@@ -1,56 +1,155 @@
+"""The Main Controller"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL v3.0"
+__version__ = "0.9991"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
+
+#
+# DEPENDENCIES
+#
+
 import numpy as np
 
+#
+# INTERNAL DEPENDENCIES
+#
 
-class NewModel(object):
+import scanomatic.gui.generic.new_model_generic as new_model_generic
 
-    def __init__(self, presets=dict()):
 
-        self._values = presets
+class Model(new_model_generic.Model):
+    #
+    # MODEL DEFAULTS
+    #
 
-    def __getitem__(self, key):
+    _PRESETS_APP = {
+        'app-title': "Scan-o-Matic: Quality Control",
+        'quit-unsaved': "You have unsaved work, are you sure you want to quit?",
 
-        if key in self._values:
+    }
 
-            return self._values[key]
+    _PRESETS_STAGE = {
 
-        elif (hasattr(self, key) and key[0].lower() == key[0] and
-              not key.startswith("_")):
+        'debug-mode': False,
 
-            return getattr(self, key)()
+        'msg-multiSelecting': "Currently using multi-seletion",
+        'showRaw': True,
+        'phenotype': None,
+        'phenotyper': None,
+        'phenotyper-path': "",
+        '_plate': 0,
+        'fixedColors': (None, None),
+        'colorsAll': True,
+        '_selectionFilter': None,
 
-        else:
+        'plates': None,
+        '_platesHaveUnsaved': None,
+        'subplateSelected': np.zeros((2, 2), dtype=bool),
+        'selection_patches': None,  # dict(),
+        'selectOnAllPhenotypes': True,
 
-            raise KeyError
+        'button-load-data': "Load experiment data",
+        'button-load-meta': "Load meta-data",
 
-    def __setitem__(self, key, value):
+        'load-fail-text': """The project could not be loaded, either files are
+    corrupt or missing""",
+        'phenotype-fail-text': """The phenotype has not been extracted, maybe
+    re-run extraction?""",
+        'loaded-text': "Loaded Project",
+        'no-plates-loaded': "-Not Loaded-",
 
-        if hasattr(self, key):
+        'label-plate': "Plate:",
+        'plate-save': "Save Plate Image",
 
-            if key in ("plate",):
+        'colors': 'Set Colors From:',
+        'color-one-plate': "This plate",
+        'color-all-plates': "All plates",
+        'color-fixed': "Values",
+        'color-fixed-update': "Update",
 
-                key = "_" + key
+        'curve-save': "Save Curve Image",
 
-            else:
+        'selections-section': "Selections & Undo",
+        'unselect': "Unselect All",
 
-                raise ValueError("Key '{0}' is read-only".format(key))
+        'badness-label': 'Quality Index',
+        'removeCurvesPhenotype': "Delete marked, this phenotype",
+        'removeCurvesAllPhenotypes': "Delete marked, all phenotypes",
+        'undo': "Undo",
+        'unremove-text': """Unfortunately the undo history is empty.
+    Do you wish to restore all removed curves for all phenotypes for
+    the current plate?""",
 
-        if key in self._values:
+        'auto-selecting': True,
 
-            self._values[key] = value
+        'multi-select-phenotype': "Select based on phenotype",
+        'multi-sel-lower': "Lower:",
+        'multi-sel-higher': "Upper:",
 
-        else:
+        'subplate-selection': "Subplate Select",
+        'subplate-0-0': "Upper Left",
+        'subplate-0-1': "Upper Right",
+        'subplate-1-0': "Lower Left",
+        'subplate-1-1': "Lower Right",
 
-            raise ValueError("Key '{0}' unknown".format(key))
+        'frame-normalize': "References / Normalize",
+        'references': "Selected plate(s) as Reference",
+        'normalize': "Normalize",
 
-    @classmethod
-    def LoadAppModel(cls):
+        'save-absolute': "Save the absolute phenotypes",
+        'save-relative': "Save the normalized phenotypes",
 
-        return cls(presets=dict(_appPresets.items() + _stagePresets.items()))
+        'saved-absolute': "Absolute Phenotypes Saved at '{0}'",
+        'saved-normed': "Normalized Relative Phenotypes Saved at '{0}'",
 
-    @classmethod
-    def LoadStageModel(cls):
+        'save-state': "Save State",
+        'reference-positions': None,
+        'set-references': "Reference Plate Set",
 
-        return cls(presets=_stagePresets)
+        'no-reference': "No Reference",
+        'yes-reference': "Ref: ",
+        'reference-offset-names': ("Up Left", "Up Right", "Low Left", "Low Right"),
+
+        'image-saved': "Image saved at '{0}'",
+
+        'saveTo': "Save to...",
+
+        'meta-data': None,
+        'meta-data-files': "Select Meta-Data Files",
+        'meta-data-loaded': "Meta-Data Loaded!",
+        'meta-data-info-column': 0,
+
+        'hover-position': 'Row {0}, Column {1}',
+        'load-data-dir': "Select Directory With Data Files",
+
+        'normalized-data': None,
+        'normalized-index-offset': None,
+        'normalized-phenotype-names': dict(),
+        'normalized-phenotype': "2D Normalized {0}",
+        'normalized-text': "2D Normalization Done",
+        'norm-alg-in-log-text': "Algorithm in Log",
+
+        'norm-alg-in-log': False,
+        'norm-outlier-fillSize': None,
+        'norm-outlier-k': 2.0,
+        'norm-outlier-p': 10,
+        'norm-outlier-iterations': 10,
+        'norm-smoothing': 1.0,
+        'norm-spline-seq': ('cubic', 'nearest'),
+        'norm-use-initial-values': False,
+        'norm-use-initial-text': "Use initial values as guide",
+
+        'norm-ref-usage-threshold': 0.95,
+        'norm-ref-CV-threshold': 0.236,  # Magic number estimated by Dr. A. Skyman
+        'ref-warning-head': """Some plates may have bad quality and should be
+    discarded, or you failed to remove all bad positions:\n""",
+        'ref-bad-plate': """Plate {0} has only used {1:.1f} percent of references
+    and has a CV of {2:.3f}""",
+    }
 
     def visibleValues(self):
 
@@ -222,132 +321,3 @@ class NewModel(object):
             raise TypeError("Plate cannot be None")
 
         return self['_plate']
-
-#
-# MODEL DEFAULTS
-#
-
-_appPresets = {
-    'app-title': "Scan-o-Matic: Quality Control",
-    'quit-unsaved': "You have unsaved work, are you sure you want to quit?",
-
-}
-
-_stagePresets = {
-
-    'debug-mode': False,
-
-    'msg-multiSelecting': "Currently using multi-seletion",
-    'showRaw': True,
-    'phenotype': None,
-    'phenotyper': None,
-    'phenotyper-path': "",
-    '_plate': 0,
-    'fixedColors': (None, None),
-    'colorsAll': True,
-    '_selectionFilter': None,
-
-    'plates': None,
-    '_platesHaveUnsaved': None,
-    'subplateSelected': np.zeros((2, 2), dtype=bool),
-    'selection_patches': None,  # dict(),
-    'selectOnAllPhenotypes': True,
-
-    'button-load-data': "Load experiment data",
-    'button-load-meta': "Load meta-data",
-
-    'load-fail-text': """The project could not be loaded, either files are
- corrupt or missing""",
-    'phenotype-fail-text': """The phenotype has not been extracted, maybe
- re-run extraction?""",
-    'loaded-text': "Loaded Project",
-    'no-plates-loaded': "-Not Loaded-",
-
-    'label-plate': "Plate:",
-    'plate-save': "Save Plate Image",
-
-    'colors': 'Set Colors From:',
-    'color-one-plate': "This plate",
-    'color-all-plates': "All plates",
-    'color-fixed': "Values",
-    'color-fixed-update': "Update",
-
-    'curve-save': "Save Curve Image",
-
-    'selections-section': "Selections & Undo",
-    'unselect': "Unselect All",
-
-    'badness-label': 'Quality Index',
-    'removeCurvesPhenotype': "Delete marked, this phenotype",
-    'removeCurvesAllPhenotypes': "Delete marked, all phenotypes",
-    'undo': "Undo",
-    'unremove-text': """Unfortunately the undo history is empty.
-Do you wish to restore all removed curves for all phenotypes for
-the current plate?""",
-
-    'auto-selecting': True,
-
-    'multi-select-phenotype': "Select based on phenotype",
-    'multi-sel-lower': "Lower:",
-    'multi-sel-higher': "Upper:",
-
-    'subplate-selection': "Subplate Select",
-    'subplate-0-0': "Upper Left",
-    'subplate-0-1': "Upper Right",
-    'subplate-1-0': "Lower Left",
-    'subplate-1-1': "Lower Right",
-
-    'frame-normalize': "References / Normalize",
-    'references': "Selected plate(s) as Reference",
-    'normalize': "Normalize",
-
-    'save-absolute': "Save the absolute phenotypes",
-    'save-relative': "Save the normalized phenotypes",
-
-    'saved-absolute': "Absolute Phenotypes Saved at '{0}'",
-    'saved-normed': "Normalized Relative Phenotypes Saved at '{0}'",
-
-    'save-state': "Save State",
-    'reference-positions': None,
-    'set-references': "Reference Plate Set",
-
-    'no-reference': "No Reference",
-    'yes-reference': "Ref: ",
-    'reference-offset-names': ("Up Left", "Up Right", "Low Left", "Low Right"),
-
-    'image-saved': "Image saved at '{0}'",
-
-    'saveTo': "Save to...",
-
-    'meta-data': None,
-    'meta-data-files': "Select Meta-Data Files",
-    'meta-data-loaded': "Meta-Data Loaded!",
-    'meta-data-info-column': 0,
-
-    'hover-position': 'Row {0}, Column {1}',
-    'load-data-dir': "Select Directory With Data Files",
-
-    'normalized-data': None,
-    'normalized-index-offset': None,
-    'normalized-phenotype-names': dict(),
-    'normalized-phenotype': "2D Normalized {0}",
-    'normalized-text': "2D Normalization Done",
-    'norm-alg-in-log-text': "Algorithm in Log",
-
-    'norm-alg-in-log': False,
-    'norm-outlier-fillSize': None,
-    'norm-outlier-k': 2.0,
-    'norm-outlier-p': 10,
-    'norm-outlier-iterations': 10,
-    'norm-smoothing': 1.0,
-    'norm-spline-seq': ('cubic', 'nearest'),
-    'norm-use-initial-values': False,
-    'norm-use-initial-text': "Use initial values as guide",
-
-    'norm-ref-usage-threshold': 0.95,
-    'norm-ref-CV-threshold': 0.236,  # Magic number estimated by Dr. A. Skyman
-    'ref-warning-head': """Some plates may have bad quality and should be
-discarded, or you failed to remove all bad positions:\n""",
-    'ref-bad-plate': """Plate {0} has only used {1:.1f} percent of references
-and has a CV of {2:.3f}""",
-}

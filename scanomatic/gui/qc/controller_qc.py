@@ -52,12 +52,12 @@ class Controller(controller_generic.Controller):
         self.paths = paths.Paths()
 
         if asApp:
-            model = model_qc.NewModel.LoadAppModel()
+            model = model_qc.Model.LoadAppModel()
             model['debug-mode'] = debugMode
             view = view_qc.Main_Window(controller=self, model=model)
         else:
             super(Controller, self).__init__(parent)
-            model = model_qc.NewModel.LoadStageModel()
+            model = model_qc.Model.LoadStageModel()
             model['debug-mode'] = debugMode
             view = view_qc.QC_Stage(controller=self, model=model)
 
