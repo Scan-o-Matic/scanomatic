@@ -156,6 +156,13 @@ class Main_Window(gtk.Window):
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
 
         button = gtk.Button()
+        button.set_label(m['panel-actions-qc'])
+        button.connect("clicked", c.add_contents, 'qc')
+        vbox.pack_start(button, False, False, PADDING_MEDIUM)
+
+        vbox.pack_start(gtk.HSeparator(), False, False, PADDING_MEDIUM)
+
+        button = gtk.Button()
         button.set_label(m['panel-actions-calibration'])
         button.connect("clicked", c.add_contents, 'calibration')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)

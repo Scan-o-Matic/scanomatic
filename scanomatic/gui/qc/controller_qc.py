@@ -46,7 +46,7 @@ import scanomatic.dataProcessing.norm as norm
 
 class Controller(controller_generic.Controller):
 
-    def __init__(self, asApp=False, debugMode=False):
+    def __init__(self, asApp=False, debugMode=False, parent=None):
 
         #PATHS NEED TO INIT BEFORE GUI
         self.paths = paths.Paths()
@@ -56,6 +56,7 @@ class Controller(controller_generic.Controller):
             model['debug-mode'] = debugMode
             view = view_qc.Main_Window(controller=self, model=model)
         else:
+            super(Controller, self).__init__(parent)
             model = model_qc.NewModel.LoadStageModel()
             model['debug-mode'] = debugMode
             view = view_qc.QC_Stage(controller=self, model=model)

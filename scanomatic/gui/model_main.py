@@ -41,6 +41,7 @@ model = {
 'panel-actions-experiment': 'Experiment',
 'panel-actions-calibration': 'Calibration',
 'panel-actions-config': 'Application Config',
+'panel-actions-qc': 'Quality Control',
 'panel-actions-quit': 'Quit',
 
 #MAIN
@@ -50,6 +51,7 @@ model = {
 'content-page-title-experiment': 'Experiment',
 'content-page-title-calibration': 'Calibration',
 'content-page-title-config': 'App Config',
+'content-page-title-qc': 'Quality Control',
 
 #DIALOGS
 'content-page-close': ("Closing content page will cause all unsaved progress"

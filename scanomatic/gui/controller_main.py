@@ -33,6 +33,7 @@ import scanomatic.gui.analysis.controller_analysis as controller_analysis
 import scanomatic.gui.experiment.controller_experiment as controller_experiment
 import scanomatic.gui.config.controller_config as controller_config
 import scanomatic.gui.calibration.controller_calibration as controller_calibration
+import scanomatic.gui.qc.controller_qc as controller_qc
 
 #Resources
 import scanomatic.io.scanner as scanner
@@ -136,7 +137,8 @@ class Controller(controller_generic.Controller):
         specific view-modes and can be inited (and with specific variables"""
 
         m = self._model
-        if content_name in ('analysis', 'experiment', 'calibration', 'config'):
+        if content_name in ('analysis', 'experiment', 'calibration', 'config',
+                            'qc'):
             title = m['content-page-title-{0}'.format(content_name)]
         else:
             err = UnknownContent("{0}".format(content_name))
@@ -157,6 +159,9 @@ class Controller(controller_generic.Controller):
         elif content_name == 'config':
             c = controller_config.Config_Controller(
                 self, **kwargs)
+
+        elif content_name == 'qc':
+            c = controller_qc.Controller(asApp=False)
 
         else:
             err = UnknownContent("{0}".format(content_name))
