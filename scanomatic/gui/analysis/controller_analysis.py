@@ -245,6 +245,19 @@ class Analysis_Controller(controller_generic.Controller):
                     view_analysis.Analysis_Inspect_Stage(
                         self._specific_controller, model))
 
+            elif stage_call == 'convert':
+
+                self._specific_controller = Analysis_Convert(
+                    self, view=view, model=self._model, **kwargs)
+
+                self.add_subcontroller(self._specific_controller)
+                view.set_top(
+                    view_analysis.Analysis_Convert_Top(
+                        self._specific_controller, model))
+                view.set_stage(
+                    view_analysis.Analysis_Convert_Stage(
+                        self._specific_controller, model))
+
             elif stage_call == "transparency":
 
                 #IF CALLED WITHOUT MODEL CREATE ONE
@@ -451,6 +464,23 @@ class Analysis_Controller(controller_generic.Controller):
             else:
 
                 raise Bad_Stage_Call(stage_call)
+
+
+class Analysis_Convert(controller_generic.Controller):
+
+    def __init__(self, parent, view=None, model=None, **kwargs):
+
+        super(Analysis_Convert, self).__init__(
+            parent, view=view, model=model)
+
+    def set_abort(self, *args):
+
+        self._parent().set_analysis_stage(None, "about")
+
+    def start(self, path):
+
+        p = Popen(['scan-o-matic_xml2image_data', '-i', path])
+        self.get_view().get_stage().addWorker(p, path)
 
 
 class Analysis_Inspect(controller_generic.Controller):

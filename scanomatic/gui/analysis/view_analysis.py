@@ -16,6 +16,7 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
+import gobject
 
 from matplotlib import pyplot as plt
 from matplotlib import patches as plt_patches
@@ -70,18 +71,16 @@ class Analysis_Top_Root(view_generic.Top):
 
         button = gtk.Button()
         button.set_label(model["analysis-top-root-project_button-text"])
+        button.set_sensitive(False)
         self.pack_start(button, False, False, PADDING_SMALL)
         button.connect("clicked", controller.set_analysis_stage, "project")
 
-        button = gtk.Button()
-        button.set_label(model["analysis-top-root-tpu_button-text"])
-        self.pack_start(button, False, False, PADDING_SMALL)
-        button.connect("clicked", controller.set_analysis_stage, "transparency")
-
+        """
         button = gtk.Button()
         button.set_label(model["analysis-top-root-color_button-text"])
         self.pack_start(button, False, False, PADDING_SMALL)
         button.connect("clicked", controller.set_analysis_stage, "colour")
+        """
 
         button = gtk.Button()
         button.set_label(model["analysis-top-root-1st_pass-text"])
@@ -92,6 +91,26 @@ class Analysis_Top_Root(view_generic.Top):
         button.set_label(model["analysis-top-root-inspect-text"])
         self.pack_start(button, False, False, PADDING_SMALL)
         button.connect("clicked", controller.set_analysis_stage, "inspect")
+
+        button = gtk.Button()
+        button.set_label(model["analysis-top-root-convert"])
+        self.pack_start(button, expand=False, fill=False,
+                        padding=PADDING_SMALL)
+        button.connect("clicked", controller.set_analysis_stage, "convert")
+
+        button = gtk.Button()
+        button.set_label(model["analysis-top-root-features"])
+        self.pack_start(button, expand=False, fill=False,
+                        padding=PADDING_SMALL)
+        button.connect("clicked", controller.set_analysis_stage, "extract")
+
+        self.pack_start(gtk.VSeparator(), expand=False, fill=False,
+                        padding=PADDING_SMALL)
+
+        button = gtk.Button()
+        button.set_label(model["analysis-top-root-tpu_button-text"])
+        self.pack_start(button, False, False, PADDING_SMALL)
+        button.connect("clicked", controller.set_analysis_stage, "transparency")
 
         self.show_all()
 
@@ -128,6 +147,18 @@ class Analysis_First_Pass_Top(view_generic.Top):
     def set_allow_next(self, val):
 
         self._start_button.set_sensitive(val)
+
+
+class Analysis_Convert_Top(view_generic.Top):
+
+    def __init__(self, controller, model):
+
+        super(Analysis_Convert_Top, self).__init__(controller, model)
+
+        self.pack_back_button(model['analysis-top-root_button-text'],
+                              controller.set_abort, None)
+
+        self.show_all()
 
 
 class Analysis_Top_Project(view_generic.Top):
@@ -270,6 +301,94 @@ class Analysis_Top_Image_Plate(Analysis_Top_Image_Generic):
         super(Analysis_Top_Image_Plate, self).__init__(
             controller, model, specific_model, specific_controller, next_text,
             next_stage_signal, back_to_root=False)
+
+
+class Analysis_Convert_Stage(gtk.VBox):
+
+    def __init__(self, controller, model):
+
+        self._controller = controller
+        self._model = model
+        super(Analysis_Convert_Stage, self).__init__(False, spacing=2)
+
+        hbox = gtk.HBox(False, spacing=2)
+        hbox.pack_start(gtk.Label(model['convert-xml-select-label']),
+                        expand=True, fill=False)
+        button = gtk.Button(label=model['convert-xml-select-button'])
+        button.connect("clicked", self._selectXmlDialog)
+        hbox.pack_start(button, expand=False, fill=False)
+
+        self.pack_start(hbox, expand=False, fill=False, padding=4)
+
+        frame = gtk.Frame(model['convert-xml-conversions'])
+        self._conversions = gtk.VBox(False, spacing=2)
+        frame.add(self._conversions)
+
+        self.pack_start(frame, expand=True, fill=True, padding=4)
+
+        frame = gtk.Frame(model['convert-xml-conversions-done'])
+        self._conversionsDone = gtk.VBox(False, spacing=2)
+        frame.add(self._conversionsDone)
+
+        self.pack_start(frame, expand=True, fill=True, padding=4)
+
+        gobject.timeout_add(71, self._update)
+
+    def addWorker(self, process, path):
+
+        lMax = 120
+        if (len(path) > lMax):
+            path = path[:lMax / 2] + "..." + path[-lMax / 2:]
+        f = gtk.Frame(label=path)
+        f.process = process
+        f.progress = gtk.ProgressBar()
+        f.add(f.progress)
+        f.progress.set_text(self._model['convert-progress'])
+        f.show_all()
+        self._conversions.pack_start(f, expand=False, fill=False, padding=2)
+
+    def _update(self, *args):
+
+        for progress in self._conversions.get_children():
+
+            if (hasattr(progress, "process")):
+
+                val = progress.process.poll()
+                if val is not None:
+
+                    l = gtk.Label(
+                        self._model['convert-completed'].format(
+                            self._model['convert-completed-status'][val == 0],
+                            progress.get_label()))
+                    l.set_justify(gtk.JUSTIFY_LEFT)
+                    self._conversionsDone.pack_start(
+                        l, expand=False, fill=False, padding=2)
+                    self._conversionsDone.reorder_child(l, 0)
+                    l.show()
+
+                    self._conversions.remove(progress)
+
+                elif (hasattr(progress, "progress")):
+                    progress.progress.pulse()
+
+        return True
+
+    def _selectXmlDialog(self, widget):
+
+        dialog = gtk.FileChooserDialog(
+            title=self._model['convert-dialog-title'],
+            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+
+        dialog.set_action(gtk.FILE_CHOOSER_ACTION_OPEN)
+
+        path = (dialog.run() == gtk.RESPONSE_OK and
+                dialog.get_filename() or None)
+
+        dialog.destroy()
+
+        if path is not None:
+            self._controller.start(path)
 
 
 class Analysis_Inspect_Stage(gtk.VBox):

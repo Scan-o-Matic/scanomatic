@@ -53,6 +53,8 @@ model = {
 'analysis-top-root-1st_pass-text': 'Make Project',
 'analysis-top-root-inspect-text': 'Inspect Analysis',
 'analysis-top-root_button-text': 'Select Analysis Mode',
+'analysis-top-root-features': 'Extract Features',
+'analysis-top-root-convert': 'Convert Analysis',
 
 #ANALYSIS STAGE ABOUT
 'analysis-stage-about-text':
@@ -62,19 +64,23 @@ model = {
 <span><i>This is for when you want to re-run the analysis of a project. That is, projects normally, automatically starts an analysis themselves
 as soon as they are done.</i></span>
 
-<span weight="heavy">Transparency Image</span>
-<span><i>This is for manually selecting colonies of transparency images and getting information about them. That is, for example,
-quatative drop-tests or calibration experiments.</i></span>
-
-<span weight="heavy">Color Image</span>
-<span><i>This is for analysing reflective color scan image -- to get quatitative values of average pigmentation.</i></span>
-
 <span weight="heavy">Make Project</span>
 <span><i>If you have to remake the first pass analysis so that you get a file that can be used for analysing a project, or
 if you have a couple of images that you want to analyse as if they had been acquired by running an experiment.</i></span>
 
 <span weight="heavy">Inspect Analysis</span>
 <span><i>Inspect how griding worked to improve future griddings (and one day, maybe to manual adjustments to it)</i></span>
+
+<span weight="heavy">Convert XML to native</span>
+<span><i>If your analysis folder lacks the numpy-files associated with image analysis, then use this to convert the analysis slimmed xml-file
+into the npy-files needed for feature extraction and quality control</i></span>
+
+<span weight="heavy">Extract Features</span>
+<span><i>Extracts growth parameters from an image analysis directory.</i></span>
+
+<span weight="heavy">Transparency Image</span>
+<span><i>This is for manually selecting colonies of transparency images and getting information about them. That is, for example,
+quatative drop-tests or calibration experiments.</i></span>
 """,
 
 #ANALYSIS TOP INSPECT
@@ -203,6 +209,16 @@ analysis of the project.</i></span>""",
 
 #ANALYSIS TOP IMAGE SECTIONING
 'analysis-top-image-sectioning-next': 'Plate Analysis',
+
+#ANALYSIS STAGE CONVERT
+'convert-progress': "Converting XML, this may take some time...",
+'convert-dialog-title': "Select the XML slimmed file to work with",
+'convert-xml-conversions': "Running conversions:",
+'convert-xml-select-button': "Select...",
+'convert-xml-select-label': "Choose Xml to be converted (output in same folder)",
+'convert-xml-conversions-done': "Completed Conversions",
+'convert-completed': "{0}: {1}",
+'convert-completed-status': ["FAILED", "SUCCESS"],
 
 #ANALYSIS STAGE IMAGE NORM MANUAL
 'analysis-stage-image-sectioning-title':
