@@ -13,6 +13,7 @@ __status__ = "Development"
 #
 
 import os
+import glob
 import re
 import gobject
 import threading
@@ -41,6 +42,7 @@ import scanomatic.io.config_file as config_file
 import scanomatic.io.verificationTags as verificationTags
 import scanomatic.io.logger as logger
 import scanomatic.io.project_log as project_log
+import scanomatic.io.paths as paths
 #from run_make_project import Make_Project
 
 #
@@ -257,6 +259,19 @@ class Analysis_Controller(controller_generic.Controller):
                     view_analysis.Analysis_Convert_Stage(
                         self._specific_controller, model))
 
+            elif stage_call == "extract":
+
+                self._specific_controller = Analysis_Extract(
+                    self, view=view, model=self._model, **kwargs)
+
+                self.add_subcontroller(self._specific_controller)
+                view.set_top(
+                    view_analysis.Analysis_Extract_Top(
+                        self._specific_controller, model))
+                view.set_stage(
+                    view_analysis.Analysis_Extract_Stage(
+                        self._specific_controller, model))
+
             elif stage_call == "transparency":
 
                 #IF CALLED WITHOUT MODEL CREATE ONE
@@ -463,6 +478,50 @@ class Analysis_Controller(controller_generic.Controller):
             else:
 
                 raise Bad_Stage_Call(stage_call)
+
+
+class Analysis_Extract(controller_generic.Controller):
+
+    def __init__(self, parent, view=None, model=None, **kwargs):
+
+        super(Analysis_Extract, self).__init__(
+            parent, view=view, model=model)
+
+        self._paths = paths.Paths()
+
+        self.set_specific_model(model_analysis.copy_model(
+            model_analysis.specific_extract))
+
+    def set_abort(self, *args):
+
+        self._parent().set_analysis_stage(None, "about")
+
+    def test_allow_start(self):
+
+        sm = self._specific_model
+        self.get_stage().get_top().set_allow_next(
+            os.path.isdir(sm['path']) and sm['tag'] != "" and
+            self.get_top_controller().server.connected())
+
+    def check_path(self, path):
+
+        p = self._paths
+        return (len(glob.glob(os.path.join(
+            path, p.image_analysis_img_data.format("*")))) > 2 and
+            os.path.isfile(os.path.join(path, p.image_analysis_time_series)))
+
+    def start(self, *args):
+
+        sm = self._specific_model
+        if not self.get_top_controller().server.addExtractionJob(
+                sm['path'], sm['tag']):
+
+            self.get_view().get_stage().error(
+                self._model['extract-launch-error'])
+
+        else:
+
+            self.destroy()
 
 
 class Analysis_Convert(controller_generic.Controller):

@@ -91,7 +91,7 @@ class Controller(controller_generic.Controller):
         self.config = app_config.Config(self.paths)
         self.fixtures = fixtures.Fixtures(self.paths, self.config)
         self.scanners = scanner.Scanners(self.paths, self.config)
-        self._serverClient = controller_server.Controller()
+        self.server = controller_server.Controller()
 
         self._view.show_notebook_or_logo()
 
@@ -105,7 +105,7 @@ class Controller(controller_generic.Controller):
         #self.add_subprocess = self.subprocs.add_subprocess
         #self.add_subcontroller(self.subprocs)
         view = self._view
-        view.populate_stats_area(self._serverClient.get_view())
+        view.populate_stats_area(self.server.get_view())
         view.populate_panel()
 
     def set_simple_logger(self):

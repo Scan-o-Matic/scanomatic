@@ -64,3 +64,16 @@ class Controller(controller_generic.Controller):
                 model['server-online-check-time'] = -time.time()
         else:
             model['server-online-check-time'] = -1
+
+    def connected(self):
+
+        return self._model['online']
+
+    def addExtractionJob(self, path, tag):
+
+        model = self._model
+        if hasattr(model['rpc-client'], 'createFeatureExtractJob'):
+
+            return model['rpc-client'].createFeatureExtractJob(path, tag)
+
+        return False

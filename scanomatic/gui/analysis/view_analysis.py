@@ -55,6 +55,9 @@ from view_analysis_single import \
     Analysis_Stage_Image_Norm_Manual, Analysis_Stage_Image_Sectioning, \
     Analysis_Stage_Image_Plate, Analysis_Stage_Log
 
+from view_analysis_extract import \
+    Analysis_Extract_Top, Analysis_Extract_Stage
+
 
 class Analysis(view_generic.Page):
 
