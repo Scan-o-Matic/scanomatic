@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """The Analysis Controller"""
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
