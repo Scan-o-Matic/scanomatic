@@ -9,6 +9,8 @@
 <div id='toc'>
 	<h1>Contents</h1>
 	<h2><a href="#installing">Installation</a></h2>
+	<h2><a href="#conversion">XML Conversion</a></h2>
+	<h2><a href="#extraction">Feature Extraction</a></h2>
 	<h2><a href="#quality">Quality Control</a></h2>
 	<h2><a href="#server">The Server</a></h2>
 </div>
@@ -40,6 +42,39 @@ $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
 		else you may have to build it:
 		<a class="linkOut" href="http://xael.org/norman/python/python-nmap/">More info here</a>.
 		</p>
+		<p>After the install several Scan-o-Matic scripts will be accessible
+		within the system.
+		All of them start with <code>scan-o-matic</code>.
+		The main program is fittingly the one called exactly so.
+		Should there be a problem reaching the launch scripts, then this
+		is probably due to a user install where it happens that python and
+		the OS disagree where to place them.
+		The setup script should have prompted you with instructions on how
+		to fix this.</p>
+
+	</div>
+	<div class='section'>
+		<h1><a id="conversion">XML Conversion</a></h1>
+		<p>If a project lacks a native image analysis output, but has a
+		slimmed version of an XML output, then it is possible to convert.
+		The conversion is run as a separate process, and not handled by the
+		server.
+		For this reason, it is not good to do too many at the same time as
+		they may eat up all available resources on the system.
+		This is particularly important if the same computer is used to
+		run experiments.</p>
+		<p>There is a live status that doesn't say how long time each
+		conversion is going to take, but reports when they are done.</p>
+	</div>
+	<div class='section'>
+		<h1><a id="extraction">Feature Extraction</a></h1>
+		<p>To be able to run feature extraction on a project, the
+		image analysis output must be in the native numpy format.
+		If this isn't the case, then do an XML-conversion (see above).</p>
+		<p>The extraction is rather straight forward and is run by the server.
+		It will overwrite any previous feature extractions and quality
+		control done on such extraction, should that exist in the
+		designated folder.</p>
 	</div>
 	<div class='section'>
 		<h1><a id="quality">Quality Control</a></h1>

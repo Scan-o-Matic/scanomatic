@@ -68,6 +68,7 @@ ul {
 .section h1 {
 	text-transform: uppercase;
 	letter-spacing: 20px;
+	line-height: 250%;
 	font-size: 115%;
 	display: block;
 	width: 100%;
