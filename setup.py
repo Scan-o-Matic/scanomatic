@@ -123,7 +123,7 @@ setup(
         "scanomatic.gui.calibration",
         "scanomatic.gui.generic",
         "scanomatic.gui.experiment",
-        "scanomatic.gui.subprocs"],
+        "scanomatic.gui.server"],
 
     package_data={"scanomatic": data_files},
     scripts=scripts,
