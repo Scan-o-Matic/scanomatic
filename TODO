@@ -2,6 +2,12 @@
 ##### THE TAKE OVER #####
    ####################
 
+*** Improve Err MSG with bad analysis dir
+
+*** Make setup suggest manual installing odfpy etc
+
+*** Add server shutdown to config with warning
+
 --
 
 **  RPC needs to accumulate job information until requested but still
