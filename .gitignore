@@ -1,6 +1,7 @@
 *.pyc
 *.pyo
 *.tmp_config
+*.aux
 ../*
 _*.lock
 .git/*
