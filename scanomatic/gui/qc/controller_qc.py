@@ -56,12 +56,11 @@ class Controller(controller_generic.Controller):
             model['debug-mode'] = debugMode
             view = view_qc.Main_Window(controller=self, model=model)
         else:
-            super(Controller, self).__init__(parent)
             model = model_qc.Model.LoadStageModel()
             model['debug-mode'] = debugMode
             view = view_qc.QC_Stage(controller=self, model=model)
 
-        super(Controller, self).__init__(None, view=view, model=model)
+        super(Controller, self).__init__(parent, view=view, model=model)
         self._logger = logger.Logger("Main Controller")
 
         #TODO: FIX new way

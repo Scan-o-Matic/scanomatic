@@ -26,16 +26,23 @@ import scanomatic.rpc_server.server as server
 
 if __name__ == "__main__":
 
-    basename = os.path.basename(sys.argv[0])
-    print basename
-    if sum([basename.startswith(p.name) and
-            len(p.name) > (len(basename) / 2.0) and
-            os.getpid() != p.pid
-            for p in psutil.get_process_list()]) > 0:
+    basename = os.path.basename(sys.argv[0])[:15]
 
-        logger.Logger("Scan-o-Matic server launcher").critical(
-            "There is already a Scan-o-Matic server running, request refused!")
-        sys.exit(9)
+    for p in psutil.get_process_list():
+
+        try:
+
+            if (p.name.startswith(basename) and
+                    os.getpid() != p.pid):
+
+                logger.Logger("Scan-o-Matic server launcher").critical(
+                    "There is already a Scan-o-Matic server running, " +
+                    "request refused!")
+                sys.exit(9)
+
+        except psutil.error.NoSuchProcess:
+
+            pass
 
     rpcServer = server.SOM_RPC()
     rpcServer.run()

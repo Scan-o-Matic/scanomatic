@@ -1,4 +1,4 @@
-"""The Main Controller"""
+"""The QC Model"""
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]

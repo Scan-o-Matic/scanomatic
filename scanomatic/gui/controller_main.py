@@ -28,7 +28,7 @@ import view_main
 #Controllers
 import generic.controller_generic as controller_generic
 
-#import subprocs.controller_subprocs as controller_subprocs
+import scanomatic.gui.server.controller_server as controller_server
 import scanomatic.gui.analysis.controller_analysis as controller_analysis
 import scanomatic.gui.experiment.controller_experiment as controller_experiment
 import scanomatic.gui.config.controller_config as controller_config
@@ -91,6 +91,7 @@ class Controller(controller_generic.Controller):
         self.config = app_config.Config(self.paths)
         self.fixtures = fixtures.Fixtures(self.paths, self.config)
         self.scanners = scanner.Scanners(self.paths, self.config)
+        self._serverClient = controller_server.Controller()
 
         self._view.show_notebook_or_logo()
 
@@ -104,7 +105,7 @@ class Controller(controller_generic.Controller):
         #self.add_subprocess = self.subprocs.add_subprocess
         #self.add_subcontroller(self.subprocs)
         view = self._view
-        #view.populate_stats_area(self.subprocs.get_view())
+        view.populate_stats_area(self._serverClient.get_view())
         view.populate_panel()
 
     def set_simple_logger(self):
