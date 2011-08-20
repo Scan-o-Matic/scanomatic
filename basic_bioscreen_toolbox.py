@@ -3,6 +3,7 @@
 #Importin what is needed
 import sys, os, gtk
 from numpy import *
+import matplotlib.pyplot as mp
 
 class Bioscreen_Run():
 	def __init__(self, file_path = None):
@@ -78,6 +79,9 @@ class Bioscreen_Run():
 						self.wells[well].values[measure] = float(values[measure][well])
 					except:
 						measures_count = measure			
+			measurements = range(len(self.wells[0].values))
+			self.good_measurements =  array(measurements) >= 0
+
 	def useful_range(self):
 		measurements = range(len(self.wells[0].values))
 		for well in self.wells:
@@ -88,13 +92,15 @@ class Bioscreen_Run():
 							measurements[value_pos] = -1
 		self.good_measurements =  array(measurements) == -1
 					
-	def smoothen(self):
+	def smoothen(self, exclude=[]):
 		for well in self.wells:
-			well.smoothen()
+			if not(well.name in exclude):
+				well.smoothen(good_measurements = self.good_measurements)
 
-	def log2(self, force_from_raw=None):
+	def log(self, exclude=[], force_from_raw=False):
 		for well in self.wells:
-			well.log2(force_from_raw=force_from_raw)
+			if not(well.name in exclude):
+				well.log(force_from_raw=force_from_raw, good_measurements = self.good_measurements)
 
 class Bioscreen_Well():
 	def __init__(self, matrix_size=None, values=None, name=None, media=None):
@@ -120,9 +126,9 @@ class Bioscreen_Well():
 		self.log2 = None
 		self.smoothened = None
 		
-	def smoothen(self):
+	def smoothen(self, good_measurements=None):
 
-		no_collapse = empty(self.values.shape, dtype=float64)
+		no_collapse = zeros(self.values.shape, dtype=float64)
 		no_collapse[0] = self.values[0]
 
 		for pos in range(no_collapse.shape[0]-1):
@@ -131,7 +137,7 @@ class Bioscreen_Well():
 			else:
 				no_collapse[pos+1] = no_collapse[pos]
 
-		self.smoothened = empty(self.values.shape, dtype=float64)
+		self.smoothened = zeros(self.values.shape, dtype=float64)
 		self.smoothened[0] = self.values[0]
 
 		for pos in range(no_collapse.shape[0]-2):
@@ -139,11 +145,14 @@ class Bioscreen_Well():
 
 		self.smoothened[-1] = self.values[-1]
 
-	def log(self, force_from_raw = False):
+	def log(self, force_from_raw = False, good_measurements=None):
 		if self.smoothened == None or force_from_raw == True:
-			self.log2 = log2(self.values)
+			self.log2 = log2(self.values[good_measurements])
 		else:
-			self.log2 = log2(self.smoothened)
+			self.log2 = log2(self.smoothened[good_measurements])
+
+	def time_2_hours(self, divisor=36000):
+		self.values /= divisor
 
 class Prophecy_Run():
 	def __init__(self, bioscreen_run):
@@ -175,5 +184,8 @@ class BBT_Phenotype():
 bioscreen = Bioscreen_Run()
 bioscreen.load_from_file()
 bioscreen.useful_range()
-print len(bioscreen.wells), bioscreen.wells[1].name
-print bioscreen.wells[1].values
+bioscreen.smoothen(exclude=[bioscreen.wells[0].name])
+bioscreen.log(exclude=[bioscreen.wells[0].name])
+bioscreen.wells[0].time_2_hours()
+mp.plot(bioscreen.wells[0].values[bioscreen.good_measurements], bioscreen.wells[1].log2, 'b.')
+mp.show()
