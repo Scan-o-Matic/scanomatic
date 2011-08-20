@@ -7,9 +7,10 @@ from numpy import *
 class Bioscreen_Run():
 	def __init__(self, file_path = None):
 
-		self.wells = None 
+		self.wells = []
 		self.source = file_path
 		self.times = None
+		self.good_measurements = None
 
 		if file_path != None:
 			load_from_file(file_path)
@@ -66,10 +67,37 @@ class Bioscreen_Run():
 						values.append(row)
 					head_row = True
 
-			print well_names
-			print values[-2]				
+			measures_count = len(values)
+			for well in well_names:
+				self.wells.append(Bioscreen_Well(matrix_size=measures_count, name=well))
+
+			well_count = len(values[0])
+			for well in range(well_count) :
+				for measure in range(measures_count):
+					try:
+						self.wells[well].values[measure] = float(values[measure][well])
+					except:
+						measures_count = measure			
+	def useful_range(self):
+		measurements = range(len(self.wells[0].values))
+		for well in self.wells:
+			if well.name != "TenthSec.":
+				for value_pos in measurements:
+					if value_pos != -1:
+						if well.values[value_pos] != 0:
+							measurements[value_pos] = -1
+		self.good_measurements =  array(measurements) == -1
+					
+	def smoothen(self):
+		for well in self.wells:
+			well.smoothen()
+
+	def log2(self, force_from_raw=None):
+		for well in self.wells:
+			well.log2(force_from_raw=force_from_raw)
+
 class Bioscreen_Well():
-	def __init__(self, values, name=None, media=None):
+	def __init__(self, matrix_size=None, values=None, name=None, media=None):
 		'''
 			The Bioscreen Well contains all the measurments from one well.
 			It has the functions generally applied to the wells
@@ -82,7 +110,12 @@ class Bioscreen_Well():
 
 		self.name = name
 		self.media = media
-		self.values = array(values)
+		if values != None:
+			self.values = array(values, dtype=float64)
+		elif matrix_size != None:
+			self.values = zeros((matrix_size,), dtype=float64)
+		else:
+			self.values = None
 
 		self.log2 = None
 		self.smoothened = None
@@ -133,7 +166,7 @@ class BBT_Phenotype():
 		pas
  
 
-#well = Bioscreen_Well([1, 2, 1, 4, 5, 6, 7, 8, 8, 9])
+#well = Bioscreen_Well(values=[1, 2, 1, 4, 5, 6, 7, 8, 8, 9])
 #well.smoothen()
 #print well.smoothened
 #well.log()
@@ -141,3 +174,6 @@ class BBT_Phenotype():
 
 bioscreen = Bioscreen_Run()
 bioscreen.load_from_file()
+bioscreen.useful_range()
+print len(bioscreen.wells), bioscreen.wells[1].name
+print bioscreen.wells[1].values
