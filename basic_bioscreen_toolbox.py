@@ -5,18 +5,8 @@ import sys, os, gtk
 from numpy import *
 import matplotlib.pyplot as mp
 
-class Bioscreen_Run():
-	def __init__(self, file_path = None):
-
-		self.wells = []
-		self.source = file_path
-		self.times = None
-		self.good_measurements = None
-
-		if file_path != None:
-			load_from_file(file_path)
-
-	def load_from_file(self, location=None):
+class Data_File():
+	def file_loader(self, location=''):
 		if location == None:
 			loader = gtk.FileChooserDialog(title="Select Bioscreen C - file", action=gtk.FILE_CHOOSER_ACTION_OPEN, \
 				buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
@@ -38,6 +28,22 @@ class Bioscreen_Run():
 			print "Error: Failed to load the file: " + location
 			halt()				
 
+		return fs
+
+class Bioscreen_Run(Data_File):
+	def __init__(self, file_path = None):
+
+		self.wells = []
+		self.source = file_path
+		self.times = None
+		self.good_measurements = None
+
+		if file_path != None:
+			load_from_file(file_path)
+
+	def load_from_file(self, location=None):
+
+		fs = self.file_loader(location=location)
 		type_of_file = fs.readline().split(" ")[0]
 
 		if type_of_file == "READER:":
@@ -70,6 +76,8 @@ class Bioscreen_Run():
 
 						values.append(row)
 					head_row = True
+
+			fs.close()
 
 			measures_count = len(values)
 			for well in well_names:
@@ -182,9 +190,78 @@ class Bioscreen_Well():
 	def time_2_hours(self, divisor=36000):
 		self.values /= divisor
 
-class Prophecy_Run():
-	def __init__(self, bioscreen_run):
-		pass
+class Prophecy_Run(Data_File):
+	def __init__(self, bioscreen_run=None, duplicate_plates=False):
+		self.duplicate_plates = duplicate_plates
+		self.wellpattern = {}
+		self.phenotypes = {'lag': 1, 'rate':2, 'gt':2, 'generation time':2, 'yield':3, 'efficiency':3}
+
+	def set_well_pattern(self, duplicate_plates=None, well_pattern=None):
+		self.wellpattern = {}
+		if duplicate_plates != None:
+			set_duplicate_plates(value=duplicate_plates)
+		if well_pattern == None:
+			fs = self.file_loader(location=None)
+			i = 0
+			for line in fs:
+				if line[0] != "#":
+					tmp = line.split('\t')
+					if len(tmp) > 1:
+						try:
+							if self.duplicate_plates == True:
+								self.wellpattern[tmp[1]] = [int(tmp[0]), int(tmp[0])+100]
+							else:
+								self.wellpattern[tmp[1]] = [int(tmp[0])]
+						except:
+							if self.duplicate_plates == True:
+								self.wellpattern[tmp[1]] = [i, i+100]
+							else:
+								self.wellpattern[tmp[1]] = [i]
+					else:
+						self.wellpattern[tmp[pos]] = [i] 
+					i+=1	
+
+			fs.close()
+		else:
+			i = 0
+			for well in well_pattern:
+				if self.duplicate_plates == True:
+					self.wellpattern[well] = [i, i+100]
+				else:
+					self.wellpattern[well] = [i]
+				i += 1
+
+	def set_duplicate_plates(self, value=True):
+		self.duplicate_plates = value
+
+	def get_duplicate_plates(self):
+		return self.duplicate_plates
+
+	def load_from_file(self, location=None):
+		fs = self.file_loader(location=location)
+		data = []
+		for line in fs:
+			tmp = line.split('\t')
+			heading_row = False
+			for i in range(len(tmp)):
+				if i == 0:
+					try:
+						tmp[i] = int(tmp[i].strip())
+					except:
+						print "Assuming this i a heading row:\n" , tmp
+						heading_row = True
+				elif heading_row == False:
+					try:
+						tmp[i] = float(tmp[i].strip())
+					except:
+						print "Unexpected data: " + tmp[i]
+						halt()
+
+			if not(heading_row):
+				data.append(tmp)
+
+		print data
+		fs.close()
 
 class Prophecy_Well():
 	def __init__(self, well):
@@ -200,16 +277,21 @@ class Prophecy_Phenotype():
 
 class BBT_Phenotype():
 	def __init__(self):
-		pas
+		pass
  
 
-#well = Bioscreen_Well(values=[1, 2, 1, 4, 5, 6, 7, 8, 8, 9])
-#well.smoothen()
-#print well.smoothened
-#well.log()
-#print well.log2
+#
+# SIMPLE PROPHECY FILE READING, MAKING AVERAGES, LOG2 TRANSFORMATIONS, ETC
+#
 
-bioscreen = Bioscreen_Run()
-bioscreen.load_from_file(location='/home/bambiraptor/Documents/PhD/Data/2011 Deadaptation/Bioscreen files/MZCS4000.XL~')
-bioscreen.process_data()
-bioscreen.plot(wells=[2, 102])
+prophecy = Prophecy_Run()
+prophecy.load_from_file()
+
+#
+# SIMPLE READING BIOSCREEN FILE, STANDARD SMOOTHING AND LOG2, AND FINALLY PLOTTING WELLS 2 and 102
+#
+
+#bioscreen = Bioscreen_Run()
+#bioscreen.load_from_file(location='/home/bambiraptor/Documents/PhD/Data/2011 Deadaptation/Bioscreen files/MZCS4000.XL~')
+#bioscreen.process_data()
+#bioscreen.plot(wells=[2, 102])
