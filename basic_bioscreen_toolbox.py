@@ -27,13 +27,16 @@ class Bioscreen_Run():
 
 			if response == gtk.RESPONSE_OK:
 				location = loader.get_filename()
+
 			loader.destroy()
+
+		print "Loading the file: " + location
 
 		try:
 			fs = open(location,'r')
 		except:
 			print "Error: Failed to load the file: " + location
-			
+			halt()				
 
 		type_of_file = fs.readline().split(" ")[0]
 
@@ -82,6 +85,12 @@ class Bioscreen_Run():
 			measurements = range(len(self.wells[0].values))
 			self.good_measurements =  array(measurements) >= 0
 
+	def process_data(self):
+		self.useful_range()
+		self.smoothen(exclude=[self.wells[0].name])
+		self.log(exclude=[self.wells[0].name])
+		self.wells[0].time_2_hours()
+
 	def useful_range(self):
 		measurements = range(len(self.wells[0].values))
 		for well in self.wells:
@@ -101,6 +110,25 @@ class Bioscreen_Run():
 		for well in self.wells:
 			if not(well.name in exclude):
 				well.log(force_from_raw=force_from_raw, good_measurements = self.good_measurements)
+
+	def plot(self, wells=[], logged=True, smoothened=True, plot_cfg_string='b.'):
+		x = self.wells[0].values[self.good_measurements]
+		y_dimensions = (x.shape[0], len(wells))
+		y = zeros(y_dimensions)
+		y_pos = 0
+		for well in wells:
+			if logged == True and self.wells[well].log2 != None:
+				y[:,y_pos] = self.wells[well].log2			
+			elif smoothened == True and self.wells[well].smoothened != None:
+				y[:,y_pos] = self.wells[well].smoothened
+			else:
+				y[:,y_pos] = self.wells[well].values
+
+			y_pos += 1
+	
+		mp.plot(x, y, plot_cfg_string)
+#		mp.semilogx(x, y, plot_cfg_string)
+		mp.show()
 
 class Bioscreen_Well():
 	def __init__(self, matrix_size=None, values=None, name=None, media=None):
@@ -182,10 +210,6 @@ class BBT_Phenotype():
 #print well.log2
 
 bioscreen = Bioscreen_Run()
-bioscreen.load_from_file()
-bioscreen.useful_range()
-bioscreen.smoothen(exclude=[bioscreen.wells[0].name])
-bioscreen.log(exclude=[bioscreen.wells[0].name])
-bioscreen.wells[0].time_2_hours()
-mp.plot(bioscreen.wells[0].values[bioscreen.good_measurements], bioscreen.wells[1].log2, 'b.')
-mp.show()
+bioscreen.load_from_file(location='/home/bambiraptor/Documents/PhD/Data/2011 Deadaptation/Bioscreen files/MZCS4000.XL~')
+bioscreen.process_data()
+bioscreen.plot(wells=[2, 102])
