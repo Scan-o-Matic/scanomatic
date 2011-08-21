@@ -194,12 +194,45 @@ class Prophecy_Run(Data_File):
 	def __init__(self, bioscreen_run=None, duplicate_plates=False):
 		self.duplicate_plates = duplicate_plates
 		self.wellpattern = {}
-		self.phenotypes = {'lag': 1, 'rate':2, 'gt':2, 'generation time':2, 'yield':3, 'efficiency':3}
+		self.phenotype = {'lag': 0, 'rate': 1, 'gt': 1, 'generation time': 1, 'yield': 2, 'efficiency': 2}
+		self.data = None
+
+	def log(self):
+		self.data = log2(self.data)
+
+	def averages(self):
+		if len(self.wellpattern) == 0:
+			self.set_well_pattern()
+
+		avgs = zeros((len(self.wellpattern),3))
+		i = 0
+		for key in self.wellpattern.keys():
+			avgs[i,:] = self.well(key, avg=True)
+			i += 1
+		return avgs
+
+	def well(self, well, avg=False):
+		if len(self.wellpattern) == 0:
+			self.set_well_pattern()
+
+		try:
+			if avg == True:
+				return mean(self.data[self.wellpattern[well],:], axis=0)
+			else:
+				return self.data[self.wellpattern[well],:]
+		except:
+			return None
+
+	def phenotypes(self, phenotype):
+		try:
+			return self.data[:,self.phenotype[phenotype.lower()]]
+		except:
+			return None
 
 	def set_well_pattern(self, duplicate_plates=None, well_pattern=None):
 		self.wellpattern = {}
 		if duplicate_plates != None:
-			set_duplicate_plates(value=duplicate_plates)
+			self.set_duplicate_plates(value=duplicate_plates)
 		if well_pattern == None:
 			fs = self.file_loader(location=None)
 			i = 0
@@ -258,34 +291,21 @@ class Prophecy_Run(Data_File):
 						halt()
 
 			if not(heading_row):
-				data.append(tmp)
+				data.append(tmp[1:len(tmp)])
 
-		print data
+		self.data = array(data, dtype = float64)
 		fs.close()
 
-class Prophecy_Well():
-	def __init__(self, well):
-		if well.smoothened == None:
-			well.smoothen
-		if well.log2 == None:
-			well.log()
-
-
-class Prophecy_Phenotype():
-	def __init__(self):
-		pass
-
-class BBT_Phenotype():
-	def __init__(self):
-		pass
- 
 
 #
 # SIMPLE PROPHECY FILE READING, MAKING AVERAGES, LOG2 TRANSFORMATIONS, ETC
 #
 
 prophecy = Prophecy_Run()
-prophecy.load_from_file()
+prophecy.load_from_file(location='2011 Deadaptation/Prophecy phenotypes/MZCS4001.txt')
+prophecy.set_well_pattern(duplicate_plates=True, well_pattern=range(1,101)) #Call experiments 1-100 and say wells 101-200 are dupes
+prophecy.log()
+print prophecy.averages()
 
 #
 # SIMPLE READING BIOSCREEN FILE, STANDARD SMOOTHING AND LOG2, AND FINALLY PLOTTING WELLS 2 and 102
