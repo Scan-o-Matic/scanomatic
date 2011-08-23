@@ -44,46 +44,48 @@ class Bioscreen_Run(Data_File):
 	def load_from_file(self, location=None):
 
 		fs = self.file_loader(location=location)
-		type_of_file = fs.readline().split(" ")[0]
+		file_contents = fs.read()
+		fs.close()
+		file_contents = file_contents.replace("\r", "\n")
+		file_contents = file_contents.split("\n")
 
-		if type_of_file == "READER:":
+		if file_contents[0].split(" ")[0] == "READER:":
 			no_data = True
 			head_row = True
 			well_names = []
 			values = []
 
-			for line in fs:
+			for line in file_contents:
 				line_tuple = line.split("\t")
-				if no_data == True:
-					if line_tuple[0][:9] == "TenthSec." or line_tuple[0][:4] == "0000":
-						no_data = False
-
-				if no_data == False:
-					if head_row == True:
-						if line_tuple[0].strip() == "TenthSec.":
+				if len(line_tuple) > 1:
+					if no_data == True:
+						if line_tuple[0][:9] == "TenthSec." or line_tuple[0][:4] == "0000":
+							no_data = False
+	
+					if no_data == False:
+						if head_row == True:
+							if line_tuple[0].strip() == "TenthSec.":
+								for item in line_tuple:
+									if item.strip() != "":
+										well_names.append(item.strip())
+							else:
+								if well_names == []:
+									well_names = range(len(line_tuple))
+								head_row = False
+	
+						if head_row == False:
+							row = []
 							for item in line_tuple:
-								if item.strip() != "":
-									well_names.append(item.strip())
-						else:
-							if well_names == []:
-								well_names = range(len(line_tuple))
-							head_row = False
+								row.append(item.strip())
+	
+							values.append(row)
 
-					if head_row == False:
-						row = []
-						for item in line_tuple:
-							row.append(item.strip())
-
-						values.append(row)
-					head_row = True
-
-			fs.close()
 
 			measures_count = len(values)
 			for well in well_names:
 				self.wells.append(Bioscreen_Well(matrix_size=measures_count, name=well))
 
-			well_count = len(values[0])
+			well_count = len(self.wells)
 			for well in range(well_count) :
 				for measure in range(measures_count):
 					try:
@@ -119,7 +121,7 @@ class Bioscreen_Run(Data_File):
 			if not(well.name in exclude):
 				well.log(force_from_raw=force_from_raw, good_measurements = self.good_measurements)
 
-	def plot(self, wells=[], logged=True, smoothened=True, plot_cfg_string='b.'):
+	def plot(self, wells=[], logged=True, smoothened=True, plot_cfg_strings=['b.'], legend=None, normalize_start=None):
 		x = self.wells[0].values[self.good_measurements]
 		y_dimensions = (x.shape[0], len(wells))
 		y = zeros(y_dimensions)
@@ -132,10 +134,18 @@ class Bioscreen_Run(Data_File):
 			else:
 				y[:,y_pos] = self.wells[well].values
 
+			if normalize_start != None:
+				y_diff = y[0,y_pos] - normalize_start
+#				print y_diff, y[0, y_pos], y[0, y_pos]-
+				y[:,y_pos] -= y_diff
+
 			y_pos += 1
 	
-		mp.plot(x, y, plot_cfg_string)
-#		mp.semilogx(x, y, plot_cfg_string)
+		mp.semilogy(x, y[:, 0], plot_cfg_strings[0], basey=2)
+		for curve in range(1, len(wells)):
+			mp.semilogy(x, y[:, curve], plot_cfg_strings[curve], basey=2)
+		if legend != None:
+			mp.legend(legend)
 		mp.show()
 
 class Bioscreen_Well():
@@ -163,17 +173,15 @@ class Bioscreen_Well():
 		self.smoothened = None
 		
 	def smoothen(self, good_measurements=None):
-
-		no_collapse = zeros(self.values.shape, dtype=float64)
+		no_collapse = zeros(self.values[good_measurements == True].shape, dtype=float64)
 		no_collapse[0] = self.values[0]
-
 		for pos in range(no_collapse.shape[0]-1):
 			if self.values[pos+1] > no_collapse[pos]:
 				no_collapse[pos+1] = self.values[pos+1]
 			else:
 				no_collapse[pos+1] = no_collapse[pos]
 
-		self.smoothened = zeros(self.values.shape, dtype=float64)
+		self.smoothened = zeros(self.values[good_measurements == True].shape, dtype=float64)
 		self.smoothened[0] = self.values[0]
 
 		for pos in range(no_collapse.shape[0]-2):
@@ -185,7 +193,7 @@ class Bioscreen_Well():
 		if self.smoothened == None or force_from_raw == True:
 			self.log2 = log2(self.values[good_measurements])
 		else:
-			self.log2 = log2(self.smoothened[good_measurements])
+			self.log2 = log2(self.smoothened)
 
 	def time_2_hours(self, divisor=36000):
 		self.values /= divisor
@@ -301,17 +309,20 @@ class Prophecy_Run(Data_File):
 # SIMPLE PROPHECY FILE READING, MAKING AVERAGES, LOG2 TRANSFORMATIONS, ETC
 #
 
-prophecy = Prophecy_Run()
-prophecy.load_from_file(location='2011 Deadaptation/Prophecy phenotypes/MZCS4001.txt')
-prophecy.set_well_pattern(duplicate_plates=True, well_pattern=range(1,101)) #Call experiments 1-100 and say wells 101-200 are dupes
-prophecy.log()
-print prophecy.averages()
+#prophecy = Prophecy_Run()
+#prophecy.load_from_file(location='2011 Deadaptation/Prophecy phenotypes/MZCS4001.txt')
+#prophecy.set_well_pattern(duplicate_plates=True, well_pattern=range(1,101)) #Call experiments 1-100 and say wells 101-200 are dupes
+#prophecy.log()
+#print prophecy.averages()
 
 #
 # SIMPLE READING BIOSCREEN FILE, STANDARD SMOOTHING AND LOG2, AND FINALLY PLOTTING WELLS 2 and 102
 #
 
-#bioscreen = Bioscreen_Run()
-#bioscreen.load_from_file(location='/home/bambiraptor/Documents/PhD/Data/2011 Deadaptation/Bioscreen files/MZCS4000.XL~')
-#bioscreen.process_data()
-#bioscreen.plot(wells=[2, 102])
+bioscreen = Bioscreen_Run()
+bioscreen.load_from_file(location='2011 Salt tolerance of diff spices/MYSC/MZGS9929.XL~') #location='/home/bambiraptor/Documents/PhD/Data/2011 Deadaptation/Bioscreen files/MZCS4000.XL~')
+bioscreen.process_data()
+#bioscreen.plot(wells=[25,125,33,133,82,182], logged=False, plot_cfg_strings=['b.','b.','r.','r.','g.','g.'], normalize_start=0.11, legend=('MYSC25 #1','MYSC25 #2','MYSC32 #1', 'MYSC32 #2','MYSC82 #1','MYSC82 #2'))
+#bioscreen.plot(wells=[26,126,83,183,31,131], logged=False, plot_cfg_strings=['b.','b.','r.','r.','g.','g.'], normalize_start=0.11, legend=('MYSC26 #1','MYSC26 #2','MYSC83 #1', 'MYSC83 #2','MYSC30 #1','MYSC30 #2'))
+bioscreen.plot(wells=[24,124,84,184], logged=False, plot_cfg_strings=['b.','b.','r.','r.'], normalize_start=0.11, legend=('MYSC24 #1','MYSC24 #2','MYSC84 #1', 'MYSC84 #2'))
+
