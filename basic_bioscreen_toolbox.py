@@ -37,6 +37,7 @@ class Bioscreen_Run(Data_File):
 		self.source = file_path
 		self.times = None
 		self.good_measurements = None
+		self.plot_figure = 1
 
 		if file_path != None:
 			load_from_file(file_path)
@@ -126,6 +127,7 @@ class Bioscreen_Run(Data_File):
 		y_dimensions = (x.shape[0], len(wells))
 		y = zeros(y_dimensions)
 		y_pos = 0
+		fig = mp.figure(self.plot_figure)
 		for well in wells:
 			if logged == True and self.wells[well].log2 != None:
 				y[:,y_pos] = self.wells[well].log2			
@@ -152,7 +154,8 @@ class Bioscreen_Run(Data_File):
 			mp.xlabel(xaxis)
 		if yaxis != None:
 			mp.ylabel(yaxis)
-		mp.show()
+		self.plot_figure += 1
+		fig.show()
 
 class Bioscreen_Well():
 	def __init__(self, matrix_size=None, values=None, name=None, media=None):
@@ -325,10 +328,11 @@ class Prophecy_Run(Data_File):
 # SIMPLE READING BIOSCREEN FILE, STANDARD SMOOTHING AND LOG2, AND FINALLY PLOTTING WELLS 2 and 102
 #
 
-bioscreen = Bioscreen_Run()
-bioscreen.load_from_file(location='2011 Salt tolerance of diff spices/MYSC/MZGS9929.XL~') #location='/home/bambiraptor/Documents/PhD/Data/2011 Deadaptation/Bioscreen files/MZCS4000.XL~')
-bioscreen.process_data()
+#bioscreen = Bioscreen_Run()
+#bioscreen.load_from_file(location='2011 Salt tolerance of diff spices/MYSC/MZGS9929.XL~') #location='/home/bambiraptor/Documents/PhD/Data/2011 Deadaptation/Bioscreen files/MZCS4000.XL~')
+#bioscreen.process_data()
 #bioscreen.plot(wells=[25,125,33,133,82,182], logged=False, plot_cfg_strings=['b.','b.','r.','r.','g.','g.'], normalize_start=0.11, legend=('MYSC25 #1','MYSC25 #2','MYSC32 #1', 'MYSC32 #2','MYSC82 #1','MYSC82 #2'), xaxis='hours', yaxis='OD', title='Debaryomyces hansenii: slow-GT examples')
 #bioscreen.plot(wells=[26,126,83,183,31,131], logged=False, plot_cfg_strings=['b.','b.','r.','r.','g.','g.'], normalize_start=0.11, legend=('MYSC26 #1','MYSC26 #2','MYSC83 #1', 'MYSC83 #2','MYSC30 #1','MYSC30 #2'), xaxis='hours', yaxis='OD', title='Debaryomyces hansenii: fast-GT examples')
-bioscreen.plot(wells=[24,124,84,184], logged=False, plot_cfg_strings=['b.','b.','r.','r.'], normalize_start=0.11, legend=('MYSC24 #1','MYSC24 #2','MYSC84 #1', 'MYSC84 #2'), xaxis='hours', yaxis='OD', title='Debaryomyces hansenii: mid-GT examples')
+#bioscreen.plot(wells=[24,124,84,184], logged=False, plot_cfg_strings=['b.','b.','r.','r.'], normalize_start=0.11, legend=('MYSC24 #1','MYSC24 #2','MYSC84 #1', 'MYSC84 #2'), xaxis='hours', yaxis='OD', title='Debaryomyces hansenii: mid-GT examples')
+pass
 
