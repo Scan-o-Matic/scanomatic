@@ -127,7 +127,12 @@ class Bioscreen_Run(Data_File):
 		y_dimensions = (x.shape[0], len(wells))
 		y = zeros(y_dimensions)
 		y_pos = 0
+		if self.plot_figure == 1:
+			mp.ion()
+
 		fig = mp.figure(self.plot_figure)
+		fig_sub_plot = fig.add_subplot(111)
+
 		for well in wells:
 			if logged == True and self.wells[well].log2 != None:
 				y[:,y_pos] = self.wells[well].log2			
@@ -143,19 +148,21 @@ class Bioscreen_Run(Data_File):
 
 			y_pos += 1
 	
-		mp.semilogy(x, y[:, 0], plot_cfg_strings[0], basey=2)
+		fig_sub_plot.semilogy(x, y[:, 0], plot_cfg_strings[0], basey=2)
 		for curve in range(1, len(wells)):
-			mp.semilogy(x, y[:, curve], plot_cfg_strings[curve], basey=2)
+			fig_sub_plot.semilogy(x, y[:, curve], plot_cfg_strings[curve], basey=2)
 		if legend != None:
-			mp.legend(legend)
+			fig_sub_plot.legend(legend)
 		if title != None:
-			mp.title(title)
+			fug_sub_plot.title(title)
 		if xaxis != None:
-			mp.xlabel(xaxis)
+			fig_sub_plot.xlabel(xaxis)
 		if yaxis != None:
-			mp.ylabel(yaxis)
+			fig_sub_plot.ylabel(yaxis)
 		self.plot_figure += 1
-		fig.show()
+		mp.draw()
+		mp.draw()
+		print "Remember to runt mp.show() when done creating graphs to make them show stably"
 
 class Bioscreen_Well():
 	def __init__(self, matrix_size=None, values=None, name=None, media=None):
