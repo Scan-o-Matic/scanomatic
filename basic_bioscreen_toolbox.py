@@ -220,18 +220,67 @@ class Prophecy_Run(Data_File):
 		self.wellpattern = {}
 		self.phenotype = {'lag': 0, 'rate': 1, 'gt': 1, 'generation time': 1, 'yield': 2, 'efficiency': 2}
 		self.data = None
+		self.plate_references = [[],[]]
+
+	def set_reference_positions(self, ref_type='Plate', wells=[]):
+		self.plate_references = [[],[]]
+		for well in wells:
+			if self.duplicate_plates:
+				if well > 100:
+					print "Skipping " + well + " since second plate is a duplicate\nusing first plates pattern instead"
+				else:
+					self.plate_references[1].append(well+100)
+					self.plate_references[0].append(well)
+
+			else:
+					self.plate_references[int((well-1)/100)].append(well)
+
+	def get_reference_positions(self):
+		return self.plate_references
+
+	def get_reference(self):
+		ret_array = zeros((2,3))
+		for plate in range(2):
+			tmp_data = zeros((len(self.plate_references[plate]),3))
+			tmp_data_pos = 0
+			for ref_pos in self.plate_references[plate]:
+				tmp_data[tmp_data_pos,:] = self.data[ref_pos-1,:]
+			ret_array[plate,:] = mean(tmp_data, axis=0)
+
+		return ret_array
+
+	def get_LSC(self, all_same_media=True):		
+		if all_same_media:
+			return self.get_plate_normalized_values(add_super_mean = False)
+		else:
+			return None
+
+	def get_plate_normalized_values(self, add_super_mean = True):
+		ref_mean = self.get_reference()
+		
+		ret_array = zeros(self.data.shape)
+		ret_array[:100, :] = self.data[:100, :] - ref_mean[0,:]
+		ret_array[101:, :] = self.data[101:] - ref_mean[1,:]
+
+		if add_super_mean == True:
+			ret_array = ret_array + mean(ref_mean, axis=0)
+
+		return ret_array
 
 	def log(self):
 		self.data = log2(self.data)
 
-	def averages(self):
+	def averages(self, data=None):
 		if len(self.wellpattern) == 0:
 			self.set_well_pattern()
 
 		avgs = zeros((len(self.wellpattern),3))
 		i = 0
 		for key in self.wellpattern.keys():
-			avgs[i,:] = self.well(key, avg=True)
+			if data == None:
+				avgs[i,:] = self.well(key, avg=True)
+			else:
+				avgs[i,:] = mean(data[self.wellpattern[key],:],axis= 0)
 			i += 1
 		return avgs
 
@@ -290,7 +339,8 @@ class Prophecy_Run(Data_File):
 
 	def set_duplicate_plates(self, value=True):
 		self.duplicate_plates = value
-
+		if value == True:
+			self.set_reference_positions(wells=self.plate_references[0])
 	def get_duplicate_plates(self):
 		return self.duplicate_plates
 
@@ -328,6 +378,7 @@ class Prophecy_Run(Data_File):
 #prophecy = Prophecy_Run()
 #prophecy.load_from_file(location='2011 Deadaptation/Prophecy phenotypes/MZCS4001.txt')
 #prophecy.set_well_pattern(duplicate_plates=True, well_pattern=range(1,101)) #Call experiments 1-100 and say wells 101-200 are dupes
+#prophecy.set_reference_positions(wells=[5, 27, 71, 88])
 #prophecy.log()
 #print prophecy.averages()
 
