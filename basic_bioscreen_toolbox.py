@@ -221,19 +221,34 @@ class Prophecy_Run(Data_File):
 		self.phenotype = {'lag': 0, 'rate': 1, 'gt': 1, 'generation time': 1, 'yield': 2, 'efficiency': 2}
 		self.data = None
 		self.plate_references = [[],[]]
+		self.media_references = {}
 
-	def set_reference_positions(self, ref_type='Plate', wells=[]):
+	def set_media_references(self, well_pattern = None):
+		if well_pattern != None:
+			for pattern in well_pattern:
+				self.media_references[pattern[0]] = pattern[1]
+
+	def get_media_references(self):
+		return self.media_references
+
+
+	def set_reference_positions(self, ref_type='Plate', wells=None):
 		self.plate_references = [[],[]]
-		for well in wells:
-			if self.duplicate_plates:
-				if well > 100:
-					print "Skipping " + well + " since second plate is a duplicate\nusing first plates pattern instead"
+		if wells != None:
+			for well in wells:
+				if self.duplicate_plates:
+					if well > 100:
+						print "Skipping " + well + " since second plate is a duplicate\nusing first plates pattern instead"
+					else:
+						self.plate_references[1].append(well-1+100)
+						self.plate_references[0].append(well-1)
+	
 				else:
-					self.plate_references[1].append(well+100)
-					self.plate_references[0].append(well)
+						self.plate_references[int((well-1)/100)].append(well-1)
+		else:
+			if self.duplicate_plates:
+				self.plate_references[1] = self.plate_references[0]
 
-			else:
-					self.plate_references[int((well-1)/100)].append(well)
 
 	def get_reference_positions(self):
 		return self.plate_references
@@ -253,7 +268,12 @@ class Prophecy_Run(Data_File):
 		if all_same_media:
 			return self.get_plate_normalized_values(add_super_mean = False)
 		else:
-			return None
+			plate_normed = self.get_plate_normalized_values(add_super_mean = True)
+			ret_array = zeroes(self.values.shape)
+			for key in self.media_references:
+				for well in self.media_references[key]:
+					ret_array[well,:] = plate_normed[well,:] - plate_normed[key,:]
+			return ret_array 
 
 	def get_plate_normalized_values(self, add_super_mean = True):
 		ref_mean = self.get_reference()
@@ -340,7 +360,7 @@ class Prophecy_Run(Data_File):
 	def set_duplicate_plates(self, value=True):
 		self.duplicate_plates = value
 		if value == True:
-			self.set_reference_positions(wells=self.plate_references[0])
+			self.set_reference_positions()
 	def get_duplicate_plates(self):
 		return self.duplicate_plates
 
@@ -370,6 +390,13 @@ class Prophecy_Run(Data_File):
 		self.data = array(data, dtype = float64)
 		fs.close()
 
+
+#
+# TODO
+#
+# 1. Make correct numbering of wells for all well patterns (user should only see 1-200, while system should use 0-199)
+#
+#
 
 #
 # SIMPLE PROPHECY FILE READING, MAKING AVERAGES, LOG2 TRANSFORMATIONS, ETC
