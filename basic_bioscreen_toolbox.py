@@ -6,7 +6,7 @@ from numpy import *
 import matplotlib.pyplot as mp
 
 class Data_File():
-	def file_loader(self, location=''):
+	def file_opener(self, location=None):
 		if location == None:
 			loader = gtk.FileChooserDialog(title="Select Bioscreen C - file", action=gtk.FILE_CHOOSER_ACTION_OPEN, \
 				buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
@@ -29,6 +29,41 @@ class Data_File():
 			halt()				
 
 		return fs
+
+	def contents_reader(self, fs, empty_start_rows=0, escape_char=None, header_row=1, header_column=1, split_char="\t"):
+		header_r = []
+		header_c = []
+		data = []
+
+		for line in fs:
+			if empty_start_rows <= 0:
+				read_line = True
+				if escape_char != None:
+					if line[0] == escape_char:
+						read_line = False
+				read_line = read_line.replace("\n", "")	
+				if read_line:
+					split_line = line.split(split_char)
+					if header_row > 0:
+						header_row -= 1
+						header_r.append(split_line)
+					else:
+						if header_column > 0:
+							header_c.append(split_line[0:header_column])
+							data.append(split_line[header_column:])								
+						else:
+							data.append(split_line)
+			empty_start_rows -= 1
+
+		fs.close()
+		return header_r, header_c, data
+
+	def file_reader(self, location, empty_start_rows=0, escape_char=None, header_row=1, header_column=1, split_char="\t"):
+		fs = self.file_opener(location)
+		return self.contents_reader(fs, empty_start_rows=empty_start_rows, escape_char=escape_char, header_row=header_row, header_column=header_column, split_char=split_char)
+
+	def transform_data(self,row_filter):
+		pass
 
 class Bioscreen_Run(Data_File):
 	def __init__(self, file_path = None):
