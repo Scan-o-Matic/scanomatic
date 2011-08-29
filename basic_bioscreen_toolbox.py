@@ -79,7 +79,7 @@ class Bioscreen_Run(Data_File):
 
 	def load_from_file(self, location=None):
 
-		fs = self.file_loader(location=location)
+		fs = self.file_opener(location=location)
 		file_contents = fs.read()
 		fs.close()
 		file_contents = file_contents.replace("\r", "\n")
@@ -362,7 +362,7 @@ class Prophecy_Run(Data_File):
 		if duplicate_plates != None:
 			self.set_duplicate_plates(value=duplicate_plates)
 		if well_pattern == None:
-			fs = self.file_loader(location=None)
+			fs = self.file_opener(location=None)
 			i = 0
 			for line in fs:
 				if line[0] != "#":
@@ -400,7 +400,7 @@ class Prophecy_Run(Data_File):
 		return self.duplicate_plates
 
 	def load_from_file(self, location=None):
-		fs = self.file_loader(location=location)
+		fs = self.file_opener(location=location)
 		data = []
 		for line in fs:
 			tmp = line.split('\t')
