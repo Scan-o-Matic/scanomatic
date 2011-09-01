@@ -41,7 +41,7 @@ class Data_File():
 				if escape_char != None:
 					if line[0] == escape_char:
 						read_line = False
-				read_line = read_line.replace("\n", "")	
+				line = line.replace("\n", "")	
 				if read_line:
 					split_line = line.split(split_char)
 					if header_row > 0:
@@ -62,8 +62,32 @@ class Data_File():
 		fs = self.file_opener(location)
 		return self.contents_reader(fs, empty_start_rows=empty_start_rows, escape_char=escape_char, header_row=header_row, header_column=header_column, split_char=split_char)
 
-	def transform_data(self,row_filter):
-		pass
+	def transform_subsets(self,row_filter, data):
+		ret_data = {}
+		filters = []
+		row_index = 0
+		for row in row_filter:
+			if row[0][0] != "#":
+				if not(row[0] in filters):
+					ret_data[row[0]] = []
+					filters.append(row[0])
+				ret_data[row[0]].append(data[row_index])
+			row_index += 1
+
+		return ret_data
+
+	def transform_int(self, data, offset=0):
+		ret_data = []
+		for row in data:
+			if type(row) == type([]):
+				ret_row = []
+				for col in row:
+					ret_row.append(int(col)+offset)
+			else:
+				ret_row = int(row) + offset
+			ret_data.append(ret_row)
+
+		return ret_data
 
 class Bioscreen_Run(Data_File):
 	def __init__(self, file_path = None):
