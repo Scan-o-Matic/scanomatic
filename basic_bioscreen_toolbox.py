@@ -76,15 +76,21 @@ class Data_File():
 
 		return ret_data
 
-	def transform_int(self, data, offset=0):
+	def transform_number(self, data, offset=0, no_valid_data=0):
 		ret_data = []
 		for row in data:
 			if type(row) == type([]):
 				ret_row = []
 				for col in row:
-					ret_row.append(int(col)+offset)
+					try:
+						ret_row.append(float(col)+offset)
+					except:
+						ret_row.append(no_valid_data)
 			else:
-				ret_row = int(row) + offset
+				try:
+					ret_row = float(row) + offset
+				except:
+					ret_row = no_valid_data
 			ret_data.append(ret_row)
 
 		return ret_data
