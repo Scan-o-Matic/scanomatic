@@ -3,10 +3,10 @@ import numpy as np
 
 
 class Data_Object():
-    def __init__(self, filename="MYSC0006_cleaned.XL~"):
+    def __init__(self, filename="MYSC0006_cleaned.XL~", skip_header=6):
         self.filename = filename
         try:
-            self.data = np.genfromtxt(self.filename, skip_header=6)
+            self.data = np.genfromtxt(self.filename, skip_header)
         except IOError:
             print "Invalid filename: " + self.filename
             print "Reload using Data_object.load(filename) or create new object."
