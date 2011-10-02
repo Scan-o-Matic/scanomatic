@@ -21,7 +21,7 @@ class Data_Object():
             print "Invalid filename: " + self.filename
 
     def plot_time_series(self, x_well=0, y_well=1, x_label='t', y_label='OD',
-            name="N/A", fign=1, clearit=True, window=0): 
+            name="N/A", fign=1, clearit=True, window=0, char='-b'): 
         # Preliminaries:
         plt.figure(fign) 
         if clearit:
@@ -35,7 +35,7 @@ class Data_Object():
             y_data = self.smoothme(y_data, window)
 
         # Plot:
-        plt.plot(x_data, y_data, '-b', label=name,
+        plt.plot(x_data, y_data, char, label=name,
             ms=self.msize, lw=self.lwidth, mew=self.lwidth)
 
         plt.legend(numpoints=1, loc=4, ncol=1)
