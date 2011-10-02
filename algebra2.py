@@ -100,7 +100,8 @@ def test(fign=1, clearit=True, a=None, b=None, P=None):
 
     Q = find_projection(a, b, P)
     d = find_distance(a, b, P) 
-    
+
+    print (Q[0]-P[0])**2 + (Q[1]-P[1])**2, d**2 
     #print a, b, P, Q, d
 
     plt.plot(x, y, '-r')

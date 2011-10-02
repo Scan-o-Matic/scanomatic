@@ -39,14 +39,14 @@ def project_onto_line_trig(points_vector, predicted_line):
 	point_dists = np.sqrt(relative_points[:,0]**2 + relative_points[:,1]**2)
 
 	#The angles of the points compared to the x-axis when origo is at intersect-point
-	point_angles = np.arctan(relative_points[:,1]/relative_points[:,0])
+	point_angles = np.arcsin(relative_points[:,1]/point_dists)
 
 	#The angle between the line and the point
 	delta_angles = line_angle - point_angles
 
 	#Here we rotate the coordinate system so the x-axis now is the line and the y-axis is the diviations
-	points_rel_closest_line_pt = np.array([point_dists * np.cos(point_angles)\
-		, point_dists * np.sin(point_angles)])	
+	points_rel_closest_line_pt = np.array([point_dists * np.cos(delta_angles)\
+		, point_dists * np.sin(delta_angles)])	
 
 	#For ease of understanding here the points as they are projected on the line are placed in the
 	#original rotation
