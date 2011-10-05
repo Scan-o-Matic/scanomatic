@@ -95,7 +95,7 @@ def test(fign=1, clearit=True, a=None, b=None, P=None):
     if P == None:
         P = np.array([random.uniform(-3, 3), random.uniform(-3, 3)])
 
-    x = np.linspace(-5, 5)
+    x = np.linspace(-2.191841795, 0)
     y = a*x + b
 
     Q = find_projection(a, b, P)
@@ -120,7 +120,7 @@ def test(fign=1, clearit=True, a=None, b=None, P=None):
 def test2():
 	#Loading data
 	D = dv.Data_Object(filename="2011 G-tow toxicity/Data.txt", skip_header=6)
-	predicted_line = np.array([[-2.191841795, 0], [0, -2.191841795]])
+	predicted_line = np.array([[-2.191841795, 0.5], [0.5, -2.191841795]])
 
 	#ploting original data
 	D.plot_time_series(x_well=4, y_well=5, x_label='', y_label='', name="test", char='.b')
