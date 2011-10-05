@@ -70,10 +70,10 @@ class Data_Object():
         max_i = np.argmax(autodiff[1:]) + 1#np.argmax(autodiff[window:]) + window
         max_x = x_data[max_i]
         max_y = autodiff[max_i]
-	left_min_i = np.argmin(autodiff[1:max_i]) +1
+        left_min_i = np.argmin(autodiff[1:max_i]) +1
         left_min_x = x_data[left_min_i]
         left_min_y = autodiff[left_min_i]
-	right_min_i = np.argmin(autodiff[max_i:]) + max_i
+        right_min_i = np.argmin(autodiff[max_i:]) + max_i
         right_min_x = x_data[right_min_i]
         right_min_y = autodiff[right_min_i]
 
@@ -105,15 +105,15 @@ class Data_Object():
               slope = (self.data[y_col][measurement+1] - self.data[y_col][measurement-1])\
                     - (self.data[x_col][measurement+1] - self.data[x_col][measurement-1])
 
-	# y = ax + b	->	b = y - ax
-	intercept = self.data[y_col][measurement] - slope * self.data[y_col][measurement]
+        # y = ax + b    ->  b = y - ax
+        intercept = self.data[y_col][measurement] - slope * self.data[y_col][measurement]
  
 
         self.add_slope_line(measurement, slope, intercept, x_window=3)
 
     def add_slope_line(self, x, a, b, x_window=0.1, line_width=1.2, char="-r"):
         xs = [x-x_window, x+x_window]
-	plt.plot(x, a*x+b, char, lw=line_width)
+        plt.plot(x, a*x+b, char, lw=line_width)
 
     def smoothme(self, data, window):
         new_data = []
