@@ -20,13 +20,18 @@ class Data_Object():
         except IOError:
             print "Invalid filename: " + self.filename
 
+    def make_figure_normal(self, y_well, clearit=True, fign=1, window=20):
+        self.plot_time_series(y_well=y_well, clearit=clearit, fign=fign, do_plot=True)
+        max_x, max_y, max_i = self.plot_autodifference(y_well=y_well, window=window, do_plot=False, plotmins=False, clearit=False)
+        self.add_slope_line_from_pt(int(max_x/(self.data[2,0]-self.data[1,0])), y_col=y_well, slope=max_y)
+
     def plot_time_series(self, x_well=0, y_well=1, x_label='t', y_label='OD',
             name="N/A", fign=1, clearit=True, window=0, char='-b', do_plot=False): 
         # Preliminaries:
         plt.figure(fign) 
         if clearit:
-            plt.clf() 
-    
+            plt.clf()
+ 
         # Prepare data:
         x_data = self.data[:, x_well]
         y_data = self.data[:, y_well]    
@@ -70,12 +75,13 @@ class Data_Object():
         max_i = np.argmax(autodiff[1:]) + 1#np.argmax(autodiff[window:]) + window
         max_x = x_data[max_i]
         max_y = autodiff[max_i]
-        left_min_i = np.argmin(autodiff[1:max_i]) +1
-        left_min_x = x_data[left_min_i]
-        left_min_y = autodiff[left_min_i]
-        right_min_i = np.argmin(autodiff[max_i:]) + max_i
-        right_min_x = x_data[right_min_i]
-        right_min_y = autodiff[right_min_i]
+        if plotmins:
+            left_min_i = np.argmin(autodiff[1:max_i]) +1
+            left_min_x = x_data[left_min_i]
+            left_min_y = autodiff[left_min_i]
+            right_min_i = np.argmin(autodiff[max_i:]) + max_i
+            right_min_x = x_data[right_min_i]
+            right_min_y = autodiff[right_min_i]
 
         if do_plot:
                # Plot:
@@ -101,19 +107,24 @@ class Data_Object():
         return max_x, max_y, max_i
 
     def add_slope_line_from_pt(self, measurement, y_col, x_col=0, slope=None):
-        if slope != None:
-              slope = (self.data[y_col][measurement+1] - self.data[y_col][measurement-1])\
-                    - (self.data[x_col][measurement+1] - self.data[x_col][measurement-1])
+        if slope == None:
+              slope = (self.data[measurement+1, y_col] - self.data[measurement-1, y_col])\
+                    / (self.data[measurement+1, x_col] - self.data[measurement-1, x_col])
 
         # y = ax + b    ->  b = y - ax
-        intercept = self.data[y_col][measurement] - slope * self.data[y_col][measurement]
- 
+        intercept = self.data[measurement, y_col] - slope * self.data[measurement, x_col]
+         
 
-        self.add_slope_line(measurement, slope, intercept, x_window=3)
+        self.add_slope_line(self.data[measurement, x_col], slope, intercept)
 
-    def add_slope_line(self, x, a, b, x_window=0.1, line_width=1.2, char="-r"):
-        xs = [x-x_window, x+x_window]
-        plt.plot(x, a*x+b, char, lw=line_width)
+    def add_slope_line(self, x, a, b, x_window=None, line_width=1.2, char="--r"):
+        if x_window == None:
+            #y = ax + b, y = 0 -> x = -b/a
+            x_window = x - (-b/a)
+        xs = np.array([x-x_window, x+x_window])
+        print xs, a, b, x, a*x+b
+        plt.plot(xs, a*xs+b, char, lw=line_width)
+       
 
     def smoothme(self, data, window):
         new_data = []
