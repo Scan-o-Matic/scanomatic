@@ -5,6 +5,16 @@ import matplotlib.pyplot as plt
 import random
 import data_viewer as dv
 
+def find_y_distance(a=1.0, b=1.0, P=np.array([2.0, 1.0])):
+    # First, offset the line and P by b, so that the line goes though
+    # the origin:
+
+    P = a*P+b - P
+    P[0] = 0
+
+    return P
+    
+
 def find_distance(a=1.0, b=1.0, P=np.array([2.0, 2.0])):
     """Find the orthogonal distance from P to the line described by:
         y = a*x + b
@@ -83,7 +93,7 @@ def find_projection(a=1.0, b=1.0, P=np.array([2.0, 2.0])):
     return Q
 
 
-def test(fign=1, clearit=True, a=None, b=None, P=None):
+def test(fign=1, clearit=True, a=None, b=None, P=None, ortho=False):
     plt.figure(fign)
     if clearit:
         plt.clf()
@@ -98,8 +108,12 @@ def test(fign=1, clearit=True, a=None, b=None, P=None):
     x = np.linspace(-2.191841795, 0)
     y = a*x + b
 
-    Q = find_projection(a, b, P)
-    d = find_distance(a, b, P) 
+    if ortho == True:
+        Q = find_projection(a, b, P)
+        d = find_distance(a, b, P) 
+    else:
+        d = abs(find_y_distance(a, b, P))[1]
+        Q = P + find_y_distance(a, b, P)
 
     print (Q[0]-P[0])**2 + (Q[1]-P[1])**2, d**2 
     #print a, b, P, Q, d
@@ -111,45 +125,50 @@ def test(fign=1, clearit=True, a=None, b=None, P=None):
 
     
     return d
-    
 
 
 
+def test2(line_factor=None, line_intercept=None, ortho=False):
+    #Loading data
+    #D = dv.Data_Object(filename="2011 G-tow toxicity/Data.txt", skip_header=6)
+    #predicted_line = np.array([[-2.191841795, 0.5], [0.5, -2.191841795]])
+    #axis_x = 4
+    #axis_y = 5
+    D = dv.Data_Object(filename="2011 G-tow toxicity/Data2.txt", skip_header=1, delimiter=" ")
+    print D.data
+    #predicted_line = np.array([[-2.191841795, 0.5], [0.5, -2.191841795]])
+    axis_x = 0
+    axis_y = 1
+    #ploting original data
+    D.plot_time_series(x_well=axis_x, y_well=axis_y, x_label='', y_label='', name="test", char='.b')
+    #dv.plt.plot(predicted_line[:,0], predicted_line[:,1], '-r')
 
+    #points vector
+    points_vector = D.data[:,axis_x:axis_x+2]
 
-def test2():
-	#Loading data
-	D = dv.Data_Object(filename="2011 G-tow toxicity/Data.txt", skip_header=6)
-	predicted_line = np.array([[-2.191841795, 0.5], [0.5, -2.191841795]])
+    #the line info
+    #line_delta = predicted_line[1,:] - predicted_line[0,:]
 
-	#ploting original data
-	D.plot_time_series(x_well=4, y_well=5, x_label='', y_label='', name="test", char='.b')
-	dv.plt.plot(predicted_line[:,0], predicted_line[:,1], '-r')
+    #line's a
+    if line_factor == None:
+        line_factor = line_delta[1] / line_delta[0]
 
-	#points vector
-	points_vector = D.data[:,4:6]
+    #line's b
+    if line_intercept == None:
+        line_intercept = predicted_line[0,1] - line_factor * predicted_line[0,0]
 
-	#the line info
-	line_delta = predicted_line[1,:] - predicted_line[0,:]
+    tmp_dists = []
+    for row in xrange(len(points_vector[:,0])):
+        tmp_dists.append(test(clearit=False, a=line_factor, b=line_intercept, P=points_vector[row,:], ortho=ortho))
 
-	#line's a
-	line_factor = line_delta[1] / line_delta[0]
+    distances = np.array(tmp_dists)
+    SStot = sum((points_vector[:,1] - np.mean(points_vector[:,1]))**2)
+    SSerr = sum(distances**2)
+    Rsquare = 1 - (SSerr/SStot)
 
-	#line's b
-	line_intercept = predicted_line[0,1] - line_factor * predicted_line[0,0]
+    plt.grid('on')
+    plt.axis('equal')
+    #plt.show()
 
-	tmp_dists = []
-	for row in xrange(len(points_vector[:,0])):
-		tmp_dists.append(test(clearit=False, a=line_factor, b=line_intercept, P=points_vector[row,:]))
-
-	distances = np.array(tmp_dists)
-	SStot = sum((points_vector[:,1] - np.mean(points_vector[:,1]))**2)
-	SSerr = sum(distances**2)
-	Rsquare = 1 - (SSerr/SStot)
-
-	plt.grid('on')
-	plt.axis('equal')
-	#plt.show()
-
-	return points_vector, distances, Rsquare
+    return points_vector, distances, Rsquare
 
