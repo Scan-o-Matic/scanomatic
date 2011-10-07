@@ -9,8 +9,7 @@ def find_y_distance(a=1.0, b=1.0, P=np.array([2.0, 1.0])):
     # First, offset the line and P by b, so that the line goes though
     # the origin:
 
-    P = a*P+b - P
-    P[0] = 0
+    P = a*P[0]+b - P[1]
 
     return P
     
@@ -112,8 +111,8 @@ def test(fign=1, clearit=True, a=None, b=None, P=None, ortho=False):
         Q = find_projection(a, b, P)
         d = find_distance(a, b, P) 
     else:
-        d = abs(find_y_distance(a, b, P))[1]
-        Q = P + find_y_distance(a, b, P)
+        d = abs(find_y_distance(a, b, P))
+        Q = P + np.array([0,find_y_distance(a, b, P)])
 
     print (Q[0]-P[0])**2 + (Q[1]-P[1])**2, d**2 
     #print a, b, P, Q, d
@@ -130,15 +129,14 @@ def test(fign=1, clearit=True, a=None, b=None, P=None, ortho=False):
 
 def test2(line_factor=None, line_intercept=None, ortho=False):
     #Loading data
-    #D = dv.Data_Object(filename="2011 G-tow toxicity/Data.txt", skip_header=6)
+    D = dv.Data_Object(filename="2011 G-tow toxicity/Data.txt", skip_header=6)
+    predicted_line = np.array([[-2.191841795, 0.5], [0.5, -2.191841795]])
+    axis_x = 4
+    axis_y = 5
+    #D = dv.Data_Object(filename="2011 G-tow toxicity/Data2.txt", skip_header=1, delimiter=" ")
     #predicted_line = np.array([[-2.191841795, 0.5], [0.5, -2.191841795]])
-    #axis_x = 4
-    #axis_y = 5
-    D = dv.Data_Object(filename="2011 G-tow toxicity/Data2.txt", skip_header=1, delimiter=" ")
-    print D.data
-    #predicted_line = np.array([[-2.191841795, 0.5], [0.5, -2.191841795]])
-    axis_x = 0
-    axis_y = 1
+    #axis_x = 0
+    #axis_y = 1
     #ploting original data
     D.plot_time_series(x_well=axis_x, y_well=axis_y, x_label='', y_label='', name="test", char='.b')
     #dv.plt.plot(predicted_line[:,0], predicted_line[:,1], '-r')
@@ -147,7 +145,7 @@ def test2(line_factor=None, line_intercept=None, ortho=False):
     points_vector = D.data[:,axis_x:axis_x+2]
 
     #the line info
-    #line_delta = predicted_line[1,:] - predicted_line[0,:]
+    line_delta = predicted_line[1,:] - predicted_line[0,:]
 
     #line's a
     if line_factor == None:
