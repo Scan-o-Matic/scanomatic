@@ -1,0 +1,220 @@
+  ############################
+##### COMPUTER REQUIREMENTS #####
+   ############################
+
+1. HARDWARE
+
+1.1 USB
+
+    For obvious reasons there's a need for USB slots on the computer,
+    but more than so. The setup with a Power Manager, imposes specific
+    requirements on the power supply to the USB. These will of course
+    vary depending on your PM. 
+
+    In our setup we use a SISPM-CTL. It has been reported to not work with
+    all USB-hubs, but it should be fine on a standard desktop computer if
+    the computers USBs' don't drive too many divices. 
+
+1.2 MEMORY / CPU
+
+    It should be taken into account that the image will be quite huge.
+    An old system is probably not recomended if you plan to do image analysis
+    on the fly from Scannomatic.
+
+1.3 STORAGE SPACE
+
+    In a standard setup, each screen will amount to 10-20Gb of data in images.
+    Given that you can connect several scanners to one computer and that a run
+    takes about three days, it is not viable to store the high-resolution images
+    indefinately. Never the less, for practical reasons you would probably want
+    at least 1Tb of storage place even if planning to remove the data as quickly
+    as possible.
+
+1.4 SCANNERS
+
+    The scanner has to have a TPU (Transparency Unit) to make any sense.
+    It also has to be compatible with your OS setup.
+    We have opted for the:
+
+        EPSON PERFECTION V700 PHOTO
+
+    The rational is simply that we had one. The rational for you using the same
+    is that it is preconfigured in the program. The negative aspect of using
+    that particular scanner is that a Power Manager is needed to brute force
+    turn the scanners lamp off inbetween scans. This cascades to issues with
+    reliability of Power Manager drivers under different OS:s.
+
+    In our setup, we use Linux. Though the program itself works perfectly 
+    under Windows, we had issues getting the scanner to were we wanted it.
+    So to sum up:
+
+        Your scanner must be supported by SANE to work in Linux <- Reccomeneded
+        Your scanner must be supported by TWAIN to work in Windows
+
+1.5 POWER MANAGERS
+
+    Any type of power manager that could be controlled from the command line
+    should in principle work. However, Scannomatic comes preconfigured for
+
+        SILVER SHIELD POWER MANAGER from GEMBIRD (SIS-PMS)
+
+
+
+2 SOFTWARE
+
+2.1 OS
+
+    The Scannomatic program is a python script.
+
+    It runs on Linux and Windows. See 1.4 for reason why Linux should be your
+    choice (it really alway should be). We run it on Ubuntu.
+
+    There are several dependencies for the script:
+
+        numpy
+        matplotlib
+        pygtk
+        PIL
+        
+    Under windows you also need to install TWAIN.
+
+  #################
+##### INSTALLING #####
+   #################
+
+0 INTRO
+
+    This section only deals with installing on Ubuntu, it should be similar
+    on most Linux distributions. On windows, that is more of a plug and play
+    OS just install drivers that come along with the stuff you've bought and
+    make sure that you have python and all the dependencies installed correctly
+    (that is, you have to install dependencies so that they match the version
+    of python you have selected.)
+
+1 INSTALLING THE POWER MANAGER (SISPM)
+    
+    On ubuntu you can install driver with the following commands:
+
+        sudo apt-get update
+        sudo apt-get upgrade
+        sudo apt-get install sispmctl
+
+    (If you're not running Ubuntu, you may find included drivers on the mini CD
+    that comes with the PM)
+
+    However, since Linux doesn't really know what to do with this new type of device
+    it will only give the superuser priveledges to write to it. First test that it
+    works by running:
+
+        sudo sispmctl -s
+
+    If will tell you where it ended up, like this:
+
+        Gembird #0 is USB device 006.This device is a 4-socket SiS-PM.
+        Accessing Gembird #0 USB device 006
+        This device has a serial number of 01:01:4b:ffffffad:ffffffa3
+
+    or:
+
+        Found GEMBIRD SiS-PM on bus 001/005.
+
+    In any a way you can test by opening a NEW TERMINAL and running these commands:
+
+        sispmctl -o 1
+        sudo sispmctl -o 1
+
+    If the first turns on jack 1, you are fine - your PM is ready to use. 
+    If it only turns when running the second, you need to give everyone the correct
+    permissions. (Close the new terminal you just used so you don't ge confused)
+
+    In your preffered editor (if you don't have one I would guess gedit would suit you),
+    but since mine is vim I'm giving you that command. Just replace "vi" with "gedit" if
+    you don't know what to do with vim.
+
+        sudo vi /etc/udev/rules.d/74-sispmctl.rules
+
+    Add the following line:
+
+        SUBSYSTEMS=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="fd1[0-3]", MODE="0666"
+
+    Save, quit and either reboot the system or unplug and replug the PM. It should now work
+    for all users. You can test this by in a new terminal (otherwise you may still have
+    sudo priveleges) run:
+
+        sispmctl -g all
+
+    Works fine? Then you are fine. (You can turn off jack 1 by running 'sispmctl -f 1')
+
+2.  INSTALLING A SCANNER
+
+    First we need libusb to be installed
+
+        sudo apt-get install libusb-dev
+
+    Then you need to get the latest versions of epson2-backend SANE drivers (if full area
+    support isn't yet implemented, we have a version that you can download and build. Just
+    go to the folder you extracted the files in and:
+
+        sudo ./configure
+        sudo make
+        sudo make install
+
+    You may also want to consider to go into /etc/sane.d/epson2.conf and add the specific scanner:
+
+        sudo gedit /etc/sane.d/epson2.conf
+
+    And in the section that talks about libusb support for unknown scanners write
+
+        usb 0x4b8 0x012c
+
+    Save and exit.
+
+    Finally this might also be needed:
+
+        sudo gedit /etc/udev/rule.d/10-local.rules
+
+    Add the following line:
+
+        BUS=="usb", SYSFS{idVendor}="04b8", SYSFS{idProduct}="012c", GROUP="martin", NAME="%k", SYMLINK="scanner%n", MODE="0666"
+
+    Save and exit. Restart the computer.
+
+3.  INSTALLING PYTHON DEPENDENCIES
+
+    Install the dependencies the following way:
+
+        sudo apt-get update
+        sudo apt-get upgrade
+        sudo apt-get install python-numpy, python-matplotlib, python-gtk2
+
+4.  INSTALLING SCANNOMATIC
+
+    Well your only need is to make the file in Scannomatic's root called scannomatic.py
+    executable (assuming you are in that folder):
+
+        chmod +x scannomatic.py
+
+    It should start up nicely by typing:
+
+        ./scannomatic.py
+
+    Select a one-scan to see that it works. And then also start an experiment to see that
+    the scanner runs stably with the PM. Check so that the PM turns on and off.
+
+
+
+########################BELOW THIS LINE IS JUST RANDOM JIBBERISH################################
+
+*** INSTALLING TWAIN on linux
+
+First you download:
+
+    http://sourceforge.net/projects/scantwain
+
+And extract to some location, there-after install:
+
+    sudo apt-get install libqt3-mt-dev
+
+Be sure to be inside the folder you extracted scantwain in.
+
+usr/share/qt3/bin/qmake -makefile scantwain.pro

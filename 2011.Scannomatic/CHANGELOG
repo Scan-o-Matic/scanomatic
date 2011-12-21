@@ -1,0 +1,205 @@
+  ##################################
+##### Changed in Scannomatic 0.97 #####
+   ##################################
+
+*** Bugs were fixed with grid array analysis.
+
+*** Signal from grid array analysis is now processed using
+    the frequency to account for missed spikes and false
+    positives.
+
+*** Recouperated the fixture settings so they work again
+
+*** Inserted a cutoff for how much the grid may change from time
+    to time, if more - it uses previous settings
+
+  ##################################
+##### Changed in Scannomatic 0.96 #####
+   ##################################
+
+*** Analysis modules were implemented for detecting the grid of
+    cells given a plate-rectangle.
+
+*** Entire project analysis was added, but not yet with a GUI
+
+*** Log file maker can now be run post scanning is complete and
+    will produce the same inforamtion about the images as
+    normal on the fly-logging. The first post with info on the
+    experiment cannot be created though.
+
+*** Included IQR mean as a measurement
+
+  ##################################
+##### Changed in Scannomatic 0.95 #####
+   ##################################
+
+*** Analyse One GUI now with interactive selection showing the
+    analysis of said selections with graphs and all.
+
+*** Fixture GUI refurnish started with interactive selection of
+    areas.
+
+*** Fixed experiment log writing so that no arrays are logged
+    (typecast as lists). Also, fixted so that the area-coordinates
+    are logged and not the pixels throughout the area
+
+*** Implemented Otsu thresholding as fallback blob detection method
+
+*** Made a config view
+
+*** Colonies analysis started
+
+  ##################################
+##### Changed in Scannomatic 0.94 #####
+   ##################################
+
+*** Implemented a DMS (print/log/gui-message handling function)
+    Started converting all print to DMS
+
+*** Made single scan be an experiment
+
+*** Interface for analysing one is there (no analysis is run yet)
+
+*** Matplotlib embedded canvases capture events.
+    (Still lacking the possibility to redraw nicely)
+
+*** Fixed bug that crashed the project log generation
+
+*** Fixed so that DMS-gui lets user know when image is comleted
+
+  ##################################
+##### Changed in Scannomatic 0.93 #####
+   ##################################
+
+*** Almost total restructuring of where code goes to make it more
+    modular.
+
+  ##################################
+##### Changed in Scannomatic 0.92 #####
+   ##################################
+
+*** Only marker detection is done at 150 dpi, grayscale detection
+    and output of coordinates is done at 600 dpi
+
+*** Labels have a nice max-width so GUI behaves better
+
+*** Made create experiment section more flexible
+
+*** All plate-areas are written to log-file
+
+*** Added numeric pattern support in simple_conf
+
+  ##################################
+##### Changed in Scannomatic 0.91 #####
+   ##################################
+
+*** Log Maker puts timestamp for each entry which more or less
+    equals the time at scanning plus some seconds
+
+*** Fixed bugs in grayscale analysis
+
+*** Analysis understands image scaling (so you can find markers
+    on downsized version and then extract sections in the full
+    scale image)
+
+*** Locked scanning when experiment is running,
+    in principle there's only support for one scanner still
+
+*** Scan one image is now saying that it does something and
+    behaves better in general
+
+*** Impossible to start two experiments (one the same scanner)
+
+*** simple_conf now reads the logfiles and just indexes every
+    entry starting at zero for the first
+
+*** Nicer not yet implemented features
+
+  #################################
+##### Changed in Scannomatic 0.9 #####
+   #################################
+
+*** Grayscale is now in scale section on X-axis
+
+*** Application has a config file and knows its
+    relevant paths
+
+*** Data is no longer stored where the application is
+    (if you don't happen to actually want that)
+
+*** Only one configuration view is visible at a time
+
+*** Changed shutdown and rescan delay from 10s to 20s
+
+*** Experiment saves marker positions and grayscale data.
+
+  #################################
+##### Changed in Scannomatic 0.8 #####
+   #################################
+
+*** Automatic gray-scale aqcuired
+
+  #################################
+##### Changed in Scannomatic 0.7 #####
+   #################################
+
+*** Image offsetting and rotation in relation of fixture markings
+    Has not been debugged
+
+*** Made a class out of the fixture making and a subclass for the fixture
+    settings
+
+*** Included more configurations to fixtures and better GUI behaviour
+
+*** An 'Analyse One Image' GUI is in dev. It produces strange slices of 
+    the image.
+
+  #################################
+##### Changed in Scannomatic 0.6 #####
+   #################################
+
+*** Automatic detection of markers done in 150dpi which give better results 
+    and also at low process cost
+
+*** Fixtures have a GUI for their setup and marking of zones in the image
+    so that all fixture elements can be specified, in prototype mode though
+
+*** Config File module implemented
+
+  #################################
+##### Changed in Scannomatic 0.5 #####
+   #################################
+
+*** Automatic detection of orientation markers done in high-res, needs to be
+    scaled down to low-res due to CPU time it takes.
+
+*** Linux-mode also produces log file and generates a histogram graph on the
+    fly
+
+  #################################
+##### Changed in Scannomatic 0.4 #####
+   #################################
+
+*** The file scannomatic.py was split up into sub-modules (in directory src)
+*   There might be bugs in windows from this, not yet dealt with
+
+*** Directory images was created under source holding suggested markings for
+    automatic fixture orientation (and maybe fixture version detection)
+
+*** Linux scanning routines are now created as subprocess during experiments.
+    That makes the program user friendly, and work with several scanners.
+
+*** Image analysis of orientation through marker detection started. Far from
+    done though (image_deconstruction.py)
+
+  #################################
+##### Changed in Scannomatic 0.3 #####
+   #################################
+
+*** File naming format changed to leading zeros making lexical ordering simpler
+
+*** CHANGELOG established
+
+*** INSTALL established
+
+

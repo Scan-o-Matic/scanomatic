@@ -1,0 +1,635 @@
+#
+# DEPENDENCIES
+#
+
+import pygtk
+pygtk.require('2.0')
+
+import gtk, pango
+import gobject
+import os, os.path, sys
+import re
+import time
+import types
+
+#
+# SCANNOMATIC LIBRARIES
+#
+
+import src.log_file_maker as log_maker
+import src.log_file_reader as log_reader
+import src.power_manager as power_manager
+import src.image_analysis_base as img_base
+import src.settings_tools as settings_tools
+import src.os_tools as os_tools
+
+#
+# OS DEPENDENT BEHAVIOUR, NOTE THAT WINDOWS HAVE EXTRA DEPENDENCIES!
+#
+
+USER_OS = os_tools.OS()
+
+if USER_OS.name == "linux":
+    import src.sane as scanner_backend
+elif USER_OS.name == "windows":
+    import twain
+    import src.twain as scanner_backend
+else:
+    print "*** ERROR: Scannomatic has not been ported to your OS, so stopping"
+    sys.exit(0)
+
+#
+# SCANNING EXPERIMENT GUI
+#
+
+
+class Scanning_Experiment(gtk.Frame):
+    def __init__(self, owner, parent_window, scanner, interval, counts, prefix, description, root, gtk_target, native=True):
+
+        self.USE_CALLBACK = owner.USE_CALLBACK
+
+        self.owner = owner
+        continue_load = True
+
+        try:
+            os.mkdir(str(root) + os.sep + str(prefix))
+        except WindowsError:
+            self.owner.DMS('Experiment conflict', 'An experiment with that prefix already exists...\nAborting.', level=1000)
+            continue_load = False
+            
+        gtk.Frame.__init__(self, prefix)
+
+        self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
+        self.f_settings = settings_tools.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
+
+        self._scanner_id = None #should be connected to vairable later: scanner
+        self._interval_time = float(interval)
+        self._iterations_max = int(counts)
+        self._prefix = str(prefix)
+        self._root = str(root)
+        self._gtk_target = gtk_target
+        self._last_rejected = -1
+        self._description = description
+        self._subprocesses = []
+
+        self._logFile = self._root + os.sep + self._prefix + os.sep + self._prefix + ".log"
+        self._heatMapPath = self._root + os.sep + self._prefix + os.sep + "progress.png"
+
+        #HACK
+        if USER_OS.name == "windows":
+            self._power_manager = power_manager.Power_Manager(installed=True, path='"C:\Program Files\Gembird\Power Manager\pm.exe"',on_string="-on -PW1 -Scanner1", off_string="-off -PW1 -Scanner1", DMS=self.owner.DMS)
+        elif USER_OS.name == "linux":
+            self._power_manager = power_manager.Power_Manager(installed=True, path="sispmctl",on_string="-o 1", off_string="-f 1", DMS=self.owner.DMS)
+            
+
+        self._power_manager.on()
+
+        if USER_OS.name == "windows":
+            self._scanner = scanner_backend.Twain_Base()
+        elif USER_OS.name == "linux":
+            self._scanner = scanner_backend.Sane_Base(self)
+
+        self._scanner.owner = self
+
+
+        self._next_scan = None
+        self._handle = parent_window
+        if not self._handle:
+            self._handle = int(0)
+            
+        if native == True:
+            self._scan = self._scanner.AcquireNatively
+        else:
+            self._scan = self._scanner.AcquireByFile
+            
+
+        self._end_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time() + 60*self._interval_time*(self._iterations_max+1)))
+        self._iteration = 0
+
+        #Make GTK-stuff
+
+        vbox = gtk.VBox()
+        
+        hbox = gtk.HBox()
+        label = gtk.Label("Location: " + self._root + os.sep + self._prefix)
+        label.set_max_width_chars(90)
+        label.set_ellipsize(pango.ELLIPSIZE_MIDDLE)
+        label.show()
+        hbox.pack_start(label, False, False, 2)
+        label = gtk.Label("Scanner: " + str(scanner))
+        label.show()
+        hbox.pack_end(label, False, False, 2)
+        hbox.show()
+        vbox.pack_start(hbox, False, False, 2)
+
+        hbox = gtk.HBox()
+        self._measurement_label = gtk.Label("")
+        self._measurement_label.show()
+        hbox.pack_start(self._measurement_label, False, False, 2)
+        self._timer = gtk.Label("")
+        self._timer.show()
+        hbox.pack_start(self._timer, False, False, 2)
+        self._warning_text = gtk.Label("")
+        self._warning_text.show()
+        hbox.pack_start(self._warning_text, False, False, 10)
+        label = gtk.Label("Estimated to end: " + self._end_time)
+        label.show()
+        hbox.pack_end(label, False, False, 2)
+        hbox.show()
+        vbox.pack_start(hbox, False, False, 2)
+        
+        vbox.show()
+        self.add(vbox)
+        self.show()
+
+        self.update_gtk()
+
+            
+        self._gtk_target.pack_start(self, False, False, 20)
+
+        if continue_load:
+            self.log_file({'Prefix':prefix,'Description':description,'Interval':self._interval_time, 'Measurments':counts, 'Start Time':time.time()},append=False)
+            gobject.timeout_add(30, self.running_Experiment) 
+            gobject.timeout_add(1000*60, self.running_timer)
+        else:
+            self._measurement_label.set_text("Conflict in name, aborting...")
+            gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)
+
+    def _quality_OK(self):
+        log_reader.load_data(self._logFile)
+        if log_reader.count_histograms() > 1:
+            A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._logFile, manual_value=None, max_value=255, save_path=self._heatMapPath)
+
+            #Here should ask image analysis module to test grayscales
+
+        #Dummy check so far
+        return True
+
+    def check_quality(self):
+        #OUTDATED QUALITY CHECK, SHOULD NOT BE HERE EITHER
+        log_reader.load_data(self._logFile)
+        if log_reader.count_histograms() > 1:
+            A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._logFile, manual_value=None, max_value=255, save_path=self._heatMapPath)
+            if len(A) > 0:
+                if (log_reader.count_histograms()-1) == A[len(A)-1]['Source Index']:
+                    if A[len(A)-1]['Source Index'] != self._last_rejected:
+                        self._last_rejected = A[len(A)-1]['Source Index']
+                        self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + "_rescan.tiff"
+                        self._scan(handle=self._handle)
+                    else:
+                        gobject.timeout_add(1000*10,self._power_manager.off)
+                else:
+                    gobject.timeout_add(1000*10,self._power_manager.off)
+            else:
+                gobject.timeout_add(1000*10,self._power_manager.off)
+        else:
+            gobject.timeout_add(1000*10,self._power_manager.off)
+
+    def log_file(self, message, append=True):
+
+        if append:            
+            fs = open(self._logFile,'a')
+        else:
+            fs = open(self._logFile,'w')
+        message = str(message)
+        fs.write(message+"\n\r")
+        fs.close()
+        
+    def update_gtk(self, widget=None, event=None, data=None):
+        self._measurement_label.set_text("Measurment (" + str(self._iteration) + "/" + str(self._iterations_max) + ")")
+        
+    def running_timer(self, widget=None, event=None, data=None):
+        if self._next_scan:
+            self._timer.set_text("Next scan in: " + str(int(self._next_scan - time.time())/60)+"min")
+            gobject.timeout_add(1000*60, self.running_timer)
+        else:
+            self._timer.set_text("")
+
+    def do_scan(self):
+        scan = self._scan(handle=self._handle)
+        if scan:
+            if type(scan) == types.TupleType:
+                if scan[0] == "SANE-CALLBACK":
+                    self._subprocesses.append(scan)
+                    if len(self._subprocesses) == 1:
+                        gobject.timeout_add(1000*30, self._callback)
+
+
+    def _write_log(self, file_list=None):
+        if file_list:
+            gs_data = []
+
+            if type(file_list) != types.ListType:
+                file_list = [file_list]
+
+            for f in file_list:
+                gs_data.append({'Time':time.time()})
+                self.owner.DMS("Analysis", "Grayscale analysis of" + str(f), level=1)
+                self.f_settings.image_path = f
+                self.f_settings.marker_analysis()
+                self.f_settings.set_areas_positions()
+                dpi_factor = 4.0
+                self.f_settings.A.load_other_size(f, dpi_factor)
+                grayscale = self.f_settings.A.get_subsection(self.f_settings.current_analysis_image_config.get("grayscale_area"))
+
+                gs_data[-1]['mark_X'] = list(self.f_settings.mark_X)
+                gs_data[-1]['mark_Y'] = list(self.f_settings.mark_Y)
+
+                if grayscale != None:
+                    gs = img_base.Analyse_Grayscale(image=grayscale)
+                    gs_data[-1]['grayscale_values'] = gs._grayscale
+                    gs_data[-1]['grayscale_inices'] = gs._grayscale_X
+                else:
+                    gs_data[-1]['grayscale_values'] = None
+                    gs_data[-1]['grayscale_inices'] = None
+            
+                sections_areas = self.f_settings.current_analysis_image_config.get_all("plate_%n_area")
+                for i, a in enumerate(sections_areas):
+                    #s = self.f_settings.A.get_subsection(a)
+                    gs_data[-1]['plate_' + str(i) + '_area'] = list(a)
+
+            fs = open(self._logFile,'a')
+            log_maker.make_entries(fs, file_list=file_list, extra_info=gs_data, verboise=False, quiet=False)
+            fs.close()
+            self.owner.DMS("Analysis","Done. Nothing more to do for that image...", level=1)
+
+    def _callback(self):
+        for i, sp in enumerate(self._subprocesses):
+            if sp[0] == "SANE-CALLBACK":
+                if sp[2].poll() != None:
+                    self.owner.DMS("Scanning", "Aqcuired image " + str(sp[1]), level=11)
+                    sp[1].close
+
+                    got_image = True
+
+                    try:
+
+                        if os.path.getsize(sp[3]) < 1000:
+                            got_image = False
+                    except:
+                            got_image = False
+
+                    if got_image:
+                        gobject.timeout_add(1000*25,self._write_log, sp[3])
+                    
+                    del self._subprocesses[i]
+
+                    if got_image and self._quality_OK():
+                        gobject.timeout_add(1000*20,self._power_manager.off)
+                    else:
+                        self.owner.DMS("Scanning", "Quality of scan histogram indicates" + 
+                            " that rescan needed! So that I do...",level=1010)
+                        self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + "_rescan.tiff"
+                        if os.path.exists(self._scanner.next_file_name) == False:
+                            self._power_manager.on()
+                            gobject.timeout_add(1000*20, self.do_scan)
+                        
+        if self._subprocesses:
+            gobject.timeout_add(1000*30, self._callback)
+
+    def running_Experiment(self, widget=None, event=None, data=None):
+        if self._iteration <= self._iterations_max:
+            self.update_gtk()
+            gobject.timeout_add(1000*60*int(self._interval_time), self.running_Experiment)
+            self._next_scan = (time.time() + 60*self._interval_time)
+            self._timer.set_text("Scanning...")
+
+
+            self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + ".tiff"
+            self._power_manager.on()
+            gobject.timeout_add(1000*10, self.do_scan)
+            self._iteration += 1
+        else:
+            self._next_scan = None
+            self._timer.set_text("")
+            self._measurement_label.set_text("Experiment complete")
+            self._scanner.Terminate()
+            gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)          
+
+          
+class Scanning_Experiment_Setup(gtk.Frame):
+    def __init__(self, owner, simple_scan = False):
+        gtk.Frame.__init__(self, "NEW SET-UP EXPERIMENT")
+
+        self._GUI_updating = False
+
+        vbox2 = gtk.VBox(False, 0)
+        vbox2.show()
+        self.add(vbox2)
+
+        label = gtk.Label("Please note this is in development, as of now you must select top scanner option yourself.")
+        label.show()
+        vbox2.pack_start(label, False, False, 10)
+        
+        label = gtk.Label("Select root directory of experiment:")
+        label.show()
+        hbox = gtk.HBox()
+        hbox.pack_start(label, False, False, 2)
+        self.experiment_root = gtk.Label(str(owner._config_file.get("data_root")))
+        self.experiment_root.set_max_width_chars(90)
+        self.experiment_root.set_ellipsize(pango.ELLIPSIZE_START)
+        self.experiment_root.show()
+        self.experiment_root.set_selectable(True)
+        button = gtk.Button(label = 'New experiment root directory')
+        button.connect("clicked", self.select_experiment_root)
+        button.show()
+        hbox.pack_end(button, False, False, 2)
+        hbox.pack_end(self.experiment_root, False, False, 2)
+        hbox.show()
+        vbox2.pack_start(hbox, False, False, 2)
+
+        label = gtk.Label("Name of project (prefix for images):")
+        label.show()
+        hbox = gtk.HBox()
+        hbox.pack_start(label, False, False, 2)
+        self.experiment_name = gtk.Entry()
+        self.experiment_name.show()
+        hbox.pack_end(self.experiment_name, False, False, 2)
+        hbox.show()
+        vbox2.pack_start(hbox, False, False, 2)
+
+        label = gtk.Label("Project discription")
+        label.show()
+        hbox = gtk.HBox()
+        hbox.pack_start(label, False, False, 2)
+        self.experiment_description = gtk.Entry()
+        self.experiment_description.set_width_chars(70)
+        self.experiment_description.show()
+        hbox.pack_end(self.experiment_description, False, False, 2)
+        hbox.show()
+        vbox2.pack_start(hbox, False, False, 2)
+
+
+        self.experiment_settings_entry_order = []
+
+        hbox = gtk.HBox()
+        label = gtk.Label("Number of measurements:")
+        label.show()
+        hbox.pack_start(label, False, False, 2)
+        self.experiment_times = gtk.Entry()
+        self.experiment_times.connect("focus-out-event",self.experiment_Duration_Calculation)
+        self.experiment_times.show()
+        hbox.pack_end(self.experiment_times, False, False, 2)
+        hbox.show()
+        vbox2.pack_start(hbox, False, False, 2)
+        
+        hbox = gtk.HBox()
+        label = gtk.Label("Interval (min) you want between measurements:")
+        label.show()
+        hbox.pack_start(label, False, False, 2)
+        self.experiment_interval = gtk.Entry()
+        self.experiment_interval.connect("focus-out-event",self.experiment_Duration_Calculation)
+        self.experiment_interval.show()
+        hbox.pack_end(self.experiment_interval, False, False, 2)
+        hbox.show()
+        vbox2.pack_start(hbox, False, False, 2)
+
+        hbox = gtk.HBox()
+        label = gtk.Label("Experiment duration:")
+        label.show()
+        self.experiment_duration = gtk.Entry()
+        self.experiment_duration.connect("focus-out-event",self.experiment_Duration_Calculation)
+        self.experiment_duration.show()
+        hbox.pack_start(label, False, False, 2)
+        hbox.pack_end(self.experiment_duration, False, False, 2)
+        hbox.show()
+        vbox2.pack_start(hbox, False, False, 20)
+        
+        #scanner_settings = Scanner_Settings(scanner=None, scanners_manager="twain", SM_HWND=0)
+        #scanner_settings.show()
+        #vbox2.pack_start(scanner_settings, False, False, 2)
+        
+        hbox = gtk.HBox()
+        hbox.show()
+        button = gtk.Button("Start experiment")
+        button.connect("clicked", owner.experiment_Start_New)
+        button.show()
+        hbox.pack_start(button, False, False, 2)
+        vbox2.pack_start(hbox, False, False, 2)
+        
+        self.experiment_name.set_text("Test")
+        self.experiment_times.set_text("217")
+        self.experiment_interval.set_text("20")
+        self.experiment_iteration = 0
+
+        self.experiment_Duration_Calculation()
+
+
+    def select_experiment_root(self, widget=None, event=None, data=None):
+        newroot = gtk.FileChooserDialog(title="Select new experiment root", action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, 
+            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+
+        result = newroot.run()
+        
+        if result == gtk.RESPONSE_APPLY:
+            self.experiment_root.set_text(newroot.get_filename())
+            
+        newroot.destroy()
+
+    def experiment_Duration_Calculation(self, widget=None, event=None, data=None):
+        if self._GUI_updating == False:
+            self._GUI_updating = True
+
+            ##Allowing thighter scans may cause problems.
+            min_interval = 7
+
+            ##Veryfying that the input is valid and putting 'standard' settings if not
+
+            #Number of measurments
+            try:
+                self.experiment_times.set_text(str(int(self.experiment_times.get_text())))
+            except:
+                self.experiment_times.set_text("217")
+
+            #Interval time
+            try:
+                self.experiment_interval.set_text(str(float(self.experiment_interval.get_text())))
+            except:
+                self.experiment_interval.set_text("20")
+            if float(self.experiment_interval.get_text()) < min_interval:
+                self.experiment_interval.set_text(str(min_interval))
+
+            #Duration time
+            duration_str = self.experiment_duration.get_text()
+            duration_array = duration_str.split(",")
+            days = 0
+            hours = 0
+            minutes = 0
+            for setting in duration_array:
+                s_array = setting.split(" ")
+                for i, v in enumerate(s_array):
+                    if v == '':
+                        del s_array[i]
+                if len(s_array) == 1:
+                    if len(s_array[0]) > 0:
+                        match = re.search('[^0-9.]{1,10}',s_array[0])
+                        unit = match.string[match.start(match.group(0)):match.end(match.group(0))]
+                        value = match.string[:match.start(match.group(0))] 
+                        if unit[0].upper() == 'H':
+                            try:
+                                hours = int(value)
+                            except:
+                                pass
+                        elif unit[0].upper() == "D":
+                            try:
+                                days = int(days)
+                            except:
+                                pass
+                        elif unit[0].upper() == "M":
+                            try:
+                                minutes = int(minutes)
+                            except:
+                                pass
+                            
+                elif len(s_array) == 0:
+                    pass
+                else: 
+                    if str(s_array[1])[0].upper() == 'D':
+                        try:
+                            days = int(s_array[0])
+                        except:
+                            pass
+                    elif str(s_array[1])[0].upper() == 'H':
+                        try:
+                            hours = int(s_array[0])
+                        except:
+                            pass
+                    elif str(s_array[1])[0].upper() == 'M':
+                        try:
+                            minutes = int(s_array[0])
+                        except:
+                            pass
+
+            ##Compensating for if user doesn't know how many minutes to the hour etc.
+            ##Also calculating the full runtime
+            hours += minutes / 60
+            minutes = minutes % 60
+            days += hours / 24
+            hours =  hours % 24
+            run_time = days * 24 * 60 + hours * 60 + minutes
+            if run_time < min_interval:
+                run_time = min_interval
+                minutes = min_interval
+            self.experiment_duration.set_text(str(days) + " days, " + str(hours) + " h, " + str(minutes) + " min")
+ 
+            ##Checking which order things have been entered and faking last entry if this was the
+            ##first.
+
+            self.experiment_settings_entry_order.append(widget)
+
+            if len(self.experiment_settings_entry_order) < 2:
+                if self.experiment_interval not in self.experiment_settings_entry_order:
+                    self.experiment_settings_entry_order.insert(0, self.experiment_interval)
+                elif self.experiment_times not in self.experiment_settgins_entry_order:
+                    self.experiment_settings_entry_order.insert(0, self.experiment_times)
+                else:
+                    self.experiment_settings_entry_order.insert(0, self.experiment_duration)
+
+            ##Calculating the third parameter, whichever it is
+
+            #Calculating duration        
+            if self.experiment_duration not in self.experiment_settings_entry_order[-2:]:
+                run_time = float(self.experiment_interval.get_text()) * (int(self.experiment_times.get_text()) + 1)
+                minutes = int(run_time % 60)
+                hours = int(run_time) % (60*24) / 60
+                days = int(run_time) / (60*24)
+                out_str = str(days) + " days, " + str(hours) + " h, " + str(minutes) + " min"
+                self.experiment_duration.set_text(out_str)
+            #Calculating measurement times
+            elif self.experiment_times not in self.experiment_settings_entry_order[-2:]:
+                times = int(run_time / float(self.experiment_interval.get_text()) - 1)
+                self.experiment_times.set_text(str(times))
+            #Calculating the interval
+            else:
+                interval = 0
+                measurements = int(self.experiment_times.get_text()) + 1
+                while interval < min_interval:
+                    if interval != 0:
+                        measurements -= 1
+
+                    interval = float(run_time/measurements)                    
+
+                self.experiment_times.set_text(str(measurements - 1))
+                self.experiment_interval.set_text(str(interval))
+
+            self._GUI_updating = False
+
+
+class Scanner_Settings(gtk.TreeView):
+    def __init__(self, scanner=None, scanners_manager="twain", SM_HWND=0):
+
+        if scanners_manager == "twain":
+            self._SM = twain.SourceManager(SM_HWND)
+            self._scanners = self._SM.GetSourceList()
+            self._settings_list = {'Lightpath': [twain.ICAP_LIGHTPATH,twain.TWTY_UINT16,'options', 'Transmissive', twain.TWLP_TRANSMISSIVE, 'Reflective', twain.TWLP_REFLECTIVE],
+                                   'Lighsource': [twain.ICAP_LIGHTSOURCE, twain.TWTY_UINT16,'int', 0],
+                                   'Unit': ['options', 'Inches', twain.TWUN_INCHES, 'Centimeters', twain.TWUN_CENTIMETERS, 'Pixels', twain.TWUN_PIXELS],
+                                   'Pixeltype': [twain.ICAP_PIXELTYPE, twain.TWTY_UINT16, 'options', 'Gray', twain.TWPT_GRAY, 'Color', twain.TWPT_RGB],
+                                   'Capability 32829': [32829, 4, 'int', 1],
+                                   'Capability 32805': [32805, 6, 'bool', 0],
+                                   'Capability 32793': [32793, 6, 'bool', 0],
+                                   'Orientation': [twain.ICAP_ORIENTATION, twain.TWTY_UINT16, 'options', '90 degrees', twain.TWOR_ROT90, '0 degrees', twain.TWOR_ROT0, '180 degrees', twain.TWOR_ROT180, '270 degrees', twain.TWOR_ROT270],
+                                   'X-resolution': [twain.ICAP_XRESOLUTION,twain.TWTY_FIX32, 'float', 600],
+                                   'Y-resolution': [twain.ICAP_YRESOLUTION,twain.TWTY_FIX32, 'float', 600],
+                                   'Bit Depth': [twain.ICAP_BITDEPTH, twain.TWTY_UINT16, 'int', 8],
+                                   'Contrast': [twain.ICAP_CONTRAST,twain.TWTY_FIX32,'float', 25.0],
+                                   'Brightness': [twain.ICAP_BRIGHTNESS,twain.TWTY_FIX32,'float', 125.0],
+                                   'Scnning area (TOP, LEFT, BOTTOM, RIGHT)': [None, None, 'float-list', '(0.0, 0.0, 11.69, 8.27)']}
+
+        else:
+            self._scanners = None
+            self._settings_ilst = None
+            
+        self._treestore = gtk.TreeStore(str, str)
+        
+        for scanner in self._scanners:
+            scanner_iter = self._treestore.append(None, [scanner, None])
+            for key, item in self._settings_list.items():
+                
+                self._treestore.append(scanner_iter, [key, item[3]])
+                                      
+        gtk.TreeView.__init__(self, self._treestore)
+
+        self._columns = []
+        self._columns.append(gtk.TreeViewColumn('Setting'))
+        self._columns.append(gtk.TreeViewColumn('Value'))
+                                      
+        for i, c in enumerate(self._columns):
+            self.append_column(c)
+            cell = gtk.CellRendererText()
+            cell.connect("edited", self.verify_input)
+            cell.connect("editing-started", self.guide_input)
+            self._columns[i].pack_start(cell, True)
+            self._columns[i].add_attribute(cell, 'text', i)
+            cell.set_property('editable', i)
+
+            
+        self.show_all()
+
+    def guide_input(self, widget=None, event=None, data=None):
+        row = self._treestore.get_iter(data)
+        try:
+            datatype = self._settings_list[self._treestore.get_value(row, 0)][2]
+        except:
+            datatype = None
+
+        if datatype == "options":
+            options = []
+            combobox = gtk.combo_box_new_text()
+            for i, val in enumerate(self._settings_list[self._treestore.get_value(row, 0)]):
+                if i > 2:
+                    if i % 2 == 1:
+                        combobox.append_text(val)
+            combobox.show()
+            combobox.set_active(0)
+            dialog = gtk.Dialog(title="Select an option", parent=None, flags=0, buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+            dialog.vbox.pack_start(combobox, True, True, 2)
+            result = dialog.run()
+            if result == gtk.RESPONSE_APPLY:
+                active = combobox.get_active()
+                self._treestore[data][1] = self._settings_list[self._treestore.get_value(row,0)][3+2*int(active)]
+            dialog.destroy()
+            
+    def verify_input(self, widget=None, event=None, data=None):
+        pass
+

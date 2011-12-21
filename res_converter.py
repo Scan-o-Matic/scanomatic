@@ -67,7 +67,7 @@ class Output_File():
 	def make_output(self, filename=None, file_ending=".csv"):
 		if self.__imported__:	
 			if filename == None:
-				filename = str(self.__filename__.split(".",1)) + str(file_ending)
+				filename = str(self.__input_file__.split(".",1)[0]) + str(file_ending)
 
 			try:
 				fs = open(filename, "w")

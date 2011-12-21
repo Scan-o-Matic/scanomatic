@@ -1,0 +1,127 @@
+  ##########################
+##### THE WHAT NEXT PLACE #####
+   ##########################
+
+** Clean up code in Fixture GUI
+
+** Grayscale norm!
+
+** Report building takes about as long as analysis when processing a project
+    Look at appending sections
+
+** Make experiment last until analysis of last image is done
+
+** Extend functionality in config view
+
+** Make it possible to reuse canvases please <- maybe baby
+
+** Use a queue for all things to be done and a scheduler
+
+---
+
+** Most fungii see blue light at 450 nm - How is the pattern of our lamp??
+
+** SANE should discover scanner better
+
+** Think about PIL I16 support
+    http://old.nabble.com/import-16-bit-tiff---byte-order-problem--td20374391.html
+    http://blog.philippklaus.de/2011/08/handle-16bit-tiff-images-in-python/
+
+* Scanner selection is still awkward... (only one scanner per program I think
+
+* Checking of space left on HD
+
+
+  ###################################
+##### HALL OF COMPLETIONLIKE STATE #####
+   ###################################
+
+** Remake entire Fixture GUI image selection handling
+    Make it possible to select areas again
+
+** See why not log_writer produces a progress.png in the right place
+
+** Make project check <- What does that mean?
+
+** Make creation of log-file post-scanning produce everythin that on-the-fly
+   production does except first entry...
+
+** Make Analyse One more according to new ways of Fixture
+
+** Fix log-file from scanning, see upload on server.
+
+** Make a config file setting GUI
+
+** Capture mouse events on canvases from matplotlib instead of using images
+
+** Make a single analysis interface
+
+** Make scan one be an experiment, easier to use the same pipe
+
+** Cut out all the different parts to separate files in src
+
+** Get all pattern from config file
+
+** Do grayscale detection in 600dpi, it is way too nice and smooth in 150dpi
+
+** Make interface label-show width nice
+
+** Include all the coordinates for all subsections on all images in 
+   logfile.
+
+** Grayscale module
+*   other way of finding indices
+        cutoff = 1.0
+        indices = ml.find(D > cutoff) 
+*   should it be a mean(mean()) or just a mean(2d)
+
+** Use 1 scanner fixture settings per scanner fixture
+    Not implemented as such but now analyis reloads settings
+
+** Make 'Scan one' nicer
+
+** Lock scanners so that you cannot scan when it's working
+
+** Make app take two types of directories:
+        App-directory
+        Save-data directory
+
+** Make Grayscale x-pos offset so that first is 0 otherwise will depend on things..
+   Also make the x-pos be devided by meandist
+
+** Restructure Image Analysis into nicer parts
+
+** Fix launching so that it works from other directories
+
+** The Fixture confile must save the fixture marking path
+
+** SISPMCTF
+* Make sure user really has the right priveleges
+
+**Set minimum scanning interval to 7minutes if rescan enabled else 4minutes
+
+**Fixture should have crashed head dummy-marking
+
+** This seems to not have had anything cool in it...
+http://www.epson.com/cgi-bin/Store/support/supDetail.jsp?oid=66172&prodoid=63056499&BV_UseBVCookie=yes&infoType=Downloads&platform=Other&x=3&y=0
+
+** Make sure the scanning is run in seperate thread but send event when done
+*   DONE: Separate thread, but no callback active yet
+*   I think it is done
+
+** Fix histograms for linux:
+*   Fix axis etc so that picture is small as possible
+        plt.xlim([0,255])       <- Should depend on pixel depth
+
+** SANE
+*   sane-find-scanner -q devname
+*   IF usb-problem: http://www.sane-project.org/README.linux
+*   scanimage/epson/sane-epson
+*   scanimage -d 'epson2:libusb:001:006' -f tiff --mode Gray --depth 12 --resolution 600.0 --auto-area-segmentation no -l 0.0 -t 0.0 -x 10.0 -y 12.0 --source TPU --focus-position "Focus 2.5mm above glass"
+*   scanimage -d [dev] --dont-scan
+*   scanimage --all-options
+*   scanimage -d 'epson2:libusb:001:006' --mode Gray --depth 16 --resolution 600 --source 'Transparaency Unit'
+*   scanimage --format tiff --resolution 600 --mode Gray --source Transparency -l 0 -t 0 -x 215.9 -y 297.18 --depth 16 > test.tiff
+*   Compliing: ./configure --prefix=/home/martin/SANE_dev
+*   Run scanimage in bin-directory created above.
+*   Diff reporting: diff . ../../sane-backends-1.0.22/backend/ | grep -v -e"^Only in"
