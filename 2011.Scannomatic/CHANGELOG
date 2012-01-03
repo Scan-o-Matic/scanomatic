@@ -1,6 +1,16 @@
   ##################################
+##### Changed in Scannomatic 0.98 #####
+   ##################################
+
+*** Analysis is now done in grayscale-values and not pixel values
+
+*** Inserted <time></time> in xml per scan
+
+  ##################################
 ##### Changed in Scannomatic 0.97 #####
    ##################################
+
+*** Fixed some more bugs in analysis
 
 *** Bugs were fixed with grid array analysis.
 

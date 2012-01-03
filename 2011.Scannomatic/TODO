@@ -2,9 +2,11 @@
 ##### THE WHAT NEXT PLACE #####
    ##########################
 
-** Clean up code in Fixture GUI
+** Check why not analysing all plates???
 
-** Grayscale norm!
+** Check if OpenCV is installed and if not, use fallback analysis
+
+** Clean up code in Fixture GUI
 
 ** Report building takes about as long as analysis when processing a project
     Look at appending sections
@@ -35,6 +37,10 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+** Grayscale norm!
+
+** Solve eq for grayscale fransformation...
 
 ** Remake entire Fixture GUI image selection handling
     Make it possible to select areas again

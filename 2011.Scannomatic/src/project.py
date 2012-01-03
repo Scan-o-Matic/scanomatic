@@ -17,6 +17,7 @@
 
 import matplotlib.image as plt_img
 import elementtree.ElementTree as ET
+import numpy as np
 
 #
 # SCANNOMATIC LIBRARIES
@@ -47,7 +48,7 @@ def print_progress_bar(fraction, size=40):
     print
 
 def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
-        verboise=False, use_fallback = False, use_otsu = True):
+        verboise=False, use_fallback = False, use_otsu = False):
     """
         analyse_project parses a log-file and runs a full analysis on all 
         images in it. It will step backwards in time, starting with the 
@@ -70,7 +71,8 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                             should be used.
 
         @use_otsu           Determines if Otsu-thresholding should be
-                            used when looking finding the grid
+                            used when looking finding the grid (not
+                            default, and should not be used)
         
         The function returns None if nothing was done of if it crashed.
         If it runs through it returns the number of images processed.
@@ -116,7 +118,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
             print
 
         features = project_image.get_analysis( img_dict_pointer['File'], \
-            plate_positions, use_fallback, use_otsu )
+            plate_positions, img_dict_pointer['grayscale_values'], use_fallback, use_otsu )
 
         if verboise:
             print "*** Building report"
@@ -133,6 +135,8 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
             ET_scan_gs_calibration = ET.SubElement(ET_scan, "calibration")
             ET_scan_gs_calibration.text = \
                 str(img_dict_pointer['grayscale_values'])
+            ET_scan_time = ET.SubElement(ET_scan, "time")
+            ET_scan_time.text = str(img_dict_pointer['Time'])
 
             for i in xrange(plates):
                 ET_plate = ET.SubElement(ET_scan, "plate")
@@ -207,7 +211,8 @@ class Project_Image():
             self.features.append(None)
             self.R.append(None)
 
-    def get_analysis(self, im_path, features, use_fallback=False, use_otsu=True):
+    def get_analysis(self, im_path, features, grayscale_values, \
+            use_fallback=False, use_otsu=True):
 
         if im_path != None:
             self._im_path = im_path
@@ -225,17 +230,39 @@ class Project_Image():
         else:
             return None
 
+        if len(grayscale_values) > 3:
+            gs_values = np.array(grayscale_values)
+            gs_indices = np.arange(len(grayscale_values))
+
+            gs_fit = np.polyfit(gs_indices, gs_values,3)
+        else:
+            gs_fit = None
+
         scale_factor = 4.0
 
         for grid_array in xrange(len(self._grid_arrays)):
 
+            x0 = int(features[grid_array][0][0]*scale_factor)
+            x1 = int(features[grid_array][1][0]*scale_factor)
+            if x0 < x1:
+                upper = x0
+                lower = x1
+            else:
+                upper = x1
+                lower = x0
+
+            y0 = int(features[grid_array][0][1]*scale_factor)
+            y1 = int(features[grid_array][1][1]*scale_factor)
+            if y0 < y1:
+                left = y0
+                right = y1
+            else:
+                left = y1
+                right = y0
 
             self._grid_arrays[grid_array].get_analysis( \
-                self.im[ int(features[grid_array][0][0]*scale_factor):\
-                        int(features[grid_array][1][0]*scale_factor),\
-                        int(features[grid_array][0][1]*scale_factor):\
-                        int(features[grid_array][1][1]*scale_factor) ],
-                use_fallback, use_otsu, median_coeff=None, 
+                self.im[ upper:lower, left:right ], \
+                gs_values=gs_values, use_fallback=use_fallback, use_otsu=use_otsu, median_coeff=None, \
                 verboise=False, visual=False)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
@@ -256,7 +283,7 @@ if __name__ == "__main__":
         print "COMMAND: ", sys.argv[0], "[log-file] [analysis-xml-file-output]"
         
     else:
-        pm = [(16,24)]
+        pm = [(16,24), (16,24), (16,24), (16,24)]
         
         #last is if Otsu, second last is for fallback
         analyse_project(sys.argv[1], sys.argv[2],pm,True, True, False)

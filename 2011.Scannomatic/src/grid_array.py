@@ -15,6 +15,7 @@
 # DEPENDENCIES
 #
 
+import numpy as np
 
 #
 # SCANNOMATIC LIBRARIES
@@ -73,10 +74,117 @@ class Grid_Array():
     # Get functions
     # 
 
-    def get_analysis(self, im, use_fallback=False, use_otsu=True, median_coeff=None, verboise=False, visual=False):
+    def get_transformation_matrix(self, gs_values=None, gs_fit=None, y_range = (0,255)):
+        """
+            get_transformation_matrix takes an coefficient array of a
+            polynomial fit of the 3rd degree and calculates a matrix
+            of all solutions for all the integer steps of the y-range
+            specified.
+
+            The function takes two arguments:
+
+            @gs_values  A numpy array or a list of gray-scale values
+
+            @gs_fit     A numpy array of the coefficients as returned
+                        by numpy.polyfit, assuming 3rd degree 
+                        solution
+    
+            @y_range    A tuple having the including range limits 
+                        for the solution.
+
+            The function returns a list of transformation values
+
+        """
+
+        if gs_values != None:
+
+            gs_indices  = range(len(gs_values))
+
+            tf_matrix = np.zeros((y_range[1]+1))
+
+            for pos in xrange(len(gs_values)):
+
+                #Ofsetting local box at edges
+                if pos == 0:
+                    offset = 1
+                elif pos == len(gs_values)-1:
+                    offset = -1
+                else:
+                    offset = 0
+
+                #create 1st degree polynomial
+                p = np.poly1d(np.polyfit(gs_indices[ pos + offset - 1 : pos + offset + 2 ],\
+                    gs_values[ pos + offset - 1: pos + offset + 2], 1))
+
+                a = p.c[0]
+                b = p.c[1]
+
+                #Getting formula ax + b = 0
+                #b = np.interp(0,gs_indices[ pos + offset - 1 : pos + offset + 1 ],\
+                    #gs_values[ pos + offset - 1: pos + offset + 1])
+
+                #Using x as 1
+                #a = (np.interp(y_range[1]+1.0, gs_indices[ pos + offset - 1: pos + offset + 1],\
+                    #gs_values[ pos + offset -1 : pos + offset + 1]) - b) / (y_range[1]+1.0)
+
+                #Setting limits to the local interpolation
+                y_left = p(gs_indices[ pos + offset - 1 ])
+                #y_left = np.interp(gs_indices[ pos + offset - 1] ,\
+                    #gs_indices[ pos + offset - 1: pos + offset + 1],\
+                    #gs_values[ pos + offset -1 : pos + offset + 1])
+
+                y_right= p(gs_indices[ pos + offset ])
+                #y_right = np.interp(gs_indices[ pos + offset ],\
+                    #gs_indices[ pos + offset - 1: pos + offset + 1],\
+                    #gs_values[ pos + offset - 1 : pos + offset + 1])
+
+                #Orderings bounds accending
+                if y_left > y_right:
+                    tmp = y_left
+                    y_left = y_right
+                    y_right = tmp
+
+                #Extending at edges
+                if pos == 0 or pos == len(gs_values) -1:
+                    if abs(y_left - y_range[0]) < abs(y_right - y_range[1]):
+                        y_left = y_range[0]
+                    else:
+                        y_right = y_range[1]
+         
+                #Trimming so inside y_range
+                if y_left < y_range[0]:
+                    y_left = y_range[0]
+                if y_right > y_range[1]:
+                    y_right = y_range[1]
+
+                #Inserting values for the tf_matrix
+                for y_pos in range(int(y_left), int(np.ceil(y_right))+1):
+                    tf_matrix[y_pos] = (y_pos - b) / a
+
+        else:    
+
+            tf_matrix = []
+
+            for y in range(y_range[0],y_range[1]+1):
+
+                #Do something real here
+                #The caluclated value shoud be a float
+                x = y
+                
+                tf_matrix.append(x)
+
+        return tf_matrix
+
+    def get_analysis(self, im, gs_fit=None, gs_values=None, use_fallback=False,\
+        use_otsu=True, median_coeff=None, verboise=False, visual=False):
 
         """
             @im         An array / the image
+
+            @gs_fit     An array of the fitted coefficients for the grayscale
+
+            @gs_values  An array of the grayscale pixelvalues, if submittet 
+                        gs_fit is disregarded
 
             @use_otsu   Causes thresholding to be done by Otsu
                         algorithm (Default)
@@ -121,6 +229,20 @@ class Grid_Array():
             has_previous_rect = False
  
         total_steps = float(self._pinning_matrix[0] * self._pinning_matrix[1])
+
+
+        #Normalising towards grayscale before anything is done on the colonies
+        transformation_matrix = None
+        if gs_values == None:
+            transformation_matrix = self.get_transformation_matrix(gs_fit=gs_fit)
+        else:
+            transformation_matrix = self.get_transformation_matrix(gs_values = gs_values)
+
+        if transformation_matrix != None:
+            #There's probably some faster way
+            for x in xrange(im.shape[0]):
+                for y in xrange(im.shape[1]):
+                    im[x,y] = transformation_matrix[im[x,y]]
         #print "*** Analysing grid:"
         #import matplotlib.pyplot as plt
         #plt.imshow(im)

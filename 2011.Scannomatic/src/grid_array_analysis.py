@@ -196,7 +196,10 @@ class Grid_Analysis():
         else:            
             self.R = -1
 
-        return self.best_fit_positions[0], self.best_fit_positions[1], self.R
+        if self.best_fit_positions == None:
+            return None, None, None
+        else:
+            return self.best_fit_positions[0], self.best_fit_positions[1], self.R
 
     def get_signal_position_and_frequency(self, measures, segments, verboise=False):
         """
