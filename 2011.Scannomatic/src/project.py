@@ -102,6 +102,9 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         print
 
     ET_root = ET.Element("project")
+    ET_start = ET.SubElement(ET_root, "start-time")
+    ET_start.text = str(image_dictionaries[0]['Time'])
+    ET_scans = ET.SubElement(ET_root, "scans")
 
     while image_pos >= 0:
 
@@ -124,7 +127,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
             print "*** Building report"
             print
 
-        ET_scan = ET.SubElement(ET_root, "scan")
+        ET_scan = ET.SubElement(ET_scans, "scan")
         ET_scan.set("index", str(image_pos))
 
         ET_scan_valid = ET.SubElement(ET_scan,"scan-valid")
@@ -137,23 +140,23 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                 str(img_dict_pointer['grayscale_values'])
             ET_scan_time = ET.SubElement(ET_scan, "time")
             ET_scan_time.text = str(img_dict_pointer['Time'])
-
+            ET_plates = ET.SubElement(ET_scan, "plates")
             for i in xrange(plates):
-                ET_plate = ET.SubElement(ET_scan, "plate")
+                ET_plate = ET.SubElement(ET_plates, "plate")
                 ET_plate.set("index", str(i))
 
                 ET_plate_matrix = ET.SubElement(ET_plate, "plate-matrix")
                 ET_plate_matrix.text = str(pinning_matrices[i])
 
-                ET_plate_R = ET.SubElement(ET_plate, "plate-R")
+                ET_plate_R = ET.SubElement(ET_plate, "R")
                 ET_plate_R.text = str(project_image.R[i])
 
-                ET_plate_measures = ET.SubElement(ET_plate, "plate-measures")
+                ET_cells = ET.SubElement(ET_plate, "cells")
 
                 for x, rows in enumerate(features[i]):
                     for y, cell in enumerate(rows):
 
-                        ET_cell = ET.SubElement(ET_plate_measures, "cell")
+                        ET_cell = ET.SubElement(ET_cells, "cell")
                         ET_cell.set("x", str(x))
                         ET_cell.set("y", str(y))
 
@@ -180,13 +183,13 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         #    image_pos = 1 
         #DEBUGHACK - END
 
-        tree = ET.ElementTree(ET_root)
-        tree.write(outdata_file_path)
 
         if verboise:
             print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
 
 
+    tree = ET.ElementTree(ET_root)
+    tree.write(outdata_file_path)
 
 #
 # CLASS Project_Image
