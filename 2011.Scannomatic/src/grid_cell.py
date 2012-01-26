@@ -190,6 +190,7 @@ class Grid_Cell():
 
         for item_name in self._analysis_item_names:
             if self._analysis_items[item_name]:
+                self._analysis_items[item_name].set_data_source(self.data_source)
                 self._analysis_items[item_name].detect()
                 self._analysis_items[item_name].do_analysis()
                 features_dict[item_name] = self._analysis_items[item_name].features

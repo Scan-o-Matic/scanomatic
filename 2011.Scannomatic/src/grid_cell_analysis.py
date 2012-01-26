@@ -83,6 +83,9 @@ class Cell_Item():
     # SET functions
     #
 
+    def set_data_source(self, data_source):
+        self.grid_array = data_source
+
     def set_type(self):
 
         """
@@ -143,8 +146,11 @@ class Cell_Item():
             self.features['median'] = ma.median(feature_array)
             self.features['mean'] = feature_array.mean()
             self.features['IQR'] = mquantiles(ma.compressed(feature_array),prob=[0.25,0.75])
-            self.features['IQR_mean'] = ma.masked_outside(feature_array, self.features['IQR'][0], self.features['IQR'][1]).mean()
-
+            try:
+                self.features['IQR_mean'] = ma.masked_outside(feature_array, self.features['IQR'][0], self.features['IQR'][1]).mean()
+            except:
+                self.features['IQR_mean'] = None
+                print "*** Failed in producting IQR_mean from IQR", self.features['IQR']
 #        if self.CELLITEM_TYPE == 3: # or self.CELLITEM_TYPE == 1:
 #            #Using IQR as default colony_size measure
 #            self.features['colony_size'] = self.features['pixelsum'] - \

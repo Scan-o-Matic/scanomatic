@@ -16,8 +16,10 @@
 #
 
 import matplotlib.image as plt_img
-import elementtree.ElementTree as ET
+#import elementtree.ElementTree as ET
 import numpy as np
+from time import time
+from argparse import ArgumentParser #, FileType
 
 #
 # SCANNOMATIC LIBRARIES
@@ -48,6 +50,7 @@ def print_progress_bar(fraction, size=40):
     print
 
 def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
+        graph_watch, graph_output, supress_analysis = False, \
         verboise=False, use_fallback = False, use_otsu = False):
     """
         analyse_project parses a log-file and runs a full analysis on all 
@@ -65,6 +68,15 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                             matrices used for each plate position 
                             respectively
 
+        @graph_watch        A coordinate PLATE:COL:ROW for a colony to
+                            watch particularly.
+
+        @graph_output       An optional PATH to where to save the graph
+                            produced by graph_watch being set.
+
+        @supress_analysis  Suppresses the main analysis and thus
+                            only graph_watch thing is produced.
+
         @verboise           Will print some basic output of progress.
 
         @use_fallback       Determines if fallback colony detection
@@ -79,9 +91,17 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
 
     """
     
+    start_time = time()
+
+
+    if graph_watch != None:
+        from matplotlib import pyplot
+        watch_reading = {}
+        watch_blob = []
+        watch_img = []
+
     log_file = conf.Config_File(log_file_path)
 
-    project_image = Project_Image(pinning_matrices)
 
     image_dictionaries = log_file.get_all("%n")
     if image_dictionaries == None:
@@ -90,8 +110,23 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
     plate_position_keys = []
     plates = len(pinning_matrices)
 
+
     for i in xrange(plates):
-        plate_position_keys.append("plate_" + str(i) + "_area")
+        if supress_analysis != True or graph_watch[0] == i:
+            plate_position_keys.append("plate_" + str(i) + "_area")
+
+    if supress_analysis == True:
+        project_image = Project_Image([pinning_matrices[graph_watch[0]]])
+        graph_watch[0] = 0
+    else:
+        try:
+            fh = open(outdata_file_path,'w')
+        except:
+            print "*** Error, can't open target file:", outdata_file_path
+            return False
+        description = None
+        interval_time = None
+        project_image = Project_Image(pinning_matrices)
 
     image_pos = len(image_dictionaries) - 1
     image_tot = image_pos 
@@ -101,13 +136,46 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         print "* Nothing to wait for"
         print
 
-    ET_root = ET.Element("project")
-    ET_start = ET.SubElement(ET_root, "start-time")
-    ET_start.text = str(image_dictionaries[0]['Time'])
-    ET_scans = ET.SubElement(ET_root, "scans")
+    if supress_analysis != True:
+        fh.write('<project>')
+        #ET_root = ET.Element("project")
+
+        fh.write('<start-time>' + str(image_dictionaries[0]['Time']) + '</start-time>')
+        #ET_start = ET.SubElement(ET_root, "start-time")
+        #ET_start.text = str(image_dictionaries[0]['Time'])
+
+        fh.write('<description>' + str(description) + '</description>')
+        #ET_description = ET.SubElement(ET_root, "description")
+        #ET_description.text = "Placeholder description"
+
+        fh.write('<number-of-scans>' + str(image_pos+1) + '</number-of-scans>')
+        #ET_number_of_scans = ET.SubElement(ET_root, "number-of-scans")
+        #ET_number_of_scans.text = str(image_pos+1)
+
+        fh.write('<interval-time>' + str(interval_time) + '</interval-time>')
+        #ET_interval = ET.SubElement(ET_root, "interval-time")
+        #ET_interval.text = "Placeholder"
+
+        fh.write('<plates-per-scan>' + str(plates) + '</plates-per-scan>')
+        #ET_plates_per_scan = ET.SubElement(ET_root, "plates-per-scan")
+        #ET_plates_per_scan.text = str(plates)
+
+        fh.write('<pinning-matrices>')
+        #ET_pinning_matrices = ET.SubElement(ET_root, "pinning-matrices")
+        for pos in xrange(plates):
+            fh.write('<pinning-matrix index="' + str(pos) + '">' + \
+                 str(pinning_matrices[pos]) + '</pinning-matrix>')
+            #ET_matrix = ET.SubElement(ET_pinning_matrices, "pinning-matrix")
+            #ET_matrix.set("index", str(pos))
+            #ET_matrix.text = str(pinning_matrices[pos])
+
+        fh.write('</pinning-matrices>')
+
+        fh.write('<scans>')
+        #ET_scans = ET.SubElement(ET_root, "scans")
 
     while image_pos >= 0:
-
+        scan_start_time = time()
         img_dict_pointer = image_dictionaries[image_pos]
 
         plate_positions = []
@@ -116,65 +184,93 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
             plate_positions.append( \
                 img_dict_pointer[plate_position_keys[i]] )
 
+            if verboise:
+                print "** Position", plate_position_keys[i], ":", img_dict_pointer[plate_position_keys[i]]
+
         if verboise:
+            print
             print "*** Analysing: " + str(img_dict_pointer['File'])
             print
 
         features = project_image.get_analysis( img_dict_pointer['File'], \
             plate_positions, img_dict_pointer['grayscale_values'], use_fallback, use_otsu )
 
-        if verboise:
-            print "*** Building report"
-            print
+        if supress_analysis != True:
+            fh.write('<scan index="' + str(image_pos) + '">')
+            #ET_scan = ET.SubElement(ET_scans, "scan")
+            #ET_scan.set("index", str(image_pos))
 
-        ET_scan = ET.SubElement(ET_scans, "scan")
-        ET_scan.set("index", str(image_pos))
+            fh.write('<scan-valid>')
+            #ET_scan_valid = ET.SubElement(ET_scan,"scan-valid")
 
-        ET_scan_valid = ET.SubElement(ET_scan,"scan-valid")
-
-        if features != None:
-            ET_scan_valid.text = str(1)
-
-            ET_scan_gs_calibration = ET.SubElement(ET_scan, "calibration")
-            ET_scan_gs_calibration.text = \
-                str(img_dict_pointer['grayscale_values'])
-            ET_scan_time = ET.SubElement(ET_scan, "time")
-            ET_scan_time.text = str(img_dict_pointer['Time'])
-            ET_plates = ET.SubElement(ET_scan, "plates")
-            for i in xrange(plates):
-                ET_plate = ET.SubElement(ET_plates, "plate")
-                ET_plate.set("index", str(i))
-
-                ET_plate_matrix = ET.SubElement(ET_plate, "plate-matrix")
-                ET_plate_matrix.text = str(pinning_matrices[i])
-
-                ET_plate_R = ET.SubElement(ET_plate, "R")
-                ET_plate_R.text = str(project_image.R[i])
-
-                ET_cells = ET.SubElement(ET_plate, "cells")
-
-                for x, rows in enumerate(features[i]):
-                    for y, cell in enumerate(rows):
-
-                        ET_cell = ET.SubElement(ET_cells, "cell")
-                        ET_cell.set("x", str(x))
-                        ET_cell.set("y", str(y))
-
-                        if cell != None:
-                            for item in cell.keys():
-
-                                ET_cell_item = ET.SubElement(ET_cell, item)
-                                
-                                for measure in cell[item].keys():
-
-                                    ET_measure = ET.SubElement(ET_cell_item,\
-                                        measure)
-
-                                    ET_measure.text = str(cell[item][measure])
-
-
+        if features == None:
+            if supress_analysis != True:
+                fh.write(str(0) + '</scan-valid>')
+                #ET_scan_valid.text = str(0)
         else:
-            ET_scan_valid.text = str(0)
+            if graph_watch != None:
+                pass
+            
+            if supress_analysis != True:
+                fh.write(str(1) + '</scan-valid>')
+                #ET_scan_valid.text = str(1)
+
+                fh.write('<calibration>' + str(img_dict_pointer['grayscale_values']) + '</calibration>')
+                #ET_scan_gs_calibration = ET.SubElement(ET_scan, "calibration")
+                #ET_scan_gs_calibration.text = \
+                #    str(img_dict_pointer['grayscale_values'])
+
+                fh.write('<time>' + str(img_dict_pointer['Time']) + '</time>')
+                #ET_scan_time = ET.SubElement(ET_scan, "time")
+                #ET_scan_time.text = str(img_dict_pointer['Time'])
+
+                fh.write('<plates>')
+                #ET_plates = ET.SubElement(ET_scan, "plates")
+
+                for i in xrange(plates):
+                    fh.write('<plate index="' + str(i) + '">')
+                    #ET_plate = ET.SubElement(ET_plates, "plate")
+                    #ET_plate.set("index", str(i))
+
+                    fh.write('<plate-matrix>' + str(pinning_matrices[i]) + '</plate-matrix>')
+                    #ET_plate_matrix = ET.SubElement(ET_plate, "plate-matrix")
+                    #ET_plate_matrix.text = str(pinning_matrices[i])
+
+                    fh.write('<R>' + str(project_image.R[i]) + '</R>')
+                    #ET_plate_R = ET.SubElement(ET_plate, "R")
+                    #ET_plate_R.text = str(project_image.R[i])
+
+                    fh.write('<grid-cells>')
+                    #ET_cells = ET.SubElement(ET_plate, "cells")
+
+                    for x, rows in enumerate(features[i]):
+                        for y, cell in enumerate(rows):
+
+                            fh.write('<grid-cell x="' + str(x) + '" y="' + str(y) + '">')
+                            #ET_cell = ET.SubElement(ET_cells, "cell")
+                            #ET_cell.set("x", str(x))
+                            #ET_cell.set("y", str(y))
+
+                            if cell != None:
+                                for item in cell.keys():
+
+                                    fh.write('<' + str(item) + '>')
+                                    #ET_cell_item = ET.SubElement(ET_cell, item)
+                                    
+                                    for measure in cell[item].keys():
+
+                                        fh.write('<' + str(measure) + '>' + \
+                                            str(cell[item][measure]) + \
+                                            '</' + str(measure) + '>')
+                                        #ET_measure = ET.SubElement(ET_cell_item,\
+                                        #    measure)
+
+                                        #ET_measure.text = str(cell[item][measure])
+
+                                    fh.write('</' + str(item) + '>')
+                            fh.write('</grid-cell>')
+                    fh.write('</grid-cells>')
+                fh.write('</plates>')
 
         image_pos -= 1
 
@@ -185,12 +281,21 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
 
 
         if verboise:
+            print "Image took", time() - scan_start_time,"seconds."
             print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
 
+    if supress_analysis != False:
+        fh.write('</scans>')
+        fh.write('</project>')
+        fh.close()
 
-    tree = ET.ElementTree(ET_root)
-    tree.write(outdata_file_path)
+    #if verboise:
+    #    print "*** Building report"
+    #    print
 
+    #tree = ET.ElementTree(ET_root)
+    #tree.write(outdata_file_path)
+    print "Full analysis took", (time() - start_time)/60, "minutes"
 #
 # CLASS Project_Image
 #
@@ -226,6 +331,7 @@ class Project_Image():
         except:
             print "*** Error: Could not open image at " + str(self._im_path)
             self._im_loaded = False
+
 
         if self._im_loaded == True:           
             if len(self.im.shape) > 2:
@@ -276,17 +382,74 @@ class Project_Image():
 
 if __name__ == "__main__":
 
-    import sys
+    parser = ArgumentParser(description='The analysis script runs through a log-file (which is created when a project is run). It creates a XML-file that holds the result of the analysis')
 
-    print "*** This IS a test ***"
-    print
+    parser.add_argument("-i", "--input-file", type=str, dest="inputfile", help="Log-file to be parsed", metavar="PATH")
+    parser.add_argument("-o", "--ouput-file", type=str, dest="outputfile", help="Path to where the XML-file should be written", metavar="PATH")
 
-    if len(sys.argv) != 3:
+    parser.add_argument("-p", "--plates", default=4, type=int, dest="plates", help="The number of plates in the fixture", metavar="N")
+    parser.add_argument("-m", "--matrices", dest="matrices", help="The pinning matrices for each plate position in the order set by the fixture config file.", metavar="(X,Y):(X,Y)...(X,Y)")
 
-        print "COMMAND: ", sys.argv[0], "[log-file] [analysis-xml-file-output]"
-        
-    else:
+    parser.add_argument("-w", "--watch-position", dest="graph_watch", help="The position of a colony to track.", metavar="PLATE:X:Y", type=str)
+
+    parser.add_argument("-g", "--graph-output", dest="graph_output", help="If specified the graph is not shown to the user but instead saved to taget position", type=str)
+
+    parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If set to True, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported. That is, this flag voids the -o flag.")
+    args = parser.parse_args()
+
+    if args.matrices == None:
+     
         pm = [(16,24), (16,24), (16,24), (16,24)]
-        
-        #last is if Otsu, second last is for fallback
-        analyse_project(sys.argv[1], sys.argv[2],pm,True, True, False)
+
+    else:
+
+        pm = args.matrices.split(':')
+        pm = map(eval, pm)
+
+    if args.inputfile == None or (args.outputfile == None and args.supress == False):
+        parser.error("You need to specify both input and output file!")
+
+    if args.graph_watch != None:
+        args.graph_watch = args.graph_watch.split(":")
+        try:
+            args.graph_watch = map(int, args.graph_watch)
+        except:
+            parser.error('The watched colony could not be resolved, make sure that you follow syntax')
+
+        if len(args.graph_watch) <> 3:
+            parser.error('Bad specification of watched colony')
+
+        if args.graph_watch[0] < args.plates:
+            if not(0 <= args.graph_watch[1] <= pm[args.graph_watch[0]][0] and 0 <= args.graph_watch[2] <= pm[args.graph_watch[0]][1]):
+                parser.error('The watched colony position is out of bounds (range: (0, 0)) - ' + str(pm[args.graph_watch[1]]) + ').')
+        else:
+            parser.error('The watched colony position has a plate number that is too high (max: ' + str(args.plates-1) + ').')
+
+    try:
+        fh = open(args.inputfile,'r')
+    except:
+        parser.error('Cannot open input file, please check your path...')
+
+    fh.close()
+
+    if args.outputfile != None:
+        try:
+            fh = open(args.outputfile, 'w')
+        except:
+            parser.error('Cannot create the output file')
+        fh.close()
+
+
+    if args.graph_output != None:
+        try:
+            fh = open(args.graph_output, 'w')
+        except:
+            parser.error('Cannot create the save-file for the watched colony.')
+
+        fh.close()
+
+    if len(pm) == args.plates:    
+        analyse_project(args.inputfile, args.outputfile, pm, args.graph_watch, args.graph_output, args.supress, True, True, False)
+    else:
+        parser.error("Missmatch between number of plates specified and the number of matrices specified.")
+
