@@ -1,4 +1,14 @@
   ##################################
+##### Changed in Scannomatic 0.99 #####
+   ##################################
+
+*** Manual hardcoded xml production to reduce memory foot print.
+
+*** In xml <cells> and <cell> where changed to <grid-cells> and
+    <grid-cell>. <grid-cells>, <plates>, <scans> can only hold
+    <grid-cell>, <plate>, <scan> respectively.
+
+  ##################################
 ##### Changed in Scannomatic 0.98 #####
    ##################################
 

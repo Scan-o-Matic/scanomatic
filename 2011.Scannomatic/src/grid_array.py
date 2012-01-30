@@ -176,7 +176,7 @@ class Grid_Array():
         return tf_matrix
 
     def get_analysis(self, im, gs_fit=None, gs_values=None, use_fallback=False,\
-        use_otsu=True, median_coeff=None, verboise=False, visual=False):
+        use_otsu=True, median_coeff=None, verboise=False, visual=False, watch_colony=None, supress_other=False):
 
         """
             @im         An array / the image
@@ -206,6 +206,11 @@ class Grid_Array():
         #verboise = True
         #DEBUGHACK - END
 
+        self.watch_source = None
+        self.watch_scaled = None
+        self.watch_blob = None
+        self.watch_results = None
+
         best_fit_rows, best_fit_columns, R = self._analysis.get_analysis(im, self._pinning_matrix, use_otsu, median_coeff, verboise, visual)
 
         self.R = R
@@ -228,7 +233,7 @@ class Grid_Array():
             rect_size = self._grid_cell_size
             has_previous_rect = False
  
-        total_steps = float(self._pinning_matrix[0] * self._pinning_matrix[1])
+        #total_steps = float(self._pinning_matrix[0] * self._pinning_matrix[1])
 
 
         #Normalising towards grayscale before anything is done on the colonies
@@ -238,39 +243,77 @@ class Grid_Array():
         else:
             transformation_matrix = self.get_transformation_matrix(gs_values = gs_values)
 
-        if transformation_matrix != None:
+        #if watch_colony != None:
+        #    ul = self._grid_cells[watch_colony[1]][watch_colony[2]].get_top_left()
+        #    lr = self._grid_cells[watch_colony[1]][watch_colony[2]].get_bottom_right()
+        #    self.watch_source = im[ul[1]:lr[1],ul[0]:lr[0]]
+
+
+        #if transformation_matrix != None:
             #There's probably some faster way
-            for x in xrange(im.shape[0]):
-                for y in xrange(im.shape[1]):
-                    im[x,y] = transformation_matrix[im[x,y]]
+            #for x in xrange(im.shape[0]):
+                #for y in xrange(im.shape[1]):
+                    #im[x,y] = transformation_matrix[im[x,y]]
         #print "*** Analysing grid:"
-        #import matplotlib.pyplot as plt
-        #plt.imshow(im)
+        import matplotlib.pyplot as plt
+        plt.imshow(im)
 
         for row in xrange(self._pinning_matrix[0]):
+            plt.plot(\
+                np.ones(len(best_fit_columns))*best_fit_rows[row],
+                np.array(best_fit_columns),
+                'r-')
             for column in xrange(self._pinning_matrix[1]):
+                plt.plot(\
+                    np.array(best_fit_rows),
+                    np.ones(len(best_fit_rows))*best_fit_columns[column],
+                    'r-')
+                if supress_other == False or (watch_colony != None and \
+                        watch_colony[1] == row and watch_colony[2] == column):
 
-                self._grid_cells[row][column].set_center( \
-                    (best_fit_rows[row], best_fit_columns[column]) , rect_size)
+                    self._grid_cells[row][column].set_center( \
+                        (best_fit_rows[row], best_fit_columns[column]) , rect_size)
 
-                ul = self._grid_cells[row][column].get_top_left()
-                lr = self._grid_cells[row][column].get_bottom_right()
-                self._grid_cells[row][column].set_data_source( im[ul[1]:lr[1],ul[0]:lr[0]] )
+                    coord_1st = self._grid_cells[row][column].get_first_dim_as_tuple()
+                    coord_2nd = self._grid_cells[row][column].get_second_dim_as_tuple()
+                    #ul = self._grid_cells[row][column].get_top_left()
+                    #lr = self._grid_cells[row][column].get_bottom_right()
+                    if transformation_matrix != None:
+                        #There's probably some faster way
+                        print coord_1st, coord_2nd
+                        for x in xrange(int(coord_1st[0]),int(np.ceil(coord_1st[1]))):
+                            for y in xrange(int(coord_2nd[0]),int(np.ceil(coord_2nd[1]))):
+                                im[x,y] = transformation_matrix[im[x,y]]
 
-                #plt.plot(self._grid_cells[row][column].center[0],
-                    #self._grid_cells[row][column].center[1] , 'k.')
-
-                               
-                #This happens only the first time
-                if has_previous_rect == False:
-                    self._grid_cells[row][column].attach_analysis(
-                        blob=True, background=True, cell=True, 
-                        use_fallback_detection=use_fallback, run_detect=False)
+                    self._grid_cells[row][column].set_data_source( \
+                        im[coord_1st[0]:coord_1st[1],\
+                        coord_2nd[0]:coord_2nd[1]] )
 
 
-                self._features[row][column] = \
-                    self._grid_cells[row][column].get_analysis()
+                    if watch_colony != None:
+                        if row == watch_colony[1] and column == watch_colony[2]:
+                            self.watch_scaled = im[coord_1st[0]:coord_1st[1],\
+                                coord_2nd[0]:coord_2nd[1]]
+                            
+                    plt.plot(self._grid_cells[row][column].center[0],
+                        self._grid_cells[row][column].center[1] , 'k.')
 
-        #plt.show()
+                    plt.plot(np.asarray(coord_1st),np.asarray(coord_2nd),'k')              
+
+                    #This happens only the first time
+                    if has_previous_rect == False:
+                        self._grid_cells[row][column].attach_analysis(
+                            blob=True, background=True, cell=True, 
+                            use_fallback_detection=use_fallback, run_detect=False)
+
+
+                    self._features[row][column] = \
+                        self._grid_cells[row][column].get_analysis()
+
+                    if watch_colony != None:
+                        if row == watch_colony[1] and column == watch_colony[2]:
+                            self.watch_blob = self._grid_cells[row][column]._analysis_items['blob'].filter_array
+                            self.watch_results = self._features[row][column]
+        plt.show()
                 #print str(((row+1)*self._pinning_matrix[1] + column+1)/total_steps) + "%"
         return self._features 

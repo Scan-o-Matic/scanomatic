@@ -104,7 +104,6 @@ class Grid_Analysis():
 
         """
 
-
         self.im = im
         positions = [None, None]
         measures = [None, None]
@@ -128,6 +127,11 @@ class Grid_Analysis():
                 print positions[dimension]
                 print 
 
+            best_fit_positions[dimension] = self.get_true_signal(\
+                im.shape[dimension], pinning_matrix[dimension], 
+                positions[dimension])
+
+            ###START HERE MARKING OUT ALL OLD STUFF...
             best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
                 self.get_signal_position_and_frequency( measures[dimension],
                     pinning_matrix[dimension], verboise )            
@@ -139,7 +143,7 @@ class Grid_Analysis():
                 print 
 
             #DEBUGHACK
-            #visual = True
+            visual = True
             #DEBUGHACK - END
 
             if best_fit_start_pos[dimension] != None:
@@ -188,6 +192,8 @@ class Grid_Analysis():
                         if verboise:
                             print "*** Got a grid R at, " + str(R)
                             print
+
+
         if R < 10 and best_fit_positions[0] != None and best_fit_positions[1] != None:
             self.best_fit_start_pos = best_fit_start_pos
             self.best_fit_frequency = best_fit_frequency
@@ -201,6 +207,179 @@ class Grid_Analysis():
         else:
             return self.best_fit_positions[0], self.best_fit_positions[1], self.R
 
+    def get_signal_frequency(self, measures):
+        """
+            get_signal_frequency returns the median distance between two
+            consecutive measures.
+ 
+            The function takes the following arguments:
+
+            @measures       An array of spikes as returned from get_spikes
+
+        """
+
+        tmp_array = np.asarray(measures)
+
+        return np.median( tmp_array[1:] - tmp_array[:-1] ) 
+
+
+    def get_best_offset(self, measures, frequency=None):
+        """
+            get_best_offset returns a optimal starting-offset for a hypthetical
+            signal with frequency as specified by frequency-variable
+            and returns a distance-value for each measure in measures to this 
+            signal at the optimal over-all offset.
+
+            The function takes the following arguments:
+
+            @measures       An array of spikes as returned from get_spikes
+
+            @frequency      The frequency of the signal, if not submitted
+                            it is derived as the median inter-measure
+                            distance in measures.
+
+        """
+
+        if frequency is None:
+            frequency = self.get_signal_frequency(measures)
+
+        dist_results = []
+
+
+        for offset in xrange(int(np.ceil(frequency))):
+
+            quality = 0
+
+            for m in measures:
+
+                #n_signal_dist is peak number of the closest signal peak
+                n_signal_dist = np.round((m - offset) / frequency)
+
+                quality += ( m - offset + frequency * n_signal_dist)**2
+
+            dist_results.append(quality)
+
+        return np.asarray(dist_results).argmin()
+
+
+    def get_spike_quality(self, measures, offset=None, frequency=None):
+        """
+            get_spike_quality returns a quality-index for each spike
+            as to how well it fits the signal.
+
+            If no offset is supplied, it is derived from measures.
+
+            Equally so for the frequency.
+
+            The function takes the following arguments:
+
+            @measures       An array of spikes as returned from get_spikes
+
+            @offset         Optional. Sets the offset of signal start
+
+            @frequency      The frequency of the signal, if not submitted
+                            it is derived as the median inter-measure
+                            distance in measures.
+
+        """
+
+        if frequency is None:
+            frequency = self.get_signal_frequency(measures)
+
+        if offset is None:
+            offset = self.get_best_offset(measures, frequency)
+
+
+        quality_results = []
+
+        for m in measures:
+
+            #n_signal_dist is peak number of the closest signal peak
+            n_signal_dist = np.round((m - offset) / frequency)
+
+            quality_results.append( ( m - offset + frequency * n_signal_dist)**2 )
+
+
+       return quality_results 
+
+    def get_true_signal(self, max_value, n, measures, measures_qualities= None,
+        offset=None, frequency=None):
+
+        """
+            get_true_signal returns the best spike pattern n peaks that 
+            describes the signal (described by offset and frequency).
+
+            The function takes the following arguments:
+
+            @max_value      The number of pixel in the current dimension
+
+            @n              The number of peaks expected
+
+            @measures       An array of spikes as returned from get_spikes
+
+            @measures_qualities
+                            Optional. A quality-index for each measure,
+                            high values representing bad quality. If not
+                            set, it will be derived from signal.
+
+            @offset         Optional. Sets the offset of signal start
+
+            @frequency      The frequency of the signal, if not submitted
+                            it is derived as the median inter-measure
+                            distance in measures.    
+
+        """ 
+
+        if frequency is None:
+            frequency = self.get_signal_frequency(measures)
+
+        if offset is None:
+            offset = self.get_best_offset(measures, frequency)
+
+        if measures_quality is None:
+            measures_quality = get_spike_quality(self, measures, offset, frequency)
+
+        m_array = np.asarray(measures)
+        mq_array = np.asarray(measures_quality)
+
+        start_peak = 0
+        start_position_qualities = []
+        while offset + frequency * (n + start_peak) < max_value:
+
+            quality = 0
+            for pos in xrange(n):
+               
+                #This heavily punishes missing signals... 
+                quality += ((m_array - (offset + frequency * (n + pos + start_peak))).min())**2
+
+            start_position_qualities.append(quality)
+
+            start_peak += 1
+
+        best_start_pos = int(np.asarray(start_position_qualities).argmin())
+
+        
+        quality_threshold = np.mean(mq_array) + np.std(mq_array) * 3
+
+        ideal_signal = np.arange(n)*frequeny + offset + best_start_pos * frequency
+
+        best_fit = []
+
+        for pos in xrange(len(ideal_signal)):
+
+            best_measure = float( m_array[((m_array - float(ideal_signal[pos]))**2).argmin()] )
+            if (ideal_signal - beast_measure).argmin() == pos:
+                if (ideal_signal[pos] - best_measure)**2 < quality_threshold:
+                    best_fit.append(best_measure)
+                else:
+                    best_fit.append(ideal_signal[pos]
+            else:
+                best_fit.append(ideal_signal[pos]
+
+
+        return ideal_signal
+ 
+            
     def get_signal_position_and_frequency(self, measures, segments, verboise=False):
         """
             get_signal_position_and_frequency takes an array of spikes

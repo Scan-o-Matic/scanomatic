@@ -199,6 +199,12 @@ class Grid_Cell():
 
         return features_dict       
 
+    def get_first_dim_as_tuple(self):
+        return (self.rect[0], self.rect[0] + self.get_width())
+
+    def get_second_dim_as_tuple(self):
+        return (self.rect[1], self.rect[1] + self.get_height())
+
     def get_rect_size(self):
         return self.rect[2:4]
 

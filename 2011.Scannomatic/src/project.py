@@ -17,6 +17,7 @@
 
 import matplotlib.image as plt_img
 #import elementtree.ElementTree as ET
+import types
 import numpy as np
 from time import time
 from argparse import ArgumentParser #, FileType
@@ -46,7 +47,7 @@ def print_progress_bar(fraction, size=40):
     print 
     print
     print prog_str
-    print
+    printmeon = True
     print
 
 def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
@@ -96,9 +97,17 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
 
     if graph_watch != None:
         from matplotlib import pyplot
-        watch_reading = {}
-        watch_blob = []
-        watch_img = []
+        from matplotlib.font_manager import FontProperties
+        from PIL import Image
+        watch_reading = [] 
+
+        fontP = FontProperties()
+        fontP.set_size('xx-small')
+
+        pict_target_width = 40
+        pyplot.axis((0, (pict_target_width + 1) * 217, 0, pict_target_width * 30), frameon=False)
+        pyplot.title('Plate: ' + str(graph_watch[0]) + ', position: (' + str(graph_watch[1]) + ', ' + str(graph_watch[2]) + ')')
+        plot_labels = []
 
     log_file = conf.Config_File(log_file_path)
 
@@ -118,6 +127,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
     if supress_analysis == True:
         project_image = Project_Image([pinning_matrices[graph_watch[0]]])
         graph_watch[0] = 0
+        plates = 1
     else:
         try:
             fh = open(outdata_file_path,'w')
@@ -193,7 +203,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
             print
 
         features = project_image.get_analysis( img_dict_pointer['File'], \
-            plate_positions, img_dict_pointer['grayscale_values'], use_fallback, use_otsu )
+            plate_positions, img_dict_pointer['grayscale_values'], use_fallback, use_otsu, watch_colony=graph_watch, supress_other=supress_analysis )
 
         if supress_analysis != True:
             fh.write('<scan index="' + str(image_pos) + '">')
@@ -209,8 +219,39 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                 #ET_scan_valid.text = str(0)
         else:
             if graph_watch != None:
-                pass
-            
+
+                pict_size = project_image.watch_grid_size
+                pict_scale = pict_target_width / float(pict_size[1])
+                pict_resize = (int(pict_size[0] * pict_scale), int(pict_size[1] * pict_scale))
+
+
+                pyplot.imshow(Image.fromstring('L', (project_image.watch_scaled.shape[1], \
+                    project_image.watch_scaled.shape[0]), \
+                    project_image.watch_scaled.tostring()).resize(pict_resize, Image.BICUBIC), \
+                    extent=(image_pos * pict_target_width, (image_pos+1)*pict_target_width-1, 10, 10 + pict_resize[1]))
+
+
+                pyplot.imshow(Image.fromstring('L', (project_image.watch_blob.shape[1], \
+                    project_image.watch_blob.shape[0]), \
+                    project_image.watch_blob.tostring()).resize(pict_resize, Image.BICUBIC), \
+                    extent=(image_pos * (pict_target_width), (image_pos+1)*(pict_target_width)-1, 10 + pict_resize[1] + 1, 10 + 2 * pict_resize[1] + 1))
+
+
+
+                #project_image.watch_blob.shape
+                tmp_results = []
+                for cell_item in project_image.watch_results.keys():
+                    for measure in project_image.watch_results[cell_item].keys():
+                        tmp_results.append(project_image.watch_results[cell_item][measure])
+                        if len(watch_reading) == 0:
+                            plot_labels.append(cell_item + ':' + measure)
+                watch_reading.append(tmp_results)    
+
+                #HACK START: DEBUGGING
+                #if image_pos < 200:
+                #    image_pos = -1 
+                #HACK END
+
             if supress_analysis != True:
                 fh.write(str(1) + '</scan-valid>')
                 #ET_scan_valid.text = str(1)
@@ -284,11 +325,46 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
             print "Image took", time() - scan_start_time,"seconds."
             print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
 
-    if supress_analysis != False:
+    if supress_analysis != True:
         fh.write('</scans>')
         fh.write('</project>')
         fh.close()
 
+    if  graph_watch != None:
+        Y = np.asarray(watch_reading)
+        X = (np.arange(0, len(image_dictionaries))+0.5)*pict_target_width
+        graphcolors='rgbycmk'
+        for i in xrange(int(Y.shape[1])):
+            if type(Y[0,i]) != np.ndarray and type(Y[0,i]) != types.ListType and type(Y[0,i]) != types.TupleType:
+                try:
+                    if Y[:,i].max() == Y[:,i].min():
+                        scale_factor = 0
+                    else:
+                        scale_factor =  pict_target_width * 3 / float(Y[:,i].max() - Y[:,i].min())
+
+                    sub_term = float(Y[:,i].min())
+                    print Y[:,i]
+                    print scale_factor, Y[:,i].min(), Y[:,i].max()
+                    print (Y[:,i] - sub_term) * scale_factor
+                    print "graphing...\n\n"
+                    pyplot.plot(X, (Y[:,i] - sub_term) * scale_factor + \
+                        3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
+                        16,\
+                        #graphcolors[i%len(graphcolors)] + '-',\
+                        label=plot_labels[i])
+
+                except TypeError:
+                    print "*** Error on", plot_labels[i], "because of something"
+
+        pyplot.legend(loc=1, ncol=3, prop=fontP, bbox_to_anchor = (1.0, -1.0))
+        if graph_output != None:
+            try:
+                pyplot.savefig(graph_output, dpi=300)
+            except:
+                pyplot.show()
+        else: 
+            pyplot.show()
+        return False
     #if verboise:
     #    print "*** Building report"
     #    print
@@ -320,7 +396,7 @@ class Project_Image():
             self.R.append(None)
 
     def get_analysis(self, im_path, features, grayscale_values, \
-            use_fallback=False, use_otsu=True):
+            use_fallback=False, use_otsu=True, watch_colony=None, supress_other=False):
 
         if im_path != None:
             self._im_path = im_path
@@ -372,11 +448,17 @@ class Project_Image():
             self._grid_arrays[grid_array].get_analysis( \
                 self.im[ upper:lower, left:right ], \
                 gs_values=gs_values, use_fallback=use_fallback, use_otsu=use_otsu, median_coeff=None, \
-                verboise=False, visual=False)
+                verboise=False, visual=False, watch_colony=watch_colony, supress_other=supress_other)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
             self.R[grid_array] = self._grid_arrays[grid_array].R
 
+        if watch_colony != None:
+            self.watch_grid_size = self._grid_arrays[watch_colony[0]]._grid_cell_size
+            self.watch_source = self._grid_arrays[watch_colony[0]].watch_source
+            self.watch_scaled = self._grid_arrays[watch_colony[0]].watch_scaled
+            self.watch_blob = self._grid_arrays[watch_colony[0]].watch_blob
+            self.watch_results = self._grid_arrays[watch_colony[0]].watch_results
         return self.features
 
 

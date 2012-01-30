@@ -2,14 +2,9 @@
 ##### THE WHAT NEXT PLACE #####
    ##########################
 
-** Check why not analysing all plates???
-
 ** Check if OpenCV is installed and if not, use fallback analysis
 
 ** Clean up code in Fixture GUI
-
-** Report building takes about as long as analysis when processing a project
-    Look at appending sections
 
 ** Make experiment last until analysis of last image is done
 
@@ -37,6 +32,11 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+** Report building takes about as long as analysis when processing a project
+    Look at appending sections
+
+** Check why not analysing all plates???
 
 ** Grayscale norm!
 
