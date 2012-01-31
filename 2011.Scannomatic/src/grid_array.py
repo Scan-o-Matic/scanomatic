@@ -211,7 +211,7 @@ class Grid_Array():
         self.watch_blob = None
         self.watch_results = None
 
-        best_fit_rows, best_fit_columns, R = self._analysis.get_analysis(im, self._pinning_matrix, use_otsu, median_coeff, verboise, visual)
+        best_fit_rows, best_fit_columns, R = self._analysis.get_analysis(im, self._pinning_matrix, use_otsu, median_coeff, verboise, False) #visual #instead of false there...
 
         self.R = R
 
@@ -230,6 +230,7 @@ class Grid_Array():
 
         if self._grid_cell_size == None:
             self._grid_cell_size = self._analysis.best_fit_frequency
+            #print self._grid_cell_size
             rect_size = self._grid_cell_size
             has_previous_rect = False
  
@@ -255,32 +256,35 @@ class Grid_Array():
                 #for y in xrange(im.shape[1]):
                     #im[x,y] = transformation_matrix[im[x,y]]
         #print "*** Analysing grid:"
-        import matplotlib.pyplot as plt
-        plt.imshow(im)
+        if visual:
+            import matplotlib.pyplot as plt
+            plt.imshow(im)
 
         for row in xrange(self._pinning_matrix[0]):
-            plt.plot(\
-                np.ones(len(best_fit_columns))*best_fit_rows[row],
-                np.array(best_fit_columns),
-                'r-')
-            for column in xrange(self._pinning_matrix[1]):
+            if visual:
                 plt.plot(\
-                    np.array(best_fit_rows),
-                    np.ones(len(best_fit_rows))*best_fit_columns[column],
+                    np.ones(len(best_fit_columns))*best_fit_rows[row],
+                    np.array(best_fit_columns),
                     'r-')
+            for column in xrange(self._pinning_matrix[1]):
+                if visual:
+                    plt.plot(\
+                        np.array(best_fit_rows),
+                        np.ones(len(best_fit_rows))*best_fit_columns[column],
+                        'r-')
                 if supress_other == False or (watch_colony != None and \
                         watch_colony[1] == row and watch_colony[2] == column):
 
                     self._grid_cells[row][column].set_center( \
                         (best_fit_rows[row], best_fit_columns[column]) , rect_size)
 
-                    coord_1st = self._grid_cells[row][column].get_first_dim_as_tuple()
-                    coord_2nd = self._grid_cells[row][column].get_second_dim_as_tuple()
+                    coord_2nd = self._grid_cells[row][column].get_first_dim_as_tuple()
+                    coord_1st = self._grid_cells[row][column].get_second_dim_as_tuple()
                     #ul = self._grid_cells[row][column].get_top_left()
                     #lr = self._grid_cells[row][column].get_bottom_right()
                     if transformation_matrix != None:
                         #There's probably some faster way
-                        print coord_1st, coord_2nd
+                        #print coord_1st, coord_2nd, im.shape
                         for x in xrange(int(coord_1st[0]),int(np.ceil(coord_1st[1]))):
                             for y in xrange(int(coord_2nd[0]),int(np.ceil(coord_2nd[1]))):
                                 im[x,y] = transformation_matrix[im[x,y]]
@@ -295,10 +299,12 @@ class Grid_Array():
                             self.watch_scaled = im[coord_1st[0]:coord_1st[1],\
                                 coord_2nd[0]:coord_2nd[1]]
                             
-                    plt.plot(self._grid_cells[row][column].center[0],
-                        self._grid_cells[row][column].center[1] , 'k.')
+                    if visual:
+                        pass
+                        #plt.plot(self._grid_cells[row][column].center[0],
+                        #    self._grid_cells[row][column].center[1] , 'k.')
 
-                    plt.plot(np.asarray(coord_1st),np.asarray(coord_2nd),'k')              
+                        #plt.plot(np.asarray(coord_1st),np.asarray(coord_2nd),'k')              
 
                     #This happens only the first time
                     if has_previous_rect == False:
@@ -314,6 +320,7 @@ class Grid_Array():
                         if row == watch_colony[1] and column == watch_colony[2]:
                             self.watch_blob = self._grid_cells[row][column]._analysis_items['blob'].filter_array
                             self.watch_results = self._features[row][column]
-        plt.show()
+        if visual:    
+            plt.show()
                 #print str(((row+1)*self._pinning_matrix[1] + column+1)/total_steps) + "%"
         return self._features 

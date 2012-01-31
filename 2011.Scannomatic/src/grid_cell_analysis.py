@@ -140,7 +140,11 @@ class Cell_Item():
             self.features['median'] = np.median(self.grid_array)
             self.features['mean'] = self.grid_array.mean()
             self.features['IQR'] = mquantiles(self.grid_array,prob=[0.25,0.75])
-            self.features['IQR_mean'] = tmean(self.grid_array,self.features['IQR'])
+            try:
+                self.features['IQR_mean'] = tmean(self.grid_array,self.features['IQR'])
+            except:
+                self.features['IQR_mean'] = None
+
         else:
             feature_array = ma.masked_array(self.grid_array, mask=abs(self.filter_array - 1))
             self.features['median'] = ma.median(feature_array)

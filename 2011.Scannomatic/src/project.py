@@ -15,6 +15,8 @@
 # DEPENDENCIES
 #
 
+import matplotlib
+#matplotlib.use('Agg')
 import matplotlib.image as plt_img
 #import elementtree.ElementTree as ET
 import types
@@ -103,10 +105,11 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
 
         fontP = FontProperties()
         fontP.set_size('xx-small')
-
+        plt_watch_colony = pyplot.Figure()
+        plt_watch_1 = plt_watch_colony.add_subplot(411)
         pict_target_width = 40
-        pyplot.axis((0, (pict_target_width + 1) * 217, 0, pict_target_width * 30), frameon=False)
-        pyplot.title('Plate: ' + str(graph_watch[0]) + ', position: (' + str(graph_watch[1]) + ', ' + str(graph_watch[2]) + ')')
+        plt_watch_1.axis((0, (pict_target_width + 1) * 217, 0, pict_target_width * 3), frameon=False,
+            title='Plate: ' + str(graph_watch[0]) + ', position: (' + str(graph_watch[1]) + ', ' + str(graph_watch[2]) + ')')
         plot_labels = []
 
     log_file = conf.Config_File(log_file_path)
@@ -225,13 +228,13 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                 pict_resize = (int(pict_size[0] * pict_scale), int(pict_size[1] * pict_scale))
 
 
-                pyplot.imshow(Image.fromstring('L', (project_image.watch_scaled.shape[1], \
+                plt_watch_1.imshow(Image.fromstring('L', (project_image.watch_scaled.shape[1], \
                     project_image.watch_scaled.shape[0]), \
                     project_image.watch_scaled.tostring()).resize(pict_resize, Image.BICUBIC), \
                     extent=(image_pos * pict_target_width, (image_pos+1)*pict_target_width-1, 10, 10 + pict_resize[1]))
 
 
-                pyplot.imshow(Image.fromstring('L', (project_image.watch_blob.shape[1], \
+                plt_watch_1.imshow(Image.fromstring('L', (project_image.watch_blob.shape[1], \
                     project_image.watch_blob.shape[0]), \
                     project_image.watch_blob.tostring()).resize(pict_resize, Image.BICUBIC), \
                     extent=(image_pos * (pict_target_width), (image_pos+1)*(pict_target_width)-1, 10 + pict_resize[1] + 1, 10 + 2 * pict_resize[1] + 1))
@@ -246,8 +249,9 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                         if len(watch_reading) == 0:
                             plot_labels.append(cell_item + ':' + measure)
                 watch_reading.append(tmp_results)    
-
+                
                 #HACK START: DEBUGGING
+                print "*** R:", project_image.R
                 #if image_pos < 200:
                 #    image_pos = -1 
                 #HACK END
@@ -311,6 +315,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                                     fh.write('</' + str(item) + '>')
                             fh.write('</grid-cell>')
                     fh.write('</grid-cells>')
+                    fh.write('</plate>')
                 fh.write('</plates>')
 
         image_pos -= 1
@@ -333,33 +338,40 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
     if  graph_watch != None:
         Y = np.asarray(watch_reading)
         X = (np.arange(0, len(image_dictionaries))+0.5)*pict_target_width
-        graphcolors='rgbycmk'
+        #graphcolors='rgbycmk'
+        cur_plt_graph = ""
+        plt_graph_i = 1
         for i in xrange(int(Y.shape[1])):
             if type(Y[0,i]) != np.ndarray and type(Y[0,i]) != types.ListType and type(Y[0,i]) != types.TupleType:
                 try:
                     if Y[:,i].max() == Y[:,i].min():
                         scale_factor = 0
                     else:
-                        scale_factor =  pict_target_width * 3 / float(Y[:,i].max() - Y[:,i].min())
+                        scale_factor =  100 / float(Y[:,i].max() - Y[:,i].min())
 
                     sub_term = float(Y[:,i].min())
-                    print Y[:,i]
-                    print scale_factor, Y[:,i].min(), Y[:,i].max()
-                    print (Y[:,i] - sub_term) * scale_factor
-                    print "graphing...\n\n"
-                    pyplot.plot(X, (Y[:,i] - sub_term) * scale_factor + \
-                        3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
-                        16,\
+
+                    if cur_plt_graph != plot_labels[i].split(":")[0]:
+                        cur_plt_graph = plot_labels[i].split(":")[0]
+                        if plt_graph_i > 1:
+                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -1.0))
+                        plt_graph_i += 1
+                        plt_watch_curves = plt_watch_colony.add_subplot(410 + plt_graph_i,
+                            title=cur_plt_graph)
+ 
+                    plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor, #+ \
+                        #3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
+                        #16,\
                         #graphcolors[i%len(graphcolors)] + '-',\
-                        label=plot_labels[i])
+                        label=plot_labels[i][len(cur_plt_graph)+1:])
 
                 except TypeError:
                     print "*** Error on", plot_labels[i], "because of something"
 
-        pyplot.legend(loc=1, ncol=3, prop=fontP, bbox_to_anchor = (1.0, -1.0))
+        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -1.0))
         if graph_output != None:
             try:
-                pyplot.savefig(graph_output, dpi=300)
+                plt_watch_colony.savefig(graph_output, dpi=300)
             except:
                 pyplot.show()
         else: 

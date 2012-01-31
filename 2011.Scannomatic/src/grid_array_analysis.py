@@ -127,55 +127,67 @@ class Grid_Analysis():
                 print positions[dimension]
                 print 
 
-            best_fit_positions[dimension] = self.get_true_signal(\
-                im.shape[dimension], pinning_matrix[dimension], 
+            best_fit_frequency[dimension] = self.get_signal_frequency(\
                 positions[dimension])
 
+            best_fit_positions[dimension] = self.get_true_signal(\
+                im.shape[int(dimension==0)], pinning_matrix[dimension], 
+                positions[dimension], \
+                frequency=best_fit_frequency[dimension] )
             ###START HERE MARKING OUT ALL OLD STUFF...
-            best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
-                self.get_signal_position_and_frequency( measures[dimension],
-                    pinning_matrix[dimension], verboise )            
+            #best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
+                #self.get_signal_position_and_frequency( measures[dimension],
+                    #pinning_matrix[dimension], verboise )            
  
             if verboise:
                 print "*** Best fit:"
                 print "* Elements", pinning_matrix[dimension]
-                print "* Position", best_fit_start_pos[dimension]
+                print "* Positions", best_fit_positions[dimension]
                 print 
 
             #DEBUGHACK
-            visual = True
+            #visual = True
             #DEBUGHACK - END
 
-            if best_fit_start_pos[dimension] != None:
+            if visual:
+                import matplotlib.pyplot as plt
+                Y = np.ones(pinning_matrix[dimension]) * 140
+                plt.plot(np.array(best_fit_positions[dimension]),\
+                    Y ,'g*') * 50
+                plt.show()
+                #plt.savefig('signal_fit.png')
+
+            #if best_fit_start_pos[dimension] != None:
  
-                best_fit_positions[dimension] = \
-                    positions[dimension][best_fit_start_pos[dimension] : \
-                        best_fit_start_pos[dimension] + \
-                        pinning_matrix[dimension] ]
-                if visual:
+                #best_fit_positions[dimension] = \
+                    #positions[dimension][best_fit_start_pos[dimension] : \
+                        #best_fit_start_pos[dimension] + \
+                        #pinning_matrix[dimension] ]
+
+                #if visual:
                    
-                    import matplotlib.pyplot as plt
-                    m_im = im.mean(axis=dimension)
-                    plt.plot(np.arange(len(m_im)), m_im, 'b-')
-                    Y = np.ones(len(best_fit_positions[dimension])) * 150
-                    plt.plot(np.array(best_fit_positions[dimension]),\
-                        Y ,'r*')
+                    #import matplotlib.pyplot as plt
+                    #m_im = im.mean(axis=dimension)
+                    #plt.plot(np.arange(len(m_im)), m_im, 'b-')
+                    #Y = np.ones(len(best_fit_positions[dimension])) * 150
+                    #plt.plot(np.array(best_fit_positions[dimension]),\
+                        #Y ,'r*')
 
-                best_fit_positions[dimension] = \
-                    self.get_inserts_discards_extrapolations(\
-                        best_fit_positions[dimension],\
-                        best_fit_frequency[dimension],\
-                        pinning_matrix[dimension])
+                #best_fit_positions[dimension] = \
+                    #self.get_inserts_discards_extrapolations(\
+                        #best_fit_positions[dimension],\
+                        #best_fit_frequency[dimension],\
+                        #pinning_matrix[dimension])
 
-                if visual:
-                    Y = np.ones(len(positions[dimension])) * 140
-                    plt.plot(np.array(positions[dimension]),\
-                        Y ,'g*') * 50
-                    Y = np.ones(len(best_fit_positions[dimension])) * 160
-                    plt.plot(np.array(best_fit_positions[dimension]),\
-                        Y ,'b*')
+                #if visual:
+                    #Y = np.ones(len(positions[dimension])) * 140
+                    #plt.plot(np.array(positions[dimension]),\
+                        #Y ,'g*') * 50
+                    #Y = np.ones(len(best_fit_positions[dimension])) * 160
+                    #plt.plot(np.array(best_fit_positions[dimension]),\
+                        #Y ,'b*')
                     #plt.get_axes().set_ylim(ymin=-1,ymax=3)
-                    plt.show()
+                    #plt.show()
 
             if best_fit_positions[dimension] != None:
 
@@ -223,7 +235,7 @@ class Grid_Analysis():
         return np.median( tmp_array[1:] - tmp_array[:-1] ) 
 
 
-    def get_best_offset(self, measures, frequency=None):
+    def get_best_offset(self, n, measures, frequency=None):
         """
             get_best_offset returns a optimal starting-offset for a hypthetical
             signal with frequency as specified by frequency-variable
@@ -231,6 +243,8 @@ class Grid_Analysis():
             signal at the optimal over-all offset.
 
             The function takes the following arguments:
+
+            @n              The number of peaks expected
 
             @measures       An array of spikes as returned from get_spikes
 
@@ -248,21 +262,26 @@ class Grid_Analysis():
 
         for offset in xrange(int(np.ceil(frequency))):
 
-            quality = 0
+            quality = [] 
 
             for m in measures:
 
+                #IMPROVE THIS ONE...
                 #n_signal_dist is peak number of the closest signal peak
-                n_signal_dist = np.round((m - offset) / frequency)
+                n_signal_dist = np.round((m - offset) / float(frequency))
 
-                quality += ( m - offset + frequency * n_signal_dist)**2
+                if abs(offset + frequency * n_signal_dist - m) > 0:
+                    quality.append(( offset + frequency * n_signal_dist - m)**2)
+                else:
+                    quality.append(0)
+            dist_results.append(np.sum(np.sort(np.asarray(quality))[:n]))
 
-            dist_results.append(quality)
-
+        #print np.argsort(np.asarray(dist_results))
+        #print np.sort(np.asarray(dist_results))
         return np.asarray(dist_results).argmin()
 
 
-    def get_spike_quality(self, measures, offset=None, frequency=None):
+    def get_spike_quality(self, measures, n=None, offset=None, frequency=None):
         """
             get_spike_quality returns a quality-index for each spike
             as to how well it fits the signal.
@@ -275,6 +294,9 @@ class Grid_Analysis():
 
             @measures       An array of spikes as returned from get_spikes
 
+            @n              The number of peaks expected (needed if offset
+                            is not given)
+
             @offset         Optional. Sets the offset of signal start
 
             @frequency      The frequency of the signal, if not submitted
@@ -286,9 +308,12 @@ class Grid_Analysis():
         if frequency is None:
             frequency = self.get_signal_frequency(measures)
 
-        if offset is None:
-            offset = self.get_best_offset(measures, frequency)
+        if offset is None and n != None:
+            offset = self.get_best_offset(n, measures, frequency)
 
+        if offset is None:
+            print "*** ERROR: You must provide n if you don't provide offset"
+            return None
 
         quality_results = []
 
@@ -300,7 +325,7 @@ class Grid_Analysis():
             quality_results.append( ( m - offset + frequency * n_signal_dist)**2 )
 
 
-       return quality_results 
+        return quality_results 
 
     def get_true_signal(self, max_value, n, measures, measures_qualities= None,
         offset=None, frequency=None):
@@ -334,47 +359,63 @@ class Grid_Analysis():
             frequency = self.get_signal_frequency(measures)
 
         if offset is None:
-            offset = self.get_best_offset(measures, frequency)
+            offset = self.get_best_offset(n, measures, frequency)
 
-        if measures_quality is None:
-            measures_quality = get_spike_quality(self, measures, offset, frequency)
+        if measures_qualities is None:
+            measures_qualities = self.get_spike_quality(measures, n, offset, frequency)
 
         m_array = np.asarray(measures)
-        mq_array = np.asarray(measures_quality)
+        mq_array = np.asarray(measures_qualities)
 
+        
         start_peak = 0
         start_position_qualities = []
+        #print offset, frequency, n, start_peak, max_value
         while offset + frequency * (n + start_peak) < max_value:
 
+            covered_peaks = 0
             quality = 0
+            ideal_peaks = (np.arange(n) + start_peak) * frequency + offset
+
             for pos in xrange(n):
                
-                #This heavily punishes missing signals... 
-                quality += ((m_array - (offset + frequency * (n + pos + start_peak))).min())**2
+                distances = (m_array - float(ideal_peaks[pos]))**2
+                closest = distances.argmin()
+                #print closest, ((ideal_peaks - float(m_array[closest]))**2).argmin(), pos, np.round((m_array[closest]-offset) / float(frequency)), pos + start_peak
+                if np.round((m_array[closest]-offset) / float(frequency)) == pos + start_peak:
+                    #Most difference with small errors... should work ok. 
+                    quality += distances[closest]
+                    #if distances[closest] >= 1:
+                    #    quality += np.log2(distances[closest])
+                    #quality += ((m_array - (offset + frequency * (n + pos + start_peak))).min())**2
+                    #quality += np.log2(((m_array - (offset + frequency * (n + pos + start_peak)))**2).min())
+                    covered_peaks += 1
 
-            start_position_qualities.append(quality)
-
+            if covered_peaks > 0:
+                start_position_qualities.append(covered_peaks + 1 / ((quality+1) / covered_peaks))
+            else:
+                start_position_qualities.append(0)
             start_peak += 1
 
-        best_start_pos = int(np.asarray(start_position_qualities).argmin())
-
+        best_start_pos = int(np.asarray(start_position_qualities).argmax())
+        #print start_position_qualities
         
         quality_threshold = np.mean(mq_array) + np.std(mq_array) * 3
 
-        ideal_signal = np.arange(n)*frequeny + offset + best_start_pos * frequency
+        ideal_signal = np.arange(n)*frequency + offset + best_start_pos * frequency
 
         best_fit = []
 
         for pos in xrange(len(ideal_signal)):
 
             best_measure = float( m_array[((m_array - float(ideal_signal[pos]))**2).argmin()] )
-            if (ideal_signal - beast_measure).argmin() == pos:
+            if (ideal_signal - best_measure).argmin() == pos:
                 if (ideal_signal[pos] - best_measure)**2 < quality_threshold:
                     best_fit.append(best_measure)
                 else:
-                    best_fit.append(ideal_signal[pos]
+                    best_fit.append(ideal_signal[pos])
             else:
-                best_fit.append(ideal_signal[pos]
+                best_fit.append(ideal_signal[pos])
 
 
         return ideal_signal
@@ -576,7 +617,7 @@ class Grid_Analysis():
             import matplotlib.pyplot as plt
             plt.plot(np.arange(len(im_1D)),im_1D,'b-')
             plt.plot(np.arange(len(im_1D2)), Y, 'g-')
-            print self.threshold, median_coeff
+            #print self.threshold, median_coeff
             plt.axhline(y=self.threshold, color = 'r')
             plt.axhline(y=np.median(im_1D), color = 'g')
 
@@ -635,10 +676,11 @@ if __name__ == "__main__":
         #correct_pos, measures = simulate(measurements, segments)
         positions, measures = get_spikes(im, 1)
         if verboise:
-            print len(measures)
+            pass
+            #print len(measures)
         est_pos, frequency = get_signal_position_and_frequency(measures, segments)
         if verboise:
-            print correct_pos, est_pos
+            #print correct_pos, est_pos
             print list(measures)
             print list(positions)
         if correct_pos == est_pos:
