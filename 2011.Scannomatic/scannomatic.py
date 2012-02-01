@@ -82,7 +82,7 @@ class Application_Window():
         self._handle = 0
         if USER_OS.name == "windows":
             self._handle = self.window.window.handle
-        window.set_title("Scannomatic v0.98")
+        window.set_title("Scannomatic v0.99")
 
         self.DMS("Program startup","Loading config",100)
 

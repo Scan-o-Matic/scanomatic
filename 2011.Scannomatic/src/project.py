@@ -105,8 +105,10 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
 
         fontP = FontProperties()
         fontP.set_size('xx-small')
-        plt_watch_colony = pyplot.Figure()
+        plt_watch_colony = pyplot.figure()
+        plt_watch_colony.subplots_adjust(hspace=2, wspace=2)
         plt_watch_1 = plt_watch_colony.add_subplot(411)
+        plt_watch_1.axis("off")
         pict_target_width = 40
         plt_watch_1.axis((0, (pict_target_width + 1) * 217, 0, pict_target_width * 3), frameon=False,
             title='Plate: ' + str(graph_watch[0]) + ', position: (' + str(graph_watch[1]) + ', ' + str(graph_watch[2]) + ')')
@@ -354,28 +356,36 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                     if cur_plt_graph != plot_labels[i].split(":")[0]:
                         cur_plt_graph = plot_labels[i].split(":")[0]
                         if plt_graph_i > 1:
-                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -1.0))
+                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.3))
                         plt_graph_i += 1
                         plt_watch_curves = plt_watch_colony.add_subplot(410 + plt_graph_i,
                             title=cur_plt_graph)
- 
-                    plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor, #+ \
+
+                    if scale_factor != 0: 
+                        plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor, #+ \
                         #3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
                         #16,\
                         #graphcolors[i%len(graphcolors)] + '-',\
-                        label=plot_labels[i][len(cur_plt_graph)+1:])
+                            label=plot_labels[i][len(cur_plt_graph)+1:])
+                    else:
+                        plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor+5*i, #+ \
+                        #3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
+                        #16,\
+                        #graphcolors[i%len(graphcolors)] + '-',\
+                            label=plot_labels[i][len(cur_plt_graph)+1:])
+
 
                 except TypeError:
                     print "*** Error on", plot_labels[i], "because of something"
 
-        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -1.0))
+        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.3))
         if graph_output != None:
             try:
                 plt_watch_colony.savefig(graph_output, dpi=300)
             except:
-                pyplot.show()
+                plt_watch_colony.show()
         else: 
-            pyplot.show()
+            plt_watch_colony.show()
         return False
     #if verboise:
     #    print "*** Building report"

@@ -2,6 +2,14 @@
 ##### Changed in Scannomatic 0.99 #####
    ##################################
 
+*** Grid-detection re-written using no heuristics (?!) and 
+    producing much more robust grid-placement
+
+*** Converted the project.py command-line behaviour to use
+    argparser for increased user-friendliness. Added possibility
+    to track a colony through the time-series to investigate
+    the robustness of the analysis methods.
+
 *** Manual hardcoded xml production to reduce memory foot print.
 
 *** In xml <cells> and <cell> where changed to <grid-cells> and
