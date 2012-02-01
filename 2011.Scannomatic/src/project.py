@@ -221,6 +221,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         if features == None:
             if supress_analysis != True:
                 fh.write(str(0) + '</scan-valid>')
+                fh.write('</scan>')
                 #ET_scan_valid.text = str(0)
         else:
             if graph_watch != None:
@@ -319,7 +320,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                     fh.write('</grid-cells>')
                     fh.write('</plate>')
                 fh.write('</plates>')
-
+                fh.write('</scan>')
         image_pos -= 1
 
         #DEBUGHACK
