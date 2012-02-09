@@ -316,12 +316,16 @@ class Blob(Cell_Item):
         x_size = (stencil.shape[0] - 1) / 2
         y_size = (stencil.shape[1] - 1) / 2
 
-        print stencil.shape,\
-            self.filter_array[center[0] - x_size : center[0] + x_size,\
-            center[1] - y_size : center[1] + y_size].shape
+        if stencil.shape == \
+            self.filter_array[center[0] - x_size : center[0] + x_size +1,\
+            center[1] - y_size : center[1] + y_size + 1].shape:
+        
+            self.filter_array[center[0] - x_size : center[0] + x_size + 1, 
+                center[1] - y_size : center[1] + y_size + 1] += stencil
 
-        self.filter_array[center[0] - x_size : center[0] + x_size + 1, 
-            center[1] - y_size : center[1] + y_size + 1] += stencil
+        else:
+
+            self.edge_detect()
  
     def get_round_kernel(self, radius=6):
 
@@ -549,7 +553,8 @@ class Blob(Cell_Item):
 
             for item in xrange(number_of_labels):
 
-                cur_pxs = np.sum( (label_array == (item + 1)) ) 
+                cur_item = (label_array == (item + 1))
+                cur_pxs = np.sum( cur_item ) 
 
                 oneD = np.where(np.sum(cur_item,1) > 0 )[0]
                 dim1 = oneD[-1] -  oneD[0]

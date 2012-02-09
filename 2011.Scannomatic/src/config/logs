@@ -7039,4 +7039,519 @@
 *
 * 
 
+*** ANALYSIS
+* 09 Feb 2012 16:38:14
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 09 Feb 2012 16:38:21
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 09 Feb 2012 16:38:21
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 09 Feb 2012 16:38:34
+*
+* Alternative measures: see in program (from mean), 113543.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 16:38:37
+*
+* Alternative measures: see in program (from mean), 113543.0 (from median)
+
+*** TERMINATING
+* 09 Feb 2012 16:38:58
+*
+* 
+
+*** ANALYSIS
+* 09 Feb 2012 16:40:07
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 09 Feb 2012 16:40:14
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 09 Feb 2012 16:40:14
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 09 Feb 2012 16:40:24
+*
+* Alternative measures: see in program (from mean), 138604.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 16:40:34
+*
+* Alternative measures: see in program (from mean), 138604.0 (from median)
+
+*** TERMINATING
+* 09 Feb 2012 16:40:42
+*
+* 
+
+*** ANALYSIS
+* 09 Feb 2012 17:06:35
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 09 Feb 2012 17:06:47
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 09 Feb 2012 17:06:47
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 09 Feb 2012 17:06:55
+*
+* Alternative measures: see in program (from mean), 97055.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:07:02
+*
+* Alternative measures: see in program (from mean), 97055.0 (from median)
+
+*** CALIBRATION
+* 09 Feb 2012 17:07:17
+*
+* Setting 0 colony depth per pixel to 2468.01859241 cell estimate.
+
+*** TERMINATING
+* 09 Feb 2012 17:07:27
+*
+* 
+
+*** ANALYSIS
+* 09 Feb 2012 17:11:29
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 09 Feb 2012 17:11:36
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 09 Feb 2012 17:11:36
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 09 Feb 2012 17:11:48
+*
+* Alternative measures: see in program (from mean), 95417.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:12:06
+*
+* Alternative measures: see in program (from mean), 95417.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:12:10
+*
+* Alternative measures: see in program (from mean), 95417.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:12:12
+*
+* Alternative measures: see in program (from mean), 95417.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:12:13
+*
+* Alternative measures: see in program (from mean), 95417.0 (from median)
+
+*** CALIBRATION
+* 09 Feb 2012 17:12:22
+*
+* Setting -3.06689646125 colony depth per pixel to 25.8453586044 cell estimate.
+
+*** TERMINATING
+* 09 Feb 2012 17:12:37
+*
+* 
+
+*** ANALYSIS
+* 09 Feb 2012 17:13:30
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 09 Feb 2012 17:13:38
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 09 Feb 2012 17:13:38
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 09 Feb 2012 17:13:47
+*
+* Alternative measures: see in program (from mean), 90191.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:13:52
+*
+* Alternative measures: see in program (from mean), 90191.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:13:58
+*
+* Alternative measures: see in program (from mean), 90191.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:14:03
+*
+* Alternative measures: see in program (from mean), 90191.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:14:11
+*
+* Alternative measures: see in program (from mean), 90191.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:14:14
+*
+* Alternative measures: see in program (from mean), 90191.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:14:18
+*
+* Alternative measures: see in program (from mean), 90191.0 (from median)
+
+*** CALIBRATION
+* 09 Feb 2012 17:14:25
+*
+* Setting -2.54760221455 colony depth per pixel to 0.271112918531 cell estimate.
+
+*** ANALYSIS
+* 09 Feb 2012 17:14:51
+*
+* Alternative measures: see in program (from mean), 90191.0 (from median)
+
+*** TERMINATING
+* 09 Feb 2012 17:15:01
+*
+* 
+
+*** ANALYSIS
+* 09 Feb 2012 17:17:38
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 09 Feb 2012 17:17:45
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 09 Feb 2012 17:17:45
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 09 Feb 2012 17:17:52
+*
+* Alternative measures: see in program (from mean), 107923.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:13
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:20
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:25
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:31
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:33
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:35
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:39
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:43
+*
+* Alternative measures: see in program (from mean), 6392.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:45
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:48
+*
+* Alternative measures: see in program (from mean), 6392.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:52
+*
+* Alternative measures: see in program (from mean), 135703.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:54
+*
+* Alternative measures: see in program (from mean), 6392.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:18:57
+*
+* Alternative measures: see in program (from mean), 6392.0 (from median)
+
+*** TERMINATING
+* 09 Feb 2012 17:18:59
+*
+* 
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:02
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 09 Feb 2012 17:21:10
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 09 Feb 2012 17:21:10
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:17
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:21
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:27
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:29
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:31
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:33
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:35
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:36
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:37
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:39
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:42
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:43
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:45
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:47
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:48
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:53
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:21:58
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:03
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:05
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:05
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:06
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:07
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:07
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:07
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:09
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:12
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:13
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:15
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:16
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:17
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:18
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:19
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:26
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:28
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:29
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:30
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:31
+*
+* Alternative measures: see in program (from mean), 23958.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:36
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** ANALYSIS
+* 09 Feb 2012 17:22:42
+*
+* Alternative measures: see in program (from mean), 83998.0 (from median)
+
+*** TERMINATING
+* 09 Feb 2012 17:22:54
+*
+* 
+
 

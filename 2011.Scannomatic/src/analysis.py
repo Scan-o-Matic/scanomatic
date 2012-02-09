@@ -175,6 +175,19 @@ class Analyse_One(gtk.Frame):
         self.bg_median.show()
         hbox.pack_end(self.bg_median, False, False, 2)
 
+        #Blob area
+        hbox = gtk.HBox()
+        hbox.show()
+        vbox3.pack_start(hbox, False, False, 2)
+
+        label = gtk.Label("Blob Area:")
+        label.show()
+        hbox.pack_start(label,False, False, 2)
+
+        self.blob_area = gtk.Label("0")
+        self.blob_area.show()
+        hbox.pack_end(self.blob_area, False, False, 2)
+
         #Blob Size
         hbox = gtk.HBox()
         hbox.show()
@@ -214,6 +227,67 @@ class Analyse_One(gtk.Frame):
         self.blob_mean.show()
         hbox.pack_end(self.blob_mean, False, False, 2)
 
+        #Cell Count Estimations
+        frame = gtk.Frame("Cell Count Estimate Calibration")
+        frame.show()
+        vbox2.pack_start(frame, False, False, 2)
+
+        vbox3 = gtk.VBox()
+        vbox3.show()
+        frame.add(vbox3)
+
+        #Unit
+        hbox = gtk.HBox()
+        hbox.show()
+        vbox3.pack_start(hbox, False, False, 2)
+
+        self.cce_per_pixel = gtk.Label("0")
+        self.cce_per_pixel.show()
+        hbox.pack_start(self.cce_per_pixel)
+
+        label = gtk.Label("depth/pixel")
+        label.show()
+        hbox.pack_end(label, False, False, 2)
+
+        label = gtk.Label("Independent measure:")
+        label.show()
+        vbox3.pack_start(label, False, False, 2)
+
+        hbox = gtk.HBox()
+        hbox.show()
+        vbox3.pack_start(hbox, False, False, 2)
+
+        self.cce_indep_measure = gtk.Entry()
+        self.cce_indep_measure.connect("focus-out-event", self.verify_number)
+        self.cce_indep_measure.show()
+        hbox.pack_start(self.cce_indep_measure, False, False, 2)
+        
+        label = gtk.Label("CCE/grid-cell")
+        label.show()
+        hbox.pack_end(label, False, False, 2)
+
+
+        button = gtk.Button("Submit calibration point")
+        button.show()
+        button.connect("clicked", self.add_calibration_point, None)
+        vbox3.pack_start(button, False, False, 2)
+
+    def verify_number(self, widget=None, event=None, data=None):
+
+        try:
+            float(widget.get_text())
+        except:
+            widget.set_text("0")
+
+    def add_calibration_point(self, widget=None, event=None, data=None):
+
+        cce_per_pixel = float(self.cce_indep_measure.get_text()) / \
+            float( self.blob_area.get_text())
+
+        self.owner.DMS("Calibration", "Setting " + self.cce_per_pixel.get_text() + \
+            " colony depth per pixel to " + str( cce_per_pixel ) + " cell estimate.")
+            
+ 
     def select_image(self, widget=None, event=None, data=None):
         newimg = gtk.FileChooserDialog(title="Select new image", action=gtk.FILE_CHOOSER_ACTION_OPEN,
             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
@@ -493,29 +567,31 @@ class Analyse_One(gtk.Frame):
 
     def blob_release(self, event=None):
         if self._circ_marking:
+  
+            if event.xdata is not None and event.ydata is not None:
 
-            cur_pos = np.asarray((event.xdata, event.ydata))
+                cur_pos = np.asarray((event.xdata, event.ydata))
 
-            if self._circ_dragging == False:
-                if event.xdata and event.ydata:
+                if self._circ_dragging == False:
+                    if event.xdata and event.ydata:
 
-                    r = np.sqrt( np.sum((cur_pos - self._circ_center)**2) )
+                        r = np.sqrt( np.sum((cur_pos - self._circ_center)**2) )
 
-                    self.owner.DMS("SELECTION", "Radius: " + str(r) + ")", level=1)
+                        self.owner.DMS("SELECTION", "Radius: " + str(r) + ")", level=1)
 
-                    self.selection_circ.set_radius(r)
+                        self.selection_circ.set_radius(r)
 
-                    self.get_analysis(center=self._circ_center, radius=r)
-            else:
+                        self.get_analysis(center=self._circ_center, radius=r)
+                else:
 
-                self._circ_center = self._circ_center + \
-                    (cur_pos - self._dragging_origin)
+                    self._circ_center = self._circ_center + \
+                        (cur_pos - self._dragging_origin)
 
-                self.selection_circ.center = tuple(self._circ_center)
+                    self.selection_circ.center = tuple(self._circ_center)
 
 
-                self.get_analysis(center=self._circ_center, \
-                    radius = self.selection_circ.get_radius())
+                    self.get_analysis(center=self._circ_center, \
+                        radius = self.selection_circ.get_radius())
                 
         self._circ_marking = False
 
@@ -618,14 +694,20 @@ class Analyse_One(gtk.Frame):
             self.bg_mean.set_text(str(features['background']['mean']))
             self.bg_iqr_mean.set_text(str(features['background']['IQR_mean']))
             self.bg_median.set_text(str(features['background']['median']))
+
             if blob_hist.labels != None:
                 image_plot.axvline(features['background']['mean'], c='g')
 
             self.blob_pixelsum.set_text(str(features['blob']['pixelsum']))
             self.blob_mean.set_text(str(features['blob']['mean']))
+            self.blob_area.set_text(str(features['blob']['area']))
 
             self.colony_size.set_text(str(abs(features['cell']['pixelsum'] - \
                 features['background']['mean'] * features['cell']['area'])))
+
+            self.cce_per_pixel.set_text(str(features['blob']['mean'] - 
+                features['background']['mean']))
+
             self.owner.DMS('Analysis', 'Alternative measures: ' + 
                 "see in program"+ " (from mean), " + 
                 str(abs(features['cell']['pixelsum'] - \
