@@ -16,6 +16,7 @@
 #
 
 import numpy as np
+from scipy.optimize import fsolve
 
 #
 # SCANNOMATIC LIBRARIES
@@ -74,7 +75,19 @@ class Grid_Array():
     # Get functions
     # 
 
-    def get_transformation_matrix(self, gs_values=None, gs_fit=None, y_range = (0,255)):
+
+    def get_p3(self, x):
+        """
+            returns the solution to:
+
+                self.gs_a * x^3 + self.gs_b * x^2 + self.gs_c * x + self.gs_d
+
+        """
+
+        return self.gs_a * (x**3) + self.gs_b * (x**2) + self.gs_c * x + self.gs_d
+
+
+    def get_transformation_matrix(self, gs_values=None, gs_fit=None, gs_indices=None, y_range = (0,255)):
         """
             get_transformation_matrix takes an coefficient array of a
             polynomial fit of the 3rd degree and calculates a matrix
@@ -98,26 +111,50 @@ class Grid_Array():
 
         if gs_values != None:
 
-            gs_indices  = range(len(gs_values))
+            if gs_indices == None:
+                gs_indices  = range(len(gs_values))
 
             tf_matrix = np.zeros((y_range[1]+1))
 
-            for pos in xrange(len(gs_values)):
+            p = np.poly1d(np.polyfit(gs_indices,\
+                gs_values, 3))
+
+            self.gs_a = p.c[0]
+            self.gs_b = p.c[1]
+            self.gs_c = p.c[2]
+            self.gs_d = p.c[3]
+
+            for i in xrange(256):
+
+                #moving the line along y-axis
+                self.gs_d = p.c[3] - i
+                x = fsolve(self.get_p3, gs_values[0])
+
+                #setting it back to get the values
+                self.gs_d = p.c[3]
+                tf_matrix[int(round(self.get_p3(x)))] = x
+
+
+            #print self.get_p3(-9.61472689), self.get_p3(-10.30651323),self.get_p3(-10.99758739)
+
+
+
+            #for pos in xrange(len(gs_values)):
 
                 #Ofsetting local box at edges
-                if pos == 0:
-                    offset = 1
-                elif pos == len(gs_values)-1:
-                    offset = -1
-                else:
-                    offset = 0
+            #    if pos == 0:
+            #        offset = 1
+            #    elif pos == len(gs_values)-1:
+            #        offset = -1
+            #    else:
+            #        offset = 0
 
                 #create 1st degree polynomial
-                p = np.poly1d(np.polyfit(gs_indices[ pos + offset - 1 : pos + offset + 2 ],\
-                    gs_values[ pos + offset - 1: pos + offset + 2], 1))
+            #    p = np.poly1d(np.polyfit(gs_indices[ pos + offset - 1 : pos + offset + 2 ],\
+            #        gs_values[ pos + offset - 1: pos + offset + 2], 1))
 
-                a = p.c[0]
-                b = p.c[1]
+#                a = p.c[0]
+#                b = p.c[1]
 
                 #Getting formula ax + b = 0
                 #b = np.interp(0,gs_indices[ pos + offset - 1 : pos + offset + 1 ],\
@@ -128,38 +165,38 @@ class Grid_Array():
                     #gs_values[ pos + offset -1 : pos + offset + 1]) - b) / (y_range[1]+1.0)
 
                 #Setting limits to the local interpolation
-                y_left = p(gs_indices[ pos + offset - 1 ])
+#                y_left = p(gs_indices[ pos + offset - 1 ])
                 #y_left = np.interp(gs_indices[ pos + offset - 1] ,\
                     #gs_indices[ pos + offset - 1: pos + offset + 1],\
                     #gs_values[ pos + offset -1 : pos + offset + 1])
 
-                y_right= p(gs_indices[ pos + offset ])
+#                y_right= p(gs_indices[ pos + offset ])
                 #y_right = np.interp(gs_indices[ pos + offset ],\
                     #gs_indices[ pos + offset - 1: pos + offset + 1],\
                     #gs_values[ pos + offset - 1 : pos + offset + 1])
 
                 #Orderings bounds accending
-                if y_left > y_right:
-                    tmp = y_left
-                    y_left = y_right
-                    y_right = tmp
+#                if y_left > y_right:
+#                    tmp = y_left
+#                    y_left = y_right
+#                    y_right = tmp
 
                 #Extending at edges
-                if pos == 0 or pos == len(gs_values) -1:
-                    if abs(y_left - y_range[0]) < abs(y_right - y_range[1]):
-                        y_left = y_range[0]
-                    else:
-                        y_right = y_range[1]
+#                if pos == 0 or pos == len(gs_values) -1:
+#                    if abs(y_left - y_range[0]) < abs(y_right - y_range[1]):
+#                        y_left = y_range[0]
+#                    else:
+#                        y_right = y_range[1]
          
                 #Trimming so inside y_range
-                if y_left < y_range[0]:
-                    y_left = y_range[0]
-                if y_right > y_range[1]:
-                    y_right = y_range[1]
+#                if y_left < y_range[0]:
+#                    y_left = y_range[0]
+#                if y_right > y_range[1]:
+#                    y_right = y_range[1]
 
                 #Inserting values for the tf_matrix
-                for y_pos in range(int(y_left), int(np.ceil(y_right))+1):
-                    tf_matrix[y_pos] = (y_pos - b) / a
+#                for y_pos in range(int(y_left), int(np.ceil(y_right))+1):
+#                    tf_matrix[y_pos] = (y_pos - b) / float(a)
 
         else:    
 
@@ -169,14 +206,16 @@ class Grid_Array():
 
                 #Do something real here
                 #The caluclated value shoud be a float
-                x = y
+                x = float(y)
                 
                 tf_matrix.append(x)
 
         return tf_matrix
 
     def get_analysis(self, im, gs_fit=None, gs_values=None, use_fallback=False,\
-        use_otsu=True, median_coeff=None, verboise=False, visual=False, watch_colony=None, supress_other=False):
+        use_otsu=True, median_coeff=None, verboise=False, visual=False, \
+        watch_colony=None, supress_other=False, save_grid_image=False, \
+        save_grid_name=None):
 
         """
             @im         An array / the image
@@ -196,14 +235,26 @@ class Grid_Array():
 
             @visual     If visual information should be presented.
 
+            @save_grid_image    Causes the script to save the plates' grid
+                                placement as images. Conflicts with visual,
+                                so don't use visual if you want to save
+
+            @save_grid_name     A custom name for the saved image, if none
+                                is submitted, it will be grid.png in
+                                current directory.
+
             The function returns two arrays, one per dimension, of the
             positions of the spikes and a quality index
 
         """
 
+        debug_per_plate = False
+
         #DEBUGHACK
         #visual = True
         #verboise = True
+        #save_grid_image = True
+        #debug_per_plate = True
         #DEBUGHACK - END
 
         self.watch_source = None
@@ -211,7 +262,10 @@ class Grid_Array():
         self.watch_blob = None
         self.watch_results = None
 
-        best_fit_rows, best_fit_columns, R = self._analysis.get_analysis(im, self._pinning_matrix, use_otsu, median_coeff, verboise, False) #visual #instead of false there...
+        if debug_per_plate:
+            raw_input("Waiting to start next plate (press Enter)")    
+
+        best_fit_rows, best_fit_columns, R = self._analysis.get_analysis(im, self._pinning_matrix, use_otsu, median_coeff, verboise, visual)
 
         self.R = R
 
@@ -239,10 +293,23 @@ class Grid_Array():
 
         #Normalising towards grayscale before anything is done on the colonies
         transformation_matrix = None
+        #KODAK neutral scale
+        gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,22,18,14,10,6,4,2,0])
+
+        #TEMPORARY SOLUTION TO MAKE AGAR APPEAR AS 0 AND BIOMASS BE POSITIVE
+        gs_indices -= 75
+        gs_indices *= -1
+        #TEMPORARY SOLUTION END
+
         if gs_values == None:
-            transformation_matrix = self.get_transformation_matrix(gs_fit=gs_fit)
+            transformation_matrix = self.get_transformation_matrix(\
+                gs_fit=gs_fit, gs_indices=gs_indices)
         else:
-            transformation_matrix = self.get_transformation_matrix(gs_values = gs_values)
+            transformation_matrix = self.get_transformation_matrix(\
+                gs_values = gs_values, gs_indices=gs_indices)
+
+        #print "\n***Transformation matrix"
+        #print transformation_matrix
 
         #if watch_colony != None:
         #    ul = self._grid_cells[watch_colony[1]][watch_colony[2]].get_top_left()
@@ -256,19 +323,23 @@ class Grid_Array():
                 #for y in xrange(im.shape[1]):
                     #im[x,y] = transformation_matrix[im[x,y]]
         #print "*** Analysing grid:"
-        if visual:
+        if visual or save_grid_image:
             import matplotlib.pyplot as plt
-            plt.imshow(im)
+            grid_image = plt.figure()
+            grid_plot = grid_image.add_subplot(111)
+            grid_plot.imshow(im)
+            if save_grid_name is None:
+                save_grid_name = "plate.png"
 
         for row in xrange(self._pinning_matrix[0]):
-            if visual:
-                plt.plot(\
+            if visual or save_grid_image:
+                grid_plot.plot(\
                     np.ones(len(best_fit_columns))*best_fit_rows[row],
                     np.array(best_fit_columns),
                     'r-')
             for column in xrange(self._pinning_matrix[1]):
-                if visual:
-                    plt.plot(\
+                if visual or save_grid_image:
+                    grid_plot.plot(\
                         np.array(best_fit_rows),
                         np.ones(len(best_fit_rows))*best_fit_columns[column],
                         'r-')
@@ -320,7 +391,13 @@ class Grid_Array():
                         if row == watch_colony[1] and column == watch_colony[2]:
                             self.watch_blob = self._grid_cells[row][column]._analysis_items['blob'].filter_array
                             self.watch_results = self._features[row][column]
-        if visual:    
-            plt.show()
+        if visual:
+            grid_image.show() 
+            plt.close(grid_image)
+            del grid_image
+        elif save_grid_image:
+            grid_image.savefig(save_grid_name)
+            plt.close(grid_image)
+            del grid_image
                 #print str(((row+1)*self._pinning_matrix[1] + column+1)/total_steps) + "%"
         return self._features 

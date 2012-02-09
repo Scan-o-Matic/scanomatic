@@ -15,6 +15,7 @@
 # DEPENDENCIES
 #
 
+import os, sys
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.image as plt_img
@@ -52,9 +53,10 @@ def print_progress_bar(fraction, size=40):
     printmeon = True
     print
 
-def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
-        graph_watch, graph_output, supress_analysis = False, \
-        verboise=False, use_fallback = False, use_otsu = False):
+def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
+        graph_watch, supress_analysis = False, \
+        verboise=False, use_fallback = False, use_otsu = False,\
+        grid_times=None):
     """
         analyse_project parses a log-file and runs a full analysis on all 
         images in it. It will step backwards in time, starting with the 
@@ -64,7 +66,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
 
         @log_file_path      The path to the log-file to be processed
 
-        @outdata_file_path  The path to the file were the analysis will
+        @outdata_files_path  The path to the file were the analysis will
                             be put
 
         @pinning_matrices   A list/tuple of (row, columns) pinning 
@@ -74,7 +76,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         @graph_watch        A coordinate PLATE:COL:ROW for a colony to
                             watch particularly.
 
-        @graph_output       An optional PATH to where to save the graph
+        VOID@graph_output   An optional PATH to where to save the graph
                             produced by graph_watch being set.
 
         @supress_analysis  Suppresses the main analysis and thus
@@ -88,13 +90,33 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         @use_otsu           Determines if Otsu-thresholding should be
                             used when looking finding the grid (not
                             default, and should not be used)
-        
+
+        @grid_times         Specifies the time-point indices at which
+                            the grids will be saved in the output-dir.
+
         The function returns None if nothing was done of if it crashed.
         If it runs through it returns the number of images processed.
 
     """
     
     start_time = time()
+    graph_output = None
+
+    if not os.path.isdir(outdata_files_path):
+        dir_OK = False
+        if not os.path.exists(outdata_files_path):
+            try:
+                os.makedirs(outdata_files_path)
+                dir_OK = True
+            except:
+                pass
+        if not dir_OK:
+            print "*** ERROR: Could not construct outdata directory, could be \
+                a conflict"
+            sys.exit()
+
+    if outdata_files_path[-1] != os.sep:
+        outdata_files_path += os.sep
 
 
     if graph_watch != None:
@@ -110,12 +132,18 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         plt_watch_1 = plt_watch_colony.add_subplot(411)
         plt_watch_1.axis("off")
         pict_target_width = 40
-        plt_watch_1.axis((0, (pict_target_width + 1) * 217, 0, pict_target_width * 3), frameon=False,
-            title='Plate: ' + str(graph_watch[0]) + ', position: (' + str(graph_watch[1]) + ', ' + str(graph_watch[2]) + ')')
+        plt_watch_1.axis((0, (pict_target_width + 1) * 217, 0, \
+            pict_target_width * 3), frameon=False,\
+            title='Plate: ' + str(graph_watch[0]) + ', position: (' +\
+             str(graph_watch[1]) + ', ' + str(graph_watch[2]) + ')')
+
         plot_labels = []
 
-    log_file = conf.Config_File(log_file_path)
+        graph_output = outdata_files_path + "plate_" + str(graph_watch[0]) + \
+            "_" + str(graph_watch[1]) + '.' + str(graph_watch[2]) + ".png"
 
+
+    log_file = conf.Config_File(log_file_path)
 
     image_dictionaries = log_file.get_all("%n")
     if image_dictionaries == None:
@@ -124,6 +152,15 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
     plate_position_keys = []
     plates = len(pinning_matrices)
 
+
+    if 'Description' in image_dictionaries[0].keys():
+        first_scan_position = 1
+        description = image_dictionaries[0]['Description']
+        interval_time = image_dictionaries[0]['Interval']
+    else:
+        first_scan_position = 0
+        description = None
+        interval_time = None
 
     for i in xrange(plates):
         if supress_analysis != True or graph_watch[0] == i:
@@ -134,13 +171,12 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         graph_watch[0] = 0
         plates = 1
     else:
+        outdata_analysis_path = outdata_files_path + "analysis.xml"
         try:
-            fh = open(outdata_file_path,'w')
+            fh = open(outdata_analysis_path,'w')
         except:
-            print "*** Error, can't open target file:", outdata_file_path
+            print "*** Error, can't open target file:", outdata_analysis_path
             return False
-        description = None
-        interval_time = None
         project_image = Project_Image(pinning_matrices)
 
     image_pos = len(image_dictionaries) - 1
@@ -155,7 +191,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         fh.write('<project>')
         #ET_root = ET.Element("project")
 
-        fh.write('<start-time>' + str(image_dictionaries[0]['Time']) + '</start-time>')
+        fh.write('<start-time>' + str(image_dictionaries[first_scan_position]['Time']) + '</start-time>')
         #ET_start = ET.SubElement(ET_root, "start-time")
         #ET_start.text = str(image_dictionaries[0]['Time'])
 
@@ -189,7 +225,7 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
         fh.write('<scans>')
         #ET_scans = ET.SubElement(ET_root, "scans")
 
-    while image_pos >= 0:
+    while image_pos >= first_scan_position:
         scan_start_time = time()
         img_dict_pointer = image_dictionaries[image_pos]
 
@@ -208,7 +244,12 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
             print
 
         features = project_image.get_analysis( img_dict_pointer['File'], \
-            plate_positions, img_dict_pointer['grayscale_values'], use_fallback, use_otsu, watch_colony=graph_watch, supress_other=supress_analysis )
+            plate_positions, img_dict_pointer['grayscale_values'], \
+            use_fallback, use_otsu, watch_colony=graph_watch, \
+            supress_other=supress_analysis, \
+            save_graph_image=(image_pos in grid_times), \
+            save_graph_name=outdata_files_path+"time_" + str(image_pos) +\
+             "_plate_")
 
         if supress_analysis != True:
             fh.write('<scan index="' + str(image_pos) + '">')
@@ -354,6 +395,20 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
 
                     sub_term = float(Y[:,i].min())
 
+                    if plot_labels[i] == "cell:area":
+                        c_area = Y[:,i]
+                    elif plot_labels[i] == "background:mean":
+                        bg_mean = Y[:,i]
+                    elif plot_labels[i] == "cell:pixelsum":
+                        c_pixelsum = Y[:,i]
+                    elif plot_labels[i] == "blob:pixelsum":
+                        b_pixelsum = Y[:,i]
+                    elif plot_labels[i] == "blob:area":
+                        b_area = Y[:,i]
+
+                    print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
+                    print Y[:,i].max(), Y[:,i].min()
+                    print Y[:,i]
                     if cur_plt_graph != plot_labels[i].split(":")[0]:
                         cur_plt_graph = plot_labels[i].split(":")[0]
                         if plt_graph_i > 1:
@@ -385,8 +440,20 @@ def analyse_project(log_file_path, outdata_file_path, pinning_matrices, \
                 plt_watch_colony.savefig(graph_output, dpi=300)
             except:
                 plt_watch_colony.show()
+
+            #DEBUG START:PLOT
+            plt_watch_colony = pyplot.figure()
+            plt_watch_1 = plt_watch_colony.add_subplot(111)
+            plt_watch_1.plot(b_area, b_pixelsum)
+            plt_watch_1.set_xlabel('Blob:Area')
+            plt_watch_1.set_ylabel('Blob:PixelSum')
+            plt_watch_colony.savefig("debug_corr.png")
+            #DEBUG END
+            pyplot.close(plt_watch_colony)
         else: 
             plt_watch_colony.show()
+
+
         return False
     #if verboise:
     #    print "*** Building report"
@@ -419,7 +486,8 @@ class Project_Image():
             self.R.append(None)
 
     def get_analysis(self, im_path, features, grayscale_values, \
-            use_fallback=False, use_otsu=True, watch_colony=None, supress_other=False):
+            use_fallback=False, use_otsu=True, watch_colony=None, \
+            supress_other=False, save_graph_image=False, save_graph_name=None):
 
         if im_path != None:
             self._im_path = im_path
@@ -448,6 +516,9 @@ class Project_Image():
 
         scale_factor = 4.0
 
+        if save_graph_image == False:
+            cur_graph_name = None
+
         for grid_array in xrange(len(self._grid_arrays)):
 
             x0 = int(features[grid_array][0][0]*scale_factor)
@@ -468,10 +539,18 @@ class Project_Image():
                 left = y1
                 right = y0
 
+ 
+            if save_graph_image == True:
+
+                cur_graph_name = save_graph_name + str(grid_array) + ".png"
+            
             self._grid_arrays[grid_array].get_analysis( \
                 self.im[ upper:lower, left:right ], \
-                gs_values=gs_values, use_fallback=use_fallback, use_otsu=use_otsu, median_coeff=None, \
-                verboise=False, visual=False, watch_colony=watch_colony, supress_other=supress_other)
+                gs_values=gs_values, use_fallback=use_fallback,\
+                use_otsu=use_otsu, median_coeff=None, \
+                verboise=False, visual=False, watch_colony=watch_colony, \
+                supress_other=supress_other, save_grid_image=save_graph_image\
+                , save_grid_name = cur_graph_name)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
             self.R[grid_array] = self._grid_arrays[grid_array].R
@@ -490,18 +569,21 @@ if __name__ == "__main__":
     parser = ArgumentParser(description='The analysis script runs through a log-file (which is created when a project is run). It creates a XML-file that holds the result of the analysis')
 
     parser.add_argument("-i", "--input-file", type=str, dest="inputfile", help="Log-file to be parsed", metavar="PATH")
-    parser.add_argument("-o", "--ouput-file", type=str, dest="outputfile", help="Path to where the XML-file should be written", metavar="PATH")
+    parser.add_argument("-o", "--ouput-path", type=str, dest="outputpath", help="Path to directory where all data is written (Default is a subdirectory 'analysis' under where the input file is)", metavar="PATH")
 
     parser.add_argument("-p", "--plates", default=4, type=int, dest="plates", help="The number of plates in the fixture", metavar="N")
     parser.add_argument("-m", "--matrices", dest="matrices", help="The pinning matrices for each plate position in the order set by the fixture config file.", metavar="(X,Y):(X,Y)...(X,Y)")
 
     parser.add_argument("-w", "--watch-position", dest="graph_watch", help="The position of a colony to track.", metavar="PLATE:X:Y", type=str)
 
-    parser.add_argument("-g", "--graph-output", dest="graph_output", help="If specified the graph is not shown to the user but instead saved to taget position", type=str)
+    #parser.add_argument("-g", "--graph-output", dest="graph_output", help="If specified the graph is not shown to the user but instead saved to taget position", type=str)
 
-    parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If set to True, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported. That is, this flag voids the -o flag.")
+    parser.add_argument("-t", "--watch-time", dest="grid_times", help="If specified, the gridplacements at the specified timepoints will be saved in the set output-directory, comma-separeted indices.", metavar="0,1,100", default="0", type=str)
+
+    parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If set to True, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported.")
     args = parser.parse_args()
 
+    
     if args.matrices == None:
      
         pm = [(16,24), (16,24), (16,24), (16,24)]
@@ -511,9 +593,37 @@ if __name__ == "__main__":
         pm = args.matrices.split(':')
         pm = map(eval, pm)
 
-    if args.inputfile == None or (args.outputfile == None and args.supress == False):
-        parser.error("You need to specify both input and output file!")
+    if args.grid_times != None:
 
+        try:
+            grid_times = map(int, args.grid_times.split(","))
+        except:
+            print "*** Warning, could not parse grid_times... will only save\
+                the first grid placement."
+
+            grid_times = [0]
+
+ 
+    if args.inputfile == None:
+        parser.error("You need to specify input file!")
+
+    if args.outputpath == None:
+
+        in_path_list = args.inputfile.split(os.sep)
+
+        output_path = ""
+
+        if len(in_path_list) == 1:
+
+            output_path = "."
+
+        else:
+
+            output_path = os.sep.join(in_path_list[:-1]) 
+
+        output_path += os.sep + "analysis"
+
+         
     if args.graph_watch != None:
         args.graph_watch = args.graph_watch.split(":")
         try:
@@ -537,24 +647,24 @@ if __name__ == "__main__":
 
     fh.close()
 
-    if args.outputfile != None:
-        try:
-            fh = open(args.outputfile, 'w')
-        except:
-            parser.error('Cannot create the output file')
-        fh.close()
+    #if args.outputfile != None:
+        #try:
+            #fh = open(args.outputfile, 'w')
+        #except:
+            #parser.error('Cannot create the output file')
+        #fh.close()
 
 
-    if args.graph_output != None:
-        try:
-            fh = open(args.graph_output, 'w')
-        except:
-            parser.error('Cannot create the save-file for the watched colony.')
+    #if args.graph_output != None:
+        #try:
+            #fh = open(args.graph_output, 'w')
+        #except:
+            #parser.error('Cannot create the save-file for the watched colony.')
 
-        fh.close()
+        #fh.close()
 
     if len(pm) == args.plates:    
-        analyse_project(args.inputfile, args.outputfile, pm, args.graph_watch, args.graph_output, args.supress, True, True, False)
+        analyse_project(args.inputfile, output_path, pm, args.graph_watch, args.supress, True, True, False, grid_times=grid_times)
     else:
         parser.error("Missmatch between number of plates specified and the number of matrices specified.")
 

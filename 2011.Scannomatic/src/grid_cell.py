@@ -170,7 +170,7 @@ class Grid_Cell():
         else:
             return None
 
-    def get_analysis(self):
+    def get_analysis(self, no_detect=False):
         """
 
             get_analysis iterates through all possible cell items
@@ -182,7 +182,11 @@ class Grid_Cell():
             If cell item is not attached, a None is put in the 
             dictionary to avoid key errors.
 
-            Function takes no arguments.
+            Function takes one optional argument:
+
+            @no_detect      If set to true, it will re-use the
+                            previously used detection.
+
 
         """
         
@@ -191,7 +195,8 @@ class Grid_Cell():
         for item_name in self._analysis_item_names:
             if self._analysis_items[item_name]:
                 self._analysis_items[item_name].set_data_source(self.data_source)
-                self._analysis_items[item_name].detect()
+                if not no_detect:
+                    self._analysis_items[item_name].detect()
                 self._analysis_items[item_name].do_analysis()
                 features_dict[item_name] = self._analysis_items[item_name].features
             else:
@@ -241,7 +246,10 @@ class Grid_Cell():
     # Other functions
     #
 
-    def attach_analysis(self, blob=True, background=True, cell=True, use_fallback_detection=False, run_detect=True):
+    def attach_analysis(self, blob=True, background=True, cell=True,\
+        use_fallback_detection=False, run_detect=True, center=None, \
+        radius=None):
+
         """
             attach_analysis connects the analysis modules to the
             Grid_Cell instance.
@@ -260,12 +268,23 @@ class Grid_Cell():
 
             @run_detect     Causes the initiation to run detection
 
+            @center         A manually set blob centrum (if set
+                            radius must be set as well)
+                            (if not supplied, blob will be detected
+                            automatically)
+
+           @radius          A manually set blob radus (if set
+                            center must be set as well)
+                            (if not supplied, blob will be detected
+                            automatically)
+           
+
         """     
 
         if blob: 
             self._analysis_items['blob'] = gca.Blob(self.data_source, 
                 use_fallback_detection=use_fallback_detection, 
-                run_detect = run_detect)
+                run_detect = run_detect, center=center, radius=radius)
 
         if background and self._analysis_items['blob']:
             self._analysis_items['background'] = gca.Background(self.data_source, 

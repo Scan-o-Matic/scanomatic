@@ -2,11 +2,36 @@
 ##### THE WHAT NEXT PLACE #####
    ##########################
 
-** Check if OpenCV is installed and if not, use fallback analysis
+
+--- GRIDDING ---
+
+** Calculate the distance of grid jumping one signal peak unit
+    Use for R-threshold (make sure R is per blob).
+
+** Make it possible to monitor the gray-scale values
+
+** Make stress test unit that randomly deletes detected peaks before
+    grid placement
+
+** Investigate resolving equal grid start pos with using most 
+    centric
+
+** Investigate only using the inter-quartile part of signal at
+    grid-placement to calculate the otsu-threshold.
+
+--- BLOB-DETECTION ---
+
+** Laplace + Smooth -> Label -> Shape evalutation
+
+--- GUI ---
 
 ** Clean up code in Fixture GUI
 
 ** Make experiment last until analysis of last image is done
+
+** Extend functionality in fixture view (Gray-scale values)
+
+** Extend functionality in fixture view (Cell calibration)
 
 ** Extend functionality in config view
 
@@ -14,7 +39,7 @@
 
 ** Use a queue for all things to be done and a scheduler
 
----
+--- OTHER ---
 
 ** Most fungii see blue light at 450 nm - How is the pattern of our lamp??
 
@@ -32,6 +57,18 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+** Check if OpenCV is installed and if not, use fallback analysis
+
+** Check so that the grid-cell has appropriate size
+
+** Remake gray-scale so that it uses Kodak Z-values
+
+** CHECK INTERPOLATION
+
+** Change to user specifying output dir - not file
+
+** Make script save grid-placement as a file for certain time-points.
 
 ** Report building takes about as long as analysis when processing a project
     Look at appending sections

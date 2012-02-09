@@ -2,6 +2,29 @@
 ##### Changed in Scannomatic 0.99 #####
    ##################################
 
+*** Manual blob selection in GUI-analysis implemented
+
+*** Interim semi-sophisticated blob detection implemented,
+    but only used through GUI-analysis
+
+*** Draggable selections implemented in the GUI-analysis view
+
+*** Manual size setting of selection in the GUI-analysis view
+
+*** The inter-scan calibration is now done using a fitted
+    3rd degree polynomial, currently translating pixel-values
+    to Kodak target values (to be changed for a cell count
+    estimate)
+
+*** Hard-coded into the analysis, the program uses the Kodak
+    gray-scale values.
+
+*** Change to user specifying output dir - not file in analysis
+    module
+
+*** Analysis script saves grid-placement as a file for certain 
+    time-points.
+
 *** Grid-detection re-written using no heuristics (?!) and 
     producing much more robust grid-placement
 

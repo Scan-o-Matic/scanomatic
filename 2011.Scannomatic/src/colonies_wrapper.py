@@ -28,16 +28,28 @@ import project
 # Functions
 #
 
-def get_grid_cell_from_array(arr):
+def get_grid_cell_from_array(arr, fallback_detection=False, center=None, radius=None):
     """
         get_grid_cell_from_array is a convinience function to pass a section
-        of an image as argumen and make the entire array be the grid_cell.
+        of an image as argument and make the entire array be the grid_cell.
 
         Function takes argument:
 
         @arr    An numpy array containing image data of interest
                 The entire array will be treated as being the grid cell
 
+
+        @fallback_detection     If true (not default) will only use otsu.
+
+        @center                 A manually set blob centrum (if set
+                                radius must be set as well)
+                                (if not supplied, blob will be detected
+                                automatically)
+
+       @radius                  A manually set blob radus (if set
+                                center must be set as well)
+                                (if not supplied, blob will be detected
+                                automatically)
 
         Function returns a Grid_Cell instance that is ready to use.
 
@@ -46,7 +58,8 @@ def get_grid_cell_from_array(arr):
     cell = grid_cell.Grid_Cell(data_source=arr)
     cell.set_rect_size()
     #cell.set_center()
-    cell.attach_analysis(use_fallback_detection=True)
+    cell.attach_analysis(use_fallback_detection=fallback_detection, 
+        center=center, radius=radius)
 
     return cell
 
