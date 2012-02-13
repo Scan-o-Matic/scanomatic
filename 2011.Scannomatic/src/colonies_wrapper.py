@@ -15,6 +15,7 @@
 # DEPENDENCIES
 #
 
+import numpy as np
 
 #
 # SCANNOMATIC LIBRARIES
@@ -83,6 +84,20 @@ def get_grid_cell_analysis_from_array(arr):
     cell = get_grid_cell_from_array(arr)
 
     return cell.get_analysis()
+
+
+def get_gray_scale_transformation_matrix(gs_values):
+    """
+        get_gray_scale_transformation_matrix takes a list of gs-values and
+        returns a transformation matrix for a normal 8-bit gray scale image.
+
+    """
+
+    arr = grid_array.Grid_Array(None)
+
+    return arr.get_transformation_matrix(gs_values=gs_values, 
+        gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,
+            22,18,14,10,6,4,2,0]))
 
 
 #

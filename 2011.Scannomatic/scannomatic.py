@@ -73,7 +73,7 @@ class Application_Window():
 
         #The window
         window = self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        window.set_size_request(1200,900)
+        window.set_size_request(1450,900)
         window.connect("delete_event", self.close_application)
 
         self.USE_CALLBACK=True

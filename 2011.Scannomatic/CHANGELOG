@@ -2,6 +2,10 @@
 ##### Changed in Scannomatic 0.99 #####
    ##################################
 
+*** Analyse one view now gives values in Kodak value-space
+
+*** Manual blob selection is now much less annoying
+
 *** Manual blob selection in GUI-analysis implemented
 
 *** Interim semi-sophisticated blob detection implemented,

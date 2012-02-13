@@ -21,7 +21,7 @@
 
 --- BLOB-DETECTION ---
 
-** Laplace + Smooth -> Label -> Shape evalutation
+** http://www.scipy.org/Cookbook/Least_Squares_Circle
 
 --- GUI ---
 
@@ -35,7 +35,7 @@
 
 ** Extend functionality in config view
 
-** Make it possible to reuse canvases please <- maybe baby
+** Implement reusable canvases everywhere, look in analysis.py
 
 ** Use a queue for all things to be done and a scheduler
 
@@ -57,6 +57,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+** Make it possible to reuse canvases please <- maybe baby
 
 ** Check if OpenCV is installed and if not, use fallback analysis
 

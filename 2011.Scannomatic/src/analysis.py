@@ -41,6 +41,7 @@ class Analyse_One(gtk.Frame):
         self._circ_dragging = False
         self._circ_center = None
 
+        self._config_calibration_path = self.owner._program_config_root + os.sep + "calibration.data"
         self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
         self.f_settings = settings_tools.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
 
@@ -283,11 +284,19 @@ class Analyse_One(gtk.Frame):
 
         cce_per_pixel = float(self.cce_indep_measure.get_text()) / \
             float( self.blob_area.get_text())
+        try:
+            fs = open(self._config_calibration_path,'a')
 
-        self.owner.DMS("Calibration", "Setting " + self.cce_per_pixel.get_text() + \
-            " colony depth per pixel to " + str( cce_per_pixel ) + " cell estimate.")
+            fs.write(str([self.analysis_img.get_text(), float(self.cce_per_pixel.get_text()), cce_per_pixel ]) + "\n")
+
+            fs.close()
+            self.owner.DMS("Calibration", "Setting " + self.cce_per_pixel.get_text() + \
+                " colony depth per pixel to " + str( cce_per_pixel ) + " cell estimate.")
             
- 
+        except:
+
+            self.owner.DMS("Error", "Could not open " + self._config_calibration_path)
+
     def select_image(self, widget=None, event=None, data=None):
         newimg = gtk.FileChooserDialog(title="Select new image", action=gtk.FILE_CHOOSER_ACTION_OPEN,
             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
@@ -327,6 +336,7 @@ class Analyse_One(gtk.Frame):
                     #GRAYSCALE PLOT 
 
                     gs = img_base.Analyse_Grayscale(image=grayscale)
+                    self._grayscale = gs._grayscale
 
                     label = gtk.Label("Grayscale analysis")
                     label.show()
@@ -403,6 +413,10 @@ class Analyse_One(gtk.Frame):
 
             self.analysis_img.set_text('Ready to use: ' + str(filename))
             self.section_picking.set_text("Click on upper left corner of interest.")
+
+            self.blob_fig = None
+            self.blob_bool_fig = None
+            self.blob_hist = None
 
     def get_click_in_rect(self, event):
 
@@ -542,6 +556,7 @@ class Analyse_One(gtk.Frame):
     def plot_release(self, event=None):
 
         if self._rect_marking:
+            self._rect_marking = False
             if self._rect_dragging == False:
                 if event.xdata and event.ydata and self._rect_ul[0] and self._rect_ul[1]:
                     self._rect_lr = (event.xdata, event.ydata)
@@ -563,11 +578,12 @@ class Analyse_One(gtk.Frame):
 
                 self.get_analysis()
                 
-        self._rect_marking = False
 
     def blob_release(self, event=None):
         if self._circ_marking:
   
+            self._circ_marking = False
+
             if event.xdata is not None and event.ydata is not None:
 
                 cur_pos = np.asarray((event.xdata, event.ydata))
@@ -579,7 +595,7 @@ class Analyse_One(gtk.Frame):
 
                         self.owner.DMS("SELECTION", "Radius: " + str(r) + ")", level=1)
 
-                        self.selection_circ.set_radius(r)
+                        print "C center", self.selection_circ.center, "radius", self.selection_circ.get_radius()
 
                         self.get_analysis(center=self._circ_center, radius=r)
                 else:
@@ -593,13 +609,15 @@ class Analyse_One(gtk.Frame):
                     self.get_analysis(center=self._circ_center, \
                         radius = self.selection_circ.get_radius())
                 
-        self._circ_marking = False
 
     def get_analysis(self, center=None, radius=None):
 
+        if radius is None:
+            self.selection_circ.set_radius(0)
+            
         #EMPTYING self.plots_vbox
-        for child in self.plots_vbox2.get_children():
-            self.plots_vbox2.remove(child)
+        #for child in self.plots_vbox2.get_children():
+        #    self.plots_vbox2.remove(child)
 
         #Getting things in order        
         if self._rect_ul[0] < self._rect_lr[0]:
@@ -615,9 +633,18 @@ class Analyse_One(gtk.Frame):
             right = self._rect_ul[1]
             left = self._rect_lr[1]
 
-        img_section = self.f_settings.A._img[upper:lower,left:right]
+        img_section = np.copy(self.f_settings.A._img[upper:lower,left:right])
+        img_transf = img_section.copy()
+
+        tf_matrix = colonies.get_gray_scale_transformation_matrix(self._grayscale)
+
+        if tf_matrix is not None:
+            for item in img_transf:
+                    item = tf_matrix[item]
+
+
         x_factor = img_section.shape[0] / 200
-        y_factor = img_section.shape[1] / 300
+        y_factor = img_section.shape[1] / 200
 
         if x_factor > y_factor:
             scale_factor = x_factor
@@ -626,30 +653,63 @@ class Analyse_One(gtk.Frame):
         if scale_factor == 0:
             scale_factor = 1
 
-        image_size = (img_section.shape[0]/scale_factor,
-            img_section.shape[1]/scale_factor)
+        #
+        # BLOB SELECTION CANVAS
+        #
+        image_size = (img_section.shape[1]/scale_factor,
+            img_section.shape[0]/scale_factor)
 
-        label = gtk.Label("Selection:")
-        label.show()
-        self.plots_vbox2.pack_start(label, False, False, 2)
+        if self.blob_fig is None:
+            hbox = gtk.HBox()
+            hbox.show()
+            self.plots_vbox2.pack_start(hbox, False, False, 0)
+
+            vbox = gtk.VBox()
+            vbox.show()
+
+            label = gtk.Label("Selection:")
+            label.show()
+            vbox.pack_start(label, False, False, 2)
+
+            self.blob_fig = plt.Figure(figsize=image_size, dpi=150)
+            self.blob_fig.add_axes()
+            image_plot = self.blob_fig.gca()
+            #image_plot = self.blob_fig.add_subplot(111)
+            
+            image_canvas = FigureCanvas(self.blob_fig)
+            self.blob_fig.canvas.mpl_connect('button_press_event', self.blob_click )
+            self.blob_fig.canvas.mpl_connect('button_release_event', self.blob_release)
+            self.blob_fig.canvas.mpl_connect('motion_notify_event', self.blob_drag)
+
+            image_plot.get_xaxis().set_visible(False)
+            image_plot.get_yaxis().set_visible(False)
+
+            image_canvas.show()
+            image_canvas.set_size_request(image_size[1], image_size[0])
+            vbox.pack_start(image_canvas, False, False, 2)
+            hbox.pack_start(vbox, False, False, 2)
+
+        if center is None and radius is None:
+            image_plot = self.blob_fig.gca()
+            image_plot.cla()
+            image_ax = image_plot.imshow(img_section.T)
+            image_plot.set_xlim(xmin=0,xmax=img_section.shape[0])
+            image_plot.set_ylim(ymin=0,ymax=img_section.shape[1])
+
+        #print "C center", self.selection_circ.center, "radius", self.selection_circ.get_radius()
+            image_plot.add_patch(self.selection_circ)
+        #if center is not None and radius is not None:        
+        #    self.selection_circ.center = center
+        #    self.selection_circ.set_radius(radius)
+
+        self.blob_fig.canvas.draw()
  
-        self.blob_fig = plt.Figure(figsize=image_size, dpi=150)
-        image_plot = self.blob_fig.add_subplot(111)
-        image_canvas = FigureCanvas(self.blob_fig)
-        self.blob_fig.canvas.mpl_connect('button_press_event', self.blob_click )
-        self.blob_fig.canvas.mpl_connect('button_release_event', self.blob_release)
-        self.blob_fig.canvas.mpl_connect('motion_notify_event', self.blob_drag)
-        image_ax = image_plot.imshow(img_section.T)
-        image_plot.get_xaxis().set_visible(False)
-        image_plot.get_yaxis().set_visible(False)
-        image_plot.set_xlim(xmin=0,xmax=img_section.shape[0])
-        image_plot.set_ylim(ymin=0,ymax=img_section.shape[1])
-        image_plot.add_patch(self.selection_circ)
-        image_canvas.show()
-        image_canvas.set_size_request(image_size[1], image_size[0])
-        self.plots_vbox2.pack_start(image_canvas, False, False, 2)
 
-        cell = colonies.get_grid_cell_from_array(img_section, center=center, radius = radius)
+        #
+        # RETRIEVING ANALYSIS
+        #
+
+        cell = colonies.get_grid_cell_from_array(img_transf, center=center, radius = radius)
 
         features = cell.get_analysis(no_detect=True)
 
@@ -657,35 +717,80 @@ class Analyse_One(gtk.Frame):
         blob_filter = blob.filter_array
         blob_hist = blob.histogram
 
-        label = gtk.Label("Blob vs Background::")
-        label.show()
-        self.plots_vbox2.pack_start(label, False, False, 2)
+        #
+        # BLOB vs BACKGROUND CANVAS
+        #
 
-        image_fig = plt.Figure(figsize=image_size, dpi=150)
-        image_plot = image_fig.add_subplot(111)
-        image_canvas = FigureCanvas(image_fig)
+        if self.blob_bool_fig is None:
+
+            vbox = gtk.VBox()
+            vbox.show()
+
+            label = gtk.Label("Blob vs Background::")
+            label.show()
+            vbox.pack_start(label, False, False, 2)
+
+            self.blob_bool_fig = plt.Figure(figsize=image_size, dpi=150)
+            #image_plot = self.blob_bool_fig.add_subplot(111)
+            image_canvas = FigureCanvas(self.blob_bool_fig)
+            image_canvas.show()
+            image_canvas.set_size_request(image_size[1], image_size[0])
+
+            vbox.pack_start(image_canvas, False, False, 2)
+            hbox.pack_start(vbox, False, False, 2)
+
+            self.blob_bool_fig.add_axes()
+            image_plot = self.blob_bool_fig.gca()
+            image_plot.get_xaxis().set_visible(False)
+            image_plot.get_yaxis().set_visible(False)
+        else:
+            image_plot = self.blob_bool_fig.gca()
+            image_plot.cla()
+
+        #image_ax = image_plot.imshow(img_section.T)
+        blob_filter = blob_filter.astype(float) * 256 + img_transf
+        blob_filter = blob_filter * ( 256/ float(np.max(blob_filter)) )
         image_ax = image_plot.imshow(blob_filter.T)
-        image_plot.get_xaxis().set_visible(False)
-        image_plot.get_yaxis().set_visible(False)
+
         image_plot.set_xlim(xmin=0,xmax=blob_filter.shape[0])
         image_plot.set_ylim(ymin=0,ymax=blob_filter.shape[1])
 
 
-        image_canvas.show()
-        image_canvas.set_size_request(image_size[1], image_size[0])
-        self.plots_vbox2.pack_start(image_canvas, False, False, 2)
+        self.blob_bool_fig.canvas.draw()
 
         if blob_hist.labels != None:
             bincenters = 0.5*(blob_hist.labels[1:]+blob_hist.labels[:-1])
-            
-            label = gtk.Label("Histogram:")
-            label.show()
-            self.plots_vbox2.pack_start(label, False, False, 2)
 
-            image_fig = plt.Figure(figsize=(400,200), dpi=150)
-            image_plot = image_fig.add_subplot(111)
-            image_canvas = FigureCanvas(image_fig)
+            if self.blob_hist is None:
+            
+                label = gtk.Label("Histogram:")
+                label.show()
+                self.plots_vbox2.pack_start(label, False, False, 2)
+
+                self.blob_hist = plt.Figure(figsize=image_size, dpi=150)
+                self.blob_hist.add_axes()
+                
+                image_canvas = FigureCanvas(self.blob_hist)
+                image_plot = self.blob_hist.gca()
+
+                image_canvas.set_size_request(image_size[1], image_size[0])
+                image_canvas.show()
+                self.plots_vbox2.pack_start(image_canvas, False, False, 2)
+
+                self.blob_hist.subplots_adjus(bottom=3)
+
+                label = gtk.Label("Threshold (red), Background Mean(green)")
+                label.show()
+                self.plots_vbox2.pack_start(label, False, False, 2)
+            else:
+                image_plot = self.blob_hist.gca()
+                image_plot.cla()
+
             image_plot.bar(blob_hist.labels, blob_hist.counts)
+
+            x_ticks = range(0,256,20)           
+            image_plot.set_xticks(x_ticks)
+            image_plot.set_xticklabels(map(str,x_ticks), fontsize='xx-small')
             image_plot.axvline(blob.threshold, c='r')
         
         if features != None:
@@ -714,12 +819,5 @@ class Analyse_One(gtk.Frame):
                 features['background']['median'] * features['cell']['area'])) + 
                 " (from median)", level = 111)
 
-        if blob_hist.labels != None:
-            image_canvas.set_size_request(400, 300)
-            image_canvas.show()
-            self.plots_vbox2.pack_start(image_canvas, False, False, 2)
-
-            label = gtk.Label("Threshold (red), Background Mean(green)")
-            label.show()
-            self.plots_vbox2.pack_start(label, False, False, 2)
+        self.blob_hist.canvas.draw()
 
