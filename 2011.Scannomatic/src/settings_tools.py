@@ -88,14 +88,7 @@ class Fixture_Settings():
         print "*** Showing image", analysis_img
         return analysis_img
 
-    def get_markings_rotations(self, X, Y):
-
-        Mcom = (X.mean(), Y.mean())
-        dX = X - Mcom[0]
-        dY = Y - Mcom[1]
-
-        L = np.sqrt(dX**2 + dY**2)
-
+    def get_fixture_markings(self):
         i = 0
         m = True
         tmpX = []
@@ -106,6 +99,17 @@ class Fixture_Settings():
                 tmpX.append(m[0])
                 tmpY.append(m[1])
             i += 1
+        return tmpX, tmpY
+
+    def get_markings_rotations(self, X, Y):
+
+        Mcom = (X.mean(), Y.mean())
+        dX = X - Mcom[0]
+        dY = Y - Mcom[1]
+
+        L = np.sqrt(dX**2 + dY**2)
+
+        tmpX, tmpY = self.get_fixture_markings()
 
         ref_X = np.array(tmpX)
         ref_Y = np.array(tmpY)

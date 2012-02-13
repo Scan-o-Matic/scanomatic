@@ -53,10 +53,76 @@ class Analyse_One(gtk.Frame):
         hbox.show()
         vbox.pack_start(hbox, False, False, 2)
 
+        #
+        # Main image and gray scale
+        #
+
         self.plots_vbox = gtk.VBox()
         self.plots_vbox.show()
         hbox.pack_start(self.plots_vbox, False, False, 2)
         
+
+        label = gtk.Label("Grayscale analysis")
+        label.show()
+        self.plots_vbox.pack_start(label, False, False, 2)
+
+        self.grayscale_fig = plt.Figure(figsize=(50,40), dpi=100)
+        self.grayscale_fig.subplots_adjust(left=0.02, right=0.98, wspace=0.3)
+
+        self.grayscale_plot_img = self.grayscale_fig.add_subplot(121)
+        self.grayscale_plot_img.get_xaxis().set_visible(False)
+        self.grayscale_plot_img.get_yaxis().set_visible(False)
+
+        self.grayscale_plot = self.grayscale_fig.add_subplot(122)
+        self.grayscale_plot.axis("tight")
+        self.grayscale_plot.get_xaxis().set_visible(False)
+
+        grayscale_canvas = FigureCanvas(self.grayscale_fig)
+        grayscale_canvas.show()
+        grayscale_canvas.set_size_request(400,150)
+        self.plots_vbox.pack_start(grayscale_canvas, False, False, 2)
+
+
+        label = gtk.Label("Marker detection analysis")
+        label.show()
+        self.plots_vbox.pack_start(label, False, False, 2)
+
+        figsize = (500,350)
+
+        self.image_fig = plt.Figure(figsize=figsize, dpi=75)
+        image_plot = self.image_fig.add_subplot(111)
+        image_canvas = FigureCanvas(self.image_fig)
+        self.image_fig.canvas.mpl_connect('button_press_event', self.plot_click)
+        self.image_fig.canvas.mpl_connect('button_release_event', self.plot_release)
+        self.image_fig.canvas.mpl_connect('motion_notify_event', self.plot_drag)
+
+        self.selection_rect = plt_patches.Rectangle(
+                (0,0),0,0, ec = 'k', fill=False, lw=0.5
+                )
+        #self.selection_rect.get_axes()
+        #self.selection_rect.get_transform()
+
+        image_plot.add_patch(self.selection_rect)
+        image_plot.get_xaxis().set_visible(False)
+        image_plot.get_yaxis().set_visible(False)
+        image_canvas.show()
+        image_canvas.set_size_request(figsize[0],figsize[1])
+
+        self.plots_vbox.pack_start(image_canvas, False, False, 2)
+
+
+        #
+        # Plot sections / blob images
+        #
+
+        self.selection_circ = plt_patches.Circle((0,0),0)
+        #self.selection_rect.get_axes()
+        #self.selection_rect.get_transform()
+
+
+        #
+        # Other
+        #
 
         self.plots_vbox2 = gtk.VBox()
         self.plots_vbox2.show()
@@ -290,7 +356,7 @@ class Analyse_One(gtk.Frame):
             fs.write(str([self.analysis_img.get_text(), float(self.cce_per_pixel.get_text()), cce_per_pixel ]) + "\n")
 
             fs.close()
-            self.owner.DMS("Calibration", "Setting " + self.cce_per_pixel.get_text() + \
+            self.owner.DMS("Calibration", "Setting " + self.f_settings.image_path + \
                 " colony depth per pixel to " + str( cce_per_pixel ) + " cell estimate.")
             
         except:
@@ -307,116 +373,107 @@ class Analyse_One(gtk.Frame):
         f.add_pattern("*.tiff")
         f.add_pattern("*.TIFF")
         newimg.add_filter(f)
-
         result = newimg.run()
 
         if result == gtk.RESPONSE_APPLY:
+            self._grayscale = None
             filename= newimg.get_filename()
             self.analysis_img.set_text(filename)
             self.f_settings.image_path = newimg.get_filename()
             newimg.destroy()
             self.f_settings.marker_analysis(output_function = self.analysis_img.set_text)
-            self.f_settings.set_areas_positions()
 
-            self.owner.DMS("Reference scan positions", 
-                str(self.f_settings.fixture_config_file.get("grayscale_area")), level = 110)
-            self.owner.DMS("Scan positions", 
-                str(self.f_settings.current_analysis_image_config.get("grayscale_area")), level = 110)
+            fixture_X, fixture_Y = self.f_settings.get_fixture_markings()
+
+            if len(fixture_X) == len(self.f_settings.mark_X):
+                self.f_settings.set_areas_positions()
+
+                self.owner.DMS("Reference scan positions", 
+                    str(self.f_settings.fixture_config_file.get("grayscale_area")), level = 110)
+                self.owner.DMS("Scan positions", 
+                    str(self.f_settings.current_analysis_image_config.get("grayscale_area")), level = 110)
+
+                rotated = True
+            else:
+                self.owner.DMS("Error", "Missmatch between fixture configuration and current image", level =110)
+                rotated = False
 
             if self.f_settings.A != None:
+                grayscale = None
                 dpi_factor = 4.0
                 self.f_settings.A.load_other_size(filename, dpi_factor)
-                grayscale = self.f_settings.A.get_subsection(self.f_settings.current_analysis_image_config.get("grayscale_area"))
-
+                if rotated:
+                    grayscale = self.f_settings.A.get_subsection(self.f_settings.current_analysis_image_config.get("grayscale_area"))
                 #EMPTYING self.plots_vbox
-                for child in self.plots_vbox.get_children():
-                    self.plots_vbox.remove(child)
+                #for child in self.plots_vbox.get_children():
+                #    self.plots_vbox.remove(child)
 
                 if grayscale != None:
-                    #GRAYSCALE PLOT 
 
-                    gs = img_base.Analyse_Grayscale(image=grayscale)
-                    self._grayscale = gs._grayscale
+                    self.set_grayscale(grayscale)
 
-                    label = gtk.Label("Grayscale analysis")
-                    label.show()
-                    self.plots_vbox.pack_start(label, False, False, 2)
-                    grayscale_fig = plt.Figure(figsize=(50,40), dpi=100)
-                    grayscale_fig.subplots_adjust(left=0.02, right=0.98, wspace=0.3)
-                    grayscale_plot = grayscale_fig.add_subplot(121)
-                    grayscale_plot.imshow(grayscale.T)
-                    Y = np.ones(len(gs._grayscale_pos)) * gs._mid_orth_strip 
-                    grayscale_plot.plot(gs._grayscale_pos, Y,'ko', mfc='w', mew=1, ms=3)
-                    grayscale_plot.get_xaxis().set_visible(False)
-                    grayscale_plot.get_yaxis().set_visible(False)
-                    grayscale_plot.set_xlim(xmin=0,xmax=grayscale.shape[0])
+                else:
+                    self._grayscale = None
 
-                    grayscale_plot = grayscale_fig.add_subplot(122)
+                #THE LARGE IMAGE
 
-                    z2 = np.polyfit(gs._grayscale_X, gs._grayscale,2)
-                    p2 = np.poly1d(z2)
-                    z3 = np.polyfit(gs._grayscale_X, gs._grayscale,3)
-                    p3 = np.poly1d(z3)
-
-                    xp = np.linspace(gs._grayscale_X[0], gs._grayscale_X[-1], 100)
-                    line1 = grayscale_plot.plot(gs._grayscale_X, gs._grayscale,'b.', mfc='None', mew=2)
-                    #line2 = grayscale_plot.plot(xp, p2(xp),'r-')
-                    line3 = grayscale_plot.plot(xp, p3(xp),'g-')
-
-                    #grayscale_plot.legend( (line1, line2, line3),
-                       #('Data', 'Poly-2', 'Poly-3'),
-                       #'upper right' )
-
-
-                    grayscale_plot.axis("tight")
-                    grayscale_plot.get_xaxis().set_visible(False)
-
-                    grayscale_canvas = FigureCanvas(grayscale_fig)
-                    grayscale_canvas.show()
-                    grayscale_canvas.set_size_request(400,150)
-                    self.plots_vbox.pack_start(grayscale_canvas, False, False, 2)
-
-
-                #ENTIRE SCAN PLOT
-                label = gtk.Label("Marker detection analysis")
-                label.show()
-                self.plots_vbox.pack_start(label, False, False, 2)
-                figsize = (500,350)
-                self.image_fig = plt.Figure(figsize=figsize, dpi=75)
-                image_plot = self.image_fig.add_subplot(111)
-                image_canvas = FigureCanvas(self.image_fig)
-                self.image_fig.canvas.mpl_connect('button_press_event', self.plot_click)
-                self.image_fig.canvas.mpl_connect('button_release_event', self.plot_release)
-                self.image_fig.canvas.mpl_connect('motion_notify_event', self.plot_drag)
-
+                image_plot = self.image_fig.gca()
+                image_plot.cla()
                 image_plot.imshow(self.f_settings.A._img.T)
                 ax = image_plot.plot(self.f_settings.mark_Y*dpi_factor, self.f_settings.mark_X*dpi_factor,'ko', mfc='None', mew=2)
-                self.selection_rect = plt_patches.Rectangle(
-                        (0,0),0,0, ec = 'k', fill=False, lw=0.2
-                        )
-                self.selection_rect.get_axes()
-                self.selection_rect.get_transform()
-                image_plot.add_patch(self.selection_rect)
-                image_plot.get_xaxis().set_visible(False)
-                image_plot.get_yaxis().set_visible(False)
                 image_plot.set_xlim(xmin=0,xmax=self.f_settings.A._img.shape[0])
                 image_plot.set_ylim(ymin=0,ymax=self.f_settings.A._img.shape[1])
-                image_canvas.show()
-                image_canvas.set_size_request(figsize[0],figsize[1])
+                image_plot.add_patch(self.selection_rect)
+                self.image_fig.canvas.draw()
 
-                self.plots_vbox.pack_start(image_canvas, False, False, 2)
-
-                self.selection_circ = plt_patches.Circle((0,0),0)
-                self.selection_rect.get_axes()
-                self.selection_rect.get_transform()
-
-
-            self.analysis_img.set_text('Ready to use: ' + str(filename))
-            self.section_picking.set_text("Click on upper left corner of interest.")
+            self.analysis_img.set_text(str(filename))
+            self.section_picking.set_text("Select area (and guide blob-detection if needed).")
 
             self.blob_fig = None
             self.blob_bool_fig = None
             self.blob_hist = None
+
+    def set_manual_grayscale(self, ul, lr):
+
+        img_section = self.get_img_section(ul, lr, as_copy=False)
+        self.set_grayscale(img_section)
+
+    def set_grayscale(self, im_section):
+
+        gs = img_base.Analyse_Grayscale(image=im_section)
+        self._grayscale = gs._grayscale
+
+        #LEFT PLOT
+        Y = np.ones(len(gs._grayscale_pos)) * gs._mid_orth_strip 
+        #grayscale_plot = self.grayscale_fig.get_subplot(121)
+        self.grayscale_plot_img.clear()
+        self.grayscale_plot_img.imshow(im_section.T)
+        self.grayscale_plot_img.plot(gs._grayscale_pos, Y,'ko', mfc='w', mew=1, ms=3)
+        self.grayscale_plot_img.set_xlim(xmin=0,xmax=im_section.shape[0])
+
+        #RIGHT PLOT
+        #grayscale_plot = self.grayscale_fig.get_subplot(122)
+
+        if len(gs._grayscale_X) != len(gs._grayscale):
+            self._grayscale=None
+            self.owner.DMS("Error", "There's something wrong with the grayscale. Switching to manual")
+            return False
+
+        z2 = np.polyfit(gs._grayscale_X, gs._grayscale,2)
+        p2 = np.poly1d(z2)
+        z3 = np.polyfit(gs._grayscale_X, gs._grayscale,3)
+        p3 = np.poly1d(z3)
+
+        xp = np.linspace(gs._grayscale_X[0], gs._grayscale_X[-1], 100)
+
+        self.grayscale_plot.clear()
+        line1 = self.grayscale_plot.plot(gs._grayscale_X, gs._grayscale,'b.', mfc='None', mew=2)
+        #line2 = grayscale_plot.plot(xp, p2(xp),'r-')
+        line3 = self.grayscale_plot.plot(xp, p3(xp),'g-')
+
+        self.grayscale_fig.canvas.draw()
+
+        return True
 
     def get_click_in_rect(self, event):
 
@@ -566,7 +623,11 @@ class Analyse_One(gtk.Frame):
 
                     self.selection_width.set_text(str(self.selection_rect.get_width()))
                     self.selection_height.set_text(str(self.selection_rect.get_height()))
-                    self.get_analysis()
+                    if self._grayscale != None:
+                        self.get_analysis()
+                    else:
+                        self.set_manual_grayscale(self._rect_ul, self._rect_lr)
+
             else:
                 self._rect_ul = (self.selection_rect.get_x(),
                     self.selection_rect.get_y())
@@ -610,6 +671,28 @@ class Analyse_One(gtk.Frame):
                         radius = self.selection_circ.get_radius())
                 
 
+    def get_img_section(self, ul, lr, as_copy=False):
+
+
+        if ul[0] < lr[0]:
+            upper = ul[0]
+            lower = lr[0]
+        else:
+            lower = ul[0]
+            upper = lr[0]
+
+        if ul[1] < lr[1]:
+            left = ul[1]
+            right = lr[1]
+        else:
+            right = ul[1]
+            left = lr[1]
+
+        if as_copy:
+            return np.copy(self.f_settings.A._img[upper:lower,left:right])
+        else:
+            return self.f_settings.A._img[upper:lower,left:right]
+
     def get_analysis(self, center=None, radius=None):
 
         if radius is None:
@@ -619,21 +702,8 @@ class Analyse_One(gtk.Frame):
         #for child in self.plots_vbox2.get_children():
         #    self.plots_vbox2.remove(child)
 
-        #Getting things in order        
-        if self._rect_ul[0] < self._rect_lr[0]:
-            upper = self._rect_ul[0]
-            lower = self._rect_lr[0]
-        else:
-            lower = self._rect_ul[0]
-            upper = self._rect_lr[0]
-        if self._rect_ul[1] < self._rect_lr[1]:
-            left = self._rect_ul[1]
-            right = self._rect_lr[1]
-        else:
-            right = self._rect_ul[1]
-            left = self._rect_lr[1]
 
-        img_section = np.copy(self.f_settings.A._img[upper:lower,left:right])
+        img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
         img_transf = img_section.copy()
 
         tf_matrix = colonies.get_gray_scale_transformation_matrix(self._grayscale)

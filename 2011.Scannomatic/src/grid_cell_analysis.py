@@ -327,7 +327,7 @@ class Blob(Cell_Item):
 
             self.edge_detect()
  
-    def get_round_kernel(self, radius=6):
+    def get_round_kernel(self, radius=6, outline=False):
 
 
         round_kernel = np.zeros(((radius+1)*2+1,(radius+1)*2+1)).astype(\
@@ -337,7 +337,10 @@ class Blob(Cell_Item):
 
         y,x = np.ogrid[-radius:radius, -radius:radius]
 
-        index = x**2 + y**2 <= radius**2
+        if outline:
+            index = radius**2 - 1 <= x**2 + y**2 <= radius** + 2
+        else:
+            index = x**2 + y**2 <= radius**2
 
         round_kernel[center_y-radius:center_y+radius, 
             center_x-radius:center_x+radius][index] = True
