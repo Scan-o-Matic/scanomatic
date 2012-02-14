@@ -111,6 +111,11 @@ class Analyse_One(gtk.Frame):
         self.plots_vbox.pack_start(image_canvas, False, False, 2)
 
 
+        self.gs_reset_button = gtk.Button(label = 'No image loaded...')
+        self.gs_reset_button.show()
+        self.gs_reset_button.connect("clicked", self.set_grayscale_selecting)
+        self.plots_vbox.pack_start(self.gs_reset_button, False, False, 2)
+        self.gs_reset_button.set_sensitive(False)
         #
         # Plot sections / blob images
         #
@@ -383,6 +388,8 @@ class Analyse_One(gtk.Frame):
             newimg.destroy()
             self.f_settings.marker_analysis(output_function = self.analysis_img.set_text)
 
+
+
             fixture_X, fixture_Y = self.f_settings.get_fixture_markings()
 
             if len(fixture_X) == len(self.f_settings.mark_X):
@@ -399,6 +406,8 @@ class Analyse_One(gtk.Frame):
                 rotated = False
 
             if self.f_settings.A != None:
+
+
                 grayscale = None
                 dpi_factor = 4.0
                 self.f_settings.A.load_other_size(filename, dpi_factor)
@@ -410,10 +419,10 @@ class Analyse_One(gtk.Frame):
 
                 if grayscale != None:
 
-                    self.set_grayscale(grayscale)
+                    gs_success = self.set_grayscale(grayscale)
 
-                else:
-                    self._grayscale = None
+                if grayscale is None or gs_success == False:
+                    self.set_grayscale_selecting()
 
                 #THE LARGE IMAGE
 
@@ -433,12 +442,25 @@ class Analyse_One(gtk.Frame):
             self.blob_bool_fig = None
             self.blob_hist = None
 
+    def set_grayscale_selecting(self, widget=None, event=None, data=None):
+
+        self.gs_reset_button.set_sensitive(False)
+        self.gs_reset_button.set_label("Currently selecting a gray-scale area")
+        self._grayscale = None
+        self.grayscale_plot_img.clear()
+        self.grayscale_plot.clear()
+        self.grayscale_fig.canvas.draw()
+
+
     def set_manual_grayscale(self, ul, lr):
 
         img_section = self.get_img_section(ul, lr, as_copy=False)
         self.set_grayscale(img_section)
 
     def set_grayscale(self, im_section):
+
+        self.gs_reset_button.set_sensitive(True)
+        self.gs_reset_button.set_label("Click to reset grayscale")
 
         gs = img_base.Analyse_Grayscale(image=im_section)
         self._grayscale = gs._grayscale
@@ -847,7 +869,7 @@ class Analyse_One(gtk.Frame):
                 image_canvas.show()
                 self.plots_vbox2.pack_start(image_canvas, False, False, 2)
 
-                self.blob_hist.subplots_adjus(bottom=3)
+                self.blob_hist.subplots_adjust(bottom=3)
 
                 label = gtk.Label("Threshold (red), Background Mean(green)")
                 label.show()

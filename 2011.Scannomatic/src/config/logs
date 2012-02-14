@@ -11034,4 +11034,79 @@
 *
 * 
 
+*** ANALYSIS
+* 14 Feb 2012 10:05:53
+*
+* Activated
+
+*** ERROR
+* 14 Feb 2012 10:06:04
+*
+* Missmatch between fixture configuration and current image
+
+*** TERMINATING
+* 14 Feb 2012 10:06:45
+*
+* 
+
+*** ANALYSIS
+* 14 Feb 2012 10:07:22
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 14 Feb 2012 10:07:28
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 14 Feb 2012 10:07:28
+*
+* [(970.67031153489631, 297.57462529970763), (791.60648156978448, 351.29989815994617)]
+
+*** ERROR
+* 14 Feb 2012 10:07:28
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 14 Feb 2012 10:07:49
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ANALYSIS
+* 14 Feb 2012 10:08:12
+*
+* Alternative measures: see in program (from mean), 117510.0 (from median)
+
+*** TERMINATING
+* 14 Feb 2012 10:09:03
+*
+* 
+
+*** ANALYSIS
+* 14 Feb 2012 10:11:55
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 14 Feb 2012 10:12:03
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 14 Feb 2012 10:12:03
+*
+* [(970.67031153489631, 297.57462529970763), (791.60648156978448, 351.29989815994617)]
+
+*** ERROR
+* 14 Feb 2012 10:12:03
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** TERMINATING
+* 14 Feb 2012 10:12:36
+*
+* 
+
 

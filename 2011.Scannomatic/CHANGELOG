@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.99 #####
    ##################################
 
+*** Gray-scale selection is now quite user-friendly
+
 *** Canvases are re-usable in analyse one and images that don't
     match the fixture will now load and give users a one-chance
     at selecting the gs-area manually.
