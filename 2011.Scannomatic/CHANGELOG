@@ -2,7 +2,9 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
-
+*** Implementation of calibration.py started, based on file
+    calibration.data in src/config (created from taking measures
+    in Analyse One-view.
 
   ##################################
 ##### Changed in Scannomatic 0.99 #####

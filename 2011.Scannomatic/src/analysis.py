@@ -123,7 +123,7 @@ class Analyse_One(gtk.Frame):
         self.selection_circ = plt_patches.Circle((0,0),0)
         #self.selection_rect.get_axes()
         #self.selection_rect.get_transform()
-
+        self._blobs_have_been_loaded = False
 
         #
         # Other
@@ -449,9 +449,10 @@ class Analyse_One(gtk.Frame):
             self.analysis_img.set_text(str(filename))
             self.section_picking.set_text("Select area (and guide blob-detection if needed).")
 
-            self.blob_fig = None
-            self.blob_bool_fig = None
-            self.blob_hist = None
+            if self._blobs_have_been_loaded:
+                self.blob_fig.cla()
+                self.blob_bool_fig.cla()
+                self.blob_hist.cla()
 
     def set_grayscale_selecting(self, widget=None, event=None, data=None):
 
@@ -762,7 +763,9 @@ class Analyse_One(gtk.Frame):
         image_size = (img_section.shape[1]/scale_factor,
             img_section.shape[0]/scale_factor)
 
-        if self.blob_fig is None:
+        if self._blobs_have_been_loaded == False:
+
+
             hbox = gtk.HBox()
             hbox.show()
             self.plots_vbox2.pack_start(hbox, False, False, 0)
@@ -824,7 +827,7 @@ class Analyse_One(gtk.Frame):
         # BLOB vs BACKGROUND CANVAS
         #
 
-        if self.blob_bool_fig is None:
+        if self._blobs_have_been_loaded == False:
 
             vbox = gtk.VBox()
             vbox.show()
@@ -864,7 +867,7 @@ class Analyse_One(gtk.Frame):
         if blob_hist.labels != None:
             bincenters = 0.5*(blob_hist.labels[1:]+blob_hist.labels[:-1])
 
-            if self.blob_hist is None:
+            if self._blobs_have_been_loaded == False:
             
                 label = gtk.Label("Histogram:")
                 label.show()
@@ -880,7 +883,7 @@ class Analyse_One(gtk.Frame):
                 image_canvas.show()
                 self.plots_vbox2.pack_start(image_canvas, False, False, 2)
 
-                self.blob_hist.subplots_adjust(bottom=3)
+                #self.blob_hist.subplots_adjust(top=2, bottom=2)
 
                 label = gtk.Label("Threshold (red), Background Mean(green)")
                 label.show()
@@ -896,6 +899,8 @@ class Analyse_One(gtk.Frame):
             image_plot.set_xticklabels(map(str,x_ticks), fontsize='xx-small')
             image_plot.axvline(blob.threshold, c='r')
         
+        self._blobs_have_been_loaded = True
+
         if features != None:
             self.cell_area.set_text(str(features['cell']['area']))
             
