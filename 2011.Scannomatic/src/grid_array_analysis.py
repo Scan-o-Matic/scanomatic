@@ -421,156 +421,156 @@ class Grid_Analysis():
         return ideal_signal
  
             
-    def get_signal_position_and_frequency(self, measures, segments, verboise=False):
-        """
-            get_signal_position_and_frequency takes an array of spikes
-            (in the format returned from get_spikes) and searches for a
-            subset of spikes with regular frequency that has the length
-            of the segments-variable.
+    #def get_signal_position_and_frequency(self, measures, segments, verboise=False):
+        #"""
+            #get_signal_position_and_frequency takes an array of spikes
+            #(in the format returned from get_spikes) and searches for a
+            #subset of spikes with regular frequency that has the length
+            #of the segments-variable.
+#
+            #This function is still in development. At present it detects
+            #a hidden signal in a spike list where the signal's spikes
+            ##is about half of the spikes given that all spikes are detected.
+            #(Score 20000 correct out of 20000 tested).
 
-            This function is still in development. At present it detects
-            a hidden signal in a spike list where the signal's spikes
-            is about half of the spikes given that all spikes are detected.
-            (Score 20000 correct out of 20000 tested).
+            #It should in principle be able to detect even if one or two
+            #of the signal's spikes where missed.
+#
+            #It may have some problem detecting the signal if there are false
+            #spikes inbetween the signal's spikes.
+#
+            #The function takes the following arguments:
+#
+            #@measures       An array of spikes as returned from get_spikes
+#
+            #@segments       An int describing how many spikes the signal
+                            #should have (E.g. 8 or 12 for a 96-pinned
+                            #plate, depending on what dimension is analysed.
+#
+            #@verboise       Boolean, causes print-outs (default False)
+#
+        #"""
+        #signals_modulus = []
+        #signals_covered = []
+        #signals_residue = []
+        #int_measures = measures.astype(int)+1
 
-            It should in principle be able to detect even if one or two
-            of the signal's spikes where missed.
-
-            It may have some problem detecting the signal if there are false
-            spikes inbetween the signal's spikes.
-
-            The function takes the following arguments:
-
-            @measures       An array of spikes as returned from get_spikes
-
-            @segments       An int describing how many spikes the signal
-                            should have (E.g. 8 or 12 for a 96-pinned
-                            plate, depending on what dimension is analysed.
-
-            @verboise       Boolean, causes print-outs (default False)
-
-        """
-        signals_modulus = []
-        signals_covered = []
-        signals_residue = []
-        int_measures = measures.astype(int)+1
-
-        for i in xrange(len(measures)-segments):
+        #for i in xrange(len(measures)-segments):
             #if verboise:
                 #print i, segments
-            signals_modulus.append((
-                (measures[i:i+segments] - measures[i])**2/ \
-                float(measures[i])).sum())
+            #signals_modulus.append((
+                #(measures[i:i+segments] - measures[i])**2/ \
+                #float(measures[i])).sum())
 
-            signal_area = int_measures[i] * (segments - 1)
-            j = i + 1
-            while j < len(measures) and signal_area > measures[j]:
-                signal_area -= measures[j]
-                j += 1
-            if j + 1 < len(measures):
-                if signal_area > (abs(signal_area - measures[j+1])):
-                    signal_area = abs(signal_area - measures[j+1])
+            #signal_area = int_measures[i] * (segments - 1)
+            #j = i + 1
+            #while j < len(measures) and signal_area > measures[j]:
+                #signal_area -= measures[j]
+                #j += 1
+            #if j + 1 < len(measures):
+                #if signal_area > (abs(signal_area - measures[j+1])):
+                    #signal_area = abs(signal_area - measures[j+1])
+#
+            #signals_covered.append(abs(j-i+2 - segments))
+            #signals_residue.append(signal_area / float(measures[i]))
+#
+        #w2 = 0.6
+        #w3 = 0.6
+        #signals = np.array(signals_covered)**2 + \
+            #w2 * np.array(signals_modulus) + \
+            #w3 * (1 + np.array(signals_residue))**2
+###
+        #if len(signals) > 0:
+            #best_fit_pos = signals.argmin()
+        #else:
+            #return None, None
 
-            signals_covered.append(abs(j-i+2 - segments))
-            signals_residue.append(signal_area / float(measures[i]))
+        #frequency = np.median(measures[best_fit_pos:(best_fit_pos + \
+             #signals_covered[best_fit_pos] + segments - 2)])
 
-        w2 = 0.6
-        w3 = 0.6
-        signals = np.array(signals_covered)**2 + \
-            w2 * np.array(signals_modulus) + \
-            w3 * (1 + np.array(signals_residue))**2
-
-        if len(signals) > 0:
-            best_fit_pos = signals.argmin()
-        else:
-            return None, None
-
-        frequency = np.median(measures[best_fit_pos:(best_fit_pos + \
-             signals_covered[best_fit_pos] + segments - 2)])
-
-        if verboise:
-            print "*** Signal evaluation:"
-            print "* Signal:"
-            print signals
-            print "* Signals Covered"
-            print signals_covered
-            print "* Signals Modulus-like"
-            print signals_modulus
-            print "* Signals Final residue"
-            print signals_residue
-            print "* Found signal frequency"
-            print frequency
-
-        #CHECK THIS!
-        return (best_fit_pos -1), frequency
-
-
-    def get_inserts_discards_extrapolations(self, best_fit_range, frequency, \
-            segments, freq_dev_allowed = 0.9):
-        """
-            get_inserts_discards_extrapolations takes a best_fit_range and
-            cleans out hits that lie too close, then inserts extra positions
-            between two hits if distance is a multiple of the expected. Finally
-            it adds extra positions to the right side if not enough were found.
-
-            The function takes the following arguments:
-
-            @best_fit_range     A range of positions that is the best fit from
-                                get_signal_position_and_frequency
-
-            @frequency          The frequency for the found signal
-
-            @segments           The wanted number of segments
-
-            @freq_dev_allowed   A coefficient (<1) of how much variation is allowed
-                                in spike to spike distance (e.g. how regular
-                                the pinning pattern is expected to be).
-        """
-
-        #Preparations
-        u_bound = (2 - freq_dev_allowed) * frequency
-        l_bound = freq_dev_allowed * frequency
-
-        if len(best_fit_range) == 0:
-            return None
-
-        #Cleaning out bad positions
-        trimmed_positions = [best_fit_range[0]]
-
-        for i in xrange(len(best_fit_range)-1):
-            if freq_dev_allowed <= (best_fit_range[i+1] - \
-                    trimmed_positions[-1]) / frequency \
-                    <= (2 - freq_dev_allowed):
-                trimmed_positions.append(best_fit_range[i])
-
-        #Filling up with good missing interpeaks
-        pos = 1
-        tp_end = len(trimmed_positions) -1
-
-        final_positions = [trimmed_positions[0]]
-        segments -= 1
-
-        while segments > 0 and pos < tp_end:
-
-            inter_positions = int(round((trimmed_positions[pos] - \
-                trimmed_positions[pos-1]) / frequency)) - 1
- 
-            for i_p in xrange(inter_positions):
-                if segments > 0:
-                    final_positions.append(final_positions[-1] + frequency)
-                else:
-                    break
-            
-            if segments > 0:
-                final_positions.append(trimmed_positions[pos])
-                pos += 1
-                segments -= 1
-
-        #Filling up at right hand side
-        for i in xrange(segments):
-            final_positions.append(final_positions[-1] + frequency)
-
-        return np.array(final_positions)
+        #if verboise:
+            #print "*** Signal evaluation:"
+            #print "* Signal:"
+            #print signals
+            #print "* Signals Covered"
+            #print signals_covered
+            #print "* Signals Modulus-like"
+            #print signals_modulus
+            #print "* Signals Final residue"
+            #print signals_residue
+            #print "* Found signal frequency"
+            #print frequency
+#
+        ##CHECK THIS!
+        #return (best_fit_pos -1), frequency
+#
+#
+    #def get_inserts_discards_extrapolations(self, best_fit_range, frequency, \
+            #segments, freq_dev_allowed = 0.9):
+        #"""
+            #get_inserts_discards_extrapolations takes a best_fit_range and
+            #cleans out hits that lie too close, then inserts extra positions
+            #between two hits if distance is a multiple of the expected. Finally
+            #it adds extra positions to the right side if not enough were found.
+#
+            #The function takes the following arguments:
+#
+            #@best_fit_range     A range of positions that is the best fit from
+                                #get_signal_position_and_frequency
+#
+            #@frequency          The frequency for the found signal
+#
+            #@segments           The wanted number of segments
+#
+            #@freq_dev_allowed   A coefficient (<1) of how much variation is allowed
+                                #in spike to spike distance (e.g. how regular
+                                #the pinning pattern is expected to be).
+        #"""
+#
+        ##Preparations
+        #u_bound = (2 - freq_dev_allowed) * frequency
+        #l_bound = freq_dev_allowed * frequency
+#
+        #if len(best_fit_range) == 0:
+            #return None
+#
+        ##Cleaning out bad positions
+        #trimmed_positions = [best_fit_range[0]]
+#
+        #for i in xrange(len(best_fit_range)-1):
+            #if freq_dev_allowed <= (best_fit_range[i+1] - \
+                    #trimmed_positions[-1]) / frequency \
+                    #<= (2 - freq_dev_allowed):
+                #trimmed_positions.append(best_fit_range[i])
+#
+        ##Filling up with good missing interpeaks
+        #pos = 1
+        #tp_end = len(trimmed_positions) -1
+#
+        #final_positions = [trimmed_positions[0]]
+        #segments -= 1
+#
+        #while segments > 0 and pos < tp_end:
+#
+            #inter_positions = int(round((trimmed_positions[pos] - \
+                #trimmed_positions[pos-1]) / frequency)) - 1
+ #
+            #for i_p in xrange(inter_positions):
+                #if segments > 0:
+                    #final_positions.append(final_positions[-1] + frequency)
+                #else:
+                    #break
+            #
+            #if segments > 0:
+                #final_positions.append(trimmed_positions[pos])
+                #pos += 1
+                #segments -= 1
+#
+        ##Filling up at right hand side
+        #for i in xrange(segments):
+            #final_positions.append(final_positions[-1] + frequency)
+#
+        #return np.array(final_positions)
 
 
     def get_spikes(self, dimension, im=None, visual = False, verboise = False,\
