@@ -329,15 +329,26 @@ class Analyse_One(gtk.Frame):
         hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
+        label = gtk.Label("CCE/grid-cell:")
+        label.show()
+        hbox.pack_start(label, False, False, 2)
+
         self.cce_indep_measure = gtk.Entry()
         self.cce_indep_measure.connect("focus-out-event", self.verify_number)
         self.cce_indep_measure.show()
-        hbox.pack_start(self.cce_indep_measure, False, False, 2)
-        
-        label = gtk.Label("CCE/grid-cell")
-        label.show()
-        hbox.pack_end(label, False, False, 2)
+        hbox.pack_end(self.cce_indep_measure, False, False, 2)
 
+        hbox = gtk.HBox()
+        hbox.show()
+        vbox3.pack_start(hbox, False, False, 2)
+
+        label = gtk.Label('Data point label:')
+        label.show()
+        hbox.pack_start(label, False, False, 2)
+
+        self.cce_data_label = gtk.Entry()
+        self.cce_data_label.show()
+        hbox.pack_end(self.cce_data_label, False, False, 2)      
 
         button = gtk.Button("Submit calibration point")
         button.show()
@@ -358,7 +369,7 @@ class Analyse_One(gtk.Frame):
         try:
             fs = open(self._config_calibration_path,'a')
 
-            fs.write(str([self.analysis_img.get_text(), float(self.cce_per_pixel.get_text()), cce_per_pixel ]) + "\n")
+            fs.write(str([self.analysis_img.get_text(), self.cce_data_label.get_text() ,float(self.cce_per_pixel.get_text()), cce_per_pixel ]) + "\n")
 
             fs.close()
             self.owner.DMS("Calibration", "Setting " + self.f_settings.image_path + \
