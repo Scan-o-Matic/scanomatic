@@ -133,7 +133,10 @@ class Cell_Item():
 
         self.features['area'] = self.filter_array.sum()
         self.features['pixelsum'] = np.float64((self.grid_array * self.filter_array).sum())
-
+        if self.features['area'] != 0:
+            self.features['mean'] = self.features['pixelsum'] / self.features['area']
+        else:
+            self.features['mean'] = None
 
         if self.CELLITEM_TYPE == 1:
             self.features['centroid'] = None
@@ -141,7 +144,6 @@ class Cell_Item():
 
         if self.CELLITEM_TYPE == 3:
             self.features['median'] = np.median(self.grid_array)
-            self.features['mean'] = self.grid_array.mean()
             self.features['IQR'] = mquantiles(self.grid_array,prob=[0.25,0.75])
             try:
                 self.features['IQR_mean'] = tmean(self.grid_array,self.features['IQR'])
@@ -151,7 +153,7 @@ class Cell_Item():
         else:
             feature_array = ma.masked_array(self.grid_array, mask=abs(self.filter_array - 1))
             self.features['median'] = ma.median(feature_array)
-            self.features['mean'] = feature_array.mean()
+            #self.features['mean'] = feature_array.mean()
             self.features['IQR'] = mquantiles(ma.compressed(feature_array),prob=[0.25,0.75])
             try:
                 self.features['IQR_mean'] = ma.masked_outside(feature_array, self.features['IQR'][0], self.features['IQR'][1]).mean()

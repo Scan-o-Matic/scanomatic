@@ -124,6 +124,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         from matplotlib.font_manager import FontProperties
         from PIL import Image
         watch_reading = [] 
+        x_labels = []
 
         fontP = FontProperties()
         fontP.set_size('xx-small')
@@ -267,6 +268,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         else:
             if graph_watch != None:
 
+                x_labels.append(image_pos)
                 pict_size = project_image.watch_grid_size
                 pict_scale = pict_target_width / float(pict_size[1])
                 pict_resize = (int(pict_size[0] * pict_scale), int(pict_size[1] * pict_scale))
@@ -382,6 +384,13 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     if  graph_watch != None:
         Y = np.asarray(watch_reading)
         X = (np.arange(0, len(image_dictionaries))+0.5)*pict_target_width
+        x_labels.reverse()
+        for xlabel_pos in xrange(len(x_labels)):
+            if xlabel_pos % 5 > 0:
+                x_labels[xlabel_pos] = ""
+        #print len(X), len(x_labels)
+        #print X
+        #print x_labels
         #graphcolors='rgbycmk'
         cur_plt_graph = ""
         plt_graph_i = 1
@@ -406,23 +415,25 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                     elif plot_labels[i] == "blob:area":
                         b_area = Y[:,i]
 
-                    print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
-                    print Y[:,i].max(), Y[:,i].min()
-                    print Y[:,i]
+                    #print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
+                    #print Y[:,i].max(), Y[:,i].min()
+                    #print Y[:,i]
                     if cur_plt_graph != plot_labels[i].split(":")[0]:
                         cur_plt_graph = plot_labels[i].split(":")[0]
                         if plt_graph_i > 1:
-                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.3))
+                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
                         plt_graph_i += 1
-                        plt_watch_curves = plt_watch_colony.add_subplot(410 + plt_graph_i,
+                        plt_watch_curves = plt_watch_colony.add_subplot(4,1,plt_graph_i,
                             title=cur_plt_graph)
+                        plt_watch_curves.set_xticks(X)
+                        plt_watch_curves.set_xticklabels(x_labels, fontsize="xx-small", rotation=90)
 
                     if scale_factor != 0: 
                         plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor, #+ \
                         #3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
                         #16,\
                         #graphcolors[i%len(graphcolors)] + '-',\
-                            label=plot_labels[i][len(cur_plt_graph)+1:])
+                            label=plot_labels[i][len(cur_plt_graph)+1:])                        
                     else:
                         plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor+5*i, #+ \
                         #3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
@@ -434,7 +445,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 except TypeError:
                     print "*** Error on", plot_labels[i], "because of something"
 
-        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.3))
+        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
         if graph_output != None:
             try:
                 plt_watch_colony.savefig(graph_output, dpi=300)
@@ -447,6 +458,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             plt_watch_1.plot(b_area, b_pixelsum)
             plt_watch_1.set_xlabel('Blob:Area')
             plt_watch_1.set_ylabel('Blob:PixelSum')
+            plt_watch_1.set_title('')
             plt_watch_colony.savefig("debug_corr.png")
             #DEBUG END
             pyplot.close(plt_watch_colony)

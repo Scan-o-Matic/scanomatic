@@ -63,7 +63,7 @@ class Grid_Analysis():
         self.im = None
         self.histogram = hist.Histogram(self.im, run_at_init = False)        
         self.threshold = None
-        self.best_fit_start_pos = None
+        #self.best_fit_start_pos = None
         self.best_fit_frequency = None
         self.best_fit_positions = None
         self.R = 0
@@ -107,7 +107,7 @@ class Grid_Analysis():
         self.im = im
         positions = [None, None]
         measures = [None, None]
-        best_fit_start_pos = [None, None]
+        #best_fit_start_pos = [None, None]
         best_fit_frequency = [None, None]
         best_fit_positions = [None, None]
         R = 0
@@ -121,6 +121,17 @@ class Grid_Analysis():
                 positions[dimension], measures[dimension] = self.get_spikes(
                     dimension, im, visual, verboise, use_otsu)
 
+            #DEBUG ROBUSTNESS TEST
+            #from random import randint
+            #print "Positions before test:", len(positions[dimension])
+            #pos_range = range(len(positions[dimension]))
+            #for del_count in xrange(randint(1,5)+1):
+                #del_pos = randint(0,len(pos_range)-1)
+                #del pos_range[del_pos]
+            #positions[dimension] = positions[dimension][pos_range]
+            #measures[dimension] = measures[dimension][pos_range]
+            #print "Deleted", del_count, "positions"
+            #DEBUG END
 
             if verboise:
                 print "*** Peak positions " + str(dimension) + "th dimension:"
@@ -151,12 +162,24 @@ class Grid_Analysis():
 
             if visual:
                 import matplotlib.pyplot as plt
-                Y = np.ones(pinning_matrix[dimension]) * 140
+                Y = np.ones(pinning_matrix[dimension]) * 50
+                Y2 = np.ones(positions[dimension].shape) * 100
+                plt.clf()
+                if dimension == 1:
+                    plt.imshow(im[:,900:1200].T)
+                else:
+                    plt.imshow(im[300:600,:])
+                plt.plot(positions[dimension], Y2, 'r*', 
+                    label='Detected spikes', lw=3, markersize=10)
                 plt.plot(np.array(best_fit_positions[dimension]),\
-                    Y ,'g*') * 50
+                    Y ,'g*', label='Selected positions', lw=3, markersize=10)
+                plt.legend(loc=0)
+                plt.ylim(ymin=0, ymax=150)
                 plt.show()
                 #plt.savefig('signal_fit.png')
-
+                #DEBUG HACK
+                #visual = False
+                #DEBUG HACK
             #if best_fit_start_pos[dimension] != None:
  
                 #best_fit_positions[dimension] = \
@@ -205,9 +228,18 @@ class Grid_Analysis():
                             print "*** Got a grid R at, " + str(R)
                             print
 
+        #DEBUG R
+        #fs = open('debug_R.log','a')
+        #if self.best_fit_positions is None:
+            #fs.write(str([best_fit_positions[0][0], best_fit_positions[1][0]]) + "\n")
+        #else:
+            #fs.write(str([R, (best_fit_positions[0][0], best_fit_positions[1][0]),
+                #(self.best_fit_positions[0][0], self.best_fit_positions[1][0]) ]) + "\n")
+        #fs.close()
+        #DEBUG END
 
-        if R < 10 and best_fit_positions[0] != None and best_fit_positions[1] != None:
-            self.best_fit_start_pos = best_fit_start_pos
+        if R < 20 and best_fit_positions[0] != None and best_fit_positions[1] != None:
+            #self.best_fit_start_pos = best_fit_start_pos
             self.best_fit_frequency = best_fit_frequency
             self.best_fit_positions = best_fit_positions
             self.R = R

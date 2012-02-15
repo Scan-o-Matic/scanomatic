@@ -2,6 +2,17 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Corrected error and inefficient calculation of mean for the
+    different grid-items
+
+*** Included Unit Test code for grid placement by random removal of
+    spikes detected. Outcome is generally good, but wrong placement
+    happens frequently, but not always, when first or last true peak
+    is not detected. The R-correction should take care of it though.
+
+*** Grid R-value threshold increased as result of monitoring analysis.
+    Unit test code in place.
+
 *** Implementation of calibration.py started, based on file
     calibration.data in src/config (created from taking measures
     in Analyse One-view.

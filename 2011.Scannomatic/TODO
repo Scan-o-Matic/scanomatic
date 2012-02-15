@@ -5,16 +5,12 @@
 
 --- GRIDDING ---
 
-** Calculate the distance of grid jumping one signal peak unit
-    Use for R-threshold (make sure R is per blob).
 
 ** Make it possible to monitor the gray-scale values
 
-** Make stress test unit that randomly deletes detected peaks before
-    grid placement
-
 ** Investigate resolving equal grid start pos with using most 
-    centric
+    centric, and using the R-value as well...(some missed peaks will
+    affect placement)
 
 ** Investigate only using the inter-quartile part of signal at
     grid-placement to calculate the otsu-threshold.
@@ -57,6 +53,12 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+** Make stress test unit that randomly deletes detected peaks before
+    grid placement
+
+** Calculate the distance of grid jumping one signal peak unit
+    Use for R-threshold (make sure R is per blob).
 
 ** Make it possible to reuse canvases please <- maybe baby
 
