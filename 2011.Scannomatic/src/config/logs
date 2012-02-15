@@ -12419,4 +12419,114 @@
 *
 * 
 
+*** ANALYSIS
+* 15 Feb 2012 12:34:45
+*
+* Activated
+
+*** ERROR
+* 15 Feb 2012 12:35:04
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 15 Feb 2012 12:35:28
+*
+* Alternative measures: see in program (from mean), 31910.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:35:39
+*
+* Alternative measures: see in program (from mean), 45448.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:35:43
+*
+* Alternative measures: see in program (from mean), 4460.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:35:48
+*
+* Alternative measures: see in program (from mean), 68139.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:35:53
+*
+* Alternative measures: see in program (from mean), 10664.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:35:55
+*
+* Alternative measures: see in program (from mean), 5154.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:35:58
+*
+* Alternative measures: see in program (from mean), 34826.0 (from median)
+
+*** REFERENCE SCAN POSITIONS
+* 15 Feb 2012 12:36:10
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 15 Feb 2012 12:36:10
+*
+* [(858.0186543655866, 74.582050025199521), (672.22279092644703, 95.322283258849239)]
+
+*** ANALYSIS
+* 15 Feb 2012 12:36:21
+*
+* Alternative measures: see in program (from mean), 239479.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:36:30
+*
+* Alternative measures: see in program (from mean), 192563.0 (from median)
+
+*** TERMINATING
+* 15 Feb 2012 12:36:45
+*
+* 
+
+*** ANALYSIS
+* 15 Feb 2012 12:39:46
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 15 Feb 2012 12:39:55
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 15 Feb 2012 12:39:55
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 15 Feb 2012 12:40:07
+*
+* Alternative measures: see in program (from mean), 39908.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:40:20
+*
+* Alternative measures: see in program (from mean), 59190.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:40:25
+*
+* Alternative measures: see in program (from mean), 35747.0 (from median)
+
+*** ANALYSIS
+* 15 Feb 2012 12:40:28
+*
+* Alternative measures: see in program (from mean), 22756.0 (from median)
+
+*** TERMINATING
+* 15 Feb 2012 12:40:56
+*
+* 
+
 

@@ -362,7 +362,7 @@ class Grid_Array():
 
                     self._grid_cells[row][column].set_data_source( \
                         im[coord_1st[0]:coord_1st[1],\
-                        coord_2nd[0]:coord_2nd[1]] )
+                        coord_2nd[0]:coord_2nd[1]].copy() )
 
 
                     if watch_colony != None:

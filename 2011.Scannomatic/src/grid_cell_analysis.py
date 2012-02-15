@@ -365,6 +365,7 @@ class Blob(Cell_Item):
         """
 
         self.old_edge_detect()
+        #self.edge_detect_sobel()
 
     def edge_detect_sobel(self):
 
@@ -378,7 +379,7 @@ class Blob(Cell_Item):
          
         #Checking the second dirivative
         #self.filter_array = laplace(self.filter_array)
-        self.filter_array = sobel(self.filter_array)
+        self.filter_array = sobel(self.filter_array,0)**2 + sobel(self.filter_array,1)**2
 
         pyplot.imshow(self.filter_array)
         #pyplot.savefig('blob_laplace.png')
@@ -399,19 +400,18 @@ class Blob(Cell_Item):
         pyplot.savefig('blob_theshold.png')
         pyplot.clf()        
 
+        kernel = self.get_round_kernel(radius=3)
+        self.filter_array = binary_dilation(self.filter_array, structure=kernel)
+
+        pyplot.imshow(self.filter_array)
+        pyplot.savefig('blob_dilation.png')
+        pyplot.clf()        
 
         kernel = self.get_round_kernel(radius=2)
         self.filter_array = binary_erosion(self.filter_array, structure=kernel)
 
         pyplot.imshow(self.filter_array)
         pyplot.savefig('blob_erosion.png')
-        pyplot.clf()        
-
-        kernel = self.get_round_kernel(radius=3)
-        self.filter_array = binary_dilation(self.filter_array, structure=kernel)
-
-        pyplot.imshow(self.filter_array)
-        pyplot.savefig('blob_dilation.png')
         pyplot.clf()        
 
         label_array, number_of_labels = label(self.filter_array)

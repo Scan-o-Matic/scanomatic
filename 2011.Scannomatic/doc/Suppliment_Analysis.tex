@@ -15,8 +15,8 @@ a separate process, allowing for multi-threading.
 The analysis algoritm first deterimines the position of the ficture in the image,
 then using ficture calibration information to plate by plate excise them and 
 analysing them seperately. 
-Prior to plate analysis the grey-scale is analysed using fixture settings. 
-The plates' pixel-values are transformed to the grey-scale, using interpolation.
+Prior to plate analysis the gray-scale is analysed using fixture settings. 
+The plates' pixel-values are transformed to the gray-scale, using interpolation.
 Then these values are transformed to a cell count estimate-scale if such a 
 calibration has been performed. 
 The pinning matrix position is deterimined for each plate and each grid cell of
@@ -42,7 +42,76 @@ If such file is lacking a new can be generated using the script
 
 \section{Fixture Position}
 
-\section{Grey-scale}
+\section{'Gray-scale Space' to 'Cell Estimate Space'}
+To normalize the inter-scan noise that could arrise from lighting settings
+around the scanner, variations in the scanner lamp's temperature profile, and
+scanner sensor stochastics, the Kodak Q-60 Color Input Target was included
+in the fixture.
+The eight bit gray-scale image aquired from the scanner is represented as a 
+two-dimensional datastructure with X, Y coordinates, where the pixel values 
+at each position can be seens as describing the position in a third dimension,
+Z. 
+The Kodak Q-60 Color Input Target has a color neutral, hence called gray-scale,
+section. 
+The inter-scan noise is resolved by extracting the average the Z-values of each
+section in the gray-scale in \emph{Gray-scale Space} (orignial image format).
+Each section of the gray-scale has its denoted target value.
+A third degree polynomial is fitted to the measured data-pairs (Kodak values,
+original image values) using least square method.
+As the color target is continiously decreasing/increasing the third degree
+polynomial will not over-fit, while second degree polynomials fail to capture
+the acceleration at the ends of the curve.
+A further argument for fitting a polynomial rather than interpolating the 
+points is that the former is less sensitive to measurement variations of 
+individual points that arises from the fact that the pixel value axis is a
+quantum axis of 256 possible steps.
+The gray-scale of the Kodak Q-60 Color Input Target only hold 24 sections,
+including the empty section, which would enhace such effects.
+Thus, to not pass the information through a five bit filter, fitting a 
+third degree polynomial, and using this curve as means to transform the
+data from a discrete \emph{Gray-scale Space} to a continious 
+\emph{Kodak Value Space}, the richness of information is conserved.
+
+The \emph{Kodak Value Space} represents an intermediate stage where the 
+inter-scan stochastics have been minimized. 
+However, this is not the sought final representation of the data, as it is
+reasonable to assume that this space is a poor representation of the number
+of cells stacked in the Z-dimension in each pixel.
+Especially at higher densities, when the light will be expected to have
+passed through several cells before being measured, a non-linear relationship
+between values from \emph{Kodak Value Space} and independet cell count
+estimates is expected.
+To this end, a dilusion series experiment was devised (described elsewhere).
+Two measueres were used to estimate the cell count from each colony, FACS
+measures and OD measures.
+The Analyse One section of the GUI was used to extract data from the images.
+The automatic blob detection was used whenever possible, but as the diluted
+samples of the series at early time-points had less than one 
+\emph{Kodak Value Space}-unit offset compared to the background, the algoritms
+failed to properly detect the to the eye visible contour of the colony.
+In these cases circle of appropriate size was drawn ontop of the colony and
+was used to set the blob.
+For each colony, the background mean in \emph{Kodak Value Space} was subtracted
+from the blob mean. 
+The independent cell count estimate was input to the GUI, and automatically 
+devided by the blob area. 
+These two values were considered paired measures of the same biological 
+phenomenon, the former describing the average blob pixel value offset compared to
+the background (agar) in \emph{Kodak Value Space} and the latter describing the
+average estimated number of cells stacked in a blob pixel.
+The FACS-based and OD-based measures where plotted against each other producing
+figure ---INSERT FIGURE---, showing a good linear correlation with a slight
+deviation from having a first derivative of one. 
+It would imply that both measures are agreeing with the exception that one is
+linearly and systematically over or underestimating the cell count compared to 
+the other.
+Thus, the OD-measures were used as basis for the \emph{Kodak Value Space} to
+\emph{Cell Estimate Space} as these are easier experimentally to perform.
+The plot of the OD-values versus the Kodak values shows, as discussed, a clear
+non-linear correlation (see figure ---INSERT FIGURE---).
+Further, the upper limit of detection seems not to be exhausted, and the range 
+span several orders of magnitude.
+
 
 \section{Grid Placement}
 
