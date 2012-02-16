@@ -435,7 +435,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                         #graphcolors[i%len(graphcolors)] + '-',\
                             label=plot_labels[i][len(cur_plt_graph)+1:])                        
                     else:
-                        plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor+5*i, #+ \
+                        plt_watch_curves.plot(X, np.zeros(X.shape)+10*i, #+ \
                         #3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
                         #16,\
                         #graphcolors[i%len(graphcolors)] + '-',\
@@ -676,7 +676,7 @@ if __name__ == "__main__":
         #fh.close()
 
     if len(pm) == args.plates:    
-        analyse_project(args.inputfile, output_path, pm, args.graph_watch, args.supress, True, True, False, grid_times=grid_times)
+        analyse_project(args.inputfile, output_path, pm, args.graph_watch, args.supress, True, False, False, grid_times=grid_times)
     else:
         parser.error("Missmatch between number of plates specified and the number of matrices specified.")
 

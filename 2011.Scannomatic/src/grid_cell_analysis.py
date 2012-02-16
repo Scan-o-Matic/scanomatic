@@ -126,6 +126,13 @@ class Cell_Item():
 
             The function takes no arguments
 
+
+            CELLITEM_TYPEs:
+
+            Blob            1
+            Background      2
+            Cell            3
+
         """
         if self.CELLITEM_TYPE == 0 or self.filter_array == None:
             return None
@@ -195,6 +202,9 @@ class Blob(Cell_Item):
                 self.threshold_detect()
             else:
                 self.edge_detect()
+
+        self._debug_ticker = 0
+
     #
     # SET functions
     #
@@ -281,6 +291,14 @@ class Blob(Cell_Item):
             self.threshold_detect()
         else:
             self.edge_detect()
+
+
+        ###DEBUG DETECTION TIME SERIES
+        from scipy.misc import imsave
+        imsave('analysis/anim_' + str(self._debug_ticker) + '_blob.png', self.filter_array) 
+        imsave('analysis/anim_' + str(self._debug_ticker) + '_orig.png', self.grid_array) 
+        self._debug_ticker += 1
+        ###DEBUG END
 
     def threshold_detect(self, im=None, threshold=None, color_logic=None):
         """
@@ -630,6 +648,15 @@ class Background(Cell_Item):
 
         if self.blob and self.blob.filter_array != None:
             self.filter_array = (self.blob.filter_array == False)
+
+            ###DEBUG CODE
+            #print "Bg area", np.sum(self.filter_array),  "of which shared with blob", 
+            #print np.sum(self.filter_array * self.blob.filter_array)
+            ###END DEBUG CODE
+
+        else:
+
+            print "***ERROR: blob was not set and thus background is wrong"
 
 #
 # CLASSES Cell (entire area)

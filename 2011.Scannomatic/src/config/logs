@@ -12599,4 +12599,1239 @@
 *
 * 
 
+*** ANALYSIS
+* 16 Feb 2012 09:06:09
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 09:06:35
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 09:07:13
+*
+* Alternative measures: see in program (from mean), 131.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:07:21
+*
+* Alternative measures: see in program (from mean), 4206755.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:07:27
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 16 Feb 2012 09:07:37
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 16 Feb 2012 09:08:09
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ANALYSIS
+* 16 Feb 2012 09:08:29
+*
+* Alternative measures: see in program (from mean), 33411.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:08:40
+*
+* Alternative measures: see in program (from mean), 68849.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:09:22
+*
+* Alternative measures: see in program (from mean), 68849.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:09:25
+*
+* Alternative measures: see in program (from mean), 68849.0 (from median)
+
+*** TERMINATING
+* 16 Feb 2012 09:09:27
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 09:09:41
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 09:09:48
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 09:10:06
+*
+* Alternative measures: see in program (from mean), 35690.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:10:39
+*
+* Alternative measures: see in program (from mean), 47585.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:10:41
+*
+* Alternative measures: see in program (from mean), 76522.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:10:44
+*
+* Alternative measures: see in program (from mean), 71516.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:10:50
+*
+* Alternative measures: see in program (from mean), 71516.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:10:53
+*
+* Alternative measures: see in program (from mean), 71516.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:11:33
+*
+* Alternative measures: see in program (from mean), 54784.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:11:36
+*
+* Alternative measures: see in program (from mean), 61291.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:11:49
+*
+* Alternative measures: see in program (from mean), 61291.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:11:53
+*
+* Alternative measures: see in program (from mean), 61291.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:11:54
+*
+* Alternative measures: see in program (from mean), 28709.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:11:59
+*
+* Alternative measures: see in program (from mean), 61291.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:12:43
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:12:47
+*
+* Alternative measures: see in program (from mean), 66827.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:12:50
+*
+* Alternative measures: see in program (from mean), 46788.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:12:55
+*
+* Alternative measures: see in program (from mean), 46788.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:12:59
+*
+* Alternative measures: see in program (from mean), 46788.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:13:13
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:13:23
+*
+* Alternative measures: see in program (from mean), 90496.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:13:25
+*
+* Alternative measures: see in program (from mean), 18207.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:13:34
+*
+* Alternative measures: see in program (from mean), 18207.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:13:40
+*
+* Alternative measures: see in program (from mean), 18207.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:13:52
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:13:56
+*
+* Alternative measures: see in program (from mean), 67667.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:05
+*
+* Alternative measures: see in program (from mean), 67667.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:07
+*
+* Alternative measures: see in program (from mean), 67667.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:10
+*
+* Alternative measures: see in program (from mean), 67667.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:10
+*
+* Alternative measures: see in program (from mean), 67667.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:11
+*
+* Alternative measures: see in program (from mean), 67667.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:14:26
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:32
+*
+* Alternative measures: see in program (from mean), 53169.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:35
+*
+* Alternative measures: see in program (from mean), 8435.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:37
+*
+* Alternative measures: see in program (from mean), 29769.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:40
+*
+* Alternative measures: see in program (from mean), 23359.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:42
+*
+* Alternative measures: see in program (from mean), 49963.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:49
+*
+* Alternative measures: see in program (from mean), 40037.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:14:51
+*
+* Alternative measures: see in program (from mean), 40037.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:15:04
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 09:15:25
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 09:15:25
+*
+* [(970.67031153489631, 297.57462529970763), (791.60648156978448, 351.29989815994617)]
+
+*** ERROR
+* 16 Feb 2012 09:15:25
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 16 Feb 2012 09:17:00
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 16 Feb 2012 09:17:35
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 16 Feb 2012 09:18:14
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 16 Feb 2012 09:18:26
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 16 Feb 2012 09:18:38
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ERROR
+* 16 Feb 2012 09:18:50
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** ANALYSIS
+* 16 Feb 2012 09:19:03
+*
+* Alternative measures: see in program (from mean), 55600.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:19:14
+*
+* Alternative measures: see in program (from mean), 35911.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:19:22
+*
+* Alternative measures: see in program (from mean), 35911.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:19:28
+*
+* Alternative measures: see in program (from mean), 180358.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:19:34
+*
+* Alternative measures: see in program (from mean), 90358.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:19:37
+*
+* Alternative measures: see in program (from mean), 90358.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:19:57
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:20:02
+*
+* Alternative measures: see in program (from mean), 93552.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:20:09
+*
+* Alternative measures: see in program (from mean), 93552.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:20:13
+*
+* Alternative measures: see in program (from mean), 93552.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:20:21
+*
+* Alternative measures: see in program (from mean), 93552.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:20:37
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:21:19
+*
+* Alternative measures: see in program (from mean), 21644.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:21:23
+*
+* Alternative measures: see in program (from mean), 35112.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:21:26
+*
+* Alternative measures: see in program (from mean), 171986.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:21:31
+*
+* Alternative measures: see in program (from mean), 95393.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:21:38
+*
+* Alternative measures: see in program (from mean), 95393.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:21:51
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:21:58
+*
+* Alternative measures: see in program (from mean), 86800.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:09
+*
+* Alternative measures: see in program (from mean), 3200.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:10
+*
+* Alternative measures: see in program (from mean), 3200.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:11
+*
+* Alternative measures: see in program (from mean), 3200.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:17
+*
+* Alternative measures: see in program (from mean), 3200.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:22:28
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:32
+*
+* Alternative measures: see in program (from mean), 46645.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:33
+*
+* Alternative measures: see in program (from mean), 46551.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:35
+*
+* Alternative measures: see in program (from mean), 47461.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:38
+*
+* Alternative measures: see in program (from mean), 46961.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:22:54
+*
+* Alternative measures: see in program (from mean), 46961.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:23:00
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:23:04
+*
+* Alternative measures: see in program (from mean), 20661.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:23:05
+*
+* Alternative measures: see in program (from mean), 96948.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:23:07
+*
+* Alternative measures: see in program (from mean), 14498.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:23:29
+*
+* Alternative measures: see in program (from mean), 14498.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:23:47
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 09:24:06
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 09:24:06
+*
+* [(857.95928425249963, 74.49312251465264), (672.16576815750579, 95.254373024698253)]
+
+*** ANALYSIS
+* 16 Feb 2012 09:24:44
+*
+* Alternative measures: see in program (from mean), 70305.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:24:49
+*
+* Alternative measures: see in program (from mean), 124478.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:26:05
+*
+* Alternative measures: see in program (from mean), 48951.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:26:19
+*
+* Alternative measures: see in program (from mean), 138951.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:26:21
+*
+* Alternative measures: see in program (from mean), 138951.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:26:49
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:26:53
+*
+* Alternative measures: see in program (from mean), 58692.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:27:02
+*
+* Alternative measures: see in program (from mean), 58692.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:27:05
+*
+* Alternative measures: see in program (from mean), 58692.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:27:13
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:27:19
+*
+* Alternative measures: see in program (from mean), 4793.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:27:31
+*
+* Alternative measures: see in program (from mean), 94793.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:27:41
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:27:45
+*
+* Alternative measures: see in program (from mean), 85868.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:27:47
+*
+* Alternative measures: see in program (from mean), 2001.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:27:48
+*
+* Alternative measures: see in program (from mean), 2001.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:27:54
+*
+* Alternative measures: see in program (from mean), 87999.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:28:06
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:28:09
+*
+* Alternative measures: see in program (from mean), 35972.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:28:11
+*
+* Alternative measures: see in program (from mean), 32501.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:28:18
+*
+* Alternative measures: see in program (from mean), 32501.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:28:27
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:28:43
+*
+* Alternative measures: see in program (from mean), 141796.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:28:59
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:29:04
+*
+* Alternative measures: see in program (from mean), 157566.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:29:10
+*
+* Alternative measures: see in program (from mean), 157566.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:29:12
+*
+* Alternative measures: see in program (from mean), 157566.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:29:24
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:29:31
+*
+* Alternative measures: see in program (from mean), 33531.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:29:35
+*
+* Alternative measures: see in program (from mean), 20561.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:29:42
+*
+* Alternative measures: see in program (from mean), 110561.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:29:45
+*
+* Alternative measures: see in program (from mean), 110561.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:29:57
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:30:01
+*
+* Alternative measures: see in program (from mean), 20907.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:30:13
+*
+* Alternative measures: see in program (from mean), 110907.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:30:22
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:30:28
+*
+* Alternative measures: see in program (from mean), 96354.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:30:34
+*
+* Alternative measures: see in program (from mean), 96354.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:30:41
+*
+* Alternative measures: see in program (from mean), 93773.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:30:54
+*
+* Alternative measures: see in program (from mean), 93773.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:30:59
+*
+* Alternative measures: see in program (from mean), 93773.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:31:06
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:31:10
+*
+* Alternative measures: see in program (from mean), 102326.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:31:12
+*
+* Alternative measures: see in program (from mean), 89682.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:31:16
+*
+* Alternative measures: see in program (from mean), 75680.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:31:18
+*
+* Alternative measures: see in program (from mean), 94889.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:31:28
+*
+* Alternative measures: see in program (from mean), 94889.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:31:36
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 09:32:13
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 09:32:13
+*
+* [(858.0186543655866, 74.582050025199521), (672.22279092644703, 95.322283258849239)]
+
+*** ANALYSIS
+* 16 Feb 2012 09:32:27
+*
+* Alternative measures: see in program (from mean), 249116.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:32:35
+*
+* Alternative measures: see in program (from mean), 249851.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:32:57
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:33:03
+*
+* Alternative measures: see in program (from mean), 159967.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:33:13
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:33:17
+*
+* Alternative measures: see in program (from mean), 69070.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:33:21
+*
+* Alternative measures: see in program (from mean), 69070.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:33:32
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:33:38
+*
+* Alternative measures: see in program (from mean), 43126.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:33:40
+*
+* Alternative measures: see in program (from mean), 44303.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:33:43
+*
+* Alternative measures: see in program (from mean), 48316.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:33:48
+*
+* Alternative measures: see in program (from mean), 41684.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:33:51
+*
+* Alternative measures: see in program (from mean), 41684.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:34:03
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:34:07
+*
+* Alternative measures: see in program (from mean), 2870.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:34:19
+*
+* Alternative measures: see in program (from mean), 2870.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:34:21
+*
+* Alternative measures: see in program (from mean), 2870.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:34:29
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:34:40
+*
+* Alternative measures: see in program (from mean), 426072.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:34:44
+*
+* Alternative measures: see in program (from mean), 156082.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:34:54
+*
+* Alternative measures: see in program (from mean), 173058.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:35:34
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ERROR
+* 16 Feb 2012 09:35:34
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:35:37
+*
+* Alternative measures: see in program (from mean), 93209.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:35:49
+*
+* Alternative measures: see in program (from mean), 93209.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:35:51
+*
+* Alternative measures: see in program (from mean), 93209.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:35:59
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:04
+*
+* Alternative measures: see in program (from mean), 8169.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:06
+*
+* Alternative measures: see in program (from mean), 34753.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:09
+*
+* Alternative measures: see in program (from mean), 39363.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:15
+*
+* Alternative measures: see in program (from mean), 50637.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:16
+*
+* Alternative measures: see in program (from mean), 50637.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:36:27
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:30
+*
+* Alternative measures: see in program (from mean), 11814.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:33
+*
+* Alternative measures: see in program (from mean), 5003.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:36
+*
+* Alternative measures: see in program (from mean), 3334.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:36
+*
+* Alternative measures: see in program (from mean), 3334.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:39
+*
+* Alternative measures: see in program (from mean), 17468.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:41
+*
+* Alternative measures: see in program (from mean), 1699.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:36:51
+*
+* Alternative measures: see in program (from mean), 1699.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:36:59
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:37:03
+*
+* Alternative measures: see in program (from mean), 3377.0 (from median)
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 09:37:29
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 09:37:29
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 16 Feb 2012 09:37:43
+*
+* Alternative measures: see in program (from mean), 1868213.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:37:46
+*
+* Alternative measures: see in program (from mean), 1908757.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:38:08
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:38:14
+*
+* Alternative measures: see in program (from mean), 1497048.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:38:29
+*
+* Alternative measures: see in program (from mean), 1834856.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:38:39
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:39:04
+*
+* Alternative measures: see in program (from mean), 1492295.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:39:14
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:39:21
+*
+* Alternative measures: see in program (from mean), 1115107.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:39:32
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:39:40
+*
+* Alternative measures: see in program (from mean), 710482.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:39:49
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:39:53
+*
+* Alternative measures: see in program (from mean), 576367.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:40:02
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:40:22
+*
+* Alternative measures: see in program (from mean), 2089310.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:40:31
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:40:38
+*
+* Alternative measures: see in program (from mean), 1838430.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:40:47
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:40:53
+*
+* Alternative measures: see in program (from mean), 1541125.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:41:06
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:41:10
+*
+* Alternative measures: see in program (from mean), 1074710.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:41:19
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:41:25
+*
+* Alternative measures: see in program (from mean), 701824.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:41:34
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:41:37
+*
+* Alternative measures: see in program (from mean), 539276.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:41:50
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 09:42:07
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 09:42:07
+*
+* [(868.13191947901873, 78.14250982351632), (682.26380045012627, 98.224901970446382)]
+
+*** ANALYSIS
+* 16 Feb 2012 09:42:23
+*
+* Alternative measures: see in program (from mean), 2197264.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:42:36
+*
+* Alternative measures: see in program (from mean), 2188771.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:42:45
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:42:52
+*
+* Alternative measures: see in program (from mean), 2314734.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:43:04
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:43:09
+*
+* Alternative measures: see in program (from mean), 2050200.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:43:20
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:43:27
+*
+* Alternative measures: see in program (from mean), 1758255.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:43:37
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:43:42
+*
+* Alternative measures: see in program (from mean), 1324652.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:43:46
+*
+* Alternative measures: see in program (from mean), 1406746.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:43:55
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:44:01
+*
+* Alternative measures: see in program (from mean), 1088109.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:44:12
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:44:18
+*
+* Alternative measures: see in program (from mean), 2452012.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:44:32
+*
+* Alternative measures: see in program (from mean), 2154444.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:44:45
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:44:51
+*
+* Alternative measures: see in program (from mean), 2086246.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:45:02
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:45:06
+*
+* Alternative measures: see in program (from mean), 1807435.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:45:19
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:45:22
+*
+* Alternative measures: see in program (from mean), 1806799.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 09:45:28
+*
+* Alternative measures: see in program (from mean), 1437042.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:45:42
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 16 Feb 2012 09:45:48
+*
+* Alternative measures: see in program (from mean), 1178926.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 09:45:58
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** TERMINATING
+* 16 Feb 2012 09:48:30
+*
+* 
+
 
