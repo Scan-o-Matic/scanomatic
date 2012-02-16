@@ -87,7 +87,7 @@ class Grid_Array():
         return self.gs_a * (x**3) + self.gs_b * (x**2) + self.gs_c * x + self.gs_d
 
 
-    def get_transformation_matrix(self, gs_values=None, gs_fit=None, gs_indices=None, y_range = (0,255)):
+    def get_transformation_matrix(self, gs_values=None, gs_fit=None, gs_indices=None, y_range = (0,255), fix_axis=False):
         """
             get_transformation_matrix takes an coefficient array of a
             polynomial fit of the 3rd degree and calculates a matrix
@@ -101,9 +101,17 @@ class Grid_Array():
             @gs_fit     A numpy array of the coefficients as returned
                         by numpy.polyfit, assuming 3rd degree 
                         solution
-    
+
+            @gs_indices An optional list of gs indices if not a simple
+                        enumerated range
+
             @y_range    A tuple having the including range limits 
                         for the solution.
+
+            @fix_axis   An optional possibility to fix the gs-axis,
+                        else it will be made increasing (transformed with
+                        -1 if not). Lowest value will also be set to 0,
+                        assuming a continious series.
 
             The function returns a list of transformation values
 
@@ -113,6 +121,12 @@ class Grid_Array():
 
             if gs_indices == None:
                 gs_indices  = range(len(gs_values))
+
+            if gs_indices[0] > gs_indices[-1]:
+                gs_indices = map(lambda x: x * -1, gs_indices)
+
+            if gs_indices[0] != 0:
+                gs_indices = map(lambda x: x - gs_indices[0], gs_indices)
 
             tf_matrix = np.zeros((y_range[1]+1))
 

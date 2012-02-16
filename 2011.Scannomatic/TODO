@@ -2,46 +2,59 @@
 ##### THE WHAT NEXT PLACE #####
    ##########################
 
+--- Kodak > Cell Estimate Space ---
+
+*** In subracting background:mean disallow negative values (blobs being pos)
+
+*** Using the vectors, fit a 3-5 deg polynomial with positive co-effs such
+    that the sum of the vector's Y-values equals the measured cell count value
+
+*** Once a curve for all measures have been fitted, reproduce the cell count by
+    selecting the blobs (Note this is proximate to circular)
+
+
+*** Mark data by time-point of sampling
+
+*** Collect new calibration data to verify the goodness of the calibration
 
 --- GRIDDING ---
 
+*** Make it possible to monitor the gray-scale values
 
-** Make it possible to monitor the gray-scale values
-
-** Investigate resolving equal grid start pos with using most 
+*** Investigate resolving equal grid start pos with using most 
     centric, and using the R-value as well...(some missed peaks will
     affect placement)
 
-** Investigate only using the inter-quartile part of signal at
+*** Investigate only using the inter-quartile part of signal at
     grid-placement to calculate the otsu-threshold.
 
 --- BLOB-DETECTION ---
 
-** http://www.scipy.org/Cookbook/Least_Squares_Circle
+*** http://www.scipy.org/Cookbook/Least_Squares_Circle
 
 --- GUI ---
 
-** Clean up code in Fixture GUI
+*** Clean up code in Fixture GUI
 
-** Make experiment last until analysis of last image is done
+*** Make experiment last until analysis of last image is done
 
-** Extend functionality in fixture view (Gray-scale values)
+*** Extend functionality in fixture view (Gray-scale values)
 
-** Extend functionality in fixture view (Cell calibration)
+*** Extend functionality in fixture view (Cell calibration)
 
-** Extend functionality in config view
+*** Extend functionality in config view
 
-** Implement reusable canvases everywhere, look in analysis.py
+*** Implement reusable canvases everywhere, look in analysis.py
 
-** Use a queue for all things to be done and a scheduler
+*** Use a queue for all things to be done and a scheduler
 
 --- OTHER ---
 
-** Most fungii see blue light at 450 nm - How is the pattern of our lamp??
+*** Most fungii see blue light at 450 nm - How is the pattern of our lamp??
 
-** SANE should discover scanner better
+*** SANE should discover scanner better
 
-** Think about PIL I16 support
+*** Think about PIL I16 support
     http://old.nabble.com/import-16-bit-tiff---byte-order-problem--td20374391.html
     http://blog.philippklaus.de/2011/08/handle-16bit-tiff-images-in-python/
 
@@ -54,113 +67,117 @@
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
 
-** Make stress test unit that randomly deletes detected peaks before
+*** Make cells count as positives in Kodak space (* -1)
+
+*** Make calibration.data contain vector of all pixels as a hashed table
+
+*** Make stress test unit that randomly deletes detected peaks before
     grid placement
 
-** Calculate the distance of grid jumping one signal peak unit
+*** Calculate the distance of grid jumping one signal peak unit
     Use for R-threshold (make sure R is per blob).
 
-** Make it possible to reuse canvases please <- maybe baby
+*** Make it possible to reuse canvases please <- maybe baby
 
-** Check if OpenCV is installed and if not, use fallback analysis
+*** Check if OpenCV is installed and if not, use fallback analysis
 
-** Check so that the grid-cell has appropriate size
+*** Check so that the grid-cell has appropriate size
 
-** Remake gray-scale so that it uses Kodak Z-values
+*** Remake gray-scale so that it uses Kodak Z-values
 
-** CHECK INTERPOLATION
+*** CHECK INTERPOLATION
 
-** Change to user specifying output dir - not file
+*** Change to user specifying output dir - not file
 
-** Make script save grid-placement as a file for certain time-points.
+*** Make script save grid-placement as a file for certain time-points.
 
-** Report building takes about as long as analysis when processing a project
+*** Report building takes about as long as analysis when processing a project
     Look at appending sections
 
-** Check why not analysing all plates???
+*** Check why not analysing all plates???
 
-** Grayscale norm!
+*** Grayscale norm!
 
-** Solve eq for grayscale fransformation...
+*** Solve eq for grayscale fransformation...
 
-** Remake entire Fixture GUI image selection handling
+*** Remake entire Fixture GUI image selection handling
     Make it possible to select areas again
 
-** See why not log_writer produces a progress.png in the right place
+*** See why not log_writer produces a progress.png in the right place
 
-** Make project check <- What does that mean?
+*** Make project check <- What does that mean?
 
-** Make creation of log-file post-scanning produce everythin that on-the-fly
+*** Make creation of log-file post-scanning produce everythin that on-the-fly
    production does except first entry...
 
-** Make Analyse One more according to new ways of Fixture
+*** Make Analyse One more according to new ways of Fixture
 
-** Fix log-file from scanning, see upload on server.
+*** Fix log-file from scanning, see upload on server.
 
-** Make a config file setting GUI
+*** Make a config file setting GUI
 
-** Capture mouse events on canvases from matplotlib instead of using images
+*** Capture mouse events on canvases from matplotlib instead of using images
 
-** Make a single analysis interface
+*** Make a single analysis interface
 
-** Make scan one be an experiment, easier to use the same pipe
+*** Make scan one be an experiment, easier to use the same pipe
 
-** Cut out all the different parts to separate files in src
+*** Cut out all the different parts to separate files in src
 
-** Get all pattern from config file
+*** Get all pattern from config file
 
-** Do grayscale detection in 600dpi, it is way too nice and smooth in 150dpi
+*** Do grayscale detection in 600dpi, it is way too nice and smooth in 150dpi
 
-** Make interface label-show width nice
+*** Make interface label-show width nice
 
-** Include all the coordinates for all subsections on all images in 
+*** Include all the coordinates for all subsections on all images in 
    logfile.
 
-** Grayscale module
+*** Grayscale module
 *   other way of finding indices
         cutoff = 1.0
         indices = ml.find(D > cutoff) 
 *   should it be a mean(mean()) or just a mean(2d)
 
-** Use 1 scanner fixture settings per scanner fixture
+*** Use 1 scanner fixture settings per scanner fixture
     Not implemented as such but now analyis reloads settings
 
-** Make 'Scan one' nicer
+*** Make 'Scan one' nicer
 
-** Lock scanners so that you cannot scan when it's working
+*** Lock scanners so that you cannot scan when it's working
 
-** Make app take two types of directories:
+*** Make app take two types of directories:
         App-directory
         Save-data directory
 
-** Make Grayscale x-pos offset so that first is 0 otherwise will depend on things..
+*** Make Grayscale x-pos offset so that first is 0 otherwise will depend on things..
    Also make the x-pos be devided by meandist
 
-** Restructure Image Analysis into nicer parts
+*** Restructure Image Analysis into nicer parts
 
-** Fix launching so that it works from other directories
+*** Fix launching so that it works from other directories
 
-** The Fixture confile must save the fixture marking path
+*** The Fixture confile must save the fixture marking path
 
-** SISPMCTF
+*** SISPMCTF
 * Make sure user really has the right priveleges
 
-**Set minimum scanning interval to 7minutes if rescan enabled else 4minutes
+***Set minimum scanning interval to 7minutes if rescan enabled else 4minutes
 
-**Fixture should have crashed head dummy-marking
+***Fixture should have crashed head dummy-marking
 
-** This seems to not have had anything cool in it...
+*** This seems to not have had anything cool in it...
 http://www.epson.com/cgi-bin/Store/support/supDetail.jsp?oid=66172&prodoid=63056499&BV_UseBVCookie=yes&infoType=Downloads&platform=Other&x=3&y=0
 
-** Make sure the scanning is run in seperate thread but send event when done
+*** Make sure the scanning is run in seperate thread but send event when done
 *   DONE: Separate thread, but no callback active yet
 *   I think it is done
 
-** Fix histograms for linux:
+*** Fix histograms for linux:
 *   Fix axis etc so that picture is small as possible
         plt.xlim([0,255])       <- Should depend on pixel depth
 
-** SANE
+*** SANE
 *   sane-find-scanner -q devname
 *   IF usb-problem: http://www.sane-project.org/README.linux
 *   scanimage/epson/sane-epson

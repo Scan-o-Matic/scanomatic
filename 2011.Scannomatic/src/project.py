@@ -297,7 +297,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 watch_reading.append(tmp_results)    
                 
                 #HACK START: DEBUGGING
-                print "*** R:", project_image.R
+                #print "*** R:", project_image.R
                 #if image_pos < 200:
                 #    image_pos = -1 
                 #HACK END
@@ -391,7 +391,6 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         #print len(X), len(x_labels)
         #print X
         #print x_labels
-        #graphcolors='rgbycmk'
         cur_plt_graph = ""
         plt_graph_i = 1
         for i in xrange(int(Y.shape[1])):
@@ -415,9 +414,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                     elif plot_labels[i] == "blob:area":
                         b_area = Y[:,i]
 
-                    #print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
+                    print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
                     #print Y[:,i].max(), Y[:,i].min()
-                    #print Y[:,i]
+                    print Y[:,i]
                     if cur_plt_graph != plot_labels[i].split(":")[0]:
                         cur_plt_graph = plot_labels[i].split(":")[0]
                         if plt_graph_i > 1:
@@ -429,16 +428,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                         plt_watch_curves.set_xticklabels(x_labels, fontsize="xx-small", rotation=90)
 
                     if scale_factor != 0: 
-                        plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor, #+ \
-                        #3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
-                        #16,\
-                        #graphcolors[i%len(graphcolors)] + '-',\
+                        plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor, 
                             label=plot_labels[i][len(cur_plt_graph)+1:])                        
                     else:
-                        plt_watch_curves.plot(X, np.zeros(X.shape)+10*i, #+ \
-                        #3*(pict_target_width+2)*(1+(i%(len(graphcolors)-1))) +\
-                        #16,\
-                        #graphcolors[i%len(graphcolors)] + '-',\
+                        plt_watch_curves.plot(X, np.zeros(X.shape)+10*(i-(plt_graph_i-1)*5), 
                             label=plot_labels[i][len(cur_plt_graph)+1:])
 
 

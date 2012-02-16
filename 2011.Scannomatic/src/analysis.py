@@ -354,6 +354,7 @@ class Analyse_One(gtk.Frame):
         button.show()
         button.connect("clicked", self.add_calibration_point, None)
         vbox3.pack_start(button, False, False, 2)
+        self.blob_filter = None
 
     def verify_number(self, widget=None, event=None, data=None):
 
@@ -364,20 +365,48 @@ class Analyse_One(gtk.Frame):
 
     def add_calibration_point(self, widget=None, event=None, data=None):
 
-        cce_per_pixel = float(self.cce_indep_measure.get_text()) / \
-            float( self.blob_area.get_text())
-        try:
-            fs = open(self._config_calibration_path,'a')
+        if self.blob_filter != None and self._rect_ul != None and self._rect_lr != None:
 
-            fs.write(str([self.analysis_img.get_text(), self.cce_data_label.get_text() ,float(self.cce_per_pixel.get_text()), cce_per_pixel ]) + "\n")
+            cce_per_pixel = float(self.cce_indep_measure.get_text()) / \
+                float( self.blob_area.get_text())
 
-            fs.close()
-            self.owner.DMS("Calibration", "Setting " + self.f_settings.image_path + \
-                " colony depth per pixel to " + str( cce_per_pixel ) + " cell estimate.")
             
-        except:
 
-            self.owner.DMS("Error", "Could not open " + self._config_calibration_path)
+            img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
+ 
+            blob_pixels = img_section[np.where(self.blob_filter)]
+            
+            tf_matrix = np.asarray(colonies.get_gray_scale_transformation_matrix(self._grayscale))
+
+            blob_pixels = tf_matrix[blob_pixels.astype(int)]
+
+            #Get the effect of blob-materia on pixels
+            blob_pixels = blob_pixels - float(self.bg_mean.get_text())
+
+            #Disallow "anti-materia" pixels           
+            blob_pixels = blob_pixels[np.where(blob_pixels > 0)] 
+
+            keys = list(np.unique(blob_pixels))
+            values = []
+            for k in keys:
+                values.append(np.sum(blob_pixels == k))
+
+            cce_data = [keys, values]
+
+            try:
+                fs = open(self._config_calibration_path,'a')
+
+
+
+                fs.write(str([self.analysis_img.get_text(), self.cce_data_label.get_text() ,float(self.cce_per_pixel.get_text()), cce_per_pixel, cce_data]) + "\n")
+
+                fs.close()
+                self.owner.DMS("Calibration", "Setting " + self.f_settings.image_path + \
+                    " colony depth per pixel to " + str( cce_per_pixel ) + " cell estimate.")
+                
+            except:
+
+                self.owner.DMS("Error", "Could not open " + self._config_calibration_path)
 
     def select_image(self, widget=None, event=None, data=None):
         newimg = gtk.FileChooserDialog(title="Select new image", action=gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -453,6 +482,11 @@ class Analyse_One(gtk.Frame):
                 self.blob_fig.cla()
                 self.blob_bool_fig.cla()
                 self.blob_hist.cla()
+
+
+            if self.selection_rect.get_width() > 0 and self.selection_rect.get_height() > 0:
+
+                self.get_analysis()
 
     def set_grayscale_selecting(self, widget=None, event=None, data=None):
 
@@ -549,6 +583,7 @@ class Analyse_One(gtk.Frame):
             widget.set_text("")
 
         self.image_fig.canvas.draw()
+        self.get_analysis()
 
     def manual_selection_height(self, widget=None, event=None, data=None):
         try:
@@ -557,6 +592,7 @@ class Analyse_One(gtk.Frame):
             widget.set_text("")
 
         self.image_fig.canvas.draw()
+        self.get_analysis()
 
     def plot_click(self, event=None):
 
@@ -743,9 +779,11 @@ class Analyse_One(gtk.Frame):
         tf_matrix = colonies.get_gray_scale_transformation_matrix(self._grayscale)
 
         if tf_matrix is not None:
-            for item in img_transf:
-                    item = tf_matrix[item]
+            for x in xrange(img_transf.shape[0]):
+                for y in xrange(img_transf.shape[1]):
+                    img_transf[x,y] = tf_matrix[img_transf[x,y]]
 
+        print "*** SECTION TRANSFORMED: ", not(img_transf.sum() == img_section.sum())
 
         x_factor = img_section.shape[0] / 200
         y_factor = img_section.shape[1] / 200
@@ -820,7 +858,7 @@ class Analyse_One(gtk.Frame):
         features = cell.get_analysis(no_detect=True)
 
         blob = cell.get_item('blob')
-        blob_filter = blob.filter_array
+        self.blob_filter = blob.filter_array
         blob_hist = blob.histogram
 
         #
@@ -854,12 +892,12 @@ class Analyse_One(gtk.Frame):
             image_plot.cla()
 
         #image_ax = image_plot.imshow(img_section.T)
-        blob_filter = blob_filter.astype(float) * 256 + img_transf
-        blob_filter = blob_filter * ( 256/ float(np.max(blob_filter)) )
-        image_ax = image_plot.imshow(blob_filter.T)
+        self.blob_filter = self.blob_filter.astype(float) * 256 + img_transf
+        self.blob_filter = self.blob_filter * ( 256/ float(np.max(self.blob_filter)) )
+        image_ax = image_plot.imshow(self.blob_filter.T)
 
-        image_plot.set_xlim(xmin=0,xmax=blob_filter.shape[0])
-        image_plot.set_ylim(ymin=0,ymax=blob_filter.shape[1])
+        image_plot.set_xlim(xmin=0,xmax=self.blob_filter.shape[0])
+        image_plot.set_ylim(ymin=0,ymax=self.blob_filter.shape[1])
 
 
         self.blob_bool_fig.canvas.draw()
@@ -898,7 +936,7 @@ class Analyse_One(gtk.Frame):
             image_plot.set_xticks(x_ticks)
             image_plot.set_xticklabels(map(str,x_ticks), fontsize='xx-small')
             image_plot.axvline(blob.threshold, c='r')
-        
+            image_plot.set_xlim(xmin=0, xmax=100)
         self._blobs_have_been_loaded = True
 
         if features != None:

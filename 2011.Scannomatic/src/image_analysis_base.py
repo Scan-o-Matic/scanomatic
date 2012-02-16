@@ -306,9 +306,17 @@ class Analyse_Grayscale():
     def __init__(self, type="Kodak", image=None):
 
         self.grayscale_type = "Kodak"
-        self._grayscale_sections = 23
-        self._grayscale_aims = [82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,22,18,14,10,6,4,2,0]
+        self._grayscale_dict = {\
+            'Kodak': {\
+                'aims':[82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,22,18,14,10,6,4,2,0],
+                'width': 55,
+                'sections': 24\
+                }\
+            }
 
+        self._grayscale_aims = self._grayscale_dict[self.grayscale_type]['aims']
+        self._grayscale_sections = self._grayscale_dict[self.grayscale_type]['sections']
+        self._grayscale_width = self._grayscale_dict[self.grayscale_type]['width']
         self._img = image
 
         #Variables from analysis
@@ -342,7 +350,7 @@ class Analyse_Grayscale():
 
         return self._grayscale_X
 
-    def get_grayscale(self, image=None, scale_factor=1.0):
+    def get_grayscale(self, image=None, scale_factor=1.0, dpi=600):
     
         if image != None:
             self._img = image
@@ -353,37 +361,72 @@ class Analyse_Grayscale():
         A  = (self._img < (self._img.max()/4)).astype(int)
 
         rect = [[0,0],[self._img.shape[0],self._img.shape[1]]]
+        orth_diff = -1
 
-        #Orthagonal trim
-        firstPass = True
-        in_strip = False
-        threshold = 0.15
-        threshold2 = 0.3
-        for i, orth in enumerate(A.mean(0)):
-            if firstPass:
-                firstPass = False
-            else:
-                if abs(old_orth - orth) > threshold:
-                    if in_strip == False:
-                        if orth > threshold2:
-                            rect[0][1] = i
-                            in_strip = True
-                    else:
-                        rect[1][1] = i
-                        break
-            old_orth = orth
+        kern = np.asarray([-1,0,1])
+        Aorth = A.mean(0)
+        Aorth_edge = abs( fftconvolve(kern, Aorth, 'same'))
+        Aorth_edge_threshold = 0.2 #Aorth_edge.max() * 0.70
+        Aorth_signals = Aorth_edge > Aorth_edge_threshold
+        Aorth_positions = np.where(Aorth_signals)
 
+        if len(Aorth_positions[0]) > 1:            
+            Aorth_pos_diff = abs(1 - ((Aorth_positions[0][1:] - \
+                Aorth_positions[0][:-1]) / float(self._grayscale_width)))
+            rect[0][1] = Aorth_positions[0][Aorth_pos_diff.argmin()]
+            rect[1][1] = Aorth_positions[0][Aorth_pos_diff.argmin()+1]
+            orth_diff = rect[1][1] - rect[0][1]
+
+            ### DEBUG CONVOLVE FINDING 
+            #print Aorth_pos_diff
+            #plt.plot(np.asarray([Aorth_positions[0][Aorth_pos_diff.argmin()], 
+            #    Aorth_positions[0][Aorth_pos_diff.argmin()+1]]), np.ones(2)*0.75,
+            #    lw=5)
+        #plt.plot(np.arange(len(Aorth)),Aorth)
+        #plt.plot(np.arange(len(Aorth)), Aorth_edge)
+        #plt.plot(np.arange(len(Aorth)), Aorth_signals)
+        #plt.show()        
+        ###DEBUG END
+
+        if orth_diff == -1:
+            #Orthagonal trim second try
+            firstPass = True
+            in_strip = False
+            threshold = 0.15
+            threshold2 = 0.3
+
+            for i, orth in enumerate(A.mean(0)):
+                if firstPass:
+                    firstPass = False
+                else:
+                    if abs(old_orth - orth) > threshold:
+                        if in_strip == False:
+                            if orth > threshold2:
+                                rect[0][1] = i
+                                in_strip = True
+                        else:
+                            rect[1][1] = i
+                            break
+                old_orth = orth
+
+
+            orth_diff = rect[1][1]-rect[0][1]
 
         #safty margin
-        orth_diff = rect[1][1]-rect[0][1]
         min_orths = 30 / scale_factor
         if orth_diff > min_orths:
             rect[0][1] += (orth_diff - min_orths) / 2
             rect[1][1] -= (orth_diff - min_orths) / 2
 
+
         self._mid_orth_strip = rect[0][1] + (rect[1][1] - rect[0][1]) / 2
+
+        ###DEBUG UNCUT SECTION
+        #plt.clf()
         #plt.imshow(A)
+        #plt.show()
         #plt.savefig('gs_test1.png')
+        ###DEBUG END
 
         #Paralell trim
         i = (rect[1][0] - rect[0][0])/2
@@ -392,6 +435,11 @@ class Analyse_Grayscale():
         transition = 0
         A2 = (self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]]< np.median(self._img)).astype(int).mean(1)
 
+        ###DEBUG CUT SECTION
+        #plt.clf()
+        #plt.imshow(self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]])
+        #plt.show()
+        ###DEBUG END
         
         while i>0:
             if A2[i] > 0.2:

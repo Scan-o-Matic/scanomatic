@@ -2,6 +2,16 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Cells now count as positive values relative to background
+
+*** Calibration point saving saves a representation of the Kodak Value Space-
+    vector that exactly represents the Cell Estimate
+
+*** Improved orthagonal grayscale detection to more robust methods.
+
+*** Changed the was median, IQR and IQR_mean is calculated to have
+    better control of these parameters.
+
 *** Corrected error and inefficient calculation of mean for the
     different grid-items
 

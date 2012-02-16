@@ -156,17 +156,26 @@ class Cell_Item():
                 self.features['IQR_mean'] = tmean(self.grid_array,self.features['IQR'])
             except:
                 self.features['IQR_mean'] = None
-
+                print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
         else:
-            feature_array = ma.masked_array(self.grid_array, mask=abs(self.filter_array - 1))
-            self.features['median'] = ma.median(feature_array)
-            #self.features['mean'] = feature_array.mean()
-            self.features['IQR'] = mquantiles(ma.compressed(feature_array),prob=[0.25,0.75])
+            feature_array = self.grid_array[np.where(self.filter_array==True)]
+            self.features['median'] = np.median(feature_array)
+            self.features['IQR'] = mquantiles(feature_array, prob=[0.25,0.75])
             try:
-                self.features['IQR_mean'] = ma.masked_outside(feature_array, self.features['IQR'][0], self.features['IQR'][1]).mean()
+                self.features['IQR_mean'] = tmean(feature_array, self.features['IQR'])
             except:
                 self.features['IQR_mean'] = None
-                print "*** Failed in producting IQR_mean from IQR", self.features['IQR']
+                print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
+
+            #feature_array = ma.masked_array(self.grid_array, mask=abs(self.filter_array - 1))
+            #self.features['median'] = ma.median(feature_array)
+            #self.features['mean'] = feature_array.mean()
+            #self.features['IQR'] = mquantiles(ma.compressed(feature_array),prob=[0.25,0.75])
+            #try:
+            #    self.features['IQR_mean'] = ma.masked_outside(feature_array, self.features['IQR'][0], self.features['IQR'][1]).mean()
+            #except:
+            #    self.features['IQR_mean'] = None
+            #    print "*** Failed in producting IQR_mean from IQR", self.features['IQR']
 #        if self.CELLITEM_TYPE == 3: # or self.CELLITEM_TYPE == 1:
 #            #Using IQR as default colony_size measure
 #            self.features['colony_size'] = self.features['pixelsum'] - \
@@ -182,7 +191,7 @@ class Cell_Item():
 
 class Blob(Cell_Item):
     def __init__(self, grid_array, run_detect=True, threshold=None, \
-        use_fallback_detection=False, image_color_logic = "Norm", \
+        use_fallback_detection=False, image_color_logic = "inv", \
         center=None, radius=None):
 
         Cell_Item.__init__(self)
@@ -412,7 +421,7 @@ class Blob(Cell_Item):
         #pyplot.clf()        
 
         #Thesholding the edges
-        self.threshold_detect(im=self.filter_array, color_logic = 'inv',
+        self.threshold_detect(im=self.filter_array, color_logic = 'norm',
             threshold=np.max(self.filter_array)*0.2)
 
 

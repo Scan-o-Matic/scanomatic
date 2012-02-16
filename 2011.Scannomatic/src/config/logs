@@ -13834,4 +13834,844 @@
 *
 * 
 
+*** ANALYSIS
+* 16 Feb 2012 11:49:53
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 11:50:04
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 11:50:04
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 11:50:19
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 11:50:35
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 11:50:42
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 11:50:42
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 11:51:57
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 11:54:04
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 11:54:16
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 11:54:16
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 11:54:33
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 11:56:36
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 11:56:44
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 11:56:44
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 11:57:06
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 11:57:24
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 11:57:32
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 11:57:32
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 13:50:31
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 13:54:25
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 13:54:32
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 13:54:32
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 13:55:16
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 13:55:59
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 13:56:06
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 13:56:06
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 13:56:26
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 13:56:46
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 13:56:52
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 13:56:52
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** ANALYSIS
+* 16 Feb 2012 13:59:21
+*
+* Alternative measures: see in program (from mean), 41816373.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 13:59:44
+*
+* There's something wrong with the grayscale. Switching to manual
+
+*** TERMINATING
+* 16 Feb 2012 14:00:09
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 14:00:32
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 14:00:40
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 14:00:40
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** ANALYSIS
+* 16 Feb 2012 14:27:17
+*
+* Alternative measures: see in program (from mean), 19411832.0 (from median)
+
+*** TERMINATING
+* 16 Feb 2012 14:27:42
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 14:45:40
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 14:45:47
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 14:45:47
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 14:46:28
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 14:47:03
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 14:47:11
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 14:47:11
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** ANALYSIS
+* 16 Feb 2012 14:48:00
+*
+* Alternative measures: see in program (from mean), 25458227.0 (from median)
+
+*** TERMINATING
+* 16 Feb 2012 14:48:49
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 14:49:44
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 14:49:56
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 14:49:56
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 14:50:23
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 14:51:42
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 14:51:51
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 14:51:51
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 14:53:37
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 14:55:31
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 14:55:38
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 14:55:38
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** ANALYSIS
+* 16 Feb 2012 14:56:42
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 14:56:49
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 14:56:49
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** ANALYSIS
+* 16 Feb 2012 14:58:23
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 14:58:31
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 14:58:31
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** ANALYSIS
+* 16 Feb 2012 14:59:04
+*
+* Alternative measures: see in program (from mean), 1848522.0 (from median)
+
+*** TERMINATING
+* 16 Feb 2012 15:00:43
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 15:05:06
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 15:05:13
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 15:05:13
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 15:05:37
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 15:07:03
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 15:07:11
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 15:07:11
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 15:09:39
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 15:09:43
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 15:09:50
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 15:09:50
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 15:10:10
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 15:10:40
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 15:10:47
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 15:10:47
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 15:11:03
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 15:12:44
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 15:12:51
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 15:12:51
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 15:13:03
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 15:14:11
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 15:14:18
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 15:14:18
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** TERMINATING
+* 16 Feb 2012 15:14:38
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 15:16:28
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 15:16:36
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 15:16:36
+*
+* [(858.09550397522185, 87.526488476647671), (672.33213826323151, 108.55580384912045)]
+
+*** ANALYSIS
+* 16 Feb 2012 15:17:28
+*
+* Alternative measures: see in program (from mean), 21086190.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 15:17:30
+*
+* Alternative measures: see in program (from mean), 45612.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 15:17:53
+*
+* Alternative measures: see in program (from mean), 32898.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 15:17:58
+*
+* Alternative measures: see in program (from mean), 16130.0 (from median)
+
+*** TERMINATING
+* 16 Feb 2012 15:18:04
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 15:27:33
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 15:27:45
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 15:27:58
+*
+* Alternative measures: see in program (from mean), 110402.0 (from median)
+
+*** TERMINATING
+* 16 Feb 2012 15:30:21
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 16:39:01
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 16:39:07
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 16:39:57
+*
+* Alternative measures: see in program (from mean), 1064.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:40:05
+*
+* Alternative measures: see in program (from mean), 1064.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:40:09
+*
+* Alternative measures: see in program (from mean), 1064.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:40:14
+*
+* Alternative measures: see in program (from mean), 43994.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:40:26
+*
+* Alternative measures: see in program (from mean), 43994.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:40:30
+*
+* Alternative measures: see in program (from mean), 43994.0 (from median)
+
+*** TERMINATING
+* 16 Feb 2012 16:40:58
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 16:40:58
+*
+* Alternative measures: see in program (from mean), 43994.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:43:42
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 16:43:47
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 16:44:44
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 16:44:50
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 16:45:00
+*
+* Alternative measures: see in program (from mean), 30084.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:46:42
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 16:46:47
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 16:47:27
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 16:47:31
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 16:48:07
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 16:48:12
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 16 Feb 2012 16:48:29
+*
+* Alternative measures: see in program (from mean), 71594.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:48:43
+*
+* Alternative measures: see in program (from mean), 71594.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:48:45
+*
+* Alternative measures: see in program (from mean), 71594.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:49:06
+*
+* Alternative measures: see in program (from mean), 2008.0 (from median)
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 16:49:30
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 16:49:30
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 16 Feb 2012 16:49:40
+*
+* Alternative measures: see in program (from mean), 596032.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:49:47
+*
+* Alternative measures: see in program (from mean), 526055.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:50:04
+*
+* Alternative measures: see in program (from mean), 526055.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:50:07
+*
+* Alternative measures: see in program (from mean), 526055.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:50:10
+*
+* Alternative measures: see in program (from mean), 526055.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:50:13
+*
+* Alternative measures: see in program (from mean), 526055.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:50:20
+*
+* Alternative measures: see in program (from mean), 399446.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:50:30
+*
+* Alternative measures: see in program (from mean), 257516.0 (from median)
+
+*** TERMINATING
+* 16 Feb 2012 16:50:35
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 16:52:03
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 16:52:09
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 16:52:09
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 16 Feb 2012 16:52:19
+*
+* Alternative measures: see in program (from mean), 562170.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:55:29
+*
+* Activated
+
+*** ERROR
+* 16 Feb 2012 16:55:37
+*
+* Missmatch between fixture configuration and current image
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 16:55:50
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 16:55:50
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** TERMINATING
+* 16 Feb 2012 16:56:15
+*
+* 
+
+*** ANALYSIS
+* 16 Feb 2012 16:57:20
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 16:57:28
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 16:57:28
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 16 Feb 2012 16:58:09
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Feb 2012 16:58:16
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 16 Feb 2012 16:58:16
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 16 Feb 2012 16:58:27
+*
+* Alternative measures: see in program (from mean), 488001.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:58:34
+*
+* Alternative measures: see in program (from mean), 382971.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:58:37
+*
+* Alternative measures: see in program (from mean), 303789.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:58:41
+*
+* Alternative measures: see in program (from mean), 208846.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:58:45
+*
+* Alternative measures: see in program (from mean), 506917.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:58:49
+*
+* Alternative measures: see in program (from mean), 471149.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:59:05
+*
+* Alternative measures: see in program (from mean), 302010.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:59:07
+*
+* Alternative measures: see in program (from mean), 377200.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:59:10
+*
+* Alternative measures: see in program (from mean), 189859.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:59:17
+*
+* Alternative measures: see in program (from mean), 384435.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:59:33
+*
+* Alternative measures: see in program (from mean), 478522.0 (from median)
+
+*** ANALYSIS
+* 16 Feb 2012 16:59:37
+*
+* Alternative measures: see in program (from mean), 472295.0 (from median)
+
+*** ERROR
+* 16 Feb 2012 17:00:46
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** TERMINATING
+* 16 Feb 2012 17:01:31
+*
+* 
+
 
