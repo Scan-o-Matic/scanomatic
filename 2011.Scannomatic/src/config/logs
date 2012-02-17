@@ -14674,4 +14674,1094 @@
 *
 * 
 
+*** ANALYSIS
+* 17 Feb 2012 09:06:59
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 09:07:20
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 09:07:20
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 09:07:52
+*
+* Alternative measures: see in program (from mean), 606046.0 (from median)
+
+*** ERROR
+* 17 Feb 2012 09:08:51
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** TERMINATING
+* 17 Feb 2012 09:08:57
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 09:24:11
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 09:24:42
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 09:24:42
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 09:24:54
+*
+* Alternative measures: see in program (from mean), 576277.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 09:25:20
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 09:26:05
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 09:26:15
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 09:26:15
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 09:26:29
+*
+* Alternative measures: see in program (from mean), 498863.0 (from median)
+
+*** ERROR
+* 17 Feb 2012 09:26:37
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** TERMINATING
+* 17 Feb 2012 09:28:25
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 09:40:14
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 09:40:24
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 09:40:24
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 09:40:36
+*
+* Alternative measures: see in program (from mean), 485864.0 (from median)
+
+*** ERROR
+* 17 Feb 2012 09:41:27
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 17 Feb 2012 09:41:55
+*
+* Alternative measures: see in program (from mean), 211974.0 (from median)
+
+*** ERROR
+* 17 Feb 2012 09:42:07
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ERROR
+* 17 Feb 2012 09:42:25
+*
+* Missmatch between fixture configuration and current image
+
+*** ANALYSIS
+* 17 Feb 2012 09:42:38
+*
+* Alternative measures: see in program (from mean), 13797.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 09:42:42
+*
+* Alternative measures: see in program (from mean), 14464.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 09:42:46
+*
+* Alternative measures: see in program (from mean), 14464.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 09:42:47
+*
+* Alternative measures: see in program (from mean), 14464.0 (from median)
+
+*** ERROR
+* 17 Feb 2012 09:42:50
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ANALYSIS
+* 17 Feb 2012 09:49:19
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 09:49:26
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 09:49:26
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 09:49:40
+*
+* Alternative measures: see in program (from mean), 397601.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 09:49:46
+*
+* Alternative measures: see in program (from mean), 397601.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 09:49:51
+*
+* Alternative measures: see in program (from mean), 498790.0 (from median)
+
+*** ERROR
+* 17 Feb 2012 09:49:59
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** TERMINATING
+* 17 Feb 2012 09:51:34
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 09:51:39
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 09:51:46
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 09:51:46
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 09:51:56
+*
+* Alternative measures: see in program (from mean), 486579.0 (from median)
+
+*** ERROR
+* 17 Feb 2012 09:52:01
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** TERMINATING
+* 17 Feb 2012 09:53:39
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 09:53:44
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 09:53:52
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 09:53:52
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 09:54:01
+*
+* Alternative measures: see in program (from mean), 498863.0 (from median)
+
+*** ERROR
+* 17 Feb 2012 09:54:25
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ERROR
+* 17 Feb 2012 09:54:35
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** ERROR
+* 17 Feb 2012 10:08:37
+*
+* Could not open /home/martin/Documents/PhD/Data/2011.Scannomatic/src/config/calibration.data
+
+*** TERMINATING
+* 17 Feb 2012 10:09:16
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 10:11:33
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 10:11:40
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 10:11:40
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 10:11:50
+*
+* Alternative measures: see in program (from mean), 424081.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 10:14:42
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 10:15:50
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 10:15:58
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 10:15:58
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 10:16:05
+*
+* Alternative measures: see in program (from mean), 539852.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 10:16:44
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 10:22:03
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 10:22:11
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 10:22:11
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 10:22:19
+*
+* Alternative measures: see in program (from mean), 485105.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 10:24:47
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 10:26:18
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 10:26:27
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 10:26:27
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 10:26:38
+*
+* Alternative measures: see in program (from mean), 484391.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 10:26:54
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 10:28:25
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 10:28:32
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 10:28:32
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 10:28:40
+*
+* Alternative measures: see in program (from mean), 495556.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 10:28:49
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 1000.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 10:29:03
+*
+* 
+
+*** SETTINGS
+* 17 Feb 2012 10:33:21
+*
+* Application Settings Activated
+
+*** ANALYSIS
+* 17 Feb 2012 10:33:24
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 10:33:32
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 10:33:32
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 10:33:39
+*
+* Alternative measures: see in program (from mean), 484022.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 10:33:58
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 1111.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 10:35:41
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 10:57:19
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 10:57:26
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 10:57:26
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 10:57:42
+*
+* Alternative measures: see in program (from mean), 498695.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 10:57:54
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 1000.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 10:59:13
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 11:04:21
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 11:04:41
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 11:04:41
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 11:04:55
+*
+* Alternative measures: see in program (from mean), 501430.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 11:05:02
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 1000.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 11:05:03
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 11:17:34
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 11:17:43
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 11:17:43
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 11:17:55
+*
+* Alternative measures: see in program (from mean), 632781.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 11:17:58
+*
+* Alternative measures: see in program (from mean), 491891.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 11:18:04
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 1000.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 11:18:05
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 11:44:56
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 11:45:04
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 11:45:04
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 11:45:19
+*
+* Alternative measures: see in program (from mean), 475504.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 11:45:25
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 90809.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 11:45:26
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 11:55:53
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 11:56:01
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 11:56:01
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 11:57:31
+*
+* Alternative measures: see in program (from mean), 492565.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 11:57:35
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 57865.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 11:57:38
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 12:02:14
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 12:02:22
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 12:02:22
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 12:02:31
+*
+* Alternative measures: see in program (from mean), 499013.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 12:02:39
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 12:04:24
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 12:04:31
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 12:04:31
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 12:04:40
+*
+* Alternative measures: see in program (from mean), 502860.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 12:04:48
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 12:05:11
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 12:05:19
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 12:05:19
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 12:05:27
+*
+* Alternative measures: see in program (from mean), 493174.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 12:05:43
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 12:10:44
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 12:10:51
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 12:10:51
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 12:10:58
+*
+* Alternative measures: see in program (from mean), 494050.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 12:11:03
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 12:12:29
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 12:12:37
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 12:12:37
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 12:12:46
+*
+* Alternative measures: see in program (from mean), 489245.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 12:12:50
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 999.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 12:12:52
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 12:20:58
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 12:21:04
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 12:21:04
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 12:21:12
+*
+* Alternative measures: see in program (from mean), 1898623.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 12:21:35
+*
+* Alternative measures: see in program (from mean), 1782130.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 12:21:38
+*
+* Alternative measures: see in program (from mean), 1782130.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 12:21:54
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 1000.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 12:23:20
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:17:22
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:17:29
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:17:29
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** TERMINATING
+* 17 Feb 2012 13:17:45
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:18:22
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:18:33
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:18:33
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 13:18:43
+*
+* Alternative measures: see in program (from mean), 1891572.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 13:19:04
+*
+* Alternative measures: see in program (from mean), 1891572.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 13:19:05
+*
+* Alternative measures: see in program (from mean), 1891572.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 13:19:09
+*
+* Alternative measures: see in program (from mean), 1891572.0 (from median)
+
+*** ANALYSIS
+* 17 Feb 2012 13:19:12
+*
+* Alternative measures: see in program (from mean), 1891572.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 13:19:23
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:45:52
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:46:01
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:46:01
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** TERMINATING
+* 17 Feb 2012 13:46:59
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:48:07
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:48:16
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:48:16
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 13:48:25
+*
+* Alternative measures: see in program (from mean), 497625.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 13:48:39
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 44444.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 13:49:24
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:50:49
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:50:58
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:50:58
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 13:51:35
+*
+* Alternative measures: see in program (from mean), 496513.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 13:52:08
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 44444.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 13:52:42
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:53:00
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:53:07
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:53:07
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 13:53:15
+*
+* Alternative measures: see in program (from mean), 491901.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 13:53:33
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:54:19
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:54:25
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:54:25
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 13:54:32
+*
+* Alternative measures: see in program (from mean), 489333.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 13:54:40
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 777.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 13:54:42
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:55:47
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:55:56
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:55:56
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 13:56:04
+*
+* Alternative measures: see in program (from mean), 476823.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 13:56:12
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 9999.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 13:56:45
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 13:58:10
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 13:58:17
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 13:58:17
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 13:58:27
+*
+* Alternative measures: see in program (from mean), 501815.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 13:58:58
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 7777.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 13:58:59
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 14:01:35
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 14:01:41
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 14:01:41
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 14:01:50
+*
+* Alternative measures: see in program (from mean), 499767.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 14:02:05
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 14:15:08
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 14:15:16
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 14:15:16
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 14:15:24
+*
+* Alternative measures: see in program (from mean), 493322.0 (from median)
+
+*** CALIBRATION
+* 17 Feb 2012 14:15:41
+*
+* Setting /home/martin/Documents/PhD/www/Scannomatic/data/Calbration_Curve/Cal_curv_replicate_12_time_3.tiff colony depth per pixel to 555.0 cell estimate.
+
+*** TERMINATING
+* 17 Feb 2012 14:16:27
+*
+* 
+
+*** ANALYSIS
+* 17 Feb 2012 14:38:24
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 17 Feb 2012 14:38:51
+*
+* [(77.41935483870967, 860.9677419354839), (98.06451612903228, 675.1612903225807)]
+
+*** SCAN POSITIONS
+* 17 Feb 2012 14:38:51
+*
+* [(857.93063972930247, 74.410214969539282), (672.13585120770233, 95.160075303899248)]
+
+*** ANALYSIS
+* 17 Feb 2012 14:39:05
+*
+* Alternative measures: see in program (from mean), 398306.0 (from median)
+
+*** TERMINATING
+* 17 Feb 2012 14:39:21
+*
+* 
+
 

@@ -121,8 +121,6 @@ class Analyse_One(gtk.Frame):
         #
 
         self.selection_circ = plt_patches.Circle((0,0),0)
-        #self.selection_rect.get_axes()
-        #self.selection_rect.get_transform()
         self._blobs_have_been_loaded = False
 
         #
@@ -181,7 +179,7 @@ class Analyse_One(gtk.Frame):
         hbox.pack_start(self.selection_height, False, False, 2)
 
         #Analysis data frame for selection
-        frame = gtk.Frame("Selection Analysis")
+        frame = gtk.Frame("Image")
         frame.show()
         vbox2.pack_start(frame, False, False, 2)
 
@@ -194,11 +192,22 @@ class Analyse_One(gtk.Frame):
         self.section_picking.show()
         vbox3.pack_start(self.section_picking, False, False, 10)
 
+        #Analysis data frame for selection
+        frame = gtk.Frame("'Kodak Value Space'")
+        frame.show()
+        vbox2.pack_start(frame, False, False, 2)
+
+        vbox3 = gtk.VBox()
+        vbox3.show()
+        frame.add(vbox3)
+
         #Cell Area
         hbox = gtk.HBox()
         hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
+
+        
         label = gtk.Label("Cell Area:")
         label.show()
         hbox.pack_start(label,False, False, 2)
@@ -300,7 +309,7 @@ class Analyse_One(gtk.Frame):
         hbox.pack_end(self.blob_mean, False, False, 2)
 
         #Cell Count Estimations
-        frame = gtk.Frame("Cell Count Estimate Calibration")
+        frame = gtk.Frame("Cell Estimate Calibration")
         frame.show()
         vbox2.pack_start(frame, False, False, 2)
 
@@ -367,24 +376,36 @@ class Analyse_One(gtk.Frame):
 
         if self.blob_filter != None and self._rect_ul != None and self._rect_lr != None:
 
-            cce_per_pixel = float(self.cce_indep_measure.get_text()) / \
-                float( self.blob_area.get_text())
-
-            
+            indep_cce = float(self.cce_indep_measure.get_text()) 
 
             img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
- 
-            blob_pixels = img_section[np.where(self.blob_filter)]
-            
+
+
             tf_matrix = np.asarray(colonies.get_gray_scale_transformation_matrix(self._grayscale))
 
-            blob_pixels = tf_matrix[blob_pixels.astype(int)]
+            if tf_matrix is not None:
+                for x in xrange(img_section.shape[0]):
+                    for y in xrange(img_section.shape[1]):
+                        img_section[x,y] = tf_matrix[img_section[x,y]]
+
+
+            ###DEBUG CALIBRATION VALUES
+            #print "REF: area", self.blob_image[np.where(self.blob_filter)].size
+            #print "REF pixsum", self.blob_image[np.where(self.blob_filter)].sum()
+            #print "--"
+            #print "img_section == orig_tf_img (0==True)", (img_section - self.img_transf).sum() 
+            #print "--"
+            #print "CAL: area", img_section[np.where(self.blob_filter)].size
+            #print "CAL: pixsum", img_section[np.where(self.blob_filter)].sum()
+            ###DEBUG END
 
             #Get the effect of blob-materia on pixels
-            blob_pixels = blob_pixels - float(self.bg_mean.get_text())
+            blob_pixels = img_section[np.where(self.blob_filter)] - float(self.bg_mean.get_text())
+
 
             #Disallow "anti-materia" pixels           
             blob_pixels = blob_pixels[np.where(blob_pixels > 0)] 
+
 
             keys = list(np.unique(blob_pixels))
             values = []
@@ -398,15 +419,17 @@ class Analyse_One(gtk.Frame):
 
 
 
-                fs.write(str([self.analysis_img.get_text(), self.cce_data_label.get_text() ,float(self.cce_per_pixel.get_text()), cce_per_pixel, cce_data]) + "\n")
+                fs.write(str([self.analysis_img.get_text(), self.cce_data_label.get_text() ,indep_cce, cce_data]) + "\n")
 
                 fs.close()
-                self.owner.DMS("Calibration", "Setting " + self.f_settings.image_path + \
-                    " colony depth per pixel to " + str( cce_per_pixel ) + " cell estimate.")
                 
             except:
 
                 self.owner.DMS("Error", "Could not open " + self._config_calibration_path)
+                return
+
+            self.owner.DMS("Calibration", "Setting " + self.analysis_img.get_text() + \
+                " colony depth per pixel to " + str( indep_cce ) + " cell estimate.")
 
     def select_image(self, widget=None, event=None, data=None):
         newimg = gtk.FileChooserDialog(title="Select new image", action=gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -758,6 +781,10 @@ class Analyse_One(gtk.Frame):
             right = ul[1]
             left = lr[1]
 
+        ###DEBUG SELECTION SHAPE
+        print "Selection shape: ", self.f_settings.A._img[upper:lower,left:right].shape
+        ###DEBUG END
+
         if as_copy:
             return np.copy(self.f_settings.A._img[upper:lower,left:right])
         else:
@@ -783,7 +810,10 @@ class Analyse_One(gtk.Frame):
                 for y in xrange(img_transf.shape[1]):
                     img_transf[x,y] = tf_matrix[img_transf[x,y]]
 
+        ###DEBUG TRANSFORMATIONS
         print "*** SECTION TRANSFORMED: ", not(img_transf.sum() == img_section.sum())
+        self.img_transf = img_transf.copy()
+        ###END DEBUG
 
         x_factor = img_section.shape[0] / 200
         y_factor = img_section.shape[1] / 200
@@ -859,6 +889,12 @@ class Analyse_One(gtk.Frame):
 
         blob = cell.get_item('blob')
         self.blob_filter = blob.filter_array
+        self.blob_image = blob.grid_array
+
+        ###DEBUG IMAGE STAYS TRUE
+        #print "DIFF:",  (self.blob_image - self.img_transf).sum()
+        ###DEBUG END
+
         blob_hist = blob.histogram
 
         #
@@ -892,9 +928,9 @@ class Analyse_One(gtk.Frame):
             image_plot.cla()
 
         #image_ax = image_plot.imshow(img_section.T)
-        self.blob_filter = self.blob_filter.astype(float) * 256 + img_transf
-        self.blob_filter = self.blob_filter * ( 256/ float(np.max(self.blob_filter)) )
-        image_ax = image_plot.imshow(self.blob_filter.T)
+        blob_filter_view = self.blob_filter.astype(float) * 256 + img_transf
+        blob_filter_view = blob_filter_view * ( 256/ float(np.max(blob_filter_view)) )
+        image_ax = image_plot.imshow(blob_filter_view.T)
 
         image_plot.set_xlim(xmin=0,xmax=self.blob_filter.shape[0])
         image_plot.set_ylim(ymin=0,ymax=self.blob_filter.shape[1])

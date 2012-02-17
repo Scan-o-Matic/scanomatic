@@ -2,6 +2,17 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Corrected bug that turned stuff up-side-down when running watch on
+    a colony while producing analysis for a whole project.
+
+*** Made Analyse One GUI more self-explaining
+
+*** Calibration measures are no longer mean pixel-darkening, but vectors of
+    all pixels that corresponds to an independent cell count.
+
+*** In subracting background:mean negative values for blob in calibration
+    is not allowed.
+
 *** Cells now count as positive values relative to background
 
 *** Calibration point saving saves a representation of the Kodak Value Space-

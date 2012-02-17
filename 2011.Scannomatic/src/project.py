@@ -19,11 +19,10 @@ import os, sys
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.image as plt_img
-#import elementtree.ElementTree as ET
 import types
 import numpy as np
 from time import time
-from argparse import ArgumentParser #, FileType
+from argparse import ArgumentParser
 
 #
 # SCANNOMATIC LIBRARIES
@@ -190,41 +189,26 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     if supress_analysis != True:
         fh.write('<project>')
-        #ET_root = ET.Element("project")
 
         fh.write('<start-time>' + str(image_dictionaries[first_scan_position]['Time']) + '</start-time>')
-        #ET_start = ET.SubElement(ET_root, "start-time")
-        #ET_start.text = str(image_dictionaries[0]['Time'])
 
         fh.write('<description>' + str(description) + '</description>')
-        #ET_description = ET.SubElement(ET_root, "description")
-        #ET_description.text = "Placeholder description"
 
         fh.write('<number-of-scans>' + str(image_pos+1) + '</number-of-scans>')
-        #ET_number_of_scans = ET.SubElement(ET_root, "number-of-scans")
-        #ET_number_of_scans.text = str(image_pos+1)
 
         fh.write('<interval-time>' + str(interval_time) + '</interval-time>')
-        #ET_interval = ET.SubElement(ET_root, "interval-time")
-        #ET_interval.text = "Placeholder"
 
         fh.write('<plates-per-scan>' + str(plates) + '</plates-per-scan>')
-        #ET_plates_per_scan = ET.SubElement(ET_root, "plates-per-scan")
-        #ET_plates_per_scan.text = str(plates)
 
         fh.write('<pinning-matrices>')
-        #ET_pinning_matrices = ET.SubElement(ET_root, "pinning-matrices")
+
         for pos in xrange(plates):
             fh.write('<pinning-matrix index="' + str(pos) + '">' + \
                  str(pinning_matrices[pos]) + '</pinning-matrix>')
-            #ET_matrix = ET.SubElement(ET_pinning_matrices, "pinning-matrix")
-            #ET_matrix.set("index", str(pos))
-            #ET_matrix.text = str(pinning_matrices[pos])
 
         fh.write('</pinning-matrices>')
 
         fh.write('<scans>')
-        #ET_scans = ET.SubElement(ET_root, "scans")
 
     while image_pos >= first_scan_position:
         scan_start_time = time()
@@ -254,17 +238,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
         if supress_analysis != True:
             fh.write('<scan index="' + str(image_pos) + '">')
-            #ET_scan = ET.SubElement(ET_scans, "scan")
-            #ET_scan.set("index", str(image_pos))
-
             fh.write('<scan-valid>')
-            #ET_scan_valid = ET.SubElement(ET_scan,"scan-valid")
 
         if features == None:
             if supress_analysis != True:
                 fh.write(str(0) + '</scan-valid>')
                 fh.write('</scan>')
-                #ET_scan_valid.text = str(0)
         else:
             if graph_watch != None:
 
@@ -291,7 +270,14 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 tmp_results = []
                 for cell_item in project_image.watch_results.keys():
                     for measure in project_image.watch_results[cell_item].keys():
-                        tmp_results.append(project_image.watch_results[cell_item][measure])
+                        if type(project_image.watch_results[cell_item][measure])\
+                                == np.ndarray or \
+                                project_image.watch_results[cell_item][measure] \
+                                is None:
+
+                            tmp_results.append(np.nan)
+                        else:
+                            tmp_results.append(project_image.watch_results[cell_item][measure])
                         if len(watch_reading) == 0:
                             plot_labels.append(cell_item + ':' + measure)
                 watch_reading.append(tmp_results)    
@@ -304,59 +290,37 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
             if supress_analysis != True:
                 fh.write(str(1) + '</scan-valid>')
-                #ET_scan_valid.text = str(1)
 
                 fh.write('<calibration>' + str(img_dict_pointer['grayscale_values']) + '</calibration>')
-                #ET_scan_gs_calibration = ET.SubElement(ET_scan, "calibration")
-                #ET_scan_gs_calibration.text = \
-                #    str(img_dict_pointer['grayscale_values'])
 
                 fh.write('<time>' + str(img_dict_pointer['Time']) + '</time>')
-                #ET_scan_time = ET.SubElement(ET_scan, "time")
-                #ET_scan_time.text = str(img_dict_pointer['Time'])
 
                 fh.write('<plates>')
-                #ET_plates = ET.SubElement(ET_scan, "plates")
 
                 for i in xrange(plates):
                     fh.write('<plate index="' + str(i) + '">')
-                    #ET_plate = ET.SubElement(ET_plates, "plate")
-                    #ET_plate.set("index", str(i))
 
                     fh.write('<plate-matrix>' + str(pinning_matrices[i]) + '</plate-matrix>')
-                    #ET_plate_matrix = ET.SubElement(ET_plate, "plate-matrix")
-                    #ET_plate_matrix.text = str(pinning_matrices[i])
 
                     fh.write('<R>' + str(project_image.R[i]) + '</R>')
-                    #ET_plate_R = ET.SubElement(ET_plate, "R")
-                    #ET_plate_R.text = str(project_image.R[i])
 
                     fh.write('<grid-cells>')
-                    #ET_cells = ET.SubElement(ET_plate, "cells")
 
                     for x, rows in enumerate(features[i]):
                         for y, cell in enumerate(rows):
 
                             fh.write('<grid-cell x="' + str(x) + '" y="' + str(y) + '">')
-                            #ET_cell = ET.SubElement(ET_cells, "cell")
-                            #ET_cell.set("x", str(x))
-                            #ET_cell.set("y", str(y))
 
                             if cell != None:
                                 for item in cell.keys():
 
                                     fh.write('<' + str(item) + '>')
-                                    #ET_cell_item = ET.SubElement(ET_cell, item)
                                     
                                     for measure in cell[item].keys():
 
                                         fh.write('<' + str(measure) + '>' + \
                                             str(cell[item][measure]) + \
                                             '</' + str(measure) + '>')
-                                        #ET_measure = ET.SubElement(ET_cell_item,\
-                                        #    measure)
-
-                                        #ET_measure.text = str(cell[item][measure])
 
                                     fh.write('</' + str(item) + '>')
                             fh.write('</grid-cell>')
@@ -382,9 +346,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         fh.close()
 
     if  graph_watch != None:
-        Y = np.asarray(watch_reading)
-        X = (np.arange(0, len(image_dictionaries))+0.5)*pict_target_width
-        x_labels.reverse()
+        print watch_reading
+        Y = np.asarray(watch_reading, dtype=np.float64)
+        X = (np.arange(len(image_dictionaries),0,-1)+0.5)*pict_target_width
+
         for xlabel_pos in xrange(len(x_labels)):
             if xlabel_pos % 5 > 0:
                 x_labels[xlabel_pos] = ""
@@ -395,48 +360,64 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         plt_graph_i = 1
         for i in xrange(int(Y.shape[1])):
             if type(Y[0,i]) != np.ndarray and type(Y[0,i]) != types.ListType and type(Y[0,i]) != types.TupleType:
-                try:
-                    if Y[:,i].max() == Y[:,i].min():
-                        scale_factor = 0
-                    else:
-                        scale_factor =  100 / float(Y[:,i].max() - Y[:,i].min())
+                Y_good_positions = np.where(np.isnan(Y[:,i]) == False)[0]
+                if Y_good_positions.size > 0:
+                    try:
 
-                    sub_term = float(Y[:,i].min())
+            
 
-                    if plot_labels[i] == "cell:area":
-                        c_area = Y[:,i]
-                    elif plot_labels[i] == "background:mean":
-                        bg_mean = Y[:,i]
-                    elif plot_labels[i] == "cell:pixelsum":
-                        c_pixelsum = Y[:,i]
-                    elif plot_labels[i] == "blob:pixelsum":
-                        b_pixelsum = Y[:,i]
-                    elif plot_labels[i] == "blob:area":
-                        b_area = Y[:,i]
+                        if Y[Y_good_positions,i].max() == Y[Y_good_positions,i].min():
+                            scale_factor = 0
+                        else:
+                            scale_factor =  100 / float(Y[Y_good_positions,i].max() - Y[Y_good_positions,i].min())
 
-                    print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
-                    #print Y[:,i].max(), Y[:,i].min()
-                    print Y[:,i]
-                    if cur_plt_graph != plot_labels[i].split(":")[0]:
-                        cur_plt_graph = plot_labels[i].split(":")[0]
-                        if plt_graph_i > 1:
-                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
-                        plt_graph_i += 1
-                        plt_watch_curves = plt_watch_colony.add_subplot(4,1,plt_graph_i,
-                            title=cur_plt_graph)
-                        plt_watch_curves.set_xticks(X)
-                        plt_watch_curves.set_xticklabels(x_labels, fontsize="xx-small", rotation=90)
+                        sub_term = float(Y[Y_good_positions,i].min())
 
-                    if scale_factor != 0: 
-                        plt_watch_curves.plot(X, (Y[:,i] - sub_term) * scale_factor, 
-                            label=plot_labels[i][len(cur_plt_graph)+1:])                        
-                    else:
-                        plt_watch_curves.plot(X, np.zeros(X.shape)+10*(i-(plt_graph_i-1)*5), 
-                            label=plot_labels[i][len(cur_plt_graph)+1:])
+                        if plot_labels[i] == "cell:area":
+                            c_area = Y[Y_good_positions,i]
+                        elif plot_labels[i] == "background:mean":
+                            bg_mean = Y[Y_good_positions,i]
+                        elif plot_labels[i] == "cell:pixelsum":
+                            c_pixelsum = Y[Y_good_positions,i]
+                        elif plot_labels[i] == "blob:pixelsum":
+                            b_pixelsum = Y[Y_good_positions,i]
+                        elif plot_labels[i] == "blob:area":
+                            b_area = Y[Y_good_positions,i]
+
+                        print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
+                        print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
+                        #print Y[Y_good_positions,i].max(), Y[Y_good_positions,i].min()
+                        print Y[Y_good_positions,i]
+                        if cur_plt_graph != plot_labels[i].split(":")[0]:
+                            cur_plt_graph = plot_labels[i].split(":")[0]
+                            if plt_graph_i > 1:
+                                plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
+                            plt_graph_i += 1
+                            plt_watch_curves = plt_watch_colony.add_subplot(4,1,plt_graph_i,
+                                title=cur_plt_graph)
+                            plt_watch_curves.set_xticks(X)
+                            plt_watch_curves.set_xticklabels(x_labels, fontsize="xx-small", rotation=90)
+
+                        if scale_factor != 0: 
+                            #print X[Y_good_positions].shape, Y[Y_good_positions,i].shape
+                            #print X[Y_good_positions]
+                            #print Y[Y_good_positions,i]
+                           
+                            plt_watch_curves.plot(X[Y_good_positions], 
+                                (Y[Y_good_positions,i] - sub_term) * scale_factor,
+                                label=plot_labels[i][len(cur_plt_graph)+1:])                        
+                        else:
+                            plt_watch_curves.plot(X[Y_good_positions], 
+                                np.zeros(X[Y_good_positions].shape)+\
+                                10*(i-(plt_graph_i-1)*5), 
+                                label=plot_labels[i][len(cur_plt_graph)+1:])
 
 
-                except TypeError:
-                    print "*** Error on", plot_labels[i], "because of something"
+                    except TypeError:
+                        print "*** Error on", plot_labels[i], "because of something"
+
+                else:
+                        print "*** Can't plot", plot_labels[i], "since it has no good data"
 
         plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
         if graph_output != None:
@@ -458,15 +439,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         else: 
             plt_watch_colony.show()
 
+        print "Full analysis took", (time() - start_time)/60, "minutes"
 
         return False
-    #if verboise:
-    #    print "*** Building report"
-    #    print
 
-    #tree = ET.ElementTree(ET_root)
-    #tree.write(outdata_file_path)
     print "Full analysis took", (time() - start_time)/60, "minutes"
+
 #
 # CLASS Project_Image
 #

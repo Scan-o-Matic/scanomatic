@@ -7,7 +7,7 @@
 
 #import cv
 import numpy as np
-import numpy.ma as ma
+#import numpy.ma as ma
 import math
 from scipy.stats.mstats import mquantiles, tmean, trim
 from scipy.ndimage.filters import sobel 
@@ -139,7 +139,8 @@ class Cell_Item():
 
 
         self.features['area'] = self.filter_array.sum()
-        self.features['pixelsum'] = np.float64((self.grid_array * self.filter_array).sum())
+        self.features['pixelsum'] = self.grid_array[np.where(self.filter_array)].sum()
+        #self.features['pixelsum'] = np.float64((self.grid_array * self.filter_array).sum())
         if self.features['area'] != 0:
             self.features['mean'] = self.features['pixelsum'] / self.features['area']
         else:
@@ -149,23 +150,24 @@ class Cell_Item():
             self.features['centroid'] = None
             self.features['perimeter'] = None
 
-        if self.CELLITEM_TYPE == 3:
-            self.features['median'] = np.median(self.grid_array)
-            self.features['IQR'] = mquantiles(self.grid_array,prob=[0.25,0.75])
-            try:
-                self.features['IQR_mean'] = tmean(self.grid_array,self.features['IQR'])
-            except:
-                self.features['IQR_mean'] = None
-                print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
-        else:
-            feature_array = self.grid_array[np.where(self.filter_array==True)]
-            self.features['median'] = np.median(feature_array)
-            self.features['IQR'] = mquantiles(feature_array, prob=[0.25,0.75])
-            try:
-                self.features['IQR_mean'] = tmean(feature_array, self.features['IQR'])
-            except:
-                self.features['IQR_mean'] = None
-                print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
+        #if self.CELLITEM_TYPE == 3:
+            #self.features['median'] = np.median(self.grid_array)
+            #self.features['IQR'] = mquantiles(self.grid_array,prob=[0.25,0.75])
+            #try:
+                #self.features['IQR_mean'] = tmean(self.grid_array,self.features['IQR'])
+            #except:
+                #self.features['IQR_mean'] = None
+                #print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
+        #else:
+        feature_array = self.grid_array[np.where(self.filter_array)]
+        self.features['median'] = np.median(feature_array)
+        self.features['IQR'] = mquantiles(feature_array, prob=[0.25,0.75])
+        try:
+            self.features['IQR_mean'] = tmean(feature_array, self.features['IQR'])
+        except:
+            self.features['IQR_mean'] = None
+            self.features['IQR'] = None
+            print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
 
             #feature_array = ma.masked_array(self.grid_array, mask=abs(self.filter_array - 1))
             #self.features['median'] = ma.median(feature_array)

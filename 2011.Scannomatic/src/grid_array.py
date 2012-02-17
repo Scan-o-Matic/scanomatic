@@ -224,6 +224,10 @@ class Grid_Array():
                 
                 tf_matrix.append(x)
 
+        ###DEBUG TF-matrix
+        #print "Transformation matrix:\n", list(tf_matrix)
+        ###END DEBUG
+
         return tf_matrix
 
     def get_analysis(self, im, gs_fit=None, gs_values=None, use_fallback=False,\

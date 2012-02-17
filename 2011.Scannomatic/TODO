@@ -4,8 +4,6 @@
 
 --- Kodak > Cell Estimate Space ---
 
-*** In subracting background:mean disallow negative values (blobs being pos)
-
 *** Using the vectors, fit a 3-5 deg polynomial with positive co-effs such
     that the sum of the vector's Y-values equals the measured cell count value
 
@@ -29,6 +27,13 @@
     grid-placement to calculate the otsu-threshold.
 
 --- BLOB-DETECTION ---
+
+*** Images show distinct blob-detection failiour at early stages using
+    current detection algorithms
+
+*** Use where previous blob was detected!
+
+*** Think about finding a good level of a thresholded image for blobedge
 
 *** http://www.scipy.org/Cookbook/Least_Squares_Circle
 
@@ -66,6 +71,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** In subracting background:mean disallow negative values (blobs being pos)
 
 *** Make cells count as positives in Kodak space (* -1)
 
