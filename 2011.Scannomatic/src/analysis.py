@@ -42,6 +42,8 @@ class Analyse_One(gtk.Frame):
         self._circ_center = None
 
         self._config_calibration_path = self.owner._program_config_root + os.sep + "calibration.data"
+        self._config_calibration_polynomial = self.owner._program_config_root + os.sep + "calibration.polynomials"
+
         self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
         self.f_settings = settings_tools.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
 
@@ -192,6 +194,10 @@ class Analyse_One(gtk.Frame):
         self.section_picking.show()
         vbox3.pack_start(self.section_picking, False, False, 10)
 
+        #
+        # KODAK VALUE SPACE
+        #
+
         #Analysis data frame for selection
         frame = gtk.Frame("'Kodak Value Space'")
         frame.show()
@@ -205,9 +211,7 @@ class Analyse_One(gtk.Frame):
         hbox = gtk.HBox()
         hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
-
-
-        
+     
         label = gtk.Label("Cell Area:")
         label.show()
         hbox.pack_start(label,False, False, 2)
@@ -308,8 +312,12 @@ class Analyse_One(gtk.Frame):
         self.blob_mean.show()
         hbox.pack_end(self.blob_mean, False, False, 2)
 
+        #
+        # CELL ESTIMATE SPACE
+        #
+
         #Cell Count Estimations
-        frame = gtk.Frame("Cell Estimate Calibration")
+        frame = gtk.Frame("Cell Estimate Space")
         frame.show()
         vbox2.pack_start(frame, False, False, 2)
 
@@ -363,6 +371,27 @@ class Analyse_One(gtk.Frame):
         button.show()
         button.connect("clicked", self.add_calibration_point, None)
         vbox3.pack_start(button, False, False, 2)
+
+        self.cce_calculated = gtk.Label("--- cells in blob")
+        self.cce_calculated.show()
+        vbox3.pack_start(self.cce_calculated, False, False, 2)
+        self._cce_poly_coeffs = None
+        has_poly_cal = True
+        try:
+            fs = open(self._config_calibration_polynomial, 'r')
+        except:
+            has_poly_cal = False
+        if has_poly_cal:
+            self._cce_poly_coeffs = []
+            for l in fs:
+                l_data = eval(l.strip("\n"))
+                if type(l_data) == types.ListType:
+                    self._cce_poly_coeffs = l_data[-1]
+                    break
+            label = gtk.Label("(using '" + str(l_data[0]) + "')")
+            label.show()
+            vbox3.pack_start(label, False, False, 2)
+
         self.blob_filter = None
 
     def verify_number(self, widget=None, event=None, data=None):
@@ -372,11 +401,26 @@ class Analyse_One(gtk.Frame):
         except:
             widget.set_text("0")
 
-    def add_calibration_point(self, widget=None, event=None, data=None):
+    def get_vector_polynomial_sum_single(self, X, coefficient_array):
+
+        return np.sum(np.polyval(coefficient_array, X))
+
+
+    def get_expanded_vector(self, compressed_vector):
+
+        vector = []
+
+        for pos in xrange(len(compressed_vector[0])):
+
+            for ith in xrange(compressed_vector[1][pos]):
+
+                vector.append(compressed_vector[0][pos])
+
+        return vector
+
+    def get_cce_data_vector(self):
 
         if self.blob_filter != None and self._rect_ul != None and self._rect_lr != None:
-
-            indep_cce = float(self.cce_indep_measure.get_text()) 
 
             img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
 
@@ -413,6 +457,16 @@ class Analyse_One(gtk.Frame):
                 values.append(np.sum(blob_pixels == k))
 
             cce_data = [keys, values]
+
+            return cce_data
+
+    def add_calibration_point(self, widget=None, event=None, data=None):
+
+        if self.blob_filter != None and self._rect_ul != None and self._rect_lr != None:
+
+            indep_cce = float(self.cce_indep_measure.get_text()) 
+
+            cce_data = self.get_cce_data_vector()
 
             try:
                 fs = open(self._config_calibration_path,'a')
@@ -825,6 +879,8 @@ class Analyse_One(gtk.Frame):
         if scale_factor == 0:
             scale_factor = 1
 
+
+
         #
         # BLOB SELECTION CANVAS
         #
@@ -891,6 +947,16 @@ class Analyse_One(gtk.Frame):
         self.blob_filter = blob.filter_array
         self.blob_image = blob.grid_array
 
+        #
+        # CALCULATING CCE IF POLY-COEFFS EXISTS
+        #
+
+        if self._cce_poly_coeffs is not None:
+
+            cce_vector = self.get_cce_data_vector()
+            cce_vector = self.get_expanded_vector(cce_vector)
+            cce_calculated = self.get_vector_polynomial_sum_single(cce_vector, self._cce_poly_coeffs)
+            self.cce_calculated.set_text(str(cce_calculated) + " cells in blob")
         ###DEBUG IMAGE STAYS TRUE
         #print "DIFF:",  (self.blob_image - self.img_transf).sum()
         ###DEBUG END
