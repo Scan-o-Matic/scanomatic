@@ -391,6 +391,7 @@ class Analyse_One(gtk.Frame):
             label = gtk.Label("(using '" + str(l_data[0]) + "')")
             label.show()
             vbox3.pack_start(label, False, False, 2)
+            fs.close()
 
         self.blob_filter = None
 

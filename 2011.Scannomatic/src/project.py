@@ -458,13 +458,20 @@ class Project_Image():
         self._plate_positions = plate_positions
         self._pinning_matrices = pinning_matrices
 
+        #PATHS
+        script_path_root = os.path.dirname(os.path.abspath(__file__))
+        scannomatic_root = os.sep.join(script_path_root.split(os.sep)[:-1])
+        self._program_root = scannomatic_root
+        self._program_code_root = scannomatic_root + os.sep + "src"
+        self._program_config_root = self._program_code_root + os.sep + "config"
+
         self.im = None
         self._grid_arrays = []
         self.features = []
         self.R = []
 
         for a in xrange(len(pinning_matrices)):
-            self._grid_arrays.append(grid_array.Grid_Array(pinning_matrices[a]))
+            self._grid_arrays.append(grid_array.Grid_Array(self, pinning_matrices[a]))
             self.features.append(None)
             self.R.append(None)
 

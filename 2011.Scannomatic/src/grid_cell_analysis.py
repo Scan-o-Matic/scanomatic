@@ -137,6 +137,13 @@ class Cell_Item():
         if self.CELLITEM_TYPE == 0 or self.filter_array == None:
             return None
 
+        ###DEBUG WHAT IS THE GRID ARRAY
+        #from matplotlib import pyplot as plt
+        #plt.clf()
+        #plt.imshow(self.grid_array)
+        #plt.title("Image section")
+        #plt.show()
+        ###END DEBUG CODE
 
         self.features['area'] = self.filter_array.sum()
         self.features['pixelsum'] = self.grid_array[np.where(self.filter_array)].sum()
@@ -672,12 +679,18 @@ class Background(Cell_Item):
             ###DEBUG CODE
             #print "Bg area", np.sum(self.filter_array),  "of which shared with blob", 
             #print np.sum(self.filter_array * self.blob.filter_array)
-            #from matplotlib import pyplot as plt
+            from matplotlib import pyplot as plt
             #plt.clf()
             #plt.imshow(self.blob.filter_array)
+            #plt.title("Blob")
             #plt.show()
             #plt.clf()
             #plt.imshow(self.filter_array)
+            #plt.title("Background")
+            #plt.show()
+            #plt.clf()
+            #plt.imshow(self.grid_array)
+            #plt.title("Image section")
             #plt.show()
             ###END DEBUG CODE
 

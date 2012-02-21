@@ -2,6 +2,9 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Analysis of project is now run in 'Cell Estimate Space' if 
+    calibration has been done.
+
 *** Background element of grid cell is now an eroded negative of
     blob such that there's a buffer-zone inbetween the two belonging
     to none of them.

@@ -17,6 +17,7 @@
 
 import numpy as np
 from scipy.optimize import fsolve
+import os, types
 
 #
 # SCANNOMATIC LIBRARIES
@@ -30,17 +31,45 @@ import grid_cell
 #
 
 class Grid_Array():
-    def __init__(self, pinning_matrix):
+    def __init__(self, parent, pinning_matrix):
 
+        self._parent = parent
         self._analysis = gaa.Grid_Analysis()
         self._pinning_matrix = None
         self._grid_cell_size = None
         self._grid_cells = None
         self._features = []
-
         self.R = None
         if pinning_matrix != None:
             self.set_pinning_matrix(pinning_matrix)
+
+        self._polynomial_coeffs = None
+        if parent is not None:
+            
+            self._config_calibration_polynomial = parent._program_config_root +\
+                os.sep + "calibration.polynomials"
+
+            get_poly = True
+            try:
+
+                fs = open(self._config_calibration_polynomial, 'r')
+            except:
+                print "ERROR: Cannot open polynomial info file"
+                get_poly = False
+
+            if get_poly:
+
+                self._polynomial_coeffs = []
+                for l in fs:
+                    l_data = eval(l.strip("\n"))
+                    if type(l_data) == types.ListType:
+                        self._polynomial_coeffs = l_data[-1]
+                        break
+
+                fs.close()
+
+                if self._polynomial_coeffs == []:
+                    self._polynomial_coeffs = None
     #
     # SET functions
     #
@@ -401,13 +430,25 @@ class Grid_Array():
                             blob=True, background=True, cell=True, 
                             use_fallback_detection=use_fallback, run_detect=False)
 
+                    #This step only detects the objects
+                    self._grid_cells[row][column].get_analysis(no_analysis=True)
 
+                    #Transfer data to 'Cell Estimate Space'
+                    self._grid_cells[row][column].set_new_data_source_space(\
+                        space='cell estimate', bg_sub_source = \
+                        self._grid_cells[row][column].get_item('background').filter_array\
+                        , polynomial_coeffs = self._polynomial_coeffs)
+
+                    #This step does analysis on the previously detected objects
                     self._features[row][column] = \
-                        self._grid_cells[row][column].get_analysis()
+                        self._grid_cells[row][column].get_analysis(no_detect=True)
 
                     if watch_colony != None:
                         if row == watch_colony[1] and column == watch_colony[2]:
-                            self.watch_blob = self._grid_cells[row][column]._analysis_items['blob'].filter_array
+                            self.watch_blob = \
+                                self._grid_cells[row][column].\
+                                get_item('blob').filter_array
+
                             self.watch_results = self._features[row][column]
         if visual:
             grid_image.show() 

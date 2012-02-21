@@ -135,6 +135,47 @@ class Grid_Cell():
 
         self.data_source = data_source
 
+    def set_new_data_source_space(self, space='cell estimate',\
+        bg_sub_source = None, polynomial_coeffs = None):
+
+        if space == 'cell estimate':
+
+            #DEBUG -> CELL ESTIMATE SPACE PART !
+            #from matplotlib import pyplot as plt
+            #plt.clf()
+            #plt.imshow(self.data_source)
+            #plt.title("Kodak Value Space")
+            #plt.show() 
+            #DEBUG END
+            if bg_sub_source is not None:
+                self.data_source = self.data_source - bg_sub_source
+                self.data_source[np.where(self.data_source<0)] = 0
+            #DEBUG -> CELL ESTIMATE SPACE PART !
+            #from matplotlib import pyplot as plt
+            #plt.clf()
+            #plt.imshow(self.data_source)
+            #plt.show() 
+            #DEBUG END
+            if polynomial_coeffs is not None:
+                self.data_source = \
+                    np.polyval(polynomial_coeffs, self.data_source)
+
+            #DEBUG -> CELL ESTIMATE SPACE PART !
+            #from matplotlib import pyplot as plt
+            #plt.clf()
+            #plt.imshow(self.data_source)
+            #plt.title("Cell Estimate Space")
+            #cb = plt.colorbar()
+            #cb.set_label('Cells Estimate/pixel')           
+            #plt.show() 
+            #DEBUG END
+
+        self.set_grid_array_pointers()
+    
+    def set_grid_array_pointers(self):
+        for item_names in self._analysis_items.keys():
+            self._analysis_items[item_names].grid_array = self.data_source
+
     def set_rect_size(self, rect_size=None):
 
         if rect_size == None:
@@ -170,7 +211,7 @@ class Grid_Cell():
         else:
             return None
 
-    def get_analysis(self, no_detect=False):
+    def get_analysis(self, no_detect=False, no_analysis=False):
         """
 
             get_analysis iterates through all possible cell items
@@ -187,6 +228,9 @@ class Grid_Cell():
             @no_detect      If set to true, it will re-use the
                             previously used detection.
 
+            @no_analysis    If set to true, there will be no
+                            analysis done, just detection (if still
+                            active). 
 
         """
         
@@ -197,8 +241,9 @@ class Grid_Cell():
                 self._analysis_items[item_name].set_data_source(self.data_source)
                 if not no_detect:
                     self._analysis_items[item_name].detect()
-                self._analysis_items[item_name].do_analysis()
-                features_dict[item_name] = self._analysis_items[item_name].features
+                if not no_analysis:
+                    self._analysis_items[item_name].do_analysis()
+                    features_dict[item_name] = self._analysis_items[item_name].features
             else:
                 features_dict[item_name] = None
 

@@ -93,7 +93,7 @@ def get_gray_scale_transformation_matrix(gs_values):
 
     """
 
-    arr = grid_array.Grid_Array(None)
+    arr = grid_array.Grid_Array(None, None)
 
     return arr.get_transformation_matrix(gs_values=gs_values, 
         gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,
@@ -105,8 +105,8 @@ def get_gray_scale_transformation_matrix(gs_values):
 #
 
 class Grid_Array(grid_array.Grid_Array):
-    def __init__(self):
-        grid_array.Grid_Array.__init__(self)
+    def __init__(self, root):
+        grid_array.Grid_Array.__init__(self, root)
 
 class Grid_Cell(grid_cell.Grid_Cell):
     def __init__(self):
