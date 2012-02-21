@@ -187,6 +187,29 @@ class Cell_Item():
 #            self.features['colony_size_from_median'] = self.features['pixelsum'] - \
 #                self.features['median'] * self.features['area']
 
+    def get_round_kernel(self, radius=6, outline=False):
+
+
+        round_kernel = np.zeros(((radius+1)*2+1,(radius+1)*2+1)).astype(\
+            self.filter_array.dtype)
+
+        center_x, center_y = radius+1, radius+1
+
+        y,x = np.ogrid[-radius:radius, -radius:radius]
+
+        if outline:
+            index = radius**2 - 1 <= x**2 + y**2 <= radius** + 2
+        else:
+            index = x**2 + y**2 <= radius**2
+
+        round_kernel[center_y-radius:center_y+radius, 
+            center_x-radius:center_x+radius][index] = True
+
+        return round_kernel
+
+
+
+
 #
 # CLASS Blob
 #
@@ -305,10 +328,10 @@ class Blob(Cell_Item):
 
 
         ###DEBUG DETECTION TIME SERIES
-        from scipy.misc import imsave
-        imsave('analysis/anim_' + str(self._debug_ticker) + '_blob.png', self.filter_array) 
-        imsave('analysis/anim_' + str(self._debug_ticker) + '_orig.png', self.grid_array) 
-        self._debug_ticker += 1
+        #from scipy.misc import imsave
+        #imsave('analysis/anim_' + str(self._debug_ticker) + '_blob.png', self.filter_array) 
+        #imsave('analysis/anim_' + str(self._debug_ticker) + '_orig.png', self.grid_array) 
+        #self._debug_ticker += 1
         ###DEBUG END
 
     def threshold_detect(self, im=None, threshold=None, color_logic=None):
@@ -358,25 +381,6 @@ class Blob(Cell_Item):
 
             self.edge_detect()
  
-    def get_round_kernel(self, radius=6, outline=False):
-
-
-        round_kernel = np.zeros(((radius+1)*2+1,(radius+1)*2+1)).astype(\
-            self.filter_array.dtype)
-
-        center_x, center_y = radius+1, radius+1
-
-        y,x = np.ogrid[-radius:radius, -radius:radius]
-
-        if outline:
-            index = radius**2 - 1 <= x**2 + y**2 <= radius** + 2
-        else:
-            index = x**2 + y**2 <= radius**2
-
-        round_kernel[center_y-radius:center_y+radius, 
-            center_x-radius:center_x+radius][index] = True
-
-        return round_kernel
 
     def edge_detect(self):
         """
@@ -660,9 +664,21 @@ class Background(Cell_Item):
         if self.blob and self.blob.filter_array != None:
             self.filter_array = (self.blob.filter_array == False)
 
+            kernel = self.get_round_kernel(radius=9)
+            self.filter_array = binary_erosion(self.filter_array, 
+                structure=kernel, border_value=1)
+
+
             ###DEBUG CODE
             #print "Bg area", np.sum(self.filter_array),  "of which shared with blob", 
             #print np.sum(self.filter_array * self.blob.filter_array)
+            #from matplotlib import pyplot as plt
+            #plt.clf()
+            #plt.imshow(self.blob.filter_array)
+            #plt.show()
+            #plt.clf()
+            #plt.imshow(self.filter_array)
+            #plt.show()
             ###END DEBUG CODE
 
         else:

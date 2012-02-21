@@ -53,9 +53,9 @@
     http://old.nabble.com/import-16-bit-tiff---byte-order-problem--td20374391.html
     http://blog.philippklaus.de/2011/08/handle-16bit-tiff-images-in-python/
 
-* Scanner selection is still awkward... (only one scanner per program I think
+*** Scanner selection is still awkward... (only one scanner per program I think
 
-* Checking of space left on HD
+*** Checking of space left on HD
 
 
   ###################################

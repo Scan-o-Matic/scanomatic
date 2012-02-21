@@ -865,8 +865,8 @@ class Analyse_One(gtk.Frame):
                     img_transf[x,y] = tf_matrix[img_transf[x,y]]
 
         ###DEBUG TRANSFORMATIONS
-        print "*** SECTION TRANSFORMED: ", not(img_transf.sum() == img_section.sum())
-        self.img_transf = img_transf.copy()
+        #print "*** SECTION TRANSFORMED: ", not(img_transf.sum() == img_section.sum())
+        #self.img_transf = img_transf.copy()
         ###END DEBUG
 
         x_factor = img_section.shape[0] / 200

@@ -2,6 +2,10 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Background element of grid cell is now an eroded negative of
+    blob such that there's a buffer-zone inbetween the two belonging
+    to none of them.
+
 *** Calibration curve to transfer data from 'Kodak Value Space' to 
     'Cell Estimate Space' done for BY4743 using ten randomly omitted
     points as a test set and obtaining near 1:1 correlation between 
