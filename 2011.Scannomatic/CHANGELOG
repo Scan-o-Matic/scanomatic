@@ -2,6 +2,14 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Calibration curve to transfer data from 'Kodak Value Space' to 
+    'Cell Estimate Space' done for BY4743 using ten randomly omitted
+    points as a test set and obtaining near 1:1 correlation between 
+    calculated cell estimate and independent measure.
+
+        y = 3.3797963108805451e-05x⁵ + 48.990614276885069x
+
+
 *** Corrected bug that turned stuff up-side-down when running watch on
     a colony while producing analysis for a whole project.
 

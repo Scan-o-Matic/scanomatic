@@ -4,16 +4,6 @@
 
 --- Kodak > Cell Estimate Space ---
 
-*** Using the vectors, fit a 3-5 deg polynomial with positive co-effs such
-    that the sum of the vector's Y-values equals the measured cell count value
-
-*** Once a curve for all measures have been fitted, reproduce the cell count by
-    selecting the blobs (Note this is proximate to circular)
-
-
-*** Mark data by time-point of sampling
-
-*** Collect new calibration data to verify the goodness of the calibration
 
 --- GRIDDING ---
 
@@ -71,6 +61,16 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Using the vectors, fit a 3-5 deg polynomial with positive co-effs such
+    that the sum of the vector's Y-values equals the measured cell count value
+
+*** Once a curve for all measures have been fitted, reproduce the cell count by
+    selecting the blobs (Note this is proximate to circular)
+
+*** Mark data by time-point of sampling
+
+*** Collect new calibration data to verify the goodness of the calibration
 
 *** In subracting background:mean disallow negative values (blobs being pos)
 
