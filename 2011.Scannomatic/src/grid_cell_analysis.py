@@ -315,14 +315,24 @@ class Blob(Cell_Item):
     # DETECT functions
     #
 
-    def detect(self, use_fallback_detection = None):
+    def detect(self, use_fallback_detection = None, 
+        max_change_threshold = 0.3):
         """
             Generic wrapper function for blob-detection
 
             Optional argument:
 
-            @use_fallback_detection     If set, overrides the instance default        
+            @use_fallback_detection     If set, overrides the instance default 
+
+            @max_change_threshold       The max sum of differentiating pixels 
+                                        devided by old filters sum of pixels.
+ 
         """
+
+        if self.filter_array is None:
+            old_filter = None
+        else:
+            old_filter = self.filter_array.copy()
 
         if use_fallback_detection:
             self.threshold_detect()
@@ -333,6 +343,86 @@ class Blob(Cell_Item):
         else:
             self.edge_detect()
 
+
+        if old_filter is not None:
+
+            blob_diff = (np.abs(old_filter - self.filter_array)).sum()
+            oldsum = old_filter.sum()
+
+            bad_diff = True
+
+            if blob_diff / float(oldsum) > max_change_threshold:
+
+                if self.filter_array.sum() > 0:
+
+                    old_com = center_of_mass(old_filter)
+                    new_com = center_of_mass(self.filter_array)
+
+                    dim_1_offset = -1 * int(old_com[0] - new_com[0])
+                    dim_2_offset = -1 * int(old_com[1] - new_com[1])
+
+                    diff_filter = old_filter.copy()
+                    
+
+                    for dim_1_pos in xrange(old_filter.shape[0]):
+
+                        for dim_2_pos in xrange(old_filter.shape[1]):
+
+                            if 0 <= dim_1_pos + dim_1_offset < \
+                                diff_filter.shape[0] and \
+                                0 <= dim_2_pos + dim_2_offset< \
+                                diff_filter.shape[1]:
+
+                                diff_filter[dim_1_pos, dim_2_pos] -= \
+                                    self.filter_array[dim_1_pos + dim_1_offset,
+                                        dim_2_pos + dim_2_offset]
+
+                    
+                            
+
+
+                    #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
+                    #print "***Offsetting blob diff calc with", dim_1_offset, dim_2_offset
+                    #from matplotlib import pyplot as plt
+                    #plt.clf()
+                    #plt.imshow(diff_filter)
+                    #plt.title("Blobs center of mass superimposed diff-image")
+                    #plt.show()
+                    #plt.clf()
+                    #plt.imshow(self.filter_array)
+                    #plt.title("Current detection (that will be discarded)")
+                    #plt.show()
+                    #plt.clf()
+                    #plt.imshow(old_filter)
+                    #plt.title("Blob detection used on previous (that will be used here)")
+                    #plt.show()
+                    #DEBUG END
+
+                    blob_diff = (np.abs(diff_filter)).sum()
+                    if blob_diff / float(oldsum) > max_change_threshold:
+                        bad_diff = False
+
+                #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
+                #from matplotlib import pyplot as plt
+                #plt.clf()
+                #plt.imshow(self.filter_array)
+                #plt.title("Current detection (that will be discarded)")
+                #plt.show()
+                #plt.clf()
+                #plt.imshow(old_filter)
+                #plt.title("Blob detection used on previous (that will be used here)")
+                #plt.show()
+                #DEBUG END
+
+                if bad_diff:
+
+                    self.filter_array = old_filter
+                    print "*** WARNING: Blob detection gone bad, using old blob"
+
+            #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
+            #else:
+            #    print "*** Blob filter data: ", oldsum, blob_diff, blob_diff/float(oldsum)
+            #DEBUG END
 
         ###DEBUG DETECTION TIME SERIES
         #from scipy.misc import imsave
@@ -354,6 +444,7 @@ class Blob(Cell_Item):
             @im             Optional alternative image source
 
         """
+
 
         if self.threshold == None:
             self.set_threshold(im=im, threshold=threshold)

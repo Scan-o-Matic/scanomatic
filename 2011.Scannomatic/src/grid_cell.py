@@ -148,7 +148,8 @@ class Grid_Cell():
             #plt.show() 
             #DEBUG END
             if bg_sub_source is not None:
-                self.data_source = self.data_source - bg_sub_source
+                bg_sub = np.mean(self.data_source[np.where(bg_sub_source)])
+                self.data_source = self.data_source - bg_sub
                 self.data_source[np.where(self.data_source<0)] = 0
             #DEBUG -> CELL ESTIMATE SPACE PART !
             #from matplotlib import pyplot as plt
