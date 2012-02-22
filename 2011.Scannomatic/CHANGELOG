@@ -2,6 +2,9 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Circularity measure possible and iterative threshold raising using blob
+    circularity as measure of good back-ground levels.
+
 *** Possible to monitor the gray-scale values
 
 *** Previous blob (t+1) detected is now tracked and the difference between 

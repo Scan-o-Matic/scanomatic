@@ -412,7 +412,7 @@ class Blob(Cell_Item):
     #
 
     def detect(self, use_fallback_detection = None, 
-        max_change_threshold = 17, remember_filter = False):
+        max_change_threshold = 8, remember_filter = False):
         """
             Generic wrapper function for blob-detection that calls the
             proper detection function and evaluates the results in comparison
@@ -533,6 +533,7 @@ class Blob(Cell_Item):
                         self._identifier, ", using old (", \
                         blob_diff / float(sqrt_of_oldsum), ")"
 
+            print "(", blob_diff / float(sqrt_of_oldsum), ")"
             #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
             #else:
             #    print "*** Blob filter data: ", sqrt_of_oldsum, blob_diff,\
