@@ -101,8 +101,10 @@ def create_id_tag(xcoor,ycoor,nrCols,nrRows):
 #
 
 class Grid_Cell():
-    def __init__(self, center=(-1,-1), rectSize = (0,0), idtag = 'n/a', data_source=None):
+    def __init__(self, identifier, center=(-1,-1), rectSize = (0,0), idtag = 'n/a', data_source=None):
 
+
+        self._identifier = identifier
         self.center = np.asarray(center)
         self.rect = compute_rect(center,np.asarray(rectSize))
         self.idtag = idtag
@@ -239,12 +241,15 @@ class Grid_Cell():
 
         for item_name in self._analysis_item_names:
             if self._analysis_items[item_name]:
-                self._analysis_items[item_name].set_data_source(self.data_source)
+                self._analysis_items[item_name].\
+                    set_data_source(self.data_source)
                 if not no_detect:
-                    self._analysis_items[item_name].detect()
+                    self._analysis_items[item_name].detect(\
+                        remember_filter = True)
                 if not no_analysis:
                     self._analysis_items[item_name].do_analysis()
-                    features_dict[item_name] = self._analysis_items[item_name].features
+                    features_dict[item_name] = \
+                        self._analysis_items[item_name].features
             else:
                 features_dict[item_name] = None
 
@@ -328,16 +333,19 @@ class Grid_Cell():
         """     
 
         if blob: 
-            self._analysis_items['blob'] = gca.Blob(self.data_source, 
+            self._analysis_items['blob'] = gca.Blob(\
+                self._identifier + ('blob',), self.data_source, 
                 use_fallback_detection=use_fallback_detection, 
                 run_detect = run_detect, center=center, radius=radius)
 
         if background and self._analysis_items['blob']:
-            self._analysis_items['background'] = gca.Background(self.data_source, 
+            self._analysis_items['background'] = gca.Background(\
+                self._identifier + ('background',), self.data_source, 
                 self._analysis_items['blob'], run_detect=run_detect)
 
         if cell:
-            self._analysis_items['cell'] = gca.Cell(self.data_source,
+            self._analysis_items['cell'] = gca.Cell(\
+                self._identifier + ('cell',), self.data_source,
                 run_detect = run_detect)
 
     def detach_analysis(self, blob=True, background=True, cell=True):

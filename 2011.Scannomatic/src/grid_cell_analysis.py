@@ -64,24 +64,36 @@ def points_in_circle(circle, arr):
 
 class Cell_Item():
 
-    def __init__(self):
+    def __init__(self, identifier):
         """
             Cell_Item is a super-class for Blob, Backgroun and Cell and should
             not be accessed directly.
 
-            It has two functions:
+            It takes one argument:
 
-            set_type    checks and defines the type of cell item a thing is
+            @identifier     A id list (plate, row, column) so that it knows its
+                            position.
 
-            do_analysis     runs analysis on a cell type, given that it has
+            It has some functions:
+
+            set_data_soruce Sets the image data array
+
+            set_type        Checks and defines the type of cell item a thing is
+
+            do_analysis     Runs analysis on a cell type, given that it has
                             previously been detected
+
+            get_round_kernel    A function to get a binary array with a circle
+                                in the center.
 
         """
 
+        self._identifier = identifier
         self.features = {}
         self.CELLITEM_TYPE = 0
+        self.old_filter = None
         self.set_type()
-
+        
     #
     # SET functions
     #
@@ -147,7 +159,7 @@ class Cell_Item():
 
         self.features['area'] = self.filter_array.sum()
         self.features['pixelsum'] = self.grid_array[np.where(self.filter_array)].sum()
-        #self.features['pixelsum'] = np.float64((self.grid_array * self.filter_array).sum())
+
         if self.features['area'] != 0:
             self.features['mean'] = self.features['pixelsum'] / self.features['area']
         else:
@@ -157,15 +169,6 @@ class Cell_Item():
             self.features['centroid'] = None
             self.features['perimeter'] = None
 
-        #if self.CELLITEM_TYPE == 3:
-            #self.features['median'] = np.median(self.grid_array)
-            #self.features['IQR'] = mquantiles(self.grid_array,prob=[0.25,0.75])
-            #try:
-                #self.features['IQR_mean'] = tmean(self.grid_array,self.features['IQR'])
-            #except:
-                #self.features['IQR_mean'] = None
-                #print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
-        #else:
         feature_array = self.grid_array[np.where(self.filter_array)]
         self.features['median'] = np.median(feature_array)
         self.features['IQR'] = mquantiles(feature_array, prob=[0.25,0.75])
@@ -176,23 +179,6 @@ class Cell_Item():
             self.features['IQR'] = None
             print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
 
-            #feature_array = ma.masked_array(self.grid_array, mask=abs(self.filter_array - 1))
-            #self.features['median'] = ma.median(feature_array)
-            #self.features['mean'] = feature_array.mean()
-            #self.features['IQR'] = mquantiles(ma.compressed(feature_array),prob=[0.25,0.75])
-            #try:
-            #    self.features['IQR_mean'] = ma.masked_outside(feature_array, self.features['IQR'][0], self.features['IQR'][1]).mean()
-            #except:
-            #    self.features['IQR_mean'] = None
-            #    print "*** Failed in producting IQR_mean from IQR", self.features['IQR']
-#        if self.CELLITEM_TYPE == 3: # or self.CELLITEM_TYPE == 1:
-#            #Using IQR as default colony_size measure
-#            self.features['colony_size'] = self.features['pixelsum'] - \
-#                self.features['IQR_mean'] * self.features['area']
-#            self.features['colony_size_from_mean'] = self.features['pixelsum'] - \
-#                self.features['mean'] * self.features['area']
-#            self.features['colony_size_from_median'] = self.features['pixelsum'] - \
-#                self.features['median'] * self.features['area']
 
     def get_round_kernel(self, radius=6, outline=False):
 
@@ -222,11 +208,11 @@ class Cell_Item():
 #
 
 class Blob(Cell_Item):
-    def __init__(self, grid_array, run_detect=True, threshold=None, \
+    def __init__(self, identifier, grid_array, run_detect=True, threshold=None, \
         use_fallback_detection=False, image_color_logic = "inv", \
         center=None, radius=None):
 
-        Cell_Item.__init__(self)
+        Cell_Item.__init__(self, identifier)
 
         self.grid_array = grid_array
         self.threshold = threshold
@@ -310,15 +296,47 @@ class Blob(Cell_Item):
 
             self.threshold = hist.otsu(
                 self.histogram.re_hist(im))
-            
+    #
+    # GET functions
+    #
+
+    def get_ideal_circle(self, c_array = None):
+
+        """
+            get_ideal_circle is a function that extracts the ideal
+            circle from an array assuming that there's only one
+            continious solid object in the array.
+
+            It has one optional parameter:
+
+            @c_array    An array to be analysed, if not passed
+                        the current filter-array will be used instead.
+
+            The function returns the following tuple:
+
+                ( center_of_mass_position, radius )
+        """
+
+        if c_array is None:
+
+            c_array = self.filter_array
+
+        center_of_mass_position = center_of_mass(c_array)
+
+        radius = (np.sum(c_array) / (2*np.pi))**0.5
+
+        return (center_of_mass_position, radius)
+
     #
     # DETECT functions
     #
 
     def detect(self, use_fallback_detection = None, 
-        max_change_threshold = 0.3):
+        max_change_threshold = 0.3, remember_filter = False):
         """
-            Generic wrapper function for blob-detection
+            Generic wrapper function for blob-detection that calls the
+            proper detection function and evaluates the results in comparison
+            to the detected blob at time t+1
 
             Optional argument:
 
@@ -329,10 +347,6 @@ class Blob(Cell_Item):
  
         """
 
-        if self.filter_array is None:
-            old_filter = None
-        else:
-            old_filter = self.filter_array.copy()
 
         if use_fallback_detection:
             self.threshold_detect()
@@ -343,63 +357,76 @@ class Blob(Cell_Item):
         else:
             self.edge_detect()
 
+        ###DEBUG GRID CELL SHAPES
+        #if self._identifier == (2,0,1,'blob'):
+            #print "My place in the world:", self._identifier,
+            #print "New grid_cell shape", self.filter_array.shape, "Old shape", 
+            #if self.old_filter is None:
+                #print "None"
+            #else:
+                #print self.old_filter.shape
+        ###DEBUG END
 
-        if old_filter is not None:
+        if self.old_filter is not None:
 
-            blob_diff = (np.abs(old_filter - self.filter_array)).sum()
-            oldsum = old_filter.sum()
+
+            blob_diff = (np.abs(self.old_filter - self.filter_array)).sum()
+            sqrt_of_oldsum = self.old_filter.sum()**0.5
 
             bad_diff = True
 
-            if blob_diff / float(oldsum) > max_change_threshold:
+            if blob_diff / float(sqrt_of_oldsum) > max_change_threshold:
 
                 if self.filter_array.sum() > 0:
 
-                    old_com = center_of_mass(old_filter)
+                    old_com = center_of_mass(self.old_filter)
                     new_com = center_of_mass(self.filter_array)
 
-                    dim_1_offset = -1 * int(old_com[0] - new_com[0])
-                    dim_2_offset = -1 * int(old_com[1] - new_com[1])
+                    dim_1_offset =  int(old_com[0] - new_com[0])
+                    dim_2_offset =  int(old_com[1] - new_com[1])
 
-                    diff_filter = old_filter.copy()
+                    diff_filter = self.old_filter.copy()
                     
+                    if dim_1_offset > 0 and dim_2_offset > 0: 
+                        diff_filter = \
+                            self.old_filter[dim_1_offset:, dim_2_offset:] -\
+                            self.filter_array[:-dim_1_offset,:-dim_2_offset]
+                    elif dim_1_offset < 0 and dim_2_offset < 0: 
+                        diff_filter = \
+                            self.old_filter[ : dim_1_offset , : dim_2_offset] -\
+                            self.filter_array[-dim_1_offset:, -dim_2_offset:]
 
-                    for dim_1_pos in xrange(old_filter.shape[0]):
+                    elif dim_1_offset > 0 and dim_2_offset < 0: 
+                        diff_filter = \
+                            self.old_filter[ dim_1_offset : , : dim_2_offset] -\
+                            self.filter_array[:-dim_1_offset, -dim_2_offset:]
 
-                        for dim_2_pos in xrange(old_filter.shape[1]):
+                    elif dim_1_offset < 0 and dim_2_offset > 0: 
+                        diff_filter = \
+                            self.old_filter[ : dim_1_offset , dim_2_offset :] -\
+                            self.filter_array[-dim_1_offset:, :-dim_2_offset]
+                    elif dim_1_offset == 0 and dim_2_offset < 0: 
+                        diff_filter = \
+                            self.old_filter[ : , : dim_2_offset] -\
+                            self.filter_array[:, -dim_2_offset:]
+                    elif dim_1_offset == 0 and dim_2_offset > 0: 
+                        diff_filter = \
+                            self.old_filter[ : , dim_2_offset :] -\
+                            self.filter_array[:, :-dim_2_offset]
+                    elif dim_1_offset < 0 and dim_2_offset == 0: 
+                        diff_filter = \
+                            self.old_filter[ : dim_1_offset , :] -\
+                            self.filter_array[-dim_1_offset:, :]
+                    elif dim_1_offset > 0 and dim_2_offset == 0: 
+                        diff_filter = \
+                            self.old_filter[ dim_1_offset : , :] -\
+                            self.filter_array[:-dim_1_offset, :]
+                    else:
+                        diff_filter = self.old_filter - self.filter_array
 
-                            if 0 <= dim_1_pos + dim_1_offset < \
-                                diff_filter.shape[0] and \
-                                0 <= dim_2_pos + dim_2_offset< \
-                                diff_filter.shape[1]:
-
-                                diff_filter[dim_1_pos, dim_2_pos] -= \
-                                    self.filter_array[dim_1_pos + dim_1_offset,
-                                        dim_2_pos + dim_2_offset]
-
-                    
-                            
-
-
-                    #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
-                    #print "***Offsetting blob diff calc with", dim_1_offset, dim_2_offset
-                    #from matplotlib import pyplot as plt
-                    #plt.clf()
-                    #plt.imshow(diff_filter)
-                    #plt.title("Blobs center of mass superimposed diff-image")
-                    #plt.show()
-                    #plt.clf()
-                    #plt.imshow(self.filter_array)
-                    #plt.title("Current detection (that will be discarded)")
-                    #plt.show()
-                    #plt.clf()
-                    #plt.imshow(old_filter)
-                    #plt.title("Blob detection used on previous (that will be used here)")
-                    #plt.show()
-                    #DEBUG END
 
                     blob_diff = (np.abs(diff_filter)).sum()
-                    if blob_diff / float(oldsum) > max_change_threshold:
+                    if blob_diff / float(sqrt_of_oldsum) > max_change_threshold:
                         bad_diff = False
 
                 #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
@@ -409,20 +436,25 @@ class Blob(Cell_Item):
                 #plt.title("Current detection (that will be discarded)")
                 #plt.show()
                 #plt.clf()
-                #plt.imshow(old_filter)
+                #plt.imshow(self.old_filter)
                 #plt.title("Blob detection used on previous (that will be used here)")
                 #plt.show()
                 #DEBUG END
 
                 if bad_diff:
 
-                    self.filter_array = old_filter
-                    print "*** WARNING: Blob detection gone bad, using old blob"
+                    self.filter_array = self.old_filter
+                    print "*** WARNING: Blob detection gone bad for",\
+                        self._identifier, ", using old blob"
 
             #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
             #else:
-            #    print "*** Blob filter data: ", oldsum, blob_diff, blob_diff/float(oldsum)
+            #    print "*** Blob filter data: ", sqrt_of_oldsum, blob_diff,\
+                    # blob_diff/float(sqrt_of_oldsum)
             #DEBUG END
+
+        if remember_filter:
+             self.old_filter = self.filter_array.copy()
 
         ###DEBUG DETECTION TIME SERIES
         #from scipy.misc import imsave
@@ -733,9 +765,9 @@ class Blob(Cell_Item):
 #
 
 class Background(Cell_Item):
-    def __init__(self, grid_array, blob, run_detect=True):
+    def __init__(self, identifier, grid_array, blob, run_detect=True):
 
-        Cell_Item.__init__(self)
+        Cell_Item.__init__(self, identifier)
 
         self.grid_array = grid_array
         if isinstance(blob, Blob):
@@ -746,7 +778,7 @@ class Background(Cell_Item):
         if run_detect:
             self.detect()
 
-    def detect(self):
+    def detect(self, remember_filter=False):
         """
 
             detect finds the background
@@ -784,6 +816,8 @@ class Background(Cell_Item):
             #plt.title("Image section")
             #plt.show()
             ###END DEBUG CODE
+            if remember_filter:
+                self.old_filter = self.filter_array.copy()
 
         else:
 
@@ -794,9 +828,9 @@ class Background(Cell_Item):
 #
 
 class Cell(Cell_Item):
-    def __init__(self, grid_array, run_detect=True, threshold=-1):
+    def __init__(self, identifier, grid_array, run_detect=True, threshold=-1):
 
-        Cell_Item.__init__(self)
+        Cell_Item.__init__(self, identifier)
 
         self.grid_array = grid_array
         self.threshold = threshold
@@ -806,7 +840,7 @@ class Cell(Cell_Item):
         if run_detect:
             self.detect()
 
-    def detect(self):
+    def detect(self, remember_filter=False):
         """
 
             detect makes a filter that is true for the full area
@@ -816,4 +850,4 @@ class Cell(Cell_Item):
         """
 
         self.filter_array = np.ones(self.grid_array.shape, dtype=bool)
-        
+            

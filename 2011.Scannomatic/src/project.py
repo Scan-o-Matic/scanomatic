@@ -220,8 +220,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             plate_positions.append( \
                 img_dict_pointer[plate_position_keys[i]] )
 
-            if verboise:
-                print "** Position", plate_position_keys[i], ":", img_dict_pointer[plate_position_keys[i]]
+            #if verboise:
+            #    print "** Position", plate_position_keys[i], ":", \
+            #img_dict_pointer[plate_position_keys[i]]
 
         if verboise:
             print
@@ -471,7 +472,7 @@ class Project_Image():
         self.R = []
 
         for a in xrange(len(pinning_matrices)):
-            self._grid_arrays.append(grid_array.Grid_Array(self, pinning_matrices[a]))
+            self._grid_arrays.append(grid_array.Grid_Array(self, (a,), pinning_matrices[a]))
             self.features.append(None)
             self.R.append(None)
 
@@ -508,6 +509,10 @@ class Project_Image():
 
         if save_graph_image == False:
             cur_graph_name = None
+
+        ###DEBUG GRID ARRAYS
+        #print "The", len(self._grid_arrays), "arrays:", self._grid_arrays
+        ###DEBUG END
 
         for grid_array in xrange(len(self._grid_arrays)):
 
@@ -597,22 +602,23 @@ if __name__ == "__main__":
     if args.inputfile == None:
         parser.error("You need to specify input file!")
 
+    in_path_list = args.inputfile.split(os.sep)
+
+    output_path = ""
+
+    if len(in_path_list) == 1:
+
+        output_path = "."
+
+    else:
+
+        output_path = os.sep.join(in_path_list[:-1]) 
     if args.outputpath == None:
 
-        in_path_list = args.inputfile.split(os.sep)
-
-        output_path = ""
-
-        if len(in_path_list) == 1:
-
-            output_path = "."
-
-        else:
-
-            output_path = os.sep.join(in_path_list[:-1]) 
 
         output_path += os.sep + "analysis"
-
+    else:
+        output_path += os.sep + str(args.outputpath)
          
     if args.graph_watch != None:
         args.graph_watch = args.graph_watch.split(":")

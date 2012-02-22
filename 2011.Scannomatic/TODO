@@ -7,8 +7,6 @@
 
 --- GRIDDING ---
 
-*** Make it possible to monitor the gray-scale values
-
 *** Investigate resolving equal grid start pos with using most 
     centric, and using the R-value as well...(some missed peaks will
     affect placement)
@@ -61,6 +59,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Make it possible to monitor the gray-scale values
 
 *** Using the vectors, fit a 3-5 deg polynomial with positive co-effs such
     that the sum of the vector's Y-values equals the measured cell count value

@@ -31,9 +31,10 @@ import grid_cell
 #
 
 class Grid_Array():
-    def __init__(self, parent, pinning_matrix):
+    def __init__(self, parent, identifier, pinning_matrix):
 
         self._parent = parent
+        self._identifier = identifier
         self._analysis = gaa.Grid_Analysis()
         self._pinning_matrix = None
         self._grid_cell_size = None
@@ -97,7 +98,8 @@ class Grid_Array():
             self._features.append([])
 
             for column in xrange(pinning_matrix[1]):
-                self._grid_cells[row].append(grid_cell.Grid_Cell())
+                self._grid_cells[row].append(grid_cell.Grid_Cell(\
+                    self._identifier + (row, column)))
                 self._features[row].append(None)
 
     #
@@ -330,11 +332,18 @@ class Grid_Array():
         has_previous_rect = True
 
         if self._grid_cell_size == None:
-            self._grid_cell_size = self._analysis.best_fit_frequency
+            self._grid_cell_size = map(round, self._analysis.best_fit_frequency[:])
             #print self._grid_cell_size
-            rect_size = self._grid_cell_size
+            rect_size = self._grid_cell_size[:]
             has_previous_rect = False
- 
+        else:
+
+            rect_size = self._grid_cell_size[:]
+
+        ###DEBUG SIZE OF CELL
+        #print  "I,",self._identifier, ", give shape ", rect_size
+        ###DEBUG END
+
         #total_steps = float(self._pinning_matrix[0] * self._pinning_matrix[1])
 
 

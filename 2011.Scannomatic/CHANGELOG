@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Possible to monitor the gray-scale values
+
 *** Previous blob (t+1) detected is now tracked and the difference between 
     current and previous is used to decide if detection failed and then the
     blob detection from the previous time-point is used instead of the present.

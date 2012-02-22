@@ -56,7 +56,7 @@ def get_grid_cell_from_array(arr, fallback_detection=False, center=None, radius=
 
     """
 
-    cell = grid_cell.Grid_Cell(data_source=arr)
+    cell = grid_cell.Grid_Cell((0,0,0), data_source=arr)
     cell.set_rect_size()
     #cell.set_center()
     cell.attach_analysis(use_fallback_detection=fallback_detection, 
@@ -93,7 +93,7 @@ def get_gray_scale_transformation_matrix(gs_values):
 
     """
 
-    arr = grid_array.Grid_Array(None, None)
+    arr = grid_array.Grid_Array(None, (0,) ,None)
 
     return arr.get_transformation_matrix(gs_values=gs_values, 
         gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,
@@ -106,11 +106,11 @@ def get_gray_scale_transformation_matrix(gs_values):
 
 class Grid_Array(grid_array.Grid_Array):
     def __init__(self, root):
-        grid_array.Grid_Array.__init__(self, root)
+        grid_array.Grid_Array.__init__(self, root, (0,))
 
 class Grid_Cell(grid_cell.Grid_Cell):
     def __init__(self):
-        grid_cell.Grid_Cell.__init__(self)
+        grid_cell.Grid_Cell.__init__(self, (0,0,0))
 
 class Project_Image(project.Project_Image):
     def __init__(self, im_path):
