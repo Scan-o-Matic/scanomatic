@@ -214,7 +214,8 @@ class Grid_Cell():
         else:
             return None
 
-    def get_analysis(self, no_detect=False, no_analysis=False):
+    def get_analysis(self, no_detect=False, no_analysis=False,
+            remember_filter=False, use_fallback=False):
         """
 
             get_analysis iterates through all possible cell items
@@ -235,6 +236,14 @@ class Grid_Cell():
                             analysis done, just detection (if still
                             active). 
 
+            @remember_filter    Makes the cell-item object remember the
+                                detection filter array. Default = False.
+                                Note: Only relevant when no_detect = False.
+
+            @use_fallback       Optionally sets detection to iterative 
+                                thresholding
+
+
         """
         
         features_dict = {}
@@ -245,7 +254,8 @@ class Grid_Cell():
                     set_data_source(self.data_source)
                 if not no_detect:
                     self._analysis_items[item_name].detect(\
-                        remember_filter = True)
+                        remember_filter = remember_filter, 
+                        use_fallback_detection=use_fallback)
                 if not no_analysis:
                     self._analysis_items[item_name].do_analysis()
                     features_dict[item_name] = \

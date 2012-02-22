@@ -347,7 +347,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         fh.close()
 
     if  graph_watch != None:
-        print watch_reading
+        #print watch_reading
         Y = np.asarray(watch_reading, dtype=np.float64)
         X = (np.arange(len(image_dictionaries),0,-1)+0.5)*pict_target_width
 
@@ -386,9 +386,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                             b_area = Y[Y_good_positions,i]
 
                         print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
-                        print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
-                        #print Y[Y_good_positions,i].max(), Y[Y_good_positions,i].min()
-                        print Y[Y_good_positions,i]
+                        #print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
+                        print "max",Y[Y_good_positions,i].max(),"min", Y[Y_good_positions,i].min()
+                        #print Y[Y_good_positions,i]
                         if cur_plt_graph != plot_labels[i].split(":")[0]:
                             cur_plt_graph = plot_labels[i].split(":")[0]
                             if plt_graph_i > 1:
@@ -408,6 +408,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                                 (Y[Y_good_positions,i] - sub_term) * scale_factor,
                                 label=plot_labels[i][len(cur_plt_graph)+1:])                        
                         else:
+                            print "even line debug", plt_graph_i, i
                             plt_watch_curves.plot(X[Y_good_positions], 
                                 np.zeros(X[Y_good_positions].shape)+\
                                 10*(i-(plt_graph_i-1)*5), 

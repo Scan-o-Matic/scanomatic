@@ -407,8 +407,7 @@ class Grid_Array():
 
                     coord_2nd = self._grid_cells[row][column].get_first_dim_as_tuple()
                     coord_1st = self._grid_cells[row][column].get_second_dim_as_tuple()
-                    #ul = self._grid_cells[row][column].get_top_left()
-                    #lr = self._grid_cells[row][column].get_bottom_right()
+
                     if transformation_matrix != None:
                         #There's probably some faster way
                         #print coord_1st, coord_2nd, im.shape
@@ -426,8 +425,8 @@ class Grid_Array():
                             self.watch_scaled = im[coord_1st[0]:coord_1st[1],\
                                 coord_2nd[0]:coord_2nd[1]]
                             
-                    if visual:
-                        pass
+                    #if visual:
+                        #pass
                         #plt.plot(self._grid_cells[row][column].center[0],
                         #    self._grid_cells[row][column].center[1] , 'k.')
 
@@ -440,13 +439,36 @@ class Grid_Array():
                             use_fallback_detection=use_fallback, run_detect=False)
 
                     #This step only detects the objects
-                    self._grid_cells[row][column].get_analysis(no_analysis=True)
+                    self._grid_cells[row][column].get_analysis(no_analysis=True, 
+                        remember_filter=True)
+
+                    ###DEBUG RE-DETECT PART1
+                    #from matplotlib import pyplot as plt
+                    #debug_plt = plt.figure()
+                    #debug_plt.add_subplot(221)
+                    #plt.imshow(self._grid_cells[row][column].get_item('blob').filter_array)
+                    #debug_plt.add_subplot(223)
+                    #plt.imshow(self._grid_cells[row][column].get_item('blob').grid_array)
+                    ###DEBUG END PART1
 
                     #Transfer data to 'Cell Estimate Space'
                     self._grid_cells[row][column].set_new_data_source_space(\
                         space='cell estimate', bg_sub_source = \
                         self._grid_cells[row][column].get_item('background').filter_array\
                         , polynomial_coeffs = self._polynomial_coeffs)
+
+                    #This step re-detects in Cell Estimate Space
+                    #self._grid_cells[row][column].get_analysis(no_analysis=True,\
+                    #    remember_filter=True, use_fallback=True)
+
+                    ###DEBUG RE-DETECT PART2
+                    #debug_plt.add_subplot(222)
+                    #plt.imshow(self._grid_cells[row][column].get_item('blob').filter_array)
+                    #debug_plt.add_subplot(224)
+                    #plt.imshow(self._grid_cells[row][column].get_item('blob').grid_array)
+                    #debug_plt.show()
+                    #plot = raw_input('waiting: ')
+                    ###DEBUG END
 
                     #This step does analysis on the previously detected objects
                     self._features[row][column] = \

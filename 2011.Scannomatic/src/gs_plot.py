@@ -13,7 +13,7 @@ import numpy as np
 from argparse import ArgumentParser
 
 
-def make_plot_from_gs_list(gs_list):
+def make_plot_from_gs_list(gs_list, save_target=None):
 
     for Y in gs_list:
 
@@ -22,7 +22,10 @@ def make_plot_from_gs_list(gs_list):
 
     plt.title("Showing grayscale calibrations for " + str(len(gs_list)) + \
         " images")
-    plt.show()
+    if save_target:
+        plt.savefig(save_target)
+    else:
+        plt.show()
 
     return True
 

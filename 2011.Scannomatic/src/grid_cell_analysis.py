@@ -323,16 +323,96 @@ class Blob(Cell_Item):
 
         center_of_mass_position = center_of_mass(c_array)
 
-        radius = (np.sum(c_array) / (2*np.pi))**0.5
+        radius = (np.sum(c_array) / np.pi)**0.5
 
         return (center_of_mass_position, radius)
+
+    def get_circularity(self, c_array = None):
+
+        """
+            get_circularity uses get_ideal_circle to make an abstract model
+            of the object in c_array and passes this information to 
+            get_round_kernel producing the ideal circle as an array. This
+            is subracted from the mass-center of the object in c_array.
+            The differating pixels are summed and used as a measure of the
+            circularity dividing it by the square root sum of pixels in the
+            blob (to make the fraction independent for radius for near circular
+            objects).
+
+            The function takes one optional argument:
+
+            @c_array        Array containing a blob, if nothing is passed then
+                            self.filter_array will be used.
+
+            The function returns a fraction value that estimates the 
+            circularity of the blob
+
+        """
+
+        if c_array is None:
+            c_array = self.filter_array
+
+        if c_array.sum() < 1:
+            return 1000
+        
+        center_of_mass_position, radius = self.get_ideal_circle(c_array)
+
+
+        radius = round(radius)
+
+        perfect_blob = self.get_round_kernel(radius = radius)
+
+        o1_low = round(center_of_mass_position[0] - perfect_blob.shape[0] / 2.0)
+        o2_low = round(center_of_mass_position[1] - perfect_blob.shape[1] / 2.0)
+
+        o1_high = o1_low + perfect_blob.shape[0]
+        o2_high = o2_low + perfect_blob.shape[1]
+
+        if o1_low < 0:
+            b1_low = -o1_low
+            o1_low = 0
+        else:
+            b1_low = 0
+
+        if o2_low < 0:
+            b2_low = -o2_low
+            o2_low = 0
+        else:
+            b2_low = 0
+   
+        if o1_high > c_array.shape[0]:
+            b1_high = perfect_blob.shape[0] - (o1_high - c_array.shape[0])
+            o1_high = c_array.shape[0]
+        else:
+            b1_high = perfect_blob.shape[0]
+        if o2_high > c_array.shape[1]:
+            b2_high = perfect_blob.shape[1] - (o2_high - c_array.shape[1])
+            o2_high = c_array.shape[1]
+        else:
+            b2_high = perfect_blob.shape[1]
+
+        diff_array = c_array.copy()
+
+        diff_array[o1_low:o1_high,o2_low:o2_high] -= \
+            perfect_blob[b1_low:b1_high,b2_low:b2_high]
+
+
+        ###DEBUG CIRCULARITY
+        #if self.grid_array.max() < 1000:
+            #from matplotlib import pyplot as plt
+            #plt.imshow(diff_array)
+            #plt.show()
+        ###DEBUG END
+
+        return diff_array.sum() / np.sqrt( c_array.sum() )
+
 
     #
     # DETECT functions
     #
 
     def detect(self, use_fallback_detection = None, 
-        max_change_threshold = 0.3, remember_filter = False):
+        max_change_threshold = 17, remember_filter = False):
         """
             Generic wrapper function for blob-detection that calls the
             proper detection function and evaluates the results in comparison
@@ -349,7 +429,7 @@ class Blob(Cell_Item):
 
 
         if use_fallback_detection:
-            self.threshold_detect()
+            self.iterative_threshold_detect()
         elif use_fallback_detection == False:
             self.edge_detect()
         elif self.use_fallback_detection:
@@ -366,6 +446,7 @@ class Blob(Cell_Item):
             #else:
                 #print self.old_filter.shape
         ###DEBUG END
+
 
         if self.old_filter is not None:
 
@@ -427,11 +508,15 @@ class Blob(Cell_Item):
 
                     blob_diff = (np.abs(diff_filter)).sum()
                     if blob_diff / float(sqrt_of_oldsum) > max_change_threshold:
-                        bad_diff = False
+                        bad_diff = True
 
                 #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
                 #from matplotlib import pyplot as plt
+                #print "fitting score:",blob_diff / float(sqrt_of_oldsum) 
                 #plt.clf()
+                #plt.imshow(diff_filter)
+                #plt.title("Current detection diff")
+                #plt.show()
                 #plt.imshow(self.filter_array)
                 #plt.title("Current detection (that will be discarded)")
                 #plt.show()
@@ -445,13 +530,16 @@ class Blob(Cell_Item):
 
                     self.filter_array = self.old_filter
                     print "*** WARNING: Blob detection gone bad for",\
-                        self._identifier, ", using old blob"
+                        self._identifier, ", using old (", \
+                        blob_diff / float(sqrt_of_oldsum), ")"
 
             #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
             #else:
             #    print "*** Blob filter data: ", sqrt_of_oldsum, blob_diff,\
                     # blob_diff/float(sqrt_of_oldsum)
             #DEBUG END
+
+        print "Threshold used ", self.threshold
 
         if remember_filter:
              self.old_filter = self.filter_array.copy()
@@ -462,6 +550,18 @@ class Blob(Cell_Item):
         #imsave('analysis/anim_' + str(self._debug_ticker) + '_orig.png', self.grid_array) 
         #self._debug_ticker += 1
         ###DEBUG END
+
+    def iterative_threshold_detect(self):
+
+        #De-noising the image with a smooth
+        grid_array = gaussian_filter(self.grid_array, 2)
+
+        threshold = 1
+        self.threshold_detect(im=grid_array, threshold=threshold)
+        
+        while self.get_circularity() > 10 and threshold < 124:
+            threshold *= 1.5
+            self.threshold_detect(im=grid_array, threshold=threshold)
 
     def threshold_detect(self, im=None, threshold=None, color_logic=None):
         """
@@ -480,6 +580,8 @@ class Blob(Cell_Item):
 
         if self.threshold == None:
             self.set_threshold(im=im, threshold=threshold)
+        else:
+            self.set_threshold(threshold=threshold)
 
         if im is None:
             im = self.grid_array        
@@ -778,7 +880,7 @@ class Background(Cell_Item):
         if run_detect:
             self.detect()
 
-    def detect(self, remember_filter=False):
+    def detect(self, use_fallback_detection = None, remember_filter=False):
         """
 
             detect finds the background
@@ -802,7 +904,7 @@ class Background(Cell_Item):
             ###DEBUG CODE
             #print "Bg area", np.sum(self.filter_array),  "of which shared with blob", 
             #print np.sum(self.filter_array * self.blob.filter_array)
-            from matplotlib import pyplot as plt
+            #from matplotlib import pyplot as plt
             #plt.clf()
             #plt.imshow(self.blob.filter_array)
             #plt.title("Blob")
@@ -840,7 +942,7 @@ class Cell(Cell_Item):
         if run_detect:
             self.detect()
 
-    def detect(self, remember_filter=False):
+    def detect(self, use_fallback_detection = None, remember_filter=False):
         """
 
             detect makes a filter that is true for the full area
