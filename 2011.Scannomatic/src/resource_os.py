@@ -10,7 +10,15 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+#
+# DEPENDENCIES
+#
+
 import os, os.path, sys
+
+#
+# CLASSES
+#
 
 class OS_Settings():
     def __init__(self):

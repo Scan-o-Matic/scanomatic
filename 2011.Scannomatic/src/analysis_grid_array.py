@@ -3,7 +3,7 @@
 
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Mats Kvarnström", "Andreas Skyman"]
+__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL"
 __version__ = "3.0"
 __maintainer__ = "Martin Zackrisson"
@@ -23,8 +23,8 @@ import os, types
 # SCANNOMATIC LIBRARIES
 #
 
-import grid_array_analysis as gaa
-import grid_cell
+import analysis_grid_array_dissection as array_dissection
+import analysis_grid_cell as grid_cell
 
 #
 # CLASS: Grid_Array
@@ -35,7 +35,7 @@ class Grid_Array():
 
         self._parent = parent
         self._identifier = identifier
-        self._analysis = gaa.Grid_Analysis()
+        self._analysis = array_dissection.Grid_Analysis()
         self._pinning_matrix = None
         self._grid_cell_size = None
         self._grid_cells = None

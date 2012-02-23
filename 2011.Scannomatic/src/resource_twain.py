@@ -14,16 +14,14 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-#import Tkinter as Tk #To be removed!
 from PIL import Image, ImageWin
 
 import os, os.path, sys
 import time
 import types
 
-#!
 #
-# TWAIN
+# GLOBALS
 #
 
 _TRANSFER_METHOD = 'Natively'
@@ -31,6 +29,9 @@ _TRANSFER_METHOD = 'Natively'
 tmpfilename = "tmp.bmp"
 OverridXferFileName = 'c:/twainxfer.jpg'
 
+#
+# CLASSES
+#
 
 class Twain_Base:
     """Simple Base Class for twain functionality. This class should

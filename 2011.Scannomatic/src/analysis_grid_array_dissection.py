@@ -5,7 +5,7 @@ Part of analysis work-flow that produces a grid-array from an image secion.
 
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson","Mats Kvarnsjö", "Andreas Skyman"]
+__credits__ = ["Martin Zackrisson","Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL"
 __version__ = "3.0"
 __maintainer__ = "Martin Zackrisson"
@@ -25,7 +25,7 @@ from math import ceil
 # SCANNOMATIC LIBRARIES
 #
 
-import histogram as hist
+import resource_histogram as hist
 
 #
 # FUNCTIONS

@@ -28,12 +28,12 @@ import types
 # SCANNOMATIC LIBRARIES
 #
 
-import src.log_file_maker as log_maker
-import src.log_file_reader as log_reader
-import src.power_manager as power_manager
-import src.image_analysis_base as img_base
-import src.settings_tools as settings_tools
-import src.os_tools as os_tools
+import src.resource_log_maker as log_maker
+import src.resource_log_reader as log_reader
+import src.resource_power_manager as power_manager
+import src.resource_image as img_base
+import src.resource_fixture as fixture_settings
+import src.resource_os as os_tools
 
 #
 # OS DEPENDENT BEHAVIOUR, NOTE THAT WINDOWS HAVE EXTRA DEPENDENCIES!
@@ -42,10 +42,10 @@ import src.os_tools as os_tools
 USER_OS = os_tools.OS()
 
 if USER_OS.name == "linux":
-    import src.sane as scanner_backend
+    import src.resource_sane as scanner_backend
 elif USER_OS.name == "windows":
     import twain
-    import src.twain as scanner_backend
+    import src.resource_twain as scanner_backend
 else:
     print "*** ERROR: Scannomatic has not been ported to your OS, so stopping"
     sys.exit(0)
@@ -72,7 +72,7 @@ class Scanning_Experiment(gtk.Frame):
         gtk.Frame.__init__(self, prefix)
 
         self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
-        self.f_settings = settings_tools.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
+        self.f_settings = fixture_settings.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
 
         self._scanner_id = None #should be connected to vairable later: scanner
         self._interval_time = float(interval)

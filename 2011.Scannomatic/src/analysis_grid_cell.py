@@ -3,9 +3,9 @@
 Part of the analysis work-flow that holds the grid-cell object (A tile in a
 grid-array with a potential blob at the center).
 """
-__author__ = "Martin Zackrisson, Mats Kvarnström"
+__author__ = "Martin Zackrisson, Mats Kvarnstroem"
 __copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Mats Kvarnström", "Andreas Skyman"]
+__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL"
 __version__ = "3.0"
 __maintainer__ = "Martin Zackrisson"
@@ -24,7 +24,7 @@ import math
 # SCANNOMATIC LIBRARIES
 #
 
-import grid_cell_analysis as gca
+import analysis_grid_cell_dissection as cell_dissection
 
 #
 # Functions
@@ -345,18 +345,18 @@ class Grid_Cell():
         """     
 
         if blob: 
-            self._analysis_items['blob'] = gca.Blob(\
+            self._analysis_items['blob'] = cell_dissection.Blob(\
                 self._identifier + ('blob',), self.data_source, 
                 use_fallback_detection=use_fallback_detection, 
                 run_detect = run_detect, center=center, radius=radius)
 
         if background and self._analysis_items['blob']:
-            self._analysis_items['background'] = gca.Background(\
+            self._analysis_items['background'] = cell_dissection.Background(\
                 self._identifier + ('background',), self.data_source, 
                 self._analysis_items['blob'], run_detect=run_detect)
 
         if cell:
-            self._analysis_items['cell'] = gca.Cell(\
+            self._analysis_items['cell'] = cell_dissection.Cell(\
                 self._identifier + ('cell',), self.data_source,
                 run_detect = run_detect)
 

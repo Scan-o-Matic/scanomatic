@@ -26,7 +26,7 @@ import types
 # SCANNOMATIC LIBRARIES
 #
 
-import src.simple_conf as conf
+import src.resource_config as conf
 
 class Config_GUI(gtk.Frame):
     def __init__(self, owner, conf_paths, title=None, conf_root=None):

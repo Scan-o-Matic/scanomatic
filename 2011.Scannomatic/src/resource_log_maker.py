@@ -12,11 +12,23 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+#
+# DEPENDENCIES
+#
+
 from PIL import Image
 import sys, os
 import types
 
+#
+# GLOBALS
+#
+
 _histograms = {}
+
+#
+# FUNCTIONS
+#
 
 def print_progress_bar(fraction, size=40):
     prog_str = "["

@@ -12,12 +12,24 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+#
+# DEPENDENCIES
+#
+
 from PIL import Image
 import numpy as np
 import sys, os
 import types
 
+#
+# GLOBALS
+#
+
 _histograms = {}
+
+#
+# FUNCTIONS
+#
 
 def evaluate_images(image_list=None, log_file=None, manual_value=None, threshold=None, threshold_less_than=True, max_value=255):
 

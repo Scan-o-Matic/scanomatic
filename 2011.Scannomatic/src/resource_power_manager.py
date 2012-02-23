@@ -16,6 +16,10 @@ __status__ = "Development"
 import os, os.path, sys
 import time
 
+#
+# CLASSES
+#
+
 class Power_Manager():
     def __init__(self, installed=False, path=None, on_string="", off_string="", DMS = None):
         self._installed = installed

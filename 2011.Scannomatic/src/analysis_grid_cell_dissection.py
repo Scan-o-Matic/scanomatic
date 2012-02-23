@@ -4,7 +4,7 @@ Part of the analysis work-flow that analyses the image section of a grid-cell.
 """
 __author__ = "Martin Zackrisson, jetxee"
 __copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Mats Kvarnström", "Andreas Skyman",
+__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman",
     "jetxee"]
 __license__ = "GPL"
 __version__ = "3.0"
@@ -29,7 +29,7 @@ from scipy.ndimage import binary_erosion, binary_dilation,\
 # SCANNOMATIC LIBRARIES
 #
 
-import histogram as hist
+import resource_histogram as hist
 
 #
 # FUNCTIONS

@@ -39,12 +39,12 @@ import types
 # SCANNOMATIC LIBRARIES
 #
 
-import src.os_tools as os_tools
-import src.simple_conf as conf
-import src.experiment as experiment
-import src.fixture as fixture
-import src.analysis as analysis
-import src.settings as settings
+import src.resource_os as os_tools
+import src.resource_config as conf
+import src.gui_experiment as experiment
+import src.gui_fixture as fixture
+import src.gui_analysis as analysis
+import src.gui_settings as settings
 
 #KNOWN ISSUES ETC.
 #
@@ -57,10 +57,10 @@ import src.settings as settings
 USER_OS = os_tools.OS()
 
 if USER_OS.name == "linux":
-    import src.sane as scanner_backend
+    import src.resource_sane as scanner_backend
 elif USER_OS.name == "windows":
     import twain
-    import src.twain as scanner_backend
+    import src.resource_twain as scanner_backend
 else:
     print "*** ERROR: Scannomatic has not been ported to your OS, so stopping"
     sys.exit(0)

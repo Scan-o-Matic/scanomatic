@@ -21,9 +21,9 @@ import numpy as np
 # SCANNOMATIC LIBRARIES
 #
 
-import grid_array
-import grid_cell
-import project
+import analysis_grid_array as grid_array
+import analysis_grid_cell as grid_cell
+import analysis as project
 
 #
 # Functions

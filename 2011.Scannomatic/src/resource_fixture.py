@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-"""
-Resource module containing classes for handling fixtures.
-"""
+"""Resource module containing classes for handling fixtures."""
+
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Andreas Skyman"]
@@ -26,8 +25,8 @@ import numpy as np
 # SCANNOMATIC LIBRARIES
 #
 
-import image_analysis_base as img_base
-import simple_conf as conf
+import resource_image as img_base
+import resource_config as conf
 
 class Fixture_Settings():
 

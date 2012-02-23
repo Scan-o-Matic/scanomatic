@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-"""The GTK-GUI view and its functions"""
+"""
+This module is the typical starting-point of the analysis work-flow.
+It has command-line behaviour but can also be run as part of another program.
+It should be noted that a full run of around 200 images takes more than 2h on
+a good computer using 100% of one processor. That is, if run from within 
+another application, it is probably best to run it as a subprocess.
+"""
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
@@ -9,1075 +15,674 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+
 #
 # DEPENDENCIES
 #
 
-import pygtk
-pygtk.require('2.0')
-
-import gtk, pango
-import os, os.path, sys
+import os, sys
+import matplotlib
+#matplotlib.use('Agg')
+import matplotlib.image as plt_img
 import types
-
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as plt_patches
-from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
-#from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
-#from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
-#import subprocess #To be removed
+from time import time
+from argparse import ArgumentParser
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import src.image_analysis_base as img_base
-import src.settings_tools as settings_tools
-import src.colonies_wrapper as colonies
+import analysis_grid_array as grid_array
+import resource_config as conf
 
-class Analyse_One(gtk.Frame):
+#
+# FUNCTIONS
+#
 
-    def __init__(self, owner, label="Analyse One Image"):
+def print_progress_bar(fraction, size=40):
+    prog_str = "["
+    fraction *= size
+    for i in xrange(size):
+        if fraction > i:
+            prog_str += "="
+        else:
+            prog_str += " "
 
-        gtk.Frame.__init__(self, label)
+    prog_str += "]"
 
-        self.owner = owner
-        self.analysis = None
+    print 
+    print
+    print prog_str
+    printmeon = True
+    print
 
-        self._rect_marking = False
-        self._rect_ul = None
-        self._rect_lr = None
-        self._circ_marking = False
-        self._circ_dragging = False
-        self._circ_center = None
+def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
+        graph_watch, supress_analysis = False, \
+        verboise=False, use_fallback = False, use_otsu = False,\
+        grid_times=None):
+    """
+        analyse_project parses a log-file and runs a full analysis on all 
+        images in it. It will step backwards in time, starting with the 
+        last image.
 
-        self._config_calibration_path = self.owner._program_config_root + os.sep + "calibration.data"
-        self._config_calibration_polynomial = self.owner._program_config_root + os.sep + "calibration.polynomials"
+        The function takes the following arguments:
 
-        self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
-        self.f_settings = settings_tools.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
+        @log_file_path      The path to the log-file to be processed
 
-        vbox = gtk.VBox()
-        vbox.show()
-        self.add(vbox)
+        @outdata_files_path  The path to the file were the analysis will
+                            be put
 
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox.pack_start(hbox, False, False, 2)
-
-        #
-        # Main image and gray scale
-        #
-
-        self.plots_vbox = gtk.VBox()
-        self.plots_vbox.show()
-        hbox.pack_start(self.plots_vbox, False, False, 2)
-        
-
-        label = gtk.Label("Grayscale analysis")
-        label.show()
-        self.plots_vbox.pack_start(label, False, False, 2)
-
-        self.grayscale_fig = plt.Figure(figsize=(50,40), dpi=100)
-        self.grayscale_fig.subplots_adjust(left=0.02, right=0.98, wspace=0.3)
-
-        self.grayscale_plot_img = self.grayscale_fig.add_subplot(121)
-        self.grayscale_plot_img.get_xaxis().set_visible(False)
-        self.grayscale_plot_img.get_yaxis().set_visible(False)
-
-        self.grayscale_plot = self.grayscale_fig.add_subplot(122)
-        self.grayscale_plot.axis("tight")
-        self.grayscale_plot.get_xaxis().set_visible(False)
-
-        grayscale_canvas = FigureCanvas(self.grayscale_fig)
-        grayscale_canvas.show()
-        grayscale_canvas.set_size_request(400,150)
-        self.plots_vbox.pack_start(grayscale_canvas, False, False, 2)
-
-
-        label = gtk.Label("Marker detection analysis")
-        label.show()
-        self.plots_vbox.pack_start(label, False, False, 2)
-
-        figsize = (500,350)
-
-        self.image_fig = plt.Figure(figsize=figsize, dpi=75)
-        image_plot = self.image_fig.add_subplot(111)
-        image_canvas = FigureCanvas(self.image_fig)
-        self.image_fig.canvas.mpl_connect('button_press_event', self.plot_click)
-        self.image_fig.canvas.mpl_connect('button_release_event', self.plot_release)
-        self.image_fig.canvas.mpl_connect('motion_notify_event', self.plot_drag)
-
-        self.selection_rect = plt_patches.Rectangle(
-                (0,0),0,0, ec = 'k', fill=False, lw=0.5
-                )
-        #self.selection_rect.get_axes()
-        #self.selection_rect.get_transform()
-
-        image_plot.add_patch(self.selection_rect)
-        image_plot.get_xaxis().set_visible(False)
-        image_plot.get_yaxis().set_visible(False)
-        image_canvas.show()
-        image_canvas.set_size_request(figsize[0],figsize[1])
-
-        self.plots_vbox.pack_start(image_canvas, False, False, 2)
-
-
-        self.gs_reset_button = gtk.Button(label = 'No image loaded...')
-        self.gs_reset_button.show()
-        self.gs_reset_button.connect("clicked", self.set_grayscale_selecting)
-        self.plots_vbox.pack_start(self.gs_reset_button, False, False, 2)
-        self.gs_reset_button.set_sensitive(False)
-        #
-        # Plot sections / blob images
-        #
-
-        self.selection_circ = plt_patches.Circle((0,0),0)
-        self._blobs_have_been_loaded = False
-
-        #
-        # Other
-        #
-
-        self.plots_vbox2 = gtk.VBox()
-        self.plots_vbox2.show()
-        hbox.pack_start(self.plots_vbox2, False, False, 2)
-
-        vbox2 = gtk.VBox()
-        vbox2.show()
-        hbox.pack_end(vbox2, False, False, 2)
-
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox2.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("Select image:")
-        label.show()
-        hbox.pack_start(label, False, False, 2)
-
-        button = gtk.Button(label = 'Open')
-        button.show()
-        button.connect("clicked", self.select_image)
-        hbox.pack_end(button, False, False, 2)
-
-        self.analysis_img = gtk.Label("")
-        self.analysis_img.set_max_width_chars(40)
-        self.analysis_img.set_ellipsize(pango.ELLIPSIZE_START)
-        self.analysis_img.show()
-        vbox2.pack_start(self.analysis_img, False, False, 2)
-
-        label = gtk.Label("Manual selection size:")
-        label.show()
-        vbox2.pack_start(label, False, False, 2)
-
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox2.pack_start(hbox, False, False, 2)
-
-        self.selection_width = gtk.Entry()
-        self.selection_width.show()
-        self.selection_width.set_text("")
-        self.selection_width.connect("focus-out-event", self.manual_selection_width)
-        hbox.pack_start(self.selection_width, False, False, 2)
-      
-        label = gtk.Label("x")
-        label.show()
-        hbox.pack_start(label, False, False, 2)
- 
-        self.selection_height = gtk.Entry()
-        self.selection_height.show()
-        self.selection_height.set_text("")
-        self.selection_height.connect("focus-out-event", self.manual_selection_height)
-        hbox.pack_start(self.selection_height, False, False, 2)
-
-        #Analysis data frame for selection
-        frame = gtk.Frame("Image")
-        frame.show()
-        vbox2.pack_start(frame, False, False, 2)
-
-        vbox3 = gtk.VBox()
-        vbox3.show()
-        frame.add(vbox3)
-
-        #Interactive helper
-        self.section_picking = gtk.Label("First load an image.")
-        self.section_picking.show()
-        vbox3.pack_start(self.section_picking, False, False, 10)
-
-        #
-        # KODAK VALUE SPACE
-        #
-
-        #Analysis data frame for selection
-        frame = gtk.Frame("'Kodak Value Space'")
-        frame.show()
-        vbox2.pack_start(frame, False, False, 2)
-
-        vbox3 = gtk.VBox()
-        vbox3.show()
-        frame.add(vbox3)
-
-        #Cell Area
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-     
-        label = gtk.Label("Cell Area:")
-        label.show()
-        hbox.pack_start(label,False, False, 2)
-
-        self.cell_area = gtk.Label("0")
-        self.cell_area.show()
-        self.cell_area.set_max_width_chars(20)
-        hbox.pack_end(self.cell_area, False, False, 2)
-
-        #Background Mean
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("Background Mean:")
-        label.show()
-        hbox.pack_start(label,False, False, 2)
-
-        self.bg_mean = gtk.Label("0")
-        self.bg_mean.show()
-        hbox.pack_end(self.bg_mean, False, False, 2)
-
-        #Background Inter Quartile Range Mean
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("Background IQR-Mean:")
-        label.show()
-        hbox.pack_start(label,False, False, 2)
-
-        self.bg_iqr_mean = gtk.Label("0")
-        self.bg_iqr_mean.show()
-        hbox.pack_end(self.bg_iqr_mean, False, False, 2)
-
-        #Background Median
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("Background Median:")
-        label.show()
-        hbox.pack_start(label,False, False, 2)
-
-        self.bg_median = gtk.Label("0")
-        self.bg_median.show()
-        hbox.pack_end(self.bg_median, False, False, 2)
-
-        #Blob area
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("Blob Area:")
-        label.show()
-        hbox.pack_start(label,False, False, 2)
-
-        self.blob_area = gtk.Label("0")
-        self.blob_area.show()
-        hbox.pack_end(self.blob_area, False, False, 2)
-
-        #Blob Size
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("Blob Size:")
-        label.show()
-        hbox.pack_start(label,False, False, 2)
-
-        self.colony_size = gtk.Label("0")
-        self.colony_size.show()
-        hbox.pack_end(self.colony_size, False, False, 2)
-
-        #Blob Pixelsum 
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("Blob Pixelsum:")
-        label.show()
-        hbox.pack_start(label,False, False, 2)
-
-        self.blob_pixelsum = gtk.Label("0")
-        self.blob_pixelsum.show()
-        hbox.pack_end(self.blob_pixelsum, False, False, 2)
-
-        #Blob Mean 
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("Blob Mean:")
-        label.show()
-        hbox.pack_start(label,False, False, 2)
-
-        self.blob_mean = gtk.Label("0")
-        self.blob_mean.show()
-        hbox.pack_end(self.blob_mean, False, False, 2)
-
-        #
-        # CELL ESTIMATE SPACE
-        #
-
-        #Cell Count Estimations
-        frame = gtk.Frame("Cell Estimate Space")
-        frame.show()
-        vbox2.pack_start(frame, False, False, 2)
-
-        vbox3 = gtk.VBox()
-        vbox3.show()
-        frame.add(vbox3)
-
-        #Unit
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        self.cce_per_pixel = gtk.Label("0")
-        self.cce_per_pixel.show()
-        hbox.pack_start(self.cce_per_pixel)
-
-        label = gtk.Label("depth/pixel")
-        label.show()
-        hbox.pack_end(label, False, False, 2)
-
-        label = gtk.Label("Independent measure:")
-        label.show()
-        vbox3.pack_start(label, False, False, 2)
-
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label("CCE/grid-cell:")
-        label.show()
-        hbox.pack_start(label, False, False, 2)
-
-        self.cce_indep_measure = gtk.Entry()
-        self.cce_indep_measure.connect("focus-out-event", self.verify_number)
-        self.cce_indep_measure.show()
-        hbox.pack_end(self.cce_indep_measure, False, False, 2)
-
-        hbox = gtk.HBox()
-        hbox.show()
-        vbox3.pack_start(hbox, False, False, 2)
-
-        label = gtk.Label('Data point label:')
-        label.show()
-        hbox.pack_start(label, False, False, 2)
-
-        self.cce_data_label = gtk.Entry()
-        self.cce_data_label.show()
-        hbox.pack_end(self.cce_data_label, False, False, 2)      
-
-        button = gtk.Button("Submit calibration point")
-        button.show()
-        button.connect("clicked", self.add_calibration_point, None)
-        vbox3.pack_start(button, False, False, 2)
+        @pinning_matrices   A list/tuple of (row, columns) pinning 
+                            matrices used for each plate position 
+                            respectively
 
-        self.cce_calculated = gtk.Label("--- cells in blob")
-        self.cce_calculated.show()
-        vbox3.pack_start(self.cce_calculated, False, False, 2)
-        self._cce_poly_coeffs = None
-        has_poly_cal = True
-        try:
-            fs = open(self._config_calibration_polynomial, 'r')
-        except:
-            has_poly_cal = False
-        if has_poly_cal:
-            self._cce_poly_coeffs = []
-            for l in fs:
-                l_data = eval(l.strip("\n"))
-                if type(l_data) == types.ListType:
-                    self._cce_poly_coeffs = l_data[-1]
-                    break
-            label = gtk.Label("(using '" + str(l_data[0]) + "')")
-            label.show()
-            vbox3.pack_start(label, False, False, 2)
-            fs.close()
+        @graph_watch        A coordinate PLATE:COL:ROW for a colony to
+                            watch particularly.
 
-        self.blob_filter = None
+        VOID@graph_output   An optional PATH to where to save the graph
+                            produced by graph_watch being set.
 
-    def verify_number(self, widget=None, event=None, data=None):
+        @supress_analysis  Suppresses the main analysis and thus
+                            only graph_watch thing is produced.
 
-        try:
-            float(widget.get_text())
-        except:
-            widget.set_text("0")
+        @verboise           Will print some basic output of progress.
 
-    def get_vector_polynomial_sum_single(self, X, coefficient_array):
+        @use_fallback       Determines if fallback colony detection
+                            should be used.
 
-        return np.sum(np.polyval(coefficient_array, X))
+        @use_otsu           Determines if Otsu-thresholding should be
+                            used when looking finding the grid (not
+                            default, and should not be used)
 
+        @grid_times         Specifies the time-point indices at which
+                            the grids will be saved in the output-dir.
 
-    def get_expanded_vector(self, compressed_vector):
+        The function returns None if nothing was done of if it crashed.
+        If it runs through it returns the number of images processed.
 
-        vector = []
+    """
+    
+    start_time = time()
+    graph_output = None
 
-        for pos in xrange(len(compressed_vector[0])):
-
-            for ith in xrange(compressed_vector[1][pos]):
-
-                vector.append(compressed_vector[0][pos])
-
-        return vector
-
-    def get_cce_data_vector(self):
-
-        if self.blob_filter != None and self._rect_ul != None and self._rect_lr != None:
-
-            img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
-
-
-            tf_matrix = np.asarray(colonies.get_gray_scale_transformation_matrix(self._grayscale))
-
-            if tf_matrix is not None:
-                for x in xrange(img_section.shape[0]):
-                    for y in xrange(img_section.shape[1]):
-                        img_section[x,y] = tf_matrix[img_section[x,y]]
-
-
-            ###DEBUG CALIBRATION VALUES
-            #print "REF: area", self.blob_image[np.where(self.blob_filter)].size
-            #print "REF pixsum", self.blob_image[np.where(self.blob_filter)].sum()
-            #print "--"
-            #print "img_section == orig_tf_img (0==True)", (img_section - self.img_transf).sum() 
-            #print "--"
-            #print "CAL: area", img_section[np.where(self.blob_filter)].size
-            #print "CAL: pixsum", img_section[np.where(self.blob_filter)].sum()
-            ###DEBUG END
-
-            #Get the effect of blob-materia on pixels
-            blob_pixels = img_section[np.where(self.blob_filter)] - float(self.bg_mean.get_text())
-
-
-            #Disallow "anti-materia" pixels           
-            blob_pixels = blob_pixels[np.where(blob_pixels > 0)] 
-
-
-            keys = list(np.unique(blob_pixels))
-            values = []
-            for k in keys:
-                values.append(np.sum(blob_pixels == k))
-
-            cce_data = [keys, values]
-
-            return cce_data
-
-    def add_calibration_point(self, widget=None, event=None, data=None):
-
-        if self.blob_filter != None and self._rect_ul != None and self._rect_lr != None:
-
-            indep_cce = float(self.cce_indep_measure.get_text()) 
-
-            cce_data = self.get_cce_data_vector()
-
+    if not os.path.isdir(outdata_files_path):
+        dir_OK = False
+        if not os.path.exists(outdata_files_path):
             try:
-                fs = open(self._config_calibration_path,'a')
-
-
-
-                fs.write(str([self.analysis_img.get_text(), self.cce_data_label.get_text() ,indep_cce, cce_data]) + "\n")
-
-                fs.close()
-                
+                os.makedirs(outdata_files_path)
+                dir_OK = True
             except:
+                pass
+        if not dir_OK:
+            print "*** ERROR: Could not construct outdata directory, could be \
+                a conflict"
+            sys.exit()
 
-                self.owner.DMS("Error", "Could not open " + self._config_calibration_path)
-                return
-
-            self.owner.DMS("Calibration", "Setting " + self.analysis_img.get_text() + \
-                " colony depth per pixel to " + str( indep_cce ) + " cell estimate.")
-
-    def select_image(self, widget=None, event=None, data=None):
-        newimg = gtk.FileChooserDialog(title="Select new image", action=gtk.FILE_CHOOSER_ACTION_OPEN,
-            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
-
-        f = gtk.FileFilter()
-        f.set_name("Valid image files")
-        f.add_mime_type("image/tiff")
-        f.add_pattern("*.tiff")
-        f.add_pattern("*.TIFF")
-        newimg.add_filter(f)
-        result = newimg.run()
-
-        if result == gtk.RESPONSE_APPLY:
-            self._grayscale = None
-            filename= newimg.get_filename()
-            self.analysis_img.set_text(filename)
-            self.f_settings.image_path = newimg.get_filename()
-            newimg.destroy()
-            self.f_settings.marker_analysis(output_function = self.analysis_img.set_text)
+    if outdata_files_path[-1] != os.sep:
+        outdata_files_path += os.sep
 
 
-
-            fixture_X, fixture_Y = self.f_settings.get_fixture_markings()
-
-            if len(fixture_X) == len(self.f_settings.mark_X):
-                self.f_settings.set_areas_positions()
-
-                self.owner.DMS("Reference scan positions", 
-                    str(self.f_settings.fixture_config_file.get("grayscale_area")), level = 110)
-                self.owner.DMS("Scan positions", 
-                    str(self.f_settings.current_analysis_image_config.get("grayscale_area")), level = 110)
-
-                rotated = True
-            else:
-                self.owner.DMS("Error", "Missmatch between fixture configuration and current image", level =110)
-                rotated = False
-
-            if self.f_settings.A != None:
+    
+    try:
+        fs = open(outdata_files_path + "analysis.run", 'w')
+        fs.write('Analysis started at ' + str(start_time) + '\n')
+        fs.close()
+    except:
+        print "WARNING: Could not produce a analysis.run file... something could be fishy"
 
 
-                grayscale = None
-                dpi_factor = 4.0
-                self.f_settings.A.load_other_size(filename, dpi_factor)
-                if rotated:
-                    grayscale = self.f_settings.A.get_subsection(self.f_settings.current_analysis_image_config.get("grayscale_area"))
-                #EMPTYING self.plots_vbox
-                #for child in self.plots_vbox.get_children():
-                #    self.plots_vbox.remove(child)
+    if graph_watch != None:
+        from matplotlib import pyplot
+        from matplotlib.font_manager import FontProperties
+        from PIL import Image
+        watch_reading = [] 
+        x_labels = []
 
-                if grayscale != None:
+        fontP = FontProperties()
+        fontP.set_size('xx-small')
+        plt_watch_colony = pyplot.figure()
+        plt_watch_colony.subplots_adjust(hspace=2, wspace=2)
+        plt_watch_1 = plt_watch_colony.add_subplot(411)
+        plt_watch_1.axis("off")
+        pict_target_width = 40
+        plt_watch_1.axis((0, (pict_target_width + 1) * 217, 0, \
+            pict_target_width * 3), frameon=False,\
+            title='Plate: ' + str(graph_watch[0]) + ', position: (' +\
+             str(graph_watch[1]) + ', ' + str(graph_watch[2]) + ')')
 
-                    gs_success = self.set_grayscale(grayscale)
+        plot_labels = []
 
-                if grayscale is None or gs_success == False:
-                    self.set_grayscale_selecting()
-
-                #THE LARGE IMAGE
-
-                image_plot = self.image_fig.gca()
-                image_plot.cla()
-                image_plot.imshow(self.f_settings.A._img.T)
-                ax = image_plot.plot(self.f_settings.mark_Y*dpi_factor, self.f_settings.mark_X*dpi_factor,'ko', mfc='None', mew=2)
-                image_plot.set_xlim(xmin=0,xmax=self.f_settings.A._img.shape[0])
-                image_plot.set_ylim(ymin=0,ymax=self.f_settings.A._img.shape[1])
-                image_plot.add_patch(self.selection_rect)
-                self.image_fig.canvas.draw()
-
-            self.analysis_img.set_text(str(filename))
-            self.section_picking.set_text("Select area (and guide blob-detection if needed).")
-
-            if self._blobs_have_been_loaded:
-                self.blob_fig.cla()
-                self.blob_bool_fig.cla()
-                self.blob_hist.cla()
+        graph_output = outdata_files_path + "plate_" + str(graph_watch[0]) + \
+            "_" + str(graph_watch[1]) + '.' + str(graph_watch[2]) + ".png"
 
 
-            if self.selection_rect.get_width() > 0 and self.selection_rect.get_height() > 0:
+    log_file = conf.Config_File(log_file_path)
 
-                self.get_analysis()
+    image_dictionaries = log_file.get_all("%n")
+    if image_dictionaries == None:
+        return None
 
-    def set_grayscale_selecting(self, widget=None, event=None, data=None):
-
-        self.gs_reset_button.set_sensitive(False)
-        self.gs_reset_button.set_label("Currently selecting a gray-scale area")
-        self._grayscale = None
-        self.grayscale_plot_img.clear()
-        self.grayscale_plot.clear()
-        self.grayscale_fig.canvas.draw()
+    plate_position_keys = []
+    plates = len(pinning_matrices)
 
 
-    def set_manual_grayscale(self, ul, lr):
+    if 'Description' in image_dictionaries[0].keys():
+        first_scan_position = 1
+        description = image_dictionaries[0]['Description']
+        interval_time = image_dictionaries[0]['Interval']
+    else:
+        first_scan_position = 0
+        description = None
+        interval_time = None
 
-        img_section = self.get_img_section(ul, lr, as_copy=False)
-        self.set_grayscale(img_section)
+    for i in xrange(plates):
+        if supress_analysis != True or graph_watch[0] == i:
+            plate_position_keys.append("plate_" + str(i) + "_area")
 
-    def set_grayscale(self, im_section):
-
-        self.gs_reset_button.set_sensitive(True)
-        self.gs_reset_button.set_label("Click to reset grayscale")
-
-        gs = img_base.Analyse_Grayscale(image=im_section)
-        self._grayscale = gs._grayscale
-
-        #LEFT PLOT
-        Y = np.ones(len(gs._grayscale_pos)) * gs._mid_orth_strip 
-        #grayscale_plot = self.grayscale_fig.get_subplot(121)
-        self.grayscale_plot_img.clear()
-        self.grayscale_plot_img.imshow(im_section.T)
-        self.grayscale_plot_img.plot(gs._grayscale_pos, Y,'ko', mfc='w', mew=1, ms=3)
-        self.grayscale_plot_img.set_xlim(xmin=0,xmax=im_section.shape[0])
-
-        #RIGHT PLOT
-        #grayscale_plot = self.grayscale_fig.get_subplot(122)
-
-        if len(gs._grayscale_X) != len(gs._grayscale):
-            self._grayscale=None
-            self.owner.DMS("Error", "There's something wrong with the grayscale. Switching to manual")
+    if supress_analysis == True:
+        project_image = Project_Image([pinning_matrices[graph_watch[0]]])
+        graph_watch[0] = 0
+        plates = 1
+    else:
+        outdata_analysis_path = outdata_files_path + "analysis.xml"
+        try:
+            fh = open(outdata_analysis_path,'w')
+        except:
+            print "*** Error, can't open target file:", outdata_analysis_path
             return False
+        project_image = Project_Image(pinning_matrices)
 
-        z2 = np.polyfit(gs._grayscale_X, gs._grayscale,2)
-        p2 = np.poly1d(z2)
-        z3 = np.polyfit(gs._grayscale_X, gs._grayscale,3)
-        p3 = np.poly1d(z3)
+    image_pos = len(image_dictionaries) - 1
+    image_tot = image_pos 
 
-        xp = np.linspace(gs._grayscale_X[0], gs._grayscale_X[-1], 100)
+    if verboise:
+        print "*** Project has " + str(image_pos+1) + " images."
+        print "* Nothing to wait for"
+        print
 
-        self.grayscale_plot.clear()
-        line1 = self.grayscale_plot.plot(gs._grayscale_X, gs._grayscale,'b.', mfc='None', mew=2)
-        #line2 = grayscale_plot.plot(xp, p2(xp),'r-')
-        line3 = self.grayscale_plot.plot(xp, p3(xp),'g-')
+    if supress_analysis != True:
+        fh.write('<project>')
 
-        self.grayscale_fig.canvas.draw()
+        fh.write('<start-time>' + str(image_dictionaries[first_scan_position]['Time']) + '</start-time>')
 
-        return True
+        fh.write('<description>' + str(description) + '</description>')
 
-    def get_click_in_rect(self, event):
+        fh.write('<number-of-scans>' + str(image_pos+1) + '</number-of-scans>')
 
-        if self._rect_lr is None or self._rect_ul is None:
-            return False
+        fh.write('<interval-time>' + str(interval_time) + '</interval-time>')
 
-        low_x = np.array([self._rect_lr[0], self._rect_ul[0]]).min()
-        high_x = np.array([self._rect_lr[0], self._rect_ul[0]]).max()
-        low_y = np.array([self._rect_lr[1], self._rect_ul[1]]).min()
-        high_y = np.array([self._rect_lr[1], self._rect_ul[1]]).max()
+        fh.write('<plates-per-scan>' + str(plates) + '</plates-per-scan>')
 
-        if low_x < event.xdata < high_x and low_y < event.ydata < high_y:
+        fh.write('<pinning-matrices>')
 
-            return True
- 
+        for pos in xrange(plates):
+            fh.write('<pinning-matrix index="' + str(pos) + '">' + \
+                 str(pinning_matrices[pos]) + '</pinning-matrix>')
+
+        fh.write('</pinning-matrices>')
+
+        fh.write('<scans>')
+
+    while image_pos >= first_scan_position:
+        scan_start_time = time()
+        img_dict_pointer = image_dictionaries[image_pos]
+
+        plate_positions = []
+
+        for i in xrange(plates):
+            plate_positions.append( \
+                img_dict_pointer[plate_position_keys[i]] )
+
+            #if verboise:
+            #    print "** Position", plate_position_keys[i], ":", \
+            #img_dict_pointer[plate_position_keys[i]]
+
+        if verboise:
+            print
+            print "*** Analysing: " + str(img_dict_pointer['File'])
+            print
+
+        features = project_image.get_analysis( img_dict_pointer['File'], \
+            plate_positions, img_dict_pointer['grayscale_values'], \
+            use_fallback, use_otsu, watch_colony=graph_watch, \
+            supress_other=supress_analysis, \
+            save_graph_image=(image_pos in grid_times), \
+            save_graph_name=outdata_files_path+"time_" + str(image_pos) +\
+             "_plate_")
+
+        if supress_analysis != True:
+            fh.write('<scan index="' + str(image_pos) + '">')
+            fh.write('<scan-valid>')
+
+        if features == None:
+            if supress_analysis != True:
+                fh.write(str(0) + '</scan-valid>')
+                fh.write('</scan>')
+        else:
+            if graph_watch != None:
+
+                x_labels.append(image_pos)
+                pict_size = project_image.watch_grid_size
+                pict_scale = pict_target_width / float(pict_size[1])
+                pict_resize = (int(pict_size[0] * pict_scale), int(pict_size[1] * pict_scale))
+
+
+                plt_watch_1.imshow(Image.fromstring('L', (project_image.watch_scaled.shape[1], \
+                    project_image.watch_scaled.shape[0]), \
+                    project_image.watch_scaled.tostring()).resize(pict_resize, Image.BICUBIC), \
+                    extent=(image_pos * pict_target_width, (image_pos+1)*pict_target_width-1, 10, 10 + pict_resize[1]))
+
+
+                plt_watch_1.imshow(Image.fromstring('L', (project_image.watch_blob.shape[1], \
+                    project_image.watch_blob.shape[0]), \
+                    project_image.watch_blob.tostring()).resize(pict_resize, Image.BICUBIC), \
+                    extent=(image_pos * (pict_target_width), (image_pos+1)*(pict_target_width)-1, 10 + pict_resize[1] + 1, 10 + 2 * pict_resize[1] + 1))
+
+
+
+                #project_image.watch_blob.shape
+                tmp_results = []
+                for cell_item in project_image.watch_results.keys():
+                    for measure in project_image.watch_results[cell_item].keys():
+                        if type(project_image.watch_results[cell_item][measure])\
+                                == np.ndarray or \
+                                project_image.watch_results[cell_item][measure] \
+                                is None:
+
+                            tmp_results.append(np.nan)
+                        else:
+                            tmp_results.append(project_image.watch_results[cell_item][measure])
+                        if len(watch_reading) == 0:
+                            plot_labels.append(cell_item + ':' + measure)
+                watch_reading.append(tmp_results)    
+                
+                #HACK START: DEBUGGING
+                #print "*** R:", project_image.R
+                #if image_pos < 200:
+                #    image_pos = -1 
+                #HACK END
+
+            if supress_analysis != True:
+                fh.write(str(1) + '</scan-valid>')
+
+                fh.write('<calibration>' + str(img_dict_pointer['grayscale_values']) + '</calibration>')
+
+                fh.write('<time>' + str(img_dict_pointer['Time']) + '</time>')
+
+                fh.write('<plates>')
+
+                for i in xrange(plates):
+                    fh.write('<plate index="' + str(i) + '">')
+
+                    fh.write('<plate-matrix>' + str(pinning_matrices[i]) + '</plate-matrix>')
+
+                    fh.write('<R>' + str(project_image.R[i]) + '</R>')
+
+                    fh.write('<grid-cells>')
+
+                    for x, rows in enumerate(features[i]):
+                        for y, cell in enumerate(rows):
+
+                            fh.write('<grid-cell x="' + str(x) + '" y="' + str(y) + '">')
+
+                            if cell != None:
+                                for item in cell.keys():
+
+                                    fh.write('<' + str(item) + '>')
+                                    
+                                    for measure in cell[item].keys():
+
+                                        fh.write('<' + str(measure) + '>' + \
+                                            str(cell[item][measure]) + \
+                                            '</' + str(measure) + '>')
+
+                                    fh.write('</' + str(item) + '>')
+                            fh.write('</grid-cell>')
+                    fh.write('</grid-cells>')
+                    fh.write('</plate>')
+                fh.write('</plates>')
+                fh.write('</scan>')
+        image_pos -= 1
+
+        #DEBUGHACK
+        #if image_pos > 1:
+        #    image_pos = 1 
+        #DEBUGHACK - END
+
+
+        if verboise:
+            print "Image took", time() - scan_start_time,"seconds."
+            print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
+
+    if supress_analysis != True:
+        fh.write('</scans>')
+        fh.write('</project>')
+        fh.close()
+
+    if  graph_watch != None:
+        #print watch_reading
+        Y = np.asarray(watch_reading, dtype=np.float64)
+        X = (np.arange(len(image_dictionaries),0,-1)+0.5)*pict_target_width
+
+        for xlabel_pos in xrange(len(x_labels)):
+            if xlabel_pos % 5 > 0:
+                x_labels[xlabel_pos] = ""
+        #print len(X), len(x_labels)
+        #print X
+        #print x_labels
+        cur_plt_graph = ""
+        plt_graph_i = 1
+        for i in xrange(int(Y.shape[1])):
+            if type(Y[0,i]) != np.ndarray and type(Y[0,i]) != types.ListType and type(Y[0,i]) != types.TupleType:
+                Y_good_positions = np.where(np.isnan(Y[:,i]) == False)[0]
+                if Y_good_positions.size > 0:
+                    try:
+
+            
+
+                        if Y[Y_good_positions,i].max() == Y[Y_good_positions,i].min():
+                            scale_factor = 0
+                        else:
+                            scale_factor =  100 / float(Y[Y_good_positions,i].max() - Y[Y_good_positions,i].min())
+
+                        sub_term = float(Y[Y_good_positions,i].min())
+
+                        if plot_labels[i] == "cell:area":
+                            c_area = Y[Y_good_positions,i]
+                        elif plot_labels[i] == "background:mean":
+                            bg_mean = Y[Y_good_positions,i]
+                        elif plot_labels[i] == "cell:pixelsum":
+                            c_pixelsum = Y[Y_good_positions,i]
+                        elif plot_labels[i] == "blob:pixelsum":
+                            b_pixelsum = Y[Y_good_positions,i]
+                        elif plot_labels[i] == "blob:area":
+                            b_area = Y[Y_good_positions,i]
+
+                        print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
+                        #print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
+                        print "max",Y[Y_good_positions,i].max(),"min", Y[Y_good_positions,i].min()
+                        #print Y[Y_good_positions,i]
+                        if cur_plt_graph != plot_labels[i].split(":")[0]:
+                            cur_plt_graph = plot_labels[i].split(":")[0]
+                            if plt_graph_i > 1:
+                                plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
+                            plt_graph_i += 1
+                            plt_watch_curves = plt_watch_colony.add_subplot(4,1,plt_graph_i,
+                                title=cur_plt_graph)
+                            plt_watch_curves.set_xticks(X)
+                            plt_watch_curves.set_xticklabels(x_labels, fontsize="xx-small", rotation=90)
+
+                        if scale_factor != 0: 
+                            #print X[Y_good_positions].shape, Y[Y_good_positions,i].shape
+                            #print X[Y_good_positions]
+                            #print Y[Y_good_positions,i]
+                           
+                            plt_watch_curves.plot(X[Y_good_positions], 
+                                (Y[Y_good_positions,i] - sub_term) * scale_factor,
+                                label=plot_labels[i][len(cur_plt_graph)+1:])                        
+                        else:
+                            print "even line debug", plt_graph_i, i
+                            plt_watch_curves.plot(X[Y_good_positions], 
+                                np.zeros(X[Y_good_positions].shape)+\
+                                10*(i-(plt_graph_i-1)*5), 
+                                label=plot_labels[i][len(cur_plt_graph)+1:])
+
+
+                    except TypeError:
+                        print "*** Error on", plot_labels[i], "because of something"
+
+                else:
+                        print "*** Can't plot", plot_labels[i], "since it has no good data"
+
+        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
+        if graph_output != None:
+            try:
+                plt_watch_colony.savefig(graph_output, dpi=300)
+            except:
+                plt_watch_colony.show()
+
+            #DEBUG START:PLOT
+            plt_watch_colony = pyplot.figure()
+            plt_watch_1 = plt_watch_colony.add_subplot(111)
+            plt_watch_1.plot(b_area, b_pixelsum)
+            plt_watch_1.set_xlabel('Blob:Area')
+            plt_watch_1.set_ylabel('Blob:PixelSum')
+            plt_watch_1.set_title('')
+            plt_watch_colony.savefig("debug_corr.png")
+            #DEBUG END
+            pyplot.close(plt_watch_colony)
+        else: 
+            plt_watch_colony.show()
+
+        print "Full analysis took", (time() - start_time)/60, "minutes"
+
         return False
 
-    def get_click_in_circle(self, event):
+    try:
+        fs = open(outdata_files_path + "analysis.run", 'a')
+        fs.write('Analysis completed at ' + str(time()) + '\n')
+        fs.close()
+    except:
+        print "WARNING: Could not add to analysis.run file... something could be fishy"
 
-        r = self.selection_circ.get_radius()
-        cur_pos = np.asarray((event.xdata, event.ydata))
-       
-        if self._circ_center is None:
-            return False
- 
-        if r**2 >= np.sum ( (cur_pos - self._circ_center)**2 ):
+    print "Full analysis took", (time() - start_time)/60, "minutes"
 
-            return True
+#
+# CLASS Project_Image
+#
 
-        else:
+class Project_Image():
+    def __init__(self, pinning_matrices, im_path=None, plate_positions=None ):
 
-            return False
+        self._im_path = im_path
+        self._im_loaded = False
+        
+        self._plate_positions = plate_positions
+        self._pinning_matrices = pinning_matrices
 
+        #PATHS
+        script_path_root = os.path.dirname(os.path.abspath(__file__))
+        scannomatic_root = os.sep.join(script_path_root.split(os.sep)[:-1])
+        self._program_root = scannomatic_root
+        self._program_code_root = scannomatic_root + os.sep + "src"
+        self._program_config_root = self._program_code_root + os.sep + "config"
 
-    def manual_selection_width(self, widget=None, event=None, data=None):
+        self.im = None
+        self._grid_arrays = []
+        self.features = []
+        self.R = []
+
+        for a in xrange(len(pinning_matrices)):
+            self._grid_arrays.append(grid_array.Grid_Array(self, (a,), pinning_matrices[a]))
+            self.features.append(None)
+            self.R.append(None)
+
+    def get_analysis(self, im_path, features, grayscale_values, \
+            use_fallback=False, use_otsu=True, watch_colony=None, \
+            supress_other=False, save_graph_image=False, save_graph_name=None):
+
+        if im_path != None:
+            self._im_path = im_path
+
         try:
-            self.selection_rect.set_width(float(widget.get_text()))
+            self.im = plt_img.imread(self._im_path)
+            self._im_loaded = True
         except:
-            widget.set_text("")
+            print "*** Error: Could not open image at " + str(self._im_path)
+            self._im_loaded = False
 
-        self.image_fig.canvas.draw()
-        self.get_analysis()
 
-    def manual_selection_height(self, widget=None, event=None, data=None):
-        try:
-            self.selection_rect.set_height(float(widget.get_text()))
-        except:
-            widget.set_text("")
-
-        self.image_fig.canvas.draw()
-        self.get_analysis()
-
-    def plot_click(self, event=None):
-
-        if self._rect_marking == True:
-            self.plot_release(event)
+        if self._im_loaded == True:           
+            if len(self.im.shape) > 2:
+                self.im = self.im[:,:,0]
         else:
-            if self.get_click_in_rect(event) == False:
-                self._rect_dragging = False
-                self._rect_ul = (event.xdata, event.ydata)
-                self.selection_rect.set_x(event.xdata)
-                self.selection_rect.set_y(event.ydata)
-                self._rect_marking = True
-            else:
-                self._rect_marking = True
-                self._rect_dragging = True
-                self._dragging_origin = np.asarray((event.xdata, event.ydata))
-                self._dragging_rect_origin = np.asarray((\
-                    self.selection_rect.get_x(), 
-                    self.selection_rect.get_y()))
+            return None
 
-    def blob_click(self, event=None):
+        if len(grayscale_values) > 3:
+            gs_values = np.array(grayscale_values)
+            gs_indices = np.arange(len(grayscale_values))
 
-        if self._circ_marking == True:
-            self.plot_release(event)
+            gs_fit = np.polyfit(gs_indices, gs_values,3)
         else:
-            if self.get_click_in_circle(event) == False:
+            gs_fit = None
 
-                self._circ_center = np.asarray((event.xdata, event.ydata))
-                self.selection_circ.center = (event.xdata, event.ydata)
+        scale_factor = 4.0
 
-                self._circ_dragging = False
-                self._circ_marking = True
+        if save_graph_image == False:
+            cur_graph_name = None
 
-            else:
-
-                self._circ_marking = True
-                self._circ_dragging = True
-
-                self._dragging_origin = np.asarray((event.xdata, event.ydata))
-                self._dragging_circ_origin = np.asarray(\
-                    self.selection_circ.center)
-
-    def plot_drag(self, event=None):
-
-        if self._rect_marking and event.xdata != None and event.ydata != None:
-            if self._rect_dragging == False:
-                #self.selection_rect = plt_patches.Rectangle(
-                    #self.plot_ul , 
-                self.selection_rect.set_width(    event.xdata - self._rect_ul[0])#,
-                self.selection_rect.set_height(    event.ydata - self._rect_ul[1])#,
-                    #ec = 'k', fc='b', fill=True, lw=1,
-                    #axes = self.image_ax)
-                self.owner.DMS("SELECTING", "Selecting something in the image", 1)
-
-            else:
-                cur_pos_offset = np.asarray((event.xdata, event.ydata)) - \
-                    self._dragging_origin
-                new_rect_pos = self._dragging_rect_origin + cur_pos_offset
-                self.selection_rect.set_x(new_rect_pos[0])
-                self.selection_rect.set_y(new_rect_pos[1])
-                self.owner.DMS("SELECTING", "Moving selection", 1)
-
-            self.image_fig.canvas.draw() 
-
-    def blob_drag(self, event=None):
-
-        if self._circ_marking and event.xdata != None and event.ydata != None:
-
-            cur_pos = np.asarray((event.xdata, event.ydata))
-
-            if self._circ_dragging == False:
-
-                r = np.sqrt( np.sum( (cur_pos - self._circ_center)**2 ) )
-
-                self.selection_circ.set_radius( r )
-
-                self.owner.DMS("SELECTING", "Selecting some blob", 1)
-
-            else:
-                cur_pos_offset = cur_pos - \
-                    self._dragging_origin
-                new_circ_pos = self._dragging_circ_origin + cur_pos_offset
-                self.selection_circ.center = tuple(new_circ_pos)
-                self.owner.DMS("SELECTING", "Moving blob selection", 1)
-
-            self.blob_fig.canvas.draw() 
-
-    def plot_release(self, event=None):
-
-        if self._rect_marking:
-            self._rect_marking = False
-            if self._rect_dragging == False:
-                if event.xdata and event.ydata and self._rect_ul[0] and self._rect_ul[1]:
-                    self._rect_lr = (event.xdata, event.ydata)
-                    self.owner.DMS("SELECTION", "UL: " + str(self._rect_ul) + ", LR: (" + 
-                        str(event.xdata) + ", "  +
-                        str(event.ydata) + ")", level=1)
-
-                    self.selection_width.set_text(str(self.selection_rect.get_width()))
-                    self.selection_height.set_text(str(self.selection_rect.get_height()))
-                    if self._grayscale != None:
-                        self.get_analysis()
-                    else:
-                        self.set_manual_grayscale(self._rect_ul, self._rect_lr)
-
-            else:
-                self._rect_ul = (self.selection_rect.get_x(),
-                    self.selection_rect.get_y())
-                self._rect_lr = (self._rect_ul[0] + self.selection_rect.get_width(),
-                    self._rect_ul[1] + self.selection_rect.get_height())
-
-                self.owner.DMS("SELECTION", "UL: " + str(self._rect_ul) + ", LR: (" + 
-                    str(self._rect_lr) + ")", level=1)
-
-                self.get_analysis()
-                
-
-    def blob_release(self, event=None):
-        if self._circ_marking:
-  
-            self._circ_marking = False
-
-            if event.xdata is not None and event.ydata is not None:
-
-                cur_pos = np.asarray((event.xdata, event.ydata))
-
-                if self._circ_dragging == False:
-                    if event.xdata and event.ydata:
-
-                        r = np.sqrt( np.sum((cur_pos - self._circ_center)**2) )
-
-                        self.owner.DMS("SELECTION", "Radius: " + str(r) + ")", level=1)
-
-                        print "C center", self.selection_circ.center, "radius", self.selection_circ.get_radius()
-
-                        self.get_analysis(center=self._circ_center, radius=r)
-                else:
-
-                    self._circ_center = self._circ_center + \
-                        (cur_pos - self._dragging_origin)
-
-                    self.selection_circ.center = tuple(self._circ_center)
-
-
-                    self.get_analysis(center=self._circ_center, \
-                        radius = self.selection_circ.get_radius())
-                
-
-    def get_img_section(self, ul, lr, as_copy=False):
-
-
-        if ul[0] < lr[0]:
-            upper = ul[0]
-            lower = lr[0]
-        else:
-            lower = ul[0]
-            upper = lr[0]
-
-        if ul[1] < lr[1]:
-            left = ul[1]
-            right = lr[1]
-        else:
-            right = ul[1]
-            left = lr[1]
-
-        ###DEBUG SELECTION SHAPE
-        print "Selection shape: ", self.f_settings.A._img[upper:lower,left:right].shape
+        ###DEBUG GRID ARRAYS
+        #print "The", len(self._grid_arrays), "arrays:", self._grid_arrays
         ###DEBUG END
 
-        if as_copy:
-            return np.copy(self.f_settings.A._img[upper:lower,left:right])
-        else:
-            return self.f_settings.A._img[upper:lower,left:right]
+        for grid_array in xrange(len(self._grid_arrays)):
 
-    def get_analysis(self, center=None, radius=None):
-
-        if radius is None:
-            self.selection_circ.set_radius(0)
-            
-        #EMPTYING self.plots_vbox
-        #for child in self.plots_vbox2.get_children():
-        #    self.plots_vbox2.remove(child)
-
-
-        img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
-        img_transf = img_section.copy()
-
-        tf_matrix = colonies.get_gray_scale_transformation_matrix(self._grayscale)
-
-        if tf_matrix is not None:
-            for x in xrange(img_transf.shape[0]):
-                for y in xrange(img_transf.shape[1]):
-                    img_transf[x,y] = tf_matrix[img_transf[x,y]]
-
-        ###DEBUG TRANSFORMATIONS
-        #print "*** SECTION TRANSFORMED: ", not(img_transf.sum() == img_section.sum())
-        #self.img_transf = img_transf.copy()
-        ###END DEBUG
-
-        x_factor = img_section.shape[0] / 200
-        y_factor = img_section.shape[1] / 200
-
-        if x_factor > y_factor:
-            scale_factor = x_factor
-        else:
-            scale_factor = y_factor
-        if scale_factor == 0:
-            scale_factor = 1
-
-
-
-        #
-        # BLOB SELECTION CANVAS
-        #
-        image_size = (img_section.shape[1]/scale_factor,
-            img_section.shape[0]/scale_factor)
-
-        if self._blobs_have_been_loaded == False:
-
-
-            hbox = gtk.HBox()
-            hbox.show()
-            self.plots_vbox2.pack_start(hbox, False, False, 0)
-
-            vbox = gtk.VBox()
-            vbox.show()
-
-            label = gtk.Label("Selection:")
-            label.show()
-            vbox.pack_start(label, False, False, 2)
-
-            self.blob_fig = plt.Figure(figsize=image_size, dpi=150)
-            self.blob_fig.add_axes()
-            image_plot = self.blob_fig.gca()
-            #image_plot = self.blob_fig.add_subplot(111)
-            
-            image_canvas = FigureCanvas(self.blob_fig)
-            self.blob_fig.canvas.mpl_connect('button_press_event', self.blob_click )
-            self.blob_fig.canvas.mpl_connect('button_release_event', self.blob_release)
-            self.blob_fig.canvas.mpl_connect('motion_notify_event', self.blob_drag)
-
-            image_plot.get_xaxis().set_visible(False)
-            image_plot.get_yaxis().set_visible(False)
-
-            image_canvas.show()
-            image_canvas.set_size_request(image_size[1], image_size[0])
-            vbox.pack_start(image_canvas, False, False, 2)
-            hbox.pack_start(vbox, False, False, 2)
-
-        if center is None and radius is None:
-            image_plot = self.blob_fig.gca()
-            image_plot.cla()
-            image_ax = image_plot.imshow(img_section.T)
-            image_plot.set_xlim(xmin=0,xmax=img_section.shape[0])
-            image_plot.set_ylim(ymin=0,ymax=img_section.shape[1])
-
-        #print "C center", self.selection_circ.center, "radius", self.selection_circ.get_radius()
-            image_plot.add_patch(self.selection_circ)
-        #if center is not None and radius is not None:        
-        #    self.selection_circ.center = center
-        #    self.selection_circ.set_radius(radius)
-
-        self.blob_fig.canvas.draw()
- 
-
-        #
-        # RETRIEVING ANALYSIS
-        #
-
-        cell = colonies.get_grid_cell_from_array(img_transf, center=center, radius = radius)
-
-        features = cell.get_analysis(no_detect=True)
-
-        blob = cell.get_item('blob')
-        self.blob_filter = blob.filter_array
-        self.blob_image = blob.grid_array
-
-        #
-        # CALCULATING CCE IF POLY-COEFFS EXISTS
-        #
-
-        if self._cce_poly_coeffs is not None:
-
-            cce_vector = self.get_cce_data_vector()
-            cce_vector = self.get_expanded_vector(cce_vector)
-            cce_calculated = self.get_vector_polynomial_sum_single(cce_vector, self._cce_poly_coeffs)
-            self.cce_calculated.set_text(str(cce_calculated) + " cells in blob")
-        ###DEBUG IMAGE STAYS TRUE
-        #print "DIFF:",  (self.blob_image - self.img_transf).sum()
-        ###DEBUG END
-
-        blob_hist = blob.histogram
-
-        #
-        # BLOB vs BACKGROUND CANVAS
-        #
-
-        if self._blobs_have_been_loaded == False:
-
-            vbox = gtk.VBox()
-            vbox.show()
-
-            label = gtk.Label("Blob vs Background::")
-            label.show()
-            vbox.pack_start(label, False, False, 2)
-
-            self.blob_bool_fig = plt.Figure(figsize=image_size, dpi=150)
-            #image_plot = self.blob_bool_fig.add_subplot(111)
-            image_canvas = FigureCanvas(self.blob_bool_fig)
-            image_canvas.show()
-            image_canvas.set_size_request(image_size[1], image_size[0])
-
-            vbox.pack_start(image_canvas, False, False, 2)
-            hbox.pack_start(vbox, False, False, 2)
-
-            self.blob_bool_fig.add_axes()
-            image_plot = self.blob_bool_fig.gca()
-            image_plot.get_xaxis().set_visible(False)
-            image_plot.get_yaxis().set_visible(False)
-        else:
-            image_plot = self.blob_bool_fig.gca()
-            image_plot.cla()
-
-        #image_ax = image_plot.imshow(img_section.T)
-        blob_filter_view = self.blob_filter.astype(float) * 256 + img_transf
-        blob_filter_view = blob_filter_view * ( 256/ float(np.max(blob_filter_view)) )
-        image_ax = image_plot.imshow(blob_filter_view.T)
-
-        image_plot.set_xlim(xmin=0,xmax=self.blob_filter.shape[0])
-        image_plot.set_ylim(ymin=0,ymax=self.blob_filter.shape[1])
-
-
-        self.blob_bool_fig.canvas.draw()
-
-        if blob_hist.labels != None:
-            bincenters = 0.5*(blob_hist.labels[1:]+blob_hist.labels[:-1])
-
-            if self._blobs_have_been_loaded == False:
-            
-                label = gtk.Label("Histogram:")
-                label.show()
-                self.plots_vbox2.pack_start(label, False, False, 2)
-
-                self.blob_hist = plt.Figure(figsize=image_size, dpi=150)
-                self.blob_hist.add_axes()
-                
-                image_canvas = FigureCanvas(self.blob_hist)
-                image_plot = self.blob_hist.gca()
-
-                image_canvas.set_size_request(image_size[1], image_size[0])
-                image_canvas.show()
-                self.plots_vbox2.pack_start(image_canvas, False, False, 2)
-
-                #self.blob_hist.subplots_adjust(top=2, bottom=2)
-
-                label = gtk.Label("Threshold (red), Background Mean(green)")
-                label.show()
-                self.plots_vbox2.pack_start(label, False, False, 2)
+            x0 = int(features[grid_array][0][0]*scale_factor)
+            x1 = int(features[grid_array][1][0]*scale_factor)
+            if x0 < x1:
+                upper = x0
+                lower = x1
             else:
-                image_plot = self.blob_hist.gca()
-                image_plot.cla()
+                upper = x1
+                lower = x0
 
-            image_plot.bar(blob_hist.labels, blob_hist.counts)
+            y0 = int(features[grid_array][0][1]*scale_factor)
+            y1 = int(features[grid_array][1][1]*scale_factor)
+            if y0 < y1:
+                left = y0
+                right = y1
+            else:
+                left = y1
+                right = y0
 
-            x_ticks = range(0,256,20)           
-            image_plot.set_xticks(x_ticks)
-            image_plot.set_xticklabels(map(str,x_ticks), fontsize='xx-small')
-            image_plot.axvline(blob.threshold, c='r')
-            image_plot.set_xlim(xmin=0, xmax=100)
-        self._blobs_have_been_loaded = True
+ 
+            if save_graph_image == True:
 
-        if features != None:
-            self.cell_area.set_text(str(features['cell']['area']))
+                cur_graph_name = save_graph_name + str(grid_array) + ".png"
             
-            self.bg_mean.set_text(str(features['background']['mean']))
-            self.bg_iqr_mean.set_text(str(features['background']['IQR_mean']))
-            self.bg_median.set_text(str(features['background']['median']))
+            self._grid_arrays[grid_array].get_analysis( \
+                self.im[ upper:lower, left:right ], \
+                gs_values=gs_values, use_fallback=use_fallback,\
+                use_otsu=use_otsu, median_coeff=None, \
+                verboise=False, visual=False, watch_colony=watch_colony, \
+                supress_other=supress_other, save_grid_image=save_graph_image\
+                , save_grid_name = cur_graph_name)
 
-            if blob_hist.labels != None:
-                image_plot.axvline(features['background']['mean'], c='g')
+            self.features[grid_array] = self._grid_arrays[grid_array]._features
+            self.R[grid_array] = self._grid_arrays[grid_array].R
 
-            self.blob_pixelsum.set_text(str(features['blob']['pixelsum']))
-            self.blob_mean.set_text(str(features['blob']['mean']))
-            self.blob_area.set_text(str(features['blob']['area']))
+        if watch_colony != None:
+            self.watch_grid_size = self._grid_arrays[watch_colony[0]]._grid_cell_size
+            self.watch_source = self._grid_arrays[watch_colony[0]].watch_source
+            self.watch_scaled = self._grid_arrays[watch_colony[0]].watch_scaled
+            self.watch_blob = self._grid_arrays[watch_colony[0]].watch_blob
+            self.watch_results = self._grid_arrays[watch_colony[0]].watch_results
+        return self.features
 
-            self.colony_size.set_text(str(abs(features['cell']['pixelsum'] - \
-                features['background']['mean'] * features['cell']['area'])))
 
-            self.cce_per_pixel.set_text(str(features['blob']['mean'] - 
-                features['background']['mean']))
+if __name__ == "__main__":
 
-            self.owner.DMS('Analysis', 'Alternative measures: ' + 
-                "see in program"+ " (from mean), " + 
-                str(abs(features['cell']['pixelsum'] - \
-                features['background']['median'] * features['cell']['area'])) + 
-                " (from median)", level = 111)
+    parser = ArgumentParser(description='The analysis script runs through a log-file (which is created when a project is run). It creates a XML-file that holds the result of the analysis')
 
-        self.blob_hist.canvas.draw()
+    parser.add_argument("-i", "--input-file", type=str, dest="inputfile", help="Log-file to be parsed", metavar="PATH")
+    parser.add_argument("-o", "--ouput-path", type=str, dest="outputpath", help="Path to directory where all data is written (Default is a subdirectory 'analysis' under where the input file is)", metavar="PATH")
+
+    parser.add_argument("-p", "--plates", default=4, type=int, dest="plates", help="The number of plates in the fixture", metavar="N")
+    parser.add_argument("-m", "--matrices", dest="matrices", help="The pinning matrices for each plate position in the order set by the fixture config file.", metavar="(X,Y):(X,Y)...(X,Y)")
+
+    parser.add_argument("-w", "--watch-position", dest="graph_watch", help="The position of a colony to track.", metavar="PLATE:X:Y", type=str)
+
+    #parser.add_argument("-g", "--graph-output", dest="graph_output", help="If specified the graph is not shown to the user but instead saved to taget position", type=str)
+
+    parser.add_argument("-t", "--watch-time", dest="grid_times", help="If specified, the gridplacements at the specified timepoints will be saved in the set output-directory, comma-separeted indices.", metavar="0,1,100", default="0", type=str)
+
+    parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If set to True, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported.")
+    args = parser.parse_args()
+
+    
+    if args.matrices == None:
+     
+        pm = [(16,24), (16,24), (16,24), (16,24)]
+
+    else:
+
+        pm = args.matrices.split(':')
+        pm = map(eval, pm)
+
+    if args.grid_times != None:
+
+        try:
+            grid_times = map(int, args.grid_times.split(","))
+        except:
+            print "*** Warning, could not parse grid_times... will only save\
+                the first grid placement."
+
+            grid_times = [0]
+
+ 
+    if args.inputfile == None:
+        parser.error("You need to specify input file!")
+
+    in_path_list = args.inputfile.split(os.sep)
+
+    output_path = ""
+
+    if len(in_path_list) == 1:
+
+        output_path = "."
+
+    else:
+
+        output_path = os.sep.join(in_path_list[:-1]) 
+    if args.outputpath == None:
+
+
+        output_path += os.sep + "analysis"
+    else:
+        output_path += os.sep + str(args.outputpath)
+         
+    if args.graph_watch != None:
+        args.graph_watch = args.graph_watch.split(":")
+        try:
+            args.graph_watch = map(int, args.graph_watch)
+        except:
+            parser.error('The watched colony could not be resolved, make sure that you follow syntax')
+
+        if len(args.graph_watch) <> 3:
+            parser.error('Bad specification of watched colony')
+
+        if args.graph_watch[0] < args.plates:
+            if not(0 <= args.graph_watch[1] <= pm[args.graph_watch[0]][0] and 0 <= args.graph_watch[2] <= pm[args.graph_watch[0]][1]):
+                parser.error('The watched colony position is out of bounds (range: (0, 0)) - ' + str(pm[args.graph_watch[1]]) + ').')
+        else:
+            parser.error('The watched colony position has a plate number that is too high (max: ' + str(args.plates-1) + ').')
+
+    try:
+        fh = open(args.inputfile,'r')
+    except:
+        parser.error('Cannot open input file, please check your path...')
+
+    fh.close()
+
+    #if args.outputfile != None:
+        #try:
+            #fh = open(args.outputfile, 'w')
+        #except:
+            #parser.error('Cannot create the output file')
+        #fh.close()
+
+
+    #if args.graph_output != None:
+        #try:
+            #fh = open(args.graph_output, 'w')
+        #except:
+            #parser.error('Cannot create the save-file for the watched colony.')
+
+        #fh.close()
+
+    if len(pm) == args.plates:    
+        analyse_project(args.inputfile, output_path, pm, args.graph_watch, args.supress, True, False, False, grid_times=grid_times)
+    else:
+        parser.error("Missmatch between number of plates specified and the number of matrices specified.")
 

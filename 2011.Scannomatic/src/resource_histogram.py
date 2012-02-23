@@ -1,18 +1,25 @@
 #!/usr/bin/env python
 """Resource module for analysis of images"""
 
-__author__ = "Mats Kvarnström, Martin Zackrisson"
+__author__ = "Mats Kvarnstroem, Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Mats Kvarnström", "Martin Zackrisson"]
+__credits__ = ["Mats Kvarnstroem", "Martin Zackrisson"]
 __license__ = "GPL"
 __version__ = "3.0"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+#
+# DEPENDENCIES
+#
 
 import numpy as np
 import types
+
+#
+# CLASSES
+#
 
 class Histogram():
     def __init__(self, img, run_at_init=True):

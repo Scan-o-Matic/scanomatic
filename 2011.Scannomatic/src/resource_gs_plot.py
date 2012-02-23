@@ -22,6 +22,10 @@ import numpy as np
 from argparse import ArgumentParser
 
 
+#
+# FUNCTIONS
+#
+
 def make_plot_from_gs_list(gs_list, save_target=None):
 
     for Y in gs_list:

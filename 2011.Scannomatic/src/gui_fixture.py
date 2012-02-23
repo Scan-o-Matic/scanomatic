@@ -27,14 +27,17 @@ import matplotlib.image as plt_img
 import matplotlib.pyplot as plt
 import matplotlib.patches as plt_patches
 from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
-#from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 import numpy as np
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import src.settings_tools as settings_tools
+import src.resource_fixture as fixture_settings
+
+#
+# CLASSES
+#
 
 class Fixture_GUI(gtk.Frame):
 
@@ -50,7 +53,7 @@ class Fixture_GUI(gtk.Frame):
         self.fixture_active_pos_setting = None
 
         self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
-        self.f_settings = settings_tools.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
+        self.f_settings = fixture_settings.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
         analysis_img = self._fixture_config_root + os.sep + self.f_settings.fixture_name + ".tiff"
 
         vbox2 = gtk.VBox(False, 0)

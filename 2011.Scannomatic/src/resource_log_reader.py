@@ -10,14 +10,30 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+#
+# DEPENDENCIES
+#
 
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
 import types
-import reject_script_2 as reject_script
+
+#
+# SCANNOMATIC DEPENDENCIES
+#
+
+import resource_image_reject as reject_script
+
+#
+# GLOBALS
+#
 
 _histograms = []
+
+#
+# FUNCTIONS
+#
 
 def count_histograms():
     return len(_histograms)

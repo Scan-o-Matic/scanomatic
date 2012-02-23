@@ -23,7 +23,7 @@ import time
 import types
 
 #
-# SANE
+# CLASSES
 #
 
 class Sane_Base():

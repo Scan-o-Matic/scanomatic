@@ -10,6 +10,9 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+#
+# DEPENDENCIES
+#
 
 from PIL import Image
 import sys, os
@@ -19,6 +22,10 @@ import numpy as np
 import matplotlib.mlab as ml
 import matplotlib.image as plt_img
 import matplotlib.pyplot as plt
+
+#
+# FUNCTIONS
+#
 
 def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
     try:
