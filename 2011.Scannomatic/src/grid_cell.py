@@ -1,14 +1,16 @@
-#! /usr/bin/env python
-
-# 
-# colonies.py   v 0.1
-#
-# This is a convienience module for command line calling of all different types of colony
-# analysis that are implemented.
-#
-# The module can also be imported directly into other scrips as a wrapper
-#
-
+#!/usr/bin/env python
+"""
+Part of the analysis work-flow that holds the grid-cell object (A tile in a
+grid-array with a potential blob at the center).
+"""
+__author__ = "Martin Zackrisson, Mats Kvarnström"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson", "Mats Kvarnström", "Andreas Skyman"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 
 #

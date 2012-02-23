@@ -1,8 +1,16 @@
 #!/usr/bin/env python
-
-#
-#This will take log-files from the Scannomatic and do nice things with them
-#
+"""
+This module is used when aquiring images to verify that the exposure and
+detection is similar to previous images.
+"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson", "Andreas Skyman"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 from PIL import Image
 import numpy as np

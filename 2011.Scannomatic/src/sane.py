@@ -1,4 +1,19 @@
 #!/usr/bin/env python
+"""This module contains a class for obtaining images using SANE (Linux)."""
+
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
+
+
+#
+# DEPENDENCIES
+#
 
 from PIL import Image, ImageWin
 

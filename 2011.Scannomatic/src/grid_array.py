@@ -1,14 +1,14 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+"""Part of analysis work-flow that holds a grid arrays"""
 
-# 
-# colonies.py   v 0.1
-#
-# This is a convienience module for command line calling of all different types of colony
-# analysis that are implemented.
-#
-# The module can also be imported directly into other scrips as a wrapper
-#
-
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson", "Mats Kvarnström", "Andreas Skyman"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 
 #

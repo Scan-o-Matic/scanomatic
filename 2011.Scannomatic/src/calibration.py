@@ -1,4 +1,16 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+"""Produces the calibration curve from calibration data"""
+
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson", "Olle Nerman"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
+
+
 
 import matplotlib.pyplot as plt
 import numpy as np

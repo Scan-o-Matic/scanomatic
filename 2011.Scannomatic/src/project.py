@@ -1,14 +1,19 @@
-#! /usr/bin/env python
-
-# 
-# colonies.py   v 0.1
-#
-# This is a convienience module for command line calling of all different types of colony
-# analysis that are implemented.
-#
-# The module can also be imported directly into other scrips as a wrapper
-#
-
+#!/usr/bin/env python
+"""
+This module is the typical starting-point of the analysis work-flow.
+It has command-line behaviour but can also be run as part of another program.
+It should be noted that a full run of around 200 images takes more than 2h on
+a good computer using 100% of one processor. That is, if run from within 
+another application, it is probably best to run it as a subprocess.
+"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 
 #
@@ -116,6 +121,15 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     if outdata_files_path[-1] != os.sep:
         outdata_files_path += os.sep
+
+
+    
+    try:
+        fs = open(outdata_files_path + "analysis.run", 'w')
+        fs.write('Analysis started at ' + str(start_time) + '\n')
+        fs.close()
+    except:
+        print "WARNING: Could not produce a analysis.run file... something could be fishy"
 
 
     if graph_watch != None:
@@ -444,6 +458,13 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         print "Full analysis took", (time() - start_time)/60, "minutes"
 
         return False
+
+    try:
+        fs = open(outdata_files_path + "analysis.run", 'a')
+        fs.write('Analysis completed at ' + str(time()) + '\n')
+        fs.close()
+    except:
+        print "WARNING: Could not add to analysis.run file... something could be fishy"
 
     print "Full analysis took", (time() - start_time)/60, "minutes"
 

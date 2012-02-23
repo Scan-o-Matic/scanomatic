@@ -1,4 +1,14 @@
 #!/usr/bin/env python
+"""Resource module for inter-platform compatibility"""
+
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 import os, os.path, sys
 

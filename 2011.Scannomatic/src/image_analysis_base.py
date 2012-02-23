@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+"""Resource module for handling the aquired images."""
+
+__author__ = "Martin Zackrisson, Andreas Skyman"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson", "Andreas Skyman"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
+
 
 from PIL import Image
 import sys, os

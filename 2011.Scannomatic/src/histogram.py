@@ -1,9 +1,14 @@
-'''
-Created on 13 dec 2011
+#!/usr/bin/env python
+"""Resource module for analysis of images"""
 
-@author: kvarnstrom
-@contributor: martin zackrisson
-'''
+__author__ = "Mats Kvarnström, Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Mats Kvarnström", "Martin Zackrisson"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 
 import numpy as np

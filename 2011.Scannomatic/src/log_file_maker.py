@@ -1,8 +1,16 @@
 #!/usr/bin/env python
-
-#
-#This will take log-files from the Scannomatic and do nice things with them
-#
+"""
+The script takes a list of scanned images and as far as possible creates a
+logfile that can be used to run the analys work-flow.
+"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 from PIL import Image
 import sys, os

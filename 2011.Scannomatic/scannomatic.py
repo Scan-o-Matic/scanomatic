@@ -1,4 +1,24 @@
 #!/usr/bin/env python
+"""
+Scannomatic is a high-throughput biological growth phenotype aquisition and
+primary analysis program. 
+
+It typically has two starting starting points, either this script that launches
+a GTK (+2.0) application, within witch most operations can be performed. The
+second way to run it is to run specific types of analysis on already aquired
+images using the script 'src/analysis.py'. (Run it with --help for further
+instructions.)
+
+"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
+
 
 #
 # DEPENDENCIES

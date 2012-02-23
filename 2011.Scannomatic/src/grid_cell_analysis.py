@@ -1,4 +1,16 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+"""
+Part of the analysis work-flow that analyses the image section of a grid-cell.
+"""
+__author__ = "Martin Zackrisson, jetxee"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson", "Mats Kvarnström", "Andreas Skyman",
+    "jetxee"]
+__license__ = "GPL"
+__version__ = "3.0"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 
 #
@@ -7,7 +19,6 @@
 
 #import cv
 import numpy as np
-#import numpy.ma as ma
 import math
 from scipy.stats.mstats import mquantiles, tmean, trim
 from scipy.ndimage.filters import sobel 
@@ -454,11 +465,15 @@ class Blob(Cell_Item):
             blob_diff = (np.abs(self.old_filter - self.filter_array)).sum()
             sqrt_of_oldsum = self.old_filter.sum()**0.5
 
-            bad_diff = True
 
             if blob_diff / float(sqrt_of_oldsum) > max_change_threshold:
 
-                if self.filter_array.sum() > 0:
+                bad_diff = False
+
+                if self.filter_array.sum() == 0:
+                    bad_diff = True
+
+                else:
 
                     old_com = center_of_mass(self.old_filter)
                     new_com = center_of_mass(self.filter_array)
@@ -533,14 +548,14 @@ class Blob(Cell_Item):
                         self._identifier, ", using old (", \
                         blob_diff / float(sqrt_of_oldsum), ")"
 
-            print "(", blob_diff / float(sqrt_of_oldsum), ")"
+            #print "(", blob_diff / float(sqrt_of_oldsum), ")"
             #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
             #else:
             #    print "*** Blob filter data: ", sqrt_of_oldsum, blob_diff,\
                     # blob_diff/float(sqrt_of_oldsum)
             #DEBUG END
 
-        print "Threshold used ", self.threshold
+        #print "Threshold used ", self.threshold
 
         if remember_filter:
              self.old_filter = self.filter_array.copy()
