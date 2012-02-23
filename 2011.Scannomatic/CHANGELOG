@@ -2,6 +2,33 @@
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 
+*** Most files were renamed for better structure:
+ rename 2011.Scannomatic/src/{project.py => analysis.py} (99%)
+ rename 2011.Scannomatic/src/{grid_array.py => analysis_grid_array.py} (98%)
+ rename 2011.Scannomatic/src/{grid_array_analysis.py => analysis_grid_array_dissection.py} (99%)
+ rename 2011.Scannomatic/src/{grid_cell.py => analysis_grid_cell.py} (96%)
+ rename 2011.Scannomatic/src/{grid_cell_analysis.py => analysis_grid_cell_dissection.py} (99%)
+ rename 2011.Scannomatic/src/{colonies_wrapper.py => analysis_wrapper.py} (96%)
+ rename 2011.Scannomatic/src/{analysis.py => gui_analysis.py} (98%)
+ rename 2011.Scannomatic/src/{experiment.py => gui_experiment.py} (98%)
+ rename 2011.Scannomatic/src/{fixture.py => gui_fixture.py} (98%)
+ rename 2011.Scannomatic/src/{settings.py => gui_settings.py} (99%)
+ rename 2011.Scannomatic/src/{calibration.py => resource_calbration.py} (100%)
+ rename 2011.Scannomatic/src/{simple_conf.py => resource_config.py} (100%)
+ rename 2011.Scannomatic/src/{settings_tools.py => resource_fixture.py} (98%)
+ rename 2011.Scannomatic/src/{gs_plot.py => resource_gs_plot.py} (99%)
+ rename 2011.Scannomatic/src/{histogram.py => resource_histogram.py} (96%)
+ rename 2011.Scannomatic/src/{image_analysis_base.py => resource_image.py} (99%)
+ rename 2011.Scannomatic/src/{reject_script_2.py => resource_image_reject.py} (99%)
+ rename 2011.Scannomatic/src/{log_file_maker.py => resource_log_maker.py} (98%)
+ rename 2011.Scannomatic/src/{log_file_reader.py => resource_log_reader.py} (97%)
+ rename 2011.Scannomatic/src/{os_tools.py => resource_os.py} (98%)
+ rename 2011.Scannomatic/src/{power_manager.py => resource_power_manager.py} (99%)
+ rename 2011.Scannomatic/src/{sane.py => resource_sane.py} (99%)
+ rename 2011.Scannomatic/src/{twain.py => resource_twain.py} (99%)
+
+*** Headers were added to all .py-files
+
 *** Circularity measure possible and iterative threshold raising using blob
     circularity as measure of good back-ground levels.
 
