@@ -6,8 +6,8 @@ Part of analysis work-flow that produces a grid-array from an image secion.
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson","Mats Kvarnstroem", "Andreas Skyman"]
-__license__ = "GPL"
-__version__ = "3.0"
+__license__ = "GPL v3.0"
+__version__ = "0.992"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"

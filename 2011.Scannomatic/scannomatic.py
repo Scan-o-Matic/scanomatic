@@ -13,8 +13,8 @@ instructions.)
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
-__license__ = "GPL"
-__version__ = "3.0"
+__license__ = "GPL v3.0"
+__version__ = "0.992"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -102,7 +102,7 @@ class Application_Window():
         self._handle = 0
         if USER_OS.name == "windows":
             self._handle = self.window.window.handle
-        window.set_title("Scannomatic v0.991")
+        window.set_title("Scannomatic v" + __version__)
 
         self.DMS("Program startup","Loading config",100)
 
@@ -171,6 +171,17 @@ class Application_Window():
         self.vbox.pack_start(menubar, False, False)
         menubar.show()
 
+        #Status area
+        self.status_area = gtk.HBox()
+        self.status_area.show()
+        self.vbox.pack_end(self.status_area, False, False, 2)
+        self.status_title = gtk.Label("")
+        self.status_title.show()
+        self.status_area.pack_start(self.status_title, False, False, 20)
+        self.status_description = gtk.Label("")
+        self.status_description.show()
+        self.status_area.pack_start(self.status_description, False, False, 2)
+
         #Fixture config GUI
         self.DMS("Program startup","Initialising fixture GUI",100)
         self.fixture_config = fixture.Fixture_GUI(self)
@@ -199,16 +210,6 @@ class Application_Window():
         self.vbox.pack_start(self.running_experiments, False, False, 2)
         self.running_experiments.show()                                
 
-        #Status area
-        self.status_area = gtk.HBox()
-        self.status_area.show()
-        self.vbox.pack_end(self.status_area, False, False, 2)
-        self.status_title = gtk.Label("")
-        self.status_title.show()
-        self.status_area.pack_start(self.status_title, False, False, 20)
-        self.status_description = gtk.Label("")
-        self.status_description.show()
-        self.status_area.pack_start(self.status_description, False, False, 2)
  
         #display all
         window.show()
@@ -254,6 +255,7 @@ class Application_Window():
 
     def config_fixture(self, widget=None, event=None, data=None):
         self.DMS('Fixture', 'Activated')
+        self.fixture_config.set_mode(widget, event, data)
         self.show_config(self.fixture_config)
 
     #

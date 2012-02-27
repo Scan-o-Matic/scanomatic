@@ -6,8 +6,8 @@ grid-array with a potential blob at the center).
 __author__ = "Martin Zackrisson, Mats Kvarnstroem"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
-__license__ = "GPL"
-__version__ = "3.0"
+__license__ = "GPL v3.0"
+__version__ = "0.992"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -346,18 +346,18 @@ class Grid_Cell():
 
         if blob: 
             self._analysis_items['blob'] = cell_dissection.Blob(\
-                self._identifier + ('blob',), self.data_source, 
+                self._identifier + ['blob'], self.data_source, 
                 use_fallback_detection=use_fallback_detection, 
                 run_detect = run_detect, center=center, radius=radius)
 
         if background and self._analysis_items['blob']:
             self._analysis_items['background'] = cell_dissection.Background(\
-                self._identifier + ('background',), self.data_source, 
+                self._identifier + ['background'], self.data_source, 
                 self._analysis_items['blob'], run_detect=run_detect)
 
         if cell:
             self._analysis_items['cell'] = cell_dissection.Cell(\
-                self._identifier + ('cell',), self.data_source,
+                self._identifier + ['cell'], self.data_source,
                 run_detect = run_detect)
 
     def detach_analysis(self, blob=True, background=True, cell=True):

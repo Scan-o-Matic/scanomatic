@@ -6,8 +6,8 @@ __author__ = "Martin Zackrisson, jetxee"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman",
     "jetxee"]
-__license__ = "GPL"
-__version__ = "3.0"
+__license__ = "GPL v3.0"
+__version__ = "0.992"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -247,6 +247,27 @@ class Blob(Cell_Item):
     # SET functions
     #
 
+
+    def get_gaussian_probabilities(self):
+
+        #P(X) = exp(-(X-m)^2/(2s^2))/(s sqrt(2*pi))
+        pass
+
+    def detect_fill(self, prob_array):
+
+        self.filter_array = np.zeros(self.filter_array.shape)
+        still_blob = True
+        seed = prob_array.argmax()
+        self.filter_array[seed] = True
+        
+
+        while still_blob:
+
+            pass    
+
+        self.filter_array[seed] = False
+
+
     def set_blob_from_shape(self, rect=None, circle=None):
         """
             set_blob_from_shape serves as the purpose of allowing users to
@@ -470,7 +491,7 @@ class Blob(Cell_Item):
 
                 bad_diff = False
 
-                if self.filter_array.sum() == 0:
+                if self.filter_array.sum() == 0 or self.old_filter.sum() == 0:
                     bad_diff = True
 
                 else:
@@ -920,19 +941,23 @@ class Background(Cell_Item):
             ###DEBUG CODE
             #print "Bg area", np.sum(self.filter_array),  "of which shared with blob", 
             #print np.sum(self.filter_array * self.blob.filter_array)
-            #from matplotlib import pyplot as plt
-            #plt.clf()
-            #plt.imshow(self.blob.filter_array)
-            #plt.title("Blob")
-            #plt.show()
-            #plt.clf()
-            #plt.imshow(self.filter_array)
-            #plt.title("Background")
-            #plt.show()
-            #plt.clf()
-            #plt.imshow(self.grid_array)
-            #plt.title("Image section")
-            #plt.show()
+            #print "I am", self._identifier
+            #if True:
+            #if self._identifier[0][0] == 0 or self._identifier[0][0] % \
+                #round(self._identifier[0][0]**0.5) == 0 or \
+                #abs(self._identifier[0][0] - 189) < 3:
+
+                #from matplotlib import pyplot as plt
+                #plt.clf()
+                #fig = plt.figure()
+                #ax = fig.add_subplot(221, title="Blob")
+                #fig.gca().imshow(self.blob.filter_array)
+                #ax = fig.add_subplot(222, title ="Background")
+                #fig.gca().imshow(self.filter_array)
+                #ax = fig.add_subplot(223, title = "Image")
+                #ax_im = fig.gca().imshow(self.grid_array, vmin=0, vmax=100)
+                #fig.colorbar(ax_im)
+                #fig.savefig("debug_cell_t" + ("%03d" % self._identifier[0][0]))
             ###END DEBUG CODE
             if remember_filter:
                 self.old_filter = self.filter_array.copy()

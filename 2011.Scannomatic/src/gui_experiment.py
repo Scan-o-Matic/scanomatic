@@ -4,8 +4,8 @@
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
-__license__ = "GPL"
-__version__ = "3.0"
+__license__ = "GPL v3.0"
+__version__ = "0.992"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -329,10 +329,6 @@ class Scanning_Experiment_Setup(gtk.Frame):
         vbox2.show()
         self.add(vbox2)
 
-        label = gtk.Label("Please note this is in development, as of now you must select top scanner option yourself.")
-        label.show()
-        vbox2.pack_start(label, False, False, 10)
-        
         label = gtk.Label("Select root directory of experiment:")
         label.show()
         hbox = gtk.HBox()
@@ -413,6 +409,12 @@ class Scanning_Experiment_Setup(gtk.Frame):
         
         hbox = gtk.HBox()
         hbox.show()
+
+        button = gtk.Button("See plate positions on fixture")
+        button.connect("clicked", owner.config_fixture,'view')
+        button.show()
+        hbox.pack_start(button, False, False, 2)
+
         button = gtk.Button("Start experiment")
         button.connect("clicked", owner.experiment_Start_New)
         button.show()

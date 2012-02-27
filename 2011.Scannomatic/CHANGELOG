@@ -1,4 +1,23 @@
   ###################################
+##### Changed in Scannomatic 0.992 #####
+   ###################################
+
+*** User guide for setting up experiment putting plates in right positions
+    implemented.
+
+*** Fixture GUI view is better now... not yet perfect
+
+*** Implemented grid-lock, that once set the grid stays where it is relative
+    to plate edges (this is probably less robust if plates are moved within
+    the fixture, but will probably produce less noise if plates stay in place)
+
+*** The identifier property of analysis-objects now is build as follows as
+    far as is applicable to a certain object:
+
+        [[time_index, plate], [row, column], cell-item]
+
+
+  ###################################
 ##### Changed in Scannomatic 0.991 #####
    ###################################
 

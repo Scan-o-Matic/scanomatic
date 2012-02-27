@@ -2,9 +2,6 @@
 ##### THE WHAT NEXT PLACE #####
    ##########################
 
---- Kodak > Cell Estimate Space ---
-
-
 --- GRIDDING ---
 
 *** Investigate resolving equal grid start pos with using most 
@@ -23,17 +20,20 @@
 
 *** Think about finding a good level of a thresholded image for blobedge
 
+*** http://scipy-lectures.github.com/advanced/image_processing/index.html
+
 *** http://www.scipy.org/Cookbook/Least_Squares_Circle
 
 --- GUI ---
 
-*** Clean up code in Fixture GUI
+*** Fixture: Re-implement all functionality.
 
 *** Make experiment last until analysis of last image is done
 
 *** Extend functionality in fixture view (Gray-scale values)
+    Status: Begun.
 
-*** Extend functionality in fixture view (Cell calibration)
+(*** Extend functionality in fixture view (Cell calibration))
 
 *** Extend functionality in config view
 
@@ -59,6 +59,11 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+--- Kodak > Cell Estimate Space ---
+---
+
+*** Fixture is nicer
 
 *** Make it possible to monitor the gray-scale values
 

@@ -9,8 +9,8 @@ another application, it is probably best to run it as a subprocess.
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
-__license__ = "GPL"
-__version__ = "3.0"
+__license__ = "GPL v3.0"
+__version__ = "0.992"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -249,7 +249,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             supress_other=supress_analysis, \
             save_graph_image=(image_pos in grid_times), \
             save_graph_name=outdata_files_path+"time_" + str(image_pos) +\
-             "_plate_")
+             "_plate_", grid_lock = True, identifier_time=image_pos)
 
         if supress_analysis != True:
             fh.write('<scan index="' + str(image_pos) + '">')
@@ -457,6 +457,13 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
         print "Full analysis took", (time() - start_time)/60, "minutes"
 
+        try:
+            fs = open(outdata_files_path + "analysis.run", 'a')
+            fs.write('Analysis completed at ' + str(time()) + '\n')
+            fs.close()
+        except:
+            print "WARNING: Could not add to analysis.run file... something could be fishy"
+
         return False
 
     try:
@@ -500,7 +507,44 @@ class Project_Image():
 
     def get_analysis(self, im_path, features, grayscale_values, \
             use_fallback=False, use_otsu=True, watch_colony=None, \
-            supress_other=False, save_graph_image=False, save_graph_name=None):
+            supress_other=False, save_graph_image=False, save_graph_name=None,
+            grid_lock=False, identifier_time = None):
+
+        """
+            @param im_path: An path to an image
+
+            @param features: A list of pinning grids to look for
+
+            @param grayscale_values : An array of the grayscale pixelvalues, if 
+            submittet gs_fit is disregarded
+
+            @param use_fallback : Causes fallback detection to be used.
+
+            @param use_otsu : Causes thresholding to be done by Otsu
+            algorithm (Default)
+
+            @param watch_colony : A particular colony to gather information
+            about.
+
+            @param supress_other : If only the watched colony should be 
+            analysed
+
+            @param save_grid_image : Causes the script to save the plates' 
+            grid placement as images. Conflicts with visual, so don't use 
+            visual if you want to save
+
+            @param save_grid_name : A custom name for the saved image, if none
+            is submitted, it will be grid.png in current directory.
+
+            @param grid_lock : Default False, if true, the grid will only be
+            gotten once and then reused all way through.
+
+            @param identifier_time : A time index to update the identifier with
+
+            The function returns two arrays, one per dimension, of the
+            positions of the spikes and a quality index
+
+        """
 
         if im_path != None:
             self._im_path = im_path
@@ -567,7 +611,8 @@ class Project_Image():
                 use_otsu=use_otsu, median_coeff=None, \
                 verboise=False, visual=False, watch_colony=watch_colony, \
                 supress_other=supress_other, save_grid_image=save_graph_image\
-                , save_grid_name = cur_graph_name)
+                , save_grid_name = cur_graph_name, grid_lock = grid_lock,
+                identifier_time = identifier_time)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
             self.R[grid_array] = self._grid_arrays[grid_array].R

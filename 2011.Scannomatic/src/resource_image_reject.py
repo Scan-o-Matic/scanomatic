@@ -6,9 +6,9 @@ detection is similar to previous images.
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Andreas Skyman"]
-__license__ = "GPL"
-__version__ = "3.0"
-__maintainer__ = "Martin Zackrisson"
+__license__ = "GPL v3.0"
+__version__ = "0.992"
+_maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 

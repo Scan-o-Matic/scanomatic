@@ -3,8 +3,8 @@
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
-__license__ = "GPL"
-__version__ = "3.0"
+__license__ = "GPL v3.0"
+__version__ = "0.992"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -32,7 +32,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 import src.resource_image as img_base
 import src.resource_fixture as fixture_settings
 import src.analysis_wrapper as colonies
-
+import src.gui_grayscale as grayscale
 #
 # CLASSES
 #
@@ -44,6 +44,8 @@ class Analyse_One(gtk.Frame):
         gtk.Frame.__init__(self, label)
 
         self.owner = owner
+        self.DMS = self.owner.DMS
+
         self.analysis = None
 
         self._rect_marking = False
@@ -76,25 +78,8 @@ class Analyse_One(gtk.Frame):
         hbox.pack_start(self.plots_vbox, False, False, 2)
         
 
-        label = gtk.Label("Grayscale analysis")
-        label.show()
-        self.plots_vbox.pack_start(label, False, False, 2)
-
-        self.grayscale_fig = plt.Figure(figsize=(50,40), dpi=100)
-        self.grayscale_fig.subplots_adjust(left=0.02, right=0.98, wspace=0.3)
-
-        self.grayscale_plot_img = self.grayscale_fig.add_subplot(121)
-        self.grayscale_plot_img.get_xaxis().set_visible(False)
-        self.grayscale_plot_img.get_yaxis().set_visible(False)
-
-        self.grayscale_plot = self.grayscale_fig.add_subplot(122)
-        self.grayscale_plot.axis("tight")
-        self.grayscale_plot.get_xaxis().set_visible(False)
-
-        grayscale_canvas = FigureCanvas(self.grayscale_fig)
-        grayscale_canvas.show()
-        grayscale_canvas.set_size_request(400,150)
-        self.plots_vbox.pack_start(grayscale_canvas, False, False, 2)
+        self.grayscale_frame = grayscale.Gray_Scale(self)
+        self.plots_vbox.pack_start(self.grayscale_frame, False, False, 2)
 
 
         label = gtk.Label("Marker detection analysis")
@@ -492,10 +477,10 @@ class Analyse_One(gtk.Frame):
                 
             except:
 
-                self.owner.DMS("Error", "Could not open " + self._config_calibration_path)
+                self.DMS("Error", "Could not open " + self._config_calibration_path)
                 return
 
-            self.owner.DMS("Calibration", "Setting " + self.analysis_img.get_text() + \
+            self.DMS("Calibration", "Setting " + self.analysis_img.get_text() + \
                 " colony depth per pixel to " + str( indep_cce ) + " cell estimate.")
 
     def select_image(self, widget=None, event=None, data=None):
@@ -525,14 +510,14 @@ class Analyse_One(gtk.Frame):
             if len(fixture_X) == len(self.f_settings.mark_X):
                 self.f_settings.set_areas_positions()
 
-                self.owner.DMS("Reference scan positions", 
+                self.DMS("Reference scan positions", 
                     str(self.f_settings.fixture_config_file.get("grayscale_area")), level = 110)
-                self.owner.DMS("Scan positions", 
+                self.DMS("Scan positions", 
                     str(self.f_settings.current_analysis_image_config.get("grayscale_area")), level = 110)
 
                 rotated = True
             else:
-                self.owner.DMS("Error", "Missmatch between fixture configuration and current image", level =110)
+                self.DMS("Error", "Missmatch between fixture configuration and current image", level =110)
                 rotated = False
 
             if self.f_settings.A != None:
@@ -583,9 +568,7 @@ class Analyse_One(gtk.Frame):
         self.gs_reset_button.set_sensitive(False)
         self.gs_reset_button.set_label("Currently selecting a gray-scale area")
         self._grayscale = None
-        self.grayscale_plot_img.clear()
-        self.grayscale_plot.clear()
-        self.grayscale_fig.canvas.draw()
+        self.grayscale_frame.clf()
 
 
     def set_manual_grayscale(self, ul, lr):
@@ -597,41 +580,7 @@ class Analyse_One(gtk.Frame):
 
         self.gs_reset_button.set_sensitive(True)
         self.gs_reset_button.set_label("Click to reset grayscale")
-
-        gs = img_base.Analyse_Grayscale(image=im_section)
-        self._grayscale = gs._grayscale
-
-        #LEFT PLOT
-        Y = np.ones(len(gs._grayscale_pos)) * gs._mid_orth_strip 
-        #grayscale_plot = self.grayscale_fig.get_subplot(121)
-        self.grayscale_plot_img.clear()
-        self.grayscale_plot_img.imshow(im_section.T)
-        self.grayscale_plot_img.plot(gs._grayscale_pos, Y,'ko', mfc='w', mew=1, ms=3)
-        self.grayscale_plot_img.set_xlim(xmin=0,xmax=im_section.shape[0])
-
-        #RIGHT PLOT
-        #grayscale_plot = self.grayscale_fig.get_subplot(122)
-
-        if len(gs._grayscale_X) != len(gs._grayscale):
-            self._grayscale=None
-            self.owner.DMS("Error", "There's something wrong with the grayscale. Switching to manual")
-            return False
-
-        z2 = np.polyfit(gs._grayscale_X, gs._grayscale,2)
-        p2 = np.poly1d(z2)
-        z3 = np.polyfit(gs._grayscale_X, gs._grayscale,3)
-        p3 = np.poly1d(z3)
-
-        xp = np.linspace(gs._grayscale_X[0], gs._grayscale_X[-1], 100)
-
-        self.grayscale_plot.clear()
-        line1 = self.grayscale_plot.plot(gs._grayscale_X, gs._grayscale,'b.', mfc='None', mew=2)
-        #line2 = grayscale_plot.plot(xp, p2(xp),'r-')
-        line3 = self.grayscale_plot.plot(xp, p3(xp),'g-')
-
-        self.grayscale_fig.canvas.draw()
-
-        return True
+        self.grayscale_frame.set_grayscale(im_section)
 
     def get_click_in_rect(self, event):
 
@@ -735,7 +684,7 @@ class Analyse_One(gtk.Frame):
                 self.selection_rect.set_height(    event.ydata - self._rect_ul[1])#,
                     #ec = 'k', fc='b', fill=True, lw=1,
                     #axes = self.image_ax)
-                self.owner.DMS("SELECTING", "Selecting something in the image", 1)
+                self.DMS("SELECTING", "Selecting something in the image", 1)
 
             else:
                 cur_pos_offset = np.asarray((event.xdata, event.ydata)) - \
@@ -743,7 +692,7 @@ class Analyse_One(gtk.Frame):
                 new_rect_pos = self._dragging_rect_origin + cur_pos_offset
                 self.selection_rect.set_x(new_rect_pos[0])
                 self.selection_rect.set_y(new_rect_pos[1])
-                self.owner.DMS("SELECTING", "Moving selection", 1)
+                self.DMS("SELECTING", "Moving selection", 1)
 
             self.image_fig.canvas.draw() 
 
@@ -759,14 +708,14 @@ class Analyse_One(gtk.Frame):
 
                 self.selection_circ.set_radius( r )
 
-                self.owner.DMS("SELECTING", "Selecting some blob", 1)
+                self.DMS("SELECTING", "Selecting some blob", 1)
 
             else:
                 cur_pos_offset = cur_pos - \
                     self._dragging_origin
                 new_circ_pos = self._dragging_circ_origin + cur_pos_offset
                 self.selection_circ.center = tuple(new_circ_pos)
-                self.owner.DMS("SELECTING", "Moving blob selection", 1)
+                self.DMS("SELECTING", "Moving blob selection", 1)
 
             self.blob_fig.canvas.draw() 
 
@@ -777,7 +726,7 @@ class Analyse_One(gtk.Frame):
             if self._rect_dragging == False:
                 if event.xdata and event.ydata and self._rect_ul[0] and self._rect_ul[1]:
                     self._rect_lr = (event.xdata, event.ydata)
-                    self.owner.DMS("SELECTION", "UL: " + str(self._rect_ul) + ", LR: (" + 
+                    self.DMS("SELECTION", "UL: " + str(self._rect_ul) + ", LR: (" + 
                         str(event.xdata) + ", "  +
                         str(event.ydata) + ")", level=1)
 
@@ -794,7 +743,7 @@ class Analyse_One(gtk.Frame):
                 self._rect_lr = (self._rect_ul[0] + self.selection_rect.get_width(),
                     self._rect_ul[1] + self.selection_rect.get_height())
 
-                self.owner.DMS("SELECTION", "UL: " + str(self._rect_ul) + ", LR: (" + 
+                self.DMS("SELECTION", "UL: " + str(self._rect_ul) + ", LR: (" + 
                     str(self._rect_lr) + ")", level=1)
 
                 self.get_analysis()
@@ -814,7 +763,7 @@ class Analyse_One(gtk.Frame):
 
                         r = np.sqrt( np.sum((cur_pos - self._circ_center)**2) )
 
-                        self.owner.DMS("SELECTION", "Radius: " + str(r) + ")", level=1)
+                        self.DMS("SELECTION", "Radius: " + str(r) + ")", level=1)
 
                         print "C center", self.selection_circ.center, "radius", self.selection_circ.get_radius()
 
@@ -1074,7 +1023,7 @@ class Analyse_One(gtk.Frame):
             self.cce_per_pixel.set_text(str(features['blob']['mean'] - 
                 features['background']['mean']))
 
-            self.owner.DMS('Analysis', 'Alternative measures: ' + 
+            self.DMS('Analysis', 'Alternative measures: ' + 
                 "see in program"+ " (from mean), " + 
                 str(abs(features['cell']['pixelsum'] - \
                 features['background']['median'] * features['cell']['area'])) + 
