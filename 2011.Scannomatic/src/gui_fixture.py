@@ -214,9 +214,7 @@ class Fixture_GUI(gtk.Frame):
         self.fixture_platepositions = gtk.Entry()
         self.fixture_platepositions.show()
         self.fixture_platepositions.set_text("4")
-        #HACK NEED RE-IMPLEMENT
-        #self.fixture_platepositions.connect("focus-out-event", self.areas_update, "int")
-        #HACK END
+        self.fixture_platepositions.connect("focus-out-event", self.set_plates_change, "int")
         hbox.pack_end(self.fixture_platepositions, False, False, 2)
 
         frame = gtk.Frame("Area config")
@@ -315,6 +313,27 @@ class Fixture_GUI(gtk.Frame):
 
         return rect
 
+    def reactivate_fixture_overlay(self, by_object=None, by_name=None):
+
+        for i in xrange(len(self.fixture_patches)):
+
+            if (by_object is not None and \
+                by_object == self.fixture_patches[i]) or \
+                (by_name is not None and \
+                by_name == self.fixture_texts[i].get_text()):
+                
+                self.fixture_patches[i].set_visible(True)
+                self.fixture_texts[i].set_visible(True)
+                #self.image_fig.remove(self.fixture_patches[i])
+                #self.image_fig.remove(self.fixture_texts[i])
+                #del self.fixture_patches[i]
+                #del self.fixture_texts[i]
+                break
+
+
+        self.image_fig.canvas.draw()
+
+
     def remove_fixture_overlay(self, by_object=None, by_name=None):
 
 
@@ -324,12 +343,17 @@ class Fixture_GUI(gtk.Frame):
                 by_object == self.fixture_patches[i]) or \
                 (by_name is not None and \
                 by_name == self.fixture_texts[i].get_text()):
-
-                self.image_fig.remove(self.fixture_patches[i])
-                self.image_fig.remove(self.fixture_texts[i])
-                del self.fixture_patches[i]
-                del self.fixture_texts[i]
+                
+                self.fixture_patches[i].set_visible(False)
+                self.fixture_texts[i].set_visible(False)
+                #self.image_fig.remove(self.fixture_patches[i])
+                #self.image_fig.remove(self.fixture_texts[i])
+                #del self.fixture_patches[i]
+                #del self.fixture_texts[i]
                 break
+
+
+        self.image_fig.canvas.draw()
 
     def change_fixture_overlay(self, area=None, by_object=None, by_name=None):
 
@@ -456,8 +480,6 @@ class Fixture_GUI(gtk.Frame):
         if event:
             x_pos = (event.x + horzOffset)
             y_pos = (event.y + vertOffset)
-            #print "x:", horzOffset, event.x, widget.get_allocation().x
-            #print "y:", vertOffset, event.y, widget.get_allocation().y
         if self.fixture_active_pos != None and self.fixture_active_pos_setting != None:
             self.fixture_active_pos(str((x_pos, y_pos)))
             area = [eval(self.fixture_area_ul.get_text()), eval(self.fixture_area_lr.get_text())] 
@@ -493,7 +515,7 @@ class Fixture_GUI(gtk.Frame):
             self.fixture_image.cla()
             self.fixture_image.gca().imshow(newimg.get_filename(), cmap=plt.cm.gray)
             self.load_fixture_config()
-            self.fixture_image.canvas.draw()
+            self.image_fig.canvas.draw()
         newimg.destroy()
 
     def select_marking(self, widget=None, event=None, data=None):
@@ -537,33 +559,80 @@ class Fixture_GUI(gtk.Frame):
             self.f_settings.markings = int(self.fixture_markings_count.get_text())
             self.f_settings.fixture_config_file.set("marker_count", self.f_settings.markings)
 
-    def reset_drop_down(self):
+    def reset_drop_down(self, widget=None, event=None, data=None):
+
                     
-            #How much should be added?
+            #How much should be there?
             grayscales = self.get_grayscales()
             overlays = self.get_total_overlays()
+
+            #What should be there?
+            drop_texts = {'welcome': 'Select an area',
+                'grayscale': 'Grayscale',
+                'plate': "Plate %d"}
+            drop_contents = {'welcome': 0,
+                'grayscale': 0,
+                'plate': 0}
 
             #Get what should be active afterwards
             active = self.fixture_area_selection.get_active()
             if active < 0:
-                active = 0
+                active_text = drop_texts['welcome']
+            else:
+                active_text = self.fixture_area_selection.get_model()[active][0]
 
-            #Add first element
-            self.fixture_area_selection.append_text("Select an area")
-            self.current_fixture_settings = []
+            #What is in it?
+            for i in xrange(len(self.fixture_area_selection.get_model())):
+                cur_text = self.fixture_area_selection.get_model()[i][0]
+                if cur_text == drop_texts['welcome']:
+                    drop_contents['welcome'] += 1
+                elif cur_text == drop_texts['grayscale']:
+                    drop_contents['grayscale'] += 1
+                elif cur_text == drop_texts['plate'] % (drop_contents['plate'] + 1):
+                    drop_contents['plate'] += 1
 
-            #Add all other elements
-            for i in xrange(overlays):
 
-                if i == 0 and grayscales == 1:
-                    self.fixture_area_selection.append_text("Grayscale")
-                else:
-                    self.fixture_area_selection.append_text("Plate " + str(i-grayscales))
+            #Remove first thing to make it workable
+            if drop_contents['welcome'] == 1:
+                self.fixture_area_selection.remove_text(0)
 
-                self.current_fixture_settings.append(" ")
+            #Check grayscales
+            if drop_contents['grayscale'] < grayscales:
+                self.fixture_area_selection.prepend_text(\
+                    drop_texts['grayscale'])
+            elif drop_contents['grayscale'] > grayscales:
+                self.fixture_area_selection.remove_text(0)
 
+            #Check plates
+            plate_diffs = (overlays - grayscales) - drop_contents['plate']
+
+            if plate_diffs > 0:
+                for i in xrange(plate_diffs):
+                    drop_contents['plate'] += 1
+                    self.fixture_area_selection.append_text(\
+                        drop_texts['plate'] % drop_contents['plate'])
+            elif plate_diffs < 0:                
+                for i in xrange(abs(plate_diffs)):
+                    self.fixture_area_selection.remove_text(len(\
+                        self.fixture_area_selection.get_model())-1)
+
+            #Add welcome first last
+            self.fixture_area_selection.prepend_text(drop_texts['welcome'])
+
+            #Place the same as active
+            active = 0
+            for i in xrange(len(self.fixture_area_selection.get_model())):
+                if self.fixture_area_selection.get_model()[i][0] == active_text:
+
+                    active = i
+                    break
+    
             self.fixture_area_selection.set_active(active)
-            self.fixture_area_selection.set_sensitive(len(self.current_fixture_settings) > 0)
+
+            #Put self as sensitive if there's stuff in you...
+            self.fixture_area_selection.set_sensitive(\
+                len(self.fixture_area_selection.get_model()) > 1)
+
 
     def set_grayscale(self):
 
@@ -633,13 +702,18 @@ class Fixture_GUI(gtk.Frame):
 
         return pos
 
+    def get_plates(self):
+
+        pos = 0
+        if self.fixture_platepositions.get_text() != "":
+            pos += int(self.fixture_platepositions.get_text())
+        return pos
+
     def get_total_overlays(self):
 
         pos = self.get_grayscales()
-
-        if self.fixture_platepositions.get_text() != "":
-            pos += int(self.fixture_platepositions.get_text())
-        
+        pos += self.get_plates()
+                
         return pos
         
     def set_active_area(self, widget=None, event=None, data=None):
@@ -665,61 +739,43 @@ class Fixture_GUI(gtk.Frame):
 
         if self.fixture_grayscale_checkbox.get_active():
             self.f_settings.fixture_config_file.set("grayscale", True)
+            #self.reactivate_fixture_overlay(by_name='G')
         else:
             self.f_settings.fixture_config_file.set("grayscale", False)
             self.f_settings.fixture_config_file.delete("grayscale_area")
             self.remove_fixture_overlay(by_name='G')
 
-    #def areas_update(self, widget=None, event=None, data=None):
-        #print "SHOULDN'T BE IN USE! areas update", widget, self._fixture_gui_updating
-        #if self._fixture_gui_updating == False:
-            #self._fixture_gui_updating = True
-            #if widget:
-                #if data == "int":
-                    #self.verify_input(widget=widget, event=event, data=data)
+        self.reset_drop_down()
 
+        return False
 
-            #overlays = self.get_total_overlays()
+    def set_plates_change(self, widget=None, event=None, data=None):
+         
+        #What is?
+        old_plates = len(self.fixture_area_selection.get_model()) -\
+            self.get_grayscales() - 1
 
-            #grayscales = self.get_grayscales()
+        #What should be?
+        try:
+            plates = int(widget.get_text())
+        except:
+            plates = 0
 
+        #What is the diff?
+        plate_diff = plates - old_plates
+        if plate_diff < 0:
+            for i in xrange(abs(plate_diff)):
+                self.remove_fixture_overlay(by_name=str(plates+i))
+                self.f_settings.fixture_config_file.set("plate_%d_area" %\
+                    (plates+i),[(-1,-1),(-1,-1)], overwrite=False)
+        elif plate_diff > 0:
+            for i in xrange(abs(plate_diff)):
 
-            #if self.current_fixture_settings != None:
-                #if len(self.current_fixture_settings) > overlays:
-                    #for i in range(overlays, len(self.current_fixture_settings)):
-#
-                        #self.f_settings.fixture_config_file.delete(
-                            #self.f_settings.settings_name(i))
-#
-                        #self.remove_fixture_overlay(by_name=\
-                            #self.f_settings.settings_name(i))
-#
-            ##A BIT UGLY
-            #if grayscales > 0:
-                #self.f_settings.fixture_config_file.set('grayscale_area',[(-1,-1),(-1,-1)], overwrite=False)
-#
-            #if overlays > grayscales:
-                #for p in xrange(overlays-grayscales):
-                    #self.f_settings.fixture_config_file.set('plate_'+str(p)+'_area',[(-1,-1),(-1,-1)], overwrite=False)
-#
-            #active = self.fixture_area_selection.get_active()
-            ##i = 0 #HACK!!
-            #while i < 15:
-                #self.fixture_area_selection.remove_text(0)
-                #i += 1
+                self.reactivate_fixture_overlay(by_name=str(old_plates+i))
+ 
+            self.image_fig.canvas.draw()
 
-#
-            #if active < 0:
-                #active = 0
-            #else:
-                #if active <= len(self.current_fixture_settings):
-                    #self.fixture_area_selection.set_active(active)
-                #else:
-                    #self.fixture_area_selection.set_active(0)
-#
-            #self.fixture_area_selection.set_sensitive(len(self.current_fixture_settings) > 0)
-#
-            #self._fixture_gui_updating = False
+        self.reset_drop_down()
 
-        #return False
+        return False
 

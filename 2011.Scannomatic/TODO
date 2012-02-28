@@ -26,12 +26,10 @@
 
 --- GUI ---
 
-*** Fixture: Re-implement all functionality.
-
 *** Make experiment last until analysis of last image is done
 
 *** Extend functionality in fixture view (Gray-scale values)
-    Status: Begun.
+    Status: Begun. Something wrong in fixture
 
 (*** Extend functionality in fixture view (Cell calibration))
 
@@ -59,6 +57,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Fixture: Re-implement all functionality.
 
 --- Kodak > Cell Estimate Space ---
 ---
