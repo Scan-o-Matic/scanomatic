@@ -61,12 +61,14 @@ class Scanning_Experiment(gtk.Frame):
         self.USE_CALLBACK = owner.USE_CALLBACK
 
         self.owner = owner
+        self.DMS = self.owner.DMS
+
         continue_load = True
 
         try:
             os.mkdir(str(root) + os.sep + str(prefix))
         except WindowsError:
-            self.owner.DMS('Experiment conflict', 'An experiment with that prefix already exists...\nAborting.', level=1000)
+            self.DMS('Experiment conflict', 'An experiment with that prefix already exists...\nAborting.', level=1000)
             continue_load = False
             
         gtk.Frame.__init__(self, prefix)
@@ -236,7 +238,7 @@ class Scanning_Experiment(gtk.Frame):
 
             for f in file_list:
                 gs_data.append({'Time':time.time()})
-                self.owner.DMS("Analysis", "Grayscale analysis of" + str(f), level=1)
+                self.DMS("Analysis", "Grayscale analysis of" + str(f), level=1)
                 self.f_settings.image_path = f
                 self.f_settings.marker_analysis()
                 self.f_settings.set_areas_positions()
@@ -263,13 +265,13 @@ class Scanning_Experiment(gtk.Frame):
             fs = open(self._logFile,'a')
             log_maker.make_entries(fs, file_list=file_list, extra_info=gs_data, verboise=False, quiet=False)
             fs.close()
-            self.owner.DMS("Analysis","Done. Nothing more to do for that image...", level=1)
+            self.DMS("Analysis","Done. Nothing more to do for that image...", level=1)
 
     def _callback(self):
         for i, sp in enumerate(self._subprocesses):
             if sp[0] == "SANE-CALLBACK":
                 if sp[2].poll() != None:
-                    self.owner.DMS("Scanning", "Aqcuired image " + str(sp[1]), level=11)
+                    self.DMS("Scanning", "Aqcuired image " + str(sp[1]), level=11)
                     sp[1].close
 
                     got_image = True
@@ -289,7 +291,7 @@ class Scanning_Experiment(gtk.Frame):
                     if got_image and self._quality_OK():
                         gobject.timeout_add(1000*20,self._power_manager.off)
                     else:
-                        self.owner.DMS("Scanning", "Quality of scan histogram indicates" + 
+                        self.DMS("Scanning", "Quality of scan histogram indicates" + 
                             " that rescan needed! So that I do...",level=1010)
                         self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + "_rescan.tiff"
                         if os.path.exists(self._scanner.next_file_name) == False:
@@ -324,6 +326,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
         gtk.Frame.__init__(self, "NEW SET-UP EXPERIMENT")
 
         self._GUI_updating = False
+        self.DMS = owner.DMS
 
         vbox2 = gtk.VBox(False, 0)
         vbox2.show()

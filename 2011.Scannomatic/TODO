@@ -2,6 +2,11 @@
 ##### THE WHAT NEXT PLACE #####
    ##########################
 
+--- SPACE-TRANSITIONS ---
+
+*** The 'Pixel Value Space' to 'Kodak Value Space' could use the advanced 
+    algorithm
+
 --- GRIDDING ---
 
 *** Investigate resolving equal grid start pos with using most 
@@ -13,8 +18,15 @@
 
 --- BLOB-DETECTION ---
 
+*** Do a check on BG to throw out outliers from the BG into trash
+
+*** Let the subtracted BG be a plane and not a single value.
+
 *** Images show distinct blob-detection failiour at early stages using
     current detection algorithms
+
+*** The iterative roundness test could use the threshold of otsu as start
+    and could use fsolve too!
 
 *** Use where previous blob was detected!
 
@@ -31,11 +43,7 @@
 *** Extend functionality in fixture view (Gray-scale values)
     Status: Begun. Something wrong in fixture
 
-(*** Extend functionality in fixture view (Cell calibration))
-
 *** Extend functionality in config view
-
-*** Implement reusable canvases everywhere, look in analysis.py
 
 *** Use a queue for all things to be done and a scheduler
 
@@ -57,6 +65,10 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+(*** Extend functionality in fixture view (Cell calibration))
+
+*** Implement reusable canvases everywhere, look in analysis.py
 
 *** Fixture: Re-implement all functionality.
 

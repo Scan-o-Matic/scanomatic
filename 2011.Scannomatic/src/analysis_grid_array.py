@@ -55,6 +55,9 @@ class Grid_Array():
         self._best_fit_rows = None
         self._best_fit_coulmns = None
 
+        self.track_times = []
+        self.track_values = []
+
         if pinning_matrix != None:
             self.set_pinning_matrix(pinning_matrix)
 
@@ -430,6 +433,11 @@ class Grid_Array():
                     #self._grid_cells[row][column].get_analysis(no_analysis=True,\
                     #    remember_filter=True, use_fallback=True)
 
+                    #This step does analysis on the previously detected objects
+                    self._features[row][column] = \
+                        self._grid_cells[row][column].get_analysis(no_detect=True)
+
+
                     ###DEBUG RE-DETECT PART2
                     #debug_plt.add_subplot(222)
                     #plt.imshow(self._grid_cells[row][column].get_item('blob').filter_array)
@@ -441,26 +449,34 @@ class Grid_Array():
 
 
                     ###DEBUG CODE
-                    #from matplotlib import pyplot as plt
-                    #plt.clf()
-                    #fig = plt.figure()
-                    #ax = fig.add_subplot(221, title="Blob")
-                    #fig.gca().imshow(self._grid_cells[row][column].\
-                        #get_item('blob').filter_array)
-                    #ax = fig.add_subplot(222, title ="Background")
-                    #fig.gca().imshow(self._grid_cells[row][column].\
-                        #get_item('background').filter_array)
-                    #ax = fig.add_subplot(223, title = "Image")
-                    #ax_im = fig.gca().imshow(self._grid_cells[row][column].\
-                        #get_item('background').grid_array, vmin=0, vmax=3500,
-                        #)
-                    #fig.colorbar(ax_im)
-                    #fig.savefig("debug_cell_t" + ("%03d" % self._identifier[0]))
-                    ###END DEBUG CODE
+                    from matplotlib import pyplot as plt
+                    plt.clf()
+                    fig = plt.figure()
+                    ax = fig.add_subplot(221, title="Blob")
+                    fig.gca().imshow(self._grid_cells[row][column].\
+                        get_item('blob').filter_array)
+                    ax = fig.add_subplot(222, title ="Background")
+                    fig.gca().imshow(self._grid_cells[row][column].\
+                        get_item('background').filter_array)
+                    ax = fig.add_subplot(223, title = "Image")
+                    ax_im = fig.gca().imshow(self._grid_cells[row][column].\
+                        get_item('background').grid_array, vmin=0, vmax=3500,
+                        )
+                    fig.colorbar(ax_im)
+                    ax = fig.add_subplot(224, title = "Growth-curve")
+                    fig.gca().plot(self.track_times, self.track_values,'b-')
+                    self.track_times.append(self._identifier[0])
+                    self.track_values.append(self._features[row][column]\
+                        ['blob']['pixelsum']) 
+                    fig.gca().plot((self.track_times[-1],), (self.track_values[-1],),'ro')
+                    ax.set_yticklabels(("0","10^5","10^6"))
+                    ax.set_yticks((0,100000,1000000))
+                    plt.xlim(0, self.track_times[0])
+                    plt.ylim(0, max(self.track_values))
+                    #ax.set_yscale('log', basey=2)
+                    fig.savefig("debug_cell_t" + ("%03d" % self._identifier[0]))
+                    ##END DEBUG CODE
 
-                    #This step does analysis on the previously detected objects
-                    self._features[row][column] = \
-                        self._grid_cells[row][column].get_analysis(no_detect=True)
 
                     if watch_colony != None:
                         if row == watch_colony[1] and column == watch_colony[2]:

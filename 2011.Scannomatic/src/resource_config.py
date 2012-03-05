@@ -173,6 +173,9 @@ class Config_File():
         else:
             return None
 
+    def get_location(self):
+        return self._location
+
     def items(self):
         return self._file_data_order, self.get_all()
 

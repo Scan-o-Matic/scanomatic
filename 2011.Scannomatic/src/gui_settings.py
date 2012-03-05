@@ -32,6 +32,7 @@ class Config_GUI(gtk.Frame):
     def __init__(self, owner, conf_paths, title=None, conf_root=None):
 
         self.owner = owner
+        self.DMS = self.owner.DMS
 
         if type(conf_paths) != types.ListType:
             conf_paths = [conf_paths]
@@ -113,7 +114,7 @@ class Config_GUI(gtk.Frame):
     def save_data_file(self, widget=None, event=None, data=None):
         for c_file in self.config_files:
             c_file.save()
-            self.owner.DMS("CONFIGURATION", "Changes have been saved",11)
+            self.DMS("CONFIGURATION", "Changes have been saved",11)
 
 class Config_TreeView(gtk.TreeView):
     def __init__(self, owner):
@@ -127,8 +128,8 @@ class Config_TreeView(gtk.TreeView):
         self._treestore = gtk.TreeStore(int,str, str)
         
         for f, root in enumerate(self._settings_list):
-            root_iter = self._treestore.append(None, [f,None, None])
-            for key, item in self._settings_list[f].items():
+            root_iter = self._treestore.append(None, [f,None, root[0]])
+            for key, item in self._settings_list[f][1].items():
                 self._treestore.append(root_iter, [f, key, item])
                                       
         gtk.TreeView.__init__(self, self._treestore)
@@ -151,12 +152,12 @@ class Config_TreeView(gtk.TreeView):
     def build_settings_list(self):
         self._settings_list = []
         for f, c_file in enumerate(self.owner.config_files):
-            self._settings_list.append({})
+            self._settings_list.append([c_file.get_location(),{}])
             k, v = c_file.items()
 
             for i, key in enumerate(k):
                 if key[0] != "#":
-                    self._settings_list[f][key] = v[i]
+                    self._settings_list[f][1][key] = v[i]
 
     def add_key(self, key):
         if type(key) == types.StringType:
@@ -189,7 +190,7 @@ class Config_TreeView(gtk.TreeView):
             dialog.destroy()
             
     def verify_input(self, widget=None, event=None, data=None):
-        row = self._treestore.get_iter(data)
+        row = self._treestore.get_iter(event)
         try:
             conf_file = self._settings_list[self._treestore.get_value(row, 0)]
         except:
