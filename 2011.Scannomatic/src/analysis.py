@@ -43,13 +43,9 @@ import resource_config as conf
 def print_progress_bar(fraction, size=40):
     prog_str = "["
     fraction *= size
-    for i in xrange(size):
-        if fraction > i:
-            prog_str += "="
-        else:
-            prog_str += " "
+    fraction = int(round(fraction))
 
-    prog_str += "]"
+    prog_str = "[" + fraction*"=" + (size-fraction)*" " + "]"
 
     print 
     print
@@ -163,18 +159,28 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     if image_dictionaries == None:
         return None
 
-    plate_position_keys = []
-    plates = len(pinning_matrices)
-
 
     if 'Description' in image_dictionaries[0].keys():
         first_scan_position = 1
         description = image_dictionaries[0]['Description']
         interval_time = image_dictionaries[0]['Interval']
+        if pinning_matrices is None and 'Pinning Matrices' \
+            in image_dictionaries[0].keys():
+
+            pinning_matrices = image_dictionaries[0]['Pinning Matrices']
+
     else:
         first_scan_position = 0
         description = None
         interval_time = None
+
+    if pinning_matrices is None:
+
+        print "ERROR: We do need some pinning matrices to analyse anything"
+        return False
+
+    plate_position_keys = []
+    plates = len(pinning_matrices)
 
     for i in xrange(plates):
         if supress_analysis != True or graph_watch[0] == i:
@@ -194,6 +200,13 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         project_image = Project_Image(pinning_matrices)
 
     image_pos = len(image_dictionaries) - 1
+
+    if image_pos < first_scan_position:
+        if verboise:
+            print "*** There are no images to analyse, aborting"
+        fh.close()
+        return True
+
     image_tot = image_pos 
 
     if verboise:
@@ -633,8 +646,8 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--input-file", type=str, dest="inputfile", help="Log-file to be parsed", metavar="PATH")
     parser.add_argument("-o", "--ouput-path", type=str, dest="outputpath", help="Path to directory where all data is written (Default is a subdirectory 'analysis' under where the input file is)", metavar="PATH")
 
-    parser.add_argument("-p", "--plates", default=4, type=int, dest="plates", help="The number of plates in the fixture", metavar="N")
-    parser.add_argument("-m", "--matrices", dest="matrices", help="The pinning matrices for each plate position in the order set by the fixture config file.", metavar="(X,Y):(X,Y)...(X,Y)")
+    #parser.add_argument("-p", "--plates", default=4, type=int, dest="plates", help="The number of plates in the fixture", metavar="N")
+    parser.add_argument("-m", "--matrices", dest="matrices", help="The pinning matrices for each plate position in the order set by the fixture config", metavar="(X,Y):(X,Y)...(X,Y)")
 
     parser.add_argument("-w", "--watch-position", dest="graph_watch", help="The position of a colony to track.", metavar="PLATE:X:Y", type=str)
 
@@ -646,14 +659,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     
-    if args.matrices == None:
-     
-        pm = [(16,24), (16,24), (16,24), (16,24)]
-
-    else:
+    if args.matrices is not None:
 
         pm = args.matrices.split(':')
         pm = map(eval, pm)
+    else:
+
+        pm = None
 
     if args.grid_times != None:
 
@@ -697,11 +709,11 @@ if __name__ == "__main__":
         if len(args.graph_watch) <> 3:
             parser.error('Bad specification of watched colony')
 
-        if args.graph_watch[0] < args.plates:
-            if not(0 <= args.graph_watch[1] <= pm[args.graph_watch[0]][0] and 0 <= args.graph_watch[2] <= pm[args.graph_watch[0]][1]):
-                parser.error('The watched colony position is out of bounds (range: (0, 0)) - ' + str(pm[args.graph_watch[1]]) + ').')
-        else:
-            parser.error('The watched colony position has a plate number that is too high (max: ' + str(args.plates-1) + ').')
+        #if args.graph_watch[0] < args.plates:
+            #if not(0 <= args.graph_watch[1] <= pm[args.graph_watch[0]][0] and 0 <= args.graph_watch[2] <= pm[args.graph_watch[0]][1]):
+                #parser.error('The watched colony position is out of bounds (range: (0, 0)) - ' + str(pm[args.graph_watch[1]]) + ').')
+        #else:
+            #parser.error('The watched colony position has a plate number that is too high (max: ' + str(args.plates-1) + ').')
 
     try:
         fh = open(args.inputfile,'r')
@@ -726,8 +738,8 @@ if __name__ == "__main__":
 
         #fh.close()
 
-    if len(pm) == args.plates:    
-        analyse_project(args.inputfile, output_path, pm, args.graph_watch, args.supress, True, False, False, grid_times=grid_times)
-    else:
-        parser.error("Missmatch between number of plates specified and the number of matrices specified.")
+    #if len(pm) == args.plates:    
+    analyse_project(args.inputfile, output_path, pm, args.graph_watch, args.supress, True, False, False, grid_times=grid_times)
+    #else:
+        #parser.error("Missmatch between number of plates specified and the number of matrices specified.")
 

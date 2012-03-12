@@ -779,3 +779,64 @@ class Fixture_GUI(gtk.Frame):
 
         return False
 
+    def get_all_fixtures(self):
+
+        file_ending = '.config'
+        expected_keys = ('grayscale', 'marking_', 'marker_count', 
+            'marker_path', 'plate_', 'marking_center_of_mass')
+        config_files = []
+
+        try:
+            for filename in os.listdir(self._fixture_config_root):
+
+                if len(filename) > len(file_ending) and \
+                    filename[-len(file_ending):]:
+
+                    config_files.append(filename)
+        except:
+            return []
+
+        good_configs = []
+        for c_path in config_files:
+
+            good_c = True
+            full_path = self._fixture_config_root + os.sep + c_path
+            try:
+                fs = open(full_path, 'r')
+            except:
+                good_c = False
+
+            if good_c:
+
+                c_dict = {}
+                for key in expected_keys:
+                    c_dict[key] = 0
+
+                for line in fs:
+
+                    key = line.split("\t")[0]
+
+                    for e_key in expected_keys:
+
+                        if len(key) >= len(e_key) and key[:len(e_key)] == e_key:
+
+                            c_dict[e_key] += 1
+
+                c_dict['marking_'] -= c_dict['marking_center_of_mass']
+
+                fs.close()
+
+                for i in c_dict.values():
+                    if i < 1:
+                        good_c = False
+                
+                if c_dict['marking_'] < 3:
+                    good_c = False
+
+                if good_c:
+
+                    good_configs.append((\
+                        c_path[:-len(file_ending)].replace('_',' '), full_path,
+                        c_dict['plate_']))
+
+        return good_configs

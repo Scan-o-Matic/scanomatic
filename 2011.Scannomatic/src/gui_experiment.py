@@ -19,7 +19,7 @@ pygtk.require('2.0')
 
 import gtk, pango
 import gobject
-import os, os.path, sys
+import os, os.path, sys, shutil
 import re
 import time
 import types
@@ -56,7 +56,7 @@ else:
 
 
 class Scanning_Experiment(gtk.Frame):
-    def __init__(self, owner, parent_window, scanner, interval, counts, prefix, description, root, gtk_target, native=True):
+    def __init__(self, owner, parent_window, scanner, interval, counts, prefix, description, root, gtk_target, native=True, matrices = None, fixture="fixture_a"):
 
         self.USE_CALLBACK = owner.USE_CALLBACK
 
@@ -74,8 +74,10 @@ class Scanning_Experiment(gtk.Frame):
         gtk.Frame.__init__(self, prefix)
 
         self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
-        self.f_settings = fixture_settings.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
+        self.f_settings = fixture_settings.Fixture_Settings(\
+            self._fixture_config_root, fixture=fixture)
 
+        self._matrices = matrices
         self._scanner_id = None #should be connected to vairable later: scanner
         self._interval_time = float(interval)
         self._iterations_max = int(counts)
@@ -85,7 +87,6 @@ class Scanning_Experiment(gtk.Frame):
         self._last_rejected = -1
         self._description = description
         self._subprocesses = []
-
         self._logFile = self._root + os.sep + self._prefix + os.sep + self._prefix + ".log"
         self._heatMapPath = self._root + os.sep + self._prefix + os.sep + "progress.png"
 
@@ -162,7 +163,17 @@ class Scanning_Experiment(gtk.Frame):
         self._gtk_target.pack_start(self, False, False, 20)
 
         if continue_load:
-            self.log_file({'Prefix':prefix,'Description':description,'Interval':self._interval_time, 'Measurments':counts, 'Start Time':time.time()},append=False)
+            try:
+                shutil.copy(self.f_settings.conf_location,
+                    self._root + os.sep + self._prefix + os.sep + fixture + ".config") 
+                
+            except:
+                self.DMS('ERROR', 'Could not make a local copy of fixture settings file, probably the template file will be used in analysis. Lets hope no-one fiddles with it', level=1001)
+        
+            self.log_file({'Prefix':prefix,'Description':description,
+                'Interval':self._interval_time, 'Measurments':counts, 
+                'Start Time':time.time(), 'Pinning Matrices':self._matrices, 'Fixture':fixture},
+                append=False)
             gobject.timeout_add(30, self.running_Experiment) 
             gobject.timeout_add(1000*60, self.running_timer)
         else:
@@ -326,6 +337,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
         gtk.Frame.__init__(self, "NEW SET-UP EXPERIMENT")
 
         self._GUI_updating = False
+        self._owner = owner
         self.DMS = owner.DMS
 
         vbox2 = gtk.VBox(False, 0)
@@ -409,18 +421,40 @@ class Scanning_Experiment_Setup(gtk.Frame):
         #scanner_settings = Scanner_Settings(scanner=None, scanners_manager="twain", SM_HWND=0)
         #scanner_settings.show()
         #vbox2.pack_start(scanner_settings, False, False, 2)
-        
+
+        vbox3 = gtk.VBox()
+
+        frame = gtk.Frame('Fixture settings')
+        frame.add(vbox3)
+
         hbox = gtk.HBox()
-        hbox.show()
+        vbox3.pack_start(hbox,False,False, 10)
+
+        self.fixture = gtk.combo_box_new_text()
+        self.fixture.connect("changed", self.set_fixture)
+        hbox.pack_start(self.fixture, False, False, 2)
+        
 
         button = gtk.Button("See plate positions on fixture")
+        #Change this...
         button.connect("clicked", owner.config_fixture,'view')
-        button.show()
         hbox.pack_start(button, False, False, 2)
+
+        self.plate_pinnings = gtk.HBox()
+        vbox3.pack_start(self.plate_pinnings,False, False, 2)
+        self.plate_matrices = []
+
+        vbox2.pack_start(frame,False, False, 2)
+
+        self.pinning_matrices = {'8 x 12 (96)':(8,12), 
+            '16 x 24 (384)': (16,24), 
+            '32 x 48 (1536)': (32,48)}
+        self.set_fixture()
+
+        hbox = gtk.HBox()
 
         button = gtk.Button("Start experiment")
         button.connect("clicked", owner.experiment_Start_New)
-        button.show()
         hbox.pack_start(button, False, False, 2)
         vbox2.pack_start(hbox, False, False, 2)
         
@@ -430,7 +464,100 @@ class Scanning_Experiment_Setup(gtk.Frame):
         self.experiment_iteration = 0
 
         self.experiment_Duration_Calculation()
+        vbox2.show_all()
 
+    def reload_fixtures(self, active_text=None):
+
+        fixture_list = self._owner.fixture_config.get_all_fixtures()
+        self.fixture_positions = {}
+        for fixture in fixture_list:
+            self.fixture_positions[fixture[0]] = fixture[2]
+            need_input = True 
+
+            #Adding that fixture if needed
+            for i in xrange(len(self.fixture.get_model())):
+                cur_text = self.fixture.get_model()[i][0]
+                if cur_text == fixture[0]:
+                    need_input = False
+                    break
+
+            if need_input:
+                self.fixture.append_text(fixture[0])                
+
+        #Cleaining up if fixtures have been removed
+        start_len = len(self.fixture.get_model())
+        for i in xrange(start_len):
+            pos = start_len - i - 1
+            cur_text = self.fixture.get_model()[pos][0]
+            if not cur_text in self.fixture_positions.keys():
+                self.fixture.remove_text(pos)
+
+        #Setting the right entry again
+        found_text = False
+        start_len = len(self.fixture.get_model())
+        for i in xrange(start_len):
+            cur_text = self.fixture.get_model()[i][0]
+            if cur_text == active_text:
+                self.fixture.set_active(i)
+                found_text = True
+                break
+        if not found_text:
+            if start_len > 0 and active_text == None:
+        
+                self.fixture.set_active(0)
+            else:
+                self.fixture.set_active(-1)
+                
+
+    def set_fixture(self, widget=None, event=None, data=None):
+
+        if not self._GUI_updating:
+            self._GUI_updating = True
+            #Get info of what user has selected 
+            active = self.fixture.get_active()
+
+            if active < 0:
+                active_text = None
+            else:
+                active_text = self.fixture.get_model()[active][0]
+
+
+            self.reload_fixtures(active_text = active_text)
+
+            active = self.fixture.get_active()
+
+            if active < 0:
+                active_text = None
+            else:
+                active_text = self.fixture.get_model()[active][0]
+
+            #self.DMS('Fixture change',str(active_text),level = 1000)
+
+            self.plate_matrices = []
+
+            #Empty self.plate_pinnings since fixture may not be what it was:
+            for child in self.plate_pinnings.get_children():
+                self.plate_pinnings.remove(child)
+
+            if active >= 0:
+                slots = self.fixture_positions[active_text]
+
+                
+                for pos in xrange(slots):
+
+                    label = gtk.Label('Position %d' % pos)
+                    self.plate_pinnings.pack_start(label, False, False, 2)
+
+                    dropbox = gtk.combo_box_new_text()                   
+                    for m in self.pinning_matrices.keys():
+                        dropbox.append_text(m)
+                    dropbox.set_active(0)
+                    self.plate_matrices.append(dropbox)
+                    self.plate_pinnings.pack_start(dropbox, False, False, 2)
+                    
+                self.plate_pinnings.show_all()
+
+            self._GUI_updating = False
 
     def select_experiment_root(self, widget=None, event=None, data=None):
         newroot = gtk.FileChooserDialog(title="Select new experiment root", action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, 

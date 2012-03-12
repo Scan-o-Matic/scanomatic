@@ -905,6 +905,12 @@ class Analyse_One(gtk.Frame):
 
         features = cell.get_analysis(no_detect=True)
 
+        ###DEBUG CODE
+
+        print features
+
+        ###DEBUG END
+
         blob = cell.get_item('blob')
         self.blob_filter = blob.filter_array
         self.blob_image = blob.grid_array

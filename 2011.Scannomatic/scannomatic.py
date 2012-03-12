@@ -287,14 +287,25 @@ class Application_Window():
     def experiment_Start_New(self, widget=None, event=None, data=None):
         self.experiment_layout.experiment_Duration_Calculation()
         self.experiment_layout.hide()
+
+        pinning_matrices = []
+        for matrix in self.experiment_layout.plate_matrices:
+            if matrix.get_active() >= 0:
+                pinning_matrices.append(self.experiment_layout.\
+                    pinning_matrices[matrix.get_active_text()])#get_model()\
+                    #[matrix.get_active()][0]])
+            else:
+                pinning_matrices.append(None)
+
         experiment.Scanning_Experiment(self, self._handle, "Scanner 1",          
-                                         self.experiment_layout.experiment_interval.get_text(),
-                                         self.experiment_layout.experiment_times.get_text(),
-                                         self.experiment_layout.experiment_name.get_text(),
-                                         self.experiment_layout.experiment_description.get_text(),
-                                         self.experiment_layout.experiment_root.get_text(),
-                                         self.running_experiments,
-                                         native=True)
+             self.experiment_layout.experiment_interval.get_text(),
+             self.experiment_layout.experiment_times.get_text(),
+             self.experiment_layout.experiment_name.get_text(),
+             self.experiment_layout.experiment_description.get_text(),
+             self.experiment_layout.experiment_root.get_text(),
+             self.running_experiments,
+             native=True, matrices = pinning_matrices,
+             fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_"))
 
 
     #

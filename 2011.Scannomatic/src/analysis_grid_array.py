@@ -449,32 +449,32 @@ class Grid_Array():
 
 
                     ###DEBUG CODE
-                    from matplotlib import pyplot as plt
-                    plt.clf()
-                    fig = plt.figure()
-                    ax = fig.add_subplot(221, title="Blob")
-                    fig.gca().imshow(self._grid_cells[row][column].\
-                        get_item('blob').filter_array)
-                    ax = fig.add_subplot(222, title ="Background")
-                    fig.gca().imshow(self._grid_cells[row][column].\
-                        get_item('background').filter_array)
-                    ax = fig.add_subplot(223, title = "Image")
-                    ax_im = fig.gca().imshow(self._grid_cells[row][column].\
-                        get_item('background').grid_array, vmin=0, vmax=3500,
-                        )
-                    fig.colorbar(ax_im)
-                    ax = fig.add_subplot(224, title = "Growth-curve")
-                    fig.gca().plot(self.track_times, self.track_values,'b-')
-                    self.track_times.append(self._identifier[0])
-                    self.track_values.append(self._features[row][column]\
-                        ['blob']['pixelsum']) 
-                    fig.gca().plot((self.track_times[-1],), (self.track_values[-1],),'ro')
-                    ax.set_yticklabels(("0","10^5","10^6"))
-                    ax.set_yticks((0,100000,1000000))
-                    plt.xlim(0, self.track_times[0])
-                    plt.ylim(0, max(self.track_values))
+                    #from matplotlib import pyplot as plt
+                    #plt.clf()
+                    #fig = plt.figure()
+                    #ax = fig.add_subplot(221, title="Blob")
+                    #fig.gca().imshow(self._grid_cells[row][column].\
+                        #get_item('blob').filter_array)
+                    #ax = fig.add_subplot(222, title ="Background")
+                    #fig.gca().imshow(self._grid_cells[row][column].\
+                        #get_item('background').filter_array)
+                    #ax = fig.add_subplot(223, title = "Image")
+                    #ax_im = fig.gca().imshow(self._grid_cells[row][column].\
+                        #get_item('background').grid_array, vmin=0, vmax=3500,
+                        #)
+                    #fig.colorbar(ax_im)
+                    #ax = fig.add_subplot(224, title = "Growth-curve")
+                    #fig.gca().plot(self.track_times, self.track_values,'b-')
+                    #self.track_times.append(self._identifier[0])
+                    #self.track_values.append(self._features[row][column]\
+                        #['blob']['pixelsum']) 
+                    #fig.gca().plot((self.track_times[-1],), (self.track_values[-1],),'ro')
+                    #ax.set_yticklabels(("0","10^5","10^6"))
+                    #ax.set_yticks((0,100000,1000000))
+                    #plt.xlim(0, self.track_times[0])
+                    #plt.ylim(0, max(self.track_values))
                     #ax.set_yscale('log', basey=2)
-                    fig.savefig("debug_cell_t" + ("%03d" % self._identifier[0]))
+                    #fig.savefig("debug_cell_t" + ("%03d" % self._identifier[0]))
                     ##END DEBUG CODE
 
 

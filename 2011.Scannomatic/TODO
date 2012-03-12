@@ -38,6 +38,10 @@
 
 --- GUI ---
 
+*** Fixture should respond to what fixture is selected in start experiment!
+
+*** Analysis One should allow for any space.
+
 *** Make experiment last until analysis of last image is done
 
 *** Extend functionality in fixture view (Gray-scale values)
