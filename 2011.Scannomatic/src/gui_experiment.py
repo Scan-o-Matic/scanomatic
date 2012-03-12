@@ -23,6 +23,7 @@ import os, os.path, sys, shutil
 import re
 import time
 import types
+from subprocess import call, Popen
 
 #
 # SCANNOMATIC LIBRARIES
@@ -77,6 +78,7 @@ class Scanning_Experiment(gtk.Frame):
         self.f_settings = fixture_settings.Fixture_Settings(\
             self._fixture_config_root, fixture=fixture)
 
+        self._analysis_running = False
         self._matrices = matrices
         self._scanner_id = None #should be connected to vairable later: scanner
         self._interval_time = float(interval)
@@ -327,9 +329,28 @@ class Scanning_Experiment(gtk.Frame):
         else:
             self._next_scan = None
             self._timer.set_text("")
-            self._measurement_label.set_text("Experiment complete")
+            self._measurement_label.set_text("Analysis will start shortly...")
             self._scanner.Terminate()
-            gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)          
+            gobject.timeout_add(1000*60*int(self._interval_time), self.running_Analysis)          
+
+    def running_Analysis(self):
+
+        if self._analysis_running:
+
+            if self._analysis_sub_proc.poll() != None:
+                self._analysis_log.close()
+                self._measurement_label.set_text("Experiment complete")
+                gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)          
+            else:
+                
+                gobject.timeout_add(1000*60*10, self.running_Analysis)
+        else:
+            self._analysis_running = True
+            self._analysis_log = open(self._root + os.sep + self._prefix + os.sep + ".analysis.log", 'w')
+            analysis_query = self.owner._program_code_root + \
+                "analysis.py -i %s -t -1" % (self._logFile)
+            self._analysis_sub_proc = Popen(analysis_query, stdout=self._analysis_log, shell=False)
+            gobject.timeout_add(1000*60*10, self.running_Analysis)
 
           
 class Scanning_Experiment_Setup(gtk.Frame):
