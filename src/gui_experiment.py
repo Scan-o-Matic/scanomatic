@@ -349,6 +349,7 @@ class Scanning_Experiment(gtk.Frame):
             self._analysis_log = open(self._root + os.sep + self._prefix + os.sep + ".analysis.log", 'w')
             analysis_query = self.owner._program_code_root + \
                 "analysis.py -i %s -t -1" % (self._logFile)
+            print analysis_query
             self._analysis_sub_proc = Popen(analysis_query, stdout=self._analysis_log, shell=False)
             gobject.timeout_add(1000*60*10, self.running_Analysis)
 
