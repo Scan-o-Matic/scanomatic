@@ -512,8 +512,8 @@ class Fixture_GUI(gtk.Frame):
         if result == gtk.RESPONSE_APPLY:
             self.fixture_image.set_text(newimg.get_filename())
             self.f_settings.image_path = newimg.get_filename()
-            self.fixture_image.cla()
-            self.fixture_image.gca().imshow(newimg.get_filename(), cmap=plt.cm.gray)
+            self.image_fig.cla()
+            self.image_fig.gca().imshow(newimg.get_filename(), cmap=plt.cm.gray)
             self.load_fixture_config()
             self.image_fig.canvas.draw()
         newimg.destroy()

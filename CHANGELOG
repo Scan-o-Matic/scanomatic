@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Corrected bug in fixture-gui
+
 *** Start experiment GUI now understands fixtures and the analysis script 
     by default use these to determine pinning matrices. A copy of the config 
     file as it was at the time of scanning is also copied to the directory.
