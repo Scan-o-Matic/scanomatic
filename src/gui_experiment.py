@@ -339,13 +339,13 @@ class Scanning_Experiment(gtk.Frame):
         if self._analysis_running:
 
             if self._analysis_sub_proc.poll() != None:
+                self._analysis_log.close()
                 self._measurement_label.set_text("Experiment complete")
                 gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)          
             else:
                 
                 gobject.timeout_add(1000*60*10, self.running_Analysis)
         else:
-            self._analysis_log.close()
             self._scanner.Terminate()
             self._timer.set_text("Analysis is running! (This may take several hours)")
             self._analysis_running = True
