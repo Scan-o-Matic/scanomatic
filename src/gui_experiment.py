@@ -315,41 +315,44 @@ class Scanning_Experiment(gtk.Frame):
             gobject.timeout_add(1000*30, self._callback)
 
     def running_Experiment(self, widget=None, event=None, data=None):
-        if self._iteration <= self._iterations_max:
-            self.update_gtk()
+        self.update_gtk()
+        if self._iteration < self._iterations_max:
             gobject.timeout_add(1000*60*int(self._interval_time), self.running_Experiment)
             self._next_scan = (time.time() + 60*self._interval_time)
-            self._timer.set_text("Scanning...")
-
-
-            self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + ".tiff"
-            self._power_manager.on()
-            gobject.timeout_add(1000*10, self.do_scan)
-            self._iteration += 1
         else:
-            self._next_scan = None
-            self._timer.set_text("")
-            self._measurement_label.set_text("Analysis will start shortly...")
-            self._scanner.Terminate()
             gobject.timeout_add(1000*60*int(self._interval_time), self.running_Analysis)          
+            self._next_scan = (time.time() + 60*self._interval_time)
+            self._measurement_label.set_text("Analysis will start shortly...")
+
+        self._timer.set_text("Scanning...")
+        self._scanner.next_file_name =  self._root + os.sep + self._prefix + \
+            os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + \
+            ".tiff"
+
+        self._power_manager.on()
+        gobject.timeout_add(1000*10, self.do_scan)
+
+        self._iteration += 1
 
     def running_Analysis(self):
 
         if self._analysis_running:
 
             if self._analysis_sub_proc.poll() != None:
-                self._analysis_log.close()
                 self._measurement_label.set_text("Experiment complete")
                 gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)          
             else:
                 
                 gobject.timeout_add(1000*60*10, self.running_Analysis)
         else:
+            self._analysis_log.close()
+            self._scanner.Terminate()
+            self._timer.set_text("Analysis is running! (This may take several hours)")
             self._analysis_running = True
             self._analysis_log = open(self._root + os.sep + self._prefix + os.sep + ".analysis.log", 'w')
-            analysis_query = self.owner._program_code_root + \
+            analysis_query = self.owner._program_code_root + os.sep + \
                 "analysis.py -i %s -t -1" % (self._logFile)
-            print analysis_query
+
             self._analysis_sub_proc = Popen(analysis_query, stdout=self._analysis_log, shell=False)
             gobject.timeout_add(1000*60*10, self.running_Analysis)
 
@@ -470,7 +473,8 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
         self.pinning_matrices = {'8 x 12 (96)':(8,12), 
             '16 x 24 (384)': (16,24), 
-            '32 x 48 (1536)': (32,48)}
+            '32 x 48 (1536)': (32,48),
+            '--Empty--': None}
         self.set_fixture()
 
         hbox = gtk.HBox()

@@ -441,6 +441,10 @@ class Grid_Analysis():
                 start_position_qualities.append(0)
             start_peak += 1
 
+        #If there simply isn't anything that looks good, the we need to stop here.
+        if len(start_position_qualities) == 0:
+            return None
+
         best_start_pos = int(np.asarray(start_position_qualities).argmax())
         #print start_position_qualities
         

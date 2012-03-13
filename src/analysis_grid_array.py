@@ -293,6 +293,9 @@ class Grid_Array():
                 print
 
             if best_fit_rows == None or best_fit_columns == None:
+
+                print "\n*** WARNING: Failed to detect grid on %s" % str(self._identifier)
+
                 self._best_fit_rows = None
                 self._best_fit_coulmns = None
                 return None
