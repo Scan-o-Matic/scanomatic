@@ -491,8 +491,12 @@ class Fixture_GUI(gtk.Frame):
     def marker_analysis(self, widget=None, event=None, data=None):
         analysis_img = self.f_settings.marker_analysis(fixture_setup=True)
         if analysis_img != None:
-            self.fixture_analysis_image.set_from_file(analysis_img)
-            self.fixture_scrolled_window.size_request()
+            self.fixture_analysis_image = plt_img.imread(analysis_img)
+            
+            self.image_fig.gca().imshow(self.fixture_analysis_image, cmap=plt.cm.gray)
+            self.load_fixture_config()
+
+            self.image_fig.canvas.draw()
         else:
             self.DMS("Error", "Image anaylsis failed", level = 1010)
 
@@ -512,9 +516,16 @@ class Fixture_GUI(gtk.Frame):
         if result == gtk.RESPONSE_APPLY:
             self.fixture_image.set_text(newimg.get_filename())
             self.f_settings.image_path = newimg.get_filename()
-            self.image_fig.cla()
-            self.image_fig.gca().imshow(newimg.get_filename(), cmap=plt.cm.gray)
-            self.load_fixture_config()
+            if os.path.isfile(self.f_settings.image_path):
+                self.fixture_analysis_image = plt_img.imread(self.f_settings.image_path)
+                self.image_fig.gca().imshow(fixture_settings.img_base.\
+                    Quick_Scale_To_im(self.f_settings.image_path), cmap=plt.cm.gray)
+                self.load_fixture_config()
+                self.DMS("Image", "Note that you really must run marker detection also", level=1000)
+            else:
+        
+                self.DMS("Image", "Could not find image", level=1000)
+
             self.image_fig.canvas.draw()
         newimg.destroy()
 
@@ -588,7 +599,7 @@ class Fixture_GUI(gtk.Frame):
                     drop_contents['welcome'] += 1
                 elif cur_text == drop_texts['grayscale']:
                     drop_contents['grayscale'] += 1
-                elif cur_text == drop_texts['plate'] % (drop_contents['plate'] + 1):
+                elif cur_text == drop_texts['plate'] % (drop_contents['plate']):
                     drop_contents['plate'] += 1
 
 
@@ -608,9 +619,9 @@ class Fixture_GUI(gtk.Frame):
 
             if plate_diffs > 0:
                 for i in xrange(plate_diffs):
-                    drop_contents['plate'] += 1
                     self.fixture_area_selection.append_text(\
                         drop_texts['plate'] % drop_contents['plate'])
+                    drop_contents['plate'] += 1
             elif plate_diffs < 0:                
                 for i in xrange(abs(plate_diffs)):
                     self.fixture_area_selection.remove_text(len(\
@@ -691,6 +702,9 @@ class Fixture_GUI(gtk.Frame):
             
             if cur_area != None:
                 self.set_fixture_overlay(cur_area, text)
+            else:
+
+                self.change_fixture_overlay(by_name=text, area=cur_area)
 
         self._fixture_gui_updating = False
 

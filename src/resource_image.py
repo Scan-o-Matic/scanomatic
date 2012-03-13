@@ -28,6 +28,18 @@ import matplotlib.pyplot as plt
 #
 
 def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
+
+    small_im = Quick_Scale_To_im(source_path, source_dpi=source_dpi, 
+        target_dpi=target_dpi)
+
+    try:
+        small_im.save(target_path)
+    except:
+        print "*** Error: Could not save scaled down image"
+        return -1
+
+def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
+
     try:
         im = Image.open(source_path)
     except:
@@ -36,11 +48,7 @@ def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
 
     small_im = im.resize((im.size[0]*target_dpi/source_dpi,im.size[1]*target_dpi/source_dpi), Image.BILINEAR)
 
-    try:
-        small_im.save(target_path)
-    except:
-        print "*** Error: Could not save scaled down image"
-        return -1
+    return small_im
 
 def Quick_Invert_To_Tiff(source_path, target_path):
     import PIL.ImageOps
