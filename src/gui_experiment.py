@@ -78,8 +78,14 @@ class Scanning_Experiment(gtk.Frame):
         self.f_settings = fixture_settings.Fixture_Settings(\
             self._fixture_config_root, fixture=fixture)
 
-        self._analysis_running = False
         self._matrices = matrices
+        self._watch_colony = None
+        self._supress_other = False
+        self._watch_time = '-1'
+
+        self._analysis_output = 'analysis'
+
+        self._analysis_running = False
         self._scanner_id = None #should be connected to vairable later: scanner
         self._interval_time = float(interval)
         self._iterations_max = int(counts)
@@ -89,7 +95,7 @@ class Scanning_Experiment(gtk.Frame):
         self._last_rejected = -1
         self._description = description
         self._subprocesses = []
-        self._logFile = self._root + os.sep + self._prefix + os.sep + self._prefix + ".log"
+        self._analysis_log_file_path = self._root + os.sep + self._prefix + os.sep + self._prefix + ".log"
         self._heatMapPath = self._root + os.sep + self._prefix + os.sep + "progress.png"
 
         #HACK
@@ -183,9 +189,9 @@ class Scanning_Experiment(gtk.Frame):
             gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)
 
     def _quality_OK(self):
-        log_reader.load_data(self._logFile)
+        log_reader.load_data(self._analysis_log_file_path)
         if log_reader.count_histograms() > 1:
-            A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._logFile, manual_value=None, max_value=255, save_path=self._heatMapPath)
+            A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._analysis_log_file_path, manual_value=None, max_value=255, save_path=self._heatMapPath)
 
             #Here should ask image analysis module to test grayscales
 
@@ -194,9 +200,9 @@ class Scanning_Experiment(gtk.Frame):
 
     def check_quality(self):
         #OUTDATED QUALITY CHECK, SHOULD NOT BE HERE EITHER
-        log_reader.load_data(self._logFile)
+        log_reader.load_data(self._analysis_log_file_path)
         if log_reader.count_histograms() > 1:
-            A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._logFile, manual_value=None, max_value=255, save_path=self._heatMapPath)
+            A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._analysis_log_file_path, manual_value=None, max_value=255, save_path=self._heatMapPath)
             if len(A) > 0:
                 if (log_reader.count_histograms()-1) == A[len(A)-1]['Source Index']:
                     if A[len(A)-1]['Source Index'] != self._last_rejected:
@@ -215,9 +221,9 @@ class Scanning_Experiment(gtk.Frame):
     def log_file(self, message, append=True):
 
         if append:            
-            fs = open(self._logFile,'a')
+            fs = open(self._analysis_log_file_path,'a')
         else:
-            fs = open(self._logFile,'w')
+            fs = open(self._analysis_log_file_path,'w')
         message = str(message)
         fs.write(message+"\n\r")
         fs.close()
@@ -275,7 +281,7 @@ class Scanning_Experiment(gtk.Frame):
                     #s = self.f_settings.A.get_subsection(a)
                     gs_data[-1]['plate_' + str(i) + '_area'] = list(a)
 
-            fs = open(self._logFile,'a')
+            fs = open(self._analysis_log_file_path,'a')
             log_maker.make_entries(fs, file_list=file_list, extra_info=gs_data, verboise=False, quiet=False)
             fs.close()
             self.DMS("Analysis","Done. Nothing more to do for that image...", level=1)
@@ -336,25 +342,8 @@ class Scanning_Experiment(gtk.Frame):
 
     def running_Analysis(self):
 
-        if self._analysis_running:
-
-            if self._analysis_sub_proc.poll() != None:
-                self._analysis_log.close()
-                self._measurement_label.set_text("Experiment complete")
-                gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)          
-            else:
-                
-                gobject.timeout_add(1000*60*10, self.running_Analysis)
-        else:
-            self._scanner.Terminate()
-            self._timer.set_text("Analysis is running! (This may take several hours)")
-            self._analysis_running = True
-            self._analysis_log = open(self._root + os.sep + self._prefix + os.sep + ".analysis.log", 'w')
-            analysis_query = self.owner._program_code_root + os.sep + \
-                "analysis.py -i %s -t -1" % (self._logFile)
-
-            self._analysis_sub_proc = Popen(analysis_query, stdout=self._analysis_log, shell=False)
-            gobject.timeout_add(1000*60*10, self.running_Analysis)
+        self._owner.analysis_Start_New(widget = self)
+        gobject.timeout_add(1000*60*4, self.destroy)          
 
           
 class Scanning_Experiment_Setup(gtk.Frame):

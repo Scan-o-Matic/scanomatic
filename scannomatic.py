@@ -45,6 +45,7 @@ import src.gui_experiment as experiment
 import src.gui_fixture as fixture
 import src.gui_analysis as analysis
 import src.gui_settings as settings
+import src.gui_project as project
 
 #KNOWN ISSUES ETC.
 #
@@ -78,6 +79,7 @@ class Application_Window():
             <menuitem action="Quit"/>
         </menu>
         <menu action="Analysis">
+            <menuitem action="Analyse Project"/>
             <menuitem action="Analyse One Image"/>
         </menu>
         <menu action="Settings">
@@ -150,6 +152,7 @@ class Application_Window():
                 ("Acquire One Image", None, "Acquire One Image", None, None, self.experiment_New_One_Scan),
                 ("Quit",    None,   "Quit",   None,  None,   self.close_application),
                 ("Analysis",   None,   "Analysis",    None,    None,   None),
+                ("Analyse Project", None, "Analyse Project", None, None, self.menu_Project),
                 ("Analyse One Image", None, "Analyse One Image", None, None, self.menu_Analysis),
                 ("Settings", None, "Settings", None, None,   None),
                 ("Application Settings", None, "Application Settings", None, None, self.menu_Settings),
@@ -192,6 +195,11 @@ class Application_Window():
         self.analyse_one = analysis.Analyse_One(self)
         self.vbox.pack_start(self.analyse_one, False, False, 2)
 
+        #Analyse Project GUI
+        self.DMS("Program startup","Initialising project analysis GUI",100)
+        self.analyse_project = project.Project_Analysis_Setup(self)
+        self.vbox.pack_start(self.analyse_project, False, False, 2)
+            
         #Application Settings GUI
         self.DMS("Program startup","Initialising settings GUI",100)
         self.app_settings = settings.Config_GUI(self, 'main.config')
@@ -306,6 +314,23 @@ class Application_Window():
              self.running_experiments,
              native=True, matrices = pinning_matrices,
              fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_"))
+
+    #
+    #   PROJECT ANALYSIS FUNCTIONS
+    #
+    def menu_Project(self, widget=None, event=None, data=None):
+        self.DMS('Project Analysis','Activated')
+        self.show_config(self.analyse_project)
+        #self.analyse_one.f_settings.load()
+
+    def analysis_Start_New(self, widget=None, event=None, data=None):
+        
+        project.Project_Analysis_Running(self, self.running_experiments, 
+            widget._analysis_log_file_path, widget._matrices, 
+            watch_colony = widget._watch_colony, 
+            supress_other = widget._supress_other, 
+            watch_time = widget._watch_time,
+            analysis_output=widget._analysis_output)
 
 
     #
