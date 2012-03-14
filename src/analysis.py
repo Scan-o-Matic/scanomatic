@@ -180,12 +180,15 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         return False
 
     plate_position_keys = []
-    plates = len(pinning_matrices)
 
-    for i in xrange(plates):
-        if supress_analysis != True or graph_watch[0] == i:
+    for i in xrange(len(pinning_matrices)):
+        if (supress_analysis != True or graph_watch[0] == i) and\
+            pinning_matrices[i] is not None:
+
             plate_position_keys.append("plate_" + str(i) + "_area")
 
+    plates = len(plate_position_keys)
+ 
     if supress_analysis == True:
         project_image = Project_Image([pinning_matrices[graph_watch[0]]])
         graph_watch[0] = 0
@@ -514,9 +517,10 @@ class Project_Image():
         self.R = []
 
         for a in xrange(len(pinning_matrices)):
-            self._grid_arrays.append(grid_array.Grid_Array(self, (a,), pinning_matrices[a]))
-            self.features.append(None)
-            self.R.append(None)
+            if pinning_matrices[a] is not None:
+                self._grid_arrays.append(grid_array.Grid_Array(self, (a,), pinning_matrices[a]))
+                self.features.append(None)
+                self.R.append(None)
 
     def get_analysis(self, im_path, features, grayscale_values, \
             use_fallback=False, use_otsu=True, watch_colony=None, \
