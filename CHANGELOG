@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Implemented a project analysis gui
+
 *** Corrected bug in fixture-gui
 
 *** Start experiment GUI now understands fixtures and the analysis script 
