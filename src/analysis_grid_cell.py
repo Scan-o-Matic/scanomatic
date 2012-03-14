@@ -115,7 +115,10 @@ class Grid_Cell():
 
         self.data_source = data_source
 
+        self._previous_image = None
+
         self._analysis_items = {}
+
         self._analysis_item_names = ('blob','background','cell')
         for item_name in self._analysis_item_names:
             self._analysis_items[item_name] = None
@@ -264,6 +267,7 @@ class Grid_Cell():
                         self._analysis_items[item_name].features
             else:
                 features_dict[item_name] = None
+
 
         return features_dict       
 

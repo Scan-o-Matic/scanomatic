@@ -300,10 +300,14 @@ class Grid_Analysis():
 
         if frequency is None:
             frequency = self.get_signal_frequency(measures)
+       
+       
+        if np.isnan(frequency):
+            return None
 
         dist_results = []
 
-
+        
         for offset in xrange(int(np.ceil(frequency))):
 
             quality = [] 
@@ -411,7 +415,9 @@ class Grid_Analysis():
         m_array = np.asarray(measures)
         mq_array = np.asarray(measures_qualities)
 
-        
+        if offset is None:
+            return None
+ 
         start_peak = 0
         start_position_qualities = []
         #print offset, frequency, n, start_peak, max_value

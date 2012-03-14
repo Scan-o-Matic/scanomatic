@@ -108,7 +108,9 @@ class Project_Analysis_Running(gtk.Frame):
                 gobject.timeout_add(1000*60*3, self.destroy)          
             else:
                 
-                gobject.timeout_add(1000*60*10, self._run)
+                self._gui_timer = gtk.Label("Run-time: %d" % int((time.time() \
+                    - float(self._start_time)) / 60))
+                gobject.timeout_add(1000*60*2, self._run)
         else:
             self._gui_status_text.set_text("Analysis is running! (This may take several hours)")
             self._analysis_running = True

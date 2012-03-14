@@ -276,7 +276,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 fh.write(str(0) + '</scan-valid>')
                 fh.write('</scan>')
         else:
-            if graph_watch != None:
+            if graph_watch != None and  project_image.watch_grid_size != None:
 
                 x_labels.append(image_pos)
                 pict_size = project_image.watch_grid_size

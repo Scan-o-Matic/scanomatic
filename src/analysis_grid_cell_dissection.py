@@ -332,6 +332,21 @@ class Blob(Cell_Item):
     # GET functions
     #
 
+    def get_diff(self, other_img, other_blob):
+        """
+            get_diff withdraws the other_img values from current image
+            (a copy of it) superimposoing them using each blob-detection
+            as reference point
+
+        """
+
+
+        cur_center = center_of_mass(self.filter_array)
+        other_center = center_of_mass(other_blob)
+        offset = np.round(np.asarray(other_center) - np.asarray(cur_center))
+
+        return self.get_array_subtraction(other_img, self.grid_array, offset)
+
     def get_ideal_circle(self, c_array = None):
 
         """
@@ -394,11 +409,25 @@ class Blob(Cell_Item):
 
         perfect_blob = self.get_round_kernel(radius = radius)
 
-        o1_low = round(center_of_mass_position[0] - perfect_blob.shape[0] / 2.0)
-        o2_low = round(center_of_mass_position[1] - perfect_blob.shape[1] / 2.0)
+        offset = np.round(center_of_mass_position - perfect_blob.shape / 2.0)
 
-        o1_high = o1_low + perfect_blob.shape[0]
-        o2_high = o2_low + perfect_blob.shape[1]
+        diff_array =  self.get_array_subtraction(c_array, perfect_blob, offset)
+
+        ###DEBUG CIRCULARITY
+        #if self.grid_array.max() < 1000:
+            #from matplotlib import pyplot as plt
+            #plt.imshow(diff_array)
+            #plt.show()
+        ###DEBUG END
+
+        return diff_array.sum() / np.sqrt( c_array.sum() )
+
+    def get_array_subtraction(self, A1, A2, offset):
+        o1_low = offset[0] 
+        o2_low = offset[1]
+
+        o1_high = o1_low + A2.shape[0]
+        o2_high = o2_low + A2.shape[1]
 
         if o1_low < 0:
             b1_low = -o1_low
@@ -412,31 +441,23 @@ class Blob(Cell_Item):
         else:
             b2_low = 0
    
-        if o1_high > c_array.shape[0]:
-            b1_high = perfect_blob.shape[0] - (o1_high - c_array.shape[0])
-            o1_high = c_array.shape[0]
+        if o1_high > A1.shape[0]:
+            b1_high = A2.shape[0] - (o1_high - A1.shape[0])
+            o1_high = A1.shape[0]
         else:
-            b1_high = perfect_blob.shape[0]
-        if o2_high > c_array.shape[1]:
-            b2_high = perfect_blob.shape[1] - (o2_high - c_array.shape[1])
-            o2_high = c_array.shape[1]
+            b1_high = A2.shape[0]
+        if o2_high > A1.shape[1]:
+            b2_high = A2.shape[1] - (o2_high - A1.shape[1])
+            o2_high = A1.shape[1]
         else:
-            b2_high = perfect_blob.shape[1]
+            b2_high = A2.shape[1]
 
-        diff_array = c_array.copy()
+        diff_array = A1.copy()
 
-        diff_array[o1_low:o1_high,o2_low:o2_high] -= \
-            perfect_blob[b1_low:b1_high,b2_low:b2_high]
+        diff_array[o1_low:o1_high,o2_low:o2_high] -= A2[b1_low:b1_high,b2_low:b2_high]
 
+        return diff_array
 
-        ###DEBUG CIRCULARITY
-        #if self.grid_array.max() < 1000:
-            #from matplotlib import pyplot as plt
-            #plt.imshow(diff_array)
-            #plt.show()
-        ###DEBUG END
-
-        return diff_array.sum() / np.sqrt( c_array.sum() )
 
 
     #

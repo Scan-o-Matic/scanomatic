@@ -55,6 +55,8 @@ class Grid_Array():
         self._best_fit_rows = None
         self._best_fit_coulmns = None
 
+        self._old_blob_img = None 
+        self._old_blob_filter = None 
         self.track_times = []
         self.track_values = []
 
@@ -451,34 +453,48 @@ class Grid_Array():
                     ###DEBUG END
 
 
-                    ###DEBUG CODE
-                    #from matplotlib import pyplot as plt
+                    ###DEBUG CODE FOR ANIME
+                    from matplotlib import pyplot as plt
                     #plt.clf()
-                    #fig = plt.figure()
+                    fig = plt.figure()
+                    blob = self._grid_cells[row][column].get_item('blob')
                     #ax = fig.add_subplot(221, title="Blob")
-                    #fig.gca().imshow(self._grid_cells[row][column].\
-                        #get_item('blob').filter_array)
+                    #fig.gca().imshow(blob.filter_array)
                     #ax = fig.add_subplot(222, title ="Background")
                     #fig.gca().imshow(self._grid_cells[row][column].\
                         #get_item('background').filter_array)
-                    #ax = fig.add_subplot(223, title = "Image")
-                    #ax_im = fig.gca().imshow(self._grid_cells[row][column].\
-                        #get_item('background').grid_array, vmin=0, vmax=3500,
-                        #)
-                    #fig.colorbar(ax_im)
-                    #ax = fig.add_subplot(224, title = "Growth-curve")
-                    #fig.gca().plot(self.track_times, self.track_values,'b-')
+                    ax = fig.add_subplot(121, title = "Image")
+                    ax_im = fig.gca().imshow(blob.grid_array, vmin=0, 
+                        vmax=3500)
+                    fig.colorbar(ax_im)
+
+                    if self._old_blob_img is not None:
+                        
+                        ax = fig.add_subplot(122, title = "Delta Cells Image")
+                        ax_im = fig.gca().imshow(blob.get_diff(\
+                            self._old_blob_img,
+                            self._old_blob_filter), 
+                            vmin=-500, vmax=500, cmap=plt.cm.RdYlGn)
+                        fig.colorbar(ax_im)
+                    
+                    self._old_blob_img = blob.grid_array.copy()
+                    self._old_blob_filter = blob.filter_array.copy()
+
+                    #ax = fig.add_subplot(313, title = "Growth-curve")
+                    #fig.gca().semilogy(self.track_times, self.track_values,
+                    #    'b-', basey=2)
                     #self.track_times.append(self._identifier[0])
                     #self.track_values.append(self._features[row][column]\
-                        #['blob']['pixelsum']) 
-                    #fig.gca().plot((self.track_times[-1],), (self.track_values[-1],),'ro')
-                    #ax.set_yticklabels(("0","10^5","10^6"))
-                    #ax.set_yticks((0,100000,1000000))
+                    #    ['blob']['pixelsum']) 
+                    #fig.gca().semilogy((self.track_times[-1],), (
+                    #    self.track_values[-1],),'ro', basey=2)
+                    #ax.set_yticklabels(("0","2^5","1^6"))
+                    #ax.set_yscale('log', basey=2)
+                    #ax.set_yticks((0,5,6))
                     #plt.xlim(0, self.track_times[0])
                     #plt.ylim(0, max(self.track_values))
-                    #ax.set_yscale('log', basey=2)
-                    #fig.savefig("debug_cell_t" + ("%03d" % self._identifier[0]))
-                    ##END DEBUG CODE
+                    fig.savefig("debug_cell_t%03d" % self._identifier[0])
+                    ###END DEBUG CODE
 
 
                     if watch_colony != None:
