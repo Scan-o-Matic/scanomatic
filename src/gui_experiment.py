@@ -342,7 +342,7 @@ class Scanning_Experiment(gtk.Frame):
 
     def running_Analysis(self):
 
-        self._owner.analysis_Start_New(widget = self)
+        self.owner.analysis_Start_New(widget = self)
         gobject.timeout_add(1000*60*4, self.destroy)          
 
           
