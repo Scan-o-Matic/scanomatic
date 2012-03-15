@@ -129,7 +129,8 @@ class Project_Analysis_Running(gtk.Frame):
 
             self.DMS("Executing", str(analysis_query), level=110)
 
-            self._analysis_sub_proc = Popen(analysis_query, stdout=self._analysis_log, shell=False)
+            self._analysis_sub_proc = Popen(map(str, analysis_query), 
+                stdout=self._analysis_log, shell=False)
             gobject.timeout_add(1000*60*10, self._run)
 
           

@@ -23,7 +23,6 @@ import os, os.path, sys, shutil
 import re
 import time
 import types
-from subprocess import call, Popen
 
 #
 # SCANNOMATIC LIBRARIES
@@ -342,6 +341,7 @@ class Scanning_Experiment(gtk.Frame):
 
     def running_Analysis(self):
 
+        self._matrices = None
         self.owner.analysis_Start_New(widget = self)
         gobject.timeout_add(1000*60*4, self.destroy)          
 

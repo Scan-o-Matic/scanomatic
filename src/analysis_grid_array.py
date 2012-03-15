@@ -455,8 +455,10 @@ class Grid_Array():
 
                     ###DEBUG CODE FOR ANIME
                     #from matplotlib import pyplot as plt
+                    #import matplotlib.gridspec as gridspec
                     #plt.clf()
                     #fig = plt.figure()
+                    #gs = gridspec.GridSpec(2, 2)
                     #blob = self._grid_cells[row][column].get_item('blob')
 
                     #ax = fig.add_subplot(221, title="Blob")
@@ -464,20 +466,39 @@ class Grid_Array():
                     #ax = fig.add_subplot(222, title ="Background")
                     #fig.gca().imshow(self._grid_cells[row][column].\
                         #get_item('background').filter_array)
-                    #ax = fig.add_subplot(121, title = "Image")
+
+                    #ax = fig.add_subplot(gs[0,0], title = "Image t=%d" % self._identifier[0])
                     #ax_im = fig.gca().imshow(blob.grid_array, vmin=0, 
                         #vmax=3500)
-                    #fig.colorbar(ax_im)
+                    #ax.get_xaxis().set_visible(False)
+                    #ax.get_yaxis().set_visible(False)
+                    #fig.colorbar(ax_im,ax)
 
                     #if self._old_blob_img is not None:
                         
-                        #ax = fig.add_subplot(122, title = "Delta Cells Image")
-                        #ax_im = fig.gca().imshow(blob.get_diff(\
-                            #self._old_blob_img,
-                            #self._old_blob_filter), 
-                            #vmin=-500, vmax=500, cmap=plt.cm.RdYlGn)
-                        #fig.colorbar(ax_im)
-                    
+                        #ax = fig.add_subplot(gs[1,0], title = "Delta Cells Image")
+                        #blob_diff = blob.get_diff(self._old_blob_img,
+                            #self._old_blob_filter)
+                        #ax_im = fig.gca().imshow(blob_diff,\
+                            #vmin=-700, vmax=700, cmap=plt.cm.RdYlGn)
+                        #ax.get_xaxis().set_visible(False)
+                        #ax.get_yaxis().set_visible(False)
+                        #fig.colorbar(ax_im) #, fraction=2)
+                   
+                        #ax = fig.add_subplot(gs[:,1], title = "Onion Avg Residuals") 
+                        #onion = blob.get_onion_values(blob_diff, 
+                            #self._old_blob_filter,
+                            #2)
+                        #ax_im = fig.gca().plot(np.arange(onion.shape[0]),
+                            #onion[:,0]/onion[:,1].astype(np.float64), 
+                            #'g-')
+                        #ax.set_xlabel('Onion layer index (0 = center of blob)')
+                        #ax.set_ylabel('Avg residual(t+1 - t')
+                        #ax.set_autoscalex_on(False)
+                        #ax.set_autoscaley_on(False)
+                        #ax.set_ylim((-150,300))
+                        #ax.set_xlim((0,15))
+
                     #self._old_blob_img = blob.grid_array.copy()
                     #self._old_blob_filter = blob.filter_array.copy()
 

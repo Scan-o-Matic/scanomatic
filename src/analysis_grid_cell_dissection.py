@@ -332,6 +332,31 @@ class Blob(Cell_Item):
     # GET functions
     #
 
+    def get_onion_values(self, A, A_filter, layer_size):
+        """
+            get_onion_value peals off bits of the A_filter and sums up
+            what is left in A until nothing rematins in A_filter. At each
+            layer it subtracts itself from the previous to become an onion.
+            It returns a 2D array of sum and pixel count pairs.
+            It leaves all sent parameters untouched...
+
+
+        """
+        onion_filter = A_filter.copy()
+        onion = []
+
+        while onion_filter.sum() > 0:
+
+            onion.insert(0,(np.sum(A*onion_filter), onion_filter.sum()))
+            if len(onion) > 1:
+                onion[1] = (onion[1][0] - onion[0][0], onion[1][1] - onion[0][1])
+
+            onion_filter = binary_erosion(onion_filter, iterations=layer_size)
+            
+        return np.asarray(onion)
+
+        
+
     def get_diff(self, other_img, other_blob):
         """
             get_diff withdraws the other_img values from current image
