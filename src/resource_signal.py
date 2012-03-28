@@ -75,7 +75,7 @@ def get_signal_frequency(measures):
     """
 
     tmp_array = np.asarray(measures)
-
+    #print "F", tmp_array
     return np.median( tmp_array[1:] - tmp_array[:-1] ) 
 
 
@@ -98,19 +98,22 @@ def get_best_offset(n, measures, frequency=None):
 
     """
 
-    if frequency is None:
-        frequency = get_signal_frequency(measures)
-   
-   
-    if np.isnan(frequency):
-        return None
 
     dist_results = []
 
     if n > measures.size:
         n = measures.size
 
-    m_where = np.where(measures==True)[0]
+    if measures.max() == 1:
+        m_where = np.where(measures==True)[0]
+    else:
+        m_where = measures
+
+    if frequency is None:
+        frequency = get_signal_frequency(measures)
+   
+    if np.isnan(frequency):
+        return None
 
     for offset in xrange(int(np.ceil(frequency))):
 
@@ -218,10 +221,15 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
     if offset is None:
         offset = get_best_offset(n, measures, frequency)
 
-    if measures_qualities is None:
-        measures_qualities = get_spike_quality(measures, n, offset, frequency)
 
-    m_array = np.where(np.asarray(measures)==True)[0]
+    if measures.max() == 1:
+        m_array = np.where(np.asarray(measures)==True)[0]
+    else:
+        m_array = np.asarray(measures)
+
+    if measures_qualities is None:
+        measures_qualities = get_spike_quality(m_array, n, offset, frequency)
+
     mq_array = np.asarray(measures_qualities)
 
     if offset is None:
@@ -232,6 +240,7 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
     frequency = float(frequency)
     #print "---Best signal---"
     #print offset, frequency, n, start_peak, max_value
+    #print "peaks", m_array
     while offset + frequency * (n + start_peak) < max_value:
 
         covered_peaks = 0
@@ -264,7 +273,7 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
 
     best_start_pos = int(np.asarray(start_position_qualities).argmax())
     #print start_position_qualities
-    
+ 
     quality_threshold = np.mean(mq_array) + np.std(mq_array) * 3
 
     ideal_signal = np.arange(n)*frequency + offset + best_start_pos * frequency

@@ -379,7 +379,6 @@ class Grid_Array():
                             self._best_fit_columns[column], 'r-')
                 if supress_other == False or (watch_colony != None and \
                         watch_colony[1] == row and watch_colony[2] == column):
-
                     self._grid_cells[row][column].set_center( \
                         (self._best_fit_rows[row], 
                             self._best_fit_columns[column]) , self._grid_cell_size)

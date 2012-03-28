@@ -371,7 +371,11 @@ class Blob(Cell_Item):
 
         cur_center = center_of_mass(self.filter_array)
         other_center = center_of_mass(other_blob)
+
         offset = np.round(np.asarray(other_center) - np.asarray(cur_center))
+
+        if np.isnan(offset).sum() > 0:
+            offset = np.zeros(2)
 
         return self.get_array_subtraction(other_img, self.grid_array, offset)
 
@@ -482,6 +486,7 @@ class Blob(Cell_Item):
 
         diff_array = A1.copy()
 
+
         diff_array[o1_low:o1_high,o2_low:o2_high] -= A2[b1_low:b1_high,b2_low:b2_high]
 
         return diff_array
@@ -528,9 +533,12 @@ class Blob(Cell_Item):
                 #print self.old_filter.shape
         ###DEBUG END
 
+       
 
         if self.old_filter is not None:
 
+            if np.sum(self.filter_array) == 0:
+                self.filter_array = self.old_filter.copy()
 
             blob_diff = (np.abs(self.old_filter - self.filter_array)).sum()
             sqrt_of_oldsum = self.old_filter.sum()**0.5
