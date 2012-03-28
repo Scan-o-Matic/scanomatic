@@ -125,6 +125,7 @@ class Fixture_Settings():
 
         tmpX, tmpY = self.get_fixture_markings()
 
+
         ref_X = np.array(tmpX)
         ref_Y = np.array(tmpY)
 
@@ -144,9 +145,8 @@ class Fixture_Settings():
             for i in itertools.permutations(s):
                 tmp_dL.append((L[list(i)]-ref_L)**2)
                 tmp_s.append(i)
-#                print tmp_dL[-1], i
 
-            dLs = np.array(tmp_dL)
+            dLs = np.array(tmp_dL).sum(1)
             s = list(tmp_s[dLs.argmin()])
 
             print "** Found sort order that matches the reference", s,". Error:", np.sqrt(dLs.min())

@@ -59,7 +59,7 @@ def make_entries(fs, file_list=None, extra_info=None, verboise=False, quiet=Fals
             file_list = sys.argv[1:-1]
 
         script_path_root = os.path.dirname(os.path.abspath(__file__))
-        f_settings = settings_tools.Fixture_Settings(script_path_root + os.sep + "config" + os.sep + "fixtures", fixture="fixture_a")
+        f_settings = r_fixture.Fixture_Settings(script_path_root + os.sep + "config" + os.sep + "fixtures", fixture="fixture_a")
 
 
     if type(file_list) != types.ListType:
@@ -132,8 +132,8 @@ if __name__ == "__main__":
                 fs = open(sys,argv[-1],'w')
                 #print "Error, the file '" + str(sys.argv[-1]) + "' can not be created."
 
-            import image_analysis_base as img_base
-            import settings_tools as settings_tools
+            import resource_image as img_base
+            import resource_fixture as r_fixture
 
             make_entries(fs)
 
