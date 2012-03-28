@@ -83,7 +83,8 @@ def make_entries(fs, file_list=None, extra_info=None, verboise=False, quiet=Fals
 
         if loaded_image:
             
-            write_dictionary = {'File':str(im_file), 'Histogram':im.histogram(),'ImageLength':im.size[1] ,'ImageWidth':im.size[0]}
+            #write_dictionary = {'File':str(im_file), 'Histogram':im.histogram(),'ImageLength':im.size[1] ,'ImageWidth':im.size[0]}
+            write_dictionary = {'File':str(im_file)}
             if extra_info != None:
                 for k,v in extra_info[f_i].items():
                     write_dictionary[k] = v

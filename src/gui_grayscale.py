@@ -75,6 +75,9 @@ class Gray_Scale(gtk.Frame):
         gs = img_base.Analyse_Grayscale(image=im_section)
         self._grayscale = gs._grayscale
 
+        if gs._mid_orth_strip is None or gs._grayscale_pos is None:
+            return False
+
         #LEFT PLOT
         Y = np.ones(len(gs._grayscale_pos)) * gs._mid_orth_strip 
         #grayscale_plot = self.grayscale_fig.get_subplot(121)

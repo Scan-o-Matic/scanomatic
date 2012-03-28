@@ -265,7 +265,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             supress_other=supress_analysis, \
             save_graph_image=(image_pos in grid_times), \
             save_graph_name=outdata_files_path+"time_" + str(image_pos) +\
-             "_plate_", grid_lock = True, identifier_time=image_pos)
+             "_plate_", grid_lock = True, identifier_time=image_pos, 
+            timestamp=img_dict_pointer['Time'])
 
         if supress_analysis != True:
             fh.write('<scan index="' + str(image_pos) + '">')
@@ -516,6 +517,8 @@ class Project_Image():
         self.features = []
         self.R = []
 
+        self._timestamp = None
+
         for a in xrange(len(pinning_matrices)):
             if pinning_matrices[a] is not None:
                 self._grid_arrays.append(grid_array.Grid_Array(self, (a,), pinning_matrices[a]))
@@ -525,7 +528,7 @@ class Project_Image():
     def get_analysis(self, im_path, features, grayscale_values, \
             use_fallback=False, use_otsu=True, watch_colony=None, \
             supress_other=False, save_graph_image=False, save_graph_name=None,
-            grid_lock=False, identifier_time = None):
+            grid_lock=False, identifier_time = None, timestamp = None):
 
         """
             @param im_path: An path to an image
@@ -580,6 +583,8 @@ class Project_Image():
         else:
             return None
 
+        self._timestamp = timestamp
+
         if len(grayscale_values) > 3:
             gs_values = np.array(grayscale_values)
             gs_indices = np.arange(len(grayscale_values))
@@ -629,7 +634,7 @@ class Project_Image():
                 verboise=False, visual=False, watch_colony=watch_colony, \
                 supress_other=supress_other, save_grid_image=save_graph_image\
                 , save_grid_name = cur_graph_name, grid_lock = grid_lock,
-                identifier_time = identifier_time)
+                identifier_time = identifier_time, timestamp=timestamp)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
             self.R[grid_array] = self._grid_arrays[grid_array].R

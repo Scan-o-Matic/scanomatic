@@ -24,6 +24,12 @@ import matplotlib.image as plt_img
 import matplotlib.pyplot as plt
 
 #
+# SCANNOMATIC DEPENDENCIES
+#
+
+import resource_signal as r_signal
+
+#
 # FUNCTIONS
 #
 
@@ -336,7 +342,10 @@ class Analyse_Grayscale():
             'Kodak': {\
                 'aims':[82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,22,18,14,10,6,4,2,0],
                 'width': 55,
-                'sections': 24\
+                'sections': 24,
+                'lower-than-half-width':350,
+                'higher-than-half-width':150,
+                'length': 28.57
                 }\
             }
 
@@ -377,6 +386,170 @@ class Analyse_Grayscale():
         return self._grayscale_X
 
     def get_grayscale(self, image=None, scale_factor=1.0, dpi=600):
+
+        if image != None:
+            self._img = image
+
+        if self._img is None:
+            return None
+
+        A  = (self._img < (self._img.max()/4)).astype(int)
+
+        rect = [[0,0],[self._img.shape[0],self._img.shape[1]]]
+        orth_diff = -1
+
+        kern = np.asarray([-1,0,1])
+        Aorth = A.mean(0)
+        Aorth_edge = abs( fftconvolve(kern, Aorth, 'same'))
+        Aorth_edge_threshold = 0.2 #Aorth_edge.max() * 0.70
+        Aorth_signals = Aorth_edge > Aorth_edge_threshold
+        Aorth_positions = np.where(Aorth_signals)
+
+        if len(Aorth_positions[0]) > 1:            
+            Aorth_pos_diff = abs(1 - ((Aorth_positions[0][1:] - \
+                Aorth_positions[0][:-1]) / float(self._grayscale_width)))
+            rect[0][1] = Aorth_positions[0][Aorth_pos_diff.argmin()]
+            rect[1][1] = Aorth_positions[0][Aorth_pos_diff.argmin()+1]
+            orth_diff = rect[1][1] - rect[0][1]
+
+        if orth_diff == -1:
+            #Orthagonal trim second try
+            firstPass = True
+            in_strip = False
+            threshold = 0.15
+            threshold2 = 0.3
+
+            for i, orth in enumerate(A.mean(0)):
+                if firstPass:
+                    firstPass = False
+                else:
+                    if abs(old_orth - orth) > threshold:
+                        if in_strip == False:
+                            if orth > threshold2:
+                                rect[0][1] = i
+                                in_strip = True
+                        else:
+                            rect[1][1] = i
+                            break
+                old_orth = orth
+
+
+            orth_diff = rect[1][1]-rect[0][1]
+
+        #safty margin
+        min_orths = 30 / scale_factor
+        if orth_diff > min_orths:
+            rect[0][1] += (orth_diff - min_orths) / 2
+            rect[1][1] -= (orth_diff - min_orths) / 2
+
+
+        self._mid_orth_strip = rect[0][1] + (rect[1][1] - rect[0][1]) / 2
+
+        #Paralell trim - right
+        box_need = self._grayscale_dict['Kodak']['lower-than-half-width'] / scale_factor
+        i = (rect[1][0] - rect[0][0])/2.0
+
+        strip_values = self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]].mean(1)
+        A2 = strip_values > 125
+        A2_where = np.where(A2 == True)[0]
+        if A2_where.size > 1:
+            A2_rights = np.append(A2_where[0], A2_where[1:] - A2_where[:-1])
+            
+            edges = np.argsort(A2_rights)
+            edge_pos = -1
+            while A2_rights[edges[edge_pos]] > box_need:
+                right_edge = edges[edge_pos]
+                if A2_rights[right_edge] > box_need and A2_rights[:right_edge+1].sum() > i:
+                    rect[1][0] = A2_rights[:right_edge+1].sum()
+                    break
+                else:
+                    edge_pos -= 1
+                    if abs(edge_pos) == edges.size:
+                        break
+
+        box_need = self._grayscale_dict['Kodak']['higher-than-half-width'] / scale_factor
+        A2 = A2 == False
+        A2_where = np.where(A2 == True)[0]
+        if A2_where.size > 1:
+            A2_lefts = np.append(A2_where[0], A2_where[1:] - A2_where[:-1])
+            edges = np.argsort(A2_lefts)
+            edge_pos = -1
+            while A2_lefts[edges[edge_pos]] > box_need:
+                left_edge = edges[edge_pos]
+                if A2_lefts[left_edge] > box_need and A2_lefts[:left_edge+1].sum() < i:
+                    rect[0][0] = A2_lefts[:left_edge].sum()
+                    break
+                else:
+                    edge_pos -= 1
+                    if abs(edge_pos) == edges.size:
+                        break
+        
+        ###DEBUG CUT SECTION
+        #plt.clf()
+        #plt.imshow(self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]])
+        #plt.show()
+        ###DEBUG END
+
+
+
+
+
+        strip_values = self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]].mean(1)
+
+
+        threshold = 1.2
+        kernel = [-1, 1] #old [-1,2,-1]
+
+        up_spikes = np.abs(np.convolve(strip_values,kernel,"same")) > threshold
+        
+        up_spikes = r_signal.get_center_of_spikes(up_spikes)
+
+        best_spikes = r_signal.get_best_spikes(up_spikes, 
+            self._grayscale_dict['Kodak']['length'], tollerance=0.05, 
+            require_both_sides=False)
+
+        frequency = r_signal.get_perfect_frequency2(best_spikes, 
+            self._grayscale_dict['Kodak']['length'])
+
+        offset = r_signal.get_best_offset(\
+            self._grayscale_dict['Kodak']['sections'],
+            best_spikes, frequency=frequency)
+
+        signal =  r_signal.get_true_signal(self._img.shape[0], 
+            self._grayscale_dict['Kodak']['sections'],
+            up_spikes, frequency=frequency,
+            offset=offset)
+
+        if signal is None:
+            return None, None
+
+
+        gray_scale = []
+        gray_scale_pos = []
+        safety_buffer = 0.2
+        for pos in xrange(signal.size-1):
+            gray_scale.append(\
+                strip_values[signal[pos]-frequency+frequency*safety_buffer:\
+                    signal[pos]-frequency*safety_buffer].mean())
+            gray_scale_pos.append(signal[pos] - 0.5*frequency + rect[0][0])
+
+        #from matplotlib import pyplot as plt
+        #print offset, frequency
+        #strip_values = self._img[:,rect[0][1]:rect[1][1]].mean(1)
+        #plt.plot(strip_values)
+        #plt.plot(np.arange(up_spikes.size)+rect[0][0],up_spikes*strip_values.max())
+        #plt.plot(np.arange(best_spikes.size)+rect[0][0],best_spikes*strip_values.max()*0.5)
+        #plt.plot(np.arange(self._grayscale_dict['Kodak']['sections']+2)*frequency+offset+rect[0][0],np.ones(self._grayscale_dict['Kodak']['sections']+2)*0.5*strip_values.max(), '*')
+        #plt.plot(np.asarray(gray_scale_pos), gray_scale, 'o')
+        #plt.plot((rect[0][0], rect[1][0]),np.ones(2)*0.75*strip_values.max(),'*')
+        #plt.show()
+
+        self._gray_scale_pos = gray_scale_pos
+        self._gray_scale = gray_scale
+
+        return gray_scale_pos, gray_scale
+
+    def get_old_grayscale(self, image=None, scale_factor=1.0, dpi=600):
     
         if image != None:
             self._img = image

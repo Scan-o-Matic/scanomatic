@@ -26,6 +26,7 @@ from math import ceil
 #
 
 import resource_histogram as hist
+import resource_signal as r_signal
 
 #
 # FUNCTIONS
@@ -150,10 +151,10 @@ class Grid_Analysis():
                 print positions[dimension]
                 print 
 
-            best_fit_frequency[dimension] = self.get_signal_frequency(\
+            best_fit_frequency[dimension] = r_signal.get_signal_frequency(\
                 positions[dimension])
 
-            best_fit_positions[dimension] = self.get_true_signal(\
+            best_fit_positions[dimension] = r_signal.get_true_signal(\
                 im.shape[int(dimension==0)], pinning_matrix[dimension], 
                 positions[dimension], \
                 frequency=best_fit_frequency[dimension] )
@@ -263,216 +264,6 @@ class Grid_Analysis():
         else:
             return self.best_fit_positions[0], self.best_fit_positions[1], self.R
 
-    def get_signal_frequency(self, measures):
-        """
-            get_signal_frequency returns the median distance between two
-            consecutive measures.
- 
-            The function takes the following arguments:
-
-            @measures       An array of spikes as returned from get_spikes
-
-        """
-
-        tmp_array = np.asarray(measures)
-
-        return np.median( tmp_array[1:] - tmp_array[:-1] ) 
-
-
-    def get_best_offset(self, n, measures, frequency=None):
-        """
-            get_best_offset returns a optimal starting-offset for a hypthetical
-            signal with frequency as specified by frequency-variable
-            and returns a distance-value for each measure in measures to this 
-            signal at the optimal over-all offset.
-
-            The function takes the following arguments:
-
-            @n              The number of peaks expected
-
-            @measures       An array of spikes as returned from get_spikes
-
-            @frequency      The frequency of the signal, if not submitted
-                            it is derived as the median inter-measure
-                            distance in measures.
-
-        """
-
-        if frequency is None:
-            frequency = self.get_signal_frequency(measures)
-       
-       
-        if np.isnan(frequency):
-            return None
-
-        dist_results = []
-
-        
-        for offset in xrange(int(np.ceil(frequency))):
-
-            quality = [] 
-
-            for m in measures:
-
-                #IMPROVE THIS ONE...
-                #n_signal_dist is peak number of the closest signal peak
-                n_signal_dist = np.round((m - offset) / float(frequency))
-
-                if abs(offset + frequency * n_signal_dist - m) > 0:
-                    quality.append(( offset + frequency * n_signal_dist - m)**2)
-                else:
-                    quality.append(0)
-            dist_results.append(np.sum(np.sort(np.asarray(quality))[:n]))
-
-        #print np.argsort(np.asarray(dist_results))
-        #print np.sort(np.asarray(dist_results))
-        return np.asarray(dist_results).argmin()
-
-
-    def get_spike_quality(self, measures, n=None, offset=None, frequency=None):
-        """
-            get_spike_quality returns a quality-index for each spike
-            as to how well it fits the signal.
-
-            If no offset is supplied, it is derived from measures.
-
-            Equally so for the frequency.
-
-            The function takes the following arguments:
-
-            @measures       An array of spikes as returned from get_spikes
-
-            @n              The number of peaks expected (needed if offset
-                            is not given)
-
-            @offset         Optional. Sets the offset of signal start
-
-            @frequency      The frequency of the signal, if not submitted
-                            it is derived as the median inter-measure
-                            distance in measures.
-
-        """
-
-        if frequency is None:
-            frequency = self.get_signal_frequency(measures)
-
-        if offset is None and n != None:
-            offset = self.get_best_offset(n, measures, frequency)
-
-        if offset is None:
-            print "*** ERROR: You must provide n if you don't provide offset"
-            return None
-
-        quality_results = []
-
-        for m in measures:
-
-            #n_signal_dist is peak number of the closest signal peak
-            n_signal_dist = np.round((m - offset) / frequency)
-
-            quality_results.append( ( m - offset + frequency * n_signal_dist)**2 )
-
-
-        return quality_results 
-
-    def get_true_signal(self, max_value, n, measures, measures_qualities= None,
-        offset=None, frequency=None):
-
-        """
-            get_true_signal returns the best spike pattern n peaks that 
-            describes the signal (described by offset and frequency).
-
-            The function takes the following arguments:
-
-            @max_value      The number of pixel in the current dimension
-
-            @n              The number of peaks expected
-
-            @measures       An array of spikes as returned from get_spikes
-
-            @measures_qualities
-                            Optional. A quality-index for each measure,
-                            high values representing bad quality. If not
-                            set, it will be derived from signal.
-
-            @offset         Optional. Sets the offset of signal start
-
-            @frequency      The frequency of the signal, if not submitted
-                            it is derived as the median inter-measure
-                            distance in measures.    
-
-        """ 
-
-        if frequency is None:
-            frequency = self.get_signal_frequency(measures)
-
-        if offset is None:
-            offset = self.get_best_offset(n, measures, frequency)
-
-        if measures_qualities is None:
-            measures_qualities = self.get_spike_quality(measures, n, offset, frequency)
-
-        m_array = np.asarray(measures)
-        mq_array = np.asarray(measures_qualities)
-
-        if offset is None:
-            return None
- 
-        start_peak = 0
-        start_position_qualities = []
-        #print offset, frequency, n, start_peak, max_value
-        while offset + frequency * (n + start_peak) < max_value:
-
-            covered_peaks = 0
-            quality = 0
-            ideal_peaks = (np.arange(n) + start_peak) * frequency + offset
-
-            for pos in xrange(n):
-               
-                distances = (m_array - float(ideal_peaks[pos]))**2
-                closest = distances.argmin()
-                #print closest, ((ideal_peaks - float(m_array[closest]))**2).argmin(), pos, np.round((m_array[closest]-offset) / float(frequency)), pos + start_peak
-                if np.round((m_array[closest]-offset) / float(frequency)) == pos + start_peak:
-                    #Most difference with small errors... should work ok. 
-                    quality += distances[closest]
-                    #if distances[closest] >= 1:
-                    #    quality += np.log2(distances[closest])
-                    #quality += ((m_array - (offset + frequency * (n + pos + start_peak))).min())**2
-                    #quality += np.log2(((m_array - (offset + frequency * (n + pos + start_peak)))**2).min())
-                    covered_peaks += 1
-
-            if covered_peaks > 0:
-                start_position_qualities.append(covered_peaks + 1 / ((quality+1) / covered_peaks))
-            else:
-                start_position_qualities.append(0)
-            start_peak += 1
-
-        #If there simply isn't anything that looks good, the we need to stop here.
-        if len(start_position_qualities) == 0:
-            return None
-
-        best_start_pos = int(np.asarray(start_position_qualities).argmax())
-        #print start_position_qualities
-        
-        quality_threshold = np.mean(mq_array) + np.std(mq_array) * 3
-
-        ideal_signal = np.arange(n)*frequency + offset + best_start_pos * frequency
-
-        best_fit = []
-
-        for pos in xrange(len(ideal_signal)):
-
-            best_measure = float( m_array[((m_array - float(ideal_signal[pos]))**2).argmin()] )
-            if (ideal_signal - best_measure).argmin() == pos:
-                if (ideal_signal[pos] - best_measure)**2 < quality_threshold:
-                    best_fit.append(best_measure)
-                else:
-                    best_fit.append(ideal_signal[pos])
-            else:
-                best_fit.append(ideal_signal[pos])
-
-
-        return ideal_signal
  
             
     #def get_signal_position_and_frequency(self, measures, segments, verboise=False):

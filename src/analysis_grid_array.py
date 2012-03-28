@@ -59,6 +59,7 @@ class Grid_Array():
         self._old_blob_filter = None 
         self.track_times = []
         self.track_values = []
+        self._old_timestamp = None
 
         if pinning_matrix != None:
             self.set_pinning_matrix(pinning_matrix)
@@ -220,7 +221,8 @@ class Grid_Array():
     def get_analysis(self, im, gs_fit=None, gs_values=None, use_fallback=False,\
         use_otsu=True, median_coeff=None, verboise=False, visual=False, \
         watch_colony=None, supress_other=False, save_grid_image=False, \
-        save_grid_name=None, grid_lock=False, identifier_time=None):
+        save_grid_name=None, grid_lock=False, identifier_time=None, \
+        timestamp=None):
 
         """
             @param im: An array / the image
@@ -459,7 +461,7 @@ class Grid_Array():
                     #plt.clf()
                     #fig = plt.figure()
                     #gs = gridspec.GridSpec(2, 2)
-                    #blob = self._grid_cells[row][column].get_item('blob')
+                    blob = self._grid_cells[row][column].get_item('blob')
 
                     #ax = fig.add_subplot(221, title="Blob")
                     #fig.gca().imshow(blob.filter_array)
@@ -474,11 +476,59 @@ class Grid_Array():
                     #ax.get_yaxis().set_visible(False)
                     #fig.colorbar(ax_im,ax)
 
-                    #if self._old_blob_img is not None:
+                    if self._old_blob_img is not None:
                         
+                        blob_diff = blob.get_diff(self._old_blob_img,
+                            self._old_blob_filter)
+                        onion2 = blob.get_onion_values(blob_diff, 
+                            self._old_blob_filter,
+                            2)
+                        onion2t = blob.get_onion_values(blob_diff, 
+                            blob.filter_array,
+                            2)
+                        #onion4 = blob.get_onion_values(blob_diff, 
+                            #self._old_blob_filter,
+                            #4)
+                        #onion6 = blob.get_onion_values(blob_diff, 
+                            #self._old_blob_filter,
+                            #6)
+                        self._onion_store.insert(0, 
+                            ((onion2t[-1,0] / onion2t[-1,1])/\
+                            ((self._old_timestamp - timestamp)/(3600.0))))
+                        self._onion_times.insert(0, (timestamp + (self._old_timestamp - timestamp)/2.0)/(3600.0))
+                            #onion2t[-1,0]/float(onion2t[-1,1])))
+                            #onion4[-1,0]/float(onion4[-1,1]),
+                            #onion6[-1,0]/float(onion6[-1,1])))
+
+                        if self._identifier[0] == 0:
+
+                            onion_times = np.asarray(self._onion_times)
+                            onion_store = np.asarray(self._onion_store)
+                            onion_labels = ['T2 outer using true dt',
+                                'T2 outer using equal dt']
+                                #'Thickness 4, outer',
+                                #'Thickness 6, outer']
+
+                            np.save('onion_start_val', np.array((np.log2(onion2t[-1,0]),)))
+                            np.save('onion_store_arr', onion_store)
+                            np.save('onion_times_arr', onion_times)
+
+                            from matplotlib import pyplot as plt
+
+                            fig = plt.figure()
+
+                            fig.gca().set_title("1st Derivative of Outer Onion Peels (t vs t+1 onionrings")
+                            #for i in xrange(onion_store.shape[0]):
+                            fig.gca().plot(np.arange(onion_store.size),#np.arange(onion_store.shape[0]), 
+                                onion_store, '-',
+                                label=onion_labels[0])
+
+                            fig.gca().set_xlabel("Time indices")
+                            fig.gca().set_ylabel("Average cell estimate difference to next time-pt")
+                            fig.gca().legend(loc=0)
+                            fig.savefig("onion.png")
+
                         #ax = fig.add_subplot(gs[1,0], title = "Delta Cells Image")
-                        #blob_diff = blob.get_diff(self._old_blob_img,
-                            #self._old_blob_filter)
                         #ax_im = fig.gca().imshow(blob_diff,\
                             #vmin=-700, vmax=700, cmap=plt.cm.RdYlGn)
                         #ax.get_xaxis().set_visible(False)
@@ -486,9 +536,6 @@ class Grid_Array():
                         #fig.colorbar(ax_im) #, fraction=2)
                    
                         #ax = fig.add_subplot(gs[:,1], title = "Onion Avg Residuals") 
-                        #onion = blob.get_onion_values(blob_diff, 
-                            #self._old_blob_filter,
-                            #2)
                         #ax_im = fig.gca().plot(np.arange(onion.shape[0]),
                             #onion[:,0]/onion[:,1].astype(np.float64), 
                             #'g-')
@@ -497,10 +544,14 @@ class Grid_Array():
                         #ax.set_autoscalex_on(False)
                         #ax.set_autoscaley_on(False)
                         #ax.set_ylim((-150,300))
-                        #ax.set_xlim((0,15))
+                        #ax.set_xlim((0,5))
 
-                    #self._old_blob_img = blob.grid_array.copy()
-                    #self._old_blob_filter = blob.filter_array.copy()
+                    else:
+                        self._onion_times = []
+                        self._onion_store = []
+                        
+                    self._old_blob_img = blob.grid_array.copy()
+                    self._old_blob_filter = blob.filter_array.copy()
 
                     #ax = fig.add_subplot(313, title = "Growth-curve")
                     #fig.gca().semilogy(self.track_times, self.track_values,
@@ -526,6 +577,9 @@ class Grid_Array():
                                 get_item('blob').filter_array
 
                             self.watch_results = self._features[row][column]
+
+        self._old_timestamp = timestamp
+
         if visual:
             grid_image.show() 
             plt.close(grid_image)

@@ -347,9 +347,12 @@ class Blob(Cell_Item):
 
         while onion_filter.sum() > 0:
 
-            onion.insert(0,(np.sum(A*onion_filter), onion_filter.sum()))
+            onion.insert(0,[np.sum(A*onion_filter), onion_filter.sum()])
+            if onion[0][0] <= 0:
+                onion[0][0] = 1
+
             if len(onion) > 1:
-                onion[1] = (onion[1][0] - onion[0][0], onion[1][1] - onion[0][1])
+                onion[1] = (np.log2(onion[1][0]) - np.log2(onion[0][0]), onion[1][1] - onion[0][1])
 
             onion_filter = binary_erosion(onion_filter, iterations=layer_size)
             

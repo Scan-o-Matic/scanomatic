@@ -246,7 +246,7 @@ class Fixture_GUI(gtk.Frame):
 
 
         self.DMS('fixture init', 'GUI loaded', 100)
-        self.load_fixture_config()
+        self.load_fixture_config(dpi=150)
         self.DMS('fixture init', 'Settings implemented', 100)
 
     #
@@ -645,18 +645,20 @@ class Fixture_GUI(gtk.Frame):
                 len(self.fixture_area_selection.get_model()) > 1)
 
 
-    def set_grayscale(self):
+    def set_grayscale(self, scale_factor=1.0):
 
         coords = self.f_settings.fixture_config_file.get("grayscale_area")
-        xs = np.asarray((coords[0][0],coords[1][0]))
-        ys = np.asarray((coords[0][1],coords[1][1]))
+        xs = np.asarray((coords[0][0],coords[1][0]))/scale_factor
+        ys = np.asarray((coords[0][1],coords[1][1]))/scale_factor
         im_section = self.fixture_analysis_image[xs.min():xs.max(), ys.min():ys.max()].copy()
         self.grayscale.clf()
         self.grayscale.set_grayscale(im_section.T)
 
-    def load_fixture_config(self):
+    def load_fixture_config(self, dpi=600):
 
         self._fixture_gui_updating = True
+
+        scale_factor = 600/float(dpi)
 
         #
         # SET FILENAME OF MARKER
@@ -683,7 +685,7 @@ class Fixture_GUI(gtk.Frame):
 
 
         if grayscale > 0:
-            self.set_grayscale()
+            self.set_grayscale(scale_factor= scale_factor)
         #
         # SET UP DROP DOWN
         #
