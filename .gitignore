@@ -1,0 +1,10 @@
+*.pyc
+*.pyo
+../*
+_*.lock
+data/*
+dev/*
+src/config/logs
+versions/*
+gs_test*.png
+bundle_version.sh

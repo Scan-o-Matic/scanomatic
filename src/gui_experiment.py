@@ -63,12 +63,16 @@ class Scanning_Experiment(gtk.Frame):
         self.owner = owner
         self.DMS = self.owner.DMS
 
+        self.scanner_queue = self.owner.scanner_queue
+
         continue_load = True
 
         try:
             os.mkdir(str(root) + os.sep + str(prefix))
         except WindowsError:
-            self.DMS('Experiment conflict', 'An experiment with that prefix already exists...\nAborting.', level=1000)
+            self.DMS('Experiment conflict',
+                'An experiment with that prefix already exists...\nAborting.', 
+                level=1100, debug_level='error')
             continue_load = False
             
         gtk.Frame.__init__(self, prefix)
@@ -85,7 +89,7 @@ class Scanning_Experiment(gtk.Frame):
         self._analysis_output = 'analysis'
 
         self._analysis_running = False
-        self._scanner_id = None #should be connected to vairable later: scanner
+        self._scanner_id = int(scanner[-1])
         self._interval_time = float(interval)
         self._iterations_max = int(counts)
         self._prefix = str(prefix)
@@ -99,9 +103,16 @@ class Scanning_Experiment(gtk.Frame):
 
         #HACK
         if USER_OS.name == "windows":
-            self._power_manager = power_manager.Power_Manager(installed=True, path='"C:\Program Files\Gembird\Power Manager\pm.exe"',on_string="-on -PW1 -Scanner1", off_string="-off -PW1 -Scanner1", DMS=self.owner.DMS)
+            self._power_manager = power_manager.Power_Manager(installed=True, 
+                path='"C:\Program Files\Gembird\Power Manager\pm.exe"',
+                on_string="-on -PW1 -Scanner1", 
+                off_string="-off -PW1 -Scanner1", DMS=self.owner.DMS)
+
         elif USER_OS.name == "linux":
-            self._power_manager = power_manager.Power_Manager(installed=True, path="sispmctl",on_string="-o 1", off_string="-f 1", DMS=self.owner.DMS)
+            self._power_manager = power_manager.Power_Manager(installed=True, 
+                path="sispmctl",on_string="-o %d" % self._scanner_id, 
+                off_string="-f %d" % self._scanner_id,
+                DMS=self.owner.DMS)
             
 
         self._power_manager.on()
@@ -175,7 +186,10 @@ class Scanning_Experiment(gtk.Frame):
                     self._root + os.sep + self._prefix + os.sep + fixture + ".config") 
                 
             except:
-                self.DMS('ERROR', 'Could not make a local copy of fixture settings file, probably the template file will be used in analysis. Lets hope no-one fiddles with it', level=1001)
+                self.DMS('Scanning',
+                    'Could not make a local copy of fixture settings file,'+
+                    ' probably the template file will be used in analysis. '+
+                    'Lets hope no-one fiddles with it', level=1101, debug_level='warning')
         
             self.log_file({'Prefix':prefix,'Description':description,
                 'Interval':self._interval_time, 'Measurments':counts, 
@@ -256,7 +270,9 @@ class Scanning_Experiment(gtk.Frame):
 
             for f in file_list:
                 gs_data.append({'Time':time.time()})
-                self.DMS("Analysis", "Grayscale analysis of" + str(f), level=1)
+                self.DMS("Analysis", "Grayscale analysis of" + str(f), 
+                    level=101, debug_level='debug')
+
                 self.f_settings.image_path = f
                 self.f_settings.marker_analysis()
                 self.f_settings.set_areas_positions()
@@ -283,13 +299,15 @@ class Scanning_Experiment(gtk.Frame):
             fs = open(self._analysis_log_file_path,'a')
             log_maker.make_entries(fs, file_list=file_list, extra_info=gs_data, verboise=False, quiet=False)
             fs.close()
-            self.DMS("Analysis","Done. Nothing more to do for that image...", level=1)
+            self.DMS("Analysis","Done. Nothing more to do for that image...", 
+                level=101, debug_level='debug')
 
     def _callback(self):
         for i, sp in enumerate(self._subprocesses):
             if sp[0] == "SANE-CALLBACK":
                 if sp[2].poll() != None:
-                    self.DMS("Scanning", "Aqcuired image " + str(sp[1]), level=11)
+                    self.DMS("Scanning", "Aqcuired image " + str(sp[1]),
+                        level=111, debug_level='debug')
                     sp[1].close
 
                     got_image = True
@@ -310,8 +328,13 @@ class Scanning_Experiment(gtk.Frame):
                         gobject.timeout_add(1000*20,self._power_manager.off)
                     else:
                         self.DMS("Scanning", "Quality of scan histogram indicates" + 
-                            " that rescan needed! So that I do...",level=1010)
-                        self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + "_rescan.tiff"
+                            " that rescan needed! So that I do...",
+                            level=1110, debug_level='warning')
+
+                        self._scanner.next_file_name =  self._root + os.sep + \
+                            self._prefix + os.sep + self._prefix + "_" + \
+                             str(self._iteration).zfill(4) + "_rescan.tiff"
+
                         if os.path.exists(self._scanner.next_file_name) == False:
                             self._power_manager.on()
                             gobject.timeout_add(1000*20, self.do_scan)
