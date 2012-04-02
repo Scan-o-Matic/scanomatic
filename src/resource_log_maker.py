@@ -129,7 +129,7 @@ if __name__ == "__main__":
             try:
                 fs = open(sys.argv[-1],'a')           
             except:
-                fs = open(sys,argv[-1],'w')
+                fs = open(sys.argv[-1],'w')
                 #print "Error, the file '" + str(sys.argv[-1]) + "' can not be created."
 
             import resource_image as img_base

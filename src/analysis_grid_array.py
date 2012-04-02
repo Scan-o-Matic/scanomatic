@@ -16,6 +16,7 @@ __status__ = "Development"
 #
 
 import numpy as np
+import logging
 from scipy.optimize import fsolve
 import os, types
 
@@ -75,7 +76,7 @@ class Grid_Array():
 
                 fs = open(self._config_calibration_polynomial, 'r')
             except:
-                print "ERROR: Cannot open polynomial info file"
+                logging.critical("GRID ARRAY, Cannot open polynomial info file")
                 get_poly = False
 
             if get_poly:
@@ -290,15 +291,14 @@ class Grid_Array():
                 visual)
 
 
-            if verboise:
-                print "*** Grid (rows x columns):"
-                print best_fit_rows
-                print best_fit_columns
-                print
+            logging.debug("GRID ARRAY %s, best rows \n%s\nbest columns\n%s" %\
+                ("unkown", str(best_fit_rows), 
+                str(best_fit_columns)))
 
             if best_fit_rows == None or best_fit_columns == None:
 
-                print "\n*** WARNING: Failed to detect grid on %s" % str(self._identifier)
+                logging.warning("GRID ARRAY %s, Failed to detect grid." %\
+                     str(self._identifier))
 
                 self._best_fit_rows = None
                 self._best_fit_coulmns = None
@@ -402,7 +402,14 @@ class Grid_Array():
                         if row == watch_colony[1] and column == watch_colony[2]:
                             self.watch_scaled = im[coord_1st[0]:coord_1st[1],\
                                 coord_2nd[0]:coord_2nd[1]]
-                            
+                            #if self.watch_scaled.sum() == (self.watch_scaled > 0).sum():
+                                ###DEBUG WHAT IS THE GRID ARRAY
+                                #from matplotlib import pyplot as plt
+                                #plt.clf()
+                                #plt.imshow(self.watch_scaled, title='Grid')
+                                #plt.show()
+                                ###END DEBUG CODE
+                                
                     #if visual:
                         #pass
                         #plt.plot(self._grid_cells[row][column].center[0],
@@ -453,120 +460,122 @@ class Grid_Array():
                     #plot = raw_input('waiting: ')
                     ###DEBUG END
 
+                    if watch_colony != None \
+                        and row == watch_colony[1] and column == watch_colony[2]:
 
-                    ###DEBUG CODE FOR ANIME
-                    #from matplotlib import pyplot as plt
-                    #import matplotlib.gridspec as gridspec
-                    #plt.clf()
-                    #fig = plt.figure()
-                    #gs = gridspec.GridSpec(2, 2)
-                    blob = self._grid_cells[row][column].get_item('blob')
+                        ###DEBUG CODE FOR ANIME
+                        #from matplotlib import pyplot as plt
+                        #import matplotlib.gridspec as gridspec
+                        #plt.clf()
+                        #fig = plt.figure()
+                        #gs = gridspec.GridSpec(2, 2)
+                        blob = self._grid_cells[row][column].get_item('blob')
 
-                    #ax = fig.add_subplot(221, title="Blob")
-                    #fig.gca().imshow(blob.filter_array)
-                    #ax = fig.add_subplot(222, title ="Background")
-                    #fig.gca().imshow(self._grid_cells[row][column].\
-                        #get_item('background').filter_array)
+                        #ax = fig.add_subplot(221, title="Blob")
+                        #fig.gca().imshow(blob.filter_array)
+                        #ax = fig.add_subplot(222, title ="Background")
+                        #fig.gca().imshow(self._grid_cells[row][column].\
+                            #get_item('background').filter_array)
 
-                    #ax = fig.add_subplot(gs[0,0], title = "Image t=%d" % self._identifier[0])
-                    #ax_im = fig.gca().imshow(blob.grid_array, vmin=0, 
-                        #vmax=3500)
-                    #ax.get_xaxis().set_visible(False)
-                    #ax.get_yaxis().set_visible(False)
-                    #fig.colorbar(ax_im,ax)
-
-                    if self._old_blob_img is not None:
-                        
-                        blob_diff = blob.get_diff(self._old_blob_img,
-                            self._old_blob_filter)
-                        onion2 = blob.get_onion_values(blob_diff, 
-                            self._old_blob_filter,
-                            2)
-                        onion2t = blob.get_onion_values(blob_diff, 
-                            blob.filter_array,
-                            2)
-                        #onion4 = blob.get_onion_values(blob_diff, 
-                            #self._old_blob_filter,
-                            #4)
-                        #onion6 = blob.get_onion_values(blob_diff, 
-                            #self._old_blob_filter,
-                            #6)
-                        self._onion_store.insert(0, 
-                            ((onion2t[-1,0] / onion2t[-1,1])/\
-                            ((self._old_timestamp - timestamp)/(3600.0))))
-                        self._onion_times.insert(0, (timestamp + (self._old_timestamp - timestamp)/2.0)/(3600.0))
-                            #onion2t[-1,0]/float(onion2t[-1,1])))
-                            #onion4[-1,0]/float(onion4[-1,1]),
-                            #onion6[-1,0]/float(onion6[-1,1])))
-
-                        if self._identifier[0] == 0:
-
-                            onion_times = np.asarray(self._onion_times)
-                            onion_store = np.asarray(self._onion_store)
-                            onion_labels = ['T2 outer using true dt',
-                                'T2 outer using equal dt']
-                                #'Thickness 4, outer',
-                                #'Thickness 6, outer']
-
-                            np.save('onion_start_val', np.array((np.log2(onion2t[-1,0]),)))
-                            np.save('onion_store_arr', onion_store)
-                            np.save('onion_times_arr', onion_times)
-
-                            from matplotlib import pyplot as plt
-
-                            fig = plt.figure()
-
-                            fig.gca().set_title("1st Derivative of Outer Onion Peels (t vs t+1 onionrings")
-                            #for i in xrange(onion_store.shape[0]):
-                            fig.gca().plot(np.arange(onion_store.size),#np.arange(onion_store.shape[0]), 
-                                onion_store, '-',
-                                label=onion_labels[0])
-
-                            fig.gca().set_xlabel("Time indices")
-                            fig.gca().set_ylabel("Average cell estimate difference to next time-pt")
-                            fig.gca().legend(loc=0)
-                            fig.savefig("onion.png")
-
-                        #ax = fig.add_subplot(gs[1,0], title = "Delta Cells Image")
-                        #ax_im = fig.gca().imshow(blob_diff,\
-                            #vmin=-700, vmax=700, cmap=plt.cm.RdYlGn)
+                        #ax = fig.add_subplot(gs[0,0], title = "Image t=%d" % self._identifier[0])
+                        #ax_im = fig.gca().imshow(blob.grid_array, vmin=0, 
+                            #vmax=3500)
                         #ax.get_xaxis().set_visible(False)
                         #ax.get_yaxis().set_visible(False)
-                        #fig.colorbar(ax_im) #, fraction=2)
-                   
-                        #ax = fig.add_subplot(gs[:,1], title = "Onion Avg Residuals") 
-                        #ax_im = fig.gca().plot(np.arange(onion.shape[0]),
-                            #onion[:,0]/onion[:,1].astype(np.float64), 
-                            #'g-')
-                        #ax.set_xlabel('Onion layer index (0 = center of blob)')
-                        #ax.set_ylabel('Avg residual(t+1 - t')
-                        #ax.set_autoscalex_on(False)
-                        #ax.set_autoscaley_on(False)
-                        #ax.set_ylim((-150,300))
-                        #ax.set_xlim((0,5))
+                        #fig.colorbar(ax_im,ax)
 
-                    else:
-                        self._onion_times = []
-                        self._onion_store = []
-                        
-                    self._old_blob_img = blob.grid_array.copy()
-                    self._old_blob_filter = blob.filter_array.copy()
+                        if self._old_blob_img is not None and self._old_timestamp is not None:
+                            
+                            blob_diff = blob.get_diff(self._old_blob_img,
+                                self._old_blob_filter)
+                            onion2 = blob.get_onion_values(blob_diff, 
+                                self._old_blob_filter,
+                                2)
+                            onion2t = blob.get_onion_values(blob_diff, 
+                                blob.filter_array,
+                                2)
+                            #onion4 = blob.get_onion_values(blob_diff, 
+                                #self._old_blob_filter,
+                                #4)
+                            #onion6 = blob.get_onion_values(blob_diff, 
+                                #self._old_blob_filter,
+                                #6)
+                            self._onion_store.insert(0, 
+                                ((onion2t[-1,0] / onion2t[-1,1])/\
+                                ((self._old_timestamp - timestamp)/(3600.0))))
+                            self._onion_times.insert(0, (timestamp + (self._old_timestamp - timestamp)/2.0)/(3600.0))
+                                #onion2t[-1,0]/float(onion2t[-1,1])))
+                                #onion4[-1,0]/float(onion4[-1,1]),
+                                #onion6[-1,0]/float(onion6[-1,1])))
 
-                    #ax = fig.add_subplot(313, title = "Growth-curve")
-                    #fig.gca().semilogy(self.track_times, self.track_values,
-                    #    'b-', basey=2)
-                    #self.track_times.append(self._identifier[0])
-                    #self.track_values.append(self._features[row][column]\
-                    #    ['blob']['pixelsum']) 
-                    #fig.gca().semilogy((self.track_times[-1],), (
-                    #    self.track_values[-1],),'ro', basey=2)
-                    #ax.set_yticklabels(("0","2^5","1^6"))
-                    #ax.set_yscale('log', basey=2)
-                    #ax.set_yticks((0,5,6))
-                    #plt.xlim(0, self.track_times[0])
-                    #plt.ylim(0, max(self.track_values))
-                    #fig.savefig("debug_cell_t%03d" % self._identifier[0])
-                    ###END DEBUG CODE
+                            if self._identifier[0] == 0:
+
+                                onion_times = np.asarray(self._onion_times)
+                                onion_store = np.asarray(self._onion_store)
+                                onion_labels = ['T2 outer using true dt',
+                                    'T2 outer using equal dt']
+                                    #'Thickness 4, outer',
+                                    #'Thickness 6, outer']
+
+                                np.save('onion_start_val', np.array((np.log2(onion2t[-1,0]),)))
+                                np.save('onion_store_arr', onion_store)
+                                np.save('onion_times_arr', onion_times)
+
+                                from matplotlib import pyplot as plt
+
+                                fig = plt.figure()
+
+                                fig.gca().set_title("1st Derivative of Outer Onion Peels (t vs t+1 onionrings")
+                                #for i in xrange(onion_store.shape[0]):
+                                fig.gca().plot(np.arange(onion_store.size),#np.arange(onion_store.shape[0]), 
+                                    onion_store, '-',
+                                    label=onion_labels[0])
+
+                                fig.gca().set_xlabel("Time indices")
+                                fig.gca().set_ylabel("Average cell estimate difference to next time-pt")
+                                fig.gca().legend(loc=0)
+                                fig.savefig("onion.png")
+
+                            #ax = fig.add_subplot(gs[1,0], title = "Delta Cells Image")
+                            #ax_im = fig.gca().imshow(blob_diff,\
+                                #vmin=-700, vmax=700, cmap=plt.cm.RdYlGn)
+                            #ax.get_xaxis().set_visible(False)
+                            #ax.get_yaxis().set_visible(False)
+                            #fig.colorbar(ax_im) #, fraction=2)
+                       
+                            #ax = fig.add_subplot(gs[:,1], title = "Onion Avg Residuals") 
+                            #ax_im = fig.gca().plot(np.arange(onion.shape[0]),
+                                #onion[:,0]/onion[:,1].astype(np.float64), 
+                                #'g-')
+                            #ax.set_xlabel('Onion layer index (0 = center of blob)')
+                            #ax.set_ylabel('Avg residual(t+1 - t')
+                            #ax.set_autoscalex_on(False)
+                            #ax.set_autoscaley_on(False)
+                            #ax.set_ylim((-150,300))
+                            #ax.set_xlim((0,5))
+
+                        else:
+                            self._onion_times = []
+                            self._onion_store = []
+                            
+                        self._old_blob_img = blob.grid_array.copy()
+                        self._old_blob_filter = blob.filter_array.copy()
+
+                        #ax = fig.add_subplot(313, title = "Growth-curve")
+                        #fig.gca().semilogy(self.track_times, self.track_values,
+                        #    'b-', basey=2)
+                        #self.track_times.append(self._identifier[0])
+                        #self.track_values.append(self._features[row][column]\
+                        #    ['blob']['pixelsum']) 
+                        #fig.gca().semilogy((self.track_times[-1],), (
+                        #    self.track_values[-1],),'ro', basey=2)
+                        #ax.set_yticklabels(("0","2^5","1^6"))
+                        #ax.set_yscale('log', basey=2)
+                        #ax.set_yticks((0,5,6))
+                        #plt.xlim(0, self.track_times[0])
+                        #plt.ylim(0, max(self.track_values))
+                        #fig.savefig("debug_cell_t%03d" % self._identifier[0])
+                        ###END DEBUG CODE
 
 
                     if watch_colony != None:

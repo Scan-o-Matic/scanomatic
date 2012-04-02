@@ -25,6 +25,7 @@ import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.image as plt_img
 import types
+import logging
 import numpy as np
 from time import time
 from argparse import ArgumentParser
@@ -42,16 +43,14 @@ import resource_config as conf
 
 def print_progress_bar(fraction, size=40):
     prog_str = "["
+    percent = 100 * fraction
     fraction *= size
     fraction = int(round(fraction))
 
     prog_str = "[" + fraction*"=" + (size-fraction)*" " + "]"
 
-    print 
-    print
-    print prog_str
-    printmeon = True
-    print
+    print "\r%s %.1f" % (prog_str, percent),
+    sys.stdout.flush()
 
 def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         graph_watch, supress_analysis = False, \
@@ -111,8 +110,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             except:
                 pass
         if not dir_OK:
-            print "*** ERROR: Could not construct outdata directory, could be \
-                a conflict"
+            logging.critical("ANALYSIS, Could not construct outdata directory,"\
+                + " could be a conflict")
             sys.exit()
 
     if outdata_files_path[-1] != os.sep:
@@ -125,7 +124,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         fs.write('Analysis started at ' + str(start_time) + '\n')
         fs.close()
     except:
-        print "WARNING: Could not produce a analysis.run file... something could be fishy"
+        logging.warning("Could not produce an 'analysis.run' file.")
 
 
     if graph_watch != None:
@@ -176,7 +175,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     if pinning_matrices is None:
 
-        print "ERROR: We do need some pinning matrices to analyse anything"
+        logging.critical("ANALYSIS,  need some pinning matrices to analyse anything")
         return False
 
     plate_position_keys = []
@@ -198,24 +197,21 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         try:
             fh = open(outdata_analysis_path,'w')
         except:
-            print "*** Error, can't open target file:", outdata_analysis_path
+            logging.critical("ANALYSIS, can't open target file:'%s'" % \
+                str(outdata_analysis_path))
             return False
         project_image = Project_Image(pinning_matrices)
 
     image_pos = len(image_dictionaries) - 1
 
     if image_pos < first_scan_position:
-        if verboise:
-            print "*** There are no images to analyse, aborting"
+        logging.critical("ANALYSIS, There are no images to analyse, aborting")
         fh.close()
         return True
 
     image_tot = image_pos 
 
-    if verboise:
-        print "*** Project has " + str(image_pos+1) + " images."
-        print "* Nothing to wait for"
-        print
+    logging.info("ANALYIS, starting project with %d images" % (image_pos + 1))
 
     if supress_analysis != True:
         fh.write('<project>')
@@ -254,10 +250,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             #    print "** Position", plate_position_keys[i], ":", \
             #img_dict_pointer[plate_position_keys[i]]
 
-        if verboise:
-            print
-            print "*** Analysing: " + str(img_dict_pointer['File'])
-            print
+        logging.info("ANALYSIS, Running analysis on '%s'" % \
+            str(img_dict_pointer['File']))
 
         features = project_image.get_analysis( img_dict_pointer['File'], \
             plate_positions, img_dict_pointer['grayscale_values'], \
@@ -368,9 +362,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         #DEBUGHACK - END
 
 
-        if verboise:
-            print "Image took", time() - scan_start_time,"seconds."
-            print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
+        logging.info("ANALYIS, Image took %.2f seconds" % (time() - scan_start_time))
+
+        print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
 
     if supress_analysis != True:
         fh.write('</scans>')
@@ -416,9 +410,15 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                         elif plot_labels[i] == "blob:area":
                             b_area = Y[Y_good_positions,i]
 
-                        print "\n*** ", plot_labels[i], str(sub_term), str(scale_factor), 
+                        logging.debug("WATCH GRAPH:\n%s\n%s\n%s" % \
+                            (str(plot_labels[i]), str(sub_term), 
+                            str(scale_factor)))
+
                         #print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
-                        print "max",Y[Y_good_positions,i].max(),"min", Y[Y_good_positions,i].min()
+                        logging.debug("WATCH GRAPH, Max %.2f Min %.2f." % \
+                            (float(Y[Y_good_positions,i].max()), 
+                            float(Y[Y_good_positions,i].min())))
+
                         #print Y[Y_good_positions,i]
                         if cur_plt_graph != plot_labels[i].split(":")[0]:
                             cur_plt_graph = plot_labels[i].split(":")[0]
@@ -439,7 +439,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                                 (Y[Y_good_positions,i] - sub_term) * scale_factor,
                                 label=plot_labels[i][len(cur_plt_graph)+1:])                        
                         else:
-                            print "even line debug", plt_graph_i, i
+                            logging.debug("GRAPH WATCH, Got straight line %s, %s" % \
+                                (str(plt_graph_i), str(i)))
+
                             plt_watch_curves.plot(X[Y_good_positions], 
                                 np.zeros(X[Y_good_positions].shape)+\
                                 10*(i-(plt_graph_i-1)*5), 
@@ -447,10 +449,11 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
 
                     except TypeError:
-                        print "*** Error on", plot_labels[i], "because of something"
+                        logging.warning("GRAPH WATCH, Error processing %s" % str(plot_labels[i]))
 
                 else:
-                        print "*** Can't plot", plot_labels[i], "since it has no good data"
+                        logging.warning("GRAPH WATCH, Cann't plot %s since has \
+no good data" % str(plot_labels[i]))
 
         plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
         if graph_output != None:
@@ -472,14 +475,15 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         else: 
             plt_watch_colony.show()
 
-        print "Full analysis took", (time() - start_time)/60, "minutes"
+        logging.info("ANALYSIS, Full analysis took %.2f minutes" %\
+            ((time() - start_time)/60.0))
 
         try:
             fs = open(outdata_files_path + "analysis.run", 'a')
             fs.write('Analysis completed at ' + str(time()) + '\n')
             fs.close()
         except:
-            print "WARNING: Could not add to analysis.run file... something could be fishy"
+            logging.warning("ANALYSIS: Could not add to 'analysis.run' file.")
 
         return False
 
@@ -488,9 +492,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         fs.write('Analysis completed at ' + str(time()) + '\n')
         fs.close()
     except:
-        print "WARNING: Could not add to analysis.run file... something could be fishy"
+        logging.warning("ANALYSIS: Could not add to 'analysis.run' file.")
 
-    print "Full analysis took", (time() - start_time)/60, "minutes"
+    logging.info("ANALYSIS, Full analysis took %.2f minutes" %\
+        ((time() - start_time)/60.0))
 
 #
 # CLASS Project_Image
@@ -573,7 +578,9 @@ class Project_Image():
             self.im = plt_img.imread(self._im_path)
             self._im_loaded = True
         except:
-            print "*** Error: Could not open image at " + str(self._im_path)
+            logging.warning("ANALYSIS IMAGE, Could not open image at '%s'" %\
+                str(self._im_path))
+
             self._im_loaded = False
 
 
@@ -665,9 +672,34 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--watch-time", dest="grid_times", help="If specified, the gridplacements at the specified timepoints will be saved in the set output-directory, comma-separeted indices.", metavar="0,1,100", default="0", type=str)
 
     parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If set to True, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported.")
+
+    parser.add_argument("--debug", dest="debug_level", default="warning", type=str, help="Set debugging level")    
+
     args = parser.parse_args()
 
-    
+    #DEBUGGING
+    LOGGING_LEVELS = {'critical': logging.CRITICAL,
+
+                      'error': logging.ERROR,
+
+                      'warning': logging.WARNING,
+
+                      'info': logging.INFO,
+
+                      'debug': logging.DEBUG}
+
+    if args.debug_level in LOGGING_LEVELS.keys():
+
+        logging_level = LOGGING_LEVELS[args.debug_level]
+
+    else:
+
+        logging_level = LOGGING_LEVELS['warning']
+
+    logging.basicConfig(level=logging_level, format='\n\n%(asctime)s %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S\n')
+
+    #MATRICES
     if args.matrices is not None:
 
         pm = args.matrices.split(':')
@@ -681,8 +713,8 @@ if __name__ == "__main__":
         try:
             grid_times = map(int, args.grid_times.split(","))
         except:
-            print "*** Warning, could not parse grid_times... will only save\
-                the first grid placement."
+            logging.warning("ARGUMENTS, could not parse grid_times... will only save\
+ the first grid placement.")
 
             grid_times = [0]
 
@@ -748,6 +780,10 @@ if __name__ == "__main__":
         #fh.close()
 
     #if len(pm) == args.plates:    
+    header_str = "The Project Analysis Script..."
+    under_line = "-"
+    print "\n\n%s\n%s\n\n" % (header_str.center(80), (len(header_str)*under_line).center(80))
+
     analyse_project(args.inputfile, output_path, pm, args.graph_watch, args.supress, True, False, False, grid_times=grid_times)
     #else:
         #parser.error("Missmatch between number of plates specified and the number of matrices specified.")

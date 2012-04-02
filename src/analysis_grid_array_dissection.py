@@ -19,7 +19,7 @@ __status__ = "Development"
 
 import numpy as np
 from math import ceil
-
+import logging
 
 #
 # SCANNOMATIC LIBRARIES
@@ -146,10 +146,8 @@ class Grid_Analysis():
             #print "Deleted", del_count, "positions"
             #DEBUG END
 
-            if verboise:
-                print "*** Peak positions " + str(dimension) + "th dimension:"
-                print positions[dimension]
-                print 
+            logging.info("GRID ARRAY, Peak positions %sth dimension:\n%s" %\
+                (str(dimension), str(positions[dimension])))
 
             best_fit_frequency[dimension] = r_signal.get_signal_frequency(\
                 positions[dimension])
@@ -164,11 +162,9 @@ class Grid_Analysis():
                 #self.get_signal_position_and_frequency( measures[dimension],
                     #pinning_matrix[dimension], verboise )            
  
-            if verboise:
-                print "*** Best fit:"
-                print "* Elements", pinning_matrix[dimension]
-                print "* Positions", best_fit_positions[dimension]
-                print 
+            logging.info("GRID ARRAY, Best fit:\n" + \
+                "* Elements" + str(pinning_matrix[dimension]) +\
+                "\n* Positions" + str(best_fit_positions[dimension]))
 
             #DEBUGHACK
             #visual = True
@@ -238,9 +234,7 @@ class Grid_Analysis():
 
 
                         #Updating previous
-                        if verboise:
-                            print "*** Got a grid R at, " + str(R)
-                            print
+                        logging.info("GRID ARRAY, Got a grid R at, %s" % str(R))
 
         #DEBUG R
         #fs = open('debug_R.log','a')
@@ -486,7 +480,8 @@ class Grid_Analysis():
         if len(spikes_toggle_down) != len(spikes_toggle_up):
            spikes_toggle_up = spikes_toggle_up[:len(spikes_toggle_down)]
 
-        #print len(im_1D2), len(spikes_toggle_down), len(spikes_toggle_up)
+        logging.debug("GRID CELL get_spikes, %d long %d downs %d ups." % \
+            ( len(im_1D2), len(spikes_toggle_down), len(spikes_toggle_up)))
         stt = (np.array(spikes_toggle_up) + np.array(spikes_toggle_down)) / 2
             
         if visual:

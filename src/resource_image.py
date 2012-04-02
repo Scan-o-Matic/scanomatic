@@ -19,6 +19,7 @@ import sys, os
 import types
 from scipy.signal import fftconvolve
 import numpy as np
+import logging
 import matplotlib.mlab as ml
 import matplotlib.image as plt_img
 import matplotlib.pyplot as plt
@@ -460,7 +461,13 @@ class Analyse_Grayscale():
             while A2_rights[edges[edge_pos]] > box_need:
                 right_edge = edges[edge_pos]
                 if A2_rights[right_edge] > box_need and A2_rights[:right_edge+1].sum() > i:
-                    rect[1][0] = A2_rights[:right_edge+1].sum()
+                    rect[1][0] = A2_rights[:right_edge+1].sum() + \
+                        self._grayscale_dict['Kodak']['length']/2.0
+                    if rect[0][0] < 0:
+                        logging.warning('GRAYSCALE, Overshot upper bound setting. Compensating')
+                        rect[0][0] = self._img.shape[0]
+
+
                     break
                 else:
                     edge_pos -= 1
@@ -477,7 +484,12 @@ class Analyse_Grayscale():
             while A2_lefts[edges[edge_pos]] > box_need:
                 left_edge = edges[edge_pos]
                 if A2_lefts[left_edge] > box_need and A2_lefts[:left_edge+1].sum() < i:
-                    rect[0][0] = A2_lefts[:left_edge].sum()
+                    rect[0][0] = A2_lefts[:left_edge].sum() - \
+                        self._grayscale_dict['Kodak']['length']/2.0
+                    if rect[0][0] < 0:
+                        logging.warning('GRAYSCALE, Overshot lower bound setting. Compensating')
+                        rect[0][0] = 0
+
                     break
                 else:
                     edge_pos -= 1
@@ -523,10 +535,19 @@ class Analyse_Grayscale():
         if signal is None:
             return None, None
 
+        safety_buffer = 0.2
+        if signal[0] - frequency + frequency*safety_buffer < 0:
+            logging.warning("GRAYSCALE, the signal got adjusted one interval"\
+                " due to lower bound overshoot")
+            signal += frequency
+        if signal[-2] - frequency*safety_buffer > strip_values.size:
+            logging.warning("GRAYSCALE, the signal got adjusted one interval"\
+                " due to upper bound overshoot")
+            signal -= frequency
 
         gray_scale = []
         gray_scale_pos = []
-        safety_buffer = 0.2
+        
         for pos in xrange(signal.size-1):
             gray_scale.append(\
                 strip_values[signal[pos]-frequency+frequency*safety_buffer:\

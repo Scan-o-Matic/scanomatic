@@ -19,6 +19,7 @@ __status__ = "Development"
 
 import numpy as np
 import math
+import logging
 
 #
 # SCANNOMATIC LIBRARIES

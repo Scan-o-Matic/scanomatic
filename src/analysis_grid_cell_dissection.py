@@ -20,6 +20,7 @@ __status__ = "Development"
 #import cv
 import numpy as np
 import math
+import logging
 from scipy.stats.mstats import mquantiles, tmean, trim
 from scipy.ndimage.filters import sobel 
 from scipy.ndimage import binary_erosion, binary_dilation,\
@@ -160,35 +161,47 @@ class Cell_Item():
         if self.CELLITEM_TYPE == 0 or self.filter_array == None:
             return None
 
-        ###DEBUG WHAT IS THE GRID ARRAY
-        #from matplotlib import pyplot as plt
-        #plt.clf()
-        #plt.imshow(self.grid_array)
-        #plt.title("Image section")
-        #plt.show()
-        ###END DEBUG CODE
 
         self.features['area'] = self.filter_array.sum()
         self.features['pixelsum'] = self.grid_array[np.where(self.filter_array)].sum()
 
+        if self.features['area'] == self.features['pixelsum'] or self.features['area'] == 0:
+            ###DEBUG WHAT IS THE GRID ARRAY
+            from matplotlib import pyplot as plt
+            plt.clf()
+            plt.add_subplot(2,1,1)
+            plt.imshow(self.grid_array, title='Grid')
+            plt.add_subplot(2,1,2)
+            plt.imshow(self.filter_array, title='Filter')
+            plt.title("Image section")
+            plt.show()
+            ###END DEBUG CODE
+            
+
         if self.features['area'] != 0:
             self.features['mean'] = self.features['pixelsum'] / self.features['area']
+            feature_array = self.grid_array[np.where(self.filter_array)]
+            self.features['median'] = np.median(feature_array)
+            self.features['IQR'] = mquantiles(feature_array, prob=[0.25,0.75])
+            try:
+                self.features['IQR_mean'] = tmean(feature_array, self.features['IQR'])
+            except:
+                self.features['IQR_mean'] = None
+                self.features['IQR'] = None
+                debug.warning("GRID CELL %s, Failed to calculate IQR_mean,"+\
+                    " probably because IQR '%s' is empty." % \
+                    ("unknown", str(self.features['IQR']))) 
+                    #str(self._identifier), str(self.features['IQR'])))
         else:
             self.features['mean'] = None
+            self.features['median'] = None
+            self.features['IQR'] = None
+            self.features['IQR_mean'] = None
 
         if self.CELLITEM_TYPE == 1:
             self.features['centroid'] = None
             self.features['perimeter'] = None
 
-        feature_array = self.grid_array[np.where(self.filter_array)]
-        self.features['median'] = np.median(feature_array)
-        self.features['IQR'] = mquantiles(feature_array, prob=[0.25,0.75])
-        try:
-            self.features['IQR_mean'] = tmean(feature_array, self.features['IQR'])
-        except:
-            self.features['IQR_mean'] = None
-            self.features['IQR'] = None
-            print "*** Failed to calculate IQR_mean, probably because IQR is empty", self.features['IQR']
 
 
     def get_round_kernel(self, radius=6, outline=False):
@@ -621,10 +634,21 @@ class Blob(Cell_Item):
 
                 if bad_diff:
 
-                    self.filter_array = self.old_filter
-                    print "*** WARNING: Blob detection gone bad for",\
-                        self._identifier, ", using old (", \
-                        blob_diff / float(sqrt_of_oldsum), ")"
+                    #self.filter_array = self.old_filter
+                    #print self._identifier, blob_diff / float(sqrt_of_oldsum)
+                    logging.warning("GRID CELL %s, Blob detection gone bad, \
+using old (Error: %.2f" % (str(self._identifier), 
+                        blob_diff / float(sqrt_of_oldsum)))
+
+                    ###DEBUG WHAT IS THE GRID ARRAY
+                    #from matplotlib import pyplot as plt
+                    #plt.clf()
+                    #plt.subplot(2,1,1, title="Filter")
+                    #plt.imshow(self.filter_array)
+                    #plt.subplot(2,1,2, title="Image")
+                    #plt.imshow(self.grid_array)
+                    #plt.show()
+                    ###END DEBUG CODE
 
             #print "(", blob_diff / float(sqrt_of_oldsum), ")"
             #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
@@ -1021,7 +1045,8 @@ class Background(Cell_Item):
 
         else:
 
-            print "***ERROR: blob was not set and thus background is wrong"
+            logging.warning("GRID CELL %s, blob was not set, thus background \
+is wrong" % str(self._identifier))
 
 #
 # CLASSES Cell (entire area)

@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Started using logging for better debugging. Also removes bugs that way.
+
 *** Revamped grayscale detection since it apparently wasn't stable enough.
 
 *** Implemented a project analysis gui
