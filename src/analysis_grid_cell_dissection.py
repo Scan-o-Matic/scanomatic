@@ -166,15 +166,17 @@ class Cell_Item():
         self.features['pixelsum'] = self.grid_array[np.where(self.filter_array)].sum()
 
         if self.features['area'] == self.features['pixelsum'] or self.features['area'] == 0:
+            logging.warning("GRID CELL %s, area seems to be zero all pixels have value 1" %
+                str(self._identifier))
             ###DEBUG WHAT IS THE GRID ARRAY
-            from matplotlib import pyplot as plt
-            plt.clf()
-            plt.add_subplot(2,1,1)
-            plt.imshow(self.grid_array, title='Grid')
-            plt.add_subplot(2,1,2)
-            plt.imshow(self.filter_array, title='Filter')
-            plt.title("Image section")
-            plt.show()
+            #from matplotlib import pyplot as plt
+            #plt.clf()
+            #plt.subplot(2,1,1, title='Grid')
+            #plt.imshow(self.grid_array)
+            #plt.subplot(2,1,2, title='Filter')
+            #plt.imshow(self.filter_array)
+            #plt.title("Image section")
+            #plt.show()
             ###END DEBUG CODE
             
 

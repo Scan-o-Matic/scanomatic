@@ -63,13 +63,12 @@ class Scanning_Experiment(gtk.Frame):
         self.owner = owner
         self.DMS = self.owner.DMS
 
-        self.scanner_queue = self.owner.scanner_queue
 
         continue_load = True
 
         try:
             os.mkdir(str(root) + os.sep + str(prefix))
-        except WindowsError:
+        except:
             self.DMS('Experiment conflict',
                 'An experiment with that prefix already exists...\nAborting.', 
                 level=1100, debug_level='error')
@@ -86,10 +85,12 @@ class Scanning_Experiment(gtk.Frame):
         self._supress_other = False
         self._watch_time = '-1'
 
+        self._force_quit = False
         self._analysis_output = 'analysis'
 
         self._analysis_running = False
         self._scanner_id = int(scanner[-1])
+        self._scanner_name = scanner
         self._interval_time = float(interval)
         self._iterations_max = int(counts)
         self._prefix = str(prefix)
@@ -168,9 +169,15 @@ class Scanning_Experiment(gtk.Frame):
         label = gtk.Label("Estimated to end: " + self._end_time)
         label.show()
         hbox.pack_end(label, False, False, 2)
+        button = gtk.Button('Terminate experiment')
+        button.connect('clicked', self.terminate_experiment)
+        button.show()
+        hbox.pack_end(button, False, False, 2)
         hbox.show()
         vbox.pack_start(hbox, False, False, 2)
         
+        
+
         vbox.show()
         self.add(vbox)
         self.show()
@@ -329,7 +336,7 @@ class Scanning_Experiment(gtk.Frame):
                     else:
                         self.DMS("Scanning", "Quality of scan histogram indicates" + 
                             " that rescan needed! So that I do...",
-                            level=1110, debug_level='warning')
+                            level=110, debug_level='warning')
 
                         self._scanner.next_file_name =  self._root + os.sep + \
                             self._prefix + os.sep + self._prefix + "_" + \
@@ -342,28 +349,49 @@ class Scanning_Experiment(gtk.Frame):
         if self._subprocesses:
             gobject.timeout_add(1000*30, self._callback)
 
+    def terminate_experiment(self, widget=None, event=None, data=None):
+
+        dialog = gtk.MessageDialog(self.owner.window, gtk.DIALOG_DESTROY_WITH_PARENT,
+           gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+           "This will terminate the ongoing experiment on %s and free up \
+that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
+
+        dialog.add_button(gtk.STOCK_YES, gtk.RESPONSE_YES)
+        dialog.add_button(gtk.STOCK_NO, gtk.RESPONSE_NO)
+        resp = dialog.run()
+        dialog.destroy()
+        if resp == gtk.RESPONSE_YES:
+            self._iteration = self._iterations_max + 1
+            self._measurement_label.set_text("The program will switch over to analysis in 3 min")
+            self._timer.set_text("")
+            self._force_quit = True
+            gobject.timeout_add(1000*60*3, self.running_Experiment)          
+
+
     def running_Experiment(self, widget=None, event=None, data=None):
-        self.update_gtk()
-        if self._iteration < self._iterations_max:
-            gobject.timeout_add(1000*60*int(self._interval_time), self.running_Experiment)
-            self._next_scan = (time.time() + 60*self._interval_time)
-        else:
-            gobject.timeout_add(1000*60*int(self._interval_time), self.running_Analysis)          
-            self._next_scan = (time.time() + 60*self._interval_time)
-            self._measurement_label.set_text("Analysis will start shortly...")
+        if self._force_quit == False:
+            self.update_gtk()
+            if self._iteration < self._iterations_max:
+                gobject.timeout_add(1000*60*int(self._interval_time), self.running_Experiment)
+                self._next_scan = (time.time() + 60*self._interval_time)
+            else:
+                    gobject.timeout_add(1000*60*int(self._interval_time), self.running_Analysis)          
+                    self._next_scan = (time.time() + 60*self._interval_time)
+                    self._measurement_label.set_text("Analysis will start shortly...")
 
-        self._timer.set_text("Scanning...")
-        self._scanner.next_file_name =  self._root + os.sep + self._prefix + \
-            os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + \
-            ".tiff"
+            self._timer.set_text("Scanning...")
+            self._scanner.next_file_name =  self._root + os.sep + self._prefix + \
+                os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + \
+                ".tiff"
 
-        self._power_manager.on()
-        gobject.timeout_add(1000*10, self.do_scan)
+            self._power_manager.on()
+            gobject.timeout_add(1000*10, self.do_scan)
 
-        self._iteration += 1
+            self._iteration += 1
 
     def running_Analysis(self):
 
+        self.owner.set_unclaim_scanner(self._scanner_name)
         self._matrices = None
         self.owner.analysis_Start_New(widget = self)
         gobject.timeout_add(1000*60*4, self.destroy)          
@@ -380,6 +408,14 @@ class Scanning_Experiment_Setup(gtk.Frame):
         vbox2 = gtk.VBox(False, 0)
         vbox2.show()
         self.add(vbox2)
+
+        hbox = gtk.HBox()
+        self._selected_scanner = None
+        self.scanner = gtk.combo_box_new_text()
+        self.reload_scanner()
+        self.scanner.connect("changed", self.set_scanner)
+        hbox.pack_start(self.scanner, False, False, 2)
+        vbox2.pack_start(hbox)
 
         label = gtk.Label("Select root directory of experiment:")
         label.show()
@@ -504,6 +540,50 @@ class Scanning_Experiment_Setup(gtk.Frame):
         self.experiment_Duration_Calculation()
         vbox2.show_all()
 
+    def reload_scanner(self, active_text=None):
+
+        scanner_list = self._owner.get_unclaimed_scanners()
+
+        self.DMS('EXPERIMENT SETUP', 'Available scanners %s' % str(scanner_list),
+            level=100, debug_level='debug')
+
+        for s in scanner_list:
+            
+            need_input = True
+
+            for pos in xrange(len(self.scanner.get_model())):
+
+                cur_text = self.scanner.get_model()[pos][0]
+                if cur_text == s:
+                    need_input = False
+                    break
+
+            if need_input:
+                self.scanner.append_text(s)
+
+        start_len = len(self.scanner.get_model())
+
+        for i in xrange(start_len):
+            pos = start_len - i - 1
+            if self.scanner.get_model()[pos][0] not in scanner_list:
+                self.scanner.remove_text(pos)
+
+
+        if active_text != None:
+
+            found_text = False
+            start_len = len(self.scanner.get_model())
+            for i in xrange(start_len):
+                if active_text == self.scanner.get_model()[i][0]:
+
+                    self.scanner.set_active(i)
+                    return None
+
+        self.scanner.set_active(-1)
+
+        return None
+
+
     def reload_fixtures(self, active_text=None):
 
         fixture_list = self._owner.fixture_config.get_all_fixtures()
@@ -545,7 +625,32 @@ class Scanning_Experiment_Setup(gtk.Frame):
                 self.fixture.set_active(0)
             else:
                 self.fixture.set_active(-1)
-                
+               
+    def set_scanner(self, widget=None, event=None, data=None):
+
+        if not self._GUI_updating:
+            self._GUI_updating = True
+
+            scanner = widget.get_active()
+            if scanner >= 0:
+
+                if self._owner.set_claim_scanner(\
+                    self.scanner.get_model()[scanner][0]):
+
+                    scanner_text = self.scanner.get_model()[scanner][0]
+                    if self._selected_scanner != None:
+                        self._owner.set_unclaim_scanner(self._selected_scanner)
+                    self._selected_scanner = scanner_text
+                    
+
+                else:
+                    if self._selected_scanner != None:
+                        self._owner.set_unclaim_scanner(self._selected_scanner)
+                    self._selected_scanner = None
+                    self.reload_scanner()
+
+            self._GUI_updating = False
+             
 
     def set_fixture(self, widget=None, event=None, data=None):
 

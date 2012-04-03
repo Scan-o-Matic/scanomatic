@@ -34,7 +34,7 @@ import gobject
 import os, os.path, sys
 import time
 import types
-from subprocess import call
+from subprocess import check_output
 
 #
 # SCANNOMATIC LIBRARIES
@@ -125,10 +125,8 @@ class Application_Window():
         ###END HACK
         self.DMS('Scanner Resources', 'Unclaimed at start-up %s' % \
             self.get_unclaimed_scanners(), level=100, debug_level='debug')
-
-        ###DEBUG
-        self.set_claim_scanner(self._installed_scanners[0])
-        ###END DEBUG
+        self.DMS('Scanner Resources', 'Scanners that are on: %s' % \
+            str(self.update_live_scanners()), level=100, debug_level='debug')
 
         #This should only happen on first run
         if self._config_file.get("data_root") == None:
@@ -312,46 +310,58 @@ class Application_Window():
                      native=True)
 
     def experiment_Start_New(self, widget=None, event=None, data=None):
-        self.experiment_layout.experiment_Duration_Calculation()
-        self.experiment_layout.hide()
 
-        pinning_matrices = []
-        for matrix in self.experiment_layout.plate_matrices:
-            if matrix.get_active() >= 0:
-                pinning_matrices.append(self.experiment_layout.\
-                    pinning_matrices[matrix.get_active_text()])#get_model()\
-                    #[matrix.get_active()][0]])
-            else:
-                pinning_matrices.append(None)
 
-        experiment.Scanning_Experiment(self, self._handle, "Scanner 1",          
-             self.experiment_layout.experiment_interval.get_text(),
-             self.experiment_layout.experiment_times.get_text(),
-             self.experiment_layout.experiment_name.get_text(),
-             self.experiment_layout.experiment_description.get_text(),
-             self.experiment_layout.experiment_root.get_text(),
-             self.running_experiments,
-             native=True, matrices = pinning_matrices,
-             fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_"))
+        if self.experiment_layout._selected_scanner != None:
+            self.experiment_layout.experiment_Duration_Calculation()
+            self.experiment_layout.hide()
+
+            pinning_matrices = []
+            for matrix in self.experiment_layout.plate_matrices:
+                if matrix.get_active() >= 0:
+                    pinning_matrices.append(self.experiment_layout.\
+                        pinning_matrices[matrix.get_active_text()])#get_model()\
+                        #[matrix.get_active()][0]])
+                else:
+                    pinning_matrices.append(None)
+
+            experiment.Scanning_Experiment(self, self._handle,
+                self.experiment_layout._selected_scanner,
+                self.experiment_layout.experiment_interval.get_text(),
+                self.experiment_layout.experiment_times.get_text(),
+                self.experiment_layout.experiment_name.get_text(),
+                self.experiment_layout.experiment_description.get_text(),
+                self.experiment_layout.experiment_root.get_text(),
+                self.running_experiments,
+                native=True, matrices = pinning_matrices,
+                fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_"))
 
     def update_live_scanners(self):
 
-        scanners = check_output("sane-find-scanner -v -v |" +
+        scanners = map(str, check_output("sane-find-scanner -v -v |" +
             " sed -n -E 's/^found USB.*(libusb.*$)/\1/p'",
-            shell=True).split('\n').strip()
+            shell=True).split('\n'))
+
+        if len(scanners) == 1 and scanners[0] == '':
+            self.DMS('Scanner Resources', 'No scanners on', level=100,
+                debug_level='debug')
+            return None
 
         for s in scanners:
-            if s not in self._live_scanners.values():
+            if s not in self._live_scanners.values() and s != '':
                 if -1 in self._live_scanners:
-                    self.DMS('Scanner Queue',
+                    self.DMS('Scanner Resources',
                         'More than one uncaught scanner, not good at all',
-                        level=101, debug_level='warning')
+                        level=100, debug_level='warning')
                 else:
                     self._live_scanners[-1] = s
+            
 
         for pos,s in self._live_scanners.items():
             if s not in scanners:
                 del self._live_scanners[pos]
+
+        return self._live_scanners
 
     def get_scanner_address(self, experiment):
 
