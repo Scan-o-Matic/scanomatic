@@ -42,22 +42,26 @@ class Sane_Base():
         pass
 
     def AcquireNatively(self, scanner=None, handle=None):
-        return self.AcquireByFile()
+        return self.AcquireByFile(scanner=None, handle=handle)
 
     def AcquireByFile(self, scanner=None, handle=None):
         if self.next_file_name:
             self.owner.owner.DMS("Scanning", str(self.next_file_name), level=1)
             #os.system(self._scan_settings + self.next_file_name) 
+            
             try:
                 im = open(self.next_file_name,'w')
             except:
                 self.owner.owner.DMS("ERROR", "Could not write to file: " + str(self.next_file_name),
-                    level=1010)
+                    level=1110)
                 return False
 
             scan_query = list(self._scan_settings)
-            scan_query.insert(0, self._program_name)
+            if scanner != None:
+                scan_query = ['-d', scanner] + scan_query
   
+            scan_query.insert(0, self._program_name)  
+
             if self.owner and self.owner.USE_CALLBACK:
                 return ("SANE-CALLBACK", im, Popen(scan_query, stdout=im, shell=False),self.next_file_name)
             else:

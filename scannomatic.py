@@ -391,19 +391,21 @@ class Application_Window():
 
     def get_scanner_address(self, experiment):
 
-        if experement in self._live_scanners:
+        self.update_live_scanners()
+
+        if experiment in self._live_scanners:
             return self._live_scanners[experiment] 
         else:
-            self._scanners_queue.insert(0, experiment)
+            self._scanner_queue.insert(0, experiment)
 
             if -1 in self._live_scanners:
-                catch_scanner = self._scanners_queue.pop()
+                catch_scanner = self._scanner_queue.pop()
                 while catch_scanner in self._live_scanners:
                     self.DMS('Scanner Queue',
                         'Trying to add a second scanner to the same project',
                         level=101, debug_level='warning')
-                    if len(self._scanners_queue) > 0:
-                        catch_scanner = self._scanners_queue.pop()
+                    if len(self._scanner_queue) > 0:
+                        catch_scanner = self._scanner_queue.pop()
                     else:
                         return None
 

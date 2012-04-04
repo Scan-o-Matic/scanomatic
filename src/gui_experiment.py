@@ -91,6 +91,7 @@ class Scanning_Experiment(gtk.Frame):
         self._supress_other = False
         self._watch_time = '-1'
 
+        self._scanning = False
         self._force_quit = False
         self._analysis_output = 'analysis'
 
@@ -208,9 +209,12 @@ class Scanning_Experiment(gtk.Frame):
                 'Interval':self._interval_time, 'Measurments':counts, 
                 'Start Time':time.time(), 'Pinning Matrices':self._matrices, 'Fixture':fixture},
                 append=False)
+
+            self._loaded = True
             gobject.timeout_add(30, self.running_Experiment) 
             gobject.timeout_add(1000*60, self.running_timer)
         else:
+            self._loaded = False
             self._measurement_label.set_text("Conflict in name, aborting...")
             gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)
 
@@ -224,25 +228,25 @@ class Scanning_Experiment(gtk.Frame):
         #Dummy check so far
         return True
 
-    def check_quality(self):
+    #def check_quality(self):
         #OUTDATED QUALITY CHECK, SHOULD NOT BE HERE EITHER
-        log_reader.load_data(self._analysis_log_file_path)
-        if log_reader.count_histograms() > 1:
-            A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._analysis_log_file_path, manual_value=None, max_value=255, save_path=self._heatMapPath)
-            if len(A) > 0:
-                if (log_reader.count_histograms()-1) == A[len(A)-1]['Source Index']:
-                    if A[len(A)-1]['Source Index'] != self._last_rejected:
-                        self._last_rejected = A[len(A)-1]['Source Index']
-                        self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + "_rescan.tiff"
-                        self._scan(handle=self._handle)
-                    else:
-                        gobject.timeout_add(1000*10,self._power_manager.off)
-                else:
-                    gobject.timeout_add(1000*10,self._power_manager.off)
-            else:
-                gobject.timeout_add(1000*10,self._power_manager.off)
-        else:
-            gobject.timeout_add(1000*10,self._power_manager.off)
+        #log_reader.load_data(self._analysis_log_file_path)
+        #if log_reader.count_histograms() > 1:
+            #A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._analysis_log_file_path, manual_value=None, max_value=255, save_path=self._heatMapPath)
+            #if len(A) > 0:
+                #if (log_reader.count_histograms()-1) == A[len(A)-1]['Source Index']:
+                    #if A[len(A)-1]['Source Index'] != self._last_rejected:
+                        #self._last_rejected = A[len(A)-1]['Source Index']
+                        #self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + "_rescan.tiff"
+                        #self._scan(handle=self._handle)
+                    #else:
+                        #gobject.timeout_add(1000*10,self._power_manager.off)
+                #else:
+                    #gobject.timeout_add(1000*10,self._power_manager.off)
+            #else:
+                #gobject.timeout_add(1000*10,self._power_manager.off)
+        #else:
+            #gobject.timeout_add(1000*10,self._power_manager.off)
 
     def log_file(self, message, append=True):
 
@@ -258,21 +262,33 @@ class Scanning_Experiment(gtk.Frame):
         self._measurement_label.set_text("Measurment (" + str(self._iteration) + "/" + str(self._iterations_max) + ")")
         
     def running_timer(self, widget=None, event=None, data=None):
-        if self._next_scan:
+        if self._next_scan and self._force_quit == False:
             self._timer.set_text("Next scan in: " + str(int(self._next_scan - time.time())/60)+"min")
             gobject.timeout_add(1000*60, self.running_timer)
         else:
             self._timer.set_text("")
 
     def do_scan(self):
-        scan = self._scan(handle=self._handle)
-        if scan:
-            if type(scan) == types.TupleType:
-                if scan[0] == "SANE-CALLBACK":
-                    self._subprocesses.append(scan)
-                    if len(self._subprocesses) == 1:
-                        gobject.timeout_add(1000*30, self._callback)
+        if not self._force_quit:
 
+            scanner_address = self.owner.get_scanner_address(self._scanner_name[-1])
+
+            if scanner_address is not None:
+
+                self._scanning = True
+                scan = self._scan(handle=self._handle, scanner=scanner_address)
+                if scan: 
+                    if type(scan) == types.TupleType:
+                        if scan[0] == "SANE-CALLBACK":
+                            self._subprocesses.append(scan)
+                            if len(self._subprocesses) == 1:
+                                gobject.timeout_add(1000*30, self._callback)
+                else:
+                    self._scanning = False
+
+            else:
+
+                gobject.timeout_add(1000*5, self.do_scan)
 
     def _write_log(self, file_list=None):
         if file_list:
@@ -291,7 +307,8 @@ class Scanning_Experiment(gtk.Frame):
                 self.f_settings.set_areas_positions()
                 dpi_factor = 4.0
                 self.f_settings.A.load_other_size(f, dpi_factor)
-                grayscale = self.f_settings.A.get_subsection(self.f_settings.current_analysis_image_config.get("grayscale_area"))
+                grayscale = self.f_settings.A.get_subsection(\
+                    self.f_settings.current_analysis_image_config.get("grayscale_area"))
 
                 gs_data[-1]['mark_X'] = list(self.f_settings.mark_X)
                 gs_data[-1]['mark_Y'] = list(self.f_settings.mark_Y)
@@ -310,7 +327,8 @@ class Scanning_Experiment(gtk.Frame):
                     gs_data[-1]['plate_' + str(i) + '_area'] = list(a)
 
             fs = open(self._analysis_log_file_path,'a')
-            log_maker.make_entries(fs, file_list=file_list, extra_info=gs_data, verboise=False, quiet=False)
+            log_maker.make_entries(fs, file_list=file_list, extra_info=gs_data,
+                verboise=False, quiet=False)
             fs.close()
             self.DMS("Analysis","Done. Nothing more to do for that image...", 
                 level=101, debug_level='debug')
@@ -337,7 +355,8 @@ class Scanning_Experiment(gtk.Frame):
                     
                     del self._subprocesses[i]
 
-                    if got_image and self._quality_OK():
+                    if (got_image and self._quality_OK()) or self._force_quit:
+                        self._scanning = False
                         gobject.timeout_add(1000*20,self._power_manager.off)
                     else:
                         self.DMS("Scanning", "Quality of scan histogram indicates" + 
@@ -368,10 +387,10 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
         dialog.destroy()
         if resp == gtk.RESPONSE_YES:
             self._iteration = self._iterations_max + 1
-            self._measurement_label.set_text("The program will switch over to analysis in 3 min")
+            self._measurement_label.set_text("The program will switch over to analysis ASAP")
             self._timer.set_text("")
             self._force_quit = True
-            gobject.timeout_add(1000*60*3, self.running_Experiment)          
+            self.running_Analysis()          
 
 
     def running_Experiment(self, widget=None, event=None, data=None):
@@ -397,12 +416,21 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
 
     def running_Analysis(self):
 
-        self.DMS('EXPERIMENT', 'Starting analysis...', level=100, debug_level='debug')
-        self.owner.set_unclaim_scanner(self._scanner_name)
-        self._matrices = None
-        self.owner.analysis_Start_New(widget = self)
-        gobject.timeout_add(1000*60*4, self.destroy)          
-
+        if self._scanning == False and self._loaded == True:
+            self._power_manager.off() #Security measure, since many ways to get here and
+                #won't do anything if already switched off
+            self._loaded = False
+            self.DMS('EXPERIMENT', 'Starting analysis...', level=100, debug_level='debug')
+            self._matrices = None
+            self.owner.analysis_Start_New(widget = self)
+            gobject.timeout_add(1000*3, self.destroy)        
+        if self._loaded == False:
+            self.owner.set_unclaim_scanner(self._scanner_name)
+            self.DMS('EXPERIMENT', 'Done...', level=100, debug_level='debug')
+            self.destroy()
+        else:  
+            self.DMS('EXPERIMENT', 'Waiting for scan to finnish...', level=100, debug_level='debug')
+            gobject.timeout_add(1000*4, self.running_Analysis)  
           
 class Scanning_Experiment_Setup(gtk.Frame):
     def __init__(self, owner, simple_scan = False):

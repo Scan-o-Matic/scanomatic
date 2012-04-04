@@ -22319,4 +22319,119 @@
 *
 * 
 
+*** TERMINATING
+* 04 Apr 2012 11:28:24
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 11:34:46
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 11:36:58
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 11:38:19
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 11:39:41
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 11:41:20
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 11:43:21
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 11:44:17
+*
+* 
+
+*** EXECUTING
+* 04 Apr 2012 11:44:32
+*
+* ['/home/martin/Documents/PhD/python/scannomatic/src/analysis.py', '-i', '/home/martin/Documents/Scannomatic/Test/Test.log', '-o', 'analysis', '-t', '-1']
+
+*** EXECUTING
+* 04 Apr 2012 11:44:48
+*
+* ['/home/martin/Documents/PhD/python/scannomatic/src/analysis.py', '-i', '/home/martin/Documents/Scannomatic/Testffff/Testffff.log', '-o', 'analysis', '-t', '-1']
+
+*** EXECUTING
+* 04 Apr 2012 11:44:52
+*
+* ['/home/martin/Documents/PhD/python/scannomatic/src/analysis.py', '-i', '/home/martin/Documents/Scannomatic/Testffff/Testffff.log', '-o', 'analysis', '-t', '-1']
+
+*** EXECUTING
+* 04 Apr 2012 11:44:56
+*
+* ['/home/martin/Documents/PhD/python/scannomatic/src/analysis.py', '-i', '/home/martin/Documents/Scannomatic/Testffff/Testffff.log', '-o', 'analysis', '-t', '-1']
+
+*** TERMINATING
+* 04 Apr 2012 11:44:59
+*
+* 
+
+*** EXECUTING
+* 04 Apr 2012 11:47:57
+*
+* ['/home/martin/Documents/PhD/python/scannomatic/src/analysis.py', '-i', '/home/martin/Documents/Scannomatic/Testjjj\xc3\xb6lk/Testjjj\xc3\xb6lk.log', '-o', 'analysis', '-t', '-1']
+
+*** TERMINATING
+* 04 Apr 2012 11:48:22
+*
+* 
+
+*** PROJECT ANALYSIS
+* 04 Apr 2012 11:49:24
+*
+* Activated
+
+*** TERMINATING
+* 04 Apr 2012 11:49:28
+*
+* 
+
+*** PROJECT ANALYSIS
+* 04 Apr 2012 11:50:08
+*
+* Activated
+
+*** TERMINATING
+* 04 Apr 2012 13:08:58
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 13:32:26
+*
+* 
+
+*** TERMINATING
+* 04 Apr 2012 13:33:25
+*
+* 
+
+*** EXECUTING
+* 04 Apr 2012 13:36:44
+*
+* ['/home/martin/Documents/PhD/python/scannomatic/src/analysis.py', '-i', '/home/martin/Documents/Scannomatic/Test46564/Test46564.log', '-o', 'analysis', '-t', '-1']
+
+*** TERMINATING
+* 04 Apr 2012 13:36:49
+*
+* 
+
 
