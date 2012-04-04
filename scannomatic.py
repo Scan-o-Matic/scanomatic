@@ -34,7 +34,7 @@ import gobject
 import os, os.path, sys
 import time
 import types
-from subprocess import check_output
+import subprocess 
 
 #
 # SCANNOMATIC LIBRARIES
@@ -364,9 +364,13 @@ class Application_Window():
 
     def update_live_scanners(self):
 
-        scanners = map(str, check_output("sane-find-scanner -v -v |" +
-            " sed -n -E 's/^found USB.*(libusb.*$)/\1/p'",
-            shell=True).split('\n'))
+        p = subprocess.Popen("sane-find-scanner -v -v |" +
+            " sed -n -E 's/^found USB.*(libusb.*$)/\1/p'", 
+            shell=True, stdout=subprocess.PIPE)
+
+        out, err = p.communicate()
+
+        scanners = map(str, out).split('\n'))
 
         if len(scanners) == 1 and scanners[0] == '':
             self.DMS('Scanner Resources', 'No scanners on', level=100,
