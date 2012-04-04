@@ -365,15 +365,13 @@ class Application_Window():
     def update_live_scanners(self):
 
         p = subprocess.Popen("sane-find-scanner -v -v |" +
-            " sed -n -E 's/^found USB.*(libusb.*$)/\1/p'", 
+            " sed -n -E 's/^found USB.*(libusb.*$)/\\1/p'", 
             shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
         out, err = p.communicate()
 
         scanners = map(str, out.split('\n'))
 
-        self.DMS('Scanner Resources', 'Live scanners %s' % str(scanners),
-            level=100, debug_level='debug')
 
         if len(scanners) == 1 and scanners[0] == '':
             self.DMS('Scanner Resources', 'No scanners on', level=100,
@@ -393,6 +391,9 @@ class Application_Window():
         for pos,s in self._live_scanners.items():
             if s not in scanners:
                 del self._live_scanners[pos]
+
+        self.DMS('Scanner Resources', 'Live scanners %s' % str(self._live_scanners),
+            level=100, debug_level='debug')
 
         return self._live_scanners
 

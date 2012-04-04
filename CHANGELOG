@@ -2,6 +2,11 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Implemented a termination button
+
+*** Implemented support for several scanners connected to same computer
+    run in both on and several instances of the program
+
 *** Started using logging for better debugging. Also removes bugs that way.
 
 *** Revamped grayscale detection since it apparently wasn't stable enough.

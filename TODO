@@ -38,20 +38,16 @@
 
 --- GUI ---
 
-*** Abort button on running experiment
-
 *** Fixture should respond to what fixture is selected in start experiment!
 
 *** Analysis One should allow for any space.
-
-*** Make experiment last until analysis of last image is done
 
 *** Extend functionality in fixture view (Gray-scale values)
     Status: Begun. Something wrong in fixture
 
 *** Extend functionality in config view
 
-*** Use a queue for all things to be done and a scheduler
+(*** Use a queue for all things to be done and a scheduler)
 
 --- OTHER ---
 
@@ -71,6 +67,10 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Make experiment last until analysis of last image is done
+
+*** Abort button on running experiment
 
 (*** Extend functionality in fixture view (Cell calibration))
 
