@@ -366,11 +366,14 @@ class Application_Window():
 
         p = subprocess.Popen("sane-find-scanner -v -v |" +
             " sed -n -E 's/^found USB.*(libusb.*$)/\1/p'", 
-            shell=True, stdout=subprocess.PIPE)
+            shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
         out, err = p.communicate()
 
         scanners = map(str, out.split('\n'))
+
+        self.DMS('Scanner Resources', 'Live scanners %s' % str(scanners),
+            level=100, debug_level='debug')
 
         if len(scanners) == 1 and scanners[0] == '':
             self.DMS('Scanner Resources', 'No scanners on', level=100,
@@ -508,7 +511,7 @@ class Application_Window():
 
     def close_application(self, widget=None, event=None, data=None):
         if self.ask_Quit():
-            for child self.running_experiments.get_children()):
+            for child in self.running_experiments.get_children():
 
                 try:
                     #not so nice... 
