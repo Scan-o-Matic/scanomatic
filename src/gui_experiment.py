@@ -63,16 +63,22 @@ class Scanning_Experiment(gtk.Frame):
         self.owner = owner
         self.DMS = self.owner.DMS
 
-
         continue_load = True
 
-        try:
-            os.mkdir(str(root) + os.sep + str(prefix))
-        except:
-            self.DMS('Experiment conflict',
-                'An experiment with that prefix already exists...\nAborting.', 
-                level=1100, debug_level='error')
+        if scanner is None:
+            
             continue_load = False
+            self.DMS('Experiment', "You're trying to start a project on no scanner.", level=1100,
+                debug_level='error')
+
+        if continue_load: 
+            try:
+                os.mkdir(str(root) + os.sep + str(prefix))
+            except:
+                self.DMS('Experiment conflict',
+                    'An experiment with that prefix already exists...\nAborting.', 
+                    level=1100, debug_level='error')
+                continue_load = False
             
         gtk.Frame.__init__(self, prefix)
 
@@ -391,6 +397,7 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
 
     def running_Analysis(self):
 
+        self.DMS('EXPERIMENT', 'Starting analysis...', level=100, debug_level='debug')
         self.owner.set_unclaim_scanner(self._scanner_name)
         self._matrices = None
         self.owner.analysis_Start_New(widget = self)
@@ -400,6 +407,9 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
 class Scanning_Experiment_Setup(gtk.Frame):
     def __init__(self, owner, simple_scan = False):
         gtk.Frame.__init__(self, "NEW SET-UP EXPERIMENT")
+
+        self.connect("hide", self._hide_function)
+        self.connect("show", self._show_function)
 
         self._GUI_updating = False
         self._owner = owner
@@ -528,7 +538,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
         hbox = gtk.HBox()
 
         button = gtk.Button("Start experiment")
-        button.connect("clicked", owner.experiment_Start_New)
+        button.connect("clicked", self._start_experiment) 
         hbox.pack_start(button, False, False, 2)
         vbox2.pack_start(hbox, False, False, 2)
         
@@ -539,6 +549,36 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
         self.experiment_Duration_Calculation()
         vbox2.show_all()
+
+    def experiment_started(self):
+
+        self._selected_scanner = None
+
+    def _start_experiment(self, widget=None, event=None, data=None):
+
+        self._GUI_updating = True
+
+        self.hide()
+
+        self.experiment_Duration_Calculation()
+
+        self._GUI_updating = False
+
+        self._owner.experiment_Start_New(widget, event, data)
+
+    def _hide_function(self, widget=None, event=None, data=None):
+
+        if self._GUI_updating == False:
+            self.DMS('EXPERIMENT SETUP', 'Aborted setup', level=100, debug_level='debug')
+            self._owner.set_unclaim_scanner(self._selected_scanner) 
+            self._selected_scanner = None
+            self.scanner.set_active(-1)
+
+    def _show_function(self, widget=None, event=None, data=None):
+
+
+        self.reload_scanner()
+         
 
     def reload_scanner(self, active_text=None):
 
@@ -631,7 +671,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
         if not self._GUI_updating:
             self._GUI_updating = True
 
-            scanner = widget.get_active()
+            scanner = self.scanner.get_active()
             if scanner >= 0:
 
                 if self._owner.set_claim_scanner(\

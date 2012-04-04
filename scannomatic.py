@@ -299,22 +299,43 @@ class Application_Window():
         self.show_config(self.experiment_layout)
 
     def experiment_New_One_Scan(self, widget=None, event=None, data=None):
-        time_stamp = time.strftime("%d_%b_%Y__%H_%M_%S", time.gmtime())
-        experiment.Scanning_Experiment(self, self._handle, "Scanner 1",          
-                     1,
-                     0,
-                     "Single_Scan_"+time_stamp,
-                     "",
-                     self.experiment_layout.experiment_root.get_text(),
-                     self.running_experiments,
-                     native=True)
+
+        scanners = self.get_unclaimed_scanners()
+
+        dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
+            gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+            "Select the scanner that you wish to use:\n" +\
+            "(Scanning will start at once)")
+        for i, s in enumerate(scanners):
+            dialog.add_button(s, i)
+
+        dialog.add_button(gtk.STOCK_CANCEL, -1)
+
+        resp = dialog.run()
+
+        dialog.destroy()
+
+        if resp >= 0:
+
+            self.set_claim_scanner(scanners[resp])
+
+            time_stamp = time.strftime("%d_%b_%Y__%H_%M_%S", time.gmtime())
+            experiment.Scanning_Experiment(self, self._handle, scanners[resp],          
+                         1,
+                         0,
+                         "Single_Scan_"+time_stamp,
+                         "",
+                         self.experiment_layout.experiment_root.get_text(),
+                         self.running_experiments,
+                         native=True)
 
     def experiment_Start_New(self, widget=None, event=None, data=None):
 
 
         if self.experiment_layout._selected_scanner != None:
-            self.experiment_layout.experiment_Duration_Calculation()
-            self.experiment_layout.hide()
+
+            scanner = self.experiment_layout._selected_scanner
+            self.experiment_layout.experiment_started()
 
             pinning_matrices = []
             for matrix in self.experiment_layout.plate_matrices:
@@ -326,7 +347,7 @@ class Application_Window():
                     pinning_matrices.append(None)
 
             experiment.Scanning_Experiment(self, self._handle,
-                self.experiment_layout._selected_scanner,
+                scanner,
                 self.experiment_layout.experiment_interval.get_text(),
                 self.experiment_layout.experiment_times.get_text(),
                 self.experiment_layout.experiment_name.get_text(),
@@ -335,6 +356,11 @@ class Application_Window():
                 self.running_experiments,
                 native=True, matrices = pinning_matrices,
                 fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_"))
+
+        else:
+
+            self.DMS('Experiment', "You're trying to start a project on no scanner."+\
+                "\n\nIt makes no sense", level = 1100, debug_level='warning')
 
     def update_live_scanners(self):
 
