@@ -370,7 +370,7 @@ class Application_Window():
 
         out, err = p.communicate()
 
-        scanners = map(str, out).split('\n'))
+        scanners = map(str, out.split('\n'))
 
         if len(scanners) == 1 and scanners[0] == '':
             self.DMS('Scanner Resources', 'No scanners on', level=100,
@@ -413,7 +413,7 @@ class Application_Window():
                     else:
                         return None
 
-                self._live_scanner[catch_scanner] = self._live_scanners[-1]
+                self._live_scanners[catch_scanner] = self._live_scanners[-1]
                 del self._live_scanners[-1]
 
         if experiment in self._live_scanners:
@@ -508,6 +508,15 @@ class Application_Window():
 
     def close_application(self, widget=None, event=None, data=None):
         if self.ask_Quit():
+            for child self.running_experiments.get_children()):
+
+                try:
+                    #not so nice... 
+                    child._power_manager.off()
+
+                except:
+
+                    pass
 
             for scanner in self._claimed_scanners:
                 self.set_unclaim_scanner(scanner)
