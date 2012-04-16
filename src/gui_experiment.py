@@ -548,7 +548,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
         button = gtk.Button("See plate positions on fixture")
         #Change this...
-        button.connect("clicked", owner.config_fixture,'view')
+        button.connect("clicked", self.view_config)
         hbox.pack_start(button, False, False, 2)
 
         self.plate_pinnings = gtk.HBox()
@@ -577,6 +577,11 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
         self.experiment_Duration_Calculation()
         vbox2.show_all()
+
+    def view_config(self, widget=None, event=None, data=None):
+        if self.fixture.get_active() >= 0:
+            self._owner.config_fixture(event='view', data=\
+                self.fixture.get_model()[self.fixture.get_active()][0].replace(" ","_"))
 
     def experiment_started(self):
 

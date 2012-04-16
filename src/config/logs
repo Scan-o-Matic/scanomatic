@@ -22454,4 +22454,669 @@
 *
 * 
 
+*** FIXTURE
+* 16 Apr 2012 10:21:03
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 10:21:30
+*
+* 
+
+*** TERMINATING
+* 16 Apr 2012 10:24:09
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 11:18:36
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 11:24:04
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:03:42
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:03:47
+*
+* 
+
+*** TERMINATING
+* 16 Apr 2012 12:05:51
+*
+* 
+
+*** TERMINATING
+* 16 Apr 2012 12:10:07
+*
+* 
+
+*** IN DEVELOPMENT
+* 16 Apr 2012 12:10:51
+*
+* Functionality has not been implemented yet
+
+*** FIXTURE
+* 16 Apr 2012 12:10:55
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:11:01
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:11:36
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:11:43
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:13:57
+*
+* Activated
+
+*** ANALYSIS
+* 16 Apr 2012 12:14:10
+*
+* Activated
+
+*** REFERENCE SCAN POSITIONS
+* 16 Apr 2012 12:14:19
+*
+* [(85.16129032258064, 848.0645161290322), (110.96774193548387, 662.258064516129)]
+
+*** SCAN POSITIONS
+* 16 Apr 2012 12:14:19
+*
+* [(847.69102117228272, 72.536018775816046), (661.8552051434848, 98.130156517455447)]
+
+*** TERMINATING
+* 16 Apr 2012 12:14:49
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:15:25
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:15:31
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:37:20
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:37:28
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:37:49
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:37:56
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:39:27
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:39:30
+*
+* 
+
+*** TERMINATING
+* 16 Apr 2012 12:41:14
+*
+* 
+
+*** TERMINATING
+* 16 Apr 2012 12:42:43
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:44:58
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:45:02
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 12:46:10
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 12:46:16
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:18:19
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:18:28
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:20:42
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:20:48
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:23:02
+*
+* Selected : fixture_b
+
+*** FIXTURE
+* 16 Apr 2012 14:23:57
+*
+* Selected : fixture_b
+
+*** FIXTURE
+* 16 Apr 2012 14:23:57
+*
+* Image: /home/martin/Documents/PhD/python/scannomatic/src/config/fixtures/fixture_b.tiff
+
+*** TERMINATING
+* 16 Apr 2012 14:24:03
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:24:41
+*
+* Selected : fixture_b
+
+*** FIXTURE
+* 16 Apr 2012 14:24:41
+*
+* Image: /home/martin/Documents/PhD/python/scannomatic/src/config/fixtures/fixture_b.tiff
+
+*** TERMINATING
+* 16 Apr 2012 14:24:44
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:25:30
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:25:52
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:47:54
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:48:04
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:48:17
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:48:41
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:49:55
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:50:09
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:52:01
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:52:20
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:53:22
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:53:46
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:53:51
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:53:57
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:54:29
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:55:44
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 14:57:25
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 14:57:30
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:07:47
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:07:57
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:09:14
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:09:31
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:10:40
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:10:42
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:16:36
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:16:42
+*
+* 
+
+*** TERMINATING
+* 16 Apr 2012 15:17:29
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:17:34
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:17:36
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:20:32
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:20:51
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:20:55
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:21:05
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:28:02
+*
+* New fixture, reproducing overlay 'G' with area '[(85.16129032258064, 848.0645161290322), (110.96774193548387, 662.258064516129)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:02
+*
+* New fixture, reproducing overlay '0' with area '[(178.06451612903228, 1482.9032258064515), (634.8387096774194, 806.7741935483871)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:02
+*
+* New fixture, reproducing overlay '1' with area '[(178.06451612903228, 706.1290322580646), (632.258064516129, 24.838709677419388)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:02
+*
+* New fixture, reproducing overlay '2' with area '[(730.3225806451613, 1482.9032258064515), (1184.516129032258, 811.9354838709678)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:02
+*
+* New fixture, reproducing overlay '3' with area '[(735.483870967742, 700.9677419354839), (1184.516129032258, 27.419354838709722)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:29
+*
+* Activated
+
+*** FIXTURE
+* 16 Apr 2012 15:28:29
+*
+* New fixture, reproducing overlay 'G' with area '[(85.16129032258064, 848.0645161290322), (110.96774193548387, 662.258064516129)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:29
+*
+* New fixture, reproducing overlay '0' with area '[(178.06451612903228, 1482.9032258064515), (634.8387096774194, 806.7741935483871)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:29
+*
+* New fixture, reproducing overlay '1' with area '[(178.06451612903228, 706.1290322580646), (632.258064516129, 24.838709677419388)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:29
+*
+* New fixture, reproducing overlay '2' with area '[(730.3225806451613, 1482.9032258064515), (1184.516129032258, 811.9354838709678)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:29
+*
+* New fixture, reproducing overlay '3' with area '[(735.483870967742, 700.9677419354839), (1184.516129032258, 27.419354838709722)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:33
+*
+* New fixture, reproducing overlay 'G' with area '[(59.35483870967744, 1227.4193548387095), (95.48387096774192, 1059.6774193548388)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:33
+*
+* New fixture, reproducing overlay '0' with area '[(136, 4), (653, 732)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:33
+*
+* New fixture, reproducing overlay '1' with area '[(227.09677419354838, 1361.6129032258063), (397.41935483870975, 1031.2903225806451)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:33
+*
+* New fixture, reproducing overlay '2' with area '[(823.2258064516129, 1281.6129032258063), (1047.741935483871, 940.9677419354839)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:33
+*
+* New fixture, reproducing overlay '3' with area '[(725.1612903225806, 592.5806451612902), (1166.4516129032259, 182.25806451612908)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:35
+*
+* New fixture, reproducing overlay 'G' with area '[(85.16129032258064, 848.0645161290322), (110.96774193548387, 662.258064516129)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:35
+*
+* New fixture, reproducing overlay '0' with area '[(178.06451612903228, 1482.9032258064515), (634.8387096774194, 806.7741935483871)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:35
+*
+* New fixture, reproducing overlay '1' with area '[(178.06451612903228, 706.1290322580646), (632.258064516129, 24.838709677419388)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:35
+*
+* New fixture, reproducing overlay '2' with area '[(730.3225806451613, 1482.9032258064515), (1184.516129032258, 811.9354838709678)]'
+
+*** FIXTURE
+* 16 Apr 2012 15:28:35
+*
+* New fixture, reproducing overlay '3' with area '[(735.483870967742, 700.9677419354839), (1184.516129032258, 27.419354838709722)]'
+
+*** TERMINATING
+* 16 Apr 2012 15:28:37
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:29:12
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:29:20
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:30:30
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:30:43
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:33:40
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:33:54
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:35:31
+*
+* Activated
+
+*** FIXTURE
+* 16 Apr 2012 15:35:59
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:36:06
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:36:27
+*
+* Activated
+
+*** FIXTURE
+* 16 Apr 2012 15:36:39
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:36:56
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:49:55
+*
+* Activated
+
+*** FIXTURE
+* 16 Apr 2012 15:50:03
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:50:07
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:51:51
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:51:53
+*
+* 
+
+*** TERMINATING
+* 16 Apr 2012 15:53:59
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:54:10
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:54:12
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:54:56
+*
+* Activated
+
+*** FIXTURE
+* 16 Apr 2012 15:55:03
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:55:07
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:58:10
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:58:14
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:58:32
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:58:36
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 15:59:34
+*
+* Activated
+
+*** FIXTURE
+* 16 Apr 2012 15:59:41
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 15:59:47
+*
+* 
+
+*** FIXTURE
+* 16 Apr 2012 16:00:51
+*
+* Activated
+
+*** FIXTURE
+* 16 Apr 2012 16:00:55
+*
+* Activated
+
+*** FIXTURE
+* 16 Apr 2012 16:01:01
+*
+* Activated
+
+*** TERMINATING
+* 16 Apr 2012 16:01:10
+*
+* 
+
 

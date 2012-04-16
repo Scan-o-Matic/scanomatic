@@ -38,6 +38,9 @@
 
 --- GUI ---
 
+*** Make scanner-queue lay outside program so several instances of program
+    will be OK.
+
 *** Fixture should respond to what fixture is selected in start experiment!
 
 *** Analysis One should allow for any space.

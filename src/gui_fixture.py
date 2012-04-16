@@ -54,21 +54,33 @@ class Fixture_GUI(gtk.Frame):
         self._fixture_gui_updating = False
         self.fixture_active_pos = None
         self.fixture_active_pos_setting = None
+        self.f_settings = None
+        self._init_done = False
 
         self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
-        self.f_settings = fixture_settings.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
-        analysis_img = self._fixture_config_root + os.sep + self.f_settings.fixture_name + ".tiff"
 
         vbox2 = gtk.VBox(False, 0)
-        vbox2.show()
         self.add(vbox2)
 
         hbox = gtk.HBox()
-        hbox.show()
+        self._current_fixture = None
+        self.fixture = gtk.combo_box_new_text()
+        self.reload_fixtures()
+        self.fixture.connect("changed", self.set_fixture)
+        hbox.pack_start(self.fixture, False, False, 2)
+        vbox2.pack_start(hbox)
+
+
+        analysis_img = self._fixture_config_root + os.sep + self.f_settings.fixture_name + ".tiff"
+
+        hbox = gtk.HBox()
         vbox2.pack_start(hbox, False, False, 0)
 
+        self.DMS("Fixture", "Image: %s" % analysis_img, 100)
         if os.path.isfile(analysis_img):
             self.fixture_analysis_image = plt_img.imread(analysis_img)
+        else:
+            self.fixture_analysis_image = None
 
         self.scale_factor = 2.0
 
@@ -105,14 +117,12 @@ class Fixture_GUI(gtk.Frame):
         image_plot.get_yaxis().set_visible(False)
         image_plot.set_xlim(xmin=0,xmax=self.fixture_analysis_image.shape[1])
         image_plot.set_ylim(ymin=0,ymax=self.fixture_analysis_image.shape[0])
-        image_canvas.show()
         image_canvas.set_size_request(int(round(image_size[1])), int(round(image_size[0])))
         hbox.pack_start(image_canvas, False, False, 2)
         self.image_fig.canvas.draw()
 
         #Grayscale view
         self.gs_view = gtk.VBox(False, 2)
-        self.gs_view.show()
         hbox.pack_start(self.gs_view, False, False, 2)
 
 
@@ -124,7 +134,6 @@ class Fixture_GUI(gtk.Frame):
         self.fixture_texts = []
 
         vbox3 = gtk.VBox(False, 0)
-        vbox3.show()
         hbox.pack_end(vbox3, False, False, 0)
 
         #Fixture just viewing mode
@@ -133,117 +142,96 @@ class Fixture_GUI(gtk.Frame):
 
         button = gtk.Button(label='Return to experiment setup')
         button.connect("clicked", owner.make_Experiment)
-        button.show()
         self.config_box_view.pack_start(button, False, False, 2)
 
         #Fixture configure mode
         self.config_box_edit = gtk.VBox(False, 0)
-        self.config_box_edit.show()
         vbox3.pack_start(self.config_box_edit, False, False, 2)
 
         hbox = gtk.HBox()
-        hbox.show()
         self.config_box_edit.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Select image of fixture:")
-        label.show()
         hbox.pack_start(label, False, False, 2)
 
         button = gtk.Button(label = 'Open')
-        button.show()
         button.connect("clicked", self.select_image)
         hbox.pack_end(button, False, False, 2)
 
         self.fixture_image = gtk.Label("")
         self.fixture_image.set_max_width_chars(60)
         self.fixture_image.set_ellipsize(pango.ELLIPSIZE_START)
-        self.fixture_image.show()
         self.config_box_edit.pack_start(self.fixture_image, False, False, 2)
 
         hbox = gtk.HBox()
-        hbox.show()
         self.config_box_edit.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Select fixture marking image:")
-        label.show()
         hbox.pack_start(label, False, False, 2)
 
         button = gtk.Button(label = 'Open')
-        button.show()
         button.connect("clicked", self.select_marking)
         hbox.pack_end(button, False, False, 2)
 
         self.fixture_marking = gtk.Label("")
         self.fixture_marking.set_max_width_chars(50)
         self.fixture_marking.set_ellipsize(pango.ELLIPSIZE_MIDDLE)
-        self.fixture_marking.show()
         self.config_box_edit.pack_start(self.fixture_marking, False, False, 2)
 
         hbox = gtk.HBox()
-        hbox.show()
         self.config_box_edit.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Number of markings:")
-        label.show()
         hbox.pack_start(label, False, False, 2)
 
         self.fixture_markings_count = gtk.Entry()
-        self.fixture_markings_count.show()
         self.fixture_markings_count.set_text("")
         self.fixture_markings_count.connect("focus-out-event", self.verify_input, "int")
         hbox.pack_end(self.fixture_markings_count, False, False, 2)
 
         self.fixture_analysis_button = gtk.Button(label = 'Run analysis of markings placement')
         self.fixture_analysis_button.connect("clicked", self.marker_analysis)    
-        self.fixture_analysis_button.show()
         self.config_box_edit.pack_start(self.fixture_analysis_button, False, False, 2)
 
         self.fixture_grayscale_checkbox = gtk.CheckButton(label="Grayscale", use_underline=False)
-        self.fixture_grayscale_checkbox.show()
         self.fixture_grayscale_checkbox.connect("clicked", self.set_grayscale_toggle)
         self.config_box_edit.pack_start(self.fixture_grayscale_checkbox, False, False, 2)
 
         hbox = gtk.HBox()
-        hbox.show()
         self.config_box_edit.pack_start(hbox, False, False, 2)
 
         label= gtk.Label("Plate Positions:")
-        label.show()
         hbox.pack_start(label, False, False, 2)
  
         self.fixture_platepositions = gtk.Entry()
-        self.fixture_platepositions.show()
         self.fixture_platepositions.set_text("4")
         self.fixture_platepositions.connect("focus-out-event", self.set_plates_change, "int")
         hbox.pack_end(self.fixture_platepositions, False, False, 2)
 
         frame = gtk.Frame("Area config")
-        frame.show()
         self.config_box_edit.pack_start(frame, False, False, 2)
 
         vbox4 = gtk.VBox()
-        vbox4.show()
         frame.add(vbox4)
 
         self.fixture_area_selection = gtk.combo_box_new_text()
-        self.fixture_area_selection.show()
         self.fixture_area_selection.connect("changed", self.set_active_area)
         vbox4.pack_start(self.fixture_area_selection, False, False, 2)
 
 
         self.fixture_area_ul = gtk.Label("")
-        self.fixture_area_ul.show()
         vbox4.pack_end(self.fixture_area_ul, False, False, 2)
 
         self.fixture_area_lr = gtk.Label("")
-        self.fixture_area_lr.show()
         vbox4.pack_end(self.fixture_area_lr, False, False, 2)
 
         button = gtk.Button(label='Save fixture settings')
-        button.show()
         button.connect("clicked", self.config_file_save)
         self.config_box_edit.pack_start(button, False, False, 2)
 
+        vbox2.show_all()
+
+        self._init_done = True
 
         self.DMS('fixture init', 'GUI loaded', 100)
         self.load_fixture_config(dpi=150)
@@ -254,17 +242,129 @@ class Fixture_GUI(gtk.Frame):
     #
     def set_mode(self, widget=None, event=None, data=None):
 
+
         if event == 'view':
+            if data is not None:
+                self._current_fixture = data
+
+            self.DMS('fixture', 'Experiment set-up requests %s' % data, 100, debug_level='info')
+            self.reload_fixtures()
+
+
             self._fixture_gui_updating = True
             self.config_box_view.show()
             self.gs_view.hide()
+            self.fixture.hide()
             self.config_box_edit.hide()
         else:
             self._fixture_gui_updating = False
             self.config_box_view.hide()
+            self.fixture.show()
             self.gs_view.show()
             self.config_box_edit.show()
             
+
+    #
+    # FIXTURE SELECTION
+    #
+    def set_fixture(self, widget=None, event=None, data=None):
+
+        pos = -1
+        if data is not None:
+
+            pos = data
+        elif self._fixture_gui_updating:
+            pos = None
+        else:
+            pos = widget.get_active()
+
+        if pos is not None and pos > -1:
+
+            self._fixture_gui_updating = True
+
+
+            
+            self._current_fixture = self.fixture.get_model()[pos][0]
+
+            self.DMS('Fixture','Selected : %s' % self._current_fixture, 100, debug_level='info')
+
+            self.f_settings = fixture_settings.Fixture_Settings(\
+                self._fixture_config_root, fixture=self._current_fixture, 
+                image = self._fixture_config_root + os.sep + self._current_fixture + ".tiff")
+
+            self.fixture_analysis_image = plt_img.imread(self.f_settings.image_path)
+
+
+            self.fixture.set_active(pos)
+
+            if self._init_done:
+
+                self.image_fig.gca().\
+                    imshow(self.fixture_analysis_image, cmap=plt.cm.gray)
+
+                self.load_fixture_config(dpi=150)
+
+
+                self.image_fig.canvas.draw()
+
+            self._fixture_gui_updating = False
+
+    def reload_fixtures(self):
+
+        self._fixture_gui_updating = True
+
+        directory = self._fixture_config_root
+        extension = ".config"
+        list_fixtures = map(lambda x: x.split(extension,1)[0], [file for file\
+            in os.listdir(directory) if file.lower().endswith(extension)])
+
+
+        for f in list_fixtures:
+
+            need_input = True
+
+            for pos in xrange(len(self.fixture.get_model())-1,-1,-1):
+
+                cur_text = self.fixture.get_model()[pos][0]
+
+                if cur_text == f:
+                    need_input = False
+                    break
+                elif cur_text not in list_fixtures:
+                    self.fixture.remove_text(pos)
+                        
+                        
+            if need_input:
+                self.fixture.append_text(f)
+
+        if self._current_fixture is not None and True not in map(lambda x: x[0] ==\
+            self._current_fixture, self.fixture.get_model()):
+
+
+            self._current_fixture = None
+
+        else:
+
+            pos = next((i for i, f in enumerate(map(lambda x: x[0] == \
+                self._current_fixture, self.fixture.get_model())) \
+                if f is True),-1)
+
+            self.set_fixture(data = pos)
+
+        if self._current_fixture is None:
+
+            if len(self.fixture.get_model()) > 0:
+
+                self.set_fixture(data=0)
+
+            else: 
+            
+                self.f_settings = fixture_settings.Fixture_Settings(self._fixture_config_root, fixture='fixture_a')
+                self._current_fixture = 'fixture_a'
+                self.reload_fixtures()
+
+        self._fixture_gui_updating = False
+
 
     #
     # IMAGE OVERLAY FUNCTIONS
@@ -274,7 +374,9 @@ class Fixture_GUI(gtk.Frame):
         #NO DUPLICATES
         for t_obj in self.fixture_texts:
             if text == t_obj.get_text():
+                self.change_fixture_overlay(area, by_name=text)
                 return None
+ 
 
         #FORMATTING DIFFER FOR GRAYSCALES
         lw = 2
@@ -635,10 +737,17 @@ class Fixture_GUI(gtk.Frame):
             for i in xrange(len(self.fixture_area_selection.get_model())):
                 if self.fixture_area_selection.get_model()[i][0] == active_text:
 
+
                     active = i
                     break
     
             self.fixture_area_selection.set_active(active)
+ 
+            if active > 0:
+                active_name = self.get_settings_name()
+                cur_area = self.f_settings.fixture_config_file.get(active_name)
+                self.fixture_area_ul.set_text(str(cur_area[0]))
+                self.fixture_area_lr.set_text(str(cur_area[1]))
 
             #Put self as sensitive if there's stuff in you...
             self.fixture_area_selection.set_sensitive(\
@@ -702,7 +811,11 @@ class Fixture_GUI(gtk.Frame):
 
             text = self.get_settings_initial(active=i+1)
             
-            if cur_area != None:
+            self.DMS("fixture", 
+                "New fixture, reproducing overlay '%s' with area '%s'" % (\
+                text, cur_area), 100, debug_level='debug')
+            
+            if cur_area is not None:
                 self.set_fixture_overlay(cur_area, text)
             else:
 

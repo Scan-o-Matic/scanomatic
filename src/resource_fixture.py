@@ -44,7 +44,7 @@ class Fixture_Settings():
         else:
             self.image_path = None
 
-        self.conf_location = self._fixture_config_root + os.sep + "tmp_current_image.config"
+        self.conf_location = self._fixture_config_root + os.sep + "current_image.tmp_config"
         self.current_analysis_image_config = conf.Config_File(self.conf_location)
 
         if marking != None:
