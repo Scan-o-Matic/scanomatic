@@ -68,6 +68,11 @@ class Fixture_GUI(gtk.Frame):
         self.reload_fixtures()
         self.fixture.connect("changed", self.set_fixture)
         hbox.pack_start(self.fixture, False, False, 2)
+
+        button = gtk.Button("New fixture")
+        button.connect('clicked', self.add_fixture)
+        hbox.pack_start(button, False, False, 2)
+
         vbox2.pack_start(hbox)
 
 
@@ -365,6 +370,87 @@ class Fixture_GUI(gtk.Frame):
 
         self._fixture_gui_updating = False
 
+
+    def add_fixture(self, widget=None, event=None, data=None):
+
+    
+        dialog = gtk.MessageDialog(None,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            gtk.MESSAGE_QUESTION,
+            gtk.BUTTONS_OK,
+            None)
+
+        dialog.set_markup('Enter name for <b>new fixture</b>')
+        dialog.format_secondary_markup('<i>Blank or duplicate aborts</i>')
+
+        entry = gtk.Entry()
+        label = gtk.Label("")
+
+        entry.connect("activate", self._add_fixture_response, dialog, 
+            gtk.RESPONSE_OK, label)
+
+        entry.connect("changed", self._add_fixture_verify, dialog, label)
+        
+        hbox = gtk.HBox()
+        hbox.pack_start(gtk.Label("Name:"), False, 5, 5)
+        hbox.pack_end(entry)
+        dialog.vbox.pack_start(hbox, True, True, 0)
+        
+        hbox = gtk.HBox()
+        hbox.pack_end(label, False, 5, 0)
+        dialog.vbox.pack_start(hbox, False, False, 2)
+
+        dialog.show_all()
+
+        response = dialog.run()
+        new_fixture = entry.get_text()
+
+        dialog.destroy()
+
+
+        if response == gtk.RESPONSE_OK:
+
+
+            self.f_settings = fixture_settings.Fixture_Settings(\
+                self._fixture_config_root, fixture=new_fixture,
+                image = None)
+
+            self._current_fixture = new_fixture
+
+            self.fixture.append_text(new_fixture)
+
+            self.fixture.set_active(len(self.fixture.get_model())-1)
+
+            self.image_fig.gca().\
+                imshow(np.ones(self.fixture_analysis_image.shape), 
+                    cmap=plt.cm.gray)
+
+            self.load_fixture_config(dpi=150)
+
+            self.image_fig.canvas.draw()
+
+
+
+    def _add_fixture_response(self, entry, dialog, response, label):
+
+        if "OK" not in label.get_text():
+            entry.set_text("")
+            dialog.response(gtk.RESPONSE_CANCEL)
+        else:
+            dialog.response(response)
+
+    def _add_fixture_verify(self, entry, dialog, label):
+
+        cur_text = entry.get_text()
+
+        if cur_text != "" and True not in map(lambda x: x[0] == cur_text, 
+            self.fixture.get_model()):
+
+            label.set_text("Name is OK")
+
+        else:
+
+            label.set_text("Duplicated name!")
 
     #
     # IMAGE OVERLAY FUNCTIONS
@@ -784,15 +870,14 @@ class Fixture_GUI(gtk.Frame):
         #
         # SET IF THERE'S A GRAY-SCALE
         #
-        grayscales = 1
+        grayscale = self.f_settings.fixture_config_file.get("grayscale") 
         try:
-            self.fixture_grayscale_checkbox.set_active(\
-                self.f_settings.fixture_config_file.get("grayscale"))
+            self.fixture_grayscale_checkbox.set_active(grayscale)
         except TypeError:
             self.fixture_grayscale_checkbox.set_active(False)
             grayscales = 0
 
-
+        print grayscale
         if grayscale > 0:
             self.set_grayscale(scale_factor= scale_factor)
         #
