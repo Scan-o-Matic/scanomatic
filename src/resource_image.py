@@ -42,7 +42,7 @@ def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
     try:
         small_im.save(target_path)
     except:
-        print "*** Error: Could not save scaled down image"
+        logging.error("Could not save scaled down image")
         return -1
 
 def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
@@ -50,7 +50,7 @@ def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
     try:
         im = Image.open(source_path)
     except:
-        print "*** Error: Could not open source"
+        logging.error("Could not open source")
         return -1
 
     small_im = im.resize((im.size[0]*target_dpi/source_dpi,im.size[1]*target_dpi/source_dpi), Image.BILINEAR)
@@ -62,7 +62,7 @@ def Quick_Invert_To_Tiff(source_path, target_path):
     try:
         im = Image.open(source_path)
     except:
-        print "*** Error: Could not open source"
+        logging.error("Could not open source")
         return -1
 
     inv_im = PIL.ImageOps.invert(im)
@@ -70,7 +70,7 @@ def Quick_Invert_To_Tiff(source_path, target_path):
     try:
         inv_im.save(target_path)
     except:
-        print "*** Error: Could not save inverted image at " + str(target_path)
+        logging.error("Could not save inverted image at " + str(target_path))
         return -1
 
     return True
@@ -79,7 +79,8 @@ def Quick_Rotate(source_path, target_path):
     try:
         im = Image.open(source_path)
     except:
-        print "*** Error: Could not open source"
+        logging.error("Could not open source")
+
         return -1
 
     rot_im = im.rotate(90)
@@ -87,7 +88,7 @@ def Quick_Rotate(source_path, target_path):
     try:
         rot_im.save(target_path)
     except:
-        print "*** Error: Could not save inverted image at " + str(target_path)
+        logging.error("Could not save inverted image at " + str(target_path))
         return -1
 
     return True
@@ -108,7 +109,7 @@ class Image_Analysis():
             try:
                 pattern_img = plt_img.imread(pattern_image_path)
             except:
-                print "***Error: Could not open orientation guide image at " + str(pattern_image_path)
+                logging.error("Could not open orientation guide image at " + str(pattern_image_path))
                 self._load_error = True
 
             if self._load_error != True:
@@ -122,7 +123,7 @@ class Image_Analysis():
             try:
                 self._img = plt_img.imread(path)
             except:
-                print "*** Error: Could not open image at " + str(path)
+                logging.error("Could not open image at " + str(path))
                 self._load_error = True 
 
             if self._load_error != True:           
@@ -140,7 +141,7 @@ class Image_Analysis():
                 #plt.savefig(self._gt_median_image_path)
         if image:
             if self._img:
-                print "*** Warning: An image was already loaded (via path), replaced by passed on image"
+                logging.warning("An image was already loaded (via path), replaced by passed on image")
             self._img = image
 
         #if self._img != None:
@@ -153,7 +154,7 @@ class Image_Analysis():
         try:
             self._img = plt_img.imread(path)
         except:
-            print "*** Error: Could not open image at " + str(path)
+            logging.error("Could not open image at " + str(path))
             self._load_error = True 
 
         if self._load_error != True:           
@@ -206,42 +207,42 @@ class Image_Analysis():
             Gy = Gx.T
 
             if verbose:
-                print "* Calculating Sobel edges:"
-                print "* Finding first edges in scanned image..."
+                logging.info( "* Calculating Sobel edges:")
+                logging.info( "* Finding first edges in scanned image...")
             Img_x = fftconvolve(Gx, T_Img, 'same')
             if verbose:
-                print "* Finding second edges in Data..."
+                logging.info( "* Finding second edges in Data...")
             Img_y = fftconvolve(Gy, T_Img, 'same')
             Img = np.sqrt(Img_x**2 + Img_y**2)
             if verbose:
-                print "* Done!"
+                logging.info( "* Done!")
 
-                print "* Finding first edges in Marker..."
+                logging.info( "* Finding first edges in Marker...")
             Marker_x = fftconvolve(Gx, T_Marker, 'valid')
             if verbose:
-                print "* Finding second edges in Marker..."
+                logging.info( "* Finding second edges in Marker...")
             Marker_y = fftconvolve(Gy, T_Marker, 'valid')
             Marker = np.sqrt(Marker_x**2 + Marker_y**2)
 
             msg = "Edges detected"
-            if output_function != None:
-                output_function(msg)
+            if output_function is not None:
+                output_function('Pattern analysis', msg, 10, debug_level='debug')
             else:
-                print msg
+                logging.info(msg)
 
             if verbose:
-                print "* Done!"
+                logging.info( "* Done!")
 
-                print "* Calculating convolution... (this may take a while)"
+                logging.info( "* Calculating convolution... (this may take a while)")
             Cv = fftconvolve(Marker, Img, 'same')
             if verbose:
-                print "* Detecting markers..."
+                logging.info( "* Detecting markers...")
 
             msg = "Convolution of image done"
             if output_function != None:
-                output_function(msg)
+                output_function('Pattern analysis',msg,10, debug_level='debug')
             else:
-                print msg
+                logging.info( msg)
 
             old_threshold = 1.3 #Hackishi
             pre_threshold = 1.3 #Don't trust if the threshold goes to low
@@ -255,7 +256,7 @@ class Image_Analysis():
 
                 i+=1
                 if verbose:
-                    print "Try", i, "with threshold", threshold, "got", len(Max_x) 
+                    logging.info( "Try", i, "with threshold", threshold, "got", len(Max_x) )
 
                 pre_threshold = old_threshold
                 old_threshold = threshold
@@ -271,9 +272,9 @@ class Image_Analysis():
                     old_threshold = 0.0
 
             if verbose:
-                print "X",Max_x, "Y",Max_y
-                print "At", threshold, "after", i,"repetitions"
-                print "Analysis Done!"
+                logging.info( "X",Max_x, "Y",Max_y)
+                logging.info( "At", threshold, "after", i,"repetitions")
+                logging.info( "Analysis Done!")
 
             if make_plot:
                 plt.clf()
@@ -301,7 +302,7 @@ class Image_Analysis():
                 plt.savefig("ch_analysis.png")
 
                 if verbose:
-                    print "* Figure done / saved"
+                    logging.info( "* Figure done / saved")
 
 
             self._conversion_factor = 1.0
@@ -757,7 +758,7 @@ class Analyse_Grayscale():
                             gray_scale_pos.append(lengthpos[pos-1]+tmpLength*1/2)
                             skip_next_pos = True
                         else:
-                            print "* Lost track after",pos,"sections... extrapolating"
+                            logging.warning( "* Lost track after",pos,"sections... extrapolating")
                             for pp in xrange(target_count-len(gray_scale)):
                                 gray_scale.append(strip_values[lengthpos[pos-1]+tmpLength*pp+tmpLength*1/4:lengthpos[pos-1]+tmpLength*pp+tmpLength*3/4].mean())
                                 gray_scale_pos.append(lengthpos[pos-1]+tmpLength*pp+tmpLength*1/2)

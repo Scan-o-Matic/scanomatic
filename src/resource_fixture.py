@@ -18,7 +18,7 @@ __status__ = "Development"
 import os, os.path, sys
 import types
 import itertools
-
+import logging
 import numpy as np
 
 #
@@ -63,6 +63,14 @@ class Fixture_Settings():
     def marker_analysis(self, fixture_setup=False, output_function=None):
 
         if self.marking_path == None or self.markings < 1:
+        
+            msg = "Error, no marker set ('%s') or no markings (%s)." % (
+                self.marking_path, self.markings)
+            if output_function != None:
+                output_function('Fixture calibration',msg,110, debug_level='error')
+            else:
+                logging.error(msg)
+
             return None
 
         if fixture_setup:
@@ -76,19 +84,14 @@ class Fixture_Settings():
             img_base.Quick_Scale_To(self.image_path, analysis_img)
             self.image_path = None  #Hackish but makes sure scaling is done once
 
-        msg = "Loading image"
-        if output_function != None:
-            output_function(msg)
-        else:
-            print msg
 
         self.A = img_base.Image_Analysis(path = analysis_img, pattern_image_path = self.marking_path)
 
         msg = "Finding pattern"
         if output_function != None:
-            output_function(msg)
+            output_function('Fixture calibration',msg,10, debug_level='debug')
         else:
-            print msg
+            logging.info(msg)
 
         Xs, Ys = self.A.find_pattern(markings = self.markings, output_function = output_function)
 
@@ -99,7 +102,13 @@ class Fixture_Settings():
             for i in xrange(len(Xs)):
                 target_conf_file.set("marking_" + str(i), (Xs[i], Ys[i]))
             target_conf_file.set("marking_center_of_mass", (Xs.mean(), Ys.mean())) 
-        print "*** Showing image", analysis_img
+
+        msg = "Showing image '{0}'".format(analysis_img)
+        if output_function is None:
+            logging.info(msg)
+        else:
+            output_function('Fixture calibration', msg, 10, debug_level='debug')
+
         return analysis_img
 
     def get_fixture_markings(self):
@@ -216,7 +225,6 @@ class Fixture_Settings():
 
             i += 1
 
-        print "*** Completed rotation and offset calculations. Ready to use!"
 
         
 
