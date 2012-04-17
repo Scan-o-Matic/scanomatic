@@ -4,7 +4,8 @@
 _*.lock
 data/*
 dev/*
-src/config/logs
+src/config/logs/*
+src/config/fixtures/*
 versions/*
 gs_test*.png
 bundle_version.sh
