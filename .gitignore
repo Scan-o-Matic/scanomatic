@@ -1,11 +1,13 @@
 *.pyc
 *.pyo
+*.tmp_config
 ../*
 _*.lock
-data/*
+.git/*
+data
 dev/*
-src/config/logs/*
-src/config/fixtures/*
+src/config/logs
+src/config/fixtures
 versions/*
 gs_test*.png
 bundle_version.sh
