@@ -2,6 +2,9 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Added XML-short form and omission of data from XML file that is
+    not of interest.
+
 *** Implemented a termination button
 
 *** Implemented support for several scanners connected to same computer

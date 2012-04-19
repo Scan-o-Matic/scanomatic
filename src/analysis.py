@@ -235,13 +235,13 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         fh.write("<{0}>{1}</{0}>\n".format(['plates-per-scan','n-plates'][xml_format['short']],
             str(plates) ))
 
-        fh.write("<{}>".format(['pinning-matrices','matrices'][xml_format['short']]))
+        fh.write("<{0}>".format(['pinning-matrices','matrices'][xml_format['short']]))
 
         for pos in xrange(plates):
             fh.write("<{0} {1}='{2}'>{3}</{0}>".format(['pinning-matrix','p-m'][xml_format['short']],
                  ['index','i'][xml_format['short']],  str(pos), str(pinning_matrices[pos])))
 
-        fh.write('</{}>\n'.format(['pinning-matrices','matrices'][xml_format['short']]))
+        fh.write('</{0}>\n'.format(['pinning-matrices','matrices'][xml_format['short']]))
 
         fh.write('<scans>\n')
 
@@ -274,12 +274,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         if supress_analysis != True:
             fh.write('<{0} {1}="{2}">'.format(['scan', 's'][xml_format['short']],  
                 ['index','i'][xml_format['short']], str(image_pos) ))
-            fh.write('<{}>'.format(['scan-valid>','ok'][xml_format['short']]))
+            fh.write('<{0}>'.format(['scan-valid>','ok'][xml_format['short']]))
 
         if features == None:
             if supress_analysis != True:
-                fh.write("0</{}>".format(['scan-valid>','ok'][xml_format['short']]))
-                fh.write('</{}>\n'.format(['scan', 's'][xml_format['short']]))
+                fh.write("0</{0}>".format(['scan-valid>','ok'][xml_format['short']]))
+                fh.write('</{0}>\n'.format(['scan', 's'][xml_format['short']]))
         else:
             if graph_watch != None and  project_image.watch_grid_size != None:
 
@@ -325,7 +325,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 #HACK END
 
             if supress_analysis != True:
-                fh.write("1</{}>".format(['scan-valid>','ok'][xml_format['short']]))
+                fh.write("1</{0}>".format(['scan-valid>','ok'][xml_format['short']]))
 
                 fh.write("<{0}>{1}</{0}>".format(['calibration','cal'][xml_format['short']],
                     str(img_dict_pointer['grayscale_values']) ))
@@ -333,7 +333,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 fh.write("<{0}>{1}</{0}>".format(['time','t'][xml_format['short']],
                     str(img_dict_pointer['Time']) ))
 
-                fh.write("<{}>".format(['plates','pls'][xml_format['short']]))
+                fh.write("<{0}>".format(['plates','pls'][xml_format['short']]))
 
                 for i in xrange(plates):
                     fh.write('<{0} {1}="{2}">'.format(['plate','p'][xml_format['short']],
@@ -344,7 +344,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
                     fh.write('<R>' + str(project_image.R[i]) + '</R>')
 
-                    fh.write('<{}>'.format(['grid-cells','gcs'][xml_format['short']]))
+                    fh.write('<{0}>'.format(['grid-cells','gcs'][xml_format['short']]))
 
                     for x, rows in enumerate(features[i]):
                         for y, cell in enumerate(rows):
@@ -391,10 +391,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                                         fh.write('</' + str(i_string) + '>')
 
                             fh.write('</{0}>'.format(['grid-cell','gc'][xml_format['short']]))
-                    fh.write('</{}>'.format(['grid-cells','gcs'][xml_format['short']]))
+                    fh.write('</{0}>'.format(['grid-cells','gcs'][xml_format['short']]))
                     fh.write('</{0}>'.format(['plate','p'][xml_format['short']]))
-                fh.write("</{}>".format(['plates','pls'][xml_format['short']]))
-                fh.write('</{}>\n'.format(['scan', 's'][xml_format['short']]))
+                fh.write("</{0}>".format(['plates','pls'][xml_format['short']]))
+                fh.write('</{0}>\n'.format(['scan', 's'][xml_format['short']]))
         image_pos -= 1
 
         #DEBUGHACK
@@ -704,7 +704,7 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--ouput-path", type=str, dest="outputpath", help="Path to directory where all data is written (Default is a subdirectory 'analysis' under where the input file is)", metavar="PATH")
 
     #parser.add_argument("-p", "--plates", default=4, type=int, dest="plates", help="The number of plates in the fixture", metavar="N")
-    parser.add_argument("-m", "--matrices", dest="matrices", help="The pinning matrices for each plate position in the order set by the fixture config", metavar="(X,Y):(X,Y)...(X,Y)")
+    parser.add_argument("-m", "--matrices", dest="matrices", default=None, help="The pinning matrices for each plate position in the order set by the fixture config", metavar="(X,Y):(X,Y)...(X,Y)")
 
     parser.add_argument("-w", "--watch-position", dest="graph_watch", help="The position of a colony to track.", metavar="PLATE:X:Y", type=str)
 

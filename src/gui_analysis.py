@@ -721,7 +721,7 @@ class Analyse_One(gtk.Frame):
 
     def plot_release(self, event=None):
 
-        self.DMS("ANALYSE ONE", "{} rect marking for {}.".format(
+        self.DMS("ANALYSE ONE", "{0} rect marking for {1}.".format(
             ['Made','Dragged'][self._rect_dragging],
             ['gray-scale', 'feature-selection'][self._grayscale is not None]),
             0100, debug_level = 'debug')
@@ -802,7 +802,7 @@ class Analyse_One(gtk.Frame):
             right = ul[1]
             left = lr[1]
 
-        self.DMS("Analyse one", "Selection shape: {}".format(self.f_settings.A.\
+        self.DMS("Analyse one", "Selection shape: {0}".format(self.f_settings.A.\
             _img[upper:lower,left:right].shape),10,debug_level="debug")
 
         if as_copy:
