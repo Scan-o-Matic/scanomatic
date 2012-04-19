@@ -118,7 +118,9 @@ class Project_Analysis_Running(gtk.Frame):
             analysis_query = [self.owner._program_code_root + os.sep + \
                 "analysis.py","-i", self._analysis_log_file_path, 
                 "-o", self._analysis_output, "-t", 
-                self._watch_time]
+                self._watch_time, '--xml-short', 'True', 
+                '--xml-omit-compartments', 'background,cell',
+                '--xml-omit-measures','mean,median,IQR,IQR_mean,centroid,perimeter,area']
 
             if self._matrices is not None:
                 analysis_query += ["-m", self._matrices]
