@@ -55,7 +55,8 @@ def print_progress_bar(fraction, size=40):
 def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         graph_watch, supress_analysis = False, \
         verboise=False, use_fallback = False, use_otsu = False,\
-        grid_times=None):
+        grid_times=None, xml_format={'short': True, 'omit_compartments':[],
+        'omit_measures':[]}):
     """
         analyse_project parses a log-file and runs a full analysis on all 
         images in it. It will step backwards in time, starting with the 
@@ -92,6 +93,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
         @grid_times         Specifies the time-point indices at which
                             the grids will be saved in the output-dir.
+
+        @xml_format         A dict for what should be in the xml and
+                            which tags (long vs short) be used.
 
         The function returns None if nothing was done of if it crashed.
         If it runs through it returns the number of images processed.
@@ -214,27 +218,32 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     logging.info("ANALYIS, starting project with %d images" % (image_pos + 1))
 
     if supress_analysis != True:
-        fh.write('<project>')
+        fh.write('<project>\n')
 
-        fh.write('<start-time>' + str(image_dictionaries[first_scan_position]['Time']) + '</start-time>')
+        fh.write("<{0}>{1}</{0}>\n".format(['start-time','start-t'][xml_format['short']],
+            str(image_dictionaries[first_scan_position]['Time'])  ))
 
-        fh.write('<description>' + str(description) + '</description>')
+        fh.write("<{0}>{1}</{0}>\n".format(['description','desc'][xml_format['short']],
+            str(description) ))
 
-        fh.write('<number-of-scans>' + str(image_pos+1) + '</number-of-scans>')
+        fh.write("<{0}>{1}</{0}>\n".format(['number-of-scans','n-scans'][xml_format['short']],
+            str(image_pos+1)))
 
-        fh.write('<interval-time>' + str(interval_time) + '</interval-time>')
+        fh.write("<{0}>{1}</{0}>\n".format(['interval-time','int-t'][xml_format['short']],
+            str(interval_time)))
 
-        fh.write('<plates-per-scan>' + str(plates) + '</plates-per-scan>')
+        fh.write("<{0}>{1}</{0}>\n".format(['plates-per-scan','n-plates'][xml_format['short']],
+            str(plates) ))
 
-        fh.write('<pinning-matrices>')
+        fh.write("<{}>".format(['pinning-matrices','matrices'][xml_format['short']]))
 
         for pos in xrange(plates):
-            fh.write('<pinning-matrix index="' + str(pos) + '">' + \
-                 str(pinning_matrices[pos]) + '</pinning-matrix>')
+            fh.write("<{0} {1}='{2}'>{3}</{0}>".format(['pinning-matrix','p-m'][xml_format['short']],
+                 ['index','i'][xml_format['short']],  str(pos), str(pinning_matrices[pos])))
 
-        fh.write('</pinning-matrices>')
+        fh.write('</{}>\n'.format(['pinning-matrices','matrices'][xml_format['short']]))
 
-        fh.write('<scans>')
+        fh.write('<scans>\n')
 
     while image_pos >= first_scan_position:
         scan_start_time = time()
@@ -263,13 +272,14 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             timestamp=img_dict_pointer['Time'])
 
         if supress_analysis != True:
-            fh.write('<scan index="' + str(image_pos) + '">')
-            fh.write('<scan-valid>')
+            fh.write('<{0} {1}="{2}">'.format(['scan', 's'][xml_format['short']],  
+                ['index','i'][xml_format['short']], str(image_pos) ))
+            fh.write('<{}>'.format(['scan-valid>','ok'][xml_format['short']]))
 
         if features == None:
             if supress_analysis != True:
-                fh.write(str(0) + '</scan-valid>')
-                fh.write('</scan>')
+                fh.write("0</{}>".format(['scan-valid>','ok'][xml_format['short']]))
+                fh.write('</{}>\n'.format(['scan', 's'][xml_format['short']]))
         else:
             if graph_watch != None and  project_image.watch_grid_size != None:
 
@@ -315,45 +325,76 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 #HACK END
 
             if supress_analysis != True:
-                fh.write(str(1) + '</scan-valid>')
+                fh.write("1</{}>".format(['scan-valid>','ok'][xml_format['short']]))
 
-                fh.write('<calibration>' + str(img_dict_pointer['grayscale_values']) + '</calibration>')
+                fh.write("<{0}>{1}</{0}>".format(['calibration','cal'][xml_format['short']],
+                    str(img_dict_pointer['grayscale_values']) ))
 
-                fh.write('<time>' + str(img_dict_pointer['Time']) + '</time>')
+                fh.write("<{0}>{1}</{0}>".format(['time','t'][xml_format['short']],
+                    str(img_dict_pointer['Time']) ))
 
-                fh.write('<plates>')
+                fh.write("<{}>".format(['plates','pls'][xml_format['short']]))
 
                 for i in xrange(plates):
-                    fh.write('<plate index="' + str(i) + '">')
+                    fh.write('<{0} {1}="{2}">'.format(['plate','p'][xml_format['short']],
+                        ['index', 'i'][xml_format['short']], str(i) ))
 
-                    fh.write('<plate-matrix>' + str(pinning_matrices[i]) + '</plate-matrix>')
+                    fh.write('<{0}>{1}</{0}>'.format(['plate-matrix','pm'][xml_format['short']],
+                        str(pinning_matrices[i]) ))
 
                     fh.write('<R>' + str(project_image.R[i]) + '</R>')
 
-                    fh.write('<grid-cells>')
+                    fh.write('<{}>'.format(['grid-cells','gcs'][xml_format['short']]))
 
                     for x, rows in enumerate(features[i]):
                         for y, cell in enumerate(rows):
 
-                            fh.write('<grid-cell x="' + str(x) + '" y="' + str(y) + '">')
+                            fh.write('<{0} x="{1}" y="{2}">'.format(['grid-cell','gc'][xml_format['short']],
+                                str(x), str(y)))
 
                             if cell != None:
                                 for item in cell.keys():
 
-                                    fh.write('<' + str(item) + '>')
-                                    
-                                    for measure in cell[item].keys():
+                                    if item not in xml_format['omit_compartments']:
 
-                                        fh.write('<' + str(measure) + '>' + \
-                                            str(cell[item][measure]) + \
-                                            '</' + str(measure) + '>')
+                                        i_string = item
 
-                                    fh.write('</' + str(item) + '>')
-                            fh.write('</grid-cell>')
-                    fh.write('</grid-cells>')
-                    fh.write('</plate>')
-                fh.write('</plates>')
-                fh.write('</scan>')
+                                        if xml_format['short']:
+
+                                            i_string = i_string\
+                                                    .replace('background','bg')\
+                                                    .replace('blob','bl')\
+                                                    .replace('cell','cl')
+
+                                        fh.write('<' + str(i_string) + '>')
+                                        
+                                        for measure in cell[item].keys():
+
+                                            if measure not in xml_format['omit_measures']:
+                                                m_string = '<' + str(measure) + '>' + \
+                                                    str(cell[item][measure]) + \
+                                                    '</' + str(measure) + '>'
+
+                                                if xml_format['short']:
+                    
+                                                    m_string = m_string\
+                                                            .replace('area','a')\
+                                                            .replace('pixel','p')\
+                                                            .replace('mean','m')\
+                                                            .replace('median','md')\
+                                                            .replace('sum','s')\
+                                                            .replace('centroid','cent')\
+                                                            .replace('perimeter','per')
+
+                                                fh.write(m_string)
+
+                                        fh.write('</' + str(i_string) + '>')
+
+                            fh.write('</{0}>'.format(['grid-cell','gc'][xml_format['short']]))
+                    fh.write('</{}>'.format(['grid-cells','gcs'][xml_format['short']]))
+                    fh.write('</{0}>'.format(['plate','p'][xml_format['short']]))
+                fh.write("</{}>".format(['plates','pls'][xml_format['short']]))
+                fh.write('</{}>\n'.format(['scan', 's'][xml_format['short']]))
         image_pos -= 1
 
         #DEBUGHACK
@@ -367,8 +408,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
 
     if supress_analysis != True:
-        fh.write('</scans>')
-        fh.write('</project>')
+        fh.write('</scans>\n')
+        fh.write('</project>\n')
         fh.close()
 
     if  graph_watch != None:
@@ -673,6 +714,14 @@ if __name__ == "__main__":
 
     parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If set to True, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported.")
 
+    parser.add_argument("--xml-short", dest="xml_short", default=False, type=bool, 
+        help="If the XML output should use short tag-names")
+
+    parser.add_argument("--xml-omit-compartments", dest="xml_omit_compartments", type=str, 
+        help="Comma separated list of compartments to not report")
+
+    parser.add_argument("--xml-omit-measures", dest="xml_omit_measures", type=str,
+        help="Comma seperated list of measures to not report")
     parser.add_argument("--debug", dest="debug_level", default="warning", type=str, help="Set debugging level")    
 
     args = parser.parse_args()
@@ -698,6 +747,24 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging_level, format='\n\n%(asctime)s %(levelname)s: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S\n')
+
+    #XML
+    xml_format = {'short':args.xml_short,'omit_compartments':[], 'omit_measures': []}
+
+    if args.xml_omit_compartments is not None:
+
+        xml_format['omit_compartments'] = map(lambda x: x.strip(), 
+            args.xml_omit_compartments.split(","))
+
+    if args.xml_omit_measures is not None:
+
+        xml_format['omit_measures'] = map(lambda x: x.strip(),
+            args.xml_omit_measures.split(","))
+
+    logging.debug("XML-formatting is {0}, omitting compartments {1} and measures {2}."\
+        .format(['long','short'][xml_format['short']], 
+        str(xml_format['omit_compartments']), str(xml_format['omit_measures'])))
+
 
     #MATRICES
     if args.matrices is not None:
@@ -784,7 +851,9 @@ if __name__ == "__main__":
     under_line = "-"
     print "\n\n%s\n%s\n\n" % (header_str.center(80), (len(header_str)*under_line).center(80))
 
-    analyse_project(args.inputfile, output_path, pm, args.graph_watch, args.supress, True, False, False, grid_times=grid_times)
+    analyse_project(args.inputfile, output_path, pm, args.graph_watch, 
+        args.supress, True, False, False, grid_times=grid_times,
+        xml_format = xml_format)
     #else:
         #parser.error("Missmatch between number of plates specified and the number of matrices specified.")
 

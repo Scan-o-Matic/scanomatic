@@ -501,7 +501,7 @@ class Analyse_One(gtk.Frame):
             self.analysis_img.set_text(filename)
             self.f_settings.image_path = newimg.get_filename()
             newimg.destroy()
-            self.f_settings.marker_analysis(output_function = self.analysis_img.set_text)
+            self.f_settings.marker_analysis(output_function = self.DMS)
 
 
 
@@ -721,6 +721,11 @@ class Analyse_One(gtk.Frame):
 
     def plot_release(self, event=None):
 
+        self.DMS("ANALYSE ONE", "{} rect marking for {}.".format(
+            ['Made','Dragged'][self._rect_dragging],
+            ['gray-scale', 'feature-selection'][self._grayscale is not None]),
+            0100, debug_level = 'debug')
+
         if self._rect_marking:
             self._rect_marking = False
             if self._rect_dragging == False:
@@ -797,9 +802,8 @@ class Analyse_One(gtk.Frame):
             right = ul[1]
             left = lr[1]
 
-        ###DEBUG SELECTION SHAPE
-        print "Selection shape: ", self.f_settings.A._img[upper:lower,left:right].shape
-        ###DEBUG END
+        self.DMS("Analyse one", "Selection shape: {}".format(self.f_settings.A.\
+            _img[upper:lower,left:right].shape),10,debug_level="debug")
 
         if as_copy:
             return np.copy(self.f_settings.A._img[upper:lower,left:right])

@@ -571,7 +571,7 @@ class Application_Window():
 
                             Pos -1 (last):      Output to GUI-status area
                             Pos -2:             Write to application's log file
-                            Pos -3:             Write to prompt/bash (print)
+                            Pos -3:             Report using logging
                             Pos -4:             Activate a message box GUI
 
                             Example: 
