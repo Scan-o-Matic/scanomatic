@@ -198,11 +198,16 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         plates = 1
     else:
         outdata_analysis_path = outdata_files_path + "analysis.xml"
+        outdata_analysis_slimmed_path = outdata_files_path + "analysis_slimmed.xml"
+
         try:
             fh = open(outdata_analysis_path,'w')
+            fhs = open(outdata_analysis_slimmed_path, 'w')
+
         except:
-            logging.critical("ANALYSIS, can't open target file:'%s'" % \
-                str(outdata_analysis_path))
+            logging.critical("ANALYSIS, can't open target file:'%s' or '%s'" % \
+                (str(outdata_analysis_path),
+                str(outdata_analysis_slimmed_path)))
             return False
         project_image = Project_Image(pinning_matrices)
 
@@ -210,7 +215,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     if image_pos < first_scan_position:
         logging.critical("ANALYSIS, There are no images to analyse, aborting")
-        fh.close()
+        for f in (fh, fhs):
+            f.close()
         return True
 
     image_tot = image_pos 
@@ -218,32 +224,55 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     logging.info("ANALYIS, starting project with %d images" % (image_pos + 1))
 
     if supress_analysis != True:
-        fh.write('<project>\n')
 
-        fh.write("<{0}>{1}</{0}>\n".format(['start-time','start-t'][xml_format['short']],
-            str(image_dictionaries[first_scan_position]['Time'])  ))
+        d_type_dict = {('pixelsum','ps'):('cells','standard'),
+            ('area','a'):('pixels','standard'),
+            ('mean','m'):('cells/pixel','standard'),
+            ('median','md'):('cells/pixel','standard'),
+            ('centroid','cent'):('(pixels,pixels)','coordnate'),
+            ('perimeter','per'):('((pixels, pixels) ...)','list of coordinates'),
+            ('IQR','IQR'):('cells/pixel to cells/pixel', 'list of standard'),
+            ('IQR_mean','IQR_m'):('cells/pixel', 'standard')}
 
-        fh.write("<{0}>{1}</{0}>\n".format(['description','desc'][xml_format['short']],
-            str(description) ))
 
-        fh.write("<{0}>{1}</{0}>\n".format(['number-of-scans','n-scans'][xml_format['short']],
-            str(image_pos+1)))
+        for f in (fh, fhs):
 
-        fh.write("<{0}>{1}</{0}>\n".format(['interval-time','int-t'][xml_format['short']],
-            str(interval_time)))
+            f.write('<project>')
 
-        fh.write("<{0}>{1}</{0}>\n".format(['plates-per-scan','n-plates'][xml_format['short']],
-            str(plates) ))
+            f.write("<{0}>{1}</{0}>".format(['start-time','start-t'][xml_format['short']],
+                str(image_dictionaries[first_scan_position]['Time'])  ))
 
-        fh.write("<{0}>".format(['pinning-matrices','matrices'][xml_format['short']]))
+            f.write("<{0}>{1}</{0}>".format(['description','desc'][xml_format['short']],
+                str(description) ))
 
-        for pos in xrange(plates):
-            fh.write("<{0} {1}='{2}'>{3}</{0}>".format(['pinning-matrix','p-m'][xml_format['short']],
-                 ['index','i'][xml_format['short']],  str(pos), str(pinning_matrices[pos])))
+            f.write("<{0}>{1}</{0}>".format(['number-of-scans','n-scans'][xml_format['short']],
+                str(image_pos+1)))
 
-        fh.write('</{0}>\n'.format(['pinning-matrices','matrices'][xml_format['short']]))
+            f.write("<{0}>{1}</{0}>".format(['interval-time','int-t'][xml_format['short']],
+                str(interval_time)))
 
-        fh.write('<scans>\n')
+            f.write("<{0}>{1}</{0}>".format(['plates-per-scan','n-plates'][xml_format['short']],
+                str(plates) ))
+
+            f.write("<{0}>".format(['pinning-matrices','matrices'][xml_format['short']]))
+
+            for pos in xrange(plates):
+                f.write("<{0} {1}='{2}'>{3}</{0}>".format(['pinning-matrix','p-m'][xml_format['short']],
+                     ['index','i'][xml_format['short']],  str(pos), str(pinning_matrices[pos])))
+
+            f.write('</{0}>'.format(['pinning-matrices','matrices'][xml_format['short']]))
+
+            for d_type, info in d_type_dict.items():
+
+                f.write('<d-type {0}="{1}" {2}="{3}" {4}="{5}">'.format(\
+                    ['measure','m'][xml_format['short']],
+                    d_type[xml_format['short']],
+                    ['unit','u'][xml_format['short']],
+                    info[0],
+                    ['type','t'][xml_format['short']],
+                    info[1]))
+
+            f.write('<scans>')
 
     while image_pos >= first_scan_position:
         scan_start_time = time()
@@ -272,14 +301,17 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             timestamp=img_dict_pointer['Time'])
 
         if supress_analysis != True:
-            fh.write('<{0} {1}="{2}">'.format(['scan', 's'][xml_format['short']],  
-                ['index','i'][xml_format['short']], str(image_pos) ))
-            fh.write('<{0}>'.format(['scan-valid>','ok'][xml_format['short']]))
+
+            for f in (fh, fhs):
+                f.write('<{0} {1}="{2}">'.format(['scan', 's'][xml_format['short']],  
+                    ['index','i'][xml_format['short']], str(image_pos) ))
+                f.write('<{0}>'.format(['scan-valid','ok'][xml_format['short']]))
 
         if features == None:
             if supress_analysis != True:
-                fh.write("0</{0}>".format(['scan-valid>','ok'][xml_format['short']]))
-                fh.write('</{0}>\n'.format(['scan', 's'][xml_format['short']]))
+                for f in (fh, fhs):
+                    f.write("0</{0}>".format(['scan-valid','ok'][xml_format['short']]))
+                    f.write('</{0}>'.format(['scan', 's'][xml_format['short']]))
         else:
             if graph_watch != None and  project_image.watch_grid_size != None:
 
@@ -325,76 +357,89 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 #HACK END
 
             if supress_analysis != True:
-                fh.write("1</{0}>".format(['scan-valid>','ok'][xml_format['short']]))
 
-                fh.write("<{0}>{1}</{0}>".format(['calibration','cal'][xml_format['short']],
-                    str(img_dict_pointer['grayscale_values']) ))
+                for f in (fh, fhs):
+                    f.write("1</{0}>".format(['scan-valid>','ok'][xml_format['short']]))
 
-                fh.write("<{0}>{1}</{0}>".format(['time','t'][xml_format['short']],
-                    str(img_dict_pointer['Time']) ))
+                    f.write("<{0}>{1}</{0}>".format(['calibration','cal'][xml_format['short']],
+                        str(img_dict_pointer['grayscale_values']) ))
 
-                fh.write("<{0}>".format(['plates','pls'][xml_format['short']]))
+                    f.write("<{0}>{1}</{0}>".format(['time','t'][xml_format['short']],
+                        str(img_dict_pointer['Time']) ))
+
+                    f.write("<{0}>".format(['plates','pls'][xml_format['short']]))
 
                 for i in xrange(plates):
-                    fh.write('<{0} {1}="{2}">'.format(['plate','p'][xml_format['short']],
-                        ['index', 'i'][xml_format['short']], str(i) ))
+                    for f in (fh, fhs):
+                        f.write('<{0} {1}="{2}">'.format(['plate','p'][xml_format['short']],
+                            ['index', 'i'][xml_format['short']], str(i) ))
 
-                    fh.write('<{0}>{1}</{0}>'.format(['plate-matrix','pm'][xml_format['short']],
-                        str(pinning_matrices[i]) ))
+                        f.write('<{0}>{1}</{0}>'.format(['plate-matrix','pm'][xml_format['short']],
+                            str(pinning_matrices[i]) ))
 
-                    fh.write('<R>' + str(project_image.R[i]) + '</R>')
+                        f.write('<R>' + str(project_image.R[i]) + '</R>')
 
-                    fh.write('<{0}>'.format(['grid-cells','gcs'][xml_format['short']]))
+                        f.write('<{0}>'.format(['grid-cells','gcs'][xml_format['short']]))
 
                     for x, rows in enumerate(features[i]):
                         for y, cell in enumerate(rows):
 
-                            fh.write('<{0} x="{1}" y="{2}">'.format(['grid-cell','gc'][xml_format['short']],
-                                str(x), str(y)))
+                            for f in (fh, fhs):
+                                f.write('<{0} x="{1}" y="{2}">'.format(['grid-cell','gc'][xml_format['short']],
+                                    str(x), str(y)))
 
                             if cell != None:
                                 for item in cell.keys():
 
-                                    if item not in xml_format['omit_compartments']:
 
-                                        i_string = item
+                                    i_string = item
+
+                                    if xml_format['short']:
+
+                                        i_string = i_string\
+                                                .replace('background','bg')\
+                                                .replace('blob','bl')\
+                                                .replace('cell','cl')
+
+                                    if item not in xml_format['omit_compartments']:
+                                        fhs.write('<' + str(i_string) + '>')
+                                    fh.write('<' + str(i_string) + '>')
+                                    
+                                    for measure in cell[item].keys():
+
+                                        m_string = '<' + str(measure) + '>' + \
+                                            str(cell[item][measure]) + \
+                                            '</' + str(measure) + '>'
 
                                         if xml_format['short']:
+            
+                                            m_string = m_string\
+                                                    .replace('area','a')\
+                                                    .replace('pixel','p')\
+                                                    .replace('mean','m')\
+                                                    .replace('median','md')\
+                                                    .replace('sum','s')\
+                                                    .replace('centroid','cent')\
+                                                    .replace('perimeter','per')
 
-                                            i_string = i_string\
-                                                    .replace('background','bg')\
-                                                    .replace('blob','bl')\
-                                                    .replace('cell','cl')
+                                        if item not in xml_format['omit_compartments'] and\
+                                            measure not in xml_format['omit_measures']:
 
-                                        fh.write('<' + str(i_string) + '>')
-                                        
-                                        for measure in cell[item].keys():
+                                            fhs.write(m_string)
+                                        fh.write(m_string)
 
-                                            if measure not in xml_format['omit_measures']:
-                                                m_string = '<' + str(measure) + '>' + \
-                                                    str(cell[item][measure]) + \
-                                                    '</' + str(measure) + '>'
+                                    if item not in xml_format['omit_compartments']:
+                                        fhs.write('</' + str(i_string) + '>')
+                                    fh.write('</' + str(i_string) + '>')
 
-                                                if xml_format['short']:
-                    
-                                                    m_string = m_string\
-                                                            .replace('area','a')\
-                                                            .replace('pixel','p')\
-                                                            .replace('mean','m')\
-                                                            .replace('median','md')\
-                                                            .replace('sum','s')\
-                                                            .replace('centroid','cent')\
-                                                            .replace('perimeter','per')
-
-                                                fh.write(m_string)
-
-                                        fh.write('</' + str(i_string) + '>')
-
-                            fh.write('</{0}>'.format(['grid-cell','gc'][xml_format['short']]))
-                    fh.write('</{0}>'.format(['grid-cells','gcs'][xml_format['short']]))
-                    fh.write('</{0}>'.format(['plate','p'][xml_format['short']]))
-                fh.write("</{0}>".format(['plates','pls'][xml_format['short']]))
-                fh.write('</{0}>\n'.format(['scan', 's'][xml_format['short']]))
+                            for f in (fh, fhs):
+                                f.write('</{0}>'.format(['grid-cell','gc'][xml_format['short']]))
+                    for f in (fh, fhs):
+                        f.write('</{0}>'.format(['grid-cells','gcs'][xml_format['short']]))
+                        f.write('</{0}>'.format(['plate','p'][xml_format['short']]))
+                for f in (fh, fhs):
+                    f.write("</{0}>".format(['plates','pls'][xml_format['short']]))
+                    f.write('</{0}>'.format(['scan', 's'][xml_format['short']]))
         image_pos -= 1
 
         #DEBUGHACK
@@ -408,9 +453,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
 
     if supress_analysis != True:
-        fh.write('</scans>\n')
-        fh.write('</project>\n')
-        fh.close()
+        for f in (fh, fhs):
+            f.write('</scans>')
+            f.write('</project>')
+            f.close()
 
     if  graph_watch != None:
         #print watch_reading
