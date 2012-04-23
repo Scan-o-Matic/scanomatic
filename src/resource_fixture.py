@@ -60,6 +60,30 @@ class Fixture_Settings():
         self.mark_Y = None
         self.A = None
 
+
+    def get_markers_from_conf(self):
+
+        X = []
+        Y = []
+
+        if self.markings == 0 or self.markings is None:
+            return None, None
+
+        for m in xrange(self.markings):
+            Z = self.get_setting('marking_{0}'.format(m))
+            if Z is not None:
+                X.append(Z[0])
+                Y.append(Z[1])
+
+        if len(X) == 0:
+            return None, None
+        
+        return np.array(X), np.array(Y)
+
+    def get_setting(self, key):
+
+        return self.fixture_config_file.get(key)
+
     def marker_analysis(self, fixture_setup=False, output_function=None):
 
         if self.marking_path == None or self.markings < 1:

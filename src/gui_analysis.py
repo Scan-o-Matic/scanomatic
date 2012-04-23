@@ -543,7 +543,7 @@ class Analyse_One(gtk.Frame):
 
                 image_plot = self.image_fig.gca()
                 image_plot.cla()
-                image_plot.imshow(self.f_settings.A._img.T)
+                image_plot.imshow(self.f_settings.A._img.T, cmap=plt.cm.gray)
                 ax = image_plot.plot(self.f_settings.mark_Y*dpi_factor, self.f_settings.mark_X*dpi_factor,'ko', mfc='None', mew=2)
                 image_plot.set_xlim(xmin=0,xmax=self.f_settings.A._img.shape[0])
                 image_plot.set_ylim(ymin=0,ymax=self.f_settings.A._img.shape[1])
@@ -888,7 +888,7 @@ class Analyse_One(gtk.Frame):
         if center is None and radius is None:
             image_plot = self.blob_fig.gca()
             image_plot.cla()
-            image_ax = image_plot.imshow(img_section.T)
+            image_ax = image_plot.imshow(img_section.T, cmap=plt.cm.gray)
             image_plot.set_xlim(xmin=0,xmax=img_section.shape[0])
             image_plot.set_ylim(ymin=0,ymax=img_section.shape[1])
 

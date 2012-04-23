@@ -51,6 +51,7 @@ class Gray_Scale(gtk.Frame):
         self.grayscale_plot_img = self.grayscale_fig.add_subplot(121)
         self.grayscale_plot_img.get_xaxis().set_visible(False)
         self.grayscale_plot_img.get_yaxis().set_visible(False)
+        self.grayscale_plot_img_ax = None
 
         self.grayscale_plot = self.grayscale_fig.add_subplot(122)
         self.grayscale_plot.axis("tight")
@@ -72,6 +73,12 @@ class Gray_Scale(gtk.Frame):
 
     def set_grayscale(self, im_section):
 
+        if im_section is None:
+            self._grayscale = None
+            if self.grayscale_plot_img_ax is not None:
+                self.grayscale_plot_img_ax.set_data(np.ones(10,10))
+            return False
+
         gs = img_base.Analyse_Grayscale(image=im_section)
         self._grayscale = gs._grayscale
 
@@ -82,7 +89,12 @@ class Gray_Scale(gtk.Frame):
         Y = np.ones(len(gs._grayscale_pos)) * gs._mid_orth_strip 
         #grayscale_plot = self.grayscale_fig.get_subplot(121)
         self.grayscale_plot_img.clear()
-        self.grayscale_plot_img.imshow(im_section.T)
+        if self.grayscale_plot_img_ax is None:
+            self.grayscale_plot_img_ax = self.grayscale_plot_img.imshow(\
+                im_section.T, cmap=plt.cm.gray)
+        else:
+            self.grayscale_plot_img_ax.set_data(im_section.T)
+
         self.grayscale_plot_img.plot(gs._grayscale_pos, Y,'ko', mfc='w', mew=1, ms=3)
         self.grayscale_plot_img.set_xlim(xmin=0,xmax=im_section.shape[0])
 

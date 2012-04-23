@@ -2,6 +2,12 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Fixture respond to what fixture is selected in start experiment!
+
+*** Fixture no longer causes file-crash if conf-file not correct.
+
+*** Fixture creation no longer requires program restart(s) to work properly
+
 *** Added XML-short form and omission of data from XML file that is
     not of interest.
 
