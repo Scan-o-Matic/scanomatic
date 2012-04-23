@@ -236,6 +236,7 @@ class Fixture_GUI(gtk.Frame):
         self.config_box_edit.pack_start(button, False, False, 2)
 
         vbox2.show_all()
+        self.gs_view.hide_all()
 
         self._init_done = True
 
@@ -878,14 +879,14 @@ class Fixture_GUI(gtk.Frame):
                 len(self.fixture_area_selection.get_model()) > 1)
 
 
-    def set_grayscale(self, scale_factor=1.0):
+    def set_grayscale(self, scale_factor=1.0, dpi=150):
 
         coords = self.f_settings.fixture_config_file.get("grayscale_area")
         if coords is not None:
             xs = np.asarray((coords[0][0],coords[1][0]))/scale_factor
             ys = np.asarray((coords[0][1],coords[1][1]))/scale_factor
             im_section = self.fixture_analysis_image[xs.min():xs.max(), ys.min():ys.max()].copy()
-            self.grayscale.set_grayscale(im_section.T)
+            self.grayscale.set_grayscale(im_section.T, dpi=dpi)
         else:
             self.DMS('FIXTURE', 'Settings are missing grayscale area', 110, debug_level='warning')
             self.grayscale.set_grayscale(None)

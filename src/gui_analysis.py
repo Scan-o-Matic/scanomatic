@@ -46,6 +46,9 @@ class Analyse_One(gtk.Frame):
         self.owner = owner
         self.DMS = self.owner.DMS
 
+        self.KODAK = 0
+        self.CELL_ESTIMATE = 1
+
         self.analysis = None
 
         self._rect_marking = False
@@ -192,95 +195,80 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(self.section_picking, False, False, 10)
 
         #
-        # KODAK VALUE SPACE
+        # LAST VALUE SPACE
         #
 
+        self.last_value_space = self.KODAK
+        if os.path.isfile(self._config_calibration_polynomial):
+            self.last_value_space = self.CELL_ESTIMATE
+
         #Analysis data frame for selection
-        frame = gtk.Frame("'Kodak Value Space'")
-        frame.show()
+        frame = gtk.Frame("'{0} Value Space'".format(\
+            ('Kodak','Cell Estimate')[self.last_value_space]))
         vbox2.pack_start(frame, False, False, 2)
 
         vbox3 = gtk.VBox()
-        vbox3.show()
         frame.add(vbox3)
 
         #Cell Area
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
      
         label = gtk.Label("Cell Area:")
-        label.show()
         hbox.pack_start(label,False, False, 2)
 
         self.cell_area = gtk.Label("0")
-        self.cell_area.show()
         self.cell_area.set_max_width_chars(20)
         hbox.pack_end(self.cell_area, False, False, 2)
 
         #Background Mean
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Background Mean:")
-        label.show()
         hbox.pack_start(label,False, False, 2)
 
         self.bg_mean = gtk.Label("0")
-        self.bg_mean.show()
         hbox.pack_end(self.bg_mean, False, False, 2)
 
         #Background Inter Quartile Range Mean
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Background IQR-Mean:")
-        label.show()
         hbox.pack_start(label,False, False, 2)
 
         self.bg_iqr_mean = gtk.Label("0")
-        self.bg_iqr_mean.show()
         hbox.pack_end(self.bg_iqr_mean, False, False, 2)
 
         #Background Median
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Background Median:")
-        label.show()
         hbox.pack_start(label,False, False, 2)
 
         self.bg_median = gtk.Label("0")
-        self.bg_median.show()
         hbox.pack_end(self.bg_median, False, False, 2)
 
         #Blob area
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Blob Area:")
-        label.show()
         hbox.pack_start(label,False, False, 2)
 
         self.blob_area = gtk.Label("0")
-        self.blob_area.show()
         hbox.pack_end(self.blob_area, False, False, 2)
 
         #Blob Size
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Blob Size:")
-        label.show()
         hbox.pack_start(label,False, False, 2)
 
         self.colony_size = gtk.Label("0")
-        self.colony_size.show()
         hbox.pack_end(self.colony_size, False, False, 2)
 
         #Blob Pixelsum 
@@ -289,88 +277,71 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Blob Pixelsum:")
-        label.show()
         hbox.pack_start(label,False, False, 2)
 
         self.blob_pixelsum = gtk.Label("0")
-        self.blob_pixelsum.show()
         hbox.pack_end(self.blob_pixelsum, False, False, 2)
 
         #Blob Mean 
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Blob Mean:")
-        label.show()
         hbox.pack_start(label,False, False, 2)
 
         self.blob_mean = gtk.Label("0")
-        self.blob_mean.show()
         hbox.pack_end(self.blob_mean, False, False, 2)
+    
+        frame.show_all()
 
         #
         # CELL ESTIMATE SPACE
         #
 
         #Cell Count Estimations
-        frame = gtk.Frame("Cell Estimate Space")
-        frame.show()
-        vbox2.pack_start(frame, False, False, 2)
+        self.calibration_frame = gtk.Frame("Cell Estimate Space")
+        vbox2.pack_start(self.calibration_frame, False, False, 2)
 
         vbox3 = gtk.VBox()
-        vbox3.show()
-        frame.add(vbox3)
+        self.calibration_frame.add(vbox3)
 
         #Unit
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         self.cce_per_pixel = gtk.Label("0")
-        self.cce_per_pixel.show()
         hbox.pack_start(self.cce_per_pixel)
 
         label = gtk.Label("depth/pixel")
-        label.show()
         hbox.pack_end(label, False, False, 2)
 
         label = gtk.Label("Independent measure:")
-        label.show()
         vbox3.pack_start(label, False, False, 2)
 
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("CCE/grid-cell:")
-        label.show()
         hbox.pack_start(label, False, False, 2)
 
         self.cce_indep_measure = gtk.Entry()
         self.cce_indep_measure.connect("focus-out-event", self.verify_number)
-        self.cce_indep_measure.show()
         hbox.pack_end(self.cce_indep_measure, False, False, 2)
 
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label('Data point label:')
-        label.show()
         hbox.pack_start(label, False, False, 2)
 
         self.cce_data_label = gtk.Entry()
-        self.cce_data_label.show()
         hbox.pack_end(self.cce_data_label, False, False, 2)      
 
         button = gtk.Button("Submit calibration point")
-        button.show()
         button.connect("clicked", self.add_calibration_point, None)
         vbox3.pack_start(button, False, False, 2)
 
         self.cce_calculated = gtk.Label("--- cells in blob")
-        self.cce_calculated.show()
         vbox3.pack_start(self.cce_calculated, False, False, 2)
         self._cce_poly_coeffs = None
         has_poly_cal = True
@@ -386,11 +357,13 @@ class Analyse_One(gtk.Frame):
                     self._cce_poly_coeffs = l_data[-1]
                     break
             label = gtk.Label("(using '" + str(l_data[0]) + "')")
-            label.show()
             vbox3.pack_start(label, False, False, 2)
             fs.close()
 
         self.blob_filter = None
+
+        if self.last_value_space == self.KODAK:
+            self.calibration_frame.show_all()
 
     def verify_number(self, widget=None, event=None, data=None):
 
@@ -423,7 +396,7 @@ class Analyse_One(gtk.Frame):
             img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
 
 
-            tf_matrix = np.asarray(colonies.get_gray_scale_transformation_matrix(self._grayscale))
+            tf_matrix = np.asarray(colonies.get_gray_scale_transformation_matrix(self.grayscale_frame._grayscale))
 
             if tf_matrix is not None:
                 for x in xrange(img_section.shape[0]):
@@ -442,8 +415,13 @@ class Analyse_One(gtk.Frame):
             ###DEBUG END
 
             #Get the effect of blob-materia on pixels
-            blob_pixels = img_section[np.where(self.blob_filter)] - float(self.bg_mean.get_text())
+            try:
+                blob_pixels = img_section[np.where(self.blob_filter)] - float(self.bg_mean.get_text())
+            except ValueError:
+                self.DMS("ANALYSE ONE", "There's no background in section.",
+                    110, debug_level="warning")
 
+                blob_pixels = img_section[np.where(self.blob_filter)]
 
             #Disallow "anti-materia" pixels           
             blob_pixels = blob_pixels[np.where(blob_pixels > 0)] 
@@ -496,7 +474,7 @@ class Analyse_One(gtk.Frame):
         result = newimg.run()
 
         if result == gtk.RESPONSE_APPLY:
-            self._grayscale = None
+            self.grayscale_frame._grayscale = None
             filename= newimg.get_filename()
             self.analysis_img.set_text(filename)
             self.f_settings.image_path = newimg.get_filename()
@@ -538,6 +516,9 @@ class Analyse_One(gtk.Frame):
 
                 if grayscale is None or gs_success == False:
                     self.set_grayscale_selecting()
+                else:
+                    pass
+
 
                 #THE LARGE IMAGE
 
@@ -567,7 +548,7 @@ class Analyse_One(gtk.Frame):
 
         self.gs_reset_button.set_sensitive(False)
         self.gs_reset_button.set_label("Currently selecting a gray-scale area")
-        self._grayscale = None
+        self.grayscale_frame._grayscale = None
         self.grayscale_frame.clf()
 
 
@@ -723,7 +704,7 @@ class Analyse_One(gtk.Frame):
 
         self.DMS("ANALYSE ONE", "{0} rect marking for {1}.".format(
             ['Made','Dragged'][self._rect_dragging],
-            ['gray-scale', 'feature-selection'][self._grayscale is not None]),
+            ['gray-scale', 'feature-selection'][self.grayscale_frame._grayscale is not None]),
             0100, debug_level = 'debug')
 
         if self._rect_marking:
@@ -737,7 +718,7 @@ class Analyse_One(gtk.Frame):
 
                     self.selection_width.set_text(str(self.selection_rect.get_width()))
                     self.selection_height.set_text(str(self.selection_rect.get_height()))
-                    if self._grayscale != None:
+                    if self.grayscale_frame._grayscale != None:
                         self.get_analysis()
                     else:
                         self.set_manual_grayscale(self._rect_ul, self._rect_lr)
@@ -823,7 +804,7 @@ class Analyse_One(gtk.Frame):
         img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
         img_transf = img_section.copy()
 
-        tf_matrix = colonies.get_gray_scale_transformation_matrix(self._grayscale)
+        tf_matrix = colonies.get_gray_scale_transformation_matrix(self.grayscale_frame._grayscale)
 
         if tf_matrix is not None:
             for x in xrange(img_transf.shape[0]):

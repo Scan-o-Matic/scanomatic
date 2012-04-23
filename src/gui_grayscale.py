@@ -72,7 +72,7 @@ class Gray_Scale(gtk.Frame):
 
         self.grayscale_fig.canvas.draw()
 
-    def set_grayscale(self, im_section):
+    def set_grayscale(self, im_section, scale_factor=1.0, dpi=600):
 
         if im_section is None:
             self._grayscale = None
@@ -85,15 +85,16 @@ class Gray_Scale(gtk.Frame):
 
             return False
 
-        gs = img_base.Analyse_Grayscale(image=im_section)
+        gs = img_base.Analyse_Grayscale(image=im_section, scale_factor=scale_factor, dpi=dpi)
         self._grayscale = gs._grayscale
 
         if gs._mid_orth_strip is None or gs._grayscale_pos is None:
             self.DMS('GRAYSCALE', 'Gray-scale could not find any signal.', 
                 110, debug_level='info')
 
-            self.grayscale_plot_img_ax.set_visible(False)
-            self.grayscale_plot_img_ax2.set_visible(False)
+            if self.grayscale_plot_img_ax is not None:
+                self.grayscale_plot_img_ax.set_visible(False)
+                self.grayscale_plot_img_ax2.set_visible(False)
             return False
 
         #LEFT PLOT
@@ -111,15 +112,15 @@ class Gray_Scale(gtk.Frame):
             self.grayscale_plot_img_ax2.set_ydata(Y)
 
         self.grayscale_plot_img.set_xlim(xmin=0,xmax=im_section.shape[0])
-        self.grayscale_plot_ax.set_visible(True)
-        self.grayscale_plot_ax2.set_visible(True)
+        self.grayscale_plot_img_ax.set_visible(True)
+        self.grayscale_plot_img_ax2.set_visible(True)
 
         #RIGHT PLOT
         #grayscale_plot = self.grayscale_fig.get_subplot(122)
 
         if len(gs._grayscale_X) != len(gs._grayscale):
             self._grayscale=None
-            self.DMS("Error", "There's something wrong with the grayscale. Switching to manual")
+            self.DMS("Error", "There's something wrong with the grayscale. Try manual selection")
             return False
 
         z2 = np.polyfit(gs._grayscale_X, gs._grayscale,2)

@@ -316,7 +316,7 @@ class Image_Analysis():
         
 
     def get_subsection(self, section):
-        if self.get_loaded():
+        if self.get_loaded() and section is not None:
             if section[0][1] > section[1][1]:
                 upper = section[1][1]
                 lower = section[0][1]
@@ -337,7 +337,7 @@ class Image_Analysis():
         return None
 
 class Analyse_Grayscale():
-    def __init__(self, type="Kodak", image=None):
+    def __init__(self, type="Kodak", image=None, scale_factor=1.0, dpi=600):
 
         self.grayscale_type = "Kodak"
         self._grayscale_dict = {\
@@ -363,7 +363,8 @@ class Analyse_Grayscale():
 
         if image != None:
 
-            self._grayscale_pos, self._grayscale = self.get_grayscale()
+            self._grayscale_pos, self._grayscale = self.get_grayscale(\
+                scale_factor=scale_factor, dpi=dpi)
             self._grayscale_X = self.get_grayscale_X(self._grayscale_pos)
 
     
@@ -394,6 +395,12 @@ class Analyse_Grayscale():
 
         if self._img is None:
             return None
+
+        if scale_factor == 1 and dpi != 600:
+            scale_factor = 600.0/dpi
+
+        logging.debug("GRAYSCALE ANALYSIS: Of images {0} at dpi={1} and scale_factor={2}".format(\
+            self._img.shape, dpi, scale_factor))
 
         A  = (self._img < (self._img.max()/4)).astype(int)
 
@@ -518,11 +525,11 @@ class Analyse_Grayscale():
         up_spikes = r_signal.get_center_of_spikes(up_spikes)
 
         best_spikes = r_signal.get_best_spikes(up_spikes, 
-            self._grayscale_dict['Kodak']['length'], tollerance=0.05, 
+            self._grayscale_dict['Kodak']['length']/scale_factor, tollerance=0.05, 
             require_both_sides=False)
 
         frequency = r_signal.get_perfect_frequency2(best_spikes, 
-            self._grayscale_dict['Kodak']['length'])
+            self._grayscale_dict['Kodak']['length']/scale_factor)
 
         offset = r_signal.get_best_offset(\
             self._grayscale_dict['Kodak']['sections'],
@@ -534,6 +541,10 @@ class Analyse_Grayscale():
             offset=offset)
 
         if signal is None:
+            logging.warning("GRAYSCALE, no signal detected for f={0} and offset={1}\
+ in best_spikes={2} from spikes={3}".format(frequency, offset, best_spikes,
+                up_spikes))
+
             return None, None
 
         safety_buffer = 0.2

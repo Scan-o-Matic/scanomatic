@@ -6,27 +6,6 @@
 
 *** Gray-scale display buggy
 
-*** Analysis one:
-
-Traceback (most recent call last):
-  File "/usr/lib/pymodules/python2.7/matplotlib/backends/backend_gtk.py", line 258, in button_release_event
-    FigureCanvasBase.button_release_event(self, x, y, event.button, guiEvent=event)
-  File "/usr/lib/pymodules/python2.7/matplotlib/backend_bases.py", line 1599, in button_release_event
-    self.callbacks.process(s, event)
-  File "/usr/lib/pymodules/python2.7/matplotlib/cbook.py", line 265, in process
-    proxy(*args, **kwargs)
-  File "/usr/lib/pymodules/python2.7/matplotlib/cbook.py", line 191, in __call__
-    return mtd(*args, **kwargs)
-  File "/home/martin/Documents/PhD/python/scannomatic/src/gui_analysis.py", line 754, in plot_release
-    self.get_analysis()
-  File "/home/martin/Documents/PhD/python/scannomatic/src/gui_analysis.py", line 928, in get_analysis
-    cce_vector = self.get_cce_data_vector()
-  File "/home/martin/Documents/PhD/python/scannomatic/src/gui_analysis.py", line 445, in get_cce_data_vector
-    blob_pixels = img_section[np.where(self.blob_filter)] - float(self.bg_mean.get_text())
-ValueError: could not convert string to float: None
-
-
-
 --- SPACE-TRANSITIONS ---
 
 *** The 'Pixel Value Space' to 'Kodak Value Space' could use the advanced 
