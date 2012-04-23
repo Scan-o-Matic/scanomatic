@@ -52,6 +52,7 @@ class Gray_Scale(gtk.Frame):
         self.grayscale_plot_img.get_xaxis().set_visible(False)
         self.grayscale_plot_img.get_yaxis().set_visible(False)
         self.grayscale_plot_img_ax = None
+        self.grayscale_plot_img_ax2 = None
 
         self.grayscale_plot = self.grayscale_fig.add_subplot(122)
         self.grayscale_plot.axis("tight")
@@ -76,27 +77,42 @@ class Gray_Scale(gtk.Frame):
         if im_section is None:
             self._grayscale = None
             if self.grayscale_plot_img_ax is not None:
-                self.grayscale_plot_img_ax.set_data(np.ones(10,10))
+                self.grayscale_plot_img_ax.set_visible(False)
+                self.grayscale_plot_img_ax2.set_visible(False)
+
+            self.DMS('GRAYSCALE', 'Gray-scale cleared since no image passed', 
+                110, debug_level='info')
+
             return False
 
         gs = img_base.Analyse_Grayscale(image=im_section)
         self._grayscale = gs._grayscale
 
         if gs._mid_orth_strip is None or gs._grayscale_pos is None:
+            self.DMS('GRAYSCALE', 'Gray-scale could not find any signal.', 
+                110, debug_level='info')
+
+            self.grayscale_plot_img_ax.set_visible(False)
+            self.grayscale_plot_img_ax2.set_visible(False)
             return False
 
         #LEFT PLOT
         Y = np.ones(len(gs._grayscale_pos)) * gs._mid_orth_strip 
         #grayscale_plot = self.grayscale_fig.get_subplot(121)
-        self.grayscale_plot_img.clear()
+        #self.grayscale_plot_img.clear()
         if self.grayscale_plot_img_ax is None:
             self.grayscale_plot_img_ax = self.grayscale_plot_img.imshow(\
                 im_section.T, cmap=plt.cm.gray)
+            self.grayscale_plot_img_ax2 = self.grayscale_plot_img.plot(\
+                gs._grayscale_pos, Y,'ko', mfc='w', mew=1, ms=3)[0]
         else:
             self.grayscale_plot_img_ax.set_data(im_section.T)
+            self.grayscale_plot_img_ax2.set_xdata(gs._grayscale_pos)
+            self.grayscale_plot_img_ax2.set_ydata(Y)
 
-        self.grayscale_plot_img.plot(gs._grayscale_pos, Y,'ko', mfc='w', mew=1, ms=3)
         self.grayscale_plot_img.set_xlim(xmin=0,xmax=im_section.shape[0])
+        self.grayscale_plot_ax.set_visible(True)
+        self.grayscale_plot_ax2.set_visible(True)
 
         #RIGHT PLOT
         #grayscale_plot = self.grayscale_fig.get_subplot(122)
