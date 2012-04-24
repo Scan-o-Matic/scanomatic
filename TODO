@@ -4,7 +4,11 @@
 
 --- DEBUGGING ---
 
-*** Gray-scale display buggy
+*** Gray-scale fails to analyse at 150 dpi
+
+*** The Analyse One GUI have strange behaviour in why extra im-array is
+    needed to have toggling between Cell Estimate and Kodak
+
 
 --- SPACE-TRANSITIONS ---
 
@@ -45,8 +49,6 @@
 *** Make scanner-queue lay outside program so several instances of program
     will be OK.
 
-*** Analysis One should allow for any space.
-
 *** Extend functionality in fixture view (Gray-scale values)
     Status: Begun. Something wrong in fixture
 
@@ -72,6 +74,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Analysis One should allow for any space.
 
 *** Fixture should respond to what fixture is selected in start experiment!
 

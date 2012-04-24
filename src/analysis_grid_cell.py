@@ -190,9 +190,12 @@ class Grid_Cell():
         if rect_size == None:
             rect_size = self.data_source.shape
 
+        if self.center.all(-1):
+            self.center = np.array(map(lambda x: x/2.0, rect_size))
+
         self.rect = compute_rect(self.center,rect_size)
 
-    def set_center(self,center,rect_size = None):
+    def set_center(self,center, rect_size = None):
         # Set the new center:
         self.center = np.asarray(center)
         # find the rectSize:
@@ -310,6 +313,8 @@ class Grid_Cell():
     def get_height(self):
         return self.rect[3]
 
+    def get_center(self):
+        return self.center
     #
     # Other functions
     #

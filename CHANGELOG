@@ -2,6 +2,9 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Analyse One allows for measures in both spaces and using any fixture
+    to find grayscale.
+
 *** Fixture respond to what fixture is selected in start experiment!
 
 *** Fixture no longer causes file-crash if conf-file not correct.

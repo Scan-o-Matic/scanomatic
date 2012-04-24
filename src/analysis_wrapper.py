@@ -16,6 +16,7 @@ __status__ = "Development"
 #
 
 import numpy as np
+import logging
 
 #
 # SCANNOMATIC LIBRARIES
@@ -47,7 +48,7 @@ def get_grid_cell_from_array(arr, fallback_detection=False, center=None, radius=
                                 (if not supplied, blob will be detected
                                 automatically)
 
-       @radius                  A manually set blob radus (if set
+        @radius                 A manually set blob radus (if set
                                 center must be set as well)
                                 (if not supplied, blob will be detected
                                 automatically)
@@ -57,8 +58,11 @@ def get_grid_cell_from_array(arr, fallback_detection=False, center=None, radius=
     """
 
     cell = grid_cell.Grid_Cell((0,0,0), data_source=arr)
-    cell.set_rect_size()
-    #cell.set_center()
+    cell.set_rect_size() 
+
+    logging.debug("GRID CELL: Created with center {0} and size {1} (im was {2})".\
+        format(cell.get_center(), cell.get_rect_size(), arr.shape))
+
     cell.attach_analysis(use_fallback_detection=fallback_detection, 
         center=center, radius=radius)
 

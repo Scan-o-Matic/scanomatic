@@ -50,6 +50,7 @@ class Analyse_One(gtk.Frame):
         self.CELL_ESTIMATE = 1
 
         self.analysis = None
+        self._cell = None
 
         self._rect_marking = False
         self._rect_ul = None
@@ -62,8 +63,14 @@ class Analyse_One(gtk.Frame):
         self._config_calibration_polynomial = self.owner._program_config_root + os.sep + "calibration.polynomials"
 
         self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
-        self.f_settings = fixture_settings.Fixture_Settings(self._fixture_config_root, fixture="fixture_a")
+        self.f_settings = None
+        self._current_fixture = None
+        self._fixture_updating = False
 
+        self.last_value_space = self.KODAK
+        if os.path.isfile(self._config_calibration_polynomial):
+            self.last_value_space = self.CELL_ESTIMATE
+        #GTK
         vbox = gtk.VBox()
         vbox.show()
         self.add(vbox)
@@ -77,16 +84,21 @@ class Analyse_One(gtk.Frame):
         #
 
         self.plots_vbox = gtk.VBox()
-        self.plots_vbox.show()
         hbox.pack_start(self.plots_vbox, False, False, 2)
         
+
+        hbox2 = gtk.HBox()
+        self.fixture = gtk.combo_box_new_text()
+        self.reload_fixtures()
+        self.fixture.connect("changed", self.set_fixture)
+        hbox2.pack_start(self.fixture, False, False, 2)
+        self.plots_vbox.pack_start(hbox2, False, False, 2)
 
         self.grayscale_frame = grayscale.Gray_Scale(self)
         self.plots_vbox.pack_start(self.grayscale_frame, False, False, 2)
 
 
         label = gtk.Label("Marker detection analysis")
-        label.show()
         self.plots_vbox.pack_start(label, False, False, 2)
 
         figsize = (500,350)
@@ -107,17 +119,17 @@ class Analyse_One(gtk.Frame):
         image_plot.add_patch(self.selection_rect)
         image_plot.get_xaxis().set_visible(False)
         image_plot.get_yaxis().set_visible(False)
-        image_canvas.show()
         image_canvas.set_size_request(figsize[0],figsize[1])
 
         self.plots_vbox.pack_start(image_canvas, False, False, 2)
 
 
         self.gs_reset_button = gtk.Button(label = 'No image loaded...')
-        self.gs_reset_button.show()
         self.gs_reset_button.connect("clicked", self.set_grayscale_selecting)
         self.plots_vbox.pack_start(self.gs_reset_button, False, False, 2)
         self.gs_reset_button.set_sensitive(False)
+
+        self.plots_vbox.show_all()
         #
         # Plot sections / blob images
         #
@@ -134,81 +146,75 @@ class Analyse_One(gtk.Frame):
         hbox.pack_start(self.plots_vbox2, False, False, 2)
 
         vbox2 = gtk.VBox()
-        vbox2.show()
         hbox.pack_end(vbox2, False, False, 2)
 
         hbox = gtk.HBox()
-        hbox.show()
         vbox2.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Select image:")
-        label.show()
         hbox.pack_start(label, False, False, 2)
 
         button = gtk.Button(label = 'Open')
-        button.show()
         button.connect("clicked", self.select_image)
         hbox.pack_end(button, False, False, 2)
 
         self.analysis_img = gtk.Label("")
         self.analysis_img.set_max_width_chars(40)
         self.analysis_img.set_ellipsize(pango.ELLIPSIZE_START)
-        self.analysis_img.show()
         vbox2.pack_start(self.analysis_img, False, False, 2)
 
         label = gtk.Label("Manual selection size:")
-        label.show()
         vbox2.pack_start(label, False, False, 2)
 
         hbox = gtk.HBox()
-        hbox.show()
         vbox2.pack_start(hbox, False, False, 2)
 
         self.selection_width = gtk.Entry()
-        self.selection_width.show()
         self.selection_width.set_text("")
         self.selection_width.connect("focus-out-event", self.manual_selection_width)
         hbox.pack_start(self.selection_width, False, False, 2)
       
         label = gtk.Label("x")
-        label.show()
         hbox.pack_start(label, False, False, 2)
  
         self.selection_height = gtk.Entry()
-        self.selection_height.show()
         self.selection_height.set_text("")
         self.selection_height.connect("focus-out-event", self.manual_selection_height)
         hbox.pack_start(self.selection_height, False, False, 2)
 
         #Analysis data frame for selection
         frame = gtk.Frame("Image")
-        frame.show()
         vbox2.pack_start(frame, False, False, 2)
 
         vbox3 = gtk.VBox()
-        vbox3.show()
         frame.add(vbox3)
 
         #Interactive helper
         self.section_picking = gtk.Label("First load an image.")
-        self.section_picking.show()
         vbox3.pack_start(self.section_picking, False, False, 10)
 
-        #
-        # LAST VALUE SPACE
-        #
+        frame.show_all()
 
-        self.last_value_space = self.KODAK
-        if os.path.isfile(self._config_calibration_polynomial):
-            self.last_value_space = self.CELL_ESTIMATE
+        button = gtk.RadioButton(None, "Kodak Value Space")
+        button2 = gtk.RadioButton(button, "Cell Estimate Space")
+        button2.set_active(self.last_value_space==self.CELL_ESTIMATE)
+        button.connect("toggled", self.set_value_space, self.KODAK)
+        vbox2.pack_start(button, False, False, 2)
+        button2.connect("toggled", self.set_value_space, self.CELL_ESTIMATE)
+        vbox2.pack_start(button2, False, False, 2)
+
+        
+        #
+        # VALUE SPACE
+        #
 
         #Analysis data frame for selection
-        frame = gtk.Frame("'{0} Value Space'".format(\
+        self.value_space_frame = gtk.Frame("'{0} Value Space'".format(\
             ('Kodak','Cell Estimate')[self.last_value_space]))
-        vbox2.pack_start(frame, False, False, 2)
+        vbox2.pack_start(self.value_space_frame, False, False, 2)
 
         vbox3 = gtk.VBox()
-        frame.add(vbox3)
+        self.value_space_frame.add(vbox3)
 
         #Cell Area
         hbox = gtk.HBox()
@@ -262,18 +268,17 @@ class Analyse_One(gtk.Frame):
         hbox.pack_end(self.blob_area, False, False, 2)
 
         #Blob Size
-        hbox = gtk.HBox()
-        vbox3.pack_start(hbox, False, False, 2)
+        #hbox = gtk.HBox()
+        #vbox3.pack_start(hbox, False, False, 2)
 
-        label = gtk.Label("Blob Size:")
-        hbox.pack_start(label,False, False, 2)
+        #label = gtk.Label("Blob Size:")
+        #hbox.pack_start(label,False, False, 2)
 
-        self.colony_size = gtk.Label("0")
-        hbox.pack_end(self.colony_size, False, False, 2)
+        #self.colony_size = gtk.Label("0")
+        #hbox.pack_end(self.colony_size, False, False, 2)
 
         #Blob Pixelsum 
         hbox = gtk.HBox()
-        hbox.show()
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Blob Pixelsum:")
@@ -292,10 +297,9 @@ class Analyse_One(gtk.Frame):
         self.blob_mean = gtk.Label("0")
         hbox.pack_end(self.blob_mean, False, False, 2)
     
-        frame.show_all()
 
         #
-        # CELL ESTIMATE SPACE
+        # CALIBRATION FRAME
         #
 
         #Cell Count Estimations
@@ -362,8 +366,10 @@ class Analyse_One(gtk.Frame):
 
         self.blob_filter = None
 
-        if self.last_value_space == self.KODAK:
-            self.calibration_frame.show_all()
+        vbox2.show_all()
+        self.value_space_frame.show_all()
+
+        self.set_value_space(widget=None, value_space=self.last_value_space)        
 
     def verify_number(self, widget=None, event=None, data=None):
 
@@ -544,6 +550,101 @@ class Analyse_One(gtk.Frame):
 
                 self.get_analysis()
 
+        else:
+
+            newimg.destroy()
+
+    def reload_fixtures(self):
+
+        self._fixture_gui_updating = True
+
+        directory = self._fixture_config_root
+        extension = ".config"
+        list_fixtures = map(lambda x: x.split(extension,1)[0], [file for file\
+            in os.listdir(directory) if file.lower().endswith(extension)])
+
+
+        for f in list_fixtures:
+
+            need_input = True
+
+            for pos in xrange(len(self.fixture.get_model())-1,-1,-1):
+
+                cur_text = self.fixture.get_model()[pos][0]
+
+                if cur_text == f:
+                    need_input = False
+                    break
+                elif cur_text not in list_fixtures:
+                    self.fixture.remove_text(pos)
+                        
+                        
+            if need_input:
+                self.fixture.append_text(f)
+
+        if self._current_fixture is not None and True not in map(lambda x: x[0] ==\
+            self._current_fixture, self.fixture.get_model()):
+
+
+            self._current_fixture = None
+
+        else:
+
+            pos = next((i for i, f in enumerate(map(lambda x: x[0] == \
+                self._current_fixture, self.fixture.get_model())) \
+                if f is True),-1)
+
+            self.set_fixture(data = pos)
+
+        if self._current_fixture is None:
+
+            if len(self.fixture.get_model()) > 0:
+
+                self.set_fixture(data=0)
+
+            else: 
+            
+                self.f_settings = fixture_settings.Fixture_Settings(self._fixture_config_root, fixture='fixture_a')
+                self._current_fixture = 'fixture_a'
+                self.reload_fixtures()
+
+        self._fixture_gui_updating = False
+
+    def set_fixture(self, widget=None, data=None):
+
+        if not self._fixture_updating:
+            self._fixture_updating = True
+            if data != None:
+
+                self.fixture.set_active(data)
+                fixture = self.fixture.get_model()[data][0]
+ 
+            else:    
+                fixture = widget.get_model()[widget.get_active()][0]
+
+            self.f_settings = fixture_settings.Fixture_Settings(\
+                self._fixture_config_root, fixture=fixture)
+
+            self._fixture_updating = False
+
+    def set_value_space(self, widget=None, value_space=None):
+
+        if value_space in (self.KODAK, self.CELL_ESTIMATE): 
+            self.last_value_space = value_space
+            self.value_space_frame.set_label("{0} Space".format(\
+                ('Kodak','Cell Estimate')[self.last_value_space]))
+            if self.last_value_space == self.KODAK:
+                self.calibration_frame.show_all()
+            else:
+                self.calibration_frame.hide()
+
+
+            features = self.get_features()
+
+            if features is not None:
+
+                self.set_features_in_gui(features)
+
     def set_grayscale_selecting(self, widget=None, event=None, data=None):
 
         self.gs_reset_button.set_sensitive(False)
@@ -562,6 +663,38 @@ class Analyse_One(gtk.Frame):
         self.gs_reset_button.set_sensitive(True)
         self.gs_reset_button.set_label("Click to reset grayscale")
         self.grayscale_frame.set_grayscale(im_section)
+
+    def set_features_in_gui(self, features):
+
+        if features != None:
+            DECIMAL_TXT = "{0:.{1}f}"
+            self.cell_area.set_text(str(features['cell']['area']))
+            
+            self.bg_mean.set_text(DECIMAL_TXT.format(\
+                features['background']['mean'], 2))
+            self.bg_iqr_mean.set_text(DECIMAL_TXT.format(\
+                features['background']['IQR_mean'], 2))
+            self.bg_median.set_text(DECIMAL_TXT.format(\
+                features['background']['median'], 2))
+
+            self.blob_pixelsum.set_text(DECIMAL_TXT.format(\
+                float(features['blob']['pixelsum']), 0))
+            self.blob_mean.set_text(DECIMAL_TXT.format(\
+                features['blob']['mean'], 2))
+            self.blob_area.set_text(str(features['blob']['area']))
+
+            #self.colony_size.set_text(str(abs(features['cell']['pixelsum'] - \
+            #    features['background']['mean'] * features['cell']['area'])))
+
+            self.cce_per_pixel.set_text(str(features['blob']['mean'] - 
+                features['background']['mean']))
+
+            self.DMS('Analysis', 'Alternative measures: ' + 
+                "see in program"+ " (from mean), " + 
+                str(abs(features['cell']['pixelsum'] - \
+                features['background']['median'] * features['cell']['area'])) + 
+                " (from median)", level = 110, debug_level='info')
+
 
     def get_click_in_rect(self, event):
 
@@ -791,6 +924,49 @@ class Analyse_One(gtk.Frame):
         else:
             return self.f_settings.A._img[upper:lower,left:right]
 
+    def get_features(self, cell=None):
+
+        if cell is not None:
+
+            self._cell = cell
+
+        if self._cell is None:
+            return None
+
+
+        if self.last_value_space == self.CELL_ESTIMATE:
+
+            self._cell.kodak_data_source = self._cell.original_data_source.copy()
+
+            self._cell.set_new_data_source_space(\
+                space='cell estimate',
+                bg_sub_source = self._cell.get_item('background').filter_array,
+                polynomial_coeffs = self._cce_poly_coeffs)
+
+            self.DMS('ANALYSE ONE', 'Cell Estimate conversion is {0}'.format(\
+                not(np.all(self._cell.kodak_data_source == self._cell.data_source))),
+                110, debug_level="debug")
+        else:
+
+            if self._cell.kodak_data_source is not None:
+
+                self._cell.data_source = self._cell.kodak_data_source.copy()
+                self._cell.kodak_data_source = None
+                self._cell.set_grid_array_pointers()
+                self.DMS('ANALYSE ONE', 'Kodak reversal is {0}'.format(\
+                    np.all(self._cell.get_item('blob').grid_array == self._cell.original_data_source)),
+                    110, debug_level="debug")
+                self.DMS('ANALYSE ONE', 'Reversed to Kodak Space', 110,
+                    debug_level="debug")
+            else:
+                self.DMS('ANALYSE ONE', 
+                    'No reversal to Kodak Space needed, already there',
+                    110, debug_level="debug")
+
+        features = self._cell.get_analysis(no_detect=True)
+
+        return features
+
     def get_analysis(self, center=None, radius=None):
 
         if radius is None:
@@ -886,17 +1062,20 @@ class Analyse_One(gtk.Frame):
         # RETRIEVING ANALYSIS
         #
 
-        cell = colonies.get_grid_cell_from_array(img_transf, center=center, radius = radius)
+        self._cell = colonies.get_grid_cell_from_array(img_transf, center=center, radius = radius)
+        self._cell.kodak_data_source = None
+        self._cell.original_data_source = img_transf.copy()
+        features = self.get_features() 
 
-        features = cell.get_analysis(no_detect=True)
-
+        self.set_features_in_gui(features)
         ###DEBUG CODE
 
-        print features
+        self.DMS("ANALYSE ONE", 'Features: {0}'.format(features),
+            110, debug_level="debug")
 
         ###DEBUG END
 
-        blob = cell.get_item('blob')
+        blob = self._cell.get_item('blob')
         self.blob_filter = blob.filter_array
         self.blob_image = blob.grid_array
 
@@ -947,8 +1126,8 @@ class Analyse_One(gtk.Frame):
             image_plot.cla()
 
         #image_ax = image_plot.imshow(img_section.T)
-        blob_filter_view = self.blob_filter.astype(float) * 256 + img_transf
-        blob_filter_view = blob_filter_view * ( 256/ float(np.max(blob_filter_view)) )
+        blob_filter_view = self.blob_filter#.astype(float) * 256 + img_transf
+        #blob_filter_view = blob_filter_view * ( 256/ float(np.max(blob_filter_view)) )
         image_ax = image_plot.imshow(blob_filter_view.T)
 
         image_plot.set_xlim(xmin=0,xmax=self.blob_filter.shape[0])
@@ -986,6 +1165,9 @@ class Analyse_One(gtk.Frame):
                 image_plot.cla()
 
             image_plot.bar(blob_hist.labels, blob_hist.counts)
+            if blob_hist.labels != None:
+                image_plot.axvline(features['background']['mean'], c='g')
+
 
             x_ticks = range(0,256,20)           
             image_plot.set_xticks(x_ticks)
@@ -993,32 +1175,6 @@ class Analyse_One(gtk.Frame):
             image_plot.axvline(blob.threshold, c='r')
             image_plot.set_xlim(xmin=0, xmax=100)
         self._blobs_have_been_loaded = True
-
-        if features != None:
-            self.cell_area.set_text(str(features['cell']['area']))
-            
-            self.bg_mean.set_text(str(features['background']['mean']))
-            self.bg_iqr_mean.set_text(str(features['background']['IQR_mean']))
-            self.bg_median.set_text(str(features['background']['median']))
-
-            if blob_hist.labels != None:
-                image_plot.axvline(features['background']['mean'], c='g')
-
-            self.blob_pixelsum.set_text(str(features['blob']['pixelsum']))
-            self.blob_mean.set_text(str(features['blob']['mean']))
-            self.blob_area.set_text(str(features['blob']['area']))
-
-            self.colony_size.set_text(str(abs(features['cell']['pixelsum'] - \
-                features['background']['mean'] * features['cell']['area'])))
-
-            self.cce_per_pixel.set_text(str(features['blob']['mean'] - 
-                features['background']['mean']))
-
-            self.DMS('Analysis', 'Alternative measures: ' + 
-                "see in program"+ " (from mean), " + 
-                str(abs(features['cell']['pixelsum'] - \
-                features['background']['median'] * features['cell']['area'])) + 
-                " (from median)", level = 111)
 
         self.blob_hist.canvas.draw()
 

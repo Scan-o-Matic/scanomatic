@@ -105,6 +105,20 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     start_time = time()
     graph_output = None
 
+    #XML STATIC TEMPLATES
+    XML_OPEN = "<{0}>"
+    XML_OPEN_W_ONE_PARAM = '<{0} {1}="{2}">'
+    XML_OPEN_CONT_CLOSE = "<{0}>{1}</{0}>" 
+    XML_OPEN_W_ONE_PARAM_CONT_CLOSE = '<{0} {1}="{2}">{3}</{0}>'
+    XML_OPEN_W_TWO_PARAM = '<{0} {1}="{2}" {3}="{4}">'
+
+    XML_CLOSE = "</{0}>"
+
+    XML_CONT_CLOSE = "{0}</{1}>"
+
+    XML_SINGLE_W_THREE_PARAM = '<{0} {1}="{2}" {3}="{4}" {5}="{6}" />'
+    #END XML STATIC TEMPLATES
+
     if not os.path.isdir(outdata_files_path):
         dir_OK = False
         if not os.path.exists(outdata_files_path):
@@ -239,32 +253,37 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
             f.write('<project>')
 
-            f.write("<{0}>{1}</{0}>".format(['start-time','start-t'][xml_format['short']],
+            f.write(XML_OPEN_CONT_CLOSE.format(['start-time','start-t'][xml_format['short']],
                 str(image_dictionaries[first_scan_position]['Time'])  ))
 
-            f.write("<{0}>{1}</{0}>".format(['description','desc'][xml_format['short']],
+            f.write(XML_OPEN_CONT_CLOSE.format(['description','desc'][xml_format['short']],
                 str(description) ))
 
-            f.write("<{0}>{1}</{0}>".format(['number-of-scans','n-scans'][xml_format['short']],
+            f.write(XML_OPEN_CONT_CLOSE.format(['number-of-scans','n-scans'][xml_format['short']],
                 str(image_pos+1)))
 
-            f.write("<{0}>{1}</{0}>".format(['interval-time','int-t'][xml_format['short']],
+            f.write(XML_OPEN_CONT_CLOSE.format(['interval-time','int-t'][xml_format['short']],
                 str(interval_time)))
 
-            f.write("<{0}>{1}</{0}>".format(['plates-per-scan','n-plates'][xml_format['short']],
+            f.write(XML_OPEN_CONT_CLOSE.format(['plates-per-scan','n-plates'][xml_format['short']],
                 str(plates) ))
 
-            f.write("<{0}>".format(['pinning-matrices','matrices'][xml_format['short']]))
+            f.write(XML_OPEN.format(['pinning-matrices','matrices'][xml_format['short']]))
 
             for pos in xrange(plates):
-                f.write("<{0} {1}='{2}'>{3}</{0}>".format(['pinning-matrix','p-m'][xml_format['short']],
-                     ['index','i'][xml_format['short']],  str(pos), str(pinning_matrices[pos])))
+                f.write(XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(\
+                    ['pinning-matrix','p-m'][xml_format['short']],
+                    ['index','i'][xml_format['short']],  str(pos), 
+                    str(pinning_matrices[pos])))
 
-            f.write('</{0}>'.format(['pinning-matrices','matrices'][xml_format['short']]))
+            f.write(XML_CLOSE.format(['pinning-matrices','matrices'][xml_format['short']]))
+
+            f.write(XML_OPEN.format('d-types'))
 
             for d_type, info in d_type_dict.items():
 
-                f.write('<d-type {0}="{1}" {2}="{3}" {4}="{5}">'.format(\
+                f.write(XML_SINGLE_W_THREE_PARAM.format(\
+                    'd-type',
                     ['measure','m'][xml_format['short']],
                     d_type[xml_format['short']],
                     ['unit','u'][xml_format['short']],
@@ -272,7 +291,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                     ['type','t'][xml_format['short']],
                     info[1]))
 
-            f.write('<scans>')
+            f.write(XML_CLOSE.format('d-types'))
+
+            f.write(XML_OPEN.format('<scans>'))
 
     while image_pos >= first_scan_position:
         scan_start_time = time()
@@ -303,15 +324,16 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         if supress_analysis != True:
 
             for f in (fh, fhs):
-                f.write('<{0} {1}="{2}">'.format(['scan', 's'][xml_format['short']],  
+                f.write(XML_OPEN_W_ONE_PARAM.format(['scan', 's'][xml_format['short']],  
                     ['index','i'][xml_format['short']], str(image_pos) ))
-                f.write('<{0}>'.format(['scan-valid','ok'][xml_format['short']]))
+                f.write(XML_OPEN.format(['scan-valid','ok'][xml_format['short']]))
 
         if features == None:
             if supress_analysis != True:
                 for f in (fh, fhs):
-                    f.write("0</{0}>".format(['scan-valid','ok'][xml_format['short']]))
-                    f.write('</{0}>'.format(['scan', 's'][xml_format['short']]))
+                    f.write(XML_CONT_CLOSE.format(0, \
+                        ['scan-valid','ok'][xml_format['short']]))
+                    f.write(XML_CLOSE.format(['scan', 's'][xml_format['short']]))
         else:
             if graph_watch != None and  project_image.watch_grid_size != None:
 
@@ -359,34 +381,43 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             if supress_analysis != True:
 
                 for f in (fh, fhs):
-                    f.write("1</{0}>".format(['scan-valid>','ok'][xml_format['short']]))
+                    f.write(XML_CONT_CLOSE.format(1, 
+                        ['scan-valid>','ok'][xml_format['short']]))
 
-                    f.write("<{0}>{1}</{0}>".format(['calibration','cal'][xml_format['short']],
+                    f.write(XML_OPEN_CONT_CLOSE.format(\
+                        ['calibration','cal'][xml_format['short']],
                         str(img_dict_pointer['grayscale_values']) ))
 
-                    f.write("<{0}>{1}</{0}>".format(['time','t'][xml_format['short']],
+                    f.write(XML_OPEN_CONT_CLOSE.format(\
+                        ['time','t'][xml_format['short']],
                         str(img_dict_pointer['Time']) ))
 
-                    f.write("<{0}>".format(['plates','pls'][xml_format['short']]))
+                    f.write(XML_OPEN.format(['plates','pls'][xml_format['short']]))
 
                 for i in xrange(plates):
                     for f in (fh, fhs):
-                        f.write('<{0} {1}="{2}">'.format(['plate','p'][xml_format['short']],
+                        f.write(XML_OPEN_W_ONE_PARAM.format(\
+                            ['plate','p'][xml_format['short']],
                             ['index', 'i'][xml_format['short']], str(i) ))
 
-                        f.write('<{0}>{1}</{0}>'.format(['plate-matrix','pm'][xml_format['short']],
+                        f.write(XML_OPEN_CONT_CLOSE.format(\
+                            ['plate-matrix','pm'][xml_format['short']],
                             str(pinning_matrices[i]) ))
 
-                        f.write('<R>' + str(project_image.R[i]) + '</R>')
+                        f.write(XML_OPEN_CONT_CLOSE.format('R',
+                            str(project_image.R[i])))
 
-                        f.write('<{0}>'.format(['grid-cells','gcs'][xml_format['short']]))
+                        f.write(XML_OPEN.format(\
+                            ['grid-cells','gcs'][xml_format['short']]))
 
                     for x, rows in enumerate(features[i]):
                         for y, cell in enumerate(rows):
 
                             for f in (fh, fhs):
-                                f.write('<{0} x="{1}" y="{2}">'.format(['grid-cell','gc'][xml_format['short']],
-                                    str(x), str(y)))
+                                f.write(XML_OPEN_W_TWO_PARAM.format(\
+                                    ['grid-cell','gc'][xml_format['short']],
+                                    'x', str(x), 
+                                    'y', str(y)))
 
                             if cell != None:
                                 for item in cell.keys():
@@ -402,14 +433,15 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                                                 .replace('cell','cl')
 
                                     if item not in xml_format['omit_compartments']:
-                                        fhs.write('<' + str(i_string) + '>')
-                                    fh.write('<' + str(i_string) + '>')
+                                        fhs.write(XML_OPEN.format(i_string))
+
+                                    fh.write(XML_OPEN.format(i_string))
                                     
                                     for measure in cell[item].keys():
 
-                                        m_string = '<' + str(measure) + '>' + \
-                                            str(cell[item][measure]) + \
-                                            '</' + str(measure) + '>'
+                                        m_string = XML_OPEN_CONT_CLOSE.format(\
+                                            str(measure),
+                                            str(cell[item][measure]))
 
                                         if xml_format['short']:
             
@@ -429,17 +461,22 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                                         fh.write(m_string)
 
                                     if item not in xml_format['omit_compartments']:
-                                        fhs.write('</' + str(i_string) + '>')
-                                    fh.write('</' + str(i_string) + '>')
+                                        fhs.write(XML_CLOSE.format(i_string))
+                                    fh.write(XML_CLOSE.format(i_string))
 
                             for f in (fh, fhs):
-                                f.write('</{0}>'.format(['grid-cell','gc'][xml_format['short']]))
+                                f.write(XML_CLOSE.format(\
+                                    ['grid-cell','gc'][xml_format['short']]))
                     for f in (fh, fhs):
-                        f.write('</{0}>'.format(['grid-cells','gcs'][xml_format['short']]))
-                        f.write('</{0}>'.format(['plate','p'][xml_format['short']]))
+                        f.write(XML_CLOSE.format(\
+                            ['grid-cells','gcs'][xml_format['short']]))
+                        f.write(XML_CLOSE.format(\
+                            ['plate','p'][xml_format['short']]))
                 for f in (fh, fhs):
-                    f.write("</{0}>".format(['plates','pls'][xml_format['short']]))
-                    f.write('</{0}>'.format(['scan', 's'][xml_format['short']]))
+                    f.write(XML_CLOSE.format(\
+                        ['plates','pls'][xml_format['short']]))
+                    f.write(XML_CLOSE.format(\
+                        ['scan', 's'][xml_format['short']]))
         image_pos -= 1
 
         #DEBUGHACK
@@ -454,8 +491,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     if supress_analysis != True:
         for f in (fh, fhs):
-            f.write('</scans>')
-            f.write('</project>')
+            f.write(XML_CLOSE.format('scans'))
+            f.write(XML_CLOSE.format('project'))
             f.close()
 
     if  graph_watch != None:
