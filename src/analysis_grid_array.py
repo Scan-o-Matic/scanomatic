@@ -385,21 +385,25 @@ class Grid_Array():
                     coord_2nd = self._grid_cells[row][column].get_first_dim_as_tuple()
                     coord_1st = self._grid_cells[row][column].get_second_dim_as_tuple()
 
-                    if transformation_matrix != None:
+                    tf_im = np.zeros(im.shape, dtype=np.float64)
+
+                    if transformation_matrix is not None:
                         #There's probably some faster way
                         logging.debug("ANALYSIS GRID ARRAY Transforming -> Kodak")
                         for x in xrange(int(coord_1st[0]),int(np.ceil(coord_1st[1]))):
                             for y in xrange(int(coord_2nd[0]),int(np.ceil(coord_2nd[1]))):
-                                im[x,y] = transformation_matrix[im[x,y]]
+                                tf_im[x,y] = transformation_matrix[im[x,y]]
+                    else:
+                        logging.critical("ANALYSIS GRID ARRAY Lacks transformation possibilities")
 
                     self._grid_cells[row][column].set_data_source( \
-                        im[coord_1st[0]:coord_1st[1],\
+                        tf_im[coord_1st[0]:coord_1st[1],\
                         coord_2nd[0]:coord_2nd[1]].copy() )
 
 
                     if watch_colony != None:
                         if row == watch_colony[1] and column == watch_colony[2]:
-                            self.watch_scaled = im[coord_1st[0]:coord_1st[1],\
+                            self.watch_scaled = tf_im[coord_1st[0]:coord_1st[1],\
                                 coord_2nd[0]:coord_2nd[1]]
                             #if self.watch_scaled.sum() == (self.watch_scaled > 0).sum():
                                 ###DEBUG WHAT IS THE GRID ARRAY

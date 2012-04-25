@@ -435,11 +435,11 @@ class Analyse_One(gtk.Frame):
             i_min = img_section.min()
             i_max = img_section.max()
 
-            self.DMS('ANALYSE ONE', 
-                'Will be using the following conversions:\n{0}'.format(\
-                zip(range(i_min, i_max+1), 
-                    tf_matrix[i_min: i_max+1])),
-                110, debug_level="debug")
+            #self.DMS('ANALYSE ONE', 
+                #'Will be using the following conversions:\n{0}'.format(\
+                #zip(range(i_min, i_max+1), 
+                    #tf_matrix[i_min: i_max+1])),
+                #110, debug_level="debug")
 
             if tf_matrix is not None:
                 for x in xrange(img_section.shape[0]):
