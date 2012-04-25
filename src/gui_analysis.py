@@ -221,9 +221,11 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(hbox, False, False, 2)
      
         label = gtk.Label("Cell Area:")
+        label.set_selectable(True)
         hbox.pack_start(label,False, False, 2)
 
         self.cell_area = gtk.Label("0")
+        self.cell_area.set_selectable(True)
         self.cell_area.set_max_width_chars(20)
         hbox.pack_end(self.cell_area, False, False, 2)
 
@@ -232,9 +234,11 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Background Mean:")
+        label.set_selectable(True)
         hbox.pack_start(label,False, False, 2)
 
         self.bg_mean = gtk.Label("0")
+        self.bg_mean.set_selectable(True)
         hbox.pack_end(self.bg_mean, False, False, 2)
 
         #Background Inter Quartile Range Mean
@@ -242,9 +246,11 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Background IQR-Mean:")
+        label.set_selectable(True)
         hbox.pack_start(label,False, False, 2)
 
         self.bg_iqr_mean = gtk.Label("0")
+        self.bg_iqr_mean.set_selectable(True)
         hbox.pack_end(self.bg_iqr_mean, False, False, 2)
 
         #Background Median
@@ -252,9 +258,11 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Background Median:")
+        label.set_selectable(True)
         hbox.pack_start(label,False, False, 2)
 
         self.bg_median = gtk.Label("0")
+        self.bg_median.set_selectable(True)
         hbox.pack_end(self.bg_median, False, False, 2)
 
         #Blob area
@@ -262,9 +270,11 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Blob Area:")
+        label.set_selectable(True)
         hbox.pack_start(label,False, False, 2)
 
         self.blob_area = gtk.Label("0")
+        self.blob_area.set_selectable(True)
         hbox.pack_end(self.blob_area, False, False, 2)
 
         #Blob Size
@@ -282,9 +292,11 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Blob Pixelsum:")
+        label.set_selectable(True)
         hbox.pack_start(label,False, False, 2)
 
         self.blob_pixelsum = gtk.Label("0")
+        self.blob_pixelsum.set_selectable(True)
         hbox.pack_end(self.blob_pixelsum, False, False, 2)
 
         #Blob Mean 
@@ -292,9 +304,11 @@ class Analyse_One(gtk.Frame):
         vbox3.pack_start(hbox, False, False, 2)
 
         label = gtk.Label("Blob Mean:")
+        label.set_selectable(True)
         hbox.pack_start(label,False, False, 2)
 
         self.blob_mean = gtk.Label("0")
+        self.blob_mean.set_selectable(True)
         hbox.pack_end(self.blob_mean, False, False, 2)
     
 
@@ -361,6 +375,9 @@ class Analyse_One(gtk.Frame):
                     self._cce_poly_coeffs = l_data[-1]
                     break
             label = gtk.Label("(using '" + str(l_data[0]) + "')")
+            self.DMS("ANALYSIS ONE", "Using polynomial: {0}".format(\
+                self._cce_poly_coeffs), 110, debug_level="info")
+
             vbox3.pack_start(label, False, False, 2)
             fs.close()
 
@@ -395,31 +412,70 @@ class Analyse_One(gtk.Frame):
 
         return vector
 
-    def get_cce_data_vector(self):
+    def get_kodak_image(self, lr=None, ul=None):
 
-        if self.blob_filter != None and self._rect_ul != None and self._rect_lr != None:
+        if lr is None:
+            lr = self._rect_lr
 
-            img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
+        if ul is None:
+            ul = self._rect_ul
 
+        if ul is not None and lr is not None:
 
-            tf_matrix = np.asarray(colonies.get_gray_scale_transformation_matrix(self.grayscale_frame._grayscale))
+            img_section = self.get_img_section(ul, lr, as_copy=True)
+
+            kodak_img = np.zeros(img_section.shape, dtype=np.float64)
+
+            self.DMS('ANALYSE ONE',
+                'Selection has pixel values ({0} - {1})'.format(\
+                img_section.min(), img_section.max()), 110, debug_level="debug")
+
+            tf_matrix = colonies.get_gray_scale_transformation_matrix(self.grayscale_frame._grayscale)
+
+            i_min = img_section.min()
+            i_max = img_section.max()
+
+            self.DMS('ANALYSE ONE', 
+                'Will be using the following conversions:\n{0}'.format(\
+                zip(range(i_min, i_max+1), 
+                    tf_matrix[i_min: i_max+1])),
+                110, debug_level="debug")
 
             if tf_matrix is not None:
                 for x in xrange(img_section.shape[0]):
                     for y in xrange(img_section.shape[1]):
-                        img_section[x,y] = tf_matrix[img_section[x,y]]
+                        if i_max >= img_section[x,y] >= i_min:
+                            kodak_img[x,y] = tf_matrix[img_section[x,y]]
+                        else:
+                            self.DMS('ANALYSE ONE', 'Fishy pixel at \
+({0},{1}) with value {2} (using {3})'.format(x,y,img_section[x,y],
+                                tf_matrix[-1]), 110, 
+                                debug_level="critical")
+                            kodak_img[x,y] = tf_matrix[-1] 
+            else:
+
+                return None
+
+            self.DMS('ANALYSE ONE',
+                'Selection has Kodak values ({0} - {1}), should be ({2} - {3}\
+, second way {4} - {5})'\
+                .format(kodak_img.min(), kodak_img.max(),
+                tf_matrix[i_max], tf_matrix[i_min],
+                np.array(tf_matrix[i_min: i_max+1]).min(), 
+                np.array(tf_matrix[i_min: i_max+1]).max()), 
+                110, debug_level="debug")
+
+            return kodak_img
+
+        return None
+
+    def get_cce_data_vector(self, img_section=None):
+
+        if img_section is None:
+            img_section = self.get_kodak_image()
 
 
-            ###DEBUG CALIBRATION VALUES
-            #print "REF: area", self.blob_image[np.where(self.blob_filter)].size
-            #print "REF pixsum", self.blob_image[np.where(self.blob_filter)].sum()
-            #print "--"
-            #print "img_section == orig_tf_img (0==True)", (img_section - self.img_transf).sum() 
-            #print "--"
-            #print "CAL: area", img_section[np.where(self.blob_filter)].size
-            #print "CAL: pixsum", img_section[np.where(self.blob_filter)].sum()
-            ###DEBUG END
-
+        if self.blob_filter != None and img_section is not None:
             #Get the effect of blob-materia on pixels
             try:
                 blob_pixels = img_section[np.where(self.blob_filter)] - float(self.bg_mean.get_text())
@@ -669,18 +725,36 @@ class Analyse_One(gtk.Frame):
         if features != None:
             DECIMAL_TXT = "{0:.{1}f}"
             self.cell_area.set_text(str(features['cell']['area']))
-            
-            self.bg_mean.set_text(DECIMAL_TXT.format(\
-                features['background']['mean'], 2))
-            self.bg_iqr_mean.set_text(DECIMAL_TXT.format(\
-                features['background']['IQR_mean'], 2))
-            self.bg_median.set_text(DECIMAL_TXT.format(\
-                features['background']['median'], 2))
+           
+            try:
+                self.bg_mean.set_text(DECIMAL_TXT.format(\
+                    features['background']['mean'], 2))
+            except:
+                self.bg_mean.set_text("0")
 
-            self.blob_pixelsum.set_text(DECIMAL_TXT.format(\
-                float(features['blob']['pixelsum']), 0))
-            self.blob_mean.set_text(DECIMAL_TXT.format(\
-                features['blob']['mean'], 2))
+            try:
+                self.bg_iqr_mean.set_text(DECIMAL_TXT.format(\
+                    features['background']['IQR_mean'], 2))
+            except:
+                self.bg_iqr_mean.set_text("0")
+            try:
+                self.bg_median.set_text(DECIMAL_TXT.format(\
+                    features['background']['median'], 2))
+            except:
+                self.bg_median.set_text("0")
+
+            try:
+                self.blob_pixelsum.set_text(DECIMAL_TXT.format(\
+                    float(features['blob']['pixelsum']), 0))
+            except:
+                self.blob_pixelsum.set_text("0")
+
+            try:
+                self.blob_mean.set_text(DECIMAL_TXT.format(\
+                    features['blob']['mean'], 2))
+            except:
+                self.blob_mean.set_text("0")
+
             self.blob_area.set_text(str(features['blob']['area']))
 
             #self.colony_size.set_text(str(abs(features['cell']['pixelsum'] - \
@@ -899,7 +973,7 @@ class Analyse_One(gtk.Frame):
                         radius = self.selection_circ.get_radius())
                 
 
-    def get_img_section(self, ul, lr, as_copy=False):
+    def get_img_section(self, ul, lr, as_copy=False, dtype=None):
 
 
         if ul[0] < lr[0]:
@@ -920,7 +994,11 @@ class Analyse_One(gtk.Frame):
             _img[upper:lower,left:right].shape),10,debug_level="debug")
 
         if as_copy:
-            return np.copy(self.f_settings.A._img[upper:lower,left:right])
+            if dtype is None:
+                return np.copy(self.f_settings.A._img[upper:lower,left:right])
+            else:
+                return np.copy(self.f_settings.A._img[upper:lower,left:right].astype(dtype))
+
         else:
             return self.f_settings.A._img[upper:lower,left:right]
 
@@ -977,23 +1055,12 @@ class Analyse_One(gtk.Frame):
         #    self.plots_vbox2.remove(child)
 
 
-        img_section = self.get_img_section(self._rect_ul, self._rect_lr, as_copy=True)
-        img_transf = img_section.copy()
+        img_transf = self.get_kodak_image()
 
-        tf_matrix = colonies.get_gray_scale_transformation_matrix(self.grayscale_frame._grayscale)
 
-        if tf_matrix is not None:
-            for x in xrange(img_transf.shape[0]):
-                for y in xrange(img_transf.shape[1]):
-                    img_transf[x,y] = tf_matrix[img_transf[x,y]]
 
-        ###DEBUG TRANSFORMATIONS
-        #print "*** SECTION TRANSFORMED: ", not(img_transf.sum() == img_section.sum())
-        #self.img_transf = img_transf.copy()
-        ###END DEBUG
-
-        x_factor = img_section.shape[0] / 200
-        y_factor = img_section.shape[1] / 200
+        x_factor = img_transf.shape[0] / 200
+        y_factor = img_transf.shape[1] / 200
 
         if x_factor > y_factor:
             scale_factor = x_factor
@@ -1007,8 +1074,8 @@ class Analyse_One(gtk.Frame):
         #
         # BLOB SELECTION CANVAS
         #
-        image_size = (img_section.shape[1]/scale_factor,
-            img_section.shape[0]/scale_factor)
+        image_size = (img_transf.shape[1]/scale_factor,
+            img_transf.shape[0]/scale_factor)
 
         if self._blobs_have_been_loaded == False:
 
@@ -1042,22 +1109,6 @@ class Analyse_One(gtk.Frame):
             vbox.pack_start(image_canvas, False, False, 2)
             hbox.pack_start(vbox, False, False, 2)
 
-        if center is None and radius is None:
-            image_plot = self.blob_fig.gca()
-            image_plot.cla()
-            image_ax = image_plot.imshow(img_section.T, cmap=plt.cm.gray)
-            image_plot.set_xlim(xmin=0,xmax=img_section.shape[0])
-            image_plot.set_ylim(ymin=0,ymax=img_section.shape[1])
-
-        #print "C center", self.selection_circ.center, "radius", self.selection_circ.get_radius()
-            image_plot.add_patch(self.selection_circ)
-        #if center is not None and radius is not None:        
-        #    self.selection_circ.center = center
-        #    self.selection_circ.set_radius(radius)
-
-        self.blob_fig.canvas.draw()
- 
-
         #
         # RETRIEVING ANALYSIS
         #
@@ -1068,12 +1119,29 @@ class Analyse_One(gtk.Frame):
         features = self.get_features() 
 
         self.set_features_in_gui(features)
-        ###DEBUG CODE
 
         self.DMS("ANALYSE ONE", 'Features: {0}'.format(features),
             110, debug_level="debug")
 
-        ###DEBUG END
+        #
+        # UPDATE IMAGE SECTION USING CURRENT VALUE SPACE REPRESENTATION
+        #
+
+        if center is None and radius is None:
+            image_plot = self.blob_fig.gca()
+            image_plot.cla()
+            image_ax = image_plot.imshow(self._cell.data_source.T, 
+                vmin = 0, vmax=(100,3500)[self.last_value_space],
+                cmap=plt.cm.gray_r)
+            image_plot.set_xlim(xmin=0,xmax=img_transf.shape[0])
+            image_plot.set_ylim(ymin=0,ymax=img_transf.shape[1])
+
+            image_plot.add_patch(self.selection_circ)
+
+        self.blob_fig.canvas.draw()
+ 
+
+
 
         blob = self._cell.get_item('blob')
         self.blob_filter = blob.filter_array
@@ -1085,7 +1153,7 @@ class Analyse_One(gtk.Frame):
 
         if self._cce_poly_coeffs is not None:
 
-            cce_vector = self.get_cce_data_vector()
+            cce_vector = self.get_cce_data_vector(img_section=img_transf)
             cce_vector = self.get_expanded_vector(cce_vector)
             cce_calculated = self.get_vector_polynomial_sum_single(cce_vector, self._cce_poly_coeffs)
             self.cce_calculated.set_text(str(cce_calculated) + " cells in blob")
@@ -1104,7 +1172,7 @@ class Analyse_One(gtk.Frame):
             vbox = gtk.VBox()
             vbox.show()
 
-            label = gtk.Label("Blob vs Background::")
+            label = gtk.Label("Blob (red)::")
             label.show()
             vbox.pack_start(label, False, False, 2)
 
@@ -1125,7 +1193,6 @@ class Analyse_One(gtk.Frame):
             image_plot = self.blob_bool_fig.gca()
             image_plot.cla()
 
-        #image_ax = image_plot.imshow(img_section.T)
         blob_filter_view = self.blob_filter#.astype(float) * 256 + img_transf
         #blob_filter_view = blob_filter_view * ( 256/ float(np.max(blob_filter_view)) )
         image_ax = image_plot.imshow(blob_filter_view.T)

@@ -180,6 +180,9 @@ class Grid_Array():
             if gs_indices[0] != 0:
                 gs_indices = map(lambda x: x - gs_indices[0], gs_indices)
 
+            #logging.debug("ANALYSIS GRID ARRAY: Kodak-indices are {0}".format(\
+            #    gs_indices))
+
             tf_matrix = np.zeros((y_range[1]+1))
 
             p = np.poly1d(np.polyfit(gs_indices,\
@@ -329,10 +332,6 @@ class Grid_Array():
         gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,
             22,18,14,10,6,4,2,0])
 
-        #TEMPORARY SOLUTION TO MAKE AGAR APPEAR AS 0 AND BIOMASS BE POSITIVE
-        gs_indices -= 75
-        gs_indices *= -1
-        #TEMPORARY SOLUTION END
 
         if gs_values == None:
             transformation_matrix = self.get_transformation_matrix(\
@@ -388,7 +387,7 @@ class Grid_Array():
 
                     if transformation_matrix != None:
                         #There's probably some faster way
-                        #print coord_1st, coord_2nd, im.shape
+                        logging.debug("ANALYSIS GRID ARRAY Transforming -> Kodak")
                         for x in xrange(int(coord_1st[0]),int(np.ceil(coord_1st[1]))):
                             for y in xrange(int(coord_2nd[0]),int(np.ceil(coord_2nd[1]))):
                                 im[x,y] = transformation_matrix[im[x,y]]

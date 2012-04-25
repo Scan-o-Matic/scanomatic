@@ -120,20 +120,46 @@ class Gray_Scale(gtk.Frame):
 
         if len(gs._grayscale_X) != len(gs._grayscale):
             self._grayscale=None
-            self.DMS("Error", "There's something wrong with the grayscale. Try manual selection")
+            self.DMS("GRAYSCALE GUI", 
+                "There's something wrong with the grayscale. Try manual selection",
+                110, debug_level="error")
             return False
 
-        z2 = np.polyfit(gs._grayscale_X, gs._grayscale,2)
-        p2 = np.poly1d(z2)
+        #z2 = np.polyfit(gs._grayscale_X, gs._grayscale,2)
+        #p2 = np.poly1d(z2)
         z3 = np.polyfit(gs._grayscale_X, gs._grayscale,3)
         p3 = np.poly1d(z3)
+
+        if z3 is not None:
+
+            z3_deriv_coeffs = np.array(z3[:3]) * (3,2,1)
+
+            z3_deriv = np.array(map(lambda x: (z3_deriv_coeffs*x).sum(), range(87)))
+
+            if (z3_deriv > 0).any() and (z3_deriv < 0).any():
+
+                self.DMS('GRAYSCALE GUI', 
+                    'Grayscale is dubious since coefficients ({0}) don\'t\
+agree on sign.'.format(z3),
+                    110, debug_level='error')
+
+                self._grayscale=None
+                return False
+
+        else:
+
+            self.DMS('GRAYSCALE GUI',
+                "Could not find a polynomial fitting the points",
+                110, debug_level="error")
+            self._grayscale=None
+            return False
 
         xp = np.linspace(gs._grayscale_X[0], gs._grayscale_X[-1], 100)
 
         self.grayscale_plot.clear()
-        line1 = self.grayscale_plot.plot(gs._grayscale_X, gs._grayscale,'b.', mfc='None', mew=2)
+        line1 = self.grayscale_plot.plot(gs._grayscale_X, gs._grayscale,'bo', mfc='None', mew=1)
         #line2 = grayscale_plot.plot(xp, p2(xp),'r-')
-        line3 = self.grayscale_plot.plot(xp, p3(xp),'g-')
+        line3 = self.grayscale_plot.plot(xp, p3(xp),'g-', lw=2)
 
         self.grayscale_fig.canvas.draw()
 

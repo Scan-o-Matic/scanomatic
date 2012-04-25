@@ -148,6 +148,8 @@ class Grid_Cell():
 
         if space == 'cell estimate':
 
+            logging.debug("ANALYSIS GRID CELL: Kodak values ran ({0} - {1})".\
+                format(self.data_source.min(), self.data_source.max()))
             #DEBUG -> CELL ESTIMATE SPACE PART !
             #from matplotlib import pyplot as plt
             #plt.clf()
@@ -157,18 +159,33 @@ class Grid_Cell():
             #DEBUG END
             if bg_sub_source is not None:
                 bg_sub = np.mean(self.data_source[np.where(bg_sub_source)])
+                logging.debug("ANALYSIS GRID CELL: Using {0} as background estimation".format(\
+                    bg_sub))
+
                 self.data_source = self.data_source - bg_sub
-                self.data_source[np.where(self.data_source<0)] = 0
+
+            logging.debug("ANALYSIS GRID CELL: Transforming -> Cell Estimate, \
+fixing negative cells counts ({0})".format(\
+                np.where(self.data_source<0)[0].shape[0]))
+
+            self.data_source[np.where(self.data_source<0)] = 0
             #DEBUG -> CELL ESTIMATE SPACE PART !
             #from matplotlib import pyplot as plt
             #plt.clf()
             #plt.imshow(self.data_source)
             #plt.show() 
             #DEBUG END
+
             if polynomial_coeffs is not None:
                 self.data_source = \
                     np.polyval(polynomial_coeffs, self.data_source)
 
+
+            else:
+                logging.error("ANALYSIS GRID CELL: Was not fed any polynomial")
+
+            logging.debug("ANALYSIS GRID CELL: Cell Estimate values run ({0} - {1})".\
+                format(self.data_source.min(), self.data_source.max()))
             #DEBUG -> CELL ESTIMATE SPACE PART !
             #from matplotlib import pyplot as plt
             #plt.clf()

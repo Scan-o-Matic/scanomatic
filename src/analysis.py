@@ -328,7 +328,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                     ['index','i'][xml_format['short']], str(image_pos) ))
                 f.write(XML_OPEN.format(['scan-valid','ok'][xml_format['short']]))
 
-        if features == None:
+        if features is None:
             if supress_analysis != True:
                 for f in (fh, fhs):
                     f.write(XML_CONT_CLOSE.format(0, \
@@ -723,6 +723,25 @@ class Project_Image():
             gs_fit = np.polyfit(gs_indices, gs_values,3)
         else:
             gs_fit = None
+
+        logging.debug("ANALYSIS produced gs-coefficients {0} ".format(gs_fit))
+
+        if gs_fit is not None:
+
+            z3_deriv_coeffs = np.array(gs_fit[:3]) * (3,2,1)
+
+            z3_deriv = np.array(map(lambda x: (z3_deriv_coeffs*x).sum(), range(87)))
+
+            if (z3_deriv > 0).any() and (z3_deriv < 0).any():
+
+                logging.warning("ANALYSIS of grayscale seems dubious as \
+coefficients don't have the same sign")
+                gs_fit = None
+
+
+        if gs_fit is None:
+
+            return None    
 
         scale_factor = 4.0
 

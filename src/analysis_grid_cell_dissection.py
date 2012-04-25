@@ -201,7 +201,11 @@ class Cell_Item():
             self.features['IQR_mean'] = None
 
         if self.CELLITEM_TYPE == 1:
-            self.features['centroid'] = None
+            try:
+                self.features['centroid'] = center_of_mass(self.filter_array)
+            except:
+                self.features['centroid'] = None
+
             self.features['perimeter'] = None
 
 

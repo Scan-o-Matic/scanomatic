@@ -2,6 +2,13 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Centroid is not explicitly tracked for blobs and outputted into the
+    analysis.xml
+
+*** If grayscale 3rd deg polyfit produces a bad curve (that doesn't 
+    continously increase or decrease) for the range of interest, then
+    the grayscale fails
+
 *** Analyse One allows for measures in both spaces and using any fixture
     to find grayscale.
 
