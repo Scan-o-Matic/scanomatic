@@ -252,6 +252,7 @@ class Blob(Cell_Item):
         self.threshold = threshold
         self.use_fallback_detection = use_fallback_detection
         self.filter_array = None
+        self.trash_array = None
         self.image_color_logic = image_color_logic
 
         self.histogram = hist.Histogram(self.grid_array, run_at_init = False)        
@@ -535,7 +536,7 @@ class Blob(Cell_Item):
                                         devided by old filters sum of pixels.
  
         """
-
+        self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
 
         if use_fallback_detection:
             self.iterative_threshold_detect()
@@ -644,8 +645,9 @@ class Blob(Cell_Item):
 
                 if bad_diff:
 
-                    #self.filter_array = self.old_filter
-                    #print self._identifier, blob_diff / float(sqrt_of_oldsum)
+                    self.filter_array = self.old_filter.copy()
+                    self.trash_array = self.old_trash.copy()
+
                     logging.warning("GRID CELL %s, Blob detection gone bad, \
 using old (Error: %.2f" % (str(self._identifier), 
                         blob_diff / float(sqrt_of_oldsum)))
@@ -670,7 +672,8 @@ using old (Error: %.2f" % (str(self._identifier),
         #print "Threshold used ", self.threshold
 
         if remember_filter:
-             self.old_filter = self.filter_array.copy()
+            self.old_filter = self.filter_array.copy()
+            self.old_trash =  self.trash_array.copy()
 
         ###DEBUG DETECTION TIME SERIES
         #from scipy.misc import imsave
@@ -861,13 +864,11 @@ using old (Error: %.2f" % (str(self._identifier),
                         structure=kernel))
                     pyplot.savefig('blob_item_' + str(i+1) + '_bad.png')
                     pyplot.clf()        
-                    #print np.sum((label_array == (i+1)))
                 else:
                     pyplot.imshow(binary_erosion((label_array == (i+1)),
                         structure=kernel))
                     pyplot.savefig('blob_item_' + str(i+1) + '.png')
                     pyplot.clf()        
-                    #print np.sum((label_array == (i+1)))
                     circle_parts.append(i+1)
 
         self.filter_array = np.zeros(self.filter_array.shape)
@@ -947,7 +948,7 @@ using old (Error: %.2f" % (str(self._identifier),
         label_array, number_of_labels = label(self.filter_array)
         qualities = []
 
-        if number_of_labels > 1:
+        if number_of_labels > 0:
 
             for item in xrange(number_of_labels):
 
@@ -970,6 +971,9 @@ using old (Error: %.2f" % (str(self._identifier),
             q_best = np.asarray(qualities).argmax()
 
             self.filter_array = (label_array == (q_best + 1) )
+
+            self.trash_array = (label_array > 0) * (label_array != q_best +1)
+
 
         #axis_1 = np.mean(self.filter_array,1)
         #axis_2 = np.mean(self.filter_array,0)
@@ -1028,6 +1032,7 @@ class Background(Cell_Item):
             self.filter_array = binary_erosion(self.filter_array, 
                 structure=kernel, border_value=1)
 
+            self.filter_array[np.where(self.blob.trash_array)] = False
 
             ###DEBUG CODE
             #print "Bg area", np.sum(self.filter_array),  "of which shared with blob", 
