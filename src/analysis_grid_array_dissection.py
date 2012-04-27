@@ -176,9 +176,9 @@ class Grid_Analysis():
                 Y2 = np.ones(positions[dimension].shape) * 100
                 plt.clf()
                 if dimension == 1:
-                    plt.imshow(im[:,900:1200].T)
+                    plt.imshow(im[:,900:1200].T, cmap=plt.cm.gray)
                 else:
-                    plt.imshow(im[300:600,:])
+                    plt.imshow(im[300:600,:], cmap=plt.cm.gray)
                 plt.plot(positions[dimension], Y2, 'r*', 
                     label='Detected spikes', lw=3, markersize=10)
                 plt.plot(np.array(best_fit_positions[dimension]),\

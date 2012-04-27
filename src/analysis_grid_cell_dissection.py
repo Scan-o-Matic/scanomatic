@@ -536,7 +536,9 @@ class Blob(Cell_Item):
                                         devided by old filters sum of pixels.
  
         """
-        self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
+
+        if self.filter_array is not None:
+            self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
 
         if use_fallback_detection:
             self.iterative_threshold_detect()
@@ -557,6 +559,8 @@ class Blob(Cell_Item):
                 #print self.old_filter.shape
         ###DEBUG END
 
+        if self.trash_array is not None:
+            self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
        
 
         if self.old_filter is not None:

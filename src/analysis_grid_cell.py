@@ -159,9 +159,13 @@ class Grid_Cell():
             #DEBUG END
             if bg_sub_source is not None:
                 bg_sub = np.mean(self.data_source[np.where(bg_sub_source)])
-                logging.debug("ANALYSIS GRID CELL: Using {0} as background estimation".format(\
-                    bg_sub))
+                logging.debug("ANALYSIS GRID CELL: Using {0} as background estimation \
+({1} - {2})".format(\
+                    bg_sub, (self.data_source[np.where(bg_sub_source)]).min(),
+                    (self.data_source[np.where(bg_sub_source)]).max()))
 
+                logging.debug("ANALYSIS GRID CELL: Good bg_sub_source = {0}".\
+                    format(bg_sub_source.max() == 1))
                 self.data_source = self.data_source - bg_sub
 
             logging.debug("ANALYSIS GRID CELL: Transforming -> Cell Estimate, \

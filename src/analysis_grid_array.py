@@ -314,7 +314,7 @@ class Grid_Array():
 
 
             if self._grid_cell_size == None:
-                self._grid_cell_size = map(round, self._analysis.best_fit_frequency[:])
+                self._grid_cell_size = map(int, map(round, self._analysis.best_fit_frequency[:]))
                 #print self._grid_cell_size
                 has_previous_rect = False
 
@@ -324,6 +324,26 @@ class Grid_Array():
             ###DEBUG END
 
         #total_steps = float(self._pinning_matrix[0] * self._pinning_matrix[1])
+
+
+        #DEBUG PLOT GRID
+        #from matplotlib import pyplot as plt
+        #debug_fig = plt.figure()
+        #debug_ax = debug_fig.add_subplot(1,1,1)
+        #debug_ax.imshow(im)
+        #if self._best_fit_rows is not None:
+            #debug_cols = (0, im.shape[0])
+            #for debug_row in self._best_fit_rows:
+                #debug_ax.plot((debug_row, debug_row),debug_cols,'k')
+        #if self._best_fit_columns is not None:
+            #debug_rows = (0, im.shape[1])
+            #for debug_col in self._best_fit_columns:
+                #debug_ax.plot(debug_rows,(debug_col,debug_col),'k')
+        #debug_fig.show()
+        #logging.warning("Pining (R,C) {0} best_rows {1} best_cols {2}".format(\
+            #self._pinning_matrix, self._best_fit_rows, best_fit_columns))
+        #raw_input("> ")
+        #DEBUG PLOT GRID END
 
 
         #Normalising towards grayscale before anything is done on the colonies
@@ -363,6 +383,7 @@ class Grid_Array():
             if save_grid_name is None:
                 save_grid_name = "plate.png"
 
+        
         for row in xrange(self._pinning_matrix[0]):
             if visual or save_grid_image:
                 grid_plot.plot(\
@@ -371,40 +392,48 @@ class Grid_Array():
                     np.array(self._best_fit_columns),
                     'r-')
             for column in xrange(self._pinning_matrix[1]):
+
                 if visual or save_grid_image:
                     grid_plot.plot(\
                         np.array(self._best_fit_rows),
                         np.ones(len(self._best_fit_rows))*\
                             self._best_fit_columns[column], 'r-')
+
                 if supress_other == False or (watch_colony != None and \
                         watch_colony[1] == row and watch_colony[2] == column):
                     self._grid_cells[row][column].set_center( \
                         (self._best_fit_rows[row], 
                             self._best_fit_columns[column]) , self._grid_cell_size)
 
-                    coord_2nd = self._grid_cells[row][column].get_first_dim_as_tuple()
-                    coord_1st = self._grid_cells[row][column].get_second_dim_as_tuple()
 
-                    tf_im = np.zeros(im.shape, dtype=np.float64)
+                    tf_im = np.zeros(self._grid_cell_size, dtype=np.float64)
 
                     if transformation_matrix is not None:
                         #There's probably some faster way
                         logging.debug("ANALYSIS GRID ARRAY Transforming -> Kodak")
-                        for x in xrange(int(coord_1st[0]),int(np.ceil(coord_1st[1]))):
-                            for y in xrange(int(coord_2nd[0]),int(np.ceil(coord_2nd[1]))):
-                                tf_im[x,y] = transformation_matrix[im[x,y]]
+
+                        for x in xrange(tf_im.shape[0]):
+
+                            x2 = int(round(self._best_fit_columns[column] - \
+                            self._grid_cell_size[0]/2.0))+x,
+
+                            for y in xrange(tf_im.shape[1]):
+
+                                y2 = int(round(self._best_fit_rows[row] - \
+                                    self._grid_cell_size[1]/2.0))+y
+
+                                tf_im[x,y] = transformation_matrix[im[x2,y2]]
+
+
                     else:
                         logging.critical("ANALYSIS GRID ARRAY Lacks transformation possibilities")
 
-                    self._grid_cells[row][column].set_data_source( \
-                        tf_im[coord_1st[0]:coord_1st[1],\
-                        coord_2nd[0]:coord_2nd[1]].copy() )
+                    self._grid_cells[row][column].set_data_source(tf_im)
 
 
                     if watch_colony != None:
                         if row == watch_colony[1] and column == watch_colony[2]:
-                            self.watch_scaled = tf_im[coord_1st[0]:coord_1st[1],\
-                                coord_2nd[0]:coord_2nd[1]]
+                            self.watch_scaled = tf_im
                             #if self.watch_scaled.sum() == (self.watch_scaled > 0).sum():
                                 ###DEBUG WHAT IS THE GRID ARRAY
                                 #from matplotlib import pyplot as plt
@@ -413,12 +442,6 @@ class Grid_Array():
                                 #plt.show()
                                 ###END DEBUG CODE
                                 
-                    #if visual:
-                        #pass
-                        #plt.plot(self._grid_cells[row][column].center[0],
-                        #    self._grid_cells[row][column].center[1] , 'k.')
-
-                        #plt.plot(np.asarray(coord_1st),np.asarray(coord_2nd),'k')              
 
                     #This happens only the first time
                     if has_previous_rect == False:
@@ -437,31 +460,53 @@ class Grid_Array():
                     #plt.imshow(self._grid_cells[row][column].get_item('blob').filter_array)
                     #debug_plt.add_subplot(223)
                     #plt.imshow(self._grid_cells[row][column].get_item('blob').grid_array)
+                    #plt.show()
+                    #raw_input("> ")
                     ###DEBUG END PART1
 
                     #Transfer data to 'Cell Estimate Space'
-                    self._grid_cells[row][column].set_new_data_source_space(\
-                        space='cell estimate', bg_sub_source = \
-                        self._grid_cells[row][column].get_item('background').filter_array\
-                        , polynomial_coeffs = self._polynomial_coeffs)
+                    bg_filter = self._grid_cells[row][column].get_item('background').filter_array
+                    if bg_filter.sum() == 0:
 
-                    #This step re-detects in Cell Estimate Space
-                    #self._grid_cells[row][column].get_analysis(no_analysis=True,\
-                    #    remember_filter=True, use_fallback=True)
+                        #from matplotlib import pyplot as plt
+                        #debug_plt = plt.figure()
+                        #debug_plt = plt.figure()
+                        ##debug_plt.add_subplot(221)
+                        #plt.imshow(self._grid_cells[row][column].get_item('blob').filter_array)
+                        #debug_plt.add_subplot(223)
+                        #plt.imshow(self._grid_cells[row][column].get_item('blob').grid_array)
 
-                    #This step does analysis on the previously detected objects
-                    self._features[row][column] = \
-                        self._grid_cells[row][column].get_analysis(no_detect=True)
+                        #debug_plt.show()
+
+                        #raw_input('x> ')
+
+                        logging.warning('Row: {0}, Column: {1} has no background'.\
+                            format(row, column))
+
+                        self._features[row][column] = None
+                    else:
+                        self._grid_cells[row][column].set_new_data_source_space(\
+                            space='cell estimate', bg_sub_source = \
+                            bg_filter\
+                            , polynomial_coeffs = self._polynomial_coeffs)
+
+                        #This step re-detects in Cell Estimate Space
+                        #self._grid_cells[row][column].get_analysis(no_analysis=True,\
+                        #    remember_filter=True, use_fallback=True)
+
+                        #This step does analysis on the previously detected objects
+                        self._features[row][column] = \
+                            self._grid_cells[row][column].get_analysis(no_detect=True)
 
 
-                    ###DEBUG RE-DETECT PART2
-                    #debug_plt.add_subplot(222)
-                    #plt.imshow(self._grid_cells[row][column].get_item('blob').filter_array)
-                    #debug_plt.add_subplot(224)
-                    #plt.imshow(self._grid_cells[row][column].get_item('blob').grid_array)
-                    #debug_plt.show()
-                    #plot = raw_input('waiting: ')
-                    ###DEBUG END
+                        ###DEBUG RE-DETECT PART2
+                        #debug_plt.add_subplot(222)
+                        #plt.imshow(self._grid_cells[row][column].get_item('blob').filter_array)
+                        #debug_plt.add_subplot(224)
+                        #plt.imshow(self._grid_cells[row][column].get_item('blob').grid_array)
+                        #debug_plt.show()
+                        #plot = raw_input('waiting: ')
+                        ###DEBUG END
 
                     if watch_colony != None \
                         and row == watch_colony[1] and column == watch_colony[2]:

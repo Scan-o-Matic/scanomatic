@@ -20,7 +20,7 @@ __status__ = "Development"
 
 import numpy as np
 from math import ceil
-
+import logging
 
 #
 # SCANNOMATIC LIBRARIES
@@ -272,7 +272,9 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
         return None
 
     best_start_pos = int(np.asarray(start_position_qualities).argmax())
-    #print start_position_qualities
+
+    logging.info("SIGNAL: Quality at start indices {0}".format(\
+        start_position_qualities))
  
     quality_threshold = np.mean(mq_array) + np.std(mq_array) * 3
 

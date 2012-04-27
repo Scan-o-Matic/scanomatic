@@ -293,7 +293,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
             f.write(XML_CLOSE.format('d-types'))
 
-            f.write(XML_OPEN.format('<scans>'))
+            f.write(XML_OPEN.format('scans'))
 
     while image_pos >= first_scan_position:
         scan_start_time = time()
