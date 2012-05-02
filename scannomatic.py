@@ -225,6 +225,14 @@ class Application_Window():
         self.experiment_layout = experiment.Scanning_Experiment_Setup(self)
         self.vbox.pack_start(self.experiment_layout, False, False, 2)
 
+        #LOGO
+        image = gtk.Image()
+        image.set_from_file('src/images/scan-o-matic.png')
+        hbox = gtk.HBox()
+        hbox.pack_start(image, True, False, 2)
+        hbox.show_all()
+        self.vbox.pack_start(hbox, True, False, 2)
+    
         #Running epxeriments
         self.running_experiments = gtk.VBox()
         label = gtk.Label("RUNNING EXPERIMENTS:")

@@ -8,17 +8,80 @@ import scipy.interpolate as scint
 def make_linear_interpolation(data):
     y, x = np.where(data != 0)
     Y, X = np.arange(data.shape[0]), np.arange(data.shape[1])
+    logging.warning("ready for linear")
     f = scint.interp2d(x, y, data[y, x], 'linear')
+    logging.warning("done linear interpol")
     return f(X,Y)
+
+def make_linear_interpolation2(data):
+    empty_poses = np.where(data == 0)
+    f = data.copy()
+    for i in xrange(len(empty_poses[0])):
+        pos = [p[i] for p in empty_poses]
+        a_pos = map(lambda x: x-1, pos)    
+        a_pos = np.array(a_pos)
+        a_pos[np.where(a_pos < 0)] = 0    
+        b_pos = map(lambda x: x+1, pos)
+        b_pos = np.array(b_pos)
+        logging.warning("Pos {0}, a_pos {1}, b_pos {2}, data.shape {3}"\
+            .format(pos, a_pos, b_pos, data.shape))
+        b_pos[np.where(b_pos > np.array(data.shape))] -= 1
+        cell = data[a_pos[0]:b_pos[0], a_pos[1]:b_pos[1]]
+        f[tuple(pos)] = cell[np.where(cell != 0)].mean()
+        logging.warning("Corrected position {0} to {1}".format(\
+            pos, f[tuple(pos)]))
+    return f
 
 def make_cubic_interpolation(data):
     y, x = np.where(data !=0)
     Y, X = np.mgrid[0: data.shape[0], 0:data.shape[1]]
-    f = scint.griddata((x,y), data[y,x], (X, Y), 'linear')
+    f = scint.griddata((x,y), data[y,x], (X, Y), 'cubic')
+    logging.warning('Done some shit')
     nans = np.where(np.isnan(f))
-    f2 = make_linear_interpolation(data)
+    logging.warning('Got {0} nans after cubic'.format(len(nans[0])))
+    f[nans] = 0
+    f2 = make_linear_interpolation2(f)
+    logging.warning('Linear done')
     f[nans] = f2[nans]
     return f
+
+#NEWEST PRECOG RATES
+def get_empty_data_structure(plate, max_row, max_column):
+    d = []
+    for p in range(plate+1):
+        d.append(np.ones((max_row[p]+1, max_column[p]+1))*48)
+    data = np.array(d)
+    return data
+
+
+#USING 1/4th AS NORMALISING GRID
+def make_norm_surface(data, sigma=3, only_linear=False):
+    norm_surfaces = []
+    for p in xrange(data.shape[0]):
+        exp_pp = map(lambda x: x/2, data[p].shape)
+        X, Y = np.mgrid[0:exp_pp[0],0:exp_pp[1]]*2
+        norm_surface = np.zeros(data[p].shape)
+        norm_surface[X, Y] = data[p][X, Y]
+        m = norm_surface[X, Y].mean()#.mean(1)
+        sd = norm_surface[X, Y].std()#.std(1)
+        logging.warning('High-bound outliers ({0}) on plate {1}'.format(\
+            len(np.where(m + sigma*sd < norm_surface[X,Y])[0]), p))
+        norm_surface[np.where(m + sigma*sd <\
+            norm_surface[X,Y])] = 0
+        logging.warning('Low-bound outliers ({0}) on plate {1}'.format(\
+            len(np.where(m - sigma*sd > norm_surface[X,Y])[0]), p))
+        norm_surface[np.where(m - sigma*sd >
+            norm_surface[X,Y])] = 0
+        if only_linear:
+            norm_surface = \
+                make_linear_interpolation(norm_surface)
+        else:
+            norm_surface = \
+                make_cubic_interpolation(norm_surface)
+        norm_surfaces.append(norm_surface)
+        logging.warning('Going for next plate')
+    return np.array(norm_surfaces)
+
 
 #NEW Luciano-format (And newest)
 fs = open("analysis_GT.csv", 'r')
@@ -41,7 +104,6 @@ for line in fs:
             max_row[plate] = row
         if max_column[plate] < column:
             max_column[plate] = column
-
         value = float(value.strip())
         data = data.strip()[1:-1]
         data = data.split(",")
@@ -50,9 +112,7 @@ for line in fs:
         data_times = map(float, [d[1] for d in data])
         data_store[(plate, row, column)] = value
         meta_data_store[(plate, row, column)] = (data_rates, data_times)
-        
     except:
-
         try:
             position, data = line.split(" ", 1)
             row, column = map(int, position.split("-"))
@@ -80,14 +140,6 @@ for loc, measures in data_store.items():
 
     data[loc] = np.array(measures)
 
-#NEWEST PRECOG RATES
-def get_empty_data_structure(plate, max_row, max_column):
-    d = []
-    for p in range(plate+1):
-        d.append(np.ones((max_row[p]+1, max_column[p]+1))*48)
-    data = np.array(d)
-    return data
-
 data = get_empty_data_structure(plate, max_row, max_column)
 
 for loc, measures in data_store.items():
@@ -98,16 +150,18 @@ for loc, measures in data_store.items():
 data = get_empty_data_structure(plate, max_row, max_column)
 dubious = 0
 dubious2 = 0
+st_pt = 0
+ln_pts = 7
+side_buff = 1
 for loc, measures in meta_data_store.items():
 
     times = np.array(measures[0])
     OD = np.array(measures[1])
-    st_pt = 0
-    ln_pts = 7
-    f_OD = OD[st_pt:ln_pts][times[st_pt:ln_pts].argmax()] / \
-        OD[st_pt:ln_pts][times[st_pt:ln_pts].argmin()]
-    d_t = times[st_pt:ln_pts].max() - times[st_pt:ln_pts].min()
-    data[loc] = d_t * np.log(2) / np.log2(f_OD)
+    f_OD = OD[st_pt:ln_pts][times[st_pt:ln_pts].argsort()[-1 - side_buff]] / \
+        OD[st_pt:ln_pts][times[st_pt:ln_pts].argsort()[side_buff]]
+    d_t = times[times[st_pt:ln_pts].argsort()[-1 - side_buff]] -\
+        times[times[st_pt:ln_pts].argsort()[side_buff]]
+    data[loc[0]][loc[1:]] = d_t * np.log(2) / np.log2(f_OD)
     if times[st_pt:ln_pts].min() in times[st_pt:ln_pts][-2:] and\
         times[st_pt:ln_pts].max() in times[st_pt:ln_pts][-2:]:
 
@@ -126,33 +180,13 @@ plate_texts = {0: 'Plate A', 1: 'Plate B', 2: 'Plate C', 3: 'Plate D'}
 fig = plt.figure()
 for p in xrange(data.shape[0]):
     ax = fig.add_subplot(2,2,p+1, title="Rates from edge points (5 v2) Plate {0}".format( plate_texts[p]))
-    plt.imshow(data[p,:,:], vmin=0, vmax=5)
+    plt.imshow(data[p], vmin=0, vmax=5)
     plt.colorbar(ax = ax, orientation='horizontal')
 
 fig.show()
 #PLOT DONE
 
 
-#USING 1/4th AS NORMALISING GRID
-def make_norm_surface(data, sigma=3, only_linear=False):
-    exp_pp = map(lambda x: x/2, data.shape[1:])
-    X, Y = np.mgrid[0:exp_pp[0],0:exp_pp[1]]*2
-    norm_surface = np.zeros(data.shape)
-    norm_surface[:,X, Y] = data[:,X, Y]
-    m = norm_surface[:,X, Y].mean(1).mean(1)
-    sd = norm_surface[:,X, Y].std(1).std(1)
-    for p in xrange(data.shape[0]):
-        norm_surface[p, np.where(m[p] + sigma*sd[p] <\
-            norm_surface[p,X,Y])] = 0
-        norm_surface[p, np.where(m[p] - sigma*sd[p] >
-            norm_surface[p,X,Y])] = 0
-        if only_linear:
-            norm_surface[p,:,:] = \
-                make_linear_interpolation(norm_surface[p,:,:])
-        else:
-            norm_surface[p,:,:] = \
-                make_cubic_interpolation(norm_surface[p,:,:])
-    return norm_surface
 
 
 
@@ -179,19 +213,6 @@ for p in range( data.shape[0]):
                     cell = data2[p, x*2: x*2+2, y*2: y*2+2]                       
             data3[p, x*2+1, y*2+1] = cell[np.where(cell != 0)].mean()
 #PASS 2
-empty_poses = np.where(data3 == 0)
-data4 = data3.copy()
-for i in xrange(len(empty_poses[0])):
-    pos = [p[i] for p in empty_poses]
-    ppos = pos[1:]
-    a_pos = map(lambda x: x-1, ppos)    
-    a_pos = np.array(a_pos)
-    a_pos[np.where(a_pos < 0)] = 0    
-    b_pos = map(lambda x: x+1, ppos)
-    b_pos = np.array(b_pos)
-    b_pos[np.where(b_pos > np.array(data3.shape[1:]))] -= 1
-    cell = data3[pos[0], a_pos[0]:b_pos[0], a_pos[1]:b_pos[1]]
-    data4[tuple(pos)] = cell[np.where(cell != 0)].mean()
 
 #DO NORM
 
@@ -203,36 +224,67 @@ data5 = data - norm_surface
 exp_filter = np.ones((2,2), dtype=bool)
 exp_filter[0,0] = 0
 norm_grid = (exp_filter == False)
-exp_mean = np.zeros([data.shape[0]] + exp_pp, dtype=np.float64)
-exp_sd = np.zeros([data.shape[0]] + exp_pp, dtype=np.float64)
+exp_pp = map(lambda x: map(lambda y: y/2, x.shape), data)
+e_mean = []
+e_sd = []
+e_max = 0
+e_min = 0
+e_sd_max = 0
+e_sd_min = 0
 #CALC EXPERIMENTS
 for p in range( data.shape[0] ):
-    for x in range( exp_pp[0]):
-        for y in range( exp_pp[1]):
-            cell = data5[p, x*2:x*2+2, y*2:y*2+2]
-            exp_mean[p,x,y] = cell[np.where(exp_filter)].mean()
-            exp_sd[p,x,y] = cell[np.where(exp_filter)].std()
+    exp_mean = np.zeros(exp_pp[p], dtype=np.float64)
+    exp_sd = np.zeros(exp_pp[p], dtype=np.float64)
+    for x in range( exp_pp[p][0]):
+        for y in range( exp_pp[p][1]):
+            cell = data5[p][x*2:x*2+2, y*2:y*2+2]
+            exp_mean[x,y] = cell[np.where(exp_filter)].mean()
+            exp_sd[x,y] = cell[np.where(exp_filter)].std()
+        logging.warning("Plate {0}, row {1}".format(p, x))
+    if e_max < exp_mean.max():
+        e_max = exp_mean.max()
+    if e_min > exp_mean.min():
+        e_min = exp_mean.min()
+    if e_sd_max < exp_sd.max():
+        e_sd_max = exp_sd.max()
+    if e_sd_min > exp_sd.min():
+        e_sd_min = exp_sd.min()
+
+    e_mean.append(exp_mean)
+    e_sd.append(exp_sd)
 
 
 #PLOT A SIMPLE HEAT MAP
 fig = plt.figure()
 for p in xrange(data.shape[0]):
-    ax = fig.add_subplot(4,2,2*p+1, title="Rate {0}".format( plate_texts[p]))
-    plt.imshow(exp_mean[p,:,:], vmin=exp_mean.min(), 
-        vmax=exp_mean.max())
-    plt.colorbar(ax = ax, orientation='horizontal')
-    ax = fig.add_subplot(4,2,2*p+2, title="Standard dev {0}".format( plate_texts[p]))
-    plt.imshow(exp_sd[p,:,:], vmin=exp_sd.min(), vmax=exp_sd.max())
+    ax = fig.add_subplot(2,2, p+1, title="Rate {0}".format( plate_texts[p]))
+    plt.imshow(e_mean[p], vmin=e_min, 
+        vmax=e_max)
     plt.colorbar(ax = ax, orientation='horizontal')
 
-fig.savefig("./exp_better_norm.png")
-fig.savefig("./exp_linear_norm.png")
+fig.savefig("./exp_norm.png")
+
+
+
+fig = plt.figure()
+for p in xrange(data.shape[0]):
+    ax = fig.add_subplot(4,2,2*p+1, title="Rate {0}".format( plate_texts[p]))
+    plt.imshow(e_mean[p], vmin=e_min, 
+        vmax=e_max)
+    plt.colorbar(ax = ax, orientation='horizontal')
+    ax = fig.add_subplot(4,2,2*p+2, title="Standard dev {0}".format( plate_texts[p]))
+    plt.imshow(e_sd[p], vmin=e_sd_min, vmax=e_sd_max)
+    plt.colorbar(ax = ax, orientation='horizontal')
+
+fig.savefig("./exp_norm_mean_sd.png")
 #PLOT DONE
 
 for p in xrange(data.shape[0]):
 
-    print "{0} has mean {1} and std {2}".format(\
-        plate_texts[p], exp_mean[p,:,:].mean(), exp_mean[p,:,:].std())
+    print "{0} has mean {1} ({2}) and std {3}".format(\
+        plate_texts[p], e_mean[p].mean(), 
+            e_mean[p].mean() + norm_surface[p].mean(),
+            e_mean[p].std())
 
 
 
