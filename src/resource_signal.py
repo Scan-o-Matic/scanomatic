@@ -241,7 +241,7 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
     #print "---Best signal---"
     #print offset, frequency, n, start_peak, max_value
     #print "peaks", m_array
-    while offset + frequency * (n + start_peak) < max_value:
+    while offset + frequency * ((n-1) + start_peak) < max_value:
 
         covered_peaks = 0
         quality = 0

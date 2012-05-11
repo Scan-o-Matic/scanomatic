@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.pylab as plt_lab
 import logging
 import scipy.interpolate as scint
+import scipy.stats as stats
 
 def make_linear_interpolation(data):
     y, x = np.where(data != 0)
@@ -174,7 +175,7 @@ for loc, measures in meta_data_store.items():
 
 plate_texts = {0: '30mL', 1: '50mL', 2: '70mL', 3: '80mL'}
 plate_texts = {0: 'Plate A', 1: 'Plate B', 2: 'Plate C', 3: 'Plate D'}
-
+plate_texts = {0: '1536 repl A', 1: '384 repl A', 2: '1536 repl B', 3: '384 repl B'}
 
 #PLOT A SIMPLE HEAT MAP
 fig = plt.figure()
@@ -231,6 +232,10 @@ e_max = 0
 e_min = 0
 e_sd_max = 0
 e_sd_min = 0
+t_ref = []
+t_exp = []
+t_plate = 0
+
 #CALC EXPERIMENTS
 for p in range( data.shape[0] ):
     exp_mean = np.zeros(exp_pp[p], dtype=np.float64)
@@ -240,6 +245,10 @@ for p in range( data.shape[0] ):
             cell = data5[p][x*2:x*2+2, y*2:y*2+2]
             exp_mean[x,y] = cell[np.where(exp_filter)].mean()
             exp_sd[x,y] = cell[np.where(exp_filter)].std()
+            if t_plate == p:
+                t_ref.append(cell[np.where(exp_filter == False)][0])
+                t_exp.append(cell[np.where(exp_filter)])
+
         logging.warning("Plate {0}, row {1}".format(p, x))
     if e_max < exp_mean.max():
         e_max = exp_mean.max()
@@ -249,10 +258,12 @@ for p in range( data.shape[0] ):
         e_sd_max = exp_sd.max()
     if e_sd_min > exp_sd.min():
         e_sd_min = exp_sd.min()
-
+    
     e_mean.append(exp_mean)
     e_sd.append(exp_sd)
 
+
+        
 
 #PLOT A SIMPLE HEAT MAP
 fig = plt.figure()
@@ -279,12 +290,48 @@ for p in xrange(data.shape[0]):
 fig.savefig("./exp_norm_mean_sd.png")
 #PLOT DONE
 
+e_mean2 = []
 for p in xrange(data.shape[0]):
 
-    print "{0} has mean {1} ({2}) and std {3}".format(\
+    print "{0} has mean {1} ({2}) and std {3} ({4})".format(\
         plate_texts[p], e_mean[p].mean(), 
             e_mean[p].mean() + norm_surface[p].mean(),
-            e_mean[p].std())
+            e_mean[p].std(),
+            (e_mean[p] + norm_surface[p].mean()).std())
+
+    e_mean2.append(e_mean[p][np.where(e_mean[p] < e_mean[p].mean() + 6 * \
+        e_mean[p].std())])
+    print "Omitting outlier experiments {0}: mean {1} std {2}\n".format(\
+        e_mean[p].shape[0] * e_mean[p].shape[1] - e_mean2[-1].shape[0],
+        e_mean2[-1].mean(),
+        e_mean2[-1].std())
+
+
+
+#TTESTS
+alpha = 0.05
+n_sign = 0
+n_controls = 15
+ctrls = np.random.random_integers(0,len(t_exp),n_controls)
+texp = np.array(t_exp)
+tref = texp[ctrls,:].ravel()
+not_ctrls = np.array([x for x in range(texp.shape[0]) if x not in ctrls])
+texp2 = texp[not_ctrls,:]
+for e in texp2:
+    if stats.ttest_ind(tref, e)[1] < alpha:
+        n_sign += 1
+    
+print "Found {0} Experimental False Positives, expected {1} using {2}\
+ control positions(ratio {3})".format(
+    n_sign,
+    alpha*texp2.shape[0],
+    n_controls,
+    n_sign / (alpha*texp2.shape[0]))
+
+
+
+
+
 
 
 

@@ -56,7 +56,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         graph_watch, supress_analysis = False, \
         verboise=False, use_fallback = False, use_otsu = False,\
         grid_times=None, xml_format={'short': True, 'omit_compartments':[],
-        'omit_measures':[]}):
+        'omit_measures':[]}, animate=False):
     """
         analyse_project parses a log-file and runs a full analysis on all 
         images in it. It will step backwards in time, starting with the 
@@ -96,6 +96,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
         @xml_format         A dict for what should be in the xml and
                             which tags (long vs short) be used.
+
+        @animate            Boolean def (False) to cause saving animation
+                            images.
 
         The function returns None if nothing was done of if it crashed.
         If it runs through it returns the number of images processed.
@@ -207,7 +210,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     plates = len(plate_position_keys)
  
     if supress_analysis == True:
-        project_image = Project_Image([pinning_matrices[graph_watch[0]]])
+        project_image = Project_Image([pinning_matrices[graph_watch[0]]], animate=animate)
         graph_watch[0] = 0
         plates = 1
     else:
@@ -223,7 +226,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 (str(outdata_analysis_path),
                 str(outdata_analysis_slimmed_path)))
             return False
-        project_image = Project_Image(pinning_matrices)
+        project_image = Project_Image(pinning_matrices, animate=animate)
 
     image_pos = len(image_dictionaries) - 1
 
@@ -317,7 +320,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             use_fallback, use_otsu, watch_colony=graph_watch, \
             supress_other=supress_analysis, \
             save_graph_image=(image_pos in grid_times), \
-            save_graph_name=outdata_files_path+"time_" + str(image_pos) +\
+            save_graph_name=outdata_files_path+"time_" + str(image_pos).zfill(4) +\
              "_plate_", grid_lock = True, identifier_time=image_pos, 
             timestamp=img_dict_pointer['Time'])
 
@@ -496,8 +499,23 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             f.close()
 
     if  graph_watch != None:
-        #print watch_reading
-        Y = np.asarray(watch_reading, dtype=np.float64)
+        #        print watch_reading
+
+        omits = []
+        gws = []
+        for i in xrange(len(watch_reading[0])):
+            gw_i = [gw[i] for gw in watch_reading]
+            try:
+                map(lambda v: len(v), gw_i)
+                omits.append(i)
+                gw_i = None
+            except:
+                pass
+
+            if gw_i is not None:
+                gws.append(gw_i)
+
+        Y = np.asarray(gws, dtype=np.float64)
         X = (np.arange(len(image_dictionaries),0,-1)+0.5)*pict_target_width
 
         for xlabel_pos in xrange(len(x_labels)):
@@ -508,78 +526,82 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         #print x_labels
         cur_plt_graph = ""
         plt_graph_i = 1
-        for i in xrange(int(Y.shape[1])):
-            if type(Y[0,i]) != np.ndarray and type(Y[0,i]) != types.ListType and type(Y[0,i]) != types.TupleType:
-                Y_good_positions = np.where(np.isnan(Y[:,i]) == False)[0]
-                if Y_good_positions.size > 0:
-                    try:
+        for i in [x for x in range(len(gws)) if x not in omits]:
+            ii = i + sum(map(lambda x: x<i, omits))
+            Y_good_positions = np.where(np.isnan(Y[i,:]) == False)[0]
+            if Y_good_positions.size > 0:
+                try:
 
-            
+        
 
-                        if Y[Y_good_positions,i].max() == Y[Y_good_positions,i].min():
-                            scale_factor = 0
-                        else:
-                            scale_factor =  100 / float(Y[Y_good_positions,i].max() - Y[Y_good_positions,i].min())
+                    if Y[i,Y_good_positions].max() == Y[i,Y_good_positions].min():
+                        scale_factor = 0
+                    else:
+                        scale_factor =  100 / float(Y[i,Y_good_positions].max() - \
+                            Y[i,Y_good_positions].min())
 
-                        sub_term = float(Y[Y_good_positions,i].min())
+                    sub_term = float(Y[i,Y_good_positions].min())
 
-                        if plot_labels[i] == "cell:area":
-                            c_area = Y[Y_good_positions,i]
-                        elif plot_labels[i] == "background:mean":
-                            bg_mean = Y[Y_good_positions,i]
-                        elif plot_labels[i] == "cell:pixelsum":
-                            c_pixelsum = Y[Y_good_positions,i]
-                        elif plot_labels[i] == "blob:pixelsum":
-                            b_pixelsum = Y[Y_good_positions,i]
-                        elif plot_labels[i] == "blob:area":
-                            b_area = Y[Y_good_positions,i]
+                    if plot_labels[ii] == "cell:area":
+                        c_area = Y[i,Y_good_positions]
+                    elif plot_labels[ii] == "background:mean":
+                        bg_mean = Y[i,Y_good_positions]
+                    elif plot_labels[ii] == "cell:pixelsum":
+                        c_pixelsum = Y[i,Y_good_positions]
+                    elif plot_labels[ii] == "blob:pixelsum":
+                        b_pixelsum = Y[i,Y_good_positions]
+                    elif plot_labels[ii] == "blob:area":
+                        b_area = Y[i,Y_good_positions]
 
-                        logging.debug("WATCH GRAPH:\n%s\n%s\n%s" % \
-                            (str(plot_labels[i]), str(sub_term), 
-                            str(scale_factor)))
+                    logging.debug("WATCH GRAPH:\n%s\n%s\n%s" % \
+                        (str(plot_labels[ii]), str(sub_term), 
+                        str(scale_factor)))
 
-                        #print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
-                        logging.debug("WATCH GRAPH, Max %.2f Min %.2f." % \
-                            (float(Y[Y_good_positions,i].max()), 
-                            float(Y[Y_good_positions,i].min())))
+                    #print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
+                    logging.debug("WATCH GRAPH, Max %.2f Min %.2f." % \
+                        (float(Y[i,Y_good_positions].max()), 
+                        float(Y[i,Y_good_positions].min())))
 
+                    #print Y[Y_good_positions,i]
+                    if cur_plt_graph != plot_labels[ii].split(":")[0]:
+                        cur_plt_graph = plot_labels[ii].split(":")[0]
+                        if plt_graph_i > 1:
+                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, 
+                                bbox_to_anchor = (1.0, -0.45))
+
+                        plt_graph_i += 1
+                        plt_watch_curves = plt_watch_colony.add_subplot(4,1,plt_graph_i,
+                            title=cur_plt_graph)
+                        plt_watch_curves.set_xticks(X)
+                        plt_watch_curves.set_xticklabels(x_labels, fontsize="xx-small", rotation=90)
+
+                    if scale_factor != 0: 
+                        #print X[Y_good_positions].shape, Y[Y_good_positions,i].shape
+                        #print X[Y_good_positions]
                         #print Y[Y_good_positions,i]
-                        if cur_plt_graph != plot_labels[i].split(":")[0]:
-                            cur_plt_graph = plot_labels[i].split(":")[0]
-                            if plt_graph_i > 1:
-                                plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
-                            plt_graph_i += 1
-                            plt_watch_curves = plt_watch_colony.add_subplot(4,1,plt_graph_i,
-                                title=cur_plt_graph)
-                            plt_watch_curves.set_xticks(X)
-                            plt_watch_curves.set_xticklabels(x_labels, fontsize="xx-small", rotation=90)
+                       
+                        plt_watch_curves.plot(X[Y_good_positions], 
+                            (Y[i,Y_good_positions] - sub_term) * scale_factor,
+                            label=plot_labels[ii][len(cur_plt_graph)+1:])                        
+                    else:
+                        logging.debug("GRAPH WATCH, Got straight line %s, %s" % \
+                            (str(plt_graph_i), str(i)))
 
-                        if scale_factor != 0: 
-                            #print X[Y_good_positions].shape, Y[Y_good_positions,i].shape
-                            #print X[Y_good_positions]
-                            #print Y[Y_good_positions,i]
-                           
-                            plt_watch_curves.plot(X[Y_good_positions], 
-                                (Y[Y_good_positions,i] - sub_term) * scale_factor,
-                                label=plot_labels[i][len(cur_plt_graph)+1:])                        
-                        else:
-                            logging.debug("GRAPH WATCH, Got straight line %s, %s" % \
-                                (str(plt_graph_i), str(i)))
-
-                            plt_watch_curves.plot(X[Y_good_positions], 
-                                np.zeros(X[Y_good_positions].shape)+\
-                                10*(i-(plt_graph_i-1)*5), 
-                                label=plot_labels[i][len(cur_plt_graph)+1:])
+                        plt_watch_curves.plot(X[Y_good_positions], 
+                            np.zeros(X[Y_good_positions].shape)+\
+                            10*(i-(plt_graph_i-1)*5), 
+                            label=plot_labels[ii][len(cur_plt_graph)+1:])
 
 
-                    except TypeError:
-                        logging.warning("GRAPH WATCH, Error processing %s" % str(plot_labels[i]))
+                except TypeError:
+                    logging.warning("GRAPH WATCH, Error processing %s" % str(plot_labels[ii]))
 
-                else:
-                        logging.warning("GRAPH WATCH, Cann't plot %s since has \
-no good data" % str(plot_labels[i]))
+            else:
+                    logging.warning("GRAPH WATCH, Cann't plot %s since has \
+no good data" % str(plot_labels[ii]))
 
-        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, bbox_to_anchor = (1.0, -0.45))
+        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, 
+            bbox_to_anchor = (1.0, -0.45))
         if graph_output != None:
             try:
                 plt_watch_colony.savefig(graph_output, dpi=300)
@@ -626,10 +648,13 @@ no good data" % str(plot_labels[i]))
 #
 
 class Project_Image():
-    def __init__(self, pinning_matrices, im_path=None, plate_positions=None ):
+    def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
+        animate=False):
 
         self._im_path = im_path
         self._im_loaded = False
+
+        self._animate = animate
         
         self._plate_positions = plate_positions
         self._pinning_matrices = pinning_matrices
@@ -776,6 +801,7 @@ coefficients don't have the same sign")
             if save_graph_image == True:
 
                 cur_graph_name = save_graph_name + str(grid_array) + ".png"
+            save_anime_name = save_graph_name + "anime.png"
             
             self._grid_arrays[grid_array].get_analysis( \
                 self.im[ upper:lower, left:right ], \
@@ -783,8 +809,10 @@ coefficients don't have the same sign")
                 use_otsu=use_otsu, median_coeff=None, \
                 verboise=False, visual=False, watch_colony=watch_colony, \
                 supress_other=supress_other, save_grid_image=save_graph_image\
-                , save_grid_name = cur_graph_name, grid_lock = grid_lock,
-                identifier_time = identifier_time, timestamp=timestamp)
+                , save_grid_name = cur_graph_name, 
+                save_anime_name = save_anime_name, grid_lock = grid_lock,
+                identifier_time = identifier_time, timestamp=timestamp,
+                animate=self._animate)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
             self.R[grid_array] = self._grid_arrays[grid_array].R
@@ -813,6 +841,8 @@ if __name__ == "__main__":
     #parser.add_argument("-g", "--graph-output", dest="graph_output", help="If specified the graph is not shown to the user but instead saved to taget position", type=str)
 
     parser.add_argument("-t", "--watch-time", dest="grid_times", help="If specified, the gridplacements at the specified timepoints will be saved in the set output-directory, comma-separeted indices.", metavar="0,1,100", default="0", type=str)
+
+    parser.add_argument('-a', '--animate', dest="animate", default=False, type=bool, help="If True, it will produce stop motion images of the watched colony ready for animation")
 
     parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If set to True, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported.")
 
@@ -880,14 +910,16 @@ if __name__ == "__main__":
     if args.grid_times != None:
 
         try:
-            grid_times = map(int, args.grid_times.split(","))
+            grid_times = (int(grid_times),)
         except:
-            logging.warning("ARGUMENTS, could not parse grid_times... will only save\
- the first grid placement.")
+            try:
+                grid_times = map(int, args.grid_times.split(","))
+            except:
+                logging.warning("ARGUMENTS, could not parse grid_times... will only save\
+     the first grid placement.")
 
-            grid_times = [0]
+                grid_times = [-1]
 
- 
     if args.inputfile == None:
         parser.error("You need to specify input file!")
 
@@ -955,7 +987,7 @@ if __name__ == "__main__":
 
     analyse_project(args.inputfile, output_path, pm, args.graph_watch, 
         args.supress, True, False, False, grid_times=grid_times,
-        xml_format = xml_format)
+        xml_format = xml_format, animate=args.animate)
     #else:
         #parser.error("Missmatch between number of plates specified and the number of matrices specified.")
 

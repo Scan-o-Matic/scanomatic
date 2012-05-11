@@ -89,7 +89,7 @@ class Scanning_Experiment(gtk.Frame):
         self._matrices = matrices
         self._watch_colony = None
         self._supress_other = False
-        self._watch_time = '-1'
+        self._watch_time = '1'
 
         self._scanning = False
         self._force_quit = False

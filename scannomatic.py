@@ -311,13 +311,19 @@ class Application_Window():
         scanners = self.get_unclaimed_scanners()
 
         dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
-            gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+            gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
             "Select the scanner that you wish to use:\n" +\
             "(Scanning will start at once)")
+
         for i, s in enumerate(scanners):
             dialog.add_button(s, i)
 
         dialog.add_button(gtk.STOCK_CANCEL, -1)
+
+        img = gtk.Image()
+        img.set_from_file('./src/images/martin3.png')
+        dialog.set_image(img)
+        dialog.show_all()
 
         resp = dialog.run()
 

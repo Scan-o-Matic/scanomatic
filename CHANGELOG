@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** New Scan One dialog! Oh so nice...
+
 *** Centroid is not explicitly tracked for blobs and outputted into the
     analysis.xml
 
