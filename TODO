@@ -4,8 +4,6 @@
 
 --- DEBUGGING ---
 
-*** Check so each grid cell actually has its data at all times (the summary image looks bad).
-
 *** Check Pattern-finding if it doesn't demand one too many intervals for optimal curve-start
     -> Seems so, line 244 in resource_signal, changed the while statement 'n' >>> '(n-1)'
 
@@ -83,6 +81,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Check so each grid cell actually has its data at all times (the summary image looks bad).
 
 *** Analysis One should allow for any space.
 

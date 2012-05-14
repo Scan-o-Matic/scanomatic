@@ -24,6 +24,7 @@ import os, sys
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.image as plt_img
+from matplotlib import pyplot
 import types
 import logging
 import numpy as np
@@ -149,7 +150,6 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
 
     if graph_watch != None:
-        from matplotlib import pyplot
         from matplotlib.font_manager import FontProperties
         from PIL import Image
         watch_reading = [] 

@@ -385,7 +385,9 @@ class Grid_Array():
             if save_grid_name is None:
                 save_grid_name = "plate.png"
 
-        
+        #Since it is remade each time it should not matter that it is only created once        
+        tf_im = np.zeros(self._grid_cell_size, dtype=np.float64)
+
         for row in xrange(self._pinning_matrix[0]):
             if visual or save_grid_image:
                 grid_plot.plot(\
@@ -408,7 +410,6 @@ class Grid_Array():
                             self._best_fit_columns[column]) , self._grid_cell_size)
 
 
-                    tf_im = np.zeros(self._grid_cell_size, dtype=np.float64)
 
                     if transformation_matrix is not None:
                         #There's probably some faster way
@@ -433,9 +434,9 @@ class Grid_Array():
                     self._grid_cells[row][column].set_data_source(tf_im)
 
 
-                    if watch_colony != None:
-                        if row == watch_colony[1] and column == watch_colony[2]:
-                            self.watch_scaled = tf_im
+                    #if watch_colony != None:
+                        #if row == watch_colony[1] and column == watch_colony[2]:
+                            #self.watch_scaled = tf_im
                             #if self.watch_scaled.sum() == (self.watch_scaled > 0).sum():
                                 ###DEBUG WHAT IS THE GRID ARRAY
                                 #plt.clf()
@@ -555,6 +556,21 @@ class Grid_Array():
                                 #onion4[-1,0]/float(onion4[-1,1]),
                                 #onion6[-1,0]/float(onion6[-1,1])))
 
+
+                            #fig3 = plt.figure()
+                            #fig3.add_subplot(2,2,1, title = 'now')
+                            #fig3.gca().imshow(blob.grid_array, vmin=0, vmax=3500)
+                            #fig3.add_subplot(2,2,2, title = 'previous')
+                            #fig3.gca().imshow(self._old_blob_img, vmin=0, vmax=3500)
+                            #fig3.add_subplot(2,2,3, title = 'previous')
+                            #fig3.gca().imshow(im, vmin=0, vmax=3500)
+                                #uncertain of if everything is cool in this plot..
+                            #fig3.gca().plot([y2 - self._grid_cell_size[0]/2], 
+                                #[x2[0] - self._grid_cell_size[1]/2], 'ro')
+                            #fig3.show()
+                            #raw_input("now max {0} vs old {1}> ".format(blob.grid_array.max(),
+                                #self._old_blob_img.max()))
+
                             if self._identifier[0] == 0:
 
                                 onion_times = np.asarray(self._onion_times)
@@ -629,7 +645,11 @@ class Grid_Array():
                         if row == watch_colony[1] and column == watch_colony[2]:
                             self.watch_blob = \
                                 self._grid_cells[row][column].\
-                                get_item('blob').filter_array
+                                get_item('blob').filter_array.copy()
+
+                            self.watch_scaled = \
+                                self._grid_cells[row][column].\
+                                get_item('blob').grid_array.copy()
 
                             self.watch_results = self._features[row][column]
 
