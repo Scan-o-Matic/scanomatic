@@ -161,6 +161,52 @@ def random_plot_on_separate_panels(xml_parser):
 
     return fig
 
+def get_graph_styles(categories, n_per_cat = None, per_cat_list = None, alpha=0.95):
+
+    if n_per_cat is not None:
+
+        per_cat_list = [range(n_per_cat)] * categories
+
+    if per_cat_list is None:
+
+        return None
+
+    #Max val = 0.25
+    color_patterns = [  np.array([0.25,0.19,0.0]), #Orange
+                        np.array([0,0.25,0]), #Greens
+                        np.array([0,0,0.25]), #Blues
+                        np.array([0,0.25,0.25]), #Navy
+                        np.array([0.25,0,0]) #Reds
+                     ]
+
+    line_styles = ['-',':', '-.', '--']
+
+    colors = []
+    styles = []
+
+    c_index = 0
+    line_pattern = 0
+    base_fraction = 0.5
+
+    for i, cat in enumerate(per_cat_list):
+
+        if i % len(color_patterns) == 0 and i > 0:
+            line_pattern += 1
+            if line_pattern > len(line_styles):
+                logging.warning("Reusing styles - too many categories")
+                line_pattern = 0
+        else:
+            c_index += 1
+
+        for line in cat:
+            color_coeff = 4*((1-base_fraction)*(line + 1)/float(len(cat))+base_fraction)
+            colors.append(list(color_patterns[c_index]*color_coeff) + [alpha])
+            styles.append(line_styles[line_pattern])
+
+    return styles, colors
+
+
+
 def random_plot_on_same_panel(xml_parser, different_line_styles=False):
     fig = plt.figure()
     col_maps = [np.array([0.15,0.15,0.10]), np.array([0.25,0,0]), np.array([0,0.25,0]), np.array([0,0,0.25])]

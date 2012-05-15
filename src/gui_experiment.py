@@ -560,6 +560,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
         self.pinning_matrices = {'8 x 12 (96)':(8,12), 
             '16 x 24 (384)': (16,24), 
             '32 x 48 (1536)': (32,48),
+            '64 x 96 (6144)': (64,96)
             '--Empty--': None}
         self.set_fixture()
 

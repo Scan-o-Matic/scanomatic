@@ -2,6 +2,13 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Changed the animation images
+
+*** Changed so trashed pixels also get a buffer around them on the background
+
+*** Changed so that blob is really a composite blob of all blobs that have
+    mass center inside the best blob.
+
 *** New Scan One dialog! Oh so nice...
 
 *** Centroid is not explicitly tracked for blobs and outputted into the

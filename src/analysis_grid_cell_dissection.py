@@ -686,6 +686,16 @@ using old (Error: %.2f" % (str(self._identifier),
         #self._debug_ticker += 1
         ###DEBUG END
 
+        #DEBUG CODE START
+        #from matplotlib import pyplot as plt
+        #plt.clf()
+        #plt.subplot(211, title='filter')
+        #plt.imshow(self.filter_array)
+        #plt.subplot(212, title='image')
+        #plt.imshow(self.grid_array)
+        #plt.show()
+        #DEBUG CODE END
+
     def iterative_threshold_detect(self):
 
         #De-noising the image with a smooth
@@ -768,6 +778,15 @@ using old (Error: %.2f" % (str(self._identifier),
 
         self.old_edge_detect()
         #self.edge_detect_sobel()
+        #DEBUG CODE START
+        #from matplotlib import pyplot as plt
+        #plt.clf()
+        #plt.subplot(211, title='filter')
+        #plt.imshow(self.filter_array)
+        #plt.subplot(212, title='image')
+        #plt.imshow(self.grid_array)
+        #plt.show()
+        #DEBUG CODE END
 
     def edge_detect_sobel(self):
 
@@ -885,11 +904,30 @@ using old (Error: %.2f" % (str(self._identifier),
 
     def old_edge_detect(self):
 
+        #DEBUG CODE START
+        #from matplotlib import pyplot as plt
+        #plt.subplot(221, title='Start image')
+        #plt.imshow(self.grid_array)
+        #DEBUG CODE END
+
         #De-noising the image with a smooth
         self.filter_array = gaussian_filter(self.grid_array, 2)
 
+        #DEBUG CODE START
+        #plt.subplot(222, title = 'Image after gauss')
+        #plt.imshow(self.grid_array)
+        #plt.subplot(223, title = 'Filter after gauss')
+        #plt.imshow(self.filter_array)
+        #DEBUG CODE END
+
         #Threshold the image
         self.threshold_detect(im=self.filter_array)
+
+        #DEBUG CODE START
+        #plt.subplot(224, title = 'Filter after threshold')
+        #plt.imshow(self.filter_array)
+        #plt.show()
+        #DDEBUG CODE END
 
         #self.filter_array = sobel(self.grid_array)
 
@@ -951,12 +989,16 @@ using old (Error: %.2f" % (str(self._identifier),
 
         label_array, number_of_labels = label(self.filter_array)
         qualities = []
+        c_o_m = {}
 
         if number_of_labels > 0:
 
             for item in xrange(number_of_labels):
 
                 cur_item = (label_array == (item + 1))
+
+                c_o_m[item] = tuple(map(np.round, center_of_mass(cur_item)))
+
                 cur_pxs = np.sum( cur_item ) 
 
                 oneD = np.where(np.sum(cur_item,1) > 0 )[0]
@@ -972,11 +1014,27 @@ using old (Error: %.2f" % (str(self._identifier),
 
                     qualities.append(cur_pxs * dim1 / float(dim2))
 
-            q_best = np.asarray(qualities).argmax()
+            q_best = np.asarray(qualities).argmax() + 1
 
-            self.filter_array = (label_array == (q_best + 1) )
+            self.filter_array = (label_array == q_best )
 
-            self.trash_array = (label_array > 0) * (label_array != q_best +1)
+            composite_blob = [q_best]
+            composite_trash = []
+            for item in xrange(number_of_labels):
+                if self.filter_array[c_o_m[item]]:
+                    composite_blob.append(item + 1)
+                else:
+                    composite_trash.append(item + 1)
+
+            #if len(composite_blob) > 1:
+            self.filter_array = np.in1d(label_array, 
+                np.array(composite_blob)).reshape(self.filter_array.shape,
+                order='C')
+            
+            #self.trash_array = (label_array > 0) * (label_array != q_best +1)
+            self.trash_array = np.in1d(label_array, 
+                np.array(composite_trash)).reshape(self.filter_array.shape,
+                order='C')
 
 
         #axis_1 = np.mean(self.filter_array,1)
@@ -1032,11 +1090,12 @@ class Background(Cell_Item):
         if self.blob and self.blob.filter_array != None:
             self.filter_array = (self.blob.filter_array == False)
 
+            self.filter_array[np.where(self.blob.trash_array)] = False
+
             kernel = self.get_round_kernel(radius=9)
             self.filter_array = binary_erosion(self.filter_array, 
                 structure=kernel, border_value=1)
 
-            self.filter_array[np.where(self.blob.trash_array)] = False
 
             ###DEBUG CODE
             #print "Bg area", np.sum(self.filter_array),  "of which shared with blob", 

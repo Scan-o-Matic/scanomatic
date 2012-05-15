@@ -293,6 +293,16 @@ fixing negative cells counts ({0})".format(\
             else:
                 features_dict[item_name] = None
 
+        #DEBUG CODE START
+        #item_name = 'blob'
+        #from matplotlib import pyplot as plt
+        #plt.clf()
+        #plt.subplot(211, title='filter after everything')
+        #plt.imshow(self._analysis_items[item_name].filter_array)
+        #plt.subplot(212, title='image')
+        #plt.imshow(self._analysis_items[item_name].grid_array)
+        #plt.show()
+        #DEBUG CODE END
 
         return features_dict       
 

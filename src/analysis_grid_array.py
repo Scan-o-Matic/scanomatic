@@ -18,9 +18,9 @@ __status__ = "Development"
 import numpy as np
 import logging
 from scipy.optimize import fsolve
-import os, types
+import os, types,sys
 from matplotlib import pyplot as plt
-import matplotlib.gridspec as gridspec
+#import matplotlib.gridspec as gridspec
 
 #
 # SCANNOMATIC LIBRARIES
@@ -425,8 +425,40 @@ class Grid_Array():
                                 y2 = int(round(self._best_fit_rows[row] - \
                                     self._grid_cell_size[1]/2.0))+y
 
-                                tf_im[x,y] = transformation_matrix[im[x2,y2]]
+                                try:
+                                    tf_im[x,y] = transformation_matrix[im[x2,y2]]
+                                except IndexError:
+                                    logging.critical(\
+                                        "Index Error:\ntf_im.shape {0} vs \
+({1}, {2}) and im.shape {3} vs ({4}, {5})\nbest_fit ({6}, {7}) size ({8}, {9}) from {10}:{11}:{12}"\
+                                        .format(tf_im.shape, x, y, 
+                                        im.shape, x2, y2,
+                                        self._best_fit_columns[column], 
+                                        self._best_fit_rows[row], 
+                                        self._grid_cell_size[0],
+                                        self._grid_cell_size[1],
+                                        self._identifier, row, column))
 
+                                    grid_image = plt.figure()
+                                    grid_plot = grid_image.add_subplot(111)
+                                    grid_plot.imshow(im)
+                                    for row in xrange(self._pinning_matrix[0]):
+                                        grid_plot.plot(\
+                                            np.ones(len(self._best_fit_columns))*\
+                                            self._best_fit_rows[row],
+                                            np.array(self._best_fit_columns),
+                                            'r-')
+                                        for column in xrange(self._pinning_matrix[1]):
+                                            grid_plot.plot(\
+                                                np.array(self._best_fit_rows),
+                                                np.ones(len(self._best_fit_rows))*\
+                                                    self._best_fit_columns[column], 'r-')   
+                                    grid_image.show()
+                                    x= raw_input("terminating on enter > ")
+                                    
+                                    sys.exit()
+        
+                                    
 
                     else:
                         logging.critical("ANALYSIS GRID ARRAY Lacks transformation possibilities")
@@ -512,23 +544,46 @@ class Grid_Array():
                         and row == watch_colony[1] and column == watch_colony[2]:
 
                         blob = self._grid_cells[row][column].get_item('blob')
+                        background = self._grid_cells[row][column].get_item('background')
+
 
                         if animate:
                             #plt.clf()
                             fig = plt.figure()
-                            gs = gridspec.GridSpec(2, 2)
+                            #gs = gridspec.GridSpec(2, 2)
                             #ax = fig.add_subplot(221, title="Blob")
                             #fig.gca().imshow(blob.filter_array)
                             #ax = fig.add_subplot(222, title ="Background")
                             #fig.gca().imshow(self._grid_cells[row][column].\
                                 #get_item('background').filter_array)
 
-                            ax = fig.add_subplot(gs[0,0], title = "Image t=%d" % self._identifier[0])
+                            #DEBUG CODE START
+                            #blob = self._grid_cells[row][column].get_item('blob')
+                            #plt.clf()
+                            #plt.subplot(211, title='filter all done')
+                            #plt.imshow(blob.filter_array)
+                            #plt.subplot(212, title='image')
+                            #plt.imshow(blob.grid_array, vmax=3500, vmin=0)
+                            #plt.show()
+                            #DEBUG CODE END
+
+                            ax = fig.add_subplot(221, title = "Image t={0}".\
+                                format(self._identifier[0]))
                             ax_im = fig.gca().imshow(blob.grid_array, vmin=0, 
                                 vmax=3500)
                             ax.get_xaxis().set_visible(False)
                             ax.get_yaxis().set_visible(False)
-                            fig.colorbar(ax_im,ax)
+                            #fig.colorbar(ax_im,ax)
+
+                            ax = fig.add_subplot(223, title = "Blob")
+                            ax_im = fig.gca().imshow(blob.filter_array)
+                            ax.get_xaxis().set_visible(False)
+                            ax.get_yaxis().set_visible(False)
+
+                            ax = fig.add_subplot(224, title = "Background")
+                            ax_im = fig.gca().imshow(background.filter_array)
+                            ax.get_xaxis().set_visible(False)
+                            ax.get_yaxis().set_visible(False)
 
                         if self._old_blob_img is not None and self._old_timestamp is not None:
                             
@@ -599,23 +654,23 @@ class Grid_Array():
                                 #fig2.savefig("onion.png")
 
                             if animate:
-                                ax = fig.add_subplot(gs[1,0], title = "Delta Cells Image")
+                                ax = fig.add_subplot(222, title = "Delta Cells Image")
                                 ax_im = fig.gca().imshow(blob_diff,\
                                     vmin=-700, vmax=700, cmap=plt.cm.RdYlGn)
                                 ax.get_xaxis().set_visible(False)
                                 ax.get_yaxis().set_visible(False)
                                 fig.colorbar(ax_im) #, fraction=2)
                            
-                                ax = fig.add_subplot(gs[:,1], title = "Onion Avg Residuals") 
-                                ax_im = fig.gca().plot(np.arange(onion6.shape[0]),
-                                    onion6[:,0]/onion6[:,1].astype(np.float64), 
-                                    'g-')
-                                ax.set_xlabel('Onion layer index (0 = center of blob)')
-                                ax.set_ylabel('Avg residual(t+1 - t')
-                                ax.set_autoscalex_on(False)
-                                ax.set_autoscaley_on(False)
-                                ax.set_ylim((-150,300))
-                                ax.set_xlim((0,5))
+                                #ax = fig.add_subplot(224, title = "Onion Avg Residuals") 
+                                #ax_im = fig.gca().plot(np.arange(onion6.shape[0]),
+                                    #onion6[:,0]/onion6[:,1].astype(np.float64), 
+                                    #'g-')
+                                #ax.set_xlabel('Onion layer index (0 = center of blob)')
+                                #ax.set_ylabel('Avg residual(t+1 - t')
+                                #ax.set_autoscalex_on(False)
+                                #ax.set_autoscaley_on(False)
+                                #ax.set_ylim((-150,300))
+                                #ax.set_xlim((0,5))
 
                         else:
                             self._onion_times = []
@@ -639,7 +694,7 @@ class Grid_Array():
                             #plt.xlim(0, self.track_times[0])
                             #plt.ylim(0, max(self.track_values))
                             fig.savefig(save_anime_name)
-
+                            del fig
 
                     if watch_colony != None:
                         if row == watch_colony[1] and column == watch_colony[2]:

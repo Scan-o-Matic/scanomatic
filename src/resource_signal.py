@@ -184,7 +184,7 @@ def get_spike_quality(measures, n=None, offset=None, frequency=None):
     return quality_results 
 
 def get_true_signal(max_value, n, measures, measures_qualities= None,
-    offset=None, frequency=None):
+    offset=None, frequency=None, offset_buffer_fraction=0):
 
     """
         get_true_signal returns the best spike pattern n peaks that 
@@ -208,6 +208,8 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
         @frequency      The frequency of the signal, if not submitted
                         it is derived as the median inter-measure
                         distance in measures.    
+        @offset_buffer_fraction     Default 0, buffer to edge on
+                        both sides in which signal is not allowed
 
     """ 
 
@@ -238,10 +240,15 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
     start_peak = 0
     start_position_qualities = []
     frequency = float(frequency)
+    while offset_buffer_fraction*frequency >= offset + frequency * \
+        ((n-1) + start_peak):
+        start_peak += 1
+        start_position_qualities.append(0)
     #print "---Best signal---"
     #print offset, frequency, n, start_peak, max_value
     #print "peaks", m_array
-    while offset + frequency * ((n-1) + start_peak) < max_value:
+    while offset_buffer_fraction*frequency <offset + frequency * \
+        ((n-1) + start_peak) < max_value - offset_buffer_fraction*frequency:
 
         covered_peaks = 0
         quality = 0

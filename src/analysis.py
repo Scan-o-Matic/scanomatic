@@ -343,19 +343,20 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 x_labels.append(image_pos)
                 pict_size = project_image.watch_grid_size
                 pict_scale = pict_target_width / float(pict_size[1])
-                pict_resize = (int(pict_size[0] * pict_scale), int(pict_size[1] * pict_scale))
+                if pict_scale < 1:
+                    pict_resize = (int(pict_size[0] * pict_scale), int(pict_size[1] * pict_scale))
+                    
+
+                    plt_watch_1.imshow(Image.fromstring('L', (project_image.watch_scaled.shape[1], \
+                        project_image.watch_scaled.shape[0]), \
+                        project_image.watch_scaled.tostring()).resize(pict_resize, Image.BICUBIC), \
+                        extent=(image_pos * pict_target_width, (image_pos+1)*pict_target_width-1, 10, 10 + pict_resize[1]))
 
 
-                plt_watch_1.imshow(Image.fromstring('L', (project_image.watch_scaled.shape[1], \
-                    project_image.watch_scaled.shape[0]), \
-                    project_image.watch_scaled.tostring()).resize(pict_resize, Image.BICUBIC), \
-                    extent=(image_pos * pict_target_width, (image_pos+1)*pict_target_width-1, 10, 10 + pict_resize[1]))
-
-
-                plt_watch_1.imshow(Image.fromstring('L', (project_image.watch_blob.shape[1], \
-                    project_image.watch_blob.shape[0]), \
-                    project_image.watch_blob.tostring()).resize(pict_resize, Image.BICUBIC), \
-                    extent=(image_pos * (pict_target_width), (image_pos+1)*(pict_target_width)-1, 10 + pict_resize[1] + 1, 10 + 2 * pict_resize[1] + 1))
+                    #plt_watch_1.imshow(Image.fromstring('L', (project_image.watch_blob.shape[1], \
+                        #project_image.watch_blob.shape[0]), \
+                        #project_image.watch_blob.tostring()).resize(pict_resize, Image.BICUBIC), \
+                        #extent=(image_pos * (pict_target_width), (image_pos+1)*(pict_target_width)-1, 10 + pict_resize[1] + 1, 10 + 2 * pict_resize[1] ))
 
 
 
@@ -844,7 +845,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-a', '--animate', dest="animate", default=False, type=bool, help="If True, it will produce stop motion images of the watched colony ready for animation")
 
-    parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If set to True, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported.")
+    parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If submitted, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported.")
 
     parser.add_argument("--xml-short", dest="xml_short", default=False, type=bool, 
         help="If the XML output should use short tag-names")

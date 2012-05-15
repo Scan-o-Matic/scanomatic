@@ -155,7 +155,8 @@ class Grid_Analysis():
             best_fit_positions[dimension] = r_signal.get_true_signal(\
                 im.shape[int(dimension==0)], pinning_matrix[dimension], 
                 positions[dimension], \
-                frequency=best_fit_frequency[dimension])
+                frequency=best_fit_frequency[dimension], 
+                offset_buffer_fraction=0.5)
 
             ###START HERE MARKING OUT ALL OLD STUFF...
             #best_fit_start_pos[dimension], best_fit_frequency[dimension] = \

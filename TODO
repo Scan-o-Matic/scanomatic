@@ -7,8 +7,6 @@
 *** Check Pattern-finding if it doesn't demand one too many intervals for optimal curve-start
     -> Seems so, line 244 in resource_signal, changed the while statement 'n' >>> '(n-1)'
 
-*** Check how time of steapest curve correlates with blob engulfing aura
-
 *** Gray-scale fails to analyse at 150 dpi
 
 *** The Analyse One GUI have strange behaviour in why extra im-array is
@@ -81,6 +79,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Check how time of steapest curve correlates with blob engulfing aura
 
 *** Check so each grid cell actually has its data at all times (the summary image looks bad).
 
