@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Gridding now has safty-margin from edge of plate-section
+
 *** Changed the animation images
 
 *** Changed so trashed pixels also get a buffer around them on the background

@@ -21,6 +21,13 @@ import sys, os
 import types
 
 #
+# SCAN-O-MATIC DEPENDENCIES
+#
+
+import resource_image as img_base
+import resource_fixture as r_fixture
+
+#
 # GLOBALS
 #
 
@@ -132,8 +139,6 @@ if __name__ == "__main__":
                 fs = open(sys.argv[-1],'w')
                 #print "Error, the file '" + str(sys.argv[-1]) + "' can not be created."
 
-            import resource_image as img_base
-            import resource_fixture as r_fixture
 
             make_entries(fs)
 
