@@ -252,6 +252,7 @@ class Blob(Cell_Item):
         self.threshold = threshold
         self.use_fallback_detection = use_fallback_detection
         self.filter_array = None
+        self.old_trahs = None
         self.trash_array = None
         self.image_color_logic = image_color_logic
 
@@ -650,7 +651,8 @@ class Blob(Cell_Item):
                 if bad_diff:
 
                     self.filter_array = self.old_filter.copy()
-                    self.trash_array = self.old_trash.copy()
+                    if self.old_trash is not None:
+                        self.trash_array = self.old_trash.copy()
 
                     logging.warning("GRID CELL %s, Blob detection gone bad, \
 using old (Error: %.2f" % (str(self._identifier), 
@@ -677,7 +679,8 @@ using old (Error: %.2f" % (str(self._identifier),
 
         if remember_filter:
             self.old_filter = self.filter_array.copy()
-            self.old_trash =  self.trash_array.copy()
+            if self.trash_array is not None:
+                self.old_trash =  self.trash_array.copy()
 
         ###DEBUG DETECTION TIME SERIES
         #from scipy.misc import imsave

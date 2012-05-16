@@ -780,8 +780,8 @@ coefficients don't have the same sign")
 
         for grid_array in xrange(len(self._grid_arrays)):
 
-            x0 = int(features[grid_array][0][0]*scale_factor)
-            x1 = int(features[grid_array][1][0]*scale_factor)
+            x0 = round(features[grid_array][0][0]*scale_factor)
+            x1 = round(features[grid_array][1][0]*scale_factor)
             if x0 < x1:
                 upper = x0
                 lower = x1
@@ -789,8 +789,8 @@ coefficients don't have the same sign")
                 upper = x1
                 lower = x0
 
-            y0 = int(features[grid_array][0][1]*scale_factor)
-            y1 = int(features[grid_array][1][1]*scale_factor)
+            y0 = round(features[grid_array][0][1]*scale_factor)
+            y1 = round(features[grid_array][1][1]*scale_factor)
             if y0 < y1:
                 left = y0
                 right = y1
