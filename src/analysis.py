@@ -140,6 +140,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     
     start_time = time()
     graph_output = None
+    file_path_base = os.sep.join(log_file_path.split(os.sep)[:-1])
 
     #XML STATIC TEMPLATES
     XML_OPEN = "<{0}>"
@@ -171,7 +172,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     if outdata_files_path[-1] != os.sep:
         outdata_files_path += os.sep
 
-
+    
     
     try:
         fs = open(outdata_files_path + "analysis.run", 'w')
@@ -242,7 +243,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     plates = len(plate_position_keys)
  
     if supress_analysis == True:
-        project_image = Project_Image([pinning_matrices[graph_watch[0]]], animate=animate)
+        project_image = Project_Image([pinning_matrices[graph_watch[0]]], 
+            animate=animate, file_path_base=file_path_base)
         graph_watch[0] = 0
         plates = 1
     else:
@@ -258,7 +260,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 (str(outdata_analysis_path),
                 str(outdata_analysis_slimmed_path)))
             return False
-        project_image = Project_Image(pinning_matrices, animate=animate)
+        project_image = Project_Image(pinning_matrices, animate=animate,
+            file_path_base = file_path_base)
 
     image_pos = len(image_dictionaries) - 1
 
@@ -682,7 +685,7 @@ no good data" % str(plot_labels[ii]))
 
 class Project_Image():
     def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
-        animate=False):
+        animate=False, file_path_base=""):
 
         self._im_path = im_path
         self._im_loaded = False
@@ -698,6 +701,7 @@ class Project_Image():
         self._program_root = scannomatic_root
         self._program_code_root = scannomatic_root + os.sep + "src"
         self._program_config_root = self._program_code_root + os.sep + "config"
+        self._file_path_base = file_path_base
 
         self.im = None
         self._grid_arrays = []
@@ -764,10 +768,19 @@ class Project_Image():
             self.im = plt_img.imread(self._im_path)
             self._im_loaded = True
         except:
-            logging.warning("ANALYSIS IMAGE, Could not open image at '%s'" %\
+            logging.warning("ANALYSIS IMAGE, Could not open image at '%s' trying in log-file directory..." %\
                 str(self._im_path))
 
-            self._im_loaded = False
+            self._im_path = os.sep.join((self._file_path_base, 
+                self.im_path.split(os.sep)[-1]))
+
+            try:
+                self.im = plt_img.imread(self._im_path)
+                self._im_loaded = True
+            except:
+                logging.warning("ANALYSIS IMAGE, No image found... sorry")
+        
+                self._im_loaded = False
 
 
         if self._im_loaded == True:           
