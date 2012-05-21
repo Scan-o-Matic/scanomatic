@@ -252,7 +252,7 @@ class Blob(Cell_Item):
         self.threshold = threshold
         self.use_fallback_detection = use_fallback_detection
         self.filter_array = None
-        self.old_trahs = None
+        self.old_trash = None
         self.trash_array = None
         self.image_color_logic = image_color_logic
 
