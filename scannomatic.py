@@ -513,7 +513,7 @@ class Application_Window():
     def analysis_Start_New(self, widget=None, event=None, data=None):
         
         project.Project_Analysis_Running(self, self.running_experiments, 
-            widget._analysis_log_file_path, widget._matrices, 
+            widget._analysis_log_file_path, widget.pinning_string, 
             watch_colony = widget._watch_colony, 
             supress_other = widget._supress_other, 
             watch_time = widget._watch_time,

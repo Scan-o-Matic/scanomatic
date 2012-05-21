@@ -50,9 +50,10 @@ import resource_config as conf
 def get_pinning_matrices(query, sep=':'):
 
 
-    PINNING_MATRICES = {(8,12): ['8,12'],
-                        (16,24): ['16,24'],
-                        (32,48): ['32,48'],
+    PINNING_MATRICES = {(8,12): ['8,12','96'],
+                        (16,24): ['16,24','384'],
+                        (32,48): ['32,48','1536'],
+                        (64,96): ['64,96','6144'],
                         None: ['none','no','n','empy','-','--']}
 
     plate_strings = query.split(sep)

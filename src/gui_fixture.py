@@ -70,9 +70,9 @@ class Fixture_GUI(gtk.Frame):
         self.fixture.connect("changed", self.set_fixture)
         hbox.pack_start(self.fixture, False, False, 2)
 
-        button = gtk.Button("New fixture")
-        button.connect('clicked', self.add_fixture)
-        hbox.pack_start(button, False, False, 2)
+        self.new_fixture_button = gtk.Button("New fixture")
+        self.new_fixture_button.connect('clicked', self.add_fixture)
+        hbox.pack_start(self.new_fixture_button, False, False, 2)
 
         vbox2.pack_start(hbox)
 
@@ -260,12 +260,14 @@ class Fixture_GUI(gtk.Frame):
 
             self._fixture_gui_updating = True
             self.config_box_view.show()
+            self.new_fixture_button.hide()
             self.gs_view.hide()
             self.fixture.hide()
             self.config_box_edit.hide()
         else:
             self._fixture_gui_updating = False
             self.config_box_view.hide()
+            self.new_fixture_button.show()
             self.fixture.show()
             self.gs_view.show()
             self.config_box_edit.show()

@@ -2,6 +2,10 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Re-run project now has friendlier GUI for reanalysis of project.
+
+*** Icons included
+
 *** Gridding now has safty-margin from edge of plate-section
 
 *** Changed the animation images

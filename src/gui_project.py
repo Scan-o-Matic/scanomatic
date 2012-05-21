@@ -151,6 +151,14 @@ class Project_Analysis_Setup(gtk.Frame):
         self._analysis_output = 'analysis'
         self._analysis_log_file_path = None
 
+        self.pinning_matrices = {'A: 8 x 12 (96)':(8,12), 
+            'B: 16 x 24 (384)': (16,24), 
+            'C: 32 x 48 (1536)': (32,48),
+            'D: 64 x 96 (6144)': (64,96),
+            '--Empty--': None}
+
+        self.pinning_string = ""
+ 
         #GTK - stuff
 
         gtk.Frame.__init__(self, "(RE)-START ANALYSIS OF A PROJECT")
@@ -187,12 +195,19 @@ class Project_Analysis_Setup(gtk.Frame):
         #Matrices-override
         hbox = gtk.HBox()
         label = gtk.Label("Override matrices")
-        entry = gtk.Entry()
-        entry.set_text(str(self._matrices))
-        entry.connect("focus-out-event", self._eval_input, "override_matrices")
+        label2 = gtk.Label("Plates")
+        self.plate_pinnings = gtk.HBox()
+        #alloc = gtk.gdk.Rectangle(width=2)
+        entry = gtk.Entry(max=1)
+        #entry.set_allocation(alloc)
+        entry.connect("focus-out-event", self._set_plates)
+        entry.set_text(str(len(self._matrices or 4*[None])))
         hbox.pack_start(label, False, False, 2)
+        hbox.pack_end(self.plate_pinnings, False, False, 2)
         hbox.pack_end(entry, False, False, 2)
+        hbox.pack_end(label2, False, False, 2)
         vbox.pack_start(hbox, False, False, 2)
+        self._set_plates(entry)
 
         #Watch-colony
         hbox = gtk.HBox()
@@ -234,6 +249,57 @@ class Project_Analysis_Setup(gtk.Frame):
         
         vbox.show_all() 
 
+    def _set_plates(self, widget=None, event=None, data=None):
+
+        try:
+            slots = int(widget.get_text())
+        except:
+            slots = 0
+            widget.set_text(str(slots))
+        if slots < 0:
+            slots = 0
+            widget.set_text(str(slots))
+ 
+        cur_len = len(self.plate_pinnings.get_children()) / 2
+
+        if cur_len < slots:
+            if cur_len > 0:
+                cur_len -= 1
+            for pos in xrange(cur_len, slots):
+
+                label = gtk.Label('#%d' % pos)
+                self.plate_pinnings.pack_start(label, False, False, 2)
+
+                dropbox = gtk.combo_box_new_text()                   
+                def_key_text = '1536'
+                def_key = 0
+                for i, m in enumerate(sorted(self.pinning_matrices.keys())):
+                    dropbox.append_text(m)
+                    if def_key_text in m:
+                        def_key = i
+                dropbox.connect("changed", self._build_pinning_string)
+                self.plate_pinnings.pack_start(dropbox, False, False, 2)
+                dropbox.set_active(def_key)
+                
+            self.plate_pinnings.show_all()
+        elif cur_len > slots:
+            children = self.plate_pinnings.get_children()
+            for i, c in enumerate(children):
+                if i >= slots*2:
+                    c.destroy()
+
+    def _build_pinning_string(self, widget=None):
+
+        children = self.plate_pinnings.get_children()
+        self.pinning_string = ""
+        sep = ":"
+        for i in xrange(1, len(children), 2):
+            c_active = children[i].get_active()
+            c_text = children[i].get_model()[c_active][0]
+            self.pinning_string += str(self.pinning_matrices[c_text])
+            if i < len(children)-1:
+                self.pinning_string += sep
+
     def _eval_input(self, widget=None, event=None, widget_name=None):
 
         if not self._gui_updating:
@@ -273,25 +339,6 @@ class Project_Analysis_Setup(gtk.Frame):
 
                 self._watch_colony = data
 
-            elif widget_name == "override_matrices":
-                if data == "None":
-                    data = None
-                else:
-
-                    try:
-                        data = data.split(":")
-                        data = map(eval, data)
-                        for i, d in enumerate(data):
-                            if d is not None:
-                                d = tuple(map(int, d))
-                                data[i] = d[:2]
-                        data = str(data)[1:-1].replace(" ","")\
-                            .replace("),","):").replace(",(",":(")\
-                            .replace("e,N","e:N")
-                    except:
-                        data = None
-
-                self._matrices = data
 
             elif widget_name == "analysis_output":
 
@@ -305,6 +352,9 @@ class Project_Analysis_Setup(gtk.Frame):
 
             widget.set_text(str(data))
             self._gui_updating = False
+
+
+
 
     def _path_warning(self, output=None):
 
