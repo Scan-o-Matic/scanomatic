@@ -39,8 +39,39 @@ import analysis_grid_array as grid_array
 import resource_config as conf
 
 #
+# GLOBALS
+#
+
+
+#
 # FUNCTIONS
 #
+
+def get_pinning_matrices(query, sep=':'):
+
+
+    PINNING_MATRICES = {(8,12): ['8,12'],
+                        (16,24): ['16,24'],
+                        (32,48): ['32,48'],
+                        None: ['none','no','n','empy','-','--']}
+
+    plate_strings = query.split(sep)
+    plates = len(plate_strings) * [None]
+
+    for i,p in enumerate(plate_strings):
+
+        result = [k for k,v in PINNING_MATRICES.items() if p.lower().replace(" ","").strip("()") in v]
+
+        if len(result) == 1:
+            plates[i] = result[0]
+
+        elif len(result) > 1:
+            logging.warning("Ambigous plate pinning matrix statement '{0}'".format(p))
+        else:
+            logging.warning("Bad pinning pattern '{0}' - ignoring that plate".format(p))
+
+    return plates
+
 
 def print_progress_bar(fraction, size=40):
     prog_str = "["
@@ -680,6 +711,10 @@ class Project_Image():
                 self.features.append(None)
                 self.R.append(None)
 
+        if len(pinning_matrices) > len(self._grid_arrays):
+            logging.info('Analysis will run on {0} plates out of {1}'.format(\
+                len(self._grid_arrays), len(pinning_matrices)))
+
     def get_analysis(self, im_path, features, grayscale_values, \
             use_fallback=False, use_otsu=True, watch_colony=None, \
             supress_other=False, save_graph_image=False, save_graph_name=None,
@@ -902,11 +937,14 @@ if __name__ == "__main__":
     #MATRICES
     if args.matrices is not None:
 
-        pm = args.matrices.split(':')
-        pm = map(eval, pm)
+        pm = get_pinning_matrices(args.matrices)
+        logging.debug("Matrices: {0}".format(pm))
+
+
     else:
 
         pm = None
+
 
     if args.grid_times != None:
 
