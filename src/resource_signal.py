@@ -101,6 +101,10 @@ def get_best_offset(n, measures, frequency=None):
 
     dist_results = []
 
+    if sum(measures.shape) == 0:
+        logging.warning("RESOURCE SIGNAL: No spikes where passed, so best offset can't be found.")    
+        return None
+
     if n > measures.size:
         n = measures.size
 

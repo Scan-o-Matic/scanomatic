@@ -159,6 +159,8 @@ class Cell_Item():
 
         """
         if self.CELLITEM_TYPE == 0 or self.filter_array == None:
+            logging.warning("GRID CELL {0}: Not properly initialized cell compartment".format(\
+                self._identifier))
             return None
 
 
@@ -172,6 +174,9 @@ class Cell_Item():
             else:
                 logging.warning("GRID CELL {0}, area is 0".format(
                 self._identifier))
+
+            return None
+            
             ###DEBUG WHAT IS THE GRID ARRAY
             #from matplotlib import pyplot as plt
             #plt.clf()

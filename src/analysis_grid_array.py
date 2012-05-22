@@ -512,8 +512,8 @@ class Grid_Array():
 
                         #raw_input('x> ')
 
-                        logging.warning('Row: {0}, Column: {1} has no background'.\
-                            format(row, column))
+                        logging.warning('Time/Plate {0}, Row: {1}, Column: {2} has no background (skipping)'.\
+                            format(self._identifier, row, column))
 
                         self._features[row][column] = None
                     else:

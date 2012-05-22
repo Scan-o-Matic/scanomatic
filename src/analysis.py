@@ -210,6 +210,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     image_dictionaries = log_file.get_all("%n")
     if image_dictionaries == None:
+        logging.critical("ANALYSIS: Log file seems corrupt - remake one!")
         return None
 
 
@@ -229,7 +230,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     if pinning_matrices is None:
 
-        logging.critical("ANALYSIS,  need some pinning matrices to analyse anything")
+        logging.critical("ANALYSIS: need some pinning matrices to analyse anything")
         return False
 
     plate_position_keys = []
@@ -256,7 +257,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             fhs = open(outdata_analysis_slimmed_path, 'w')
 
         except:
-            logging.critical("ANALYSIS, can't open target file:'%s' or '%s'" % \
+            logging.critical("ANALYSIS: can't open target file:'%s' or '%s'" % \
                 (str(outdata_analysis_path),
                 str(outdata_analysis_slimmed_path)))
             return False
@@ -265,8 +266,11 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     image_pos = len(image_dictionaries) - 1
 
+    logging.info("ANALYSIS: A total of {0} images to analyse".format(\
+        len(image_dictionaries)-first_scan_position + 1))
+
     if image_pos < first_scan_position:
-        logging.critical("ANALYSIS, There are no images to analyse, aborting")
+        logging.critical("ANALYSIS: There are no images to analyse, aborting")
         for f in (fh, fhs):
             f.close()
         return True
@@ -768,14 +772,18 @@ class Project_Image():
             self.im = plt_img.imread(self._im_path)
             self._im_loaded = True
         except:
-            logging.warning("ANALYSIS IMAGE, Could not open image at '%s' trying in log-file directory..." %\
-                str(self._im_path))
 
-            self._im_path = os.sep.join((self._file_path_base, 
+            alt_path = os.sep.join((self._file_path_base,
                 self.im_path.split(os.sep)[-1]))
 
+            logging.warning("ANALYSIS IMAGE, Could not open image at '{0}' trying in log-file ('{1}') directory...".\
+                format(self._im_path, alt_path))
+
+            #self._im_path = os.sep.join((self._file_path_base, 
+            #    self.im_path.split(os.sep)[-1]))
+
             try:
-                self.im = plt_img.imread(self._im_path)
+                self.im = plt_img.imread(alt_path)
                 self._im_loaded = True
             except:
                 logging.warning("ANALYSIS IMAGE, No image found... sorry")
