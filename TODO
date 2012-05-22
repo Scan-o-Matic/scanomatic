@@ -46,6 +46,8 @@
 
 --- GUI ---
 
+*** User needs to know if the analysis-script is working...
+
 *** Make Analyse One use the grid if one pleases...
 
 *** Make scanner-queue lay outside program so several instances of program

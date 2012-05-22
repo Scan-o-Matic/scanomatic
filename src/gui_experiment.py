@@ -660,7 +660,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
     def reload_fixtures(self, active_text=None):
 
-        fixture_list = self._owner.fixture_config.get_all_fixtures()
+        fixture_list = sorted(self._owner.fixture_config.get_all_fixtures())
         self.fixture_positions = {}
         for fixture in fixture_list:
             self.fixture_positions[fixture[0]] = fixture[2]

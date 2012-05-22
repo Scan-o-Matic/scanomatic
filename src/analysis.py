@@ -774,9 +774,9 @@ class Project_Image():
         except:
 
             alt_path = os.sep.join((self._file_path_base,
-                self.im_path.split(os.sep)[-1]))
+                self._im_path.split(os.sep)[-1]))
 
-            logging.warning("ANALYSIS IMAGE, Could not open image at '{0}' trying in log-file ('{1}') directory...".\
+            logging.warning("ANALYSIS IMAGE, Could not open image at '{0}' trying in log-file directory ('{1}').".\
                 format(self._im_path, alt_path))
 
             #self._im_path = os.sep.join((self._file_path_base, 

@@ -194,20 +194,20 @@ class Project_Analysis_Setup(gtk.Frame):
 
         #Matrices-override
         hbox = gtk.HBox()
-        label = gtk.Label("Override matrices")
-        label2 = gtk.Label("Plates")
+        self.plates_label = gtk.Label("Plates")
+        checkbox = gtk.CheckButton(label="Override pinning settings", use_underline=False)
+        checkbox.connect("clicked", self._set_override_toggle)
         self.plate_pinnings = gtk.HBox()
-        #alloc = gtk.gdk.Rectangle(width=2)
-        entry = gtk.Entry(max=1)
-        #entry.set_allocation(alloc)
-        entry.connect("focus-out-event", self._set_plates)
-        entry.set_text(str(len(self._matrices or 4*[None])))
-        hbox.pack_start(label, False, False, 2)
+        self.plates_entry = gtk.Entry(max=1)
+        self.plates_entry.set_size_request(20,-1)
+        self.plates_entry.connect("focus-out-event", self._set_plates)
+        self.plates_entry.set_text(str(len(self._matrices or 4*[None])))
+        hbox.pack_start(checkbox, False, False, 2)
         hbox.pack_end(self.plate_pinnings, False, False, 2)
-        hbox.pack_end(entry, False, False, 2)
-        hbox.pack_end(label2, False, False, 2)
+        hbox.pack_end(self.plates_entry, False, False, 2)
+        hbox.pack_end(self.plates_label, False, False, 2)
         vbox.pack_start(hbox, False, False, 2)
-        self._set_plates(entry)
+        self._set_plates(self.plates_entry)
 
         #Watch-colony
         hbox = gtk.HBox()
@@ -248,6 +248,20 @@ class Project_Analysis_Setup(gtk.Frame):
         vbox.pack_start(hbox, False, False, 2)
         
         vbox.show_all() 
+        self._set_override_toggle(widget=checkbox)
+
+    def _set_override_toggle(self, widget=None, event=None, data=None):
+
+        if widget.get_active():
+            self.plates_entry.show()
+            self.plate_pinnings.show()
+            self._set_plates(widget=self.plates_entry)
+            self.plates_label.set_text("Plates:")
+        else:
+            self.plates_entry.hide()
+            self.plate_pinnings.hide()
+            self.plates_label.set_text("(Using the pinning matrices specified in the log-file)")
+            self.pinning_string = None
 
     def _set_plates(self, widget=None, event=None, data=None):
 
@@ -263,8 +277,6 @@ class Project_Analysis_Setup(gtk.Frame):
         cur_len = len(self.plate_pinnings.get_children()) / 2
 
         if cur_len < slots:
-            if cur_len > 0:
-                cur_len -= 1
             for pos in xrange(cur_len, slots):
 
                 label = gtk.Label('#%d' % pos)

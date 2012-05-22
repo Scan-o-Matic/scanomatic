@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Added nicer pinning matrix override GUI to analyse project
+
 *** Gridding now has safty-margin from edge of plate-section
 
 *** Changed the animation images
