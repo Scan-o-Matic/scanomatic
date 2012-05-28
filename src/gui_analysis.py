@@ -651,6 +651,8 @@ class Analyse_One(gtk.Frame):
 
                 if grayscale != None:
 
+                    self.DMS('ANALYSE ONE', 'Automatically setting grayscale-area to {0}'.\
+                        format(grayscale.shape), 110, debug_level='debug')
                     gs_success = self.set_grayscale(grayscale)
 
                 if grayscale is None or gs_success == False:
@@ -664,7 +666,8 @@ class Analyse_One(gtk.Frame):
                 image_plot = self.image_fig.gca()
                 image_plot.cla()
                 image_plot.imshow(self.f_settings.A._img.T, cmap=plt.cm.gray)
-                ax = image_plot.plot(self.f_settings.mark_Y*dpi_factor, self.f_settings.mark_X*dpi_factor,'ko', mfc='None', mew=2)
+                ax = image_plot.plot(self.f_settings.mark_Y*dpi_factor, 
+                    self.f_settings.mark_X*dpi_factor,'o', mfc='r', mew=2)
                 image_plot.set_xlim(xmin=0,xmax=self.f_settings.A._img.shape[0])
                 image_plot.set_ylim(ymin=0,ymax=self.f_settings.A._img.shape[1])
                 image_plot.add_patch(self.selection_rect)
@@ -676,7 +679,7 @@ class Analyse_One(gtk.Frame):
             if self._blobs_have_been_loaded:
                 self.blob_fig_ax.set_data(self._no_selection)
                 self.blob_bool_fig_ax.set_data(self._no_selection)
-                self.blob_hist.cla()
+                self.blob_hist.clf()
 
 
             if self.selection_rect.get_width() > 0 and self.selection_rect.get_height() > 0:
@@ -783,19 +786,22 @@ class Analyse_One(gtk.Frame):
         self.gs_reset_button.set_sensitive(False)
         self.gs_reset_button.set_label("Currently selecting a gray-scale area")
         self.grayscale_frame._grayscale = None
-        self.grayscale_frame.clf()
 
 
     def set_manual_grayscale(self, ul, lr):
 
         img_section = self.get_img_section(ul, lr, as_copy=False)
-        self.set_grayscale(img_section)
+        self.DMS('ANALYSE ONE', 'Manually setting grayscale-area to {0} {1} (shape {2}'.\
+            format(ul, lr, img_section.shape), 110, debug_level='debug')
+        if not self.set_grayscale(img_section):
+            self.set_grayscale_selecting()
 
     def set_grayscale(self, im_section):
 
         self.gs_reset_button.set_sensitive(True)
         self.gs_reset_button.set_label("Click to reset grayscale")
         self.grayscale_frame.set_grayscale(im_section)
+        return self.grayscale_frame.get_has_grayscale()
 
     def set_lock_selection_size(self, widget = None):
 

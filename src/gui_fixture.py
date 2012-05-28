@@ -923,7 +923,8 @@ class Fixture_GUI(gtk.Frame):
             grayscales = 0
 
         if grayscale > 0:
-            self.set_grayscale(scale_factor= scale_factor)
+            pass
+            #self.set_grayscale(scale_factor= scale_factor)
         #
         # SET UP DROP DOWN
         #

@@ -2,6 +2,11 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Improved robustness of orthalogical grayscale detection
+
+*** Improved Analyse One interface so it responds more 'correctly' to grayscale
+    detections
+
 *** Added nicer pinning matrix override GUI to analyse project
 
 *** Gridding now has safty-margin from edge of plate-section

@@ -367,7 +367,11 @@ class Analyse_Grayscale():
                 scale_factor=scale_factor, dpi=dpi)
             self._grayscale_X = self.get_grayscale_X(self._grayscale_pos)
 
-    
+   
+    def get_kodak_values(self):
+
+        return self._grayscale_dict[self.grayscale_type]['aims']
+ 
     def get_grayscale_X(self, grayscale_pos=None):
 
         if grayscale_pos == None:
@@ -393,16 +397,29 @@ class Analyse_Grayscale():
         if image != None:
             self._img = image
 
-        if self._img is None:
+        if self._img is None or sum(self._img.shape) == 0:
             return None
 
+        #DEBUG PLOT
+        #plt.imshow(self._img)
+        #plt.show()
+        #DEBUG PLOT END
+    
         if scale_factor == 1 and dpi != 600:
             scale_factor = 600.0/dpi
 
         logging.debug("GRAYSCALE ANALYSIS: Of images {0} at dpi={1} and scale_factor={2}".format(\
             self._img.shape, dpi, scale_factor))
 
-        A  = (self._img < (self._img.max()/4)).astype(int)
+        A = (self._img[self._img.shape[0]/2:,:] < (256*1/4)).astype(int)
+        #B = (self._img[:self._img.shape[0]/2,:] > (256*2/4)).astype(int)
+        #DEBUG PLOT
+        #plt.subplot(121)
+        #plt.imshow(A)
+        #plt.subplot(122)
+        #plt.imshow(B)
+        #plt.show()
+        #DEBUG PLOT END
 
         rect = [[0,0],[self._img.shape[0],self._img.shape[1]]]
         orth_diff = -1
@@ -458,8 +475,16 @@ class Analyse_Grayscale():
         box_need = self._grayscale_dict['Kodak']['lower-than-half-width'] / scale_factor
         i = (rect[1][0] - rect[0][0])/2.0
 
+        #DEBUG PLOT
+        #plt.imshow(self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]])
+        #plt.show()
+        #END DEBUG PLOT
+
         strip_values = self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]].mean(1)
         A2 = strip_values > 125
+
+
+
         A2_where = np.where(A2 == True)[0]
         if A2_where.size > 1:
             A2_rights = np.append(A2_where[0], A2_where[1:] - A2_where[:-1])
@@ -557,14 +582,17 @@ class Analyse_Grayscale():
                 " due to upper bound overshoot")
             signal -= frequency
 
+        safety_coeff = 0.5
         gray_scale = []
         gray_scale_pos = []
-        
+        self.ortho_half_height = self._grayscale_dict['Kodak']['width'] /2.0*safety_coeff
         for pos in xrange(signal.size-1):
-            gray_scale.append(\
-                strip_values[signal[pos]-frequency+frequency*safety_buffer:\
-                    signal[pos]-frequency*safety_buffer].mean())
             gray_scale_pos.append(signal[pos] - 0.5*frequency + rect[0][0])
+            gray_scale.append(\
+                self._img[gray_scale_pos[-1]-0.5*frequency*safety_coeff:\
+                    gray_scale_pos[-1]+0.5*frequency*safety_coeff,
+                    self._mid_orth_strip-self.ortho_half_height:\
+                    self._mid_orth_strip+self.ortho_half_height].mean())
 
         #from matplotlib import pyplot as plt
         #print offset, frequency
@@ -576,6 +604,20 @@ class Analyse_Grayscale():
         #plt.plot(np.asarray(gray_scale_pos), gray_scale, 'o')
         #plt.plot((rect[0][0], rect[1][0]),np.ones(2)*0.75*strip_values.max(),'*')
         #plt.show()
+
+        #DEBUG PLOT
+        #plt.imshow(self._img.T, cmap=plt.cm.gray)
+        #plt.plot(gray_scale_pos, np.ones(len(gray_scale_pos))*self._mid_orth_strip -\
+             #self.ortho_half_height ,
+            #'r-' )
+        #plt.plot(gray_scale_pos, np.ones(len(gray_scale_pos))*self._mid_orth_strip +\
+             #self.ortho_half_height,
+            #'r-' )
+        #plt.plot(gray_scale_pos, np.ones(len(gray_scale_pos))*self._mid_orth_strip ,
+            #'ro' )
+        #plt.plot(gray_scale_pos, gray_scale, 'b--')
+        #plt.show()
+        #END DEBUG PLOT
 
         self._gray_scale_pos = gray_scale_pos
         self._gray_scale = gray_scale
@@ -651,7 +693,7 @@ class Analyse_Grayscale():
             rect[1][1] -= (orth_diff - min_orths) / 2
 
 
-        self._mid_orth_strip = rect[0][1] + (rect[1][1] - rect[0][1]) / 2
+        self._mid_orth_strip = (rect[0][1] + rect[1][1]) / 2.0
 
         ###DEBUG UNCUT SECTION
         #plt.clf()

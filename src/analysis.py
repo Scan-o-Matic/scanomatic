@@ -811,9 +811,10 @@ class Project_Image():
 
         if gs_fit is not None:
 
-            z3_deriv_coeffs = np.array(gs_fit[:3]) * (3,2,1)
+            z3_deriv_coeffs = np.array(gs_fit[:-1]) * np.arange(gs_fit.shape[0]-1,0,-1)
 
-            z3_deriv = np.array(map(lambda x: (z3_deriv_coeffs*x).sum(), range(87)))
+            z3_deriv = np.array(map(lambda x: (z3_deriv_coeffs*np.power(x,
+                np.arange(z3_deriv_coeffs.shape[0],0,-1))).sum(), range(87)))
 
             if (z3_deriv > 0).any() and (z3_deriv < 0).any():
 
