@@ -59,7 +59,11 @@ class Project_Analysis_Running(gtk.Frame):
 
         self._analysis_running = False
 
-        self._matrices = matrices
+        if matrices != None and matrices != "":
+            self._matrices = matrices
+        else:
+            self._matrices = None
+
         self._watch_colony = watch_colony
         self._supress_other = supress_other
         self._watch_time = watch_time
@@ -105,7 +109,7 @@ class Project_Analysis_Running(gtk.Frame):
             if self._analysis_sub_proc.poll() != None:
                 self._analysis_log.close()
                 self._gui_status_text.set_text("Analysis complete")
-                gobject.timeout_add(1000*60*3, self.destroy)          
+                gobject.timeout_add(1000*60*1, self.destroy)          
             else:
                 
                 self._gui_timer = gtk.Label("Run-time: %d" % int((time.time() \
@@ -129,11 +133,11 @@ class Project_Analysis_Running(gtk.Frame):
             if self._supress_other is True: 
                 analysis_query += ["-s", "True"]
 
-            self.DMS("Executing", str(analysis_query), level=110)
+            self.DMS("ANALYSE PROJECT", "Executing {0}".format(analysis_query), level=110)
 
             self._analysis_sub_proc = Popen(map(str, analysis_query), 
                 stdout=self._analysis_log, shell=False)
-            gobject.timeout_add(1000*60*10, self._run)
+            gobject.timeout_add(1000*30, self._run)
 
           
 class Project_Analysis_Setup(gtk.Frame):

@@ -22,7 +22,7 @@ import logging
 import numpy as np
 import re
 import matplotlib.pyplot as plt
-
+from matplotlib.font_manager import FontProperties
 #
 # SCANNOMATIC LIBRARIES
 #
@@ -78,18 +78,21 @@ class XML_Reader():
         nscans = len(re.findall(XML_TAG_INDEX_VALUE.format('s','i'), f))
         pms = re.findall(XML_TAG_INDEX_VALUE_CONT.format('p-m', 'i'), f)
         pms = map(lambda x: map(eval, x), pms)
-        colonies = sum([p[1][0]*p[1][1] for p in pms])
+        print "Pinning matrices: {0}".format(pms)
+        colonies = sum([p[1][0]*p[1][1] for p in pms if p[1] is not None])
         measures = colonies * nscans
         max_pm = np.max(np.array([p[1] for p in pms]),0)
 
         for pm in pms:
-            self._data[pm[0]] = np.zeros((pm[1] + (nscans,)),dtype=np.float64)
+            if pm[1] is not None:
+                self._data[pm[0]] = np.zeros((pm[1] + (nscans,)),dtype=np.float64)
         
+        print "Ready for {0} plates".format(len(self._data)) 
         colonies_done = 0
         for x in xrange(max_pm[0]):
             for y in xrange(max_pm[1]):
                 try:
-                    v = map(lambda x: x == 'nan' and np.nan or np.float64(x), 
+                    v = map(lambda x: (x == 'nan' or x=='') and np.nan or np.float64(x), 
                         re.findall(XML_TAG_2_INDEX_VALUE_CONT.format('gc','x','y',x,y), f))
                 except ValueError:
                     print XML_TAG_2_INDEX_VALUE_CONT.format('gc','x','y',x,y)
@@ -98,9 +101,10 @@ class XML_Reader():
 
                 slicers = [False] * len(pms)
                 for i,pm in enumerate(pms):
-                    if x < pm[1][0] and y < pm[1][1]:                        
-                        slicers[i] = True
-
+                    if pm[1] is not None:
+                        if x < pm[1][0] and y < pm[1][1]:                        
+                            slicers[i] = True
+                #print "Data should go into Plates {0}".format(slicers)
                 slice_start = 0
                 for i,pm in enumerate(slicers):
                     if pm:
@@ -146,22 +150,10 @@ class XML_Reader():
         except:
             return None
 
-def random_plot_on_separate_panels(xml_parser):
-    fig = plt.figure()
-    for i in xrange(4):
-        ax = fig.add_subplot(2,2,i+1, title='Plate {0}'.format(i))
-        d = xml_parser.get_plate(i)
-        if d is not None:
-            x,y,z = d.shape
-            for j in xrange(10):
-                tx = np.random.randint(0,x)
-                ty = np.random.randint(0,y)
-                ax.semilogy(d[tx, ty,:], basey=2, label="{0}:{1}".format(tx,ty) )
-        ax.legend(loc = 4, ncol=2)
+def get_graph_styles(categories = 1, n_per_cat = None, per_cat_list = None, alpha=0.95):
 
-    return fig
-
-def get_graph_styles(categories, n_per_cat = None, per_cat_list = None, alpha=0.95):
+    if per_cat_list is not None:
+        per_cat_list = [range(n) for n in per_cat_list]
 
     if n_per_cat is not None:
 
@@ -184,7 +176,7 @@ def get_graph_styles(categories, n_per_cat = None, per_cat_list = None, alpha=0.
     colors = []
     styles = []
 
-    c_index = 0
+    c_index = -1
     line_pattern = 0
     base_fraction = 0.5
 
@@ -195,6 +187,7 @@ def get_graph_styles(categories, n_per_cat = None, per_cat_list = None, alpha=0.
             if line_pattern > len(line_styles):
                 logging.warning("Reusing styles - too many categories")
                 line_pattern = 0
+            c_index = 0
         else:
             c_index += 1
 
@@ -205,6 +198,36 @@ def get_graph_styles(categories, n_per_cat = None, per_cat_list = None, alpha=0.
 
     return styles, colors
 
+
+def random_plot_on_separate_panels(xml_parser, n=10):
+    fig = plt.figure()
+    fig.subplots_adjust(hspace = .5)
+
+    cats = []
+    i = n
+    while i > 5:
+        cats.append(i/5)
+        i -= 5
+    cats.append(i)
+    styles, colors = get_graph_styles(per_cat_list=cats)
+    fontP = FontProperties()
+    fontP.set_size('xx-small')
+
+    for i in xrange(4):
+        ax = fig.add_subplot(2,2,i+1, title='Plate {0}'.format(i))
+        d = xml_parser.get_plate(i)
+        if d is not None:
+            x,y,z = d.shape
+            for j in xrange(n):
+                tx = np.random.randint(0,x)
+                ty = np.random.randint(0,y)
+                ax.semilogy(d[tx, ty,:], basey=2, 
+                    label="{0}:{1}".format(tx,ty), color=colors[j] )
+        
+        ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,0), 
+            ncol=len(cats), prop=fontP)
+
+    return fig
 
 
 def random_plot_on_same_panel(xml_parser, different_line_styles=False):
@@ -229,4 +252,61 @@ def random_plot_on_same_panel(xml_parser, different_line_styles=False):
     
     return fig
 
+def plot_from_list(xml_parser, position_list):
+    """
+    Plots curves from an xml_parser-instance given the position_list where locations are
+    described as (plate, row, column)
+    """
 
+
+    fig = plt.figure()
+    fig.subplots_adjust(hspace = .5)
+    fontP = FontProperties()
+    fontP.set_size('xx-small')
+
+    plates = sorted([p[0] for p in position_list])
+    pl = [plates[0]]
+    map(lambda x: x != pl[-1] and pl.append(x) , plates)
+   
+    print "These are the plates {0}".format(pl)
+
+    p_pos = 1
+    rows = 1
+    cols = 1 
+    while rows * cols < len(pl):
+        if cols < rows:
+            cols += 1
+        else:
+            rows += 1
+
+    for p in pl:
+
+        coords = [c[1:] for c in position_list if c[0] == p]
+
+        print "Plate {0} has {1} curves to plot ({2})".format(p, 
+            len(coords), coords)
+
+        cats = []
+        i = len(coords)
+        cat_max = 5 
+        while i > cat_max:
+            cats.append(cat_max)
+            i -= cat_max
+        if i > 0:
+            cats.append(i)
+        styles, colors = get_graph_styles(per_cat_list=cats)
+
+        ax = fig.add_subplot(rows,cols,p_pos, title='Plate {0}'.format(p))
+        for j, c in enumerate(coords):
+            d = xml_parser.get_colony(p,c[0],c[1])        
+            if d is not None and np.isnan(d).all() == False:
+                ax.semilogy(d, basey=2, label="{0}".format(c), color=colors[j] )
+            else:
+                print "Curve {0} is bad!".format(c)
+     
+        ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,-0.015), 
+            ncol=len(cats), prop=fontP)
+
+        p_pos += 1
+
+    return fig

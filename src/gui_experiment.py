@@ -56,7 +56,7 @@ else:
 
 
 class Scanning_Experiment(gtk.Frame):
-    def __init__(self, owner, parent_window, scanner, interval, counts, prefix, description, root, gtk_target, native=True, matrices = None, fixture="fixture_a"):
+    def __init__(self, owner, parent_window, scanner, interval, counts, prefix, description, root, gtk_target, native=True, matrices = None, fixture="fixture_a", include_analysis=True):
 
         self.USE_CALLBACK = owner.USE_CALLBACK
 
@@ -86,15 +86,18 @@ class Scanning_Experiment(gtk.Frame):
         self.f_settings = fixture_settings.Fixture_Settings(\
             self._fixture_config_root, fixture=fixture)
 
+        self.pinning_string = ""
         self._matrices = matrices
         self._watch_colony = None
         self._supress_other = False
         self._watch_time = '1'
 
+        self._looked_for_scanner = 0
         self._scanning = False
         self._force_quit = False
         self._analysis_output = 'analysis'
 
+        self._include_analysis = include_analysis
         self._analysis_running = False
         self._scanner_id = int(scanner[-1])
         self._scanner_name = scanner
@@ -259,23 +262,29 @@ class Scanning_Experiment(gtk.Frame):
         fs.close()
         
     def update_gtk(self, widget=None, event=None, data=None):
-        self._measurement_label.set_text("Measurment (" + str(self._iteration) + "/" + str(self._iterations_max) + ")")
+        self._measurement_label.set_text("Measurment ({0}/{1}):".\
+            format(self._iteration, self._iterations_max))
         
     def running_timer(self, widget=None, event=None, data=None):
-        if self._next_scan and self._force_quit == False:
-            self._timer.set_text("Next scan in: " + str(int(self._next_scan - time.time())/60)+"min")
+        if self._scanning:
             gobject.timeout_add(1000*60, self.running_timer)
-        else:
-            self._timer.set_text("")
+        elif self._next_scan and self._force_quit == False:
+            self._timer.set_text("Next scan in {0} min".\
+                format(int(self._next_scan - time.time())/60))
+
+            gobject.timeout_add(1000*60, self.running_timer)
 
     def do_scan(self):
         if not self._force_quit:
 
+            self._scanning = True
+
             scanner_address = self.owner.get_scanner_address(self._scanner_name[-1])
 
             if scanner_address is not None:
+                self._looked_for_scanner = 0
 
-                self._scanning = True
+                self._timer.set_text("Scanning...")
                 scan = self._scan(handle=self._handle, scanner=scanner_address)
                 if scan: 
                     if type(scan) == types.TupleType:
@@ -285,10 +294,20 @@ class Scanning_Experiment(gtk.Frame):
                                 gobject.timeout_add(1000*30, self._callback)
                 else:
                     self._scanning = False
+                    self._power_manager.off()
+                    self._timer.set_text("Unknown error initiating scan - do you have the capability?")
+                    self.DMS('Scanning', 'Unknown error initiating scan - do you have the capability?',
+                        110, debug_level='warning')
 
-            else:
-
+            elif self._looked_for_scanner < 12*4:
+                self._looked_for_scanner += 1
                 gobject.timeout_add(1000*5, self.do_scan)
+            else:
+                self._scanning = False
+                self._power_manager.off()
+                self._looked_for_scanner = 0
+                self._timer.set_text('Scanner was never turned on')
+                self.DMS('Scanning', 'Scanner was never turned on', 110, debug_level='warning')
 
     def _write_log(self, file_list=None):
         if file_list:
@@ -387,7 +406,7 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
         dialog.destroy()
         if resp == gtk.RESPONSE_YES:
             self._iteration = self._iterations_max + 1
-            self._measurement_label.set_text("The program will switch over to analysis ASAP")
+            self._measurement_label.set_text("The program will switch stop aquiring ASAP")
             self._timer.set_text("")
             self._force_quit = True
             self.running_Analysis()          
@@ -401,10 +420,10 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
                 self._next_scan = (time.time() + 60*self._interval_time)
             else:
                     gobject.timeout_add(1000*60*int(self._interval_time), self.running_Analysis)          
-                    self._next_scan = (time.time() + 60*self._interval_time)
-                    self._measurement_label.set_text("Analysis will start shortly...")
+                    self._next_scan = None #(time.time() + 60*self._interval_time)
+                    self._measurement_label.set_text("Aquiring last image:")
 
-            self._timer.set_text("Scanning...")
+            self._timer.set_text("Waiting for scanner to come online...")
             self._scanner.next_file_name =  self._root + os.sep + self._prefix + \
                 os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + \
                 ".tiff"
@@ -419,14 +438,21 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
         if self._scanning == False and self._loaded == True:
             self._power_manager.off() #Security measure, since many ways to get here and
                 #won't do anything if already switched off
-            self._loaded = False
-            self.DMS('EXPERIMENT', 'Starting analysis...', level=100, debug_level='debug')
-            self._matrices = None
-            self.owner.analysis_Start_New(widget = self)
-            gobject.timeout_add(1000*3, self.destroy)        
-        if self._loaded == False:
             self.owner.set_unclaim_scanner(self._scanner_name)
-            self.DMS('EXPERIMENT', 'Done...', level=100, debug_level='debug')
+            self._loaded = False
+            self._measurement_label.set_text("Scanning done:")
+            if self._include_analysis:
+                self._timer.set_text("Starting analysis...")
+                self.DMS('EXPERIMENT', 'Starting analysis...', level=100, debug_level='debug')
+                self._matrices = None
+                self.owner.analysis_Start_New(widget = self)
+            else:
+                self._timer.set_text("No automatic analysis...")
+                self.DMS('EXPERIMENT', 'Not starting analysis...', level=100, debug_level='debug')
+            gobject.timeout_add(1000*3, self.destroy)        
+        elif self._loaded == False:
+            self.owner.set_unclaim_scanner(self._scanner_name)
+            self.DMS('EXPERIMENT', 'Failed to start...', level=100, debug_level='debug')
             self.destroy()
         else:  
             self.DMS('EXPERIMENT', 'Waiting for scan to finnish...', level=100, debug_level='debug')

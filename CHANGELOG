@@ -2,6 +2,9 @@
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 
+*** Improved messages when running experiments and single scans. Also tweaked and
+    fixed a bug or so.
+
 *** Improved robustness of orthalogical grayscale detection
 
 *** Improved Analyse One interface so it responds more 'correctly' to grayscale

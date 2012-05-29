@@ -53,8 +53,8 @@
 *** Make scanner-queue lay outside program so several instances of program
     will be OK.
 
-*** Extend functionality in fixture view (Gray-scale values)
-    Status: Begun. Something wrong in fixture
+(*** Extend functionality in fixture view (Gray-scale values)
+    Status: Begun. Something wrong in fixture)
 
 *** Extend functionality in config view
 

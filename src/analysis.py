@@ -312,11 +312,15 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
             f.write(XML_OPEN.format(['pinning-matrices','matrices'][xml_format['short']]))
 
-            for pos in xrange(plates):
-                f.write(XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(\
-                    ['pinning-matrix','p-m'][xml_format['short']],
-                    ['index','i'][xml_format['short']],  str(pos), 
-                    str(pinning_matrices[pos])))
+            p_string = ""
+            for pos in xrange(pinning_matrices):
+                if pinning_matrices[pos] is not None:
+                    f.write(XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(\
+                        ['pinning-matrix','p-m'][xml_format['short']],
+                        ['index','i'][xml_format['short']],  str(pos), 
+                        str(pinning_matrices[pos])))
+                    p_string += "Plate {0}: {1}\t".format(pos, pinning_matrices[pos])
+            logging.debug(p_string)
 
             f.write(XML_CLOSE.format(['pinning-matrices','matrices'][xml_format['short']]))
 

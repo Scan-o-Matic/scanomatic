@@ -341,7 +341,7 @@ class Application_Window():
                          "",
                          self.experiment_layout.experiment_root.get_text(),
                          self.running_experiments,
-                         native=True)
+                         native=True, include_analysis=False)
 
     def experiment_Start_New(self, widget=None, event=None, data=None):
 
