@@ -1,4 +1,16 @@
   ###################################
+##### Changed in Scannomatic 0.993 #####
+   ###################################
+
+*** Fixture-configurations record the history of the top-left placement of the grid
+    per pinning-matrix format.
+
+*** Projects have UUID:s.
+
+*** Changed crash test dummy marker detection aglorithm so it is simple, faster
+    and robuster.
+
+  ###################################
 ##### Changed in Scannomatic 0.992 #####
    ###################################
 

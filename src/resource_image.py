@@ -5,7 +5,7 @@ __author__ = "Martin Zackrisson, Andreas Skyman"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Andreas Skyman"]
 __license__ = "GPL v3.0"
-__version__ = "0.992"
+__version__ = "0.993"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -97,8 +97,6 @@ def Quick_Rotate(source_path, target_path):
 class Image_Analysis():
     def __init__(self, path=None, image=None, pattern_image_path=None):
 
-        self._gray_scale_image_path = None
-        self._gt_median_image_path = None
         self._img = None
         self._pattern_img = None
         self._load_error = None
@@ -115,8 +113,9 @@ class Image_Analysis():
             if self._load_error != True:
                 if len(pattern_img.shape) > 2:
                     pattern_img = pattern_img[:,:,0]
-                self._pattern_img = np.ones((pattern_img.shape[0]+8,pattern_img.shape[1]+8))
-                self._pattern_img[4:self._pattern_img.shape[0]-4,4:self._pattern_img.shape[1]-4] = pattern_img
+                self._pattern_img = pattern_img
+                #self._pattern_img = np.ones((pattern_img.shape[0]+8,pattern_img.shape[1]+8))
+                #self._pattern_img[4:self._pattern_img.shape[0]-4,4:self._pattern_img.shape[1]-4] = pattern_img
 
 
         if path:
@@ -129,16 +128,7 @@ class Image_Analysis():
             if self._load_error != True:           
                 if len(self._img.shape) > 2:
                     self._img = self._img[:,:,0]
-                #if self._img.shape[0] > self._img.shape[1]:
-                    #Quick_Rotate(path, path)
-                    #self._img = plt_img.imread(path)
 
-                self._gray_scale_image_path = ".".join(path.split(".")[:-1]) + "_scale.png"
-                self._gt_median_image_path = ".".join(path.split(".")[:-1]) + "_gt_median.png"
-                #im = self.get_im_diff(gt=np.median(self._img))
-                #plt.clf()
-                #plt.imshow(im)
-                #plt.savefig(self._gt_median_image_path)
         if image:
             if self._img:
                 logging.warning("An image was already loaded (via path), replaced by passed on image")
@@ -162,152 +152,88 @@ class Image_Analysis():
                 self._img = self._img[:,:,0]
 
 
-    def get_maxima_coords(self, data, threshold, closeness):
-        """Finds the maxima in the data, compensating for clustering by
-        making a weighted averaged, based on the value at the identified
-        candidate maxima."""
+    def get_hit_refined(self, hit, conv_img):
+
+        #quarter_stencil = map(lambda x: x/8.0, stencil_size)
+        #m_hit = conv_img[(max_coord[0] - quarter_stencil[0] or 0):\
+            #(max_coord[0] + quarter_stencil[0] or conv_img.shape[0]),
+            #(max_coord[1] - quarter_stencil[1] or 0):\
+            #(max_coord[1] + quarter_stencil[1] or conv_img.shape[1])]
+
+        #mg = np.mgrid[:m_hit.shape[0],:m_hit.shape[1]]
+        #w_m_hit = m_hit*mg *m_hit.shape[0] * m_hit.shape[1] / float(m_hit.sum())
+        #refinement = np.array((w_m_hit[0].mean(), w_m_hit[1].mean()))
+        #m_hit_max = np.where(m_hit == m_hit.max())
+        #print "HIT: {1}, REFINED HIT: {0}, VECTOR: {2}".format(
+            #refinement, 
+            #(m_hit_max[0][0], m_hit_max[1][0]), 
+            #(refinement - np.array([m_hit_max[0][0], m_hit_max[1][0]])))
+
+        #print "OLD POS", max_coord, " ",
+        #max_coord = (refinement - np.array([m_hit_max[0][0], m_hit_max[1][0]])) + max_coord
+        #print "NEW POS", max_coord, "\n"
+
+        return hit
+
+
+    def get_convolution(self, img, marker, threshold=130):
+
+        t_img = (img > threshold).astype(np.int8) * 2  - 1
+
+        if len(marker.shape) == 3:
+            marker = marker[:,:,0]
+        t_mrk = (marker > 0) * 2 - 1
+
+        return fftconvolve(t_img, t_mrk, mode='same')
+
+    def get_best_location(self, conv_img, stencil_size, refine_hit=True):
+
+        max_coord = np.where(conv_img == conv_img.max())
+        if len(max_coord[0]) == 0:
+            return None, conv_img
+
+        max_coord = np.array((max_coord[0][0], max_coord[1][0]))
+
+        #Refining
+        if refine_hit:
+            max_coord = self.get_hit_refined(max_coord, conv_img)
+
+        #Zeroing out hit
+        half_stencil = map(lambda x: x/2.0, stencil_size)
+        conv_img[(max_coord[0] - half_stencil[0] or 0):\
+            (max_coord[0] + half_stencil[0] or conv_img.shape[0]),
+            (max_coord[1] - half_stencil[1] or 0):\
+            (max_coord[1] + half_stencil[1] or conv_img.shape[1])] = 0
+
         
-        # Find candidate maxima:
-        Max_i = ml.find(data > data.max()*threshold) # ml.find gives 1-d indices
-        Max_x = Max_i % data.shape[1] # Max_i modulo x-dim gives x-positions
-        Max_y = Max_i / data.shape[1] # integer division of MAx_i by x-dim gives 
-                                      # y-positions as residuals
-        vals = data[Max_y, Max_x]
 
-        # Identify peaks, by taking weighted average of candidate maxima:
-        # (could probably be improved by vlec use of find and matrix algebra...)
-        theMax_x, theMax_y = [], []
-        # values in vals are set to zero when counted, hence the while-condition:
-        while vals.sum() > 0:
-            # Pick strongest peak as reference:
-            ref_i = vals.argmax()
-            ref_val = vals.max()
-            ref_x = Max_x[ref_i]
-            ref_y = Max_y[ref_i]
-            # Make a weighted sum of points close to the reference peak:
-            temp_x, temp_y, temp_vals = 0.0, 0.0, 0.0
-            for i in xrange(vals.size): 
-                if (ref_x - Max_x[i])**2 + (ref_y - Max_y[i])**2 <= closeness**2:
-                    temp_x += Max_x[i]*vals[i]
-                    temp_y += Max_y[i]*vals[i]
-                    temp_vals += vals[i]
-                    vals[i] = 0.0
-            # Divide by sum of included values and append to relevant list:
-            theMax_x.append(temp_x/temp_vals)
-            theMax_y.append(temp_y/temp_vals)
-            
-        return theMax_x, theMax_y
-
-    def find_pattern(self, markings=3, img_threshold=130, marker_threshold=0.5, verbose = False, make_plot=False, output_function=None):
-        if self.get_loaded() and self._pattern_img != None:
-
-            T_Img, T_Marker = (self._img > img_threshold).astype(int), (self._pattern_img > marker_threshold).astype(int)
-
-            Gx = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
-            Gy = Gx.T
-
-            if verbose:
-                logging.info( "* Calculating Sobel edges:")
-                logging.info( "* Finding first edges in scanned image...")
-            Img_x = fftconvolve(Gx, T_Img, 'same')
-            if verbose:
-                logging.info( "* Finding second edges in Data...")
-            Img_y = fftconvolve(Gy, T_Img, 'same')
-            Img = np.sqrt(Img_x**2 + Img_y**2)
-            if verbose:
-                logging.info( "* Done!")
-
-                logging.info( "* Finding first edges in Marker...")
-            Marker_x = fftconvolve(Gx, T_Marker, 'valid')
-            if verbose:
-                logging.info( "* Finding second edges in Marker...")
-            Marker_y = fftconvolve(Gy, T_Marker, 'valid')
-            Marker = np.sqrt(Marker_x**2 + Marker_y**2)
-
-            msg = "Edges detected"
-            if output_function is not None:
-                output_function('Pattern analysis', msg, 10, debug_level='debug')
-            else:
-                logging.info(msg)
-
-            if verbose:
-                logging.info( "* Done!")
-
-                logging.info( "* Calculating convolution... (this may take a while)")
-            Cv = fftconvolve(Marker, Img, 'same')
-            if verbose:
-                logging.info( "* Detecting markers...")
-
-            msg = "Convolution of image done"
-            if output_function != None:
-                output_function('Pattern analysis',msg,10, debug_level='debug')
-            else:
-                logging.info( msg)
-
-            old_threshold = 1.3 #Hackishi
-            pre_threshold = 1.3 #Don't trust if the threshold goes to low
-            threshold = 0.9
-            closeness = np.max(Marker.shape)*0.5
-            Max_x = []
-
-            i = 0
-            while len(Max_x) != markings and old_threshold > 0:
-                Max_x, Max_y = self.get_maxima_coords(Cv, threshold, closeness)
-
-                i+=1
-                if verbose:
-                    logging.info( "Try", i, "with threshold", threshold, "got", len(Max_x) )
-
-                pre_threshold = old_threshold
-                old_threshold = threshold
-
-                if len(Max_x) < markings:
-                    threshold -= abs(pre_threshold - threshold) / 2.0
-                elif len(Max_x) > markings:
-                    if pre_threshold > 1.0:
-                        pre_threshold = 1.0
-                    threshold += abs(pre_threshold - threshold) / 2.0
-
-                if abs(old_threshold - threshold) < 0.01:
-                    old_threshold = 0.0
-
-            if verbose:
-                logging.info( "X",Max_x, "Y",Max_y)
-                logging.info( "At", threshold, "after", i,"repetitions")
-                logging.info( "Analysis Done!")
-
-            if make_plot:
-                plt.clf()
-
-                plt.subplot(221)
-                plt.imshow(T_Img)
-                plt.title('The Scan')
-
-                plt.subplot(222)
-                plt.imshow(Img)
-                plt.title('Scan-edges')
-
-                plt.subplot(223)
-                plt.imshow(Cv)
-                plt.title('Convolve2d')
-                plt.plot(Max_x, Max_y, 'ko', mfc='None', mew=1)
-
-                plt.axis('image')
-
-                plt.subplot(224)
-                plt.imshow(Marker)
-                plt.title("Orientation marker edges")
+        return max_coord, conv_img
 
 
-                plt.savefig("ch_analysis.png")
+    def get_best_locations(self, conv_img, stencil_size, n, refine_hit=True, threshold=130):
 
-                if verbose:
-                    logging.info( "* Figure done / saved")
+        m_locations = []
+        c_img = conv_img.copy()
 
+        while len(m_locations) < n:
 
-            self._conversion_factor = 1.0
+            m_loc, c_img = self.get_best_location(c_img, stencil_size, refine_hit)
 
-            return np.array(Max_x), np.array(Max_y)
+            m_locations.append(m_loc)
+
+        return m_locations
+
+    def find_pattern(self, markings=3, img_threshold=130):
+
+        if self.get_loaded():
+            c1 = self.get_convolution(self._img, self._pattern_img, threshold=img_threshold)
+            m1 = np.array(self.get_best_locations(c1, self._pattern_img.shape, markings, 
+                refine_hit=False))
+
+            return m1[:,1], m1[:,0]
+
+        else:
+            return None
 
     def get_loaded(self):
         return (self._img != None) and (self._load_error != True)

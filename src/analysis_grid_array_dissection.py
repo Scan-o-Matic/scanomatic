@@ -7,7 +7,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson","Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL v3.0"
-__version__ = "0.992"
+__version__ = "0.993"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -85,7 +85,9 @@ class Grid_Analysis():
     # GET functions
     #
 
-    def get_analysis(self, im, pinning_matrix, use_otsu = True, median_coeff=None, verboise=False, visual=False):
+    def get_analysis(self, im, pinning_matrix, use_otsu = True, 
+        median_coeff=None, verboise=False, visual=False,
+        history=[]):
         """
 
             get_analysis is a convenience function for get_spikes and 
@@ -111,6 +113,9 @@ class Grid_Analysis():
             @verboise   If a lot of things should be printed out
 
             @visual     If visual information should be presented.
+
+            @history    A history of the top-left positions selected
+                        for the particular format for the particular plate
 
             The function returns two arrays, one per dimension, of the
             positions of the spikes and a quality index

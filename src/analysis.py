@@ -10,7 +10,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.992"
+__version__ = "0.993"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -37,6 +37,8 @@ from argparse import ArgumentParser
 
 import analysis_grid_array as grid_array
 import resource_config as conf
+import resource_fixture as r_fixture
+import resource_log_edit as rle        
 
 #
 # GLOBALS
@@ -213,8 +215,22 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         logging.critical("ANALYSIS: Log file seems corrupt - remake one!")
         return None
 
+    fixture_name = 'fixture_a'
+    f_uuid = None
 
-    if 'Description' in image_dictionaries[0].keys():
+    if 'Description' not in image_dictionaries[0].keys():
+        fake_proj_metadata = rle.create_place_holder_meta_info(path = log_file_path)
+        rle.rewrite(log_file_path, {0: {'mode':'a', 
+            'data': str(fake_proj_metadata) + '\n'}})
+
+        log_file = conf.Config_File(log_file_path)
+
+        image_dictionaries = log_file.get_all("%n")
+        if image_dictionaries == None:
+            logging.critical("ANALYSIS: Log file seems corrupt - remake one!")
+            return None
+
+    if 'Description' not in image_dictionaries[0].keys():
         first_scan_position = 1
         description = image_dictionaries[0]['Description']
         interval_time = image_dictionaries[0]['Interval']
@@ -222,6 +238,13 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             in image_dictionaries[0].keys():
 
             pinning_matrices = image_dictionaries[0]['Pinning Matrices']
+        if 'Fixture' in image_dictionaries[0].keys():
+            fixture_name = image_dictionaries[0]['Fixture']
+
+        if 'UUID' in image_dictionaries[0].keys():
+            f_uuid =  image_dictionaries[0]['UUID']
+        else:
+
 
     else:
         first_scan_position = 0
@@ -245,7 +268,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
  
     if supress_analysis == True:
         project_image = Project_Image([pinning_matrices[graph_watch[0]]], 
-            animate=animate, file_path_base=file_path_base)
+            animate=animate, file_path_base=file_path_base, fixture_name=fixture_name,
+            p_uuid=p_uuid)
         graph_watch[0] = 0
         plates = 1
     else:
@@ -262,7 +286,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                 str(outdata_analysis_slimmed_path)))
             return False
         project_image = Project_Image(pinning_matrices, animate=animate,
-            file_path_base = file_path_base)
+            file_path_base = file_path_base, fixture_name=fixture_name,
+            p_uuid = p_uuid)
 
     image_pos = len(image_dictionaries) - 1
 
@@ -693,7 +718,11 @@ no good data" % str(plot_labels[ii]))
 
 class Project_Image():
     def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
-        animate=False, file_path_base=""):
+        animate=False, file_path_base="", fixture_name='fixture_a',
+        p_uuid=None):
+
+
+        self.p_uuid = p_uuid
 
         self._im_path = im_path
         self._im_loaded = False
@@ -710,6 +739,10 @@ class Project_Image():
         self._program_code_root = scannomatic_root + os.sep + "src"
         self._program_config_root = self._program_code_root + os.sep + "config"
         self._file_path_base = file_path_base
+
+        self.fixture = r_fixture.Fixture_Config(\
+            self._program_config_root + os.sep + "fixtures", 
+            fixture = fixture_name)
 
         self.im = None
         self._grid_arrays = []

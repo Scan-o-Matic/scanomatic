@@ -5,7 +5,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL v3.0"
-__version__ = "0.992"
+__version__ = "0.993"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -293,9 +293,12 @@ class Grid_Array():
         if not grid_lock or self._best_fit_rows is None:
             #if rows is None so is columns 
 
+            topleft_history = self._parent.fixture.get_pinning_history(\
+                self._identifier[1], self._pinning_matrix)
+
             best_fit_rows, best_fit_columns, R = self._analysis.get_analysis(\
                 im, self._pinning_matrix, use_otsu, median_coeff, verboise, 
-                visual)
+                visual, history=topleft_history)
 
 
             logging.debug("GRID ARRAY %s, best rows \n%s\nbest columns\n%s" %\
@@ -313,7 +316,30 @@ class Grid_Array():
             elif self.R is None or R < 20:
                 self._best_fit_rows = best_fit_rows
                 self._best_fit_columns = best_fit_columns
+                p_uuid = self._parent.p_uuid
+                if p_uuid is not None:
 
+                    is_rerun = [i for i, tl in enumerate(topleft_history) if tl[0] == p_uuid]
+                    hist_b_r = np.asarray(best_fit_rows)
+                    hist_b_c = np.asarray(best_fit_columns)
+                    hist_entry = (p_uuid, 
+                        (best_fit_rows[0], best_fit_columns[1]),
+                        ((hist_b_r[1:]-hist_b_r[:-1]).mean(),
+                        (hist_b_c[1:]-hist_b_c[:-1]).mean()))
+
+                    if len(is_rurun) == 0:
+                        topleft_history.append(hist_entry)
+                    else:
+                        topleft_history[is_rerun[0]] = hist_entry
+
+                    if len(topleft_history) > 20:
+                        del topleft_history[0]
+
+                self._parent.fixture.set_pinning_positions(\
+                    self._identifier[1], self._pinning_matrix, topleft_history)
+
+
+                
             self.R = R
 
 

@@ -5,7 +5,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Andreas Skyman"]
 __license__ = "GPL v3.0"
-__version__ = "0.992"
+__version__ = "0.993"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -117,7 +117,7 @@ class Fixture_Settings():
         else:
             logging.info(msg)
 
-        Xs, Ys = self.A.find_pattern(markings = self.markings, output_function = output_function)
+        Xs, Ys = self.A.find_pattern(markings = self.markings)
 
         self.mark_X = Xs
         self.mark_Y = Ys
@@ -249,6 +249,77 @@ class Fixture_Settings():
 
             i += 1
 
+    def get_plates_list(self):
 
+        plate_list = []
+
+        p = True
+        ps = "plate_{0}_area"
+        i = 0
+
+        while p is not None:
+
+            p = self.fixture_config_file.get(ps.format(i))
+            if p is not None:
+                plate_list.append(i)
+
+            i+= 1
+
+        return plate_list
+       
+    def get_pinning_formats(self, plate):
+
+        pt = "plate_{0}_pin_formats"
+    
+        return self.fixture_config_file.get(pt.format(plate))
+
+    def set_pinning_formats(self, plate, pin_format):
+
+        pt = "plate_{0}_pin_formats"
+       
+        t = self.get_pinning_formats(plate)
+        if t is None:
+            t = []
+
+        if plate not in t:
+            t.append(t)
+            self.fixture_config_file.set(pt.format(plate), t) 
+ 
+    def get_pinning_history(self, plate, pin_format):
+
+        ph = "plate_{0}_pinning_{1}"
+
+        return self.fixture_config_file.get(ph.format(plate, pin_format))
+
+    def set_append_pinning_position(self, plate, pin_format, position):
+
+        ph = "plate_{0}_pinning_{1}"
+        h = self.get_pinning_history(plate, pin_format)
+        if h is None:
+            h = []
+        h.append(position)
+
+        self.fixture_config_file.set(ph.format(plate, pin_format), h)
+        self.fixture_config_file.save()
+
+    def set_pinning_positions(self, plate, pin_format, position_list):
+
+        ph = "plate_{0}_pinning_{1}"
+        self.fixture_config_file.set(ph.format(plate, pin_format), position_list)
+        self.fixture_config_file.save()
+
+    def reset_pinning_history(self, plate):
+
+    
+        ph = "plate_{0}_pinning_{1}"
+        pts = self.get_pinning_formats(plate)
+        if pts is not None:
+            
+            for t in pts:
+                self.fixture_config_file.set(ph.format(plate, pin_format), [])
         
+    def reset_all_pinning_histories(self):
+
+        for p in self.get_plates_list():
+            self.reset_pinning_history(p)
 

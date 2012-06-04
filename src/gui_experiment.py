@@ -5,7 +5,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.992"
+__version__ = "0.993"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -23,6 +23,7 @@ import os, os.path, sys, shutil
 import re
 import time
 import types
+import uuid
 
 #
 # SCANNOMATIC LIBRARIES
@@ -56,7 +57,13 @@ else:
 
 
 class Scanning_Experiment(gtk.Frame):
-    def __init__(self, owner, parent_window, scanner, interval, counts, prefix, description, root, gtk_target, native=True, matrices = None, fixture="fixture_a", include_analysis=True):
+    def __init__(self, owner, parent_window, scanner, interval, counts, prefix,
+        description, root, gtk_target, native=True, matrices = None, 
+        fixture="fixture_a", include_analysis=True, p_uuid = None):
+
+        if p_uuid is None:
+            p_uuid = uuid.uuid1()
+        self._p_uuid = uuid
 
         self.USE_CALLBACK = owner.USE_CALLBACK
 
@@ -210,7 +217,8 @@ class Scanning_Experiment(gtk.Frame):
         
             self.log_file({'Prefix':prefix,'Description':description,
                 'Interval':self._interval_time, 'Measurments':counts, 
-                'Start Time':time.time(), 'Pinning Matrices':self._matrices, 'Fixture':fixture},
+                'Start Time':time.time(), 'Pinning Matrices':self._matrices,
+                'Fixture':fixture, 'UUID':str(self._p_uuid)},
                 append=False)
 
             self._loaded = True
@@ -224,32 +232,16 @@ class Scanning_Experiment(gtk.Frame):
     def _quality_OK(self):
         log_reader.load_data(self._analysis_log_file_path)
         if log_reader.count_histograms() > 1:
-            A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._analysis_log_file_path, manual_value=None, max_value=255, save_path=self._heatMapPath)
+            A = log_reader.display_histograms(draw_plot=False, 
+                mark_rejected=True, threshold=0.995, 
+                threshold_less_than=True, 
+                log_file=self._analysis_log_file_path, manual_value=None, 
+                max_value=255, save_path=self._heatMapPath)
 
             #Here should ask image analysis module to test grayscales
 
         #Dummy check so far
         return True
-
-    #def check_quality(self):
-        #OUTDATED QUALITY CHECK, SHOULD NOT BE HERE EITHER
-        #log_reader.load_data(self._analysis_log_file_path)
-        #if log_reader.count_histograms() > 1:
-            #A = log_reader.display_histograms(draw_plot=False, mark_rejected=True, threshold=0.995, threshold_less_than=True, log_file=self._analysis_log_file_path, manual_value=None, max_value=255, save_path=self._heatMapPath)
-            #if len(A) > 0:
-                #if (log_reader.count_histograms()-1) == A[len(A)-1]['Source Index']:
-                    #if A[len(A)-1]['Source Index'] != self._last_rejected:
-                        #self._last_rejected = A[len(A)-1]['Source Index']
-                        #self._scanner.next_file_name =  self._root + os.sep + self._prefix + os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + "_rescan.tiff"
-                        #self._scan(handle=self._handle)
-                    #else:
-                        #gobject.timeout_add(1000*10,self._power_manager.off)
-                #else:
-                    #gobject.timeout_add(1000*10,self._power_manager.off)
-            #else:
-                #gobject.timeout_add(1000*10,self._power_manager.off)
-        #else:
-            #gobject.timeout_add(1000*10,self._power_manager.off)
 
     def log_file(self, message, append=True):
 
@@ -459,11 +451,16 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
             gobject.timeout_add(1000*4, self.running_Analysis)  
           
 class Scanning_Experiment_Setup(gtk.Frame):
-    def __init__(self, owner, simple_scan = False):
+    def __init__(self, owner, simple_scan = False, p_uuid=None):
         gtk.Frame.__init__(self, "NEW SET-UP EXPERIMENT")
 
         self.connect("hide", self._hide_function)
         self.connect("show", self._show_function)
+
+        if p_uuid is None:
+            p_uuid = uuid.uuid1()
+
+        self.p_uuid = p_uuid
 
         self._GUI_updating = False
         self._owner = owner

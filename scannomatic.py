@@ -14,7 +14,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.992"
+__version__ = "0.993"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -369,7 +369,8 @@ class Application_Window():
                 self.experiment_layout.experiment_root.get_text(),
                 self.running_experiments,
                 native=True, matrices = pinning_matrices,
-                fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_"))
+                fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_")
+                p_uuid = self.experiment_layout.p_uuid)
 
         else:
 
