@@ -384,4 +384,18 @@ def get_best_spikes(spikes, frequency, tollerance=0.05,
     return best_spikes
 
 
- 
+def get_position_of_spike(spike, signal_start, frequency):
+    """
+        Gives the spike position as a float point indicating which signal it
+        is relative the signal start.
+
+        @args: spike: The point where the spike is detected.
+
+        @args: signal_start: The known or guessed start of the signal
+
+        @args: frequency: The frequency of the signal
+
+        @returns: Float point value for the closest position in the signal.
+    """
+
+    return (spike - signal_start) / float(frequency)

@@ -20,7 +20,7 @@ __status__ = "Development"
 #import cv
 import numpy as np
 import math
-import logging
+#import logging
 from scipy.stats.mstats import mquantiles, tmean, trim
 from scipy.ndimage.filters import sobel 
 from scipy.ndimage import binary_erosion, binary_dilation,\
@@ -76,7 +76,7 @@ def points_in_circle(circle, arr):
 
 class Cell_Item():
 
-    def __init__(self, identifier):
+    def __init__(self, parent, identifier):
         """
             Cell_Item is a super-class for Blob, Backgroun and Cell and should
             not be accessed directly.
@@ -99,7 +99,8 @@ class Cell_Item():
                                 in the center.
 
         """
-
+        self._parent = parent
+        self.logger = self._parent.logger
         self._identifier = identifier
         self.features = {}
         self.CELLITEM_TYPE = 0
@@ -159,7 +160,7 @@ class Cell_Item():
 
         """
         if self.CELLITEM_TYPE == 0 or self.filter_array == None:
-            logging.warning("GRID CELL {0}: Not properly initialized cell compartment".format(\
+            self.logger.warning("GRID CELL {0}: Not properly initialized cell compartment".format(\
                 self._identifier))
             return None
 
@@ -169,10 +170,10 @@ class Cell_Item():
 
         if self.features['area'] == self.features['pixelsum'] or self.features['area'] == 0:
             if self.features['area'] == self.features['pixelsum']:
-                logging.warning("GRID CELL {0}, seems to have all pixels value 1".format(
+                self.logger.warning("GRID CELL {0}, seems to have all pixels value 1".format(
                 self._identifier))
             else:
-                logging.warning("GRID CELL {0}, area is 0".format(
+                self.logger.warning("GRID CELL {0}, area is 0".format(
                 self._identifier))
 
             return None
@@ -247,11 +248,11 @@ class Cell_Item():
 #
 
 class Blob(Cell_Item):
-    def __init__(self, identifier, grid_array, run_detect=True, threshold=None, \
+    def __init__(self, parent, identifier, grid_array, run_detect=True, threshold=None, \
         use_fallback_detection=False, image_color_logic = "inv", \
         center=None, radius=None):
 
-        Cell_Item.__init__(self, identifier)
+        Cell_Item.__init__(self, parent, identifier)
 
         self.grid_array = grid_array
         self.threshold = threshold
@@ -659,7 +660,7 @@ class Blob(Cell_Item):
                     if self.old_trash is not None:
                         self.trash_array = self.old_trash.copy()
 
-                    logging.warning("GRID CELL %s, Blob detection gone bad, \
+                    self.logger.warning("GRID CELL %s, Blob detection gone bad, \
 using old (Error: %.2f" % (str(self._identifier), 
                         blob_diff / float(sqrt_of_oldsum)))
 
@@ -1069,9 +1070,9 @@ using old (Error: %.2f" % (str(self._identifier),
 #
 
 class Background(Cell_Item):
-    def __init__(self, identifier, grid_array, blob, run_detect=True):
+    def __init__(self, parent, identifier, grid_array, blob, run_detect=True):
 
-        Cell_Item.__init__(self, identifier)
+        Cell_Item.__init__(self, parent, identifier)
 
         self.grid_array = grid_array
         if isinstance(blob, Blob):
@@ -1131,7 +1132,7 @@ class Background(Cell_Item):
 
         else:
 
-            logging.warning("GRID CELL %s, blob was not set, thus background \
+            self.logger.warning("GRID CELL %s, blob was not set, thus background \
 is wrong" % str(self._identifier))
 
 #
@@ -1139,9 +1140,9 @@ is wrong" % str(self._identifier))
 #
 
 class Cell(Cell_Item):
-    def __init__(self, identifier, grid_array, run_detect=True, threshold=-1):
+    def __init__(self, parent, identifier, grid_array, run_detect=True, threshold=-1):
 
-        Cell_Item.__init__(self, identifier)
+        Cell_Item.__init__(self, parent, identifier)
 
         self.grid_array = grid_array
         self.threshold = threshold

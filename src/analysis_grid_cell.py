@@ -19,7 +19,7 @@ __status__ = "Development"
 
 import numpy as np
 import math
-import logging
+#import logging
 
 #
 # SCANNOMATIC LIBRARIES
@@ -104,8 +104,10 @@ def create_id_tag(xcoor,ycoor,nrCols,nrRows):
 #
 
 class Grid_Cell():
-    def __init__(self, identifier, center=(-1,-1), rectSize = (0,0), idtag = 'n/a', data_source=None):
+    def __init__(self, parent, identifier, center=(-1,-1), rectSize = (0,0), idtag = 'n/a', data_source=None):
 
+        self._parent = parent
+        self.logger = self._parent.logger
 
         self._identifier = identifier
         self.center = np.asarray(center)
@@ -148,7 +150,7 @@ class Grid_Cell():
 
         if space == 'cell estimate':
 
-            logging.debug("ANALYSIS GRID CELL: Kodak values ran ({0} - {1})".\
+            self.logger.debug("ANALYSIS GRID CELL: Kodak values ran ({0} - {1})".\
                 format(self.data_source.min(), self.data_source.max()))
             #DEBUG -> CELL ESTIMATE SPACE PART !
             #from matplotlib import pyplot as plt
@@ -159,16 +161,16 @@ class Grid_Cell():
             #DEBUG END
             if bg_sub_source is not None:
                 bg_sub = np.mean(self.data_source[np.where(bg_sub_source)])
-                logging.debug("ANALYSIS GRID CELL: Using {0} as background estimation \
+                self.logger.debug("ANALYSIS GRID CELL: Using {0} as background estimation \
 ({1} - {2})".format(\
                     bg_sub, (self.data_source[np.where(bg_sub_source)]).min(),
                     (self.data_source[np.where(bg_sub_source)]).max()))
 
-                logging.debug("ANALYSIS GRID CELL: Good bg_sub_source = {0}".\
+                self.logger.debug("ANALYSIS GRID CELL: Good bg_sub_source = {0}".\
                     format(bg_sub_source.max() == 1))
                 self.data_source = self.data_source - bg_sub
 
-            logging.debug("ANALYSIS GRID CELL: Transforming -> Cell Estimate, \
+            self.logger.debug("ANALYSIS GRID CELL: Transforming -> Cell Estimate, \
 fixing negative cells counts ({0})".format(\
                 np.where(self.data_source<0)[0].shape[0]))
 
@@ -186,9 +188,9 @@ fixing negative cells counts ({0})".format(\
 
 
             else:
-                logging.error("ANALYSIS GRID CELL: Was not fed any polynomial")
+                self.logger.error("ANALYSIS GRID CELL: Was not fed any polynomial")
 
-            logging.debug("ANALYSIS GRID CELL: Cell Estimate values run ({0} - {1})".\
+            self.logger.debug("ANALYSIS GRID CELL: Cell Estimate values run ({0} - {1})".\
                 format(self.data_source.min(), self.data_source.max()))
             #DEBUG -> CELL ESTIMATE SPACE PART !
             #from matplotlib import pyplot as plt
@@ -386,18 +388,18 @@ fixing negative cells counts ({0})".format(\
         """     
 
         if blob: 
-            self._analysis_items['blob'] = cell_dissection.Blob(\
+            self._analysis_items['blob'] = cell_dissection.Blob(self,\
                 [self._identifier , ['blob']], self.data_source, 
                 use_fallback_detection=use_fallback_detection, 
                 run_detect = run_detect, center=center, radius=radius)
 
         if background and self._analysis_items['blob']:
-            self._analysis_items['background'] = cell_dissection.Background(\
+            self._analysis_items['background'] = cell_dissection.Background(self,\
                 [self._identifier , ['background']], self.data_source, 
                 self._analysis_items['blob'], run_detect=run_detect)
 
         if cell:
-            self._analysis_items['cell'] = cell_dissection.Cell(\
+            self._analysis_items['cell'] = cell_dissection.Cell(self,\
                 [self._identifier , ['cell']], self.data_source,
                 run_detect = run_detect)
 

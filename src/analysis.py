@@ -69,9 +69,9 @@ def get_pinning_matrices(query, sep=':'):
             plates[i] = result[0]
 
         elif len(result) > 1:
-            logging.warning("Ambigous plate pinning matrix statement '{0}'".format(p))
+            logger.warning("Ambigous plate pinning matrix statement '{0}'".format(p))
         else:
-            logging.warning("Bad pinning pattern '{0}' - ignoring that plate".format(p))
+            logger.warning("Bad pinning pattern '{0}' - ignoring that plate".format(p))
 
     return plates
 
@@ -141,6 +141,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     """
     
     start_time = time()
+
     graph_output = None
     file_path_base = os.sep.join(log_file_path.split(os.sep)[:-1])
 
@@ -167,7 +168,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             except:
                 pass
         if not dir_OK:
-            logging.critical("ANALYSIS, Could not construct outdata directory,"\
+            logger.critical("ANALYSIS, Could not construct outdata directory,"\
                 + " could be a conflict")
             sys.exit()
 
@@ -176,13 +177,11 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     
     
-    try:
-        fs = open(outdata_files_path + "analysis.run", 'w')
-        fs.write('Analysis started at ' + str(start_time) + '\n')
-        fs.close()
-    except:
-        logging.warning("Could not produce an 'analysis.run' file.")
 
+    hdlr = logging.FileHandler(outdata_files_path + "analysis.run", mode='w')
+    hdlr.setFormatter(log_formatter)
+    logger.addHandler(hdlr)
+    logger.info('Analysis started at ' + str(start_time))
 
     if graph_watch != None:
         from matplotlib.font_manager import FontProperties
@@ -212,11 +211,11 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     image_dictionaries = log_file.get_all("%n")
     if image_dictionaries == None:
-        logging.critical("ANALYSIS: Log file seems corrupt - remake one!")
+        logger.critical("ANALYSIS: Log file seems corrupt - remake one!")
         return None
 
     fixture_name = 'fixture_a'
-    f_uuid = None
+    p_uuid = None
 
     if 'Description' not in image_dictionaries[0].keys():
         fake_proj_metadata = rle.create_place_holder_meta_info(path = log_file_path)
@@ -227,10 +226,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
         image_dictionaries = log_file.get_all("%n")
         if image_dictionaries == None:
-            logging.critical("ANALYSIS: Log file seems corrupt - remake one!")
+            logger.critical("ANALYSIS: Log file seems corrupt - remake one!")
             return None
 
-    if 'Description' not in image_dictionaries[0].keys():
+    if 'Description' in image_dictionaries[0].keys():
         first_scan_position = 1
         description = image_dictionaries[0]['Description']
         interval_time = image_dictionaries[0]['Interval']
@@ -242,9 +241,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             fixture_name = image_dictionaries[0]['Fixture']
 
         if 'UUID' in image_dictionaries[0].keys():
-            f_uuid =  image_dictionaries[0]['UUID']
-        else:
-
+            p_uuid =  image_dictionaries[0]['UUID']
+            
 
     else:
         first_scan_position = 0
@@ -253,7 +251,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     if pinning_matrices is None:
 
-        logging.critical("ANALYSIS: need some pinning matrices to analyse anything")
+        logger.critical("ANALYSIS: need some pinning matrices to analyse anything")
         return False
 
     plate_position_keys = []
@@ -281,7 +279,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             fhs = open(outdata_analysis_slimmed_path, 'w')
 
         except:
-            logging.critical("ANALYSIS: can't open target file:'%s' or '%s'" % \
+            logger.critical("ANALYSIS: can't open target file:'%s' or '%s'" % \
                 (str(outdata_analysis_path),
                 str(outdata_analysis_slimmed_path)))
             return False
@@ -291,18 +289,17 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     image_pos = len(image_dictionaries) - 1
 
-    logging.info("ANALYSIS: A total of {0} images to analyse".format(\
-        len(image_dictionaries)-first_scan_position + 1))
+    logger.info("ANALYSIS: A total of {0} images to analyse in project with UUID {1}".format(\
+        len(image_dictionaries)-first_scan_position + 1, p_uuid))
 
     if image_pos < first_scan_position:
-        logging.critical("ANALYSIS: There are no images to analyse, aborting")
+        logger.critical("ANALYSIS: There are no images to analyse, aborting")
         for f in (fh, fhs):
             f.close()
         return True
 
     image_tot = image_pos 
 
-    logging.info("ANALYIS, starting project with %d images" % (image_pos + 1))
 
     if supress_analysis != True:
 
@@ -345,7 +342,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                         ['index','i'][xml_format['short']],  str(pos), 
                         str(pinning_matrices[pos])))
                     p_string += "Plate {0}: {1}\t".format(pos, pinning_matrices[pos])
-            logging.debug(p_string)
+            logger.debug(p_string)
 
             f.write(XML_CLOSE.format(['pinning-matrices','matrices'][xml_format['short']]))
 
@@ -366,6 +363,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
             f.write(XML_OPEN.format('scans'))
 
+    logger.info("Starting analysis of {0} images, with log-record {1} (first image at {2})".\
+        format(image_pos - first_scan_position + 1, image_pos, first_scan_position))
+
+    
     while image_pos >= first_scan_position:
         scan_start_time = time()
         img_dict_pointer = image_dictionaries[image_pos]
@@ -380,7 +381,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             #    print "** Position", plate_position_keys[i], ":", \
             #img_dict_pointer[plate_position_keys[i]]
 
-        logging.info("ANALYSIS, Running analysis on '%s'" % \
+        logger.info("ANALYSIS, Running analysis on '%s'" % \
             str(img_dict_pointer['File']))
 
         features = project_image.get_analysis( img_dict_pointer['File'], \
@@ -557,7 +558,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         #DEBUGHACK - END
 
 
-        logging.info("ANALYIS, Image took %.2f seconds" % (time() - scan_start_time))
+        logger.info("ANALYIS, Image took %.2f seconds" % (time() - scan_start_time))
 
         print_progress_bar((image_tot-image_pos)/float(image_tot), size=70)
 
@@ -622,12 +623,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                     elif plot_labels[ii] == "blob:area":
                         b_area = Y[i,Y_good_positions]
 
-                    logging.debug("WATCH GRAPH:\n%s\n%s\n%s" % \
+                    logger.debug("WATCH GRAPH:\n%s\n%s\n%s" % \
                         (str(plot_labels[ii]), str(sub_term), 
                         str(scale_factor)))
 
                     #print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
-                    logging.debug("WATCH GRAPH, Max %.2f Min %.2f." % \
+                    logger.debug("WATCH GRAPH, Max %.2f Min %.2f." % \
                         (float(Y[i,Y_good_positions].max()), 
                         float(Y[i,Y_good_positions].min())))
 
@@ -653,7 +654,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
                             (Y[i,Y_good_positions] - sub_term) * scale_factor,
                             label=plot_labels[ii][len(cur_plt_graph)+1:])                        
                     else:
-                        logging.debug("GRAPH WATCH, Got straight line %s, %s" % \
+                        logger.debug("GRAPH WATCH, Got straight line %s, %s" % \
                             (str(plt_graph_i), str(i)))
 
                         plt_watch_curves.plot(X[Y_good_positions], 
@@ -663,10 +664,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
 
                 except TypeError:
-                    logging.warning("GRAPH WATCH, Error processing %s" % str(plot_labels[ii]))
+                    logger.warning("GRAPH WATCH, Error processing %s" % str(plot_labels[ii]))
 
             else:
-                    logging.warning("GRAPH WATCH, Cann't plot %s since has \
+                    logger.warning("GRAPH WATCH, Cann't plot %s since has \
 no good data" % str(plot_labels[ii]))
 
         plt_watch_curves.legend(loc=1, ncol=5, prop=fontP, 
@@ -690,28 +691,18 @@ no good data" % str(plot_labels[ii]))
         else: 
             plt_watch_colony.show()
 
-        logging.info("ANALYSIS, Full analysis took %.2f minutes" %\
+        logger.info("ANALYSIS, Full analysis took %.2f minutes" %\
             ((time() - start_time)/60.0))
 
-        try:
-            fs = open(outdata_files_path + "analysis.run", 'a')
-            fs.write('Analysis completed at ' + str(time()) + '\n')
-            fs.close()
-        except:
-            logging.warning("ANALYSIS: Could not add to 'analysis.run' file.")
+        logger.info('Analysis completed at ' + str(time()))
 
         return False
 
-    try:
-        fs = open(outdata_files_path + "analysis.run", 'a')
-        fs.write('Analysis completed at ' + str(time()) + '\n')
-        fs.close()
-    except:
-        logging.warning("ANALYSIS: Could not add to 'analysis.run' file.")
 
-    logging.info("ANALYSIS, Full analysis took %.2f minutes" %\
+    logger.info("ANALYSIS, Full analysis took %.2f minutes" %\
         ((time() - start_time)/60.0))
 
+    logger.info('Analysis completed at ' + str(time()))
 #
 # CLASS Project_Image
 #
@@ -719,8 +710,13 @@ no good data" % str(plot_labels[ii]))
 class Project_Image():
     def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
         animate=False, file_path_base="", fixture_name='fixture_a',
-        p_uuid=None):
+        p_uuid=None, logger = None):
 
+
+        if logger is not None:
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger('Scan-o-Matic Analysis')
 
         self.p_uuid = p_uuid
 
@@ -740,7 +736,7 @@ class Project_Image():
         self._program_config_root = self._program_code_root + os.sep + "config"
         self._file_path_base = file_path_base
 
-        self.fixture = r_fixture.Fixture_Config(\
+        self.fixture = r_fixture.Fixture_Settings(\
             self._program_config_root + os.sep + "fixtures", 
             fixture = fixture_name)
 
@@ -758,7 +754,7 @@ class Project_Image():
                 self.R.append(None)
 
         if len(pinning_matrices) > len(self._grid_arrays):
-            logging.info('Analysis will run on {0} plates out of {1}'.format(\
+            logger.info('Analysis will run on {0} plates out of {1}'.format(\
                 len(self._grid_arrays), len(pinning_matrices)))
 
     def get_analysis(self, im_path, features, grayscale_values, \
@@ -813,7 +809,7 @@ class Project_Image():
             alt_path = os.sep.join((self._file_path_base,
                 self._im_path.split(os.sep)[-1]))
 
-            logging.warning("ANALYSIS IMAGE, Could not open image at '{0}' trying in log-file directory ('{1}').".\
+            logger.warning("ANALYSIS IMAGE, Could not open image at '{0}' trying in log-file directory ('{1}').".\
                 format(self._im_path, alt_path))
 
             #self._im_path = os.sep.join((self._file_path_base, 
@@ -823,7 +819,7 @@ class Project_Image():
                 self.im = plt_img.imread(alt_path)
                 self._im_loaded = True
             except:
-                logging.warning("ANALYSIS IMAGE, No image found... sorry")
+                logger.warning("ANALYSIS IMAGE, No image found... sorry")
         
                 self._im_loaded = False
 
@@ -844,7 +840,7 @@ class Project_Image():
         else:
             gs_fit = None
 
-        logging.debug("ANALYSIS produced gs-coefficients {0} ".format(gs_fit))
+        logger.debug("ANALYSIS produced gs-coefficients {0} ".format(gs_fit))
 
         if gs_fit is not None:
 
@@ -855,7 +851,7 @@ class Project_Image():
 
             if (z3_deriv > 0).any() and (z3_deriv < 0).any():
 
-                logging.warning("ANALYSIS of grayscale seems dubious as \
+                logger.warning("ANALYSIS of grayscale seems dubious as \
 coefficients don't have the same sign")
                 gs_fit = None
 
@@ -973,9 +969,12 @@ if __name__ == "__main__":
 
         logging_level = LOGGING_LEVELS['warning']
 
-    logging.basicConfig(level=logging_level, format='\n\n%(asctime)s %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S\n')
+    
+    logger = logging.getLogger('Scan-o-Matic Analysis')
 
+    log_formatter = logging.Formatter('\n\n%(asctime)s %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S\n')
+    
     #XML
     xml_format = {'short':args.xml_short,'omit_compartments':[], 'omit_measures': []}
 
@@ -989,6 +988,7 @@ if __name__ == "__main__":
         xml_format['omit_measures'] = map(lambda x: x.strip(),
             args.xml_omit_measures.split(","))
 
+    
     logging.debug("XML-formatting is {0}, omitting compartments {1} and measures {2}."\
         .format(['long','short'][xml_format['short']], 
         str(xml_format['omit_compartments']), str(xml_format['omit_measures'])))
@@ -1084,6 +1084,8 @@ if __name__ == "__main__":
     under_line = "-"
     print "\n\n%s\n%s\n\n" % (header_str.center(80), (len(header_str)*under_line).center(80))
 
+    logger.setLevel(logging_level)
+    logger.debug("Logger is ready!")
     analyse_project(args.inputfile, output_path, pm, args.graph_watch, 
         args.supress, True, False, False, grid_times=grid_times,
         xml_format = xml_format, animate=args.animate)

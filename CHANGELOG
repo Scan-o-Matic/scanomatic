@@ -2,6 +2,9 @@
 ##### Changed in Scannomatic 0.993 #####
    ###################################
 
+*** Analysis script writes logging-info to the analysis.run - file of designated
+    output directory
+
 *** Fixture-configurations record the history of the top-left placement of the grid
     per pinning-matrix format.
 

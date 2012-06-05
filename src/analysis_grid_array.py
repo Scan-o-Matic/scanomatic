@@ -16,7 +16,7 @@ __status__ = "Development"
 #
 
 import numpy as np
-import logging
+#import logging
 from scipy.optimize import fsolve
 import os, types,sys
 from matplotlib import pyplot as plt
@@ -37,6 +37,7 @@ class Grid_Array():
     def __init__(self, parent, identifier, pinning_matrix):
 
         self._parent = parent
+        self.logger = self._parent.logger
 
         if type(identifier) == types.IntType:
             identifier = ("unknown", identifier)
@@ -46,7 +47,7 @@ class Grid_Array():
             identifier = [identifier[0], identifier[1]]
 
         self._identifier = identifier
-        self._analysis = array_dissection.Grid_Analysis()
+        self._analysis = array_dissection.Grid_Analysis(self)
         self._pinning_matrix = None
 
         self._grid_cell_size = None
@@ -78,7 +79,7 @@ class Grid_Array():
 
                 fs = open(self._config_calibration_polynomial, 'r')
             except:
-                logging.critical("GRID ARRAY, Cannot open polynomial info file")
+                self.logger.critical("GRID ARRAY, Cannot open polynomial info file")
                 get_poly = False
 
             if get_poly:
@@ -122,7 +123,7 @@ class Grid_Array():
 
             for column in xrange(pinning_matrix[1]):
                 self._grid_cells[row].append(grid_cell.Grid_Cell(\
-                    [self._identifier,  [row, column]]))
+                    self, [self._identifier,  [row, column]]))
                 self._features[row].append(None)
 
     #
@@ -182,7 +183,7 @@ class Grid_Array():
             if gs_indices[0] != 0:
                 gs_indices = map(lambda x: x - gs_indices[0], gs_indices)
 
-            #logging.debug("ANALYSIS GRID ARRAY: Kodak-indices are {0}".format(\
+            #self.logger.debug("ANALYSIS GRID ARRAY: Kodak-indices are {0}".format(\
             #    gs_indices))
 
             tf_matrix = np.zeros((y_range[1]+1))
@@ -295,19 +296,23 @@ class Grid_Array():
 
             topleft_history = self._parent.fixture.get_pinning_history(\
                 self._identifier[1], self._pinning_matrix)
+            if topleft_history is None:
+                topleft_history = []
+
+            self.logger.debug('The gridding history is {0}'.format(topleft_history))
 
             best_fit_rows, best_fit_columns, R = self._analysis.get_analysis(\
                 im, self._pinning_matrix, use_otsu, median_coeff, verboise, 
                 visual, history=topleft_history)
 
 
-            logging.debug("GRID ARRAY %s, best rows \n%s\nbest columns\n%s" %\
+            self.logger.debug("GRID ARRAY %s, best rows \n%s\nbest columns\n%s" %\
                 ("unkown", str(best_fit_rows), 
                 str(best_fit_columns)))
 
             if best_fit_rows == None or best_fit_columns == None:
 
-                logging.warning("GRID ARRAY %s, Failed to detect grid." %\
+                self.logger.warning("GRID ARRAY %s, Failed to detect grid." %\
                      str(self._identifier))
 
                 self._best_fit_rows = None
@@ -317,8 +322,9 @@ class Grid_Array():
                 self._best_fit_rows = best_fit_rows
                 self._best_fit_columns = best_fit_columns
                 p_uuid = self._parent.p_uuid
+               
                 if p_uuid is not None:
-
+                    
                     is_rerun = [i for i, tl in enumerate(topleft_history) if tl[0] == p_uuid]
                     hist_b_r = np.asarray(best_fit_rows)
                     hist_b_c = np.asarray(best_fit_columns)
@@ -327,7 +333,7 @@ class Grid_Array():
                         ((hist_b_r[1:]-hist_b_r[:-1]).mean(),
                         (hist_b_c[1:]-hist_b_c[:-1]).mean()))
 
-                    if len(is_rurun) == 0:
+                    if len(is_rerun) == 0:
                         topleft_history.append(hist_entry)
                     else:
                         topleft_history[is_rerun[0]] = hist_entry
@@ -369,7 +375,7 @@ class Grid_Array():
             #for debug_col in self._best_fit_columns:
                 #debug_ax.plot(debug_rows,(debug_col,debug_col),'k')
         #debug_fig.show()
-        #logging.warning("Pining (R,C) {0} best_rows {1} best_cols {2}".format(\
+        #self.logger.warning("Pining (R,C) {0} best_rows {1} best_cols {2}".format(\
             #self._pinning_matrix, self._best_fit_rows, best_fit_columns))
         #raw_input("> ")
         #DEBUG PLOT GRID END
@@ -407,7 +413,7 @@ class Grid_Array():
         if visual or save_grid_image:
             grid_image = plt.figure()
             grid_plot = grid_image.add_subplot(111)
-            grid_plot.imshow(im)
+            grid_plot.imshow(im, cmap=plt.cm.gray)
             if save_grid_name is None:
                 save_grid_name = "plate.png"
 
@@ -439,7 +445,7 @@ class Grid_Array():
 
                     if transformation_matrix is not None:
                         #There's probably some faster way
-                        logging.debug("ANALYSIS GRID ARRAY Transforming -> Kodak")
+                        self.logger.debug("ANALYSIS GRID ARRAY Transforming -> Kodak")
 
                         for x in xrange(tf_im.shape[0]):
 
@@ -454,7 +460,7 @@ class Grid_Array():
                                 try:
                                     tf_im[x,y] = transformation_matrix[im[x2,y2]]
                                 except IndexError:
-                                    logging.critical(\
+                                    self.logger.critical(\
                                         "Index Error:\ntf_im.shape {0} vs \
 ({1}, {2}) and im.shape {3} vs ({4}, {5})\nbest_fit ({6}, {7}) size ({8}, {9}) from {10}:{11}:{12}"\
                                         .format(tf_im.shape, x, y, 
@@ -487,7 +493,7 @@ class Grid_Array():
                                     
 
                     else:
-                        logging.critical("ANALYSIS GRID ARRAY Lacks transformation possibilities")
+                        self.logger.critical("ANALYSIS GRID ARRAY Lacks transformation possibilities")
 
                     self._grid_cells[row][column].set_data_source(tf_im)
 
@@ -538,7 +544,7 @@ class Grid_Array():
 
                         #raw_input('x> ')
 
-                        logging.warning('Time/Plate {0}, Row: {1}, Column: {2} has no background (skipping)'.\
+                        self.logger.warning('Time/Plate {0}, Row: {1}, Column: {2} has no background (skipping)'.\
                             format(self._identifier, row, column))
 
                         self._features[row][column] = None
@@ -741,6 +747,8 @@ class Grid_Array():
             plt.close(grid_image)
             del grid_image
         elif save_grid_image:
+            self.logger.info("ANALYSIS GRID: Saving grid-image as file '{0}' for plate {1}".format(\
+                save_grid_name, self._identifier[1]))
             grid_image.savefig(save_grid_name)
             plt.close(grid_image)
             del grid_image

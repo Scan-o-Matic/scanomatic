@@ -369,7 +369,7 @@ class Application_Window():
                 self.experiment_layout.experiment_root.get_text(),
                 self.running_experiments,
                 native=True, matrices = pinning_matrices,
-                fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_")
+                fixture=self.experiment_layout.fixture.get_active_text().replace(" ","_"),
                 p_uuid = self.experiment_layout.p_uuid)
 
         else:
