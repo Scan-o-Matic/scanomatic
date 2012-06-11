@@ -47,6 +47,7 @@ import src.gui_fixture as fixture
 import src.gui_analysis as analysis
 import src.gui_settings as settings
 import src.gui_project as project
+import src.gui_grid as grid
 
 #KNOWN ISSUES ETC.
 #
@@ -82,6 +83,7 @@ class Application_Window():
         <menu action="Analysis">
             <menuitem action="Analyse Project"/>
             <menuitem action="Analyse One Image"/>
+            <menuitem action="Inspect and Adjust Gridding"/>
         </menu>
         <menu action="Settings">
             <menuitem action="Application Settings"/>
@@ -169,6 +171,7 @@ class Application_Window():
                 ("Analysis",   None,   "Analysis",    None,    None,   None),
                 ("Analyse Project", None, "Analyse Project", None, None, self.menu_Project),
                 ("Analyse One Image", None, "Analyse One Image", None, None, self.menu_Analysis),
+                ("Inspect and Adjust Gridding", None, "Inspect and Adjust Gridding", None, None, self.menu_Grid),
                 ("Settings", None, "Settings", None, None,   None),
                 ("Application Settings", None, "Application Settings", None, None, self.menu_Settings),
                 ("Installing Scanner",    None,   "Installing Scanner",   None,  None,   self.null_thing),
@@ -215,6 +218,11 @@ class Application_Window():
         self.analyse_project = project.Project_Analysis_Setup(self)
         self.vbox.pack_start(self.analyse_project, False, False, 2)
             
+        #Grid GUI
+        self.DMS("Program startup","Initialising reGrid GUI",100, debug_level='info')
+        self.grid = grid.Grid(self)
+        self.vbox.pack_start(self.grid, False, False, 2)
+
         #Application Settings GUI
         self.DMS("Program startup","Initialising settings GUI",100, debug_level='info')
         self.app_settings = settings.Config_GUI(self, 'main.config')
@@ -262,6 +270,14 @@ class Application_Window():
                     w.show()
                 else:
                     w.hide()
+
+    #
+    # APPLICATION GRID FUNCTIONS
+    #
+
+    def menu_Grid(self, widget=None, event=None, data=None):
+        self.DMS('Gridding','Activated', debug_level='info')
+        self.show_config(self.grid)
 
     #
     # APPLICATION SETTINGS FUNCTIONS
