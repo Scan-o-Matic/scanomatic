@@ -2,6 +2,12 @@
 ##### Changed in Scannomatic 0.993 #####
    ###################################
 
+*** Implemented an abort running analysis
+
+*** Implemented nicer program terminate to catch all ongoing processes.
+
+*** Moved the gridding out of the analysis-path so grids can be set manually
+
 *** Analysis script writes logging-info to the analysis.run - file of designated
     output directory
 

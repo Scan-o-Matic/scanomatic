@@ -131,6 +131,7 @@ class Grid_Analysis():
         #best_fit_start_pos = [None, None]
         best_fit_frequency = [None, None]
         best_fit_positions = [None, None]
+        adjusted_by_history = False
         R = 0
         if history is not None and len(history) > 0:
             history_rc = (np.array([h[1][0] for h in history]).mean(), 
@@ -173,6 +174,9 @@ class Grid_Analysis():
                 if abs(best_fit_frequency[dimension]/float(history_f[dimension]) - 1) > 0.1:
                     self.logger.warning('GRID ARRAY, frequency abnormality for dimension {0} (Current {1}, Expected {2}'.format(dimension, best_fit_frequency[dimension], history_f))
 
+                    adjusted_by_history = True
+                    #ADJUST F HERE
+
             best_fit_positions[dimension] = r_signal.get_true_signal(\
                 im.shape[int(dimension==0)], pinning_matrix[dimension], 
                 positions[dimension], \
@@ -189,6 +193,9 @@ class Grid_Analysis():
                         dimension, best_fit_positions[dimension][0],
                         history_rc[dimension]))
                     
+                    adjusted_by_history = True
+                    #ADJUST RC HERE
+
             ###START HERE MARKING OUT ALL OLD STUFF...
             #best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
                 #self.get_signal_position_and_frequency( measures[dimension],
@@ -286,9 +293,9 @@ class Grid_Analysis():
             self.R = -1
 
         if self.best_fit_positions == None:
-            return None, None, None
+            return None, None, None, adjusted_by_history
         else:
-            return self.best_fit_positions[0], self.best_fit_positions[1], self.R
+            return self.best_fit_positions[0], self.best_fit_positions[1], self.R, adjusted_by_history
 
 
     def get_spikes(self, dimension, im=None, visual = False, verboise = False,\

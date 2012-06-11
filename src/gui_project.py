@@ -24,6 +24,7 @@ import re
 import time
 import types
 from subprocess import call, Popen
+import signal
 
 #
 # SCANNOMATIC LIBRARIES
@@ -69,10 +70,11 @@ class Project_Analysis_Running(gtk.Frame):
         self._watch_time = watch_time
 
         self._analysis_log_dir = os.sep.join(log_file.split(os.sep)[:-1]) + os.sep 
-
+        self._analysis_sub_proc = None
         self._analysis_output = analysis_output
         self._analysis_log_file_path = log_file
-
+        self._analysis_run_file = self._analysis_log_dir + analysis_output + os.sep + 'analysis.run'
+        self._analysis_re_pattern = "Running analysis on '([^']*)'".format(os.sep)
         self._start_time = time.time()
 
         #Make GTK-stuff
@@ -88,14 +90,19 @@ class Project_Analysis_Running(gtk.Frame):
             time.strftime("%Y-%m-%d %H:%M",
             time.localtime(time.time()))))
         self._gui_timer = gtk.Label("Run-time: %d" % int((time.time() - float(self._start_time)) / 60))
+        button = gtk.Button('Teminate Analysis')
+        button.connect('clicked', self._terminate)
+
         hbox.pack_start(self._gui_analysis_start, False, False, 2)
         hbox.pack_start(self._gui_timer, False, False, 20)
+        hbox.pack_end(button, False, False, 2)        
         vbox.pack_start(hbox, False, False, 2)
 
         #Run status
         self._gui_status_text = gtk.Label("")
         vbox.pack_start(self._gui_status_text, False, False, 2)
 
+        
             
         self._gtk_target.pack_start(self, False, False, 20)
         self.show_all()
@@ -108,12 +115,29 @@ class Project_Analysis_Running(gtk.Frame):
 
             if self._analysis_sub_proc.poll() != None:
                 self._analysis_log.close()
-                self._gui_status_text.set_text("Analysis complete")
+                self._gui_status_text.set_text("Analysis done...")
                 gobject.timeout_add(1000*60*1, self.destroy)          
             else:
                 
-                self._gui_timer = gtk.Label("Run-time: %d" % int((time.time() \
+                self._gui_timer.set_text("Run-time: %d min" % int((time.time() \
                     - float(self._start_time)) / 60))
+
+                try:
+                    fs = open(self._analysis_run_file,'r')
+
+                except:
+                    fs = None
+
+                if fs is not None:
+                    fs_lines = fs.read()
+                    re_hits = re.findall(self._analysis_re_pattern, fs_lines)
+                    status_text = "Currently anlysiing image: {0}".format(\
+                        re_hits[-1].split(os.sep)[-1])
+                    self._gui_status_text.set_text(status_text)
+                else:
+                    self._gui_status_text.set_text("Can't find analysis"\
+                        + " run-log, no status will be produced")
+
                 gobject.timeout_add(1000*60*2, self._run)
         else:
             self._gui_status_text.set_text("Analysis is running! (This may take several hours)")
@@ -124,7 +148,8 @@ class Project_Analysis_Running(gtk.Frame):
                 "-o", self._analysis_output, "-t", 
                 self._watch_time, '--xml-short', 'True', 
                 '--xml-omit-compartments', 'background,cell',
-                '--xml-omit-measures','mean,median,IQR,IQR_mean,centroid,perimeter,area']
+                '--xml-omit-measures','mean,median,IQR,IQR_mean,centroid,perimeter,area',
+                '--debug', 'info']
 
             if self._matrices is not None:
                 analysis_query += ["-m", self._matrices]
@@ -139,7 +164,45 @@ class Project_Analysis_Running(gtk.Frame):
                 stdout=self._analysis_log, shell=False)
             gobject.timeout_add(1000*30, self._run)
 
-          
+    def _terminate(self, widget=None, event=None, data=None, ask=True):
+
+        if ask:
+            dialog = gtk.MessageDialog(self.owner.window, gtk.DIALOG_DESTROY_WITH_PARENT,
+               gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+               "This will terminate the ongoing analyis prematurely.")
+
+            dialog.add_button(gtk.STOCK_YES, gtk.RESPONSE_YES)
+            dialog.add_button(gtk.STOCK_NO, gtk.RESPONSE_NO)
+            resp = dialog.run()
+            dialog.destroy()
+
+
+        if not ask or resp == gtk.RESPONSE_YES:
+            if self._analysis_sub_proc != None and self._analysis_sub_proc.poll() == None:
+                term_success = False
+                if os_tools.OS().name == 'linux':
+
+                    term_success = True
+                    os.kill(self._analysis_sub_proc.pid, signal.SIGTERM)
+
+                elif os_tools.OS().name == 'windows':
+
+                    term_success = True
+                    import ctypes
+                    PROCESS_TERMINATE = 1 
+                    handle = ctypes.windll.kernel32.OpenProcess(\
+                        PROCESS_TERMINATE, False, self._analysis_sub_proc.pid)
+                    ctypes.windll.kernel32.TerminateProcess(handle, -1)
+                    ctypes.windll.kernel32.CloseHandle(handle)
+
+                else:
+                    self.DMS("ANALYSE PROJECT", "OS not supported for manual termination of subprocess {0}".format(self._analysis_sub_proc.pid), level=1000)
+                if term_success:
+                    self._gui_status_text.set_text("Analysis termitating manually")
+                    self.DMS("ANALYSE PROJECT", "Analysis termitating manually", level=110)
+            else:
+                self.destroy()
+
 class Project_Analysis_Setup(gtk.Frame):
     def __init__(self, owner):
 

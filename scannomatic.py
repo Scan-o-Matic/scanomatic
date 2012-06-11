@@ -558,6 +558,15 @@ class Application_Window():
             resp = dialog.run()
             dialog.destroy()
             if resp == gtk.RESPONSE_YES:
+
+                
+                children = self.running_experiments.get_children()
+                children[0].set_text("Aborting running processes, if scans are running it may take some time. Be patient.")
+                self.DMS("Scan-o-Matic", "Shutting down, but processes need to end nicely first", 1)
+
+                for child in children[1:]:
+                    child._terminate(ask=False)
+
                 return True
             else:
                 return False

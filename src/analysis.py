@@ -216,6 +216,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     fixture_name = 'fixture_a'
     p_uuid = None
+    grid_adjustments = None
 
     if 'Description' not in image_dictionaries[0].keys():
         fake_proj_metadata = rle.create_place_holder_meta_info(path = log_file_path)
@@ -243,6 +244,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         if 'UUID' in image_dictionaries[0].keys():
             p_uuid =  image_dictionaries[0]['UUID']
             
+        if 'Grid Adjustments' in image_dictionaries[0].keys():
+            grid_adjustments =  image_dictionaries[0]['Grid Adjustments']
 
     else:
         first_scan_position = 0
@@ -287,10 +290,17 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             file_path_base = file_path_base, fixture_name=fixture_name,
             p_uuid = p_uuid)
 
+    if grid_adjustments is not None:
+        
+        logger.info("ANALYSIS: Will implement manual adjustments of grid on plates {0}".format(\
+            grid_adjustments.keys()))
+
+        project_image.set_manual_grids(grid_adjustments)
+
     image_pos = len(image_dictionaries) - 1
 
     logger.info("ANALYSIS: A total of {0} images to analyse in project with UUID {1}".format(\
-        len(image_dictionaries)-first_scan_position + 1, p_uuid))
+        len(image_dictionaries)-first_scan_position, p_uuid))
 
     if image_pos < first_scan_position:
         logger.critical("ANALYSIS: There are no images to analyse, aborting")
@@ -335,7 +345,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             f.write(XML_OPEN.format(['pinning-matrices','matrices'][xml_format['short']]))
 
             p_string = ""
-            for pos in xrange(pinning_matrices):
+
+            for pos in xrange(len(pinning_matrices)):
                 if pinning_matrices[pos] is not None:
                     f.write(XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(\
                         ['pinning-matrix','p-m'][xml_format['short']],
@@ -381,8 +392,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             #    print "** Position", plate_position_keys[i], ":", \
             #img_dict_pointer[plate_position_keys[i]]
 
-        logger.info("ANALYSIS, Running analysis on '%s'" % \
-            str(img_dict_pointer['File']))
+        logger.info("ANALYSIS, Running analysis on '{}'".format( \
+            img_dict_pointer['File']))
 
         features = project_image.get_analysis( img_dict_pointer['File'], \
             plate_positions, img_dict_pointer['grayscale_values'], \
@@ -746,6 +757,7 @@ class Project_Image():
         self.R = []
 
         self._timestamp = None
+        self._pinning_matrices = pinning_matrices
 
         for a in xrange(len(pinning_matrices)):
             if pinning_matrices[a] is not None:
@@ -756,6 +768,26 @@ class Project_Image():
         if len(pinning_matrices) > len(self._grid_arrays):
             logger.info('Analysis will run on {0} plates out of {1}'.format(\
                 len(self._grid_arrays), len(pinning_matrices)))
+
+    def set_manual_grids(self, grid_adjustments):
+        """
+            Overrides grid detection with a specified grid supplied in grid adjustments
+
+            @param grid_adjustments:    A dictionary of pinning grids with plate numbers as
+                                        keys and items being tuples of row and column position 
+                                        lists.
+        """
+
+        for k in grid_adjustments.keys():
+
+            if self._pinning_matrices[k] is not None:
+
+                try:
+                    self._grid_arrays[k].set_manual_grid(grid_adjustments[k])
+                except IndexError:
+                    logger.error('Failed to set manual grid adjustments to {0}, plate non-existent'.\
+                        format(k))
+            
 
     def get_analysis(self, im_path, features, grayscale_values, \
             use_fallback=False, use_otsu=True, watch_colony=None, \

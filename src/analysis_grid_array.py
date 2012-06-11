@@ -99,6 +99,170 @@ class Grid_Array():
     # SET functions
     #
 
+    def set_manual_grid(self, grid):
+
+        best_fit_rows = grid[0]
+        best_fit_columns = grid[1]
+
+        self._best_fit_rows = best_fit_rows
+        self._best_fit_columns = best_fit_columns
+
+        if self._grid_cell_size == None:
+            self._grid_cell_size = map(int, map(round, fit_frequency[:]))
+         
+        self.set_history() 
+
+    def set_history(self, adjusted_by_history=False):
+
+        topleft_history = self._parent.fixture.get_pinning_history(\
+            self._identifier[1], self._pinning_matrix)
+        if topleft_history is None:
+            topleft_history = []
+        p_uuid = self._parent.p_uuid
+       
+        if p_uuid is not None:
+            
+            is_rerun = [i for i, tl in enumerate(topleft_history) if tl[0] == p_uuid]
+            hist_b_r = np.asarray(self._best_fit_rows)
+            hist_b_c = np.asarray(self._best_fit_columns)
+            hist_entry = (p_uuid, 
+                (self._best_fit_rows[0], self._best_fit_columns[0]),
+                ((hist_b_r[1:]-hist_b_r[:-1]).mean(),
+                (hist_b_c[1:]-hist_b_c[:-1]).mean()))
+
+            if not adjusted_by_history:
+                if len(is_rerun) == 0:
+                    topleft_history.append(hist_entry)
+                else:
+                    topleft_history[is_rerun[0]] = hist_entry
+
+                if len(topleft_history) > 20:
+                    del topleft_history[0]
+
+                self._parent.fixture.set_pinning_positions(\
+                    self._identifier[1], self._pinning_matrix, topleft_history)
+
+    def set_grid(self, im, save_grid_name=None, save_grid_image=False,
+        grid_lock = True, use_otsu=True, 
+        median_coeff=None, verboise=False, visual=False):
+        """
+            Sets a grid to an image.
+
+            @param im: An array / the image
+
+            @param use_otsu : Causes thresholding to be done by Otsu
+            algorithm (Default)
+
+            @param median_coeff : Coefficient to threshold from the
+            median when not using Otsu.
+
+            @param save_grid_image : Causes the script to save the plates' 
+            grid placement as images. Conflicts with visual, so don't use 
+            visual if you want to save
+
+            @param save_grid_name : A custom name for the saved image, if none
+            is submitted, it will be grid.png in current directory.
+
+            @param grid_lock : Default True -- if true, the grid will only be
+            placed once and then reused all way through.
+
+            @param verboise : If a lot of things should be printed out
+
+            @param visual : If visual information should be presented.
+
+
+            The function returns True if it did set the grid. 
+
+        """
+
+        if visual or save_grid_image:
+            grid_image = plt.figure()
+            grid_plot = grid_image.add_subplot(111)
+            grid_plot.imshow(im, cmap=plt.cm.gray)
+            if save_grid_name is None:
+                save_grid_name = "plate.png"
+
+        if not grid_lock or self._best_fit_rows is None:
+            #if rows is None so is columns 
+
+            topleft_history = self._parent.fixture.get_pinning_history(\
+                self._identifier[1], self._pinning_matrix)
+            if topleft_history is None:
+                topleft_history = []
+
+            self.logger.debug('The gridding history is {0}'.format(topleft_history))
+
+            best_fit_rows, best_fit_columns, R, adjusted_by_history = \
+                self._analysis.get_analysis(\
+                im, self._pinning_matrix, use_otsu, median_coeff, verboise, 
+                visual, history=topleft_history)
+
+
+            self.logger.debug("GRID ARRAY %s, best rows \n%s\nbest columns\n%s" %\
+                ("unkown", str(best_fit_rows), 
+                str(best_fit_columns)))
+
+            if best_fit_rows == None or best_fit_columns == None:
+
+                self.logger.warning("GRID ARRAY %s, Failed to detect grid." %\
+                     str(self._identifier))
+
+                self._best_fit_rows = None
+                self._best_fit_coulmns = None
+                return False
+
+            elif self.R is None or R < 20:
+
+                self._best_fit_rows = best_fit_rows
+                self._best_fit_columns = best_fit_columns
+
+                self.set_history(adjusted_by_history=adjusted_by_history)
+
+
+            else:
+                
+                logger.warning('Pinning matrix seem inconsistent with previous' +\
+                    'matrices in this project, using old')
+                
+            self.R = R
+
+
+            if self._grid_cell_size == None:
+                self._grid_cell_size = map(int, map(round, self._analysis.best_fit_frequency[:]))
+                #print self._grid_cell_size
+
+        else:
+            return False 
+
+        for row in xrange(self._pinning_matrix[0]):
+            if visual or save_grid_image:
+                grid_plot.plot(\
+                    np.ones(len(self._best_fit_columns))*\
+                    self._best_fit_rows[row],
+                    np.array(self._best_fit_columns),
+                    'r-')
+
+            for column in xrange(self._pinning_matrix[1]):
+
+                if visual or save_grid_image:
+                    grid_plot.plot(\
+                        np.array(self._best_fit_rows),
+                        np.ones(len(self._best_fit_rows))*\
+                            self._best_fit_columns[column], 'r-')
+
+        if visual:
+            grid_image.show() 
+            plt.close(grid_image)
+            del grid_image
+        elif save_grid_image:
+            self.logger.info("ANALYSIS GRID: Saving grid-image as file '{0}' for plate {1}".format(\
+                save_grid_name, self._identifier[1]))
+            grid_image.savefig(save_grid_name)
+            plt.close(grid_image)
+            del grid_image
+
+        return True
+
     def set_pinning_matrix(self, pinning_matrix):
         """
             set_pinning_matrix sets the pinning_matrix.
@@ -225,6 +389,7 @@ class Grid_Array():
 
         return tf_matrix
 
+
     def get_analysis(self, im, gs_fit=None, gs_values=None, use_fallback=False,\
         use_otsu=True, median_coeff=None, verboise=False, visual=False, \
         watch_colony=None, supress_other=False, save_grid_image=False, \
@@ -291,68 +456,22 @@ class Grid_Array():
 
         has_previous_rect = True
 
+
+
         if not grid_lock or self._best_fit_rows is None:
-            #if rows is None so is columns 
 
-            topleft_history = self._parent.fixture.get_pinning_history(\
-                self._identifier[1], self._pinning_matrix)
-            if topleft_history is None:
-                topleft_history = []
-
-            self.logger.debug('The gridding history is {0}'.format(topleft_history))
-
-            best_fit_rows, best_fit_columns, R = self._analysis.get_analysis(\
-                im, self._pinning_matrix, use_otsu, median_coeff, verboise, 
-                visual, history=topleft_history)
-
-
-            self.logger.debug("GRID ARRAY %s, best rows \n%s\nbest columns\n%s" %\
-                ("unkown", str(best_fit_rows), 
-                str(best_fit_columns)))
-
-            if best_fit_rows == None or best_fit_columns == None:
-
-                self.logger.warning("GRID ARRAY %s, Failed to detect grid." %\
-                     str(self._identifier))
-
-                self._best_fit_rows = None
-                self._best_fit_coulmns = None
-                return None
-            elif self.R is None or R < 20:
-                self._best_fit_rows = best_fit_rows
-                self._best_fit_columns = best_fit_columns
-                p_uuid = self._parent.p_uuid
-               
-                if p_uuid is not None:
-                    
-                    is_rerun = [i for i, tl in enumerate(topleft_history) if tl[0] == p_uuid]
-                    hist_b_r = np.asarray(best_fit_rows)
-                    hist_b_c = np.asarray(best_fit_columns)
-                    hist_entry = (p_uuid, 
-                        (best_fit_rows[0], best_fit_columns[1]),
-                        ((hist_b_r[1:]-hist_b_r[:-1]).mean(),
-                        (hist_b_c[1:]-hist_b_c[:-1]).mean()))
-
-                    if len(is_rerun) == 0:
-                        topleft_history.append(hist_entry)
-                    else:
-                        topleft_history[is_rerun[0]] = hist_entry
-
-                    if len(topleft_history) > 20:
-                        del topleft_history[0]
-
-                self._parent.fixture.set_pinning_positions(\
-                    self._identifier[1], self._pinning_matrix, topleft_history)
-
-
-                
-            self.R = R
-
-
-            if self._grid_cell_size == None:
-                self._grid_cell_size = map(int, map(round, self._analysis.best_fit_frequency[:]))
-                #print self._grid_cell_size
+            if self._best_fit_rows is None:
                 has_previous_rect = False
+
+            if not self.set_grid(im, save_grid_name=save_grid_name, 
+                save_grid_image=save_grid_image, grid_lock = grid_lock, 
+                use_otsu=use_otsu, median_coeff=median_coeff, 
+                verboise=verboise, visual=visual):
+                
+                self.logger.critical('Failed to set grid on {0} and none to use'.\
+                    format(self._identifier))
+
+                return None
 
         #else:
             ###DEBUG SIZE OF CELL
@@ -410,30 +529,13 @@ class Grid_Array():
                 #for y in xrange(im.shape[1]):
                     #im[x,y] = transformation_matrix[im[x,y]]
         #print "*** Analysing grid:"
-        if visual or save_grid_image:
-            grid_image = plt.figure()
-            grid_plot = grid_image.add_subplot(111)
-            grid_plot.imshow(im, cmap=plt.cm.gray)
-            if save_grid_name is None:
-                save_grid_name = "plate.png"
 
         #Since it is remade each time it should not matter that it is only created once        
         tf_im = np.zeros(self._grid_cell_size, dtype=np.float64)
 
         for row in xrange(self._pinning_matrix[0]):
-            if visual or save_grid_image:
-                grid_plot.plot(\
-                    np.ones(len(self._best_fit_columns))*\
-                    self._best_fit_rows[row],
-                    np.array(self._best_fit_columns),
-                    'r-')
-            for column in xrange(self._pinning_matrix[1]):
 
-                if visual or save_grid_image:
-                    grid_plot.plot(\
-                        np.array(self._best_fit_rows),
-                        np.ones(len(self._best_fit_rows))*\
-                            self._best_fit_columns[column], 'r-')
+            for column in xrange(self._pinning_matrix[1]):
 
                 if supress_other == False or (watch_colony != None and \
                         watch_colony[1] == row and watch_colony[2] == column):
@@ -742,15 +844,5 @@ class Grid_Array():
 
         self._old_timestamp = timestamp
 
-        if visual:
-            grid_image.show() 
-            plt.close(grid_image)
-            del grid_image
-        elif save_grid_image:
-            self.logger.info("ANALYSIS GRID: Saving grid-image as file '{0}' for plate {1}".format(\
-                save_grid_name, self._identifier[1]))
-            grid_image.savefig(save_grid_name)
-            plt.close(grid_image)
-            del grid_image
                 #print str(((row+1)*self._pinning_matrix[1] + column+1)/total_steps) + "%"
         return self._features 

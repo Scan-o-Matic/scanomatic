@@ -403,6 +403,15 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
             self._force_quit = True
             self.running_Analysis()          
 
+    def _terminate(self, ask=True):
+
+        while self._scanning == True and self._loaded:
+            pass
+
+        if self._loaded:
+            self._power_manager.off()
+            self.owner.set_unclaim_scanner(self._scanner_name)
+            self.destroy()
 
     def running_Experiment(self, widget=None, event=None, data=None):
         if self._force_quit == False:
