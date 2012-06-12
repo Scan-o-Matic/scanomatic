@@ -58,6 +58,7 @@ class Grid_Array():
         self.R = None
         self._best_fit_rows = None
         self._best_fit_coulmns = None
+        self._first_analysis = True
 
         self._old_blob_img = None 
         self._old_blob_filter = None 
@@ -460,14 +461,11 @@ class Grid_Array():
         if debug_per_plate:
             raw_input("Waiting to start next plate (press Enter)")    
 
-        has_previous_rect = True
 
 
 
         if not grid_lock or self._best_fit_rows is None:
 
-            if self._best_fit_rows is None:
-                has_previous_rect = False
 
             if not self.set_grid(im, save_grid_name=save_grid_name, 
                 save_grid_image=save_grid_image, grid_lock = grid_lock, 
@@ -618,7 +616,7 @@ class Grid_Array():
                                 
 
                     #This happens only the first time
-                    if has_previous_rect == False:
+                    if self._first_analysis:
                         self._grid_cells[row][column].attach_analysis(
                             blob=True, background=True, cell=True, 
                             use_fallback_detection=use_fallback, run_detect=False)
@@ -851,4 +849,5 @@ class Grid_Array():
         self._old_timestamp = timestamp
 
                 #print str(((row+1)*self._pinning_matrix[1] + column+1)/total_steps) + "%"
+        self._first_analysis = False
         return self._features 

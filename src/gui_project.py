@@ -89,7 +89,8 @@ class Project_Analysis_Running(gtk.Frame):
         self._gui_analysis_start = gtk.Label("Start time: %s" % str(\
             time.strftime("%Y-%m-%d %H:%M",
             time.localtime(time.time()))))
-        self._gui_timer = gtk.Label("Run-time: %d" % int((time.time() - float(self._start_time)) / 60))
+        self._gui_timer = gtk.Label("Run-time: {0} min".format(\
+            int((time.time() - float(self._start_time)) / 60)))
         button = gtk.Button('Teminate Analysis')
         button.connect('clicked', self._terminate)
 
@@ -130,6 +131,7 @@ class Project_Analysis_Running(gtk.Frame):
 
                 if fs is not None:
                     fs_lines = fs.read()
+                    fs.close()
                     re_hits = re.findall(self._analysis_re_pattern, fs_lines)
                     status_text = "Currently anlysing image: {0}".format(\
                         re_hits[-1].split(os.sep)[-1])
@@ -278,7 +280,7 @@ class Project_Analysis_Setup(gtk.Frame):
 
         #Watch-colony
         hbox = gtk.HBox()
-        label = gtk.Label("Watch colony:")
+        label = gtk.Label("Watch colony (to track and give extremely ritch data on):")
         entry = gtk.Entry()
         entry.set_text(str(self._watch_colony))
         entry.connect("focus-out-event",self._eval_input, "watch_colony")
@@ -288,12 +290,12 @@ class Project_Analysis_Setup(gtk.Frame):
        
         #Watch-time 
         hbox = gtk.HBox()
-        label = gtk.Label("Watch time:")
-        entry = gtk.Entry()
-        entry.set_text(str(self._watch_time))
-        entry.connect("focus-out-event",self._eval_input, "watch_time")
+        label = gtk.Label("Watch time (index of when to save images of how gridding worked):")
+        self.gui_watch_time_entry = gtk.Entry()
+        self.gui_watch_time_entry.set_text(str(self._watch_time))
+        self.gui_watch_time_entry.connect("focus-out-event",self._eval_input, "watch_time")
         hbox.pack_start(label, False, False, 2)
-        hbox.pack_end(entry, False, False, 2)
+        hbox.pack_end(self.gui_watch_time_entry, False, False, 2)
         vbox.pack_start(hbox, False, False, 2)
 
         #Supress other
@@ -432,7 +434,36 @@ class Project_Analysis_Setup(gtk.Frame):
             widget.set_text(str(data))
             self._gui_updating = False
 
+    def _set_watch_time(self):
 
+        try:
+            current_values = map(int, self.gui_watch_time_entry.get_text().split(","))
+        except:
+            current_values = [-1]
+
+        images_in_run = -1
+        if self._analysis_log_file_path is not None:
+
+            try:
+                fs = open(self._analysis_log_file_path,'r')
+            except:
+                fs = None
+
+            if fs is not None:
+                fs_lines = fs.read()
+                fs.close()
+                re_pattern = 'File'
+                images_in_run = len(re.findall(re_pattern, fs_lines))
+        
+        if images_in_run > 0:
+
+            #clean out indices that are too high
+            current_values = [x for x in current_values if x < images_in_run]
+            
+            if current_values == [-1] or current_values ==[]:
+                current_values = [images_in_run-1]
+
+        self.gui_watch_time_entry.set_text(",".join(map(str,current_values)))
 
 
     def _path_warning(self, output=None):
@@ -471,6 +502,7 @@ class Project_Analysis_Setup(gtk.Frame):
                 str(self._analysis_log_file_path))
 
             self._path_warning()
+            self._set_watch_time()
 
             self._gui_start_button.set_sensitive(True)
             
