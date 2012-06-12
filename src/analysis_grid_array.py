@@ -57,7 +57,7 @@ class Grid_Array():
 
         self.R = None
         self._best_fit_rows = None
-        self._best_fit_coulmns = None
+        self._best_fit_columns = None
         self._first_analysis = True
 
         self._old_blob_img = None 
@@ -150,7 +150,7 @@ class Grid_Array():
 
     def set_grid(self, im, save_grid_name=None, save_grid_image=False,
         grid_lock = True, use_otsu=True, 
-        median_coeff=None, verboise=False, visual=False):
+        median_coeff=None, verboise=False, visual=False, dont_save_grid=False):
         """
             Sets a grid to an image.
 
@@ -188,6 +188,9 @@ class Grid_Array():
             if save_grid_name is None:
                 save_grid_name = "plate.png"
 
+        best_fit_rows = self._best_fit_rows
+        best_fit_columns = self._best_fit_columns
+
         if not grid_lock or self._best_fit_rows is None:
             #if rows is None so is columns 
 
@@ -208,64 +211,72 @@ class Grid_Array():
                 ("unkown", str(best_fit_rows), 
                 str(best_fit_columns)))
 
-            if best_fit_rows == None or best_fit_columns == None:
+            if not dont_save_grid:
+                if best_fit_rows == None or best_fit_columns == None:
 
-                self.logger.warning("GRID ARRAY %s, Failed to detect grid." %\
-                     str(self._identifier))
+                    self.logger.warning("GRID ARRAY %s, Failed to detect grid." %\
+                         str(self._identifier))
 
-                self._best_fit_rows = None
-                self._best_fit_coulmns = None
-                return False
+                    self._best_fit_rows = None
+                    self._best_fit_coulmns = None
+                    return False
 
-            elif self.R is None or R < 20:
+                elif self.R is None or R < 20:
 
-                self._best_fit_rows = best_fit_rows
-                self._best_fit_columns = best_fit_columns
+                    self._best_fit_rows = best_fit_rows
+                    self._best_fit_columns = best_fit_columns
 
-                self.set_history(adjusted_by_history=adjusted_by_history)
+                    self.set_history(adjusted_by_history=adjusted_by_history)
 
 
-            else:
-                
-                logger.warning('Pinning matrix seem inconsistent with previous' +\
-                    'matrices in this project, using old')
-                
-            self.R = R
+                else:
+                    
+                    logger.warning('Pinning matrix seem inconsistent with previous' +\
+                        'matrices in this project, using old')
+                    
+                self.R = R
 
 
             if self._grid_cell_size == None:
                 self._grid_cell_size = map(int, map(round, self._analysis.best_fit_frequency[:]))
                 #print self._grid_cell_size
 
-
-        for row in xrange(self._pinning_matrix[0]):
-            if visual or save_grid_image:
-                grid_plot.plot(\
-                    np.ones(len(self._best_fit_columns))*\
-                    self._best_fit_rows[row],
-                    np.array(self._best_fit_columns),
-                    'r-')
-
-            for column in xrange(self._pinning_matrix[1]):
-
+        if visual or save_grid_image:
+            for row in xrange(self._pinning_matrix[0]):
                 if visual or save_grid_image:
                     grid_plot.plot(\
-                        np.array(self._best_fit_rows),
-                        np.ones(len(self._best_fit_rows))*\
-                            self._best_fit_columns[column], 'r-')
+                        np.ones(len(best_fit_columns))*\
+                        best_fit_rows[row],
+                        np.array(best_fit_columns),
+                        'r-')
 
-        if visual:
-            grid_image.show() 
-            plt.close(grid_image)
-            del grid_image
-        elif save_grid_image:
-            self.logger.info("ANALYSIS GRID: Saving grid-image as file '{0}' for plate {1}".format(\
-                save_grid_name, self._identifier[1]))
-            grid_image.savefig(save_grid_name)
-            plt.close(grid_image)
-            del grid_image
+                for column in xrange(self._pinning_matrix[1]):
 
-        if not grid_lock or self._best_fit_rows is None:
+                    if visual or save_grid_image:
+                        grid_plot.plot(\
+                            np.array(best_fit_rows),
+                            np.ones(len(best_fit_rows))*\
+                                best_fit_columns[column], 'r-')
+
+            ax = grid_image.gca()
+            ax.set_xlim(0,im.shape[1])
+            ax.set_ylim(0,im.shape[0])
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+            
+
+            if visual:
+                grid_image.show() 
+                plt.close(grid_image)
+                del grid_image
+            elif save_grid_image:
+                self.logger.info("ANALYSIS GRID: Saving grid-image as file '{0}' for plate {1}".format(\
+                    save_grid_name, self._identifier[1]))
+                grid_image.savefig(save_grid_name, pad_inches=0.01, bbox_inches='tight')
+                plt.close(grid_image)
+                del grid_image
+
+        if (not grid_lock or self._best_fit_rows is None) and not dont_save_grid:
             return True
         else:
             return False
@@ -477,6 +488,8 @@ class Grid_Array():
 
                 return None
 
+                
+
         #else:
             ###DEBUG SIZE OF CELL
             #print  "I,",self._identifier, ", give shape ", self._grid_cell_size, " and keep position"
@@ -507,8 +520,7 @@ class Grid_Array():
         #Normalising towards grayscale before anything is done on the colonies
         transformation_matrix = None
         #KODAK neutral scale
-        gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,
-            22,18,14,10,6,4,2,0])
+        gs_indices = self._parent.gs_indices
 
 
         if gs_values == None:

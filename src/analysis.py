@@ -377,7 +377,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     logger.info("Starting analysis of {0} images, with log-record {1} (first image at {2})".\
         format(image_pos - first_scan_position + 1, image_pos, first_scan_position))
 
-    
+    logger.info("Will save grids at times: {0}".format(grid_times))
+ 
     while image_pos >= first_scan_position:
         scan_start_time = time()
         img_dict_pointer = image_dictionaries[image_pos]
@@ -395,14 +396,20 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         logger.info("ANALYSIS, Running analysis on '{}'".format( \
             img_dict_pointer['File']))
 
+        if 'grayscale_indices' in img_dict_pointer.keys():
+            gs_indices = img_dict_pointer['grayscale_indices']
+        else:
+            gs_indices = None
+
         features = project_image.get_analysis( img_dict_pointer['File'], \
             plate_positions, img_dict_pointer['grayscale_values'], \
             use_fallback, use_otsu, watch_colony=graph_watch, \
             supress_other=supress_analysis, \
-            save_graph_image=(image_pos in grid_times), \
-            save_graph_name=outdata_files_path+"time_" + str(image_pos).zfill(4) +\
+            save_graph_image=(image_pos-first_scan_position in grid_times), \
+            save_graph_name=outdata_files_path+"time_" + str(image_pos-first_scan_position).zfill(4) +\
              "_plate_", grid_lock = True, identifier_time=image_pos, 
-            timestamp=img_dict_pointer['Time'])
+            timestamp=img_dict_pointer['Time'],
+            grayscale_indices=gs_indices)
 
         if supress_analysis != True:
 
@@ -752,6 +759,8 @@ class Project_Image():
             fixture = fixture_name)
 
         self.im = None
+        self.gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,
+            22,18,14,10,6,4,2,0])
 
         self._timestamp = None
         self.set_pinning_matrices(pinning_matrices)
@@ -821,9 +830,11 @@ class Project_Image():
         if -1 < plate_index < len(self._grid_arrays):
             return self._grid_arrays[plate_index]
         else:
+            self.logger.warning("ANALYSIS IMAGE: Plate {0} outside expected range (0 - {1}).".\
+                format(plate_index, len(self._grid_arrays)))
             return None
 
-    def get_im_section(self, features, scale_factor=1.0):
+    def get_im_section(self, features, scale_factor=4.0):
 
         if self._im_loaded:
 
@@ -853,7 +864,8 @@ class Project_Image():
     def get_analysis(self, im_path, features, grayscale_values, \
             use_fallback=False, use_otsu=True, watch_colony=None, \
             supress_other=False, save_graph_image=False, save_graph_name=None,
-            grid_lock=False, identifier_time = None, timestamp = None):
+            grid_lock=False, identifier_time = None, timestamp = None, 
+            grayscale_indices=None):
 
         """
             @param im_path: An path to an image
@@ -906,13 +918,31 @@ class Project_Image():
 
         if len(grayscale_values) > 3:
             gs_values = np.array(grayscale_values)
-            gs_indices = np.arange(len(grayscale_values))
+            if grayscale_indices is None:
+                gs_indices = self.gs_indices
+            else:
+                gs_indices = np.array(grayscale_indices)
+                self.gs_indices = gs_indices
 
             gs_fit = np.polyfit(gs_indices, gs_values,3)
         else:
             gs_fit = None
 
         self.logger.debug("ANALYSIS produced gs-coefficients {0} ".format(gs_fit))
+
+        scale_factor = 4.0
+
+        if save_graph_image:
+
+            for ga_i, grid_array in enumerate(self._grid_arrays):
+
+                im = self.get_im_section(features[ga_i], scale_factor)
+                cur_graph_name = save_graph_name + str(ga_i) + ".png"
+                grid_array.set_grid(im, save_grid_name=cur_graph_name, 
+                    save_grid_image=cur_graph_name, grid_lock = grid_lock, 
+                    use_otsu=use_otsu, median_coeff=None, 
+                    verboise=False, visual=False, dont_save_grid=True)
+
 
         if gs_fit is not None:
 
@@ -932,11 +962,8 @@ coefficients don't have the same sign")
 
             return None    
 
-        scale_factor = 4.0
 
-        if save_graph_image == False:
-            cur_graph_name = None
-
+            
         ###DEBUG GRID ARRAYS
         #print "The", len(self._grid_arrays), "arrays:", self._grid_arrays
         ###DEBUG END
@@ -945,9 +972,6 @@ coefficients don't have the same sign")
 
             im = self.get_im_section(features[grid_array], scale_factor)
  
-            if save_graph_image == True:
-
-                cur_graph_name = save_graph_name + str(grid_array) + ".png"
             save_anime_name = save_graph_name + "anime.png"
             
             self._grid_arrays[grid_array].get_analysis( \
@@ -955,8 +979,8 @@ coefficients don't have the same sign")
                 gs_values=gs_values, use_fallback=use_fallback,\
                 use_otsu=use_otsu, median_coeff=None, \
                 verboise=False, visual=False, watch_colony=watch_colony, \
-                supress_other=supress_other, save_grid_image=save_graph_image\
-                , save_grid_name = cur_graph_name, 
+                supress_other=supress_other, save_grid_image=False\
+                , save_grid_name = None, 
                 save_anime_name = save_anime_name, grid_lock = grid_lock,
                 identifier_time = identifier_time, timestamp=timestamp,
                 animate=self._animate)

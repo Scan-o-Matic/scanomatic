@@ -328,10 +328,10 @@ class Scanning_Experiment(gtk.Frame):
                 if grayscale != None:
                     gs = img_base.Analyse_Grayscale(image=grayscale)
                     gs_data[-1]['grayscale_values'] = gs._grayscale
-                    gs_data[-1]['grayscale_inices'] = gs._grayscale_X
+                    gs_data[-1]['grayscale_indices'] = gs.get_kodak_values()
                 else:
                     gs_data[-1]['grayscale_values'] = None
-                    gs_data[-1]['grayscale_inices'] = None
+                    gs_data[-1]['grayscale_indices'] = None
             
                 sections_areas = self.f_settings.current_analysis_image_config.get_all("plate_%n_area")
                 for i, a in enumerate(sections_areas):

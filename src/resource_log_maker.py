@@ -108,18 +108,18 @@ def make_entries(fs, file_list=None, extra_info=None, verboise=False, quiet=Fals
                 write_dictionary['mark_Y'] = list(f_settings.mark_Y)
 
                 if grayscale != None:
-                    gs = img_base.Analyse_Grayscale(image=grayscale, )
+                    gs = img_base.Analyse_Grayscale(image=grayscale)
                     write_dictionary['grayscale_values'] = gs._grayscale
-                    write_dictionary['grayscale_inices'] = gs._grayscale_X
+                    write_dictionary['grayscale_indices'] = gs.get_kodak_values()
                 else:
                     write_dictionary['grayscale_values'] = None
-                    write_dictionary['grayscale_inices'] = None
+                    write_dictionary['grayscale_indices'] = None
             
+                
                 sections_areas = f_settings.current_analysis_image_config.get_all("plate_%n_area")
                 for i, a in enumerate(sections_areas):
                     #s = f_settings.A.get_subsection(a)
                     write_dictionary['plate_' + str(i) + '_area'] = list(a)
-
             if 'Time' not in write_dictionary.keys():
                 write_dictionary['Time'] = os.stat(im_file).st_mtime
 

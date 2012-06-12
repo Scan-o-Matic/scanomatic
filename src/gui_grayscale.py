@@ -140,7 +140,7 @@ class Gray_Scale(gtk.Frame):
                 1110, debug_level="error")
             return False
 
-        #z2 = np.polyfit(gs._grayscale_X, gs._grayscale,2)
+        #z2 = np.polyfit(kodak_values, gs._grayscale,2)
         #p2 = np.poly1d(z2)
         z3 = np.polyfit(kodak_values, gs._grayscale,3)
         p3 = np.poly1d(z3)

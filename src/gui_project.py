@@ -464,6 +464,7 @@ class Project_Analysis_Setup(gtk.Frame):
                 current_values = [images_in_run-1]
 
         self.gui_watch_time_entry.set_text(",".join(map(str,current_values)))
+        self._watch_time = self.gui_watch_time_entry.get_text() 
 
 
     def _path_warning(self, output=None):

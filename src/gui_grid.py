@@ -140,31 +140,44 @@ class Grid(gtk.Frame):
         self.review_hbox.pack_start(vbox2, False, False, 2)
 
         vbox2 = gtk.VBox()
-        label = gtk.Label("Remapping of grid:")
-        vbox2.pack_start(label, False, False, 2)
-        label = gtk.Label("For now only done in simple shifting in discrete steps")
+        label = gtk.Label("For now only done in shifting in discrete steps")
         vbox2.pack_start(label, False, False, 20)
+
+        label = gtk.Label("How many steps should the columns be moved?")
+        vbox2.pack_start(label, False, False, 2)
+
+        label = gtk.Label("(positive numbers = to the right)")
+        vbox2.pack_start(label, False, False, 2)
+
         hbox = gtk.HBox()
-        label = gtk.Label("How many steps should the columns be moved (positive numbers = to the right)?")
-        hbox.pack_start(label, False, False, 2)
         self._gui_column_shift = gtk.Entry(2)
         self._gui_column_shift.set_text("0")
         self._gui_column_shift.connect("focus-out-event", self.move_grid)
         hbox.pack_end(self._gui_column_shift, False, False, 2)
         vbox2.pack_start(hbox, False, False, 2)
+
+        label = gtk.Label("How many steps should the rows be moved?")
+        vbox2.pack_start(label, False, False, 2)
+
+        label = gtk.Label("(positive numbers = down)")
+        vbox2.pack_start(label, False, False, 2)
+
         hbox = gtk.HBox()
-        label = gtk.Label("How many steps should the rows be moved (positive numbers = down)?")
-        hbox.pack_start(label, False, False, 2)
         self._gui_row_shift = gtk.Entry(2)
         self._gui_row_shift.set_text("0")
         self._gui_row_shift.connect("focus-out-event", self.move_grid)
         hbox.pack_end(self._gui_row_shift, False, False, 2)
         vbox2.pack_start(hbox, False, False, 2)
 
+        self.review_hbox.pack_end(vbox2, False, False, 2)
+
+        vbox2 = gtk.VBox()
+        label = gtk.Label("Remapping of grid:")
+        vbox2.pack_start(label, False, False, 2)
         self._gui_reanalysis_img = gtk.Image()
         vbox2.pack_start(self._gui_reanalysis_img, False, False, 2)
+        self.review_hbox.pack_start(vbox2, False, False, 2)
 
-        self.review_hbox.pack_end(vbox2, False, False, 2)
         vbox.pack_start(self.review_hbox,False, False, 2)
 
         vbox.show_all()
@@ -203,54 +216,61 @@ class Grid(gtk.Frame):
             except:
                 self._gui_row_shift.set_text("0")
 
-            if row_shift != 0 or column_shift != 0:  
-                active = self.plate_selector.get_active()
 
-                rows, columns = self.pinnings[active]
+            #Take care of the fact that the image is oriented as it is
+            row_shift *= -1
+            #column_shift *= -1
 
-                if row_shift != 0:
-                    np_rows = np.asarray(rows)
-                    rows_f =  (np_rows[1:] - np_rows[:-1]).mean()
+            active = self.plate_selector.get_active()
 
-                    if row_shift > 0:
-                        rows = rows[row_shift:]
-                        for i in xrange(row_shift):
-                            rows.append(rows[-1] + rows_f)
-                    else:
-                        rows = rows[:row_shift]
-                        for i in xrange(-row_shift):
-                            rows.insert(0, rows[0] - rows_f)
+            columns, rows = self.pinnings[active]
 
-                if column_shift != 0:
-                    np_columns = np.asarray(columns)
-                    columns_f =  (np_columns[1:] - np_columns[:-1]).mean()
+            if row_shift != 0:
+                np_rows = np.asarray(rows)
+                rows_f =  (np_rows[1:] - np_rows[:-1]).mean()
 
-                    if column_shift > 0:
-                        columns = columns[column_shift:]
-                        for i in xrange(column_shift):
-                            columns.append(columns[-1] + columns_f)
-                    else:
-                        columns = columns[:column_shift]
-                        for i in xrange(-column_shift):
-                            columns.insert(0, columns[0] - columns_f)
-                
-                self.repinnings[active] = (rows, columns)
+                if row_shift > 0:
+                    rows = rows[row_shift:]
+                    for i in xrange(row_shift):
+                        rows.append(rows[-1] + rows_f)
+                else:
+                    rows = rows[:row_shift]
+                    for i in xrange(-row_shift):
+                        rows.insert(0, rows[0] - rows_f)
+
+            if column_shift != 0:
+                np_columns = np.asarray(columns)
+                columns_f =  (np_columns[1:] - np_columns[:-1]).mean()
+
+                if column_shift > 0:
+                    columns = columns[column_shift:]
+                    for i in xrange(column_shift):
+                        columns.append(columns[-1] + columns_f)
+                else:
+                    columns = columns[:column_shift]
+                    for i in xrange(-column_shift):
+                        columns.insert(0, columns[0] - columns_f)
+            
+            self.repinnings[active] = (columns, rows)
  
             self._gui_updating = False
 
             self.make_repinning()
 
     def make_repinning(self):
-            
+           
+            self.analysis_image.set_pinning_matrices(self._pinning_matrices)
             self.analysis_image.set_manual_grids(self.repinnings)
             active = self.plate_selector.get_active()
             plate = self.analysis_image.get_plate(active)
-            im = self.analysis_image.get_im_section(self._plate_positions[active])
-            plate.set_grid(im , save_grid_name= self._temp_grid_image, save_grid_image=True,
-                grid_lock = True, verboise=False, visual=False)
+            if plate is not None:
+                im = self.analysis_image.get_im_section(self._plate_positions[active])
+                plate.set_grid(im , save_grid_name= self._temp_grid_image, save_grid_image=True,
+                    grid_lock = True, verboise=False, visual=False)
 
-            self._gui_reanalysis_img.set_from_file(self._temp_grid_image)
-            
+                self._gui_reanalysis_img.set_from_file(self._temp_grid_image)
+            else:
+                self.DMS("GRID","Failed to make regridding on Plate {0} - sorry!".format(active)) 
     def set_image(self):
 
         if self._grid_image is None:
@@ -315,14 +335,8 @@ class Grid(gtk.Frame):
 
                         self.pinnings[true_plate] = (pinnings[plate], pinnings[plate+1])
 
-        if self._pinning_matrices is None or self._pinning_matrices == [None] * len(self.pinnings.keys()):
-
-            for k in self.pinnings.keys():
-                self._pinning_matrices[k] = (len(self.pinnings[k][0]), len(self.pinnings[k][1])) 
 
         if self._log is not None:
-            if not self._run_file_path or fs is None and self._log is not None:
-                self._diagnostic_images = []
 
             image_dicts = self._log.get_all("%n")
             pos = 100
@@ -337,6 +351,14 @@ class Grid(gtk.Frame):
                 self._plate_positions.append( \
                     image_dicts[pos]["plate_{0}_area".format(i)] )
 
+        if self._pinning_matrices is None or \
+            self._pinning_matrices == [None] * len(self._plate_positions):
+
+            for k in self.pinnings.keys():
+                try:
+                    self._pinning_matrices[k] = (len(self.pinnings[k][0]), len(self.pinnings[k][1])) 
+                except:
+                    pass
 
     def set_log_file(self):
 
