@@ -98,6 +98,7 @@ class Scanning_Experiment(gtk.Frame):
         self._watch_colony = None
         self._supress_other = False
         self._watch_time = '1'
+        self._destroy_request = None
 
         self._looked_for_scanner = 0
         self._scanning = False
@@ -405,13 +406,19 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
 
     def _terminate(self, ask=True):
 
-        while self._scanning == True and self._loaded:
-            pass
-
+        
+        if self._scanning == True and self._loaded:
+            if self._destroy_request is None:
+                self._destroy_request = time.time()
+                
+            if time.time() - self._destroy_request < 5:
+                gobject.timeout_add(500, self._terminate)
+                return
+            
         if self._loaded:
             self._power_manager.off()
             self.owner.set_unclaim_scanner(self._scanner_name)
-            self.destroy()
+        self.destroy()
 
     def running_Experiment(self, widget=None, event=None, data=None):
         if self._force_quit == False:

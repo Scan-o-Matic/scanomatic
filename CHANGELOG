@@ -2,6 +2,10 @@
 ##### Changed in Scannomatic 0.993 #####
    ###################################
 
+*** Migrated number of scanners to main.config
+
+*** Implemented a Force Unclaim Scanner possibility
+
 *** Implemented an abort running analysis
 
 *** Implemented nicer program terminate to catch all ongoing processes.

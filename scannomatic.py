@@ -89,6 +89,7 @@ class Application_Window():
             <menuitem action="Application Settings"/>
             <menuitem action="Installing Scanner"/>
             <menuitem action="Scanner Configurations"/>
+            <menuitem action="Unclaim Scanner by Force"/>
             <menuitem action="Configuring Fixtures"/>
         </menu>
     </menubar>
@@ -122,9 +123,15 @@ class Application_Window():
         self._live_scanners = {}
         self._claimed_scanners = []
 
-        ###HACK
-        self._installed_scanners = ['Scanner 1', 'Scanner 2']
-        ###END HACK
+        ###LESS-OF-A-HACK
+        if self._config_file.get("number_of_scanners") is None:
+            self._config_file.set("number_of_scanners", 1)
+            self._config_file.save()
+
+        self._installed_scanners = []
+        for scanner in xrange(int(self._config_file.get("number_of_scanners"))):
+            self._installed_scanners.append("Scanner {0}".format(scanner+1))    
+        ###END LESS-OF-A-HACK
         self.DMS('Scanner Resources', 'Unclaimed at start-up %s' % \
             self.get_unclaimed_scanners(), level=100, debug_level='debug')
         self.DMS('Scanner Resources', 'Scanners that are on: %s' % \
@@ -176,6 +183,7 @@ class Application_Window():
                 ("Application Settings", None, "Application Settings", None, None, self.menu_Settings),
                 ("Installing Scanner",    None,   "Installing Scanner",   None,  None,   self.null_thing),
                 ("Scanner Configurations",    None,   "Scanner Configurations",   None,  None,   self.null_thing),
+                ("Unclaim Scanner by Force", None, "Unclaim Scanner by Force", None, None, self.menu_unclaim_scanner_by_force),
                 ("Configuring Fixtures",    None,   "Configuring Fixtures",   None,  None,   self.config_fixture)
             ])
 
@@ -517,8 +525,44 @@ class Application_Window():
                 level=100, debug_level='debug')
         except:
             self.DMS('Scanner Resources', 
-                "Could not unclaim scanner %s when done with it" % scanner,
+                "Could not unclaim scanner %s for unkown reasons" % scanner,
                 level=100, debug_level='warning')
+
+    #
+    #   FORCE UNCLAIM FUNCTIONS
+    #
+    def menu_unclaim_scanner_by_force(self, widget=None, event=None, data=None):
+
+            dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
+                                   gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+                                   "Select the scanner that you wish to free up:")
+
+            unclaimed = self.get_unclaimed_scanners()
+            claimed = [s for s in self._installed_scanners if s not in unclaimed]
+            for i,s in enumerate(claimed):
+                dialog.add_button(s,i)
+            dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+
+            resp = dialog.run()
+            dialog.destroy()
+            if resp != gtk.RESPONSE_CANCEL:
+                
+                dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
+                   gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+                   "This will free up {0}\n".format(claimed[resp]) + \
+                    "Thus crash anything running on it.\n" + \
+                    "Please make sure it really is free.\n" +
+                    "And make sure no other instance of Scan-o-Matic is using it!")
+                
+                dialog.add_button("Unclaim it!", gtk.RESPONSE_YES)
+                dialog.add_button("Cancel", gtk.RESPONSE_NO)
+
+                resp2 = dialog.run()
+                dialog.destroy()
+                if resp2 == gtk.RESPONSE_YES:
+                    self.set_unclaim_scanner(claimed[resp])
+                    self.DMS("Force Unclaim Scanner","{0} is now free to use".format(\
+                        claimed[resp])) 
     #
     #   PROJECT ANALYSIS FUNCTIONS
     #
