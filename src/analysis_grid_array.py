@@ -107,6 +107,11 @@ class Grid_Array():
         self._best_fit_rows = best_fit_rows
         self._best_fit_columns = best_fit_columns
 
+        best_fit_rows = np.asarray(best_fit_rows)
+        best_fit_columns = np.asarray(best_fit_columns)
+
+        fit_frequency = ((best_fit_columns[1:]-best_fit_columns[:-1]).mean(), (best_fit_rows[1:] - best_fit_rows[:-1]).mean())
+
         if self._grid_cell_size == None:
             self._grid_cell_size = map(int, map(round, fit_frequency[:]))
          
@@ -231,8 +236,6 @@ class Grid_Array():
                 self._grid_cell_size = map(int, map(round, self._analysis.best_fit_frequency[:]))
                 #print self._grid_cell_size
 
-        else:
-            return False 
 
         for row in xrange(self._pinning_matrix[0]):
             if visual or save_grid_image:
@@ -261,7 +264,10 @@ class Grid_Array():
             plt.close(grid_image)
             del grid_image
 
-        return True
+        if not grid_lock or self._best_fit_rows is None:
+            return True
+        else:
+            return False
 
     def set_pinning_matrix(self, pinning_matrix):
         """

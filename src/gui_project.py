@@ -131,7 +131,7 @@ class Project_Analysis_Running(gtk.Frame):
                 if fs is not None:
                     fs_lines = fs.read()
                     re_hits = re.findall(self._analysis_re_pattern, fs_lines)
-                    status_text = "Currently anlysiing image: {0}".format(\
+                    status_text = "Currently anlysing image: {0}".format(\
                         re_hits[-1].split(os.sep)[-1])
                     self._gui_status_text.set_text(status_text)
                 else:

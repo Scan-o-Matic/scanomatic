@@ -752,11 +752,15 @@ class Project_Image():
             fixture = fixture_name)
 
         self.im = None
-        self._grid_arrays = []
-        self.features = []
-        self.R = []
 
         self._timestamp = None
+        self.set_pinning_matrices(pinning_matrices)
+
+    def set_pinning_matrices(self, pinning_matrices):
+
+        self.R = []
+        self.features = []
+        self._grid_arrays = []
         self._pinning_matrices = pinning_matrices
 
         for a in xrange(len(pinning_matrices)):
@@ -766,7 +770,7 @@ class Project_Image():
                 self.R.append(None)
 
         if len(pinning_matrices) > len(self._grid_arrays):
-            logger.info('Analysis will run on {0} plates out of {1}'.format(\
+            self.logger.info('Analysis will run on {0} plates out of {1}'.format(\
                 len(self._grid_arrays), len(pinning_matrices)))
 
     def set_manual_grids(self, grid_adjustments):
@@ -785,9 +789,66 @@ class Project_Image():
                 try:
                     self._grid_arrays[k].set_manual_grid(grid_adjustments[k])
                 except IndexError:
-                    logger.error('Failed to set manual grid adjustments to {0}, plate non-existent'.\
+                    self.logger.error('Failed to set manual grid adjustments to {0}, plate non-existent'.\
                         format(k))
             
+    def load_image(self):
+
+        try:
+            self.im = plt_img.imread(self._im_path)
+            self._im_loaded = True
+        except:
+
+            alt_path = os.sep.join((self._file_path_base,
+                self._im_path.split(os.sep)[-1]))
+
+            self.logger.warning("ANALYSIS IMAGE, Could not open image at '{0}' trying in log-file directory ('{1}').".\
+                format(self._im_path, alt_path))
+
+            #self._im_path = os.sep.join((self._file_path_base, 
+            #    self.im_path.split(os.sep)[-1]))
+
+            try:
+                self.im = plt_img.imread(alt_path)
+                self._im_loaded = True
+            except:
+                self.logger.warning("ANALYSIS IMAGE, No image found... sorry")
+        
+                self._im_loaded = False
+
+    def get_plate(self, plate_index):
+
+        if -1 < plate_index < len(self._grid_arrays):
+            return self._grid_arrays[plate_index]
+        else:
+            return None
+
+    def get_im_section(self, features, scale_factor=1.0):
+
+        if self._im_loaded:
+
+            x0 = round(features[0][0]*scale_factor)
+            x1 = round(features[1][0]*scale_factor)
+            if x0 < x1:
+                upper = x0
+                lower = x1
+            else:
+                upper = x1
+                lower = x0
+
+            y0 = round(features[0][1]*scale_factor)
+            y1 = round(features[1][1]*scale_factor)
+            if y0 < y1:
+                left = y0
+                right = y1
+            else:
+                left = y1
+                right = y0
+
+            return self.im[ upper:lower, left:right ]
+
+        else:
+            return None
 
     def get_analysis(self, im_path, features, grayscale_values, \
             use_fallback=False, use_otsu=True, watch_colony=None, \
@@ -832,28 +893,7 @@ class Project_Image():
 
         if im_path != None:
             self._im_path = im_path
-
-        try:
-            self.im = plt_img.imread(self._im_path)
-            self._im_loaded = True
-        except:
-
-            alt_path = os.sep.join((self._file_path_base,
-                self._im_path.split(os.sep)[-1]))
-
-            logger.warning("ANALYSIS IMAGE, Could not open image at '{0}' trying in log-file directory ('{1}').".\
-                format(self._im_path, alt_path))
-
-            #self._im_path = os.sep.join((self._file_path_base, 
-            #    self.im_path.split(os.sep)[-1]))
-
-            try:
-                self.im = plt_img.imread(alt_path)
-                self._im_loaded = True
-            except:
-                logger.warning("ANALYSIS IMAGE, No image found... sorry")
-        
-                self._im_loaded = False
+            self.load_image()
 
 
         if self._im_loaded == True:           
@@ -872,7 +912,7 @@ class Project_Image():
         else:
             gs_fit = None
 
-        logger.debug("ANALYSIS produced gs-coefficients {0} ".format(gs_fit))
+        self.logger.debug("ANALYSIS produced gs-coefficients {0} ".format(gs_fit))
 
         if gs_fit is not None:
 
@@ -883,7 +923,7 @@ class Project_Image():
 
             if (z3_deriv > 0).any() and (z3_deriv < 0).any():
 
-                logger.warning("ANALYSIS of grayscale seems dubious as \
+                self.logger.warning("ANALYSIS of grayscale seems dubious as \
 coefficients don't have the same sign")
                 gs_fit = None
 
@@ -903,24 +943,7 @@ coefficients don't have the same sign")
 
         for grid_array in xrange(len(self._grid_arrays)):
 
-            x0 = round(features[grid_array][0][0]*scale_factor)
-            x1 = round(features[grid_array][1][0]*scale_factor)
-            if x0 < x1:
-                upper = x0
-                lower = x1
-            else:
-                upper = x1
-                lower = x0
-
-            y0 = round(features[grid_array][0][1]*scale_factor)
-            y1 = round(features[grid_array][1][1]*scale_factor)
-            if y0 < y1:
-                left = y0
-                right = y1
-            else:
-                left = y1
-                right = y0
-
+            im = self.get_im_section(features[grid_array], scale_factor)
  
             if save_graph_image == True:
 
@@ -928,7 +951,7 @@ coefficients don't have the same sign")
             save_anime_name = save_graph_name + "anime.png"
             
             self._grid_arrays[grid_array].get_analysis( \
-                self.im[ upper:lower, left:right ], \
+                im, \
                 gs_values=gs_values, use_fallback=use_fallback,\
                 use_otsu=use_otsu, median_coeff=None, \
                 verboise=False, visual=False, watch_colony=watch_colony, \
