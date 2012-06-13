@@ -2,6 +2,13 @@
 ##### Changed in Scannomatic 0.993 #####
    ###################################
 
+*** Analysis corrects grids according to its knowledge of how it should be
+    if it gets odd results.
+
+*** Added manual grid to analysis / GUI and command line
+
+*** Implemented GUI for regridding
+
 *** Migrated number of scanners to main.config
 
 *** Implemented a Force Unclaim Scanner possibility

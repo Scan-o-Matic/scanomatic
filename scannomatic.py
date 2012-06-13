@@ -578,7 +578,8 @@ class Application_Window():
             watch_colony = widget._watch_colony, 
             supress_other = widget._supress_other, 
             watch_time = widget._watch_time,
-            analysis_output=widget._analysis_output)
+            analysis_output=widget._analysis_output,
+            manual_grid = widget._manual_grid)
 
 
     #

@@ -28,7 +28,10 @@ import numpy as np
 
 import resource_config as conf
 import resource_fixture as r_fixture
+import resource_signal as r_signal
 import analysis as analysis_module
+import resource_log_edit as rle
+
 #
 # SCANNING RE GRIDDING
 #
@@ -57,6 +60,10 @@ class Grid(gtk.Frame):
         self._p_uuid = None 
         self._grid_adjustments = None 
         self._grid_image = None
+
+        self._old_row_shift = 0
+        self._old_column_shift = 0
+
         self._re_pattern_diag_imgs = "grid-image as file '(.*)' for plate (.)"
         self._re_pattern_imgs = ".*Running analysis on '([^']*)'"
         self._re_pattern_pinnings = "Positions([^\]]*])"
@@ -106,21 +113,6 @@ class Grid(gtk.Frame):
         vbox.pack_start(hbox, False, False, 2)
 
         
-        #Matrices-override
-        hbox = gtk.HBox()
-        self.plates_label = gtk.Label("Plates")
-        checkbox = gtk.CheckButton(label="Override pinning settings", use_underline=False)
-        checkbox.connect("clicked", self._set_override_toggle)
-        self.plate_pinnings = gtk.HBox()
-        self.plates_entry = gtk.Entry(max=1)
-        self.plates_entry.set_size_request(20,-1)
-        self.plates_entry.connect("focus-out-event", self._set_plates)
-        self.plates_entry.set_text(str(len(self._matrices or 4*[None])))
-        hbox.pack_start(checkbox, False, False, 2)
-        hbox.pack_end(self.plate_pinnings, False, False, 2)
-        hbox.pack_end(self.plates_entry, False, False, 2)
-        hbox.pack_end(self.plates_label, False, False, 2)
-        vbox.pack_start(hbox, False, False, 2)
 
 
         hbox = gtk.HBox()
@@ -129,6 +121,23 @@ class Grid(gtk.Frame):
         self.plate_selector = gtk.combo_box_new_text()                   
         self.plate_selector.connect("changed", self._set_active_plate)
         hbox.pack_start(self.plate_selector, False, False, 2)
+        self.gui_matrix_override = gtk.combo_box_new_text()
+        self.gui_matrix_override.append_text("--Keep current pinning format--")
+        for pm in sorted(self.pinning_matrices.keys()):
+            self.gui_matrix_override.append_text(pm)
+        self.gui_matrix_override.set_active(0)
+        self.gui_matrix_override.connect("changed", self._set_update_pinning_matrix)
+        hbox.pack_start(self.gui_matrix_override, False, False, 2) 
+        self.save_button = gtk.Button("Save all changes made")
+        self.save_button.connect("clicked",self._set_write_manual_grid)
+        self.save_button.set_sensitive(False)
+        self.rerun_button = gtk.Button("Rerun analysis with current changes")
+        self.rerun_button.connect("clicked", self._rerun_analysis)
+        self.rerun_button.set_sensitive(False)
+        
+        hbox.pack_start(self.save_button, False, False, 20)
+        hbox.pack_start(self.rerun_button, False, False, 20)
+        
         vbox.pack_start(hbox, False, False, 2)
    
         self.review_hbox = gtk.HBox()
@@ -183,6 +192,25 @@ class Grid(gtk.Frame):
         vbox.show_all()
         self.review_hbox.hide()
 
+    def _rerun_analysis(self, widget=None, event=None, data=None):
+
+        self.owner.analyse_project.set_defaults(log_file=self._log_file_path, 
+            manual_gridding=True)
+        self.owner.menu_Project()
+        
+    def _set_write_manual_grid(self, widget=None, event=None, data=None):
+
+        if self._log_file_path:
+
+            header_entries = {\
+                'Pinning Matrices': self._pinning_matrices,
+                'Manual Gridding': self.repinnings}
+
+            rle.rewrite_meta_row(self._log_file_path, header_entries)
+            self.DMS("Regridding","Logfile has been updated!")
+            self.save_button.set_sensitive(False)
+            self.rerun_button.set_sensitive(True)
+
     def _set_active_plate(self, widget=None, event=None, data=None):
 
         if self.analysis_image is None:
@@ -196,9 +224,34 @@ class Grid(gtk.Frame):
             if len(dbg_img) > 0:
                 self.pin_img.set_from_file(dbg_img[0])
 
+            self._gui_updating = True
             self.review_hbox.show()
+            self._gui_reanalysis_img.hide()
+            self._gui_row_shift.set_text("0")
+            self._gui_column_shift.set_text("0")
+            self.gui_matrix_override.set_active(0)
+
+            self._gui_updating = False
+
         else: 
             self.review_hbox.hide()
+
+    def _set_update_pinning_matrix(self, widget=None, event=None, data=None):
+
+        if not self._gui_updating:
+            self._gui_updating = True
+            active_plate = self.plate_selector.get_active()
+            if 0 <= active_plate < len(self._pinning_matrices):
+                pm_text = widget.get_model()[widget.get_active()][0]
+                self.DMS("regridding","Requesting plate {0} to have pinning {1}".\
+                    format(active_plate, pm_text))
+                if pm_text in self.pinning_matrices.keys():
+
+                    self._pinning_matrices[active_plate] = \
+                        self.pinning_matrices[pm_text]    
+                
+            self._gui_updating = False
+            self.make_repinning()
 
     def move_grid(self, widget=None, event=None, data=None):
 
@@ -216,49 +269,32 @@ class Grid(gtk.Frame):
             except:
                 self._gui_row_shift.set_text("0")
 
-
             #Take care of the fact that the image is oriented as it is
             row_shift *= -1
-            #column_shift *= -1
+
+            #Make it relative to prev value
+            row_shift -= self._old_row_shift
+            column_shift -= self._old_column_shift
 
             active = self.plate_selector.get_active()
 
             columns, rows = self.pinnings[active]
 
-            if row_shift != 0:
-                np_rows = np.asarray(rows)
-                rows_f =  (np_rows[1:] - np_rows[:-1]).mean()
+            signal_move = r_signal.move_signal(self.pinnings[active],
+                [column_shift, row_shift])
 
-                if row_shift > 0:
-                    rows = rows[row_shift:]
-                    for i in xrange(row_shift):
-                        rows.append(rows[-1] + rows_f)
-                else:
-                    rows = rows[:row_shift]
-                    for i in xrange(-row_shift):
-                        rows.insert(0, rows[0] - rows_f)
+            if signal_move is not None: 
+                self.repinnings[active] = signal_move
+                self._old_row_shift += row_shift
+                self._old_column_shift += column_shift
 
-            if column_shift != 0:
-                np_columns = np.asarray(columns)
-                columns_f =  (np_columns[1:] - np_columns[:-1]).mean()
-
-                if column_shift > 0:
-                    columns = columns[column_shift:]
-                    for i in xrange(column_shift):
-                        columns.append(columns[-1] + columns_f)
-                else:
-                    columns = columns[:column_shift]
-                    for i in xrange(-column_shift):
-                        columns.insert(0, columns[0] - columns_f)
-            
-            self.repinnings[active] = (columns, rows)
- 
             self._gui_updating = False
 
             self.make_repinning()
 
     def make_repinning(self):
            
+        if self.analysis_image:
             self.analysis_image.set_pinning_matrices(self._pinning_matrices)
             self.analysis_image.set_manual_grids(self.repinnings)
             active = self.plate_selector.get_active()
@@ -269,8 +305,12 @@ class Grid(gtk.Frame):
                     grid_lock = True, verboise=False, visual=False)
 
                 self._gui_reanalysis_img.set_from_file(self._temp_grid_image)
+                self._gui_reanalysis_img.show()
+                self.save_button.set_sensitive(True)
+                self.rerun_button.set_sensitive(False)
             else:
                 self.DMS("GRID","Failed to make regridding on Plate {0} - sorry!".format(active)) 
+
     def set_image(self):
 
         if self._grid_image is None:
@@ -333,8 +373,10 @@ class Grid(gtk.Frame):
                         else:
                             true_plate = plate
 
-                        self.pinnings[true_plate] = (pinnings[plate], pinnings[plate+1])
-
+                        if true_plate < len(self._pinning_matrices):
+                            self.pinnings[true_plate] = [pinnings[2*plate], pinnings[2*plate+1]]
+                            self.DMS('Regridding', "Found grid for {0}:\n{1}".format(\
+                                true_plate, self.pinnings[true_plate]), 110, debug_level='info')
 
         if self._log is not None:
 
@@ -360,6 +402,9 @@ class Grid(gtk.Frame):
                 except:
                     pass
 
+            header_entries = {'Pinning Matrices': self._pinning_matrices}
+            rle.rewrite_meta_row(self._log_file_path, header_entries)
+
     def set_log_file(self):
 
         if self._log_file_path:
@@ -374,15 +419,23 @@ class Grid(gtk.Frame):
 
             if 'Fixture' in image_dicts[0].keys():
                 self._fixture_name = image_dicts[0]['Fixture']
+            else:
+                self._fixture_name = "fixture_a"
 
             if 'Pinning Matrices' in image_dicts[0].keys():
                 self._pinning_matrices = image_dicts[0]['Pinning Matrices']
+            else:
+                self._pinning_matrices = None
 
             if 'UUID' in image_dicts[0].keys():
                 self._p_uuid =  image_dicts[0]['UUID']
-                
-            if 'Grid Adjustments' in image_dicts[0].keys():
-                self._grid_adjustments =  image_dicts[0]['Grid Adjustments']
+            else:
+                self._p_uuid = None               
+ 
+            if 'Manual Gridding' in image_dicts[0].keys():
+                self.repinnings =  image_dicts[0]['Manual Gridding']
+            else:
+                self.repinnings = {}
 
             if self._fixture_name is not None:
                 self.fixture = r_fixture.Fixture_Settings(\
@@ -409,22 +462,22 @@ class Grid(gtk.Frame):
             self._pinning_matrices = [None] * n
         self.plate_selector.set_sensitive(True)
 
-    def _set_override_toggle(self, widget=None, event=None, data=None):
+    #def _set_override_toggle(self, widget=None, event=None, data=None):
+#
+        #if widget.get_active():
+            #self.plates_entry.show()
+            #self.plate_pinnings.show()
+            #self._set_plates(widget=self.plates_entry)
+            #self.plates_label.set_text("Plates:")
+        #else:
+            #self.plates_entry.hide()
+            #self.plate_pinnings.hide()
+            #self.plates_label.set_text("(Using the pinning matrices specified in the log-file)")
+            #self.pinning_string = None
 
-        if widget.get_active():
-            self.plates_entry.show()
-            self.plate_pinnings.show()
-            self._set_plates(widget=self.plates_entry)
-            self.plates_label.set_text("Plates:")
-        else:
-            self.plates_entry.hide()
-            self.plate_pinnings.hide()
-            self.plates_label.set_text("(Using the pinning matrices specified in the log-file)")
-            self.pinning_string = None
+    #def _set_plates(self, widget=None, event=None, data=None):
 
-    def _set_plates(self, widget=None, event=None, data=None):
-
-        pass
+        #pass
 
     def _select_file(self, widget=None, event=None, data=None):
 

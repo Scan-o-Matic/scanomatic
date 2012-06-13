@@ -276,7 +276,7 @@ class Grid_Array():
                 plt.close(grid_image)
                 del grid_image
 
-        if (not grid_lock or self._best_fit_rows is None) and not dont_save_grid:
+        if self._best_fit_rows is not None or not dont_save_grid:
             return True
         else:
             return False

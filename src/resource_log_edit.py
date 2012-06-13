@@ -19,8 +19,59 @@ __status__ = "Development"
 import logging, uuid, os
 
 #
+# GLOBALS
+#
+
+META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0, 
+   'Description': 'Automatic placeholder description',
+   'UUID': str(uuid.uuid1()),'Measures':0,'Fixture': 'fixture_a',
+   'Pinning Matrices': None, 'Manual Gridding': None}
+
+#
 # FUNCTIONS
 #
+
+def rewrite_meta_row(path, header_entries):
+
+    try:
+        fs = open(path, 'r')
+    except:
+        logging.error("Could not open '{0}'".format(path))
+        return False
+
+
+    lines = []
+    i = 0
+    for l in fs:
+        if i == 0:
+            l_dict = eval(l)
+            try:
+                l_keys_in_meta = [(k in META_DATA.keys()) for k in l_dict.keys()]
+            except:
+                l_keys_in_meta = [False]
+
+            if len(l_keys_in_meta) > sum(l_keys_in_meta):
+                data = l_dict
+            else:
+                data = META_DATA
+
+            for h in header_entries.keys():
+                data[h] = header_entries[h]
+             
+            if len(l_keys_in_meta) > sum(l_keys_in_meta):
+                lines = [str(data)+"\n", l]
+            else:
+                lines = [str(data)+"\n"]
+        else:
+            lines.append(l)
+        i += 1
+    fs.close()
+
+    fs = open(path, 'w')
+    for l in lines:
+        fs.write(l)
+    fs.close()
+    return True
 
 def rewrite(path, rewrite_entries):
 
@@ -54,10 +105,7 @@ def rewrite(path, rewrite_entries):
 
 def create_place_holder_meta_info(path = None):
 
-    data = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0, 
-       'Description': 'Automatic placeholder description',
-       'UUID': str(uuid.uuid1()),'Measures':0,'Fixture': 'fixture_a',
-        'Pinning Matrices': None}
+    data = META_DATA
 
     if path:
 

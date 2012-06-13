@@ -46,7 +46,7 @@ import src.resource_os as os_tools
 class Project_Analysis_Running(gtk.Frame):
     def __init__(self, owner, gtk_target, log_file, matrices, 
         watch_colony = None, supress_other = False, watch_time = 1, 
-        analysis_output='analysis'):
+        analysis_output='analysis', manual_grid=False):
 
         self.USE_CALLBACK = owner.USE_CALLBACK
 
@@ -68,6 +68,7 @@ class Project_Analysis_Running(gtk.Frame):
         self._watch_colony = watch_colony
         self._supress_other = supress_other
         self._watch_time = watch_time
+        self._manual_grid = manual_grid
 
         self._analysis_log_dir = os.sep.join(log_file.split(os.sep)[:-1]) + os.sep 
         self._analysis_sub_proc = None
@@ -151,7 +152,7 @@ class Project_Analysis_Running(gtk.Frame):
                 self._watch_time, '--xml-short', 'True', 
                 '--xml-omit-compartments', 'background,cell',
                 '--xml-omit-measures','mean,median,IQR,IQR_mean,centroid,perimeter,area',
-                '--debug', 'info']
+                '--debug', 'info', '--manual-grid', str(self._manual_grid)]
 
             if self._matrices is not None:
                 analysis_query += ["-m", self._matrices]
@@ -216,7 +217,7 @@ class Project_Analysis_Setup(gtk.Frame):
         self._watch_colony = None
         self._supress_other = False
         self._watch_time = '-1'
-
+        self._manual_grid = False
         self._analysis_output = 'analysis'
         self._analysis_log_file_path = None
 
@@ -250,11 +251,11 @@ class Project_Analysis_Setup(gtk.Frame):
         #Output directory name
         hbox = gtk.HBox()
         label = gtk.Label("Analysis output relative directory:")
-        entry = gtk.Entry()
-        entry.set_text(str(self._analysis_output))
-        entry.connect("focus-out-event", self._eval_input, "analysis_output")
+        self.output_entry = gtk.Entry()
+        self.output_entry.set_text(str(self._analysis_output))
+        self.output_entry.connect("focus-out-event", self._eval_input, "analysis_output")
         hbox.pack_start(label, False, False, 2)
-        hbox.pack_end(entry, False, False, 2)
+        hbox.pack_end(self.output_entry, False, False, 2)
         vbox.pack_start(hbox, False, False, 2)
 
         #Output directory overwrite warning
@@ -264,28 +265,37 @@ class Project_Analysis_Setup(gtk.Frame):
         #Matrices-override
         hbox = gtk.HBox()
         self.plates_label = gtk.Label("Plates")
-        checkbox = gtk.CheckButton(label="Override pinning settings", use_underline=False)
-        checkbox.connect("clicked", self._set_override_toggle)
+        self.override_checkbox = gtk.CheckButton(label="Override pinning settings", use_underline=False)
+        self.override_checkbox.connect("clicked", self._set_override_toggle)
         self.plate_pinnings = gtk.HBox()
         self.plates_entry = gtk.Entry(max=1)
         self.plates_entry.set_size_request(20,-1)
         self.plates_entry.connect("focus-out-event", self._set_plates)
         self.plates_entry.set_text(str(len(self._matrices or 4*[None])))
-        hbox.pack_start(checkbox, False, False, 2)
+        hbox.pack_start(self.override_checkbox, False, False, 2)
         hbox.pack_end(self.plate_pinnings, False, False, 2)
         hbox.pack_end(self.plates_entry, False, False, 2)
         hbox.pack_end(self.plates_label, False, False, 2)
         vbox.pack_start(hbox, False, False, 2)
         self._set_plates(self.plates_entry)
 
+        #Manual gridding (if exists)
+        hbox = gtk.HBox()
+        self.manual_gridding_cb = gtk.CheckButton(\
+            label="Use manual gridding (if exists in log-file)",
+            use_underline=False)
+        self.manual_gridding_cb.connect("clicked", self._set_manual_grid_toggle)
+        hbox.pack_start(self.manual_gridding_cb, False, False, 2)
+        vbox.pack_start(hbox, False, False, 2)
+
         #Watch-colony
         hbox = gtk.HBox()
         label = gtk.Label("Watch colony (to track and give extremely ritch data on):")
-        entry = gtk.Entry()
-        entry.set_text(str(self._watch_colony))
-        entry.connect("focus-out-event",self._eval_input, "watch_colony")
+        self.watch_entry = gtk.Entry()
+        self.watch_entry.set_text(str(self._watch_colony))
+        self.watch_entry.connect("focus-out-event",self._eval_input, "watch_colony")
         hbox.pack_start(label, False, False, 2)
-        hbox.pack_end(entry, False, False, 2)
+        hbox.pack_end(self.watch_entry, False, False, 2)
         vbox.pack_start(hbox, False, False, 2)
        
         #Watch-time 
@@ -301,11 +311,11 @@ class Project_Analysis_Setup(gtk.Frame):
         #Supress other
         hbox = gtk.HBox()
         label = gtk.Label("Supress analysis of the non-watched colonies:")
-        entry = gtk.Entry()
-        entry.set_text(str(self._supress_other))
-        entry.connect("focus-out-event",self._eval_input, "supress_other")
+        self.supress_entry = gtk.Entry()
+        self.supress_entry.set_text(str(self._supress_other))
+        self.supress_entry.connect("focus-out-event",self._eval_input, "supress_other")
         hbox.pack_start(label, False, False, 2)
-        hbox.pack_end(entry, False, False, 2)
+        hbox.pack_end(self.supress_entry, False, False, 2)
         vbox.pack_start(hbox, False, False, 20)
         
         #Start button
@@ -317,7 +327,11 @@ class Project_Analysis_Setup(gtk.Frame):
         vbox.pack_start(hbox, False, False, 2)
         
         vbox.show_all() 
-        self._set_override_toggle(widget=checkbox)
+        self._set_override_toggle(widget=self.override_checkbox)
+
+    def _set_manual_grid_toggle(self, widget=None, event=None, data=None):
+    
+        self._manual_grid = widget.get_active()
 
     def _set_override_toggle(self, widget=None, event=None, data=None):
 
@@ -368,6 +382,24 @@ class Project_Analysis_Setup(gtk.Frame):
             for i, c in enumerate(children):
                 if i >= slots*2:
                     c.destroy()
+
+    def set_defaults(self, log_file=None, manual_gridding=False):
+
+        self.supress_entry.set_text("False")
+        self.gui_watch_time_entry.set_text("-1")
+        self.watch_entry.set_text("None")
+        self.output_entry.set_text("analysis")
+
+
+        if log_file is not None:
+            self._select_log_file(data=log_file)
+        else:
+            self._gui_analysis_log_file.set_text("")      
+            self._gui_start_button.set_sensitive(False)
+
+        self.override_checkbox.set_active(False)
+        self.manual_gridding_cb.set_active(True)
+
 
     def _build_pinning_string(self, widget=None):
 
@@ -482,23 +514,28 @@ class Project_Analysis_Setup(gtk.Frame):
             self._gui_warning.set_text("") 
 
     def _select_log_file(self, widget=None, event=None, data=None):
-        newlog = gtk.FileChooserDialog(title="Select log file", 
-            action=gtk.FILE_CHOOSER_ACTION_OPEN, 
-            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
-            gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+        if data is None:
+            newlog = gtk.FileChooserDialog(title="Select log file", 
+                action=gtk.FILE_CHOOSER_ACTION_OPEN, 
+                buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
+                gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
 
-        f = gtk.FileFilter()
-        f.set_name("Valid log files")
-        f.add_mime_type("text")
-        f.add_pattern("*.log")
-        newlog.add_filter(f)
+            f = gtk.FileFilter()
+            f.set_name("Valid log files")
+            f.add_mime_type("text")
+            f.add_pattern("*.log")
+            newlog.add_filter(f)
 
 
-        result = newlog.run()
+            result = newlog.run()
         
-        if result == gtk.RESPONSE_APPLY:
+        if data is not None or result == gtk.RESPONSE_APPLY:
 
-            self._analysis_log_file_path = newlog.get_filename()
+            if data is not None:
+                self._analysis_log_file_path = data
+            else:
+                self._analysis_log_file_path = newlog.get_filename()
+
             self._gui_analysis_log_file.set_text("Log file: %s" % \
                 str(self._analysis_log_file_path))
 
@@ -507,7 +544,9 @@ class Project_Analysis_Setup(gtk.Frame):
 
             self._gui_start_button.set_sensitive(True)
             
-        newlog.destroy()
+        if data is None:
+            newlog.destroy()
+
 
     def _start(self, widget=None, event=None, data=None):
 

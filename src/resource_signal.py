@@ -399,3 +399,31 @@ def get_position_of_spike(spike, signal_start, frequency):
     """
 
     return (spike - signal_start) / float(frequency)
+
+def move_signal(signals, shifts, frequencies=None, freq_offset=1):
+
+    if len(shifts) != len(signals):
+        logging.error("1st Dimension missmatch between signal and shift-list")
+        return None
+
+    else:
+        if frequencies is None:
+            frequencies = [None] * len(shifts)
+            for i in xrange(len(shifts)):
+                frequencies[i] = (np.array(signals[i][1:]) - np.array(signals[i][:-1])).mean()
+
+        
+        for i,s in enumerate(shifts):
+            if s != 0:
+                
+                f = frequencies[(i + freq_offset) % len(signals)]
+                if s > 0:
+                    signals[i] = signals[i][s:]
+                    for i in xrange(s):
+                        signals[i].append(signals[i][-1] + f)
+                else:
+                    signals[i] = signals[i][:s]
+                    for i in xrange(-s):
+                        signals[i].insert(0, signals[0] - f)
+
+        return signals

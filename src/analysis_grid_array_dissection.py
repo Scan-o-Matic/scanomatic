@@ -175,7 +175,7 @@ class Grid_Analysis():
                     self.logger.warning('GRID ARRAY, frequency abnormality for dimension {0} (Current {1}, Expected {2}'.format(dimension, best_fit_frequency[dimension], history_f))
 
                     adjusted_by_history = True
-                    #ADJUST F HERE
+                    best_fit_frequency[dimension] = history_f[dimension]
 
             best_fit_positions[dimension] = r_signal.get_true_signal(\
                 im.shape[int(dimension==0)], pinning_matrix[dimension], 
@@ -189,12 +189,19 @@ class Grid_Analysis():
                     history_f[dimension])
                 if abs(goodness_of_signal) > 0.2:
                     self.logger.warning("GRID ARRAY, dubious pinning position for\
- dimension {0} (Current signal start {1}, Expected {2}).".format(\
+ dimension {0} (Current signal start {1}, Expected {2} (error: {3}).".format(\
                         dimension, best_fit_positions[dimension][0],
-                        history_rc[dimension]))
+                        history_rc[dimension], goodness_of_signal))
                     
                     adjusted_by_history = True
-                    #ADJUST RC HERE
+
+                    new_fit = r_signal.move_signal([best_fit_positions[dimension]],
+                        [-1*round(goodness_of_signal)], freq_offset=0)
+                    if new_fit is not None:
+                        self.logger.warning("GRID ARRAY, remapped signal for "+\
+                            "dimension {0} , new signal:\n{1}".format(\
+                            dimension, list(new_fit)))
+                        best_fit_positions[dimension] = new_fit[0]
 
             ###START HERE MARKING OUT ALL OLD STUFF...
             #best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
@@ -202,8 +209,8 @@ class Grid_Analysis():
                     #pinning_matrix[dimension], verboise )            
  
             self.logger.info("GRID ARRAY, Best fit:\n" + \
-                "* Elements" + str(pinning_matrix[dimension]) +\
-                "\n* Positions" + str(best_fit_positions[dimension]))
+                "* Elements: " + str(pinning_matrix[dimension]) +\
+                "\n* Positions:\n" + str(best_fit_positions[dimension]))
 
             #DEBUGHACK
             #visual = True

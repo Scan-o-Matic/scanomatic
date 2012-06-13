@@ -91,7 +91,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         graph_watch, supress_analysis = False, \
         verboise=False, use_fallback = False, use_otsu = False,\
         grid_times=None, xml_format={'short': True, 'omit_compartments':[],
-        'omit_measures':[]}, animate=False):
+        'omit_measures':[]}, animate=False, manual_grid=False):
     """
         analyse_project parses a log-file and runs a full analysis on all 
         images in it. It will step backwards in time, starting with the 
@@ -216,7 +216,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     fixture_name = 'fixture_a'
     p_uuid = None
-    grid_adjustments = None
+    #grid_adjustments = None
+    manual_griddings = None
 
     if 'Description' not in image_dictionaries[0].keys():
         fake_proj_metadata = rle.create_place_holder_meta_info(path = log_file_path)
@@ -244,8 +245,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         if 'UUID' in image_dictionaries[0].keys():
             p_uuid =  image_dictionaries[0]['UUID']
             
-        if 'Grid Adjustments' in image_dictionaries[0].keys():
-            grid_adjustments =  image_dictionaries[0]['Grid Adjustments']
+        #if 'Grid Adjustments' in image_dictionaries[0].keys():
+        #    grid_adjustments =  image_dictionaries[0]['Grid Adjustments']
+        if 'Manual Gridding' in image_dictionaries[0].keys():
+            manual_griddings = image_dictionaries[0]['Manual Gridding']
 
     else:
         first_scan_position = 0
@@ -290,12 +293,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             file_path_base = file_path_base, fixture_name=fixture_name,
             p_uuid = p_uuid)
 
-    if grid_adjustments is not None:
+    if manual_grid and manual_griddings is not None:
         
         logger.info("ANALYSIS: Will implement manual adjustments of grid on plates {0}".format(\
-            grid_adjustments.keys()))
+            manual_griddings.keys()))
 
-        project_image.set_manual_grids(grid_adjustments)
+        project_image.set_manual_grids(manual_griddings)
 
     image_pos = len(image_dictionaries) - 1
 
@@ -1001,31 +1004,58 @@ if __name__ == "__main__":
 
     parser = ArgumentParser(description='The analysis script runs through a log-file (which is created when a project is run). It creates a XML-file that holds the result of the analysis')
 
-    parser.add_argument("-i", "--input-file", type=str, dest="inputfile", help="Log-file to be parsed", metavar="PATH")
-    parser.add_argument("-o", "--ouput-path", type=str, dest="outputpath", help="Path to directory where all data is written (Default is a subdirectory 'analysis' under where the input file is)", metavar="PATH")
+    parser.add_argument("-i", "--input-file", type=str, dest="inputfile", 
+        help="Log-file to be parsed", metavar="PATH")
+
+    parser.add_argument("-o", "--ouput-path", type=str, dest="outputpath", 
+        help="Path to directory where all data is written (Default is a "+\
+        "subdirectory 'analysis' under where the input file is)", 
+        metavar="PATH")
 
     #parser.add_argument("-p", "--plates", default=4, type=int, dest="plates", help="The number of plates in the fixture", metavar="N")
-    parser.add_argument("-m", "--matrices", dest="matrices", default=None, help="The pinning matrices for each plate position in the order set by the fixture config", metavar="(X,Y):(X,Y)...(X,Y)")
+    parser.add_argument("-m", "--matrices", dest="matrices", default=None, 
+        help="The pinning matrices for each plate position in the order set by"\
+        +" the fixture config", metavar="(X,Y):(X,Y)...(X,Y)")
 
-    parser.add_argument("-w", "--watch-position", dest="graph_watch", help="The position of a colony to track.", metavar="PLATE:X:Y", type=str)
+    parser.add_argument("-w", "--watch-position", dest="graph_watch", 
+        help="The position of a colony to track.", metavar="PLATE:X:Y", 
+        type=str)
 
     #parser.add_argument("-g", "--graph-output", dest="graph_output", help="If specified the graph is not shown to the user but instead saved to taget position", type=str)
 
-    parser.add_argument("-t", "--watch-time", dest="grid_times", help="If specified, the gridplacements at the specified timepoints will be saved in the set output-directory, comma-separeted indices.", metavar="0,1,100", default="0", type=str)
+    parser.add_argument("-t", "--watch-time", dest="grid_times", 
+        help="If specified, the gridplacements at the specified timepoints"+\
+        " will be saved in the set output-directory, comma-separeted indices.",
+        metavar="0,1,100", default="0", type=str)
 
-    parser.add_argument('-a', '--animate', dest="animate", default=False, type=bool, help="If True, it will produce stop motion images of the watched colony ready for animation")
+    parser.add_argument("-g", "--manual-grid", dest="manual_grid", 
+        help="Boolean used to invoke manually set gridding, default is false", 
+        default=False, type=bool)
 
-    parser.add_argument("-s", "--supress-analysis", dest="supress", default=False, type=bool, help="If submitted, main analysis will be by-passed and only the plate and position that was specified by the -w flag will be analysed and reported.")
+    parser.add_argument('-a', '--animate', dest="animate", default=False, 
+        type=bool, help="If True, it will produce stop motion images of the "+\
+        "watched colony ready for animation")
 
-    parser.add_argument("--xml-short", dest="xml_short", default=False, type=bool, 
+    parser.add_argument("-s", "--supress-analysis", dest="supress", 
+        default=False, type=bool, 
+        help="If submitted, main analysis will be by-passed and only the plate"\
+        +" and position that was specified by the -w flag will be analysed and"\
+        +" reported.")
+
+    parser.add_argument("--xml-short", dest="xml_short", default=False,
+        type=bool, 
         help="If the XML output should use short tag-names")
 
-    parser.add_argument("--xml-omit-compartments", dest="xml_omit_compartments", type=str, 
+    parser.add_argument("--xml-omit-compartments", 
+        dest="xml_omit_compartments", type=str, 
         help="Comma separated list of compartments to not report")
 
-    parser.add_argument("--xml-omit-measures", dest="xml_omit_measures", type=str,
+    parser.add_argument("--xml-omit-measures", dest="xml_omit_measures",
+        type=str,
         help="Comma seperated list of measures to not report")
-    parser.add_argument("--debug", dest="debug_level", default="warning", type=str, help="Set debugging level")    
+
+    parser.add_argument("--debug", dest="debug_level", default="warning", 
+        type=str, help="Set debugging level")    
 
     args = parser.parse_args()
 
@@ -1167,7 +1197,7 @@ if __name__ == "__main__":
     logger.debug("Logger is ready!")
     analyse_project(args.inputfile, output_path, pm, args.graph_watch, 
         args.supress, True, False, False, grid_times=grid_times,
-        xml_format = xml_format, animate=args.animate)
+        xml_format = xml_format, animate=args.animate, manual_grid=args.manual_grid)
     #else:
         #parser.error("Missmatch between number of plates specified and the number of matrices specified.")
 
