@@ -911,7 +911,7 @@ using old (Error: %.2f" % (str(self._identifier),
 
 
 
-    def old_edge_detect(self):
+    def set_first_step_filtering(self):
 
         #DEBUG CODE START
         #from matplotlib import pyplot as plt
@@ -995,6 +995,7 @@ using old (Error: %.2f" % (str(self._identifier),
         #print "Holes filled"
         #print np.sum(self.filter_array), "pixels inside at this stage"
 
+    def get_candidate_blob_ranks(self):
 
         label_array, number_of_labels = label(self.filter_array)
         qualities = []
@@ -1006,7 +1007,7 @@ using old (Error: %.2f" % (str(self._identifier),
 
                 cur_item = (label_array == (item + 1))
 
-                c_o_m[item] = tuple(map(np.round, center_of_mass(cur_item)))
+                c_o_m[item] = center_of_mass(cur_item)
 
                 cur_pxs = np.sum( cur_item ) 
 
@@ -1023,6 +1024,16 @@ using old (Error: %.2f" % (str(self._identifier),
 
                     qualities.append(cur_pxs * dim1 / float(dim2))
 
+        return number_of_labels, qualities, c_o_m, label_array
+
+    def old_edge_detect(self):
+
+        self.set_first_step_filtering()
+
+        number_of_labels, qualities, c_o_m, label_array = self.get_candidate_blob_ranks()
+
+        if number_of_labels > 0:
+
             q_best = np.asarray(qualities).argmax() + 1
 
             self.filter_array = (label_array == q_best )
@@ -1030,7 +1041,7 @@ using old (Error: %.2f" % (str(self._identifier),
             composite_blob = [q_best]
             composite_trash = []
             for item in xrange(number_of_labels):
-                if self.filter_array[c_o_m[item]]:
+                if self.filter_array[tuple(map(round, c_o_m[item]))]:
                     composite_blob.append(item + 1)
                 else:
                     composite_trash.append(item + 1)

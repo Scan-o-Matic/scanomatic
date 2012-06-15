@@ -89,8 +89,8 @@ class Grid_Analysis():
     #
 
     def get_analysis(self, im, pinning_matrix, use_otsu = True, 
-        median_coeff=None, verboise=False, visual=False,
-        history=[]):
+        median_coeff=None, verboise=False, 
+        visual=False, history=[], manual_threshold = None):
         """
 
             get_analysis is a convenience function for get_spikes and 
@@ -147,10 +147,12 @@ class Grid_Analysis():
         for dimension in xrange(2):
             if median_coeff:
                 positions[dimension], measures[dimension] = self.get_spikes(
-                    dimension, im, visual, verboise, use_otsu, median_coeff)
+                    dimension, im, visual, verboise, use_otsu, median_coeff,
+                    manual_threshold=manual_threshold)
             else:
                 positions[dimension], measures[dimension] = self.get_spikes(
-                    dimension, im, visual, verboise, use_otsu)
+                    dimension, im, visual, verboise, use_otsu,
+                    manual_threshold=manual_threshold)
 
             #DEBUG ROBUSTNESS TEST
             #from random import randint
@@ -306,7 +308,7 @@ class Grid_Analysis():
 
 
     def get_spikes(self, dimension, im=None, visual = False, verboise = False,\
-             use_otsu=True, median_coeff=0.99):
+             use_otsu=True, median_coeff=0.99, manual_threshold=None):
         """
             get_spikes returns a spike list for a dimension of an image array
 
@@ -338,8 +340,9 @@ class Grid_Analysis():
 
         if use_otsu:
 
-            self.threshold = hist.otsu(
-                self.histogram.re_hist(im_1D))
+            self.threshold = hist.otsu(self.histogram.re_hist(im_1D))
+        elif manual_threshold:
+            self.threshold = manual_threshold
         else:
             self.threshold = np.median(im_1D)*median_coeff
 

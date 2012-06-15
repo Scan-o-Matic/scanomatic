@@ -413,7 +413,7 @@ def move_signal(signals, shifts, frequencies=None, freq_offset=1):
                 frequencies[i] = (np.array(signals[i][1:]) - np.array(signals[i][:-1])).mean()
 
         
-        for i,s in enumerate(shifts):
+        for i,s in enumerate(map(int, shifts)):
             if s != 0:
                 
                 f = frequencies[(i + freq_offset) % len(signals)]
@@ -424,6 +424,13 @@ def move_signal(signals, shifts, frequencies=None, freq_offset=1):
                 else:
                     signals[i] = signals[i][:s]
                     for i in xrange(-s):
-                        signals[i].insert(0, signals[0] - f)
+                        signals[i].insert(0, signals[0][0] - f)
+
+
+        for i,s in enumerate([s - int(s) for s in shifts]):
+
+            if s != 0:
+
+                signals[i] = [sign + s*frequencies[i] for sign in signals[i]]
 
         return signals
