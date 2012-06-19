@@ -101,22 +101,21 @@ pos_ctrl[1] = [[20,40],[705,740]]
 neg_ctrl[0] = [[10,40],[395,425]]
 neg_ctrl[1] = [[20,45],[490,535]]
 
-cim = r_colour.Color_Image("./120613_Iodine_LYS+_5min_1.tif", parent=r_colour.Parent(level='debug'))
+cim = r_colour.Color_Image("./120613_Iodine_LYS+_5min_1.tif", parent=r_colour.Parent(level='info'))
 cim.set_deband_image(0,200)
 cim.set_crop_image(margin=[[270,100],[300,240]])
+
 cim.set_features_from_rects(pos_ctrl, settings={'control': True, 'control-type': True})
 cim.set_features_from_rects(neg_ctrl, settings={'control': True, 'control-type': False})
-cim.set_grid()
+cim.set_grid(interactive=False)
+#cim.set_grid()
+
 
 cim.set_features_from_grid()
 #cim.get_plt_features_detected().show()
-cim.del_feature("0:3")
-cim.del_feature("1:2")
-cim.del_feature("2:4")
-cim.del_feature("0:6")
-cim.del_feature("2:10")
+cim.set_references_from_list(["5:2", "2:2", "3:0", "5:0"])
 p = cim.get_phenotypes()
-cim.get_plt_features(p, f=r_colour.get_2_decimals,title="Phenotypes on {0}".format(cim.get_path())).show()
+cim.get_plt_features(p, f=r_colour.get_2_decimals).show()
 
 pos_ctrl = [None, None]
 neg_ctrl = [None, None]
@@ -124,7 +123,7 @@ pos_ctrl[0] = [[30,50],[610,640]]
 pos_ctrl[1] = [[25,45],[725,760]]
 neg_ctrl[0] = [[20,55],[410,440]]
 neg_ctrl[1] = [[25,55],[510,520]]
-cim = r_colour.Color_Image("./120613_Iodine_LYS+_5min_2.tif")
+cim = r_colour.Color_Image("./120613_Iodine_LYS+_5min_2.tif", parent=r_colour.Parent(level='info'))
 cim.set_deband_image(0,180)
 cim.set_crop_image(margin=[[260,100],[330,200]])
 """
@@ -176,6 +175,7 @@ class Color_Image():
         self._grid = None
         self._grid_cell_size = None
         self._features = []
+        self._untrusted = []
         self._next_feature_identifier = 0
 
     def set_deband_image(self, im_norm_low, im_norm_high):
@@ -251,14 +251,29 @@ class Color_Image():
         else:
             return im
 
-    def get_gs_im(self, rect=None):
+    def get_gs_im(self, rect=None, use_ref_vector=None):
 
         if rect is None:
             im = self.get_cur_im()
         else:
             im = self.get_im_section(rect=rect)    
 
-        return im.mean(2)
+        if use_ref_vector is None:
+            return im.mean(2)
+        else:
+
+            if use_ref_vector.upper() == "NEG":
+                n_vector = np.array([f.get_rgb_unit_vector() for f in self.get_neg_features()])
+            elif use_ref_vector.upper() == "POS":
+                n_vector = np.array([f.get_rgb_unit_vector() for f in self.get_pos_features()])
+            elif use_ref_vector.upper() == "REF":
+                n_vector = np.array([f.get_rgb_unit_vector() for f in self.get_ref_features()])
+
+            if len(n_vector.shape) == 2:
+                n_vector = n_vector.mean(0)
+
+            return (im * n_vector).mean(2)
+
 
     def get_im_section(self, rect=None, margin=None):
 
@@ -334,24 +349,24 @@ class Color_Image():
 
         ax = fig.add_subplot(plt_grid[0], plt_grid[1] ,im_cur_count, 
             title="Gray-scale")
-        ax.imshow(self.get_gs_im(), cmap = plt.cm.Greys)
+        ax.imshow(self.get_gs_im(), cmap = plt.cm.Greys_r)
         im_cur_count += 1
 
         cur_im = self.get_cur_im()
 
         ax = fig.add_subplot(plt_grid[0], plt_grid[1] ,im_cur_count, 
             title="Red channel")
-        ax.imshow(cur_im[:,:,0], cmap=plt.cm.Reds)
+        ax.imshow(cur_im[:,:,0], cmap=plt.cm.Greys_r)
         im_cur_count += 1
 
         ax = fig.add_subplot(plt_grid[0], plt_grid[1] ,im_cur_count, 
             title="Green channel")
-        ax.imshow(cur_im[:,:,1], cmap=plt.cm.Greens)
+        ax.imshow(cur_im[:,:,1], cmap=plt.cm.Greys_r)
         im_cur_count += 1
 
         ax = fig.add_subplot(plt_grid[0], plt_grid[1] ,im_cur_count, 
             title="Blue channel")
-        ax.imshow(cur_im[:,:,0], cmap=plt.cm.Blues)
+        ax.imshow(cur_im[:,:,0], cmap=plt.cm.Greys_r)
         im_cur_count += 1
 
         return fig
@@ -400,12 +415,12 @@ class Color_Image():
         for i, f in enumerate(features_with_filter):
             ax = fig.add_subplot(plt_grid[0], plt_grid[1], 2*i + 1)
             ax.set_title(f.get_identifier(), fontsize='xx-small')
-            ax.imshow(f.get_filter(), cmap=plt.cm.gray)
+            ax.imshow(f.get_filter(), cmap=plt.cm.Greys_r)
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
 
             ax = fig.add_subplot(plt_grid[0], plt_grid[1], 2*i + 2)
-            ax.imshow(self.get_gs_im(rect=f.get_rect()), cmap=plt.cm.gray)
+            ax.imshow(self.get_gs_im(rect=f.get_rect()), cmap=plt.cm.Greys_r)
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
 
@@ -452,29 +467,12 @@ class Color_Image():
             ax.imshow(self.get_im_section(rect=f.get_rect()))
             if plts == 2:
                 ax = fig.add_subplot(2,1,2, title='Filter {0}'.format(f.get_identifier()))
-                ax.imshow(f.get_filter(), cmap=plt.cm.Greys)
+                ax.imshow(f.get_filter(), cmap=plt.cm.Greys_r)
 
             return fig
 
         else:
             return None
-
-    def set_free_detect(self):
-
-        im_all_blobs = cell.Blob(self._parent, self._im_path,
-                self.get_gs_im(), 
-                run_detect=False, threshold=None,
-                use_fallback_detection=False, image_color_logic = "inv",
-                center=None, radius=None)
-
-        im_all_blobs.set_first_step_filtering()
-        blobs, qualities, c_o_m, filter_array = im_all_blobs.get_candidate_blob_ranks()
-
-        self._filter_free_detect = im_all_blobs
-        self._filter_array = filter_array
-        self._filter_blobs = blobs
-        self._filter_qualities = qualities
-        self._filter_c_o_m = c_o_m
 
     def get_path(self):
 
@@ -505,6 +503,23 @@ class Color_Image():
                 return_list.append(get_rgb(f))
 
         return return_list
+
+    def set_free_detect(self):
+
+        im_all_blobs = cell.Blob(self._parent, self._im_path,
+                self.get_gs_im(), 
+                run_detect=False, threshold=None,
+                use_fallback_detection=False, image_color_logic = "inv",
+                center=None, radius=None)
+
+        im_all_blobs.set_first_step_filtering()
+        blobs, qualities, c_o_m, filter_array = im_all_blobs.get_candidate_blob_ranks()
+
+        self._filter_free_detect = im_all_blobs
+        self._filter_array = filter_array
+        self._filter_blobs = blobs
+        self._filter_qualities = qualities
+        self._filter_c_o_m = c_o_m
 
     def set_features_from_rects(self, rects, append=True, settings = {}):
 
@@ -542,9 +557,13 @@ class Color_Image():
         #im3_grid = g.get_analysis(get_gs_im(im3_cropped), pinning_matrix, use_otsu = True,
                 #median_coeff=None, verboise=False, visual=False,
                 #history=[])
+        self._grid = im_grid 
+        self._grid_cell_size = (im_f0, im_f1)
+
+        self.set_grid_move(col_move=0.5, row_move=0.5)
 
         if interactive:
-            self.get_plt_grid(grid=im_grid).show()
+            self.get_plt_grid(grid=self._grid).show()
             row_move = raw_input("In terms of steps, many rows should rows be moved? ")
             col_move = raw_input("And columns? ")
             try:
@@ -556,13 +575,13 @@ class Color_Image():
             except:
                 col_move = 0
 
-            im_grid[0] = np.array(r_signal.move_signal([list(im_grid[0])],[col_move], freq_offset=0)[0])
-            im_grid[1] = np.array(r_signal.move_signal([list(im_grid[1])],[row_move], freq_offset=0)[0])
+            self.set_grid_move(col_move=col_move, row_move=row_move)
+            self.get_plt_grid(grid=self._grid, title="Gridding as returned").show()
 
-            self.get_plt_grid(grid=im_grid, title="Gridding as returned").show()
 
-        self._grid = im_grid 
-        self._grid_cell_size = (im_f0, im_f1)
+    def set_grid_move(self, col_move=0, row_move=0):
+        self._grid[0] = np.array(r_signal.move_signal([list(self._grid[0])],[col_move], freq_offset=0)[0])
+        self._grid[1] = np.array(r_signal.move_signal([list(self._grid[1])],[row_move], freq_offset=0)[0])
 
     def set_features_from_grid(self, use_cell_fraction=0.7, verbose=False):
 
@@ -587,7 +606,29 @@ class Color_Image():
                         run_detect=True, threshold=None,
                         use_fallback_detection=False, image_color_logic = "inv",
                         center=None, radius=None)
-                f.set_filter(blob.filter_array)
+                q_inv = blob.get_candidate_blob_ranks()[1][0]
+                if q_inv > 900:
+                    self.logger.warning('Colony {0}'.format(settings['identifier']) +\
+                        ' had bad blob detection quality, testing inverted logic')
+                    blob2 = cell.Blob(self._parent, f.get_identifier(), 
+                            self.get_gs_im(f.get_rect()),
+                            run_detect=True, threshold=None,
+                            use_fallback_detection=False, image_color_logic = None,
+                            center=None, radius=None)
+                    q_2 = blob2.get_candidate_blob_ranks()[1][0]
+                    self.logger.info('Colony {0}'.format(settings['identifier']) +\
+                        " got qualities {0} and {1}".format(q_inv, q_2))
+
+                    if q_2 > 1000:
+                        self._untrusted.append(settings['identifier'])
+                        self.logger.warning('Colony {0}'.format(settings['identifier']) +\
+                            " has no good blob. I put it among the untrusted.")
+                if q_inv <= 900 or q_inv < q_2:    
+                    f.set_filter(blob.filter_array)
+                    f.set_quality(q_inv)
+                else:
+                    f.set_filter(blob2.filter_array)
+                    f.set_quality(q_2)
 
                 self._features.append(f)
 
@@ -613,6 +654,22 @@ class Color_Image():
                 else:
                     f.set_neg_ctrl()
 
+    def set_reference(self, identifier):
+        f = self.get_feature_by_identifier(identifier)
+        if f:
+            f.set_ref_ctrl()
+            return True
+        return False
+
+    def set_references_from_list(self, identifiers):
+        no_errors = True
+        for identifier in identifiers:
+            if not self.set_reference(identifier):
+                no_errors = False
+
+        return no_errors
+
+
     def set_not_control(self, identifier):
 
         f = self.get_feature_by_identifier(identifier)
@@ -632,6 +689,11 @@ class Color_Image():
 
         return False
 
+    def del_untrusted(self):
+
+        for f in self._untrusted:
+            self.del_feature(f)
+            
     def get_feature_by_identifier(self, identifier):
 
         try:
@@ -639,18 +701,33 @@ class Color_Image():
         except IndexError:
             return None
 
-    def get_phenotypes(self, length_normed=True):
+    def get_pos_features(self):
+
+        return [f for f in self._features if f.get_is_pos_ctrl()]
+
+    def get_neg_features(self):
+
+        return [f for f in self._features if f.get_is_neg_ctrl()]
+
+    def get_ref_features(self):
+
+        return [f for f in self._features if f.get_is_ref()]
+
+    def get_untrusted_features(self):
+
+        return [f for f in self._features if f.get_identifier() in self._untrusted]
+
+    def get_phenotypes(self, length_normed=True, expected_ref_mean=0.5):
 
         if length_normed:
             get_vector = lambda x: x.get_rgb_unit_vector()
         else:
             get_vector = lambda x: x.get_rgb_vector()
 
-        pos_vector = np.array([get_vector(f) for f in self._features \
-            if f.get_is_pos_ctrl()]).mean(0)
-        neg_vector = np.array([get_vector(f) for f in self._features \
-            if f.get_is_neg_ctrl()]).mean(0)
-        
+        pos_vector = np.array([get_vector(f) for f in self.get_pos_features()]).mean(0)
+        neg_vector = np.array([get_vector(f) for f in self.get_neg_features()]).mean(0)
+        ref_names = [f.get_identifier() for f in self.get_ref_features()]
+ 
         neg_pos_vector = pos_vector - neg_vector
         pos_distance = np.sqrt((neg_pos_vector**2).sum())
 
@@ -659,9 +736,21 @@ class Color_Image():
 
             neg_data_vector = get_vector(f) - neg_vector
 
-            phenotypes.append((f.get_identifier(),
+            phenotypes.append([f.get_identifier(),
                 f.get_center(),
-                (neg_data_vector * neg_pos_vector).sum() / pos_distance**2) )
+                (neg_data_vector * neg_pos_vector).sum() / pos_distance**2,
+                f.get_quality()] )
+
+        if len(ref_names) > 0:
+
+            ref_phenotypes = [p[2] for p in phenotypes if p[0] in ref_names]
+            ref_mean = np.array(ref_phenotypes).mean()
+
+            ref_coeff = expected_ref_mean / ref_mean
+
+            for i, p in enumerate(phenotypes):
+
+                phenotypes[i][2] = p[2] * ref_coeff
 
         return phenotypes
 
@@ -672,6 +761,7 @@ class Feature():
         self._parent = parent
         self._rgb_vector = None
         self._rgb_unit_vector = None
+        self._quality = None
 
         self._rect = rect
         self._parent.logger.debug("FEATURE: starts with settings {0}".format(settings))
@@ -694,13 +784,15 @@ class Feature():
         if 'control' in settings.keys() and 'control-type' in settings.keys():
             self._control = True
             if settings['control-type'] == True:
-                self._control_type = True
+                self._control_type = "Pos"
             elif settings['control-type'] == False:
-                self._control_type = False
+                self._control_type = "Neg"
             elif 'P' in settings['control-type'].upper():
-                self._control_type = True
+                self._control_type = "Pos"
+            elif 'R' in settings['control-type'].upper():
+                self._control_type = "Ref"
             else:
-                self._control_type = False
+                self._control_type = "Neg"
         else: 
             self._control = False
             self._control_type = None
@@ -739,10 +831,14 @@ class Feature():
 
     def get_is_pos_ctrl(self):
 
-        return self._control and self._control_type
+        return self._control and self._control_type == "Pos"
+
+    def get_is_ref(self):
+
+        return self._control and self._control_type == "Ref"
 
     def get_is_neg_ctrl(self):
-        return self._control and self._control_type == False
+        return self._control and self._control_type == "Neg"
 
     def get_is_ctrl(self):
         return self._control
@@ -768,6 +864,10 @@ class Feature():
 
         return self._filter_array
 
+    def get_quality(self):
+
+        return self._quality
+
     def set_filter(self, filter_array):
 
         #if self._rect[0] == filter_array.shape[0] and\
@@ -775,15 +875,22 @@ class Feature():
 
         self._filter_array = filter_array
 
-    def set_is_ctrl(self, ctrl_type=False):
+    def set_quality(self, quality):
+
+        self._quality = quality
+
+    def _set_is_ctrl(self, ctrl_type="Neg"):
         self._control = True
         self._control_type = ctrl_type
 
     def set_pos_ctrl(self):
-        self.set_is_ctrl(ctrl_type=True)
+        self._set_is_ctrl(ctrl_type="Pos")
 
     def set_neg_ctrl(self):
-        self.set_is_ctrl(ctrl_type=False)
+        self._set_is_ctrl(ctrl_type="Neg")
+
+    def set_ref_ctrl(self):
+        self._set_is_ctrl(ctrl_type="Ref")
 
     def set_is_test(self):
         self._control = None
