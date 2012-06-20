@@ -114,8 +114,8 @@ cim.set_grid(interactive=False)
 cim.set_features_from_grid()
 #cim.get_plt_features_detected().show()
 cim.set_references_from_list(["5:2", "2:2", "3:0", "5:0"])
-p = cim.get_phenotypes()
-cim.get_plt_features(p, f=r_colour.get_2_decimals).show()
+p,q = cim.get_phenotypes(expected_ref_mean=0.4798)
+cim.get_plt_features(p, f=r_colour.get_2_decimals, quality = q).show()
 
 pos_ctrl = [None, None]
 neg_ctrl = [None, None]
@@ -426,7 +426,7 @@ class Color_Image():
 
         return fig
 
-    def get_plt_features(self, features=None, f=None, title="", dist=10):
+    def get_plt_features(self, features=None, f=None, title="", quality = None, dist=10):
         """
             places text labels in nice positions produced as the results of:
 
@@ -443,7 +443,8 @@ class Color_Image():
 
         fig = self.get_fig()
         ax = fig.add_subplot(1,1,1, title=title)
-        ax.imshow(self.get_cur_im())
+        im = self.get_cur_im()
+        ax.imshow(im)
         for feat in features:
             if f is not None:
                 ax.text(feat[1][1]+dist, feat[1][0]-dist, 
@@ -454,6 +455,10 @@ class Color_Image():
                     str(feat[2]), 
                     bbox=dict(facecolor='white', alpha=0.5))
 
+        if quality is not None:
+
+            ax.text(im.shape[1]*0.8,im.shape[0]*0.99,"Color quality {0:.2f}".format(quality), 
+                fontsize='x-small')
         return fig
 
     def get_plt_feature_by_identifier(self, identifier):
@@ -717,6 +722,16 @@ class Color_Image():
 
         return [f for f in self._features if f.get_identifier() in self._untrusted]
 
+    def get_phenotype_correction_coeffs(self, detected_ref, expected_ref):
+
+        b = (expected_ref - detected_ref) / (detected_ref * (1 - np.e) \
+            + np.exp(detected_ref) - 1)
+        a = 1 + b * (1 - np.e)
+        return (a,b)
+
+    def get_phenotype_corrected(self, phenotype, coeffs):
+        return coeffs[0] * phenotype + coeffs[1] * np.exp(phenotype) - coeffs[1]
+
     def get_phenotypes(self, length_normed=True, expected_ref_mean=0.5):
 
         if length_normed:
@@ -741,18 +756,24 @@ class Color_Image():
                 (neg_data_vector * neg_pos_vector).sum() / pos_distance**2,
                 f.get_quality()] )
 
-        if len(ref_names) > 0:
+        q = 1
 
+        if len(ref_names) > 0:
             ref_phenotypes = [p[2] for p in phenotypes if p[0] in ref_names]
             ref_mean = np.array(ref_phenotypes).mean()
 
-            ref_coeff = expected_ref_mean / ref_mean
+            q = 1 / (1 + np.exp(-24 * (0.25-abs(ref_mean - expected_ref_mean))))
+            coeffs = self.get_phenotype_correction_coeffs(ref_mean, expected_ref_mean)
 
             for i, p in enumerate(phenotypes):
 
-                phenotypes[i][2] = p[2] * ref_coeff
+                phenotypes[i][2] = self.get_phenotype_corrected(p[2], coeffs)
 
-        return phenotypes
+        if q < 0.95:
+            self.logger.warning("The colour quality is bad ({0.2f})".format(q)\
+                +" which means measurement quality is low!")
+
+        return phenotypes, q
 
 class Feature():
 
