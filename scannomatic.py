@@ -77,7 +77,8 @@ class Application_Window():
     <menubar name="MenuBar">
         <menu action="Scanning">
             <menuitem action="New Experiment"/>
-            <menuitem action="Acquire One Image"/>
+            <menuitem action="Get Drop Test Image"/>
+            <menuitem action="Get Pigmentation Image"/>
             <menuitem action="Quit"/>
         </menu>
         <menu action="Analysis">
@@ -173,18 +174,29 @@ class Application_Window():
             [
                 ("Scanning",   None,   "Scanning",    None,    None,   None),
                 ("New Experiment",    None,   "New Experiment", None, None, self.make_Experiment),
-                ("Acquire One Image", None, "Acquire One Image", None, None, self.experiment_New_One_Scan),
+                ("Get Drop Test Image", None, "Get Drop Test Image", None, 
+                    None, self.experiment_New_One_Scan),
+                ("Get Pigmentation Image", None, "Get Pigmentation Image", 
+                    None, None, self.experiment_New_One_Scan_Color),
                 ("Quit",    None,   "Quit",   None,  None,   self.close_application),
                 ("Analysis",   None,   "Analysis",    None,    None,   None),
-                ("Analyse Project", None, "Analyse Project", None, None, self.menu_Project),
-                ("Analyse One Image", None, "Analyse One Image", None, None, self.menu_Analysis),
-                ("Inspect and Adjust Gridding", None, "Inspect and Adjust Gridding", None, None, self.menu_Grid),
+                ("Analyse Project", None, "Analyse Project", None, None, 
+                    self.menu_Project),
+                ("Analyse One Image", None, "Analyse One Image", None, None, 
+                    self.menu_Analysis),
+                ("Inspect and Adjust Gridding", None, 
+                    "Inspect and Adjust Gridding", None, None, self.menu_Grid),
                 ("Settings", None, "Settings", None, None,   None),
-                ("Application Settings", None, "Application Settings", None, None, self.menu_Settings),
-                ("Installing Scanner",    None,   "Installing Scanner",   None,  None,   self.null_thing),
-                ("Scanner Configurations",    None,   "Scanner Configurations",   None,  None,   self.null_thing),
-                ("Unclaim Scanner by Force", None, "Unclaim Scanner by Force", None, None, self.menu_unclaim_scanner_by_force),
-                ("Configuring Fixtures",    None,   "Configuring Fixtures",   None,  None,   self.config_fixture)
+                ("Application Settings", None, "Application Settings", None, 
+                    None, self.menu_Settings),
+                ("Installing Scanner",    None,   "Installing Scanner",   None,
+                    None,   self.null_thing),
+                ("Scanner Configurations",    None,   "Scanner Configurations",
+                    None,  None,   self.null_thing),
+                ("Unclaim Scanner by Force", None, "Unclaim Scanner by Force", 
+                    None, None, self.menu_unclaim_scanner_by_force),
+                ("Configuring Fixtures",    None,   "Configuring Fixtures",   
+                    None,  None,   self.config_fixture)
             ])
 
         #attach the actiongroup
@@ -330,7 +342,7 @@ class Application_Window():
     def make_Experiment(self, widget=None, event=None, data=None):
         self.show_config(self.experiment_layout)
 
-    def experiment_New_One_Scan(self, widget=None, event=None, data=None):
+    def claim_a_scanner_dialog(self):
 
         scanners = self.get_unclaimed_scanners()
 
@@ -353,6 +365,12 @@ class Application_Window():
 
         dialog.destroy()
 
+        return resp, scanners
+
+    def experiment_New_One_Scan(self, widget=None, event=None, data=None):
+
+        resp, scanners = self.claim_a_scanner_dialog()
+
         if resp >= 0:
 
             self.set_claim_scanner(scanners[resp])
@@ -361,11 +379,30 @@ class Application_Window():
             experiment.Scanning_Experiment(self, self._handle, scanners[resp],          
                          1,
                          0,
-                         "Single_Scan_"+time_stamp,
+                         "Drop_Test_Scan_"+time_stamp,
                          "",
                          self.experiment_layout.experiment_root.get_text(),
                          self.running_experiments,
                          native=True, include_analysis=False)
+
+    def experiment_New_One_Scan_Color(self, widget=None, event=None, data=None):
+
+        resp, scanners = self.claim_a_scanner_dialog()
+
+        if resp >= 0:
+
+            self.set_claim_scanner(scanners[resp])
+
+            time_stamp = time.strftime("%d_%b_%Y__%H_%M_%S", time.gmtime())
+            experiment.Scanning_Experiment(self, self._handle, scanners[resp],          
+                         1,
+                         0,
+                         "Pigment_Scan_"+time_stamp,
+                         "",
+                         self.experiment_layout.experiment_root.get_text(),
+                         self.running_experiments,
+                         native=True, include_analysis=False,
+                         color = True)
 
     def experiment_Start_New(self, widget=None, event=None, data=None):
 

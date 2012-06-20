@@ -59,7 +59,7 @@ else:
 class Scanning_Experiment(gtk.Frame):
     def __init__(self, owner, parent_window, scanner, interval, counts, prefix,
         description, root, gtk_target, native=True, matrices = None, 
-        fixture="fixture_a", include_analysis=True, p_uuid = None):
+        fixture="fixture_a", include_analysis=True, p_uuid = None, color=False):
 
         if p_uuid is None:
             p_uuid = uuid.uuid1()
@@ -99,7 +99,7 @@ class Scanning_Experiment(gtk.Frame):
         self._supress_other = False
         self._watch_time = '1'
         self._destroy_request = None
-
+        self._two_step = color
         self._looked_for_scanner = 0
         self._scanning = False
         self._force_quit = False
@@ -139,7 +139,10 @@ class Scanning_Experiment(gtk.Frame):
         if USER_OS.name == "windows":
             self._scanner = scanner_backend.Twain_Base()
         elif USER_OS.name == "linux":
-            self._scanner = scanner_backend.Sane_Base(self)
+            if color:
+                self._scanner = scanner_backend.Sane_Base(self, scan_mode="Colour")
+            else:
+                self._scanner = scanner_backend.Sane_Base(self, scan_mode="TPU")
 
         self._scanner.owner = self
 
@@ -191,6 +194,14 @@ class Scanning_Experiment(gtk.Frame):
         button.connect('clicked', self.terminate_experiment)
         button.show()
         hbox.pack_end(button, False, False, 2)
+        if self._two_step:
+            self.scan_button = gtk.Button('Scan')
+            self.scan_button.set_sensitive(False)
+            self.scan_button.connect('clicked', self.do_scan)
+            self.scan_button.show()
+            hbox.pack_end(self.scan_button, False, False, 2)
+        
+
         hbox.show()
         vbox.pack_start(hbox, False, False, 2)
         
@@ -267,8 +278,11 @@ class Scanning_Experiment(gtk.Frame):
 
             gobject.timeout_add(1000*60, self.running_timer)
 
-    def do_scan(self):
+    def do_scan(self, widget = None, event = None, data = None):
         if not self._force_quit:
+            if widget is not None:
+                gobject.timeout_add(1000*60*int(self._interval_time), self.running_Analysis)          
+                widget.set_sensitive(False)
 
             self._scanning = True
 
@@ -293,6 +307,8 @@ class Scanning_Experiment(gtk.Frame):
                         110, debug_level='warning')
 
             elif self._looked_for_scanner < 12*4:
+                self._timer.set_text("Can't find the scanner... (Try {0})".\
+                    format(self._looked_for_scanner))
                 self._looked_for_scanner += 1
                 gobject.timeout_add(1000*5, self.do_scan)
             else:
@@ -427,19 +443,27 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
                 gobject.timeout_add(1000*60*int(self._interval_time), self.running_Experiment)
                 self._next_scan = (time.time() + 60*self._interval_time)
             else:
-                    gobject.timeout_add(1000*60*int(self._interval_time), self.running_Analysis)          
+                    if not self._two_step:
+                        gobject.timeout_add(1000*60*int(self._interval_time), self.running_Analysis)          
                     self._next_scan = None #(time.time() + 60*self._interval_time)
                     self._measurement_label.set_text("Aquiring last image:")
 
-            self._timer.set_text("Waiting for scanner to come online...")
+            
             self._scanner.next_file_name =  self._root + os.sep + self._prefix + \
                 os.sep + self._prefix + "_" + str(self._iteration).zfill(4) + \
                 ".tiff"
 
             self._power_manager.on()
-            gobject.timeout_add(1000*10, self.do_scan)
-
+            if not self._two_step:
+                self._timer.set_text("Waiting for scanner to come online...")
+                gobject.timeout_add(1000*10, self.do_scan)
+            else:
+                self._timer.set_text("Press 'Scan' when you're ready to do so...")
+                gobject.timeout_add(1000*10, self.manual_power_is_on)
             self._iteration += 1
+
+    def manual_power_is_on(self):
+        self.scan_button.set_sensitive(True)
 
     def running_Analysis(self):
 
