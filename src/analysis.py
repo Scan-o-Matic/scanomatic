@@ -1118,7 +1118,7 @@ if __name__ == "__main__":
     if args.grid_times != None:
 
         try:
-            grid_times = (int(grid_times),)
+            grid_times = [int(grid_times)]
         except:
             try:
                 grid_times = map(int, args.grid_times.split(","))
