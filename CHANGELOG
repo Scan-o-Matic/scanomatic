@@ -2,6 +2,13 @@
 ##### Changed in Scannomatic 0.993 #####
    ###################################
 
+*** runtime.log gets all logging messages and is overwritten at each start-up
+
+*** Changed the DMS of Scan-o-Matic to have better naming of where things
+    should be reported. Dialogs also take appropriate icons.
+
+*** Implemented custom uncaught exception hook
+
 *** Renamed Aquire One... to 'Drop Test'
 
 *** Added Pigmentation Scan feature
