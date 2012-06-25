@@ -109,6 +109,33 @@ class Application_Window():
         self._program_code_root = program_root + os.sep + "src"
         self._program_config_root = self._program_code_root + os.sep + "config"
         self._config_file = conf.Config_File(self._program_config_root + os.sep + "main.config")
+        self._main_lock_file = self._program_config_root + os.sep + "main.lock"
+
+        #Other instances running?
+        instances_running = self.set_main_lock_file(delta_instances=1)
+
+        if instances_running > 1:
+
+        
+            dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
+                gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+                "There's already {0} instance{1}".format(instances_running-1, 
+                ['','s'][instances_running > 2]) + " running!\nI will cause havoc should" + \
+                " scans be initiated from more than one!")
+
+
+            dialog.add_button(gtk.STOCK_STOP, -1)
+            dialog.add_button(gtk.STOCK_OK, 1)
+
+            dialog.show_all()
+
+            resp = dialog.run()
+
+            dialog.destroy()
+
+            if resp == -1:
+                self.set_main_lock_file(delta_instances = -1)
+                sys.exit()
 
         #Logging
         log_file_path = self._config_file.get("log_path")
@@ -663,6 +690,8 @@ class Application_Window():
             for scanner in self._claimed_scanners:
                 self.set_unclaim_scanner(scanner)
 
+            self.set_main_lock_file(delta_instances = -1)
+
             self.DMS('Terminating', '', level = "L", debug_level='info')
             self.window.destroy()
             gtk.main_quit()
@@ -776,6 +805,27 @@ class Application_Window():
             dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
             resp = dialog.run()
             dialog.destroy()
+
+    def set_main_lock_file(self, delta_instances = 0):
+        instances_running = 0
+        other_instance = True
+        try:
+            fs = open(self._main_lock_file, 'r')
+        except:
+            other_instance = False
+        if other_instance:
+            try:
+                instances_running = int(fs.read())
+            except:
+                pass
+            fs.close()
+
+        instances_running += delta_instances
+        fs = open(self._main_lock_file,'w')
+        fs.write(str(instances_running))
+        fs.close() 
+
+        return instances_running
 
 if __name__ == "__main__":
     #the following two methods should be equal...

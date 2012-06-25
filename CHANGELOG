@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.993 #####
    ###################################
 
+*** Warning message if serveral instances of the program is running in parallell.
+
 *** runtime.log gets all logging messages and is overwritten at each start-up
 
 *** Changed the DMS of Scan-o-Matic to have better naming of where things
