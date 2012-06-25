@@ -3,6 +3,8 @@ from matplotlib import pyplot as plt
 import types
 import logging
 from time import time
+from scipy.ndimage import binary_erosion
+
 import analysis_grid_cell_dissection as cell
 import analysis_grid_array_dissection as grid
 import resource_signal as r_signal
@@ -14,86 +16,13 @@ import resource_signal as r_signal
 
 im_path = "./2012-05-31_Iodine_LYS+_C.tif"
 im_path2 = "./2012-05-31_Iodine_URA+_C.tif"
-
-im_norm_low = 0
-im_norm_high = 13
-
-im = plt.imread(im_path)
-im2 = plt.imread(im_path2)
-
-
-#Debanding
 im_deband = de_band_image(im, 0, 13)
 im2_deband = de_band_image(im2, 0, 13)
-#im2_lvld = level_image(im2_deband, im, [[0,13],[0,im2_deband.shape[1]]],
-#    [[0,13],[0,im_deband.shape[1]]])
-#Cropping away bad stuff
 im_cropped = get_im_section(im_deband, margin=[[70,37],[50,60]])
 im2_cropped = get_im_section(im2_deband, margin=[[70,42],[45,52]])
-
-g = grid.Grid_Analysis(parent)
-im_grid = g.get_analysis(get_gs_im(im_cropped), pinning_matrix, use_otsu = True,
-        median_coeff=None, verboise=False, visual=False,
-        history=[])
-
-col_span = (im_grid[1].min(), im_grid[1].max())
-row_span = (im_grid[0].min(), im_grid[0].max())
-
-fig = plt.figure()
-ax = fig.add_subplot(1,1,1, title="Testing gridding")
-ax.imshow(im_cropped)
-for column in im_grid[0]:
-    line = plt.Line2D((column, column), col_span)
-    ax.add_line(line)
-
-for row in im_grid[1]:
-    line = plt.Line2D(row_span, (row, row))
-    ax.add_line(line)
-
-
 #
 # Pinned image
 #
-im_path3 = "./120613_Iodine_LYS+_5min_1.tif"
-im3 = plt.imread(im_path3)
-im3_deband = de_band_image(im3, 0, 200)
-im3_cropped = get_im_section(im3_deband, margin=[[270,100],[300,240]])
-pinning_matrix = (12, 8)
-
-neg_rgb = []
-
-def add_texts_to_fig(fig, features, f=None, f2=None, dist=10):
-
-    ax = fig.gca()
-
-    for k in features.keys():
-        if f is not None:
-            ax.text(k[1]+dist, k[0]-dist, str(f(features[k])), bbox=dict(facecolor='white', alpha=0.5))
-        elif f2 is not None:
-            ax.text(k[1]+dist, k[0]-dist, str(f2(im, k, features[k])), 
-                bbox=dict(facecolor='white', alpha=0.5),
-                fontsize='xx-small')
-        else:
-            ax.text(k[1], k[0], str(features[k]), bbox=dict(facecolor='white', alpha=0.5))
-
-    return fig
-
-#Calling the functions
-neg_rgb = get_rgbs_from_rect_list(im3_cropped, neg_ctrl)
-neg_vector = np.array(neg_rgb).mean(0)
-pos_rgb = get_rgbs_from_rect_list(im3_cropped, pos_ctrl)
-pos_vector = np.array(pos_rgb).mean(0)
-ref_features = get_features_from_rects_and_rgbs(neg_ctrl, neg_rgb)
-ref_features = get_features_from_rects_and_rgbs(pos_ctrl, pos_rgb, features = ref_features)
-
-im_grid, grid_size = get_grid_for_im(im3_cropped, pinning_matrix)
-features, fig = get_features_and_figure(im3_cropped, im_grid, pinning_matrix, grid_size)
-ref_features2 = get_relative_feature_projections(im3_cropped, ref_features, neg_vector, pos_vector, features_are_rgb=True, length_normed=True)
-features2 = get_relative_feature_projections(im3_cropped, features, neg_vector, pos_vector, length_normed=True)
-fig = get_feature_plot(im3_cropped, features2, f=get_2_decimals, title="Brightness-Normed Phenotypes", dist=10)
-fig = add_texts_to_fig(fig, ref_features2, f=get_2_decimals, dist=10)
-
-#new code
 pos_ctrl = [None, None]
 neg_ctrl = [None, None]
 pos_ctrl[0] = [[20,40],[600,635]]
@@ -101,15 +30,20 @@ pos_ctrl[1] = [[20,40],[705,740]]
 neg_ctrl[0] = [[10,40],[395,425]]
 neg_ctrl[1] = [[20,45],[490,535]]
 
-cim = r_colour.Color_Image("./120613_Iodine_LYS+_5min_1.tif", parent=r_colour.Parent(level='info'))
+cim = r_colour.Color_Image("./120613_Iodine_LYS+_5min_1.tif", 
+parent=r_colour.Parent(level='info'))
+
 cim.set_deband_image(0,200)
 cim.set_crop_image(margin=[[270,100],[300,240]])
 
-cim.set_features_from_rects(pos_ctrl, settings={'control': True, 'control-type': True})
-cim.set_features_from_rects(neg_ctrl, settings={'control': True, 'control-type': False})
-cim.set_grid(interactive=False)
-#cim.set_grid()
+#COMMONS
+cim.set_features_from_rects(pos_ctrl, settings={'control': True, 
+'control-type': True})
 
+cim.set_features_from_rects(neg_ctrl, settings={'control': True, 
+'control-type': False})
+
+cim.set_grid(interactive=False)
 
 cim.set_features_from_grid()
 #cim.get_plt_features_detected().show()
@@ -117,13 +51,15 @@ cim.set_references_from_list(["5:2", "2:2", "3:0", "5:0"])
 p,q = cim.get_phenotypes(expected_ref_mean=0.4798)
 cim.get_plt_features(p, f=r_colour.get_2_decimals, quality = q).show()
 
+#IM2
 pos_ctrl = [None, None]
 neg_ctrl = [None, None]
 pos_ctrl[0] = [[30,50],[610,640]]
 pos_ctrl[1] = [[25,45],[725,760]]
 neg_ctrl[0] = [[20,55],[410,440]]
 neg_ctrl[1] = [[25,55],[510,520]]
-cim = r_colour.Color_Image("./120613_Iodine_LYS+_5min_2.tif", parent=r_colour.Parent(level='info'))
+cim = r_colour.Color_Image("./120613_Iodine_LYS+_5min_2.tif", 
+parent=r_colour.Parent(level='info'))
 cim.set_deband_image(0,180)
 cim.set_crop_image(margin=[[260,100],[330,200]])
 """
@@ -409,24 +345,48 @@ class Color_Image():
     def get_plt_features_detected(self):
 
         features_with_filter = [f for f in self._features if f.get_has_filter()]
-        plt_grid = self.get_plts_grid(len(features_with_filter)*2, need_even=True)
+        plt_grid = self.get_plts_grid(len(features_with_filter), need_even=True)
 
         fig = self.get_fig()
         for i, f in enumerate(features_with_filter):
-            ax = fig.add_subplot(plt_grid[0], plt_grid[1], 2*i + 1)
+            ax = fig.add_subplot(plt_grid[0], plt_grid[1], i + 1)
             ax.set_title(f.get_identifier(), fontsize='xx-small')
-            ax.imshow(f.get_filter(), cmap=plt.cm.Greys_r)
+            #ax.imshow(f.get_filter(), cmap=plt.cm.Greys_r)
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
 
-            ax = fig.add_subplot(plt_grid[0], plt_grid[1], 2*i + 2)
+            #ax = fig.add_subplot(plt_grid[0], plt_grid[1], 2*i + 2)
             ax.imshow(self.get_gs_im(rect=f.get_rect()), cmap=plt.cm.Greys_r)
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-
+            #ax.get_xaxis().set_visible(False)
+            #ax.get_yaxis().set_visible(False)
+            self.set_plt_filter_outline(ax, f.get_identifier(), extent=False)
         return fig
 
-    def get_plt_features(self, features=None, f=None, title="", quality = None, dist=10):
+    def set_plt_filter_outline(self, ax, feature, extent=True, 
+        interpolate=False):
+
+        g_cm = plt.cm.get_cmap('Greens')
+        g_cm._init()
+        g_cm._lut[:150,-1] = 0
+        interpolate = ['bicubic', 'none'][interpolate]
+
+        feat_obj =  self.get_feature_by_identifier(feature)
+        if feat_obj is not None:
+            outline = feat_obj.get_filter_outline()
+            if outline is not None:
+                rect = feat_obj.get_rect()
+                if extent == True:
+                    feat_ext = (rect[1][0], rect[1][1], 
+                        rect[0][0], rect[0][1])
+                    ax.imshow(outline, cmap=g_cm, alpha=0.8,
+                        interpolation=interpolate, extent = feat_ext)
+                else:
+                    ax.imshow(outline, cmap=g_cm, alpha=0.8,
+                        interpolation=interpolate)
+
+
+    def get_plt_features(self, features=None, f=None, title="", 
+        quality = None, filter_outlines=True, dist=10):
         """
             places text labels in nice positions produced as the results of:
 
@@ -445,6 +405,15 @@ class Color_Image():
         ax = fig.add_subplot(1,1,1, title=title)
         im = self.get_cur_im()
         ax.imshow(im)
+        if filter_outlines:
+
+
+            for feat in features:
+                self.set_plt_feature_outline(ax, feat[0])
+
+            ax.set_ylim(0, im.shape[0])
+            ax.set_xlim(0, im.shape[1]) 
+
         for feat in features:
             if f is not None:
                 ax.text(feat[1][1]+dist, feat[1][0]-dist, 
@@ -783,6 +752,7 @@ class Feature():
         self._rgb_vector = None
         self._rgb_unit_vector = None
         self._quality = None
+        self._filter_outline = None
 
         self._rect = rect
         self._parent.logger.debug("FEATURE: starts with settings {0}".format(settings))
@@ -895,6 +865,16 @@ class Feature():
         #    self._rect[1] == filter_array.shape[1]:
 
         self._filter_array = filter_array
+        self._set_filter_outline()
+
+    def _set_filter_outline(self):
+
+        eroded = binary_erosion(self._filter_array)
+        self._filter_outline = self._filter_array - eroded
+
+    def get_filter_outline(self):
+
+        return self._filter_outline
 
     def set_quality(self, quality):
 

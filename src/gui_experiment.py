@@ -104,6 +104,7 @@ class Scanning_Experiment(gtk.Frame):
         self._scanning = False
         self._force_quit = False
         self._analysis_output = 'analysis'
+        self._manual_grid = None
 
         self._include_analysis = include_analysis
         self._analysis_running = False
@@ -380,7 +381,8 @@ class Scanning_Experiment(gtk.Frame):
 
                     if got_image:
                         gobject.timeout_add(1000*25,self._write_log, sp[3])
-                    
+                        self._timer.set_text("Image aquired, running analysis.")
+ 
                     del self._subprocesses[i]
 
                     if (got_image and self._quality_OK()) or self._force_quit:
