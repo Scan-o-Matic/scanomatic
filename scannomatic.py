@@ -140,7 +140,7 @@ class Application_Window():
         #Logging
         log_file_path = self._config_file.get("log_path")
         if log_file_path == None:
-            self._config_file.set("log_path","log" + os.sep + "runtime.log")
+            self._config_file.set("log_path","log" + os.sep + "runtime_{0}.log")
             if self._config_file.get("log_level") is None:
                 self._config_file.set("log_level", "A")
             self.DMS('Incomplete config file','New entries were temporarly' +
@@ -149,7 +149,7 @@ class Application_Window():
                 level="LD")
             log_file_path = self._config_file.get("log_path")
 
-        self._log_file_path = self._program_code_root + os.sep + log_file_path
+        self._log_file_path = self._program_code_root + os.sep + log_file_path.format(instances_running)
 
         log_formatter = logging.Formatter('\n\n%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S\n')
