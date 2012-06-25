@@ -130,7 +130,7 @@ class Application_Window():
         hdlr.setFormatter(log_formatter)
         self._logger = logging.getLogger('Scan-o-Matic GUI')
         self._logger.addHandler(hdlr)
-        logging.Handler.handleError = self._DMS_tracebacks
+        sys.excepthook = self._DMS_tracebacks
 
         #Callbacks
         self.USE_CALLBACK=True
@@ -696,13 +696,19 @@ class Application_Window():
         else:
             return True
 
-    def _DMS_tracebacks(self, record):
+    def _DMS_tracebacks(self, excType, excValue, traceback):
+        self._logger.critical("Uncaught exception:",
+                 exc_info=(excType, excValue, traceback))
 
-        fs = open(self._log_file_path, 'a')
+        self.DMS("Code Error Encountered", "An error in the code was encountered.\n"+\
+            "Please close the program as soon as no experiment is running and send "+\
+            "the file '{0}' to martin.zackrisson@gu.se".format(self._log_file_path),
+            level="D", debug_level="critical")
+        #fs = open(self._log_file_path, 'a')
 
-        traceback.print_tb(record, file=fs)
+        #traceback.print_tb(record, file=fs)
 
-        fs.close()
+        #fs.close()
 
 
     def DMS(self, title, subject, level=None, debug_level='debug'):

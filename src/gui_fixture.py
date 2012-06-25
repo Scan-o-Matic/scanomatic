@@ -22,6 +22,7 @@ pygtk.require('2.0')
 import gtk, pango
 import os, os.path, sys
 import types
+import re
 
 import matplotlib.image as plt_img
 import matplotlib.pyplot as plt
@@ -1063,7 +1064,7 @@ class Fixture_GUI(gtk.Frame):
 
         file_ending = '.config'
         expected_keys = ('grayscale', 'marking_', 'marker_count', 
-            'marker_path', 'plate_', 'marking_center_of_mass')
+            'marker_path', 'plate_\d_area', 'marking_center_of_mass')
         config_files = []
 
         try:
@@ -1098,7 +1099,7 @@ class Fixture_GUI(gtk.Frame):
 
                     for e_key in expected_keys:
 
-                        if len(key) >= len(e_key) and key[:len(e_key)] == e_key:
+                        if len(re.findall(e_key,  key)) == 1:
 
                             c_dict[e_key] += 1
 
@@ -1117,6 +1118,6 @@ class Fixture_GUI(gtk.Frame):
 
                     good_configs.append((\
                         c_path[:-len(file_ending)].replace('_',' '), full_path,
-                        c_dict['plate_']))
+                        c_dict['plate_\d_area']))
 
         return good_configs

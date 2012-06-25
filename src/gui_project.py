@@ -45,7 +45,7 @@ import src.resource_os as os_tools
 
 class Project_Analysis_Running(gtk.Frame):
     def __init__(self, owner, gtk_target, log_file, matrices, 
-        watch_colony = None, supress_other = False, watch_time = 1, 
+        watch_colony = None, supress_other = False, watch_time = "1", 
         analysis_output='analysis', manual_grid=False):
 
         self.USE_CALLBACK = owner.USE_CALLBACK

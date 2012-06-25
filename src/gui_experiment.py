@@ -498,6 +498,8 @@ class Scanning_Experiment_Setup(gtk.Frame):
     def __init__(self, owner, simple_scan = False, p_uuid=None):
         gtk.Frame.__init__(self, "NEW SET-UP EXPERIMENT")
 
+        self._dont_reload_scanner = False
+
         self.connect("hide", self._hide_function)
         self.connect("show", self._show_function)
 
@@ -648,6 +650,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
     def view_config(self, widget=None, event=None, data=None):
         if self.fixture.get_active() >= 0:
+            self._dont_reload_scanner = True
             self._owner.config_fixture(event='view', data=\
                 self.fixture.get_model()[self.fixture.get_active()][0].replace(" ","_"))
 
@@ -669,7 +672,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
     def _hide_function(self, widget=None, event=None, data=None):
 
-        if self._GUI_updating == False:
+        if self._GUI_updating == False and self._dont_reload_scanner == False:
             self.DMS('EXPERIMENT SETUP', 'Aborted setup', level="L", debug_level='debug')
             self._owner.set_unclaim_scanner(self._selected_scanner) 
             self._selected_scanner = None
@@ -677,9 +680,10 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
     def _show_function(self, widget=None, event=None, data=None):
 
-
-        self.reload_scanner()
+        if not self._dont_reload_scanner:
+            self.reload_scanner()
          
+        self._dont_reload_scanner = False
 
     def reload_scanner(self, active_text=None):
 
