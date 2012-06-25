@@ -114,7 +114,7 @@ class Config_GUI(gtk.Frame):
     def save_data_file(self, widget=None, event=None, data=None):
         for c_file in self.config_files:
             c_file.save()
-            self.DMS("CONFIGURATION", "Changes have been saved",11)
+            self.DMS("CONFIGURATION", "Changes have been saved","LA",debug_level="info")
 
 class Config_TreeView(gtk.TreeView):
     def __init__(self, owner):

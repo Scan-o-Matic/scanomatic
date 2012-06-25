@@ -82,7 +82,7 @@ class Fixture_GUI(gtk.Frame):
         hbox = gtk.HBox()
         vbox2.pack_start(hbox, False, False, 0)
 
-        self.DMS("Fixture", "Image: %s" % analysis_img, 100)
+        self.DMS("Fixture", "Image: {0}".format(analysis_img), level="L")
         if os.path.isfile(analysis_img):
             self.fixture_analysis_image = plt_img.imread(analysis_img)
         else:
@@ -96,20 +96,20 @@ class Fixture_GUI(gtk.Frame):
         self.plot_selecting = False
         self.plot_ul  = (0,0)
 
-        self.DMS("Fixture init","Setting up figure display",100)
+        self.DMS("Fixture init","Setting up figure display",level="L")
         self.image_fig = plt.Figure(figsize=image_size, dpi=150)
         image_plot = self.image_fig.add_subplot(111)
         image_canvas = FigureCanvas(self.image_fig)
 
-        self.DMS("Fixture init","Figure: Connetcting events",100)
+        self.DMS("Fixture init","Figure: Connetcting events",level="L")
         self.image_fig.canvas.mpl_connect('button_press_event', self.plot_click)
         self.image_fig.canvas.mpl_connect('button_release_event', self.plot_release)
         self.image_fig.canvas.mpl_connect('motion_notify_event', self.plot_move)
 
-        self.DMS("Fixture init","Figure: Plotting image",100)
+        self.DMS("Fixture init","Figure: Plotting image", level="L")
         self.fix_image_ax = image_plot.imshow(self.fixture_analysis_image, cmap=plt.cm.gray)
 
-        self.DMS("Fixture init","Figure: Initialising selection rectangle",100)
+        self.DMS("Fixture init","Figure: Initialising selection rectangle",level="L")
         self.selection_rect = plt_patches.Rectangle(
                 (0,0),0,0, ec = 'k', fill=False, lw=0.2
                 )
@@ -240,9 +240,9 @@ class Fixture_GUI(gtk.Frame):
 
         self._init_done = True
 
-        self.DMS('fixture init', 'GUI loaded', 100)
+        self.DMS('fixture init', 'GUI loaded', level="L")
         self.load_fixture_config(dpi=150)
-        self.DMS('fixture init', 'Settings implemented', 100)
+        self.DMS('fixture init', 'Settings implemented', level="L")
 
     #
     # FIXTURE VIEW MODE
@@ -254,7 +254,8 @@ class Fixture_GUI(gtk.Frame):
             if data is not None:
                 self._current_fixture = data
 
-            self.DMS('fixture', 'Experiment set-up requests %s' % data, 100, debug_level='info')
+            self.DMS('fixture', 'Experiment set-up requests {0}'.format(data),
+                level="L", debug_level='info')
             self.reload_fixtures()
 
 
@@ -295,7 +296,7 @@ class Fixture_GUI(gtk.Frame):
             
             self._current_fixture = self.fixture.get_model()[pos][0]
 
-            self.DMS('Fixture','Selected : %s' % self._current_fixture, 100, debug_level='info')
+            self.DMS('Fixture','Selected : %s' % self._current_fixture, level="L", debug_level='info')
 
             image = self._fixture_config_root + os.sep + self._current_fixture\
                 + ".tiff"
@@ -473,7 +474,7 @@ class Fixture_GUI(gtk.Frame):
 
         self.DMS('FIXTURE', 
             'Requested overlay add/set, text={0}, area={1}'.format(\
-                text, area), 110, debug_level='debug')
+                text, area), level="L", debug_level='debug')
 
         #NO DUPLICATES
         for t_obj in self.fixture_texts:
@@ -544,7 +545,7 @@ class Fixture_GUI(gtk.Frame):
 
         self.DMS('FIXTURE', 
             'Requested overlay remove, by_object={0}, by_name={1}, area={2}'.format(\
-                by_object, by_name, area), 110, debug_level='debug')
+                by_object, by_name, area), level="L", debug_level='debug')
 
         for i in xrange(len(self.fixture_patches)):
 
@@ -568,7 +569,7 @@ class Fixture_GUI(gtk.Frame):
 
         self.DMS('FIXTURE', 
             'Requested overlay change, by_object={0}, by_name={1}, area={2}'.format(\
-                by_object, by_name, area), 110, debug_level='debug')
+                by_object, by_name, area), level="L", debug_level='debug')
         
         changed = False
 
@@ -625,7 +626,7 @@ class Fixture_GUI(gtk.Frame):
             self.selection_rect.set_width(    event.xdata - self.plot_ul[0])#,
             self.selection_rect.set_height(    event.ydata - self.plot_ul[1])#,
             self.image_fig.canvas.draw() 
-            self.DMS("SELECTING", "Selecting something in the image", 1)
+            self.DMS("SELECTING", "Selecting something in the image", level="A")
 
     def plot_release(self, event=None):
 
@@ -645,7 +646,7 @@ class Fixture_GUI(gtk.Frame):
             lr = (event.xdata, event.ydata)
             area = [self.plot_ul, lr] 
             
-            self.DMS("SELECTION", "AREA: {0}".format(area), level=110, 
+            self.DMS("SELECTION", "AREA: {0}".format(area), level="L", 
                 debug_level='debug')
             text = self.get_settings_initial()
             self.f_settings.fixture_config_file.set(self.get_settings_name(), area)
@@ -713,7 +714,7 @@ class Fixture_GUI(gtk.Frame):
             self.f_settings.fixture_config_file.set(self.get_settings_name(), area)
 
         else:
-            self.DMS("Clicked Image", "Pos: " + str((x_pos, y_pos)), level=1)
+            self.DMS("Clicked Image", "Pos: " + str((x_pos, y_pos)), level="A")
 
     def marker_analysis(self, widget=None, event=None, data=None):
         analysis_img = self.f_settings.marker_analysis(fixture_setup=True, output_function=self.DMS)
@@ -725,9 +726,9 @@ class Fixture_GUI(gtk.Frame):
             self.load_fixture_config()
 
             self.image_fig.canvas.draw()
-            self.DMS("Info", "Markers analysed", level = 1010)
+            self.DMS("Info", "Markers analysed", level = "D", debug_level="info")
         else:
-            self.DMS("Error", "Markers anaylsis failed", level = 1010)
+            self.DMS("Error", "Markers anaylsis failed", level = "DL", debug_level="error")
 
     def select_image(self, widget=None, event=None, data=None):
         newimg = gtk.FileChooserDialog(title="Select new image", action=gtk.FILE_CHOOSER_ACTION_OPEN, 
@@ -751,10 +752,11 @@ class Fixture_GUI(gtk.Frame):
                 self.fix_image_ax.set_visible(True)
                 self.image_fig.canvas.draw()
                 self.load_fixture_config()
-                self.DMS("Image", "Note that you really must run marker detection also", level=1000)
+                self.DMS("Image", "Note that you really must run marker detection also", level="D",
+                    debug_level="info")
             else:
         
-                self.DMS("Image", "Could not find image", level=1000)
+                self.DMS("Image", "Could not find image", level="DL", debug_level="error")
 
             self.image_fig.canvas.draw()
         newimg.destroy()
@@ -891,7 +893,7 @@ class Fixture_GUI(gtk.Frame):
             im_section = self.fixture_analysis_image[xs.min():xs.max(), ys.min():ys.max()].copy()
             self.grayscale.set_grayscale(im_section.T, dpi=dpi)
         else:
-            self.DMS('FIXTURE', 'Settings are missing grayscale area', 110, debug_level='warning')
+            self.DMS('FIXTURE', 'Settings are missing grayscale area', "L", debug_level='warning')
             self.grayscale.set_grayscale(None)
 
 
@@ -943,8 +945,8 @@ class Fixture_GUI(gtk.Frame):
             text = self.get_settings_initial(active=i+1)
             
             self.DMS("fixture", 
-                "New fixture, reproducing overlay '%s' with area '%s'" % (\
-                text, cur_area), 100, debug_level='debug')
+                "New fixture, reproducing overlay '{0}' with area '{1}'".format(\
+                text, cur_area), "L", debug_level='debug')
             
             if cur_area is not None:
                 self.set_fixture_overlay(cur_area, text)

@@ -207,7 +207,7 @@ class Grid(gtk.Frame):
                 'Manual Gridding': self.repinnings}
 
             rle.rewrite_meta_row(self._log_file_path, header_entries)
-            self.DMS("Regridding","Logfile has been updated!")
+            self.DMS("Regridding","Logfile has been updated!",level='L')
             self.save_button.set_sensitive(False)
             self.rerun_button.set_sensitive(True)
 
@@ -244,7 +244,7 @@ class Grid(gtk.Frame):
             if 0 <= active_plate < len(self._pinning_matrices):
                 pm_text = widget.get_model()[widget.get_active()][0]
                 self.DMS("regridding","Requesting plate {0} to have pinning {1}".\
-                    format(active_plate, pm_text))
+                    format(active_plate, pm_text), level="L")
                 if pm_text in self.pinning_matrices.keys():
 
                     self._pinning_matrices[active_plate] = \
@@ -309,7 +309,8 @@ class Grid(gtk.Frame):
                 self.save_button.set_sensitive(True)
                 self.rerun_button.set_sensitive(False)
             else:
-                self.DMS("GRID","Failed to make regridding on Plate {0} - sorry!".format(active)) 
+                self.DMS("GRID","Failed to make regridding on Plate {0} - sorry!".format(active),
+                    level="DL", debug_level="error") 
 
     def set_image(self):
 
@@ -344,7 +345,7 @@ class Grid(gtk.Frame):
                 except:
                     self._grid_image = None
                     self.DMS('Regridding', "Error parsing diagnostic images {0}"\
-                        .format(self._diagnostic_images), 110, debug_level='warning')
+                        .format(self._diagnostic_images), "L", debug_level='warning')
 
                 pinnings = re.findall(self._re_pattern_pinnings, fs_lines)
                 pinnings = [re.sub(" +",",", p.replace("\n","")).replace(",","",1) for p in pinnings]
@@ -376,7 +377,7 @@ class Grid(gtk.Frame):
                         if true_plate < len(self._pinning_matrices):
                             self.pinnings[true_plate] = [pinnings[2*plate], pinnings[2*plate+1]]
                             self.DMS('Regridding', "Found grid for {0}:\n{1}".format(\
-                                true_plate, self.pinnings[true_plate]), 110, debug_level='info')
+                                true_plate, self.pinnings[true_plate]), "L", debug_level='info')
 
         if self._log is not None:
 

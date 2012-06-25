@@ -61,9 +61,11 @@ class Scanning_Experiment(gtk.Frame):
         description, root, gtk_target, native=True, matrices = None, 
         fixture="fixture_a", include_analysis=True, p_uuid = None, color=False):
 
+        self._loaded = False
+
         if p_uuid is None:
             p_uuid = uuid.uuid1()
-        self._p_uuid = uuid
+        self._p_uuid = p_uuid
 
         self.USE_CALLBACK = owner.USE_CALLBACK
 
@@ -75,7 +77,7 @@ class Scanning_Experiment(gtk.Frame):
         if scanner is None:
             
             continue_load = False
-            self.DMS('Experiment', "You're trying to start a project on no scanner.", level=1100,
+            self.DMS('Experiment', "You're trying to start a project on no scanner.", level="DL",
                 debug_level='error')
 
         if continue_load: 
@@ -84,7 +86,7 @@ class Scanning_Experiment(gtk.Frame):
             except:
                 self.DMS('Experiment conflict',
                     'An experiment with that prefix already exists...\nAborting.', 
-                    level=1100, debug_level='error')
+                    level="DL", debug_level='error')
                 continue_load = False
             
         gtk.Frame.__init__(self, prefix)
@@ -226,12 +228,12 @@ class Scanning_Experiment(gtk.Frame):
                 self.DMS('Scanning',
                     'Could not make a local copy of fixture settings file,'+
                     ' probably the template file will be used in analysis. '+
-                    'Lets hope no-one fiddles with it', level=1101, debug_level='warning')
+                    'Lets hope no-one fiddles with it', level="DL", debug_level='warning')
         
             self.log_file({'Prefix':prefix,'Description':description,
                 'Interval':self._interval_time, 'Measurments':counts, 
                 'Start Time':time.time(), 'Pinning Matrices':self._matrices,
-                'Fixture':fixture, 'UUID':str(self._p_uuid)},
+                'Fixture':fixture, 'UUID':self._p_uuid.get_urn().split(":")[-1]},
                 append=False)
 
             self._loaded = True
@@ -305,7 +307,7 @@ class Scanning_Experiment(gtk.Frame):
                     self._power_manager.off()
                     self._timer.set_text("Unknown error initiating scan - do you have the capability?")
                     self.DMS('Scanning', 'Unknown error initiating scan - do you have the capability?',
-                        110, debug_level='warning')
+                        "AL", debug_level='warning')
 
             elif self._looked_for_scanner < 12*4:
                 self._timer.set_text("Can't find the scanner... (Try {0})".\
@@ -317,7 +319,7 @@ class Scanning_Experiment(gtk.Frame):
                 self._power_manager.off()
                 self._looked_for_scanner = 0
                 self._timer.set_text('Scanner was never turned on')
-                self.DMS('Scanning', 'Scanner was never turned on', 110, debug_level='warning')
+                self.DMS('Scanning', 'Scanner was never turned on', "LA", debug_level='warning')
 
     def _write_log(self, file_list=None):
         if file_list:
@@ -329,7 +331,7 @@ class Scanning_Experiment(gtk.Frame):
             for f in file_list:
                 gs_data.append({'Time':time.time()})
                 self.DMS("Analysis", "Grayscale analysis of" + str(f), 
-                    level=101, debug_level='debug')
+                    level="LA", debug_level='debug')
 
                 self.f_settings.image_path = f
                 self.f_settings.marker_analysis()
@@ -360,14 +362,14 @@ class Scanning_Experiment(gtk.Frame):
                 verboise=False, quiet=False)
             fs.close()
             self.DMS("Analysis","Done. Nothing more to do for that image...", 
-                level=101, debug_level='debug')
+                level="LA", debug_level='debug')
 
     def _callback(self):
         for i, sp in enumerate(self._subprocesses):
             if sp[0] == "SANE-CALLBACK":
                 if sp[2].poll() != None:
                     self.DMS("Scanning", "Aqcuired image " + str(sp[1]),
-                        level=111, debug_level='debug')
+                        level="LA", debug_level='info')
                     sp[1].close
 
                     got_image = True
@@ -381,7 +383,7 @@ class Scanning_Experiment(gtk.Frame):
 
                     if got_image:
                         gobject.timeout_add(1000*25,self._write_log, sp[3])
-                        self._timer.set_text("Image aquired, running analysis.")
+                        self._timer.set_text("Image aquired, running grayscale and position analysis.")
  
                     del self._subprocesses[i]
 
@@ -391,7 +393,7 @@ class Scanning_Experiment(gtk.Frame):
                     else:
                         self.DMS("Scanning", "Quality of scan histogram indicates" + 
                             " that rescan needed! So that I do...",
-                            level=110, debug_level='warning')
+                            level="LA", debug_level='warning')
 
                         self._scanner.next_file_name =  self._root + os.sep + \
                             self._prefix + os.sep + self._prefix + "_" + \
@@ -477,19 +479,19 @@ that scanner.\n\nDo you wish to continiue"  % self._scanner_name)
             self._measurement_label.set_text("Scanning done:")
             if self._include_analysis:
                 self._timer.set_text("Starting analysis...")
-                self.DMS('EXPERIMENT', 'Starting analysis...', level=100, debug_level='debug')
+                self.DMS('EXPERIMENT', 'Starting analysis...', level="L", debug_level='info')
                 self._matrices = None
                 self.owner.analysis_Start_New(widget = self)
             else:
                 self._timer.set_text("No automatic analysis...")
-                self.DMS('EXPERIMENT', 'Not starting analysis...', level=100, debug_level='debug')
+                self.DMS('EXPERIMENT', 'Not starting analysis...', level="L", debug_level='info')
             gobject.timeout_add(1000*3, self.destroy)        
         elif self._loaded == False:
             self.owner.set_unclaim_scanner(self._scanner_name)
-            self.DMS('EXPERIMENT', 'Failed to start...', level=100, debug_level='debug')
+            self.DMS('EXPERIMENT', 'Failed to start...', level="L", debug_level='error')
             self.destroy()
         else:  
-            self.DMS('EXPERIMENT', 'Waiting for scan to finnish...', level=100, debug_level='debug')
+            self.DMS('EXPERIMENT', 'Waiting for scan to finnish...', level="L", debug_level='debug')
             gobject.timeout_add(1000*4, self.running_Analysis)  
           
 class Scanning_Experiment_Setup(gtk.Frame):
@@ -668,7 +670,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
     def _hide_function(self, widget=None, event=None, data=None):
 
         if self._GUI_updating == False:
-            self.DMS('EXPERIMENT SETUP', 'Aborted setup', level=100, debug_level='debug')
+            self.DMS('EXPERIMENT SETUP', 'Aborted setup', level="L", debug_level='debug')
             self._owner.set_unclaim_scanner(self._selected_scanner) 
             self._selected_scanner = None
             self.scanner.set_active(-1)
@@ -684,7 +686,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
         scanner_list = self._owner.get_unclaimed_scanners()
 
         self.DMS('EXPERIMENT SETUP', 'Available scanners %s' % str(scanner_list),
-            level=100, debug_level='debug')
+            level="L", debug_level='debug')
 
         for s in scanner_list:
             
@@ -813,7 +815,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
             else:
                 active_text = self.fixture.get_model()[active][0]
 
-            #self.DMS('Fixture change',str(active_text),level = 1000)
+            #self.DMS('Fixture change',str(active_text),level = "D")
 
             self.plate_matrices = []
 

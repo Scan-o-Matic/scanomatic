@@ -28,7 +28,7 @@ from PIL import Image, ImageWin
 
 import pygtk
 pygtk.require('2.0')
-import logging
+import logging, traceback
 import gtk, pango
 import gobject
 import os, os.path, sys
@@ -103,6 +103,36 @@ class Application_Window():
         window.set_size_request(1450,900)
         window.connect("delete_event", self.close_application)
 
+        #Init of config parameters
+        self._logger = None
+        self._program_root = program_root
+        self._program_code_root = program_root + os.sep + "src"
+        self._program_config_root = self._program_code_root + os.sep + "config"
+        self._config_file = conf.Config_File(self._program_config_root + os.sep + "main.config")
+
+        #Logging
+        log_file_path = self._config_file.get("log_path")
+        if log_file_path == None:
+            self._config_file.set("log_path","log" + os.sep + "runtime.log")
+            if self._config_file.get("log_level") is None:
+                self._config_file.set("log_level", "A")
+            self.DMS('Incomplete config file','New entries were temporarly' +
+                ' added to config settings.\n' +
+                'You should consider saving these.', 
+                level="LD")
+            log_file_path = self._config_file.get("log_path")
+
+        self._log_file_path = self._program_code_root + os.sep + log_file_path
+
+        log_formatter = logging.Formatter('\n\n%(asctime)s %(levelname)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S\n')
+        hdlr = logging.FileHandler(self._log_file_path, mode='w')
+        hdlr.setFormatter(log_formatter)
+        self._logger = logging.getLogger('Scan-o-Matic GUI')
+        self._logger.addHandler(hdlr)
+        logging.Handler.handleError = self._DMS_tracebacks
+
+        #Callbacks
         self.USE_CALLBACK=True
         self.USER_OS = USER_OS
 
@@ -111,13 +141,8 @@ class Application_Window():
             self._handle = self.window.window.handle
         window.set_title("Scannomatic v" + __version__)
 
-        self.DMS("Program startup","Loading config",100,debug_level='info')
+        self.DMS("Program startup","Loading config","L",debug_level='info')
 
-        #Init of config parameters
-        self._program_root = program_root
-        self._program_code_root = program_root + os.sep + "src"
-        self._program_config_root = self._program_code_root + os.sep + "config"
-        self._config_file = conf.Config_File(self._program_config_root + os.sep + "main.config")
         
         #The scanner queue et al
         self._scanner_queue = []
@@ -134,9 +159,9 @@ class Application_Window():
             self._installed_scanners.append("Scanner {0}".format(scanner+1))    
         ###END LESS-OF-A-HACK
         self.DMS('Scanner Resources', 'Unclaimed at start-up %s' % \
-            self.get_unclaimed_scanners(), level=100, debug_level='debug')
+            self.get_unclaimed_scanners(), level="L", debug_level='warning')
         self.DMS('Scanner Resources', 'Scanners that are on: %s' % \
-            str(self.update_live_scanners()), level=100, debug_level='debug')
+            str(self.update_live_scanners()), level="L", debug_level='warning')
 
         #This should only happen on first run
         if self._config_file.get("data_root") == None:
@@ -205,7 +230,7 @@ class Application_Window():
         #add a ui description
         ui_manager.add_ui_from_string(self.ui)
 
-        self.DMS("Program startup","Initialising menu",100, debug_level='info')
+        self.DMS("Program startup","Initialising menu","L", debug_level='info')
 
         #create a menu-bar to hold the menus and add it to our main window
         menubar = ui_manager.get_widget('/MenuBar')
@@ -224,32 +249,32 @@ class Application_Window():
         self.status_area.pack_start(self.status_description, False, False, 2)
 
         #Fixture config GUI
-        self.DMS("Program startup","Initialising fixture GUI",100, debug_level='info')
+        self.DMS("Program startup","Initialising fixture GUI","L", debug_level='info')
         self.fixture_config = fixture.Fixture_GUI(self)
         self.vbox.pack_start(self.fixture_config, False, False, 2)
 
         #Analyis GUI
-        self.DMS("Program startup","Initialising analysis GUI",100, debug_level='info')
+        self.DMS("Program startup","Initialising analysis GUI","L", debug_level='info')
         self.analyse_one = analysis.Analyse_One(self)
         self.vbox.pack_start(self.analyse_one, False, False, 2)
 
         #Analyse Project GUI
-        self.DMS("Program startup","Initialising project analysis GUI",100, debug_level='info')
+        self.DMS("Program startup","Initialising project analysis GUI","L", debug_level='info')
         self.analyse_project = project.Project_Analysis_Setup(self)
         self.vbox.pack_start(self.analyse_project, False, False, 2)
             
         #Grid GUI
-        self.DMS("Program startup","Initialising reGrid GUI",100, debug_level='info')
+        self.DMS("Program startup","Initialising reGrid GUI","L", debug_level='info')
         self.grid = grid.Grid(self)
         self.vbox.pack_start(self.grid, False, False, 2)
 
         #Application Settings GUI
-        self.DMS("Program startup","Initialising settings GUI",100, debug_level='info')
+        self.DMS("Program startup","Initialising settings GUI","L", debug_level='info')
         self.app_settings = settings.Config_GUI(self, 'main.config')
         self.vbox.pack_start(self.app_settings, False, False, 2)
 
         #Setup new Experiment
-        self.DMS("Program startup","Initialising experiment GUI",100, debug_level='info')
+        self.DMS("Program startup","Initialising experiment GUI","L", debug_level='info')
         self.experiment_layout = experiment.Scanning_Experiment_Setup(self)
         self.vbox.pack_start(self.experiment_layout, False, False, 2)
 
@@ -296,7 +321,7 @@ class Application_Window():
     #
 
     def menu_Grid(self, widget=None, event=None, data=None):
-        self.DMS('Gridding','Activated', debug_level='info')
+        self.DMS('Gridding','Activated', "L", debug_level='info')
         self.show_config(self.grid)
 
     #
@@ -304,7 +329,7 @@ class Application_Window():
     #
 
     def menu_Settings(self, widget=None, event=None, data=None):
-        self.DMS('Settings','Application Settings Activated', debug_level='info')
+        self.DMS('Settings','Application Settings Activated', "L", debug_level='info')
         self.show_config(self.app_settings)
 
     #
@@ -312,7 +337,7 @@ class Application_Window():
     #
 
     def menu_Analysis(self, widget=None, event=None, data=None):
-        self.DMS('Analysis','Activated', debug_level='info')
+        self.DMS('Analysis','Activated', "L", debug_level='info')
         self.show_config(self.analyse_one)
         #self.analyse_one.f_settings.load()
 
@@ -321,7 +346,7 @@ class Application_Window():
     #
 
     def config_fixture(self, widget=None, event=None, data=None):
-        self.DMS('Fixture', 'Activated', debug_level='info')
+        self.DMS('Fixture', 'Activated', 'L', debug_level='info')
         self.fixture_config.set_mode(widget, event, data)
         self.show_config(self.fixture_config)
 
@@ -332,7 +357,7 @@ class Application_Window():
     def null_thing(self, widget=None, event=None, data=None):
         widget.set_sensitive(False)
         self.DMS('In development',
-            'Functionality has not been implemented yet',level=1110, 
+            'Functionality has not been implemented yet',level="DL", 
             debug_level='error')
 
 
@@ -436,7 +461,7 @@ class Application_Window():
         else:
 
             self.DMS('Experiment', "You're trying to start a project on no scanner."+\
-                "\n\nIt makes no sense", level = 1100, debug_level='warning')
+                "\n\nIt makes no sense", level = "DL", debug_level='warning')
 
     def update_live_scanners(self):
 
@@ -450,7 +475,7 @@ class Application_Window():
 
 
         if len(scanners) == 1 and scanners[0] == '':
-            self.DMS('Scanner Resources', 'No scanners on', level=100,
+            self.DMS('Scanner Resources', 'No scanners on', level="L",
                 debug_level='debug')
             return None
 
@@ -459,7 +484,7 @@ class Application_Window():
                 if -1 in self._live_scanners:
                     self.DMS('Scanner Resources',
                         'More than one uncaught scanner, not good at all',
-                        level=100, debug_level='warning')
+                        level="AL", debug_level='warning')
                 else:
                     self._live_scanners[-1] = s
             
@@ -469,7 +494,7 @@ class Application_Window():
                 del self._live_scanners[pos]
 
         self.DMS('Scanner Resources', 'Live scanners %s' % str(self._live_scanners),
-            level=100, debug_level='debug')
+            level="L", debug_level='info')
 
         return self._live_scanners
 
@@ -487,7 +512,7 @@ class Application_Window():
                 while catch_scanner in self._live_scanners:
                     self.DMS('Scanner Queue',
                         'Trying to add a second scanner to the same project',
-                        level=101, debug_level='warning')
+                        level="LA", debug_level='warning')
                     if len(self._scanner_queue) > 0:
                         catch_scanner = self._scanner_queue.pop()
                     else:
@@ -510,7 +535,7 @@ class Application_Window():
                 scanner.replace(" ","_")
 
             self.DMS("Scanner Resources", "Looking for lockfile '%s'" % \
-                lock_file, level=100, debug_level='debug')
+                lock_file, level="L", debug_level='debug')
             try:
                 fs = open(lock_file, 'r')
                 if str(fs.read(1)) == '0':
@@ -529,7 +554,7 @@ class Application_Window():
             if str(fs.read(1)) == '1':
                 self.DMS('Scanner Resources',
                     "Trying to claim taken scanner, should not be possible!",
-                    level=100, debug_level='warning')
+                    level="L", debug_level='warning')
                 fs.close()
                 return False
             fs.close()
@@ -543,12 +568,12 @@ class Application_Window():
             self._claimed_scanners.append(scanner)
             self.DMS('Scanner Resources', 
                 "Claimed scanner %s" % scanner,
-                level=100, debug_level='debug')
+                level="L", debug_level='debug')
             return True
         except:
             self.DMS('Scanner Resources',
                     "Failed to claim scanner %s" % scanner,
-                    level=100, debug_level='error')
+                    level="LA", debug_level='error')
             return False
 
     def set_unclaim_scanner(self, scanner):
@@ -559,11 +584,11 @@ class Application_Window():
             fs.close()
             self.DMS('Scanner Resources', 
                 "Released scanner %s" % scanner,
-                level=100, debug_level='debug')
+                level="L", debug_level='debug')
         except:
             self.DMS('Scanner Resources', 
                 "Could not unclaim scanner %s for unkown reasons" % scanner,
-                level=100, debug_level='warning')
+                level="LA", debug_level='warning')
 
     #
     #   FORCE UNCLAIM FUNCTIONS
@@ -599,7 +624,7 @@ class Application_Window():
                 if resp2 == gtk.RESPONSE_YES:
                     self.set_unclaim_scanner(claimed[resp])
                     self.DMS("Force Unclaim Scanner","{0} is now free to use".format(\
-                        claimed[resp])) 
+                        claimed[resp]),level="LA",debug_level="info") 
     #
     #   PROJECT ANALYSIS FUNCTIONS
     #
@@ -638,12 +663,12 @@ class Application_Window():
             for scanner in self._claimed_scanners:
                 self.set_unclaim_scanner(scanner)
 
-            self.DMS('Terminating', '', level = 110, debug_level='info')
+            self.DMS('Terminating', '', level = "L", debug_level='info')
             self.window.destroy()
             gtk.main_quit()
             return False
         else:
-            self.DMS('Keeping alive','', level = 110, debug_level='info')
+            self.DMS('Keeping alive','', level = "L", debug_level='info')
             return True
          
     def ask_Quit(self):
@@ -660,7 +685,7 @@ class Application_Window():
                 
                 children = self.running_experiments.get_children()
                 children[0].set_text("Aborting running processes, if scans are running it may take some time. Be patient.")
-                self.DMS("Scan-o-Matic", "Shutting down, but processes need to end nicely first", 1)
+                self.DMS("Scan-o-Matic", "Shutting down, but processes need to end nicely first", "LA")
 
                 for child in children[1:]:
                     child._terminate(ask=False)
@@ -671,7 +696,16 @@ class Application_Window():
         else:
             return True
 
-    def DMS(self, title, subject, level = -1, debug_level='debug'):
+    def _DMS_tracebacks(self, record):
+
+        fs = open(self._log_file_path, 'a')
+
+        traceback.print_tb(record, file=fs)
+
+        fs.close()
+
+
+    def DMS(self, title, subject, level=None, debug_level='debug'):
         """
             Display Message System
 
@@ -684,75 +718,53 @@ class Application_Window():
 
                 @subject    A string containing the subject. Rows are split at \\n
 
-                @level      An int describing where the data should be output
-                            It works as a fake binary array with each position
-                            being either 0 or 1. Default behaviour is using 
-                            application's configurated standard "log_level" 
-                            (activated by passing level = -1). 
-                            If none has been set level is set to 11
+                @level      A string specifying where message should appear,
+                            if it conains...
 
-                            Pos -1 (last):      Output to GUI-status area
-                            Pos -2:             Write to application's log file
-                            Pos -3:             Report using logging
-                            Pos -4:             Activate a message box GUI
+                            'A' it will be in the message area of the GUI
 
-                            Example: 
-                            level = 101 prints and puts in GUI-status area
+                            'L' it will be reported using logging (at set
+                            debug_level)
+
+                            'D' a dialog will be produced
+
+                @debug_level    Sets logging level, ('critical', 'error',
+                                'warning', 'info', 'debug')
+
         """
 
-        if level == -1:
+        if level == None or type(level) == types.IntType:
             level = self._config_file.get("log_level")
             if level == None:
-                level = 11
+                level = "A"
+            elif type(level) == types.IntType:
+                level = "A"
 
         s_arr = subject.split('\n')
 
         #Last digit says if message should be displayed in application
-        if level % 10 == 1:
+        if "A" in level:
             self.status_title.set_text(title.upper())
             self.status_description.set_text(subject)
 
         #2nd last digit says if message should be written to applications log-file:
-        if level % 100 / 10 == 1:
-            log_file_path = self._config_file.get("log_path")
-            if log_file_path == None:
-                self._config_file.set("log_path","log" + os.sep + "runtime.log")
-                self.DMS('Incomplete config file','New entries were temporarly' +
-                    ' added to config settings.\n' +
-                    'You should consider saving these.', 
-                    level=1000)
-                log_file_path = self._config_file.get("log_path")
+        if "L" in level:
+            if self._logger is None:
+                self._logger = logging.getLogger("Scan-o-Matic GUI - early bird logging")
 
-            log_file_path = self._program_code_root + os.sep + log_file_path
-            time_stamp = time.strftime("%d %b %Y %H:%M:%S", time.gmtime())
-            no_file = False
-
-            try:
-                fs = open(log_file_path, 'a')
-            except:
-                self.DMS('File path error', 'Failed to open log-file at:\n\n' + log_file_path +
-                    '\n\nPlease update your configuration', level = 1100, debug_level='error')
-                no_file = True
-
-            if not no_file:
-                fs.write("*** " + title.upper() + "\n\r")
-                fs.write("* " + time_stamp + "\n\r")
-                fs.write("*\n\r")
-                for s_row in s_arr:
-                    fs.write("* " + str(s_row) +"\n\r")
-                fs.write("\n\r")
-
-                fs.close()
-
-        #3rd last digit says if message should just be printed
-        if level % 1000 / 100 == 1:
             if debug_level in ['critical', 'error', 'warning', 'info', 'debug']:
-                eval("logging." + debug_level)("%s: %s" % (str(title).upper(), str(subject)))
+                eval("self._logger." + debug_level)("{0}: {1}".format(str(title).upper(), subject))
 
         #4th last digit says if message should be displayed as a pop-up dialog
-        if level % 10000 / 1000 == 1:
+        if "D" in level:
+            gtk_debug_levels = {'critical': gtk.MESSAGE_ERROR, 'error': gtk.MESSAGE_ERROR,
+                'warning': gtk.MESSAGE_WARNING, 'info': gtk.MESSAGE_INFO, 'debug':
+                gtk.MESSAGE_INFO}
+            if debug_level not in gtk_debug_levels.keys():
+                debug_level = "info"
+
             dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
-                                   gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+                                   gtk_debug_levels[debug_level], gtk.BUTTONS_NONE,
                                    subject)
             dialog.set_title(title)
             dialog.add_button(gtk.STOCK_OK, gtk.RESPONSE_OK)
@@ -797,6 +809,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging_level, format='\n\n%(asctime)s %(levelname)s: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S\n')
+
     app = Application_Window(program_root = script_path_root)
 
     gtk.main()

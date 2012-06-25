@@ -161,7 +161,7 @@ class Project_Analysis_Running(gtk.Frame):
             if self._supress_other is True: 
                 analysis_query += ["-s", "True"]
 
-            self.DMS("ANALYSE PROJECT", "Executing {0}".format(analysis_query), level=110)
+            self.DMS("ANALYSE PROJECT", "Executing {0}".format(analysis_query), level="L")
 
             self._analysis_sub_proc = Popen(map(str, analysis_query), 
                 stdout=self._analysis_log, shell=False)
@@ -199,10 +199,13 @@ class Project_Analysis_Running(gtk.Frame):
                     ctypes.windll.kernel32.CloseHandle(handle)
 
                 else:
-                    self.DMS("ANALYSE PROJECT", "OS not supported for manual termination of subprocess {0}".format(self._analysis_sub_proc.pid), level=1000)
+                    self.DMS("ANALYSE PROJECT", 
+                        "OS not supported for manual termination of subprocess"+\
+                        " {0}".format(self._analysis_sub_proc.pid), 
+                        level="DL", debug_level="error")
                 if term_success:
                     self._gui_status_text.set_text("Analysis termitating manually")
-                    self.DMS("ANALYSE PROJECT", "Analysis termitating manually", level=110)
+                    self.DMS("ANALYSE PROJECT", "Analysis termitating manually", level="LA")
             else:
                 self.destroy()
 

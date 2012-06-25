@@ -451,7 +451,7 @@ class Analyse_One(gtk.Frame):
                     break
             label = gtk.Label("(using '" + str(l_data[0]) + "')")
             self.DMS("ANALYSIS ONE", "Using polynomial: {0}".format(\
-                self._cce_poly_coeffs), 110, debug_level="info")
+                self._cce_poly_coeffs), "L", debug_level="info")
 
             vbox3.pack_start(label, False, False, 2)
             fs.close()
@@ -505,7 +505,7 @@ class Analyse_One(gtk.Frame):
 
             self.DMS('ANALYSE ONE',
                 'Selection has pixel values ({0} - {1})'.format(\
-                img_section.min(), img_section.max()), 110, debug_level="debug")
+                img_section.min(), img_section.max()), level="L", debug_level="debug")
 
             tf_matrix = colonies.get_gray_scale_transformation_matrix(self.grayscale_frame._grayscale)
 
@@ -526,7 +526,7 @@ class Analyse_One(gtk.Frame):
                         else:
                             self.DMS('ANALYSE ONE', 'Fishy pixel at \
 ({0},{1}) with value {2} (using {3})'.format(x,y,img_section[x,y],
-                                tf_matrix[-1]), 110, 
+                                tf_matrix[-1]), "L", 
                                 debug_level="critical")
                             kodak_img[x,y] = tf_matrix[-1] 
             else:
@@ -540,7 +540,7 @@ class Analyse_One(gtk.Frame):
                 tf_matrix[i_max], tf_matrix[i_min],
                 np.array(tf_matrix[i_min: i_max+1]).min(), 
                 np.array(tf_matrix[i_min: i_max+1]).max()), 
-                110, debug_level="debug")
+                "L", debug_level="debug")
 
             return kodak_img
 
@@ -558,7 +558,7 @@ class Analyse_One(gtk.Frame):
                 blob_pixels = img_section[np.where(self.blob_filter)] - float(self.bg_mean.get_text())
             except ValueError:
                 self.DMS("ANALYSE ONE", "There's no background in section.",
-                    110, debug_level="warning")
+                    "L", debug_level="warning")
 
                 blob_pixels = img_section[np.where(self.blob_filter)]
 
@@ -594,11 +594,13 @@ class Analyse_One(gtk.Frame):
                 
             except:
 
-                self.DMS("Error", "Could not open " + self._config_calibration_path)
+                self.DMS("Error", "Could not open " + self._config_calibration_path,'LA',
+                    debug_level='error')
                 return
 
             self.DMS("Calibration", "Setting " + self.analysis_img.get_text() + \
-                " colony depth per pixel to " + str( indep_cce ) + " cell estimate.")
+                " colony depth per pixel to " + str( indep_cce ) + " cell estimate.", level="L",
+                debug_level="info")
 
     def select_image(self, widget=None, event=None, data=None):
         newimg = gtk.FileChooserDialog(title="Select new image", action=gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -628,13 +630,14 @@ class Analyse_One(gtk.Frame):
                 self.f_settings.set_areas_positions()
 
                 self.DMS("Reference scan positions", 
-                    str(self.f_settings.fixture_config_file.get("grayscale_area")), level = 110)
+                    str(self.f_settings.fixture_config_file.get("grayscale_area")), level = "L")
                 self.DMS("Scan positions", 
-                    str(self.f_settings.current_analysis_image_config.get("grayscale_area")), level = 110)
+                    str(self.f_settings.current_analysis_image_config.get("grayscale_area")), level = "L")
 
                 rotated = True
             else:
-                self.DMS("Error", "Missmatch between fixture configuration and current image", level =110)
+                self.DMS("Error", "Missmatch between fixture configuration and current image", 
+                    level = "L", debug_level="error")
                 rotated = False
 
             if self.f_settings.A != None:
@@ -652,7 +655,7 @@ class Analyse_One(gtk.Frame):
                 if grayscale != None:
 
                     self.DMS('ANALYSE ONE', 'Automatically setting grayscale-area to {0}'.\
-                        format(grayscale.shape), 110, debug_level='debug')
+                        format(grayscale.shape), level="L", debug_level='debug')
                     gs_success = self.set_grayscale(grayscale)
 
                 if grayscale is None or gs_success == False:
@@ -792,7 +795,7 @@ class Analyse_One(gtk.Frame):
 
         img_section = self.get_img_section(ul, lr, as_copy=False)
         self.DMS('ANALYSE ONE', 'Manually setting grayscale-area to {0} {1} (shape {2}'.\
-            format(ul, lr, img_section.shape), 110, debug_level='debug')
+            format(ul, lr, img_section.shape), level="L", debug_level='debug')
         if not self.set_grayscale(img_section):
             self.set_grayscale_selecting()
 
@@ -861,7 +864,7 @@ class Analyse_One(gtk.Frame):
                 "see in program"+ " (from mean), " + 
                 str(abs(features['cell']['pixelsum'] - \
                 features['background']['median'] * features['cell']['area'])) + 
-                " (from median)", level = 110, debug_level='info')
+                " (from median)", level = "L", debug_level='info')
 
 
     def get_click_in_rect(self, event):
@@ -968,7 +971,7 @@ class Analyse_One(gtk.Frame):
                 self.selection_rect.set_height(    event.ydata - self._rect_ul[1])#,
                     #ec = 'k', fc='b', fill=True, lw=1,
                     #axes = self.image_ax)
-                self.DMS("SELECTING", "Selecting something in the image", 1)
+                self.DMS("SELECTING", "Selecting something in the image", level="A")
 
             else:
                 cur_pos_offset = np.asarray((event.xdata, event.ydata)) - \
@@ -976,7 +979,7 @@ class Analyse_One(gtk.Frame):
                 new_rect_pos = self._dragging_rect_origin + cur_pos_offset
                 self.selection_rect.set_x(new_rect_pos[0])
                 self.selection_rect.set_y(new_rect_pos[1])
-                self.DMS("SELECTING", "Moving selection", 1)
+                self.DMS("SELECTING", "Moving selection", level="A")
 
             self.image_fig.canvas.draw() 
 
@@ -992,14 +995,14 @@ class Analyse_One(gtk.Frame):
 
                 self.selection_circ.set_radius( r )
 
-                self.DMS("SELECTING", "Selecting some blob", 1)
+                self.DMS("SELECTING", "Selecting some blob", "A")
 
             else:
                 cur_pos_offset = cur_pos - \
                     self._dragging_origin
                 new_circ_pos = self._dragging_circ_origin + cur_pos_offset
                 self.selection_circ.center = tuple(new_circ_pos)
-                self.DMS("SELECTING", "Moving blob selection", 1)
+                self.DMS("SELECTING", "Moving blob selection", "A")
 
             self.blob_fig.canvas.draw() 
 
@@ -1008,7 +1011,7 @@ class Analyse_One(gtk.Frame):
         self.DMS("ANALYSE ONE", "{0} rect marking for {1}.".format(
             ['Made','Dragged'][self._rect_dragging],
             ['gray-scale', 'feature-selection'][self.grayscale_frame._grayscale is not None]),
-            0100, debug_level = 'debug')
+            level="L", debug_level = 'debug')
 
         if self._rect_marking:
             self._rect_marking = False
@@ -1017,7 +1020,7 @@ class Analyse_One(gtk.Frame):
                     self._rect_lr = (event.xdata, event.ydata)
                     self.DMS("SELECTION", "UL: " + str(self._rect_ul) + ", LR: (" + 
                         str(event.xdata) + ", "  +
-                        str(event.ydata) + ")", level=1)
+                        str(event.ydata) + ")", level="A")
 
                     self.selection_width.set_text(str(self.selection_rect.get_width()))
                     self.selection_height.set_text(str(self.selection_rect.get_height()))
@@ -1033,7 +1036,7 @@ class Analyse_One(gtk.Frame):
                     self._rect_ul[1] + self.selection_rect.get_height())
 
                 self.DMS("SELECTION", "UL: " + str(self._rect_ul) + ", LR: (" + 
-                    str(self._rect_lr) + ")", level=1)
+                    str(self._rect_lr) + ")", level="A")
 
                 self.get_analysis()
                 
@@ -1052,7 +1055,7 @@ class Analyse_One(gtk.Frame):
 
                         r = np.sqrt( np.sum((cur_pos - self._circ_center)**2) )
 
-                        self.DMS("SELECTION", "Radius: " + str(r) + ")", level=1)
+                        self.DMS("SELECTION", "Radius: " + str(r) + ")", level="A")
 
                         print "C center", self.selection_circ.center, "radius", self.selection_circ.get_radius()
 
@@ -1087,7 +1090,7 @@ class Analyse_One(gtk.Frame):
             left = lr[1]
 
         self.DMS("Analyse one", "Selection shape: {0}".format(self.f_settings.A.\
-            _img[upper:lower,left:right].shape),10,debug_level="debug")
+            _img[upper:lower,left:right].shape),level="D",debug_level="debug")
 
         if as_copy:
             if dtype is None:
@@ -1119,7 +1122,7 @@ class Analyse_One(gtk.Frame):
 
             self.DMS('ANALYSE ONE', 'Cell Estimate conversion is {0}'.format(\
                 not(np.all(self._cell.kodak_data_source == self._cell.data_source))),
-                110, debug_level="debug")
+                "L", debug_level="debug")
         else:
 
             if self._cell.kodak_data_source is not None:
@@ -1129,13 +1132,13 @@ class Analyse_One(gtk.Frame):
                 self._cell.set_grid_array_pointers()
                 self.DMS('ANALYSE ONE', 'Kodak reversal is {0}'.format(\
                     np.all(self._cell.get_item('blob').grid_array == self._cell.original_data_source)),
-                    110, debug_level="debug")
-                self.DMS('ANALYSE ONE', 'Reversed to Kodak Space', 110,
+                    "L", debug_level="debug")
+                self.DMS('ANALYSE ONE', 'Reversed to Kodak Space', "L",
                     debug_level="debug")
             else:
                 self.DMS('ANALYSE ONE', 
                     'No reversal to Kodak Space needed, already there',
-                    110, debug_level="debug")
+                    "L", debug_level="debug")
 
         features = self._cell.get_analysis(no_detect=True)
 
@@ -1187,7 +1190,7 @@ class Analyse_One(gtk.Frame):
         self.set_features_in_gui(features)
 
         self.DMS("ANALYSE ONE", 'Features: {0}'.format(features),
-            110, debug_level="debug")
+            "L", debug_level="debug")
 
         #
         # UPDATE IMAGE SECTION USING CURRENT VALUE SPACE REPRESENTATION
@@ -1281,7 +1284,7 @@ class Analyse_One(gtk.Frame):
             x_labels = [t.get_text() for t  in image_plot.get_axes().get_xticklabels()]
             self.DMS('ANALYSE ONE', 'Debugging niceness of plot {0}'.format(\
                 [str(t) for t  in image_plot.get_axes().get_xticklabels()]), 
-                100, debug_level='debug')
+                "L", debug_level='debug')
 
             image_plot.get_axes().set_xticklabels(x_labels, fontsize='xx-small')
 

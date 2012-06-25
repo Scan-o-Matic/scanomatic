@@ -75,14 +75,14 @@ class Sane_Base():
 
     def AcquireByFile(self, scanner=None, handle=None):
         if self.next_file_name:
-            self.owner.owner.DMS("Scanning", str(self.next_file_name), level=1)
+            self.owner.owner.DMS("Scanning", str(self.next_file_name), level="LA")
             #os.system(self._scan_settings + self.next_file_name) 
             
             try:
                 im = open(self.next_file_name,'w')
             except:
                 self.owner.owner.DMS("ERROR", "Could not write to file: " + str(self.next_file_name),
-                    level=1110)
+                    level="DL", debug_level="error")
                 return False
 
             scan_query = list(self._scan_settings)

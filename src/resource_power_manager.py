@@ -42,7 +42,7 @@ class Power_Manager():
             os.system(str(self._path)+' '+str(self._on_string))
             self._on = True
             if self._DMS:
-                self._DMS("Power","Switching on",101, debug_level='debug')     
+                self._DMS("Power","Switching on",level="LA", debug_level='debug')     
 
     def off(self):
         if self._installed and self._on != False:
@@ -50,7 +50,7 @@ class Power_Manager():
             os.system('"'+str(self._path)+'" '+str(self._off_string))
             self._on = False
             if self._DMS:
-                self._DMS("Power","Switching off",101, debug_level='debug')     
+                self._DMS("Power","Switching off",level="LA", debug_level='debug')     
 
     def toggle(self):
         if self.on != None:

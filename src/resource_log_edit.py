@@ -24,7 +24,7 @@ import logging, uuid, os
 
 META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0, 
    'Description': 'Automatic placeholder description',
-   'UUID': str(uuid.uuid1()),'Measures':0,'Fixture': 'fixture_a',
+   'UUID': uuid.uuid1().get_urn().split(":")[-1],'Measures':0,'Fixture': 'fixture_a',
    'Pinning Matrices': None, 'Manual Gridding': None}
 
 #

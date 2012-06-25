@@ -89,7 +89,7 @@ class Gray_Scale(gtk.Frame):
                 self.grayscale_plot_img_ax2.set_visible(False)
 
             self.DMS('GRAYSCALE', 'Gray-scale cleared since no image passed', 
-                110, debug_level='info')
+                "L", debug_level='info')
 
             return False
 
@@ -98,7 +98,7 @@ class Gray_Scale(gtk.Frame):
 
         if gs._mid_orth_strip is None or gs._grayscale_pos is None:
             self.DMS('GRAYSCALE', 'Gray-scale could not find any signal.', 
-                1110, debug_level='info')
+                "DL", debug_level='error')
 
             if self.grayscale_plot_img_ax is not None:
                 self.grayscale_plot_img_ax.set_visible(False)
@@ -137,7 +137,7 @@ class Gray_Scale(gtk.Frame):
             self._grayscale=None
             self.DMS("GRAYSCALE GUI", 
                 "There's something wrong with the grayscale. Try manual selection",
-                1110, debug_level="error")
+                "DL", debug_level="error")
             return False
 
         #z2 = np.polyfit(kodak_values, gs._grayscale,2)
@@ -158,18 +158,18 @@ class Gray_Scale(gtk.Frame):
                 self.DMS('GRAYSCALE GUI', 
                     'Grayscale is dubious since coefficients ({0}) don\'t\
  agree on sign.'.format(z3_deriv_coeffs),
-                    1110, debug_level='error')
+                    level="DL", debug_level='error')
 
                 self._grayscale=None
                 return False
             else:
-                self.DMS('GRAYSCALE GUI', 'Got regression coeffs: {0}'.format(z3), 110,
+                self.DMS('GRAYSCALE GUI', 'Got regression coeffs: {0}'.format(z3), level="L",
                     debug_level='info')
         else:
 
             self.DMS('GRAYSCALE GUI',
                 "Could not find a polynomial fitting the points",
-                110, debug_level="error")
+                level="L", debug_level="error")
             self._grayscale=None
             return False
 
