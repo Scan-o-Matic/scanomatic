@@ -6,7 +6,7 @@ _*.lock
 .git/*
 data
 dev/*
-src/config/logs
+src/config/log/runtime.log
 src/config/main.config
 src/config/fixtures
 versions/*
