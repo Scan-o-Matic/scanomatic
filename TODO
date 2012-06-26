@@ -46,8 +46,6 @@
 
 --- GUI ---
 
-*** User needs to know if the analysis-script is working...
-
 *** Make Analyse One use the grid if one pleases...
 
 *** Make scanner-queue lay outside program so several instances of program
@@ -78,6 +76,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** User needs to know if the analysis-script is working...
 
 *** Check Pattern-finding if it doesn't demand one too many intervals for optimal curve-start
     -> Seems so, line 244 in resource_signal, changed the while statement 'n' >>> '(n-1)'
