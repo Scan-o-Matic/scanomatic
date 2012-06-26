@@ -89,7 +89,7 @@ class Grid_Analysis():
     #
 
     def get_analysis(self, im, pinning_matrix, use_otsu = True, 
-        median_coeff=None, verboise=False, 
+        median_coeff=None, verbose=False, 
         visual=False, history=[], manual_threshold = None):
         """
 
@@ -113,7 +113,7 @@ class Grid_Analysis():
             @median_coeff       Coefficient to threshold from the
                                 median when not using Otsu.
 
-            @verboise   If a lot of things should be printed out
+            @verbose   If a lot of things should be printed out
 
             @visual     If visual information should be presented.
 
@@ -147,11 +147,11 @@ class Grid_Analysis():
         for dimension in xrange(2):
             if median_coeff:
                 positions[dimension], measures[dimension] = self.get_spikes(
-                    dimension, im, visual, verboise, use_otsu, median_coeff,
+                    dimension, im, visual, verbose, use_otsu, median_coeff,
                     manual_threshold=manual_threshold)
             else:
                 positions[dimension], measures[dimension] = self.get_spikes(
-                    dimension, im, visual, verboise, use_otsu,
+                    dimension, im, visual, verbose, use_otsu,
                     manual_threshold=manual_threshold)
 
             #DEBUG ROBUSTNESS TEST
@@ -208,7 +208,7 @@ class Grid_Analysis():
             ###START HERE MARKING OUT ALL OLD STUFF...
             #best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
                 #self.get_signal_position_and_frequency( measures[dimension],
-                    #pinning_matrix[dimension], verboise )            
+                    #pinning_matrix[dimension], verbose )            
  
             self.logger.info("GRID ARRAY, Best fit:\n" + \
                 "* Elements: " + str(pinning_matrix[dimension]) +\
@@ -307,7 +307,7 @@ class Grid_Analysis():
             return self.best_fit_positions[0], self.best_fit_positions[1], self.R, adjusted_by_history
 
 
-    def get_spikes(self, dimension, im=None, visual = False, verboise = False,\
+    def get_spikes(self, dimension, im=None, visual = False, verbose = False,\
              use_otsu=True, median_coeff=0.99, manual_threshold=None):
         """
             get_spikes returns a spike list for a dimension of an image array
@@ -322,7 +322,7 @@ class Grid_Analysis():
             @visual     Plot the results (only possible when running
                         the script from prompt)
 
-            @verboise   Do a whole lot of print out of everything to
+            @verbose   Do a whole lot of print out of everything to
                         debug what goes wrong.
 
             @use_otsu   Using the Otsu algorithm to set the threshold used in
@@ -403,18 +403,18 @@ if __name__ == "__main__":
     test = 0
     correct_pos = -1
     im = plt.imread("section.tiff")
-    verboise = False
+    verbose = False
     visual = True
 
     while test < tests:
 
         #correct_pos, measures = simulate(measurements, segments)
         positions, measures = get_spikes(im, 1)
-        if verboise:
+        if verbose:
             pass
             #print len(measures)
         est_pos, frequency = get_signal_position_and_frequency(measures, segments)
-        if verboise:
+        if verbose:
             #print correct_pos, est_pos
             print list(measures)
             print list(positions)
@@ -426,7 +426,7 @@ if __name__ == "__main__":
 
     if visual:
         Y = np.ones(positions.shape)*40
-        if verboise:
+        if verbose:
             print len(Y), len(positions[est_pos:est_pos+segments + 2])
         plt.plot(positions, Y, 'ko', lw=2)
         pfound = positions[est_pos:est_pos+segments]
@@ -435,6 +435,6 @@ if __name__ == "__main__":
         plt.plot(positions[est_pos:est_pos+segments], Y, 'ro')
         plt.show()
 
-    if verboise:
+    if verbose:
         print "*** ", est_pos, segments, len(positions)
         print "*** Got", corrects, "out of", tests, "right"

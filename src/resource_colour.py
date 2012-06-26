@@ -529,7 +529,7 @@ class Color_Image():
             self._pinning_matrix[1] , 
             im_d1_s, frequency =  im_f1, offset_buffer_fraction=0.5)
         #im3_grid = g.get_analysis(get_gs_im(im3_cropped), pinning_matrix, use_otsu = True,
-                #median_coeff=None, verboise=False, visual=False,
+                #median_coeff=None, verbose=False, visual=False,
                 #history=[])
         self._grid = im_grid 
         self._grid_cell_size = (im_f0, im_f1)

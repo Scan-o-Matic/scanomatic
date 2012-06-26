@@ -150,7 +150,7 @@ class Grid_Array():
 
     def set_grid(self, im, save_grid_name=None, save_grid_image=False,
         grid_lock = True, use_otsu=True, 
-        median_coeff=None, verboise=False, visual=False, dont_save_grid=False):
+        median_coeff=None, verbose=False, visual=False, dont_save_grid=False):
         """
             Sets a grid to an image.
 
@@ -172,7 +172,7 @@ class Grid_Array():
             @param grid_lock : Default True -- if true, the grid will only be
             placed once and then reused all way through.
 
-            @param verboise : If a lot of things should be printed out
+            @param verbose : If a lot of things should be printed out
 
             @param visual : If visual information should be presented.
 
@@ -203,7 +203,7 @@ class Grid_Array():
 
             best_fit_rows, best_fit_columns, R, adjusted_by_history = \
                 self._analysis.get_analysis(\
-                im, self._pinning_matrix, use_otsu, median_coeff, verboise, 
+                im, self._pinning_matrix, use_otsu, median_coeff, verbose, 
                 visual, history=topleft_history)
 
 
@@ -409,7 +409,7 @@ class Grid_Array():
 
 
     def get_analysis(self, im, gs_fit=None, gs_values=None, use_fallback=False,\
-        use_otsu=True, median_coeff=None, verboise=False, visual=False, \
+        use_otsu=True, median_coeff=None, verbose=False, visual=False, \
         watch_colony=None, supress_other=False, save_grid_image=False, \
         save_grid_name=None, grid_lock=False, identifier_time=None, \
         save_anime_name=None, timestamp=None, animate=False):
@@ -428,7 +428,7 @@ class Grid_Array():
             @param median_coeff : Coefficient to threshold from the
             median when not using Otsu.
 
-            @param verboise : If a lot of things should be printed out
+            @param verbose : If a lot of things should be printed out
 
             @param visual : If visual information should be presented.
 
@@ -459,7 +459,7 @@ class Grid_Array():
         #DEBUGHACK
         #grid_lock = False
         #visual = True
-        #verboise = True
+        #verbose = True
         #save_grid_image = True
         #debug_per_plate = True
         #DEBUGHACK - END
@@ -481,7 +481,7 @@ class Grid_Array():
             if not self.set_grid(im, save_grid_name=save_grid_name, 
                 save_grid_image=save_grid_image, grid_lock = grid_lock, 
                 use_otsu=use_otsu, median_coeff=median_coeff, 
-                verboise=verboise, visual=visual):
+                verbose=verbose, visual=visual):
                 
                 self.logger.critical('Failed to set grid on {0} and none to use'.\
                     format(self._identifier))
@@ -579,7 +579,8 @@ class Grid_Array():
                                     tf_im[x,y] = transformation_matrix[im[x2,y2]]
                                 except IndexError:
                                     self.logger.critical(\
-                                        "Index Error:\ntf_im.shape {0} vs \
+                                        "Index Error:An image has been saved as gridding_error.png\n"+\
+                                        "tf_im.shape {0} vs \
 ({1}, {2}) and im.shape {3} vs ({4}, {5})\nbest_fit ({6}, {7}) size ({8}, {9}) from {10}:{11}:{12}"\
                                         .format(tf_im.shape, x, y, 
                                         im.shape, x2, y2,
@@ -603,9 +604,8 @@ class Grid_Array():
                                                 np.array(self._best_fit_rows),
                                                 np.ones(len(self._best_fit_rows))*\
                                                     self._best_fit_columns[column], 'r-')   
-                                    grid_image.show()
-                                    x= raw_input("terminating on enter > ")
-                                    
+                                    grid_image.savefig("gridding_error.png")
+                                    raise IndexError, "Image showing the grid that caused it: gridding_error.png" 
                                     sys.exit()
         
                                     

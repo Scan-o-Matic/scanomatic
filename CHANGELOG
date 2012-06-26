@@ -2,6 +2,10 @@
 ##### Changed in Scannomatic 0.993 #####
    ###################################
 
+*** Minor adjustment to experiment pinning matrix dropdowns
+
+*** Running project analysis now reports if anything bad happened.
+
 *** Warning message if serveral instances of the program is running in parallell.
 
 *** runtime.log gets all logging messages and is overwritten at each start-up

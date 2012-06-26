@@ -733,11 +733,6 @@ class Application_Window():
             "Please close the program as soon as no experiment is running and send "+\
             "the file '{0}' to martin.zackrisson@gu.se".format(self._log_file_path),
             level="D", debug_level="critical")
-        #fs = open(self._log_file_path, 'a')
-
-        #traceback.print_tb(record, file=fs)
-
-        #fs.close()
 
 
     def DMS(self, title, subject, level=None, debug_level='debug'):

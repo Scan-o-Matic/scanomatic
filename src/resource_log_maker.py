@@ -52,12 +52,12 @@ def print_progress_bar(fraction, size=40):
     print
     print prog_str
 
-def make_entries(fs, file_list=None, extra_info=None, verboise=False, quiet=False):
+def make_entries(fs, file_list=None, extra_info=None, verbose=False, quiet=False):
     if file_list == None:
         if sys.argv[1][0] == "-":
 
             if sys.argv[1] == "-v":
-                verboise = True 
+                verbose = True 
             elif sys.argv[1] == "-q":
                 quiet = True
 
@@ -75,7 +75,7 @@ def make_entries(fs, file_list=None, extra_info=None, verboise=False, quiet=Fals
     exception_count = 0
     for f_i, im_file in enumerate(file_list):
 
-        if verboise and not quiet:
+        if verbose and not quiet:
             print_progress_bar(f_i/float(len(file_list)))
             print "** Processing:", im_file
 
@@ -125,7 +125,7 @@ def make_entries(fs, file_list=None, extra_info=None, verboise=False, quiet=Fals
 
             fs.write(str(write_dictionary)+"\n\r")
 
-    if verboise and not quiet:
+    if verbose and not quiet:
         print_progress_bar(1)
 
     if not quiet:

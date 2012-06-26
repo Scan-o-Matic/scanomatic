@@ -359,7 +359,7 @@ class Scanning_Experiment(gtk.Frame):
 
             fs = open(self._analysis_log_file_path,'a')
             log_maker.make_entries(fs, file_list=file_list, extra_info=gs_data,
-                verboise=False, quiet=False)
+                verbose=False, quiet=False)
             fs.close()
             self.DMS("Analysis","Done. Nothing more to do for that image...", 
                 level="LA", debug_level='debug')
@@ -626,11 +626,12 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
         vbox2.pack_start(frame,False, False, 2)
 
-        self.pinning_matrices = {'8 x 12 (96)':(8,12), 
-            '16 x 24 (384)': (16,24), 
-            '32 x 48 (1536)': (32,48),
-            '64 x 96 (6144)': (64,96),
+        self.pinning_matrices = {'A: 8 x 12 (96)':(8,12), 
+            'B: 16 x 24 (384)': (16,24), 
+            'C: 32 x 48 (1536)': (32,48),
+            'D: 64 x 96 (6144)': (64,96),
             '--Empty--': None}
+
         self.set_fixture()
 
         hbox = gtk.HBox()
@@ -837,9 +838,9 @@ class Scanning_Experiment_Setup(gtk.Frame):
                     self.plate_pinnings.pack_start(label, False, False, 2)
 
                     dropbox = gtk.combo_box_new_text()                   
-                    for m in self.pinning_matrices.keys():
+                    for i, m in enumerate(sorted(self.pinning_matrices.keys())):
                         dropbox.append_text(m)
-                    dropbox.set_active(0)
+                    dropbox.set_active(3)
                     self.plate_matrices.append(dropbox)
                     self.plate_pinnings.pack_start(dropbox, False, False, 2)
                     

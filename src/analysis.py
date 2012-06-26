@@ -49,6 +49,7 @@ import resource_log_edit as rle
 # FUNCTIONS
 #
 
+
 def get_pinning_matrices(query, sep=':'):
 
 
@@ -89,7 +90,7 @@ def print_progress_bar(fraction, size=40):
 
 def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         graph_watch, supress_analysis = False, \
-        verboise=False, use_fallback = False, use_otsu = False,\
+        verbose=False, use_fallback = False, use_otsu = False,\
         grid_times=None, xml_format={'short': True, 'omit_compartments':[],
         'omit_measures':[]}, animate=False, manual_grid=False):
     """
@@ -117,7 +118,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
         @supress_analysis  Suppresses the main analysis and thus
                             only graph_watch thing is produced.
 
-        @verboise           Will print some basic output of progress.
+        @verbose           Will print some basic output of progress.
 
         @use_fallback       Determines if fallback colony detection
                             should be used.
@@ -141,6 +142,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
     """
     
     start_time = time()
+
+
 
     graph_output = None
     file_path_base = os.sep.join(log_file_path.split(os.sep)[:-1])
@@ -177,10 +180,47 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
     
     
-
+    #SET UP LOGGER
     hdlr = logging.FileHandler(outdata_files_path + "analysis.run", mode='w')
     hdlr.setFormatter(log_formatter)
     logger.addHandler(hdlr)
+    def produce_custom_traceback(excType, excValue, traceback, logger=logger):
+
+        run_file_path = "(sorry couldn't find the name, but it is the analysis.run of your project)"
+        if logger is not None:
+            for handler in logger.handlers:
+                try:
+                    run_file_path = handler.baseFilename
+                except:
+                    pass
+
+        logger.critical("Uncaught exception -- An error in the code was encountered.\n"+\
+            "The analysis needs to be re-run when the problem is fixed.\n"+\
+            "If you are lucky, the problem may be solved by recompiling a new log-file for "+\
+            "the project.\nIn any a way, please send "+\
+            "the file {0} to martin.zackrisson@gu.se".format(run_file_path),
+                 exc_info=(excType, excValue, traceback))
+
+        sys.exit()
+
+    sys.excepthook = produce_custom_traceback
+    #SET UP LOGGER DONE
+
+    #RECORD HOW ANALYSIS WAS STARTED
+    logger.info('Analysis was called with the following arguments:\n' +\
+        'log_file_path\t\t{0}'.format(log_file_path) + \
+        '\noutdata_file_path\t{0}'.format(outdata_files_path) + \
+        '\npinning_matrices\t{0}'.format(pinning_matrices) +\
+        '\ngraph_watch\t\t{0}'.format(graph_watch) +\
+        '\nsupress_analysis\t{0}'.format(supress_analysis) + \
+        '\nverbose\t\t\t{0}'.format(verbose) + \
+        '\nuse_fallback\t\t{0}'.format(use_fallback) + \
+        '\nuse_otsu\t\t{0}'.format(use_otsu) +\
+        '\ngrid_times\t\t{0}'.format(grid_times) +\
+        '\nxml_format\t\t{0}'.format(xml_format) +\
+        '\nanimate\t\t\t{0}'.format(animate) +\
+        '\nmanual_grid\t\t{0}'.format(manual_grid))
+
     logger.info('Analysis started at ' + str(start_time))
 
     if graph_watch != None:
@@ -392,7 +432,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
             plate_positions.append( \
                 img_dict_pointer[plate_position_keys[i]] )
 
-            #if verboise:
+            #if verbose:
             #    print "** Position", plate_position_keys[i], ":", \
             #img_dict_pointer[plate_position_keys[i]]
 
@@ -944,7 +984,7 @@ class Project_Image():
                 grid_array.set_grid(im, save_grid_name=cur_graph_name, 
                     save_grid_image=cur_graph_name, grid_lock = grid_lock, 
                     use_otsu=use_otsu, median_coeff=None, 
-                    verboise=False, visual=False, dont_save_grid=True)
+                    verbose=False, visual=False, dont_save_grid=True)
 
 
         if gs_fit is not None:
@@ -981,7 +1021,7 @@ coefficients don't have the same sign")
                 im, \
                 gs_values=gs_values, use_fallback=use_fallback,\
                 use_otsu=use_otsu, median_coeff=None, \
-                verboise=False, visual=False, watch_colony=watch_colony, \
+                verbose=False, visual=False, watch_colony=watch_colony, \
                 supress_other=supress_other, save_grid_image=False\
                 , save_grid_name = None, 
                 save_anime_name = save_anime_name, grid_lock = grid_lock,

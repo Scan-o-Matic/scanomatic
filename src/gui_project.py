@@ -111,6 +111,21 @@ class Project_Analysis_Running(gtk.Frame):
 
         gobject.timeout_add(1000*5, self._run)
 
+    def get_run_file_contents(self):
+
+        fs_lines = ""
+        try:
+            fs = open(self._analysis_run_file,'r')
+
+        except:
+            fs = None
+
+        if fs is not None:
+            fs_lines = fs.read()
+            fs.close()
+
+        return fs_lines
+
     def _run(self):
 
         if self._analysis_running:
@@ -118,21 +133,58 @@ class Project_Analysis_Running(gtk.Frame):
             if self._analysis_sub_proc.poll() != None:
                 self._analysis_log.close()
                 self._gui_status_text.set_text("Analysis done...")
+                fs_lines = self.get_run_file_contents()
+                error_pattern = re.compile(r"^ +ERROR: (.+)\n", re.MULTILINE)
+                warning_pattern = re.compile(r"^ +WARNING: (.+)\n", re.MULTILINE)
+                critical_pattern = re.compile(r"^ +CRITICAL: (.+)\n", re.MULTILINE)
+                crash_pattern = re.compile(r"^ +CRITICAL: Uncaught exception([^:]+)", 
+                    re.MULTILINE)
+
+                crashed = re.findall(crash_pattern, fs_lines)
+                if len(crashed) > 0:
+
+                    crash_text = crashed[0].split("Traceback")[0].strip()[3:]
+
+                    self.DMS("Analysis Project", crash_text, 'LD', debug_level='critical')
+
+                else:
+
+                    criticals = re.findall(critical_pattern, fs_lines)
+                    errors = re.findall(error_pattern, fs_lines)
+                    warnings = re.findall(warning_pattern, fs_lines)
+
+                    if len(criticals) > 0:
+
+
+                        self.DMS("Analyse Project", "The analysis produced " +\
+                        "{0} critical exception{1}:\n\n".format(len(criticals),
+                        ['','s'][len(criticals)>1]) +\
+                        "\n".join(criticals) +\
+                        "\n\n Further it produced {0} error{1}.".format(len(errors),
+                        ['s',''][len(errors) == 1]) +\
+                        " and {0} warning{1}.".format(len(warnings),
+                        ['s',''][len(warnings) == 1]),
+                        'DL', debug_level='critical')
+                    elif len(errors) > 0:
+                        self.DMS("Analyse Project", "The analysis was completed," +\
+                        " but with {0} error{1}.".format(len(errors),
+                        ['','s'][len(errors) > 1]) +\
+                        "and {0} warning{1}.".format(len(warnings),
+                        ['s',''][len(warnings) == 1]), level="DL", debug_level="warning")
+
+                    elif len(warnings) > 0:
+                        self.DMS("Analyse Project", "The analysis was completed," +\
+                        " but with {0} warning{1}.".format(len(warnings),
+                        ['','s'][len(warnings) > 1]), level="LA", debug_level="warning")
+ 
                 gobject.timeout_add(1000*60*1, self.destroy)          
             else:
                 
                 self._gui_timer.set_text("Run-time: %d min" % int((time.time() \
                     - float(self._start_time)) / 60))
+                fs_lines = self.get_run_file_contents()
 
-                try:
-                    fs = open(self._analysis_run_file,'r')
-
-                except:
-                    fs = None
-
-                if fs is not None:
-                    fs_lines = fs.read()
-                    fs.close()
+                if fs_lines != "":
                     re_hits = re.findall(self._analysis_re_pattern, fs_lines)
                     status_text = "Currently anlysing image: {0}".format(\
                         re_hits[-1].split(os.sep)[-1])
