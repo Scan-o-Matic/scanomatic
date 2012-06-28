@@ -8,6 +8,8 @@ import scipy.interpolate as scint
 import scipy.stats as stats
 import sys
 
+import resource_xml_read as r_xml
+
 def make_linear_interpolation(data):
     y, x = np.where(data != 0)
     Y, X = np.arange(data.shape[0]), np.arange(data.shape[1])
@@ -201,6 +203,18 @@ def get_data_from_file(file_path):
             return None
 
     return {'data': data, 'meta-data': meta_data_store}
+
+def get_outlier_phenotypes(data, alpha=3):
+
+    suspects = []
+
+    for i,p in enumerate(data):
+        if len(p.shape) == 2:
+            d = p[np.where(np.isnan(p) != True)]
+            coords = np.where(abs(p-d.mean()) > alpha * d.std())
+            suspects += zip([i]*len(coords[0]), coords[0], coords[1])
+
+    return suspects
 
 def get_dubious_phenotypes(meta_data_store, plate, max_row, max_column):
 
@@ -466,6 +480,8 @@ class Interactive_Menu():
     def __init__(self):
 
         self._menu = {'1': 'Load data',
+            '1A': 'Inspect/remove outliers (requires access of the xml-fiel)',
+            '1B': 'Manual remove stuff',
             '2': 'Set normalisation grids',
             '3': 'Normalise data',
             '4': 'Calculate experiments',
@@ -501,7 +517,7 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['2','3','P1'])
+        self.set_enable_menu_items(['1A','1B', '2','3','P1'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -560,6 +576,12 @@ class Interactive_Menu():
         logging.info("New labels set")
         self.set_enable_menu_plots()
 
+    def set_nan_from_list(self, nan_list):
+
+        for pos in nan_list:
+
+            self._original_phenotypes[pos[0]][pos[1],pos[2]] = np.nan
+
     def load_file(self, file_path):
 
 
@@ -601,6 +623,88 @@ class Interactive_Menu():
             if self.load_file(file_path) == False:
 
                 logging.warning("Nothing changed...")
+        elif task == "1A":
+
+            file_path = str(raw_input("The path to the xml-file: "))
+        
+            logging.info("This may take a while...")
+
+            self._xml_file = r_xml.XML_Reader(file_path)
+
+            if self._xml_file is not None:
+
+                outliers = get_outlier_phenotypes(self._original_phenotypes)
+
+                remove_outliers = []
+
+                for o in outliers:
+
+                    fig = r_xml.plot_from_list(self._xml_file, [o])
+                    fig.show()
+                    if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
+
+                        remove_outliers.append(o)
+
+                    del fig
+
+                logging.info("{0} outliers will be removed".format(len(remove_outliers)))
+
+                self.set_nan_from_list(remove_outliers)
+
+        elif task == "1B":
+
+           answer = "0"
+           removal_list = []
+
+           while answer not in ["", "A"]:
+
+                for o in [('R','Remove a Row from a Plate'), ('C', 'Remove a Column from a Plate'),
+                    ('P', 'Remove an individual Position from a Plate'), ('A','Abort')]:
+ 
+                    print " "*2 + o[0] + " "*(6 -len(o[0])) + o[1]
+
+                print "\nJust press enter when you are ready to remove all you have selected"
+
+                answer = str(raw_input("What's your wish? ")).upper()
+
+                if answer not in ["", "A"] and answer in ['R','C','P']:
+                    print "From which plate?"
+                    if self._plate_labels is not None:
+                        for i, p in self._plate_labels.items():
+                            print " "*2 + i + " "*5 + p
+                    else:
+                        print "(0 - {0})".format(self._original_phenotypes.shape[0]-1)
+
+                    plate = int(raw_input("> "))
+                    row = 0
+                    column = 0
+
+                    if answer in ["R", "P"]:
+
+                        row = int(raw_input("Which row (0 - {0}): ".format(self._original_phenotypes[plate].shape[0]-1)))
+
+                    if answer in ["C", "P"]:
+
+                        column = int(raw_input("Which column (0 - {0}): ".format(self._original_phenotypes[plate].shape[1]-1)))
+
+                    if answer == "P":
+
+                        pos = (plate, row, column)
+                        logging.info("{0} is now selected for removal".format(pos))
+                        removal_list.append(pos)
+
+                    elif answer in ["R", "C"]:
+
+                        pos_list = []
+                        for i in xrange(self._original_phenotypes[plate].shape[answer=="R"]):
+                            pos_list.append((plate,[i,row][answer=="R"],[column,i][answer=="R"]))
+
+                        logging.info("The following positions are not marked for removal {0}".format(pos_list))
+
+                        removal_list += pos_list
+                elif answer == "":
+                    self.set_nan_from_list(removal_list)
+                    
 
         elif task == "2":
 
