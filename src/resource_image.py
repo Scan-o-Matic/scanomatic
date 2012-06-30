@@ -256,9 +256,13 @@ class Image_Analysis():
                 left = section[0][0]
                 right = section[1][0]
 
+            try:
+                subsection = self._img[int(left*self._conversion_factor):int(right*self._conversion_factor),
+                    int(upper*self._conversion_factor):int(lower*self._conversion_factor)]
+            except:
+                subsection = None
 
-            return self._img[int(left*self._conversion_factor):int(right*self._conversion_factor),
-                int(upper*self._conversion_factor):int(lower*self._conversion_factor)]
+            return subsection
 
         return None
 

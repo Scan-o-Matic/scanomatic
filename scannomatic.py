@@ -186,9 +186,9 @@ class Application_Window():
             self._installed_scanners.append("Scanner {0}".format(scanner+1))    
         ###END LESS-OF-A-HACK
         self.DMS('Scanner Resources', 'Unclaimed at start-up %s' % \
-            self.get_unclaimed_scanners(), level="L", debug_level='warning')
+            self.get_unclaimed_scanners(), level="L", debug_level='info')
         self.DMS('Scanner Resources', 'Scanners that are on: %s' % \
-            str(self.update_live_scanners()), level="L", debug_level='warning')
+            str(self.update_live_scanners()), level="L", debug_level='info')
 
         #This should only happen on first run
         if self._config_file.get("data_root") == None:
@@ -611,7 +611,7 @@ class Application_Window():
             fs.close()
             self.DMS('Scanner Resources', 
                 "Released scanner %s" % scanner,
-                level="L", debug_level='debug')
+                level="L", debug_level='info')
         except:
             self.DMS('Scanner Resources', 
                 "Could not unclaim scanner %s for unkown reasons" % scanner,
@@ -834,7 +834,7 @@ if __name__ == "__main__":
 
     parser = ArgumentParser(description='This is the main GUI. It requires no arguments to run')
 
-    parser.add_argument("--debug", dest="debug_level", default="warning",
+    parser.add_argument("--debug", dest="debug_level", default="info",
         type=str, help="Set debugging level")    
 
     args = parser.parse_args()

@@ -48,6 +48,8 @@ class XML_Reader():
 
         if not self.read():
             self._logger.error("XML Reader not fully initialized!")
+        else:
+            self._loaded = True
 
     def read(self, file_path=None):
         """Reads the file_path file using short-format xml"""
@@ -150,6 +152,9 @@ class XML_Reader():
         except:
             return None
 
+
+    def get_loaded(self):
+        return self._loaded
 def get_graph_styles(categories = 1, n_per_cat = None, per_cat_list = None, alpha=0.95):
 
     if per_cat_list is not None:

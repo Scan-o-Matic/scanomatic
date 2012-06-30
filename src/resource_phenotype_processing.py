@@ -6,7 +6,7 @@ import matplotlib.pylab as plt_lab
 import logging
 import scipy.interpolate as scint
 import scipy.stats as stats
-import sys
+import sys, os
 
 import resource_xml_read as r_xml
 
@@ -480,11 +480,12 @@ class Interactive_Menu():
     def __init__(self):
 
         self._menu = {'1': 'Load data',
-            '1A': 'Inspect/remove outliers (requires access of the xml-fiel)',
+            '1A': 'Inspect/remove outliers (requires access of the xml-file)',
             '1B': 'Manual remove stuff',
             '2': 'Set normalisation grids',
             '3': 'Normalise data',
             '4': 'Calculate experiments',
+            'R': 'Re-map positions',
             'P1': 'Set plot plate names',
             'P2': 'Show heatmap(s) of original data',
             'P3': 'Show heatmap(s) of normalised data',
@@ -501,6 +502,7 @@ class Interactive_Menu():
         self._experiments = None
         self._experiments_sd = None
         self._file_path = None
+        self._xml_file = None
         self._grid_surface_matrices = None
         self._plate_labels = None
         self._original_phenotypes = None 
@@ -517,7 +519,7 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1A','1B', '2','3','P1'])
+        self.set_enable_menu_items(['1A','1B', '2','3','P1','R'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -582,6 +584,55 @@ class Interactive_Menu():
 
             self._original_phenotypes[pos[0]][pos[1],pos[2]] = np.nan
 
+    def set_xml_file(self):
+
+        file_path = self._file_path.split(".")
+        file_path = ".".join(file_path[:-1]) + ".xml"
+        good_guess = True
+        try:
+            fs = open(file_path, 'r')
+            fs.close()
+            print "Maybe this is the file: '{0}'?".format(file_path)
+        except:
+            good_guess = False
+            file_path = file_path.split(os.sep)
+            file_path = os.sep.join(file_path[:-1])
+            print "Maybe this is the directory of the file: '{0}'".format(file_path)
+        answer = str(raw_input("The path to the xml-file {0}: ".format(\
+            ["","(Press enter to use suggested file)"][good_guess])))
+
+        if answer != "":
+             file_path = answer
+
+        logging.info("This may take a while...")
+        self._xml_file = r_xml.XML_Reader(file_path)
+
+    def review_positions_for_deletion(self, suspect_list=None):
+
+            if self._xml_file is None:
+                self.set_xml_file()
+
+            if self._xml_file.get_loaded():
+
+                if suspect_list is None: 
+                    suspect_list = get_outlier_phenotypes(self._original_phenotypes)
+
+                remove_list = []
+
+                for s in suspect_list:
+
+                    fig = r_xml.plot_from_list(self._xml_file, [s])
+                    fig.show()
+                    if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
+
+                        remove_list.append(s)
+
+                    del fig
+
+                logging.info("{0} outliers will be removed".format(len(remove_list)))
+
+                self.set_nan_from_list(remove_list)
+
     def load_file(self, file_path):
 
 
@@ -615,6 +666,18 @@ class Interactive_Menu():
         else:
             return False
 
+    def get_interactive_plate(self):
+
+        print "From which plate?"
+        if self._plate_labels is not None:
+            for i, p in self._plate_labels.items():
+                print " "*2 + str(i) + " "*5 + p
+        else:
+            print "(0 - {0})".format(self._original_phenotypes.shape[0]-1)
+
+        plate = int(raw_input("> "))
+        return plate
+
     def do_task(self, task):
 
         if task == "1":
@@ -623,33 +686,10 @@ class Interactive_Menu():
             if self.load_file(file_path) == False:
 
                 logging.warning("Nothing changed...")
+
         elif task == "1A":
 
-            file_path = str(raw_input("The path to the xml-file: "))
-        
-            logging.info("This may take a while...")
-
-            self._xml_file = r_xml.XML_Reader(file_path)
-
-            if self._xml_file is not None:
-
-                outliers = get_outlier_phenotypes(self._original_phenotypes)
-
-                remove_outliers = []
-
-                for o in outliers:
-
-                    fig = r_xml.plot_from_list(self._xml_file, [o])
-                    fig.show()
-                    if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
-
-                        remove_outliers.append(o)
-
-                    del fig
-
-                logging.info("{0} outliers will be removed".format(len(remove_outliers)))
-
-                self.set_nan_from_list(remove_outliers)
+            self.review_positions_for_deletion()
 
         elif task == "1B":
 
@@ -658,24 +698,18 @@ class Interactive_Menu():
 
            while answer not in ["", "A"]:
 
-                for o in [('R','Remove a Row from a Plate'), ('C', 'Remove a Column from a Plate'),
-                    ('P', 'Remove an individual Position from a Plate'), ('A','Abort')]:
+                for o in [('R','Remove a Row from a Plate (Per plate count: {0})'), ('C', 'Remove a Column from a Plate (Per plate count: {0})'),
+                    ('P', 'Remove an individual Position from a Plate'), ('L', 'Look through and review the selected'),('A','Abort')]:
  
-                    print " "*2 + o[0] + " "*(6 -len(o[0])) + o[1]
+                    print " "*2 + o[0] + " "*(6 -len(o[0])) + o[1].format([p.shape[o[0]=='C'] for p in self._original_phenotypes])
 
                 print "\nJust press enter when you are ready to remove all you have selected"
 
                 answer = str(raw_input("What's your wish? ")).upper()
 
-                if answer not in ["", "A"] and answer in ['R','C','P']:
-                    print "From which plate?"
-                    if self._plate_labels is not None:
-                        for i, p in self._plate_labels.items():
-                            print " "*2 + i + " "*5 + p
-                    else:
-                        print "(0 - {0})".format(self._original_phenotypes.shape[0]-1)
+                if answer not in ["", "A","L"] and answer in ['R','C','P']:
 
-                    plate = int(raw_input("> "))
+                    plate = self.get_interactive_plate()        
                     row = 0
                     column = 0
 
@@ -702,6 +736,12 @@ class Interactive_Menu():
                         logging.info("The following positions are not marked for removal {0}".format(pos_list))
 
                         removal_list += pos_list
+                elif answer == "L":
+
+                    self.review_positions_for_deletion(suspect_list = removal_list)
+                    logging.info("The suspect list that you had compiled is now empty")
+                    removal_list = [] 
+
                 elif answer == "":
                     self.set_nan_from_list(removal_list)
                     
@@ -721,6 +761,35 @@ class Interactive_Menu():
 
             self.set_enable_menu_items(["4","S1","S3", "S2", "S4"])
             self.set_enable_menu_plots()
+
+        elif task == "R":
+
+            plate = self.get_interactive_plate()        
+           
+            print "Should the (0,0) position be:"
+
+            for i, p in enumerate([\
+                #"({0},0)".format(self._original_phenotypes[plate].shape[0]-1),
+                "(0,{0})".format(self._original_phenotypes[plate].shape[0]-1),
+                #"(0,{0})".format(self._original_phenotypes[plate].shape[1]-1),
+                "({0},{1})".format(self._original_phenotypes[plate].shape[0]-1,
+                self._original_phenotypes[plate].shape[1]-1),
+                #"({0},{1})".format(self._original_phenotypes[plate].shape[1]-1,
+                #self._original_phenotypes[plate].shape[0]-1)
+                "({0},0)".format(self._original_phenotypes[plate].shape[1]-1)
+                ]):
+
+                print " "*2 + str(i) + " "*5 + p
+
+            rotation = str(raw_input("Select way to rotate/flip your data or press enter to abort: "))
+            
+            if rotation in ["0", "1", "2"]:
+                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+            if rotation in ["0", "1"]:
+                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+            if rotation in ["0"]:
+                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+
 
         elif task == "P1":
 
@@ -832,7 +901,8 @@ class Interactive_Menu():
         get_interactive_header("This script will take care of positional effects")
         get_interactive_info(["It is in alpha-state,",
             "so let Martin know what doesn't work.",
-            "And don't expect everything to work."])
+            "And don't expect everything to work.", "",
+            "Also, don't be affraid -- nothing will happen to the files you've loaded unless you decide to save over them"])
 
         answer = None
 
