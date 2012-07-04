@@ -160,7 +160,7 @@ class Config_GUI(gtk.Frame):
             try:
                 data[0](widget.get_text())
             except:
-                widget.set_text(data[1])
+                widget.set_text(str(data[1]))
 
             self.config_file.set(data[2], widget.get_text())
             self.save_button.set_sensitive(True)
@@ -180,9 +180,9 @@ class Config_GUI(gtk.Frame):
         new_path.destroy()
 
     def set_values_from_file(self):
-        self.scanner_count.set_text(self.config_file.get("number_of_scanners","0"))
-        self.data_root.set_text(self.config_file.get("data_root",""))
-        self.logs_root.set_text(self.config_file.get("log_path","runtime_{0}.log"))
+        self.scanner_count.set_text(str(self.config_file.get("number_of_scanners","0")))
+        self.data_root.set_text(str(self.config_file.get("data_root","")))
+        self.logs_root.set_text(str(self.config_file.get("log_path","runtime_{0}.log")))
         log_level = self.config_file.get("log_level","")
         self.loglvl_A.set_active("A"  in log_level)
         self.loglvl_L.set_active("L" in log_level)
