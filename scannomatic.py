@@ -90,6 +90,7 @@ class Application_Window():
         <menu action="Settings">
             <menuitem action="Application Settings"/>
             <menuitem action="Reset Instances Counter"/>
+            <menuitem action="Update Program"/>
             <menuitem action="Installing Scanner"/>
             <menuitem action="Scanner Configurations"/>
             <menuitem action="Unclaim Scanner by Force"/>
@@ -242,6 +243,8 @@ class Application_Window():
                     None, self.menu_Settings),
                 ("Reset Instances Counter", None, "Reset Instances Counter", None,
                     None, self.reset_Instances_Dialog),
+                ("Update Program", None, "Update Program", None,
+                    None, self.check_updates),
                 ("Installing Scanner",    None,   "Installing Scanner",   None,
                     None,   self.null_thing),
                 ("Scanner Configurations",    None,   "Scanner Configurations",
@@ -749,6 +752,7 @@ class Application_Window():
             self.DMS('Terminating', '', level = "L", debug_level='info')
             self.window.destroy()
             gtk.main_quit()
+
             return False
         else:
             self.DMS('Keeping alive','', level = "L", debug_level='info')
@@ -781,7 +785,29 @@ class Application_Window():
 
     def auto_reload(self):
 
-        self.DMS("Restart","Not implemented yet -- please do it manually instead!", level="D")
+        reloaded = False
+        prog = self._program_root + os.sep + sys.argv[0].split(os.sep)[-1]
+        args = " ".join(sys.argv[1:])
+        
+        self.set_main_lock_file(delta_instances = -1)
+
+        try:
+            os.execl(prog, args)
+            reloaded = True
+        except OSError:
+            pass
+
+
+
+        if not reloaded:
+            self.DMS("Restart","Failed to restart the application, do it manually instead!", 
+                level="D", debug_level="error")
+            self.set_main_lock_file(delta_instances = 1)
+            return False
+
+        
+        self.DMS("Restart","Updates are now live and running!", level="D")
+        return True
 
     def _DMS_tracebacks(self, excType, excValue, traceback):
         self._logger.critical("Uncaught exception:",

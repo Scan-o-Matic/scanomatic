@@ -149,7 +149,6 @@ class Update_Process(gtk.Frame):
 
         update_query = ["git","pull"]
 
-        print update_query 
         try:
             self._proc = Popen(map(str, update_query), 
                 stdout=self._log, shell=False)
