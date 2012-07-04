@@ -370,6 +370,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices, \
 
             f.write('<project>')
 
+            f.write(XML_OPEN_CONT_CLOSE.format(\
+                ['version','ver'][xml_format['short']],__version__))
             f.write(XML_OPEN_CONT_CLOSE.format(['start-time','start-t'][xml_format['short']],
                 str(image_dictionaries[first_scan_position]['Time'])  ))
 

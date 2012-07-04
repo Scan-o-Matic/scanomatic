@@ -29,8 +29,14 @@ class Config_File():
         if fs != None:
             self.read(fs = fs)
 
-    def load(self, location):
-        
+    def reload(self):
+        return self.read()
+
+    def load(self, location = None):
+
+        if location is None:
+            location = self.get_location()
+ 
         no_file = False
         try:
             fs = open(location,'r')          
@@ -51,61 +57,58 @@ class Config_File():
         return fs
 
     def read(self, fs = None, location = None):
-        if fs != None or location != None:
-            self._data = {}
-            self._file_data_order = []
-            self._comment_index = -1
-            
+        self._data = {}
+        self._file_data_order = []
+        self._comment_index = -1
+        
+        if fs == None:
+
+            fs = self.load(location)
             if fs == None:
+                return False
 
-                fs = self.load(location)
-                if fs == None:
-                    return False
+        for line in fs.readlines():
+            line = line.strip()
 
-            for line in fs.readlines():
-                line = line.strip()
+            if len(line) > 0 and line[0] != "#":
 
-                if len(line) > 0 and line[0] != "#":
+                line_list = line.split("\t")
+                bad_conf_line = False
 
-                    line_list = line.split("\t")
-                    bad_conf_line = False
-
-                    if len(line_list) == 2:
-                        self._file_data_order.append(line_list[0])
-                        try:
-                            self._data[str(self._file_data_order[-1])] = eval(line_list[1])
-                        except:
-                            bad_conf_line = True
-                            del self._file_data_order[-1]
-                    elif len(line_list) == 1:
-                        self._file_data_order.append(str(self._no_name_enumerator))
-                        self._no_name_enumerator += 1
-
-                        try:
-                            self._data[str(self._file_data_order[-1])] = eval(line_list[0])
-                            
-                        except:
-                            bad_conf_line = True
-                            self._no_name_enumerator -= 1
-                            del self._file_data_order[-1]
-                    else:
-                    
+                if len(line_list) == 2:
+                    self._file_data_order.append(line_list[0])
+                    try:
+                        self._data[str(self._file_data_order[-1])] = eval(line_list[1])
+                    except:
                         bad_conf_line = True
+                        del self._file_data_order[-1]
+                elif len(line_list) == 1:
+                    self._file_data_order.append(str(self._no_name_enumerator))
+                    self._no_name_enumerator += 1
 
-                    if bad_conf_line:
-                        print "*** Log-file error in file", location
-                        print "** The following is not a correct data row:"
-                        print line
-                        print "** Now commented out (once data is saved)"
+                    try:
+                        self._data[str(self._file_data_order[-1])] = eval(line_list[0])
                         
-                if len(line) == 0 or line[0] == "#" or bad_conf_line:
-                    self._comment_index += 1
-                    self._file_data_order.append("#" + str(self._comment_index))
-                    self._data[self._file_data_order[-1]] = line
+                    except:
+                        bad_conf_line = True
+                        self._no_name_enumerator -= 1
+                        del self._file_data_order[-1]
+                else:
+                
+                    bad_conf_line = True
 
-            fs.close()
-        else:
-            return False
+                if bad_conf_line:
+                    print "*** Log-file error in file", location
+                    print "** The following is not a correct data row:"
+                    print line
+                    print "** Now commented out (once data is saved)"
+                    
+            if len(line) == 0 or line[0] == "#" or bad_conf_line:
+                self._comment_index += 1
+                self._file_data_order.append("#" + str(self._comment_index))
+                self._data[self._file_data_order[-1]] = line
+
+        fs.close()
 
         return True
 
@@ -167,11 +170,11 @@ class Config_File():
 
         return return_list
 
-    def get(self, key):
+    def get(self, key, return_value = None):
         if key in self._file_data_order:
             return self._data[key]
         else:
-            return None
+            return return_value
 
     def get_location(self):
         return self._location

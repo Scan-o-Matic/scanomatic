@@ -2,6 +2,12 @@
 ##### Changed in Scannomatic 0.993 #####
    ###################################
 
+*** Reset instances counter possible
+
+*** Analysis writes the version of scan-o-matic to xml
+
+*** Nice settings gui that is integrated with the actual config settings of the program
+
 *** Minor adjustment to experiment pinning matrix dropdowns
 
 *** Running project analysis now reports if anything bad happened.

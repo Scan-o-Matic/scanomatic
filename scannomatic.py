@@ -88,6 +88,7 @@ class Application_Window():
         </menu>
         <menu action="Settings">
             <menuitem action="Application Settings"/>
+            <menuitem action="Reset Instances Counter"/>
             <menuitem action="Installing Scanner"/>
             <menuitem action="Scanner Configurations"/>
             <menuitem action="Unclaim Scanner by Force"/>
@@ -176,15 +177,12 @@ class Application_Window():
         self._live_scanners = {}
         self._claimed_scanners = []
 
-        ###LESS-OF-A-HACK
         if self._config_file.get("number_of_scanners") is None:
             self._config_file.set("number_of_scanners", 1)
             self._config_file.save()
 
-        self._installed_scanners = []
-        for scanner in xrange(int(self._config_file.get("number_of_scanners"))):
-            self._installed_scanners.append("Scanner {0}".format(scanner+1))    
-        ###END LESS-OF-A-HACK
+        self.set_installed_scanners()
+
         self.DMS('Scanner Resources', 'Unclaimed at start-up %s' % \
             self.get_unclaimed_scanners(), level="L", debug_level='info')
         self.DMS('Scanner Resources', 'Scanners that are on: %s' % \
@@ -241,6 +239,8 @@ class Application_Window():
                 ("Settings", None, "Settings", None, None,   None),
                 ("Application Settings", None, "Application Settings", None, 
                     None, self.menu_Settings),
+                ("Reset Instances Counter", None, "Reset Instances Counter", None,
+                    None, self.reset_Instances_Dialog),
                 ("Installing Scanner",    None,   "Installing Scanner",   None,
                     None,   self.null_thing),
                 ("Scanner Configurations",    None,   "Scanner Configurations",
@@ -297,7 +297,7 @@ class Application_Window():
 
         #Application Settings GUI
         self.DMS("Program startup","Initialising settings GUI","L", debug_level='info')
-        self.app_settings = settings.Config_GUI(self, 'main.config')
+        self.app_settings = settings.Config_GUI(self, conf_file=self._config_file)
         self.vbox.pack_start(self.app_settings, False, False, 2)
 
         #Setup new Experiment
@@ -315,7 +315,7 @@ class Application_Window():
     
         #Running epxeriments
         self.running_experiments = gtk.VBox()
-        label = gtk.Label("RUNNING EXPERIMENTS:")
+        label = gtk.Label("RUNNING PROCESSES:")
         label.show()
         self.running_experiments.pack_start(label, False, False, 2)
         self.vbox.pack_start(self.running_experiments, False, False, 2)
@@ -393,6 +393,12 @@ class Application_Window():
     #
     def make_Experiment(self, widget=None, event=None, data=None):
         self.show_config(self.experiment_layout)
+
+    def set_installed_scanners(self):
+
+        self._installed_scanners = []
+        for scanner in xrange(int(self._config_file.get("number_of_scanners"))):
+            self._installed_scanners.append("Scanner {0}".format(scanner+1))    
 
     def claim_a_scanner_dialog(self):
 
@@ -622,36 +628,59 @@ class Application_Window():
     #
     def menu_unclaim_scanner_by_force(self, widget=None, event=None, data=None):
 
+        dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
+                               gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+                               "Select the scanner that you wish to free up:")
+
+        unclaimed = self.get_unclaimed_scanners()
+        claimed = [s for s in self._installed_scanners if s not in unclaimed]
+        for i,s in enumerate(claimed):
+            dialog.add_button(s,i)
+        dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+
+        resp = dialog.run()
+        dialog.destroy()
+        if resp != gtk.RESPONSE_CANCEL:
+            
             dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
-                                   gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
-                                   "Select the scanner that you wish to free up:")
+               gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+               "This will free up {0}\n".format(claimed[resp]) + \
+                "Thus crash anything running on it.\n" + \
+                "Please make sure it really is free.\n" +
+                "And make sure no other instance of Scan-o-Matic is using it!")
+            
+            dialog.add_button("Unclaim it!", gtk.RESPONSE_YES)
+            dialog.add_button("Cancel", gtk.RESPONSE_NO)
 
-            unclaimed = self.get_unclaimed_scanners()
-            claimed = [s for s in self._installed_scanners if s not in unclaimed]
-            for i,s in enumerate(claimed):
-                dialog.add_button(s,i)
-            dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-
-            resp = dialog.run()
+            resp2 = dialog.run()
             dialog.destroy()
-            if resp != gtk.RESPONSE_CANCEL:
-                
-                dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
-                   gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
-                   "This will free up {0}\n".format(claimed[resp]) + \
-                    "Thus crash anything running on it.\n" + \
-                    "Please make sure it really is free.\n" +
-                    "And make sure no other instance of Scan-o-Matic is using it!")
-                
-                dialog.add_button("Unclaim it!", gtk.RESPONSE_YES)
-                dialog.add_button("Cancel", gtk.RESPONSE_NO)
+            if resp2 == gtk.RESPONSE_YES:
+                self.set_unclaim_scanner(claimed[resp])
+                self.DMS("Force Unclaim Scanner","{0} is now free to use".format(\
+                    claimed[resp]),level="LA",debug_level="info") 
 
-                resp2 = dialog.run()
-                dialog.destroy()
-                if resp2 == gtk.RESPONSE_YES:
-                    self.set_unclaim_scanner(claimed[resp])
-                    self.DMS("Force Unclaim Scanner","{0} is now free to use".format(\
-                        claimed[resp]),level="LA",debug_level="info") 
+    def reset_Instances_Dialog(self, widget=None, event=None, data=None):
+
+        dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
+               gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+               "This will cause scan-o-matic to think that this "+\
+                "instance is the only one running.\n"+\
+                "It is not good to lie to scan-o-matic,\n"+\
+                "so please be sure it is true.\n\nIs this the only instance?")
+
+        dialog.add_button(gtk.STOCK_YES, gtk.RESPONSE_YES)
+        dialog.add_button(gtk.STOCK_NO, gtk.RESPONSE_NO)
+
+        resp = dialog.run()
+        dialog.destroy()
+
+        if resp == gtk.RESPONSE_YES:
+            self.set_main_lock_file(reset_counter=True)
+            
+            self.DMS("Reset Instance Counter","Instance counter is reset",
+                debug_level="info") 
+
+
     #
     #   PROJECT ANALYSIS FUNCTIONS
     #
@@ -801,7 +830,7 @@ class Application_Window():
             resp = dialog.run()
             dialog.destroy()
 
-    def set_main_lock_file(self, delta_instances = 0):
+    def set_main_lock_file(self, delta_instances = 0, reset_counter=False):
         instances_running = 0
         other_instance = True
         try:
@@ -815,7 +844,13 @@ class Application_Window():
                 pass
             fs.close()
 
+        if reset_counter:
+            delta_instances = 1 - instances_running
+
         instances_running += delta_instances
+        if instances_running < 0:
+            instances_running = 0
+
         fs = open(self._main_lock_file,'w')
         fs.write(str(instances_running))
         fs.close() 
