@@ -126,8 +126,10 @@ class Fixture_GUI(gtk.Frame):
 
         image_plot.get_xaxis().set_visible(False)
         image_plot.get_yaxis().set_visible(False)
-        image_plot.set_xlim(xmin=0,xmax=self.fixture_analysis_image.shape[1])
-        image_plot.set_ylim(ymin=0,ymax=self.fixture_analysis_image.shape[0])
+        if self.fixutre_analysis_image is not None:
+            image_plot.set_xlim(xmin=0,xmax=self.fixture_analysis_image.shape[1])
+            image_plot.set_ylim(ymin=0,ymax=self.fixture_analysis_image.shape[0])
+
         image_canvas.set_size_request(int(round(image_size[1])), int(round(image_size[0])))
         hbox.pack_start(image_canvas, False, False, 2)
         self.image_fig.canvas.draw()
