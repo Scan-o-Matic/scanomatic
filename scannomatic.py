@@ -50,10 +50,6 @@ import src.gui_project as project
 import src.gui_grid as grid
 import src.gui_update as gui_update
 
-#KNOWN ISSUES ETC.
-#
-# See CHANGELOG and TODO
-
 #
 # OS DEPENDENT BEHAVIOUR, NOTE THAT WINDOWS HAVE EXTRA DEPENDENCIES!
 #
@@ -70,7 +66,15 @@ else:
     sys.exit(0)
 
 
+#
+# GLOBALS
+#
 
+DEVELOPMENT = True
+
+#
+# CLASSES
+#
 
 class Application_Window():
 
@@ -334,6 +338,14 @@ class Application_Window():
         #Set up the idle timer. To chekc if an image is ready
         if not self.USE_CALLBACK:
             self.idleTimer = gobject.idle_add(self.onIdleTimer)
+       
+        if DEVELOPMENT:
+            self.DMS("Brave one", 
+                "I hope you are aware that you are running developmental version of " +\
+                "Scan-o-Matic.\n\nIt means it can be highly unstable!\n\n" +\
+                "If you only want to track new versions look in settings...", level="D",
+                debug_level = "warning")
+  
 
     #
     # CHECK UPDATES

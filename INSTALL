@@ -189,6 +189,8 @@
 
 4.  INSTALLING SCANNOMATIC
 
+4.a FROM DOWNLOADED REPO
+
     Well your only need is to make the file in Scannomatic's root called scannomatic.py
     executable (assuming you are in that folder):
 
@@ -202,6 +204,25 @@
     the scanner runs stably with the PM. Check so that the PM turns on and off.
 
 
+    To get auto-update working you need to initialize this as a repo as well...
+
+4.b DIRECTLY FROM GITORIOUS WITH GIT (Linux)
+
+    If you don't have git installed do:
+
+        sudo apt-get install git
+
+    Open a terminal
+
+    Go the the directory that will contain the scan-o-matic directory
+
+        git clone git://gitorious.org/scannomatic/scannomatic.git scan-o-matic
+
+    Then go to that directory:
+
+        cd scan-o-matic
+
+ 
 
 ########################BELOW THIS LINE IS JUST RANDOM JIBBERISH################################
 
