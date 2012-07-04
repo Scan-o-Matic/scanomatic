@@ -14,3 +14,4 @@ gs_test*.png
 .exclude.list
 bundle_version.sh
 ver_upgrade.py
+GIT_HELP
