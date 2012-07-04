@@ -806,7 +806,6 @@ class Application_Window():
             return False
 
         
-        self.DMS("Restart","Updates are now live and running!", level="D")
         return True
 
     def _DMS_tracebacks(self, excType, excValue, traceback):
