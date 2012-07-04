@@ -140,14 +140,7 @@ class Update_Process(gtk.Frame):
 
     def run_update(self):
 
-        if self.ver_update:
-            self.DMS("Update", "Version update not implemented yet, sorry!", level="D")
-        
-            self._status.set_text("Only developmental update works")
-            gobject.timeout_add(1000*30, self._terminate)
-            return None
-
-        update_query = ["git","pull"]
+        update_query = ["git","pull", "origin", ["master","version"][self.ver_update]]
 
         try:
             self._proc = Popen(map(str, update_query), 
