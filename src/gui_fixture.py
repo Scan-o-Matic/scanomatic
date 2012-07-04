@@ -111,8 +111,9 @@ class Fixture_GUI(gtk.Frame):
         self.image_fig.canvas.mpl_connect('motion_notify_event', self.plot_move)
 
         self.DMS("Fixture init","Figure: Plotting image", level="L")
-        self.fix_image_ax = image_plot.imshow(self.fixture_analysis_image, cmap=plt.cm.gray)
-
+        if self.fixture_analysis_image is not None:
+            self.fix_image_ax = image_plot.imshow(self.fixture_analysis_image, cmap=plt.cm.gray)
+        
         self.DMS("Fixture init","Figure: Initialising selection rectangle",level="L")
         self.selection_rect = plt_patches.Rectangle(
                 (0,0),0,0, ec = 'k', fill=False, lw=0.2
