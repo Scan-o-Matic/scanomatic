@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.994 #####
    ###################################
 
+*** Fixed buggs appearing when freash install is run
+
 *** Auto-update on versions works as well as on dev.
 
   ###################################
