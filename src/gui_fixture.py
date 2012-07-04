@@ -973,10 +973,10 @@ class Fixture_GUI(gtk.Frame):
                 self.ctd_markings.set_xdata(mark_X)
                 self.ctd_markings.set_ydata(mark_Y)            
 
-            if self.ctf_markings is not None:
+            if self.ctd_markings is not None:
                 self.ctd_markings.set_visible(True)
         else:
-            if self.ctf_markings is not None:
+            if self.ctd_markings is not None:
                 self.ctd_markings.set_visible(False)
 
         self.image_fig.canvas.draw()
