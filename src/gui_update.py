@@ -20,9 +20,7 @@ pygtk.require('2.0')
 import gtk, pango
 import gobject
 import os, os.path, sys, shutil
-import re
-import time
-import types
+from subprocess import call, Popen
 
 #
 # SCANNOMATIC LIBRARIES
@@ -51,11 +49,13 @@ else:
 
 
 class Update_Process(gtk.Frame):
-    def __init__(self, owner, update_type="ver"):
+    def __init__(self, owner, dev_update):
 
 
         self._proc = None
         self._owner = owner
+        self.DMS = owner.DMS
+        self.ver_update = not dev_update
         self._log_path = os.sep.join(self._owner._log_file_path.split(os.sep)[:-1]) + \
             os.sep + "update.log"
 
@@ -70,27 +70,30 @@ class Update_Process(gtk.Frame):
 
         vbox = gtk.VBox()
             
-        hbox = gtk.HBox()
+        self.hbox = gtk.HBox()
         label = gtk.Label("Checking for new {0} releases:".format(\
-            ["development","version"][update_type == "ver"])
-        hbox.pack_start(label, False, False, 2)
+            ["development","version"][self.ver_update]))
+        self.hbox.pack_start(label, False, False, 2)
 
-        self._status = gtk.Label("Preparing...")
-        hbox.pack_end(self._status, False, False, 2)
 
-        self._ok_button = gtk.Label("Close program")
-        self._ok_button.connect("clicked", reboot)
-
+        self._ok_button = gtk.Button(label="Restart program")
+        self._ok_button.connect("clicked", self.reboot)
+        self.hbox.pack_end(self._ok_button,False, False, 2)
+        vbox.pack_start(self.hbox, False, False, 2)
         self.add(vbox)
 
+        self._status = gtk.Label("Preparing...")
+        self.hbox.pack_end(self._status, False, False, 2)
+
         self.show_all()
+        self._ok_button.hide()
 
         if self._log is None:
             self._status.set_text("Could not create update log - update won't run!")
             gobject.timeout_add(1000*60*1, self.done)
 
         else:
-            gobject.timeout_add(1000*2, self.run_update(update_type == "ver")
+            gobject.timeout_add(1000*2, self.run_update)
 
 
     def get_log_contents(self):
@@ -112,34 +115,57 @@ class Update_Process(gtk.Frame):
 
         if self._proc.poll() != None:
 
-            self._proc == None
+            self._log.close()
+            self._proc = None
 
             log = self.get_log_contents()
+            destroy_time = 5
 
             if "Already up-to-date" in log:
-                self._stauts.set_text("Program already up-to-date")
+                self._status.set_text("Program already up-to-date")
+            elif "xx" in log:
+                self._status.set_text("Local changes makes automatic update impossible")
+            elif "fatal" in log:
+                self._status.set_text("Unexpected error, maybe internet connection isn't working...")
+            elif "Updating" in log:
+                self._status.set_text("Updated!")
 
+                self._ok_button.show()
+                destroy_time = 30
+        
         if self._proc is not None:
-            self._callback()
+            gobject.timeout_add(100, self._callback)
         else:
-            gobject.timeout_add(1000*60*1, self.destroy)
+            gobject.timeout_add(1000*destroy_time, self._terminate)
 
-    def run_update(self, only_version_updates):
+    def run_update(self):
 
-        update_query = [self._owner._program_code_root + os.sep + \
-            "git","pull"]
- 
-        self._proc = Popen(map(str, update_query), 
-            stdout=self._log, stderr=self._log, shell=False)
+        if self.ver_update:
+            self.DMS("Update", "Version update not implemented yet, sorry!", level="D")
+        
+            self._status.set_text("Only developmental update works")
+            gobject.timeout_add(1000*30, self._terminate)
+            return None
+
+        update_query = ["git","pull"]
+
+        print update_query 
+        try:
+            self._proc = Popen(map(str, update_query), 
+                stdout=self._log, shell=False)
+        except OSError:
+            self._status.set_text("Automatic updating requires git installed, can't find it")
+            gobject.timeout_add(1000*30, self._terminate)
+            return None
+
         self._status.set_text("Comunicating with repo...")
         gobject.timeout_add(100, self._callback)
 
     def reboot(self, widget=None, event=None, data=None):
 
-        self.done()
-        self._owner.close_application()
+        self._terminate()
+        self._owner.auto_reload()
 
-    def done(self):
+    def _terminate(self, ask=False):
 
-        sefl._log.close()
         self.destroy()

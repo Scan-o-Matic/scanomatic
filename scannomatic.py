@@ -48,6 +48,7 @@ import src.gui_analysis as analysis
 import src.gui_settings as settings
 import src.gui_project as project
 import src.gui_grid as grid
+import src.gui_update as gui_update
 
 #KNOWN ISSUES ETC.
 #
@@ -306,10 +307,10 @@ class Application_Window():
         self.vbox.pack_start(self.experiment_layout, False, False, 2)
 
         #LOGO
-        image = gtk.Image()
-        image.set_from_file('src/images/scan-o-matic.png')
+        self.logo_image = gtk.Image()
+        self.logo_image.set_from_file('src/images/scan-o-matic.png')
         hbox = gtk.HBox()
-        hbox.pack_start(image, True, False, 2)
+        hbox.pack_start(self.logo_image, True, False, 2)
         hbox.show_all()
         self.vbox.pack_start(hbox, True, False, 2)
     
@@ -325,10 +326,34 @@ class Application_Window():
         #display all
         window.show()
 
+        self.check_updates()
+
         #Set up the idle timer. To chekc if an image is ready
         if not self.USE_CALLBACK:
             self.idleTimer = gobject.idle_add(self.onIdleTimer)
 
+    #
+    # CHECK UPDATES
+    #
+
+    def check_updates(self, widget=None, event=None, data=None):
+
+        try:
+            dev_update = bool( int(self._config_file.get("dev_update", "0")))
+        except:
+            dev_update = False
+
+        
+        try:
+            ver_update = bool( int(self._config_file.get("ver_update", "0")))
+        except:
+            ver_update = False
+
+
+        if dev_update or ver_update:
+
+            self.running_experiments.pack_end(gui_update.Update_Process(self, dev_update))
+            
     #
     # CONFIGS VISIBILITY
     #
@@ -664,8 +689,8 @@ class Application_Window():
         dialog = gtk.MessageDialog(self.window, gtk.DIALOG_DESTROY_WITH_PARENT,
                gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
                "This will cause scan-o-matic to think that this "+\
-                "instance is the only one running.\n"+\
-                "It is not good to lie to scan-o-matic,\n"+\
+                "instance is the only one running.\n\n"+\
+                "It is not good to lie to Scan-o-Matic,\n"+\
                 "so please be sure it is true.\n\nIs this the only instance?")
 
         dialog.add_button(gtk.STOCK_YES, gtk.RESPONSE_YES)
@@ -753,6 +778,10 @@ class Application_Window():
                 return False
         else:
             return True
+
+    def auto_reload(self):
+
+        self.DMS("Restart","Not implemented yet -- please do it manually instead!", level="D")
 
     def _DMS_tracebacks(self, excType, excValue, traceback):
         self._logger.critical("Uncaught exception:",
