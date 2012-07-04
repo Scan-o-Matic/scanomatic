@@ -91,8 +91,11 @@ class Fixture_GUI(gtk.Frame):
 
         self.scale_factor = 2.0
 
-        image_size = (self.fixture_analysis_image.shape[0]/self.scale_factor,
-            self.fixture_analysis_image.shape[1]/self.scale_factor)
+        if self.fixture_analysis_image is not None:
+            image_size = (self.fixture_analysis_image.shape[0]/self.scale_factor,
+                self.fixture_analysis_image.shape[1]/self.scale_factor)
+        else:
+            image_size = (4800/self.scale_factor, 6000/self.scale_factor)
 
         self.plot_selecting = False
         self.plot_ul  = (0,0)
