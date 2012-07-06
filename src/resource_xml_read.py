@@ -315,9 +315,10 @@ def plot_from_list(xml_parser, position_list, fig = None):
                         pass
             else:
                 print "Curve {0} is bad!".format(c)
-     
-        ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,-0.015), 
-            ncol=len(cats), prop=fontP)
+    
+        if len(ax.lines) > 0: 
+            ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,-0.015), 
+                ncol=len(cats), prop=fontP)
 
         p_pos += 1
 

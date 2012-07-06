@@ -400,8 +400,9 @@ class Interactive_Menu():
     def __init__(self):
 
         self._menu = {'1': 'Load data',
-            '1A': 'Inspect/remove outliers (requires access of the xml-file)',
-            '1B': 'Manual remove stuff',
+            '1A': 'Weed out superbad curves automatically (requires xml-file)',
+            '1B': 'Inspect/remove outliers (requires xml-file)',
+            '1C': 'Manual remove stuff',
             '2': 'Set normalisation grids',
             '3': 'Normalise data',
             '4': 'Calculate experiments',
@@ -441,7 +442,7 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1A','1B', '2','3','P1','R1', 'R2'])
+        self.set_enable_menu_items(['1C', '1A','1B', '2','3','P1','R1', 'R2'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -619,11 +620,32 @@ class Interactive_Menu():
 
                 logging.warning("Nothing changed...")
 
+
         elif task == "1A":
+
+            removal_list = []
+            if self._xml_file is None or self._xml_file.get_loaded() == False:
+                self.set_xml_file()
+ 
+            if self._xml_file.get_loaded():
+
+                t = 0.6
+                for p in xrange(self._original_phenotypes.shape[0]):
+                    for c in xrange(self._original_phenotypes[p].shape[0]):
+                        for r in xrange(self._original_phenotypes[p].shape[1]):
+
+                            d = np.isnan(self._xml_file.get_colony(p,c,r)).astype(np.int8)
+                            if 1 - d.sum() / float(d.shape[0]) < 0.6:
+                                removal_list.append((p,c,d))
+
+                logging.info("Removed {0} positions because of superbadness".format(len(removal_list)))
+                self.set_nan_from_list(removal_list)
+    
+        elif task == "1B":
 
             self.review_positions_for_deletion()
 
-        elif task == "1B":
+        elif task == "1C":
 
            answer = "0"
            removal_list = []
@@ -673,14 +695,20 @@ class Interactive_Menu():
                         logging.info("The following positions are not marked for removal {0}".format(pos_list))
 
                         removal_list += pos_list
+
                 elif answer == "L":
 
                     self.review_positions_for_deletion(suspect_list = removal_list)
                     logging.info("The suspect list that you had compiled is now empty")
                     removal_list = [] 
 
-                elif answer == "":
-                    self.set_nan_from_list(removal_list)
+                elif answer == "" and len(removal_list) > 0:
+
+                    answer = str(raw_input("This will remove {0} colonies,".format(len(removal_list))\
+                    +" are you 112% sure? y/N")).upper()
+
+                    if answer == "Y":
+                        self.set_nan_from_list(removal_list)
                     
 
         elif task == "2":
