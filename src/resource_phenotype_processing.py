@@ -636,7 +636,7 @@ class Interactive_Menu():
 
                             d = np.isnan(self._xml_file.get_colony(p,c,r)).astype(np.int8)
                             if 1 - d.sum() / float(d.shape[0]) < 0.6:
-                                removal_list.append((p,c,d))
+                                removal_list.append((p,c,r))
 
                 logging.info("Removed {0} positions because of superbadness".format(len(removal_list)))
                 self.set_nan_from_list(removal_list)
