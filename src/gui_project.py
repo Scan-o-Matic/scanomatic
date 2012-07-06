@@ -55,6 +55,7 @@ class Project_Analysis_Running(gtk.Frame):
 
         self._gtk_target = gtk_target
 
+        self._subprocess_pid = None
 
         self._analyis_script_path = self.owner._program_config_root + os.sep + "analysis.py"
 
@@ -110,6 +111,10 @@ class Project_Analysis_Running(gtk.Frame):
         self.show_all()
 
         gobject.timeout_add(1000*5, self._run)
+
+    def get_pid(self):
+
+        return self._subprocess_pid
 
     def get_run_file_contents(self):
 
@@ -217,6 +222,8 @@ class Project_Analysis_Running(gtk.Frame):
 
             self._analysis_sub_proc = Popen(map(str, analysis_query), 
                 stdout=self._analysis_log, shell=False)
+            self._subprocess_pid = self._analysis_sub_proc.pid
+
             gobject.timeout_add(1000*30, self._run)
 
     def _terminate(self, widget=None, event=None, data=None, ask=True):
@@ -256,6 +263,7 @@ class Project_Analysis_Running(gtk.Frame):
                         " {0}".format(self._analysis_sub_proc.pid), 
                         level="DL", debug_level="error")
                 if term_success:
+                    self._subprocess_pid = None
                     self._gui_status_text.set_text("Analysis termitating manually")
                     self.DMS("ANALYSE PROJECT", "Analysis termitating manually", level="LA")
             else:

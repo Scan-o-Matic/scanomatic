@@ -118,7 +118,8 @@ class Application_Window():
         self._config_file = conf.Config_File(self._program_config_root + os.sep + "main.config")
         self._main_lock_file = self._program_config_root + os.sep + "main.lock"
 
-        #Other instances running?
+        #Other instances / catch subprocs from other instances
+        self.running_experiments = None
         instances_running = self.set_main_lock_file(delta_instances=1)
 
         if instances_running > 1:
@@ -903,9 +904,11 @@ class Application_Window():
             fs = open(self._main_lock_file, 'r')
         except:
             other_instance = False
+
         if other_instance:
+            lock_contents = fs.read().split("\n")
             try:
-                instances_running = int(fs.read())
+                instances_running = int(lock_contents[0])
             except:
                 pass
             fs.close()
@@ -917,11 +920,41 @@ class Application_Window():
         if instances_running < 0:
             instances_running = 0
 
+        new_lock = [str(instances_running)]
+
+        for p in lock_contents[1:]:
+            try:
+                proc = psutil.Process(int(p))
+            except:
+                proc = None
+            if proc is not None:
+                if proc.is_running() and 'python' in p.name:
+                    new_lock.append(p)
+
+        if self.running_experiments is not None:
+            for c in self.running_experiments.get_children()[1:]:
+                pid = str(c.get_pid())
+                if pid is not None and pid not in new_lock[1:]:
+                    new_lock.append(pid)
+
+
         fs = open(self._main_lock_file,'w')
-        fs.write(str(instances_running))
+        fs.write('\n'.join(new_lock))
         fs.close() 
 
         return instances_running
+
+    def get_subprocs_from_lock_file(self):
+
+        try:
+            fs = open(self._main_lock_file, 'r')
+            lock_contents = fs.read().split("\n")[1:]
+            lock_contents = map(int, lock_contents)
+            fs.close()
+        except:
+            lock_contents = []
+
+        return lock_contents 
 
 if __name__ == "__main__":
     #the following two methods should be equal...

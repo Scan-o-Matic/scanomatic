@@ -5,7 +5,7 @@ __author__ = "Martin Zackrisson, Andreas Skyman"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Andreas Skyman"]
 __license__ = "GPL v3.0"
-__version__ = "0.995"
+__version__ = "0.994"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -200,12 +200,17 @@ class Image_Analysis():
 
         #Zeroing out hit
         half_stencil = map(lambda x: x/2.0, stencil_size)
-        conv_img[(max_coord[0] - half_stencil[0] or 0):\
-            (max_coord[0] + half_stencil[0] or conv_img.shape[0]),
-            (max_coord[1] - half_stencil[1] or 0):\
-            (max_coord[1] + half_stencil[1] or conv_img.shape[1])] = 0
+	d1_min = (max_coord[0] - half_stencil[0] > 0 and \
+            max_coord[0] - half_stencil[0] or 0)
+	d1_max = (max_coord[0] + half_stencil[0] < conv_img.shape[0] \
+            and max_coord[0] + half_stencil[0] or conv_img.shape[0]-1)
+	d2_min = (max_coord[1] - half_stencil[1] > 0 and \
+            max_coord[1] - half_stencil[1] or 0)
+	d2_max = (max_coord[1] + half_stencil[1] < conv_img.shape[1] \
+            and max_coord[1] + half_stencil[1] or conv_img.shape[1]-1)
 
-        
+        conv_img[d1_min: d1_max, d2_min:d2_max] = \
+	    conv_img.min() - 1
 
         return max_coord, conv_img
 

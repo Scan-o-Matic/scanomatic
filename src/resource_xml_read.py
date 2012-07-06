@@ -257,14 +257,15 @@ def random_plot_on_same_panel(xml_parser, different_line_styles=False):
     
     return fig
 
-def plot_from_list(xml_parser, position_list):
+def plot_from_list(xml_parser, position_list, fig = None):
     """
     Plots curves from an xml_parser-instance given the position_list where locations are
     described as (plate, row, column)
     """
 
+    if fig is None:
+        fig = plt.figure()
 
-    fig = plt.figure()
     fig.subplots_adjust(hspace = .5)
     fontP = FontProperties()
     fontP.set_size('xx-small')
@@ -305,7 +306,13 @@ def plot_from_list(xml_parser, position_list):
         for j, c in enumerate(coords):
             d = xml_parser.get_colony(p,c[0],c[1])        
             if d is not None and np.isnan(d).all() == False:
-                ax.semilogy(d, basey=2, label="{0}".format(c), color=colors[j] )
+                try:
+                    ax.semilogy(d, basey=2, label="{0}".format(c), color=colors[j] )
+                except:
+                    try:
+                        ax.plot(d, label="Not logged! {0}".format(c), color=colors[j])
+                    except:
+                        pass
             else:
                 print "Curve {0} is bad!".format(c)
      

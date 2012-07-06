@@ -52,19 +52,20 @@ def make_cubic_interpolation(data):
 
 #NEWEST PRECOG RATES
 def get_empty_data_structure(plate, max_row, max_column, depth=None, default_value=48):
-    d = []
-    for p in range(plate+1):
+    data = np.array([None]*(plate+1), dtype=np.object)
+
+    for p in xrange(plate+1):
         if depth is None:
             if max_row[p] > 0 and max_column[p] > 0:
-                d.append(np.ones((max_row[p]+1, max_column[p]+1))*default_value)
+                data[p] = np.ones((max_row[p]+1, max_column[p]+1))*default_value
             else:
-                d.append(np.array([]))
+                data[p] = np.array([])
         else:
             if max_row[p] > 0 and max_column[p] > 0:
-                d.append(np.ones((max_row[p]+1, max_column[p]+1, depth))*default_value)
+                data[p] = np.ones((max_row[p]+1, max_column[p]+1, depth))*default_value
             else:
-                d.append(np.array([]))
-    data = np.array(d)
+                data[p] = np.array([])
+
     return data
 
 
@@ -75,14 +76,14 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
         for p in xrange(data.shape[0]):
             surface_matrix[p] = [[1,0],[0,0]]
 
-    norm_surfaces = []
+    norm_surfaces = data.copy()*0 
     norm_means = []
     for p in xrange(data.shape[0]):
 
         if len(data[p].shape) == 2:
             #exp_pp = map(lambda x: x/2, data[p].shape)
             #X, Y = np.mgrid[0:exp_pp[0],0:exp_pp[1]]*2
-            norm_surface = np.zeros(data[p].shape)
+            norm_surface = norm_surfaces[p]
             original_norm_surface = norm_surface.copy()
             #norm_surface[X, Y] = data[p][X, Y]
             #m = norm_surface[X, Y].mean()#.mean(1)
@@ -121,13 +122,14 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
             else:
                 norm_surface = \
                     make_cubic_interpolation(norm_surface)
-            norm_surfaces.append(norm_surface - original_norm_surface)
+
             norm_means.append(m)
             logging.info('Going for next plate')
         else:
-            norm_surfaces.append(np.array([]))
+            norm_surfaces[p] = np.array([])
             norm_means.append(None)
-    return np.array(norm_surfaces), np.array(norm_means)
+
+    return norm_surfaces, np.array(norm_means)
 
 
 #NEW Luciano-format (And newest)
@@ -141,13 +143,16 @@ def get_data_from_file(file_path):
     old_row = -1
     max_row = [-1,-1,-1,-1]
     max_column = [-1,-1,-1,-1]
+    max_plate = 0
     plate = 0
     data_store = {}
     meta_data_store = {}
 
     for line in fs:
         try:
-            position, value, data = line.split("\t",2)
+
+            position, value, data = [i.strip('"') for i  in line.split("\t",2)]
+
             try:
                 plate, row_column = map(lambda x: x.strip(":"), 
                     position.split(" "))
@@ -161,7 +166,13 @@ def get_data_from_file(file_path):
                 max_row[plate] = row
             if max_column[plate] < column:
                 max_column[plate] = column
-            value = float(value.strip())
+            if max_plate < plate:
+                max_plate = plate
+            try:
+                value = float(value.strip())
+            except:
+                value = np.nan
+
             data_store[(plate, row, column)] = value
             data = data.strip()[1:-1]
             data = data.split(",")
@@ -193,7 +204,7 @@ def get_data_from_file(file_path):
             
 
     fs.close()    
-    data = get_empty_data_structure(plate, max_row, max_column, default_value=48)
+    data = get_empty_data_structure(max_plate, max_row, max_column, default_value=48)
     for k,v in data_store.items():
         try:
             data[k[0]][k[1], k[2]] = v 
@@ -252,7 +263,7 @@ def get_dubious_phenotypes(meta_data_store, plate, max_row, max_column):
 
     return dubious, dubious2
 
-def show_heatmap(data, plate_texts, plate_text_pattern, vlim=(0,5)):
+def show_heatmap(data, plate_texts, plate_text_pattern, vlim=(0,48)):
     #PLOT A SIMPLE HEAT MAP
     fig = plt.figure()
     rows = np.ceil(data.shape[0] / 2.0)
@@ -354,8 +365,10 @@ for p in range( data.shape[0]):
 def get_normalised_values(data, surface_matrices):
 
     norm_surface, norm_means = get_norm_surface(data, surface_matrix=surface_matrices)
+    normed_data = data.copy() * np.nan
     print norm_means
-    normed_data = (data - norm_surface) + norm_means
+    for p in xrange(data.shape[0]):
+        normed_data[p] = (data[p] - norm_surface[p]) + norm_means[p]
 
     return normed_data
 
@@ -485,7 +498,8 @@ class Interactive_Menu():
             '2': 'Set normalisation grids',
             '3': 'Normalise data',
             '4': 'Calculate experiments',
-            'R': 'Re-map positions',
+            'R1': 'Re-map positions -- rotate',
+            'R2': 'Re-map positions -- move',
             'P1': 'Set plot plate names',
             'P2': 'Show heatmap(s) of original data',
             'P3': 'Show heatmap(s) of normalised data',
@@ -503,6 +517,7 @@ class Interactive_Menu():
         self._experiments_sd = None
         self._file_path = None
         self._xml_file = None
+        self._xml_connection = [0, [0,0]]
         self._grid_surface_matrices = None
         self._plate_labels = None
         self._original_phenotypes = None 
@@ -519,7 +534,7 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1A','1B', '2','3','P1','R'])
+        self.set_enable_menu_items(['1A','1B', '2','3','P1','R1', 'R2'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -619,15 +634,20 @@ class Interactive_Menu():
 
                 remove_list = []
 
+
+                fig = plt.figure()
+
+                fig.show()
+
                 for s in suspect_list:
 
-                    fig = r_xml.plot_from_list(self._xml_file, [s])
+                    fig.clf()
+                    fig = r_xml.plot_from_list(self._xml_file, [s], fig=fig)
                     fig.show()
                     if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
 
                         remove_list.append(s)
 
-                    del fig
 
                 logging.info("{0} outliers will be removed".format(len(remove_list)))
 
@@ -661,6 +681,9 @@ class Interactive_Menu():
                 mins, maxs))
 
             self.set_new_file_menu_state()
+            self._plate_labels = range(self._original_phenotypes.shape[0])
+            logging.info("Temporary plate labels set")
+            self.set_enable_menu_plots()
             return True
 
         else:
@@ -700,8 +723,13 @@ class Interactive_Menu():
 
                 for o in [('R','Remove a Row from a Plate (Per plate count: {0})'), ('C', 'Remove a Column from a Plate (Per plate count: {0})'),
                     ('P', 'Remove an individual Position from a Plate'), ('L', 'Look through and review the selected'),('A','Abort')]:
- 
-                    print " "*2 + o[0] + " "*(6 -len(o[0])) + o[1].format([p.shape[o[0]=='C'] for p in self._original_phenotypes])
+
+                    items = [(["-",""][len(p.shape) == 2]) for p in self._original_phenotypes]
+                    for i, it in enumerate(items):
+                        if it == "":
+                            items[i] = self._original_phenotypes[i].shape[o[0]=='C']
+
+                    print " "*2 + o[0] + " "*(6 -len(o[0])) + o[1].format(items)
 
                 print "\nJust press enter when you are ready to remove all you have selected"
 
@@ -762,7 +790,7 @@ class Interactive_Menu():
             self.set_enable_menu_items(["4","S1","S3", "S2", "S4"])
             self.set_enable_menu_plots()
 
-        elif task == "R":
+        elif task == "R1":
 
             plate = self.get_interactive_plate()        
            
@@ -790,6 +818,51 @@ class Interactive_Menu():
             if rotation in ["0"]:
                 self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
 
+            self._xml_connection[0] = (self._xml_connection[0] + (3- int(rotate))) % 4
+
+        elif task == "R2":
+
+            
+            plate = self.get_interactive_plate()        
+           
+            new_pos_str = str(raw_input("The current (0,0) position should be: "))
+
+            bad_pos = False
+            try:
+                new_pos = map(int, eval(new_pos_str))
+            except:
+                bad_pos = True
+            if not bad_pos:
+                if len(new_pos) != 2:
+                    bad_pos = True
+
+            if bad_pos:
+                print "Could not understand you input"
+            else:
+                m = new_pos[0]
+                if m > 0:
+                    self._original_phenotypes[plate][m:,:] = self._original_phenotypes[plate][:-m,:]
+                    self._original_phenotypes[plate][:m,:] = np.nan
+                elif m < 0:
+                    self._original_phenotypes[plate][:m,:] = self._original_phenotypes[plate][-m:,:]
+                    self._original_phenotypes[plate][m:,:] = np.nan
+                m = new_pos[1]
+                if m > 0:
+                    self._original_phenotypes[plate][:,m:] = self._original_phenotypes[plate][:,:-m]
+                    self._original_phenotypes[plate][:,:m] = np.nan
+                elif m < 0:
+                    self._original_phenotypes[plate][:,:m] = self._original_phenotypes[plate][:,-m:]
+                    self._original_phenotypes[plate][:,m:] = np.nan
+
+                print "It has been moved and unkown places filled with nan"
+                print "You need to reload the data-set if you want to undo"
+                print "Also remembeer to re-run normalisation etc."
+
+
+
+                self._xml_connection[1][0] += new_pos[0]
+                self._xml_connection[1][1] += new_pos[1]
+
 
         elif task == "P1":
 
@@ -799,23 +872,23 @@ class Interactive_Menu():
         
             show_heatmap(self._original_phenotypes, 
                 self._plate_labels, 
-                "Phenotypes with position effect (Plate {0})" , vlim=(0,5))
+                "Phenotypes with position effect (Plate {0})" , vlim=(0,48))
 
         elif task == "P3":
         
             show_heatmap(self._normalised_phenotypes, 
                 self._plate_labels, 
-                "Phenotypes (Plate {0})" , vlim=(0,5))
+                "Phenotypes (Plate {0})" , vlim=(0,48))
 
         elif task == "P4":
 
             show_heatmap(self._experiments, 
                 self._plate_labels, 
-                "Mean experiment phenotype (Plate {0})" , vlim=(0,5))
+                "Mean experiment phenotype (Plate {0})" , vlim=(0,48))
 
             show_heatmap(self._experiments_sd, 
                 self._plate_labels, 
-                "Experiment phenotype std (Plate {0})" , vlim=(0,5))
+                "Experiment phenotype std (Plate {0})" , vlim=(0,48))
 
         elif task in ["S1", "S3"] :
 

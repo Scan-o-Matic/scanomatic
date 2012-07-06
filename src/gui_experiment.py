@@ -61,6 +61,7 @@ class Scanning_Experiment(gtk.Frame):
         description, root, gtk_target, native=True, matrices = None, 
         fixture="fixture_a", include_analysis=True, p_uuid = None, color=False):
 
+        self._subprocess_pid = None
         self._loaded = False
 
         if p_uuid is None:
@@ -243,6 +244,11 @@ class Scanning_Experiment(gtk.Frame):
             self._loaded = False
             self._measurement_label.set_text("Conflict in name, aborting...")
             gobject.timeout_add(1000*60*int(self._interval_time), self.destroy)
+
+    def get_pid(self):
+
+        return self._subprocess_pid
+
 
     def _quality_OK(self):
         log_reader.load_data(self._analysis_log_file_path)
