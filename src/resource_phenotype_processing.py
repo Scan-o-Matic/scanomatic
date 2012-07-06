@@ -271,7 +271,8 @@ def show_heatmap(data, plate_texts, plate_text_pattern, vlim=(0,48)):
     for p in xrange(data.shape[0]):
         if len(data[p].shape) == 2:
             ax = fig.add_subplot(rows, columns ,p+1, title=plate_text_pattern.format( plate_texts[p]))
-            plt.imshow(data[p], vmin=vlim[0], vmax=vlim[1], interpolation="nearest")
+            plt.imshow(data[p], vmin=vlim[0], vmax=vlim[1], interpolation="nearest", 
+                cmap=plt.cm.jet)
             #plt.colorbar(ax = ax, orientation='horizontal')
         else:
             logging.warning("Plate {0} has no values (shape {1})".format(p, data[p].shape))
@@ -587,7 +588,9 @@ class Interactive_Menu():
                 mins, maxs))
 
             self.set_new_file_menu_state()
-            self._plate_labels = range(self._original_phenotypes.shape[0])
+            self._plate_labels = {}
+            for i in xrange(self._original_phenotypes.shape[0]):
+                self._plate_labels[i] = str(i)
             logging.info("Temporary plate labels set")
             self.set_enable_menu_plots()
             return True
