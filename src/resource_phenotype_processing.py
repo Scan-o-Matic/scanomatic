@@ -336,32 +336,6 @@ def get_interactive_norm_surface_matrix(data):
     return norm_surface_matrices
 
 
-"""
-#CREATING NORM TARGET ARRAY
-data2 = np.zeros(data.shape, dtype=np.float64)
-
-for p in range( data.shape[0] ):
-    for x in range( exp_pp[0] ):
-        for y in range( exp_pp[1] ):
-
-            data2[p, x*2, y*2] = data[p, x*2, y*2]
-
-data3 = data2.copy()
-#PASS 1
-for p in range( data.shape[0]):
-    for x in range( exp_pp[0]):
-        for y in range(exp_pp[1]):
-            try:
-                cell = data2[p, x*2: x*2+3, y*2: y*2+3]            
-            except:
-                try:
-                    cell = data2[p, x*2: x*2+2, y*2: y*2+3] 
-                except:
-                    cell = data2[p, x*2: x*2+2, y*2: y*2+2]                       
-            data3[p, x*2+1, y*2+1] = cell[np.where(cell != 0)].mean()
-#PASS 2
-"""
-#DO NORM
 def get_normalised_values(data, surface_matrices):
 
     norm_surface, norm_means = get_norm_surface(data, surface_matrix=surface_matrices)
@@ -420,74 +394,6 @@ def get_experiment_results(data, surface_matrices):
 
     return np.array(e_mean), np.array(e_sd) #, (e_min, e_max), (e_sd_min, e_sd_max)
         
-"""
-#PLOT A SIMPLE HEAT MAP
-fig = plt.figure()
-for p in xrange(data.shape[0]):
-    ax = fig.add_subplot(2,2, p+1, title="Rate {0}".format( plate_texts[p]))
-    plt.imshow(e_mean[p], vmin=e_min, 
-        vmax=e_max)
-    plt.colorbar(ax = ax, orientation='horizontal')
-
-fig.savefig("./exp_norm.png")
-"""
-
-"""
-fig = plt.figure()
-for p in xrange(data.shape[0]):
-    ax = fig.add_subplot(4,2,2*p+1, title="Rate {0}".format( plate_texts[p]))
-    plt.imshow(e_mean[p], vmin=e_min, 
-        vmax=e_max)
-    plt.colorbar(ax = ax, orientation='horizontal')
-    ax = fig.add_subplot(4,2,2*p+2, title="Standard dev {0}".format( plate_texts[p]))
-    plt.imshow(e_sd[p], vmin=e_sd_min, vmax=e_sd_max)
-    plt.colorbar(ax = ax, orientation='horizontal')
-
-fig.savefig("./exp_norm_mean_sd.png")
-#PLOT DONE
-"""
-
-"""
-e_mean2 = []
-for p in xrange(data.shape[0]):
-
-    print "{0} has mean {1} ({2}) and std {3} ({4})".format(\
-        plate_texts[p], e_mean[p].mean(), 
-            e_mean[p].mean() + norm_surface[p].mean(),
-            e_mean[p].std(),
-            (e_mean[p] + norm_surface[p].mean()).std())
-
-    e_mean2.append(e_mean[p][np.where(e_mean[p] < e_mean[p].mean() + 6 * \
-        e_mean[p].std())])
-    print "Omitting outlier experiments {0}: mean {1} std {2}\n".format(\
-        e_mean[p].shape[0] * e_mean[p].shape[1] - e_mean2[-1].shape[0],
-        e_mean2[-1].mean(),
-        e_mean2[-1].std())
-
-"""
-"""
-#TTESTS
-alpha = 0.05
-n_sign = 0
-n_controls = 15
-ctrls = np.random.random_integers(0,len(t_exp),n_controls)
-texp = np.array(t_exp)
-tref = texp[ctrls,:].ravel()
-not_ctrls = np.array([x for x in range(texp.shape[0]) if x not in ctrls])
-texp2 = texp[not_ctrls,:]
-for e in texp2:
-    if stats.ttest_ind(tref, e)[1] < alpha:
-        n_sign += 1
-    
-print "Found {0} Experimental False Positives, expected {1} using {2}\
- control positions(ratio {3})".format(
-    n_sign,
-    alpha*texp2.shape[0],
-    n_controls,
-    n_sign / (alpha*texp2.shape[0]))
-
-"""
-
 class Interactive_Menu():
 
     def __init__(self):
@@ -997,136 +903,10 @@ if __name__ == "__main__":
 
     interactive_menu.run()
 
-"""
-
-
-#############################################################################
-#OLD STUFF
 #
-#############################################################################
+# NOT IN USE
+#
 
-#LOADING DATA
-X = plt_lab.csv2rec("analysis_GT.csv", skiprows=1, delimiter="\t")
-
-X_list = []
-
-for x in X:
-    X_list.append([x[1],x[3],x[5],x[7]])
-
-
-Y = np.asarray(X_list)
-Y2 = np.reshape(Y, (16, 24,4))
-#DATA LOADED
-
-#CLEAR OUT OUT-LIERS
-Y2[np.where(Y2[:,:,:]>10)] = np.nan
-
-#ALTERNATIVE DATA
-#X = plt_lab.csv2rec("analysis_locked_baseline.csv", skiprows=1, delimiter="\t")
-#X_list = []
-#for x in X:
-#    X_list.append([x[2],x[5],x[8],x[11]])
-
-#Z = np.asarray(X_list)
-#Z2 = np.reshape(Y, (16, 24,4))
-#ALTERNATIVE DATA LOADED
-
-#PLOT A SIMPLE HEAT MAP
-fig = plt.figure()
-for p in xrange(Y2.shape[2]):
-    fig.add_subplot(2,2,p+1, title="Plate %d" % p)
-    plt.imshow(Y2[:,:,p])
-
-fig.show()
-#PLOT DONE
-
-#PLOT HISTOGRAM
-fig = plt.figure()
-plt.clf()
-plt.hist(Y2[np.where(Y2[:,:,0]>0)].ravel(), bins=25)
-plt.show()
-#PLOT DONE
-
-#PLOTTING DATA VS ALTERNATIVE DATA...
-plt.clf()
-for i in xrange(Y2.shape[2]):
-    plt.plot(Y2[:,:,i].ravel(), Z2[:,:,i].ravel(), '.', label="Plate %d" % i)
-
-
-plt.xlabel('Rate')
-plt.ylabel('Lowest value')
-plt.legend()
-plt.show()
-#PLOT DONE
-
-#NEIGHBOUR COUNT ARRAY
-N = Y2.copy()
-N[:,:,:] = 4 + 4*(1/np.sqrt(2))
-N[0,:,:] = 3 + 2*(1/np.sqrt(2))
-N[-1,:,:] = 3 + 2*(1/np.sqrt(2))
-N[:,0,:] = 3 + 2*(1/np.sqrt(2))
-N[:,-1,:] = 3 + 2*(1/np.sqrt(2))
-N[0,0,:] = 2 + (1/np.sqrt(2))
-N[-1,0,:] = 2 + (1/np.sqrt(2))
-N[-1,-1,:] = 2 + (1/np.sqrt(2))
-N[0,-1,:] = 2 + (1/np.sqrt(2))
-
-#THE NUMBER OF NEIGHBOURS PER TYPE
-neighbours = [2 + (1/np.sqrt(2)), 3 + 2*(1/np.sqrt(2)), 4 + 4*(1/np.sqrt(2))]
-
-#MAKE NEIGHBOURDEPENDENT PLOT
-plt.clf()
-fig = plt.figure()
-
-for i in xrange(N.shape[2]):
-    fig.add_subplot(2,2,i+1, title="Plate %d" % i)
-    plt.boxplot([Y2[np.where(N[:,:,i] == neighbours[0])].ravel(), 
-        Y2[np.where(N[:,:,i] == neighbours[1])].ravel(),
-        Y2[np.where(N[:,:,i] == neighbours[2])].ravel()],
-        positions=neighbours)
-    plt.ylabel('Rate')
-    plt.xlabel('Neighbours')
-
-
-fig.show()
-#PLOT END
-
-#POSITIONAL EFFECT
-
-Y2[np.where(np.isnan(Y2[:,:,:]))] = 0
-
-#STENCIL A
-#n = 4 + 4 / np.sqrt(2)
-#kernel = np.asarray([[-1/np.sqrt(2), -1.0,-1/np.sqrt(2)],[-1, n,-1],[-1/np.sqrt(2), -1, -1/np.sqrt(2)]])
-#STENCIL B
-n=6
-kernel = np.asarray([[-1/2, -1.0,-1/2],[-1, n,-1],[-1/2, -1, -1/2]])
-N2 = []
-for i in xrange(Y2.shape[2]):
-    N2.append(fftconvolve(kernel, Y2[:,:,i], mode='full'))
-
-
-#PLOT POSITIONAL EFFECT
-fig = plt.figure()
-for p in xrange(Y2.shape[2]):
-    fig.add_subplot(2,2,p+1, title="Plate %d" % p)
-    plt.imshow(N2[p])
-    plt.colorbar()
-
-fig.show()
-
-
-Y3 = 1 / Y2
-
-#STENCILS
-kernel = np.asarray([[0.5, 1.0, 0.5],
-                    [1.0, 0, 1.0],
-                    [0.5, 1.0, 0.5]])
-
-kernel = np.asarray([[1/np.sqrt(2), 1.0,1/np.sqrt(2)],
-                    [1.0, 0, 1.0],
-                    [1/np.sqrt(2), 1.0, 1/np.sqrt(2)]])
-"""
 
 def vector_orth_dist(x, y, p1):
     """
@@ -1151,6 +931,7 @@ def vector_orth_dist(x, y, p1):
         dists[d] = np.sum(np.asarray((x[d]-x_off,y[d]))* p_u_orth)
     #
     return dists
+
 """
 #PLOT THE POSITIONAL EFFECT
 plt.clf()

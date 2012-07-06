@@ -290,7 +290,7 @@ class Project_Analysis_Setup(gtk.Frame):
             'D: 64 x 96 (6144)': (64,96),
             '--Empty--': None}
 
-        self.pinning_string = ""
+        self.pinning_string = None
  
         #GTK - stuff
 
@@ -403,6 +403,7 @@ class Project_Analysis_Setup(gtk.Frame):
             self.plate_pinnings.show()
             self._set_plates(widget=self.plates_entry)
             self.plates_label.set_text("Plates:")
+            self. _build_pinning_string()
         else:
             self.plates_entry.hide()
             self.plate_pinnings.hide()
