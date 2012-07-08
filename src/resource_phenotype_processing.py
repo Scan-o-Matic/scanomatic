@@ -100,7 +100,7 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
 
                         original_norm_surface[x,y] = np.nan
                         #print x, y
-            original_norms = norm_surface[np.where(norm_surface != 0)]
+            original_norms = norm_surface[np.where(np.logical_and(norm_surface != 0 , np.isnan(norm_surface) == False))]
             m = original_norms.mean()
             sd = original_norms.std()
 
@@ -122,7 +122,7 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
             else:
                 norm_surface = \
                     make_cubic_interpolation(norm_surface)
-
+            norm_surface[np.where(np.isnan(original_norm_surface))] = np.nan
             norm_means.append(m)
             logging.info('Going for next plate')
         else:
@@ -341,11 +341,11 @@ def get_normalised_values(data, surface_matrices):
 
     norm_surface, norm_means = get_norm_surface(data, surface_matrix=surface_matrices)
     normed_data = data.copy() * np.nan
-    print norm_means
+    logging.info("The norm-grid means where {0}".format( norm_means ))
     for p in xrange(data.shape[0]):
         normed_data[p] = (data[p] - norm_surface[p]) + norm_means[p]
 
-    return normed_data
+    return normed_data, norm_means
 
 def get_experiment_results(data, surface_matrices):
     exp_pp = map(lambda x: map(lambda y: y/2, x.shape), data)
@@ -423,6 +423,8 @@ class Interactive_Menu():
 
         self._experiments = None
         self._experiments_sd = None
+        self._file_dir_path = None
+        self._file_name = None
         self._file_path = None
         self._xml_file = None
         self._xml_connection = [0, [0,0]]
@@ -430,6 +432,7 @@ class Interactive_Menu():
         self._plate_labels = None
         self._original_phenotypes = None 
         self._normalised_phenotypes = None
+        self._normalisation_means = None
         self._original_meta_data = None 
         self._data_shapes = None 
 
@@ -570,6 +573,9 @@ class Interactive_Menu():
             
 
             self._file_path = file_path
+            self._file_name = ".".join(file_path.split(os.sep)[-1].split(".")[:-1])
+            self._file_dir_path = os.sep.join(file_path.split(os.sep)[:-1])
+
             self._original_phenotypes = file_contents['data']
             self._original_meta_data = file_contents['meta-data']
 
@@ -718,7 +724,7 @@ class Interactive_Menu():
 
         elif task == "3":
 
-            self._normalised_phenotypes = get_normalised_values(self._original_phenotypes, 
+            self._normalised_phenotypes, self._normalisation_means = get_normalised_values(self._original_phenotypes, 
                 self._grid_surface_matrices)
 
             self._experiments, self._experiments_sd = get_experiment_results(\
@@ -831,7 +837,8 @@ class Interactive_Menu():
 
             header = "Saving normalised phenotypes as {0}".format(["csv","numpy-array"][task == "S3"])
             if self._save(self._normalised_phenotypes, header,
-                save_as_np_array = (task == "S3")):
+                save_as_np_array = (task == "S3"), 
+                file_guess = '_normed.{0}'.format(['csv','npy'][task == 'S3'])):
 
                 logging.info("Data saved!")
 
@@ -843,7 +850,8 @@ class Interactive_Menu():
 
             header = "Saving experiment phenotypes as {0}".format(["csv","numpy-array"][task == "S3"])
             if self._save(self._experiment, header,
-                save_as_np_array = (task == "S3"), data2=self._experiment_sd):
+                save_as_np_array = (task == "S4"), data2=self._experiment_sd, 
+                file_guess = '_experment.{0}'.format(['csv','npy'][task =='S4'])):
 
                 logging.info("Data saved!")
 
@@ -852,8 +860,9 @@ class Interactive_Menu():
                 logging.warning("Could not save data, probably path is not valid")
 
             
-    def _save(self, data, header, save_as_np_array=False, data2=None):
+    def _save(self, data, header, save_as_np_array=False, data2=None, file_guess=None):
 
+        file_path = None
         get_interactive_header(header)
         get_interactive_info(['Note that the directory must exist.',
             'Also note that this will overwrite existing files (if they exist)'])
@@ -861,7 +870,13 @@ class Interactive_Menu():
         if self._plate_labels == None:
             self.set_plate_labels()
 
-        file_path = str(raw_input("Save-path (with file name): "))
+        if file_guess is not None:
+            file_path = self._file_dir_path + os.sep + self._file_name + file_guess
+            if str(raw_input("Maybe this is a good place:\n'{0}'\n(y/N)?".format(file_path))).upper() != "Y":
+                file_path = None
+
+        if file_path is None:
+            file_path = str(raw_input("Save-path (with file name): "))
 
         if save_as_np_array:
             try:
@@ -924,6 +939,11 @@ class Interactive_Menu():
 
             if answer is not None:
                 self.do_task(answer)
+
+                if answer == 'T':
+
+                    if str(raw_input("Are you sure you wish to quit (y/N)? ")).upper() != 'Y':
+                        answer = ''
 
 if __name__ == "__main__":
 
