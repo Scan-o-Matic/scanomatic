@@ -863,8 +863,8 @@ class Interactive_Menu():
         elif task in ["S2", "S4"]:
 
             header = "Saving experiment phenotypes as {0}".format(["csv","numpy-array"][task == "S3"])
-            if self._save(self._experiment, header,
-                save_as_np_array = (task == "S4"), data2=self._experiment_sd, 
+            if self._save(self._experiments, header,
+                save_as_np_array = (task == "S4"), data2=self._experiments_sd, 
                 file_guess = '_experment.{0}'.format(['csv','npy'][task =='S4'])):
 
                 logging.info("Data saved!")
