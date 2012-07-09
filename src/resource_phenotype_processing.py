@@ -412,6 +412,7 @@ class Interactive_Menu():
             'P2': 'Show heatmap(s) of original data',
             'P3': 'Show heatmap(s) of normalised data',
             'P4': 'Show heatmap(s) of per experment data',
+            'S0': 'Save the un-normalised data as np-array',
             'S1': 'Save the normalised data',
             'S2': 'Save the normalised data per experiment',
             'S3': 'Save the normalised data as np-array',
@@ -445,7 +446,7 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1C', '1A','1B', '2','3','P1','R1', 'R2'])
+        self.set_enable_menu_items(['1C', '1A','1B', '2','3','P1','R1', 'R2', 'S0'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -780,7 +781,7 @@ class Interactive_Menu():
                     bad_pos = True
 
             if bad_pos:
-                print "Could not understand you input"
+                logging.error("Could not understand you input")
             else:
                 m = new_pos[0]
                 if m > 0:
@@ -797,9 +798,9 @@ class Interactive_Menu():
                     self._original_phenotypes[plate][:,:m] = self._original_phenotypes[plate][:,-m:]
                     self._original_phenotypes[plate][:,m:] = np.nan
 
-                print "It has been moved and unkown places filled with nan"
-                print "You need to reload the data-set if you want to undo"
-                print "Also remembeer to re-run normalisation etc."
+                logging.info("It has been moved and unkown places filled with nan")
+                logging.info("You need to reload the data-set if you want to undo")
+                logging.info("Also remember to re-run normalisation etc.")
 
 
 
@@ -832,6 +833,19 @@ class Interactive_Menu():
             show_heatmap(self._experiments_sd, 
                 self._plate_labels, 
                 "Experiment phenotype std (Plate {0})" , vlim=(0,48))
+
+        elif task == "S0":
+
+            header = "Saving original phenotypes as numpy-array"
+            if self._save(self._original_phenotypes, header, save_as_np_array=True, 
+                file_guess="_original.npy"):
+            
+                logging.info("Data saved!")
+
+            else:
+
+                logging.warning("Could not save data, probably path is not valid")
+
 
         elif task in ["S1", "S3"] :
 
