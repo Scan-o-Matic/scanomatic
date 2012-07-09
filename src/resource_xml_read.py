@@ -59,7 +59,7 @@ class XML_Reader():
             self._logger.error("XML-file '{0}' not found".format(self._file_path))
             return False
 
-        f = fs.readline()
+        f = fs.read()
         fs.close()
         self._data = {}
         self._meta_data = {}
@@ -69,6 +69,7 @@ class XML_Reader():
         XML_TAG_INDEX_VALUE = "<{0} {1}..(\d*).>"
         XML_TAG_2_INDEX_VALUE = "<{0} {1}..(\d*). {2}..(\d*).>"
         XML_TAG_2_INDEX_VALUE_CONT = "<{0} {1}..{3}. {2}..{4}.>[^\d]*([0-9.]*)<"
+        XML_BAD_SCANS = "<s i..(\d*).><ok>0"
 
         #METADATA
         tags = ['start-t','desc','n-plates']
@@ -76,7 +77,7 @@ class XML_Reader():
             self._meta_data[t] = re.findall(XML_TAG_CONT.format(t), f)
 
         #DATA
-
+        bad_scans = map(int, re.findall(XML_BAD_SCANS, f))
         nscans = len(re.findall(XML_TAG_INDEX_VALUE.format('s','i'), f))
         pms = re.findall(XML_TAG_INDEX_VALUE_CONT.format('p-m', 'i'), f)
         pms = map(lambda x: map(eval, x), pms)
@@ -89,7 +90,7 @@ class XML_Reader():
             if pm[1] is not None:
                 self._data[pm[0]] = np.zeros((pm[1] + (nscans,)),dtype=np.float64)
         
-        print "Ready for {0} plates".format(len(self._data)) 
+        print "Ready for {0} plates ({1} scans)".format(len(self._data), nscans) 
         colonies_done = 0
         for x in xrange(max_pm[0]):
             for y in xrange(max_pm[1]):
@@ -110,7 +111,13 @@ class XML_Reader():
                 slice_start = 0
                 for i,pm in enumerate(slicers):
                     if pm:
-                        self._data[i][x,y,:] = (np.array(v)[range(slice_start, len(v), sum(slicers))])[-1::-1]
+                        well_as_list = list((np.array(v)[range(slice_start, 
+                            len(v), sum(slicers))])[-1::-1])
+
+                        for bs in bad_scans:
+                            well_as_list.insert(bs-1, np.nan)
+
+                        self._data[i][x,y,:] = np.array(well_as_list)
                         slice_start += 1
                         colonies_done += 1
 

@@ -350,6 +350,7 @@ def get_normalised_values(data, surface_matrices):
 def get_experiment_results(data, surface_matrices):
     exp_pp = map(lambda x: map(lambda y: y/2, x.shape), data)
     e_mean = []
+    e_data = []
     e_sd = []
     """
     e_max = 0
@@ -367,13 +368,16 @@ def get_experiment_results(data, surface_matrices):
      
         if len(data[p].shape) == 2: 
             exp_filter = np.array(surface_matrices[p]) == 0
+            exp_data = np.zeros(exp_pp[p]+[exp_filter.sum()], dtype=np.float64)
             exp_mean = np.zeros(exp_pp[p], dtype=np.float64)
             exp_sd = np.zeros(exp_pp[p], dtype=np.float64)
             for x in range( exp_pp[p][0]):
                 for y in range( exp_pp[p][1]):
                     cell = data[p][x*2:x*2+2, y*2:y*2+2]
-                    exp_mean[x,y] = cell[np.where(exp_filter)].mean()
-                    exp_sd[x,y] = cell[np.where(exp_filter)].std()
+                    cell_data = cell[np.where(exp_filter)]
+                    exp_data[x,y,:] = cell_data
+                    exp_mean[x,y] = cell_data[np.where(np.isnan(cell_data)==False)].mean()
+                    exp_sd[x,y] = cell_data[np.where(np.isnan(cell_data)==False)].std()
 
                 #logging.warning("Plate {0}, row {1}".format(p, x))
             """
@@ -388,12 +392,14 @@ def get_experiment_results(data, surface_matrices):
             """
             e_mean.append(exp_mean)
             e_sd.append(exp_sd)
+            e_data.append(exp_data)
         else:
             e_mean.append(np.array([]))
             e_sd.append(np.array([]))
+            e_data.append(np.array([]))
 
 
-    return np.array(e_mean), np.array(e_sd) #, (e_min, e_max), (e_sd_min, e_sd_max)
+    return np.array(e_mean), np.array(e_sd), np.array(e_data) #, (e_min, e_max), (e_sd_min, e_sd_max)
         
 class Interactive_Menu():
 
@@ -423,6 +429,7 @@ class Interactive_Menu():
         self.set_start_menu_state()
 
         self._experiments = None
+        self._experiments_data = None
         self._experiments_sd = None
         self._file_dir_path = None
         self._file_name = None
@@ -728,7 +735,7 @@ class Interactive_Menu():
             self._normalised_phenotypes, self._normalisation_means = get_normalised_values(self._original_phenotypes, 
                 self._grid_surface_matrices)
 
-            self._experiments, self._experiments_sd = get_experiment_results(\
+            self._experiments, self._experiments_sd, self._experiments_data = get_experiment_results(\
                 self._normalised_phenotypes, self._grid_surface_matrices)
 
             self.set_enable_menu_items(["4","S1","S3", "S2", "S4"])
@@ -863,8 +870,8 @@ class Interactive_Menu():
         elif task in ["S2", "S4"]:
 
             header = "Saving experiment phenotypes as {0}".format(["csv","numpy-array"][task == "S3"])
-            if self._save(self._experiments, header,
-                save_as_np_array = (task == "S4"), data2=self._experiments_sd, 
+            if self._save(self._experiments_data, header,
+                save_as_np_array = (task == "S4"),  
                 file_guess = '_experment.{0}'.format(['csv','npy'][task =='S4'])):
 
                 logging.info("Data saved!")
@@ -924,10 +931,12 @@ class Interactive_Menu():
                         for y in xrange(data[p].shape[1]):
                             if data2 is None:
                                 fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
-                                    p,x,y, data[p][x,y]))
+                                    p,x,y, "\t".join(list(data[p][x,y]))))
                             else:
                                 fs.write("{0}\t{1}\t{2}\t{3}\t{4}\n".format(\
-                                    p,x,y, data[p][x,y]), data2[p][x,y])
+                                    p,x,y, 
+                                    "\t".join(list(data[p][x,y])), 
+                                    "\t".join(list(data2[p][x,y]))))
 
 
                 fs.write("STOP PLATE {0}\n".format(self._plate_labels[p]))
