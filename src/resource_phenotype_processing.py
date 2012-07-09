@@ -761,7 +761,7 @@ class Interactive_Menu():
             if rotation in ["0"]:
                 self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
 
-            self._xml_connection[0] = (self._xml_connection[0] + (3- int(rotate))) % 4
+            self._xml_connection[0] = (self._xml_connection[0] + (3- int(rotation))) % 4
 
         elif task == "R2":
 
