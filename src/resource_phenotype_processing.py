@@ -350,7 +350,7 @@ def get_normalised_values(data, surface_matrices):
 def get_experiment_results(data, surface_matrices):
     exp_pp = map(lambda x: map(lambda y: y/2, x.shape), data)
     e_mean = []
-    e_data = []
+    e_data = np.array([None]*data.shape[0], dtype=np.object)
     e_sd = []
     """
     e_max = 0
@@ -392,14 +392,14 @@ def get_experiment_results(data, surface_matrices):
             """
             e_mean.append(exp_mean)
             e_sd.append(exp_sd)
-            e_data.append(exp_data)
+            e_data[p] = exp_data
         else:
             e_mean.append(np.array([]))
             e_sd.append(np.array([]))
-            e_data.append(np.array([]))
+            e_data[p] = np.array([])
 
 
-    return np.array(e_mean), np.array(e_sd), np.array(e_data) #, (e_min, e_max), (e_sd_min, e_sd_max)
+    return np.array(e_mean), np.array(e_sd), e_data
         
 class Interactive_Menu():
 
