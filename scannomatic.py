@@ -905,6 +905,7 @@ class Application_Window():
         except:
             other_instance = False
 
+        lock_contents = []
         if other_instance:
             lock_contents = fs.read().split("\n")
             try:

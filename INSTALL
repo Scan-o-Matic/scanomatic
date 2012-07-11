@@ -185,7 +185,7 @@
 
         sudo apt-get update
         sudo apt-get upgrade
-        sudo apt-get install python-numpy, python-matplotlib, python-gtk2
+        sudo apt-get install python-numpy, python-scipy, python-matplotlib, python-gtk2
 
 4.  INSTALLING SCANNOMATIC
 
@@ -216,7 +216,7 @@
 
     Go the the directory that will contain the scan-o-matic directory
 
-        git clone git://gitorious.org/scannomatic/scannomatic.git scan-o-matic
+        git clone git://gitorious.org/scannomatic/scannomatic.git -b version scan-o-matic
 
     Then go to that directory:
 
