@@ -415,6 +415,7 @@ class Interactive_Menu():
             '4': 'Calculate experiments',
             'R1': 'Re-map positions -- rotate',
             'R2': 'Re-map positions -- move',
+            'R3': 'Re-map positions -- flip',
             'P1': 'Set plot plate names',
             'P2': 'Show heatmap(s) of original data',
             'P3': 'Show heatmap(s) of normalised data',
@@ -454,7 +455,7 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1C', '1A','1B', '2','3','P1','R1', 'R2', 'S0'])
+        self.set_enable_menu_items(['1C', '1A','1B', '2','3','P1','R1', 'R2', 'R3', 'S0'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -815,6 +816,35 @@ class Interactive_Menu():
                 self._xml_connection[1][0] += new_pos[0]
                 self._xml_connection[1][1] += new_pos[1]
 
+        elif task == "R3":
+
+            plate = self.get_interactive_plate()        
+           
+            flip_dim = str(raw_input("Which dimension should be flipped? "+\
+                "(0 (size: {0}) / 1 (size: {1}) / Abort (anything else)): ".format(\
+                self._original_phenotypes[plate].shape[0],
+                self._original_phenotypes[plate].shape[1])))
+
+            if flip_dim in ['0','1']:
+
+                flip_dim = int(flip_dim)
+
+                dim_size = self._original_phenotypes[plate].shape[flip_dim]
+
+                if flip_dim == 0:
+                    self._original_phenotypes[plate] = \
+                        self._original_phenotypes[plate][\
+                        np.arange(dim_size-1,-1,-1),:]
+                elif flip_dim == 1:
+                    self._original_phenotypes[plate] = \
+                        self._original_phenotypes[plate][\
+                        :,np.arange(dim_size-1,-1,-1)]
+
+                logging.info("Flip is done, but you should have done this the last thing you do before normalising!")
+            else:
+
+                logging.info("No flip done!")
+            
 
         elif task == "P1":
 
