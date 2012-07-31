@@ -961,8 +961,13 @@ class Interactive_Menu():
                     for x in xrange(data[p].shape[0]):
                         for y in xrange(data[p].shape[1]):
                             if data2 is None:
-                                fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
-                                    p,x,y, "\t".join(list(data[p][x,y]))))
+                                try:
+                                    fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
+                                        p,x,y, "\t".join(list(data[p][x,y]))))
+                                except:
+                                    fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
+                                        p,x,y, data[p][x,y]))
+
                             else:
                                 fs.write("{0}\t{1}\t{2}\t{3}\t{4}\n".format(\
                                     p,x,y, 
