@@ -624,7 +624,11 @@ class Interactive_Menu():
         else:
             print "(0 - {0})".format(self._original_phenotypes.shape[0]-1)
 
-        plate = int(raw_input("> "))
+        try:
+            plate = int(raw_input("> "))
+        except:
+            plate = None
+
         return plate
 
     def do_task(self, task):
@@ -685,32 +689,35 @@ class Interactive_Menu():
                 if answer not in ["", "A","L"] and answer in ['R','C','P']:
 
                     plate = self.get_interactive_plate()        
-                    row = 0
-                    column = 0
 
-                    if answer in ["R", "P"]:
+                    if plate is not None:
 
-                        row = int(raw_input("Which row (0 - {0}): ".format(self._original_phenotypes[plate].shape[0]-1)))
+                        row = 0
+                        column = 0
 
-                    if answer in ["C", "P"]:
+                        if answer in ["R", "P"]:
 
-                        column = int(raw_input("Which column (0 - {0}): ".format(self._original_phenotypes[plate].shape[1]-1)))
+                            row = int(raw_input("Which row (0 - {0}): ".format(self._original_phenotypes[plate].shape[0]-1)))
 
-                    if answer == "P":
+                        if answer in ["C", "P"]:
 
-                        pos = (plate, row, column)
-                        logging.info("{0} is now selected for removal".format(pos))
-                        removal_list.append(pos)
+                            column = int(raw_input("Which column (0 - {0}): ".format(self._original_phenotypes[plate].shape[1]-1)))
 
-                    elif answer in ["R", "C"]:
+                        if answer == "P":
 
-                        pos_list = []
-                        for i in xrange(self._original_phenotypes[plate].shape[answer=="R"]):
-                            pos_list.append((plate,[i,row][answer=="R"],[column,i][answer=="R"]))
+                            pos = (plate, row, column)
+                            logging.info("{0} is now selected for removal".format(pos))
+                            removal_list.append(pos)
 
-                        logging.info("The following positions are not marked for removal {0}".format(pos_list))
+                        elif answer in ["R", "C"]:
 
-                        removal_list += pos_list
+                            pos_list = []
+                            for i in xrange(self._original_phenotypes[plate].shape[answer=="R"]):
+                                pos_list.append((plate,[i,row][answer=="R"],[column,i][answer=="R"]))
+
+                            logging.info("The following positions are not marked for removal {0}".format(pos_list))
+
+                            removal_list += pos_list
 
                 elif answer == "L":
 
@@ -746,105 +753,109 @@ class Interactive_Menu():
         elif task == "R1":
 
             plate = self.get_interactive_plate()        
-           
-            print "Should the (0,0) position be:"
+          
+            if plate is not None: 
+                print "Should the (0,0) position be:"
 
-            for i, p in enumerate([\
-                #"({0},0)".format(self._original_phenotypes[plate].shape[0]-1),
-                "(0,{0})".format(self._original_phenotypes[plate].shape[0]-1),
-                #"(0,{0})".format(self._original_phenotypes[plate].shape[1]-1),
-                "({0},{1})".format(self._original_phenotypes[plate].shape[0]-1,
-                self._original_phenotypes[plate].shape[1]-1),
-                #"({0},{1})".format(self._original_phenotypes[plate].shape[1]-1,
-                #self._original_phenotypes[plate].shape[0]-1)
-                "({0},0)".format(self._original_phenotypes[plate].shape[1]-1)
-                ]):
+                for i, p in enumerate([\
+                    #"({0},0)".format(self._original_phenotypes[plate].shape[0]-1),
+                    "(0,{0})".format(self._original_phenotypes[plate].shape[0]-1),
+                    #"(0,{0})".format(self._original_phenotypes[plate].shape[1]-1),
+                    "({0},{1})".format(self._original_phenotypes[plate].shape[0]-1,
+                    self._original_phenotypes[plate].shape[1]-1),
+                    #"({0},{1})".format(self._original_phenotypes[plate].shape[1]-1,
+                    #self._original_phenotypes[plate].shape[0]-1)
+                    "({0},0)".format(self._original_phenotypes[plate].shape[1]-1)
+                    ]):
 
-                print " "*2 + str(i) + " "*5 + p
+                    print " "*2 + str(i) + " "*5 + p
 
-            rotation = str(raw_input("Select way to rotate/flip your data or press enter to abort: "))
-            
-            if rotation in ["0", "1", "2"]:
-                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
-            if rotation in ["0", "1"]:
-                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
-            if rotation in ["0"]:
-                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+                rotation = str(raw_input("Select way to rotate/flip your data or press enter to abort: "))
+                
+                if rotation in ["0", "1", "2"]:
+                    self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+                if rotation in ["0", "1"]:
+                    self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+                if rotation in ["0"]:
+                    self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
 
-            self._xml_connection[0] = (self._xml_connection[0] + (3- int(rotation))) % 4
+                self._xml_connection[0] = (self._xml_connection[0] + (3- int(rotation))) % 4
 
         elif task == "R2":
 
             
             plate = self.get_interactive_plate()        
-           
-            new_pos_str = str(raw_input("The current (0,0) position should be: "))
+          
+            if plate is not None: 
+                new_pos_str = str(raw_input("The current (0,0) position should be: "))
 
-            bad_pos = False
-            try:
-                new_pos = map(int, eval(new_pos_str))
-            except:
-                bad_pos = True
-            if not bad_pos:
-                if len(new_pos) != 2:
+                bad_pos = False
+                try:
+                    new_pos = map(int, eval(new_pos_str))
+                except:
                     bad_pos = True
+                if not bad_pos:
+                    if len(new_pos) != 2:
+                        bad_pos = True
 
-            if bad_pos:
-                logging.error("Could not understand you input")
-            else:
-                m = new_pos[0]
-                if m > 0:
-                    self._original_phenotypes[plate][m:,:] = self._original_phenotypes[plate][:-m,:]
-                    self._original_phenotypes[plate][:m,:] = np.nan
-                elif m < 0:
-                    self._original_phenotypes[plate][:m,:] = self._original_phenotypes[plate][-m:,:]
-                    self._original_phenotypes[plate][m:,:] = np.nan
-                m = new_pos[1]
-                if m > 0:
-                    self._original_phenotypes[plate][:,m:] = self._original_phenotypes[plate][:,:-m]
-                    self._original_phenotypes[plate][:,:m] = np.nan
-                elif m < 0:
-                    self._original_phenotypes[plate][:,:m] = self._original_phenotypes[plate][:,-m:]
-                    self._original_phenotypes[plate][:,m:] = np.nan
+                if bad_pos:
+                    logging.error("Could not understand you input")
+                else:
+                    m = new_pos[0]
+                    if m > 0:
+                        self._original_phenotypes[plate][m:,:] = self._original_phenotypes[plate][:-m,:]
+                        self._original_phenotypes[plate][:m,:] = np.nan
+                    elif m < 0:
+                        self._original_phenotypes[plate][:m,:] = self._original_phenotypes[plate][-m:,:]
+                        self._original_phenotypes[plate][m:,:] = np.nan
+                    m = new_pos[1]
+                    if m > 0:
+                        self._original_phenotypes[plate][:,m:] = self._original_phenotypes[plate][:,:-m]
+                        self._original_phenotypes[plate][:,:m] = np.nan
+                    elif m < 0:
+                        self._original_phenotypes[plate][:,:m] = self._original_phenotypes[plate][:,-m:]
+                        self._original_phenotypes[plate][:,m:] = np.nan
 
-                logging.info("It has been moved and unkown places filled with nan")
-                logging.info("You need to reload the data-set if you want to undo")
-                logging.info("Also remember to re-run normalisation etc.")
+                    logging.info("It has been moved and unkown places filled with nan")
+                    logging.info("You need to reload the data-set if you want to undo")
+                    logging.info("Also remember to re-run normalisation etc.")
 
 
 
-                self._xml_connection[1][0] += new_pos[0]
-                self._xml_connection[1][1] += new_pos[1]
+                    self._xml_connection[1][0] += new_pos[0]
+                    self._xml_connection[1][1] += new_pos[1]
 
         elif task == "R3":
 
             plate = self.get_interactive_plate()        
-           
-            flip_dim = str(raw_input("Which dimension should be flipped? "+\
-                "(0 (size: {0}) / 1 (size: {1}) / Abort (anything else)): ".format(\
-                self._original_phenotypes[plate].shape[0],
-                self._original_phenotypes[plate].shape[1])))
+          
+            if plate is not None: 
 
-            if flip_dim in ['0','1']:
+                flip_dim = str(raw_input("Which dimension should be flipped? "+\
+                    "(0 (size: {0}) / 1 (size: {1}) / Abort (anything else)): ".format(\
+                    self._original_phenotypes[plate].shape[0],
+                    self._original_phenotypes[plate].shape[1])))
 
-                flip_dim = int(flip_dim)
+                if flip_dim in ['0','1']:
 
-                dim_size = self._original_phenotypes[plate].shape[flip_dim]
+                    flip_dim = int(flip_dim)
 
-                if flip_dim == 0:
-                    self._original_phenotypes[plate] = \
-                        self._original_phenotypes[plate][\
-                        np.arange(dim_size-1,-1,-1),:]
-                elif flip_dim == 1:
-                    self._original_phenotypes[plate] = \
-                        self._original_phenotypes[plate][\
-                        :,np.arange(dim_size-1,-1,-1)]
+                    dim_size = self._original_phenotypes[plate].shape[flip_dim]
 
-                logging.info("Flip is done, but you should have done this the last thing you do before normalising!")
-            else:
+                    if flip_dim == 0:
+                        self._original_phenotypes[plate] = \
+                            self._original_phenotypes[plate][\
+                            np.arange(dim_size-1,-1,-1),:]
+                    elif flip_dim == 1:
+                        self._original_phenotypes[plate] = \
+                            self._original_phenotypes[plate][\
+                            :,np.arange(dim_size-1,-1,-1)]
 
-                logging.info("No flip done!")
-            
+                    logging.info("Flip is done, but you should have done this the last thing you do before normalising!")
+                else:
+
+                    logging.info("No flip done!")
+                
 
         elif task == "P1":
 
@@ -957,13 +968,13 @@ class Interactive_Menu():
             for p in xrange(data.shape[0]):
                 fs.write("START PLATE {0}\n".format(self._plate_labels[p]))
 
-                if len(data[p].shape) == 2:
+                if data[p].ndim >= 2:
                     for x in xrange(data[p].shape[0]):
                         for y in xrange(data[p].shape[1]):
                             if data2 is None:
                                 try:
                                     fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
-                                        p,x,y, "\t".join(list(data[p][x,y]))))
+                                        p,x,y, "\t".join(list(map(str, data[p][x,y,:])))))
                                 except:
                                     fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
                                         p,x,y, data[p][x,y]))
@@ -971,8 +982,8 @@ class Interactive_Menu():
                             else:
                                 fs.write("{0}\t{1}\t{2}\t{3}\t{4}\n".format(\
                                     p,x,y, 
-                                    "\t".join(list(data[p][x,y])), 
-                                    "\t".join(list(data2[p][x,y]))))
+                                    "\t".join(list(map(str, data[p][x,y]))), 
+                                    "\t".join(list(map(str, data2[p][x,y])))))
 
 
                 fs.write("STOP PLATE {0}\n".format(self._plate_labels[p]))
