@@ -576,6 +576,8 @@ class Interactive_Menu():
 
     def load_file(self, file_path):
 
+        if os.sep not in file_path:
+            file_path = ".{0}{1}".format(os.sep, file_path)
 
         file_contents = get_data_from_file(file_path)
 

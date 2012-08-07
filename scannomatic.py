@@ -651,18 +651,20 @@ class Application_Window():
             return False
 
     def set_unclaim_scanner(self, scanner):
-        try:
-            fs = open(self._program_config_root + os.sep + "_%s.lock" %\
-                 scanner.replace(" ","_"),"w")
-            fs.write('0')
-            fs.close()
-            self.DMS('Scanner Resources', 
-                "Released scanner %s" % scanner,
-                level="L", debug_level='info')
-        except:
-            self.DMS('Scanner Resources', 
-                "Could not unclaim scanner %s for unkown reasons" % scanner,
-                level="LA", debug_level='warning')
+
+        if scanner is not None:
+            try:
+                fs = open(self._program_config_root + os.sep + "_%s.lock" %\
+                     scanner.replace(" ","_"),"w")
+                fs.write('0')
+                fs.close()
+                self.DMS('Scanner Resources', 
+                    "Released scanner %s" % scanner,
+                    level="L", debug_level='info')
+            except:
+                self.DMS('Scanner Resources', 
+                    "Could not unclaim scanner %s for unkown reasons" % scanner,
+                    level="LA", debug_level='warning')
 
     #
     #   FORCE UNCLAIM FUNCTIONS

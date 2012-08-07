@@ -29,7 +29,16 @@ class Config_File():
         if fs != None:
             self.read(fs = fs)
 
+    def __getitem__(self, key):
+
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+
+        return self.set(key, value)
+
     def reload(self):
+
         return self.read()
 
     def load(self, location = None):

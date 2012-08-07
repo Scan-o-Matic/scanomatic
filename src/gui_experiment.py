@@ -124,19 +124,21 @@ class Scanning_Experiment(gtk.Frame):
         self._analysis_log_file_path = self._root + os.sep + self._prefix + os.sep + self._prefix + ".log"
         self._heatMapPath = self._root + os.sep + self._prefix + os.sep + "progress.png"
 
-        #HACK
-        if USER_OS.name == "windows":
-            self._power_manager = power_manager.Power_Manager(installed=True, 
-                path='"C:\Program Files\Gembird\Power Manager\pm.exe"',
-                on_string="-on -PW1 -Scanner1", 
-                off_string="-off -PW1 -Scanner1", DMS=self.owner.DMS)
+        if owner._config_file['LAN-PM'] == True:
 
-        elif USER_OS.name == "linux":
-            self._power_manager = power_manager.Power_Manager(installed=True, 
-                path="sispmctl",on_string="-o %d" % self._scanner_id, 
-                off_string="-f %d" % self._scanner_id,
-                DMS=self.owner.DMS)
-            
+            pm = power_manager.LAN_PM(owner._config_file['LAN-HOST'], 
+                self._scanner_id, owner._config_file['LAN-PASSWORD'])
+
+        else:
+
+            if USER_OS.name == "windows":
+                pm = power_manager.USB_PM_WIN(self._scanner_id)
+
+            elif USER_OS.name == "linux":
+                pm = power_manager.USB_PM_LINUX(self._scanner_id)
+
+        self._power_manager = power_manager.Power_Manager(
+            pm = pm, DMS=self.owner.DMS)
 
         self._power_manager.on()
 
