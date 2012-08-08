@@ -22,6 +22,17 @@ from urllib import urlencode
 #
 # CLASSES
 #
+
+class NO_PM(object):
+    def __init__(self):
+        self.name ="Scanner always accessible/no PM"
+
+    def on(self):
+        pass
+
+    def off(self):
+        pass
+
 class USB_PM(object):
     def __init__(self, path, on_string="", off_string=""):
         self.name ="USB connected PM"
@@ -59,16 +70,21 @@ class USB_PM_WIN(USB_PM):
 
 class LAN_PM(object):
 
-    def __init__(self, host, socket, password):
+    def __init__(self, host, socket, password, verify_name = False, pm_name="Server 1"):
 
         self.name ="LAN connected PM"
         self._host = host
         self._socket = socket
         self._password = password is not None and password or "1"
 
+        self._pm_server_name = pm_name
+        self._pm_server_str = "<h2>{0}".format(pm_name)
+        self._verify_name = verify_name
+
         self._pwd_params = urlencode((("pw", password),))
         self._on_params = urlencode((("cte{0}".format(socket),1),))
         self._on_params = urlencode((("cte{0}".format(socket),0),))
+    
 
         self._login_out_url = "http://{0}/login.html".format(host)
         self._ctrl_panel_url = "http://{0}/".format(host)
@@ -84,19 +100,23 @@ class LAN_PM(object):
 
     def on(self):
 
-        self._login()
+        u = self._login()
 
-        urllib2.urlopen(self._ctrl_panel_url, self._on_params)
+        if not self._verify_name or self._pm_server_str in u.readlines():
 
-        self._logout()
+            urllib2.urlopen(self._ctrl_panel_url, self._on_params)
+
+            self._logout()
 
     def off(self):
 
         self._login()
 
-        urllib2.urlopen(self._ctrl_panel_url, self._off_params)
+        if not self._verify_name or self._pm_server_str in u.readlines():
 
-        self._logout()
+            urllib2.urlopen(self._ctrl_panel_url, self._off_params)
+
+            self._logout()
 
 class Power_Manager():
     def __init__(self, pm=None, DMS=None):
