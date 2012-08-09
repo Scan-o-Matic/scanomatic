@@ -21,6 +21,7 @@ pygtk.require('2.0')
 import gtk, pango
 import os, os.path, sys
 import types
+import re
 
 #
 # SCANNOMATIC LIBRARIES
@@ -80,8 +81,9 @@ class Config_GUI(gtk.Frame):
         #POWER MANAGEMENT
         hbox = gtk.HBox(False, 0)
         vbox.pack_start(hbox, False, False, 20)
-        label = gtk.Label("Power Management:")
-        hbox.pack_start(label, False, False, 2)
+        self.pm_exists = gtk.CheckButton("Power Management:")
+        self.pm_exists.connect("clicked", self.pm_set_exists)
+        hbox.pack_start(self.pm_exists, False, False, 2)
 
         self.pm_usb_button = gtk.RadioButton(None, "via USB")
         self.pm_lan_button = gtk.RadioButton(self.pm_usb_button, "via LAN")
@@ -90,12 +92,19 @@ class Config_GUI(gtk.Frame):
         hbox.pack_start(self.pm_usb_button, False, False, 8)
         hbox.pack_start(self.pm_lan_button, False, False, 8)
 
-        label = gtk.Label("Host/IP:")
+        label = gtk.Label("Static IP:")
         hbox.pack_start(label, False, False, 2)
         self.pm_host = gtk.Entry()
         self.pm_host.connect("changed", self.pm_set_host)
         hbox.pack_start(self.pm_host, False, False, 2)
     
+        label = gtk.Label("MAC-address (for dynamic IPs):")
+        hbox.pack_start(label, False, False, 2)
+        self.pm_mac = gtk.Entry()
+        self.pm_mac.connect("focus-out-event", self.pm_set_mac)
+        hbox.pack_start(self.pm_mac, False, False, 2)
+        
+
         label = gtk.Label("Password:")
         hbox.pack_start(label, False, False, 2)
         self.pm_pwd = gtk.Entry()
@@ -162,6 +171,23 @@ class Config_GUI(gtk.Frame):
         self._GUI_updating = False
         vbox.show_all()
 
+    def pm_set_exists(self, widget=None, data=None):
+
+        pm_state = widget.get_active()
+
+        self.config_file['PM'] = pm_state
+
+        try:
+            pm_state = int(pm_state)
+        except:
+            pm_state = 1
+
+        self.pm_lan_button.set_sensitive(pm_state)
+        self.pm_usb_button.set_sensitive(pm_state)
+        self.pm_pwd.set_sensitive(pm_state)
+        self.pm_host.set_sensitive(pm_state)
+        self.pm_mac.set_sensitive(pm_state)
+
     def pm_set_type(self, widget=None, data=None):
 
         self.config_file['LAN-PM'] =  widget.get_active() == False
@@ -174,6 +200,7 @@ class Config_GUI(gtk.Frame):
 
         self.pm_pwd.set_sensitive(has_lan_settings)
         self.pm_host.set_sensitive(has_lan_settings)
+        self.pm_mac.set_sensitive(has_lan_settings)
 
         self._GUI_updating = False
 
@@ -186,6 +213,32 @@ class Config_GUI(gtk.Frame):
     def pm_set_host(self, widget=None, data=None):
         if not self._GUI_updating:
             self.config_file['LAN-HOST'] = widget.get_text()
+
+    def pm_set_mac(self, widget=None, data=None):
+        if not self._GUI_updating:
+            mac = widget.get_text()
+            mac = mac.replace(" ",":")
+
+            if len(mac)%2 == 0 and ":" not in mac:
+                mac = [(len(mac)-2==i and mac[i:i+2] or "{0}:".format(mac[i:i+2])) \
+                    for i in xrange(len(mac)) if i%2==0 and len(mac)-i>=2]
+
+                mac = "".join(mac)
+
+            mac = mac.lower()
+
+            p = re.compile("([0-9a-h]{2}:|[0-9a-h]{2}$)")
+            m = re.findall(p, mac)
+
+            if sum(len(x) for x in m) != len(mac):
+                mac = ""
+
+            if mac != widget.get_text():
+                self._GUI_updating = True
+                widget.set_text(mac)
+                self._GUI_updating = False
+
+            self.config_file['LAN-MAC'] = mac
 
     def set_log_level(self, widget=None, data=None):
 
@@ -256,10 +309,14 @@ class Config_GUI(gtk.Frame):
 
             self.auto_ver_update.set_active(ver_update)
 
+        self.pm_exists.set_active(bool(self.config_file.get("PM",True)))
         self.pm_lan_button.set_active(bool(self.config_file.get("LAN-PM",False)))
         self.pm_host.set_text(str(self.config_file.get("LAN-HOST", "")))
         self.pm_pwd.set_text(str(self.config_file.get("LAN-PASSWORD", "")))
+        self.pm_mac.set_text(str(self.config_file.get("LAN-MAC","")))
+
         self.pm_set_type(widget=self.pm_usb_button)
+        self.pm_set_exists(widget=self.pm_exists)
 
         self.set_update_pattern(force_update=True)
 

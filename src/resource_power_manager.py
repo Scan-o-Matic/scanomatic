@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Resource module using a SIS-PM with the scanner to control its power."""
+"""Resource module using a SIS-PM to control power to one socket at a time."""
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
@@ -18,22 +18,15 @@ import sys
 import time
 import urllib2
 from urllib import urlencode
+import nmap
+from subprocess import Popen, PIPE
 
 #
 # CLASSES
 #
 
-class NO_PM(object):
-    def __init__(self):
-        self.name ="Scanner always accessible/no PM"
-
-    def on(self):
-        pass
-
-    def off(self):
-        pass
-
 class USB_PM(object):
+    """Base Class for USB-connected PM:s. Not intended to be used directly."""
     def __init__(self, path, on_string="", off_string=""):
         self.name ="USB connected PM"
         self._path = path
@@ -49,7 +42,7 @@ class USB_PM(object):
         os.system(str(self._path)+' '+str(self._off_string))
 
 class USB_PM_LINUX(USB_PM):
-
+    """Class for handling USB connected PM:s on linux."""
     def __init__(self, socket, path = "sispmctl"):
 
         self.name ="USB connected PM (Linux)"
@@ -59,7 +52,7 @@ class USB_PM_LINUX(USB_PM):
         self._off_string = "-f %{0}".format(socket)
 
 class USB_PM_WIN(USB_PM):
-
+    """Class for handling USB connected PM:s on windows."""
     def __init__(self, socket, path = r"C:\Program Files\Gembird\Power Manager\pm.exe"):
 
         self.name ="USB connected PM (Windows)"
@@ -69,11 +62,16 @@ class USB_PM_WIN(USB_PM):
         self._off_string = "-off -PW1 -Scanner{0}".format(socket)
 
 class LAN_PM(object):
+    """Class for handling LAN-connected PM:s.
 
-    def __init__(self, host, socket, password, verify_name = False, pm_name="Server 1"):
+    host may be None if MAC is supplied. 
+    If no password is supplied, default password is used."""
+
+    def __init__(self, host, socket, password, verify_name = False, pm_name="Server 1", MAC=None):
 
         self.name ="LAN connected PM"
         self._host = host
+        self._MAC = MAC
         self._socket = socket
         self._password = password is not None and password or "1"
 
@@ -89,6 +87,43 @@ class LAN_PM(object):
         self._login_out_url = "http://{0}/login.html".format(host)
         self._ctrl_panel_url = "http://{0}/".format(host)
 
+        if MAC is not None:
+
+            res = self._find_ip()
+
+            if res is not None:
+                self._host = res
+          
+    
+    def _find_ip(self):
+        """Looks up the MAC-address supplied on the local router"""
+
+        #PINGSCAN ALL IP:S
+        nm = nmap.PortScanner()
+        nm_res = nm.scan(hosts="192.168.1.1-255", arguments="-sP")
+
+        #FILTER OUT THOSE RESPONDING
+        up_ips = [k for k in nm_res['scan'] if nm_res['scan'][k]['status']['state'] == u'up']
+
+        #LET THE OS PING THEM AGAIN SO THEY END UP IN ARP
+        for ip in up_ips:
+
+            os.system('ping -c 1 {0}'.format(ip))
+
+        #RUN ARP
+        p = Popen(['arp','-n'], stdout=PIPE)
+
+        #FILTER LIST ON ROWS WITH SOUGHT MAC-ADDRESS
+        res = [l for l in p.communicate()[0].split("\n") if self._MAC in l]
+
+        
+        if len(res) > 0:
+            #RETURN THE IP
+            return res[0].split(" ",1)[0]
+
+        else:
+            #IF IT IS NOT CONNECTED AND UP RETURN NONE
+            return None
 
     def _login(self):
 
@@ -119,7 +154,11 @@ class LAN_PM(object):
             self._logout()
 
 class Power_Manager():
+    """Interface that takes a PM-class and emits messages as well as introduces
+    a power toggle switch"""
+
     def __init__(self, pm=None, DMS=None):
+
         self._pm = pm 
         self._installed = pm is not None
         self._on = None

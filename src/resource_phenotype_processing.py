@@ -409,7 +409,8 @@ class Interactive_Menu():
         self._menu = {'1': 'Load data',
             '1A': 'Weed out superbad curves automatically (requires xml-file)',
             '1B': 'Inspect/remove outliers (requires xml-file)',
-            '1C': 'Manual remove stuff',
+            '1C': 'Inspect/remove based on bad friends (requires xml-file)',
+            '1D': 'Manual remove stuff',
             '2': 'Set normalisation grids',
             '3': 'Normalise data',
             '4': 'Calculate experiments',
@@ -455,7 +456,7 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1C', '1A','1B', '2','3','P1','R1', 'R2', 'R3', 'S0'])
+        self.set_enable_menu_items(['1D', '1C', '1A','1B', '2','3','P1','R1', 'R2', 'R3', 'S0'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -574,6 +575,7 @@ class Interactive_Menu():
 
                 self.set_nan_from_list(remove_list)
 
+
     def load_file(self, file_path):
 
         if os.sep not in file_path:
@@ -626,9 +628,16 @@ class Interactive_Menu():
         else:
             print "(0 - {0})".format(self._original_phenotypes.shape[0]-1)
 
+        #INPUT AND DISCARD NON INTs
         try:
             plate = int(raw_input("> "))
         except:
+            plate = None
+            logging.warning("Not a valid plate number")
+
+        #OUT OF RANGE CHECK
+        if self._original_phenotypes.shape[0] <= plate or plate < 0:
+            logging.warning("Out of bounds {0}".format(plate))
             plate = None
 
         return plate
@@ -669,6 +678,25 @@ class Interactive_Menu():
 
         elif task == "1C":
 
+            suspect_list = []
+
+            for p in xrange(self._original_phenotypes.shape[0]):
+                for c in xrange(0, self._original_phenotypes[p].shape[0],2):
+                    for r in xrange(0, self._original_phenotypes[p].shape[1],2):
+
+                        nans = np.isnan(self._original_phenotypes[p][2*c:2*c+2,2*r:2*r+2])
+                        if nans.any():
+                            pos = np.where(nans==False)
+                            for pp in xrange(len(pos[0])):
+                                suspect_list.append((p,2*c+pos[0][pp], 2*r+pos[1][pp]))
+                                print self._original_phenotypes[p][2*c+pos[0][pp],2*r+pos[1][pp]]
+
+            self.review_positions_for_deletion(suspect_list)
+                            
+                
+
+        elif task == "1D":
+
            answer = "0"
            removal_list = []
 
@@ -701,25 +729,38 @@ class Interactive_Menu():
 
                             row = int(raw_input("Which row (0 - {0}): ".format(self._original_phenotypes[plate].shape[0]-1)))
 
+                            if row < 0 or row >= self._original_phenotypes[plate].shape[0]:
+                                row = None
+
+                
                         if answer in ["C", "P"]:
 
                             column = int(raw_input("Which column (0 - {0}): ".format(self._original_phenotypes[plate].shape[1]-1)))
 
-                        if answer == "P":
+                            if column < 0 or column >= self._original_phenotypes[plate].shape[1]:
+                                column = None
 
-                            pos = (plate, row, column)
-                            logging.info("{0} is now selected for removal".format(pos))
-                            removal_list.append(pos)
+                        if None in (row, column):
 
-                        elif answer in ["R", "C"]:
+                            logging.warning("Index out of bounds")
 
-                            pos_list = []
-                            for i in xrange(self._original_phenotypes[plate].shape[answer=="R"]):
-                                pos_list.append((plate,[i,row][answer=="R"],[column,i][answer=="R"]))
+                        else:
 
-                            logging.info("The following positions are not marked for removal {0}".format(pos_list))
+                            if answer == "P":
 
-                            removal_list += pos_list
+                                pos = (plate, row, column)
+                                logging.info("{0} is now selected for removal".format(pos))
+                                removal_list.append(pos)
+
+                            elif answer in ["R", "C"]:
+
+                                pos_list = []
+                                for i in xrange(self._original_phenotypes[plate].shape[answer=="R"]):
+                                    pos_list.append((plate,[i,row][answer=="R"],[column,i][answer=="R"]))
+
+                                logging.info("The following positions are not marked for removal {0}".format(pos_list))
+
+                                removal_list += pos_list
 
                 elif answer == "L":
 
@@ -730,10 +771,11 @@ class Interactive_Menu():
                 elif answer == "" and len(removal_list) > 0:
 
                     answer = str(raw_input("This will remove {0} colonies,".format(len(removal_list))\
-                    +" are you 112% sure? y/N")).upper()
+                    +" are you 112% sure (y/N)? ")).upper()
 
                     if answer == "Y":
                         self.set_nan_from_list(removal_list)
+                        removal_list = [] 
                     
 
         elif task == "2":
