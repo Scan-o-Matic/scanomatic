@@ -26,13 +26,14 @@ def make_linear_interpolation2(data):
         a_pos = map(lambda x: x-1, pos)    
         a_pos = np.array(a_pos)
         a_pos[np.where(a_pos < 0)] = 0    
-        b_pos = map(lambda x: x+1, pos)
+        b_pos = map(lambda x: x+2, pos) # +2 so it gets 3x3
         b_pos = np.array(b_pos)
         #logging.warning("Pos {0}, a_pos {1}, b_pos {2}, data.shape {3}"\
         #    .format(pos, a_pos, b_pos, data.shape))
         b_pos[np.where(b_pos > np.array(data.shape))] -= 1
         cell = data[a_pos[0]:b_pos[0], a_pos[1]:b_pos[1]]
-        f[tuple(pos)] = cell[np.where(cell != 0)].mean()
+        f[tuple(pos)] = cell[np.where(np.logical_and(cell != 0, 
+                np.isnan(cell) == False))].mean()
         #logging.warning("Corrected position {0} to {1}".format(\
         #    pos, f[tuple(pos)]))
     return f
@@ -68,13 +69,41 @@ def get_empty_data_structure(plate, max_row, max_column, depth=None, default_val
 
     return data
 
+def get_default_surface_matrix(data):
+
+    surface_matrix = {}
+    for p in xrange(data.shape[0]):
+        surface_matrix[p] = [[1,0],[0,0]]
+
+    return surface_matrix
+
+def get_norm_surface_origin(data, p, norm_surface, surface_matrix=None):
+
+    if surface_matrix is None:
+        surface_matrix = get_default_surface_matrix(data)
+
+
+    original_norm_surface = norm_surface.copy()
+    
+    for x in xrange(data[p].shape[0]):
+        for y in xrange(data[p].shape[1]):
+            if surface_matrix[p][x % 2][y % 2] == 1:
+                if np.isnan(data[p][x,y]) or data[p][x,y] == 48:
+                    logging.warning("Discarded grid point ({0},{1})".format(\
+                        x,y) + " on plate {0} because it {1}.".format(\
+                        p, ["had no data", "had no growth"][data[p][x,y] == 48]))
+                else:
+                    norm_surface[x, y] = data[p][x, y]
+
+                original_norm_surface[x,y] = np.nan
+                #print x, y
+
+    return norm_surface, original_norm_surface
 
 #USING 1/4th AS NORMALISING GRID
 def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
     if surface_matrix is None:
-        surface_matrix = {}
-        for p in xrange(data.shape[0]):
-            surface_matrix[p] = [[1,0],[0,0]]
+        surface_matrix = get_default_surface_matrix(data)
 
     norm_surfaces = data.copy()*0 
     norm_means = []
@@ -84,23 +113,17 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
             #exp_pp = map(lambda x: x/2, data[p].shape)
             #X, Y = np.mgrid[0:exp_pp[0],0:exp_pp[1]]*2
             norm_surface = norm_surfaces[p]
-            original_norm_surface = norm_surface.copy()
             #norm_surface[X, Y] = data[p][X, Y]
             #m = norm_surface[X, Y].mean()#.mean(1)
             #sd = norm_surface[X, Y].std()#.std(1)
-            for x in xrange(data[p].shape[0]):
-                for y in xrange(data[p].shape[1]):
-                    if surface_matrix[p][x % 2][y % 2] == 1:
-                        if np.isnan(data[p][x,y]) or data[p][x,y] == 48:
-                            logging.warning("Discarded grid point ({0},{1})".format(\
-                                x,y) + " on plate {0} because it {1}.".format(\
-                                p, ["had no data", "had no growth"][data[p][x,y] == 48]))
-                        else:
-                            norm_surface[x, y] = data[p][x, y]
 
-                        original_norm_surface[x,y] = np.nan
-                        #print x, y
-            original_norms = norm_surface[np.where(np.logical_and(norm_surface != 0 , np.isnan(norm_surface) == False))]
+            norm_surface, original_norm_surface = get_norm_surface_origin(data,
+                                            p, norm_surface, surface_matrix)
+
+            original_norms = norm_surface[np.where(\
+                            np.logical_and(norm_surface != 0 , 
+                            np.isnan(norm_surface) == False))]
+
             m = original_norms.mean()
             sd = original_norms.std()
 
@@ -118,11 +141,14 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
 
             if only_linear:
                 norm_surface = \
-                    make_linear_interpolation(norm_surface)
+                    make_linear_interpolation2(norm_surface)
             else:
                 norm_surface = \
                     make_cubic_interpolation(norm_surface)
-            norm_surface[np.where(np.isnan(original_norm_surface))] = np.nan
+            
+            #norm_surface[np.where(np.isnan(original_norm_surface))] = np.nan 
+
+            norm_surfaces[p] = norm_surface
             norm_means.append(m)
             logging.info('Going for next plate')
         else:
@@ -339,9 +365,13 @@ def get_interactive_norm_surface_matrix(data):
 
 def get_normalised_values(data, surface_matrices):
 
-    norm_surface, norm_means = get_norm_surface(data, surface_matrix=surface_matrices)
+    norm_surface, norm_means = get_norm_surface(data, 
+                        surface_matrix=surface_matrices, 
+                        only_linear=True)
     normed_data = data.copy() * np.nan
-    logging.info("The norm-grid means where {0}".format( norm_means ))
+    logging.info("The norm-grid means where {0} (surface mean was {1})".format( norm_means, 
+            [np.mean(p[np.where(np.isnan(p)==False)]) for p in norm_surface] ))
+    logging.info("Zero positions in normsurface: {0}".format([(p == 0).sum() for p in norm_surface]))
     for p in xrange(data.shape[0]):
         normed_data[p] = (data[p] - norm_surface[p]) + norm_means[p]
 
