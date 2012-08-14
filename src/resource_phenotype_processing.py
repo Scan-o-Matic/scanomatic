@@ -51,6 +51,38 @@ def make_cubic_interpolation(data):
     f[nans] = f2[nans]
     return f
 
+def make_griddata_interpolation(plate, method='cubic'):
+
+
+    points = np.where(np.logical_and(np.isnan(plate) == False, 
+        plate > 0))
+
+    values = plate[points]
+
+    x_grid, y_grid = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
+
+    res = scint.griddata(points, values, (x_grid, y_grid), method = method)
+
+    if np.isnan(res).sum() > 0:
+
+        methods = [(0,'cubic'), (1,'linear'), (2,'nearest')]
+        method_int_dict = {m[1]: m[0] for m in methods}
+        int_method_dict = {m[0]: m[1] for m in methods}
+        mval = method_int_dict[method] 
+
+        if mval < 2:
+
+            method = int_method_dict[mval+1]
+
+            res = make_griddata_interpolation(res, method=method)
+
+        else:
+
+            logging.warning("There are still empty positions,"\
+                    +" it should not be possible!")
+
+    return res
+
 #NEWEST PRECOG RATES
 def get_empty_data_structure(plate, max_row, max_column, depth=None, default_value=48):
     data = np.array([None]*(plate+1), dtype=np.object)
@@ -144,7 +176,8 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
                     make_linear_interpolation2(norm_surface)
             else:
                 norm_surface = \
-                    make_cubic_interpolation(norm_surface)
+                    make_griddata_interpolation(norm_surface)
+                    # make_cubic_interpolation(norm_surface)
             
             #norm_surface[np.where(np.isnan(original_norm_surface))] = np.nan 
 
@@ -366,8 +399,8 @@ def get_interactive_norm_surface_matrix(data):
 def get_normalised_values(data, surface_matrices):
 
     norm_surface, norm_means = get_norm_surface(data, 
-                        surface_matrix=surface_matrices, 
-                        only_linear=True)
+                        surface_matrix=surface_matrices)
+
     normed_data = data.copy() * np.nan
     logging.info("The norm-grid means where {0} (surface mean was {1})".format( norm_means, 
             [np.mean(p[np.where(np.isnan(p)==False)]) for p in norm_surface] ))
