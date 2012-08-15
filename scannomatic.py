@@ -1034,13 +1034,9 @@ if __name__ == "__main__":
 
     #DEBUGGING
     LOGGING_LEVELS = {'critical': logging.CRITICAL,
-
                       'error': logging.ERROR,
-
                       'warning': logging.WARNING,
-
                       'info': logging.INFO,
-
                       'debug': logging.DEBUG}
 
     if args.debug_level in LOGGING_LEVELS.keys():
