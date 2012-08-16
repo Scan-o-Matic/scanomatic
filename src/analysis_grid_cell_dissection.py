@@ -80,16 +80,44 @@ def points_in_circle(circle, arr):
 #
 
 
+class Log_Garbage_Collector(object):
+
+    def warning(self, *args, **kwargs):
+
+        pass
+
+    def info(self, *args, **kwargs):
+
+        pass
+
+    def debug(self, *args, **kwargs):
+
+        pass
+
+    def error(self, *args, **kwargs):
+
+        pass
+
+    def critical(self, *args, **kwargs):
+
+        pass
+
+
 class Cell_Item():
 
-    def __init__(self, parent, identifier):
+    def __init__(self, parent, identifier, grid_array):
         """Cell_Item is a super-class for Blob, Backgroun and Cell and should
         not be accessed directly.
 
-        It takes one argument:
+        It takes these argument:
+
+        @parent         The parent of the class
 
         @identifier     A id list (plate, row, column) so that it knows its
                         position.
+
+        @grid_array     The first image_section (will initialize a filter
+                        array of the same size.
 
         It has some functions:
 
@@ -104,7 +132,15 @@ class Cell_Item():
                             in the center."""
 
         self._parent = parent
-        self.logger = self._parent.logger
+
+        if parent is not None:
+            self.logger = self._parent.logger
+        else:
+            self.logger = Log_Garbage_Collector()
+
+        self.grid_array = grid_array.copy()
+        self.filter_array = np.zeros(grid_array.shape, dtype=grid_array.dtype)
+
         self._identifier = identifier
         self.features = {}
         self.CELLITEM_TYPE = 0
@@ -118,6 +154,15 @@ class Cell_Item():
     def set_data_source(self, data_source):
 
         self.grid_array = data_source
+
+        if self.grid_array.shape != self.filter_array.shape:
+
+            self.logger.warning("GRID CELL " + \
+                    "{0}: I just changed shape! Why?".format(
+                    self._identifier))
+
+            self.filter_array = np.zeros(self.grid_array.shape,
+                                    dtype=self.grid_array.dtype)
 
     def set_type(self):
 
@@ -248,9 +293,10 @@ class Cell_Item():
 
             self.features['perimeter'] = None
 
+
     def get_round_kernel(self, radius=6, outline=False):
 
-        round_kernel = np.zeros(((radiusi + 1) * 2 + 1,
+        round_kernel = np.zeros(((radius + 1) * 2 + 1,
                         (radius + 1) * 2 + 1)).astype(
                         self.filter_array.dtype)
 
@@ -282,12 +328,11 @@ class Blob(Cell_Item):
                     threshold=None, use_fallback_detection=False,
                     image_color_logic="inv", center=None, radius=None):
 
-        Cell_Item.__init__(self, parent, identifier)
+        Cell_Item.__init__(self, parent, identifier, grid_array)
 
-        self.grid_array = grid_array
         self.threshold = threshold
         self.use_fallback_detection = use_fallback_detection
-        self.filter_array = None
+
         self.old_trash = None
         self.trash_array = None
         self.image_color_logic = image_color_logic
@@ -320,6 +365,9 @@ class Blob(Cell_Item):
         pass
 
     def detect_fill(self, prob_array):
+        """This function is not in use and should not be called"""
+
+        return None
 
         self.filter_array = np.zeros(self.filter_array.shape)
         still_blob = True
@@ -1183,9 +1231,7 @@ class Background(Cell_Item):
 
     def __init__(self, parent, identifier, grid_array, blob, run_detect=True):
 
-        Cell_Item.__init__(self, parent, identifier)
-
-        self.grid_array = grid_array
+        Cell_Item.__init__(self, parent, identifier, grid_array)
 
         if isinstance(blob, Blob):
 
@@ -1264,12 +1310,11 @@ class Cell(Cell_Item):
     def __init__(self, parent, identifier, grid_array,
                         run_detect=True, threshold=-1):
 
-        Cell_Item.__init__(self, parent, identifier)
+        Cell_Item.__init__(self, parent, identifier, grid_array)
 
-        self.grid_array = grid_array
         self.threshold = threshold
 
-        self.filter_array = None
+        self.filter_array[:,:] = 1
 
         if run_detect:
 
@@ -1281,5 +1326,4 @@ class Cell(Cell_Item):
 
         The function takes no argument.
         """
-
-        self.filter_array = np.ones(self.grid_array.shape, dtype=bool)
+        pass
