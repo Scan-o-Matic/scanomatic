@@ -115,6 +115,64 @@ class Test_Grid_Cell_Cell(Test_Grid_Cell_Item):
         self.assertAlmostEqual(i.features['median'], np.median(I), places=3)
         self.assertEquals(i.features['pixelsum'], I.sum())
 
+class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
+
+    Item = gc.Blob
+
+    def test_do_analysis(self):
+
+        I = np.random.random((105,104))
+
+        i = self.Item(None, None, I)
+
+        ret = i.do_analysis()
+
+        self.assertEqual(ret, None)
+
+        k = sorted(i.features.keys())
+
+        self.assertListEqual(k, sorted(('area', 'pixelsum', 'mean',
+                        'median', 'IQR', 'IQR_mean', 'perimeter',
+                        'centroid')))
+
+        #self.assertEquals(i.features['area'], I.shape[0] * I.shape[1])
+        #self.assertAlmostEqual(i.features['mean'], I.mean(), places=3)
+        #self.assertAlmostEqual(i.features['median'], np.median(I), places=3)
+        #self.assertEquals(i.features['pixelsum'], I.sum())
+
+    def test_set_blob_from_shape_circle(self):
+
+        I = np.random.random((105,104))
+
+        i = self.Item(None, None, I)
+
+        r = np.random.randint(10, 20)
+
+        i.set_blob_from_shape(circle=((50, 50), r))
+
+        self.assertTupleEqual(i.filter_array.shape, I.shape)
+
+        i.do_analysis()
+
+        self.assertAlmostEqual(abs(1 - np.pi * r ** 2 / i.features['area']), 0.000,
+                                                                places=1)
+
+    def test_set_blob_from_shape_rect(self):
+
+        I = np.random.random((105,104))
+
+        i = self.Item(None, None, I)
+
+        rect = [[21, 24], [56, 71]]
+        r_area = (rect[1][0] - rect[0][0], rect[1][1] - rect[0][1])
+ 
+        i.set_blob_from_shape(rect=rect)
+
+        self.assertTupleEqual(i.filter_array.shape, I.shape)
+
+        i.do_analysis()
+
+        self.assertEqual(i.features['area'], r_area[0] * r_area[1])
 
 if __name__ == "__main__":
 

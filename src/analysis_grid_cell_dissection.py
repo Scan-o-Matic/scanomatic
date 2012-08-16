@@ -51,7 +51,7 @@ def points_in_circle(circle, arr):
     Usage:
 
     raster = np.fromfunction(lambda i,j: 100+10*i+j, shape, dtype=int)
-    points_iterator = points_in_circle((i0,j0,r),raster)
+    points_iterator = points_in_circle(((i0,j0),r),raster)
     pts = np.array(list(points_iterator))
 
     Originally written by jetxee
@@ -62,18 +62,19 @@ def points_in_circle(circle, arr):
     extract-points-within-a-shape-from-a-raster
     """
 
-    origo, r = circle
+    (i0, j0), r = circle
 
     def intceil(x):
         return int(np.ceil(x))
 
-    for i in xrange(intceil(origo[0] - r), intceil(origo[0] + r)):
+    for i in xrange(intceil(i0 - r), intceil(i0 + r)):
 
         ri = np.sqrt(r ** 2 - (i - i0) ** 2)
 
-        for j in xrange(intceil(origo[1] - ri), intceil(origo[1] + ri)):
+        for j in xrange(intceil(j0 - ri), intceil(j0 + ri)):
 
-            yield arr[i][j]
+            yield (i, j)
+            #yield arr[i][j]
 
 #
 # CLASSES Cell_Item
@@ -397,8 +398,9 @@ class Blob(Cell_Item):
                 Where origo is a tuple itself (x,y)
         """
 
+        self.filter_array[:,:] = 0
+
         if rect:
-            self.filter_array = np.zeros(self.grid_array.shape, dtype=bool)
 
             self.filter_array[rect[0][0]: rect[1][0],
                                 rect[0][1]: rect[1][1]] = True
@@ -410,7 +412,9 @@ class Blob(Cell_Item):
 
             pts_iterator = points_in_circle(circle, raster)
 
-            self.filter_array = np.array(list(pts_iterator), dtype=bool)
+            for pt in pts_iterator:
+                self.filter_array[pt] = 1
+
 
     def set_threshold(self, threshold=None, relative=False, im=None):
         """
