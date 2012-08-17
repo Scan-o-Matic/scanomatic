@@ -1080,7 +1080,7 @@ class Blob(Cell_Item):
         #DEBUG CODE END
 
         #De-noising the image with a smooth
-        self.filter_array = gaussian_filter(self.grid_array, 2)
+        detect_im = gaussian_filter(self.grid_array, 2)
 
         #DEBUG CODE START
         #plt.subplot(222, title = 'Image after gauss')
@@ -1090,7 +1090,7 @@ class Blob(Cell_Item):
         #DEBUG CODE END
 
         #Threshold the image
-        self.threshold_detect(im=self.filter_array)
+        self.threshold_detect(im=detect_im)
 
         #DEBUG CODE START
         #plt.subplot(224, title = 'Filter after threshold')
@@ -1115,7 +1115,8 @@ class Blob(Cell_Item):
         #print kernel.astype(int)
         #print "***Erosion kernel ready"
 
-        self.filter_array = binary_erosion(self.filter_array, structure=kernel)
+        binary_erosion(self.filter_array, structure=kernel,
+                                    output=self.filter_array)
 
         #Erode, radius 6, iterations = default (1)
         #kernel = cv.CreateStructuringElementEx(radius*2+1, radius*2+1,
@@ -1133,14 +1134,15 @@ class Blob(Cell_Item):
         kernel = self.get_round_kernel(radius=4)
 
         #print "Kernel in place"
-        self.filter_array = binary_dilation(self.filter_array,
-                                            structure=kernel)
+        binary_dilation(self.filter_array, structure=kernel,
+                                    output=self.filter_array)
 
         #cv.Dilate(mat, mat, kernel)
         #print "Dilated"
         #print np.sum(self.filter_array), "pixels inside at this stage"
 
-        self.filter_array = binary_closing(self.filter_array, structure=kernel)
+        binary_closing(self.filter_array, structure=kernel,
+                                    output=self.filter_array)
 
         #print "Closing applied"
         #print np.sum(self.filter_array), "pixels inside at this stage"
@@ -1150,8 +1152,8 @@ class Blob(Cell_Item):
         #print "Edged detected"
         #print np.sum(self.filter_array), "pixels inside at this stage"
 
-        self.filter_array = binary_fill_holes(self.filter_array,
-                                        structure=np.ones((5, 5)))
+        binary_fill_holes(self.filter_array, structure=np.ones((5, 5)),
+                                    output=self.filter_array)
 
         #print "Holes filled"
         #print np.sum(self.filter_array), "pixels inside at this stage"

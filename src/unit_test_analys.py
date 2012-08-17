@@ -291,7 +291,19 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
         self.assertEqual(i.get_circularity(), 1000)
 
+    def test_detect_threshold(self):
 
+        i = self.Item(None, None, self.I.copy())
+
+        i.set_blob_from_shape(circle=((50, 50), 20))
+
+        i_filter = i.filter_array.copy()
+
+        I2 = np.random.uniform(40, shape=self.i_shape)
+
+        i.grid_array[np.where(i.filter_array)] = I2[np.where(i.filter_array)]
+
+        
 if __name__ == "__main__":
 
     unittest.main()
