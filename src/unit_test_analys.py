@@ -326,6 +326,30 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
         self.assertEqual(i.grid_array[np.where(i.filter_array)].sum(),
                     i.grid_array[np.where(i_filter)].sum())
 
+    def test_manual_detect(self):
+
+        i = self.Item(None, None, self.I.copy())
+
+        i.set_blob_from_shape(circle=((50, 50), 20))
+
+        i_filter = i.filter_array.copy()
+
+        self.assertIsNot(i_filter, i.filter_array)
+
+        I2 = np.random.normal(40, size=self.i_shape)
+
+        i.grid_array[np.where(i.filter_array)] = I2[np.where(i.filter_array)]
+
+        i.manual_detect((45, 50), 25)
+
+        self.assertGreater(np.abs(i.filter_array - i_filter).sum(), 0)
+ 
+        i_filter = i.filter_array.copt()
+
+        i.set_blob_from_shape(circle=((45, 50), 25))
+
+        self.assertEqual(np.abs(i.filter_array - i_filter).sum(), 0)
+
 if __name__ == "__main__":
 
     unittest.main()
