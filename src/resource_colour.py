@@ -483,7 +483,7 @@ class Color_Image():
         im_all_blobs = cell.Blob(self._parent, self._im_path,
                 self.get_gs_im(), 
                 run_detect=False, threshold=None,
-                use_fallback_detection=False, image_color_logic = "inv",
+                use_fallback_detection=False, image_color_logic = "norm",
                 center=None, radius=None)
 
         im_all_blobs.set_first_step_filtering()
@@ -578,7 +578,7 @@ class Color_Image():
                 blob = cell.Blob(self._parent, f.get_identifier(), 
                         self.get_gs_im(f.get_rect()),
                         run_detect=True, threshold=None,
-                        use_fallback_detection=False, image_color_logic = "inv",
+                        use_fallback_detection=False, image_color_logic = "norm",
                         center=None, radius=None)
                 q_inv = blob.get_candidate_blob_ranks()[1][0]
                 if q_inv > 900:

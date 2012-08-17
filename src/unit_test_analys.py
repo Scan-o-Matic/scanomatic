@@ -265,7 +265,7 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
         i.filter_array[:,:] = 0
         c_center = (50, 50)
-        c_r = 30
+        c_r = 20
         circle = gc.points_in_circle((c_center, c_r))
 
         for pos in circle:
@@ -287,7 +287,7 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
         self.assertGreater(i.get_circularity(), 2.0)
 
-        i.filter_array[:,:] = 0
+        i.filter_array *= 0
 
         self.assertEqual(i.get_circularity(), 1000)
 
@@ -299,11 +299,33 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
         i_filter = i.filter_array.copy()
 
-        I2 = np.random.uniform(40, shape=self.i_shape)
+        self.assertIsNot(i_filter, i.filter_array)
+
+        I2 = np.random.normal(40, size=self.i_shape)
 
         i.grid_array[np.where(i.filter_array)] = I2[np.where(i.filter_array)]
 
-        
+        i.threshold_detect(threshold=10)        
+
+        self.assertEqual(np.abs(i_filter - i.filter_array).sum(), 0)
+
+        self.assertEqual(i.grid_array[np.where(i.filter_array)].sum(),
+                    i.grid_array[np.where(i_filter)].sum())
+
+        i.threshold_detect(threshold=10, color_logic="inv")
+
+        self.assertEqual(np.abs((i_filter == 0) - i.filter_array).sum(), 0)
+
+        self.assertEqual(i.grid_array[np.where(i.filter_array)].sum(),
+                    i.grid_array[np.where(i_filter == 0)].sum())
+
+        i.threshold_detect()
+
+        self.assertEqual(np.abs(i_filter - i.filter_array).sum(), 0)
+
+        self.assertEqual(i.grid_array[np.where(i.filter_array)].sum(),
+                    i.grid_array[np.where(i_filter)].sum())
+
 if __name__ == "__main__":
 
     unittest.main()

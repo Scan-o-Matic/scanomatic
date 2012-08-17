@@ -208,7 +208,11 @@ class Cell_Item():
         self.filter_array = np.zeros(grid_array.shape, dtype=grid_array.dtype)
 
         self._identifier = identifier
+
         self.features = {}
+        self._features_key_list = ['area', 'mean', 'median', 'IQR',
+                    'IQR_mean','pixelsum']
+
         self.CELLITEM_TYPE = 0
         self.old_filter = None
         self.set_type()
@@ -277,7 +281,10 @@ class Cell_Item():
         Cell            3
         """
 
+
         if self.CELLITEM_TYPE == 0 or self.filter_array == None:
+
+            self.features = dict()
 
             self.logger.warning("GRID CELL " + \
                     "{0}: Not properly initialized cell compartment".format(
@@ -285,6 +292,11 @@ class Cell_Item():
 
             return None
 
+       
+
+        self.features = {k: None for k in self._features_key_list}
+
+ 
         self.features['area'] = self.filter_array.sum()
         self.features['pixelsum'] = \
                 self.grid_array[np.where(self.filter_array)].sum()
@@ -392,7 +404,7 @@ class Blob(Cell_Item):
 
     def __init__(self, parent, identifier, grid_array, run_detect=True,
                     threshold=None, use_fallback_detection=False,
-                    image_color_logic="inv", center=None, radius=None):
+                    image_color_logic="norm", center=None, radius=None):
 
         Cell_Item.__init__(self, parent, identifier, grid_array)
 
@@ -402,6 +414,7 @@ class Blob(Cell_Item):
         self.old_trash = None
         self.trash_array = None
         self.image_color_logic = image_color_logic
+        self._features_key_list += ['centroid', 'perimeter']
 
         self.histogram = hist.Histogram(self.grid_array, run_at_init=False)
 
@@ -463,12 +476,12 @@ class Blob(Cell_Item):
                 Where origo is a tuple itself (x,y)
         """
 
-        self.filter_array[:,:] = 0
+        self.filter_array *= 0
 
         if rect:
 
             self.filter_array[rect[0][0]: rect[1][0],
-                                rect[0][1]: rect[1][1]] = True
+                                rect[0][1]: rect[1][1]] = 1
 
         elif circle:
 
@@ -629,7 +642,8 @@ class Blob(Cell_Item):
         offset = [np.round(i[0] - i[1] / 2.0) for i in \
                 zip(center_of_mass_position,  perfect_blob.shape)]
 
-        diff_array = get_array_subtraction(c_array, perfect_blob, offset)
+        diff_array = np.abs(get_array_subtraction(c_array,
+                                    perfect_blob, offset))
 
         ###DEBUG CIRCULARITY
         #if self.grid_array.max() < 1000:
@@ -896,11 +910,11 @@ class Blob(Cell_Item):
 
         if color_logic == "inv":
 
-            self.filter_array[np.where(im > self.threshold)] = 1
+            self.filter_array[np.where(im < self.threshold)] = 1
 
         else:
 
-            self.filter_array[np.where(im < self.threshold)] = 1
+            self.filter_array[np.where(im > self.threshold)] = 1
 
     def manual_detect(self, center, radius):
 
