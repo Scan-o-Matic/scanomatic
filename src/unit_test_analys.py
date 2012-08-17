@@ -78,28 +78,34 @@ class Test_Grid_Cell_Item(unittest.TestCase):
 
         i.set_data_source(I2)
 
+        self.assertIs(i.grid_array, I2)
+        self.assertIsNot(i.grid_array, I1)
+
         self.assertEqual((I2 == i.grid_array).sum(),
                             I2.shape[0] * I2.shape[1])
 
         self.assertTupleEqual(I2.shape, i.filter_array.shape)
 
+
+
 class Test_Grid_Cell_Cell(Test_Grid_Cell_Item):
 
     Item = gc.Cell
 
+    def setUp(self):
+
+        self.i_shape = (105, 104)
+        self.I = np.random.random(self.i_shape)
+
     def test_filter(self):
 
-        I = np.zeros((105,104))
+        c = self.Item(None, None, self.I)
 
-        c = self.Item(None, None, I)
-
-        self.assertEqual(c.filter_array.sum(), I.shape[0]*I.shape[1])
+        self.assertEqual(c.filter_array.sum(), self.I.shape[0]*self.I.shape[1])
 
     def test_do_analysis(self):
 
-        I = np.random.random((105,104))
-
-        i = self.Item(None, None, I)
+        i = self.Item(None, None, self.I)
 
         ret = i.do_analysis()
 
@@ -110,20 +116,32 @@ class Test_Grid_Cell_Cell(Test_Grid_Cell_Item):
         self.assertListEqual(k, sorted(('area', 'pixelsum', 'mean',
                         'median', 'IQR', 'IQR_mean')))
 
-        self.assertEquals(i.features['area'], I.shape[0] * I.shape[1])
-        self.assertAlmostEqual(i.features['mean'], I.mean(), places=3)
-        self.assertAlmostEqual(i.features['median'], np.median(I), places=3)
-        self.assertEquals(i.features['pixelsum'], I.sum())
+        self.assertEquals(i.features['area'], self.I.shape[0] * self.I.shape[1])
+        self.assertAlmostEqual(i.features['mean'], self.I.mean(), places=3)
+
+        self.assertAlmostEqual(i.features['median'], np.median(self.I),
+                                                            places=3)
+
+        self.assertEquals(i.features['pixelsum'], self.I.sum())
+
+    def test_type(self):
+
+        i = self.Item(None, None, self.I)
+
+        self.assertEqual(i.CELLITEM_TYPE, 3)
 
 class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
     Item = gc.Blob
 
+    def setUp(self):
+
+        self.i_shape = (105, 104)
+        self.I = np.random.random(self.i_shape)
+
     def test_do_analysis(self):
 
-        I = np.random.random((105,104))
-
-        i = self.Item(None, None, I)
+        i = self.Item(None, None, self.I)
 
         ret = i.do_analysis()
 
@@ -159,20 +177,120 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
     def test_set_blob_from_shape_rect(self):
 
-        I = np.random.random((105,104))
-
-        i = self.Item(None, None, I)
+        i = self.Item(None, None, self.I)
 
         rect = [[21, 24], [56, 71]]
         r_area = (rect[1][0] - rect[0][0], rect[1][1] - rect[0][1])
  
         i.set_blob_from_shape(rect=rect)
 
-        self.assertTupleEqual(i.filter_array.shape, I.shape)
+        self.assertTupleEqual(i.filter_array.shape, self.I.shape)
 
         i.do_analysis()
 
         self.assertEqual(i.features['area'], r_area[0] * r_area[1])
+
+    def test_full_empty_filters(self):
+
+        i = self.Item(None, None, self.I)
+
+        i.filter_array = np.zeros(self.i_shape)
+
+        i.do_analysis()
+
+        self.assertEqual(i.features['area'], 0)
+        self.assertEqual(i.features['pixelsum'], 0)
+
+        i.filter_array = np.ones(self.i_shape)
+
+        i.do_analysis()
+
+        self.assertEqual(i.features['area'], self.i_shape[0] * self.i_shape[1])
+        self.assertEqual(i.features['pixelsum'], self.I.sum())
+
+    def test_type(self):
+
+        i = self.Item(None, None, self.I)
+
+        self.assertEqual(i.CELLITEM_TYPE, 1)
+
+    def test_thresholds(self):
+
+        locA = 2
+        locB = 30
+        locC = 200
+
+        I1 = np.random.normal(locA, size=self.i_shape)
+        I2 = np.random.normal(locB, size=self.i_shape)
+
+        I = np.random.randint(0, 2, self.i_shape)
+
+        I[np.where(I == 1)] = I1[np.where(I == 1)]
+        I[np.where(I == 0)] = I2[np.where(I == 0)]
+
+        i = self.Item(None, None, I)
+
+
+        for t in xrange(-5, 10):
+
+            i.set_threshold(threshold=t)
+
+            self.assertEqual(i.threshold, t)
+
+        t2 = np.random.randint(5, 15)
+        i.set_threshold(threshold=t2, relative=True)
+
+        self.assertEqual(t2 + t, i.threshold)
+
+        i.set_threshold(threshold=0)
+        i.set_threshold()
+
+        self.assertLess(i.threshold, locB)
+        self.assertGreater(i.threshold, locA)
+
+        I3 = np.random.normal(locC, size=self.i_shape)
+
+        II = I.copy()
+
+        II[np.where(II < i.threshold)] = I3[np.where(II < i.threshold)]
+
+        i.set_threshold(im=II)
+
+        self.assertLess(i.threshold, locC)
+        self.assertGreater(i.threshold, locB)
+
+    def test_cirularity_of_filter(self):
+
+        i = self.Item(None, None, self.I)
+
+        i.filter_array[:,:] = 0
+        c_center = (50, 50)
+        c_r = 30
+        circle = gc.points_in_circle((c_center, c_r))
+
+        for pos in circle:
+
+            i.filter_array[pos] = 1
+
+        c_o_m, radius = i.get_ideal_circle(i.filter_array)
+        c_o_m_fraction = sum([abs(1 - x[0] / x[1]) for x in \
+            zip(c_o_m, c_center)])
+
+        self.assertAlmostEqual(c_o_m_fraction, 0.000, places=1)
+        self.assertAlmostEqual(radius/float(c_r), 1.00, places=1)
+        self.assertAlmostEqual(i.get_circularity(), 1.00, places=1) 
+
+        rect = [[21, 24], [56, 71]]
+        r_area = (rect[1][0] - rect[0][0], rect[1][1] - rect[0][1])
+
+        i.set_blob_from_shape(rect=rect)
+
+        self.assertGreater(i.get_circularity(), 2.0)
+
+        i.filter_array[:,:] = 0
+
+        self.assertEqual(i.get_circularity(), 1000)
+
 
 if __name__ == "__main__":
 

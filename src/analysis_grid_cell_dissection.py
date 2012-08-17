@@ -37,7 +37,7 @@ import resource_histogram as hist
 #
 
 
-def points_in_circle(circle, arr):
+def points_in_circle(circle):
     """A generator to return all points whose indices are within given circle.
 
     Function takes two arguments:
@@ -46,7 +46,7 @@ def points_in_circle(circle, arr):
                 Where i and j are the center coordinates of the arrays first
                 and second dimension
 
-    @arr        An array
+    @arr        An array (NOT ANYMORE, just give positions!)
 
     Usage:
 
@@ -75,6 +75,71 @@ def points_in_circle(circle, arr):
 
             yield (i, j)
             #yield arr[i][j]
+
+
+def get_array_subtraction(A1, A2, offset, output = None):
+    """Makes offsetted subtractions for A1 - A2 independent of sizes
+
+    If output is supplied it will be fed directly into it, else,
+    it will just return a new array.
+    """
+
+    o1_low = offset[0]
+    o2_low = offset[1]
+
+    o1_high = o1_low + A2.shape[0]
+    o2_high = o2_low + A2.shape[1]
+
+    if o1_low < 0:
+
+        b1_low = -o1_low
+        o1_low = 0
+
+    else:
+
+        b1_low = 0
+
+    if o2_low < 0:
+
+        b2_low = -o2_low
+        o2_low = 0
+
+    else:
+
+        b2_low = 0
+
+    if o1_high > A1.shape[0]:
+
+        b1_high = A2.shape[0] - (o1_high - A1.shape[0])
+        o1_high = A1.shape[0]
+
+    else:
+
+        b1_high = A2.shape[0]
+
+    if o2_high > A1.shape[1]:
+
+        b2_high = A2.shape[1] - (o2_high - A1.shape[1])
+        o2_high = A1.shape[1]
+
+    else:
+
+        b2_high = A2.shape[1]
+
+    if output is None:
+
+        diff_array = A1.copy()
+
+        diff_array[o1_low: o1_high, o2_low: o2_high] -= \
+                    A2[b1_low: b1_high, b2_low: b2_high]
+
+        return diff_array
+
+    else:
+
+        output[o1_low: o1_high, o2_low: o2_high] = \
+                    A1[o1_low: o1_high, o2_low: o2_high] - \
+                    A2[b1_low: b1_high, b2_low: b2_high]
 
 #
 # CLASSES Cell_Item
@@ -410,7 +475,7 @@ class Blob(Cell_Item):
             raster = np.fromfunction(lambda i, j: 100 + 10 * i + j,
                             self.grid_array.shape, dtype=int)
 
-            pts_iterator = points_in_circle(circle, raster)
+            pts_iterator = points_in_circle(circle)  #  , raster)
 
             for pt in pts_iterator:
                 self.filter_array[pt] = 1
@@ -435,7 +500,7 @@ class Blob(Cell_Item):
         @im             Optional alternative image source
         """
 
-        if threshold:
+        if threshold is not None:
 
             if relative:
 
@@ -499,7 +564,7 @@ class Blob(Cell_Item):
         if np.isnan(offset).sum() > 0:
             offset = np.zeros(2)
 
-        return self.get_array_subtraction(other_img, self.grid_array, offset)
+        return get_array_subtraction(other_img, self.grid_array, offset)
 
     def get_ideal_circle(self, c_array=None):
         """
@@ -561,9 +626,10 @@ class Blob(Cell_Item):
 
         perfect_blob = self.get_round_kernel(radius=radius)
 
-        offset = np.round(center_of_mass_position - perfect_blob.shape / 2.0)
+        offset = [np.round(i[0] - i[1] / 2.0) for i in \
+                zip(center_of_mass_position,  perfect_blob.shape)]
 
-        diff_array = self.get_array_subtraction(c_array, perfect_blob, offset)
+        diff_array = get_array_subtraction(c_array, perfect_blob, offset)
 
         ###DEBUG CIRCULARITY
         #if self.grid_array.max() < 1000:
@@ -572,58 +638,8 @@ class Blob(Cell_Item):
             #plt.show()
         ###DEBUG END
 
-        return diff_array.sum() / np.sqrt(c_array.sum())
+        return diff_array.sum() / (np.sqrt(c_array.sum()) * np.pi)
 
-    def get_array_subtraction(self, A1, A2, offset):
-
-        o1_low = offset[0]
-        o2_low = offset[1]
-
-        o1_high = o1_low + A2.shape[0]
-        o2_high = o2_low + A2.shape[1]
-
-        if o1_low < 0:
-
-            b1_low = -o1_low
-            o1_low = 0
-
-        else:
-
-            b1_low = 0
-
-        if o2_low < 0:
-
-            b2_low = -o2_low
-            o2_low = 0
-
-        else:
-
-            b2_low = 0
-
-        if o1_high > A1.shape[0]:
-
-            b1_high = A2.shape[0] - (o1_high - A1.shape[0])
-            o1_high = A1.shape[0]
-
-        else:
-
-            b1_high = A2.shape[0]
-
-        if o2_high > A1.shape[1]:
-
-            b2_high = A2.shape[1] - (o2_high - A1.shape[1])
-            o2_high = A1.shape[1]
-
-        else:
-
-            b2_high = A2.shape[1]
-
-        diff_array = A1.copy()
-
-        diff_array[o1_low: o1_high, o2_low: o2_high] -= \
-                    A2[b1_low: b1_high, b2_low: b2_high]
-
-        return diff_array
 
     #
     # DETECT functions
@@ -864,13 +880,9 @@ class Blob(Cell_Item):
         @im             Optional alternative image source
         """
 
-        if self.threshold == None:
+        if self.threshold == None or threshold is not None:
 
             self.set_threshold(im=im, threshold=threshold)
-
-        else:
-
-            self.set_threshold(threshold=threshold)
 
         if im is None:
 
@@ -880,17 +892,19 @@ class Blob(Cell_Item):
 
             color_logic = self.image_color_logic
 
+        self.filter_array *= 0
+
         if color_logic == "inv":
 
-            self.filter_array = (im > self.threshold)
+            self.filter_array[np.where(im > self.threshold)] = 1
 
         else:
 
-            self.filter_array = (im < self.threshold)
+            self.filter_array[np.where(im < self.threshold)] = 1
 
     def manual_detect(self, center, radius):
 
-        self.filter_array = np.zeros(self.grid_array.shape)
+        self.filter_array *= 0
 
         stencil = self.get_round_kernel(int(np.round(radius)))
         x_size = (stencil.shape[0] - 1) / 2
@@ -936,6 +950,8 @@ class Blob(Cell_Item):
         #DEBUG CODE END
 
     def edge_detect_sobel(self):
+        """This is a scetch for another detect, and should Not
+        bw used"""
 
         from matplotlib import pyplot
 
