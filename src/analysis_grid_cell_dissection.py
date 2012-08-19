@@ -25,7 +25,7 @@ from scipy.stats.mstats import mquantiles, tmean, trim
 from scipy.ndimage.filters import sobel
 from scipy.ndimage import binary_erosion, binary_dilation,\
     binary_fill_holes, binary_closing, center_of_mass, label, laplace,\
-    gaussian_filter
+    gaussian_filter, median_filter
 #
 # SCANNOMATIC LIBRARIES
 #
@@ -76,7 +76,43 @@ def points_in_circle(circle):
             yield (i, j)
             #yield arr[i][j]
 
+def get_round_kernel(radius=6, outline=False):
 
+    round_kernel = np.zeros(((radius + 1) * 2 + 1,
+                    (radius + 1) * 2 + 1))
+
+    center_1D = radius + 1
+
+    y, x = np.ogrid[-radius: radius, -radius: radius]
+
+    if outline:
+
+        index = radius ** 2 - 1 <= x ** 2 + y ** 2 <= radius ** 2 + 2
+
+    else:
+
+        index = x ** 2 + y ** 2 <= radius ** 2
+
+    round_kernel[center_1D - radius: center_1D + radius,
+            center_1D - radius: center_1D + radius][index] = True
+
+    return round_kernel
+
+def get_round_kernel2(radius=3):
+
+    round_kernel = np.zeros(((radius + 1) * 2 + 1,
+                    (radius + 1) * 2 + 1))
+
+    center_1D = radius + 1
+   
+    circle = points_in_circle(((center_1D, center_1D), radius))
+
+    for pt in circle:
+
+        round_kernel[pt] = 1
+
+    return round_kernel
+ 
 def get_array_subtraction(A1, A2, offset, output = None):
     """Makes offsetted subtractions for A1 - A2 independent of sizes
 
@@ -372,28 +408,6 @@ class Cell_Item():
             self.features['perimeter'] = None
 
 
-    def get_round_kernel(self, radius=6, outline=False):
-
-        round_kernel = np.zeros(((radius + 1) * 2 + 1,
-                        (radius + 1) * 2 + 1)).astype(
-                        self.filter_array.dtype)
-
-        center_x, center_y = radius + 1, radius + 1
-
-        y, x = np.ogrid[-radius: radius, -radius: radius]
-
-        if outline:
-
-            index = radius ** 2 - 1 <= x ** 2 + y ** 2 <= radius ** 2 + 2
-
-        else:
-
-            index = x ** 2 + y ** 2 <= radius ** 2
-
-        round_kernel[center_y - radius: center_y + radius,
-                center_x - radius: center_x + radius][index] = True
-
-        return round_kernel
 
 #
 # CLASS Blob
@@ -418,6 +432,11 @@ class Blob(Cell_Item):
 
         self.histogram = hist.Histogram(self.grid_array, run_at_init=False)
 
+        self.kernel = np.array([[0, 0, 1, 0, 0,],
+                                [0, 1, 1, 1, 0,],
+                                [1, 1, 1, 1, 1,],
+                                [0, 1, 1, 1, 0,],
+                                [0, 0, 1, 0, 0,]])
         if run_detect:
 
             if center is not None and radius is not None:
@@ -637,7 +656,7 @@ class Blob(Cell_Item):
 
         radius = round(radius)
 
-        perfect_blob = self.get_round_kernel(radius=radius)
+        perfect_blob = get_round_kernel(radius=radius)
 
         offset = [np.round(i[0] - i[1] / 2.0) for i in \
                 zip(center_of_mass_position,  perfect_blob.shape)]
@@ -920,7 +939,7 @@ class Blob(Cell_Item):
 
         self.filter_array *= 0
 
-        stencil = self.get_round_kernel(int(np.round(radius)))
+        stencil = get_round_kernel(int(np.round(radius)))
         x_size = (stencil.shape[0] - 1) / 2
         y_size = (stencil.shape[1] - 1) / 2
 
@@ -998,7 +1017,7 @@ class Blob(Cell_Item):
         pyplot.savefig('blob_theshold.png')
         pyplot.clf()
 
-        kernel = self.get_round_kernel(radius=3)
+        kernel = get_round_kernel(radius=3)
         self.filter_array = binary_dilation(self.filter_array,
                                             structure=kernel)
 
@@ -1006,7 +1025,7 @@ class Blob(Cell_Item):
         pyplot.savefig('blob_dilation.png')
         pyplot.clf()
 
-        kernel = self.get_round_kernel(radius=2)
+        kernel = get_round_kernel(radius=2)
         self.filter_array = binary_erosion(self.filter_array, structure=kernel)
 
         pyplot.imshow(self.filter_array)
@@ -1015,7 +1034,7 @@ class Blob(Cell_Item):
 
         label_array, number_of_labels = label(self.filter_array)
         #print number_of_labels
-        kernel = self.get_round_kernel(radius=1)
+        kernel = get_round_kernel(radius=1)
         center_size = 2
         circle_parts = []
 
@@ -1086,6 +1105,7 @@ class Blob(Cell_Item):
             self.filter_array += (label_array == c_part)
 
     def set_first_step_filtering(self):
+        """Crashed this on my way to toronto, fix!" """
 
         #DEBUG CODE START
         #from matplotlib import pyplot as plt
@@ -1095,6 +1115,9 @@ class Blob(Cell_Item):
 
         #De-noising the image with a smooth
         detect_im = gaussian_filter(self.grid_array, 2)
+
+        #detect_im = median_filter(self.grid_array, size=(3, 3),
+        #                mode="nearest")
 
         #DEBUG CODE START
         #plt.subplot(222, title = 'Image after gauss')
@@ -1125,12 +1148,12 @@ class Blob(Cell_Item):
         #eroded_mat = cv.CreateMat(mat.rows, mat.cols, cv.CV_8UC1)
 
         #Erosion kernel
-        kernel = self.get_round_kernel(radius=3)
+        #kernel = get_round_kernel(radius=2)
         #print kernel.astype(int)
         #print "***Erosion kernel ready"
 
-        binary_erosion(self.filter_array, structure=kernel,
-                                    output=self.filter_array)
+        self.filter_array = binary_erosion(self.filter_array, 
+                                    structure=self.kernel)
 
         #Erode, radius 6, iterations = default (1)
         #kernel = cv.CreateStructuringElementEx(radius*2+1, radius*2+1,
@@ -1145,18 +1168,18 @@ class Blob(Cell_Item):
         #kernel = cv.CreateStructuringElementEx(radius*2+1, radius*2+1,
         #    radius, radius, cv.CV_SHAPE_ELLIPSE)
 
-        kernel = self.get_round_kernel(radius=4)
+        #kernel = get_round_kernel(radius=4)
 
         #print "Kernel in place"
-        binary_dilation(self.filter_array, structure=kernel,
-                                    output=self.filter_array)
+        self.filter_array = binary_dilation(self.filter_array,
+                                        structure=self.kernel)
 
         #cv.Dilate(mat, mat, kernel)
         #print "Dilated"
         #print np.sum(self.filter_array), "pixels inside at this stage"
 
-        binary_closing(self.filter_array, structure=kernel,
-                                    output=self.filter_array)
+        #self.filter_array = binary_closing(self.filter_array)
+                                    #structure=kernel)
 
         #print "Closing applied"
         #print np.sum(self.filter_array), "pixels inside at this stage"
@@ -1166,8 +1189,8 @@ class Blob(Cell_Item):
         #print "Edged detected"
         #print np.sum(self.filter_array), "pixels inside at this stage"
 
-        binary_fill_holes(self.filter_array, structure=np.ones((5, 5)),
-                                    output=self.filter_array)
+        #self.filter_array = binary_fill_holes(self.filter_array,
+                    #structure=np.ones((5, 5)))
 
         #print "Holes filled"
         #print np.sum(self.filter_array), "pixels inside at this stage"
@@ -1294,11 +1317,13 @@ class Background(Cell_Item):
 
         if self.blob and self.blob.filter_array != None:
 
-            self.filter_array = (self.blob.filter_array == False)
+            self.filter_array[:, :] = 1
 
-            self.filter_array[np.where(self.blob.trash_array)] = False
+            self.filter_array[np.where(self.blob.filter_array)] = 0 
 
-            kernel = self.get_round_kernel(radius=9)
+            self.filter_array[np.where(self.blob.trash_array)] = 1
+
+            kernel = get_round_kernel(radius=9)
 
             self.filter_array = binary_erosion(self.filter_array,
                                 structure=kernel, border_value=1)

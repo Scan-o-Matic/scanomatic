@@ -396,7 +396,7 @@ def get_interactive_norm_surface_matrix(data):
     return norm_surface_matrices
 
 
-def get_normalised_values(data, surface_matrices):
+def get_normalised_values(data, surface_matrices=None):
 
     norm_surface, norm_means = get_norm_surface(data, 
                         surface_matrix=surface_matrices)
@@ -410,7 +410,7 @@ def get_normalised_values(data, surface_matrices):
 
     return normed_data, norm_means
 
-def get_experiment_results(data, surface_matrices):
+def get_experiment_results(data, surface_matrices=None):
     exp_pp = map(lambda x: map(lambda y: y/2, x.shape), data)
     e_mean = np.array([None]*data.shape[0], dtype=np.object)
     e_data = np.array([None]*data.shape[0], dtype=np.object)

@@ -9,83 +9,71 @@ class Test_Grid_Cell_Item(unittest.TestCase):
 
     Item = gc.Cell_Item
 
+    def setUp(self):
+
+        self.I = np.random.random((105, 104))
+        self.Id = ["test", 1, [1, 3]]
+        self.i = self.Item(None, self.Id, self.I)
+
+
     def test_load_no_parent(self):
 
-        I = np.random.random((100, 100))
-        i = self.Item(None, None, I)
-
-        self.assertEqual((I == i.grid_array).sum(), I.shape[0] * I.shape[1])
+        self.assertEqual((self.I == self.i.grid_array).sum(), 
+                            self.I.shape[0] * self.I.shape[1])
 
     def test_identity(self):
 
-        Id = ["test", 1, [1, 3]]
-
-        i = self.Item(None, Id, np.zeros((100, 100)))
-
-        self.assertEqual(Id, i._identifier)
+        self.assertEqual(self.Id, self.i._identifier)
 
     def test_filter_shape(self):
 
-        I = np.random.random(np.random.randint(50, 150, 2))
-
-        i = self.Item(None, None, I)
-
-        self.assertTupleEqual(I.shape, i.filter_array.shape)
+        self.assertTupleEqual(self.I.shape, self.i.filter_array.shape)
 
     def test_logging_behaviour(self):
 
-        i = self.Item(None, None, np.zeros((100, 100)))
-
-        i.logger.info("Test")
-        i.logger.debug("Test")
-        i.logger.warning("Test")
-        i.logger.error("Test")
-        i.logger.critical("Test")
+        self.i.logger.info("Test")
+        self.i.logger.debug("Test")
+        self.i.logger.warning("Test")
+        self.i.logger.error("Test")
+        self.i.logger.critical("Test")
 
     def test_get_round_kernel(self):
 
         refs = []
         tests = []
 
-        i = self.Item(None, None, np.zeros((100, 100)))
-
         for x in xrange(10):
 
             r = np.random.randint(5, 15)
 
-            c = i.get_round_kernel(radius=r)
+            c = gc.get_round_kernel(radius=r)
 
             self.assertAlmostEqual(abs(1 - np.pi * r ** 2 / c.sum()), 0.000,
                                                                     places=1)
 
     def test_do_analysis(self):
 
-        i = self.Item(None, None, np.zeros((100, 100)))
-
-        ret = i.do_analysis()
+        ret = self.i.do_analysis()
 
         self.assertEqual(ret, None)
 
-        self.assertDictEqual(i.features, dict())
+        self.assertDictEqual(self.i.features, dict())
 
     def test_set_data_source(self):
 
-        I1 = np.random.random((100, 100))
-
-        i = self.Item(None, None, I1)
-
         I2 = np.random.random((105, 104))
 
-        i.set_data_source(I2)
+        self.i.set_data_source(I2)
 
-        self.assertIs(i.grid_array, I2)
-        self.assertIsNot(i.grid_array, I1)
+        self.assertIs(self.i.grid_array, I2)
+        self.assertIsNot(self.i.grid_array, self.I)
 
-        self.assertEqual((I2 == i.grid_array).sum(),
+        self.assertEqual((I2 == self.i.grid_array).sum(),
                             I2.shape[0] * I2.shape[1])
 
-        self.assertTupleEqual(I2.shape, i.filter_array.shape)
+        self.assertTupleEqual(I2.shape, self.i.filter_array.shape)
 
+        self.assertGreater(np.abs(self.I - I2).sum(), 0)
 
 
 class Test_Grid_Cell_Cell(Test_Grid_Cell_Item):
@@ -96,6 +84,8 @@ class Test_Grid_Cell_Cell(Test_Grid_Cell_Item):
 
         self.i_shape = (105, 104)
         self.I = np.random.random(self.i_shape)
+        self.Id = ["test", 1, [1, 3]]
+        self.i = self.Item(None, self.Id, self.I)
 
     def test_filter(self):
 
@@ -138,6 +128,14 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
         self.i_shape = (105, 104)
         self.I = np.random.random(self.i_shape)
+        self.Id = ["test", 1, [1, 3]]
+        self.i = self.Item(None, self.Id, self.I)
+
+    def test_type(self):
+
+        i = self.Item(None, None, self.I)
+
+        self.assertEqual(i.CELLITEM_TYPE, 1)
 
     def test_do_analysis(self):
 
@@ -207,12 +205,6 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
         self.assertEqual(i.features['area'], self.i_shape[0] * self.i_shape[1])
         self.assertEqual(i.features['pixelsum'], self.I.sum())
-
-    def test_type(self):
-
-        i = self.Item(None, None, self.I)
-
-        self.assertEqual(i.CELLITEM_TYPE, 1)
 
     def test_thresholds(self):
 
@@ -344,12 +336,62 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
         self.assertGreater(np.abs(i.filter_array - i_filter).sum(), 0)
  
-        i_filter = i.filter_array.copt()
+        i_filter = i.filter_array.copy()
 
         i.set_blob_from_shape(circle=((45, 50), 25))
 
-        self.assertEqual(np.abs(i.filter_array - i_filter).sum(), 0)
+        self.assertLess(np.abs(i.filter_array - \
+                    i_filter).sum()/i_filter.sum(), 0.01)
 
+
+class Test_Grid_Cell_Background(Test_Grid_Cell_Item):
+
+    Item = gc.Background
+
+    def setUp(self):
+
+        self.i_shape = (105, 104)
+        self.I = np.random.random(self.i_shape)
+        self.blob = gc.Blob(None, None, self.I)
+        self.Id = ["test", 1, [1, 3]]
+        self.i = self.Item(None, self.Id, self.I, self.blob,
+                        run_detect=False)
+
+    def test_type(self):
+
+        self.assertEqual(self.i.CELLITEM_TYPE, 2)
+
+    def test_do_analysis(self):
+
+        ret = self.i.do_analysis()
+
+        self.assertEqual(ret, None)
+
+        k = sorted(self.i.features.keys())
+
+        self.assertListEqual(k, sorted(('area', 'pixelsum', 'mean',
+                        'median', 'IQR', 'IQR_mean')))
+
+        #self.assertEquals(i.features['area'], I.shape[0] * I.shape[1])
+        #self.assertAlmostEqual(i.features['mean'], I.mean(), places=3)
+        #self.assertAlmostEqual(i.features['median'], np.median(I), places=3)
+        #self.assertEquals(i.features['pixelsum'], I.sum())
+
+    def test_detect(self):
+
+        r = 30
+        self.blob.set_blob_from_shape(circle=((50, 50), r))
+
+        self.i.detect()
+
+        diff_filter = np.abs(self.blob.filter_array - 1)
+
+        self.assertLessEqual(self.blob.filter_array.sum(),
+                        diff_filter.sum())
+
+        self.assertGreaterEqual(self.i.filter_array.shape[0] *
+                    self.i.filter_array.shape[1] - r ** 2 * np.pi,
+                    self.i.filter_array.sum())
 if __name__ == "__main__":
 
     unittest.main()
