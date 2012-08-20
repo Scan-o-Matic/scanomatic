@@ -2,10 +2,9 @@
 """
 Part of analysis work-flow that produces a grid-array from an image secion.
 """
-
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson","Mats Kvarnstroem", "Andreas Skyman"]
+__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL v3.0"
 __version__ = "0.996"
 __maintainer__ = "Martin Zackrisson"
@@ -33,6 +32,7 @@ import resource_signal as r_signal
 # FUNCTIONS
 #
 
+
 def simulate(measurements, segments):
     segments_left = segments
     true_segment_length = 28
@@ -52,11 +52,9 @@ def simulate(measurements, segments):
 
         if i < signal_start_pos or segments_left == 0:
             measures.append(
-                np.random.rand(1)[0]* noise_max_length )
+                np.random.rand(1)[0] * noise_max_length)
         else:
-            measures.append(
-                true_segment_length
-            )
+            measures.append(true_segment_length)
 
             segments_left -= 1
 
@@ -77,7 +75,7 @@ class Grid_Analysis():
         self.logger = self._parent.logger
 
         self.im = None
-        self.histogram = hist.Histogram(self.im, run_at_init = False)        
+        self.histogram = hist.Histogram(self.im, run_at_init=False)
         self.threshold = None
         #self.best_fit_start_pos = None
         self.best_fit_frequency = None
@@ -88,41 +86,39 @@ class Grid_Analysis():
     # GET functions
     #
 
-    def get_analysis(self, im, pinning_matrix, use_otsu = True, 
-        median_coeff=None, verbose=False, 
-        visual=False, history=[], manual_threshold = None):
+    def get_analysis(self, im, pinning_matrix, use_otsu=True,
+        median_coeff=None, verbose=False,
+        visual=False, history=[], manual_threshold=None):
         """
+        get_analysis is a convenience function for get_spikes and
+        get_signal_position_and_frequency functions run on both
+        dimensions of the image.
 
-            get_analysis is a convenience function for get_spikes and 
-            get_signal_position_and_frequency functions run on both
-            dimensions of the image.
+        (This function sets the self.im for get_spikes.)
 
-            (This function sets the self.im for get_spikes.)
+        The function takes the following arguments:
 
-            The function takes the following arguments:
+        @im         An array / the image
 
-            @im         An array / the image
+        @pinning_matrix  A list/tuple/array where first position is
+                        the number of rows to be detected and second
+                        is the number of columns to be detected.
 
-            @pinning_matrix  A list/tuple/array where first position is
-                            the number of rows to be detected and second
-                            is the number of columns to be detected.
+        @use_otsu   Causes thresholding to be done by Otsu
+                    algorithm (Default)
 
-            @use_otsu   Causes thresholding to be done by Otsu
-                        algorithm (Default)
+        @median_coeff       Coefficient to threshold from the
+                            median when not using Otsu.
 
-            @median_coeff       Coefficient to threshold from the
-                                median when not using Otsu.
+        @verbose   If a lot of things should be printed out
 
-            @verbose   If a lot of things should be printed out
+        @visual     If visual information should be presented.
 
-            @visual     If visual information should be presented.
+        @history    A history of the top-left positions selected
+                    for the particular format for the particular plate
 
-            @history    A history of the top-left positions selected
-                        for the particular format for the particular plate
-
-            The function returns two arrays, one per dimension, of the
-            positions of the spikes and a quality index
-
+        The function returns two arrays, one per dimension, of the
+        positions of the spikes and a quality index
         """
 
         self.im = im
@@ -134,22 +130,28 @@ class Grid_Analysis():
         adjusted_by_history = False
         R = 0
         if history is not None and len(history) > 0:
-            history_rc = (np.array([h[1][0] for h in history]).mean(), 
+
+            history_rc = (np.array([h[1][0] for h in history]).mean(),
                 np.array([h[1][1] for h in history]).mean())
 
             history_f = (np.array([h[2][0] for h in history]).mean(),
                 np.array([h[2][1] for h in history]).mean())
+
         else:
+
             history_rc = None
             history_f = None
- 
+
         #Obtaining current values
         for dimension in xrange(2):
             if median_coeff:
+
                 positions[dimension], measures[dimension] = self.get_spikes(
                     dimension, im, visual, verbose, use_otsu, median_coeff,
                     manual_threshold=manual_threshold)
+
             else:
+
                 positions[dimension], measures[dimension] = self.get_spikes(
                     dimension, im, visual, verbose, use_otsu,
                     manual_threshold=manual_threshold)
@@ -166,51 +168,70 @@ class Grid_Analysis():
             #print "Deleted", del_count, "positions"
             #DEBUG END
 
-            self.logger.info("GRID ARRAY, Peak positions %sth dimension:\n%s" %\
+            self.logger.info(
+                "GRID ARRAY, Peak positions %sth dimension:\n%s" %\
                 (str(dimension), str(positions[dimension])))
 
             best_fit_frequency[dimension] = r_signal.get_signal_frequency(\
                 positions[dimension])
 
-            if best_fit_frequency[dimension] is not None and history_f is not None:
-                if abs(best_fit_frequency[dimension]/float(history_f[dimension]) - 1) > 0.1:
-                    self.logger.warning('GRID ARRAY, frequency abnormality for dimension {0} (Current {1}, Expected {2}'.format(dimension, best_fit_frequency[dimension], history_f))
+            if best_fit_frequency[dimension] is not None \
+                                and history_f is not None:
+
+                if abs(best_fit_frequency[dimension] /\
+                            float(history_f[dimension]) - 1) > 0.1:
+
+                    self.logger.warning(
+                            ('GRID ARRAY, frequency abnormality for ' +\
+                            'dimension {0} (Current {1}, Expected {2}'.format(
+                            dimension, best_fit_frequency[dimension],
+                            history_f))
 
                     adjusted_by_history = True
                     best_fit_frequency[dimension] = history_f[dimension]
 
-            best_fit_positions[dimension] = r_signal.get_true_signal(\
-                im.shape[int(dimension==0)], pinning_matrix[dimension], 
-                positions[dimension], \
-                frequency=best_fit_frequency[dimension], 
+            best_fit_positions[dimension] = r_signal.get_true_signal(
+                im.shape[int(dimension==0)], pinning_matrix[dimension],
+                positions[dimension],
+                frequency=best_fit_frequency[dimension],
                 offset_buffer_fraction=0.5)
 
-            if best_fit_positions[dimension] is not None and history_rc is not None:
-                goodness_of_signal = r_signal.get_position_of_spike(\
-                    best_fit_positions[dimension][0], history_rc[dimension], 
+            if best_fit_positions[dimension] is not None and \
+                                        history_rc is not None:
+
+                goodness_of_signal = r_signal.get_position_of_spike(
+                    best_fit_positions[dimension][0], history_rc[dimension],
                     history_f[dimension])
+
                 if abs(goodness_of_signal) > 0.2:
-                    self.logger.warning("GRID ARRAY, dubious pinning position for\
- dimension {0} (Current signal start {1}, Expected {2} (error: {3}).".format(\
+
+                    self.logger.warning(("GRID ARRAY, dubious pinning " + \
+                        "position for  dimension {0} (Current signal " + \
+                        "start {1}, Expected {2} (error: {3}).".format(
                         dimension, best_fit_positions[dimension][0],
                         history_rc[dimension], goodness_of_signal))
-                    
+
                     adjusted_by_history = True
 
-                    new_fit = r_signal.move_signal([best_fit_positions[dimension]],
-                        [-1*round(goodness_of_signal)], freq_offset=0)
+                    new_fit = r_signal.move_signal(
+                        [best_fit_positions[dimension]],
+                        [-1 * round(goodness_of_signal)], freq_offset=0)
+
                     if new_fit is not None:
-                        self.logger.warning("GRID ARRAY, remapped signal for "+\
-                            "dimension {0} , new signal:\n{1}".format(\
+
+                        self.logger.warning(
+                            "GRID ARRAY, remapped signal for " +\
+                            "dimension {0} , new signal:\n{1}".format(
                             dimension, list(new_fit)))
+
                         best_fit_positions[dimension] = new_fit[0]
 
             ###START HERE MARKING OUT ALL OLD STUFF...
             #best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
                 #self.get_signal_position_and_frequency( measures[dimension],
-                    #pinning_matrix[dimension], verbose )            
- 
-            self.logger.info("GRID ARRAY, Best fit:\n" + \
+                    #pinning_matrix[dimension], verbose)
+
+            self.logger.info("GRID ARRAY, Best fit:\n" +\
                 "* Elements: " + str(pinning_matrix[dimension]) +\
                 "\n* Positions:\n" + str(best_fit_positions[dimension]))
 
@@ -226,10 +247,13 @@ class Grid_Analysis():
                     plt.imshow(im[:,900:1200].T, cmap=plt.cm.gray)
                 else:
                     plt.imshow(im[300:600,:], cmap=plt.cm.gray)
-                plt.plot(positions[dimension], Y2, 'r*', 
+
+                plt.plot(positions[dimension], Y2, 'r*',
                     label='Detected spikes', lw=3, markersize=10)
+
                 plt.plot(np.array(best_fit_positions[dimension]),\
                     Y ,'g*', label='Selected positions', lw=3, markersize=10)
+
                 plt.legend(loc=0)
                 plt.ylim(ymin=0, ymax=150)
                 plt.show()
@@ -238,14 +262,14 @@ class Grid_Analysis():
                 #visual = False
                 #DEBUG HACK
             #if best_fit_start_pos[dimension] != None:
- 
+
                 #best_fit_positions[dimension] = \
                     #positions[dimension][best_fit_start_pos[dimension] : \
                         #best_fit_start_pos[dimension] + \
                         #pinning_matrix[dimension] ]
 
                 #if visual:
-                   
+
                     #import matplotlib.pyplot as plt
                     #m_im = im.mean(axis=dimension)
                     #plt.plot(np.arange(len(m_im)), m_im, 'b-')
@@ -281,57 +305,71 @@ class Grid_Analysis():
 
 
                         #Updating previous
-                        self.logger.info("GRID ARRAY, Got a grid R at, %s" % str(R))
+                        self.logger.info(
+                            "GRID ARRAY, Got a grid R at, {0}".format(R))
 
         #DEBUG R
         #fs = open('debug_R.log','a')
         #if self.best_fit_positions is None:
-            #fs.write(str([best_fit_positions[0][0], best_fit_positions[1][0]]) + "\n")
+            #fs.write(str([best_fit_positions[0][0],
+                    #best_fit_positions[1][0]]) + "\n")
         #else:
-            #fs.write(str([R, (best_fit_positions[0][0], best_fit_positions[1][0]),
-                #(self.best_fit_positions[0][0], self.best_fit_positions[1][0]) ]) + "\n")
+            #fs.write(str([R, (best_fit_positions[0][0],
+                #best_fit_positions[1][0]),
+                #(self.best_fit_positions[0][0],
+                #self.best_fit_positions[1][0]) ]) + "\n")
         #fs.close()
         #DEBUG END
 
-        if R < 20 and best_fit_positions[0] != None and best_fit_positions[1] != None:
+        if R < 20 and best_fit_positions[0] != None and \
+                             best_fit_positions[1] != None:
+
             #self.best_fit_start_pos = best_fit_start_pos
             self.best_fit_frequency = best_fit_frequency
             self.best_fit_positions = best_fit_positions
             self.R = R
-        else:            
+
+        else:
+
             self.R = -1
 
         if self.best_fit_positions == None:
-            return None, None, None, adjusted_by_history
-        else:
-            return self.best_fit_positions[0], self.best_fit_positions[1], self.R, adjusted_by_history
 
+            return None, None, None, adjusted_by_history
+
+        else:
+
+            ret_tuple = (self.best_fit_positions[0],
+                    self.best_fit_positions[1], self.R,
+                    adjusted_by_history)
+
+            return ret_tuple
 
     def get_spikes(self, dimension, im=None, visual = False, verbose = False,\
              use_otsu=True, median_coeff=0.99, manual_threshold=None):
         """
-            get_spikes returns a spike list for a dimension of an image array
+        get_spikes returns a spike list for a dimension of an image array
 
-            The function takes the following arguments:
+        The function takes the following arguments:
 
-            @dimension  The dimension to be analysed (0 or 1)
+        @dimension  The dimension to be analysed (0 or 1)
 
-            @im         An image numpy array, if left out previously loaded
-                        image will be used
-            
-            @visual     Plot the results (only possible when running
-                        the script from prompt)
+        @im         An image numpy array, if left out previously loaded
+                    image will be used
 
-            @verbose   Do a whole lot of print out of everything to
-                        debug what goes wrong.
+        @visual     Plot the results (only possible when running
+                    the script from prompt)
 
-            @use_otsu   Using the Otsu algorithm to set the threshold used in
-                        spike detection (default True). If Otsu is not used,
-                        the median coefficient is used.
+        @verbose   Do a whole lot of print out of everything to
+                    debug what goes wrong.
 
-            @median_coeff   A float that is multiplied to the median of the 
-                            1D flattned image to get a threshold if otsu is not
-                            used.
+        @use_otsu   Using the Otsu algorithm to set the threshold used in
+                    spike detection (default True). If Otsu is not used,
+                    the median coefficient is used.
+
+        @median_coeff   A float that is multiplied to the median of the
+                        1D flattned image to get a threshold if otsu is not
+                        used.
         """
         if im == None:
             im  = self.im
@@ -375,9 +413,10 @@ class Grid_Analysis():
            spikes_toggle_up = spikes_toggle_up[:len(spikes_toggle_down)]
 
         self.logger.debug("GRID CELL get_spikes, %d long %d downs %d ups." % \
-            ( len(im_1D2), len(spikes_toggle_down), len(spikes_toggle_up)))
+            (len(im_1D2), len(spikes_toggle_down), len(spikes_toggle_up)))
+
         stt = (np.array(spikes_toggle_up) + np.array(spikes_toggle_down)) / 2
-            
+
         if visual:
             Y = np.ones(len(stt)) * 80
             plt.plot(stt,Y,'b.')
@@ -413,21 +452,30 @@ if __name__ == "__main__":
         if verbose:
             pass
             #print len(measures)
-        est_pos, frequency = get_signal_position_and_frequency(measures, segments)
+
+        est_pos, frequency = get_signal_position_and_frequency(
+                                            measures, segments)
+
         if verbose:
             #print correct_pos, est_pos
             print list(measures)
             print list(positions)
+
         if correct_pos == est_pos:
             corrects += 1
         else:
             break
+
         test += 1
 
     if visual:
+
         Y = np.ones(positions.shape)*40
+
         if verbose:
+
             print len(Y), len(positions[est_pos:est_pos+segments + 2])
+
         plt.plot(positions, Y, 'ko', lw=2)
         pfound = positions[est_pos:est_pos+segments]
         Y = np.ones(pfound.shape)*80
@@ -436,5 +484,6 @@ if __name__ == "__main__":
         plt.show()
 
     if verbose:
+
         print "*** ", est_pos, segments, len(positions)
         print "*** Got", corrects, "out of", tests, "right"
