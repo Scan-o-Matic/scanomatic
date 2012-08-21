@@ -182,13 +182,47 @@ def get_array_subtraction(A1, A2, offset, output = None):
 #
 
 
-class Analysis_Recipe_Abstraction(objecT):
+class Analysis_Recipe_Abstraction(object):
     """Holds an instruction and/or a list of subinstructions."""
 
-    def init(self, grid_cell):
+
+    def init(self, grid_cell, parent = None, description=""):
 
         self.grid_cell = grid_cell
+        self.parent = parent 
         self.analysis_order = [self]
+        self.description = description
+        self._analysis_image = None
+
+    def __str__(self):
+
+        return self.description
+
+    def __repr__(self):
+
+        return "<{0} {1}>".format(id(self), description)
+
+    def set_reference_image(self, im, inplace=False, enforce_self=False):
+
+        if enforce_self or parent is None:
+
+            dest = self
+
+        else:
+
+            dest = self.parent
+
+        if inplace:
+
+            dest._analysis_image[:,:] = im
+
+        else:
+
+            dest._analysis_image = im.copy()
+
+        if enforce_self == False and self.analysis_order != [self]:
+
+            self.set_reference_image(im, inplace=inplace, enforce_self=True)
 
     def analyse(self):
 
@@ -196,7 +230,7 @@ class Analysis_Recipe_Abstraction(objecT):
 
             if a is self:
 
-                self._do()
+                self._do(self._analysis_image)
 
             else:
 
@@ -212,11 +246,98 @@ class Analysis_Recipe_Abstraction(objecT):
 
             self.analysis_order.insert(pos, a)
 
-    def _do(self):
+    def _do(self, im):
 
         pass
 
-    
+
+class Analysis_Recipe_Empty(Analysis_Recipe_Abstraction):
+
+    def __init__(self, grid_cell, parent):
+
+        super(Analysis_Recipe_Empty, self).__init__(grid_cell, 
+                                            description="Recipe")
+
+        self.analysis_order = []
+
+  
+class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
+
+    self.kernel = np.array([[0, 0, 1, 0, 0,],
+                            [0, 1, 1, 1, 0,],
+                            [1, 1, 1, 1, 1,],
+                            [0, 1, 1, 1, 0,],
+                            [0, 0, 1, 0, 0,]])
+   
+    def __init__(self, grid_cell, parent):
+
+        super(Analysis_Recipe_Erode, self).__init__(grid_cell, parent,
+                                            description="Binary Erode")
+
+    def _do(self, im):
+
+        #Erosion kernel
+        #kernel = get_round_kernel(radius=2)
+        #print kernel.astype(int)
+        #print "***Erosion kernel ready"
+
+        self.grid_cell.filter_array = binary_erosion(
+                                    self.grid_cell.filter_array,
+                                    structure=self.kernel)
+ 
+
+class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
+
+    self.kernel = np.array([[0, 0, 1, 0, 0,],
+                            [0, 1, 1, 1, 0,],
+                            [1, 1, 1, 1, 1,],
+                            [0, 1, 1, 1, 0,],
+                            [0, 0, 1, 0, 0,]])
+   
+    def __init__(self, grid_cell, parent):
+
+        super(Analysis_Recipe_Dilate, self).__init__(grid_cell, parent,
+                                            description="Binary Dilate")
+
+    def _do(self, im):
+
+        #Erosion kernel
+        #kernel = get_round_kernel(radius=2)
+        #print kernel.astype(int)
+        #print "***Erosion kernel ready"
+
+        self.grid_cell.filter_array = binary_dilation(
+                                    self.grid_cell.filter_array,
+                                    structure=self.kernel)
+ 
+
+class Analysis_Recipe_Gauss_2(Analysis_Recipe_Abstraction):
+
+    def __init__(self, grid_cell, parent):
+
+        super(Analysis_Recipe_Gauss_2, self).__init__(grid_cell, parent,
+                                            description="Gaussian size 2")
+
+    def _do(self, im):
+
+        detect_im = gaussian_filter(im, 2)
+
+        self.set_reference_image(detect_im, inplace=True)
+
+class Analysis_Recipe_Median_Filter(Analysis_Recipe_Abstraction)
+
+    def __init__(self, grid_cell, parent):
+
+        super(Analysis_Recipe_Median_Filter, self).__init__(grid_cell, parent,
+                                            description="Median Filter")
+
+    def _do(self, im):
+
+        detect_im = median_filter(im, size=(3, 3), mode="nearest")
+
+        self.set_reference_image(detect_im, inplace=True)
+
+
 class Log_Garbage_Collector(object):
 
     def warning(self, *args, **kwargs):
@@ -466,6 +587,11 @@ class Blob(Cell_Item):
         self._features_key_list += ['centroid', 'perimeter']
 
         self.histogram = hist.Histogram(self.grid_array, run_at_init=False)
+
+        self.blob_recipe = Analysis_Recipe_Empty(self)
+        self.blob_recipe.add_anlysis(Analysis_Recipe_Median_Filter(self))
+        self.blob_recipe.add_anlysis(Analysis_Recipe_Erode(self))
+        self.blob_recipe.add_anlysis(Analysis_Recipe_Dilate(self))
 
         self.kernel = np.array([[0, 0, 1, 0, 0,],
                                 [0, 1, 1, 1, 0,],
