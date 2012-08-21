@@ -182,6 +182,41 @@ def get_array_subtraction(A1, A2, offset, output = None):
 #
 
 
+class Analysis_Recipe_Abstraction(objecT):
+    """Holds an instruction and/or a list of subinstructions."""
+
+    def init(self, grid_cell):
+
+        self.grid_cell = grid_cell
+        self.analysis_order = [self]
+
+    def analyse(self):
+
+        for a in self.analysis_order:
+
+            if a is self:
+
+                self._do()
+
+            else:
+
+                a.analyse()
+
+    def add_anlysis(a, pos=-1):
+
+        if pos = -1:
+
+            self.analysis_order.append(a)
+
+        else:
+
+            self.analysis_order.insert(pos, a)
+
+    def _do(self):
+
+        pass
+
+    
 class Log_Garbage_Collector(object):
 
     def warning(self, *args, **kwargs):
