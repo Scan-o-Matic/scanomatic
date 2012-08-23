@@ -392,6 +392,49 @@ class Test_Grid_Cell_Background(Test_Grid_Cell_Item):
         self.assertGreaterEqual(self.i.filter_array.shape[0] *
                     self.i.filter_array.shape[1] - r ** 2 * np.pi,
                     self.i.filter_array.sum())
+
+
+class Test_Analysis_Recipe(unittest.TestCase):
+
+    def setUp(self):
+
+        self.I = np.random.random((104, 105))
+        self.b = gc.Blob(None, None, self.I)
+        self.ar1 = gc.Analysis_Recipe_Empty(self.b)
+        self.ar1.set_reference_image(self.I)
+
+        self.ar2 = gc.Analysis_Recipe_Empty(self.b, parent=self.ar1)
+        self.ar3 = gc.Analysis_Recipe_Median_Filter(self.b, self.ar2)
+        self.ar4 = gc.Analysis_Recipe_Gauss_2(self.b, self.ar1)
+        self.ar5 = gc.Analysis_Recipe_Erode(self.b, self.ar1)
+
+    def test_set_image(self):
+
+        im = np.random.random((104, 105))
+        id1 = id(self.ar1._analysis_image)
+
+        self.ar1.set_reference_image(im, inplace=True)
+        self.assertNotEqual(id(self.b.grid_array), id(self.ar1._analysis_image))
+        self.assertNotEqual(id(self.I), id(self.ar1._analysis_image))
+        self.assertEqual(id1, id(self.ar1._analysis_image))
+
+        self.ar1.set_reference_image(im, inplace=False)
+        self.assertNotEqual(id(im), id(self.ar1._analysis_image))
+        self.assertNotEqual(id1, id(self.ar1._analysis_image))
+
+        im2 = np.random.random((104, 105))
+        id2 = id(im)
+
+        self.ar2.set_reference_image(im2, inplace=True)
+        self.assertNotEqual(id2, id(self.ar1._analysis_image))
+        self.assertNotEqual(id2, id(self.ar2._analysis_image))
+        self.assertEqual(np.abs(im2 - self.ar1._analysis_image).sum(), 0)
+        self.assertEqual(np.abs(im2 - self.ar2._analysis_image).sum(), 0)
+
+    def test_sub_analysis(self):
+
+        pass
+        
 if __name__ == "__main__":
 
     unittest.main()

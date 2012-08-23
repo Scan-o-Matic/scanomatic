@@ -186,13 +186,17 @@ class Analysis_Recipe_Abstraction(object):
     """Holds an instruction and/or a list of subinstructions."""
 
 
-    def init(self, grid_cell, parent = None, description=""):
+    def __init__(self, grid_cell, parent=None, description=""):
 
         self.grid_cell = grid_cell
         self.parent = parent 
         self.analysis_order = [self]
         self.description = description
         self._analysis_image = None
+
+        if parent is not None:
+
+            parent.add_anlysis(self)
 
     def __str__(self):
 
@@ -204,7 +208,7 @@ class Analysis_Recipe_Abstraction(object):
 
     def set_reference_image(self, im, inplace=False, enforce_self=False):
 
-        if enforce_self or parent is None:
+        if enforce_self or self.parent is None:
 
             dest = self
 
@@ -236,9 +240,9 @@ class Analysis_Recipe_Abstraction(object):
 
                 a.analyse()
 
-    def add_anlysis(a, pos=-1):
+    def add_anlysis(self, a, pos=-1):
 
-        if pos = -1:
+        if pos == -1:
 
             self.analysis_order.append(a)
 
@@ -253,9 +257,10 @@ class Analysis_Recipe_Abstraction(object):
 
 class Analysis_Recipe_Empty(Analysis_Recipe_Abstraction):
 
-    def __init__(self, grid_cell, parent):
+    def __init__(self, grid_cell, parent=None):
 
         super(Analysis_Recipe_Empty, self).__init__(grid_cell, 
+                                            parent=parent,
                                             description="Recipe")
 
         self.analysis_order = []
@@ -263,11 +268,11 @@ class Analysis_Recipe_Empty(Analysis_Recipe_Abstraction):
   
 class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
 
-    self.kernel = np.array([[0, 0, 1, 0, 0,],
-                            [0, 1, 1, 1, 0,],
-                            [1, 1, 1, 1, 1,],
-                            [0, 1, 1, 1, 0,],
-                            [0, 0, 1, 0, 0,]])
+    kernel = np.array([[0, 0, 1, 0, 0,],
+                       [0, 1, 1, 1, 0,],
+                       [1, 1, 1, 1, 1,],
+                       [0, 1, 1, 1, 0,],
+                       [0, 0, 1, 0, 0,]])
    
     def __init__(self, grid_cell, parent):
 
@@ -288,11 +293,11 @@ class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
 
 class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
 
-    self.kernel = np.array([[0, 0, 1, 0, 0,],
-                            [0, 1, 1, 1, 0,],
-                            [1, 1, 1, 1, 1,],
-                            [0, 1, 1, 1, 0,],
-                            [0, 0, 1, 0, 0,]])
+    kernel = np.array([[0, 0, 1, 0, 0,],
+                       [0, 1, 1, 1, 0,],
+                       [1, 1, 1, 1, 1,],
+                       [0, 1, 1, 1, 0,],
+                       [0, 0, 1, 0, 0,]])
    
     def __init__(self, grid_cell, parent):
 
@@ -324,7 +329,8 @@ class Analysis_Recipe_Gauss_2(Analysis_Recipe_Abstraction):
 
         self.set_reference_image(detect_im, inplace=True)
 
-class Analysis_Recipe_Median_Filter(Analysis_Recipe_Abstraction)
+
+class Analysis_Recipe_Median_Filter(Analysis_Recipe_Abstraction):
 
     def __init__(self, grid_cell, parent):
 
@@ -589,9 +595,9 @@ class Blob(Cell_Item):
         self.histogram = hist.Histogram(self.grid_array, run_at_init=False)
 
         self.blob_recipe = Analysis_Recipe_Empty(self)
-        self.blob_recipe.add_anlysis(Analysis_Recipe_Median_Filter(self))
-        self.blob_recipe.add_anlysis(Analysis_Recipe_Erode(self))
-        self.blob_recipe.add_anlysis(Analysis_Recipe_Dilate(self))
+        Analysis_Recipe_Median_Filter(self, self.blob_recipe)
+        Analysis_Recipe_Erode(self, self.blob_recipe)
+        Analysis_Recipe_Dilate(self, self.blob_recipe)
 
         self.kernel = np.array([[0, 0, 1, 0, 0,],
                                 [0, 1, 1, 1, 0,],
