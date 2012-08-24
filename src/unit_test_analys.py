@@ -3,7 +3,8 @@
 import unittest
 import analysis_grid_cell_dissection as gc
 import numpy as np
-
+import sys
+import inspect
 
 class Test_Grid_Cell_Item(unittest.TestCase):
 
@@ -404,9 +405,9 @@ class Test_Analysis_Recipe(unittest.TestCase):
         self.ar1.set_reference_image(self.I)
 
         self.ar2 = gc.Analysis_Recipe_Empty(self.b, parent=self.ar1)
-        self.ar3 = gc.Analysis_Recipe_Median_Filter(self.b, self.ar2)
-        self.ar4 = gc.Analysis_Recipe_Gauss_2(self.b, self.ar1)
-        self.ar5 = gc.Analysis_Recipe_Erode(self.b, self.ar1)
+        #self.ar3 = gc.Analysis_Recipe_Median_Filter(self.b, self.ar2)
+        #self.ar4 = gc.Analysis_Recipe_Gauss_2(self.b, self.ar1)
+        #self.ar5 = gc.Analysis_Recipe_Erode(self.b, self.ar1)
 
     def test_set_image(self):
 
@@ -434,7 +435,36 @@ class Test_Analysis_Recipe(unittest.TestCase):
     def test_sub_analysis(self):
 
         pass
+
+class Test_Derived_Analysis(unittest.TestCase):
+
+    def setUp(self):
+
+        self.known_classes = [gc.__getattribute__(c) for c in dir(gc) if 
+                    inspect.isclass(gc.__getattribute__(c))
+                    and issubclass(gc.__getattribute__(c), 
+                    gc.Analysis_Recipe_Abstraction)]
+
+        self.I = np.random.random((104, 105))
+        self.b = gc.Blob(None, None, self.I)
+
+        self.guess_count = sum([1 for i in dir(gc) 
+                if 'Analysis_' == i[:9]])
+       
+    def test_good_names(self):
+
+        self.assertEqual(self.guess_count, len(self.known_classes))
+
+    def test_init(self):
+
+        for c in self.known_classes:
+
+            ar1 = c(self.b, None)
+
+            self.assertIs(ar1.parent, None)
+            self.assertIs(ar1.grid_cell, self.b)
         
+
 if __name__ == "__main__":
 
     unittest.main()

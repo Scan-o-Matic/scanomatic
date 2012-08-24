@@ -204,9 +204,10 @@ class Analysis_Recipe_Abstraction(object):
 
     def __repr__(self):
 
-        return "<{0} {1}>".format(id(self), description)
+        return "<{0} {1}>".format(id(self), self.description)
 
-    def set_reference_image(self, im, inplace=False, enforce_self=False):
+    def set_reference_image(self, im, inplace=False, enforce_self=False,
+                                                        do_copy=True):
 
         if enforce_self or self.parent is None:
 
@@ -216,17 +217,26 @@ class Analysis_Recipe_Abstraction(object):
 
             dest = self.parent
 
+        if self._analysis_image is None and inplace:
+
+            inplace = False
+
         if inplace:
 
             dest._analysis_image[:,:] = im
 
         else:
 
-            dest._analysis_image = im.copy()
+            if do_copy:
+
+                im = im.copy()
+
+            dest._analysis_image = im
 
         if enforce_self == False and self.analysis_order != [self]:
 
-            self.set_reference_image(im, inplace=inplace, enforce_self=True)
+            self.set_reference_image(im, inplace=inplace, enforce_self=True,
+                                        do_copy=False)
 
     def analyse(self):
 
