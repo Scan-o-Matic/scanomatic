@@ -1,11 +1,79 @@
 #!/usr/bin/env python
 
 import unittest
-import analysis_grid_cell_dissection as gc
 import numpy as np
 import sys
 import inspect
+from scipy.ndimage import convolve
 
+import analysis_grid_cell_dissection as gc
+import analysis_grid_array_dissection as ga
+
+
+def simulate_colony(colony_thickness=30, i_shape=(105, 104), add_bg=True):
+
+    origo = [i / 2 for i in i_shape]
+    r = int((origo[0] * origo[1]) ** 0.5 / np.pi)
+
+    i = gc.Blob(None, None, np.zeros(i_shape))
+
+    i.set_blob_from_shape(circle=(origo, r))
+
+
+    fgIM = np.random.normal(loc=colony_thickness, size=i_shape)
+
+    im = np.zeros(i_shape)
+
+    im[np.where(i.filter_array > 0)] = fgIM[np.where(i.filter_array \
+                                    > 0)]
+
+    kernel = np.array([[1, 1, 1],
+                       [1, 1, 1],
+                       [1, 1, 1]], dtype=np.float)
+
+    kernel /= kernel.sum()
+
+    im = convolve(im, kernel)
+
+    true_blob = im > 0 
+
+    if add_bg:
+
+        im += np.random.normal(loc=1, size=i_shape)
+    
+    return im, true_blob
+    
+
+def simulate_plate(pinning=(32, 48), colony_thickness=30, i_shape=(1768, 2600)):
+
+    cell_size = [int(i / float(pinning[n]+1)) for n, i in enumerate(i_shape)]
+
+    im = np.random.normal(loc=1, size=i_shape)
+
+    a = 0.025 * colony_thickness
+
+    for x in xrange(pinning[0]):
+
+        for y in xrange(pinning[1]):
+
+            blob_im, true_blob = simulate_colony(
+                            colony_thickness=colony_thickness + \
+                            a * np.random.normal(),
+                            i_shape=cell_size,
+                            add_bg=False)
+
+            low_x = (x + 0.5) * cell_size[0]
+            low_y = (y + 0.5) * cell_size[1]
+
+            im[low_x: low_x + cell_size[0], low_y: low_y + cell_size[1]] += \
+                            blob_im
+
+
+    im += np.random.normal(loc=1, size=i_shape)
+
+    return im
+
+ 
 class Test_Grid_Cell_Item(unittest.TestCase):
 
     Item = gc.Cell_Item
@@ -131,6 +199,8 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
         self.I = np.random.random(self.i_shape)
         self.Id = ["test", 1, [1, 3]]
         self.i = self.Item(None, self.Id, self.I)
+
+        self.im, self.true_blob = simulate_colony()
 
     def test_type(self):
 
@@ -286,38 +356,32 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
     def test_detect_threshold(self):
 
-        i = self.Item(None, None, self.I.copy())
+        self.im, self.true_blob = simulate_colony(colony_thickness=100,
+                                                add_bg=True)
 
-        i.set_blob_from_shape(circle=((50, 50), 20))
+        i = self.Item(None, None, self.im)
 
-        i_filter = i.filter_array.copy()
+        i.threshold_detect(threshold=20)        
 
-        self.assertIsNot(i_filter, i.filter_array)
+        np.save("_debug_t1.npy", self.true_blob)
+        np.save("_debug_t2.npy", i.filter_array)
 
-        I2 = np.random.normal(40, size=self.i_shape)
+        self.assertEqual(np.abs(self.true_blob - 
+                    i.filter_array).sum(), 0)
+                   
+        i.threshold_detect(threshold=20, color_logic="inv")
 
-        i.grid_array[np.where(i.filter_array)] = I2[np.where(i.filter_array)]
+        self.assertEqual(np.abs((self.true_blob == 0) - i.filter_array).sum(), 0)
 
-        i.threshold_detect(threshold=10)        
-
-        self.assertEqual(np.abs(i_filter - i.filter_array).sum(), 0)
-
-        self.assertEqual(i.grid_array[np.where(i.filter_array)].sum(),
-                    i.grid_array[np.where(i_filter)].sum())
-
-        i.threshold_detect(threshold=10, color_logic="inv")
-
-        self.assertEqual(np.abs((i_filter == 0) - i.filter_array).sum(), 0)
-
-        self.assertEqual(i.grid_array[np.where(i.filter_array)].sum(),
-                    i.grid_array[np.where(i_filter == 0)].sum())
+        self.assertEqual(i.grid_array[np.where(i.filter_array > 0)].sum(),
+                    i.grid_array[np.where(self.true_blob == 0)].sum())
 
         i.threshold_detect()
 
-        self.assertEqual(np.abs(i_filter - i.filter_array).sum(), 0)
+        self.assertEqual(np.abs(self.true_blob - i.filter_array).sum(), 0)
 
         self.assertEqual(i.grid_array[np.where(i.filter_array)].sum(),
-                    i.grid_array[np.where(i_filter)].sum())
+                    i.grid_array[np.where(self.true_blob)].sum())
 
     def test_manual_detect(self):
 
@@ -344,6 +408,35 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
         self.assertLess(np.abs(i.filter_array - \
                     i_filter).sum()/i_filter.sum(), 0.01)
 
+
+    def test_detect(self):
+
+        i = gc.Blob(None, None, self.I)
+        tollerance = 100
+        colony_thickness = 300
+        #x = 1
+
+        while colony_thickness > 3:
+
+            self.im, self.true_blob = simulate_colony(colony_thickness)
+
+            i.set_data_source(self.im)
+
+            i.detect()
+
+            diff = i.filter_array.astype(np.int) - \
+                        self.true_blob.astype(np.int)
+
+            #np.save("_debug_{0}.npy".format(x), diff)
+            #x += 1
+            
+            diff = np.abs(diff).sum()
+
+            self.assert_(diff < tollerance,
+                msg="Failed at {0} thickness, {1} is more than {2}".format(
+                colony_thickness, diff, tollerance))
+
+            colony_thickness /= 2.0
 
 class Test_Grid_Cell_Background(Test_Grid_Cell_Item):
 
@@ -396,6 +489,7 @@ class Test_Grid_Cell_Background(Test_Grid_Cell_Item):
 
 
 class Test_Analysis_Recipe(unittest.TestCase):
+    """NEED MORE TESTS"""
 
     def setUp(self):
 
@@ -437,6 +531,7 @@ class Test_Analysis_Recipe(unittest.TestCase):
         pass
 
 class Test_Derived_Analysis(unittest.TestCase):
+    """NEED MORE TESTS"""
 
     def setUp(self):
 

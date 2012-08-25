@@ -185,7 +185,7 @@ class Grid_Analysis():
                             ('GRID ARRAY, frequency abnormality for ' +\
                             'dimension {0} (Current {1}, Expected {2}'.format(
                             dimension, best_fit_frequency[dimension],
-                            history_f))
+                            history_f)))
 
                     adjusted_by_history = True
                     best_fit_frequency[dimension] = history_f[dimension]
@@ -209,7 +209,7 @@ class Grid_Analysis():
                         "position for  dimension {0} (Current signal " + \
                         "start {1}, Expected {2} (error: {3}).".format(
                         dimension, best_fit_positions[dimension][0],
-                        history_rc[dimension], goodness_of_signal))
+                        history_rc[dimension], goodness_of_signal)))
 
                     adjusted_by_history = True
 

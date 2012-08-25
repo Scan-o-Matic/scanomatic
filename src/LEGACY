@@ -1,0 +1,217 @@
+"""
+FROM: analysis_grid_cell_disection.py
+CLASS: Blob
+"""
+    def set_first_step_filtering(self):
+        """Crashed this on my way to toronto, fix!" """
+
+        #DEBUG CODE START
+        #from matplotlib import pyplot as plt
+        #plt.subplot(221, title='Start image')
+        #plt.imshow(self.grid_array)
+        #DEBUG CODE END
+
+        #De-noising the image with a smooth
+        detect_im = gaussian_filter(self.grid_array, 2)
+
+        #detect_im = median_filter(self.grid_array, size=(3, 3),
+        #                mode="nearest")
+
+        #DEBUG CODE START
+        #plt.subplot(222, title = 'Image after gauss')
+        #plt.imshow(self.grid_array)
+        #plt.subplot(223, title = 'Filter after gauss')
+        #plt.imshow(self.filter_array)
+        #DEBUG CODE END
+
+        #Threshold the image
+        self.threshold_detect(im=detect_im)
+
+        #DEBUG CODE START
+        #plt.subplot(224, title = 'Filter after threshold')
+        #plt.imshow(self.filter_array)
+        #plt.show()
+        #DDEBUG CODE END
+
+        #self.filter_array = sobel(self.grid_array)
+
+        #print np.sum(self.filter_array), "pixels inside at this stage"
+        #from scipy.ndimage.filters import sobel
+        #from scipy.ndimage.morpholgy import binary_erosion, binary_dilation,
+        #    binary_fill_holes, binary_closing
+
+        #Not neccesary per se, but we need a copy anyways
+        #mat = cv.fromarray(self.filter_array)
+        #print "**Mat made"
+        #eroded_mat = cv.CreateMat(mat.rows, mat.cols, cv.CV_8UC1)
+
+        #Erosion kernel
+        #kernel = get_round_kernel(radius=2)
+        #print kernel.astype(int)
+        #print "***Erosion kernel ready"
+
+        self.filter_array = binary_erosion(self.filter_array,
+                                    structure=self.kernel)
+
+        #Erode, radius 6, iterations = default (1)
+        #kernel = cv.CreateStructuringElementEx(radius*2+1, radius*2+1,
+        #    radius, radius, cv.CV_SHAPE_ELLIPSE)
+
+        #print "Kernel in place", kernel
+        #cv.Erode(mat, eroded_mat, kernel)
+        #print "Eroded"
+        #print np.sum(self.filter_array), "pixels inside at this stage"
+        #Dilate, radius 4, iterations = default (1)
+        #radius = 4
+        #kernel = cv.CreateStructuringElementEx(radius*2+1, radius*2+1,
+        #    radius, radius, cv.CV_SHAPE_ELLIPSE)
+
+        #kernel = get_round_kernel(radius=4)
+
+        #print "Kernel in place"
+        self.filter_array = binary_dilation(self.filter_array,
+                                        structure=self.kernel)
+
+        #cv.Dilate(mat, mat, kernel)
+        #print "Dilated"
+        #print np.sum(self.filter_array), "pixels inside at this stage"
+
+        #self.filter_array = binary_closing(self.filter_array)
+                                    #structure=kernel)
+
+        #print "Closing applied"
+        #print np.sum(self.filter_array), "pixels inside at this stage"
+
+        #self.filter_array = sobel(self.filter_array)
+
+        #print "Edged detected"
+        #print np.sum(self.filter_array), "pixels inside at this stage"
+
+        #self.filter_array = binary_fill_holes(self.filter_array,
+                    #structure=np.ones((5, 5)))
+
+        #print "Holes filled"
+        #print np.sum(self.filter_array), "pixels inside at this stage"
+
+    def edge_detect_sobel(self):
+        """This is a scetch for another detect, and should Not
+        bw used"""
+
+        from matplotlib import pyplot
+
+        #De-noising the image with a smooth
+        self.filter_array = gaussian_filter(self.grid_array, 2)
+        pyplot.imshow(self.filter_array)
+        pyplot.savefig('blob_gauss.png')
+        pyplot.clf()
+
+        #Checking the second dirivative
+        #self.filter_array = laplace(self.filter_array)
+        self.filter_array = sobel(self.filter_array, 0) ** 2 + \
+                            sobel(self.filter_array, 1) ** 2
+
+        pyplot.imshow(self.filter_array)
+        #pyplot.savefig('blob_laplace.png')
+        pyplot.savefig('blob_sobel.png')
+        pyplot.clf()
+
+        #self.filter_array = gaussian_filter(self.filter_array, 2)
+        #pyplot.imshow(self.filter_array)
+        #pyplot.savefig('blob_gauss2.png')
+        #pyplot.clf()
+
+        #Thesholding the edges
+        self.threshold_detect(im=self.filter_array, color_logic='norm',
+            threshold=np.max(self.filter_array) * 0.2)
+
+        pyplot.imshow(self.filter_array)
+        pyplot.savefig('blob_theshold.png')
+        pyplot.clf()
+
+        kernel = get_round_kernel(radius=3)
+        self.filter_array = binary_dilation(self.filter_array,
+                                            structure=kernel)
+
+        pyplot.imshow(self.filter_array)
+        pyplot.savefig('blob_dilation.png')
+        pyplot.clf()
+
+        kernel = get_round_kernel(radius=2)
+        self.filter_array = binary_erosion(self.filter_array, structure=kernel)
+
+        pyplot.imshow(self.filter_array)
+        pyplot.savefig('blob_erosion.png')
+        pyplot.clf()
+
+        label_array, number_of_labels = label(self.filter_array)
+        #print number_of_labels
+        kernel = get_round_kernel(radius=1)
+        center_size = 2
+        circle_parts = []
+
+        for i in xrange(number_of_labels):
+
+            cur_item = (label_array == (i + 1))
+            cur_pxs = np.sum(cur_item)
+
+            if cur_pxs > 100:
+                #c_o_m = center_of_mass(cur_item)
+                #print "Mass centra: ", c_o_m
+                oneD = np.where(np.sum(cur_item, 1) > 0)[0]
+                dim1 = (oneD[0], oneD[-1])
+                oneD = np.where(np.sum(cur_item, 0) > 0)[0]
+                dim2 = (oneD[0], oneD[-1])
+                cur_off = 2
+                good_part = True
+
+                if cur_item[dim1[0]: dim1[1], dim2[0] + cur_off].sum() / \
+                                float(cur_pxs)\
+                                >= cur_pxs / float(dim2[1] - dim2[0]):
+
+                    good_part = False
+
+                if good_part and cur_item[dim1[0]: dim1[1],
+                                dim2[1] - cur_off].sum() / float(cur_pxs)\
+                                >= cur_pxs / float(dim2[1] - dim2[0]):
+
+                    good_part = False
+
+                if cur_item[dim2[0]: dim2[1], dim1[0] + cur_off].sum() / \
+                                float(cur_pxs)\
+                                >= cur_pxs / float(dim1[1] - dim1[0]):
+
+                    good_part = False
+
+                if good_part and cur_item[dim2[0]: dim2[1],
+                                dim1[1] - cur_off].sum() / float(cur_pxs)\
+                                >= cur_pxs / float(dim1[1] - dim1[0]):
+
+                    good_part = False
+
+                #if cur_item[c_o_m[0]-center_size:c_o_m[0]+center_size,
+                #    c_o_m[1]-center_size: c_o_m[1]+center_size].sum() > 0:
+
+                if good_part == False:
+
+                    pyplot.imshow(binary_erosion((label_array == (i + 1)),
+                                                        structure=kernel))
+
+                    pyplot.savefig('blob_item_' + str(i + 1) + '_bad.png')
+                    pyplot.clf()
+
+                else:
+
+                    pyplot.imshow(binary_erosion((label_array == (i + 1)),
+                                                        structure=kernel))
+
+                    pyplot.savefig('blob_item_' + str(i + 1) + '.png')
+                    pyplot.clf()
+                    circle_parts.append(i + 1)
+
+        self.filter_array = np.zeros(self.filter_array.shape)
+
+        for c_part in circle_parts:
+
+            #print self.filter_array.shape, label_array.shape
+            self.filter_array += (label_array == c_part)
+

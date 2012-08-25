@@ -76,6 +76,7 @@ def points_in_circle(circle):
             yield (i, j)
             #yield arr[i][j]
 
+
 def get_round_kernel(radius=6, outline=False):
 
     round_kernel = np.zeros(((radius + 1) * 2 + 1,
@@ -98,13 +99,14 @@ def get_round_kernel(radius=6, outline=False):
 
     return round_kernel
 
+
 def get_round_kernel2(radius=3):
 
     round_kernel = np.zeros(((radius + 1) * 2 + 1,
                     (radius + 1) * 2 + 1))
 
     center_1D = radius + 1
-   
+
     circle = points_in_circle(((center_1D, center_1D), radius))
 
     for pt in circle:
@@ -112,8 +114,9 @@ def get_round_kernel2(radius=3):
         round_kernel[pt] = 1
 
     return round_kernel
- 
-def get_array_subtraction(A1, A2, offset, output = None):
+
+
+def get_array_subtraction(A1, A2, offset, output=None):
     """Makes offsetted subtractions for A1 - A2 independent of sizes
 
     If output is supplied it will be fed directly into it, else,
@@ -185,11 +188,10 @@ def get_array_subtraction(A1, A2, offset, output = None):
 class Analysis_Recipe_Abstraction(object):
     """Holds an instruction and/or a list of subinstructions."""
 
-
     def __init__(self, grid_cell, parent=None, description=""):
 
         self.grid_cell = grid_cell
-        self.parent = parent 
+        self.parent = parent
         self.analysis_order = [self]
         self.description = description
         self._analysis_image = None
@@ -223,7 +225,7 @@ class Analysis_Recipe_Abstraction(object):
 
         if inplace:
 
-            dest._analysis_image[:,:] = im
+            dest._analysis_image[:, :] = im
 
         else:
 
@@ -238,17 +240,21 @@ class Analysis_Recipe_Abstraction(object):
             self.set_reference_image(im, inplace=inplace, enforce_self=True,
                                         do_copy=False)
 
-    def analyse(self):
+    def analyse(self, im_at_parent=False):
 
         for a in self.analysis_order:
 
             if a is self:
 
+                if im_at_parent:
+
+                    self._analysis_image = self.parent._analysis_image
+
                 self._do(self._analysis_image)
 
             else:
 
-                a.analyse()
+                a.analyse(im_at_parent=True)
 
     def add_anlysis(self, a, pos=-1):
 
@@ -269,21 +275,34 @@ class Analysis_Recipe_Empty(Analysis_Recipe_Abstraction):
 
     def __init__(self, grid_cell, parent=None):
 
-        super(Analysis_Recipe_Empty, self).__init__(grid_cell, 
+        super(Analysis_Recipe_Empty, self).__init__(grid_cell,
                                             parent=parent,
                                             description="Recipe")
 
         self.analysis_order = []
 
+class Analysis_Threshold_Otsu(Analysis_Recipe_Abstraction):
+
+    def __init__(self, grid_cell, parent):
+
+        super(Analysis_Threshold_Otsu, self).__init__(grid_cell, parent,
+                                            description="Otsu Threshold")
+
+    def _do(self, im):
+
+        threshold = hist.otsu(
+            self.grid_cell.histogram.re_hist(im))
+
+        self.grid_cell.filter_array[:, :] = im > threshold
   
 class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
 
-    kernel = np.array([[0, 0, 1, 0, 0,],
-                       [0, 1, 1, 1, 0,],
-                       [1, 1, 1, 1, 1,],
-                       [0, 1, 1, 1, 0,],
-                       [0, 0, 1, 0, 0,]])
-   
+    kernel = np.array([[0, 0, 1, 0, 0],
+                       [0, 1, 1, 1, 0],
+                       [1, 1, 1, 1, 1],
+                       [0, 1, 1, 1, 0],
+                       [0, 0, 1, 0, 0]])
+
     def __init__(self, grid_cell, parent):
 
         super(Analysis_Recipe_Erode, self).__init__(grid_cell, parent,
@@ -299,16 +318,42 @@ class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
         self.grid_cell.filter_array = binary_erosion(
                                     self.grid_cell.filter_array,
                                     structure=self.kernel)
- 
+
+
+class Analysis_Recipe_Erode_Conditional(Analysis_Recipe_Abstraction):
+
+    kernel = np.array([[0, 1, 0],
+                       [1, 1, 1],
+                       [0, 1, 0]])
+
+    threshold = 10
+
+    def __init__(self, grid_cell, parent):
+
+        super(Analysis_Recipe_Erode_Conditional, self).__init__(grid_cell,
+                                            parent,
+                                            description="Binary Erode")
+
+    def _do(self, im):
+
+        fa = self.grid_cell.filter_array
+
+        if np.median(im[np.where(fa == 1)]) / \
+                float(np.median(im[np.where(fa == 0)])) < self.threshold:
+
+            self.grid_cell.filter_array = binary_erosion(
+                                fa, structure=self.kernel)
+
 
 class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
 
-    kernel = np.array([[0, 0, 1, 0, 0,],
-                       [0, 1, 1, 1, 0,],
-                       [1, 1, 1, 1, 1,],
-                       [0, 1, 1, 1, 0,],
-                       [0, 0, 1, 0, 0,]])
-   
+    kernel = np.array([[0, 0, 1, 1, 0, 0],
+                       [0, 1, 1, 1, 1, 0],
+                       [1, 1, 1, 1, 1, 1],
+                       [1, 1, 1, 1, 1, 1],
+                       [0, 1, 1, 1, 1, 0],
+                       [0, 0, 1, 1, 0, 0]])
+
     def __init__(self, grid_cell, parent):
 
         super(Analysis_Recipe_Dilate, self).__init__(grid_cell, parent,
@@ -324,7 +369,7 @@ class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
         self.grid_cell.filter_array = binary_dilation(
                                     self.grid_cell.filter_array,
                                     structure=self.kernel)
- 
+
 
 class Analysis_Recipe_Gauss_2(Analysis_Recipe_Abstraction):
 
@@ -419,7 +464,7 @@ class Cell_Item():
 
         self.features = {}
         self._features_key_list = ['area', 'mean', 'median', 'IQR',
-                    'IQR_mean','pixelsum']
+                    'IQR_mean', 'pixelsum']
 
         self.CELLITEM_TYPE = 0
         self.old_filter = None
@@ -489,7 +534,6 @@ class Cell_Item():
         Cell            3
         """
 
-
         if self.CELLITEM_TYPE == 0 or self.filter_array == None:
 
             self.features = dict()
@@ -500,12 +544,10 @@ class Cell_Item():
 
             return None
 
-       
-
         self.features = {k: None for k in self._features_key_list}
 
- 
         self.features['area'] = self.filter_array.sum()
+
         self.features['pixelsum'] = \
                 self.grid_array[np.where(self.filter_array)].sum()
 
@@ -579,8 +621,6 @@ class Cell_Item():
 
             self.features['perimeter'] = None
 
-
-
 #
 # CLASS Blob
 #
@@ -606,14 +646,17 @@ class Blob(Cell_Item):
 
         self.blob_recipe = Analysis_Recipe_Empty(self)
         Analysis_Recipe_Median_Filter(self, self.blob_recipe)
+        Analysis_Threshold_Otsu(self, self.blob_recipe)
         Analysis_Recipe_Erode(self, self.blob_recipe)
         Analysis_Recipe_Dilate(self, self.blob_recipe)
+        #Analysis_Recipe_Erode_Conditional(self, self.blob_recipe)
 
-        self.kernel = np.array([[0, 0, 1, 0, 0,],
-                                [0, 1, 1, 1, 0,],
-                                [1, 1, 1, 1, 1,],
-                                [0, 1, 1, 1, 0,],
-                                [0, 0, 1, 0, 0,]])
+        self.kernel = np.array([[0, 0, 1, 0, 0],
+                                [0, 1, 1, 1, 0],
+                                [1, 1, 1, 1, 1],
+                                [0, 1, 1, 1, 0],
+                                [0, 0, 1, 0, 0]])
+
         if run_detect:
 
             if center is not None and radius is not None:
@@ -684,11 +727,10 @@ class Blob(Cell_Item):
             raster = np.fromfunction(lambda i, j: 100 + 10 * i + j,
                             self.grid_array.shape, dtype=int)
 
-            pts_iterator = points_in_circle(circle)  #  , raster)
+            pts_iterator = points_in_circle(circle)  # , raster)
 
             for pt in pts_iterator:
                 self.filter_array[pt] = 1
-
 
     def set_threshold(self, threshold=None, relative=False, im=None):
         """
@@ -849,7 +891,6 @@ class Blob(Cell_Item):
         ###DEBUG END
 
         return diff_array.sum() / (np.sqrt(c_array.sum()) * np.pi)
-
 
     #
     # DETECT functions
@@ -1148,7 +1189,7 @@ class Blob(Cell_Item):
         """
 
         self.old_edge_detect()
-        #self.edge_detect_sobel()
+
         #DEBUG CODE START
         #from matplotlib import pyplot as plt
         #plt.clf()
@@ -1158,219 +1199,6 @@ class Blob(Cell_Item):
         #plt.imshow(self.grid_array)
         #plt.show()
         #DEBUG CODE END
-
-    def edge_detect_sobel(self):
-        """This is a scetch for another detect, and should Not
-        bw used"""
-
-        from matplotlib import pyplot
-
-        #De-noising the image with a smooth
-        self.filter_array = gaussian_filter(self.grid_array, 2)
-        pyplot.imshow(self.filter_array)
-        pyplot.savefig('blob_gauss.png')
-        pyplot.clf()
-
-        #Checking the second dirivative
-        #self.filter_array = laplace(self.filter_array)
-        self.filter_array = sobel(self.filter_array, 0) ** 2 + \
-                            sobel(self.filter_array, 1) ** 2
-
-        pyplot.imshow(self.filter_array)
-        #pyplot.savefig('blob_laplace.png')
-        pyplot.savefig('blob_sobel.png')
-        pyplot.clf()
-
-        #self.filter_array = gaussian_filter(self.filter_array, 2)
-        #pyplot.imshow(self.filter_array)
-        #pyplot.savefig('blob_gauss2.png')
-        #pyplot.clf()
-
-        #Thesholding the edges
-        self.threshold_detect(im=self.filter_array, color_logic='norm',
-            threshold=np.max(self.filter_array) * 0.2)
-
-        pyplot.imshow(self.filter_array)
-        pyplot.savefig('blob_theshold.png')
-        pyplot.clf()
-
-        kernel = get_round_kernel(radius=3)
-        self.filter_array = binary_dilation(self.filter_array,
-                                            structure=kernel)
-
-        pyplot.imshow(self.filter_array)
-        pyplot.savefig('blob_dilation.png')
-        pyplot.clf()
-
-        kernel = get_round_kernel(radius=2)
-        self.filter_array = binary_erosion(self.filter_array, structure=kernel)
-
-        pyplot.imshow(self.filter_array)
-        pyplot.savefig('blob_erosion.png')
-        pyplot.clf()
-
-        label_array, number_of_labels = label(self.filter_array)
-        #print number_of_labels
-        kernel = get_round_kernel(radius=1)
-        center_size = 2
-        circle_parts = []
-
-        for i in xrange(number_of_labels):
-
-            cur_item = (label_array == (i + 1))
-            cur_pxs = np.sum(cur_item)
-
-            if cur_pxs > 100:
-                #c_o_m = center_of_mass(cur_item)
-                #print "Mass centra: ", c_o_m
-                oneD = np.where(np.sum(cur_item, 1) > 0)[0]
-                dim1 = (oneD[0], oneD[-1])
-                oneD = np.where(np.sum(cur_item, 0) > 0)[0]
-                dim2 = (oneD[0], oneD[-1])
-                cur_off = 2
-                good_part = True
-
-                if cur_item[dim1[0]: dim1[1], dim2[0] + cur_off].sum() / \
-                                float(cur_pxs)\
-                                >= cur_pxs / float(dim2[1] - dim2[0]):
-
-                    good_part = False
-
-                if good_part and cur_item[dim1[0]: dim1[1],
-                                dim2[1] - cur_off].sum() / float(cur_pxs)\
-                                >= cur_pxs / float(dim2[1] - dim2[0]):
-
-                    good_part = False
-
-                if cur_item[dim2[0]: dim2[1], dim1[0] + cur_off].sum() / \
-                                float(cur_pxs)\
-                                >= cur_pxs / float(dim1[1] - dim1[0]):
-
-                    good_part = False
-
-                if good_part and cur_item[dim2[0]: dim2[1],
-                                dim1[1] - cur_off].sum() / float(cur_pxs)\
-                                >= cur_pxs / float(dim1[1] - dim1[0]):
-
-                    good_part = False
-
-                #if cur_item[c_o_m[0]-center_size:c_o_m[0]+center_size,
-                #    c_o_m[1]-center_size: c_o_m[1]+center_size].sum() > 0:
-
-                if good_part == False:
-
-                    pyplot.imshow(binary_erosion((label_array == (i + 1)),
-                                                        structure=kernel))
-
-                    pyplot.savefig('blob_item_' + str(i + 1) + '_bad.png')
-                    pyplot.clf()
-
-                else:
-
-                    pyplot.imshow(binary_erosion((label_array == (i + 1)),
-                                                        structure=kernel))
-
-                    pyplot.savefig('blob_item_' + str(i + 1) + '.png')
-                    pyplot.clf()
-                    circle_parts.append(i + 1)
-
-        self.filter_array = np.zeros(self.filter_array.shape)
-
-        for c_part in circle_parts:
-
-            #print self.filter_array.shape, label_array.shape
-            self.filter_array += (label_array == c_part)
-
-    def set_first_step_filtering(self):
-        """Crashed this on my way to toronto, fix!" """
-
-        #DEBUG CODE START
-        #from matplotlib import pyplot as plt
-        #plt.subplot(221, title='Start image')
-        #plt.imshow(self.grid_array)
-        #DEBUG CODE END
-
-        #De-noising the image with a smooth
-        detect_im = gaussian_filter(self.grid_array, 2)
-
-        #detect_im = median_filter(self.grid_array, size=(3, 3),
-        #                mode="nearest")
-
-        #DEBUG CODE START
-        #plt.subplot(222, title = 'Image after gauss')
-        #plt.imshow(self.grid_array)
-        #plt.subplot(223, title = 'Filter after gauss')
-        #plt.imshow(self.filter_array)
-        #DEBUG CODE END
-
-        #Threshold the image
-        self.threshold_detect(im=detect_im)
-
-        #DEBUG CODE START
-        #plt.subplot(224, title = 'Filter after threshold')
-        #plt.imshow(self.filter_array)
-        #plt.show()
-        #DDEBUG CODE END
-
-        #self.filter_array = sobel(self.grid_array)
-
-        #print np.sum(self.filter_array), "pixels inside at this stage"
-        #from scipy.ndimage.filters import sobel
-        #from scipy.ndimage.morpholgy import binary_erosion, binary_dilation,
-        #    binary_fill_holes, binary_closing
-
-        #Not neccesary per se, but we need a copy anyways
-        #mat = cv.fromarray(self.filter_array)
-        #print "**Mat made"
-        #eroded_mat = cv.CreateMat(mat.rows, mat.cols, cv.CV_8UC1)
-
-        #Erosion kernel
-        #kernel = get_round_kernel(radius=2)
-        #print kernel.astype(int)
-        #print "***Erosion kernel ready"
-
-        self.filter_array = binary_erosion(self.filter_array, 
-                                    structure=self.kernel)
-
-        #Erode, radius 6, iterations = default (1)
-        #kernel = cv.CreateStructuringElementEx(radius*2+1, radius*2+1,
-        #    radius, radius, cv.CV_SHAPE_ELLIPSE)
-
-        #print "Kernel in place", kernel
-        #cv.Erode(mat, eroded_mat, kernel)
-        #print "Eroded"
-        #print np.sum(self.filter_array), "pixels inside at this stage"
-        #Dilate, radius 4, iterations = default (1)
-        #radius = 4
-        #kernel = cv.CreateStructuringElementEx(radius*2+1, radius*2+1,
-        #    radius, radius, cv.CV_SHAPE_ELLIPSE)
-
-        #kernel = get_round_kernel(radius=4)
-
-        #print "Kernel in place"
-        self.filter_array = binary_dilation(self.filter_array,
-                                        structure=self.kernel)
-
-        #cv.Dilate(mat, mat, kernel)
-        #print "Dilated"
-        #print np.sum(self.filter_array), "pixels inside at this stage"
-
-        #self.filter_array = binary_closing(self.filter_array)
-                                    #structure=kernel)
-
-        #print "Closing applied"
-        #print np.sum(self.filter_array), "pixels inside at this stage"
-
-        #self.filter_array = sobel(self.filter_array)
-
-        #print "Edged detected"
-        #print np.sum(self.filter_array), "pixels inside at this stage"
-
-        #self.filter_array = binary_fill_holes(self.filter_array,
-                    #structure=np.ones((5, 5)))
-
-        #print "Holes filled"
-        #print np.sum(self.filter_array), "pixels inside at this stage"
 
     def get_candidate_blob_ranks(self):
 
@@ -1405,7 +1233,9 @@ class Blob(Cell_Item):
 
     def old_edge_detect(self):
 
-        self.set_first_step_filtering()
+        self.blob_recipe.set_reference_image(self.grid_array)
+        self.blob_recipe.analyse()
+
 
         number_of_labels, qualities, c_o_m, label_array = \
                                 self.get_candidate_blob_ranks()
@@ -1496,7 +1326,7 @@ class Background(Cell_Item):
 
             self.filter_array[:, :] = 1
 
-            self.filter_array[np.where(self.blob.filter_array)] = 0 
+            self.filter_array[np.where(self.blob.filter_array)] = 0
 
             self.filter_array[np.where(self.blob.trash_array)] = 1
 
@@ -1552,7 +1382,7 @@ class Cell(Cell_Item):
 
         self.threshold = threshold
 
-        self.filter_array[:,:] = 1
+        self.filter_array[:, :] = 1
 
         if run_detect:
 
