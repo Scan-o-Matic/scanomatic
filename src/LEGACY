@@ -1,7 +1,277 @@
+
+
+"""
+FROM: analysis_grid_array_dissection.py
+CLASS: Grid_Analysis
+"""
+
+
+    def get_analysis(self, im, pinning_matrix, use_otsu=True,
+        median_coeff=None, verbose=False,
+        visual=False, history=[], manual_threshold=None):
+        """
+        get_analysis is a convenience function for get_spikes and
+        get_signal_position_and_frequency functions run on both
+        dimensions of the image.
+
+        (This function sets the self.im for get_spikes.)
+
+        The function takes the following arguments:
+
+        @im         An array / the image
+
+        @pinning_matrix  A list/tuple/array where first position is
+                        the number of rows to be detected and second
+                        is the number of columns to be detected.
+
+        @use_otsu   Causes thresholding to be done by Otsu
+                    algorithm (Default)
+
+        @median_coeff       Coefficient to threshold from the
+                            median when not using Otsu.
+
+        @verbose   If a lot of things should be printed out
+
+        @visual     If visual information should be presented.
+
+        @history    A history of the top-left positions selected
+                    for the particular format for the particular plate
+
+        The function returns two arrays, one per dimension, of the
+        positions of the spikes and a quality index
+        """
+
+        self.im = im
+        positions = [None, None]
+        measures = [None, None]
+        #best_fit_start_pos = [None, None]
+        best_fit_frequency = [None, None]
+        best_fit_positions = [None, None]
+        adjusted_by_history = False
+        R = 0
+        if history is not None and len(history) > 0:
+
+            history_rc = (np.array([h[1][0] for h in history]).mean(),
+                np.array([h[1][1] for h in history]).mean())
+
+            history_f = (np.array([h[2][0] for h in history]).mean(),
+                np.array([h[2][1] for h in history]).mean())
+
+        else:
+
+            history_rc = None
+            history_f = None
+
+        #Obtaining current values
+        for dimension in xrange(2):
+            if median_coeff:
+
+                positions[dimension], measures[dimension] = self.get_spikes(
+                    dimension, im, visual, verbose, use_otsu, median_coeff,
+                    manual_threshold=manual_threshold)
+
+            else:
+
+                positions[dimension], measures[dimension] = self.get_spikes(
+                    dimension, im, visual, verbose, use_otsu,
+                    manual_threshold=manual_threshold)
+
+            #DEBUG ROBUSTNESS TEST
+            #from random import randint
+            #print "Positions before test:", len(positions[dimension])
+            #pos_range = range(len(positions[dimension]))
+            #for del_count in xrange(randint(1,5)+1):
+                #del_pos = randint(0,len(pos_range)-1)
+                #del pos_range[del_pos]
+            #positions[dimension] = positions[dimension][pos_range]
+            #measures[dimension] = measures[dimension][pos_range]
+            #print "Deleted", del_count, "positions"
+            #DEBUG END
+
+            self.logger.info(
+                "GRID ARRAY, Peak positions %sth dimension:\n%s" %\
+                (str(dimension), str(positions[dimension])))
+
+            best_fit_frequency[dimension] = r_signal.get_signal_frequency(\
+                positions[dimension])
+
+            if best_fit_frequency[dimension] is not None \
+                                and history_f is not None:
+
+                if abs(best_fit_frequency[dimension] /\
+                            float(history_f[dimension]) - 1) > 0.1:
+
+                    self.logger.warning(
+                            ('GRID ARRAY, frequency abnormality for ' +\
+                            'dimension {0} (Current {1}, Expected {2}'.format(
+                            dimension, best_fit_frequency[dimension],
+                            history_f)))
+
+                    adjusted_by_history = True
+                    best_fit_frequency[dimension] = history_f[dimension]
+
+            best_fit_positions[dimension] = r_signal.get_true_signal(
+                im.shape[int(dimension==0)], pinning_matrix[dimension],
+                positions[dimension],
+                frequency=best_fit_frequency[dimension],
+                offset_buffer_fraction=0.5)
+
+            if best_fit_positions[dimension] is not None and \
+                                        history_rc is not None:
+
+                goodness_of_signal = r_signal.get_position_of_spike(
+                    best_fit_positions[dimension][0], history_rc[dimension],
+                    history_f[dimension])
+
+                if abs(goodness_of_signal) > 0.2:
+
+                    self.logger.warning(("GRID ARRAY, dubious pinning " + \
+                        "position for  dimension {0} (Current signal " + \
+                        "start {1}, Expected {2} (error: {3}).".format(
+                        dimension, best_fit_positions[dimension][0],
+                        history_rc[dimension], goodness_of_signal)))
+
+                    adjusted_by_history = True
+
+                    new_fit = r_signal.move_signal(
+                        [best_fit_positions[dimension]],
+                        [-1 * round(goodness_of_signal)], freq_offset=0)
+
+                    if new_fit is not None:
+
+                        self.logger.warning(
+                            "GRID ARRAY, remapped signal for " +\
+                            "dimension {0} , new signal:\n{1}".format(
+                            dimension, list(new_fit)))
+
+                        best_fit_positions[dimension] = new_fit[0]
+
+            ###START HERE MARKING OUT ALL OLD STUFF...
+            #best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
+                #self.get_signal_position_and_frequency( measures[dimension],
+                    #pinning_matrix[dimension], verbose)
+
+            self.logger.info("GRID ARRAY, Best fit:\n" +\
+                "* Elements: " + str(pinning_matrix[dimension]) +\
+                "\n* Positions:\n" + str(best_fit_positions[dimension]))
+
+            #DEBUGHACK
+            #visual = True
+            #DEBUGHACK - END
+
+            if visual:
+                Y = np.ones(pinning_matrix[dimension]) * 50
+                Y2 = np.ones(positions[dimension].shape) * 100
+                plt.clf()
+                if dimension == 1:
+                    plt.imshow(im[:,900:1200].T, cmap=plt.cm.gray)
+                else:
+                    plt.imshow(im[300:600,:], cmap=plt.cm.gray)
+
+                plt.plot(positions[dimension], Y2, 'r*',
+                    label='Detected spikes', lw=3, markersize=10)
+
+                plt.plot(np.array(best_fit_positions[dimension]),\
+                    Y ,'g*', label='Selected positions', lw=3, markersize=10)
+
+                plt.legend(loc=0)
+                plt.ylim(ymin=0, ymax=150)
+                plt.show()
+                #plt.savefig('signal_fit.png')
+                #DEBUG HACK
+                #visual = False
+                #DEBUG HACK
+            #if best_fit_start_pos[dimension] != None:
+
+                #best_fit_positions[dimension] = \
+                    #positions[dimension][best_fit_start_pos[dimension] : \
+                        #best_fit_start_pos[dimension] + \
+                        #pinning_matrix[dimension] ]
+
+                #if visual:
+
+                    #import matplotlib.pyplot as plt
+                    #m_im = im.mean(axis=dimension)
+                    #plt.plot(np.arange(len(m_im)), m_im, 'b-')
+                    #Y = np.ones(len(best_fit_positions[dimension])) * 150
+                    #plt.plot(np.array(best_fit_positions[dimension]),\
+                        #Y ,'r*')
+
+                #best_fit_positions[dimension] = \
+                    #self.get_inserts_discards_extrapolations(\
+                        #best_fit_positions[dimension],\
+                        #best_fit_frequency[dimension],\
+                        #pinning_matrix[dimension])
+
+                #if visual:
+                    #Y = np.ones(len(positions[dimension])) * 140
+                    #plt.plot(np.array(positions[dimension]),\
+                        #Y ,'g*') * 50
+                    #Y = np.ones(len(best_fit_positions[dimension])) * 160
+                    #plt.plot(np.array(best_fit_positions[dimension]),\
+                        #Y ,'b*')
+                    #plt.get_axes().set_ylim(ymin=-1,ymax=3)
+                    #plt.show()
+
+            if best_fit_positions[dimension] != None:
+
+                #Comparing to previous
+                if self.best_fit_positions != None:
+                    if self.best_fit_positions[dimension] != None:
+                        R += ((best_fit_positions[dimension] - \
+                            self.best_fit_positions[dimension])**2).sum() / \
+                            float(pinning_matrix[dimension])
+
+
+
+                        #Updating previous
+                        self.logger.info(
+                            "GRID ARRAY, Got a grid R at, {0}".format(R))
+
+        #DEBUG R
+        #fs = open('debug_R.log','a')
+        #if self.best_fit_positions is None:
+            #fs.write(str([best_fit_positions[0][0],
+                    #best_fit_positions[1][0]]) + "\n")
+        #else:
+            #fs.write(str([R, (best_fit_positions[0][0],
+                #best_fit_positions[1][0]),
+                #(self.best_fit_positions[0][0],
+                #self.best_fit_positions[1][0]) ]) + "\n")
+        #fs.close()
+        #DEBUG END
+
+        if R < 20 and best_fit_positions[0] != None and \
+                             best_fit_positions[1] != None:
+
+            #self.best_fit_start_pos = best_fit_start_pos
+            self.best_fit_frequency = best_fit_frequency
+            self.best_fit_positions = best_fit_positions
+            self.R = R
+
+        else:
+
+            self.R = -1
+
+        if self.best_fit_positions == None:
+
+            return None, None, None, adjusted_by_history
+
+        else:
+
+            ret_tuple = (self.best_fit_positions[0],
+                    self.best_fit_positions[1], self.R,
+                    adjusted_by_history)
+
+            return ret_tuple
+
+
 """
 FROM: analysis_grid_cell_disection.py
 CLASS: Blob
 """
+
+
     def set_first_step_filtering(self):
         """Crashed this on my way to toronto, fix!" """
 

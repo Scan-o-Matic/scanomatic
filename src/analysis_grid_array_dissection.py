@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 # SCANNOMATIC LIBRARIES
 #
 
+import resource_logger as logger
 import resource_histogram as hist
 import resource_signal as r_signal
 
@@ -72,7 +73,14 @@ class Grid_Analysis():
     def __init__(self, parent):
 
         self._parent = parent
-        self.logger = self._parent.logger
+
+        if parent is None:
+
+            self.logger = logger.Log_Garbage_Collector()
+
+        else:
+
+            self.logger = self._parent.logger
 
         self.im = None
         self.histogram = hist.Histogram(self.im, run_at_init=False)
@@ -124,11 +132,11 @@ class Grid_Analysis():
         self.im = im
         positions = [None, None]
         measures = [None, None]
-        #best_fit_start_pos = [None, None]
         best_fit_frequency = [None, None]
         best_fit_positions = [None, None]
         adjusted_by_history = False
         R = 0
+
         if history is not None and len(history) > 0:
 
             history_rc = (np.array([h[1][0] for h in history]).mean(),
@@ -155,18 +163,6 @@ class Grid_Analysis():
                 positions[dimension], measures[dimension] = self.get_spikes(
                     dimension, im, visual, verbose, use_otsu,
                     manual_threshold=manual_threshold)
-
-            #DEBUG ROBUSTNESS TEST
-            #from random import randint
-            #print "Positions before test:", len(positions[dimension])
-            #pos_range = range(len(positions[dimension]))
-            #for del_count in xrange(randint(1,5)+1):
-                #del_pos = randint(0,len(pos_range)-1)
-                #del pos_range[del_pos]
-            #positions[dimension] = positions[dimension][pos_range]
-            #measures[dimension] = measures[dimension][pos_range]
-            #print "Deleted", del_count, "positions"
-            #DEBUG END
 
             self.logger.info(
                 "GRID ARRAY, Peak positions %sth dimension:\n%s" %\
@@ -257,41 +253,6 @@ class Grid_Analysis():
                 plt.legend(loc=0)
                 plt.ylim(ymin=0, ymax=150)
                 plt.show()
-                #plt.savefig('signal_fit.png')
-                #DEBUG HACK
-                #visual = False
-                #DEBUG HACK
-            #if best_fit_start_pos[dimension] != None:
-
-                #best_fit_positions[dimension] = \
-                    #positions[dimension][best_fit_start_pos[dimension] : \
-                        #best_fit_start_pos[dimension] + \
-                        #pinning_matrix[dimension] ]
-
-                #if visual:
-
-                    #import matplotlib.pyplot as plt
-                    #m_im = im.mean(axis=dimension)
-                    #plt.plot(np.arange(len(m_im)), m_im, 'b-')
-                    #Y = np.ones(len(best_fit_positions[dimension])) * 150
-                    #plt.plot(np.array(best_fit_positions[dimension]),\
-                        #Y ,'r*')
-
-                #best_fit_positions[dimension] = \
-                    #self.get_inserts_discards_extrapolations(\
-                        #best_fit_positions[dimension],\
-                        #best_fit_frequency[dimension],\
-                        #pinning_matrix[dimension])
-
-                #if visual:
-                    #Y = np.ones(len(positions[dimension])) * 140
-                    #plt.plot(np.array(positions[dimension]),\
-                        #Y ,'g*') * 50
-                    #Y = np.ones(len(best_fit_positions[dimension])) * 160
-                    #plt.plot(np.array(best_fit_positions[dimension]),\
-                        #Y ,'b*')
-                    #plt.get_axes().set_ylim(ymin=-1,ymax=3)
-                    #plt.show()
 
             if best_fit_positions[dimension] != None:
 
@@ -307,19 +268,6 @@ class Grid_Analysis():
                         #Updating previous
                         self.logger.info(
                             "GRID ARRAY, Got a grid R at, {0}".format(R))
-
-        #DEBUG R
-        #fs = open('debug_R.log','a')
-        #if self.best_fit_positions is None:
-            #fs.write(str([best_fit_positions[0][0],
-                    #best_fit_positions[1][0]]) + "\n")
-        #else:
-            #fs.write(str([R, (best_fit_positions[0][0],
-                #best_fit_positions[1][0]),
-                #(self.best_fit_positions[0][0],
-                #self.best_fit_positions[1][0]) ]) + "\n")
-        #fs.close()
-        #DEBUG END
 
         if R < 20 and best_fit_positions[0] != None and \
                              best_fit_positions[1] != None:

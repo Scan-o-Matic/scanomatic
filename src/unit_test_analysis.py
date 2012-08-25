@@ -71,8 +71,29 @@ def simulate_plate(pinning=(32, 48), colony_thickness=30, i_shape=(1768, 2600)):
 
     im += np.random.normal(loc=1, size=i_shape)
 
-    return im
+    return im, cell_size
 
+
+class Test_Grid(unittest.TestCase):
+
+    def setUp(self):
+
+        self.pinning = (32, 48)
+        self.colony_thickness = 500
+
+        self.g = ga.Grid_Analysis(None)
+
+        self.im, self.cell_size = simulate_plate(pinning=self.pinning,
+                        colony_thickness=self.colony_thickness)
+
+    def test_find_grid(self):
+
+        res = self.g.get_analysis(self.im, self.pinning)
+
+        self.assertEquals(self.cell_size, self.g.best_fit_frequency)
+
+        self.assertEqual(self.cell_size[0] * 0.5, res[0][0])
+        self.assertEqual(self.cell_size[1] * 0.5, res[1][0])
  
 class Test_Grid_Cell_Item(unittest.TestCase):
 

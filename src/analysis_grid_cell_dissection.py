@@ -31,6 +31,7 @@ from scipy.ndimage import binary_erosion, binary_dilation,\
 #
 
 import resource_histogram as hist
+import resource_logger as logger
 
 #
 # FUNCTIONS
@@ -399,28 +400,6 @@ class Analysis_Recipe_Median_Filter(Analysis_Recipe_Abstraction):
         self.set_reference_image(detect_im, inplace=True)
 
 
-class Log_Garbage_Collector(object):
-
-    def warning(self, *args, **kwargs):
-
-        pass
-
-    def info(self, *args, **kwargs):
-
-        pass
-
-    def debug(self, *args, **kwargs):
-
-        pass
-
-    def error(self, *args, **kwargs):
-
-        pass
-
-    def critical(self, *args, **kwargs):
-
-        pass
-
 
 class Cell_Item():
 
@@ -455,7 +434,7 @@ class Cell_Item():
         if parent is not None:
             self.logger = self._parent.logger
         else:
-            self.logger = Log_Garbage_Collector()
+            self.logger = logger.Log_Garbage_Collector()
 
         self.grid_array = grid_array.copy()
         self.filter_array = np.zeros(grid_array.shape, dtype=grid_array.dtype)
