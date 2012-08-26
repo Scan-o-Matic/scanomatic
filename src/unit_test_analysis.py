@@ -8,9 +8,11 @@ from scipy.ndimage import convolve
 
 import analysis_grid_cell_dissection as gc
 import analysis_grid_array_dissection as ga
-
+import analysis_grid_array as g
 
 def simulate_colony(colony_thickness=30, i_shape=(105, 104), add_bg=True):
+
+    i_shape = map(int, i_shape)
 
     origo = [i / 2 for i in i_shape]
     r = int((origo[0] * origo[1]) ** 0.5 / np.pi)
@@ -44,9 +46,10 @@ def simulate_colony(colony_thickness=30, i_shape=(105, 104), add_bg=True):
     return im, true_blob
     
 
-def simulate_plate(pinning=(32, 48), colony_thickness=30, i_shape=(1768, 2600)):
+def simulate_plate(pinning=(32, 48), colony_thickness=30, i_shape=(1610, 2550),
+                        simulate_8_bit=False):
 
-    cell_size = [int(i / float(pinning[n]+1)) for n, i in enumerate(i_shape)]
+    cell_size = [i / float(pinning[n]+2) for n, i in enumerate(i_shape)]
 
     im = np.random.normal(loc=1, size=i_shape)
 
@@ -62,14 +65,25 @@ def simulate_plate(pinning=(32, 48), colony_thickness=30, i_shape=(1768, 2600)):
                             i_shape=cell_size,
                             add_bg=False)
 
-            low_x = (x + 0.5) * cell_size[0]
-            low_y = (y + 0.5) * cell_size[1]
+            low_x = int((x + 0.6) * cell_size[0])
+            low_y = int((y + 0.6) * cell_size[1])
 
-            im[low_x: low_x + cell_size[0], low_y: low_y + cell_size[1]] += \
+            im[low_x: low_x + int(cell_size[0]),
+                            low_y: low_y + int(cell_size[1])] += \
                             blob_im
 
-
     im += np.random.normal(loc=1, size=i_shape)
+
+    if simulate_8_bit:
+
+        if im.min() < 0:
+            im -= im.min()
+
+        if im.max() > 255:
+
+            im *= 255.0 / im.max()
+
+        im = np.round(im).astype(np.int)
 
     return im, cell_size
 
@@ -81,20 +95,49 @@ class Test_Grid(unittest.TestCase):
         self.pinning = (32, 48)
         self.colony_thickness = 500
 
-        self.g = ga.Grid_Analysis(None)
+        self.ga = ga.Grid_Analysis(None)
 
         self.im, self.cell_size = simulate_plate(pinning=self.pinning,
-                        colony_thickness=self.colony_thickness)
+                        colony_thickness=self.colony_thickness,
+                        simulate_8_bit=True)
 
     def test_find_grid(self):
 
-        res = self.g.get_analysis(self.im, self.pinning)
+        res = self.ga.get_analysis(self.im, self.pinning)
 
-        self.assertEquals(self.cell_size, self.g.best_fit_frequency)
+        self.assertEquals(map(round, self.cell_size), 
+                map(round, self.ga.best_fit_frequency))
 
-        self.assertEqual(self.cell_size[0] * 0.5, res[0][0])
-        self.assertEqual(self.cell_size[1] * 0.5, res[1][0])
- 
+        self.assertEqual(int(self.cell_size[0] * 0.6), res[0][0])
+        self.assertEqual(int(self.cell_size[1] * 0.6), res[1][0])
+
+
+    def test_plate(self):
+
+        grid = g.Grid_Array(None, 1, (32, 48))
+
+        self.assertEquals((len(grid._grid_cells),
+                len(grid._grid_cells[0])), (32, 48))
+
+
+        f = grid.get_analysis(self.im.copy())
+
+        self.assertIsNot(f, None)
+
+        for c_pos in ((0, 0), (31, 0), (0, 47), (31, 47)):
+
+            for d in (0, 1):
+
+                blob_center = f[c_pos[0]][c_pos[1]]['blob']['centroid']
+
+                grid_cell_size = grid._grid_cell_size
+
+                self.assert_(grid_cell_size[d] * 0.25 < blob_center[d] < \
+                        grid_cell_size[d] * 0.75, 
+                        msg="Cell {0} has blob not in center".format(c_pos))
+
+
+
 class Test_Grid_Cell_Item(unittest.TestCase):
 
     Item = gc.Cell_Item
@@ -551,6 +594,7 @@ class Test_Analysis_Recipe(unittest.TestCase):
 
         pass
 
+
 class Test_Derived_Analysis(unittest.TestCase):
     """NEED MORE TESTS"""
 
@@ -580,6 +624,8 @@ class Test_Derived_Analysis(unittest.TestCase):
             self.assertIs(ar1.parent, None)
             self.assertIs(ar1.grid_cell, self.b)
         
+            ar1._do(self.I)
+
 
 if __name__ == "__main__":
 

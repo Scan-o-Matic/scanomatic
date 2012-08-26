@@ -282,6 +282,7 @@ class Analysis_Recipe_Empty(Analysis_Recipe_Abstraction):
 
         self.analysis_order = []
 
+
 class Analysis_Threshold_Otsu(Analysis_Recipe_Abstraction):
 
     def __init__(self, grid_cell, parent):
@@ -295,7 +296,8 @@ class Analysis_Threshold_Otsu(Analysis_Recipe_Abstraction):
             self.grid_cell.histogram.re_hist(im))
 
         self.grid_cell.filter_array[:, :] = im > threshold
-  
+
+
 class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
 
     kernel = np.array([[0, 0, 1, 0, 0],
@@ -398,7 +400,6 @@ class Analysis_Recipe_Median_Filter(Analysis_Recipe_Abstraction):
         detect_im = median_filter(im, size=(3, 3), mode="nearest")
 
         self.set_reference_image(detect_im, inplace=True)
-
 
 
 class Cell_Item():
@@ -1214,7 +1215,6 @@ class Blob(Cell_Item):
 
         self.blob_recipe.set_reference_image(self.grid_array)
         self.blob_recipe.analyse()
-
 
         number_of_labels, qualities, c_o_m, label_array = \
                                 self.get_candidate_blob_ranks()

@@ -918,7 +918,6 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
         return False
 
-
     logger.info("ANALYSIS, Full analysis took %.2f minutes" %\
         ((time() - start_time) / 60.0))
 
@@ -932,8 +931,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 class Project_Image():
     def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
         animate=False, file_path_base="", fixture_name='fixture_a',
-        p_uuid=None, logger = None):
-
+        p_uuid=None, logger=None):
 
         if logger is not None:
             self.logger = logger
@@ -960,7 +958,7 @@ class Project_Image():
 
         self.fixture = r_fixture.Fixture_Settings(\
                 self._program_config_root + os.sep + "fixtures",
-                fixture = fixture_name)
+                fixture=fixture_name)
 
         self.im = None
 
@@ -1135,28 +1133,39 @@ class Project_Image():
         """
 
         if im_path != None:
+
             self._im_path = im_path
             self.load_image()
 
-
         if self._im_loaded == True:
+
             if len(self.im.shape) > 2:
-                self.im = self.im[:,:,0]
+
+                self.im = self.im[:, :, 0]
+
         else:
+
             return None
 
         self._timestamp = timestamp
 
         if len(grayscale_values) > 3:
+
             gs_values = np.array(grayscale_values)
+
             if grayscale_indices is None:
+
                 gs_indices = self.gs_indices
+
             else:
+
                 gs_indices = np.array(grayscale_indices)
                 self.gs_indices = gs_indices
 
-            gs_fit = np.polyfit(gs_indices, gs_values,3)
+            gs_fit = np.polyfit(gs_indices, gs_values, 3)
+
         else:
+
             gs_fit = None
 
         self.logger.debug("ANALYSIS produced gs-coefficients" + \
@@ -1169,6 +1178,7 @@ class Project_Image():
             for ga_i, grid_array in enumerate(self._grid_arrays):
 
                 im = self.get_im_section(features[ga_i], scale_factor)
+
                 cur_graph_name = save_graph_name + str(ga_i) + ".png"
 
                 grid_array.set_grid(im, save_grid_name=cur_graph_name,
@@ -1176,14 +1186,13 @@ class Project_Image():
                     use_otsu=use_otsu, median_coeff=None,
                     verbose=False, visual=False, dont_save_grid=True)
 
-
         if gs_fit is not None:
 
             z3_deriv_coeffs = np.array(gs_fit[: -1]) * \
                         np.arange(gs_fit.shape[0] - 1, 0, -1)
 
-            z3_deriv = np.array(map(lambda x: (z3_deriv_coeffs*np.power(x,
-                np.arange(z3_deriv_coeffs.shape[0],0,-1))).sum(), range(87)))
+            z3_deriv = np.array(map(lambda x: (z3_deriv_coeffs * np.power(x,
+                np.arange(z3_deriv_coeffs.shape[0], 0, -1))).sum(), range(87)))
 
             if (z3_deriv > 0).any() and (z3_deriv < 0).any():
 
@@ -1265,7 +1274,7 @@ if __name__ == "__main__":
         #"instead saved to taget position", type=str)
 
     parser.add_argument("-t", "--watch-time", dest="grid_times",
-        help="If specified, the gridplacements at the specified timepoints"+\
+        help="If specified, the gridplacements at the specified timepoints" + \
         " will be saved in the set output-directory, comma-separeted indices.",
         metavar="0,1,100", default="0", type=str)
 
@@ -1274,7 +1283,7 @@ if __name__ == "__main__":
         default=False, type=bool)
 
     parser.add_argument('-a', '--animate', dest="animate", default=False,
-        type=bool, help="If True, it will produce stop motion images of the "+\
+        type=bool, help="If True, it will produce stop motion images of the" +\
         "watched colony ready for animation")
 
     parser.add_argument("-s", "--supress-analysis", dest="supress",
@@ -1337,7 +1346,7 @@ if __name__ == "__main__":
 
     logging.debug("XML-formatting is " + \
                 "{0}, omitting compartments {1} and measures {2}.".format(
-                ['long','short'][xml_format['short']],
+                ['long', 'short'][xml_format['short']],
                 xml_format['omit_compartments'],
                 xml_format['omit_measures']))
 
@@ -1407,7 +1416,7 @@ if __name__ == "__main__":
             parser.error('The watched colony could not be resolved,' + \
                                 ' make sure that you follow syntax')
 
-        if len(args.graph_watch) <> 3:
+        if len(args.graph_watch) != 3:
 
             parser.error('Bad specification of watched colony')
 
@@ -1426,7 +1435,7 @@ if __name__ == "__main__":
 
     try:
 
-        fh = open(args.inputfile,'r')
+        fh = open(args.inputfile, 'r')
 
     except:
 
@@ -1472,5 +1481,5 @@ if __name__ == "__main__":
 
     analyse_project(args.inputfile, output_path, pm, args.graph_watch,
         args.supress, True, False, False, grid_times=grid_times,
-        xml_format = xml_format, animate=args.animate,
+        xml_format=xml_format, animate=args.animate,
         manual_grid=args.manual_grid)

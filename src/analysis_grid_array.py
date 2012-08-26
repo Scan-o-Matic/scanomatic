@@ -29,6 +29,7 @@ from matplotlib import pyplot as plt
 
 import analysis_grid_array_dissection as array_dissection
 import analysis_grid_cell as grid_cell
+import resource_logger as logger
 
 #
 # CLASS: Grid_Array
@@ -36,10 +37,18 @@ import analysis_grid_cell as grid_cell
 
 
 class Grid_Array():
+
     def __init__(self, parent, identifier, pinning_matrix):
 
         self._parent = parent
-        self.logger = self._parent.logger
+
+        if parent is None:
+
+            self.logger = logger.Log_Garbage_Collector()
+
+        else:
+
+            self.logger = self._parent.logger
 
         if type(identifier) == types.IntType:
 
@@ -139,7 +148,9 @@ class Grid_Array():
 
             self._grid_cell_size = map(int, map(round, fit_frequency[:]))
 
-        self.set_history()
+        if self._parent is not None:
+
+            self.set_history()
 
     def set_history(self, adjusted_by_history=False):
 
@@ -223,8 +234,11 @@ class Grid_Array():
 
             #if rows is None so is columns
 
-            topleft_history = self._parent.fixture.get_pinning_history(
-                        self._identifier[1], self._pinning_matrix)
+            if self._parent is not None:
+                topleft_history = self._parent.fixture.get_pinning_history(
+                            self._identifier[1], self._pinning_matrix)
+            else:
+                topleft_history = []
 
             if topleft_history is None:
                 topleft_history = []
@@ -250,7 +264,7 @@ class Grid_Array():
                                 self._identifier))
 
                     self._best_fit_rows = None
-                    self._best_fit_coulmns = None
+                    self._best_fit_columns = None
 
                     return False
 
@@ -258,7 +272,11 @@ class Grid_Array():
 
                     self._best_fit_rows = best_fit_rows
                     self._best_fit_columns = best_fit_columns
-                    self.set_history(adjusted_by_history=adjusted_by_history)
+
+                    if self._parent is not None:
+
+                        self.set_history(
+                            adjusted_by_history=adjusted_by_history)
 
                 else:
 
@@ -515,7 +533,7 @@ class Grid_Array():
 
             raw_input("Waiting to start next plate (press Enter)")
 
-        if not grid_lock or self._best_fit_rows is None:
+        if not grid_lock or self._best_fit_columns is None:
 
             if not self.set_grid(im, save_grid_name=save_grid_name,
                     save_grid_image=save_grid_image, grid_lock=grid_lock,
@@ -526,6 +544,10 @@ class Grid_Array():
                         '{0} and none to use'.format(self._identifier))
 
                 return None
+
+        s_bfr = self._best_fit_rows
+        s_bfc = self._best_fit_columns
+        s_gcs = self._grid_cell_size
 
         #total_steps = float(self._pinning_matrix[0] * self._pinning_matrix[1])
 
@@ -552,7 +574,13 @@ class Grid_Array():
         transformation_matrix = None
 
         #KODAK neutral scale
-        gs_indices = self._parent.gs_indices
+        if self._parent is not None:
+
+            gs_indices = self._parent.gs_indices
+
+        else:
+
+            gs_indices = None
 
         if gs_values == None:
 
@@ -581,7 +609,7 @@ class Grid_Array():
                     #im[x,y] = transformation_matrix[im[x,y]]
         #print "*** Analysing grid:"
 
-        tf_im = np.zeros(self._grid_cell_size, dtype=np.float64)
+        tf_im = np.zeros(s_gcs, dtype=np.float64)
 
         for row in xrange(self._pinning_matrix[0]):
 
@@ -592,10 +620,13 @@ class Grid_Array():
 
                     _cur_gc = self._grid_cells[row][column]
 
+                    row_min = s_bfr[row]
+                    col_min = s_bfc[column]
+
                     _cur_gc.set_center(
-                                    (self._best_fit_rows[row],
-                                    self._best_fit_columns[column]),
-                                    self._grid_cell_size)
+                                    (row_min,
+                                    col_min),
+                                    s_gcs)
 
                     if transformation_matrix is not None:
 
@@ -605,13 +636,13 @@ class Grid_Array():
 
                         for x in xrange(tf_im.shape[0]):
 
-                            x2 = int(round(self._best_fit_columns[column] - \
-                                        self._grid_cell_size[0] / 2.0)) + x
+                            x2 = int(round(row_min)) + x
+                                        #- s_gcs[0] / 2.0)) + x
 
                             for y in xrange(tf_im.shape[1]):
 
-                                y2 = int(round(self._best_fit_rows[row] - \
-                                        self._grid_cell_size[1] / 2.0)) + y
+                                y2 = int(round(col_min)) + y
+                                        #- s_gcs[1] / 2.0)) + y
 
                                 try:
                                     tf_im[x, y] = \
@@ -628,11 +659,11 @@ class Grid_Array():
                                         ) + "({0}, {1})\nbest_fit ".format(
                                         x2, y2) + \
                                         "({0}, {1}) size ({2}, {3}) ".format(
-                                        self._best_fit_columns[column],
-                                        self._best_fit_rows[row],
-                                        self._grid_cell_size[0],
-                                        self._grid_cell_size[1]) + \
-                                        "from {10}:{11}:{12}".format(
+                                        col_min,
+                                        row_min,
+                                        s_gcs[0],
+                                        s_gcs[1]) + \
+                                        "from {0}:{1}:{2}".format(
                                         self._identifier, row, column))
 
                                     grid_image = plt.figure()
@@ -643,19 +674,19 @@ class Grid_Array():
 
                                         grid_plot.plot(
                                             np.ones(
-                                            len(self._best_fit_columns)) * \
-                                            self._best_fit_rows[row],
-                                            np.array(self._best_fit_columns),
+                                            len(s_bfc)) * \
+                                            s_bfr[row],
+                                            np.array(s_bfc),
                                             'r-')
 
                                         for column in xrange(
                                                 self._pinning_matrix[1]):
 
                                             grid_plot.plot(
-                                                np.array(self._best_fit_rows),
+                                                np.array(s_bfr),
                                                 np.ones(
-                                                len(self._best_fit_rows)) * \
-                                                self._best_fit_columns[column],
+                                                len(s_bfr)) * \
+                                                s_bfc[column],
                                                 'r-')
 
                                     grid_image.savefig("gridding_error.png")

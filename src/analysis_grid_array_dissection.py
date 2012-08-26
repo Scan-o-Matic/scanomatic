@@ -152,23 +152,19 @@ class Grid_Analysis():
 
         #Obtaining current values
         for dimension in xrange(2):
-            if median_coeff:
 
-                positions[dimension], measures[dimension] = self.get_spikes(
-                    dimension, im, visual, verbose, use_otsu, median_coeff,
-                    manual_threshold=manual_threshold)
-
-            else:
-
-                positions[dimension], measures[dimension] = self.get_spikes(
-                    dimension, im, visual, verbose, use_otsu,
+            positions[dimension], measures[dimension] = \
+                    self.get_spikes(
+                    int(dimension == 0),
+                    im=im, visual=visual, verbose=verbose,
+                    use_otsu=use_otsu, median_coeff=median_coeff,
                     manual_threshold=manual_threshold)
 
             self.logger.info(
                 "GRID ARRAY, Peak positions %sth dimension:\n%s" %\
                 (str(dimension), str(positions[dimension])))
 
-            best_fit_frequency[dimension] = r_signal.get_signal_frequency(\
+            best_fit_frequency[dimension] = r_signal.get_signal_frequency(
                 positions[dimension])
 
             if best_fit_frequency[dimension] is not None \
@@ -187,7 +183,7 @@ class Grid_Analysis():
                     best_fit_frequency[dimension] = history_f[dimension]
 
             best_fit_positions[dimension] = r_signal.get_true_signal(
-                im.shape[int(dimension==0)], pinning_matrix[dimension],
+                im.shape[dimension], pinning_matrix[dimension],
                 positions[dimension],
                 frequency=best_fit_frequency[dimension],
                 offset_buffer_fraction=0.5)
@@ -222,11 +218,6 @@ class Grid_Analysis():
 
                         best_fit_positions[dimension] = new_fit[0]
 
-            ###START HERE MARKING OUT ALL OLD STUFF...
-            #best_fit_start_pos[dimension], best_fit_frequency[dimension] = \
-                #self.get_signal_position_and_frequency( measures[dimension],
-                    #pinning_matrix[dimension], verbose)
-
             self.logger.info("GRID ARRAY, Best fit:\n" +\
                 "* Elements: " + str(pinning_matrix[dimension]) +\
                 "\n* Positions:\n" + str(best_fit_positions[dimension]))
@@ -240,15 +231,15 @@ class Grid_Analysis():
                 Y2 = np.ones(positions[dimension].shape) * 100
                 plt.clf()
                 if dimension == 1:
-                    plt.imshow(im[:,900:1200].T, cmap=plt.cm.gray)
+                    plt.imshow(im[:, 900: 1200].T, cmap=plt.cm.gray)
                 else:
-                    plt.imshow(im[300:600,:], cmap=plt.cm.gray)
+                    plt.imshow(im[300: 600, :], cmap=plt.cm.gray)
 
                 plt.plot(positions[dimension], Y2, 'r*',
                     label='Detected spikes', lw=3, markersize=10)
 
                 plt.plot(np.array(best_fit_positions[dimension]),\
-                    Y ,'g*', label='Selected positions', lw=3, markersize=10)
+                    Y, 'g*', label='Selected positions', lw=3, markersize=10)
 
                 plt.legend(loc=0)
                 plt.ylim(ymin=0, ymax=150)
@@ -260,10 +251,8 @@ class Grid_Analysis():
                 if self.best_fit_positions != None:
                     if self.best_fit_positions[dimension] != None:
                         R += ((best_fit_positions[dimension] - \
-                            self.best_fit_positions[dimension])**2).sum() / \
+                            self.best_fit_positions[dimension]) ** 2).sum() / \
                             float(pinning_matrix[dimension])
-
-
 
                         #Updating previous
                         self.logger.info(
@@ -293,7 +282,7 @@ class Grid_Analysis():
 
             return ret_tuple
 
-    def get_spikes(self, dimension, im=None, visual = False, verbose = False,\
+    def get_spikes(self, dimension, im=None, visual=False, verbose=False,
              use_otsu=True, median_coeff=0.99, manual_threshold=None):
         """
         get_spikes returns a spike list for a dimension of an image array
@@ -319,27 +308,30 @@ class Grid_Analysis():
                         1D flattned image to get a threshold if otsu is not
                         used.
         """
+
         if im == None:
-            im  = self.im
+
+            im = self.im
 
         im_1D = im.mean(axis=dimension)
 
         if use_otsu:
 
             self.threshold = hist.otsu(self.histogram.re_hist(im_1D))
+
         elif manual_threshold:
             self.threshold = manual_threshold
         else:
-            self.threshold = np.median(im_1D)*median_coeff
+            self.threshold = np.median(im_1D) * median_coeff
 
         im_1D2 = (im_1D < self.threshold).astype(int)
         if visual:
             Y = im_1D2 * 100
-            plt.plot(np.arange(len(im_1D)),im_1D,'b-')
+            plt.plot(np.arange(len(im_1D)), im_1D, 'b-')
             plt.plot(np.arange(len(im_1D2)), Y, 'g-')
             #print self.threshold, median_coeff
-            plt.axhline(y=self.threshold, color = 'r')
-            plt.axhline(y=np.median(im_1D), color = 'g')
+            plt.axhline(y=self.threshold, color='r')
+            plt.axhline(y=np.median(im_1D), color='g')
 
         #kernel = [-1,1]
         #spikes = np.convolve(im_1D, kernel, 'same')
@@ -350,15 +342,22 @@ class Grid_Analysis():
         spikes_toggle = False
 
         for i in xrange(len(im_1D2)):
+
             if im_1D2[i] and not spikes_toggle:
+
                 spikes_toggle = True
                 spikes_toggle_up.append(i)
+
             elif not im_1D2[i]:
+
                 if spikes_toggle == True:
                     spikes_toggle_down.append(i)
+
                 spikes_toggle = False
+
         if len(spikes_toggle_down) != len(spikes_toggle_up):
-           spikes_toggle_up = spikes_toggle_up[:len(spikes_toggle_down)]
+
+            spikes_toggle_up = spikes_toggle_up[: len(spikes_toggle_down)]
 
         self.logger.debug("GRID CELL get_spikes, %d long %d downs %d ups." % \
             (len(im_1D2), len(spikes_toggle_down), len(spikes_toggle_up)))
@@ -366,12 +365,13 @@ class Grid_Analysis():
         stt = (np.array(spikes_toggle_up) + np.array(spikes_toggle_down)) / 2
 
         if visual:
+
             Y = np.ones(len(stt)) * 80
-            plt.plot(stt,Y,'b.')
+
+            plt.plot(stt, Y, 'b.')
             plt.show()
 
-        spike_f = stt[1:] - \
-             stt[:-1]
+        spike_f = stt[1:] - stt[: -1]
 
         return stt[1:], spike_f
 
@@ -385,7 +385,7 @@ if __name__ == "__main__":
     measurements = 50
     segments = 12
 
-    tests = 1#0000
+    tests = 1  # 0000
     corrects = 0
     test = 0
     correct_pos = -1
@@ -418,17 +418,17 @@ if __name__ == "__main__":
 
     if visual:
 
-        Y = np.ones(positions.shape)*40
+        Y = np.ones(positions.shape) * 40
 
         if verbose:
 
-            print len(Y), len(positions[est_pos:est_pos+segments + 2])
+            print len(Y), len(positions[est_pos: est_pos + segments + 2])
 
         plt.plot(positions, Y, 'ko', lw=2)
-        pfound = positions[est_pos:est_pos+segments]
-        Y = np.ones(pfound.shape)*80
+        pfound = positions[est_pos: est_pos + segments]
+        Y = np.ones(pfound.shape) * 80
 
-        plt.plot(positions[est_pos:est_pos+segments], Y, 'ro')
+        plt.plot(positions[est_pos: est_pos + segments], Y, 'ro')
         plt.show()
 
     if verbose:
