@@ -353,7 +353,7 @@ class Project_Analysis_Setup(gtk.Frame):
 
         #Watch-colony
         hbox = gtk.HBox()
-        label = gtk.Label("Watch colony (to track and give extremely ritch data on):")
+        label = gtk.Label("Watch colony (to track and give extremely rich data on):")
         self.watch_entry = gtk.Entry()
         self.watch_entry.set_text(str(self._watch_colony))
         self.watch_entry.connect("focus-out-event",self._eval_input, "watch_colony")

@@ -129,12 +129,25 @@ class Grid_Analysis():
         positions of the spikes and a quality index
         """
 
+
         self.im = im
         positions = [None, None]
         measures = [None, None]
         best_fit_frequency = [None, None]
         best_fit_positions = [None, None]
         adjusted_by_history = False
+
+        pinning_max_dim = max(pinning_matrix)
+        im_max_dim = max(im.shape)
+
+        if pinning_max_dim == im_max_dim:
+
+            dim_order = [int(i == im_max_dim) for i in im.shape]
+
+        else:
+
+            dim_order = [int(i != im_max_dim) for i in im.shape]
+
         R = 0
 
         if history is not None and len(history) > 0:
@@ -150,63 +163,74 @@ class Grid_Analysis():
             history_rc = None
             history_f = None
 
-        #Obtaining current values
-        for dimension in xrange(2):
+        """
+        fig = plt.figure(10)
+        fig.add_subplot(2,2,1).imshow(im, cmap=plt.cm.Greys)
+        fig.add_subplot(2,2,2).plot(im.mean(0))
+        fig.gca().set_title("Dim 0 ({0})".format(pinning_matrix[dim_order[0]]))
+        fig.add_subplot(2,2,3).plot(im.mean(1))
+        fig.gca().set_title("Dim 1 ({0})".format(pinning_matrix[dim_order[1]]))
+        fig.show() 
+        raw_input("ttt.>")
+        """
 
-            positions[dimension], measures[dimension] = \
+        #Obtaining current values
+        for dim_i, dimension in enumerate(dim_order):
+
+            positions[dim_i], measures[dim_i] = \
                     self.get_spikes(
-                    int(dimension == 0),
+                    dim_i,
                     im=im, visual=visual, verbose=verbose,
                     use_otsu=use_otsu, median_coeff=median_coeff,
                     manual_threshold=manual_threshold)
 
             self.logger.info(
                 "GRID ARRAY, Peak positions %sth dimension:\n%s" %\
-                (str(dimension), str(positions[dimension])))
+                (str(dim_i), str(positions[dim_i])))
 
-            best_fit_frequency[dimension] = r_signal.get_signal_frequency(
-                positions[dimension])
+            best_fit_frequency[dim_i] = r_signal.get_signal_frequency(
+                positions[dim_i])
 
-            if best_fit_frequency[dimension] is not None \
+            if best_fit_frequency[dim_i] is not None \
                                 and history_f is not None:
 
-                if abs(best_fit_frequency[dimension] /\
-                            float(history_f[dimension]) - 1) > 0.1:
+                if abs(best_fit_frequency[dim_i] /\
+                            float(history_f[dim_i]) - 1) > 0.1:
 
                     self.logger.warning(
                             ('GRID ARRAY, frequency abnormality for ' +\
                             'dimension {0} (Current {1}, Expected {2}'.format(
-                            dimension, best_fit_frequency[dimension],
+                            dim_i, best_fit_frequency[dim_i],
                             history_f)))
 
                     adjusted_by_history = True
-                    best_fit_frequency[dimension] = history_f[dimension]
+                    best_fit_frequency[dim_i] = history_f[dim_i]
 
-            best_fit_positions[dimension] = r_signal.get_true_signal(
-                im.shape[dimension], pinning_matrix[dimension],
-                positions[dimension],
-                frequency=best_fit_frequency[dimension],
+            best_fit_positions[dim_i] = r_signal.get_true_signal(
+                im.shape[dim_i-1], pinning_matrix[dimension],
+                positions[dim_i],
+                frequency=best_fit_frequency[dim_i],
                 offset_buffer_fraction=0.5)
 
-            if best_fit_positions[dimension] is not None and \
+            if best_fit_positions[dim_i] is not None and \
                                         history_rc is not None:
 
                 goodness_of_signal = r_signal.get_position_of_spike(
-                    best_fit_positions[dimension][0], history_rc[dimension],
-                    history_f[dimension])
+                    best_fit_positions[dim_i][0], history_rc[dim_i],
+                    history_f[dim_i])
 
                 if abs(goodness_of_signal) > 0.2:
 
                     self.logger.warning(("GRID ARRAY, dubious pinning " + \
                         "position for  dimension {0} (Current signal " + \
                         "start {1}, Expected {2} (error: {3}).".format(
-                        dimension, best_fit_positions[dimension][0],
-                        history_rc[dimension], goodness_of_signal)))
+                        dim_i, best_fit_positions[dim_i][0],
+                        history_rc[dim_i], goodness_of_signal)))
 
                     adjusted_by_history = True
 
                     new_fit = r_signal.move_signal(
-                        [best_fit_positions[dimension]],
+                        list(best_fit_positions[dim_i]),
                         [-1 * round(goodness_of_signal)], freq_offset=0)
 
                     if new_fit is not None:
@@ -214,13 +238,13 @@ class Grid_Analysis():
                         self.logger.warning(
                             "GRID ARRAY, remapped signal for " +\
                             "dimension {0} , new signal:\n{1}".format(
-                            dimension, list(new_fit)))
+                            dim_i, list(new_fit)))
 
-                        best_fit_positions[dimension] = new_fit[0]
+                        best_fit_positions[dim_i] = new_fit[0]
 
             self.logger.info("GRID ARRAY, Best fit:\n" +\
                 "* Elements: " + str(pinning_matrix[dimension]) +\
-                "\n* Positions:\n" + str(best_fit_positions[dimension]))
+                "\n* Positions:\n" + str(best_fit_positions[dim_i]))
 
             #DEBUGHACK
             #visual = True
@@ -228,30 +252,30 @@ class Grid_Analysis():
 
             if visual:
                 Y = np.ones(pinning_matrix[dimension]) * 50
-                Y2 = np.ones(positions[dimension].shape) * 100
+                Y2 = np.ones(positions[dim_i].shape) * 100
                 plt.clf()
-                if dimension == 1:
+                if dim_i == 1:
                     plt.imshow(im[:, 900: 1200].T, cmap=plt.cm.gray)
                 else:
                     plt.imshow(im[300: 600, :], cmap=plt.cm.gray)
 
-                plt.plot(positions[dimension], Y2, 'r*',
+                plt.plot(positions[dim_i], Y2, 'r*',
                     label='Detected spikes', lw=3, markersize=10)
 
-                plt.plot(np.array(best_fit_positions[dimension]),\
+                plt.plot(np.array(best_fit_positions[dim_i]),\
                     Y, 'g*', label='Selected positions', lw=3, markersize=10)
 
                 plt.legend(loc=0)
                 plt.ylim(ymin=0, ymax=150)
                 plt.show()
 
-            if best_fit_positions[dimension] != None:
+            if best_fit_positions[dim_i] != None:
 
                 #Comparing to previous
                 if self.best_fit_positions != None:
-                    if self.best_fit_positions[dimension] != None:
-                        R += ((best_fit_positions[dimension] - \
-                            self.best_fit_positions[dimension]) ** 2).sum() / \
+                    if self.best_fit_positions[dim_i] != None:
+                        R += ((best_fit_positions[dim_i] - \
+                            self.best_fit_positions[dim_i]) ** 2).sum() / \
                             float(pinning_matrix[dimension])
 
                         #Updating previous
@@ -325,6 +349,10 @@ class Grid_Analysis():
             self.threshold = manual_threshold
 
         else:
+
+            if median_coeff is None:
+
+                median_coeff = 0.99
 
             self.threshold = np.median(im_1D) * median_coeff
 

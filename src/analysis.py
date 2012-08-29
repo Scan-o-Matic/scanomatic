@@ -731,7 +731,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         #    image_pos = 1
         #DEBUGHACK - END
 
-        logger.info("ANALYIS, Image took %.2f seconds" % \
+        logger.info("ANALYSIS, Image took %.2f seconds" % \
                          (time() - scan_start_time))
 
         print_progress_bar((image_tot - image_pos) / float(image_tot),
@@ -1184,7 +1184,7 @@ class Project_Image():
                 grid_array.set_grid(im, save_grid_name=cur_graph_name,
                     save_grid_image=cur_graph_name, grid_lock=grid_lock,
                     use_otsu=use_otsu, median_coeff=None,
-                    verbose=False, visual=False, dont_save_grid=True)
+                    verbose=False, visual=False, dont_save_grid=False)
 
         if gs_fit is not None:
 
@@ -1286,6 +1286,9 @@ if __name__ == "__main__":
         type=bool, help="If True, it will produce stop motion images of the" +\
         "watched colony ready for animation")
 
+    parser.add_argument("--otsu", dest="otsu", default=False, type=bool,
+        help="Invokes the usage of utso segmentation for detecting the grid")
+
     parser.add_argument("-s", "--supress-analysis", dest="supress",
         default=False, type=bool,
         help="If submitted, main analysis will be by-passed and only the" + \
@@ -1355,6 +1358,12 @@ if __name__ == "__main__":
 
         pm = get_pinning_matrices(args.matrices)
         logging.debug("Matrices: {0}".format(pm))
+
+        if pm == [None] * len(pm):
+
+            logging.error("No valid pinning matrices, aborting")
+            parser.error("Check that you supplied a valid string...")
+            
 
     else:
 
@@ -1480,6 +1489,7 @@ if __name__ == "__main__":
     logger.debug("Logger is ready!")
 
     analyse_project(args.inputfile, output_path, pm, args.graph_watch,
-        args.supress, True, False, False, grid_times=grid_times,
+        supress_analysis=args.supress, verbose=True, use_fallback=False,
+        use_otsu=args.otsu, grid_times=grid_times,
         xml_format=xml_format, animate=args.animate,
         manual_grid=args.manual_grid)

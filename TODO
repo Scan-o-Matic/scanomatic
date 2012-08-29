@@ -26,6 +26,8 @@
 
 --- BLOB-DETECTION ---
 
+*** New structure needed for all the grid cell abstract layers (Blob, Bg, Trash, Cell)
+
 *** Do a check on BG to throw out outliers from the BG into trash
 
 *** Let the subtracted BG be a plane and not a single value.

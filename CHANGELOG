@@ -2,6 +2,13 @@
 ##### Changed in Scannomatic 0.996 #####
    ###################################
 
+*** Started constructing unittests
+
+*** Restructured Blob Detection as a set of Classes in its own module
+    Also changed all of the algoritms that go into it
+
+*** Started mission to follow PEP8 standard
+
 *** Fixted so analysis project actually takes pinning string override directly
     when toggled and not only when a pinning setting is changed
 

@@ -248,8 +248,9 @@ class Grid_Array():
 
             best_fit_rows, best_fit_columns, R, adjusted_by_history = \
                     self._analysis.get_analysis(
-                    im, self._pinning_matrix, use_otsu, median_coeff,
-                    verbose, visual, history=topleft_history)
+                    im, self._pinning_matrix, 
+                    use_otsu=use_otsu, median_coeff=median_coeff,
+                    verbose=verbose, visual=visual, history=topleft_history)
 
             self.logger.debug("GRID ARRAY " + \
                     "{0}, best rows \n{1}\nbest columns\n{2}".format(
@@ -285,7 +286,15 @@ class Grid_Array():
 
                 self.R = R
 
-            if self._grid_cell_size == None:
+            if self._grid_cell_size is None:
+
+                if self._analysis.best_fit_frequency is None:
+
+                    self.logger.critical("GRID ARRAY, No grid cell size" +
+                            " obtained, probably because fixure calibration" +
+                            "is bad.")
+
+                    return None
 
                 self._grid_cell_size = map(int, map(round,
                             self._analysis.best_fit_frequency[:]))
@@ -533,6 +542,10 @@ class Grid_Array():
 
             raw_input("Waiting to start next plate (press Enter)")
 
+        if min(self._pinning_matrix) == 1:
+
+            self._pinning_matrix.reverse()
+
         if not grid_lock or self._best_fit_columns is None:
 
             if not self.set_grid(im, save_grid_name=save_grid_name,
@@ -572,6 +585,7 @@ class Grid_Array():
 
         #Normalising towards grayscale before anything is done on the colonies
         transformation_matrix = None
+        
 
         #KODAK neutral scale
         if self._parent is not None:

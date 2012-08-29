@@ -46,8 +46,17 @@ def simulate_colony(colony_thickness=30, i_shape=(105, 104), add_bg=True):
     return im, true_blob
     
 
-def simulate_plate(pinning=(32, 48), colony_thickness=30, i_shape=(1610, 2550),
+def simulate_plate(pinning=[32, 48], colony_thickness=30, i_shape=[1610, 2550],
                         simulate_8_bit=False):
+
+    if (min(i_shape) == i_shape[0]) != (min(pinning) == pinning[0]):
+
+        pinning.reverse()
+
+    if pinning[0] < pinning[1]:
+
+        pinning.reverse()
+        i_shape.reverse()
 
     cell_size = [i / float(pinning[n]+2) for n, i in enumerate(i_shape)]
 
@@ -92,7 +101,7 @@ class Test_Grid(unittest.TestCase):
 
     def setUp(self):
 
-        self.pinning = (32, 48)
+        self.pinning = [32, 48]
         self.colony_thickness = 500
 
         self.ga = ga.Grid_Analysis(None)
@@ -104,6 +113,9 @@ class Test_Grid(unittest.TestCase):
     def test_find_grid(self):
 
         res = self.ga.get_analysis(self.im, self.pinning)
+
+        self.assertIsNot(self.cell_size, None)
+        self.assertIsNot(self.ga.best_fit_frequency, None)
 
         self.assertEquals(map(round, self.cell_size), 
                 map(round, self.ga.best_fit_frequency))
