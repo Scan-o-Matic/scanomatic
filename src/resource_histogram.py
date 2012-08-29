@@ -23,10 +23,11 @@ import types
 
 
 class Histogram():
-    def __init__(self, img, run_at_init=True):
+    def __init__(self, img, run_at_init=True, bins=256):
 
         self.labels = None
         self.counts = None
+        self.bins = bins
 
         if run_at_init:
             self.re_hist(img)
@@ -73,8 +74,8 @@ class Histogram():
     def _hist(self, img):
 
         # if image is of type uint8:
-        counts = np.histogram(img, bins=range(257))[0]
-        labels = np.arange(256)
+        counts, labels = np.histogram(img, bins=self.bins+1)
+
         # Notice the rather peculiar organization of the return arguments
         # from np.histogram where 'bins'
         # has size len(counts)+1 size 'bins' is the bin EDGES
@@ -82,29 +83,41 @@ class Histogram():
         return (labels, counts)
 
 
-def otsu(histogram):
-    """ threshold = otsu(labels,counts)
-
-    Computes an optimal threshold according to Otsu's non-parametric
+def otsu(histogram=None, labels=None, counts=None):
+    """Returns a threshold based according to Otsu's non-parametric
     method for two classes
+
     The output 'threshold' is the index to label should be interpreted as
     class0 = {labels<=threshold}
     and class1 = {lables>threshold}
+
+    The function either takes a histogram class instance or two lists 
+    (labels and counts) as arguments.
     """
 
-    #labels, counts = np.float32(self.bins),np.float32(self.counts)
-    labels = np.float32(labels)
-    counts = np.float32(counts)
+    if histogram is not None:
 
+        labels = np.float32(histogram.labels)
+        counts = np.float32(histogram.counts)
+
+    elif labels is not None and counts is not None:
+
+        labels = np.float32(labels)
+        counts = np.float32(counts)
+
+    else:
+
+        return None
+        
     # First compute muT = 'overall mean', mu2T= 'mean square'
     #and sumc ='sum of counts'
 
     muT = mu2T = sumT = 0.0
     count = counts[0]
     label = labels[0]
-    nSlots = len(labels)
+    nSlots = len(labels) - 1  # Since labels actually contains borders
 
-    for k in range(nSlots):
+    for k in xrange(nSlots):
 
         count = counts[k]
         label = labels[k]
@@ -130,7 +143,7 @@ def otsu(histogram):
     mu0 = 0
     mu1 = muT
 
-    for k in range(nSlots):
+    for k in xrange(nSlots):
 
         if counts[k] > 0:
 

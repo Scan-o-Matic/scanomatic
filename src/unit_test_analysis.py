@@ -427,8 +427,8 @@ class Test_Grid_Cell_Blob(Test_Grid_Cell_Item):
 
         i.threshold_detect(threshold=20)        
 
-        np.save("_debug_t1.npy", self.true_blob)
-        np.save("_debug_t2.npy", i.filter_array)
+        #np.save("_debug_t1.npy", self.true_blob)
+        #np.save("_debug_t2.npy", i.filter_array)
 
         self.assertEqual(np.abs(self.true_blob - 
                     i.filter_array).sum(), 0)
@@ -559,13 +559,13 @@ class Test_Analysis_Recipe(unittest.TestCase):
 
         self.I = np.random.random((104, 105))
         self.b = gc.Blob(None, None, self.I)
-        self.ar1 = gc.Analysis_Recipe_Empty(self.b)
+        self.ar1 = gc.rblob.Analysis_Recipe_Empty(self.b)
         self.ar1.set_reference_image(self.I)
 
-        self.ar2 = gc.Analysis_Recipe_Empty(self.b, parent=self.ar1)
-        #self.ar3 = gc.Analysis_Recipe_Median_Filter(self.b, self.ar2)
-        #self.ar4 = gc.Analysis_Recipe_Gauss_2(self.b, self.ar1)
-        #self.ar5 = gc.Analysis_Recipe_Erode(self.b, self.ar1)
+        self.ar2 = gc.rblob.Analysis_Recipe_Empty(self.b, parent=self.ar1)
+        #self.ar3 = gc.rblob.Analysis_Recipe_Median_Filter(self.b, self.ar2)
+        #self.ar4 = gc.rblob.Analysis_Recipe_Gauss_2(self.b, self.ar1)
+        #self.ar5 = gc.rblob.Analysis_Recipe_Erode(self.b, self.ar1)
 
     def test_set_image(self):
 
@@ -603,7 +603,7 @@ class Test_Derived_Analysis(unittest.TestCase):
         self.known_classes = [gc.__getattribute__(c) for c in dir(gc) if 
                     inspect.isclass(gc.__getattribute__(c))
                     and issubclass(gc.__getattribute__(c), 
-                    gc.Analysis_Recipe_Abstraction)]
+                    gc.rblob.Analysis_Recipe_Abstraction)]
 
         self.I = np.random.random((104, 105))
         self.b = gc.Blob(None, None, self.I)

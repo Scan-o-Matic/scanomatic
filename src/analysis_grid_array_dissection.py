@@ -317,11 +317,15 @@ class Grid_Analysis():
 
         if use_otsu:
 
-            self.threshold = hist.otsu(self.histogram.re_hist(im_1D))
+            self.histogram.re_hist(im_1D)
+            self.threshold = hist.otsu(histogram = self.histogram)
 
         elif manual_threshold:
+
             self.threshold = manual_threshold
+
         else:
+
             self.threshold = np.median(im_1D) * median_coeff
 
         im_1D2 = (im_1D < self.threshold).astype(int)
