@@ -184,7 +184,7 @@ class Grid_Analysis():
         #Obtaining current values
         for dim in xrange(2):
 
-            positions[dim_i], measures[dim_i] = \
+            positions[dim], measures[dim: = \
                     self.get_spikes(
                     self.dim_order[dim]-1,
                     im=im, visual=self.visual, verbose=self.verbose,
