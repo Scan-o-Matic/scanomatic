@@ -325,21 +325,43 @@ class Grid_Array():
         grid_plot = grid_image.add_subplot(111)
         grid_plot.imshow(im, cmap=plt.cm.gray)
 
+        
 
         for row in xrange(self._pinning_matrix[0]):
 
-            grid_plot.plot(\
-                    np.ones(len(best_fit_columns)) * \
-                    best_fit_rows[row],
-                    np.array(best_fit_columns),
-                    'r-')
+            if self._im_dim_order[0] == 1:
+
+                grid_plot.plot(
+                        np.ones(len(best_fit_columns)) * \
+                        best_fit_rows[row],
+                        np.array(best_fit_columns),
+                        'r-')
+
+            else:
+
+                grid_plot.plot(
+                        np.array(best_fit_columns),
+                        np.ones(len(best_fit_columns)) * \
+                        best_fit_rows[row],
+                        'r-')
 
             for column in xrange(self._pinning_matrix[1]):
 
-                grid_plot.plot(\
-                        np.array(best_fit_rows),
-                        np.ones(len(best_fit_rows)) * \
-                        best_fit_columns[column], 'r-')
+                if self._im_dim_order[0] == 1:
+
+                    grid_plot.plot(
+                            np.array(best_fit_rows),
+                            np.ones(len(best_fit_rows)) * \
+                            best_fit_columns[column],
+                            'r-')
+
+                else:
+
+                    grid_plot.plot(
+                            np.ones(len(best_fit_rows)) * \
+                            best_fit_columns[column],
+                            np.array(best_fit_rows),
+                            'r-')
 
         ax = grid_image.gca()
         ax.set_xlim(0, im.shape[1])
@@ -544,8 +566,8 @@ class Grid_Array():
         c_column    The column / (dim 1)
         """
 
-        #Clear source of might just be laying there
-        source *= 0
+        #Clear target of might just be laying there
+        target *= 0
     
         #wh          Width and Height
         wh = self._grid_cell_size
@@ -565,15 +587,17 @@ class Grid_Array():
         #x,y        are target coordinates
         #x2, y2     are source coordinates
 
+        wh_half = [i/2.0 for i in wh]
+
         for x in xrange(wh[im_axis_order[0]]):
 
-            x2 = int(round(ul[axis_order[0]])) + x
-                        #- s_gcs[0] / 2.0)) + x
+            x2 = int(round(ul[axis_order[0]] - 
+                    wh_half[im_axis_order[0]])) + x
 
             for y in xrange(wh[axis_order[1]]):
 
-                y2 = int(round(ul[axis_order[1]])) + y
-                        #- s_gcs[1] / 2.0)) + y
+                y2 = int(round(ul[axis_order[1]] -
+                    wh_half[im_axis_order[1]])) + y
 
                 try:
 
@@ -584,13 +608,14 @@ class Grid_Array():
                     #up the transformed value in the tm and place that value
                     #in the corresponting positon in target
 
-                    if axis_order[0] < axis_order[1]:
+                    if axis_order[0] > axis_order[1]:
 
-                        target[x, y] = tm[source[x2, y2]]
+                        target[y, x] = tm[source[x2, y2]]
 
                     else:
 
-                        target[y, x] = tm[source[y2, x2]]
+                        target[x, y] = tm[source[x2, y2]]
+                        #print target[x, y], source[x2, y2], tm[source[x2, y2]]
 
                 except IndexError:
 
@@ -626,7 +651,7 @@ class Grid_Array():
                     grid_plot.set_xlim(0, source.shape[axis_order[0]])
                     grid_plot.set_ylim(0, source.shape[axis_order[1]])
 
-                    for row in xrange(self._pinning_matrix[axis_order[0]]):
+                    for row in xrange(self._pinning_matrix[0]):
 
                         grid_plot.plot(
                             np.ones(
@@ -636,7 +661,7 @@ class Grid_Array():
                             'r-')
 
                         for column in xrange(
-                                self._pinning_matrix[axis_order[1]]):
+                                self._pinning_matrix[1]):
 
                             grid_plot.plot(
                                 np.array(self._best_fit_rows),
@@ -656,6 +681,7 @@ class Grid_Array():
                     raise Exception(IndexError, err_str)
 
                     sys.exit()
+
 
     def get_analysis(self, im, gs_values=None, gs_fit=None, gs_indices=None,
             identifier_time=None, watch_colony=None, save_grid_name=None):
@@ -730,11 +756,13 @@ class Grid_Array():
                     #-----------------------------------
                     #
 
+                    """
                     #Set current gc center according to which pin we look at
                     _cur_gc.set_center(
                                     (rc_min_tuple[im_dim_order[0]],
                                     rc_min_tuple[im_dim_order[1]]),
                                     s_gcs)  # Does this do anything?
+                    """
 
                     #
                     #Transforming to inter-scan neutal values
@@ -834,6 +862,8 @@ class Grid_Array():
                                 _cur_gc.get_item('blob').grid_array.copy()
 
                             self.watch_results = self._features[row][col]
+
+        return self._features
 
     def get_analysis_old(self, im, gs_fit=None, gs_values=None, use_fallback=False,
                 use_otsu=True, median_coeff=None, verbose=False, visual=False,

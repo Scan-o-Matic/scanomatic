@@ -147,11 +147,11 @@ class Grid_Cell():
 
     def __str__(self):
 
-        s = "{0} id = {1} centered at (x,y)=({2:.2f}, {3:.2f})".format(
+        s = "{0} id = {1} centered at (x,y)=({2}, {3})".format(
                 self.__class__.__name__, self.idtag,
                 self.center[0], self.center[1])
 
-        s += " with (width,height)=({0:.2f}, {1.2f}".format(
+        s += " with (width,height)=({0}, {1}".format(
                 self.rect[2], self.rect[3])
 
         return s
@@ -239,7 +239,7 @@ class Grid_Cell():
     def set_grid_array_pointers(self):
         for item_names in self._analysis_items.keys():
             self._analysis_items[item_names].grid_array = self.data_source
-
+    """
     def set_rect_size(self, rect_size=None):
 
         if rect_size == None:
@@ -269,6 +269,7 @@ class Grid_Cell():
         vec.shape = self.center.shape
         self.center += vec
         self.set_center(self.center)
+    """
 
     #
     # GET functions
@@ -350,6 +351,7 @@ class Grid_Cell():
 
         return features_dict
 
+    """
     def get_first_dim_as_tuple(self):
 
         return (self.rect[0], self.rect[0] + self.get_width())
@@ -404,6 +406,7 @@ class Grid_Cell():
 
         return self.center
 
+    """
     #
     # Other functions
     #

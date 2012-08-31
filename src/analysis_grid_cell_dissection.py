@@ -662,8 +662,8 @@ class Blob(Cell_Item):
     # DETECT functions
     #
 
-    def detect(self, use_fallback_detection=None,
-                        max_change_threshold=8, remember_filter=False):
+    def detect(self, use_fallback_detection=False, 
+                max_change_threshold=8, remember_filter=False):
         """
         Generic wrapper function for blob-detection that calls the
         proper detection function and evaluates the results in comparison
@@ -685,7 +685,7 @@ class Blob(Cell_Item):
 
             self.iterative_threshold_detect()
 
-        elif use_fallback_detection == False:
+        elif self.use_fallback_detection == False:
 
             self.edge_detect()
 

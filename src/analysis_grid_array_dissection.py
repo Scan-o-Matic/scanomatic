@@ -183,8 +183,6 @@ class Grid_Analysis():
 
         #Obtaining current values by pinning grid dimension order
 
-        #print im.shape, self.pinning_matrix, self.dim_order
-
         for dim in xrange(2):
 
             positions[dim], measures[dim] = \

@@ -116,6 +116,18 @@ def simulate_plate(pinning=[32, 48], colony_thickness=30, im_shape=None,
 
 class Test_Grid(unittest.TestCase):
 
+    gs_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 
+                        15, 16, 17, 18, 19, 20, 21, 22]
+
+    gs_values = [232.06862745098039, 205.80196078431371,
+        191.11875000000003, 175.11176470588239, 161.23333333333332,
+        148.77254901960785, 136.07647058823531, 122.375, 111.64509803921568,
+        101.05882352941177, 91.209803921568636, 80.472549019607825,
+        72.439583333333331, 64.005882352941171, 55.258823529411771,
+        48.860784313725482, 42.186274509803923, 34.158333333333331,
+        28.276470588235295, 23.086274509803925, 19.241176470588229,
+        17.360784313725492, 14.783333333333335]
+
     def setUp(self):
 
         self.pinning = [32, 48]
@@ -132,7 +144,7 @@ class Test_Grid(unittest.TestCase):
         im_max_pos = int(max(self.im.shape) == self.im.shape[1])
 
         self.im_axis_order = [int(pm_max_pos != im_max_pos)]
-        self.im_axis_order.append(int(im_axis_order[0] == 0)) 
+        self.im_axis_order.append(int(self.im_axis_order[0] == 0)) 
 
         self.ga = ga.Grid_Analysis(None, self.pinning)
 
@@ -164,7 +176,9 @@ class Test_Grid(unittest.TestCase):
         self.assertEquals([len(grid._grid_cells),
                 len(grid._grid_cells[0])], self.pinning)
 
-        f = grid.get_analysis(self.im.copy())
+        f = grid.get_analysis(self.im.copy(),
+            gs_values=self.gs_values, gs_indices=self.gs_indices)
+
         cell_count_list = list()
 
         self.assertIsNot(f, None)
@@ -186,7 +200,7 @@ class Test_Grid(unittest.TestCase):
         cell_count /= cell_count.mean()
         cell_count = np.abs(1 - cell_count)
 
-        self.assertEqual((cell_count < 0.0001).all(True), True)
+        self.assertEqual((cell_count < 0.05).all(), True)
 
 class Test_Grid_Cell_Item(unittest.TestCase):
 
