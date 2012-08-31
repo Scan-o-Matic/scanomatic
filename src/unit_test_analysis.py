@@ -47,7 +47,7 @@ def simulate_colony(colony_thickness=30, i_shape=(105, 104), add_bg=True):
     
 
 def simulate_plate(pinning=[32, 48], colony_thickness=30, i_shape=[1610, 2550],
-                        simulate_8_bit=False):
+                        simulate_8_bit=False, inverse_8_bit=False):
 
     if (min(i_shape) == i_shape[0]) != (min(pinning) == pinning[0]):
 
@@ -94,6 +94,11 @@ def simulate_plate(pinning=[32, 48], colony_thickness=30, i_shape=[1610, 2550],
 
         im = np.round(im).astype(np.int)
 
+        if inverse_8_bit:
+
+            im *= -1
+            im += 255
+
     return im, cell_size
 
 
@@ -108,7 +113,7 @@ class Test_Grid(unittest.TestCase):
 
         self.im, self.cell_size = simulate_plate(pinning=self.pinning,
                         colony_thickness=self.colony_thickness,
-                        simulate_8_bit=True)
+                        simulate_8_bit=True, inverse_8_bit=True)
 
     def test_find_grid(self):
 
@@ -133,14 +138,16 @@ class Test_Grid(unittest.TestCase):
 
 
         f = grid.get_analysis(self.im.copy())
+        cell_count_list = list()
 
         self.assertIsNot(f, None)
-
+        
         for c_pos in ((0, 0), (31, 0), (0, 47), (31, 47)):
 
             for d in (0, 1):
 
                 blob_center = f[c_pos[0]][c_pos[1]]['blob']['centroid']
+                cell_count_list.append(f[c_pos[0]][c_pos[1]]['blob']['pixelsum']
 
                 grid_cell_size = grid._grid_cell_size
 
@@ -148,7 +155,11 @@ class Test_Grid(unittest.TestCase):
                         grid_cell_size[d] * 0.75, 
                         msg="Cell {0} has blob not in center".format(c_pos))
 
+        cell_count = np.array(cell_count_list)
+        cell_count /= cell_count.mean()
+        cell_count = np.abs(1 - cell_count)
 
+        self.assertEqual((cell_count < 0.0001).all(True), True)
 
 class Test_Grid_Cell_Item(unittest.TestCase):
 

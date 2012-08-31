@@ -300,9 +300,11 @@ class Grid(gtk.Frame):
             active = self.plate_selector.get_active()
             plate = self.analysis_image.get_plate(active)
             if plate is not None:
+
                 im = self.analysis_image.get_im_section(self._plate_positions[active])
-                plate.set_grid(im , save_grid_name= self._temp_grid_image, save_grid_image=True,
-                    grid_lock = True, verbose=False, visual=False)
+
+                plate.set_grid(im , save_grid_name=self._temp_grid_image,
+                    verbose=False, visual=False)
 
                 self._gui_reanalysis_img.set_from_file(self._temp_grid_image)
                 self._gui_reanalysis_img.show()

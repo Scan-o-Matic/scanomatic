@@ -94,11 +94,12 @@ def print_progress_bar(fraction, size=40):
 
 
 def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
-            graph_watch, supress_analysis=False,
-            verbose=False, use_fallback=False, use_otsu=False,
+            graph_watch, suppress_analysis=False,
+            verbose=False, use_fallback_detection=False, use_otsu=False,
             grid_times=None, xml_format={'short': True,
             'omit_compartments': [], 'omit_measures': []},
-            animate=False, manual_grid=False):
+            animate=False, manual_grid=False, median_coeff=0.99,
+            visual=False, manual_threshold=0.05):
     """
         analyse_project parses a log-file and runs a full analysis on all
         images in it. It will step backwards in time, starting with the
@@ -121,7 +122,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         VOID@graph_output   An optional PATH to where to save the graph
                             produced by graph_watch being set.
 
-        @supress_analysis  Suppresses the main analysis and thus
+        @suppress_analysis  Suppresses the main analysis and thus
                             only graph_watch thing is produced.
 
         @verbose           Will print some basic output of progress.
@@ -224,9 +225,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         '\noutdata_file_path\t{0}'.format(outdata_files_path) + \
         '\npinning_matrices\t{0}'.format(pinning_matrices) +\
         '\ngraph_watch\t\t{0}'.format(graph_watch) +\
-        '\nsupress_analysis\t{0}'.format(supress_analysis) + \
+        '\nsuppress_analysis\t{0}'.format(suppress_analysis) + \
         '\nverbose\t\t\t{0}'.format(verbose) + \
-        '\nuse_fallback\t\t{0}'.format(use_fallback) + \
+        '\nuse_fallback\t\t{0}'.format(use_fallback_detection) + \
         '\nuse_otsu\t\t{0}'.format(use_otsu) +\
         '\ngrid_times\t\t{0}'.format(grid_times) +\
         '\nxml_format\t\t{0}'.format(xml_format) +\
@@ -327,18 +328,23 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
     plate_position_keys = []
 
     for i in xrange(len(pinning_matrices)):
-        if (supress_analysis != True or graph_watch[0] == i) and\
+        if (suppress_analysis != True or graph_watch[0] == i) and\
             pinning_matrices[i] is not None:
 
             plate_position_keys.append("plate_" + str(i) + "_area")
 
     plates = len(plate_position_keys)
 
-    if supress_analysis == True:
+    if suppress_analysis == True:
 
         project_image = Project_Image([pinning_matrices[graph_watch[0]]],
                     animate=animate, file_path_base=file_path_base,
-                    fixture_name=fixture_name, p_uuid=p_uuid)
+                    fixture_name=fixture_name, p_uuid=p_uuid, logger=None,
+                    use_otsu=use_otsu, median_coeff=median_coeff,
+                    verbose=verbose, visual=visual,
+                    manual_threshold=manual_threshold,
+                    suppress_other=suppress_analysis,
+                    use_fallback_detection=use_fallback_detection)
 
         graph_watch[0] = 0
         plates = 1
@@ -365,7 +371,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
         project_image = Project_Image(pinning_matrices, animate=animate,
                 file_path_base=file_path_base, fixture_name=fixture_name,
-                p_uuid=p_uuid)
+                p_uuid=p_uuid, logger=None,
+                use_otsu=use_otsu, median_coeff=median_coeff,
+                verbose=verbose, visual=visual,
+                manual_threshold=manual_threshold,
+                suppress_other=suppress_analysis,
+                use_fallback_detection=use_fallback_detection)
 
     if manual_grid and manual_griddings is not None:
 
@@ -391,7 +402,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
     image_tot = image_pos
 
-    if supress_analysis != True:
+    if suppress_analysis != True:
 
         d_type_dict = {('pixelsum', 'ps'): ('cells', 'standard'),
             ('area', 'a'): ('pixels', 'standard'),
@@ -504,19 +515,21 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
         features = project_image.get_analysis(img_dict_pointer['File'],
             plate_positions, img_dict_pointer['grayscale_values'],
-            use_fallback, use_otsu,
             watch_colony=graph_watch,
-            supress_other=supress_analysis,
-            save_graph_image=(image_pos - first_scan_position in grid_times),
-            save_graph_name=outdata_files_path + "time_" + \
-            str(image_pos - first_scan_position).zfill(4) + \
-            "_plate_",
-            grid_lock=True,
+            save_graph_name=(image_pos - first_scan_position in grid_times) and
+            (outdata_files_path + "time_" + \
+            str(image_pos - first_scan_position).zfill(4) + "_plate_") or None,
             identifier_time=image_pos,
             timestamp=img_dict_pointer['Time'],
             grayscale_indices=gs_indices)
 
-        if supress_analysis != True:
+    def get_analysis(self, im_path, features, grayscale_values,
+            watch_colony=None,
+            save_graph_name=None,
+            grid_lock=False, identifier_time=None, timestamp=None,
+            grayscale_indices=None):
+
+        if suppress_analysis != True:
 
             for f in (fh, fhs):
 
@@ -530,7 +543,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
         if features is None:
 
-            if supress_analysis != True:
+            if suppress_analysis != True:
 
                 for f in (fh, fhs):
 
@@ -605,7 +618,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
                 #    image_pos = -1
                 #HACK END
 
-            if supress_analysis != True:
+            if suppress_analysis != True:
 
                 for f in (fh, fhs):
 
@@ -737,7 +750,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         print_progress_bar((image_tot - image_pos) / float(image_tot),
                         size=70)
 
-    if supress_analysis != True:
+    if suppress_analysis != True:
 
         for f in (fh, fhs):
 
@@ -931,7 +944,9 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 class Project_Image():
     def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
         animate=False, file_path_base="", fixture_name='fixture_a',
-        p_uuid=None, logger=None):
+        p_uuid=None, logger=None, use_otsu=True, median_coeff=0.99,
+        verbose=False, visual=False, manual_threshold=0.05,
+        suppress_other=False, use_fallback_detection=False):
 
         if logger is not None:
             self.logger = logger
@@ -947,6 +962,14 @@ class Project_Image():
 
         self._plate_positions = plate_positions
         self._pinning_matrices = pinning_matrices
+
+        self.use_otsu = use_otsu
+        self.median_coeff = median_coeff
+        self.verbose = verbose
+        self.visual = visual
+        self.manual_threshold = manual_threshold
+        self.suppress_other = suppress_other
+        self.use_fallback_detection = use_fallback_detection
 
         #PATHS
         script_path_root = os.path.dirname(os.path.abspath(__file__))
@@ -980,7 +1003,12 @@ class Project_Image():
             if pinning_matrices[a] is not None:
 
                 self._grid_arrays.append(grid_array.Grid_Array(self, (a,),
-                        pinning_matrices[a]))
+                        pinning_matrices[a], use_otsu=self.use_otsu,
+                        median_coeff=self.median_coeff, verbose=self.verbose,
+                        visual=self.visual,
+                        manual_threshold=self.manual_threshold,
+                        suppress_other=self.suppress_other,
+                        use_fallback_detection=self.use_fallback_detection))
 
                 self.features.append(None)
                 self.R.append(None)
@@ -1091,9 +1119,9 @@ class Project_Image():
         else:
             return None
 
-    def get_analysis(self, im_path, features, grayscale_values, \
-            use_fallback=False, use_otsu=True, watch_colony=None, \
-            supress_other=False, save_graph_image=False, save_graph_name=None,
+    def get_analysis(self, im_path, features, grayscale_values,
+            watch_colony=None,
+            save_graph_image=False, save_graph_name=None,
             grid_lock=False, identifier_time=None, timestamp=None,
             grayscale_indices=None):
 
@@ -1107,18 +1135,11 @@ class Project_Image():
 
             @param use_fallback : Causes fallback detection to be used.
 
-            @param use_otsu : Causes thresholding to be done by Otsu
-            algorithm (Default)
-
             @param watch_colony : A particular colony to gather information
             about.
 
-            @param supress_other : If only the watched colony should be
+            @param suppress_other : If only the watched colony should be
             analysed
-
-            @param save_grid_image : Causes the script to save the plates'
-            grid placement as images. Conflicts with visual, so don't use
-            visual if you want to save
 
             @param save_grid_name : A custom name for the saved image, if none
             is submitted, it will be grid.png in current directory.
@@ -1181,10 +1202,13 @@ class Project_Image():
 
                 cur_graph_name = save_graph_name + str(ga_i) + ".png"
 
-                grid_array.set_grid(im, save_grid_name=cur_graph_name,
-                    save_grid_image=cur_graph_name, grid_lock=grid_lock,
-                    use_otsu=use_otsu, median_coeff=None,
-                    verbose=False, visual=False, dont_save_grid=False)
+                if grid_lock == False or grid_array._best_fit_rows is None:
+
+                    grid_array.set_grid(im,
+                        save_grid_name=(save_graph_image is None and
+                        cur_graph_name or None),
+                        use_otsu=use_otsu, median_coeff=None,
+                        verbose=False, visual=False, dont_save_grid=False)
 
         if gs_fit is not None:
 
@@ -1213,18 +1237,22 @@ class Project_Image():
 
             im = self.get_im_section(features[grid_array], scale_factor)
 
-            save_anime_name = save_graph_name + "anime.png"
+            """
+            if save_graph_name is None:
+
+                save_anime_name = None
+
+            else:
+
+                save_anime_name = save_graph_name + "anime.png"
+            """
 
             self._grid_arrays[grid_array].get_analysis(
                     im,
-                    gs_values=gs_values, use_fallback=use_fallback,
-                    use_otsu=use_otsu, median_coeff=None,
-                    verbose=False, visual=False, watch_colony=watch_colony,
-                    supress_other=supress_other, save_grid_image=False,
+                    gs_values=gs_values,
+                    watch_colony=watch_colony,
                     save_grid_name=None,
-                    save_anime_name=save_anime_name, grid_lock=grid_lock,
-                    identifier_time=identifier_time, timestamp=timestamp,
-                    animate=self._animate)
+                    identifier_time=identifier_time)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
             self.R[grid_array] = self._grid_arrays[grid_array].R
@@ -1289,7 +1317,7 @@ if __name__ == "__main__":
     parser.add_argument("--otsu", dest="otsu", default=False, type=bool,
         help="Invokes the usage of utso segmentation for detecting the grid")
 
-    parser.add_argument("-s", "--supress-analysis", dest="supress",
+    parser.add_argument("-s", "--suppress-analysis", dest="suppress",
         default=False, type=bool,
         help="If submitted, main analysis will be by-passed and only the" + \
         " plate and position that was specified by the -w flag will be " + \
@@ -1482,14 +1510,15 @@ if __name__ == "__main__":
     header_str = "The Project Analysis Script..."
     under_line = "-"
 
-    print "\n\n{0}\n{0}\n\n".format(header_str.center(80),
+    print "\n\n{0}\n{1}\n\n".format(header_str.center(80),
             (len(header_str) * under_line).center(80))
 
     logger.setLevel(logging_level)
     logger.debug("Logger is ready!")
 
     analyse_project(args.inputfile, output_path, pm, args.graph_watch,
-        supress_analysis=args.supress, verbose=True, use_fallback=False,
+        suppress_analysis=args.suppress, verbose=True,
+        use_fallback_detection=False,
         use_otsu=args.otsu, grid_times=grid_times,
         xml_format=xml_format, animate=args.animate,
         manual_grid=args.manual_grid)

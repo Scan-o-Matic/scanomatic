@@ -70,7 +70,10 @@ def simulate(measurements, segments):
 
 class Grid_Analysis():
 
-    def __init__(self, parent):
+    def __init__(self, parent, pinning_matrix, use_otsu=True,
+            median_coeff=True, verbose=False, visual=False,
+            manual_threshold=None,
+            dim_order={0: 0, 1: 1}):
 
         self._parent = parent
 
@@ -88,15 +91,25 @@ class Grid_Analysis():
         #self.best_fit_start_pos = None
         self.best_fit_frequency = None
         self.best_fit_positions = None
+        self.dim_order = dim_order
         self.R = 0
+
+        self.visual = visual
+        self.median_coeff = median_coeff
+        self.manual_threshold = 0.05
+        self.use_otsu = use_otsu
+        self.verbose = verbose
+        self.pinning_matrix = pinning_matrix
+
+    def set_dim_order(self, dim_order):
+
+        self.dim_order = dim_order
 
     #
     # GET functions
     #
 
-    def get_analysis(self, im, pinning_matrix, use_otsu=True,
-        median_coeff=None, verbose=False,
-        visual=False, history=[], manual_threshold=None):
+    def get_analysis(self, im, history=[]):
         """
         get_analysis is a convenience function for get_spikes and
         get_signal_position_and_frequency functions run on both
@@ -137,17 +150,6 @@ class Grid_Analysis():
         best_fit_positions = [None, None]
         adjusted_by_history = False
 
-        pinning_max_dim = max(pinning_matrix)
-        im_max_dim = max(im.shape)
-
-        if pinning_max_dim == im_max_dim:
-
-            dim_order = [int(i == im_max_dim) for i in im.shape]
-
-        else:
-
-            dim_order = [int(i != im_max_dim) for i in im.shape]
-
         R = 0
 
         if history is not None and len(history) > 0:
@@ -167,22 +169,27 @@ class Grid_Analysis():
         fig = plt.figure(10)
         fig.add_subplot(2,2,1).imshow(im, cmap=plt.cm.Greys)
         fig.add_subplot(2,2,2).plot(im.mean(0))
+        t = hist.otsu(hist.Histogram(im.mean(0)))
+        fig.gca().plot((0, im.shape[1]),(t, t))
         fig.gca().set_title("Dim 0 ({0})".format(pinning_matrix[dim_order[0]]))
         fig.add_subplot(2,2,3).plot(im.mean(1))
+        t = hist.otsu(hist.Histogram(im.mean(1)))
+        fig.gca().plot((0, im.shape[0]),(t, t))
         fig.gca().set_title("Dim 1 ({0})".format(pinning_matrix[dim_order[1]]))
         fig.show() 
-        raw_input("ttt.>")
+        raw_input("Im {0}, Pin {1}, Order {2}".format(im.shape,
+                pinning_matrix, dim_order))
         """
 
         #Obtaining current values
-        for dim_i, dimension in enumerate(dim_order):
+        for dim in xrange(2):
 
             positions[dim_i], measures[dim_i] = \
                     self.get_spikes(
-                    dim_i,
-                    im=im, visual=visual, verbose=verbose,
-                    use_otsu=use_otsu, median_coeff=median_coeff,
-                    manual_threshold=manual_threshold)
+                    self.dim_order[dim]-1,
+                    im=im, visual=self.visual, verbose=self.verbose,
+                    use_otsu=self.use_otsu, median_coeff=self.median_coeff,
+                    manual_threshold=self.manual_threshold)
 
             self.logger.info(
                 "GRID ARRAY, Peak positions %sth dimension:\n%s" %\
@@ -207,7 +214,7 @@ class Grid_Analysis():
                     best_fit_frequency[dim_i] = history_f[dim_i]
 
             best_fit_positions[dim_i] = r_signal.get_true_signal(
-                im.shape[dim_i-1], pinning_matrix[dimension],
+                im.shape[dim_i-1], pinning_matrix[dim_i],
                 positions[dim_i],
                 frequency=best_fit_frequency[dim_i],
                 offset_buffer_fraction=0.5)
@@ -243,7 +250,7 @@ class Grid_Analysis():
                         best_fit_positions[dim_i] = new_fit[0]
 
             self.logger.info("GRID ARRAY, Best fit:\n" +\
-                "* Elements: " + str(pinning_matrix[dimension]) +\
+                "* Elements: " + str(pinning_matrix[dim_i]) +\
                 "\n* Positions:\n" + str(best_fit_positions[dim_i]))
 
             #DEBUGHACK
@@ -251,7 +258,7 @@ class Grid_Analysis():
             #DEBUGHACK - END
 
             if visual:
-                Y = np.ones(pinning_matrix[dimension]) * 50
+                Y = np.ones(pinning_matrix[dim_i]) * 50
                 Y2 = np.ones(positions[dim_i].shape) * 100
                 plt.clf()
                 if dim_i == 1:
@@ -276,7 +283,7 @@ class Grid_Analysis():
                     if self.best_fit_positions[dim_i] != None:
                         R += ((best_fit_positions[dim_i] - \
                             self.best_fit_positions[dim_i]) ** 2).sum() / \
-                            float(pinning_matrix[dimension])
+                            float(pinning_matrix[dim_i])
 
                         #Updating previous
                         self.logger.info(

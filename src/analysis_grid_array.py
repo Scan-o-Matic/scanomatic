@@ -38,7 +38,10 @@ import resource_logger as logger
 
 class Grid_Array():
 
-    def __init__(self, parent, identifier, pinning_matrix):
+    def __init__(self, parent, identifier, pinning_matrix, 
+        use_otsu=True, median_coeff=0.99, verbose=False,
+        visual=False, manual_threshold=0.05, suppress_other=False,
+        use_fallback_detection=False):
 
         self._parent = parent
 
@@ -63,8 +66,16 @@ class Grid_Array():
             identifier = [identifier[0], identifier[1]]
 
         self._identifier = identifier
-        self._analysis = array_dissection.Grid_Analysis(self)
+
+        self._analysis = array_dissection.Grid_Analysis(self, 
+            pinning_matrix, use_otsu=use_otsu,
+            median_coeff=median_coeff, verbose=verbose, visual=visual,
+            manual_threshold=manual_threshold)
+
         self._pinning_matrix = None
+        self.suppress_other = suppress_other
+        self.use_fallback_detection = use_fallback_detection
+        self.visual = visual
 
         self._grid_cell_size = None
         self._grid_cells = None
@@ -84,9 +95,11 @@ class Grid_Array():
 
         if pinning_matrix != None:
 
-            self.set_pinning_matrix(pinning_matrix)
+            self._set_pinning_matrix(pinning_matrix)
 
         self._polynomial_coeffs = None
+
+        self._im_dim_order = None
 
         if parent is not None:
 
@@ -188,10 +201,8 @@ class Grid_Array():
                 self._parent.fixture.set_pinning_positions(\
                     self._identifier[1], self._pinning_matrix, topleft_history)
 
-    def set_grid(self, im, save_grid_name=None, save_grid_image=False,
-                        grid_lock=True, use_otsu=True,
-                        median_coeff=None, verbose=False,
-                        visual=False, dont_save_grid=False):
+    def set_grid(self, im, save_grid_name=None,
+                        dont_save_grid=False):
         """Sets a grid to an image.
 
         @param im: An array / the image
@@ -202,125 +213,111 @@ class Grid_Array():
         @param median_coeff : Coefficient to threshold from the
         median when not using Otsu.
 
-        @param save_grid_image : Causes the script to save the plates'
-        grid placement as images. Conflicts with visual, so don't use
-        visual if you want to save
-
-        @param save_grid_name : A custom name for the saved image, if none
-        is submitted, it will be grid.png in current directory.
-
-        @param grid_lock : Default True -- if true, the grid will only be
-        placed once and then reused all way through.
+        @param save_grid_name : A custom name for the saved image,
+        if left out it is not saved.
 
         @param verbose : If a lot of things should be printed out
 
         @param visual : If visual information should be presented.
 
-
         The function returns True if it did set the grid.
         """
 
-        if visual or save_grid_image:
+        if self.visual or save_grid_name is not None:
+
             grid_image = plt.figure()
             grid_plot = grid_image.add_subplot(111)
             grid_plot.imshow(im, cmap=plt.cm.gray)
-            if save_grid_name is None:
-                save_grid_name = "plate.png"
+
 
         best_fit_rows = self._best_fit_rows
         best_fit_columns = self._best_fit_columns
 
-        if not grid_lock or self._best_fit_rows is None:
+        if self._parent is not None:
 
-            #if rows is None so is columns
+            topleft_history = self._parent.fixture.get_pinning_history(
+                        self._identifier[1], self._pinning_matrix)
 
-            if self._parent is not None:
-                topleft_history = self._parent.fixture.get_pinning_history(
-                            self._identifier[1], self._pinning_matrix)
+        else:
+
+            topleft_history = []
+
+        if topleft_history is None:
+
+            topleft_history = []
+
+        self.logger.debug('The gridding history is {0}'.format(
+                    topleft_history))
+
+        best_fit_rows, best_fit_columns, R, adjusted_by_history = \
+                self._analysis.get_analysis(im, 
+                history=topleft_history)
+
+        self.logger.debug("GRID ARRAY " + \
+                "{0}, best rows \n{1}\nbest columns\n{2}".format(
+                "unkown", best_fit_rows, best_fit_columns))
+
+        if not dont_save_grid:
+
+            if best_fit_rows == None or best_fit_columns == None:
+
+                self.logger.warning("GRID ARRAY " + \
+                            " {0}, Failed to detect grid.".format(
+                            self._identifier))
+
+                self._best_fit_rows = None
+                self._best_fit_columns = None
+
+                return False
+
+            elif self.R is None or R < 20:
+
+                self._best_fit_rows = best_fit_rows
+                self._best_fit_columns = best_fit_columns
+
+                if self._parent is not None:
+
+                    self.set_history(
+                        adjusted_by_history=adjusted_by_history)
+
             else:
-                topleft_history = []
 
-            if topleft_history is None:
-                topleft_history = []
+                logger.warning('Pinning matrix seem inconsistent with ' +\
+                        'previous matrices in this project, using old')
 
-            self.logger.debug('The gridding history is {0}'.format(
-                        topleft_history))
+            self.R = R
 
-            best_fit_rows, best_fit_columns, R, adjusted_by_history = \
-                    self._analysis.get_analysis(
-                    im, self._pinning_matrix, 
-                    use_otsu=use_otsu, median_coeff=median_coeff,
-                    verbose=verbose, visual=visual, history=topleft_history)
+        if self._grid_cell_size is None:
 
-            self.logger.debug("GRID ARRAY " + \
-                    "{0}, best rows \n{1}\nbest columns\n{2}".format(
-                    "unkown", best_fit_rows, best_fit_columns))
+            if self._analysis.best_fit_frequency is None:
 
-            if not dont_save_grid:
+                self.logger.critical("GRID ARRAY, No grid cell size" +
+                        " obtained, probably because fixure calibration" +
+                        "is bad.")
 
-                if best_fit_rows == None or best_fit_columns == None:
+                return None
 
-                    self.logger.warning("GRID ARRAY " + \
-                                " {0}, Failed to detect grid.".format(
-                                self._identifier))
+            self._grid_cell_size = map(int, map(round,
+                        self._analysis.best_fit_frequency[:]))
 
-                    self._best_fit_rows = None
-                    self._best_fit_columns = None
+            #print self._grid_cell_size
 
-                    return False
-
-                elif self.R is None or R < 20:
-
-                    self._best_fit_rows = best_fit_rows
-                    self._best_fit_columns = best_fit_columns
-
-                    if self._parent is not None:
-
-                        self.set_history(
-                            adjusted_by_history=adjusted_by_history)
-
-                else:
-
-                    logger.warning('Pinning matrix seem inconsistent with ' +\
-                            'previous matrices in this project, using old')
-
-                self.R = R
-
-            if self._grid_cell_size is None:
-
-                if self._analysis.best_fit_frequency is None:
-
-                    self.logger.critical("GRID ARRAY, No grid cell size" +
-                            " obtained, probably because fixure calibration" +
-                            "is bad.")
-
-                    return None
-
-                self._grid_cell_size = map(int, map(round,
-                            self._analysis.best_fit_frequency[:]))
-
-                #print self._grid_cell_size
-
-        if visual or save_grid_image:
+        if visual or save_grid_name is not None:
 
             for row in xrange(self._pinning_matrix[0]):
 
-                if visual or save_grid_image:
-
-                    grid_plot.plot(\
-                            np.ones(len(best_fit_columns)) * \
-                            best_fit_rows[row],
-                            np.array(best_fit_columns),
-                            'r-')
+                grid_plot.plot(\
+                        np.ones(len(best_fit_columns)) * \
+                        best_fit_rows[row],
+                        np.array(best_fit_columns),
+                        'r-')
 
                 for column in xrange(self._pinning_matrix[1]):
 
-                    if visual or save_grid_image:
-
-                        grid_plot.plot(\
-                                np.array(best_fit_rows),
-                                np.ones(len(best_fit_rows)) * \
-                                best_fit_columns[column], 'r-')
+                    grid_plot.plot(\
+                            np.array(best_fit_rows),
+                            np.ones(len(best_fit_rows)) * \
+                            best_fit_columns[column], 'r-')
 
             ax = grid_image.gca()
             ax.set_xlim(0, im.shape[1])
@@ -334,7 +331,7 @@ class Grid_Array():
                 plt.close(grid_image)
                 del grid_image
 
-            elif save_grid_image:
+            else:
 
                 self.logger.info("ANALYSIS GRID: Saving grid-image as file" +\
                             " '{0}' for plate {1}".format(
@@ -354,7 +351,7 @@ class Grid_Array():
 
             return False
 
-    def set_pinning_matrix(self, pinning_matrix):
+    def _set_pinning_matrix(self, pinning_matrix):
         """
             set_pinning_matrix sets the pinning_matrix.
 
@@ -478,10 +475,330 @@ class Grid_Array():
 
         return tf_matrix
 
-    def get_analysis(self, im, gs_fit=None, gs_values=None, use_fallback=False,
+    def _get_grid_to_im_axis_mapping(self, pm, im):
+
+        pm_max_pos = int(max(pm) == pm[1])
+        im_max_pos = int(max(im.shape) == im.shape[1])
+
+        im_axis_order = [(pm_max_pos == im_max_pos and i or i-1) for i in
+                            xrange(2)]
+
+        return {0:im_axis_order[0], 1:im_axis_order[1]}
+
+
+    def _get_transformation_matrix_for_analysis(self, gs_values=None,
+                gs_indices=None, gs_fit=None):
+
+        #KODAK neutral scale
+        if self._parent is not None:
+
+            gs_indices = self._parent.gs_indices
+
+        else:
+
+            gs_indices = None
+
+        if gs_values == None:
+
+            transformation_matrix = self.get_transformation_matrix(\
+                gs_fit=gs_fit, gs_indices=gs_indices)
+
+        else:
+
+            transformation_matrix = self.get_transformation_matrix(\
+                gs_values=gs_values, gs_indices=gs_indices)
+
+        return transformation_matrix
+
+    def _set_tm_im(self, source, target, ul, tm, c_row, c_column):
+        """Places the transformed image values in target
+
+        Used by algorithm:
+        ------------------
+
+        source      image that has the section that should be transformed
+        target      image with size matching wh (see below) that will take the
+                    transformed im
+        ul          Upper Left corner on source
+        tm          Transformation matrix
+
+        Used only for error reporting:
+        ------------------------------
+
+        c_row       The row on the pinning matrix (dim 0 of pm) currently used
+        c_column    The column / (dim 1)
+        """
+
+        #wh          Width and Height
+        wh = self._grid_cell_size
+
+        #axis_order  Tells the orientation of the grid on the source
+        axis_order = self._im_dim_order
+
+        #There's probably some faster way
+        self.logger.debug("ANALYSIS GRID ARRAY Transforming -> Kodak")
+
+        #Iteration direction priority is decided by how the pinning matrix
+        #was written and not how the image looks
+
+        #x,y        are target coordinates
+        #x2, y2     are source coordinates
+
+        for x in xrange(wh[im_axis_order[0]]):
+
+            x2 = int(round(ul[axis_order[0]])) + x
+                        #- s_gcs[0] / 2.0)) + x
+
+            for y in xrange(wh[axis_order[1]]):
+
+                y2 = int(round(ul[axis_order[1]])) + y
+                        #- s_gcs[1] / 2.0)) + y
+
+                try:
+
+                    #This makes sure that the target and source have the
+                    #same rotation.
+
+                    #Common logic in words: "For each pixel, in source, look
+                    #up the transformed value in the tm and place that value
+                    #in the corresponting positon in target
+
+                    if axis_order[0] > axis_order[1]:
+
+                        target[x, y] = tm[source[x2, y2]]
+
+                    else:
+
+                        target[y, x] = tm[source[y2, x2]]
+
+                except IndexError:
+
+                    self.logger.critical(
+                        "Index Error:An image has been " + 
+                        " saved as gridding_error.png\n" + 
+                        "target.shape {0} stopped at ({1}, {2})".format(
+                        (target.shape[axis_order[0]],
+                        target.shape[axis_order[1]]), x, y) + 
+                        ("which corresponds to  ({0}, {1}) on source" +
+                        " (shape {2})").format(x2, y2, 
+                        (source.shape[axis_order[0]],
+                        source.shape[axis_order[1]])) + 
+                        ("Origin on source was: ({0}, {1}) and attempted" +
+                        " size was ({2}, {3}) ").format(
+                        ul[axis_order[0]],
+                        ul[axis_order[1]],
+                        wh[im_axis_order[0]],
+                        wh[im_axis_order[1]]) + \
+                        "from {0}:{1}:{2}".format(
+                        self._identifier, (c_row, 
+                        self._pinning_matrix[0]), (c_column,
+                        self._pinning_matrix[1])))
+
+                    grid_image = plt.figure()
+                    grid_plot = grid_image.add_subplot(111)
+
+                    if axis_order[0] > axis_order[1]:
+
+                        grid_plot.imshow(source.T, cmap=plt.cm.Greys)
+
+                    else:
+
+                        grid_plot.imshow(source, cmap=plt.cm.Greys)
+
+                    grid_plot.set_xlim(0, source.shape[axis_order[0]])
+                    grid_plot.set_ylim(0, source.shape[axis_order[1]])
+
+                    for row in xrange(self._pinning_matrix[axis_order[0]]):
+
+                        grid_plot.plot(
+                            np.ones(
+                            len(self._best_fit_columns)) * \
+                            self._best_fit_rows[row],
+                            np.array(self._best_fit_columns),
+                            'r-')
+
+                        for column in xrange(
+                                self._pinning_matrix[axis_order[1]]):
+
+                            grid_plot.plot(
+                                np.array(self._best_fit_rows),
+                                np.ones(
+                                len(self._best_fit_rows)) * \
+                                self._best_fit_columns[column],
+                                'r-')
+
+                    grid_plot.add_patch(plt.Rectangle((x2,y2),
+                        wh[axis_order[0]],
+                        wh[axis_order[1]],
+                        ls='solid', lw=2,
+                        fill=False, ec=(0.9, 0.9, .1, 1)))
+
+                    grid_image.savefig("gridding_error.png")
+
+                    err_str = "Image showing the grid that " +\
+                                "caused it: gridding_error.png"
+
+                    raise Exception(IndexError, err_str)
+
+                    sys.exit()
+
+    def get_analysis(self, im, gs_values=None, gs_fit=None, gs_indices=None,
+            identifier_time=None, watch_colony=None, save_grid_name=None):
+
+        #Update info for future self-id reporting
+        if identifier_time is not None:
+            self._identifier[0] = identifier_time
+
+        #Get an image-specific inter-scan-neutral transformation dictionary
+        tm = self._get_transformation_matrix_for_analysis(gs_values=gs_values,
+                    gs_fit=gs_fit, gs_indices=gs_indices)
+
+        #Fast access to the pinning matrix
+        pm = self._pinning_matrix
+
+        #Map so grid axis concur with image rotation
+        if self._im_dim_order is None:
+
+            self._im_dim_order = self._get_grid_to_im_axis_mapping(pm, im)
+
+            self._analysis.set_dim_order(self._im_dim_order)
+
+        im_dim_order = self._im_dim_order
+
+        #Only place grid if not yet placed
+        if self._best_fit_columns is None:
+
+            if not self.set_grid(im, save_grid_name=save_grid_name):
+
+                self.logger.critical('Failed to set grid on ' + \
+                        '{0} and none to use'.format(self._identifier))
+
+                return None
+
+        #Setting shortcuts for repeatedly used variable
+        s_bfr = self._best_fit_rows
+        s_bfc = self._best_fit_columns
+        s_gcs = self._grid_cell_size
+
+        #Setting up target array for trasnformation
+        tm_im = np.zeros(s_gcs, dtype=np.float64)
+
+        #Go through the pinning abstract positions in order designated by pm
+        for row in xrange(pm[0]):
+
+            for col in xrange(pm[1]):
+
+                #Only work on watched colonies if other's are suppressed
+                if suppress_other == False or (watch_colony != None and \
+                        watch_colony[1] == row and watch_colony[2] == column):
+
+                    #Set up shortcuts
+                    _cur_gc = self._grid_cells[row][column]
+
+                    rc_tuple = (row, column)
+                    row_min = s_bfr[row]
+                    col_min = s_bfc[column]
+                    rc_min_tuple = (row_min, col_min)
+
+                    #
+                    #Finding the right part of the image
+                    #-----------------------------------
+                    #
+
+                    #Set current gc center according to which pin we look at
+                    _cur_gc.set_center(
+                                    (rc_min_tuple[im_dim_order[0]],
+                                    rc_min_tuple[im_dim_order[1]]),
+                                    s_gcs)  # Does this do anything?
+
+                    #
+                    #Transforming to inter-scan neutal values
+                    #----------------------------------------
+                    #
+
+                    #Set the tm_im for the region
+                    if tm is not None:
+
+                        self._set_tm_im(im, tm_im, rc_min_tuple,tm, row, column)
+
+                    else:
+
+                        #Shold make sure that tm_im is okay
+                        self.logger.critical("ANALYSIS GRID ARRAY Lacks" + \
+                                " transformation possibilities")
+
+                    #
+                    #Setting up the grid cell
+                    #------------------------
+                    #
+
+                    #Sets the tm_im as the gc data source
+                    _cur_gc.set_data_source(tm_im)
+
+                    #This happens only the first time, setting up the analysis
+                    #layers of the grid cell
+
+                    if self._first_analysis:
+
+                        _cur_gc.attach_analysis(
+                                blob=True, background=True, cell=True,
+                                use_fallback_detection=self.use_fallback_detection,
+                                run_detect=False)
+
+                    #
+                    #Detecting the features
+                    #----------------------
+                    #
+
+                    #This step only detects the objects, but doesn't run 
+                    #analysis. Reason: We need the background mean to do the
+                    #final transformation to cell count space.
+
+                    _cur_gc.get_analysis(no_analysis=True,
+                                    remember_filter=True)
+
+                    #
+                    #Transfer data to 'Cell Estimate Space'
+                    #--------------------------------------
+                    #
+
+                    bg_filter = _cur_gc.get_item('background').filter_array
+
+                    #Check so that there actually was a background detected
+                    #if not, something is horribly wrong and current measure
+                    #should be skipped
+
+                    #
+                    #Reporting the findings
+                    #----------------------
+                    #
+
+                    if bg_filter.sum() == 0:
+
+                        self.logger.warning('Time/Plate ' + 
+                                '{0}, Row: {1}, Column: {2}'.format(
+                                self._identifier, row, column) + 
+                                ' has no background (skipping)')
+
+                        self._features[rc_tuple[ax1]][rc_tuple[ax2]] = None
+
+                    else:
+
+                        #Moving the pixel values to cell estimate space
+
+                        _cur_gc.set_new_data_source_space(
+                                space='cell estimate', bg_sub_source=bg_filter,
+                                polynomial_coeffs=self._polynomial_coeffs)
+
+                        #Just run the actual analysis on what was detected
+                        #above
+                        self._features[rc_tuple[ax1]][rc_tuple[ax2]] = \
+                                _cur_gc.get_analysis(no_detect=True)
+
+    def get_analysis_old(self, im, gs_fit=None, gs_values=None, use_fallback=False,
                 use_otsu=True, median_coeff=None, verbose=False, visual=False,
-                watch_colony=None, supress_other=False, save_grid_image=False,
-                save_grid_name=None, grid_lock=False, identifier_time=None,
+                watch_colony=None, suppress_other=False,
+                save_grid_name=None, identifier_time=None,
                 save_anime_name=None, timestamp=None, animate=False):
 
         """Returns analysis!
@@ -502,15 +819,8 @@ class Grid_Array():
 
         @param visual : If visual information should be presented.
 
-        @param save_grid_image : Causes the script to save the plates'
-        grid placement as images. Conflicts with visual, so don't use
-        visual if you want to save
-
         @param save_grid_name : A custom name for the saved image, if none
         is submitted, it will be grid.png in current directory.
-
-        @param grid_lock : Default False, if true, the grid will only be
-        gotten once and then reused all way through.
 
         @param identifier_time : A time index to update the identifier with
 
@@ -526,10 +836,8 @@ class Grid_Array():
         debug_per_plate = False
 
         #DEBUGHACK
-        #grid_lock = False
         #visual = True
         #verbose = True
-        #save_grid_image = True
         #debug_per_plate = True
         #DEBUGHACK - END
 
@@ -542,14 +850,9 @@ class Grid_Array():
 
             raw_input("Waiting to start next plate (press Enter)")
 
-        if min(self._pinning_matrix) == 1:
-
-            self._pinning_matrix.reverse()
-
-        if not grid_lock or self._best_fit_columns is None:
+        if self._best_fit_columns is None:
 
             if not self.set_grid(im, save_grid_name=save_grid_name,
-                    save_grid_image=save_grid_image, grid_lock=grid_lock,
                     use_otsu=use_otsu, median_coeff=median_coeff,
                     verbose=verbose, visual=visual):
 
@@ -558,9 +861,22 @@ class Grid_Array():
 
                 return None
 
-        s_bfr = self._best_fit_rows
-        s_bfc = self._best_fit_columns
-        s_gcs = self._grid_cell_size
+        if (min(self._pinning_matrix) == self._pinning_matrix[1]) != \
+            (min(im.shape) == im.shape[1]):
+
+            ax1 = 0
+            ax2 = 1
+            s_bfc = self._best_fit_rows
+            s_bfr = self._best_fit_columns
+            s_gcs = [self._grid_cell_size[1], self._grid_cell_size[0]]
+
+        else:
+
+            ax1 = 1
+            ax2 = 0
+            s_bfr = self._best_fit_rows
+            s_bfc = self._best_fit_columns
+            s_gcs = self._grid_cell_size
 
         #total_steps = float(self._pinning_matrix[0] * self._pinning_matrix[1])
 
@@ -625,15 +941,16 @@ class Grid_Array():
 
         tf_im = np.zeros(s_gcs, dtype=np.float64)
 
-        for row in xrange(self._pinning_matrix[0]):
+        for row in xrange(self._pinning_matrix[ax1]):
 
-            for column in xrange(self._pinning_matrix[1]):
+            for column in xrange(self._pinning_matrix[ax2]):
 
-                if supress_other == False or (watch_colony != None and \
+                if suppress_other == False or (watch_colony != None and \
                         watch_colony[1] == row and watch_colony[2] == column):
 
                     _cur_gc = self._grid_cells[row][column]
 
+                    rc_tuple = (row, column)
                     row_min = s_bfr[row]
                     col_min = s_bfc[column]
 
@@ -648,12 +965,12 @@ class Grid_Array():
                         self.logger.debug(
                                 "ANALYSIS GRID ARRAY Transforming -> Kodak")
 
-                        for x in xrange(tf_im.shape[0]):
+                        for x in xrange(tf_im.shape[ax1]):
 
                             x2 = int(round(row_min)) + x
                                         #- s_gcs[0] / 2.0)) + x
 
-                            for y in xrange(tf_im.shape[1]):
+                            for y in xrange(tf_im.shape[ax2]):
 
                                 y2 = int(round(col_min)) + y
                                         #- s_gcs[1] / 2.0)) + y
@@ -675,16 +992,20 @@ class Grid_Array():
                                         "({0}, {1}) size ({2}, {3}) ".format(
                                         col_min,
                                         row_min,
-                                        s_gcs[0],
-                                        s_gcs[1]) + \
+                                        s_gcs[ax1],
+                                        s_gcs[ax2]) + \
                                         "from {0}:{1}:{2}".format(
-                                        self._identifier, row, column))
+                                        self._identifier, (row, 
+                                        self._pinning_matrix[ax1]), (column,
+                                        self._pinning_matrix[ax2])))
 
                                     grid_image = plt.figure()
                                     grid_plot = grid_image.add_subplot(111)
-                                    grid_plot.imshow(im)
+                                    grid_plot.imshow(im, cmap=plt.cm.Greys)
+                                    grid_plot.set_xlim(0, im.shape[ax1-1])
+                                    grid_plot.set_ylim(0, im.shape[ax2-1])
 
-                                    for row in xrange(self._pinning_matrix[0]):
+                                    for row in xrange(self._pinning_matrix[ax1]):
 
                                         grid_plot.plot(
                                             np.ones(
@@ -694,7 +1015,7 @@ class Grid_Array():
                                             'r-')
 
                                         for column in xrange(
-                                                self._pinning_matrix[1]):
+                                                self._pinning_matrix[ax2]):
 
                                             grid_plot.plot(
                                                 np.array(s_bfr),
@@ -702,6 +1023,12 @@ class Grid_Array():
                                                 len(s_bfr)) * \
                                                 s_bfc[column],
                                                 'r-')
+
+                                    grid_plot.add_patch(plt.Rectangle((y2,x2),
+                                        tf_im.shape[ax1-1],
+                                        tf_im.shape[ax2-1],
+                                        ls='solid', lw=2,
+                                        fill=False, ec=(0.9, 0.9, .1, 1)))
 
                                     grid_image.savefig("gridding_error.png")
 
@@ -776,7 +1103,7 @@ class Grid_Array():
                                 self._identifier, row, column) + \
                                 ' has no background (skipping)')
 
-                        self._features[row][column] = None
+                        self._features[rc_tuple[ax1]][rc_tuple[ax2]] = None
 
                     else:
                         _cur_gc.set_new_data_source_space(
@@ -789,7 +1116,7 @@ class Grid_Array():
                         #    remember_filter=True, use_fallback=True)
 
                         #analysis on the previously detected objects
-                        self._features[row][column] = \
+                        self._features[rc_tuple[ax1]][rc_tuple[ax2]] = \
                                 _cur_gc.get_analysis(no_detect=True)
 
                         ###DEBUG RE-DETECT PART2
@@ -801,7 +1128,7 @@ class Grid_Array():
                         #plot = raw_input('waiting: ')
                         ###DEBUG END
 
-                    if watch_colony != None \
+                    if watch_colony is not None \
                                 and row == watch_colony[1] \
                                 and column == watch_colony[2]:
 
