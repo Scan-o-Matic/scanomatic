@@ -516,18 +516,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         features = project_image.get_analysis(img_dict_pointer['File'],
             plate_positions, img_dict_pointer['grayscale_values'],
             watch_colony=graph_watch,
-            save_graph_name=(image_pos - first_scan_position in grid_times) and
+            save_grid_name=(image_pos - first_scan_position in grid_times) and
             (outdata_files_path + "time_" + \
             str(image_pos - first_scan_position).zfill(4) + "_plate_") or None,
             identifier_time=image_pos,
             timestamp=img_dict_pointer['Time'],
             grayscale_indices=gs_indices)
-
-    def get_analysis(self, im_path, features, grayscale_values,
-            watch_colony=None,
-            save_graph_name=None,
-            grid_lock=False, identifier_time=None, timestamp=None,
-            grayscale_indices=None):
 
         if suppress_analysis != True:
 
@@ -587,28 +581,30 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
                 tmp_results = []
 
-                for cell_item in project_image.watch_results.keys():
+                if project_image.watch_results is not None:
 
-                    for measure in project_image.watch_results[\
-                                                cell_item].keys():
+                    for cell_item in project_image.watch_results.keys():
 
-                        if type(project_image.watch_results[\
-                                        cell_item][measure])\
-                                        == np.ndarray or \
+                        for measure in project_image.watch_results[\
+                                                    cell_item].keys():
+
+                            if type(project_image.watch_results[\
+                                            cell_item][measure])\
+                                            == np.ndarray or \
+                                            project_image.watch_results[\
+                                            cell_item][measure] is None:
+
+                                tmp_results.append(np.nan)
+
+                            else:
+
+                                tmp_results.append(
                                         project_image.watch_results[\
-                                        cell_item][measure] is None:
+                                        cell_item][measure])
 
-                            tmp_results.append(np.nan)
+                            if len(watch_reading) == 0:
 
-                        else:
-
-                            tmp_results.append(
-                                    project_image.watch_results[\
-                                    cell_item][measure])
-
-                        if len(watch_reading) == 0:
-
-                            plot_labels.append(cell_item + ':' + measure)
+                                plot_labels.append(cell_item + ':' + measure)
 
                 watch_reading.append(tmp_results)
 
@@ -1120,8 +1116,7 @@ class Project_Image():
             return None
 
     def get_analysis(self, im_path, features, grayscale_values,
-            watch_colony=None,
-            save_graph_image=False, save_graph_name=None,
+            watch_colony=None, save_grid_name=None,
             grid_lock=False, identifier_time=None, timestamp=None,
             grayscale_indices=None):
 
@@ -1194,6 +1189,7 @@ class Project_Image():
 
         scale_factor = 4.0
 
+        """
         if save_graph_image:
 
             for ga_i, grid_array in enumerate(self._grid_arrays):
@@ -1209,6 +1205,7 @@ class Project_Image():
                         cur_graph_name or None),
                         use_otsu=use_otsu, median_coeff=None,
                         verbose=False, visual=False, dont_save_grid=False)
+        """
 
         if gs_fit is not None:
 
@@ -1251,7 +1248,7 @@ class Project_Image():
                     im,
                     gs_values=gs_values,
                     watch_colony=watch_colony,
-                    save_grid_name=None,
+                    save_grid_name=save_grid_name,
                     identifier_time=identifier_time)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features

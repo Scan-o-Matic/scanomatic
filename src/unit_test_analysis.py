@@ -46,21 +46,33 @@ def simulate_colony(colony_thickness=30, i_shape=(105, 104), add_bg=True):
     return im, true_blob
     
 
-def simulate_plate(pinning=[32, 48], colony_thickness=30, i_shape=[1610, 2550],
-                        simulate_8_bit=False, inverse_8_bit=False):
+def simulate_plate(pinning=[32, 48], colony_thickness=30, im_shape=None,
+            grid_cell_size=None, simulate_8_bit=False, inverse_8_bit=False):
 
-    if (min(i_shape) == i_shape[0]) != (min(pinning) == pinning[0]):
+    if im_shape is None:
+
+        if grid_cell_size is None:
+
+            im_shape = [322*2, 482*2]
+            grid_cell_size = [i / float(pinning[n]+2) for n, i in
+                                enumerate(im_shape)]
+
+        else:
+
+            im_shape = [i * (pinning[d] + 2) for d, i in
+                            enumerate(grid_cell_size)]
+    """        
+    if (min(im_shape) == im_shape[0]) != (min(pinning) == pinning[0]):
 
         pinning.reverse()
 
     if pinning[0] < pinning[1]:
 
         pinning.reverse()
-        i_shape.reverse()
+        im_shape.reverse()
+    """
 
-    cell_size = [i / float(pinning[n]+2) for n, i in enumerate(i_shape)]
-
-    im = np.random.normal(loc=1, size=i_shape)
+    im = np.random.normal(loc=1, size=im_shape)
 
     a = 0.025 * colony_thickness
 
@@ -71,17 +83,17 @@ def simulate_plate(pinning=[32, 48], colony_thickness=30, i_shape=[1610, 2550],
             blob_im, true_blob = simulate_colony(
                             colony_thickness=colony_thickness + \
                             a * np.random.normal(),
-                            i_shape=cell_size,
+                            i_shape=grid_cell_size,
                             add_bg=False)
 
-            low_x = int((x + 0.6) * cell_size[0])
-            low_y = int((y + 0.6) * cell_size[1])
+            low_x = int((x + 0.6) * grid_cell_size[0])
+            low_y = int((y + 0.6) * grid_cell_size[1])
 
-            im[low_x: low_x + int(cell_size[0]),
-                            low_y: low_y + int(cell_size[1])] += \
+            im[low_x: low_x + int(grid_cell_size[0]),
+                            low_y: low_y + int(grid_cell_size[1])] += \
                             blob_im
 
-    im += np.random.normal(loc=1, size=i_shape)
+    im += np.random.normal(loc=1, size=im_shape)
 
     if simulate_8_bit:
 
@@ -99,7 +111,7 @@ def simulate_plate(pinning=[32, 48], colony_thickness=30, i_shape=[1610, 2550],
             im *= -1
             im += 255
 
-    return im, cell_size
+    return im, grid_cell_size
 
 
 class Test_Grid(unittest.TestCase):
@@ -107,35 +119,50 @@ class Test_Grid(unittest.TestCase):
     def setUp(self):
 
         self.pinning = [32, 48]
-        self.colony_thickness = 500
+        self.grid_cell_size = [52, 105]
 
-        self.ga = ga.Grid_Analysis(None)
+        self.colony_thickness = 500
 
         self.im, self.cell_size = simulate_plate(pinning=self.pinning,
                         colony_thickness=self.colony_thickness,
+                        grid_cell_size=self.grid_cell_size,
                         simulate_8_bit=True, inverse_8_bit=True)
+
+        pm_max_pos = int(max(self.pinning) == self.pinning[1])
+        im_max_pos = int(max(self.im.shape) == self.im.shape[1])
+
+        self.im_axis_order = [int(pm_max_pos != im_max_pos)]
+        self.im_axis_order.append(int(im_axis_order[0] == 0)) 
+
+        self.ga = ga.Grid_Analysis(None, self.pinning)
+
+        self.ga.set_dim_order(self.im_axis_order)
 
     def test_find_grid(self):
 
-        res = self.ga.get_analysis(self.im, self.pinning)
+        res = self.ga.get_analysis(self.im.copy())
 
         self.assertIsNot(self.cell_size, None)
+        self.assertIn(self.cell_size[0], self.grid_cell_size)
+        self.assertIn(self.cell_size[1], self.grid_cell_size)
+
         self.assertIsNot(self.ga.best_fit_frequency, None)
 
         self.assertEquals(map(round, self.cell_size), 
                 map(round, self.ga.best_fit_frequency))
 
-        self.assertEqual(int(self.cell_size[0] * 0.6), res[0][0])
-        self.assertEqual(int(self.cell_size[1] * 0.6), res[1][0])
+        low_x = int(1.1 * self.grid_cell_size[0])
+        low_y = int(1.1 * self.grid_cell_size[1])
+        self.assertEqual(low_x, res[0][0])
+        self.assertEqual(low_y, res[1][0])
 
 
     def test_plate(self):
 
-        grid = g.Grid_Array(None, 1, (32, 48))
+        grid = g.Grid_Array(None, 1, self.pinning)
 
-        self.assertEquals((len(grid._grid_cells),
-                len(grid._grid_cells[0])), (32, 48))
-
+        self.assertEquals([len(grid._grid_cells),
+                len(grid._grid_cells[0])], self.pinning)
 
         f = grid.get_analysis(self.im.copy())
         cell_count_list = list()
@@ -147,7 +174,7 @@ class Test_Grid(unittest.TestCase):
             for d in (0, 1):
 
                 blob_center = f[c_pos[0]][c_pos[1]]['blob']['centroid']
-                cell_count_list.append(f[c_pos[0]][c_pos[1]]['blob']['pixelsum']
+                cell_count_list.append(f[c_pos[0]][c_pos[1]]['blob']['pixelsum'])
 
                 grid_cell_size = grid._grid_cell_size
 
