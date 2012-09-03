@@ -444,7 +444,7 @@ class Blob(Cell_Item):
 
                 self.manual_detect(center, radius)
 
-            elif self.use_fallback_detection == True:
+            elif self.blob_detect == self.THRESHOLD:
 
                 self.threshold_detect()
 
@@ -1175,7 +1175,7 @@ class Cell(Cell_Item):
 
             self.detect()
 
-    def detect(self, use_fallback_detection=None, remember_filter=False):
+    def detect(self, **kwargs):
         """
         detect makes a filter that is true for the full area
 
