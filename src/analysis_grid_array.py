@@ -39,9 +39,9 @@ import resource_logger as logger
 class Grid_Array():
 
     def __init__(self, parent, identifier, pinning_matrix, 
-        use_otsu=True, median_coeff=0.99, verbose=False,
-        visual=False, manual_threshold=0.05, suppress_other=False,
-        use_fallback_detection=False):
+        verbose=False, visual=False, suppress_analysis=False,
+        grid_array_settings=None, gridding_settings=None,
+        grid_cell_settings=None):
 
         self._parent = parent
 
@@ -67,10 +67,10 @@ class Grid_Array():
 
         self._identifier = identifier
 
+
         self._analysis = array_dissection.Grid_Analysis(self, 
-            pinning_matrix, use_otsu=use_otsu,
-            median_coeff=median_coeff, verbose=verbose, visual=visual,
-            manual_threshold=manual_threshold)
+            pinning_matrix, verbose=verbose, visual=visual,
+            gridding_settings=gridding_settings)
 
         self.watch_source = None
         self.watch_scaled = None
@@ -78,9 +78,26 @@ class Grid_Array():
         self.watch_results = None
 
         self._pinning_matrix = None
-        self.suppress_other = suppress_other
-        self.use_fallback_detection = use_fallback_detection
+
+        default_settings = {'animate': False}
+
+        if grid_array_settings is None:
+
+            grid_array_settings = default_settings
+
+        for k in default_settings.keys():
+
+            if k in grid_array_settings.keys():
+
+                setattr(self, k, grid_array_settings[k])
+
+            else:
+
+                setattr(self, k, default_settings[k])
+
         self.visual = visual
+        self.suppress_analysis = suppress_analysis
+        self.grid_cell_settings = grid_cell_settings
 
         self._grid_cell_size = None
         self._grid_cells = None
@@ -412,7 +429,8 @@ class Grid_Array():
 
             for column in xrange(pinning_matrix[1]):
                 self._grid_cells[row].append(grid_cell.Grid_Cell(\
-                    self, [self._identifier,  [row, column]]))
+                    self, [self._identifier,  [row, column]],
+                    grid_cell_settings=self.grid_cell_settings))
                 self._features[row].append(None)
 
     #
@@ -741,7 +759,7 @@ class Grid_Array():
             for col in xrange(pm[1]):
 
                 #Only work on watched colonies if other's are suppressed
-                if self.suppress_other == False or (watch_colony != None and \
+                if self.suppress_analysis == False or (watch_colony != None and \
                         watch_colony[1] == row and watch_colony[2] == col):
 
                     #Set up shortcuts
@@ -795,58 +813,16 @@ class Grid_Array():
 
                         _cur_gc.attach_analysis(
                                 blob=True, background=True, cell=True,
-                                use_fallback_detection=self.use_fallback_detection,
                                 run_detect=False)
 
                     #
-                    #Detecting the features
-                    #----------------------
+                    #Getting the analysis for all layers of the Grid Cell
+                    #----------------------------------------------------
                     #
 
-                    #This step only detects the objects, but doesn't run 
-                    #analysis. Reason: We need the background mean to do the
-                    #final transformation to cell count space.
-
-                    _cur_gc.get_analysis(no_analysis=True,
-                                    remember_filter=True)
-
-                    #
-                    #Transfer data to 'Cell Estimate Space'
-                    #--------------------------------------
-                    #
-
-                    bg_filter = _cur_gc.get_item('background').filter_array
-
-                    #Check so that there actually was a background detected
-                    #if not, something is horribly wrong and current measure
-                    #should be skipped
-
-                    #
-                    #Reporting the findings
-                    #----------------------
-                    #
-
-                    if bg_filter.sum() == 0:
-
-                        self.logger.warning('Time/Plate ' + 
-                                '{0}, Row: {1}, Column: {2}'.format(
-                                self._identifier, row, col) + 
-                                ' has no background (skipping)')
-
-                        self._features[row][col] = None
-
-                    else:
-
-                        #Moving the pixel values to cell estimate space
-
-                        _cur_gc.set_new_data_source_space(
-                                space='cell estimate', bg_sub_source=bg_filter,
-                                polynomial_coeffs=self._polynomial_coeffs)
-
-                        #Just run the actual analysis on what was detected
-                        #above
-                        self._features[row][col] = \
-                                _cur_gc.get_analysis(no_detect=True)
+                    self._features[row][col] = \
+                            _cur_gc.get_analysis(no_analysis=True,
+                            remember_filter=True)
 
                     #Info on the watched colony hooked up if that's the one
                     #analysed
@@ -867,7 +843,7 @@ class Grid_Array():
 
     def get_analysis_old(self, im, gs_fit=None, gs_values=None, use_fallback=False,
                 use_otsu=True, median_coeff=None, verbose=False, visual=False,
-                watch_colony=None, suppress_other=False,
+                watch_colony=None, suppress_analysis=False,
                 save_grid_name=None, identifier_time=None,
                 save_anime_name=None, timestamp=None, animate=False):
 
@@ -1015,7 +991,7 @@ class Grid_Array():
 
             for column in xrange(self._pinning_matrix[ax2]):
 
-                if suppress_other == False or (watch_colony != None and \
+                if suppress_analysis == False or (watch_colony != None and \
                         watch_colony[1] == row and watch_colony[2] == column):
 
                     _cur_gc = self._grid_cells[row][column]
@@ -1137,65 +1113,9 @@ class Grid_Array():
                                 use_fallback_detection=use_fallback,
                                 run_detect=False)
 
-                    #This step only detects the objects
-                    _cur_gc.get_analysis(no_analysis=True,
-                                    remember_filter=True)
 
-                    ###DEBUG RE-DETECT PART1
-                    #debug_plt = plt.figure()
-                    #debug_plt.add_subplot(221)
-                    #plt.imshow(_cur_gc.get_item('blob').filter_array)
-                    #debug_plt.add_subplot(223)
-                    #plt.imshow(_cur_gc.get_item('blob').grid_array)
-                    #plt.show()
-                    #raw_input("> ")
-                    ###DEBUG END PART1
-
-                    #Transfer data to 'Cell Estimate Space'
-                    bg_filter = _cur_gc.get_item('background').filter_array
-
-                    if bg_filter.sum() == 0:
-
-                        #debug_plt = plt.figure()
-                        #debug_plt = plt.figure()
-                        ##debug_plt.add_subplot(221)
-                        #plt.imshow(_cur_gc.get_item('blob').filter_array)
-                        #debug_plt.add_subplot(223)
-                        #plt.imshow(_cur_gc.get_item('blob').grid_array)
-
-                        #debug_plt.show()
-
-                        #raw_input('x> ')
-
-                        self.logger.warning('Time/Plate ' + \
-                                '{0}, Row: {1}, Column: {2}'.format(
-                                self._identifier, row, column) + \
-                                ' has no background (skipping)')
-
-                        self._features[row][col] = None
-
-                    else:
-                        _cur_gc.set_new_data_source_space(
-                                space='cell estimate', bg_sub_source=bg_filter,
-                                polynomial_coeffs=self._polynomial_coeffs)
-
-                        #This step re-detects in Cell Estimate Space
-                        #_cur_gc.get_analysis(
-                            #no_analysis=True,\
-                        #    remember_filter=True, use_fallback=True)
-
-                        #analysis on the previously detected objects
-                        self._features[row][col] = \
-                                _cur_gc.get_analysis(no_detect=True)
-
-                        ###DEBUG RE-DETECT PART2
-                        #debug_plt.add_subplot(222)
-                        #plt.imshow(_cur_gc.get_item('blob').filter_array)
-                        #debug_plt.add_subplot(224)
-                        #plt.imshow(_cur_gc.get_item('blob').grid_array)
-                        #debug_plt.show()
-                        #plot = raw_input('waiting: ')
-                        ###DEBUG END
+                    #Gather info on the blob
+                    self._features[row][col] = _cur_gc.get_analysis()
 
                     if watch_colony is not None \
                                 and row == watch_colony[1] \

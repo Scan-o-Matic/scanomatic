@@ -94,12 +94,15 @@ def print_progress_bar(fraction, size=40):
 
 
 def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
-            graph_watch, suppress_analysis=False,
-            verbose=False, use_fallback_detection=False, use_otsu=False,
-            grid_times=None, xml_format={'short': True,
-            'omit_compartments': [], 'omit_measures': []},
-            animate=False, manual_grid=False, median_coeff=0.99,
-            visual=False, manual_threshold=0.05):
+            graph_watch,
+            verbose=False, visual=False, manual_grid=False, grid_times=None, 
+            suppress_analysis = False,
+            xml_format={'short': True, 'omit_compartments': [], 
+            'omit_measures': []},
+            grid_array_settings = {'animate': False},
+            gridding_settings = {'use_otsu': True, 'median_coeff': 0.99,
+            'manual_threshold': 0.05},
+            grid_cell_settings = {'blob_detect': 'default'}):
     """
         analyse_project parses a log-file and runs a full analysis on all
         images in it. It will step backwards in time, starting with the
@@ -127,10 +130,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
         @verbose           Will print some basic output of progress.
 
-        @use_fallback       Determines if fallback colony detection
-                            should be used.
+        @blob_detect        Determines colony detection algorithm
+                            (see Grid_Cell_Dissection).
 
-        @use_otsu           Determines if Otsu-thresholding should be
+        @grid_otsu          Determines if Otsu-thresholding should be
                             used when looking finding the grid (not
                             default, and should not be used)
 
@@ -225,13 +228,11 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         '\noutdata_file_path\t{0}'.format(outdata_files_path) + \
         '\npinning_matrices\t{0}'.format(pinning_matrices) +\
         '\ngraph_watch\t\t{0}'.format(graph_watch) +\
-        '\nsuppress_analysis\t{0}'.format(suppress_analysis) + \
         '\nverbose\t\t\t{0}'.format(verbose) + \
-        '\nuse_fallback\t\t{0}'.format(use_fallback_detection) + \
-        '\nuse_otsu\t\t{0}'.format(use_otsu) +\
-        '\ngrid_times\t\t{0}'.format(grid_times) +\
+        '\ngrid_array_settings\t{0}'.format(grid_array_settings) + \
+        '\ngridding_settings\t\t{0}'.format(gridding_settings) + \
+        '\ngrid_cell_settings\t\t{0}'.format(grid_cell_settings) +\
         '\nxml_format\t\t{0}'.format(xml_format) +\
-        '\nanimate\t\t\t{0}'.format(animate) +\
         '\nmanual_grid\t\t{0}'.format(manual_grid))
 
     logger.info('Analysis started at ' + str(start_time))
@@ -338,13 +339,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
     if suppress_analysis == True:
 
         project_image = Project_Image([pinning_matrices[graph_watch[0]]],
-                    animate=animate, file_path_base=file_path_base,
+                    file_path_base=file_path_base,
                     fixture_name=fixture_name, p_uuid=p_uuid, logger=None,
-                    use_otsu=use_otsu, median_coeff=median_coeff,
                     verbose=verbose, visual=visual,
-                    manual_threshold=manual_threshold,
-                    suppress_other=suppress_analysis,
-                    use_fallback_detection=use_fallback_detection)
+                    grid_array_settings=grid_array_settings,
+                    gridding_settings = gridding_settings,
+                    grid_cell_settings = grid_cell_settings)
 
         graph_watch[0] = 0
         plates = 1
@@ -369,14 +369,13 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
             return False
 
-        project_image = Project_Image(pinning_matrices, animate=animate,
+        project_image = Project_Image(pinning_matrices,
                 file_path_base=file_path_base, fixture_name=fixture_name,
                 p_uuid=p_uuid, logger=None,
-                use_otsu=use_otsu, median_coeff=median_coeff,
                 verbose=verbose, visual=visual,
-                manual_threshold=manual_threshold,
-                suppress_other=suppress_analysis,
-                use_fallback_detection=use_fallback_detection)
+                grid_array_settings=grid_array_settings,
+                gridding_settings = gridding_settings,
+                grid_cell_settings = grid_cell_settings)
 
     if manual_grid and manual_griddings is not None:
 
@@ -940,9 +939,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 class Project_Image():
     def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
         animate=False, file_path_base="", fixture_name='fixture_a',
-        p_uuid=None, logger=None, use_otsu=True, median_coeff=0.99,
-        verbose=False, visual=False, manual_threshold=0.05,
-        suppress_other=False, use_fallback_detection=False):
+        p_uuid=None, logger=None, verbose=False, visual=False,
+        suppress_analysis=False,
+        grid_array_settings=None, gridding_settings=None,
+        grid_cell_settings=None):
 
         if logger is not None:
             self.logger = logger
@@ -954,18 +954,16 @@ class Project_Image():
         self._im_path = im_path
         self._im_loaded = False
 
-        self._animate = animate
-
         self._plate_positions = plate_positions
         self._pinning_matrices = pinning_matrices
 
-        self.use_otsu = use_otsu
-        self.median_coeff = median_coeff
         self.verbose = verbose
         self.visual = visual
-        self.manual_threshold = manual_threshold
-        self.suppress_other = suppress_other
-        self.use_fallback_detection = use_fallback_detection
+        self.suppress_analysis = suppress_analysis
+
+        self.grid_array_settings = grid_array_settings
+        self.gridding_settings = gridding_settings
+        self.grid_cell_settings = grid_cell_settings
 
         #PATHS
         script_path_root = os.path.dirname(os.path.abspath(__file__))
@@ -999,12 +997,12 @@ class Project_Image():
             if pinning_matrices[a] is not None:
 
                 self._grid_arrays.append(grid_array.Grid_Array(self, (a,),
-                        pinning_matrices[a], use_otsu=self.use_otsu,
-                        median_coeff=self.median_coeff, verbose=self.verbose,
+                        pinning_matrices[a], verbose=self.verbose,
                         visual=self.visual,
-                        manual_threshold=self.manual_threshold,
-                        suppress_other=self.suppress_other,
-                        use_fallback_detection=self.use_fallback_detection))
+                        suppress_analysis=self.suppress_analysis,
+                        grid_array_settings=self.grid_array_settings,
+                        gridding_settings=self.gridding_settings,
+                        grid_cell_settings=self.grid_cell_settings))
 
                 self.features.append(None)
                 self.R.append(None)
@@ -1311,8 +1309,13 @@ if __name__ == "__main__":
         type=bool, help="If True, it will produce stop motion images of the" +\
         "watched colony ready for animation")
 
-    parser.add_argument("--otsu", dest="otsu", default=False, type=bool,
+    parser.add_argument("--grid-otsu", dest="g_otsu", default=False, type=bool,
         help="Invokes the usage of utso segmentation for detecting the grid")
+
+    parser.add_argument("--blob-detection", dest="b_detect", default="default",
+        type=str,
+        help="Determines which algorithm will be used to detect blobs." +
+        "Currently, only 'default'")
 
     parser.add_argument("-s", "--suppress-analysis", dest="suppress",
         default=False, type=bool,
@@ -1336,6 +1339,14 @@ if __name__ == "__main__":
         type=str, help="Set debugging level")
 
     args = parser.parse_args()
+
+    #THE THREE SETTINGS DICTS
+    grid_array_settings = {'animate': False}
+
+    gridding_settings = {'use_otsu': True, 'median_coeff': 0.99,
+            'manual_threshold': 0.05}
+
+    grid_cell_settings = {'blob_detect': 'default'}
 
     #DEBUGGING
     LOGGING_LEVELS = {'critical': logging.CRITICAL,
@@ -1378,6 +1389,21 @@ if __name__ == "__main__":
                 xml_format['omit_compartments'],
                 xml_format['omit_measures']))
 
+    #BLOB DETECTION
+    args.b_detect = args.b_detect.lower()
+
+    if args.b_detect not in ('default',):
+
+        args.b_detect = 'default'
+
+    grid_cell_settings['blob_detect'] = args.b_detect
+
+    #GRID OTSU
+    gridding_settings['use_otsu'] = args.g_otsu
+
+    #ANIMATE THE WATCHED COLONY
+    grid_array_settings['animate'] = args.animate
+
     #MATRICES
     if args.matrices is not None:
 
@@ -1394,6 +1420,7 @@ if __name__ == "__main__":
 
         pm = None
 
+    #TIMES TO SAVE GRIDDING IMAGE
     if args.grid_times != None:
 
         try:
@@ -1413,12 +1440,24 @@ if __name__ == "__main__":
 
                 grid_times = [-1]
 
+    #INPUT FILE LOCATION
     if args.inputfile == None:
 
         parser.error("You need to specify input file!")
 
     in_path_list = args.inputfile.split(os.sep)
 
+    try:
+
+        fh = open(args.inputfile, 'r')
+
+    except:
+
+        parser.error('Cannot open input file, please check your path...')
+
+    fh.close()
+
+    #OUTPUT LOCATION
     output_path = ""
 
     if len(in_path_list) == 1:
@@ -1437,6 +1476,7 @@ if __name__ == "__main__":
 
         output_path += os.sep + str(args.outputpath)
 
+    #SPECIAL WATCH GRAPH
     if args.graph_watch != None:
 
         args.graph_watch = args.graph_watch.split(":")
@@ -1467,16 +1507,6 @@ if __name__ == "__main__":
             #parser.error('The watched colony position has a plate number '
                     #'that is too high (max: ' + str(args.plates-1) + ').')
 
-    try:
-
-        fh = open(args.inputfile, 'r')
-
-    except:
-
-        parser.error('Cannot open input file, please check your path...')
-
-    fh.close()
-
     #if args.outputfile != None:
 
         #try:
@@ -1504,18 +1534,23 @@ if __name__ == "__main__":
 
     #if len(pm) == args.plates:
 
+    #OUTPUT TO USER
     header_str = "The Project Analysis Script..."
     under_line = "-"
 
     print "\n\n{0}\n{1}\n\n".format(header_str.center(80),
             (len(header_str) * under_line).center(80))
 
+    #LOGGER
     logger.setLevel(logging_level)
     logger.debug("Logger is ready!")
 
+    #START ANALYSIS
     analyse_project(args.inputfile, output_path, pm, args.graph_watch,
-        suppress_analysis=args.suppress, verbose=True,
-        use_fallback_detection=False,
-        use_otsu=args.otsu, grid_times=grid_times,
-        xml_format=xml_format, animate=args.animate,
-        manual_grid=args.manual_grid)
+        verbose=True, visual=False, manual_grid=args.manual_grid,
+        grid_times=grid_times,
+        xml_format=xml_format,
+        suppress_analysis=args.suppress,
+        grid_array_settings=grid_array_settings,
+        gridding_settings=gridding_settings,
+        grid_cell_settings=grid_cell_settings)

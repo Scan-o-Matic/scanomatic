@@ -120,20 +120,40 @@ def create_id_tag(xcoor, ycoor, nrCols, nrRows):
 
 class Grid_Cell():
 
-    def __init__(self, parent, identifier, center=(-1, -1), rectSize=(0, 0),
-                                        idtag='n/a', data_source=None):
+    def __init__(self, parent, identifier, **grid_cell_settings):
+
+        #, center=(-1, -1), rectSize=(0, 0),
+        #                                idtag='n/a', data_source=None):
 
         self._parent = parent
         self.logger = self._parent.logger
 
         self._identifier = identifier
+        """
         self.center = np.asarray(center)
         self.rect = compute_rect(center, np.asarray(rectSize))
         self.idtag = idtag
         self.pinned = 1
         self.nr_neighbours = -1
+        """
 
-        self.data_source = data_source
+        default_settings = {'data_source': None,
+                'no_analysis': False, 'no_detect': False,
+                'blob_detect': 'default', 'remember_filter': True}
+
+        if grid_cell_settings is None:
+
+            grid_cell_settings = default_settings
+
+        for k in default_settings.keys():
+
+            if k in grid_cell_settings.keys():
+
+                setattr(self, k, grid_cell_settings[k])
+
+            else:
+
+                setattr(self, k, default_settings[k])
 
         self._previous_image = None
 
@@ -147,12 +167,17 @@ class Grid_Cell():
 
     def __str__(self):
 
-        s = "{0} id = {1} centered at (x,y)=({2}, {3})".format(
-                self.__class__.__name__, self.idtag,
-                self.center[0], self.center[1])
+        s = "< {0}".format(self._identifier)
 
-        s += " with (width,height)=({0}, {1}".format(
-                self.rect[2], self.rect[3])
+        if self.data_source is None:
+
+            s+= " No image set"
+
+        else:
+
+            s+= " Image size: {0}".format(self.data_source.shape)
+
+        s+= " Layers: {0} >".format(self._analyisis_items.keys())
 
         return s
 
@@ -285,8 +310,8 @@ class Grid_Cell():
 
             return None
 
-    def get_analysis(self, no_detect=False, no_analysis=False,
-            remember_filter=False, use_fallback=False):
+    def get_analysis(self, no_detect=None, no_analysis=None,
+            remember_filter=None, use_fallback=None):
         """get_analysis iterates through all possible cell items
         and runs their detect and do_analysis if they are attached.
 
@@ -312,31 +337,87 @@ class Grid_Cell():
         @use_fallback       Optionally sets detection to iterative
                             thresholding"""
 
+        if remember_filter is None:
+
+            remember_filter = self.remember_filter
+
         features_dict = {}
 
-        for item_name in self._analysis_item_names:
+        #This step only detects the objects
+        self.get_item('blob').detect(remember_filter=remember_filter)
+        self.get_item('background').detect()
 
-            if self._analysis_items[item_name]:
+        ###DEBUG RE-DETECT PART1
+        #debug_plt = plt.figure()
+        #debug_plt.add_subplot(221)
+        #plt.imshow(_cur_gc.get_item('blob').filter_array)
+        #debug_plt.add_subplot(223)
+        #plt.imshow(_cur_gc.get_item('blob').grid_array)
+        #plt.show()
+        #raw_input("> ")
+        ###DEBUG END PART1
 
-                self._analysis_items[item_name].\
-                    set_data_source(self.data_source)
+        #Transfer data to 'Cell Estimate Space'
+        bg_filter = self.get_item('background').filter_array
 
-                if not no_detect:
+        if bg_filter.sum() == 0:
 
-                    self._analysis_items[item_name].detect(
-                        remember_filter=remember_filter,
-                        use_fallback_detection=use_fallback)
+            #debug_plt = plt.figure()
+            #debug_plt = plt.figure()
+            ##debug_plt.add_subplot(221)
+            #plt.imshow(_cur_gc.get_item('blob').filter_array)
+            #debug_plt.add_subplot(223)
+            #plt.imshow(_cur_gc.get_item('blob').grid_array)
 
-                if not no_analysis:
+            #debug_plt.show()
+
+            #raw_input('x> ')
+
+            self.logger.warning('Grid Cell {0}'.format(self._identifier) +
+                    ' has no background (skipping)')
+
+            return None
+
+        else:
+
+            self.set_new_data_source_space(
+                    space='cell estimate', bg_sub_source=bg_filter,
+                    polynomial_coeffs=self._polynomial_coeffs)
+
+            #This step re-detects in Cell Estimate Space
+            #_cur_gc.get_analysis(
+                #no_analysis=True,\
+            #    remember_filter=True, use_fallback=True)
+
+            #analysis on the previously detected objects
+            #self._features[row][col] = \
+            #        _cur_gc.get_analysis(no_detect=True)
+
+            ###DEBUG RE-DETECT PART2
+            #debug_plt.add_subplot(222)
+            #plt.imshow(_cur_gc.get_item('blob').filter_array)
+            #debug_plt.add_subplot(224)
+            #plt.imshow(_cur_gc.get_item('blob').grid_array)
+            #debug_plt.show()
+            #plot = raw_input('waiting: ')
+            ###DEBUG END
+
+
+            for item_name in self._analysis_item_names:
+
+                if self._analysis_items[item_name]:
+
+                    self._analysis_items[item_name].\
+                        set_data_source(self.data_source)
 
                     self._analysis_items[item_name].do_analysis()
 
                     features_dict[item_name] = \
                         self._analysis_items[item_name].features
 
-            else:
+                else:
 
-                features_dict[item_name] = None
+                    features_dict[item_name] = None
 
         #DEBUG CODE START
         #item_name = 'blob'
@@ -412,7 +493,7 @@ class Grid_Cell():
     #
 
     def attach_analysis(self, blob=True, background=True, cell=True,
-                use_fallback_detection=False, run_detect=True, center=None,
+                blob_detect='default', run_detect=None, center=None,
                 radius=None):
 
         """attach_analysis connects the analysis modules to the Grid_Cell.
@@ -441,11 +522,19 @@ class Grid_Cell():
                         (if not supplied, blob will be detected
                         automatically)"""
 
+        if blob_detect is None:
+
+            blob_detect = self.blob_detect
+
+        if run_detect is None:
+
+            run_detect = self.run_detect
+
         if blob:
 
             self._analysis_items['blob'] = cell_dissection.Blob(self,
                     [self._identifier, ['blob']], self.data_source,
-                    use_fallback_detection=use_fallback_detection,
+                    blob_detect=blob_detect,
                     run_detect=run_detect, center=center, radius=radius)
 
         if background and self._analysis_items['blob']:

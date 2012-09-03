@@ -20,6 +20,7 @@ import numpy as np
 from math import ceil
 #import logging
 import matplotlib.pyplot as plt
+from scipy import signal as scisg
 
 #
 # SCANNOMATIC LIBRARIES
@@ -70,10 +71,8 @@ def simulate(measurements, segments):
 
 class Grid_Analysis():
 
-    def __init__(self, parent, pinning_matrix, use_otsu=True,
-            median_coeff=True, verbose=False, visual=False,
-            manual_threshold=None,
-            dim_order={0: 0, 1: 1}):
+    def __init__(self, parent, pinning_matrix, verbose=False, visual=False,
+            dim_order={0: 0, 1: 1}, gridding_settings=None):
 
         self._parent = parent
 
@@ -85,6 +84,23 @@ class Grid_Analysis():
 
             self.logger = self._parent.logger
 
+        default_settings = {'median_coeff': 0.99,
+                'use_otsu': False, 'manual_threshold': '0.05'}
+
+        if gridding_settings is None:
+
+            gridding_settings = default_settings
+
+        for k in default_settings.keys():
+
+            if k in gridding_settings.keys():
+
+                setattr(self, k, gridding_settings[k])
+
+            else:
+
+                setattr(self, k, default_settings[k])
+
         self.im = None
         self.histogram = hist.Histogram(self.im, run_at_init=False)
         self.threshold = None
@@ -95,10 +111,8 @@ class Grid_Analysis():
         self.R = 0
 
         self.visual = visual
-        self.median_coeff = median_coeff
-        self.manual_threshold = 0.05
-        self.use_otsu = use_otsu
         self.verbose = verbose
+
         self.pinning_matrix = pinning_matrix
 
     def set_dim_order(self, dim_order):
@@ -183,14 +197,23 @@ class Grid_Analysis():
 
         #Obtaining current values by pinning grid dimension order
 
+        np.save("_grid_im.npy", im)
+
         for dim in xrange(2):
 
+            positions[dim], measures[dim] = \
+                    self._get_new_spikes(
+                    self.dim_order[dim]-1,
+                    im=im)
+
+            """
             positions[dim], measures[dim] = \
                     self.get_spikes(
                     self.dim_order[dim]-1,
                     im=im, visual=self.visual, verbose=self.verbose,
                     use_otsu=self.use_otsu, median_coeff=self.median_coeff,
                     manual_threshold=self.manual_threshold)
+            """
 
             self.logger.info(
                 "GRID ARRAY, Peak positions %sth dimension:\n%s" %\
@@ -320,6 +343,66 @@ class Grid_Analysis():
                     adjusted_by_history)
 
             return ret_tuple
+
+    def _get_new_spikes(self, dim, im, threshold_coeff=0.75):
+
+        im_1D = im.mean(axis=dim)
+
+        #DE-NOISE
+        im_1D = scisg.medfilt(im_1D)
+
+        #CONVOLUTION
+        d_im_1D = scisg.convolve(im_1D, np.array((-1, 0, 1)), mode='same')
+
+        #FIND MAX AND MIN FOR CENTER 50% (SAFE SECTION)
+        low_bound = d_im_1D.shape[0] / 4
+        high_bound = d_im_1D.shape[0] * 3 / 4
+
+        low_threshold = threshold_coeff * d_im_1D[low_bound: high_bound].min()
+        high_threshold = threshold_coeff * d_im_1D[low_bound: high_bound].max()
+
+        spikes = list()
+        slope_direction = None
+
+        transitions = np.where(np.logical_or(d_im_1D < low_threshold,
+                                             d_im_1D > high_threshold))[0]
+
+        best_up_pos = None
+        best_down_pos = None
+                
+        #DEMAND FLIPPING UP DOWN TO REPORT SPIKE
+        for pos in transitions:
+
+            if d_im_1D[pos] > 0:
+
+                if slope_direction != 1:
+
+                    if best_up_pos is not None and best_down_pos is not None:
+
+                        spikes.append(sum((best_up_pos, best_down_pos)) / 2.0)
+
+                    slope_direction = 1
+                    best_up_pos = pos
+
+                elif d_im_1D[best_up_pos] < d_im_1D[pos]:
+
+                    best_up_pos = pos
+
+            else:
+
+                if slope_direction != -1:
+
+                    slope_direction = -1
+                    best_down_pos = pos
+
+                elif d_im_1D[best_down_pos] > d_im_1D[pos]:
+
+                    best_down_pos = pos
+
+        spikes = np.array(spikes)
+        spike_f = spikes[1:] - spikes[: -1]
+
+        return spikes, spike_f
 
     def get_spikes(self, dimension, im=None, visual=False, verbose=False,
              use_otsu=True, median_coeff=0.99, manual_threshold=None):

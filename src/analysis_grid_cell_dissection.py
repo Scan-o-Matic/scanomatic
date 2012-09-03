@@ -393,14 +393,29 @@ class Cell_Item():
 
 class Blob(Cell_Item):
 
+    DEFAULT = 0
+    ITERATIVE = 1
+    THRESHOLD = 2
+
     def __init__(self, parent, identifier, grid_array, run_detect=True,
-                    threshold=None, use_fallback_detection=False,
+                    threshold=None, blob_detect='default',
                     image_color_logic="norm", center=None, radius=None):
 
         Cell_Item.__init__(self, parent, identifier, grid_array)
 
         self.threshold = threshold
-        self.use_fallback_detection = use_fallback_detection
+
+        detect_types = {'default': self.DEFAULT,
+            'iterative': self.ITERATIVE,
+            'threshold': self.THRESHOLD}
+
+        try:
+
+            self.blob_detect = detect_types[blob_detect.lower()]
+
+        except:
+
+            self.blob_detect = self.DEFAULT
 
         self.old_trash = None
         self.trash_array = None
@@ -662,8 +677,8 @@ class Blob(Cell_Item):
     # DETECT functions
     #
 
-    def detect(self, use_fallback_detection=False, 
-                max_change_threshold=8, remember_filter=False):
+    def detect(self, blob_detect=None, max_change_threshold=8,
+                                remember_filter=False):
         """
         Generic wrapper function for blob-detection that calls the
         proper detection function and evaluates the results in comparison
@@ -681,15 +696,19 @@ class Blob(Cell_Item):
 
             self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
 
-        if use_fallback_detection:
+        if blob_detect is None:
 
-            self.iterative_threshold_detect()
+            blob_detect = self.blob_detect
 
-        elif self.use_fallback_detection == False:
+        if blob_detect == self.DEFAULT:
 
             self.edge_detect()
 
-        elif self.use_fallback_detection:
+        elif blob_detect == self.ITERATIVE:
+
+            self.iterative_threshold_detect()
+
+        elif blob_detect == self.THRESHOLD:
 
             self.threshold_detect()
 
@@ -1076,7 +1095,7 @@ class Background(Cell_Item):
 
             self.detect()
 
-    def detect(self, use_fallback_detection=None, remember_filter=False):
+    def detect(self, **kwargs):
         """
         detect finds the background
 
@@ -1084,7 +1103,7 @@ class Background(Cell_Item):
         of the blob. Therefore this function only runs after
         the detect function has been run on blob.
 
-        Function takes no arguments
+        Function takes no arguments (**kwargs just there to keep interface)
         """
 
         if self.blob and self.blob.filter_array != None:
@@ -1093,12 +1112,15 @@ class Background(Cell_Item):
 
             self.filter_array[np.where(self.blob.filter_array)] = 0
 
-            self.filter_array[np.where(self.blob.trash_array)] = 1
-
-            kernel = get_round_kernel(radius=9)
+            self.filter_array[np.where(self.blob.trash_array)] = 0
 
             self.filter_array = binary_erosion(self.filter_array,
-                                structure=kernel, border_value=1)
+                                iterations=6, border_value=1)
+
+            #kernel = get_round_kernel(radius=9)
+
+            #self.filter_array = binary_erosion(self.filter_array,
+            #                    structure=kernel, border_value=1)
 
             ###DEBUG CODE
             #print "Bg area", np.sum(self.filter_array),
@@ -1124,9 +1146,9 @@ class Background(Cell_Item):
                     # ("%03d" % self._identifier[0][0]))
             ###END DEBUG CODE
 
-            if remember_filter:
+            #if remember_filter:
 
-                self.old_filter = self.filter_array.copy()
+            #    self.old_filter = self.filter_array.copy()
 
         else:
 
