@@ -1117,39 +1117,6 @@ class Background(Cell_Item):
             self.filter_array = binary_erosion(self.filter_array,
                                 iterations=6, border_value=1)
 
-            #kernel = get_round_kernel(radius=9)
-
-            #self.filter_array = binary_erosion(self.filter_array,
-            #                    structure=kernel, border_value=1)
-
-            ###DEBUG CODE
-            #print "Bg area", np.sum(self.filter_array),
-            #print "of which shared with blob",
-            #print np.sum(self.filter_array * self.blob.filter_array)
-            #print "I am", self._identifier
-            #if True:
-            #if self._identifier[0][0] == 0 or self._identifier[0][0] % \
-                #round(self._identifier[0][0]**0.5) == 0 or \
-                #abs(self._identifier[0][0] - 189) < 3:
-
-                #from matplotlib import pyplot as plt
-                #plt.clf()
-                #fig = plt.figure()
-                #ax = fig.add_subplot(221, title="Blob")
-                #fig.gca().imshow(self.blob.filter_array)
-                #ax = fig.add_subplot(222, title ="Background")
-                #fig.gca().imshow(self.filter_array)
-                #ax = fig.add_subplot(223, title = "Image")
-                #ax_im = fig.gca().imshow(self.grid_array, vmin=0, vmax=100)
-                #fig.colorbar(ax_im)
-                #fig.savefig("debug_cell_t" +\
-                    # ("%03d" % self._identifier[0][0]))
-            ###END DEBUG CODE
-
-            #if remember_filter:
-
-            #    self.old_filter = self.filter_array.copy()
-
         else:
 
             self.logger.warning(("GRID CELL {0}, blob was not set, " + \

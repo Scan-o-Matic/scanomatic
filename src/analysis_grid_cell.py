@@ -265,37 +265,6 @@ class Grid_Cell():
     def set_grid_array_pointers(self):
         for item_names in self._analysis_items.keys():
             self._analysis_items[item_names].grid_array = self.data_source
-    """
-    def set_rect_size(self, rect_size=None):
-
-        if rect_size == None:
-            rect_size = self.data_source.shape
-
-        if self.center.all(-1):
-            self.center = np.array(map(lambda x: x / 2.0, rect_size))
-
-        self.rect = compute_rect(self.center, rect_size)
-
-    def set_center(self, center, rect_size=None):
-
-        # Set the new center:
-        self.center = np.asarray(center)
-
-        # find the rectSize:
-        if rect_size is None:
-
-            rect_size = self.get_rect_size()
-
-        # Set rectSize, which also corrects for the new center:
-        self.set_rect_size(rect_size)
-
-    def set_offset(self, offset_vec):
-
-        vec = np.asarray(offset_vec)
-        vec.shape = self.center.shape
-        self.center += vec
-        self.set_center(self.center)
-    """
 
     #
     # GET functions
@@ -433,62 +402,6 @@ class Grid_Cell():
 
         return features_dict
 
-    """
-    def get_first_dim_as_tuple(self):
-
-        return (self.rect[0], self.rect[0] + self.get_width())
-
-    def get_second_dim_as_tuple(self):
-
-        return (self.rect[1], self.rect[1] + self.get_height())
-
-    def get_rect_size(self):
-
-        return self.rect[2: 4]
-
-    def get_rect(self):
-
-        return self.rect
-
-    def get_top_left(self):
-
-        return self.rect[0: 2]
-
-    def get_bottom_right(self):
-
-        widthHeight = np.maximum(self.rect[2: 4] - 1, 0)
-
-        return self.rect[0: 2] + widthHeight
-
-    def get_bottom_left(self):
-
-        x = self.rect[0]
-        height = max(self.rect[3] - 1, 0)
-        y = self.rect[1] + height
-
-        return np.array([x, y])
-
-    def get_top_right(self):
-
-        width = np.max(self.rect[2] - 1)
-        x = self.rect[0] + width
-        y = self.rect[1]
-
-        return np.array([x, y])
-
-    def get_width(self):
-
-        return self.rect[2]
-
-    def get_height(self):
-
-        return self.rect[3]
-
-    def get_center(self):
-
-        return self.center
-
-    """
     #
     # Other functions
     #
