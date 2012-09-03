@@ -97,10 +97,19 @@ class Grid_Array():
 
         self.visual = visual
         self.suppress_analysis = suppress_analysis
+
+        if grid_cell_settings is None:
+
+            grid_cell_settings = dict()
+
+        grid_cell_settings['polynomial_coeffs'] = \
+                self.get_polynomial_coeffs()
+
         self.grid_cell_settings = grid_cell_settings
 
         self._grid_cell_size = None
         self._grid_cells = None
+
 
         self._features = []
 
@@ -119,47 +128,8 @@ class Grid_Array():
 
             self._set_pinning_matrix(pinning_matrix)
 
-        self._polynomial_coeffs = None
-
         self._im_dim_order = None
 
-        if parent is not None:
-
-            self._config_calibration_polynomial = \
-                            parent._program_config_root +\
-                            os.sep + "calibration.polynomials"
-
-            get_poly = True
-
-            try:
-
-                fs = open(self._config_calibration_polynomial, 'r')
-
-            except:
-
-                self.logger.critical("GRID ARRAY, " + \
-                            "Cannot open polynomial info file")
-
-                get_poly = False
-
-            if get_poly:
-
-                self._polynomial_coeffs = []
-
-                for l in fs:
-
-                    l_data = eval(l.strip("\n"))
-
-                    if type(l_data) == types.ListType:
-
-                        self._polynomial_coeffs = l_data[-1]
-                        break
-
-                fs.close()
-
-                if self._polynomial_coeffs == []:
-
-                    self._polynomial_coeffs = None
 
     #
     # SET functions
@@ -436,6 +406,47 @@ class Grid_Array():
     #
     # Get functions
     #
+
+    def get_polynomial_coeffs(self):
+
+        polynomial_coeffs = None
+
+        if self._parent is not None:
+
+            self._config_calibration_polynomial = \
+                            self._parent._program_config_root +\
+                            os.sep + "calibration.polynomials"
+
+            try:
+
+                fs = open(self._config_calibration_polynomial, 'r')
+
+            except:
+
+                self.logger.critical("GRID ARRAY, " + \
+                            "Cannot open polynomial info file")
+
+                return None
+
+
+            polynomial_coeffs = []
+
+            for l in fs:
+
+                l_data = eval(l.strip("\n"))
+
+                if type(l_data) == types.ListType:
+
+                    polynomial_coeffs = l_data[-1]
+                    break
+
+            fs.close()
+
+            if polynomial_coeffs == []:
+
+                polynomial_coeffs = None
+
+        return polynomial_coeffs
 
     def get_p3(self, x):
         """

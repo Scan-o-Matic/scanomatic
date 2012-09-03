@@ -120,7 +120,7 @@ def create_id_tag(xcoor, ycoor, nrCols, nrRows):
 
 class Grid_Cell():
 
-    def __init__(self, parent, identifier, **grid_cell_settings):
+    def __init__(self, parent, identifier, grid_cell_settings=None):
 
         #, center=(-1, -1), rectSize=(0, 0),
         #                                idtag='n/a', data_source=None):
@@ -139,7 +139,8 @@ class Grid_Cell():
 
         default_settings = {'data_source': None,
                 'no_analysis': False, 'no_detect': False,
-                'blob_detect': 'default', 'remember_filter': True}
+                'blob_detect': 'default', 'remember_filter': True,
+                'polynomial_coeffs': None}
 
         if grid_cell_settings is None:
 
@@ -382,7 +383,7 @@ class Grid_Cell():
 
             self.set_new_data_source_space(
                     space='cell estimate', bg_sub_source=bg_filter,
-                    polynomial_coeffs=self._polynomial_coeffs)
+                    polynomial_coeffs=self.polynomial_coeffs)
 
             #This step re-detects in Cell Estimate Space
             #_cur_gc.get_analysis(
