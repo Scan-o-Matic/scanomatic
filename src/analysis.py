@@ -28,7 +28,7 @@ from matplotlib import pyplot
 import types
 import logging
 import numpy as np
-from time import time
+import time
 from argparse import ArgumentParser
 
 #
@@ -81,15 +81,30 @@ def get_pinning_matrices(query, sep=':'):
     return plates
 
 
-def print_progress_bar(fraction=0.0, size=40):
+def print_progress_bar(fraction=0.0, size=40, start_time=None):
     prog_str = "["
     percent = 100 * fraction
-    fraction *= size
-    fraction = int(round(fraction))
+    pfraction = fraction * size
+    pfraction = int(round(pfraction))
 
-    prog_str = "[" + fraction * "=" + (size - fraction) * " " + "]"
+    prog_str = "[" + pfraction * "=" + (size - pfraction) * " " + "]"
+    perc_str ="%.1f" % (percent) + " %"
 
-    print "\r%s %.1f" % (prog_str, percent),
+    prog_l = len(prog_str)
+    perc_l = len(perc_str)
+
+    prog_str = prog_str[:prog_l/2 - perc_l/2] + perc_str + \
+                prog_str[prog_l/2 + perc_l:]
+
+    print "\r{0}".format(prog_str),
+
+    if start_time is not None:
+
+        elapsed = time.time() - start_time
+        eta = elapsed / fraction + start_time
+
+        print " ETA: {0}".format(time.asctime(time.localtime(eta))),
+
     sys.stdout.flush()
 
 
@@ -151,7 +166,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
     """
 
-    start_time = time()
+    start_time = time.time()
 
     graph_output = None
     file_path_base = os.sep.join(log_file_path.split(os.sep)[:-1])
@@ -485,11 +500,11 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
     logger.info("Will save grids at times: {0}".format(grid_times))
 
-    print_progress_bar()
+    print_progress_bar(size=60)
 
     while image_pos >= first_scan_position:
 
-        scan_start_time = time()
+        scan_start_time = time.time()
         img_dict_pointer = image_dictionaries[image_pos]
 
         plate_positions = []
@@ -716,10 +731,11 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         image_pos -= 1
 
         logger.info("ANALYSIS, Image took %.2f seconds" % \
-                         (time() - scan_start_time))
+                         (time.time() - scan_start_time))
 
-        print_progress_bar((image_tot - image_pos) / float(image_tot),
-                        size=70)
+        print_progress_bar(
+                        fraction = (image_tot - image_pos) / float(image_tot),
+                        size=60, start_time=start_time)
 
     if suppress_analysis != True:
 
@@ -890,16 +906,16 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
             plt_watch_colony.show()
 
         logger.info("ANALYSIS, Full analysis took %.2f minutes" %\
-            ((time() - start_time) / 60.0))
+            ((time.time() - start_time) / 60.0))
 
-        logger.info('Analysis completed at ' + str(time()))
+        logger.info('Analysis completed at ' + str(time.time()))
 
         return False
 
     logger.info("ANALYSIS, Full analysis took %.2f minutes" %\
-        ((time() - start_time) / 60.0))
+        ((time.time() - start_time) / 60.0))
 
-    logger.info('Analysis completed at ' + str(time()))
+    logger.info('Analysis completed at ' + str(time.time()))
 
 #
 # CLASS Project_Image
