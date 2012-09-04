@@ -139,6 +139,8 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
 
     norm_surfaces = data.copy()*0 
     norm_means = []
+    norm_var = []
+
     for p in xrange(data.shape[0]):
 
         if len(data[p].shape) == 2:
@@ -157,6 +159,7 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
                             np.isnan(norm_surface) == False))]
 
             m = original_norms.mean()
+            v = original_norms.var()
             sd = original_norms.std()
 
             logging.info('Plate {0} has size {1} and {2} grid positions.'.format(\
@@ -183,12 +186,14 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
 
             norm_surfaces[p] = norm_surface
             norm_means.append(m)
+            norm_var.append(v)
             logging.info('Going for next plate')
         else:
             norm_surfaces[p] = np.array([])
             norm_means.append(None)
+            norm_var.append(None)
 
-    return norm_surfaces, np.array(norm_means)
+    return norm_surfaces, np.array(norm_means), np.array(norm_var)
 
 
 #NEW Luciano-format (And newest)
@@ -398,7 +403,7 @@ def get_interactive_norm_surface_matrix(data):
 
 def get_normalised_values(data, surface_matrices=None):
 
-    norm_surface, norm_means = get_norm_surface(data, 
+    norm_surface, norm_means, norm_vars = get_norm_surface(data, 
                         surface_matrix=surface_matrices)
 
     normed_data = data.copy() * np.nan
@@ -408,7 +413,7 @@ def get_normalised_values(data, surface_matrices=None):
     for p in xrange(data.shape[0]):
         normed_data[p] = (data[p] - norm_surface[p]) + norm_means[p]
 
-    return normed_data, norm_means
+    return normed_data, norm_means, norm_vars
 
 def get_experiment_results(data, surface_matrices=None):
     exp_pp = map(lambda x: map(lambda y: y/2, x.shape), data)
@@ -871,7 +876,8 @@ class Interactive_Menu():
 
         elif task == "3":
 
-            self._normalised_phenotypes, self._normalisation_means = get_normalised_values(self._original_phenotypes, 
+            self._normalised_phenotypes, self._normalisation_means, \
+                self._nomalisation_vars = get_normalised_values(self._original_phenotypes, 
                 self._grid_surface_matrices)
 
             self._experiments, self._experiments_sd, self._experiments_data = get_experiment_results(\
@@ -879,6 +885,11 @@ class Interactive_Menu():
 
             self.set_enable_menu_items(["4","S1","S3", "S2", "S4"])
             self.set_enable_menu_plots()
+
+            logging.info("These values are indicative of the general" +
+                " quality of the experiment (lower better " +
+                "(variance of the grid before normalisation)):\n{0}".format(
+                list(self._nomalisation_vars)))
 
         elif task == "R1":
 
