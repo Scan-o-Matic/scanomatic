@@ -93,7 +93,6 @@ class LAN_PM(object):
 
             if res is not None:
                 self._host = res
-          
     
     def _find_ip(self):
         """Looks up the MAC-address supplied on the local router"""
@@ -127,15 +126,31 @@ class LAN_PM(object):
 
     def _login(self):
 
-        return urllib2.urlopen(self._login_out_url, self._pwd_params)
+        if self._host is None or self._host == "":
+
+            return None
+ 
+        else:
+
+            return urllib2.urlopen(self._login_out_url, self._pwd_params)
 
     def _logout(self):
 
-        return urllib2.urlopen(self._login_out_url)
+        if self._host is None or self._host == "":
+
+            return None
+ 
+        else:
+
+            return urllib2.urlopen(self._login_out_url)
 
     def on(self):
 
         u = self._login()
+
+        if u is None:
+
+            return None
 
         if not self._verify_name or self._pm_server_str in u.readlines():
 
@@ -146,6 +161,10 @@ class LAN_PM(object):
     def off(self):
 
         self._login()
+
+        if u is None:
+
+            return None
 
         if not self._verify_name or self._pm_server_str in u.readlines():
 
