@@ -319,7 +319,7 @@ class Cell_Item():
         if self.features['area'] == self.features['pixelsum'] or \
                                         self.features['area'] == 0:
 
-            if self.features['area'] == self.features['pixelsum']:
+            if self.features['area'] != 0:
 
                 self.logger.warning("GRID CELL " + \
                         "{0}, seems to have all pixels value 1".format(
@@ -331,17 +331,6 @@ class Cell_Item():
                         self._identifier))
 
             return None
-
-            ###DEBUG WHAT IS THE GRID ARRAY
-            #from matplotlib import pyplot as plt
-            #plt.clf()
-            #plt.subplot(2,1,1, title='Grid')
-            #plt.imshow(self.grid_array)
-            #plt.subplot(2,1,2, title='Filter')
-            #plt.imshow(self.filter_array)
-            #plt.title("Image section")
-            #plt.show()
-            ###END DEBUG CODE
 
         if self.features['area'] != 0:
 
@@ -365,7 +354,6 @@ class Cell_Item():
                 debug.warning("GRID CELL %s, Failed to calculate IQR_mean," +\
                     " probably because IQR '%s' is empty." % \
                     ("unknown", str(self.features['IQR'])))
-                    #str(self._identifier), str(self.features['IQR'])))
 
         else:
 
@@ -432,12 +420,6 @@ class Blob(Cell_Item):
         #rblob.Analysis_Recipe_Erode_Small(self, self.blob_recipe)
         #rblob.Analysis_Recipe_Erode_Conditional(self, self.blob_recipe)
 
-        self.kernel = np.array([[0, 0, 1, 0, 0],
-                                [0, 1, 1, 1, 0],
-                                [1, 1, 1, 1, 1],
-                                [0, 1, 1, 1, 0],
-                                [0, 0, 1, 0, 0]])
-
         if run_detect:
 
             if center is not None and radius is not None:
@@ -450,34 +432,13 @@ class Blob(Cell_Item):
 
             else:
 
-                self.edge_detect()
+                self.default_detect()
 
         self._debug_ticker = 0
 
     #
     # SET functions
     #
-
-    def get_gaussian_probabilities(self):
-
-        #P(X) = exp(-(X-m)^2/(2s^2))/(s sqrt(2*pi))
-        pass
-
-    def detect_fill(self, prob_array):
-        """This function is not in use and should not be called"""
-
-        return None
-
-        self.filter_array = np.zeros(self.filter_array.shape)
-        still_blob = True
-        seed = prob_array.argmax()
-        self.filter_array[seed] = True
-
-        while still_blob:
-
-            pass
-
-        self.filter_array[seed] = False
 
     def set_blob_from_shape(self, rect=None, circle=None):
         """
@@ -692,6 +653,7 @@ class Blob(Cell_Item):
                                     devided by old filters sum of pixels.
         """
 
+        #DETECT BLOB ACCORDING TO METHOD
         if self.filter_array is not None:
 
             self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
@@ -702,7 +664,7 @@ class Blob(Cell_Item):
 
         if blob_detect == self.DEFAULT:
 
-            self.edge_detect()
+            self.default_detect()
 
         elif blob_detect == self.ITERATIVE:
 
@@ -714,28 +676,22 @@ class Blob(Cell_Item):
 
         else:
 
-            self.edge_detect()
+            self.default_detect()
 
-        ###DEBUG GRID CELL SHAPES
-        #if self._identifier == (2,0,1,'blob'):
-            #print "My place in the world:", self._identifier,
-            #print "New grid_cell shape", self.filter_array.shape, "Old shape"
-            #if self.old_filter is None:
-                #print "None"
-            #else:
-                #print self.old_filter.shape
-        ###DEBUG END
-
+        #DEAL WITH WHAT COULD BE DUST ETC -> TRASHED PIXELS
         if self.trash_array is not None:
 
             self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
 
+        #COMPAIR WITH OLD FILTER
         if self.old_filter is not None:
 
-            if np.sum(self.filter_array) == 0:
+            #DEMAND NOT TO LOOSE FILTER COMPLETELY
+            if self.filter_array.sum() == 0:
 
                 self.filter_array = self.old_filter.copy()
 
+            #SHOULD BE MOVED/USE GENERAL FUNCTION AT MODlvl
             blob_diff = (np.abs(self.old_filter - self.filter_array)).sum()
             sqrt_of_oldsum = self.old_filter.sum() ** 0.5
 
@@ -814,23 +770,6 @@ class Blob(Cell_Item):
 
                         bad_diff = True
 
-                #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
-                #from matplotlib import pyplot as plt
-                #print "fitting score:",blob_diff / float(sqrt_of_oldsum)
-                #plt.clf()
-                #plt.imshow(diff_filter)
-                #plt.title("Current detection diff")
-                #plt.show()
-                #plt.imshow(self.filter_array)
-                #plt.title("Current detection (that will be discarded)")
-                #plt.show()
-                #plt.clf()
-                #plt.imshow(self.old_filter)
-                #plt.title("Blob detection used on previous "
-                        #"(that will be used here)")
-                #plt.show()
-                #DEBUG END
-
                 if bad_diff:
 
                     self.filter_array = self.old_filter.copy()
@@ -844,25 +783,7 @@ class Blob(Cell_Item):
                             "(Error: {1:.2f})").format(self._identifier,
                             blob_diff / float(sqrt_of_oldsum)))
 
-                    ###DEBUG WHAT IS THE GRID ARRAY
-                    #from matplotlib import pyplot as plt
-                    #plt.clf()
-                    #plt.subplot(2,1,1, title="Filter")
-                    #plt.imshow(self.filter_array)
-                    #plt.subplot(2,1,2, title="Image")
-                    #plt.imshow(self.grid_array)
-                    #plt.show()
-                    ###END DEBUG CODE
-
-            #print "(", blob_diff / float(sqrt_of_oldsum), ")"
-            #DEBUG BLOB DIFFERENCE QUALITY THRESHOLD
-            #else:
-            #    print "*** Blob filter data: ", sqrt_of_oldsum, blob_diff,\
-                    # blob_diff/float(sqrt_of_oldsum)
-            #DEBUG END
-
-        #print "Threshold used ", self.threshold
-
+        #IF FILTER SHOULD BE REMEMBERED THEN DO SO
         if remember_filter:
 
             self.old_filter = self.filter_array.copy()
@@ -870,25 +791,6 @@ class Blob(Cell_Item):
             if self.trash_array is not None:
 
                 self.old_trash = self.trash_array.copy()
-
-        ###DEBUG DETECTION TIME SERIES
-        #from scipy.misc import imsave
-        #imsave('analysis/anim_' + str(self._debug_ticker) + '_blob.png',
-            #self.filter_array)
-        #imsave('analysis/anim_' + str(self._debug_ticker) + '_orig.png',
-            #self.grid_array)
-        #self._debug_ticker += 1
-        ###DEBUG END
-
-        #DEBUG CODE START
-        #from matplotlib import pyplot as plt
-        #plt.clf()
-        #plt.subplot(211, title='filter')
-        #plt.imshow(self.filter_array)
-        #plt.subplot(212, title='image')
-        #plt.imshow(self.grid_array)
-        #plt.show()
-        #DEBUG CODE END
 
     def iterative_threshold_detect(self):
 
@@ -955,35 +857,13 @@ class Blob(Cell_Item):
 
         else:
 
-            self.edge_detect()
+            self.default_detect()
 
-    def edge_detect(self):
-        """
-        Edge detect actually includes the fallback threshold detect
-        as first step.
+    def default_detect(self):
 
-        The function convolves a circular pattern over the thresholded
-        image using first an erode function to discard noise and then
-        a dilate function to expand the detected blobs.
-
-        Finally the contours are aquired and the minimum circle is fitted
-        ontop. Whereupon detection is discarded if the detected area is
-        too small.
-
-        Function takes no arguments.
-        """
-
-        self.old_edge_detect()
-
-        #DEBUG CODE START
-        #from matplotlib import pyplot as plt
-        #plt.clf()
-        #plt.subplot(211, title='filter')
-        #plt.imshow(self.filter_array)
-        #plt.subplot(212, title='image')
-        #plt.imshow(self.grid_array)
-        #plt.show()
-        #DEBUG CODE END
+        self.blob_recipe.set_reference_image(self.grid_array)
+        self.blob_recipe.analyse()
+        self.keep_best_blob()
 
     def get_candidate_blob_ranks(self):
 
@@ -1016,10 +896,8 @@ class Blob(Cell_Item):
 
         return number_of_labels, qualities, c_o_m, label_array
 
-    def old_edge_detect(self):
-
-        self.blob_recipe.set_reference_image(self.grid_array)
-        self.blob_recipe.analyse()
+    def keep_best_blob(self):
+        """Evaluates all blobs detected and keeps the best one"""
 
         number_of_labels, qualities, c_o_m, label_array = \
                                 self.get_candidate_blob_ranks()
@@ -1043,7 +921,7 @@ class Blob(Cell_Item):
 
                     composite_trash.append(item + 1)
 
-            #if len(composite_blob) > 1:
+            #if len(composite_blob) > 1
             self.filter_array = np.in1d(label_array,
                     np.array(composite_blob)).reshape(self.filter_array.shape,
                     order='C')
@@ -1053,27 +931,8 @@ class Blob(Cell_Item):
                     np.array(composite_trash)).reshape(self.filter_array.shape,
                     order='C')
 
-        #axis_1 = np.mean(self.filter_array,1)
-        #axis_2 = np.mean(self.filter_array,0)
-
-        #ax_1_center = np.argmax(axis_1)
-        #ax_2_center = np.argmax(axis_2)
-
-        #borders = np.where(axis_1 == 0)
-
-        #Bwareopen, min_radius
-        #min_radius = 10
-        #contour = cv.FindContours(mat, cv.CreateMemStorage(), cv.CV_RETR_LIST)
-        #print "Found contours"
-        #self.bounding_circle = cv.MinEnclosingCircle(list(contour))
-        #if type(circle) == types.IntType or circle[2] < min_radius:
-        #    print self.bounding_circle, "Too small or strange"
-        #else:
-        #    print self.bountin_circle, "is good"
-        #    self.filter_array = numpy.asarray(mat)
-
 #
-# CLASSES Background (invers blob area)
+# CLASSES Background (inverse blob area)
 #
 
 

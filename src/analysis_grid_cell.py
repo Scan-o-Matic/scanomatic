@@ -27,93 +27,6 @@ import math
 import analysis_grid_cell_dissection as cell_dissection
 
 #
-# Functions
-#
-
-
-def crop(A, rect):
-    """ Crop numpy matrix/array A with rect = (x,y,width,height) where (x,y)
-    is the topLeft corner of the rect """
-
-    return A[rect[1]: (rect[3] + rect[1]), rect[0]: (rect[2] + rect[0])]
-
-
-def compute_rect(center, rectSize):
-    """ Typically you call this function with rectSize = interDist which is
-    the default grid-rect size, but it might be the case that the size is
-    set to smaller manually by invoking method setRectSize in class GridArray.
-
-    rectSize can also be a tuple (width,height)
-
-    for even, integer valued rectSize, the topLeft corner of the resulting
-    rectangle will be center-rectSize/2 , which results in a rect
-    "biased upwards to the left"
-
-    if rectSize is empty or has negative elements, an ndarray
-    with -1 elements is returned"""
-
-    center = np.asarray(center)
-    #print rectSize
-    if np.isscalar(rectSize):
-
-        rectSize = np.asarray([rectSize, rectSize])
-
-    else:
-
-        rectSize = np.asarray(rectSize)
-
-    if (rectSize < 0).any() or rectSize.size == 0:
-
-        return np.asarray([-1, -1, -1, -1])
-
-    topLeft = center - rectSize / 2.0
-
-    return np.asarray(tuple(topLeft) + tuple(rectSize))
-
-#
-# SPREADSHEET COMPATIBILITY FUNCTIONS
-#
-
-
-def ystring(ycoor):
-    """'ystring' produces a string representation for the ycoor (integer >=1)
-    that corresponds to Excels column annotation.
-    1 (first column) => 'A'
-    2                => 'B'
-    ...
-    26               => 'Z'
-    27               => 'AA'
-    28               => 'AB' (etc
-
-    Note that this is NOT the typical representation in another base/alphabet,
-    since in that case 'A' should correspond to 0, 'B' to 1, and 'Z' to 25, and
-    'BA' to 26 since these would be short-hand to 'AAA' <=> 0, 'AAB' <=> 1,
-    'AAZ'<=> 25 and 'ABA' to 26.
-    Of course this could be offset:ed with +1, but it does not change
-    the fact that it is another algorithm for columns/rows >=27"""
-
-    if ycoor < 27:
-
-        return chr(65 + ycoor - 1)
-
-    else:
-
-        y = ycoor - 1
-        next = y / 26
-        rest = y % 26
-
-        return ystring(next) + chr(65 + rest)
-
-
-def create_id_tag(xcoor, ycoor, nrCols, nrRows):
-
-    #x = xcoor-1;
-    nrDigits = math.floor(math.log10(nrCols) + 1)
-    template = '%0' + ('%d' % (nrDigits)) + 'd'
-
-    return ystring(ycoor) + (template % (xcoor))
-
-#
 # CLASS: Grid_Cell
 #
 
@@ -122,20 +35,10 @@ class Grid_Cell():
 
     def __init__(self, parent, identifier, grid_cell_settings=None):
 
-        #, center=(-1, -1), rectSize=(0, 0),
-        #                                idtag='n/a', data_source=None):
-
         self._parent = parent
         self.logger = self._parent.logger
 
         self._identifier = identifier
-        """
-        self.center = np.asarray(center)
-        self.rect = compute_rect(center, np.asarray(rectSize))
-        self.idtag = idtag
-        self.pinned = 1
-        self.nr_neighbours = -1
-        """
 
         default_settings = {'data_source': None,
                 'no_analysis': False, 'no_detect': False,
@@ -203,14 +106,6 @@ class Grid_Cell():
                             " ({0} - {1})".format(self.data_source.min(),
                             self.data_source.max()))
 
-            #DEBUG -> CELL ESTIMATE SPACE PART !
-            #from matplotlib import pyplot as plt
-            #plt.clf()
-            #plt.imshow(self.data_source)
-            #plt.title("Kodak Value Space")
-            #plt.show()
-            #DEBUG END
-
             if bg_sub_source is not None:
 
                 bg_sub = np.mean(self.data_source[np.where(bg_sub_source)])
@@ -230,14 +125,9 @@ class Grid_Cell():
                     np.where(self.data_source < 0)[0].shape[0]))
 
             self.data_source[np.where(self.data_source < 0)] = 0
-            #DEBUG -> CELL ESTIMATE SPACE PART !
-            #from matplotlib import pyplot as plt
-            #plt.clf()
-            #plt.imshow(self.data_source)
-            #plt.show()
-            #DEBUG END
 
             if polynomial_coeffs is not None:
+
                 self.data_source = \
                     np.polyval(polynomial_coeffs, self.data_source)
 
@@ -249,16 +139,6 @@ class Grid_Cell():
             self.logger.debug("ANALYSIS GRID CELL: Cell Estimate values run" +\
                     " ({0} - {1})".format(self.data_source.min(),
                     self.data_source.max()))
-
-            #DEBUG -> CELL ESTIMATE SPACE PART !
-            #from matplotlib import pyplot as plt
-            #plt.clf()
-            #plt.imshow(self.data_source)
-            #plt.title("Cell Estimate Space")
-            #cb = plt.colorbar()
-            #cb.set_label('Cells Estimate/pixel')
-            #plt.show()
-            #DEBUG END
 
         self.set_grid_array_pointers()
 
@@ -317,31 +197,10 @@ class Grid_Cell():
         self.get_item('blob').detect(remember_filter=remember_filter)
         self.get_item('background').detect()
 
-        ###DEBUG RE-DETECT PART1
-        #debug_plt = plt.figure()
-        #debug_plt.add_subplot(221)
-        #plt.imshow(_cur_gc.get_item('blob').filter_array)
-        #debug_plt.add_subplot(223)
-        #plt.imshow(_cur_gc.get_item('blob').grid_array)
-        #plt.show()
-        #raw_input("> ")
-        ###DEBUG END PART1
-
         #Transfer data to 'Cell Estimate Space'
         bg_filter = self.get_item('background').filter_array
 
         if bg_filter.sum() == 0:
-
-            #debug_plt = plt.figure()
-            #debug_plt = plt.figure()
-            ##debug_plt.add_subplot(221)
-            #plt.imshow(_cur_gc.get_item('blob').filter_array)
-            #debug_plt.add_subplot(223)
-            #plt.imshow(_cur_gc.get_item('blob').grid_array)
-
-            #debug_plt.show()
-
-            #raw_input('x> ')
 
             self.logger.warning('Grid Cell {0}'.format(self._identifier) +
                     ' has no background (skipping)')
@@ -353,25 +212,6 @@ class Grid_Cell():
             self.set_new_data_source_space(
                     space='cell estimate', bg_sub_source=bg_filter,
                     polynomial_coeffs=self.polynomial_coeffs)
-
-            #This step re-detects in Cell Estimate Space
-            #_cur_gc.get_analysis(
-                #no_analysis=True,\
-            #    remember_filter=True, use_fallback=True)
-
-            #analysis on the previously detected objects
-            #self._features[row][col] = \
-            #        _cur_gc.get_analysis(no_detect=True)
-
-            ###DEBUG RE-DETECT PART2
-            #debug_plt.add_subplot(222)
-            #plt.imshow(_cur_gc.get_item('blob').filter_array)
-            #debug_plt.add_subplot(224)
-            #plt.imshow(_cur_gc.get_item('blob').grid_array)
-            #debug_plt.show()
-            #plot = raw_input('waiting: ')
-            ###DEBUG END
-
 
             for item_name in self._analysis_item_names:
 
@@ -388,17 +228,6 @@ class Grid_Cell():
                 else:
 
                     features_dict[item_name] = None
-
-        #DEBUG CODE START
-        #item_name = 'blob'
-        #from matplotlib import pyplot as plt
-        #plt.clf()
-        #plt.subplot(211, title='filter after everything')
-        #plt.imshow(self._analysis_items[item_name].filter_array)
-        #plt.subplot(212, title='image')
-        #plt.imshow(self._analysis_items[item_name].grid_array)
-        #plt.show()
-        #DEBUG CODE END
 
         return features_dict
 
@@ -462,29 +291,3 @@ class Grid_Cell():
             self._analysis_items['cell'] = cell_dissection.Cell(self,
                     [self._identifier, ['cell']], self.data_source,
                     run_detect=run_detect)
-
-    def detach_analysis(self, blob=True, background=True, cell=True):
-        """detach_analysis disconnects the analysis modules specified
-        from the Grid_Cell instance.
-
-        Function has three optional boolean arguments:
-
-        @blob           Detaches blob analysis (default)
-                        This also detaches background
-
-        @background     Detaches background analysis (default)
-
-        @cell           Detaches cell analysis (default)"""
-
-        if blob:
-
-            self._analysis_items['blob'] = None
-            self._analysis_items['background'] = None
-
-        if background:
-
-            self._analysis_items['background'] = None
-
-        if cell:
-
-            self._analysis_items['cell'] = None

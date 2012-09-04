@@ -81,7 +81,7 @@ def get_pinning_matrices(query, sep=':'):
     return plates
 
 
-def print_progress_bar(fraction, size=40):
+def print_progress_bar(fraction=0.0, size=40):
     prog_str = "["
     percent = 100 * fraction
     fraction *= size
@@ -485,6 +485,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
     logger.info("Will save grids at times: {0}".format(grid_times))
 
+    print_progress_bar()
+
     while image_pos >= first_scan_position:
 
         scan_start_time = time()
@@ -496,10 +498,6 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
             plate_positions.append(
                 img_dict_pointer[plate_position_keys[i]])
-
-            #if verbose:
-            #    print "** Position", plate_position_keys[i], ":", \
-            #img_dict_pointer[plate_position_keys[i]]
 
         logger.info("ANALYSIS, Running analysis on '{}'".format( \
             img_dict_pointer['File']))
@@ -567,17 +565,6 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
                             (image_pos + 1) * pict_target_width - 1,
                             10, 10 + pict_resize[1]))
 
-                    #plt_watch_1.imshow(Image.fromstring('L',
-                        #(project_image.watch_blob.shape[1],
-                        #project_image.watch_blob.shape[0]),
-                        #project_image.watch_blob.tostring())
-                        #.resize(pict_resize, Image.BICUBIC),
-                        #extent=(image_pos * (pict_target_width),
-                        #(image_pos + 1) * (pict_target_width) - 1,
-                        #10 + pict_resize[1] + 1, 10 + 2 * pict_resize[1] ))
-
-                #project_image.watch_blob.shape
-
                 tmp_results = []
 
                 if project_image.watch_results is not None:
@@ -606,12 +593,6 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
                                 plot_labels.append(cell_item + ':' + measure)
 
                 watch_reading.append(tmp_results)
-
-                #HACK START: DEBUGGING
-                #print "*** R:", project_image.R
-                #if image_pos < 200:
-                #    image_pos = -1
-                #HACK END
 
             if suppress_analysis != True:
 
@@ -734,11 +715,6 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
         image_pos -= 1
 
-        #DEBUGHACK
-        #if image_pos > 1:
-        #    image_pos = 1
-        #DEBUGHACK - END
-
         logger.info("ANALYSIS, Image took %.2f seconds" % \
                          (time() - scan_start_time))
 
@@ -784,10 +760,6 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
             if xlabel_pos % 5 > 0:
                 x_labels[xlabel_pos] = ""
-
-        #print len(X), len(x_labels)
-        #print X
-        #print x_labels
 
         cur_plt_graph = ""
         plt_graph_i = 1
@@ -839,12 +811,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
                                 (str(plot_labels[ii]), str(sub_term),
                                 str(scale_factor)))
 
-                    #print ", NaNs: ", Y[:,i].size - Y[Y_good_positions,i].size
                     logger.debug("WATCH GRAPH, Max %.2f Min %.2f." % \
                             (float(Y[i, Y_good_positions].max()),
                             float(Y[i, Y_good_positions].min())))
 
-                    #print Y[Y_good_positions,i]
                     if cur_plt_graph != plot_labels[ii].split(":")[0]:
 
                         cur_plt_graph = plot_labels[ii].split(":")[0]
@@ -906,7 +876,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
             #DEBUG START:PLOT
             plt_watch_colony = pyplot.figure()
             plt_watch_1 = plt_watch_colony.add_subplot(111)
-            plt_watch_1.plot(b_area, b_pixelsum)
+            plt_watch_1.loglog(b_area, b_pixelsum)
             plt_watch_1.set_xlabel('Blob:Area')
             plt_watch_1.set_ylabel('Blob:PixelSum')
             plt_watch_1.set_title('')
@@ -1051,9 +1021,6 @@ class Project_Image():
                     "'{0}' trying in log-file directory ('{1}').".format(
                     self._im_path, alt_path))
 
-            #self._im_path = os.sep.join((self._file_path_base,
-            #    self.im_path.split(os.sep)[-1]))
-
             try:
 
                 self.im = plt_img.imread(alt_path)
@@ -1187,24 +1154,6 @@ class Project_Image():
 
         scale_factor = 4.0
 
-        """
-        if save_graph_image:
-
-            for ga_i, grid_array in enumerate(self._grid_arrays):
-
-                im = self.get_im_section(features[ga_i], scale_factor)
-
-                cur_graph_name = save_graph_name + str(ga_i) + ".png"
-
-                if grid_lock == False or grid_array._best_fit_rows is None:
-
-                    grid_array.set_grid(im,
-                        save_grid_name=(save_graph_image is None and
-                        cur_graph_name or None),
-                        use_otsu=use_otsu, median_coeff=None,
-                        verbose=False, visual=False, dont_save_grid=False)
-        """
-
         if gs_fit is not None:
 
             z3_deriv_coeffs = np.array(gs_fit[: -1]) * \
@@ -1224,23 +1173,9 @@ class Project_Image():
 
             return None
 
-        ###DEBUG GRID ARRAYS
-        #print "The", len(self._grid_arrays), "arrays:", self._grid_arrays
-        ###DEBUG END
-
         for grid_array in xrange(len(self._grid_arrays)):
 
             im = self.get_im_section(features[grid_array], scale_factor)
-
-            """
-            if save_graph_name is None:
-
-                save_anime_name = None
-
-            else:
-
-                save_anime_name = save_graph_name + "anime.png"
-            """
 
             self._grid_arrays[grid_array].get_analysis(
                     im,
@@ -1281,9 +1216,6 @@ if __name__ == "__main__":
         "subdirectory 'analysis' under where the input file is)",
         metavar="PATH")
 
-    #parser.add_argument("-p", "--plates", default=4, type=int, dest="plates",
-        #help="The number of plates in the fixture", metavar="N")
-
     parser.add_argument("-m", "--matrices", dest="matrices", default=None,
         help="The pinning matrices for each plate position in the order " + \
         "set by the fixture config", metavar="(X,Y):(X,Y)...(X,Y)")
@@ -1291,10 +1223,6 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--watch-position", dest="graph_watch",
         help="The position of a colony to track.", metavar="PLATE:X:Y",
         type=str)
-
-    #parser.add_argument("-g", "--graph-output", dest="graph_output",
-        #help="If specified the graph is not shown to the user but " + \
-        #"instead saved to taget position", type=str)
 
     parser.add_argument("-t", "--watch-time", dest="grid_times",
         help="If specified, the gridplacements at the specified timepoints" + \
@@ -1493,46 +1421,6 @@ if __name__ == "__main__":
         if len(args.graph_watch) != 3:
 
             parser.error('Bad specification of watched colony')
-
-        #if args.graph_watch[0] < args.plates:
-
-            #if not(0 <= args.graph_watch[1] <= pm[args.graph_watch[0]][0]
-            #and 0 <= args.graph_watch[2] <= pm[args.graph_watch[0]][1]):
-
-                #parser.error('The watched colony position is out of bounds'
-                    #' (range: (0, 0)) - ' + str(pm[args.graph_watch[1]])
-                    #+ ').')
-        #else:
-
-            #parser.error('The watched colony position has a plate number '
-                    #'that is too high (max: ' + str(args.plates-1) + ').')
-
-    #if args.outputfile != None:
-
-        #try:
-
-            #fh = open(args.outputfile, 'w')
-
-        #except:
-
-            #parser.error('Cannot create the output file')
-
-        #fh.close()
-
-    #if args.graph_output != None:
-
-        #try:
-
-            #fh = open(args.graph_output, 'w')
-
-        #except:
-
-            #parser.error('Cannot create the save-file for the'
-                #' watched colony.')
-
-        #fh.close()
-
-    #if len(pm) == args.plates:
 
     #OUTPUT TO USER
     header_str = "The Project Analysis Script..."
