@@ -619,6 +619,26 @@ class Interactive_Menu():
 
                 remove_list = []
 
+                shapes = self._xml_file.get_shapes()
+
+                measurement = 0
+
+                if shapes[0][-1][-1] > 1:
+
+                    print "There are multiple measures for each colony, which to you want to see?\n"
+                    print "Value example (it is all you get):"
+                    d = self._xml_file.get_colony(shapes[0][0], 0, 0)
+                    print list(d[-1,:])
+
+                    try:
+
+                        measurement = int(raw_input(
+                            'Which do you want (0 - {0})? '.format(
+                            d.shape[-1])))
+
+                    except:
+
+                        measurement = 0
 
                 fig = plt.figure()
 
@@ -627,7 +647,10 @@ class Interactive_Menu():
                 for s in suspect_list:
 
                     fig.clf()
-                    fig = r_xml.plot_from_list(self._xml_file, [s], fig=fig)
+
+                    fig = r_xml.plot_from_list(self._xml_file, [s], fig=fig,
+                            measurement=measurement)
+
                     fig.show()
                     if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
 
