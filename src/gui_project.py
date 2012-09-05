@@ -80,19 +80,17 @@ class Project_Analysis_Running(gtk.Frame):
         self._start_time = time.time()
 
         #Make GTK-stuff
-        gtk.Frame.__init__(self, "Running Analysis On: %s" % log_file)
+        gtk.Frame.__init__(self, "Running Analysis On: {0}".format(log_file))
 
         vbox = gtk.VBox()
         self.add(vbox)
-
 
         #Time status
         hbox = gtk.HBox()
         self._gui_analysis_start = gtk.Label("Start time: %s" % str(\
             time.strftime("%Y-%m-%d %H:%M",
             time.localtime(time.time()))))
-        self._gui_timer = gtk.Label("Run-time: {0} min".format(\
-            int((time.time() - float(self._start_time)) / 60)))
+        self._gui_timer = gtk.Label("In about 2 min you will get feedback on ETA etc.")
         button = gtk.Button('Teminate Analysis')
         button.connect('clicked', self._terminate)
 
@@ -184,9 +182,20 @@ class Project_Analysis_Running(gtk.Frame):
  
                 gobject.timeout_add(1000*60*1, self.destroy)          
             else:
-                
-                self._gui_timer.set_text("Run-time: %d min" % int((time.time() \
-                    - float(self._start_time)) / 60))
+
+                timer_text = "Run-time: %d min " % int((time.time() \
+                    - float(self._start_time)) / 60)
+
+                try:                
+                    fs = open(self._analysis_log_dir +  ".analysis.log", 'r')
+                    timer_text += fs.readlines()[-1].split("\r")[-1].split("]")[-1]
+                    fs.close()
+
+                except:
+
+                    timer_text += "No info yet on progress and ETA"
+
+                self._gui_timer.set_text(timer_text)
                 fs_lines = self.get_run_file_contents()
 
                 if fs_lines != "":
