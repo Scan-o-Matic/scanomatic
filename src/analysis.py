@@ -334,12 +334,46 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         description = None
         interval_time = None
 
+    #Verifying sanity of request: Are there any pinning matrices?
     if pinning_matrices is None:
 
         logger.critical(
             "ANALYSIS: need some pinning matrices to analyse anything")
 
         return False
+
+    #Verifying sanity of request: Suppression requires watching?
+    if suppress_analysis:
+
+        if graph_watch is None or len(graph_watch) == 0:
+
+            logger.critical("ANALYSIS: You are effectively requesting to" +
+                " do nothing,\nso I guess I'm done...\n(If you suppress" +
+                " analysis of non-watched colonies, then you need to watch" +
+                " some as well!)")
+    
+            return False
+
+        elif graph_watch[0] >= len(pinning_matrices) or graph_watch[0] < 0 or \
+                pinning_matrices[graph_watch[0]] is None:
+
+            logger.critical("ANALYSIS: That plate ({0}) does not exist"\
+                .format(graph_watch[0]) + " or doesn't have a pinning!")
+
+            return False
+
+        else:
+
+            pm = pinning_matrices[graph_watch[0]]
+
+            if graph_watch[1] >= pm[0] or graph_watch[1] < 0 or \
+                    graph_watch[2] >= pm[1] or graph_watch[2] < 0:
+
+                logger.critical("ANALYSIS: The watch colony cordinate" + \
+                    " ({0}) is out of bounds on plate {1}.".format(
+                    graph_watch[1:], graph_watch[0]))
+
+                return False 
 
     plate_position_keys = []
 
