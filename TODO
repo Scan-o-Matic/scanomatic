@@ -9,6 +9,7 @@
 *** The Analyse One GUI have strange behaviour in why extra im-array is
     needed to have toggling between Cell Estimate and Kodak
 
+*** gui_anal.. 623 f_sel....mark(... -> r_fixt 120 Xs, Ys set.A.find... -> None not iterable
 
 --- SPACE-TRANSITIONS ---
 
