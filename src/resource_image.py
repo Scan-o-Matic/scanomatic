@@ -311,7 +311,7 @@ class Image_Analysis():
 
         else:
 
-            return None
+            return None, None
 
     def get_loaded(self):
 

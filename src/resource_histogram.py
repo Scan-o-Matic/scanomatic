@@ -113,9 +113,10 @@ def otsu(histogram=None, labels=None, counts=None):
     #and sumc ='sum of counts'
 
     muT = mu2T = sumT = 0.0
-    count = counts[0]
-    label = labels[0]
     nSlots = len(labels) - 1  # Since labels actually contains borders
+
+    if nSlots == 0:
+        return None
 
     for k in xrange(nSlots):
 
