@@ -14,11 +14,30 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import os, os.path, sys
+import os
+import sys
+
+#
+# FUNCTIONS
+#
+
+
+def get_valid_relative_dir(path, default=""):
+
+    valid_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+
+    path = "".join([c for c in path if c in valid_chars])
+
+    if path == "":
+
+        path = default
+
+    return path
 
 #
 # CLASSES
 #
+
 
 class OS_Settings():
     def __init__(self):

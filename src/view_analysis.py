@@ -23,6 +23,7 @@ import gtk
 #
 
 PADDING_LARGE = 10
+PADDING_MEDIUM = 4
 PADDING_SMALL = 2
 
 #
@@ -193,11 +194,169 @@ class Analysis_Stage_Project(gtk.VBox):
         label = gtk.Label()
         label.set_markup(model['analysis-stage-project-title'])
         self.pack_start(label, False, False, PADDING_LARGE)
+        label.show()
+
+        frame = gtk.Frame(model['analysis-stage-project-file'])
+        self.pack_start(frame, False, False, PADDING_SMALL)
+        hbox = gtk.HBox()
+        hbox.set_border_width(PADDING_MEDIUM)
+        frame.add(hbox)
+        self.log_file = gtk.Entry()
+        self.log_file.set_text(model['analysis-project-log_file'])
+        self.log_file.set_sensitive(False)
+        hbox.pack_start(self.log_file, True, True, PADDING_SMALL)
+        button = gtk.Button(
+            label=model['analysis-stage-project-log_file_button-text'])
+        button.connect("clicked", controller.project.set_log_file)
+        hbox.pack_end(button, False, False, PADDING_SMALL)
+        frame.show_all()
+ 
+        frame = gtk.Frame(model['analysis-stage-project-output_folder'])
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        hbox = gtk.HBox()
+        hbox.set_border_width(PADDING_MEDIUM)
+        frame.add(hbox)
+        self.output = gtk.Entry()
+        hbox.pack_start(self.output, True, True, PADDING_MEDIUM)
+        self.output.connect("changed",
+            controller.project.set_output, self, "change")
+        self.output.connect("focus-out-event",
+            self._output_focus_out)
+        self.output_warning = gtk.Image()
+        controller.project.set_output(self.output, self, "exit")
+        hbox.pack_end(self.output_warning, False, False, PADDING_LARGE)
+        frame.show_all()
+ 
+        frame = gtk.Frame(model['analysis-stage-project-plates'])
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        vbox = gtk.VBox()
+        frame.add(vbox)
+        self.keep_gridding = gtk.CheckButton(
+            label=model['analysis-stage-project-keep_gridding'])
+        self.keep_gridding.connect("clicked", 
+            controller.project.toggle_set_pinning, self)
+        hbox = gtk.HBox()
+        hbox.pack_start(self.keep_gridding, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
+        self.pm_box = gtk.HBox()
+        vbox.pack_start(self.pm_box, False, True, PADDING_SMALL)
+        self.keep_gridding.clicked()
+        frame.show_all()
 
         self.show()
 
+    def _output_focus_out(self, widget, *args, **kwargs):
+
+        self._controller.project.set_output(widget, self, "exit")
+
+    def correct_output_path(self, new_path):
+
+        self.output.set_text(new_path) 
+
+    def set_output_warning(self, val=False):
+
+        if val == False:
+
+            self.output_warning.set_from_stock(gtk.STOCK_APPLY,
+                    gtk.ICON_SIZE_SMALL_TOOLBAR)
+            self.output_warning.set_tooltip_text(
+                self._model['analysis-stage-project-output_folder-ok'])
+
+        else:
+
+            self.output_warning.set_from_stock(gtk.STOCK_DIALOG_WARNING,
+                    gtk.ICON_SIZE_SMALL_TOOLBAR)
+            self.output_warning.set_tooltip_text(
+                self._model['analysis-stage-project-output_folder-warning'])
 
 
+    def set_pinning(self, pinnings_list, sensitive):
+
+        box = self.pm_box
+
+        children = box.children()
+
+        if len(children) < len(pinnings_list):
+
+           for p in xrange(len(pinnings_list) - len(children)):
+
+                box.pack_start(Analysis_Stage_Project_Pinning(
+                    self._controller, self._model, self,
+                    len(children) + p + 1))
+
+           children = box.children()
+
+        if len(children) > len(pinnings_list):
+
+            for p in xrange(len(children) - len(pinnings_list)):
+                box.remove[children[-1 - p]]
+
+            children = box.children()
+
+        for i, child in enumerate(children):
+
+            child.set_sensitive(sensitive)
+            child.set_pinning(pinnings_list[i])
+
+
+class Analysis_Stage_Project_Pinning(gtk.VBox):
+
+    def __init__(self, controller, model, project_veiw, 
+            plate_number, pinning = None):
+
+            self._model = model
+            self._controller = controller
+            self._project_view = project_veiw
+
+            super(Analysis_Stage_Project_Pinning, self).__init__()
+
+            label = gtk.Label(
+                model['analysis-stage-project-plate-label'].format(
+                plate_number))
+
+
+            self.pack_start(label, False, False, PADDING_SMALL)
+
+            if pinning is None:
+
+                pinning = model['analysis-project-pinning-default']
+
+            self.dropbox = gtk.combo_box_new_text()                   
+
+            def_key = 0
+            for i, m in enumerate(sorted(model['pinning_matrices'].keys())):
+
+                self.dropbox.append_text(m)
+
+                if pinning in m:
+                    def_key = i
+
+            self.dropbox.set_active(def_key)
+            
+            self.dropbox.connect("changed",
+                self.controller.project.set_pinning, project_veiw,
+                plate_number)
+
+    def set_sensitive(self, val):
+
+        self.dropbox.set_sensitive(val)
+
+
+    def set_pinning(self, pinning):
+
+        orig_key = self.dropbox.get_active()
+        new_key = -2
+
+        for i, m in enumerate(sorted(model['pinning_matrices'].keys())):
+
+            if pinning in m:
+                new_key = i
+
+        if new_key != orig_key:
+
+            self.dropbox.set_active(new_key)
+           
+"""
 
 
 
@@ -220,9 +379,6 @@ class Analysis_Stage_Project(gtk.VBox):
  
         #GTK - stuff
 
-        gtk.Frame.__init__(self, "(RE)-START ANALYSIS OF A PROJECT")
-        vbox = gtk.VBox()
-        self.add(vbox)
 
         #Log-file selection
         hbox = gtk.HBox()
@@ -1845,3 +2001,4 @@ class Analyse_One(gtk.Frame):
             self.plots_vbox2.show_all()
             self._blobs_have_been_loaded = True
 
+"""

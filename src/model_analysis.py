@@ -21,10 +21,29 @@ quatative drop-tests or calibration experiments.</i></span>
 to get quatitative values of average pigmentation.</i></span>
 """,
 'analysis-top-project-start-text': 'Start',
-'pinning-matrices': {'A: 8 x 12 (96)':(8,12), 
-                    'B: 16 x 24 (384)': (16,24),
-                    'C: 32 x 48 (1536)': (32,48),
-                    'D: 64 x 96 (6144)': (64,96),
-                    '--Empty--': None}
-
+'pinning-matrices': {'A: 8 x 12 (96)': (8, 12), 
+                    'B: 16 x 24 (384)': (16, 24),
+                    'C: 32 x 48 (1536)': (32, 48),
+                    'D: 64 x 96 (6144)': (64, 96),
+                    '--Empty--': None},
+'analysis-stage-project-title': 
+"<span weight='heavy' size='large'>Analyse Project</span>",
+'analysis-stage-project-file': 'Select Log File to Process',
+'analysis-stage-project-log_file_button-text': 'Browse...',
+'analysis-stage-project-output_folder': 
+'Output Folder (relative log-file path)',
+'analysis-stage-project-output_folder-ok': 'Nice choice!',
+'analysis-stage-project-output_folder-warning': 
+'That folder exists, might not be optimal to write into previous analysis',
+'analysis-stage-project-plates': 'Tweak gridding',
+'analysis-stage-project-keep_gridding': 'Keep grids as specified in log-file',
+'analysis-stage-project-plate-label': 'Plate {0]',
+'analysis-project-log_file': '',
+'analysis-project-log_file_dir':'',
+'analysis-project-output-default': 'analysis',
+'analysis-project-output-path': 'analysis',
+'analysis-project-plates': 0,
+'analysis-project-pinning-default': '1536',
+'analysis-project-pinnings': (),
+'analysis-project-pinnings-from-file': ()
 }
