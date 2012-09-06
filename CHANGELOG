@@ -2,6 +2,8 @@
 ##### Changed in Scannomatic 0.997 #####
    ###################################
 
+*** Started rewriting of analysis GUI:s, going towards MVC-paradigm
+
   ###################################
 ##### Changed in Scannomatic 0.996 #####
    ###################################
