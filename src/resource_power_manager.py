@@ -48,8 +48,8 @@ class USB_PM_LINUX(USB_PM):
         self.name ="USB connected PM (Linux)"
         self._socket = socket
         self._path = path
-        self._on_string = "-o %{0}".format(socket)
-        self._off_string = "-f %{0}".format(socket)
+        self._on_string = "-o {0}".format(socket)
+        self._off_string = "-f {0}".format(socket)
 
 class USB_PM_WIN(USB_PM):
     """Class for handling USB connected PM:s on windows."""

@@ -520,6 +520,8 @@ class Scanning_Experiment_Setup(gtk.Frame):
         self._owner = owner
         self.DMS = owner.DMS
 
+        self._prefix_text = None
+
         vbox2 = gtk.VBox(False, 0)
         vbox2.show()
         self.add(vbox2)
@@ -554,6 +556,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
         hbox = gtk.HBox()
         hbox.pack_start(label, False, False, 2)
         self.experiment_name = gtk.Entry()
+        self.experiment_name.connect("changed", self._check_start_button_ok)
         self.experiment_name.show()
         hbox.pack_end(self.experiment_name, False, False, 2)
         hbox.show()
@@ -644,9 +647,9 @@ class Scanning_Experiment_Setup(gtk.Frame):
 
         hbox = gtk.HBox()
 
-        button = gtk.Button("Start experiment")
-        button.connect("clicked", self._start_experiment) 
-        hbox.pack_start(button, False, False, 2)
+        self.start_button = gtk.Button("Start experiment")
+        self.start_button.connect("clicked", self._start_experiment) 
+        hbox.pack_start(self.start_button, False, False, 2)
         vbox2.pack_start(hbox, False, False, 2)
         
         self.experiment_name.set_text("Test")
@@ -655,7 +658,39 @@ class Scanning_Experiment_Setup(gtk.Frame):
         self.experiment_iteration = 0
 
         self.experiment_Duration_Calculation()
+        self._check_start_button_ok()
         vbox2.show_all()
+
+    def _check_start_button_ok(self, *args, **kwargs):
+
+        if len(args) > 0:
+
+            widget = args[0]
+
+            self._prefix_text = widget.get_text()
+
+        if self._selected_scanner is not None and self._check_experiment_dupe() == False:
+
+            self.start_button.set_sensitive(True)
+
+        else:
+
+            self.start_button.set_sensitive(False)
+
+    def _check_experiment_dupe(self):
+
+        if self._prefix_text is None or self._prefix_text == "":
+
+            #This would mean invalid place... and should count as a dupe
+            return True
+
+        elif os.path.isdir(self.experiment_root.get_text() + os.sep + self._prefix_text):
+
+            return True
+
+        else:
+
+            return False
 
     def view_config(self, widget=None, event=None, data=None):
         if self.fixture.get_active() >= 0:
@@ -803,6 +838,7 @@ class Scanning_Experiment_Setup(gtk.Frame):
                     self._selected_scanner = None
                     self.reload_scanner()
 
+            self._check_start_button_ok()
             self._GUI_updating = False
              
 
