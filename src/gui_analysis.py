@@ -4,7 +4,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.995"
+__version__ = "0.996"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -626,19 +626,25 @@ class Analyse_One(gtk.Frame):
 
             fixture_X, fixture_Y = self.f_settings.get_fixture_markings()
 
-            if len(fixture_X) == len(self.f_settings.mark_X):
-                self.f_settings.set_areas_positions()
+            if fixture_X is not None and fixture_Y is not None and \
+                self.f_settings.mark_X is not None and \
+                self.f_settings.mark_Y is not None:
 
-                self.DMS("Reference scan positions", 
-                    str(self.f_settings.fixture_config_file.get("grayscale_area")), level = "L")
-                self.DMS("Scan positions", 
-                    str(self.f_settings.current_analysis_image_config.get("grayscale_area")), level = "L")
+                if len(fixture_X) == len(self.f_settings.mark_X):
+                    self.f_settings.set_areas_positions()
 
-                rotated = True
-            else:
-                self.DMS("Error", "Missmatch between fixture configuration and current image", 
-                    level = "L", debug_level="error")
-                rotated = False
+                    self.DMS("Reference scan positions", 
+                        str(self.f_settings.fixture_config_file.get("grayscale_area")), level = "L")
+                    self.DMS("Scan positions", 
+                        str(self.f_settings.current_analysis_image_config.get("grayscale_area")), level = "L")
+
+                    rotated = True
+                else:
+                    self.DMS("Error", "Missmatch between fixture configuration and current image", 
+                        level = "L", debug_level="error")
+                    rotated = False
+
+            print fixture_X, fixture_Y, self.f_settings.A
 
             if self.f_settings.A != None:
 
@@ -660,9 +666,6 @@ class Analyse_One(gtk.Frame):
 
                 if grayscale is None or gs_success == False:
                     self.set_grayscale_selecting()
-                else:
-                    pass
-
 
                 #THE LARGE IMAGE
 

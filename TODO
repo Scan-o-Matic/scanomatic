@@ -9,6 +9,7 @@
 *** The Analyse One GUI have strange behaviour in why extra im-array is
     needed to have toggling between Cell Estimate and Kodak
 
+*** gui_anal.. 623 f_sel....mark(... -> r_fixt 120 Xs, Ys set.A.find... -> None not iterable
 
 --- SPACE-TRANSITIONS ---
 
@@ -21,17 +22,13 @@
     centric, and using the R-value as well...(some missed peaks will
     affect placement)
 
-*** Investigate only using the inter-quartile part of signal at
-    grid-placement to calculate the otsu-threshold.
-
 --- BLOB-DETECTION ---
+
+*** New structure needed for all the grid cell abstract layers (Blob, Bg, Trash, Cell)
 
 *** Do a check on BG to throw out outliers from the BG into trash
 
 *** Let the subtracted BG be a plane and not a single value.
-
-*** Images show distinct blob-detection failiour at early stages using
-    current detection algorithms
 
 *** The iterative roundness test could use the threshold of otsu as start
     and could use fsolve too!
@@ -76,6 +73,12 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Images show distinct blob-detection failiour at early stages using
+    current detection algorithms
+
+*** Investigate only using the inter-quartile part of signal at
+    grid-placement to calculate the otsu-threshold.
 
 *** User needs to know if the analysis-script is working...
 

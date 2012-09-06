@@ -26,13 +26,14 @@ def make_linear_interpolation2(data):
         a_pos = map(lambda x: x-1, pos)    
         a_pos = np.array(a_pos)
         a_pos[np.where(a_pos < 0)] = 0    
-        b_pos = map(lambda x: x+1, pos)
+        b_pos = map(lambda x: x+2, pos) # +2 so it gets 3x3
         b_pos = np.array(b_pos)
         #logging.warning("Pos {0}, a_pos {1}, b_pos {2}, data.shape {3}"\
         #    .format(pos, a_pos, b_pos, data.shape))
         b_pos[np.where(b_pos > np.array(data.shape))] -= 1
         cell = data[a_pos[0]:b_pos[0], a_pos[1]:b_pos[1]]
-        f[tuple(pos)] = cell[np.where(cell != 0)].mean()
+        f[tuple(pos)] = cell[np.where(np.logical_and(cell != 0, 
+                np.isnan(cell) == False))].mean()
         #logging.warning("Corrected position {0} to {1}".format(\
         #    pos, f[tuple(pos)]))
     return f
@@ -49,6 +50,38 @@ def make_cubic_interpolation(data):
     #logging.warning('Linear done')
     f[nans] = f2[nans]
     return f
+
+def make_griddata_interpolation(plate, method='cubic'):
+
+
+    points = np.where(np.logical_and(np.isnan(plate) == False, 
+        plate > 0))
+
+    values = plate[points]
+
+    x_grid, y_grid = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
+
+    res = scint.griddata(points, values, (x_grid, y_grid), method = method)
+
+    if np.isnan(res).sum() > 0:
+
+        methods = [(0,'cubic'), (1,'linear'), (2,'nearest')]
+        method_int_dict = {m[1]: m[0] for m in methods}
+        int_method_dict = {m[0]: m[1] for m in methods}
+        mval = method_int_dict[method] 
+
+        if mval < 2:
+
+            method = int_method_dict[mval+1]
+
+            res = make_griddata_interpolation(res, method=method)
+
+        else:
+
+            logging.warning("There are still empty positions,"\
+                    +" it should not be possible!")
+
+    return res
 
 #NEWEST PRECOG RATES
 def get_empty_data_structure(plate, max_row, max_column, depth=None, default_value=48):
@@ -68,40 +101,65 @@ def get_empty_data_structure(plate, max_row, max_column, depth=None, default_val
 
     return data
 
+def get_default_surface_matrix(data):
+
+    surface_matrix = {}
+    for p in xrange(data.shape[0]):
+        surface_matrix[p] = [[1,0],[0,0]]
+
+    return surface_matrix
+
+def get_norm_surface_origin(data, p, norm_surface, surface_matrix=None):
+
+    if surface_matrix is None:
+        surface_matrix = get_default_surface_matrix(data)
+
+
+    original_norm_surface = norm_surface.copy()
+    
+    for x in xrange(data[p].shape[0]):
+        for y in xrange(data[p].shape[1]):
+            if surface_matrix[p][x % 2][y % 2] == 1:
+                if np.isnan(data[p][x,y]) or data[p][x,y] == 48:
+                    logging.warning("Discarded grid point ({0},{1})".format(\
+                        x,y) + " on plate {0} because it {1}.".format(\
+                        p, ["had no data", "had no growth"][data[p][x,y] == 48]))
+                else:
+                    norm_surface[x, y] = data[p][x, y]
+
+                original_norm_surface[x,y] = np.nan
+                #print x, y
+
+    return norm_surface, original_norm_surface
 
 #USING 1/4th AS NORMALISING GRID
 def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
     if surface_matrix is None:
-        surface_matrix = {}
-        for p in xrange(data.shape[0]):
-            surface_matrix[p] = [[1,0],[0,0]]
+        surface_matrix = get_default_surface_matrix(data)
 
     norm_surfaces = data.copy()*0 
     norm_means = []
+    norm_var = []
+
     for p in xrange(data.shape[0]):
 
         if len(data[p].shape) == 2:
             #exp_pp = map(lambda x: x/2, data[p].shape)
             #X, Y = np.mgrid[0:exp_pp[0],0:exp_pp[1]]*2
             norm_surface = norm_surfaces[p]
-            original_norm_surface = norm_surface.copy()
             #norm_surface[X, Y] = data[p][X, Y]
             #m = norm_surface[X, Y].mean()#.mean(1)
             #sd = norm_surface[X, Y].std()#.std(1)
-            for x in xrange(data[p].shape[0]):
-                for y in xrange(data[p].shape[1]):
-                    if surface_matrix[p][x % 2][y % 2] == 1:
-                        if np.isnan(data[p][x,y]) or data[p][x,y] == 48:
-                            logging.warning("Discarded grid point ({0},{1})".format(\
-                                x,y) + " on plate {0} because it {1}.".format(\
-                                p, ["had no data", "had no growth"][data[p][x,y] == 48]))
-                        else:
-                            norm_surface[x, y] = data[p][x, y]
 
-                        original_norm_surface[x,y] = np.nan
-                        #print x, y
-            original_norms = norm_surface[np.where(norm_surface != 0)]
+            norm_surface, original_norm_surface = get_norm_surface_origin(data,
+                                            p, norm_surface, surface_matrix)
+
+            original_norms = norm_surface[np.where(\
+                            np.logical_and(norm_surface != 0 , 
+                            np.isnan(norm_surface) == False))]
+
             m = original_norms.mean()
+            v = original_norms.var()
             sd = original_norms.std()
 
             logging.info('Plate {0} has size {1} and {2} grid positions.'.format(\
@@ -118,18 +176,24 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
 
             if only_linear:
                 norm_surface = \
-                    make_linear_interpolation(norm_surface)
+                    make_linear_interpolation2(norm_surface)
             else:
                 norm_surface = \
-                    make_cubic_interpolation(norm_surface)
+                    make_griddata_interpolation(norm_surface)
+                    # make_cubic_interpolation(norm_surface)
+            
+            #norm_surface[np.where(np.isnan(original_norm_surface))] = np.nan 
 
+            norm_surfaces[p] = norm_surface
             norm_means.append(m)
+            norm_var.append(v)
             logging.info('Going for next plate')
         else:
             norm_surfaces[p] = np.array([])
             norm_means.append(None)
+            norm_var.append(None)
 
-    return norm_surfaces, np.array(norm_means)
+    return norm_surfaces, np.array(norm_means), np.array(norm_var)
 
 
 #NEW Luciano-format (And newest)
@@ -271,7 +335,8 @@ def show_heatmap(data, plate_texts, plate_text_pattern, vlim=(0,48)):
     for p in xrange(data.shape[0]):
         if len(data[p].shape) == 2:
             ax = fig.add_subplot(rows, columns ,p+1, title=plate_text_pattern.format( plate_texts[p]))
-            plt.imshow(data[p], vmin=vlim[0], vmax=vlim[1], interpolation="nearest")
+            plt.imshow(data[p], vmin=vlim[0], vmax=vlim[1], interpolation="nearest", 
+                cmap=plt.cm.jet)
             #plt.colorbar(ax = ax, orientation='horizontal')
         else:
             logging.warning("Plate {0} has no values (shape {1})".format(p, data[p].shape))
@@ -336,46 +401,26 @@ def get_interactive_norm_surface_matrix(data):
     return norm_surface_matrices
 
 
-"""
-#CREATING NORM TARGET ARRAY
-data2 = np.zeros(data.shape, dtype=np.float64)
+def get_normalised_values(data, surface_matrices=None):
 
-for p in range( data.shape[0] ):
-    for x in range( exp_pp[0] ):
-        for y in range( exp_pp[1] ):
+    norm_surface, norm_means, norm_vars = get_norm_surface(data, 
+                        surface_matrix=surface_matrices)
 
-            data2[p, x*2, y*2] = data[p, x*2, y*2]
-
-data3 = data2.copy()
-#PASS 1
-for p in range( data.shape[0]):
-    for x in range( exp_pp[0]):
-        for y in range(exp_pp[1]):
-            try:
-                cell = data2[p, x*2: x*2+3, y*2: y*2+3]            
-            except:
-                try:
-                    cell = data2[p, x*2: x*2+2, y*2: y*2+3] 
-                except:
-                    cell = data2[p, x*2: x*2+2, y*2: y*2+2]                       
-            data3[p, x*2+1, y*2+1] = cell[np.where(cell != 0)].mean()
-#PASS 2
-"""
-#DO NORM
-def get_normalised_values(data, surface_matrices):
-
-    norm_surface, norm_means = get_norm_surface(data, surface_matrix=surface_matrices)
     normed_data = data.copy() * np.nan
-    print norm_means
+    logging.info("The norm-grid means where {0} (surface mean was {1})".format( norm_means, 
+            [np.mean(p[np.where(np.isnan(p)==False)]) for p in norm_surface] ))
+    logging.info("Zero positions in normsurface: {0}".format([(p == 0).sum() for p in norm_surface]))
     for p in xrange(data.shape[0]):
         normed_data[p] = (data[p] - norm_surface[p]) + norm_means[p]
 
-    return normed_data
+    return normed_data, norm_means, norm_vars
 
-def get_experiment_results(data, surface_matrices):
+def get_experiment_results(data, surface_matrices=None):
     exp_pp = map(lambda x: map(lambda y: y/2, x.shape), data)
-    e_mean = []
-    e_sd = []
+    e_mean = np.array([None]*data.shape[0], dtype=np.object)
+    e_data = np.array([None]*data.shape[0], dtype=np.object)
+    e_sd = np.array([None]*data.shape[0], dtype=np.object)
+
     """
     e_max = 0
     e_min = 0
@@ -392,13 +437,16 @@ def get_experiment_results(data, surface_matrices):
      
         if len(data[p].shape) == 2: 
             exp_filter = np.array(surface_matrices[p]) == 0
+            exp_data = np.zeros(exp_pp[p]+[exp_filter.sum()], dtype=np.float64)
             exp_mean = np.zeros(exp_pp[p], dtype=np.float64)
             exp_sd = np.zeros(exp_pp[p], dtype=np.float64)
             for x in range( exp_pp[p][0]):
                 for y in range( exp_pp[p][1]):
                     cell = data[p][x*2:x*2+2, y*2:y*2+2]
-                    exp_mean[x,y] = cell[np.where(exp_filter)].mean()
-                    exp_sd[x,y] = cell[np.where(exp_filter)].std()
+                    cell_data = cell[np.where(exp_filter)]
+                    exp_data[x,y,:] = cell_data
+                    exp_mean[x,y] = cell_data[np.where(np.isnan(cell_data)==False)].mean()
+                    exp_sd[x,y] = cell_data[np.where(np.isnan(cell_data)==False)].std()
 
                 #logging.warning("Plate {0}, row {1}".format(p, x))
             """
@@ -411,99 +459,37 @@ def get_experiment_results(data, surface_matrices):
             if e_sd_min > exp_sd.min():
                 e_sd_min = exp_sd.min()
             """
-            e_mean.append(exp_mean)
-            e_sd.append(exp_sd)
+            e_mean[p] = exp_mean
+            e_sd[p] = exp_sd
+            e_data[p] = exp_data
         else:
-            e_mean.append(np.array([]))
-            e_sd.append(np.array([]))
+            e_mean[p] = np.array([])
+            e_sd[p] = np.array([])
+            e_data[p] = np.array([])
 
 
-    return np.array(e_mean), np.array(e_sd) #, (e_min, e_max), (e_sd_min, e_sd_max)
+    return e_mean, e_sd, e_data
         
-"""
-#PLOT A SIMPLE HEAT MAP
-fig = plt.figure()
-for p in xrange(data.shape[0]):
-    ax = fig.add_subplot(2,2, p+1, title="Rate {0}".format( plate_texts[p]))
-    plt.imshow(e_mean[p], vmin=e_min, 
-        vmax=e_max)
-    plt.colorbar(ax = ax, orientation='horizontal')
-
-fig.savefig("./exp_norm.png")
-"""
-
-"""
-fig = plt.figure()
-for p in xrange(data.shape[0]):
-    ax = fig.add_subplot(4,2,2*p+1, title="Rate {0}".format( plate_texts[p]))
-    plt.imshow(e_mean[p], vmin=e_min, 
-        vmax=e_max)
-    plt.colorbar(ax = ax, orientation='horizontal')
-    ax = fig.add_subplot(4,2,2*p+2, title="Standard dev {0}".format( plate_texts[p]))
-    plt.imshow(e_sd[p], vmin=e_sd_min, vmax=e_sd_max)
-    plt.colorbar(ax = ax, orientation='horizontal')
-
-fig.savefig("./exp_norm_mean_sd.png")
-#PLOT DONE
-"""
-
-"""
-e_mean2 = []
-for p in xrange(data.shape[0]):
-
-    print "{0} has mean {1} ({2}) and std {3} ({4})".format(\
-        plate_texts[p], e_mean[p].mean(), 
-            e_mean[p].mean() + norm_surface[p].mean(),
-            e_mean[p].std(),
-            (e_mean[p] + norm_surface[p].mean()).std())
-
-    e_mean2.append(e_mean[p][np.where(e_mean[p] < e_mean[p].mean() + 6 * \
-        e_mean[p].std())])
-    print "Omitting outlier experiments {0}: mean {1} std {2}\n".format(\
-        e_mean[p].shape[0] * e_mean[p].shape[1] - e_mean2[-1].shape[0],
-        e_mean2[-1].mean(),
-        e_mean2[-1].std())
-
-"""
-"""
-#TTESTS
-alpha = 0.05
-n_sign = 0
-n_controls = 15
-ctrls = np.random.random_integers(0,len(t_exp),n_controls)
-texp = np.array(t_exp)
-tref = texp[ctrls,:].ravel()
-not_ctrls = np.array([x for x in range(texp.shape[0]) if x not in ctrls])
-texp2 = texp[not_ctrls,:]
-for e in texp2:
-    if stats.ttest_ind(tref, e)[1] < alpha:
-        n_sign += 1
-    
-print "Found {0} Experimental False Positives, expected {1} using {2}\
- control positions(ratio {3})".format(
-    n_sign,
-    alpha*texp2.shape[0],
-    n_controls,
-    n_sign / (alpha*texp2.shape[0]))
-
-"""
-
 class Interactive_Menu():
 
     def __init__(self):
 
         self._menu = {'1': 'Load data',
-            '1A': 'Inspect/remove outliers (requires access of the xml-file)',
-            '1B': 'Manual remove stuff',
+            '1A': 'Weed out superbad curves automatically (requires xml-file)',
+            '1B': 'Inspect/remove outliers (requires xml-file)',
+            '1C': 'Inspect/remove based on bad friends (requires xml-file)',
+            '1D': 'Manual remove stuff',
             '2': 'Set normalisation grids',
             '3': 'Normalise data',
             '4': 'Calculate experiments',
             'R1': 'Re-map positions -- rotate',
             'R2': 'Re-map positions -- move',
+            'R3': 'Re-map positions -- flip',
             'P1': 'Set plot plate names',
             'P2': 'Show heatmap(s) of original data',
             'P3': 'Show heatmap(s) of normalised data',
             'P4': 'Show heatmap(s) of per experment data',
+            'S0': 'Save the un-normalised data as np-array',
             'S1': 'Save the normalised data',
             'S2': 'Save the normalised data per experiment',
             'S3': 'Save the normalised data as np-array',
@@ -514,7 +500,10 @@ class Interactive_Menu():
         self.set_start_menu_state()
 
         self._experiments = None
+        self._experiments_data = None
         self._experiments_sd = None
+        self._file_dir_path = None
+        self._file_name = None
         self._file_path = None
         self._xml_file = None
         self._xml_connection = [0, [0,0]]
@@ -522,6 +511,7 @@ class Interactive_Menu():
         self._plate_labels = None
         self._original_phenotypes = None 
         self._normalised_phenotypes = None
+        self._normalisation_means = None
         self._original_meta_data = None 
         self._data_shapes = None 
 
@@ -534,7 +524,7 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1A','1B', '2','3','P1','R1', 'R2'])
+        self.set_enable_menu_items(['1D', '1C', '1A','1B', '2','3','P1','R1', 'R2', 'R3', 'S0'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -634,6 +624,26 @@ class Interactive_Menu():
 
                 remove_list = []
 
+                shapes = self._xml_file.get_shapes()
+
+                measurement = 0
+
+                if shapes[0][-1][-1] > 1:
+
+                    print "There are multiple measures for each colony, which to you want to see?\n"
+                    print "Value example (it is all you get):"
+                    d = self._xml_file.get_colony(shapes[0][0], 0, 0)
+                    print list(d[-1,:])
+
+                    try:
+
+                        measurement = int(raw_input(
+                            'Which do you want (0 - {0})? '.format(
+                            d.shape[-1])))
+
+                    except:
+
+                        measurement = 0
 
                 fig = plt.figure()
 
@@ -642,7 +652,10 @@ class Interactive_Menu():
                 for s in suspect_list:
 
                     fig.clf()
-                    fig = r_xml.plot_from_list(self._xml_file, [s], fig=fig)
+
+                    fig = r_xml.plot_from_list(self._xml_file, [s], fig=fig,
+                            measurement=measurement)
+
                     fig.show()
                     if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
 
@@ -653,8 +666,11 @@ class Interactive_Menu():
 
                 self.set_nan_from_list(remove_list)
 
+
     def load_file(self, file_path):
 
+        if os.sep not in file_path:
+            file_path = ".{0}{1}".format(os.sep, file_path)
 
         file_contents = get_data_from_file(file_path)
 
@@ -662,6 +678,9 @@ class Interactive_Menu():
             
 
             self._file_path = file_path
+            self._file_name = ".".join(file_path.split(os.sep)[-1].split(".")[:-1])
+            self._file_dir_path = os.sep.join(file_path.split(os.sep)[:-1])
+
             self._original_phenotypes = file_contents['data']
             self._original_meta_data = file_contents['meta-data']
 
@@ -681,7 +700,9 @@ class Interactive_Menu():
                 mins, maxs))
 
             self.set_new_file_menu_state()
-            self._plate_labels = range(self._original_phenotypes.shape[0])
+            self._plate_labels = {}
+            for i in xrange(self._original_phenotypes.shape[0]):
+                self._plate_labels[i] = str(i)
             logging.info("Temporary plate labels set")
             self.set_enable_menu_plots()
             return True
@@ -698,7 +719,18 @@ class Interactive_Menu():
         else:
             print "(0 - {0})".format(self._original_phenotypes.shape[0]-1)
 
-        plate = int(raw_input("> "))
+        #INPUT AND DISCARD NON INTs
+        try:
+            plate = int(raw_input("> "))
+        except:
+            plate = None
+            logging.warning("Not a valid plate number")
+
+        #OUT OF RANGE CHECK
+        if self._original_phenotypes.shape[0] <= plate or plate < 0:
+            logging.warning("Out of bounds {0}".format(plate))
+            plate = None
+
         return plate
 
     def do_task(self, task):
@@ -710,11 +742,51 @@ class Interactive_Menu():
 
                 logging.warning("Nothing changed...")
 
+
         elif task == "1A":
+
+            removal_list = []
+            if self._xml_file is None or self._xml_file.get_loaded() == False:
+                self.set_xml_file()
+ 
+            if self._xml_file.get_loaded():
+
+                t = 0.6
+                for p in xrange(self._original_phenotypes.shape[0]):
+                    for c in xrange(self._original_phenotypes[p].shape[0]):
+                        for r in xrange(self._original_phenotypes[p].shape[1]):
+
+                            d = np.isnan(self._xml_file.get_colony(p,c,r)).astype(np.int8)
+                            if 1 - d.sum() / float(d.shape[0]) < 0.6:
+                                removal_list.append((p,c,r))
+
+                logging.info("Removed {0} positions because of superbadness".format(len(removal_list)))
+                self.set_nan_from_list(removal_list)
+    
+        elif task == "1B":
 
             self.review_positions_for_deletion()
 
-        elif task == "1B":
+        elif task == "1C":
+
+            suspect_list = []
+
+            for p in xrange(self._original_phenotypes.shape[0]):
+                for c in xrange(0, self._original_phenotypes[p].shape[0],2):
+                    for r in xrange(0, self._original_phenotypes[p].shape[1],2):
+
+                        nans = np.isnan(self._original_phenotypes[p][2*c:2*c+2,2*r:2*r+2])
+                        if nans.any():
+                            pos = np.where(nans==False)
+                            for pp in xrange(len(pos[0])):
+                                suspect_list.append((p,2*c+pos[0][pp], 2*r+pos[1][pp]))
+                                print self._original_phenotypes[p][2*c+pos[0][pp],2*r+pos[1][pp]]
+
+            self.review_positions_for_deletion(suspect_list)
+                            
+                
+
+        elif task == "1D":
 
            answer = "0"
            removal_list = []
@@ -738,40 +810,63 @@ class Interactive_Menu():
                 if answer not in ["", "A","L"] and answer in ['R','C','P']:
 
                     plate = self.get_interactive_plate()        
-                    row = 0
-                    column = 0
 
-                    if answer in ["R", "P"]:
+                    if plate is not None:
 
-                        row = int(raw_input("Which row (0 - {0}): ".format(self._original_phenotypes[plate].shape[0]-1)))
+                        row = 0
+                        column = 0
 
-                    if answer in ["C", "P"]:
+                        if answer in ["R", "P"]:
 
-                        column = int(raw_input("Which column (0 - {0}): ".format(self._original_phenotypes[plate].shape[1]-1)))
+                            row = int(raw_input("Which row (0 - {0}): ".format(self._original_phenotypes[plate].shape[0]-1)))
 
-                    if answer == "P":
+                            if row < 0 or row >= self._original_phenotypes[plate].shape[0]:
+                                row = None
 
-                        pos = (plate, row, column)
-                        logging.info("{0} is now selected for removal".format(pos))
-                        removal_list.append(pos)
+                
+                        if answer in ["C", "P"]:
 
-                    elif answer in ["R", "C"]:
+                            column = int(raw_input("Which column (0 - {0}): ".format(self._original_phenotypes[plate].shape[1]-1)))
 
-                        pos_list = []
-                        for i in xrange(self._original_phenotypes[plate].shape[answer=="R"]):
-                            pos_list.append((plate,[i,row][answer=="R"],[column,i][answer=="R"]))
+                            if column < 0 or column >= self._original_phenotypes[plate].shape[1]:
+                                column = None
 
-                        logging.info("The following positions are not marked for removal {0}".format(pos_list))
+                        if None in (row, column):
 
-                        removal_list += pos_list
+                            logging.warning("Index out of bounds")
+
+                        else:
+
+                            if answer == "P":
+
+                                pos = (plate, row, column)
+                                logging.info("{0} is now selected for removal".format(pos))
+                                removal_list.append(pos)
+
+                            elif answer in ["R", "C"]:
+
+                                pos_list = []
+                                for i in xrange(self._original_phenotypes[plate].shape[answer=="R"]):
+                                    pos_list.append((plate,[i,row][answer=="R"],[column,i][answer=="R"]))
+
+                                logging.info("The following positions are not marked for removal {0}".format(pos_list))
+
+                                removal_list += pos_list
+
                 elif answer == "L":
 
                     self.review_positions_for_deletion(suspect_list = removal_list)
                     logging.info("The suspect list that you had compiled is now empty")
                     removal_list = [] 
 
-                elif answer == "":
-                    self.set_nan_from_list(removal_list)
+                elif answer == "" and len(removal_list) > 0:
+
+                    answer = str(raw_input("This will remove {0} colonies,".format(len(removal_list))\
+                    +" are you 112% sure (y/N)? ")).upper()
+
+                    if answer == "Y":
+                        self.set_nan_from_list(removal_list)
+                        removal_list = [] 
                     
 
         elif task == "2":
@@ -781,88 +876,127 @@ class Interactive_Menu():
 
         elif task == "3":
 
-            self._normalised_phenotypes = get_normalised_values(self._original_phenotypes, 
+            self._normalised_phenotypes, self._normalisation_means, \
+                self._nomalisation_vars = get_normalised_values(self._original_phenotypes, 
                 self._grid_surface_matrices)
 
-            self._experiments, self._experiments_sd = get_experiment_results(\
+            self._experiments, self._experiments_sd, self._experiments_data = get_experiment_results(\
                 self._normalised_phenotypes, self._grid_surface_matrices)
 
             self.set_enable_menu_items(["4","S1","S3", "S2", "S4"])
             self.set_enable_menu_plots()
 
+            logging.info("These values are indicative of the general" +
+                " quality of the experiment (lower better " +
+                "(variance of the grid before normalisation)):\n{0}".format(
+                list(self._nomalisation_vars)))
+
         elif task == "R1":
 
             plate = self.get_interactive_plate()        
-           
-            print "Should the (0,0) position be:"
+          
+            if plate is not None: 
+                print "Should the (0,0) position be:"
 
-            for i, p in enumerate([\
-                #"({0},0)".format(self._original_phenotypes[plate].shape[0]-1),
-                "(0,{0})".format(self._original_phenotypes[plate].shape[0]-1),
-                #"(0,{0})".format(self._original_phenotypes[plate].shape[1]-1),
-                "({0},{1})".format(self._original_phenotypes[plate].shape[0]-1,
-                self._original_phenotypes[plate].shape[1]-1),
-                #"({0},{1})".format(self._original_phenotypes[plate].shape[1]-1,
-                #self._original_phenotypes[plate].shape[0]-1)
-                "({0},0)".format(self._original_phenotypes[plate].shape[1]-1)
-                ]):
+                for i, p in enumerate([\
+                    #"({0},0)".format(self._original_phenotypes[plate].shape[0]-1),
+                    "(0,{0})".format(self._original_phenotypes[plate].shape[0]-1),
+                    #"(0,{0})".format(self._original_phenotypes[plate].shape[1]-1),
+                    "({0},{1})".format(self._original_phenotypes[plate].shape[0]-1,
+                    self._original_phenotypes[plate].shape[1]-1),
+                    #"({0},{1})".format(self._original_phenotypes[plate].shape[1]-1,
+                    #self._original_phenotypes[plate].shape[0]-1)
+                    "({0},0)".format(self._original_phenotypes[plate].shape[1]-1)
+                    ]):
 
-                print " "*2 + str(i) + " "*5 + p
+                    print " "*2 + str(i) + " "*5 + p
 
-            rotation = str(raw_input("Select way to rotate/flip your data or press enter to abort: "))
-            
-            if rotation in ["0", "1", "2"]:
-                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
-            if rotation in ["0", "1"]:
-                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
-            if rotation in ["0"]:
-                self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+                rotation = str(raw_input("Select way to rotate/flip your data or press enter to abort: "))
+                
+                if rotation in ["0", "1", "2"]:
+                    self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+                if rotation in ["0", "1"]:
+                    self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
+                if rotation in ["0"]:
+                    self._original_phenotypes[plate] = np.rot90(self._original_phenotypes[plate])
 
-            self._xml_connection[0] = (self._xml_connection[0] + (3- int(rotate))) % 4
+                self._xml_connection[0] = (self._xml_connection[0] + (3- int(rotation))) % 4
 
         elif task == "R2":
 
             
             plate = self.get_interactive_plate()        
-           
-            new_pos_str = str(raw_input("The current (0,0) position should be: "))
+          
+            if plate is not None: 
+                new_pos_str = str(raw_input("The current (0,0) position should be: "))
 
-            bad_pos = False
-            try:
-                new_pos = map(int, eval(new_pos_str))
-            except:
-                bad_pos = True
-            if not bad_pos:
-                if len(new_pos) != 2:
+                bad_pos = False
+                try:
+                    new_pos = map(int, eval(new_pos_str))
+                except:
                     bad_pos = True
+                if not bad_pos:
+                    if len(new_pos) != 2:
+                        bad_pos = True
 
-            if bad_pos:
-                print "Could not understand you input"
-            else:
-                m = new_pos[0]
-                if m > 0:
-                    self._original_phenotypes[plate][m:,:] = self._original_phenotypes[plate][:-m,:]
-                    self._original_phenotypes[plate][:m,:] = np.nan
-                elif m < 0:
-                    self._original_phenotypes[plate][:m,:] = self._original_phenotypes[plate][-m:,:]
-                    self._original_phenotypes[plate][m:,:] = np.nan
-                m = new_pos[1]
-                if m > 0:
-                    self._original_phenotypes[plate][:,m:] = self._original_phenotypes[plate][:,:-m]
-                    self._original_phenotypes[plate][:,:m] = np.nan
-                elif m < 0:
-                    self._original_phenotypes[plate][:,:m] = self._original_phenotypes[plate][:,-m:]
-                    self._original_phenotypes[plate][:,m:] = np.nan
+                if bad_pos:
+                    logging.error("Could not understand you input")
+                else:
+                    m = new_pos[0]
+                    if m > 0:
+                        self._original_phenotypes[plate][m:,:] = self._original_phenotypes[plate][:-m,:]
+                        self._original_phenotypes[plate][:m,:] = np.nan
+                    elif m < 0:
+                        self._original_phenotypes[plate][:m,:] = self._original_phenotypes[plate][-m:,:]
+                        self._original_phenotypes[plate][m:,:] = np.nan
+                    m = new_pos[1]
+                    if m > 0:
+                        self._original_phenotypes[plate][:,m:] = self._original_phenotypes[plate][:,:-m]
+                        self._original_phenotypes[plate][:,:m] = np.nan
+                    elif m < 0:
+                        self._original_phenotypes[plate][:,:m] = self._original_phenotypes[plate][:,-m:]
+                        self._original_phenotypes[plate][:,m:] = np.nan
 
-                print "It has been moved and unkown places filled with nan"
-                print "You need to reload the data-set if you want to undo"
-                print "Also remembeer to re-run normalisation etc."
+                    logging.info("It has been moved and unkown places filled with nan")
+                    logging.info("You need to reload the data-set if you want to undo")
+                    logging.info("Also remember to re-run normalisation etc.")
 
 
 
-                self._xml_connection[1][0] += new_pos[0]
-                self._xml_connection[1][1] += new_pos[1]
+                    self._xml_connection[1][0] += new_pos[0]
+                    self._xml_connection[1][1] += new_pos[1]
 
+        elif task == "R3":
+
+            plate = self.get_interactive_plate()        
+          
+            if plate is not None: 
+
+                flip_dim = str(raw_input("Which dimension should be flipped? "+\
+                    "(0 (size: {0}) / 1 (size: {1}) / Abort (anything else)): ".format(\
+                    self._original_phenotypes[plate].shape[0],
+                    self._original_phenotypes[plate].shape[1])))
+
+                if flip_dim in ['0','1']:
+
+                    flip_dim = int(flip_dim)
+
+                    dim_size = self._original_phenotypes[plate].shape[flip_dim]
+
+                    if flip_dim == 0:
+                        self._original_phenotypes[plate] = \
+                            self._original_phenotypes[plate][\
+                            np.arange(dim_size-1,-1,-1),:]
+                    elif flip_dim == 1:
+                        self._original_phenotypes[plate] = \
+                            self._original_phenotypes[plate][\
+                            :,np.arange(dim_size-1,-1,-1)]
+
+                    logging.info("Flip is done, but you should have done this the last thing you do before normalising!")
+                else:
+
+                    logging.info("No flip done!")
+                
 
         elif task == "P1":
 
@@ -890,11 +1024,25 @@ class Interactive_Menu():
                 self._plate_labels, 
                 "Experiment phenotype std (Plate {0})" , vlim=(0,48))
 
+        elif task == "S0":
+
+            header = "Saving original phenotypes as numpy-array"
+            if self._save(self._original_phenotypes, header, save_as_np_array=True, 
+                file_guess="_original.npy"):
+            
+                logging.info("Data saved!")
+
+            else:
+
+                logging.warning("Could not save data, probably path is not valid")
+
+
         elif task in ["S1", "S3"] :
 
             header = "Saving normalised phenotypes as {0}".format(["csv","numpy-array"][task == "S3"])
             if self._save(self._normalised_phenotypes, header,
-                save_as_np_array = (task == "S3")):
+                save_as_np_array = (task == "S3"), 
+                file_guess = '_normed.{0}'.format(['csv','npy'][task == 'S3'])):
 
                 logging.info("Data saved!")
 
@@ -905,8 +1053,9 @@ class Interactive_Menu():
         elif task in ["S2", "S4"]:
 
             header = "Saving experiment phenotypes as {0}".format(["csv","numpy-array"][task == "S3"])
-            if self._save(self._experiment, header,
-                save_as_np_array = (task == "S3"), data2=self._experiment_sd):
+            if self._save(self._experiments_data, header,
+                save_as_np_array = (task == "S4"),  
+                file_guess = '_experment.{0}'.format(['csv','npy'][task =='S4'])):
 
                 logging.info("Data saved!")
 
@@ -915,8 +1064,9 @@ class Interactive_Menu():
                 logging.warning("Could not save data, probably path is not valid")
 
             
-    def _save(self, data, header, save_as_np_array=False, data2=None):
+    def _save(self, data, header, save_as_np_array=False, data2=None, file_guess=None):
 
+        file_path = None
         get_interactive_header(header)
         get_interactive_info(['Note that the directory must exist.',
             'Also note that this will overwrite existing files (if they exist)'])
@@ -924,7 +1074,13 @@ class Interactive_Menu():
         if self._plate_labels == None:
             self.set_plate_labels()
 
-        file_path = str(raw_input("Save-path (with file name): "))
+        if file_guess is not None:
+            file_path = self._file_dir_path + os.sep + self._file_name + file_guess
+            if str(raw_input("Maybe this is a good place:\n'{0}'\n(y/N)?".format(file_path))).upper() != "Y":
+                file_path = None
+
+        if file_path is None:
+            file_path = str(raw_input("Save-path (with file name): "))
 
         if save_as_np_array:
             try:
@@ -953,15 +1109,22 @@ class Interactive_Menu():
             for p in xrange(data.shape[0]):
                 fs.write("START PLATE {0}\n".format(self._plate_labels[p]))
 
-                if len(data[p].shape) == 2:
+                if data[p].ndim >= 2:
                     for x in xrange(data[p].shape[0]):
                         for y in xrange(data[p].shape[1]):
                             if data2 is None:
-                                fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
-                                    p,x,y, data[p][x,y]))
+                                try:
+                                    fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
+                                        p,x,y, "\t".join(list(map(str, data[p][x,y,:])))))
+                                except:
+                                    fs.write("{0}\t{1}\t{2}\t{3}\n".format(\
+                                        p,x,y, data[p][x,y]))
+
                             else:
                                 fs.write("{0}\t{1}\t{2}\t{3}\t{4}\n".format(\
-                                    p,x,y, data[p][x,y]), data2[p][x,y])
+                                    p,x,y, 
+                                    "\t".join(list(map(str, data[p][x,y]))), 
+                                    "\t".join(list(map(str, data2[p][x,y])))))
 
 
                 fs.write("STOP PLATE {0}\n".format(self._plate_labels[p]))
@@ -988,6 +1151,11 @@ class Interactive_Menu():
             if answer is not None:
                 self.do_task(answer)
 
+                if answer == 'T':
+
+                    if str(raw_input("Are you sure you wish to quit (y/N)? ")).upper() != 'Y':
+                        answer = ''
+
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
@@ -997,136 +1165,10 @@ if __name__ == "__main__":
 
     interactive_menu.run()
 
-"""
-
-
-#############################################################################
-#OLD STUFF
 #
-#############################################################################
+# NOT IN USE
+#
 
-#LOADING DATA
-X = plt_lab.csv2rec("analysis_GT.csv", skiprows=1, delimiter="\t")
-
-X_list = []
-
-for x in X:
-    X_list.append([x[1],x[3],x[5],x[7]])
-
-
-Y = np.asarray(X_list)
-Y2 = np.reshape(Y, (16, 24,4))
-#DATA LOADED
-
-#CLEAR OUT OUT-LIERS
-Y2[np.where(Y2[:,:,:]>10)] = np.nan
-
-#ALTERNATIVE DATA
-#X = plt_lab.csv2rec("analysis_locked_baseline.csv", skiprows=1, delimiter="\t")
-#X_list = []
-#for x in X:
-#    X_list.append([x[2],x[5],x[8],x[11]])
-
-#Z = np.asarray(X_list)
-#Z2 = np.reshape(Y, (16, 24,4))
-#ALTERNATIVE DATA LOADED
-
-#PLOT A SIMPLE HEAT MAP
-fig = plt.figure()
-for p in xrange(Y2.shape[2]):
-    fig.add_subplot(2,2,p+1, title="Plate %d" % p)
-    plt.imshow(Y2[:,:,p])
-
-fig.show()
-#PLOT DONE
-
-#PLOT HISTOGRAM
-fig = plt.figure()
-plt.clf()
-plt.hist(Y2[np.where(Y2[:,:,0]>0)].ravel(), bins=25)
-plt.show()
-#PLOT DONE
-
-#PLOTTING DATA VS ALTERNATIVE DATA...
-plt.clf()
-for i in xrange(Y2.shape[2]):
-    plt.plot(Y2[:,:,i].ravel(), Z2[:,:,i].ravel(), '.', label="Plate %d" % i)
-
-
-plt.xlabel('Rate')
-plt.ylabel('Lowest value')
-plt.legend()
-plt.show()
-#PLOT DONE
-
-#NEIGHBOUR COUNT ARRAY
-N = Y2.copy()
-N[:,:,:] = 4 + 4*(1/np.sqrt(2))
-N[0,:,:] = 3 + 2*(1/np.sqrt(2))
-N[-1,:,:] = 3 + 2*(1/np.sqrt(2))
-N[:,0,:] = 3 + 2*(1/np.sqrt(2))
-N[:,-1,:] = 3 + 2*(1/np.sqrt(2))
-N[0,0,:] = 2 + (1/np.sqrt(2))
-N[-1,0,:] = 2 + (1/np.sqrt(2))
-N[-1,-1,:] = 2 + (1/np.sqrt(2))
-N[0,-1,:] = 2 + (1/np.sqrt(2))
-
-#THE NUMBER OF NEIGHBOURS PER TYPE
-neighbours = [2 + (1/np.sqrt(2)), 3 + 2*(1/np.sqrt(2)), 4 + 4*(1/np.sqrt(2))]
-
-#MAKE NEIGHBOURDEPENDENT PLOT
-plt.clf()
-fig = plt.figure()
-
-for i in xrange(N.shape[2]):
-    fig.add_subplot(2,2,i+1, title="Plate %d" % i)
-    plt.boxplot([Y2[np.where(N[:,:,i] == neighbours[0])].ravel(), 
-        Y2[np.where(N[:,:,i] == neighbours[1])].ravel(),
-        Y2[np.where(N[:,:,i] == neighbours[2])].ravel()],
-        positions=neighbours)
-    plt.ylabel('Rate')
-    plt.xlabel('Neighbours')
-
-
-fig.show()
-#PLOT END
-
-#POSITIONAL EFFECT
-
-Y2[np.where(np.isnan(Y2[:,:,:]))] = 0
-
-#STENCIL A
-#n = 4 + 4 / np.sqrt(2)
-#kernel = np.asarray([[-1/np.sqrt(2), -1.0,-1/np.sqrt(2)],[-1, n,-1],[-1/np.sqrt(2), -1, -1/np.sqrt(2)]])
-#STENCIL B
-n=6
-kernel = np.asarray([[-1/2, -1.0,-1/2],[-1, n,-1],[-1/2, -1, -1/2]])
-N2 = []
-for i in xrange(Y2.shape[2]):
-    N2.append(fftconvolve(kernel, Y2[:,:,i], mode='full'))
-
-
-#PLOT POSITIONAL EFFECT
-fig = plt.figure()
-for p in xrange(Y2.shape[2]):
-    fig.add_subplot(2,2,p+1, title="Plate %d" % p)
-    plt.imshow(N2[p])
-    plt.colorbar()
-
-fig.show()
-
-
-Y3 = 1 / Y2
-
-#STENCILS
-kernel = np.asarray([[0.5, 1.0, 0.5],
-                    [1.0, 0, 1.0],
-                    [0.5, 1.0, 0.5]])
-
-kernel = np.asarray([[1/np.sqrt(2), 1.0,1/np.sqrt(2)],
-                    [1.0, 0, 1.0],
-                    [1/np.sqrt(2), 1.0, 1/np.sqrt(2)]])
-"""
 
 def vector_orth_dist(x, y, p1):
     """
@@ -1151,6 +1193,7 @@ def vector_orth_dist(x, y, p1):
         dists[d] = np.sum(np.asarray((x[d]-x_off,y[d]))* p_u_orth)
     #
     return dists
+
 """
 #PLOT THE POSITIONAL EFFECT
 plt.clf()

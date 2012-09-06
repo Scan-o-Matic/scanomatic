@@ -6,7 +6,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.995"
+__version__ = "0.996"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -59,7 +59,7 @@ class XML_Reader():
             self._logger.error("XML-file '{0}' not found".format(self._file_path))
             return False
 
-        f = fs.readline()
+        f = fs.read()
         fs.close()
         self._data = {}
         self._meta_data = {}
@@ -68,7 +68,10 @@ class XML_Reader():
         XML_TAG_INDEX_VALUE_CONT  =  "<{0} {1}..(\d).>([^<]*)</{0}>"
         XML_TAG_INDEX_VALUE = "<{0} {1}..(\d*).>"
         XML_TAG_2_INDEX_VALUE = "<{0} {1}..(\d*). {2}..(\d*).>"
+        XML_TAG_2_INDEX_FULL_NONGREEDY = "<{0} {1}..{3}. {2}..{4}.>(.*?)</{0}>"
+        XML_ANY_CONT_NONGREEDY = ">([^<>]+?)<"
         XML_TAG_2_INDEX_VALUE_CONT = "<{0} {1}..{3}. {2}..{4}.>[^\d]*([0-9.]*)<"
+        XML_BAD_SCANS = "<s i..(\d*).><ok>0"
 
         #METADATA
         tags = ['start-t','desc','n-plates']
@@ -76,7 +79,7 @@ class XML_Reader():
             self._meta_data[t] = re.findall(XML_TAG_CONT.format(t), f)
 
         #DATA
-
+        bad_scans = map(int, re.findall(XML_BAD_SCANS, f))
         nscans = len(re.findall(XML_TAG_INDEX_VALUE.format('s','i'), f))
         pms = re.findall(XML_TAG_INDEX_VALUE_CONT.format('p-m', 'i'), f)
         pms = map(lambda x: map(eval, x), pms)
@@ -85,22 +88,75 @@ class XML_Reader():
         measures = colonies * nscans
         max_pm = np.max(np.array([p[1] for p in pms]),0)
 
+        #GET NUMBER OF MEASURES
+        v = re.findall(XML_TAG_2_INDEX_FULL_NONGREEDY.format(
+                    'gc', 'x', 'y', 0, 0), f)[0]
+
+        m_types = len(re.findall(XML_ANY_CONT_NONGREEDY, v))
+
         for pm in pms:
             if pm[1] is not None:
-                self._data[pm[0]] = np.zeros((pm[1] + (nscans,)),dtype=np.float64)
+                self._data[pm[0]] = np.zeros((pm[1] + (nscans, m_types)),dtype=np.float64)
         
-        print "Ready for {0} plates".format(len(self._data)) 
+        print "Ready for {0} plates ({1} scans, {2} measures per colony)".format(
+                len(self._data), nscans, m_types) 
         colonies_done = 0
+        
         for x in xrange(max_pm[0]):
             for y in xrange(max_pm[1]):
+
+                #print XML_TAG_2_INDEX_FULL_NONGREEDY.format('gc', 'x', 'y', x, y)
+
+                v = re.findall(XML_TAG_2_INDEX_FULL_NONGREEDY.format(
+                            'gc', 'x', 'y', x, y), f)
+
+                v = [re.findall(XML_ANY_CONT_NONGREEDY, i) for i in v]
+
+                for pos, vals in enumerate(v):
+
+                    try:
+
+                        v[pos] = map(lambda x: (x == 'nan' or x=='None') and
+                                np.nan or np.float64(x), vals)
+
+                    except ValueError:
+
+                        v_list = []
+                        for i in vals:
+
+                            try:
+
+                                v_list.append(np.float64(i))
+
+                            except:
+
+                                v_list.append(np.nan)
+
+                        v[pos] = v_list
+
+                    if len(v[pos]) != m_types:
+
+                        v[pos] = [np.nan] * m_types
+
+
+                """
                 try:
-                    v = map(lambda x: (x == 'nan' or x=='') and np.nan or np.float64(x), 
-                        re.findall(XML_TAG_2_INDEX_VALUE_CONT.format('gc','x','y',x,y), f))
+
+                    v = map(lambda x: (x == 'nan' or x=='') and
+                        np.nan or np.float64(x),
+                        re.findall(
+                                XML_TAG_2_INDEX_VALUE_CONT.format(
+                                'gc','x','y',x,y), f))
+
                 except ValueError:
                     print XML_TAG_2_INDEX_VALUE_CONT.format('gc','x','y',x,y)
-                    print re.findall(XML_TAG_2_INDEX_VALUE_CONT.format('gc','x','y',x,y), f)
-                    #self._logger.error( re.findall(XML_TAG_2_INDEX_VALUE_CONT.format('gc','x','y',x,y), f))
-
+                    print re.findall(
+                                XML_TAG_2_INDEX_VALUE_CONT.format(
+                                'gc','x','y',x,y), f)
+                    #self._logger.error(re.findall(
+                                XML_TAG_2_INDEX_VALUE_CONT.format(
+                                'gc','x','y',x,y), f))
+                """
                 slicers = [False] * len(pms)
                 for i,pm in enumerate(pms):
                     if pm[1] is not None:
@@ -110,7 +166,22 @@ class XML_Reader():
                 slice_start = 0
                 for i,pm in enumerate(slicers):
                     if pm:
-                        self._data[i][x,y,:] = (np.array(v)[range(slice_start, len(v), sum(slicers))])[-1::-1]
+                        well_as_list = list((np.array(v)[range(slice_start, 
+                            len(v), sum(slicers))])[-1::-1])
+
+                        for bs in bad_scans:
+                            well_as_list.insert(bs-1, np.nan)
+
+                        d_arr = np.array(well_as_list)
+
+                        if d_arr.ndim == 1:
+
+                            self._data[i][x,y,:,0] = d_arr
+
+                        else:
+
+                            self._data[i][x,y,:] = d_arr
+
                         slice_start += 1
                         colonies_done += 1
 
@@ -152,9 +223,10 @@ class XML_Reader():
         except:
             return None
 
-
     def get_loaded(self):
         return self._loaded
+
+
 def get_graph_styles(categories = 1, n_per_cat = None, per_cat_list = None, alpha=0.95):
 
     if per_cat_list is not None:
@@ -235,7 +307,7 @@ def random_plot_on_separate_panels(xml_parser, n=10):
     return fig
 
 
-def random_plot_on_same_panel(xml_parser, different_line_styles=False):
+def random_plot_on_same_panel(xml_parser, different_line_styles=False, measurement=0):
     fig = plt.figure()
     col_maps = [np.array([0.15,0.15,0.10]), np.array([0.25,0,0]), np.array([0,0.25,0]), np.array([0,0,0.25])]
     if different_line_styles:
@@ -247,17 +319,25 @@ def random_plot_on_same_panel(xml_parser, different_line_styles=False):
     for i in xrange(4):
         d = xml_parser.get_plate(i)
         if d is not None:
-            x,y,z = d.shape
+            x,y,z,m = d.shape
+
+            if measurement > m:
+                print "Impossible, index for measurement too high"
+                return None
+
             for j in xrange(4):
                 tx = np.random.randint(0,x)
                 ty = np.random.randint(0,y)
-                ax.semilogy(d[tx, ty,:], line_styles[i], basey=2, label="{0} {1}:{2}".format(i, tx,ty), 
+
+                ax.semilogy(d[tx, ty,:, measurement], line_styles[i], basey=2,
+                    label="{0} {1}:{2}".format(i, tx,ty),
                     color=list(col_maps[i]*(1 + 0.75*(j+1))) + [1] )
+
     ax.legend(loc = 4, ncol=4, title='Plate Colony_ X:Colony_Y')
     
     return fig
 
-def plot_from_list(xml_parser, position_list, fig = None):
+def plot_from_list(xml_parser, position_list, fig=None, measurement=0):
     """
     Plots curves from an xml_parser-instance given the position_list where locations are
     described as (plate, row, column)
@@ -307,17 +387,24 @@ def plot_from_list(xml_parser, position_list, fig = None):
             d = xml_parser.get_colony(p,c[0],c[1])        
             if d is not None and np.isnan(d).all() == False:
                 try:
-                    ax.semilogy(d, basey=2, label="{0}".format(c), color=colors[j] )
+                    ax.semilogy(d[:, measurement], basey=2,
+                        label="{0}".format(c), color=colors[j] )
                 except:
                     try:
-                        ax.plot(d, label="Not logged! {0}".format(c), color=colors[j])
+
+                        ax.plot(d[:, measurement], 
+                            label="Not logged! {0}".format(c), color=colors[j])
+
                     except:
+
                         pass
+
             else:
                 print "Curve {0} is bad!".format(c)
-     
-        ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,-0.015), 
-            ncol=len(cats), prop=fontP)
+    
+        if len(ax.lines) > 0: 
+            ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,-0.015), 
+                ncol=len(cats), prop=fontP)
 
         p_pos += 1
 

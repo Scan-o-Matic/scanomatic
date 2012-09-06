@@ -1,4 +1,26 @@
   ###################################
+##### Changed in Scannomatic 0.996 #####
+   ###################################
+
+*** Changed the gridding spikes detection
+
+*** Packaged variables pertaining to discrete part av analysis in dicts
+
+*** Moved some steps of analysis around so it is where it belongs
+
+*** Removed code that is not in use
+
+*** Started constructing unittests
+
+*** Restructured Blob Detection as a set of Classes in its own module
+    Also changed all of the algoritms that go into it
+
+*** Started mission to follow PEP8 standard
+
+*** Fixted so analysis project actually takes pinning string override directly
+    when toggled and not only when a pinning setting is changed
+
+  ###################################
 ##### Changed in Scannomatic 0.995 #####
    ###################################
 
