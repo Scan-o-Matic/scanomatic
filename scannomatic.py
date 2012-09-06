@@ -73,7 +73,7 @@ else:
 # GLOBALS
 #
 
-DEVELOPMENT = True
+DEVELOPMENT = False
 
 #
 # CLASSES
