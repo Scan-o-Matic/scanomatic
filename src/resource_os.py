@@ -24,7 +24,8 @@ import sys
 
 def get_valid_relative_dir(path, default=""):
 
-    valid_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+    valid_chars = \
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789"
 
     path = "".join([c for c in path if c in valid_chars])
 
