@@ -27,6 +27,40 @@ PADDING_MEDIUM = 4
 PADDING_SMALL = 2
 
 #
+# FUNCTIONS
+#
+
+def select_file(title, multiple_files=False, file_filter=None):
+
+    d = gtk.FileChooserDialog(title=title, 
+        action=gtk.FILE_CHOOSER_ACTION_OPEN, 
+        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
+        gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+
+    d.set_select_multiple(multiple_files)
+
+    if file_filter is not None:
+
+        f = gtk.FileFilter()
+        f.set_name(file_filter['filter_name'])
+        for m, p in file_filter['mime_and_patterns']:
+            f.add_mime_type(m)
+            f.add_pattern(p)
+        d.add_filter(f)
+
+    res = d.run()
+    file_list = d.get_filenames()
+    d.destroy()
+
+    if res == gtk.RESPONSE_APPLY:
+
+        return file_list
+
+    else:
+
+        return list()
+
+#
 # CLASSES
 #
 
@@ -62,6 +96,10 @@ class Analysis(gtk.VBox):
         self._remove_child(pos=0)
         self.pack_start(widget, False, True, PADDING_LARGE)
 
+    def get_top(self):
+
+        return self._top
+
     def set_stage(self, widget=None):
 
         if widget is None:
@@ -73,6 +111,9 @@ class Analysis(gtk.VBox):
         self._remove_child(pos=1)
         self.pack_end(widget, True, True, 10)
 
+    def get_state(self):
+
+        return self._stage
 
 class Analysis_Top(gtk.HBox):
 
@@ -103,12 +144,12 @@ class Analysis_Top_Root(Analysis_Top):
         button = gtk.Button()
         button.set_label(model["analysis-top-root-tpu_button-text"])
         self.pack_start(button, False, False, PADDING_SMALL)
-        button.connect("clicked", controller.set_analysis_stage, "transperency")
+        button.connect("clicked", controller.set_analysis_stage, "transparency")
 
         button = gtk.Button()
         button.set_label(model["analysis-top-root-color_button-text"])
         self.pack_start(button, False, False, PADDING_SMALL)
-        button.connect("clicked", controller.set_analysis_stage, "color")
+        button.connect("clicked", controller.set_analysis_stage, "colour")
 
         self.show_all()
 
@@ -121,7 +162,7 @@ class Analysis_Top_Project(Analysis_Top):
         self._pack_root_button()
 
         self._start_button = Analysis_Top_Project_Start_Button(controller, model)
-        self.pack_end(self._start_button, False, False, 10)
+        self.pack_end(self._start_button, False, False, PADDING_LARGE)
         self.set_allow_start(False)
 
         self.show_all()
@@ -129,6 +170,54 @@ class Analysis_Top_Project(Analysis_Top):
     def set_allow_start(self, val):
 
         self._start_button.set_sensitive(val)
+
+
+class Analysis_Top_Image_Selection(Analysis_Top):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        super(Analysis_Top_Image_Selection, self).__init__(controller, model)
+
+        self._specific_model = specific_model
+        self._specific_controller = specific_controller
+
+        self._pack_root_button()
+
+        self._next_button = Analysis_Top_Next_Button(controller,
+            model, specific_model, model['analysis-top-image-selection-next'])
+
+        self.pack_end(self._next_button, False, False, PADDING_LARGE)
+        self.set_allow_next(False)
+
+        self.show_all()
+
+    def set_allow_next(self, val):
+
+        self._next_button.set_sensitive(val)
+
+class Analysis_Top_Next_Button(gtk.Button):
+
+    def __init__(self, controller, model, specific_model, label_text):
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        super(Analysis_Top_Next_Button, self).__init__(
+                                stock=gtk.STOCK_GO_FORWARD)
+
+        al = self.get_children()[0]
+        hbox = al.get_children()[0]
+        im, l = hbox.get_children()
+
+        l.set_text(label_text)
+        hbox.remove(im)
+        hbox.remove(l)
+        hbox.pack_start(l, False, False, PADDING_SMALL)
+        hbox.pack_end(im, False, False, PADDING_SMALL)
+
+        self.connect("clicked", controller.set_analysis_stage, 
+                            "normalisation", specific_model)
 
 class Analysis_Top_Root_Button(gtk.Button):
 
@@ -356,6 +445,75 @@ class Analysis_Stage_Project_Pinning(gtk.VBox):
 
             self.dropbox.set_active(new_key)
            
+class Analysis_Stage_Image_Selection(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        super(Analysis_Stage_Image_Selection, self).__init__(0, False)
+
+        self._controller = controller
+        self._specific_controller = specific_controller
+        self._model = model
+        self._specific_model = specific_model
+
+        label = gtk.Label()
+        label.set_markup(model['analysis-stage-image-selection-title'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+        label.show()
+
+        frame = gtk.Frame(model['analysis-stage-image-selection-images'])
+        self.pack_start(frame, True, False, PADDING_SMALL)
+        vbox = gtk.VBox(0, False)
+        treemodel = gtk.ListStore(str)
+        specific_model['images-list-model'] = treemodel
+        treeview = gtk.TreeView(treemodel)
+        tv_cell = gtk.CellRendererText()
+        tv_column = gtk.TreeViewColumn(
+            model['analysis-stage-image-selection-list-column-title'],
+            tv_cell, text=0)
+        treeview.append_column(tv_column)
+        #tv_column.pack_start(tv_cell, True)
+        treeview.set_reorderable(True)
+        vbox.pack_start(treeview, True, True, PADDING_SMALL)
+        hbox = gtk.HBox()
+        button = gtk.Button(
+            label=model['analysis-stage-image-selection-dialog-button'])
+        button.connect("clicked", specific_controller.set_new_images, self)
+        hbox.pack_start(button, False, False, PADDING_SMALL)
+        vbox.pack_end(hbox, False, False, PADDING_SMALL)
+        frame.add(vbox)
+        frame.show_all()
+
+        check_button = gtk.CheckButton(
+            label=model['analysis-stage-image-selection-fixture'])
+        check_button.set_active(specific_model['fixture'])
+        check_button.connect("clicked", specific_controller.set_images_has_fixture)
+        self.pack_start(check_button, False, False, PADDING_LARGE)
+        check_button.show()
+
+        self.show()
+
+
+class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        super(Analysis_Stage_Image_Norm_Manual, self).__init__(0, False)
+
+        self._controller = controller
+        self._specific_controller = specific_controller
+        self._model = model
+        self._specific_model = specific_model
+
+        label = gtk.Label()
+        label.set_markup(model['analysis-stage-image-norm-manual-title'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        label = gtk.Label(
+            specific_model['images-list-model'][specific_model['image']][0])
+        self.pack_start(label, False, False, PADDING_SMALL)
+ 
+        self.show_all()
 """
 
 
