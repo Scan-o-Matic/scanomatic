@@ -81,7 +81,6 @@ class Analysis_Controller(controller_generic.Controller):
 
                 specific_model = args[1]
                 print specific_model
-                print args
 
                 if specific_model['mode'] == 'transparency':
 
@@ -174,6 +173,36 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         self._view.get_top().set_allow_next(len(treemodel) > 0)
 
+    def log_compartments(self, widget):
+
+        rows = widget.get_selected_rows()[1]
+        self._specific_model['log-interests'][0] = \
+            [self._specific_model['log-compartments-default'][r[0]]
+            for r in rows]
+        
+    def log_measures(self, widget):
+
+        rows = widget.get_selected_rows()[1]
+        self._specific_model['log-interests'][1] = \
+            [self._specific_model['log-measures-default'][r[0]]
+            for r in rows]
+
+    def mouse_button_press(self, widget, *args, **kwargs):
+
+        print widget
+        print args, kwargs
+
+    def mouse_button_release(self, widget, *args, **kwargs):
+
+        print widget
+        print args, kwargs
+
+    def mouse_move(self, widget, *args, **kwargs):
+
+        print widget
+        print args, kwargs
+
+
 class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
     def __init__(self, view=None, model=None):
@@ -181,11 +210,11 @@ class Analysis_Transparency_Controller(Analysis_Image_Controller):
         super(Analysis_Transparency_Controller, self).__init__(view=view,
                 model=model)
 
-
     def build_blank_specific_model(self):
 
         self.set_specific_model(model_analysis.copy_model(
             model_analysis.specific_transparency))
+
 
 class Analysis_Project_Controller(controller_generic.Controller):
 
@@ -193,7 +222,6 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
        super(Analysis_Project_Controller, self).__init__(view=view,
                 model=model) 
-
 
     def start(self, *args, **kwargs):
 
@@ -241,7 +269,6 @@ class Analysis_Project_Controller(controller_generic.Controller):
             view.set_pinning(
                 self._model['analysis-project-pinnings'], True)
             
-
     def set_pinning(self, widget, view, *args, **kwargs):
 
         print view, args, kwargs

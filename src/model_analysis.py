@@ -135,7 +135,6 @@ to get quatitative values of average pigmentation.</i></span>
 'analysis-stage-image-selection-title':
 "<span weight='heavy' size='large'>Image(s) Selection</span>",
 
-'analysis-stage-image-selection-images': 'Images:',
 'analysis-stage-image-selection-fixture': 'Images contain a fixture',
 'analysis-stage-image-selection-dialog-button': 'Select Images...',
 'analysis-stage-image-selection-file-dialogue-title': 'New Images to Analyse',
@@ -144,7 +143,11 @@ to get quatitative values of average pigmentation.</i></span>
 'mime_and_patterns': (('IMAGE/TIFF', '*.[tT][iI][fF]'),
 ('IMAGE/TIF','*.[tT][iI][fF][fF]'))},
 
-'analysis-stage-image-selection-list-column-title': 'Path',
+'analysis-stage-image-selection-list-column-title': 'Image Path(s)',
+
+'analysis-stage-image-selection-logging-title': 'Logging interests',
+'analysis-stage-image-selection-compartments': 'Compartments',
+'analysis-stage-image-selection-measures': 'Measures',
 
 #ANALYSIS STAGE IMAGE NORM MANUAL
 'analysis-stage-image-norm-manual-title':
@@ -163,5 +166,17 @@ specific_transparency = {
 'mode': 'transparency',
 'fixture': True,
 'images-list-model': None,
-'image': -1
+'image': -1,
+'log-interests': [None, None],
+'log-meta-features': ('image','plate-coords','plate-name','plate-media',
+'strain'),
+'log-compartments-default': ('blob','background','cell'),
+'log-measures-default': ('area', 'mean', 'median', 'IQR','IQR_mean',
+'pixelsum', 'centroid', 'perimeter'),
+}
+
+specific_log_book = {
+'manual-calibration': None,
+'log': list(),
+'log-interests': None
 }
