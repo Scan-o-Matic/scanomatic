@@ -286,7 +286,6 @@ class Analysis_Stage_Project(gtk.VBox):
         label = gtk.Label()
         label.set_markup(model['analysis-stage-project-title'])
         self.pack_start(label, False, False, PADDING_LARGE)
-        label.show()
 
         frame = gtk.Frame(model['analysis-stage-project-file'])
         self.pack_start(frame, False, False, PADDING_SMALL)
@@ -464,7 +463,13 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         self.pack_start(label, False, False, PADDING_LARGE)
         label.show()
 
-        vbox = gtk.VBox(0, False)
+        hbox = gtk.HBox(0, False)
+        self.pack_start(hbox, True, True, PADDING_SMALL)
+        left_vbox = gtk.VBox(0, False)
+        hbox.pack_start(left_vbox, True, True, PADDING_SMALL)
+        right_vbox = gtk.VBox(0, False)
+        hbox.pack_start(right_vbox, True, True, PADDING_SMALL)
+
         treemodel = gtk.ListStore(str)
         specific_model['images-list-model'] = treemodel
         treeview = gtk.TreeView(treemodel)
@@ -474,15 +479,13 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
             tv_cell, text=0)
         treeview.append_column(tv_column)
         treeview.set_reorderable(True)
-        vbox.pack_start(treeview, True, True, PADDING_SMALL)
+        left_vbox.pack_start(treeview, True, True, PADDING_SMALL)
         hbox = gtk.HBox()
         button = gtk.Button(
             label=model['analysis-stage-image-selection-dialog-button'])
         button.connect("clicked", specific_controller.set_new_images, self)
         hbox.pack_start(button, False, False, PADDING_SMALL)
-        vbox.pack_end(hbox, False, False, PADDING_SMALL)
-        self.pack_start(vbox, True, True, PADDING_SMALL)
-        vbox.show_all()
+        left_vbox.pack_end(hbox, False, False, PADDING_SMALL)
 
         check_button = gtk.CheckButton(
             label=model['analysis-stage-image-selection-fixture'])
@@ -493,52 +496,38 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
 
         frame = gtk.Frame(
             label=model['analysis-stage-image-selection-logging-title'])
-        hbox = gtk.HBox(0, False)
+        vbox = gtk.VBox(0, False)
 
-        treemodel = gtk.ListStore(str)
-        treeview = gtk.TreeView(treemodel)
-        tv_cell = gtk.CellRendererText()
-        tv_column = gtk.TreeViewColumn(
-            model['analysis-stage-image-selection-compartments'],
-            tv_cell, text=0)
-        treeview.append_column(tv_column)
-        treeview.set_reorderable(False)
-        for s in specific_model['log-compartments-default']:
-            treemodel.append((s,))
-        selecton = treeview.get_selection()
-        selecton.set_mode(gtk.SELECTION_MULTIPLE)
-        selecton.connect("changed", specific_controller.log_compartments)
-        for i in xrange(len(treemodel)):
-            selecton.select_path("{0}".format(i))
-        vbox = gtk.VBox()
-        vbox.pack_start(treeview, False, False, PADDING_SMALL)
-        hbox.pack_start(vbox, False, False, PADDING_SMALL)
+        selections = (('analysis-stage-image-selection-compartments',
+            'log-compartments-default',
+            specific_controller.log_compartments),
+            ('analysis-stage-image-selection-measures',
+            'log-measures-default',
+            specific_controller.log_measures))
 
-        treemodel = gtk.ListStore(str)
-        treeview = gtk.TreeView(treemodel)
-        tv_cell = gtk.CellRendererText()
-        tv_column = gtk.TreeViewColumn(
-            model['analysis-stage-image-selection-measures'],
-            tv_cell, text=0)
-        treeview.append_column(tv_column)
-        treeview.set_reorderable(False)
-        for s in specific_model['log-measures-default']:
-            treemodel.append((s,))
-        selecton = treeview.get_selection()
-        selecton.set_mode(gtk.SELECTION_MULTIPLE)
-        selecton.connect("changed",
-            specific_controller.log_measures)
-        for i in xrange(len(treemodel)):
-            selecton.select_path("{0}".format(i))
-        vbox = gtk.VBox()
-        vbox.pack_start(treeview, False, False, PADDING_SMALL)
-        hbox.pack_start(vbox, False, False, PADDING_SMALL)
+        for item_list_title, item_list, callback in selections:
 
-        frame.add(hbox)
-        frame.show_all()
-        self.pack_start(frame, False, True, PADDING_LARGE)
+            treemodel = gtk.ListStore(str)
+            treeview = gtk.TreeView(treemodel)
+            tv_cell = gtk.CellRendererText()
+            tv_column = gtk.TreeViewColumn(
+                model[item_list_title],
+                tv_cell, text=0)
+            treeview.append_column(tv_column)
+            treeview.set_reorderable(False)
+            for s in specific_model[item_list]:
+                treemodel.append((s,))
+            selecton = treeview.get_selection()
+            selecton.set_mode(gtk.SELECTION_MULTIPLE)
+            selecton.connect("changed", callback)
+            for i in xrange(len(treemodel)):
+                selecton.select_path("{0}".format(i))
+            vbox.pack_start(treeview, False, False, PADDING_SMALL)
 
-        self.show()
+        frame.add(vbox)
+        right_vbox.pack_start(frame, False, True, PADDING_LARGE)
+
+        self.show_all()
 
 
 class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
