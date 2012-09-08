@@ -62,6 +62,7 @@ class Analysis_Controller(controller_generic.Controller):
             elif stage_call == "transparency":
 
                 self.transparency.build_blank_specific_model()
+                self.transparency._specific_model['stage'] = 'image-selection'
 
                 view.set_top(view_analysis.Analysis_Top_Image_Selection(
                                 self, model,
@@ -80,7 +81,7 @@ class Analysis_Controller(controller_generic.Controller):
             elif stage_call == "normalisation":
 
                 specific_model = args[1]
-                print specific_model
+
 
                 if specific_model['mode'] == 'transparency':
 
@@ -90,6 +91,7 @@ class Analysis_Controller(controller_generic.Controller):
 
                     else:
 
+                        specific_model['stage'] = 'manual-calibration'
                         specific_model['image'] += 1
 
                         if specific_model['image'] >= len(specific_model['images-list-model']):
@@ -98,12 +100,16 @@ class Analysis_Controller(controller_generic.Controller):
 
                         else:
 
-                            view.get_top().set_allow_next(False)
+                            view.set_top(
+                                view_analysis.Analysis_Top_Image_Normalisation(
+                                self, model,
+                                specific_model,
+                                self.transparency))
 
                             view.set_stage(
                                 view_analysis.Analysis_Stage_Image_Norm_Manual(
                                 self, model,
-                                self.transparency.get_specific_model(),
+                                specific_model,
                                 self.transparency))
 
                 elif specific_model['mode'] == 'colour':
@@ -113,6 +119,24 @@ class Analysis_Controller(controller_generic.Controller):
                 else:
 
                     raise Bad_Stage_Call(stage_call)
+
+            elif stage_call == "sectioning":
+
+                specific_model = args[1]
+                specific_model['stage'] = 'sectioning'
+
+                view.set_top(
+                    view_analysis.Analysis_Top_Image_Sectioning(
+                    self, model,
+                    specific_model,
+                    self.transparency))
+
+                view.set_stage(
+                    view_analysis.Analysis_Stage_Image_Sectioning(
+                    self, model,
+                    specific_model,
+                    self.transparency))
+
 
             else:
 
@@ -169,8 +193,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
                 treemodel.append((im,))
 
-        print len(treemodel)
-
         self._view.get_top().set_allow_next(len(treemodel) > 0)
 
     def log_compartments(self, widget):
@@ -187,20 +209,170 @@ class Analysis_Image_Controller(controller_generic.Controller):
             [self._specific_model['log-measures-default'][r[0]]
             for r in rows]
 
-    def mouse_button_press(self, widget, *args, **kwargs):
+    def mouse_button_press(self, event, *args, **kwargs):
 
-        print widget
-        print args, kwargs
+        if event.xdata is None or event.ydata is None:
 
-    def mouse_button_release(self, widget, *args, **kwargs):
+            return None
 
-        print widget
-        print args, kwargs
+        if event.button == 1:
 
-    def mouse_move(self, widget, *args, **kwargs):
+            if self._specific_model['stage'] == 'manual-calibration':
 
-        print widget
-        print args, kwargs
+                if self._specific_model['manual-calibration-positions'] is None:
+                    self._specific_model['manual-calibration-positions'] = list()
+
+                mc = self._specific_model['manual-calibration-positions']
+
+                if len(mc) == self._specific_model['image']:
+
+                    mc.append(list())
+
+                pos = (event.xdata, event.ydata)
+
+                if len(mc[-1]) > 0 and len(mc[-1][-1]) == 1:
+
+                    mc[-1][-1][0] = pos
+
+                else:
+
+                    mc[-1].append([pos])
+
+                self._view.get_stage().place_patch_origin(pos)
+
+            elif self._specific_model['stage'] == 'sectioning':
+
+                pc = self._specific_model['plate-coords']
+                pos = (event.xdata, event.ydata)
+
+                if len(pc) > 0 and len(pc[-1]) == 1:
+
+                    pc[-1] = pos
+
+                else:
+
+                    pc.append([pos])
+
+                self._view.get_stage().place_patch_origin(pos)
+ 
+    def mouse_button_release(self, event, *args, **kwargs):
+
+        if event.button == 1:
+
+            if self._specific_model['stage'] == 'manual-calibration':
+
+                mc = self._specific_model['manual-calibration-positions'][-1]
+
+                if event.xdata is None or event.ydata is None:
+
+                    if len(mc[-1]) == 1:
+
+                        del mc[-1]
+                        self._view.get_stage().remove_patch()
+
+                    return None
+
+                if len(mc[-1]) == 1:
+
+                    origin_pos = mc[-1][0]
+                    pos = (event.xdata, event.ydata)
+                    w = pos[0] - origin_pos[0]
+                    h = pos[1] - origin_pos[1]
+                    mc[-1] = zip(*map(sorted, zip(origin_pos, pos)))
+
+                    self._view.get_stage().move_patch_target(w, h)
+
+                    self.set_manual_calibration_value(mc[-1])
+
+            elif self._specific_model['stage'] == 'sectioning':
+
+                pc = self._specific_model['plate-coords']
+
+                if event.xdata is None or event.ydata is None:
+
+                    if len(pc[-1]) == 1:
+
+                        del pc[-1]
+                        self._view.get_stage().remove_patch()
+
+                    return None
+
+                if len(pc[-1]) == 1:
+
+                    origin_pos = pc[-1][0]
+                    pos = (event.xdata, event.ydata)
+                    w = pos[0] - origin_pos[0]
+                    h = pos[1] - origin_pos[1]
+                    pc[-1] = zip(*map(sorted, zip(origin_pos, pos)))
+
+                    self._view.get_stage().move_patch_target(w, h)
+
+                    self.set_manual_calibration_value(pc[-1])
+
+                    if len(pc) > 0:
+
+                        self._view.get_top().set_allow_next(True)
+
+                    else:
+
+                        self._view.get_top().set_allow_next(False)
+ 
+    def set_manual_calibration_value(self, coords):
+
+        if self._specific_model['manual-calibration-values'] is None:
+
+            self._specific_model['manual-calibration-values'] = list()
+
+        mcv = self._specific_model['manual-calibration-values']
+
+        if len(mcv) == self._specific_model['image']:
+
+            mcv.append(list())
+
+        mcv[-1]. append(
+            self._specific_model['image-array'][coords[0][0]: coords[1][0],
+            coords[0][1]: coords[1][1]].mean())
+
+        self._view.get_stage().add_measure(mcv[-1][-1])
+
+        if len(mcv[-1]) == len(mcv[0]) and len(mcv[-1]) >= 2:
+
+            self._view.get_top().set_allow_next(True)
+
+        else:
+
+            self._view.get_top().set_allow_next(False)
+
+    def mouse_move(self, event, *args, **kwargs):
+
+        if event.xdata is None or event.ydata is None:
+
+            return None
+
+        if self._specific_model['stage'] == 'manual-calibration':
+
+            mc = self._specific_model['manual-calibration-positions']
+
+            if mc is not None and mc[-1] is not None and len(mc[-1]) > 0 \
+                and len(mc[-1][-1]) == 1:
+                
+                origin_pos = mc[-1][-1][0]
+                pos = (event.xdata, event.ydata)
+                w = pos[0] - origin_pos[0]
+                h = pos[1] - origin_pos[1]
+                self._view.get_stage().move_patch_target(w, h)
+
+        elif self._specific_model['stage'] == 'sectioning':
+
+            pc = self._specific_model['plate-coords']
+
+            if len(pc) > 0 and len(pc[-1]) == 1:
+                
+                origin_pos = pc[-1][0]
+                pos = (event.xdata, event.ydata)
+                w = pos[0] - origin_pos[0]
+                h = pos[1] - origin_pos[1]
+                self._view.get_stage().move_patch_target(w, h)
 
 
 class Analysis_Transparency_Controller(Analysis_Image_Controller):

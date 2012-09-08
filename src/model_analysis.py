@@ -149,9 +149,25 @@ to get quatitative values of average pigmentation.</i></span>
 'analysis-stage-image-selection-compartments': 'Compartments',
 'analysis-stage-image-selection-measures': 'Measures',
 
+#ANALYSIS TOP IMAGE NORMALISATION
+'analysis-top-image-normalisation-next': 'Plate Sectioning',
+
 #ANALYSIS STAGE IMAGE NORM MANUAL
 'analysis-stage-image-norm-manual-title':
 "<span weight='heavy' size='large'>Manual Image Normalisation</span>",
+
+'analysis-stage-image-norm-manual-measures': 'Measures',
+
+#ANALYSIS TOP IMAGE SECTIONING
+'analysis-top-image-sectioning-next': 'Plate Analysis',
+
+#ANALYSIS STAGE IMAGE NORM MANUAL
+'analysis-stage-image-sectioning-title':
+"<span weight='heavy' size='large'>Marking out Plates</span>",
+
+'analysis-stage-image-sectioning-help_text':
+"""<i>If you have the same stuff in several images, mark out the plates
+in the same order and watch the magic!</i>""",
 
 #GENERIC
 'pinning-matrices': {'A: 8 x 12 (96)': (8, 12), 
@@ -165,14 +181,20 @@ to get quatitative values of average pigmentation.</i></span>
 specific_transparency = {
 'mode': 'transparency',
 'fixture': True,
+'stage': None,
+'manual-calibration-positions': None,
+'manual-calibration-values': None,
 'images-list-model': None,
 'image': -1,
+'plate': -1,
+'plate-coords': list(),
+'image-array': None,
 'log-interests': [None, None],
 'log-meta-features': ('image','plate-coords','plate-name','plate-media',
 'strain'),
 'log-compartments-default': ('blob','background','cell'),
-'log-measures-default': ('area', 'mean', 'median', 'IQR','IQR_mean',
-'pixelsum', 'centroid', 'perimeter'),
+'log-measures-default': ('pixelsum', 'area', 'mean', 'median', 'IQR',
+'IQR_mean', 'centroid', 'perimeter')
 }
 
 specific_log_book = {

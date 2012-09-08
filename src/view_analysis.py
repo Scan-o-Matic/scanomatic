@@ -114,7 +114,7 @@ class Analysis(gtk.VBox):
         self._remove_child(pos=1)
         self.pack_end(widget, True, True, 10)
 
-    def get_state(self):
+    def get_stage(self):
 
         return self._stage
 
@@ -175,11 +175,12 @@ class Analysis_Top_Project(Analysis_Top):
         self._start_button.set_sensitive(val)
 
 
-class Analysis_Top_Image_Selection(Analysis_Top):
+class Analysis_Top_Image_Generic(Analysis_Top):
 
-    def __init__(self, controller, model, specific_model, specific_controller):
+    def __init__(self, controller, model, specific_model,
+            specific_controller, next_text, next_stage_signal):
 
-        super(Analysis_Top_Image_Selection, self).__init__(controller, model)
+        super(Analysis_Top_Image_Generic, self).__init__(controller, model)
 
         self._specific_model = specific_model
         self._specific_controller = specific_controller
@@ -187,7 +188,7 @@ class Analysis_Top_Image_Selection(Analysis_Top):
         self._pack_root_button()
 
         self._next_button = Analysis_Top_Next_Button(controller,
-            model, specific_model, model['analysis-top-image-selection-next'])
+            model, specific_model, next_text, next_stage_signal)
 
         self.pack_end(self._next_button, False, False, PADDING_LARGE)
         self.set_allow_next(False)
@@ -198,9 +199,48 @@ class Analysis_Top_Image_Selection(Analysis_Top):
 
         self._next_button.set_sensitive(val)
 
+
+class Analysis_Top_Image_Sectioning(Analysis_Top_Image_Generic):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        next_text = model['analysis-top-image-sectioning-next']
+        next_stage_signal = 'plate'
+
+        super(Analysis_Top_Image_Sectioning, self).__init__(controller,
+            model, specific_model, specific_controller, next_text,
+            next_stage_signal)
+
+
+
+class Analysis_Top_Image_Normalisation(Analysis_Top_Image_Generic):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        next_text = model['analysis-top-image-normalisation-next']
+        next_stage_signal = 'sectioning'
+
+        super(Analysis_Top_Image_Normalisation, self).__init__(controller,
+            model, specific_model, specific_controller, next_text,
+            next_stage_signal)
+
+
+class Analysis_Top_Image_Selection(Analysis_Top_Image_Generic):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        next_text = model['analysis-top-image-selection-next']
+        next_stage_signal = 'normalisation'
+
+        super(Analysis_Top_Image_Selection, self).__init__(controller,
+            model, specific_model, specific_controller, next_text,
+            next_stage_signal)
+
+
 class Analysis_Top_Next_Button(gtk.Button):
 
-    def __init__(self, controller, model, specific_model, label_text):
+    def __init__(self, controller, model, specific_model, label_text,
+        stage_signal_text):
 
         self._controller = controller
         self._model = model
@@ -220,7 +260,7 @@ class Analysis_Top_Next_Button(gtk.Button):
         hbox.pack_end(im, False, False, PADDING_SMALL)
 
         self.connect("clicked", controller.set_analysis_stage, 
-                            "normalisation", specific_model)
+                            stage_signal_text, specific_model)
 
 class Analysis_Top_Root_Button(gtk.Button):
 
@@ -541,6 +581,8 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
         self._model = model
         self._specific_model = specific_model
 
+        self.patches = list()
+
         label = gtk.Label()
         label.set_markup(model['analysis-stage-image-norm-manual-title'])
         self.pack_start(label, False, False, PADDING_LARGE)
@@ -548,6 +590,9 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
         label = gtk.Label(
             specific_model['images-list-model'][specific_model['image']][0])
         self.pack_start(label, False, False, PADDING_SMALL)
+
+        hbox = gtk.HBox(0, False)
+        self.pack_start(hbox, True, True, PADDING_SMALL)
 
         self.figure = plt.Figure(figsize=(300, 400), dpi=150)
         self.figure.add_axes()
@@ -564,20 +609,55 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
 
         self.image_canvas.set_size_request(300, 400)
         vbox = gtk.VBox(0, False)
-        hbox = gtk.HBox(0, False)
         vbox.pack_start(self.image_canvas, False, False, PADDING_SMALL)
         hbox.pack_start(vbox, False, False, PADDING_SMALL)
-        self.pack_start(hbox, True, True, PADDING_SMALL)
+
+        self.treemodel = gtk.ListStore(str)
+        treeview = gtk.TreeView(self.treemodel)
+        tv_cell = gtk.CellRendererText()
+        tv_column = gtk.TreeViewColumn(
+            model['analysis-stage-image-norm-manual-measures'],
+            tv_cell, text=0)
+        treeview.append_column(tv_column)
+        treeview.set_reorderable(False)
+        
+        hbox.pack_start(treeview, False, False, PADDING_SMALL)
 
         self.show_all()
 
     def set_image(self):
 
-        self.figure_ax.imshow(plt.imread(
+        self._specific_model['image-array'] = plt.imread(
             self._specific_model['images-list-model']\
-            [self._specific_model['image']][0]),
+            [self._specific_model['image']][0])
+
+        self.figure_ax.imshow(self._specific_model['image-array'],
             cmap=plt.cm.gray_r)
 
+    def add_measure(self, val):
+
+        self.treemodel.append((val,))
+
+    def place_patch_origin(self, pos):
+
+        p = plt_patches.Rectangle(pos, 0, 0, ec='k', fill=False, lw=0.5)
+        self.figure_ax.add_patch(p)
+        self.image_canvas.draw()
+        self.patches.append(p)
+
+    def move_patch_target(self, w, h):
+
+        p = self.patches[-1]
+        p.set_width(w)
+        p.set_height(h)
+        self.image_canvas.draw()
+
+    def remove_patch(self, x, y):
+
+        self.fixure_ax.remove_patch(self.patches[-1])
+        self.image_canvas.draw()
+        del self.patches[-1]
+        
 
 class Analysis_Log_Book(gtk.VBox):
 
@@ -594,6 +674,67 @@ class Analysis_Log_Book(gtk.VBox):
         self.label = gtk.Label('analysis-log-title')
         self.pack_start(self.label, False, False, PADDING_SMALL)
 
-         
+
+class Analysis_Stage_Image_Sectioning(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        super(Analysis_Stage_Image_Sectioning, self).__init__(0, False)
+
+        self._controller = controller
+        self._specific_controller = specific_controller
+        self._model = model
+        self._specific_model = specific_model
+
+        self.patches = list()
+
+        label = gtk.Label()
+        label.set_markup(model['analysis-stage-image-sectioning-title'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+        
+        label = gtk.Label()
+        label.set_markup(model['analysis-stage-image-sectioning-help_text'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        self.figure = plt.Figure(figsize=(300, 400), dpi=150)
+        self.figure.add_axes()
+        self.figure_ax = self.figure.gca()
+        self.figure_ax.imshow(self._specific_model['image-array'],
+            cmap=plt.cm.gray_r)
+
+        self.image_canvas = FigureCanvas(self.figure)
+        self.image_canvas.mpl_connect('button_press_event', specific_controller.mouse_button_press)
+        self.image_canvas.mpl_connect('button_release_event', specific_controller.mouse_button_release)
+        self.image_canvas.mpl_connect('motion_notify_event', specific_controller.mouse_move)
+
+        self.figure_ax.get_xaxis().set_visible(False)
+        self.figure_ax.get_yaxis().set_visible(False)
+
+        self.image_canvas.set_size_request(300, 400)
+        hbox = gtk.VBox(0, False)
+        hbox.pack_start(self.image_canvas, False, False, PADDING_SMALL)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+
+        self.show_all()
+
+    def place_patch_origin(self, pos):
+
+        p = plt_patches.Rectangle(pos, 0, 0, ec='b', fill=False, lw=2)
+        self.figure_ax.add_patch(p)
+        self.image_canvas.draw()
+        self.patches.append(p)
+
+    def move_patch_target(self, w, h):
+
+        p = self.patches[-1]
+        p.set_width(w)
+        p.set_height(h)
+        self.image_canvas.draw()
+
+    def remove_patch(self, x, y):
+
+        self.fixure_ax.remove_patch(self.patches[-1])
+        self.image_canvas.draw()
+        del self.patches[-1]
 """
 """
