@@ -169,6 +169,23 @@ to get quatitative values of average pigmentation.</i></span>
 """<i>If you have the same stuff in several images, mark out the plates
 in the same order and watch the magic!</i>""",
 
+#ANALYSIS TOP IMAGE SECTIONING
+'analysis-top-image-plate-next_plate': 'Next Plate',
+'analysis-top-image-plate-next_image': 'Next Image',
+'analysis-top-image-plate-next_done': 'Done!',
+
+#ANALYSIS STAGE IMAGE PLATE
+'analysis-stage-image-plate-title':
+"<span weight='heavy' size='large'>Analyis of Plate {0}</span>",
+
+'analysis-stage-image-plate-name': 'Plate Description/Media:',
+'analysis-stage-image-plate-lock_selection': 'Lock Selection Size',
+'analysis-stage-image-plate-selection-width': 'Selection Width:',
+'analysis-stage-image-plate-selection-height': 'Selection Height:',
+
+#ANALYSIS STAGE LOG
+'analysis-stage-log-title': 'Log Book',
+
 #GENERIC
 'pinning-matrices': {'A: 8 x 12 (96)': (8, 12), 
                     'B: 16 x 24 (384)': (16, 24),
@@ -188,6 +205,9 @@ specific_transparency = {
 'image': -1,
 'plate': -1,
 'plate-coords': list(),
+'plate-im-array': None,
+'plate-selection': {'u': None, 'l': None, 'w': None, 'h': None},
+'lock-selection': None,
 'image-array': None,
 'log-interests': [None, None],
 'log-meta-features': ('image','plate-coords','plate-name','plate-media',
@@ -200,5 +220,7 @@ specific_transparency = {
 specific_log_book = {
 'manual-calibration': None,
 'log': list(),
-'log-interests': None
+'log-interests': None,
+'images': list(),
+'plate-names': list()
 }

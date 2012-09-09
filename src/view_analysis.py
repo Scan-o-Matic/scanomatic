@@ -236,6 +236,29 @@ class Analysis_Top_Image_Selection(Analysis_Top_Image_Generic):
             model, specific_model, specific_controller, next_text,
             next_stage_signal)
 
+class Analysis_Top_Image_Plate(Analysis_Top_Image_Generic):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        if specific_model['plate'] + 1 < len(specific_model['plate-coords']):
+
+            next_text = model['analysis-top-image-plate-next_plate']
+            next_stage_signal = 'plate'
+
+        elif specific_model['image'] + 1 < len(specific_model['images-list-model']):
+
+            next_text = model['analysis-top-image-plate-next_image']
+            next_stage_signal = 'normalisation'
+
+        else:
+
+            next_text = model['analysis-top-image-plate-next_done']
+            next_stage_signal = 'log_book'
+
+
+        super(Analysis_Top_Image_Plate, self).__init__(controller,
+            model, specific_model, specific_controller, next_text,
+            next_stage_signal)
 
 class Analysis_Top_Next_Button(gtk.Button):
 
@@ -736,5 +759,109 @@ class Analysis_Stage_Image_Sectioning(gtk.VBox):
         self.fixure_ax.remove_patch(self.patches[-1])
         self.image_canvas.draw()
         del self.patches[-1]
-"""
-"""
+
+
+class Analysis_Stage_Image_Plate(gtk.HBox):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        super(Analysis_Stage_Image_Plate, self).__init__(0, False)
+
+        self._controller = controller
+        self._specific_controller = specific_controller
+        self._model = model
+        self._specific_model = specific_model
+
+        left_vbox = gtk.VBox(0, False)
+        self.pack_start(left_vbox, True, True, PADDING_LARGE)
+
+        self.pack_end(self._specific_controller._log.get_view(),
+            False, True, PADDING_LARGE)
+
+        label = gtk.Label()
+        label.set_markup(model['analysis-stage-image-plate-title'].format(
+            specific_model['plate'] + 1))
+        left_vbox.pack_start(label, False, False, PADDING_LARGE)
+
+        hbox = gtk.HBox(0, False)
+
+        label = gtk.Label(model['analysis-stage-image-plate-name'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self.plate_description = gtk.Entry()
+        self.plate_description.connect("changed", specific_controller.set_in_log, "plate")
+        hbox.pack_start(self.plate_description, True, True, PADDING_SMALL)
+        left_vbox.pack_start(hbox, False, True, PADDING_SMALL)
+
+        self.figure = plt.Figure(figsize=(300, 400), dpi=150)
+        self.figure.add_axes()
+        self.figure_ax = self.figure.gca()
+        self.figure_ax.imshow(self._specific_model['plate-im-array'],
+            cmap=plt.cm.gray_r)
+
+        self.image_canvas = FigureCanvas(self.figure)
+        self.image_canvas.mpl_connect('button_press_event', specific_controller.mouse_button_press)
+        self.image_canvas.mpl_connect('button_release_event', specific_controller.mouse_button_release)
+        self.image_canvas.mpl_connect('motion_notify_event', specific_controller.mouse_move)
+
+        self.figure_ax.get_xaxis().set_visible(False)
+        self.figure_ax.get_yaxis().set_visible(False)
+
+        self.image_canvas.set_size_request(300, 400)
+        hbox = gtk.HBox(0, False)
+        hbox.pack_start(self.image_canvas, False, False, PADDING_SMALL)
+        left_vbox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        hbox = gtk.HBox(0, False)
+        lock_selection = gtk.CheckButton(
+            label=model['analysis-stage-image-plate-lock_selection'])
+        hbox.pack_start(lock_selection, False, False, PADDING_SMALL)
+
+        label = gtk.Label(model['analysis-stage-image-plate-selection-width'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self.selection_width = gtk.Entry()
+        self.selection_width.connect("changed", specific_controller.set_cell,
+            'width')
+        hbox.pack_start(self.selection_width, False, False, PADDING_SMALL)
+
+        label = gtk.Label(model['analysis-stage-image-plate-selection-height'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self.selection_height = gtk.Entry()
+        self.selection_height.connect("changed", specific_controller.set_cell,
+            'height')
+        hbox.pack_start(self.selection_height, False, False, PADDING_SMALL)
+
+        lock_selection.connect("clicked", specific_controller.set_selection_lock)
+        lock_selection.set_active(specific_model['lock-selection'] is not None)
+
+        left_vbox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        
+        self.show_all()
+
+    def get_selection_size(self):
+
+        wh = (float(self.selection_width.get_text()),
+            float(self.selection_height.get_text()))
+
+        return wh
+
+    def set_allow_selection_size_change(self, val):
+
+        self.selection_height.set_sensitive(val)
+        self.selection_width.set_sensitive(val)
+
+class Analysis_Stage_Log(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Analysis_Stage_Log, self).__init__(0, False)
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+
+        label = gtk.Label(model['analysis-stage-log-title'])
+        self.pack_start(label, False, False, PADDING_MEDIUM)
+
+        self.show_all()

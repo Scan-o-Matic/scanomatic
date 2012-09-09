@@ -137,7 +137,38 @@ class Analysis_Controller(controller_generic.Controller):
                     specific_model,
                     self.transparency))
 
+            elif stage_call == "plate":
 
+                specific_model = args[1]
+                specific_model['plate'] += 1
+
+                if self.transparency._log is None:
+                    self.transparency._log = Analysis_Log_Controller(
+                        self._model, specific_model)
+
+                if specific_model['plate'] < len(specific_model['plate-coords']):
+
+                    coords = specific_model['plate-coords'][specific_model['plate']]
+
+                    specific_model['plate-im-array'] = \
+                        specific_model['image-array'][
+                        coords[0][1]: coords[1][1],
+                        coords[0][0]: coords[1][0]]
+
+                    view.set_top(
+                        view_analysis.Analysis_Top_Image_Plate(
+                        self, model,
+                        specific_model,
+                        self.transparency))
+
+                    view.get_top().set_allow_next(True)
+
+                    view.set_stage(
+                        view_analysis.Analysis_Stage_Image_Plate(
+                        self, model,
+                        specific_model,
+                        self.transparency))
+                    
             else:
 
                 raise Bad_Stage_Call(stage_call)
@@ -151,6 +182,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 model=model)
 
         self._specific_model = None
+        self._log = None
 
     def set_specific_model(self, specific_model):
 
@@ -307,8 +339,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
                     self._view.get_stage().move_patch_target(w, h)
 
-                    self.set_manual_calibration_value(pc[-1])
-
                     if len(pc) > 0:
 
                         self._view.get_top().set_allow_next(True)
@@ -330,8 +360,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
             mcv.append(list())
 
         mcv[-1]. append(
-            self._specific_model['image-array'][coords[0][0]: coords[1][0],
-            coords[0][1]: coords[1][1]].mean())
+            self._specific_model['image-array'][coords[0][1]: coords[1][1],
+            coords[0][0]: coords[1][0]].mean())
 
         self._view.get_stage().add_measure(mcv[-1][-1])
 
@@ -373,6 +403,36 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 w = pos[0] - origin_pos[0]
                 h = pos[1] - origin_pos[1]
                 self._view.get_stage().move_patch_target(w, h)
+
+    def set_cell(self, widget, type_of_value):
+
+        if type_of_value == 'height':
+
+            self._specific_model['plate-selection']['h'] = \
+                float(widget.get_text())
+
+        elif type_of_value == "width":
+
+            self._specific_model['plate-selection']['w'] = \
+                float(widget.get_text())
+
+    def set_selection_lock(self, widget):
+
+        if widget.get_active():
+
+            self._specific_model['lock-selection'] = \
+                self._view.get_stage().get_selection_size()
+
+        else:
+
+            self._specific_model['lock-selection'] = None
+
+        self._view.get_stage().set_allow_selection_size_change(
+            self._specific_model['lock-selection'] == None)
+
+    def set_in_log(self, widget, key):
+
+        self._log.set(key, widget)
 
 
 class Analysis_Transparency_Controller(Analysis_Image_Controller):
@@ -444,3 +504,35 @@ class Analysis_Project_Controller(controller_generic.Controller):
     def set_pinning(self, widget, view, *args, **kwargs):
 
         print view, args, kwargs
+
+class Analysis_Log_Controller(controller_generic.Controller):
+
+    def __init__(self, general_model, parent_model):
+
+        model = model_analysis.copy_model(model_analysis.specific_log_book)
+
+        super(Analysis_Log_Controller, self).__init__(model=model,
+            view=view_analysis.Analysis_Stage_Log(self, general_model,
+            model))
+
+        self._parent_model = parent_model
+
+    def set(self, key, item):
+
+        if key == 'plate':
+
+            image = self._parent_model['image']
+            plate = self._parent_model['plate']
+
+            if len(self._model['images']) <= image:
+                self._model['images'].append(
+                    self._parent_model['images-list-model'][image][0])
+
+            if len(self._model['plate-names'][image]) <= plate:
+
+                self._model['plate-names'][image].append(item.get_text())
+
+            else:
+
+                self._model['plate-names'][image][plate] = item.get_text()
+
