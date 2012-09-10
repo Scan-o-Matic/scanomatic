@@ -535,14 +535,15 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
 
         treemodel = gtk.ListStore(str)
         specific_model['images-list-model'] = treemodel
-        treeview = gtk.TreeView(treemodel)
+        self.treeview = gtk.TreeView(treemodel)
         tv_cell = gtk.CellRendererText()
         tv_column = gtk.TreeViewColumn(
             model['analysis-stage-image-selection-list-column-title'],
             tv_cell, text=0)
-        treeview.append_column(tv_column)
-        treeview.set_reorderable(True)
-        left_vbox.pack_start(treeview, True, True, PADDING_SMALL)
+        self.treeview.append_column(tv_column)
+        self.treeview.set_reorderable(True)
+        self.treeview.connect('key_press_event', specific_controller.handle_keypress)
+        left_vbox.pack_start(self.treeview, True, True, PADDING_SMALL)
         hbox = gtk.HBox()
         button = gtk.Button(
             label=model['analysis-stage-image-selection-dialog-button'])
@@ -592,6 +593,20 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
 
         self.show_all()
 
+    def delete_selection(self):
+
+        selection = self.treeview.get_selection()
+        model = self._specific_model['images-list-model']
+
+        result = selection.get_selected()
+
+        if result is not None:
+
+            model, iter = result
+
+            if iter is not None:
+
+                model.remove(iter)
 
 class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
 
@@ -636,15 +651,16 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
         hbox.pack_start(vbox, False, False, PADDING_SMALL)
 
         self.treemodel = gtk.ListStore(str)
-        treeview = gtk.TreeView(self.treemodel)
+        self.treeview = gtk.TreeView(self.treemodel)
+        self.treeview.connect('key_press_event', specific_controller.handle_keypress)
         tv_cell = gtk.CellRendererText()
         tv_column = gtk.TreeViewColumn(
             model['analysis-stage-image-norm-manual-measures'],
             tv_cell, text=0)
-        treeview.append_column(tv_column)
-        treeview.set_reorderable(False)
+        self.treeview.append_column(tv_column)
+        self.treeview.set_reorderable(False)
         
-        hbox.pack_start(treeview, False, False, PADDING_SMALL)
+        hbox.pack_start(self.treeview, True, True, PADDING_SMALL)
 
         self.show_all()
 
@@ -654,8 +670,31 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
             self._specific_model['images-list-model']\
             [self._specific_model['image']][0])
 
-        self.figure_ax.imshow(self._specific_model['image-array'],
-            cmap=plt.cm.gray_r)
+        im = self._specific_model['image-array']
+        if im.max() > 1:
+            vmax = 255
+        else:
+            vmax = 1
+        self.figure_ax.imshow(im,
+            cmap=plt.cm.gray_r, vmin=0, vmax=vmax)
+
+    def delete_selection(self):
+
+        selection = self.treeview.get_selection()
+        model = self.treemodel
+
+        result = selection.get_selected()
+
+        if result is not None:
+
+            model, iter = result
+
+            if iter is not None:
+
+                pos = self._specific_controller.remove_selection(model[iter][0])
+                if pos >= 0:
+                    model.remove(iter)
+                    self.remove_patch(pos)
 
     def add_measure(self, val):
 
@@ -675,32 +714,16 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
         p.set_height(h)
         self.image_canvas.draw()
 
-    def remove_patch(self, x, y):
+    def remove_patch(self, i):
 
-        self.fixure_ax.remove_patch(self.patches[-1])
+        self.patches[i].remove()
         self.image_canvas.draw()
-        del self.patches[-1]
+        del self.patches[i]
         
-
-class Analysis_Log_Book(gtk.VBox):
-
-    def __init__(self, controller, model, specific_model,
-                                    specific_controller):
-
-        super(Analysis_Log_Book, self).__init__(0, False)
-
-        self._model = model
-        self._specific_model = specific_model
-        self._controller = controller
-        self._specific_controller = specific_controller
-
-        self.label = gtk.Label('analysis-log-title')
-        self.pack_start(self.label, False, False, PADDING_SMALL)
-
 
 class Analysis_Stage_Image_Sectioning(gtk.VBox):
 
-    def __init__(self, controller, model, specific_model, specific_controller):
+    def __init__(self, controller, model, specific_model, specific_controller, window):
 
         super(Analysis_Stage_Image_Sectioning, self).__init__(0, False)
 
@@ -708,6 +731,7 @@ class Analysis_Stage_Image_Sectioning(gtk.VBox):
         self._specific_controller = specific_controller
         self._model = model
         self._specific_model = specific_model
+        self._window = window
 
         self.patches = list()
 
@@ -726,10 +750,10 @@ class Analysis_Stage_Image_Sectioning(gtk.VBox):
             cmap=plt.cm.gray_r)
 
         self.image_canvas = FigureCanvas(self.figure)
+        self.image_canvas.mpl_connect('key_press_event', specific_controller.handle_mpl_keypress)
         self.image_canvas.mpl_connect('button_press_event', specific_controller.mouse_button_press)
         self.image_canvas.mpl_connect('button_release_event', specific_controller.mouse_button_release)
         self.image_canvas.mpl_connect('motion_notify_event', specific_controller.mouse_move)
-
         self.figure_ax.get_xaxis().set_visible(False)
         self.figure_ax.get_yaxis().set_visible(False)
 
@@ -754,9 +778,13 @@ class Analysis_Stage_Image_Sectioning(gtk.VBox):
         p.set_height(h)
         self.image_canvas.draw()
 
-    def remove_patch(self, x, y):
+    def set_focus_on_im(self):
 
-        self.fixure_ax.remove_patch(self.patches[-1])
+        self._window.set_focus(self.image_canvas)
+
+    def remove_patch(self):
+
+        self.patches[-1].remove()
         self.image_canvas.draw()
         del self.patches[-1]
 
@@ -824,6 +852,11 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         label = gtk.Label(model['analysis-stage-image-plate-selection-width'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.selection_width = gtk.Entry()
+        if specific_model['lock-selection'] is not None:
+            self.selection_width.set_text(
+                str(specific_model['lock-selection'][0]))
+        else:
+            self.selection_width.set_text("0")
         self.selection_width.connect("changed", specific_controller.set_cell,
             'width')
         hbox.pack_start(self.selection_width, False, False, PADDING_SMALL)
@@ -833,6 +866,11 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         label = gtk.Label(model['analysis-stage-image-plate-selection-height'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.selection_height = gtk.Entry()
+        if specific_model['lock-selection'] is not None:
+            self.selection_height.set_text(
+                str(specific_model['lock-selection'][1]))
+        else:
+            self.selection_height.set_text("0")
         self.selection_height.connect("changed", specific_controller.set_cell,
             'height')
         hbox.pack_start(self.selection_height, False, False, PADDING_SMALL)
@@ -899,6 +937,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self._selection = None
         if specific_model['lock-selection'] is not None:
             pos = [d/2 for d in specific_model['plate-im-array'].shape][:2]
+            pos.reverse()
             self.place_patch_origin(pos, specific_model['lock-selection'])
             self.set_section_image()
         else:
@@ -962,7 +1001,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
     def remove_patch(self, x, y):
 
-        self.fixure_ax.remove_patch(self._selection)
+        self.figure_ax.remove_patch(self._selection)
         self.image_canvas.draw()
         self._selection = None
 
@@ -1002,7 +1041,12 @@ class Analysis_Stage_Log(gtk.VBox):
             len(parent_model['log-interests'][0]) *
             len(parent_model['log-interests'][1]))))
 
-        treeview = gtk.TreeView(self.treemodel)
+        for row in specific_model['measures']:
+
+            self.add_data_row(row)
+
+        self.treeview = gtk.TreeView(self.treemodel)
+        self.treeview.connect('key_press_event', controller.handle_keypress)
 
         tv_cell = gtk.CellRendererText()
 
@@ -1012,7 +1056,7 @@ class Analysis_Stage_Log(gtk.VBox):
                 parent_model['log-meta-features'][col],
                 tv_cell, text=col)
 
-            treeview.append_column(tv_column)
+            self.treeview.append_column(tv_column)
 
         start_col = len(parent_model['log-meta-features'])
 
@@ -1026,10 +1070,10 @@ class Analysis_Stage_Log(gtk.VBox):
 
                 tv_column.set_resizable(True)
                 tv_column.set_reorderable(True)
-                treeview.append_column(tv_column)
+                self.treeview.append_column(tv_column)
 
         scrolled_window = gtk.ScrolledWindow()
-        scrolled_window.add_with_viewport(treeview)
+        scrolled_window.add_with_viewport(self.treeview)
 
         self.pack_start(scrolled_window, True, True, PADDING_SMALL)
         
@@ -1038,3 +1082,23 @@ class Analysis_Stage_Log(gtk.VBox):
     def add_data_row(self, measure):
 
         self.treemodel.append(measure)
+
+    def delete_selection(self):
+
+        selection = self.treeview.get_selection()
+        model = self.treemodel
+
+        result = selection.get_selected()
+
+        if result is not None:
+
+            model, iter = result
+
+            if iter is not None:
+
+                pos = self._controller.remove_selection(
+                    model[iter][0], model[iter][2], model[iter][4])
+
+                if pos >= 0:
+                    model.remove(iter)
+                    self.remove_patch(pos)

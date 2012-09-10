@@ -13,7 +13,9 @@ class Unknown_Log_Request(Exception): pass
 
 class Analysis_Controller(controller_generic.Controller):
 
-    def __init__(self):
+    def __init__(self, window):
+
+        self._window = window
 
         super(Analysis_Controller, self).__init__()
 
@@ -137,7 +139,8 @@ class Analysis_Controller(controller_generic.Controller):
                     view_analysis.Analysis_Stage_Image_Sectioning(
                     self, model,
                     specific_model,
-                    self.transparency))
+                    self.transparency,
+                    self._window))
 
             elif stage_call == "plate":
 
@@ -148,6 +151,10 @@ class Analysis_Controller(controller_generic.Controller):
                 if self.transparency._log is None:
                     self.transparency._log = Analysis_Log_Controller(
                         self._model, specific_model)
+
+                else:
+
+                    self.transparency._log.set_view()
 
                 if specific_model['plate'] < len(specific_model['plate-coords']):
 
@@ -243,6 +250,56 @@ class Analysis_Image_Controller(controller_generic.Controller):
         self._specific_model['log-interests'][1] = \
             [self._specific_model['log-measures-default'][r[0]]
             for r in rows]
+
+    def handle_mpl_keypress(self, event):
+
+        if event.key == "delete":
+
+            if len(self._specific_model['plate-coords']) > 0:
+
+                del self._specific_model['plate-coords'][-1]
+                self._view.get_stage().remove_patch()  
+ 
+
+    def handle_keypress(self, widget, event):
+
+        sm = self._specific_model
+
+        if view_analysis.gtk.gdk.keyval_name(event.keyval) == "Delete":
+
+            if sm['stage'] == 'image-selection' or \
+                sm['stage'] == 'manual-calibration':
+
+                self._view.get_stage().delete_selection()  
+
+    def remove_selection(self, *stuff):
+
+        sm = self._specific_model
+
+        if sm['stage'] == 'manual-calibration':
+
+            mcv = sm['manual-calibration-values']
+
+            val = stuff[0]
+
+            for i in xrange(len(mcv[-1])):
+
+                if val == str(mcv[-1][i]):
+
+                    del sm['manual-calibration-positions'][-1][i]
+                    del mcv[-1][i]
+
+                    if len(mcv[-1]) == len(mcv[0]) and len(mcv[-1]) >= 1:
+
+                        self._view.get_top().set_allow_next(True)
+
+                    else:
+
+                        self._view.get_top().set_allow_next(False)
+
+                    return i
+
+        return -1
 
     def mouse_button_press(self, event, *args, **kwargs):
 
@@ -379,6 +436,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                         del pc[-1]
                         self._view.get_stage().remove_patch()
 
+                    self._view.get_stage().set_focus_on_im()
                     return None
 
                 if len(pc[-1]) == 1:
@@ -397,6 +455,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
                     else:
 
                         self._view.get_top().set_allow_next(False)
+
+                    self._view.get_stage().set_focus_on_im()
 
             elif self._specific_model['stage'] == 'plate':
 
@@ -462,7 +522,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         self._view.get_stage().add_measure(mcv[-1][-1])
 
-        if len(mcv[-1]) == len(mcv[0]) and len(mcv[-1]) >= 2:
+        if len(mcv[-1]) == len(mcv[0]) and len(mcv[-1]) >= 1:
 
             self._view.get_top().set_allow_next(True)
 
@@ -637,10 +697,18 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
         model = model_analysis.copy_model(model_analysis.specific_log_book)
         self._parent_model = parent_model
+        self._general_model = general_model
 
         super(Analysis_Log_Controller, self).__init__(model=model,
             view=view_analysis.Analysis_Stage_Log(self, general_model,
             model, parent_model))
+
+    def _get_default_view(self):
+
+        view = view_analysis.Analysis_Stage_Log(self, self._general_model,
+            self._model, self._parent_model)
+
+        return view
 
     def get_all_meta_filled(self):
 
@@ -729,3 +797,30 @@ class Analysis_Log_Controller(controller_generic.Controller):
         else:
 
             raise Unknown_Log_Request("The key '{0}' not recognized (item {1} lost)".format(key, item))
+
+    def handle_keypress(self, widget, event):
+
+        if view_analysis.gtk.gdk.keyval_name(event.keyval) == "Delete":
+
+            self._view.delete_selection()  
+
+    def remove_selection(self, *stuff):
+
+        m = self._model
+
+        im_path = stuff[0]
+        plate = stuff[1]
+        pos = stuff[2]
+
+        for i in xrange(len(m['measures'])):
+
+            if im_path == m['measures'][i][0] and \
+                plate == m['measures'][i][2] and \
+                pos == m['measures'][i][4]:
+
+
+                del m['measures'][i]
+
+                return i
+
+        return -1
