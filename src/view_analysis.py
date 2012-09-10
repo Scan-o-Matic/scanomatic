@@ -663,7 +663,7 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
 
     def place_patch_origin(self, pos):
 
-        p = plt_patches.Rectangle(pos, 0, 0, ec='k', fill=False, lw=0.5)
+        p = plt_patches.Rectangle(pos, 0, 0, ec='b', fill=False, lw=2)
         self.figure_ax.add_patch(p)
         self.image_canvas.draw()
         self.patches.append(p)
@@ -773,10 +773,13 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self._specific_model = specific_model
 
         left_vbox = gtk.VBox(0, False)
-        self.pack_start(left_vbox, True, True, PADDING_LARGE)
+        self.pack_start(left_vbox, False, True, PADDING_LARGE)
+
+        right_vbox = gtk.VBox(0, False)
+        self.pack_start(right_vbox, False, True, PADDING_LARGE)
 
         self.pack_end(self._specific_controller._log.get_view(),
-            False, True, PADDING_LARGE)
+            True, True, PADDING_LARGE)
 
         label = gtk.Label()
         label.set_markup(model['analysis-stage-image-plate-title'].format(
@@ -811,37 +814,168 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         hbox.pack_start(self.image_canvas, False, False, PADDING_SMALL)
         left_vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
-        hbox = gtk.HBox(0, False)
+        #LOCK SIZE
+        vbox = gtk.VBox(0, False)
         lock_selection = gtk.CheckButton(
             label=model['analysis-stage-image-plate-lock_selection'])
-        hbox.pack_start(lock_selection, False, False, PADDING_SMALL)
+        vbox.pack_start(lock_selection, False, False, PADDING_SMALL)
 
+        hbox = gtk.HBox(0, False)
         label = gtk.Label(model['analysis-stage-image-plate-selection-width'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.selection_width = gtk.Entry()
         self.selection_width.connect("changed", specific_controller.set_cell,
             'width')
         hbox.pack_start(self.selection_width, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
+        hbox = gtk.HBox(0, False)
         label = gtk.Label(model['analysis-stage-image-plate-selection-height'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.selection_height = gtk.Entry()
         self.selection_height.connect("changed", specific_controller.set_cell,
             'height')
         hbox.pack_start(self.selection_height, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
         lock_selection.connect("clicked", specific_controller.set_selection_lock)
         lock_selection.set_active(specific_model['lock-selection'] is not None)
 
-        left_vbox.pack_start(hbox, False, False, PADDING_SMALL)
+        left_vbox.pack_start(vbox, False, False, PADDING_SMALL)
 
-        
+        #STRAIN
+        label = gtk.Label(model['analysis-stage-image-plate-colony-name'])
+        right_vbox.pack_start(label, False, False, PADDING_SMALL)
+
+        self.strain_name = gtk.Entry()
+        self.strain_name.connect("changed", specific_controller.set_in_log, 'strain')
+        right_vbox.pack_start(self.strain_name, False, False, PADDING_SMALL)
+
+        #STRAIN SECTION IM
+        self.section_figure = plt.Figure(figsize=(40, 40), dpi=150)
+        self.section_figure.add_axes()
+        self.section_figure_ax = self.section_figure.gca()
+
+        self.section_image_canvas = FigureCanvas(self.section_figure)
+        self.section_image_canvas.mpl_connect('button_press_event',
+            specific_controller.mouse_button_press)
+        self.section_image_canvas.mpl_connect('button_release_event',
+            specific_controller.mouse_button_release)
+        self.section_image_canvas.mpl_connect('motion_notify_event',
+            specific_controller.mouse_move)
+
+        self.section_figure_ax.get_xaxis().set_visible(False)
+        self.section_figure_ax.get_yaxis().set_visible(False)
+
+        hbox = gtk.HBox(0, False)
+        hbox.pack_start(self.section_image_canvas, False, False, PADDING_SMALL)
+        right_vbox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        #STRAIN SECTION ANALYSIS IM
+        self.analysis_figure = plt.Figure(figsize=(40, 40), dpi=150)
+        self.analysis_figure.add_axes()
+        self.analysis_figure_ax = self.analysis_figure.gca()
+
+        self.analysis_image_canvas = FigureCanvas(self.analysis_figure)
+        self.analysis_image_canvas.mpl_connect('button_press_event',
+            specific_controller.mouse_button_press)
+        self.analysis_image_canvas.mpl_connect('button_release_event',
+            specific_controller.mouse_button_release)
+        self.analysis_image_canvas.mpl_connect('motion_notify_event',
+            specific_controller.mouse_move)
+
+        self.analysis_figure_ax.get_xaxis().set_visible(False)
+        self.analysis_figure_ax.get_yaxis().set_visible(False)
+
+        hbox = gtk.HBox(0, False)
+        hbox.pack_start(self.analysis_image_canvas, False, False, PADDING_SMALL)
+        right_vbox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        self.log_button = gtk.Button(label=model['analysis-stage-image-plate-log-button'])
+        self.log_button.connect("clicked", specific_controller.set_in_log, 'measures')
+        right_vbox.pack_start(self.log_button, False, False, PADDING_LARGE)
+        self.set_allow_logging(False)
+
+        self._selection = None
+        if specific_model['lock-selection'] is not None:
+            pos = [d/2 for d in specific_model['plate-im-array'].shape][:2]
+            self.place_patch_origin(pos, specific_model['lock-selection'])
+            self.set_section_image()
+        else:
+            specific_controller.set_selection(pos=None, wh=None)
+
         self.show_all()
+
+    def set_allow_logging(self, val):
+
+        self.log_button.set_sensitive(val)
+
+    def set_section_image(self):
+
+        if self._specific_model['plate-section-im-array'] is not None:
+ 
+            self.section_figure_ax.imshow(self._specific_model['plate-section-im-array'],
+                cmap=plt.cm.gray_r)
+            self.section_image_canvas.set_size_request(150, 150)
+            self.section_image_canvas.draw()
+
+    def set_analysis_image(self):
+
+        if self._specific_model['plate-section-grid-cell'] is not None:
+ 
+            self.analysis_figure_ax.imshow(
+                self._specific_model['plate-section-grid-cell'].get_item(
+                "blob").filter_array,
+                cmap=plt.cm.gray_r)
+            self.analysis_image_canvas.set_size_request(150, 150)
+            self.analysis_image_canvas.draw()
+
+    def place_patch_origin(self, pos, wh):
+
+        w, h = wh
+        p = plt_patches.Rectangle(pos, w, h, ec='b', fill=False, lw=2)
+        self.figure_ax.add_patch(p)
+        self.image_canvas.draw()
+        self._selection = p
+        self._specific_controller.set_selection(pos=pos)
+
+    def move_patch_origin(self, pos):
+
+        if self._selection is None:
+
+            self.place_patch_origin(pos, (0, 0))
+
+        else:
+
+            self._selection.set_xy(pos)
+            self.image_canvas.draw()
+
+    def move_patch_target(self, w, h):
+
+        if self._selection is not None:
+
+            self._selection.set_width(w)
+            self._selection.set_height(h)
+            self.selection_width.set_text(str(w))
+            self.selection_height.set_text(str(h))
+            self.image_canvas.draw()
+
+    def remove_patch(self, x, y):
+
+        self.fixure_ax.remove_patch(self._selection)
+        self.image_canvas.draw()
+        self._selection = None
 
     def get_selection_size(self):
 
-        wh = (float(self.selection_width.get_text()),
-            float(self.selection_height.get_text()))
+        try:
+
+            wh = (float(self.selection_width.get_text()),
+                float(self.selection_height.get_text()))
+
+        except:
+
+            wh = (0, 0)
 
         return wh
 
@@ -852,7 +986,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
 class Analysis_Stage_Log(gtk.VBox):
 
-    def __init__(self, controller, model, specific_model):
+    def __init__(self, controller, model, specific_model, parent_model):
 
         super(Analysis_Stage_Log, self).__init__(0, False)
 
@@ -860,8 +994,47 @@ class Analysis_Stage_Log(gtk.VBox):
         self._model = model
         self._specific_model = specific_model
 
-
         label = gtk.Label(model['analysis-stage-log-title'])
         self.pack_start(label, False, False, PADDING_MEDIUM)
 
+        self.treemodel = gtk.ListStore(*([str] * (
+            len(parent_model['log-meta-features']) +
+            len(parent_model['log-interests'][0]) *
+            len(parent_model['log-interests'][1]))))
+
+        treeview = gtk.TreeView(self.treemodel)
+
+        tv_cell = gtk.CellRendererText()
+
+        for col in (0, 3, 5):
+
+            tv_column = gtk.TreeViewColumn(
+                parent_model['log-meta-features'][col],
+                tv_cell, text=col)
+
+            treeview.append_column(tv_column)
+
+        start_col = len(parent_model['log-meta-features'])
+
+        for c_i, compartment in enumerate(parent_model['log-interests'][0]):
+
+            for m_i, measure in enumerate(parent_model['log-interests'][1]):
+
+                tv_column = gtk.TreeViewColumn(
+                    "{0}: {1}".format(compartment, measure),
+                    tv_cell, text=start_col + (c_i + 1) * m_i)
+
+                tv_column.set_resizable(True)
+                tv_column.set_reorderable(True)
+                treeview.append_column(tv_column)
+
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.add_with_viewport(treeview)
+
+        self.pack_start(scrolled_window, True, True, PADDING_SMALL)
+        
         self.show_all()
+
+    def add_data_row(self, measure):
+
+        self.treemodel.append(measure)

@@ -4,10 +4,12 @@ import model_analysis
 import view_analysis
 import controller_generic
 import resource_os
+import analysis_wrapper as a_wrapper
 
 class Bad_Stage_Call(Exception): pass
 class No_View_Loaded(Exception): pass
 class Not_Yet_Implemented(Exception): pass
+class Unknown_Log_Request(Exception): pass
 
 class Analysis_Controller(controller_generic.Controller):
 
@@ -141,6 +143,7 @@ class Analysis_Controller(controller_generic.Controller):
 
                 specific_model = args[1]
                 specific_model['plate'] += 1
+                specific_model['stage'] = 'plate'
 
                 if self.transparency._log is None:
                     self.transparency._log = Analysis_Log_Controller(
@@ -247,20 +250,21 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             return None
 
+        pos = (event.xdata, event.ydata)
+        sm = self._specific_model
+
         if event.button == 1:
 
-            if self._specific_model['stage'] == 'manual-calibration':
+            if sm['stage'] == 'manual-calibration':
 
-                if self._specific_model['manual-calibration-positions'] is None:
-                    self._specific_model['manual-calibration-positions'] = list()
+                if sm['manual-calibration-positions'] is None:
+                    sm['manual-calibration-positions'] = list()
 
-                mc = self._specific_model['manual-calibration-positions']
+                mc = sm['manual-calibration-positions']
 
-                if len(mc) == self._specific_model['image']:
+                if len(mc) == sm['image']:
 
                     mc.append(list())
-
-                pos = (event.xdata, event.ydata)
 
                 if len(mc[-1]) > 0 and len(mc[-1][-1]) == 1:
 
@@ -275,7 +279,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
             elif self._specific_model['stage'] == 'sectioning':
 
                 pc = self._specific_model['plate-coords']
-                pos = (event.xdata, event.ydata)
 
                 if len(pc) > 0 and len(pc[-1]) == 1:
 
@@ -286,8 +289,58 @@ class Analysis_Image_Controller(controller_generic.Controller):
                     pc.append([pos])
 
                 self._view.get_stage().place_patch_origin(pos)
+
+            elif sm['stage'] == 'plate':
+
+                if self._get_inside_selection(pos):
+
+                    sm['selection-move-source'] = pos
+
+                else:
+
+                    if sm['lock-selection'] is not None:
  
+                        self.set_selection(pos=pos)
+                        self._view.get_stage().move_patch_origin(pos)
+
+                    else:
+
+                        sm['selection-move-source'] = None
+                        self.set_selection(pos=pos, wh=(0, 0))
+                        specific_view = self._view.get_stage()
+                        specific_view.move_patch_origin(pos)
+                        specific_view.move_patch_target(0, 0)
+                        sm['selection-drawing'] = True
+
+    def _get_inside_selection(self, pos):
+
+        if self._specific_model['selection-origin'] is None or \
+            self._specific_model['selection-size'] is None:
+
+            return False
+
+        s_origin = self._specific_model['selection-origin']
+        s_target = [p + s for p, s in zip(s_origin,  self._specific_model['selection-size'])]
+
+        for d in xrange(2):
+
+            if not(s_origin[d] <= pos[d] <= s_target[d]):
+
+                return False
+
+        return True
+
+    def set_selection(self, pos=False, wh=False):
+
+        if pos != False:
+            self._specific_model['selection-origin'] = pos
+
+        if wh != False:
+            self._specific_model['selection-size'] = wh
+
     def mouse_button_release(self, event, *args, **kwargs):
+
+        pos = (event.xdata, event.ydata)
 
         if event.button == 1:
 
@@ -307,7 +360,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 if len(mc[-1]) == 1:
 
                     origin_pos = mc[-1][0]
-                    pos = (event.xdata, event.ydata)
                     w = pos[0] - origin_pos[0]
                     h = pos[1] - origin_pos[1]
                     mc[-1] = zip(*map(sorted, zip(origin_pos, pos)))
@@ -332,7 +384,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 if len(pc[-1]) == 1:
 
                     origin_pos = pc[-1][0]
-                    pos = (event.xdata, event.ydata)
                     w = pos[0] - origin_pos[0]
                     h = pos[1] - origin_pos[1]
                     pc[-1] = zip(*map(sorted, zip(origin_pos, pos)))
@@ -346,7 +397,53 @@ class Analysis_Image_Controller(controller_generic.Controller):
                     else:
 
                         self._view.get_top().set_allow_next(False)
+
+            elif self._specific_model['stage'] == 'plate':
+
+                sm = self._specific_model
+
+                if sm['selection-move-source'] is not None:
+
+                    self.set_selection(pos=self._get_new_selection_origin(pos))
+                    self._view.get_stage().move_patch_origin(sm['selection-origin'])
+
+                elif sm['lock-selection'] is None and sm['selection-origin'] is not None:
+
+                    origin_pos = sm['selection-origin']
+                    w = pos[0] - origin_pos[0]
+                    h = pos[1] - origin_pos[1]
+
+                    self._view.get_stage().move_patch_target(w, h)
+                    self.set_selection(wh=(w, h))
+                    sm['selection-drawing'] = False
+
+                sm['selection-move-source'] = None
+                pos1 = sm['selection-origin']
+                wh = self._view.get_stage().get_selection_size()
+                pos2 = [p + s for p, s in zip(pos1, wh)]
+
+                sm['plate-section-im-array'] = sm['plate-im-array'][pos1[1]:pos2[1], pos1[0]:pos2[0]]
+                sm['plate-section-grid-cell'] = a_wrapper.get_grid_cell_from_array(
+                            sm['plate-section-im-array'], center=None,
+                            radius=None)
+
+                sm['plate-section-features'] = sm['plate-section-grid-cell'].get_analysis()
+
+                self._view.get_stage().set_section_image()
+                self._view.get_stage().set_analysis_image()
+
+                self._view.get_stage().set_allow_logging(not(sm['plate-section-features'] is None)
+                    and self._log.get_all_meta_filled())
  
+    def _get_new_selection_origin(self, pos):
+
+        sm = self._specific_model
+        sel_move = [n - o for n, o in zip(pos, sm['selection-move-source'])]
+
+        new_origin = [o + m for o, m in zip(sm['selection-origin'], sel_move)]
+
+        return new_origin
+
     def set_manual_calibration_value(self, coords):
 
         if self._specific_model['manual-calibration-values'] is None:
@@ -375,46 +472,75 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
     def mouse_move(self, event, *args, **kwargs):
 
+        sm = self._specific_model
+        pos = (event.xdata, event.ydata)
+
         if event.xdata is None or event.ydata is None:
 
             return None
 
-        if self._specific_model['stage'] == 'manual-calibration':
+        if sm['stage'] == 'manual-calibration':
 
-            mc = self._specific_model['manual-calibration-positions']
+            mc = sm['manual-calibration-positions']
 
             if mc is not None and mc[-1] is not None and len(mc[-1]) > 0 \
                 and len(mc[-1][-1]) == 1:
                 
                 origin_pos = mc[-1][-1][0]
-                pos = (event.xdata, event.ydata)
                 w = pos[0] - origin_pos[0]
                 h = pos[1] - origin_pos[1]
                 self._view.get_stage().move_patch_target(w, h)
 
-        elif self._specific_model['stage'] == 'sectioning':
+        elif sm['stage'] == 'sectioning':
 
             pc = self._specific_model['plate-coords']
 
             if len(pc) > 0 and len(pc[-1]) == 1:
                 
                 origin_pos = pc[-1][0]
-                pos = (event.xdata, event.ydata)
                 w = pos[0] - origin_pos[0]
                 h = pos[1] - origin_pos[1]
                 self._view.get_stage().move_patch_target(w, h)
 
+        elif sm['stage'] == 'plate':
+
+            if sm['selection-move-source'] is not None:
+
+                self._view.get_stage().move_patch_origin(
+                        self._get_new_selection_origin(pos))
+
+            elif sm['lock-selection'] is None and sm['selection-origin'] is not None \
+                and sm['selection-drawing'] == True:
+
+                origin_pos = sm['selection-origin']
+                w = pos[0] - origin_pos[0]
+                h = pos[1] - origin_pos[1]
+
+                self._view.get_stage().move_patch_target(w, h)
+
     def set_cell(self, widget, type_of_value):
 
-        if type_of_value == 'height':
+        stage = self._view.get_stage()
 
-            self._specific_model['plate-selection']['h'] = \
-                float(widget.get_text())
+        wh = list(stage.get_selection_size())
+        if type_of_value ==  "height":
+            try:
+                h = int(widget.get_text())
+            except:
+                return None
+        else:
+            h = wh[1]
 
-        elif type_of_value == "width":
+        if type_of_value ==  "width":
+            try:
+                w = int(widget.get_text())
+            except:
+                return None
+        else:
+            w = wh[0]
 
-            self._specific_model['plate-selection']['w'] = \
-                float(widget.get_text())
+        self.set_selection(wh=(w, h))
+        stage.move_patch_target(w, h)
 
     def set_selection_lock(self, widget):
 
@@ -510,12 +636,37 @@ class Analysis_Log_Controller(controller_generic.Controller):
     def __init__(self, general_model, parent_model):
 
         model = model_analysis.copy_model(model_analysis.specific_log_book)
+        self._parent_model = parent_model
 
         super(Analysis_Log_Controller, self).__init__(model=model,
             view=view_analysis.Analysis_Stage_Log(self, general_model,
-            model))
+            model, parent_model))
 
-        self._parent_model = parent_model
+    def get_all_meta_filled(self):
+
+        m = self._model
+        pm = self._parent_model
+
+        """
+        print
+
+        print 'plate-names', m['plate-names']
+        print 'image', pm['image']
+        print 'current-strain', m['current-strain']
+
+        print
+        """
+        try:
+
+            all_ok = m['plate-names'][pm['image']] is not None and \
+                len(m['plate-names'][pm['image']]) == pm['image'] + 1 and \
+                m['current-strain'] is not None
+
+        except:
+
+            return False
+
+        return all_ok
 
     def set(self, key, item):
 
@@ -527,6 +678,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
             if len(self._model['images']) <= image:
                 self._model['images'].append(
                     self._parent_model['images-list-model'][image][0])
+                self._model['plate-names'].append(list())
 
             if len(self._model['plate-names'][image]) <= plate:
 
@@ -536,3 +688,44 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
                 self._model['plate-names'][image][plate] = item.get_text()
 
+        elif key == 'strain':
+
+            self._model['current-strain'] = item.get_text()
+
+        elif key == 'measures':
+
+            pm = self._parent_model
+            m = self._model
+
+            #META INFO
+            measures = [m['images'][-1], pm['plate-coords'][pm['plate']],
+                pm['plate'], m['plate-names'][pm['image']][pm['plate']],
+                (pm['selection-origin'], pm['selection-size']),
+                m['current-strain']]
+
+            features = pm['plate-section-features']
+
+            for compartment in pm['log-interests'][0]:
+
+                if compartment in features.keys():
+
+                    c = features[compartment]
+
+                    for measure in pm['log-interests'][1]:
+
+                        if measure in c.keys():
+
+                            measures.append(c[measure])
+
+                        else:
+
+                            measures.append(None)
+
+            m['measures'].append(measures)
+
+
+            self._view.add_data_row(measures)
+
+        else:
+
+            raise Unknown_Log_Request("The key '{0}' not recognized (item {1} lost)".format(key, item))

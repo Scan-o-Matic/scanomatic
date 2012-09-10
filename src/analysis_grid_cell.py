@@ -81,7 +81,7 @@ class Grid_Cell():
 
             s+= " Image size: {0}".format(self.data_source.shape)
 
-        s+= " Layers: {0} >".format(self._analyisis_items.keys())
+        s+= " Layers: {0} >".format(self._analysis_items.keys())
 
         return s
 
@@ -133,7 +133,7 @@ class Grid_Cell():
 
             else:
 
-                self.logger.error(
+                self.logger.warning(
                     "ANALYSIS GRID CELL: Was not fed any polynomial")
 
             self.logger.debug("ANALYSIS GRID CELL: Cell Estimate values run" +\
@@ -271,7 +271,7 @@ class Grid_Cell():
 
         if run_detect is None:
 
-            run_detect = self.run_detect
+            run_detect = not(self.no_detect)
 
         if blob:
 

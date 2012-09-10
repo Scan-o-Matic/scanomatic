@@ -57,14 +57,13 @@ def get_grid_cell_from_array(arr, fallback_detection=False, center=None, radius=
 
     """
 
-    cell = grid_cell.Grid_Cell((0,0,0), data_source=arr)
-    cell.set_rect_size() 
+    settings = {'data_source': arr, 'no_analysis': True, 'no_detect': True,
+        'blob_detect': 'default', 'remember_filter': False,
+        'polynomial_coeffs':None}
 
-    logging.debug("GRID CELL: Created with center {0} and size {1} (im was {2})".\
-        format(cell.get_center(), cell.get_rect_size(), arr.shape))
+    cell = grid_cell.Grid_Cell(Log_Parent(), (0,0,0), grid_cell_settings=settings)
 
-    cell.attach_analysis(use_fallback_detection=fallback_detection, 
-        center=center, radius=radius)
+    cell.attach_analysis(center=center, radius=radius)
 
     return cell
 
@@ -120,6 +119,12 @@ class Project_Image(project.Project_Image):
     def __init__(self, im_path):
         project.Project_Image.__init__(self, im_path)
 
+class Log_Parent(object):
+
+    def __init__(self):
+
+        logging.basicConfig()
+        self.logger = logging.getLogger("Wrapped Item")
 
 #
 # COMMAND LINE BEHAVIOUR

@@ -182,6 +182,8 @@ in the same order and watch the magic!</i>""",
 'analysis-stage-image-plate-lock_selection': 'Lock Selection Size',
 'analysis-stage-image-plate-selection-width': 'Selection Width:',
 'analysis-stage-image-plate-selection-height': 'Selection Height:',
+'analysis-stage-image-plate-colony-name': 'Name specific experiment:',
+'analysis-stage-image-plate-log-button': 'Record data for this experiment',
 
 #ANALYSIS STAGE LOG
 'analysis-stage-log-title': 'Log Book',
@@ -206,12 +208,19 @@ specific_transparency = {
 'plate': -1,
 'plate-coords': list(),
 'plate-im-array': None,
+'plate-section-im-array': None,
+'plate-section-grid-cell': None,
+'plate-section-features': None,
 'plate-selection': {'u': None, 'l': None, 'w': None, 'h': None},
 'lock-selection': None,
+'selection-move-source': None,
+'selection-origin': None,
+'selection-size': None,
+'selection-drawning': False,
 'image-array': None,
 'log-interests': [None, None],
-'log-meta-features': ('image','plate-coords','plate-name','plate-media',
-'strain'),
+'log-meta-features': ('image','plate-coords','plate-index','plate-media',
+'selected-plate-area', 'strain'),
 'log-compartments-default': ('blob','background','cell'),
 'log-measures-default': ('pixelsum', 'area', 'mean', 'median', 'IQR',
 'IQR_mean', 'centroid', 'perimeter')
@@ -222,5 +231,7 @@ specific_log_book = {
 'log': list(),
 'log-interests': None,
 'images': list(),
-'plate-names': list()
+'plate-names': list(),
+'current-strain': None,
+'measures': list()
 }
