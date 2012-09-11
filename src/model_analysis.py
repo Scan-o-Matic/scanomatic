@@ -187,13 +187,24 @@ in the same order and watch the magic!</i>""",
 
 #ANALYSIS STAGE LOG
 'analysis-stage-log-title': 'Log Book',
+'analysis-stage-log-save': 'Save...',
+'analysis-stage-log-save-dialog': 'Name your file:',
+
+'analysis-stage-log-save-file-filter': {'filter_name': 'CSV Files',
+'mime_and_patterns': (('TEXT/CSV', '*.[cC][sS][vV]'),)},
+
+'analysis-stage-log-overwrite': 'The file "{0}" already exists, are you sure you want to overwrite it?',
+'analysis-stage-log-saved': 'Your file has been saved!',
+'analysis-stage-log-not-saved': "Your file wasn't saved",
 
 #GENERIC
 'pinning-matrices': {'A: 8 x 12 (96)': (8, 12), 
                     'B: 16 x 24 (384)': (16, 24),
                     'C: 32 x 48 (1536)': (32, 48),
                     'D: 64 x 96 (6144)': (64, 96),
-                    '--Empty--': None}
+                    '--Empty--': None},
+
+'not-implemented': "That feature hasn't been implemented yet!"
 
 }
 
@@ -216,7 +227,7 @@ specific_transparency = {
 'selection-move-source': None,
 'selection-origin': None,
 'selection-size': None,
-'selection-drawning': False,
+'selection-drawing': False,
 'image-array': None,
 'log-interests': [None, None],
 'log-meta-features': ('image','plate-coords','plate-index','plate-media',

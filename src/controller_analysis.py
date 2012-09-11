@@ -1,4 +1,5 @@
 import os
+import types
 
 import model_analysis
 import view_analysis
@@ -91,6 +92,10 @@ class Analysis_Controller(controller_generic.Controller):
 
                     if specific_model['fixture']:
 
+                        view_analysis.dialog(self._window,
+                            self._model['not-implemented'],
+                            d_type='warning')
+
                         raise Not_Yet_Implemented((stage_call, ('fixture', specific_model['fixture'])))
 
                     else:
@@ -128,6 +133,7 @@ class Analysis_Controller(controller_generic.Controller):
 
                 specific_model = args[1]
                 specific_model['stage'] = 'sectioning'
+                specific_model['plate-coords'] = list()
 
                 view.set_top(
                     view_analysis.Analysis_Top_Image_Sectioning(
@@ -142,6 +148,8 @@ class Analysis_Controller(controller_generic.Controller):
                     self.transparency,
                     self._window))
 
+                specific_model['plate'] = -1
+
             elif stage_call == "plate":
 
                 specific_model = args[1]
@@ -150,11 +158,12 @@ class Analysis_Controller(controller_generic.Controller):
 
                 if self.transparency._log is None:
                     self.transparency._log = Analysis_Log_Controller(
-                        self._model, specific_model)
+                        self._model, specific_model, self._window)
 
                 else:
 
                     self.transparency._log.set_view()
+                    self.transparency._log._model['current-strain'] = None
 
                 if specific_model['plate'] < len(specific_model['plate-coords']):
 
@@ -179,6 +188,7 @@ class Analysis_Controller(controller_generic.Controller):
                         specific_model,
                         self.transparency))
                     
+                    view.get_stage().run_lock_select_check()
             else:
 
                 raise Bad_Stage_Call(stage_call)
@@ -491,9 +501,16 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
                 self._view.get_stage().set_section_image()
                 self._view.get_stage().set_analysis_image()
+                self.set_allow_logging()
 
-                self._view.get_stage().set_allow_logging(not(sm['plate-section-features'] is None)
-                    and self._log.get_all_meta_filled())
+    def set_allow_logging(self):
+
+        sm = self._specific_model
+
+        print "Selection exists:", not(sm['plate-section-features'] is None)
+
+        self._view.get_stage().set_allow_logging(not(sm['plate-section-features'] is None)
+            and self._log.get_all_meta_filled())
  
     def _get_new_selection_origin(self, pos):
 
@@ -619,6 +636,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
     def set_in_log(self, widget, key):
 
         self._log.set(key, widget)
+        self.set_allow_logging()
 
 
 class Analysis_Transparency_Controller(Analysis_Image_Controller):
@@ -693,11 +711,12 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
 class Analysis_Log_Controller(controller_generic.Controller):
 
-    def __init__(self, general_model, parent_model):
+    def __init__(self, general_model, parent_model, window):
 
         model = model_analysis.copy_model(model_analysis.specific_log_book)
         self._parent_model = parent_model
         self._general_model = general_model
+        self._window = window
 
         super(Analysis_Log_Controller, self).__init__(model=model,
             view=view_analysis.Analysis_Stage_Log(self, general_model,
@@ -715,19 +734,18 @@ class Analysis_Log_Controller(controller_generic.Controller):
         m = self._model
         pm = self._parent_model
 
-        """
         print
 
         print 'plate-names', m['plate-names']
         print 'image', pm['image']
+        print 'plate', pm['plate']
         print 'current-strain', m['current-strain']
 
         print
-        """
         try:
 
             all_ok = m['plate-names'][pm['image']] is not None and \
-                len(m['plate-names'][pm['image']]) == pm['image'] + 1 and \
+                len(m['plate-names'][pm['image']]) == pm['plate'] + 1 and \
                 m['current-strain'] is not None
 
         except:
@@ -798,6 +816,102 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
             raise Unknown_Log_Request("The key '{0}' not recognized (item {1} lost)".format(key, item))
 
+    def save_data(self, widget):
+
+        file_name = view_analysis.save_file(
+            self._general_model['analysis-stage-log-save-dialog'],
+            multiple_files=False,
+            file_filter=self._general_model['analysis-stage-log-save-file-filter'])
+            
+        file_saved = False
+
+        if len(file_name) > 0:
+
+            file_name = file_name[0]
+
+            try:
+
+                fs = open(file_name, 'r')
+                file_exists = True
+                fs.close()
+
+            except:
+
+                file_exists = False
+
+            if file_exists:
+
+                file_exists = not(view_analysis.overwrite(
+                    self._general_model['analysis-stage-log-overwrite'],
+                    file_name, self._window))
+
+            
+
+            if file_exists == False:
+
+
+                fs = open(file_name, 'w')
+
+                sep = "\t"
+                quoute = '"'
+                pm = self._parent_model
+                m = self._model
+
+                for i, header in enumerate(pm['log-meta-features']):
+
+                    fs.write("{0}{1}{0}{2}".format(quoute, header, sep))
+
+                for i, compartment in enumerate(pm['log-interests'][0]):
+
+                    for j, measure in enumerate(pm['log-interests'][1]):
+
+                        fs.write("{0}{1}: {2}{0}".format(quoute,
+                            compartment, measure) )
+
+                        if j + 1 != len(pm['log-interests'][1]):
+
+                            fs.write(sep)
+
+                    if i + 1 != len(pm['log-interests'][0]):
+
+                        fs.write(sep)
+
+                fs.write("\n\r")
+ 
+                for i, measure in enumerate(m['measures']):
+
+                    for j, val in enumerate(measure):
+
+                        if type(val) == types.IntType or type(val) == types.FloatType:
+
+                            fs.write(str(val))
+
+                        else:
+
+                            fs.write("{0}{1}{0}".format(quoute, val))
+
+                        if j + 1 != len(measure):
+
+                            fs.write(sep)
+
+                    if i + 1  != len(m['measures']):
+
+                        fs.write("\n\r")
+
+                fs.close()
+
+                file_saved = True
+
+                view_analysis.dialog(self._window,
+                    self._general_model['analysis-stage-log-saved'],
+                    d_type='info')
+
+        if file_saved == False:
+
+            view_analysis.dialog(self._window,
+                self._general_model['analysis-stage-log-not-saved'],
+                d_type='warning')
+
     def handle_keypress(self, widget, event):
 
         if view_analysis.gtk.gdk.keyval_name(event.keyval) == "Delete":
@@ -809,15 +923,14 @@ class Analysis_Log_Controller(controller_generic.Controller):
         m = self._model
 
         im_path = stuff[0]
-        plate = stuff[1]
-        pos = stuff[2]
+        plate = int(stuff[1])
+        pos = eval(stuff[2])
 
         for i in xrange(len(m['measures'])):
 
             if im_path == m['measures'][i][0] and \
                 plate == m['measures'][i][2] and \
                 pos == m['measures'][i][4]:
-
 
                 del m['measures'][i]
 

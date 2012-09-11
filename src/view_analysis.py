@@ -63,6 +63,80 @@ def select_file(title, multiple_files=False, file_filter=None):
 
         return list()
 
+def save_file(title, multiple_files=False, file_filter=None):
+
+    d = gtk.FileChooserDialog(title=title, 
+        action=gtk.FILE_CHOOSER_ACTION_SAVE, 
+        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
+        gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+
+    d.set_select_multiple(multiple_files)
+
+    if file_filter is not None:
+
+        f = gtk.FileFilter()
+        f.set_name(file_filter['filter_name'])
+        for m, p in file_filter['mime_and_patterns']:
+            f.add_mime_type(m)
+            f.add_pattern(p)
+        d.add_filter(f)
+
+    res = d.run()
+    file_list = d.get_filenames()
+    d.destroy()
+
+    if res == gtk.RESPONSE_APPLY:
+
+        return file_list
+
+    else:
+
+        return list()
+
+
+def overwrite(text, file_name, window):
+
+    dialog = gtk.MessageDialog(window,
+                    gtk.DIALOG_DESTROY_WITH_PARENT,
+                    gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+                    text.format(file_name))
+
+    dialog.add_button(gtk.STOCK_NO, False)
+    dialog.add_button(gtk.STOCK_YES, True)
+
+    dialog.show_all()
+
+    resp = dialog.run()
+
+    dialog.destroy()
+
+    return resp
+
+def dialog(window, text, d_type="info"):
+
+    d_types = {'info': gtk.MESSAGE_INFO, 'error': gtk.MESSAGE_ERROR,
+        'warning': gtk.MESSAGE_WARNING, 'question': gtk.MESSAGE_QUESTION,
+        'other': gtk.MESSAGE_OTHER}
+
+    if d_type in d_types.keys():
+
+        d_type = d_types[d_type]
+
+    else:
+
+        d_type = gtk.MESSAGE_INFO
+
+    d = gtk.MessageDialog(window, gtk.DIALOG_DESTROY_WITH_PARENT,
+        gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+        text)
+
+
+    d.add_button(gtk.STOCK_OK, -1)
+
+    result = d.run()
+
+    d.destroy()
+
 #
 # CLASSES
 #
@@ -844,9 +918,11 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         #LOCK SIZE
         vbox = gtk.VBox(0, False)
-        lock_selection = gtk.CheckButton(
+        self.lock_selection = gtk.CheckButton(
             label=model['analysis-stage-image-plate-lock_selection'])
-        vbox.pack_start(lock_selection, False, False, PADDING_SMALL)
+        vbox.pack_start(self.lock_selection, False, False, PADDING_SMALL)
+        self.lock_selection.set_active(specific_model['lock-selection'] is None)
+        self.lock_selection.connect("clicked", specific_controller.set_selection_lock)
 
         hbox = gtk.HBox(0, False)
         label = gtk.Label(model['analysis-stage-image-plate-selection-width'])
@@ -876,9 +952,6 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         hbox.pack_start(self.selection_height, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
-        lock_selection.connect("clicked", specific_controller.set_selection_lock)
-        lock_selection.set_active(specific_model['lock-selection'] is not None)
-
         left_vbox.pack_start(vbox, False, False, PADDING_SMALL)
 
         #STRAIN
@@ -895,13 +968,14 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self.section_figure_ax = self.section_figure.gca()
 
         self.section_image_canvas = FigureCanvas(self.section_figure)
+        """
         self.section_image_canvas.mpl_connect('button_press_event',
             specific_controller.mouse_button_press)
         self.section_image_canvas.mpl_connect('button_release_event',
             specific_controller.mouse_button_release)
         self.section_image_canvas.mpl_connect('motion_notify_event',
             specific_controller.mouse_move)
-
+        """
         self.section_figure_ax.get_xaxis().set_visible(False)
         self.section_figure_ax.get_yaxis().set_visible(False)
 
@@ -915,13 +989,14 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self.analysis_figure_ax = self.analysis_figure.gca()
 
         self.analysis_image_canvas = FigureCanvas(self.analysis_figure)
+        """
         self.analysis_image_canvas.mpl_connect('button_press_event',
             specific_controller.mouse_button_press)
         self.analysis_image_canvas.mpl_connect('button_release_event',
             specific_controller.mouse_button_release)
         self.analysis_image_canvas.mpl_connect('motion_notify_event',
             specific_controller.mouse_move)
-
+        """
         self.analysis_figure_ax.get_xaxis().set_visible(False)
         self.analysis_figure_ax.get_yaxis().set_visible(False)
 
@@ -944,6 +1019,10 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
             specific_controller.set_selection(pos=None, wh=None)
 
         self.show_all()
+
+    def run_lock_select_check(self):
+
+        self.lock_selection.emit("clicked")
 
     def set_allow_logging(self, val):
 
@@ -1077,6 +1156,12 @@ class Analysis_Stage_Log(gtk.VBox):
 
         self.pack_start(scrolled_window, True, True, PADDING_SMALL)
         
+        button = gtk.Button(label=model['analysis-stage-log-save'])
+        hbox = gtk.HBox(0, False)
+        hbox.pack_end(button, False, False, PADDING_SMALL)
+        button.connect("clicked", self._controller.save_data)
+        self.pack_end(hbox, False, False, PADDING_SMALL)
+
         self.show_all()
 
     def add_data_row(self, measure):
@@ -1101,4 +1186,3 @@ class Analysis_Stage_Log(gtk.VBox):
 
                 if pos >= 0:
                     model.remove(iter)
-                    self.remove_patch(pos)
