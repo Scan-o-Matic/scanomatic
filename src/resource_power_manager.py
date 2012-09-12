@@ -160,7 +160,7 @@ class LAN_PM(object):
 
     def off(self):
 
-        self._login()
+        u = self._login()
 
         if u is None:
 

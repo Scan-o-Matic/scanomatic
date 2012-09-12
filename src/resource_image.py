@@ -246,7 +246,7 @@ class Image_Analysis():
 
         return fftconvolve(t_img, t_mrk, mode='same')
 
-    def get_best_location_2(self, conv_img, stencil_size, refine_hit=True):
+    def get_best_location(self, conv_img, stencil_size, refine_hit=True):
         """This whas hidden and should be taken care of, is it needed"""
 
         max_coord = np.where(conv_img == conv_img.max())
