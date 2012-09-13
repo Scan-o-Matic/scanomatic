@@ -234,9 +234,10 @@ class Image_Analysis():
 
         return hit
 
-    def get_convolution(self, img, marker, threshold=130):
+    def get_convolution(self, threshold=130):
 
-        t_img = (img > threshold).astype(np.int8) * 2 - 1
+        t_img = (self._img > threshold).astype(np.int8) * 2 - 1
+        marker = self._pattern_img
 
         if len(marker.shape) == 3:
 
@@ -301,8 +302,7 @@ class Image_Analysis():
 
         if self.get_loaded():
 
-            c1 = self.get_convolution(self._img, self._pattern_img,
-                        threshold=img_threshold)
+            c1 = self.get_convolution(threshold=img_threshold)
 
             m1 = np.array(self.get_best_locations(c1, self._pattern_img.shape,
                 markings, refine_hit=False))
