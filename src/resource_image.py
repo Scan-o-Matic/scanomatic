@@ -283,8 +283,7 @@ class Image_Analysis():
 
         return max_coord, conv_img
 
-    def get_best_locations(self, conv_img, stencil_size, n, refine_hit=True,
-                                            threshold=130):
+    def get_best_locations(self, conv_img, stencil_size, n, refine_hit=True):
 
         m_locations = []
         c_img = conv_img.copy()

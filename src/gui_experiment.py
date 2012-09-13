@@ -127,7 +127,8 @@ class Scanning_Experiment(gtk.Frame):
         if owner._config_file['LAN-PM'] == True:
 
             pm = power_manager.LAN_PM(owner._config_file['LAN-HOST'], 
-                self._scanner_id, owner._config_file['LAN-PASSWORD'])
+                self._scanner_id, owner._config_file['LAN-PASSWORD'],
+                MAC=owner._config_file['LAN-MAC'])
 
         else:
 

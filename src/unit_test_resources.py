@@ -19,7 +19,7 @@ class Test_Image(unittest.TestCase):
     im_dpi = 600
     test_target = './src/unittests/test_target.tiff'
     pattern_image_path = './src/images/orientation_marker_150dpi.png'
-    known_positions_600dpi = ((390, 144), (245, 5610), (2726, 3057))
+    known_positions_600dpi = ((379, 140), (242, 5596), (2714, 3037))
 
     def setUp(self):
 
@@ -46,6 +46,24 @@ class Test_Image(unittest.TestCase):
 
         self.assertEquals(conv.shape, self.ia._img.shape)
 
+    def test_find_best_hits(self):
+
+        conv = self.ia.get_convolution()
+        stencil_size = self.ia._pattern_img.shape
+
+        locs = self.ia.get_best_locations(conv, stencil_size, 3, refine_hit=True)
+
+        print locs
+
+        self.assertEqual(len(locs), 3)
+
+        conv = self.ia.get_convolution()
+
+        print locs
+
+        locs = self.ia.get_best_locations(conv, stencil_size, 3, refine_hit=False)
+
+        
     def test_find_pattern(self):
 
         D1, D2 = self.ia.find_pattern()

@@ -66,15 +66,22 @@
 
     The Scannomatic program is a python script.
 
-    It runs on Linux and Windows. See 1.4 for reason why Linux should be your
-    choice (it really alway should be). We run it on Ubuntu.
+    It runs on Linux (and maybe on Windows). See 1.4 for reason why Linux should be your
+    choice (it really alway should be). We run it on Ubuntu (dependencies are written as
+    their deb-names for ease of installing.
 
-    There are several dependencies for the script:
+    There are several dependencies for the scripts:
 
-        numpy
-        matplotlib
-        pygtk
-        PIL
+        python-numpy
+        python-scipy
+        python-matplotlib
+        python-pygtk2
+        python-imaging (PIL)
+
+    For networked PM:s you also need:
+
+        python-nmap
+        nmap
         
     Under windows you also need to install TWAIN.
 
