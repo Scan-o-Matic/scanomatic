@@ -29,16 +29,9 @@ class Test_Image(unittest.TestCase):
         self.ia = r_i.Image_Analysis(image=self.im,
                 pattern_image_path=self.pattern_image_path)
 
-    def load_image(self):
+    def test_load_image(self):
 
-        self.assertEqual(ia.get_loaded(), True)
-
-    def test_scale(self):
-
-        im = r_i.Quick_Scale_To_im(self.im_path, source_dpi=self.im_dpi,
-                target_dpi=150)
-
-        self.assertNotEqual(type(im), types.IntType)
+        self.assertEqual(self.ia.get_loaded(), True)
 
     def test_convolution(self):
 
@@ -53,15 +46,13 @@ class Test_Image(unittest.TestCase):
 
         locs = self.ia.get_best_locations(conv, stencil_size, 3, refine_hit=True)
 
-        print locs
-
         self.assertEqual(len(locs), 3)
 
         conv = self.ia.get_convolution()
 
-        print locs
-
         locs = self.ia.get_best_locations(conv, stencil_size, 3, refine_hit=False)
+
+        self.assertEqual(len(locs), 3)
 
         
     def test_find_pattern(self):
@@ -90,7 +81,7 @@ class Test_Image(unittest.TestCase):
                     break
 
         self.assertEqual(len(uniq(used_pos)), len(used_pos))
-        print best_pos
+
         ok_dist = [p <= 3 for p in best_pos]
 
         self.assertNotEqual(False in ok_dist, True)

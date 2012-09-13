@@ -14,15 +14,14 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from PIL import Image
 import sys
 import os
 import types
 from scipy.signal import fftconvolve
+from scipy.ndimage import zoom
 import numpy as np
 import logging
 import matplotlib.mlab as ml
-import matplotlib.image as plt_img
 import matplotlib.pyplot as plt
 
 #
@@ -56,7 +55,7 @@ def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
 
     try:
 
-        im = Image.open(source_path)
+        im = plt.imread(source_path)
 
     except:
 
@@ -64,66 +63,12 @@ def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
 
         return -1
 
-    small_im = im.resize((im.size[0] * target_dpi / source_dpi,
-                im.size[1] * target_dpi / source_dpi), Image.BILINEAR)
-
-    return small_im
+    return SciPy_zoom(im, source_dpi, target_dpi)
 
 
-def Quick_Invert_To_Tiff(source_path, target_path):
+def SciPy_zoom(im, source_dpi, target_dpi):
 
-    import PIL.ImageOps
-
-    try:
-
-        im = Image.open(source_path)
-
-    except:
-
-        logging.error("Could not open source")
-
-        return -1
-
-    inv_im = PIL.ImageOps.invert(im)
-
-    try:
-
-        inv_im.save(target_path)
-
-    except:
-
-        logging.error("Could not save inverted image at " + str(target_path))
-
-        return -1
-
-    return True
-
-
-def Quick_Rotate(source_path, target_path):
-
-    try:
-
-        im = Image.open(source_path)
-
-    except:
-
-        logging.error("Could not open source")
-
-        return -1
-
-    rot_im = im.rotate(90)
-
-    try:
-
-        rot_im.save(target_path)
-
-    except:
-
-        logging.error("Could not save inverted image at " + str(target_path))
-
-        return -1
-
-    return True
+    return zoom(im, target_dpi/float(source_dpi))
 
 
 class Image_Analysis():
@@ -140,7 +85,7 @@ class Image_Analysis():
 
             try:
 
-                pattern_img = plt_img.imread(pattern_image_path)
+                pattern_img = plt.imread(pattern_image_path)
 
             except:
 
@@ -165,7 +110,7 @@ class Image_Analysis():
 
             try:
 
-                self._img = plt_img.imread(path)
+                self._img = plt.imread(path)
 
             except:
 
@@ -178,7 +123,7 @@ class Image_Analysis():
 
                     self._img = self._img[:, :, 0]
 
-        if image:
+        if image is not None:
 
             if self._img:
 
@@ -196,7 +141,7 @@ class Image_Analysis():
 
         try:
 
-            self._img = plt_img.imread(path)
+            self._img = plt.imread(path)
 
         except:
 

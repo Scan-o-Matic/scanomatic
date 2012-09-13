@@ -24,8 +24,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from PIL import Image, ImageWin
-
 import pygtk
 pygtk.require('2.0')
 import logging
