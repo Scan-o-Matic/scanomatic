@@ -8,17 +8,25 @@ import types
 
 import resource_image as r_i
 
+def uniq(seq):
+    seen = set()
+    seen_add = seen.add
+    return [ x for x in seq if x not in seen and not seen_add(x)]
+
 class Test_Image(unittest.TestCase):
 
     im_path = './src/unittests/test_img.tiff'
     im_dpi = 600
     test_target = './src/unittests/test_target.tiff'
-    pattern_image_path = './src/images/orientation_marker_600dpi.png'
-
+    pattern_image_path = './src/images/orientation_marker_150dpi.png'
+    known_positions_600dpi = ((390, 144), (245, 5610), (2726, 3057))
 
     def setUp(self):
 
-        self.ia = r_i.Image_Analysis(path=self.im_path,
+        self.im = r_i.Quick_Scale_To_im(self.im_path, source_dpi=self.im_dpi,
+                target_dpi=150)
+
+        self.ia = r_i.Image_Analysis(image=self.im,
                 pattern_image_path=self.pattern_image_path)
 
     def load_image(self):
@@ -36,7 +44,7 @@ class Test_Image(unittest.TestCase):
 
         conv = self.ia.get_convolution()
 
-        self.assertEquals(conv.shape, ia._img.shape)
+        self.assertEquals(conv.shape, self.ia._img.shape)
 
     def test_find_pattern(self):
 
@@ -46,7 +54,30 @@ class Test_Image(unittest.TestCase):
         self.assertNotEqual(D2, None)
         self.assertEqual(len(D1), 3)
         self.assertEqual(len(D2), 3)
-        print D1, D2
+
+        known_positions_150dpi = [[v/4.0 for v in p] for p in self.known_positions_600dpi]
+        found_positions = zip(D1, D2)
+        best_pos = [None] * 3
+        used_pos = [None] * 3
+
+        for i, pos in enumerate(found_positions):
+
+            candidates = [max(abs(pos[0] - ref[0]), abs(pos[1] - ref[1]))
+                for ref in known_positions_150dpi]
+
+            best_pos[i] = min(candidates)
+            for j in xrange(3):
+                if candidates[j] == best_pos[i]:
+                    used_pos[i] = j
+                    break
+
+        self.assertEqual(len(uniq(used_pos)), len(used_pos))
+        print best_pos
+        ok_dist = [p <= 3 for p in best_pos]
+
+        self.assertNotEqual(False in ok_dist, True)
+
+
 if __name__ == "__main__":
 
     unittest.main()

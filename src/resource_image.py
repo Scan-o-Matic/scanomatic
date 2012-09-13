@@ -185,7 +185,7 @@ class Image_Analysis():
                 logging.warning("An image was already loaded (via path),"
                         " replaced by passed on image")
 
-            self._img = image
+            self._img = np.asarray(image)
 
         #if self._img != None:
         #    self.set_correct_rotation()
