@@ -132,7 +132,7 @@ class Gray_Scale(gtk.Frame):
 
         #RIGHT PLOT
         #grayscale_plot = self.grayscale_fig.get_subplot(122)
-        kodak_values = gs.get_kodak_values()
+        kodak_values = gs.get_target_values()
         if len(kodak_values) != len(gs._grayscale):
             self._grayscale=None
             self.DMS("GRAYSCALE GUI", 
