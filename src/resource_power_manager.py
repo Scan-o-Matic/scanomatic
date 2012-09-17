@@ -16,10 +16,8 @@ __status__ = "Development"
 import os
 import sys
 import time
-import urllib2
-from urllib import urlencode
-import nmap
 from subprocess import Popen, PIPE
+#FUTHER LAN-specific dependenies further down
 
 #
 # CLASSES
@@ -69,6 +67,11 @@ class LAN_PM(object):
 
     def __init__(self, host, socket, password, verify_name = False, pm_name="Server 1", MAC=None):
 
+        #LAN-specific dependencies
+        import urllib2
+        from urllib import urlencode
+        #Specific dependencies for finding device based on MAC further down
+
         self.name ="LAN connected PM"
         self._host = host
         self._MAC = MAC
@@ -96,6 +99,9 @@ class LAN_PM(object):
     
     def _find_ip(self):
         """Looks up the MAC-address supplied on the local router"""
+
+        #SEARCHING FOR IP SPECIFIC DEPENDENCIES
+        import nmap
 
         #PINGSCAN ALL IP:S
         nm = nmap.PortScanner()

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
+from matplotlib.pyplot import imread
 import numpy as np
 import sys
 import inspect
@@ -86,6 +87,38 @@ class Test_Image(unittest.TestCase):
 
         self.assertNotEqual(False in ok_dist, True)
 
+
+class Test_Image_Grayscale(unittest.TestCase):
+ 
+    im_path = './src/unittests/test_gs.tiff'
+    im = imread(im_path)
+
+    def setUp(self):
+    
+        self.ag = r_i.Analyse_Grayscale(target_type="Kodak", image=self.im,
+                    scale_factor=1.0, dpi=600)
+
+    def test_get_target_values(self):
+
+        targets = self.ag.get_target_values()
+
+        self.assertGreater(len(targets), 2)
+        self.assertEqual(len(targets), self.ag._grayscale_sections)
+
+    def test_get_grayscale_X(self):
+
+        gs_X = self.ag.get_grayscale_X()
+
+        self.assertNotEqual(gs_X, None)
+
+        self.assertEqual(len(gs_X), len(self.ag.get_target_values()))
+
+    def test_get_grayscale(self):
+
+        gs_pos, gs_val = self.ag.get_grayscale()
+
+        self.assertEqual(len(gs_pos), len(gs_val))
+        self.assertEqual(len(gs_pos), self.ag._grayscale_sections)
 
 if __name__ == "__main__":
 

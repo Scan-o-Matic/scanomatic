@@ -110,7 +110,7 @@ def make_entries(fs, file_list=None, extra_info=None, verbose=False, quiet=False
                 if grayscale != None:
                     gs = img_base.Analyse_Grayscale(image=grayscale)
                     write_dictionary['grayscale_values'] = gs._grayscale
-                    write_dictionary['grayscale_indices'] = gs.get_kodak_values()
+                    write_dictionary['grayscale_indices'] = gs.get_target_values()
                 else:
                     write_dictionary['grayscale_values'] = None
                     write_dictionary['grayscale_indices'] = None
