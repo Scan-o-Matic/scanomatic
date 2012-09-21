@@ -17,6 +17,10 @@ import os
 import sys
 import time
 from subprocess import Popen, PIPE
+#LAN-specific dependencies
+import urllib2
+from urllib import urlencode
+
 #FUTHER LAN-specific dependenies further down
 
 #
@@ -86,11 +90,6 @@ class LAN_PM(object):
     def __init__(self, host, socket, password, verify_name = False,
             pm_name="Server 1", MAC=None, DMS=None):
 
-        #LAN-specific dependencies
-        import urllib2
-        from urllib import urlencode
-        #Specific dependencies for finding device based on MAC further down
-
         self.name ="LAN connected PM"
         self._host = host
         self._MAC = MAC
@@ -114,11 +113,14 @@ class LAN_PM(object):
         if MAC is not None:
 
             res = self._find_ip()
-            self.DMS("LAN PM", "Fount {0}".format(res))
+            self.DMS("LAN PM", "Found {0}".format(res))
 
-            if res is not None:
-                self._host = res
+            self._host = res
     
+    def _DMS(self, *args, **kwargs):
+
+        pass
+
     def _find_ip(self):
         """Looks up the MAC-address supplied on the local router"""
 
@@ -126,17 +128,15 @@ class LAN_PM(object):
         import nmap
 
         #PINGSCAN ALL IP:S
-        self.DMS("LAN PM", "Scanning hosts")
+        self.DMS("LAN PM", "Scanning hosts (may take a while...)")
         nm = nmap.PortScanner()
-        nm_res = nm.scan(hosts="192.168.1.1-255", arguments="-sP")
+        nm_res = nm.scan(hosts="192.168.0.1-255", arguments="-sP")
 
 
         #FILTER OUT THOSE RESPONDING
         self.DMS("LAN PM", "Evaluating all alive hosts")
         up_ips = [k for k in nm_res['scan'] if nm_res['scan'][k]['status']['state'] == u'up']
 
-
-        
         #LET THE OS PING THEM AGAIN SO THEY END UP IN ARP
         self.DMS("LAN PM", "Scanning pinning alive hosts")
         for ip in up_ips:
@@ -209,6 +209,17 @@ class LAN_PM(object):
 
             self._logout()
 
+    def set_DMS(self, DMS):
+
+        if DMS is None:
+
+            self.DMS = self._DMS
+
+        else:
+
+            self.DMS = DMS
+
+
 class Power_Manager():
     """Interface that takes a PM-class and emits messages as well as introduces
     a power toggle switch"""
@@ -233,6 +244,7 @@ class Power_Manager():
             self._DMS("Power", "Power Manager has no device to talk to")
 
     def no_view(self, *args, **args2):
+
         pass
 
     def on(self):
