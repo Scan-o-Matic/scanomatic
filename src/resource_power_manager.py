@@ -30,6 +30,7 @@ class USB_PM(object):
         self._path = path
         self._on_string = on_string
         self._off_string = off_string
+        self.DMS = self._DMS
 
     def on(self):
         #print "*** Calling", self._path, self._on_string
@@ -38,6 +39,21 @@ class USB_PM(object):
     def off(self): 
         #print "*** Calling", self._path, self._off_string
         os.system(str(self._path)+' '+str(self._off_string))
+
+    def set_DMS(self, DMS):
+
+        if DMS is None:
+
+            self.DMS = self._DMS
+
+        else:
+
+            self.DMS = DMS
+
+    def _DMS(self, *args, **kwargs):
+
+        pass
+
 
 class USB_PM_LINUX(USB_PM):
     """Class for handling USB connected PM:s on linux."""
@@ -48,6 +64,7 @@ class USB_PM_LINUX(USB_PM):
         self._path = path
         self._on_string = "-o {0}".format(socket)
         self._off_string = "-f {0}".format(socket)
+        self.DMS = self._DMS
 
 class USB_PM_WIN(USB_PM):
     """Class for handling USB connected PM:s on windows."""
@@ -58,6 +75,7 @@ class USB_PM_WIN(USB_PM):
         self._path = path
         self._on_string = "-on -PW1 -Scanner{0}".format(socket)
         self._off_string = "-off -PW1 -Scanner{0}".format(socket)
+        self.DMS = self._DMS
 
 class LAN_PM(object):
     """Class for handling LAN-connected PM:s.
@@ -65,7 +83,8 @@ class LAN_PM(object):
     host may be None if MAC is supplied. 
     If no password is supplied, default password is used."""
 
-    def __init__(self, host, socket, password, verify_name = False, pm_name="Server 1", MAC=None):
+    def __init__(self, host, socket, password, verify_name = False,
+            pm_name="Server 1", MAC=None, DMS=None):
 
         #LAN-specific dependencies
         import urllib2
@@ -77,6 +96,8 @@ class LAN_PM(object):
         self._MAC = MAC
         self._socket = socket
         self._password = password is not None and password or "1"
+
+        self.set_DMS(DMS)
 
         self._pm_server_name = pm_name
         self._pm_server_str = "<h2>{0}".format(pm_name)
@@ -93,6 +114,7 @@ class LAN_PM(object):
         if MAC is not None:
 
             res = self._find_ip()
+            self.DMS("LAN PM", "Fount {0}".format(res))
 
             if res is not None:
                 self._host = res
@@ -104,21 +126,30 @@ class LAN_PM(object):
         import nmap
 
         #PINGSCAN ALL IP:S
+        self.DMS("LAN PM", "Scanning hosts")
         nm = nmap.PortScanner()
         nm_res = nm.scan(hosts="192.168.1.1-255", arguments="-sP")
 
+
         #FILTER OUT THOSE RESPONDING
+        self.DMS("LAN PM", "Evaluating all alive hosts")
         up_ips = [k for k in nm_res['scan'] if nm_res['scan'][k]['status']['state'] == u'up']
 
+
+        
         #LET THE OS PING THEM AGAIN SO THEY END UP IN ARP
+        self.DMS("LAN PM", "Scanning pinning alive hosts")
         for ip in up_ips:
 
             os.system('ping -c 1 {0}'.format(ip))
 
         #RUN ARP
+        self.DMS("LAN PM", "Searching arp")
         p = Popen(['arp','-n'], stdout=PIPE)
 
         #FILTER LIST ON ROWS WITH SOUGHT MAC-ADDRESS
+        self.DMS("LAN PM", "Keeping those with correct MAC-addr")
+
         res = [l for l in p.communicate()[0].split("\n") if self._MAC in l]
 
         
@@ -195,6 +226,9 @@ class Power_Manager():
         if pm is not None:
             self._DMS("Power", "Hooked up {0}, Socket {1}".format(pm.name, 
                 pm._socket))
+
+            self._pm.set_DMS(DMS)
+
         else:
             self._DMS("Power", "Power Manager has no device to talk to")
 
