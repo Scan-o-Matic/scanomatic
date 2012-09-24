@@ -10,6 +10,7 @@ import controller_generic
 import resource_os
 import analysis_wrapper as a_wrapper
 import resource_fixture
+import resource_image
 
 class Bad_Stage_Call(Exception): pass
 class No_View_Loaded(Exception): pass

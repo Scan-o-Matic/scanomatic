@@ -755,7 +755,8 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
     def set_progress(self, value):
 
-        if self.progress.get_fraction() > 0.97:
+        f = self.progress.get_fraction()
+        if 1.0 > self.progress.get_fraction() > 0.97:
 
             self.progress.pulse()
 
