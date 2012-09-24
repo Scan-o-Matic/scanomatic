@@ -15,6 +15,8 @@ class Bad_Stage_Call(Exception): pass
 class No_View_Loaded(Exception): pass
 class Not_Yet_Implemented(Exception): pass
 class Unknown_Log_Request(Exception): pass
+class UnDocumented_Error(Exception): pass
+
 
 class Analysis_Controller(controller_generic.Controller):
 
@@ -54,6 +56,7 @@ class Analysis_Controller(controller_generic.Controller):
                 user_data['view-function'](user_data['view-complete'])
                 print "Done!"
                 self.progress.release()
+                user_data['view'].run_release()
 
                 return False
 
@@ -79,6 +82,7 @@ class Analysis_Controller(controller_generic.Controller):
     def execute_fixture(self, widget, data):
 
         view, specific_model = data
+        view.run_lock()
 
         self.fixture = resource_fixture.Fixture_Settings(
             self._model['fixtures-path'],
@@ -87,12 +91,13 @@ class Analysis_Controller(controller_generic.Controller):
             specific_model['image']][0],
             markings=-1)
 
-        thread = threading.Thread(target=self.fixture.marker_analysis)
+        thread = threading.Thread(target=self.fixture.threaded)
 
         thread.start()
         self.progress.acquire()
 
         gobject.timeout_add(250, self._callback, {
+            'view': view,
             'view-function': view.set_progress,
             'view-data':None,
             'view-complete': 1.0,
@@ -105,12 +110,23 @@ class Analysis_Controller(controller_generic.Controller):
         list_fixtures = map(lambda x: x.split(extension,1)[0], [file for file\
             in os.listdir(directory) if file.lower().endswith(extension)])
 
-        return list_fixtures
-
+        return sorted(list_fixtures)
 
     def set_fixture(self, view, fixture_name, specific_model):
 
         specific_model['fixture-name'] = fixture_name
+
+    def set_grayscale(self, view):
+
+        if self.fixture is not None:
+
+            grayscale_im = self.fixture['image'].get_subsection(self.fixture['current'].get("grayscale_area"))
+            ag = resource_image.Analyse_Grayscale(target_type="Kodak", image=grayscale_im, scale_factor=1.0, dpi=600)
+            print ag.get_grayscale()
+
+        else:
+
+            raise UnDocumented_Error()
 
     def set_analysis_stage(self, widget, *args, **kwargs):
 

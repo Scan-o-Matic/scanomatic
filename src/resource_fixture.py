@@ -16,6 +16,7 @@ __status__ = "Development"
 #
 
 import os
+import time
 import sys
 import types
 import itertools
@@ -77,6 +78,25 @@ class Fixture_Settings(object):
         self.mark_Y = None
         self.A = None
 
+    def __getitem__(self, key):
+
+        if key in 'image':
+
+            return self.A
+
+        elif key in 'current':
+
+            return self.current_analysis_image_config
+
+        elif key in 'fixture':
+
+            return self.fixture_config_file
+ 
+    def threaded(self):
+
+        self.marker_analysis()
+        self.set_areas_positions()
+
     def get_markers_from_conf(self):
 
         X = []
@@ -125,22 +145,27 @@ class Fixture_Settings(object):
 
         if fixture_setup:
 
-            analysis_img = self._fixture_config_root + os.sep + \
+            analysis_im_path = self._fixture_config_root + os.sep + \
                     self.fixture_name + ".tiff"
 
             target_conf_file = self.fixture_config_file
 
         else:
 
-            analysis_img = os.getcwd() + os.sep + "tmp_analysis_img.tiff"
+            analysis_im_path = None
             target_conf_file = self.current_analysis_image_config
 
         if self.image_path:
 
-            img_base.Quick_Scale_To(self.image_path, analysis_img)
+            analysis_img = img_base.Quick_Scale_To_im(self.image_path)
+
+            if analysis_im_path is not None:
+
+                np.save(analysis_im_path, analysis_img)
+
             self.image_path = None  # Hackish makes sure scaling is done once
 
-        self.A = img_base.Image_Analysis(path=analysis_img,
+        self.A = img_base.Image_Analysis(image=analysis_img,
                     pattern_image_path=self.marking_path)
 
         msg = "Finding pattern"
@@ -159,6 +184,18 @@ class Fixture_Settings(object):
         self.mark_X = Xs
         self.mark_Y = Ys
 
+        if Xs is None or Ys is None:
+
+            if output_function is None:
+
+                logging.error("Fixture error: No markers found")
+
+            else:
+
+                output_function('Fixture error', "No markers found")
+
+            return None
+
         if len(Xs) == self.markings:
 
             for i in xrange(len(Xs)):
@@ -167,8 +204,6 @@ class Fixture_Settings(object):
 
             target_conf_file.set("marking_center_of_mass",
                 (Xs.mean(), Ys.mean()))
-
-        msg = "Showing image '{0}'".format(analysis_img)
 
         if output_function is None:
 
@@ -179,7 +214,6 @@ class Fixture_Settings(object):
             output_function('Fixture calibration', msg, 'A',
                         debug_level='debug')
 
-        return analysis_img
 
     def get_fixture_markings(self):
 

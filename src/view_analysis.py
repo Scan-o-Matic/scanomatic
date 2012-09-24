@@ -739,11 +739,29 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         self.progress = gtk.ProgressBar()
         hbox.pack_start(self.progress, False, False, PADDING_SMALL)
         
+        hbox = gtk.HBox(0, False)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+
         self.show_all()
+
+    def run_lock(self):
+
+        self.run_button.set_sensitive(False)
+
+    def run_release(self):
+
+        self.run_button.set_sensitive(True)
+        self._controller.set_grayscale(self)
 
     def set_progress(self, value):
 
-        self.progress.set_fraction(float(value))
+        if self.progress.get_fraction() > 0.97:
+
+            self.progress.pulse()
+
+        else:
+
+            self.progress.set_fraction(float(value))
 
     def set_fixtures_from_model(self, keep_name=True):
 
