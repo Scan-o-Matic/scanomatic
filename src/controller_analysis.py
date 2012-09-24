@@ -1,11 +1,15 @@
 import os
 import types
+import gobject
+import threading
+import math
 
 import model_analysis
 import view_analysis
 import controller_generic
 import resource_os
 import analysis_wrapper as a_wrapper
+import resource_fixture
 
 class Bad_Stage_Call(Exception): pass
 class No_View_Loaded(Exception): pass
@@ -26,6 +30,9 @@ class Analysis_Controller(controller_generic.Controller):
         self.transparency = Analysis_Transparency_Controller(view=self._view,
                                 model=self._model)
 
+        self.progress = threading.Lock()
+        self.fixture = None
+
     def _get_default_view(self):
 
         return view_analysis.Analysis(self, self._model)
@@ -33,6 +40,77 @@ class Analysis_Controller(controller_generic.Controller):
     def _get_default_model(self):
 
         return model_analysis.model
+
+    def _callback(self, user_data):
+
+        if user_data is not None:
+
+            if user_data['view-data'] is None and 'cb' not in user_data:
+
+                user_data['cb'] = 9
+
+            if user_data['thread'].is_alive() == False:
+
+                user_data['view-function'](user_data['view-complete'])
+                print "Done!"
+                self.progress.release()
+
+                return False
+
+            else:
+
+                if user_data['view-data'] is None:
+
+                    user_data['cb'] += 1
+                    user_data['view-function'](1 - math.exp(-0.01 * user_data['cb']))
+
+                else:
+
+                    user_data['view-function'](user_data['view-data'])
+
+        if user_data is None:
+
+            print "LOST!"
+            return False
+
+        gobject.timeout_add(250, self._callback, user_data)
+        return None
+
+    def execute_fixture(self, widget, data):
+
+        view, specific_model = data
+
+        self.fixture = resource_fixture.Fixture_Settings(
+            self._model['fixtures-path'],
+            fixture=specific_model["fixture-name"],
+            image=specific_model['images-list-model'][
+            specific_model['image']][0],
+            markings=-1)
+
+        thread = threading.Thread(target=self.fixture.marker_analysis)
+
+        thread.start()
+        self.progress.acquire()
+
+        gobject.timeout_add(250, self._callback, {
+            'view-function': view.set_progress,
+            'view-data':None,
+            'view-complete': 1.0,
+            'thread': thread})
+
+    def get_available_fixtures(self):
+
+        directory = self._model['fixtures-path']
+        extension = ".config"
+        list_fixtures = map(lambda x: x.split(extension,1)[0], [file for file\
+            in os.listdir(directory) if file.lower().endswith(extension)])
+
+        return list_fixtures
+
+
+    def set_fixture(self, view, fixture_name, specific_model):
+
+        specific_model['fixture-name'] = fixture_name
 
     def set_analysis_stage(self, widget, *args, **kwargs):
 
@@ -90,36 +168,46 @@ class Analysis_Controller(controller_generic.Controller):
 
                 if specific_model['mode'] == 'transparency':
 
+                    specific_model['image'] += 1
+
+                    if specific_model['image'] >= len(specific_model['images-list-model']):
+
+                        raise Bad_Stage_Call("Image position overflow")
+
                     if specific_model['fixture']:
 
-                        view_analysis.dialog(self._window,
-                            self._model['not-implemented'],
-                            d_type='warning')
+                        specific_model['stage'] = 'auto-calibration'
+                        specific_model['plate'] = -1
 
-                        raise Not_Yet_Implemented((stage_call, ('fixture', specific_model['fixture'])))
+                        model['fixtures'] = self.get_available_fixtures()
+
+                        view.set_top(
+                            view_analysis.Analysis_Top_Auto_Norm_and_Section(
+                            self, model,
+                            specific_model,
+                            self.transparency))
+
+                        view.set_stage(
+                            view_analysis.Analysis_Stage_Auto_Norm_and_Section(
+                            self, model,
+                            specific_model,
+                            self.transparency))
 
                     else:
 
                         specific_model['stage'] = 'manual-calibration'
-                        specific_model['image'] += 1
 
-                        if specific_model['image'] >= len(specific_model['images-list-model']):
+                        view.set_top(
+                            view_analysis.Analysis_Top_Image_Normalisation(
+                            self, model,
+                            specific_model,
+                            self.transparency))
 
-                            raise Bad_Stage_Call("Image position overflow")
-
-                        else:
-
-                            view.set_top(
-                                view_analysis.Analysis_Top_Image_Normalisation(
-                                self, model,
-                                specific_model,
-                                self.transparency))
-
-                            view.set_stage(
-                                view_analysis.Analysis_Stage_Image_Norm_Manual(
-                                self, model,
-                                specific_model,
-                                self.transparency))
+                        view.set_stage(
+                            view_analysis.Analysis_Stage_Image_Norm_Manual(
+                            self, model,
+                            specific_model,
+                            self.transparency))
 
                 elif specific_model['mode'] == 'colour':
 

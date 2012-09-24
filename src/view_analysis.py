@@ -286,6 +286,17 @@ class Analysis_Top_Image_Sectioning(Analysis_Top_Image_Generic):
             next_stage_signal)
 
 
+class Analysis_Top_Auto_Norm_and_Section(Analysis_Top_Image_Generic):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        next_text = model['analysis-top-auto-norm-and-section-next']
+        next_stage_signal = 'plate'
+
+        super(Analysis_Top_Auto_Norm_and_Section, self).__init__(controller,
+            model, specific_model, specific_controller, next_text,
+            next_stage_signal)
+
 
 class Analysis_Top_Image_Normalisation(Analysis_Top_Image_Generic):
 
@@ -681,6 +692,111 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
             if iter is not None:
 
                 model.remove(iter)
+
+class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model, specific_controller):
+
+        super(Analysis_Stage_Auto_Norm_and_Section, self).__init__(0, False)
+
+        self._controller = controller
+        self._specific_controller = specific_controller
+        self._model = model
+        self._specific_model = specific_model
+
+        hbox = gtk.HBox(0, False)
+        self.pack_start(hbox, False, False, PADDING_LARGE)
+
+        label = gtk.Label()
+        label.set_markup(model['analysis-stage-auto-norm-and-section-title'])
+        hbox.pack_start(label, False, False, PADDING_LARGE)
+
+        hbox = gtk.HBox(0, False)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+
+        label = gtk.Label(model['analysis-stage-auto-norm-and-section-fixture'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+
+        hbox = gtk.HBox(0, False)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+
+        self.fixture = gtk.combo_box_new_text()
+        hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
+        self._fixture_signal = self.fixture.connect("changed",
+                self._pre_process_fixture_signal)
+        self.run_button = gtk.Button()
+        self.run_button.set_label(model['analysis-stage-auto-norm-and-section-run'])
+        self.run_button.connect("clicked", controller.execute_fixture,
+            (self, specific_model))
+        self.run_button.set_sensitive(False)
+        hbox.pack_start(self.run_button, False, False, PADDING_SMALL)
+
+        self.set_fixtures_from_model()
+
+        hbox = gtk.HBox(0, False)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+
+        self.progress = gtk.ProgressBar()
+        hbox.pack_start(self.progress, False, False, PADDING_SMALL)
+        
+        self.show_all()
+
+    def set_progress(self, value):
+
+        self.progress.set_fraction(float(value))
+
+    def set_fixtures_from_model(self, keep_name=True):
+
+        self.fixture.handler_block(self._fixture_signal)
+
+        active_name = None
+
+        if keep_name and len(self.fixture.get_model()) > 0:
+
+            active_name = self.fixture.get_model()[
+                        self.fixture.get_active()][0]
+
+        while len(self.fixture.get_model()) > 0:
+
+            self.fixture.remove_text(0)
+
+        for f_name in self._model['fixtures']:
+
+            self.fixture.append_text(f_name.replace("_"," ").capitalize())
+
+        if keep_name:
+
+            if active_name is None:
+
+                self.fixture.set_active(-1)
+
+            else:
+
+                model = self.fixture.get_model()
+
+                for row in xrange(len(model)):
+
+                    if model[row][0] == active_name:
+
+                        self.fixture.set_active(row)
+                        break
+
+        self.fixture.handler_unblock(self._fixture_signal)
+        
+    def _pre_process_fixture_signal(self, widget, *args, **kwargs):
+
+        active = self.fixture.get_active()
+
+        self.run_button.set_sensitive(active >= 0)
+
+        if active < 0:
+            active_text = None
+        else:
+            active_text = self.fixture.get_model()[active][0]
+            active_text = active_text.lower().replace(" ", "_")
+
+        self._controller.set_fixture(self, active_text, self._specific_model)
+
 
 class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
 

@@ -1,4 +1,5 @@
 import copy
+import os
 
 #
 # FUNCTIONS
@@ -197,6 +198,16 @@ in the same order and watch the magic!</i>""",
 'analysis-stage-log-saved': 'Your file has been saved!',
 'analysis-stage-log-not-saved': "Your file wasn't saved",
 
+#ANALYSIS TOP AUTO NORMALISATION AND SECTIONING
+'analysis-top-auto-norm-and-section-next': 'Plate 1',
+
+#ANALYSIS STAGE AUTO NORMALISATION AND SECTIONING
+'analysis-stage-auto-norm-and-section-title':
+"<span weight='heavy' size='large'>Automatic Normalisation and Sectioning</span>",
+
+'analysis-stage-auto-norm-and-section-fixture': 'Fixture:',
+'analysis-stage-auto-norm-and-section-run': 'Run it!',
+
 #GENERIC
 'pinning-matrices': {'A: 8 x 12 (96)': (8, 12), 
                     'B: 16 x 24 (384)': (16, 24),
@@ -204,6 +215,8 @@ in the same order and watch the magic!</i>""",
                     'D: 64 x 96 (6144)': (64, 96),
                     '--Empty--': None},
 
+'fixtures': list(),
+'fixtures-path': 'src{0}config{0}fixtures{0}'.format(os.sep),
 'not-implemented': "That feature hasn't been implemented yet!"
 
 }
@@ -211,6 +224,7 @@ in the same order and watch the magic!</i>""",
 specific_transparency = {
 'mode': 'transparency',
 'fixture': True,
+'fixture-name': None,
 'stage': None,
 'manual-calibration-positions': None,
 'manual-calibration-values': None,

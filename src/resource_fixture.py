@@ -38,12 +38,12 @@ class Fixture_Settings(object):
         self.fixture_name = fixture
         self._fixture_config_root = fixture_config_root
 
-        self.conf_location = self._fixture_config_root + os.sep + \
+        fixture_file = self._fixture_config_root + os.sep + \
                     self.fixture_name + ".config"
 
-        self.fixture_config_file = conf.Config_File(self.conf_location)
+        self.fixture_config_file = conf.Config_File(fixture_file)
 
-        if image != None:
+        if image is not None:
 
             self.image_path = image
 
@@ -51,13 +51,13 @@ class Fixture_Settings(object):
 
             self.image_path = None
 
-        self.conf_location = self._fixture_config_root + os.sep + \
+        fixture_file = self._fixture_config_root + os.sep + \
                         "current_image.tmp_config"
 
         self.current_analysis_image_config = conf.Config_File(
-                        self.conf_location)
+                        fixture_file)
 
-        if marking != None:
+        if marking is not None:
 
             self.marking_path = marking
 
