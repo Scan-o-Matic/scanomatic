@@ -44,6 +44,7 @@ class Fixture_Settings(object):
 
         self.fixture_config_file = conf.Config_File(fixture_file)
 
+        self.A_is_scaled = False
         if image is not None:
 
             self.image_path = image
@@ -155,17 +156,18 @@ class Fixture_Settings(object):
             analysis_im_path = None
             target_conf_file = self.current_analysis_image_config
 
-        if self.image_path:
+        if self.A_is_scaled == False:
 
+            self.A_is_scaled = True
             analysis_img = img_base.Quick_Scale_To_im(self.image_path)
 
             if analysis_im_path is not None:
 
                 np.save(analysis_im_path, analysis_img)
 
-            self.image_path = None  # Hackish makes sure scaling is done once
-
-        self.A = img_base.Image_Analysis(image=analysis_img,
+        self.A = img_base.Image_Analysis(
+                    path=self.image_path,
+                    image=analysis_img,
                     pattern_image_path=self.marking_path)
 
         msg = "Finding pattern"

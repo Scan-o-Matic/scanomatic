@@ -775,11 +775,11 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
     def run_release(self):
 
         self.run_button.set_sensitive(True)
-        self._specific_controller.set_grayscale(self)
 
     def set_progress(self, value):
 
         f = self.progress.get_fraction()
+
         if 1.0 > self.progress.get_fraction() > 0.97:
 
             self.progress.pulse()
@@ -848,6 +848,10 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         if val:
 
             self._specific_controller.get_previously_detected(self, self._specific_model)
+
+        else:
+
+            self._specific_controller.set_no_auto_norm()
 
 class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
 

@@ -32,7 +32,8 @@ class Analysis_Controller(controller_generic.Controller):
                                 model=self._model)
 
         self.transparency = Analysis_Transparency_Controller(view=self._view,
-                                model=self._model)
+                                model=self._model,
+                                parent=self)
 
         self.progress = threading.Lock()
         self.fixture = None
@@ -56,9 +57,12 @@ class Analysis_Controller(controller_generic.Controller):
             if user_data['thread'].is_alive() == False:
 
                 user_data['view-function'](user_data['view-complete'])
-                print "Done!"
                 self.progress.release()
                 user_data['view'].run_release()
+
+                if 'complete-function' in user_data:
+
+                    user_data['complete-function']()
 
                 return False
 
@@ -279,11 +283,12 @@ class Analysis_Controller(controller_generic.Controller):
 
 class Analysis_Image_Controller(controller_generic.Controller):
 
-    def __init__(self, view=None, model=None):
+    def __init__(self, view=None, model=None, parent=None):
 
         super(Analysis_Image_Controller, self).__init__(view=view,
                 model=model)
 
+        self._parent = parent
         self._specific_model = None
         self._log = None
 
@@ -314,14 +319,20 @@ class Analysis_Image_Controller(controller_generic.Controller):
         thread = threading.Thread(target=self.fixture.threaded)
 
         thread.start()
-        self.progress.acquire()
+        self._parent.progress.acquire()
 
-        gobject.timeout_add(250, self._callback, {
+        gobject.timeout_add(250, self._parent._callback, {
             'view': view,
             'view-function': view.set_progress,
             'view-data':None,
             'view-complete': 1.0,
+            'complete-function': self.set_grayscale,
             'thread': thread})
+
+    def _get_scale_slice(self, slice):
+
+        data_sorted = zip(*map(sorted, zip(*slice)))
+        return [[4*p[1], 4*p[0]] for p in data_sorted]
 
     def get_previously_detected(self, view, specific_model):
 
@@ -360,9 +371,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             while 'plate_{0}_area'.format(i) in data:
 
-                data_sorted =  zip(*map(sorted, zip(*data['plate_{0}_area'.format(i)])))
-                scale_sorted = [[4*p[1], 4*p[0]] for p in data_sorted]
-                plate_coords[i] = scale_sorted
+                plate_coords[i] = self._get_scale_slice(
+                    data['plate_{0}_area'.format(i)])
                 i += 1
 
             specific_model['plate-coords'] = plate_coords
@@ -370,7 +380,12 @@ class Analysis_Image_Controller(controller_generic.Controller):
             self.set_auto_grayscale(data['grayscale_values'],
                 data[gs_i_key])
 
-            self.get_view().get_top().set_allow_next(True)
+
+    def set_no_auto_norm(self):
+
+        sm = self._specific_model
+        del sm['auto-transpose'][sm['image']]
+        self.get_view().get_top().set_allow_next(False)
 
     def set_fixture(self, view, fixture_name, specific_model):
 
@@ -385,17 +400,40 @@ class Analysis_Image_Controller(controller_generic.Controller):
             gs_values=vals,
             gs_indices=indices)
             
-    def set_grayscale(self, view):
+        self.get_view().get_top().set_allow_next(True)
+
+    def set_grayscale(self):
 
         if self.fixture is not None:
 
-            grayscale_im = self.fixture['image'].get_subsection(
+            self.fixture['image'].load_other_size()
+
+            gs_a = self._get_scale_slice(
                 self.fixture['current'].get("grayscale_area"))
+
+            grayscale_im = self.fixture['image'].get_subsection(gs_a)
 
             ag = resource_image.Analyse_Grayscale(target_type="Kodak",
                 image=grayscale_im, scale_factor=1.0, dpi=600)
 
-            print ag.get_grayscale()
+            gs_pos, gs = ag.get_grayscale()
+            gs_targets = ag.get_target_values()
+
+            self.set_auto_grayscale(gs, gs_targets) 
+
+            pl = self.fixture.get_plates_list()
+
+            plate_coords = dict()
+            if pl is not None:
+
+                imd = self.fixture['current']
+ 
+                for i, p in enumerate(pl):
+
+                    if p is not None:
+                        plate_coords[i] = self._get_scale_slice(imd.get(p))
+
+            self._specific_model['plate-coords'] = plate_coords
 
         else:
 
@@ -828,10 +866,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
 class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
-    def __init__(self, view=None, model=None):
+    def __init__(self, view=None, model=None, parent=None):
 
         super(Analysis_Transparency_Controller, self).__init__(view=view,
-                model=model)
+                model=model, parent=parent)
 
     def build_blank_specific_model(self):
 

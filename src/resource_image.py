@@ -20,7 +20,6 @@ import types
 from scipy.ndimage import zoom
 from scipy.signal import fftconvolve
 from scipy.optimize import fsolve
-from scipy.ndimage import zoom
 import numpy as np
 import logging
 import matplotlib.pyplot as plt
@@ -52,7 +51,8 @@ def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
         return -1
 
 
-def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
+def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150,
+    scale=None):
 
     try:
 
@@ -64,7 +64,8 @@ def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
 
         return -1
 
-    scale = target_dpi / float(source_dpi)
+    if scale is None:
+        scale = target_dpi / float(source_dpi)
 
     small_im = zoom(im, scale, order=1)
  
@@ -189,6 +190,7 @@ class Image_Analysis():
 
     def __init__(self, path=None, image=None, pattern_image_path=None):
 
+        self._path = path
         self._img = None
         self._pattern_img = None
         self._load_error = None
@@ -220,38 +222,43 @@ class Image_Analysis():
                 #self._pattern_img[4:self._pattern_img.shape[0]-4,4:
                         #self._pattern_img.shape[1]-4] = pattern_img
 
-        if path:
-
-            try:
-
-                self._img = plt.imread(path)
-
-            except:
-
-                logging.error("Could not open image at " + str(path))
-                self._load_error = True
-
-            if self._load_error != True:
-
-                if len(self._img.shape) > 2:
-
-                    self._img = self._img[:, :, 0]
-
         if image is not None:
 
-            if self._img:
-
-                logging.warning("An image was already loaded (via path),"
-                        " replaced by passed on image")
 
             self._img = np.asarray(image)
 
-        #if self._img != None:
-        #    self.set_correct_rotation()
+        if path:
 
-    def load_other_size(self, path, conversion_factor):
+            if not(self._img is None):
+
+                logging.warning("Won't load from path since actually submitted")
+
+            else:
+
+                try:
+
+                    self._img = plt.imread(path)
+
+                except:
+
+                    logging.error("Could not open image at " + str(path))
+                    self._load_error = True
+
+
+        if self._load_error != True:
+
+            if len(self._img.shape) > 2:
+
+                self._img = self._img[:, :, 0]
+
+
+    def load_other_size(self, path=None, conversion_factor=1.0):
 
         self._conversion_factor = float(conversion_factor)
+
+        if path is None:
+
+            path = self._path
 
         try:
 
@@ -259,7 +266,7 @@ class Image_Analysis():
 
         except:
 
-            logging.error("Could not open image at " + str(path))
+            logging.error("Could not reload image at " + str(path))
             self._load_error = True
 
         if self._load_error != True:
@@ -267,6 +274,11 @@ class Image_Analysis():
             if len(self._img.shape) > 2:
 
                 self._img = self._img[:, :, 0]
+
+        if conversion_factor != 1.0:
+
+            self._img = Quick_Scale_To_im(conversion_factor)
+
 
     def get_hit_refined(self, hit, conv_img):
 
@@ -379,6 +391,7 @@ class Image_Analysis():
 
         if self.get_loaded() and section is not None:
 
+            """
             if section[0][1] > section[1][1]:
 
                 upper = section[1][1]
@@ -398,15 +411,21 @@ class Image_Analysis():
 
                 left = section[0][0]
                 right = section[1][0]
+            """
+
+            section = zip(*map(sorted, zip(*section)))
 
             try:
 
                 subsection = self._img[
-                    int(left * self._conversion_factor):
+                    section[0][0]: section[1][0],
+                    section[0][1]: section[1][1]]
+                """
+                    left * self._conversion_factor):
                     int(right * self._conversion_factor),
                     int(upper * self._conversion_factor):
                     int(lower * self._conversion_factor)]
-
+                """
             except:
 
                 subsection = None

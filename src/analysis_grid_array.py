@@ -415,8 +415,6 @@ class Grid_Array():
                 os.path.dirname(os.path.abspath(__file__)) + \
                 os.sep + "config" + os.sep + "calibration.polynomials"
 
-        print self._config_calibration_polynomial
-
         try:
 
             fs = open(self._config_calibration_polynomial, 'r')
@@ -428,7 +426,6 @@ class Grid_Array():
 
             return None
 
-        print "Pass"
         polynomial_coeffs = []
 
         for l in fs:
