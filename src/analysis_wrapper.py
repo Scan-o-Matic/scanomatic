@@ -27,10 +27,19 @@ import analysis_grid_cell as grid_cell
 import analysis as project
 
 #
+# Globals
+#
+
+_ga = grid_array.Grid_Array(None, (0,) ,None)
+POLY = _ga.get_polynomial_coeffs()
+
+
+#
 # Functions
 #
 
-def get_grid_cell_from_array(arr, fallback_detection=False, center=None, radius=None):
+def get_grid_cell_from_array(arr, fallback_detection=False, center=None,
+        radius=None, invoke_transform=False):
     """
         get_grid_cell_from_array is a convinience function to pass a section
         of an image as argument and make the entire array be the grid_cell.
@@ -57,9 +66,19 @@ def get_grid_cell_from_array(arr, fallback_detection=False, center=None, radius=
 
     """
 
+    global POLY
+
+    if invoke_transform:
+
+        poly = POLY
+
+    else:
+
+        poly = None
+
     settings = {'data_source': arr, 'no_analysis': True, 'no_detect': True,
         'blob_detect': 'default', 'remember_filter': False,
-        'polynomial_coeffs':None}
+        'polynomial_coeffs':poly}
 
     cell = grid_cell.Grid_Cell(Log_Parent(), (0,0,0), grid_cell_settings=settings)
 

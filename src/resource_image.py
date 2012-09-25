@@ -70,15 +70,18 @@ def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
  
     return small_im
 
+
 class Image_Transpose(object):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
 
         #So that p3 won't fail
         self.gs_a = 0
         self.gs_b = 0
         self.gs_c = 1
         self.gs_d = 0
+
+        self.set_matrix(*args, **kwargs)
 
     def _get_p3(self, x):
         """
@@ -161,7 +164,7 @@ class Image_Transpose(object):
 
             tf_matrix = []
 
-            for y in range(y_range[0], y_range[1] + 1):
+            for y in range(y_max + 1):
 
                 #Do something real here
                 #The caluclated value shoud be a float

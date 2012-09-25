@@ -236,23 +236,26 @@ class Analysis_Controller(controller_generic.Controller):
                     coords = specific_model['plate-coords'][specific_model['plate']]
                     image = specific_model['image']
                     
-                    if image in specific_model['auto-calibration-values']:
+                    if image in specific_model['auto-transpose']:
 
-                        image_transpose = resource_image.Image_Transpose()
-                        image_transpose.set_matrix(
-                            gs_values=specific_model['auto-calibration-values'][image],
-                            gs_indices=specific_model['auto-calibration-indices'][image])
 
-                        specific_model['plate-im-array'] = image_transpose.get_transposed_im(
+                        specific_model['plate-im-array'] = \
+                            specific_model['auto-transpose'][image]\
+                            .get_transposed_im(
                             specific_model['image-array'][
                             coords[0][1]: coords[1][1],
                             coords[0][0]: coords[1][0]])
 
+                        specific_model['plate-is-normed'] = True
+
                     else:
+
                         specific_model['plate-im-array'] = \
                             specific_model['image-array'][
                             coords[0][1]: coords[1][1],
                             coords[0][0]: coords[1][0]]
+
+                        specific_model['plate-is-normed'] = False
 
                     view.set_top(
                         view_analysis.Analysis_Top_Image_Plate(
@@ -377,8 +380,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         sm = self._specific_model
 
-        sm['auto-calibration-values'][sm['image']] = vals
-        sm['auto-calibration-indices'][sm['image']] = indices
+        sm['auto-transpose'][sm['image']] = \
+            resource_image.Image_Transpose(
+            gs_values=vals,
+            gs_indices=indices)
             
     def set_grayscale(self, view):
 
@@ -673,9 +678,11 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 pos2 = [p + s for p, s in zip(pos1, wh)]
 
                 sm['plate-section-im-array'] = sm['plate-im-array'][pos1[1]:pos2[1], pos1[0]:pos2[0]]
+
                 sm['plate-section-grid-cell'] = a_wrapper.get_grid_cell_from_array(
                             sm['plate-section-im-array'], center=None,
-                            radius=None)
+                            radius=None,
+                            invoke_transform=sm['plate-is-normed'])
 
                 sm['plate-section-features'] = sm['plate-section-grid-cell'].get_analysis()
 

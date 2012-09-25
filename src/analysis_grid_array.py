@@ -409,34 +409,42 @@ class Grid_Array():
                             self._parent._program_config_root +\
                             os.sep + "calibration.polynomials"
 
-            try:
+        else:
 
-                fs = open(self._config_calibration_polynomial, 'r')
+            self._config_calibration_polynomial = \
+                os.path.dirname(os.path.abspath(__file__)) + \
+                os.sep + "config" + os.sep + "calibration.polynomials"
 
-            except:
+        print self._config_calibration_polynomial
 
-                self.logger.critical("GRID ARRAY, " + \
-                            "Cannot open polynomial info file")
+        try:
 
-                return None
+            fs = open(self._config_calibration_polynomial, 'r')
 
+        except:
 
-            polynomial_coeffs = []
+            self.logger.critical("GRID ARRAY, " + \
+                        "Cannot open polynomial info file")
 
-            for l in fs:
+            return None
 
-                l_data = eval(l.strip("\n"))
+        print "Pass"
+        polynomial_coeffs = []
 
-                if type(l_data) == types.ListType:
+        for l in fs:
 
-                    polynomial_coeffs = l_data[-1]
-                    break
+            l_data = eval(l.strip("\n"))
 
-            fs.close()
+            if type(l_data) == types.ListType:
 
-            if polynomial_coeffs == []:
+                polynomial_coeffs = l_data[-1]
+                break
 
-                polynomial_coeffs = None
+        fs.close()
+
+        if polynomial_coeffs == []:
+
+            polynomial_coeffs = None
 
         return polynomial_coeffs
 
