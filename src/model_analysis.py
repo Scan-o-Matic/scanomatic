@@ -205,7 +205,8 @@ in the same order and watch the magic!</i>""",
 'analysis-stage-auto-norm-and-section-title':
 "<span weight='heavy' size='large'>Automatic Normalisation and Sectioning</span>",
 
-'analysis-stage-auto-norm-and-section-fixture': 'Fixture:',
+'analysis-stage-auto-norm-and-section-file': 'Use already detected',
+'analysis-stage-auto-norm-and-section-fixture': 'Detect:',
 'analysis-stage-auto-norm-and-section-run': 'Run it!',
 
 #GENERIC
@@ -228,6 +229,8 @@ specific_transparency = {
 'stage': None,
 'manual-calibration-positions': None,
 'manual-calibration-values': None,
+'auto-calibration-values': dict(),
+'auto-calibration-indices': dict(),
 'images-list-model': None,
 'image': -1,
 'plate': -1,

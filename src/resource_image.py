@@ -19,6 +19,7 @@ import os
 import types
 from scipy.ndimage import zoom
 from scipy.signal import fftconvolve
+from scipy.optimize import fsolve
 from scipy.ndimage import zoom
 import numpy as np
 import logging
@@ -68,6 +69,117 @@ def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150):
     small_im = zoom(im, scale, order=1)
  
     return small_im
+
+class Image_Transpose(object):
+
+    def __init__(self):
+
+        #So that p3 won't fail
+        self.gs_a = 0
+        self.gs_b = 0
+        self.gs_c = 1
+        self.gs_d = 0
+
+    def _get_p3(self, x):
+        """
+            returns the solution to:
+
+                self.gs_a * x^3 + self.gs_b * x^2 + self.gs_c * x + self.gs_d
+
+        """
+
+        p = self.gs_a * (x ** 3) + self.gs_b * (x ** 2) + \
+                self.gs_c * x + self.gs_d
+
+        return p
+
+    def set_matrix(self, gs_values=None, gs_fit=None,
+                gs_indices=None, y_max=255, fix_axis=False):
+        """get_transformation_matrix takes an coefficient array of a
+        polynomial fit of the 3rd degree and calculates a matrix
+        of all solutions for all the integer steps of the y-range
+        specified.
+
+        The function takes two arguments:
+
+        @gs_values  A numpy array or a list of gray-scale values
+
+        @gs_fit     A numpy array of the coefficients as returned
+                    by numpy.polyfit, assuming 3rd degree
+                    solution
+
+        @gs_indices An optional list of gs indices if not a simple
+                    enumerated range
+
+        @y_max      An int for the upper bound of the solution
+                    lower will always be 0
+
+        @fix_axis   An optional possibility to fix the gs-axis,
+                    else it will be made increasing (transformed with
+                    -1 if not). Lowest value will also be set to 0,
+                    assuming a continious series.
+
+        The function returns a list of transformation values
+        """
+
+        if gs_values != None:
+
+            #Create value - indices if not supplied
+            if gs_indices == None:
+
+                gs_indices = range(len(gs_values))
+
+            #Make it increasing
+            if gs_indices[0] > gs_indices[-1]:
+
+                gs_indices = map(lambda x: x * -1, gs_indices)
+
+            #Move it to zero
+            if gs_indices[0] != 0:
+
+                gs_indices = map(lambda x: x - gs_indices[0], gs_indices)
+
+            #Solve the polynomial
+            p = np.poly1d(np.polyfit(gs_indices, gs_values, 3))
+
+            self.gs_a = p.c[0]
+            self.gs_b = p.c[1]
+            self.gs_c = p.c[2]
+            #self.gs_d gets reset each time below
+
+            tf_matrix = np.zeros((y_max + 1))
+            for i in xrange(256):
+
+                #moving the line along y-axis
+                self.gs_d = p.c[3] - i
+                x = fsolve(self._get_p3, gs_values[0])
+
+                #setting it back to get the values
+                tf_matrix[i] = x
+
+        else:
+
+            tf_matrix = []
+
+            for y in range(y_range[0], y_range[1] + 1):
+
+                #Do something real here
+                #The caluclated value shoud be a float
+
+                x = float(y)
+                tf_matrix.append(x)
+
+        self.tf_matrix = tf_matrix
+
+    def get_transposed_im(self, im):
+
+        im2 = np.zeros(im.shape) * np.nan
+        tf = self.tf_matrix
+        for i in xrange(tf.size):
+
+            np.place(im2, im==i, tf[i])
+
+        return im2
 
 
 class Image_Analysis():

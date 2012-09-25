@@ -704,6 +704,10 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         self._model = model
         self._specific_model = specific_model
 
+        self._specific_model['image-array'] = plt.imread(
+            self._specific_model['images-list-model']\
+            [self._specific_model['image']][0])
+
         hbox = gtk.HBox(0, False)
         self.pack_start(hbox, False, False, PADDING_LARGE)
 
@@ -711,14 +715,25 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         label.set_markup(model['analysis-stage-auto-norm-and-section-title'])
         hbox.pack_start(label, False, False, PADDING_LARGE)
 
-        hbox = gtk.HBox(0, False)
-        self.pack_start(hbox, False, False, PADDING_SMALL)
-
-        label = gtk.Label(model['analysis-stage-auto-norm-and-section-fixture'])
-        hbox.pack_start(label, False, False, PADDING_SMALL)
+        #Previously detected option
 
         hbox = gtk.HBox(0, False)
         self.pack_start(hbox, False, False, PADDING_SMALL)
+
+        self.cb = gtk.CheckButton(
+            label=model['analysis-stage-auto-norm-and-section-file'])
+        self._cb_signal = self.cb.connect("clicked",
+            self._pre_process_pre_detected)
+        hbox.pack_start(self.cb, False, False, PADDING_SMALL)
+
+        #Re-detect option
+        frame = gtk.Frame(model['analysis-stage-auto-norm-and-section-fixture'])
+        self.pack_start(frame, False, False, PADDING_SMALL)
+        vbox = gtk.VBox(0, False)
+        frame.add(vbox)
+
+        hbox = gtk.HBox(0, False)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
         self.fixture = gtk.combo_box_new_text()
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
@@ -726,15 +741,14 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
                 self._pre_process_fixture_signal)
         self.run_button = gtk.Button()
         self.run_button.set_label(model['analysis-stage-auto-norm-and-section-run'])
-        self.run_button.connect("clicked", controller.execute_fixture,
+        self.run_button.connect("clicked", specific_controller.execute_fixture,
             (self, specific_model))
         self.run_button.set_sensitive(False)
         hbox.pack_start(self.run_button, False, False, PADDING_SMALL)
 
-        self.set_fixtures_from_model()
 
         hbox = gtk.HBox(0, False)
-        self.pack_start(hbox, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
         self.progress = gtk.ProgressBar()
         hbox.pack_start(self.progress, False, False, PADDING_SMALL)
@@ -742,8 +756,18 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         hbox = gtk.HBox(0, False)
         self.pack_start(hbox, False, False, PADDING_SMALL)
 
+        self.set_fixtures_from_model()
+        self.cb.set_active(True)
+
         self.show_all()
 
+    def set_detect_lock(self, val=True):
+
+        self.cb.handler_block(self._cb_signal)
+        self.cb.set_active(val)
+        self.fixture.set_sensitive(val==False)
+        self.cb.handler_unblock(self._cb_signal)
+        
     def run_lock(self):
 
         self.run_button.set_sensitive(False)
@@ -751,7 +775,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
     def run_release(self):
 
         self.run_button.set_sensitive(True)
-        self._controller.set_grayscale(self)
+        self._specific_controller.set_grayscale(self)
 
     def set_progress(self, value):
 
@@ -814,8 +838,16 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
             active_text = self.fixture.get_model()[active][0]
             active_text = active_text.lower().replace(" ", "_")
 
-        self._controller.set_fixture(self, active_text, self._specific_model)
+        self._specific_controller.set_fixture(self, active_text, self._specific_model)
 
+    def _pre_process_pre_detected(self, widget, *args, **kwargs):
+
+        val = widget.get_active()
+        self.set_detect_lock(val)
+
+        if val:
+
+            self._specific_controller.get_previously_detected(self, self._specific_model)
 
 class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
 

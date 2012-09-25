@@ -8,6 +8,7 @@ import model_analysis
 import view_analysis
 import controller_generic
 import resource_os
+import resource_log_reader
 import analysis_wrapper as a_wrapper
 import resource_fixture
 import resource_image
@@ -80,30 +81,6 @@ class Analysis_Controller(controller_generic.Controller):
         gobject.timeout_add(250, self._callback, user_data)
         return None
 
-    def execute_fixture(self, widget, data):
-
-        view, specific_model = data
-        view.run_lock()
-
-        self.fixture = resource_fixture.Fixture_Settings(
-            self._model['fixtures-path'],
-            fixture=specific_model["fixture-name"],
-            image=specific_model['images-list-model'][
-            specific_model['image']][0],
-            markings=-1)
-
-        thread = threading.Thread(target=self.fixture.threaded)
-
-        thread.start()
-        self.progress.acquire()
-
-        gobject.timeout_add(250, self._callback, {
-            'view': view,
-            'view-function': view.set_progress,
-            'view-data':None,
-            'view-complete': 1.0,
-            'thread': thread})
-
     def get_available_fixtures(self):
 
         directory = self._model['fixtures-path']
@@ -112,22 +89,6 @@ class Analysis_Controller(controller_generic.Controller):
             in os.listdir(directory) if file.lower().endswith(extension)])
 
         return sorted(list_fixtures)
-
-    def set_fixture(self, view, fixture_name, specific_model):
-
-        specific_model['fixture-name'] = fixture_name
-
-    def set_grayscale(self, view):
-
-        if self.fixture is not None:
-
-            grayscale_im = self.fixture['image'].get_subsection(self.fixture['current'].get("grayscale_area"))
-            ag = resource_image.Analyse_Grayscale(target_type="Kodak", image=grayscale_im, scale_factor=1.0, dpi=600)
-            print ag.get_grayscale()
-
-        else:
-
-            raise UnDocumented_Error()
 
     def set_analysis_stage(self, widget, *args, **kwargs):
 
@@ -273,11 +234,25 @@ class Analysis_Controller(controller_generic.Controller):
                 if specific_model['plate'] < len(specific_model['plate-coords']):
 
                     coords = specific_model['plate-coords'][specific_model['plate']]
+                    image = specific_model['image']
+                    
+                    if image in specific_model['auto-calibration-values']:
 
-                    specific_model['plate-im-array'] = \
-                        specific_model['image-array'][
-                        coords[0][1]: coords[1][1],
-                        coords[0][0]: coords[1][0]]
+                        image_transpose = resource_image.Image_Transpose()
+                        image_transpose.set_matrix(
+                            gs_values=specific_model['auto-calibration-values'][image],
+                            gs_indices=specific_model['auto-calibration-indices'][image])
+
+                        specific_model['plate-im-array'] = image_transpose.get_transposed_im(
+                            specific_model['image-array'][
+                            coords[0][1]: coords[1][1],
+                            coords[0][0]: coords[1][0]])
+
+                    else:
+                        specific_model['plate-im-array'] = \
+                            specific_model['image-array'][
+                            coords[0][1]: coords[1][1],
+                            coords[0][0]: coords[1][0]]
 
                     view.set_top(
                         view_analysis.Analysis_Top_Image_Plate(
@@ -320,6 +295,106 @@ class Analysis_Image_Controller(controller_generic.Controller):
             self.set_specific_model(dict())
 
         return self._specific_model
+
+    def execute_fixture(self, widget, data):
+
+        view, specific_model = data
+        view.run_lock()
+
+        self.fixture = resource_fixture.Fixture_Settings(
+            self._model['fixtures-path'],
+            fixture=specific_model["fixture-name"],
+            image=specific_model['images-list-model'][
+            specific_model['image']][0],
+            markings=-1)
+
+        thread = threading.Thread(target=self.fixture.threaded)
+
+        thread.start()
+        self.progress.acquire()
+
+        gobject.timeout_add(250, self._callback, {
+            'view': view,
+            'view-function': view.set_progress,
+            'view-data':None,
+            'view-complete': 1.0,
+            'thread': thread})
+
+    def get_previously_detected(self, view, specific_model):
+
+        image=specific_model['images-list-model'][
+                specific_model['image']][0]
+
+        im_dir = os.sep.join(image.split(os.sep)[:-1])
+
+        extension = ".log"
+
+        log_files = [im_dir + os.sep + f for f in os.listdir(im_dir) 
+                        if f.lower().endswith(extension)]
+
+        data = None
+
+        for f in log_files:
+
+            data = resource_log_reader.get_im_data(f, image)
+
+            if data is not None:
+
+                break
+
+        if data is None:
+
+            view.set_detect_lock(False)
+
+        else:
+
+            i = 0
+
+            plate_coords = dict()
+
+            #Backwards compatible with spell error in early log-files
+            gs_i_key = [k for k in data if 'grayscale_in' in k][0]
+
+            while 'plate_{0}_area'.format(i) in data:
+
+                data_sorted =  zip(*map(sorted, zip(*data['plate_{0}_area'.format(i)])))
+                scale_sorted = [[4*p[1], 4*p[0]] for p in data_sorted]
+                plate_coords[i] = scale_sorted
+                i += 1
+
+            specific_model['plate-coords'] = plate_coords
+
+            self.set_auto_grayscale(data['grayscale_values'],
+                data[gs_i_key])
+
+            self.get_view().get_top().set_allow_next(True)
+
+    def set_fixture(self, view, fixture_name, specific_model):
+
+        specific_model['fixture-name'] = fixture_name
+
+    def set_auto_grayscale(self, vals, indices):
+
+        sm = self._specific_model
+
+        sm['auto-calibration-values'][sm['image']] = vals
+        sm['auto-calibration-indices'][sm['image']] = indices
+            
+    def set_grayscale(self, view):
+
+        if self.fixture is not None:
+
+            grayscale_im = self.fixture['image'].get_subsection(
+                self.fixture['current'].get("grayscale_area"))
+
+            ag = resource_image.Analyse_Grayscale(target_type="Kodak",
+                image=grayscale_im, scale_factor=1.0, dpi=600)
+
+            print ag.get_grayscale()
+
+        else:
+
+            raise UnDocumented_Error()
 
     def set_images_has_fixture(self, widget, *args, **kwargs):
 

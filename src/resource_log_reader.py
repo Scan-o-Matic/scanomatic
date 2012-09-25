@@ -32,11 +32,68 @@ import resource_image_reject as reject_script
 _histograms = []
 
 #
+# EXCEPTIONS
+#
+
+class FileError(Exception): pass
+
+#
 # FUNCTIONS
 #
 
+
+def get_all_data(f):
+
+
+    try:
+
+        fs = open(f, 'r')
+
+    except:
+
+        raise FileError("File '{0}' doesn't exist".format(f))
+
+    lines = list()
+
+    for line in fs.readlines():
+
+        try:
+            l = eval(line)
+
+            if type(l) == types.DictType:
+
+                lines.append(l)
+        except:
+            pass
+            #print "Lost line \n{0}\n".format(line)
+
+    fs.close()
+
+    return lines
+
+
+def get_im_data(f, im_path, only_file_name=True, im_path_prefix='File'):
+
+    d = get_all_data(f)
+
+    if only_file_name:
+
+        im_path = im_path.split(os.sep)[-1]
+
+    im_data = [l for l in d if im_path_prefix in l.keys() and im_path in l[im_path_prefix]]
+
+    if len(im_data) > 0:
+
+        return im_data[0]
+
+    else:
+
+        return None
+
+
 def count_histograms():
     return len(_histograms)
+
 
 def load_data(path):
 
