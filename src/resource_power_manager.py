@@ -105,18 +105,23 @@ class LAN_PM(object):
         self._pwd_params = urlencode((("pw", password),))
         self._on_params = urlencode((("cte{0}".format(socket),1),))
         self._on_params = urlencode((("cte{0}".format(socket),0),))
-    
 
-        self._login_out_url = "http://{0}/login.html".format(host)
-        self._ctrl_panel_url = "http://{0}/".format(host)
+        self._set_urls()
+        self.test_ip()
 
-        if MAC is not None:
+        if self._host is None and MAC is not None:
 
             res = self._find_ip()
             self.DMS("LAN PM", "Found {0}".format(res))
 
-            self._host = res
     
+    def _set_urls(self):
+
+        host = self._host
+
+        self._login_out_url = "http://{0}/login.html".format(host)
+        self._ctrl_panel_url = "http://{0}/".format(host)
+
     def _DMS(self, *args, **kwargs):
 
         pass
@@ -155,11 +160,15 @@ class LAN_PM(object):
         
         if len(res) > 0:
             #RETURN THE IP
-            return res[0].split(" ",1)[0]
+            self._host = res[0].split(" ",1)[0]
 
         else:
             #IF IT IS NOT CONNECTED AND UP RETURN NONE
-            return None
+            self._host = None
+
+        self._set_urls()
+
+        return self._host
 
     def _login(self):
 
@@ -181,6 +190,22 @@ class LAN_PM(object):
 
             return urllib2.urlopen(self._login_out_url)
 
+    def test_ip(self):
+
+        u = self._logout()
+
+        if u is None:
+
+            self._host = None
+
+        else:
+        
+            if "EnerGenie" not in u:
+
+                self._host = None
+
+        return self._host is not None
+            
     def on(self):
 
         u = self._login()
