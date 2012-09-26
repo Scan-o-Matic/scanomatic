@@ -160,8 +160,12 @@ class LAN_PM(object):
         
         if len(res) > 0:
             #RETURN THE IP
-            self._host = res[0].split(" ",1)[0]
 
+            for r in res:
+                self._host = r.split(" ",1)[0]
+                self._set_urls()
+                if self.test_ip() is not None:
+                    break
         else:
             #IF IT IS NOT CONNECTED AND UP RETURN NONE
             self._host = None
@@ -201,6 +205,10 @@ class LAN_PM(object):
         else:
         
             if "EnerGenie" not in u:
+
+                self._host = None
+
+            if self._pm_server_name is not in u:
 
                 self._host = None
 

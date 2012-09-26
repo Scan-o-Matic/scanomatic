@@ -79,6 +79,10 @@ class Fixture_Settings(object):
         self.mark_Y = None
         self.A = None
 
+    def _output_f(self, *args, **kwargs):
+
+        print "Debug output function: ", args, kwargs
+
     def __getitem__(self, key):
 
         if key in 'image':
@@ -93,10 +97,28 @@ class Fixture_Settings(object):
 
             return self.fixture_config_file
  
-    def threaded(self):
+    def threaded(self, output_function=None):
+
+        if output_function is None:
+            output_function = self._output_f
+
+        t = time.time()
+        output_function('Fixture calibration',
+                    "Threading invokes marker analysis", "LA",
+                    debug_level='info')
 
         self.marker_analysis()
+
+        output_function('Fixture calibration',
+                    "Threading marker detection complete, invokes setting area positions" +
+                    " (took {0} s)".format(time.time()-t), "LA",
+                    debug_level='info')
+
         self.set_areas_positions()
+
+        output_function('Fixture calibration',
+                    "Threading done (took: {0} s)".format(time.time()-t),
+                    "LA", debug_level='info')
 
     def get_markers_from_conf(self):
 
@@ -126,21 +148,21 @@ class Fixture_Settings(object):
 
         return self.fixture_config_file.get(key)
 
-    def marker_analysis(self, fixture_setup=False, output_function=None):
+    def marker_analysis(self, fixture_setup=False,
+            output_function=None):
+
+        if output_function is None:
+            output_function = self._output_f
+
+        t = time.time()
 
         if self.marking_path == None or self.markings < 1:
 
             msg = "Error, no marker set ('%s') or no markings (%s)." % (
                 self.marking_path, self.markings)
 
-            if output_function != None:
-
-                output_function('Fixture calibration', msg, "LA",
-                            debug_level='error')
-
-            else:
-
-                logging.error(msg)
+            output_function('Fixture calibration: Marker Detection', msg, "LA",
+                        debug_level='error')
 
             return None
 
@@ -159,27 +181,34 @@ class Fixture_Settings(object):
         if self.A_is_scaled == False:
 
             self.A_is_scaled = True
+
+            output_function('Fixture calibration: Marker Detection', "Scaling image", "LA",
+                            debug_level='info')
+
             analysis_img = img_base.Quick_Scale_To_im(self.image_path)
+
+            output_function('Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
+                            time.time()-t), "LA",
+                            debug_level='info')
 
             if analysis_im_path is not None:
 
                 np.save(analysis_im_path, analysis_img)
+
+        msg = "Setting up Image Analysis (acc {0} s)".format(time.time()-t)
+
+        output_function('Fixture calibration: Marker Detection', msg, 'A',
+                    debug_level='debug')
 
         self.A = img_base.Image_Analysis(
                     path=self.image_path,
                     image=analysis_img,
                     pattern_image_path=self.marking_path)
 
-        msg = "Finding pattern"
+        msg = "Finding pattern (acc {0} s)".format(time.time()-t)
 
-        if output_function != None:
-
-            output_function('Fixture calibration', msg, 'A',
-                        debug_level='debug')
-
-        else:
-
-            logging.info(msg)
+        output_function('Fixture calibration, Marker Detection', msg, 'A',
+                    debug_level='debug')
 
         Xs, Ys = self.A.find_pattern(markings=self.markings)
 
@@ -188,15 +217,7 @@ class Fixture_Settings(object):
 
         if Xs is None or Ys is None:
 
-            if output_function is None:
-
-                logging.error("Fixture error: No markers found")
-
-            else:
-
-                output_function('Fixture error', "No markers found")
-
-            return None
+            output_function('Fixture error', "No markers found")
 
         if len(Xs) == self.markings:
 
@@ -207,15 +228,11 @@ class Fixture_Settings(object):
             target_conf_file.set("marking_center_of_mass",
                 (Xs.mean(), Ys.mean()))
 
-        if output_function is None:
+        msg = "Marker Detection complete (acc {0} s)".format(time.time()-t)
+        output_function('Fixture calibration: Marker Detection', msg, 'A',
+                    debug_level='debug')
 
-            logging.info(msg)
-
-        else:
-
-            output_function('Fixture calibration', msg, 'A',
-                        debug_level='debug')
-
+        return None
 
     def get_fixture_markings(self):
 

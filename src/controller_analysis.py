@@ -35,7 +35,6 @@ class Analysis_Controller(controller_generic.Controller):
                                 model=self._model,
                                 parent=self)
 
-        self.progress = threading.Lock()
         self.fixture = None
 
     def _get_default_view(self):
@@ -57,7 +56,6 @@ class Analysis_Controller(controller_generic.Controller):
             if user_data['thread'].is_alive() == False:
 
                 user_data['view-function'](user_data['view-complete'])
-                self.progress.release()
                 user_data['view'].run_release()
 
                 if 'complete-function' in user_data:
@@ -276,6 +274,19 @@ class Analysis_Controller(controller_generic.Controller):
                         self.transparency))
                     
                     view.get_stage().run_lock_select_check()
+
+            elif stage_call == "log_book":
+
+                specific_model = args[1]
+                specific_model['stage'] = 'plate'
+
+                view.set_top(
+                    view_analysis.Analysis_Top_Done(
+                    self, model))
+
+                view.set_stage(
+                    self.transparency._log.get_view())
+
             else:
 
                 raise Bad_Stage_Call(stage_call)
@@ -319,7 +330,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
         thread = threading.Thread(target=self.fixture.threaded)
 
         thread.start()
-        self._parent.progress.acquire()
 
         gobject.timeout_add(250, self._parent._callback, {
             'view': view,
@@ -329,10 +339,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
             'complete-function': self.set_grayscale,
             'thread': thread})
 
-    def _get_scale_slice(self, slice):
+    def _get_scale_slice(self, the_slice, flip_coords=False, factor=4):
 
-        data_sorted = zip(*map(sorted, zip(*slice)))
-        return [[4*p[1], 4*p[0]] for p in data_sorted]
+        data_sorted = zip(*map(sorted, zip(*the_slice)))
+        return [[factor*p[flip_coords], factor*p[not(flip_coords)]] for p in data_sorted]
 
     def get_previously_detected(self, view, specific_model):
 
@@ -372,7 +382,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
             while 'plate_{0}_area'.format(i) in data:
 
                 plate_coords[i] = self._get_scale_slice(
-                    data['plate_{0}_area'.format(i)])
+                    data['plate_{0}_area'.format(i)],
+                    flip_coords=True)
                 i += 1
 
             specific_model['plate-coords'] = plate_coords
@@ -427,11 +438,13 @@ class Analysis_Image_Controller(controller_generic.Controller):
             if pl is not None:
 
                 imd = self.fixture['current']
+                s_pattern = "plate_{0}_area"
  
                 for i, p in enumerate(pl):
 
                     if p is not None:
-                        plate_coords[i] = self._get_scale_slice(imd.get(p))
+                        plate_coords[i] = self._get_scale_slice(imd.get(s_pattern.format(p)),
+                            flip_coords=True)
 
             self._specific_model['plate-coords'] = plate_coords
 

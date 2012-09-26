@@ -260,6 +260,8 @@ class Image_Analysis():
 
             path = self._path
 
+        logging.info("Loading image from {0}".format(path))
+
         try:
 
             self._img = plt.imread(path)
@@ -277,7 +279,9 @@ class Image_Analysis():
 
         if conversion_factor != 1.0:
 
+            logging.info("Scaling to {0}".format(conversion_factor))
             self._img = Quick_Scale_To_im(conversion_factor)
+            logging.info("Scaled")
 
 
     def get_hit_refined(self, hit, conv_img):
@@ -420,6 +424,7 @@ class Image_Analysis():
                 subsection = self._img[
                     section[0][0]: section[1][0],
                     section[0][1]: section[1][1]]
+
                 """
                     left * self._conversion_factor):
                     int(right * self._conversion_factor),
@@ -458,6 +463,7 @@ class Analyse_Grayscale(object):
                 self._grayscale_dict[target_type][k])
 
         self._img = image
+        np.save("tmp_img.npy", image)
 
         #Variables from analysis
         self._grayscale_pos = None

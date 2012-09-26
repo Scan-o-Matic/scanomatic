@@ -187,6 +187,7 @@ class Analysis(gtk.VBox):
         self._stage = widget
         self._remove_child(pos=1)
         self.pack_end(widget, True, True, 10)
+        widget.show_all()
 
     def get_stage(self):
 
@@ -205,7 +206,6 @@ class Analysis_Top(gtk.HBox):
 
         self.pack_start(Analysis_Top_Root_Button(
                 self._controller, self._model), False, False, PADDING_SMALL)
-
 
 class Analysis_Top_Root(Analysis_Top):
 
@@ -252,7 +252,8 @@ class Analysis_Top_Project(Analysis_Top):
 class Analysis_Top_Image_Generic(Analysis_Top):
 
     def __init__(self, controller, model, specific_model,
-            specific_controller, next_text, next_stage_signal):
+            specific_controller, next_text=None,
+            next_stage_signal=None):
 
         super(Analysis_Top_Image_Generic, self).__init__(controller, model)
 
@@ -261,17 +262,30 @@ class Analysis_Top_Image_Generic(Analysis_Top):
 
         self._pack_root_button()
 
-        self._next_button = Analysis_Top_Next_Button(controller,
-            model, specific_model, next_text, next_stage_signal)
+        if next_text is not None:
 
-        self.pack_end(self._next_button, False, False, PADDING_LARGE)
-        self.set_allow_next(False)
+            self._next_button = Analysis_Top_Next_Button(controller,
+                model, specific_model, next_text, next_stage_signal)
+
+            self.pack_end(self._next_button, False, False, PADDING_LARGE)
+            self.set_allow_next(False)
 
         self.show_all()
 
     def set_allow_next(self, val):
 
         self._next_button.set_sensitive(val)
+
+
+class Analysis_Top_Done(Analysis_Top_Image_Generic):
+
+    def __init__(self, controller, model):
+
+        next_text = model['analysis-top-image-sectioning-next']
+        next_stage_signal = 'plate'
+
+        super(Analysis_Top_Done, self).__init__(controller,
+            model, None, None)
 
 
 class Analysis_Top_Image_Sectioning(Analysis_Top_Image_Generic):
