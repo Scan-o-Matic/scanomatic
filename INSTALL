@@ -159,8 +159,12 @@
         sudo apt-get install libusb-dev
 
     Then you need to get the latest versions of epson2-backend SANE drivers (if full area
-    support isn't yet implemented, we have a version that you can download and build. Just
-    go to the folder you extracted the files in and:
+    support isn't yet implemented, we have a version that you can download and build. 
+
+        git clone git://git.debian.org/sane/sane-backends.git SANE
+        cd SANE
+
+    Just go to the folder you extracted the files in and:
 
         sudo ./configure
         sudo make
