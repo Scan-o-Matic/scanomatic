@@ -96,7 +96,7 @@ class LAN_PM(object):
         self._socket = socket
         self._password = password is not None and password or "1"
 
-        self.set_DMS(DMS)
+        self.set_DMS(None)  # DMS)
 
         self._pm_server_name = pm_name
         self._pm_server_str = "<h2>{0}".format(pm_name)
@@ -204,11 +204,14 @@ class LAN_PM(object):
 
         else:
         
-            if "EnerGenie" not in u:
+            s = u.read()
+            u.close()
+
+            if "EnerGenie" not in s:
 
                 self._host = None
 
-            if self._pm_server_name not in u:
+            if self._pm_server_name not in s:
 
                 self._host = None
 
