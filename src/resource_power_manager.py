@@ -111,9 +111,9 @@ class LAN_PM(object):
 
         if self._host is None and MAC is not None:
 
+            self.DMS("LAN PM", "No valid host known, searching...")
             res = self._find_ip()
             self.DMS("LAN PM", "Found {0}".format(res))
-
     
     def _set_urls(self):
 
