@@ -96,7 +96,7 @@ class LAN_PM(object):
         self._socket = socket
         self._password = password is not None and password or "1"
 
-        self.set_DMS(None)  # DMS)
+        self.set_DMS(DMS)
 
         self._pm_server_name = pm_name
         self._pm_server_str = "<h2>{0}".format(pm_name)
@@ -178,24 +178,24 @@ class LAN_PM(object):
 
         if self._host is None or self._host == "":
 
-            self.DMS("Loging in failed, no host")
+            self.DMS("LAN PM", "Loging in failed, no host")
             return None
  
         else:
 
-            self.DMS("Logging in")
+            self.DMS("LAN PM", "Logging in")
             return urllib2.urlopen(self._login_out_url, self._pwd_params)
 
     def _logout(self):
 
         if self._host is None or self._host == "":
 
-            self.DMS("Log out failed, no host")
+            self.DMS("LAN PM", "Log out failed, no host")
             return None
  
         else:
 
-            self.DMS("Logging out")
+            self.DMS("LAN PM", "Logging out")
             return urllib2.urlopen(self._login_out_url)
 
     def test_ip(self):
@@ -231,14 +231,14 @@ class LAN_PM(object):
 
         if not self._verify_name or self._pm_server_str in u.read():
 
-            self.DMS("Turning on")
+            self.DMS("LAN PM", "Turning on")
             urllib2.urlopen(self._ctrl_panel_url, self._on_params)
 
             self._logout()
 
         else:
 
-            self.DMS("Failed to turn on")
+            self.DMS("LAN PM", "Failed to turn on")
 
     def off(self):
 
@@ -250,7 +250,7 @@ class LAN_PM(object):
 
         if not self._verify_name or self._pm_server_str in u.read():
 
-            self.DMS("Turning off")
+            self.DMS("LAN PM", "Turning off")
             urllib2.urlopen(self._ctrl_panel_url, self._off_params)
 
             self._logout()
@@ -258,9 +258,12 @@ class LAN_PM(object):
 
         else:
 
-            self.DMS("Failed to turn off")
+            self.DMS("LAN PM", "Failed to turn off")
 
     def set_DMS(self, DMS):
+
+        #HACK
+        DMS = None
 
         if DMS is None:
 
