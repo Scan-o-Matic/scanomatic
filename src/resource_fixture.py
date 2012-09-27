@@ -219,7 +219,7 @@ class Fixture_Settings(object):
 
             output_function('Fixture error', "No markers found")
 
-        if len(Xs) == self.markings:
+        elif len(Xs) == self.markings:
 
             for i in xrange(len(Xs)):
 
