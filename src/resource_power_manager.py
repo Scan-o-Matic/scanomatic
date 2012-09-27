@@ -178,20 +178,24 @@ class LAN_PM(object):
 
         if self._host is None or self._host == "":
 
+            self.DMS("Loging in failed, no host")
             return None
  
         else:
 
+            self.DMS("Logging in")
             return urllib2.urlopen(self._login_out_url, self._pwd_params)
 
     def _logout(self):
 
         if self._host is None or self._host == "":
 
+            self.DMS("Log out failed, no host")
             return None
  
         else:
 
+            self.DMS("Logging out")
             return urllib2.urlopen(self._login_out_url)
 
     def test_ip(self):
@@ -225,11 +229,16 @@ class LAN_PM(object):
 
             return None
 
-        if not self._verify_name or self._pm_server_str in u.readlines():
+        if not self._verify_name or self._pm_server_str in u.read():
 
+            self.DMS("Turning on")
             urllib2.urlopen(self._ctrl_panel_url, self._on_params)
 
             self._logout()
+
+        else:
+
+            self.DMS("Failed to turn on")
 
     def off(self):
 
@@ -239,11 +248,17 @@ class LAN_PM(object):
 
             return None
 
-        if not self._verify_name or self._pm_server_str in u.readlines():
+        if not self._verify_name or self._pm_server_str in u.read():
 
+            self.DMS("Turning off")
             urllib2.urlopen(self._ctrl_panel_url, self._off_params)
 
             self._logout()
+
+
+        else:
+
+            self.DMS("Failed to turn off")
 
     def set_DMS(self, DMS):
 
