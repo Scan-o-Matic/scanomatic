@@ -124,7 +124,7 @@ class LAN_PM(object):
 
     def _DMS(self, *args, **kwargs):
 
-        pass
+        print args, kwargs
 
     def _find_ip(self):
         """Looks up the MAC-address supplied on the local router"""
@@ -208,7 +208,7 @@ class LAN_PM(object):
 
                 self._host = None
 
-            if self._pm_server_name is not in u:
+            if self._pm_server_name not in u:
 
                 self._host = None
 
