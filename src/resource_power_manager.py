@@ -104,7 +104,7 @@ class LAN_PM(object):
 
         self._pwd_params = urlencode((("pw", password),))
         self._on_params = urlencode((("cte{0}".format(socket),1),))
-        self._on_params = urlencode((("cte{0}".format(socket),0),))
+        self._off_params = urlencode((("cte{0}".format(socket),0),))
 
         self._set_urls()
         self.test_ip()
