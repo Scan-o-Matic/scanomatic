@@ -557,6 +557,21 @@ class Application_Window():
                 "You're trying to start a project on no scanner." + \
                 "\n\nIt makes no sense", level="DL", debug_level='warning')
 
+    def alternative_live_scanners(self):
+
+        p = subprocess.Popen("lsusb", shell=True, stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE)
+
+        out, err = p.communicate()
+
+        pattern = "Bus ([0-9]*) Device ([0-9]*):.*{0}.*\\n".format(self._scanner)
+
+        found_scanners = re.findall(pattern, out)
+
+        addresses = "libusb:{0}:{1}".format(*a) for a in found_scanners]
+
+        #Do stuff to live scanners
+
     def update_live_scanners(self):
 
         p = subprocess.Popen("sane-find-scanner -v -v |" +

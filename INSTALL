@@ -164,6 +164,19 @@
         git clone git://git.debian.org/sane/sane-backends.git SANE
         cd SANE
 
+    The original diff of the changes that were applied, note that line number may not
+    coincide anymore, upper lines are the goood ones.
+
+        epson2-ops.c:
+        673c673
+        <         if (e2_model(s, "GT-X800") || e2_model(s, "GT-X900")) {
+        ---
+        >         if (e2_model(s, "GT-X800")) {
+        1223c1223
+        <     if (s->lcount < 3 && (e2_model(s, "GT-X800") || e2_model(s, "GT-X900"))) {
+        ---
+        >     if (s->lcount < 3 && e2_model(s, "GT-X800")) { 
+
     Just go to the folder you extracted the files in and:
 
         sudo ./configure

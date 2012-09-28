@@ -33,6 +33,26 @@ PADDING_SMALL = 2
 # FUNCTIONS
 #
 
+def select_dir(title):
+
+    d = gtk.FileChooserDialog(title=title, 
+        action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, 
+        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
+        gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+
+    res = d.run()
+    file_list = d.get_filename()
+    d.destroy()
+
+    if res == gtk.RESPONSE_APPLY:
+
+        return file_list
+
+    else:
+
+        return None
+
+
 def select_file(title, multiple_files=False, file_filter=None):
 
     d = gtk.FileChooserDialog(title=title, 
@@ -442,20 +462,25 @@ class Analysis_Stage_Project(gtk.VBox):
 
         self._controller = controller
         self._model = model
+        self._specific_model = controller.project.get_specific_model()
 
-        super(Analysis_Stage_Project, self).__init__()
+        sm = self._specific_model
 
+        super(Analysis_Stage_Project, self).__init__(0, False)
+
+        #Title
         label = gtk.Label()
         label.set_markup(model['analysis-stage-project-title'])
         self.pack_start(label, False, False, PADDING_LARGE)
 
+        #File - dialog
         frame = gtk.Frame(model['analysis-stage-project-file'])
         self.pack_start(frame, False, False, PADDING_SMALL)
         hbox = gtk.HBox()
         hbox.set_border_width(PADDING_MEDIUM)
         frame.add(hbox)
         self.log_file = gtk.Entry()
-        self.log_file.set_text(model['analysis-project-log_file'])
+        self.log_file.set_text(sm['analysis-project-log_file'])
         self.log_file.set_sensitive(False)
         hbox.pack_start(self.log_file, True, True, PADDING_SMALL)
         button = gtk.Button(
@@ -522,6 +547,9 @@ class Analysis_Stage_Project(gtk.VBox):
             self.output_warning.set_tooltip_text(
                 self._model['analysis-stage-project-output_folder-warning'])
 
+    def set_log_file(self):
+
+        self.log_file.set_text(self._specific_model['analysis-project-log_file'])
 
     def set_pinning(self, pinnings_list, sensitive):
 

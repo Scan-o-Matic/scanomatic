@@ -118,16 +118,10 @@ to get quatitative values of average pigmentation.</i></span>
 'analysis-stage-project-plates': 'Tweak gridding',
 'analysis-stage-project-keep_gridding': 'Keep grids as specified in log-file',
 'analysis-stage-project-plate-label': 'Plate {0]',
+'analysis-stage-project-select-log-file-dialog': 'Select Log File',
 
-#ANALYSIS PROJECT FILE
-'analysis-project-log_file': '',
-'analysis-project-log_file_dir':'',
-'analysis-project-output-default': 'analysis',
-'analysis-project-output-path': 'analysis',
-'analysis-project-plates': 0,
-'analysis-project-pinning-default': '1536',
-'analysis-project-pinnings': (),
-'analysis-project-pinnings-from-file': (),
+'analysis-stage-project-select-log-file-filter': {'filter_name': 'Log Files',
+'mime_and_patterns': (('TEXT', '*.log'),)},
 
 #ANALYSIS TOP IMAGE SELECTION
 'analysis-top-image-selection-next': 'Normalisation',
@@ -220,6 +214,17 @@ in the same order and watch the magic!</i>""",
 'fixtures-path': 'src{0}config{0}fixtures{0}'.format(os.sep),
 'not-implemented': "That feature hasn't been implemented yet!"
 
+}
+
+specific_project = {
+'analysis-project-log_file': '',
+'analysis-project-log_file_dir':'',
+'analysis-project-output-default': 'analysis',
+'analysis-project-output-path': 'analysis',
+'analysis-project-plates': 0,
+'analysis-project-pinning-default': '1536',
+'analysis-project-pinnings': (),
+'analysis-project-pinnings-from-file': ()
 }
 
 specific_transparency = {

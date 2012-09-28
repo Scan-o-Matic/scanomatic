@@ -303,18 +303,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
         self._specific_model = None
         self._log = None
 
-    def set_specific_model(self, specific_model):
-
-        self._specific_model = specific_model
-
-    def get_specific_model(self):
-
-        if self._specific_model is None:
-
-            self.set_specific_model(dict())
-
-        return self._specific_model
-
     def execute_fixture(self, widget, data):
 
         view, specific_model = data
@@ -894,8 +882,15 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
     def __init__(self, view=None, model=None):
 
-       super(Analysis_Project_Controller, self).__init__(view=view,
+        super(Analysis_Project_Controller, self).__init__(view=view,
                 model=model) 
+
+        self.build_blank_specific_model()
+
+    def build_blank_specific_model(self):
+
+        self.set_specific_model(model_analysis.copy_model(
+            model_analysis.specific_project))
 
     def start(self, *args, **kwargs):
 
@@ -903,7 +898,19 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
     def set_log_file(self, *args, **kwargs):
 
-        print args, kwargs
+        log_files = view_analysis.select_file(
+            self._model['analysis-stage-project-select-log-file-dialog'],
+            multiple_files=False, file_filter=
+            self._model['analysis-stage-project-select-log-file-filter'])
+
+        if len(log_files) > 0:
+
+            self._specific_model['analysis-project-log_file'] = log_files[0]
+            self._specific_model['analysis-project-log_file_dir'] = \
+                os.sep.join(log_files[0].split(os.sep)[: -1])
+
+            self._view.get_stage().set_log_file()
+            self.set_output_dupe()
 
     def set_output(self, widget, view, event):
 
@@ -912,11 +919,13 @@ class Analysis_Project_Controller(controller_generic.Controller):
         output_path = resource_os.get_valid_relative_dir(output_path,
                 "")
 
+        sm = self._specific_model
+
         if event == "exit" and output_path == "":
 
-            output_path = self._model['analysis-project-output-default']
+            output_path = sm['analysis-project-output-default']
 
-        self._model['analysis-project-output-path'] = output_path
+        sm['analysis-project-output-path'] = output_path
 
         if output_path != widget.get_text():
 
@@ -924,24 +933,34 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         self.set_output_dupe(output_path, view)
 
-    def set_output_dupe(self, rel_path, view):
+    def set_output_dupe(self, rel_path=None, view=None):
 
-        full_path = self._model['analysis-project-log_file_dir'] + \
+        sm = self._specific_model
+
+        if view is None:
+            view = self._view.get_stage()
+
+        if rel_path is None:
+            rel_path = sm['analysis-project-output-path']
+
+        full_path = sm['analysis-project-log_file_dir'] + \
             os.sep + rel_path
 
         view.set_output_warning(os.path.isdir(full_path))
 
     def toggle_set_pinning(self, widget, view):
 
+        sm = self._specific_model
+
         if widget.get_active():
 
             view.set_pinning(
-                self._model['analysis-project-pinnings-from-file'], False)
+                sm['analysis-project-pinnings-from-file'], False)
 
         else:
 
             view.set_pinning(
-                self._model['analysis-project-pinnings'], True)
+                sm['analysis-project-pinnings'], True)
             
     def set_pinning(self, widget, view, *args, **kwargs):
 
