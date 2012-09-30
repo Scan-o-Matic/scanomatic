@@ -30,8 +30,7 @@ import signal
 # SCANNOMATIC LIBRARIES
 #
 
-import src.resource_log_maker as log_maker
-import src.resource_log_reader as log_reader
+import src.resource_project_log as rpl
 import src.resource_power_manager as power_manager
 import src.resource_image as img_base
 import src.resource_fixture as fixture_settings

@@ -30,7 +30,7 @@ import resource_config as conf
 import resource_fixture as r_fixture
 import resource_signal as r_signal
 import analysis as analysis_module
-import resource_log_edit as rle
+import resource_project_log as rpl
 
 #
 # SCANNING RE GRIDDING
@@ -206,7 +206,7 @@ class Grid(gtk.Frame):
                 'Pinning Matrices': self._pinning_matrices,
                 'Manual Gridding': self.repinnings}
 
-            rle.rewrite_meta_row(self._log_file_path, header_entries)
+            rpl.write_to_log_meta(self._log_file_path, header_entries)
             self.DMS("Regridding","Logfile has been updated!",level='L')
             self.save_button.set_sensitive(False)
             self.rerun_button.set_sensitive(True)
@@ -406,7 +406,7 @@ class Grid(gtk.Frame):
                     pass
 
             header_entries = {'Pinning Matrices': self._pinning_matrices}
-            rle.rewrite_meta_row(self._log_file_path, header_entries)
+            rpl.write_to_log_meta(self._log_file_path, header_entries)
 
     def set_log_file(self):
 

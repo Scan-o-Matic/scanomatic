@@ -37,7 +37,7 @@ from argparse import ArgumentParser
 
 import analysis_grid_array as grid_array
 import resource_config as conf
-import resource_fixture as r_fixture
+import resource_fixture_image 
 import resource_project_log as rpl
 
 #
@@ -989,9 +989,11 @@ class Project_Image():
         self._program_config_root = self._program_code_root + os.sep + "config"
         self._file_path_base = file_path_base
 
-        self.fixture = r_fixture.Fixture_Settings(\
-                self._program_config_root + os.sep + "fixtures",
-                fixture=fixture_name)
+        #Fixture setting is used for pinning history in the arrays
+        self.fixture = resource_fixture_image.Fixture_Image(
+                fixture_name,
+                fixture_directory=self._program_config_root + os.sep + "fixtures",
+                )
 
         self.im = None
 

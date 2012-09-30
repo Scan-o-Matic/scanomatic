@@ -16,7 +16,10 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import logging, uuid, os, copy
+import logging
+import uuid
+import os
+import copy
 
 #
 # GLOBALS
@@ -246,70 +249,58 @@ def write_log_file(path, meta_data=None, images=list()):
     return True
 
 
-def get_image_dict_from_path(image_path):
-    """
-    f_settings = r_fixture.Fixture_Settings(
-        script_path_root + os.sep + "config" + os.sep + "fixtures",
-        fixture="fixture_a")
-    """
-    return None
+def write_to_log_meta(path, partial_meta_data):
 
+    meta_data, images = get_log_file(path)
 
-def write_log_file_from_image_paths(log_file_path, image_paths,
-        meta_data=None, only_append=False, force_over_write=False):
-    """A list of image_paths are analysed and their info appended
-    to the logfile.
+    for k in partial_meta_data:
 
-    Only append will assume file is correct and add to the end.
-    """
+        meta_data[k] = partial_meta_data[k]
 
-    new_images = list()
+    write_log_file(path, meta_data=meta_data, images=images)
+    
+def _approve_image_dicts(images):
 
-    for img in image_paths:
+    for i_dict in images:
 
-        new_img = get_image_dict_from_path(img)
+        if 'mark_X' in i_dict:
 
-        if new_img is not None:
+            i_dict['mark_X'] = list(i_dict['mark_X'])
 
-            new_images.append(new_img)        
+        if 'mark_Y' in i_dict:
 
-    if not only_append:
+            i_dict['mark_Y'] = list(i_dict['mark_Y'])
 
-        if force_over_write:
+        if 'grayscale_indices' in i_dict:
 
-            meta_data2 = get_meta_data(path=log_file_path)
-            images = new_images
+            i_dict['grayscale_indices'] = list(i_dict['grayscale_indices'])
 
         else:
 
-            meta_data2, images = get_log_file(log_file_path)
-            images += new_images
+            i_dict['grayscale_indices'] = None
 
-        if meta_data is None:
+        if 'grayscale_values' in i_dict:
 
-            meta_data = meta_data2
+            i_dict['grayscale_values'] = list(i_dict['grayscale_values'])
 
-            
-        return write_log_file(log_file_path, meta_data, images)
+        else:
+            i_dict['grayscale_values'] = None
 
-    else:
 
-        try:
+        if 'Time' not in i_dict and 'File' in i_dict:
 
-            fs.open(log_file_path, 'a')
+            try:
 
-        except:
+                i_dict['Time'] = os.stat(i_dict['File']).st_mtime
 
-            return False
+            except:
 
-        images = ["{0}\n\r".format(l) for l in map(str, images)]
-        fs.writelines(images)
-        fs.close()
-
-        return True
+                pass
 
 
 def append_image_dicts(path, images=list()):
+
+    _approve_image_dicts(images)
 
     try:
 

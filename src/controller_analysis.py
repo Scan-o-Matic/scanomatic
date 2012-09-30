@@ -11,7 +11,7 @@ import controller_generic
 import resource_os
 import resource_project_log
 import analysis_wrapper as a_wrapper
-import resource_fixture
+import resource_fixture_image
 import resource_image
 
 class Bad_Stage_Call(Exception): pass
@@ -309,12 +309,12 @@ class Analysis_Image_Controller(controller_generic.Controller):
         view, specific_model = data
         view.run_lock()
 
-        self.fixture = resource_fixture.Fixture_Settings(
-            self._model['fixtures-path'],
-            fixture=specific_model["fixture-name"],
-            image=specific_model['images-list-model'][
+        self.fixture = resource_fixture_image.Fixture_Image(
+            specific_model["fixture-name"],
+            image_path=specific_model['images-list-model'][
             specific_model['image']][0],
-            markings=-1)
+            fixture_directory=self._model['fixtures-path']
+            )
 
         thread = threading.Thread(target=self.fixture.threaded)
 
@@ -406,6 +406,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         if self.fixture is not None:
 
+            """
             self.fixture['image'].load_other_size()
 
             gs_a = self._get_scale_slice(
@@ -418,7 +419,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             gs_pos, gs = ag.get_grayscale()
             gs_targets = ag.get_target_values()
-
+            """
+            gs_targets, gs = self.fixture['grayscale']
             self.set_auto_grayscale(gs, gs_targets) 
 
             pl = self.fixture.get_plates_list()

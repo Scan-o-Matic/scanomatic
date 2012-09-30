@@ -51,18 +51,20 @@ def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
         return -1
 
 
-def Quick_Scale_To_im(source_path, source_dpi=600, target_dpi=150,
+def Quick_Scale_To_im(path=None, im=None, source_dpi=600, target_dpi=150,
     scale=None):
 
-    try:
+    if im is None:
 
-        im = plt.imread(source_path)
+        try:
 
-    except:
+            im = plt.imread(path)
 
-        logging.error("Could not open source")
+        except:
 
-        return -1
+            logging.error("Could not open source")
+
+            return -1
 
     if scale is None:
         scale = target_dpi / float(source_dpi)
@@ -188,14 +190,15 @@ class Image_Transpose(object):
 
 class Image_Analysis():
 
-    def __init__(self, path=None, image=None, pattern_image_path=None):
+    def __init__(self, path=None, image=None, pattern_image_path=None,
+        scale=1.0):
 
         self._path = path
         self._img = None
         self._pattern_img = None
         self._load_error = None
         self._transformed = False
-        self._conversion_factor = 1.0
+        self._conversion_factor = 1.0 / scale
 
         if pattern_image_path:
 
@@ -217,10 +220,6 @@ class Image_Analysis():
                     pattern_img = pattern_img[:, :, 0]
 
                 self._pattern_img = pattern_img
-                #self._pattern_img = np.ones((pattern_img.shape[0]+8,
-                        #pattern_img.shape[1]+8))
-                #self._pattern_img[4:self._pattern_img.shape[0]-4,4:
-                        #self._pattern_img.shape[1]-4] = pattern_img
 
         if image is not None:
 
@@ -391,53 +390,6 @@ class Image_Analysis():
 
         return (self._img != None) and (self._load_error != True)
 
-    def get_subsection(self, section):
-
-        if self.get_loaded() and section is not None:
-
-            """
-            if section[0][1] > section[1][1]:
-
-                upper = section[1][1]
-                lower = section[0][1]
-
-            else:
-
-                upper = section[0][1]
-                lower = section[1][1]
-
-            if section[0][0] > section[1][0]:
-
-                left = section[1][0]
-                right = section[0][0]
-
-            else:
-
-                left = section[0][0]
-                right = section[1][0]
-            """
-
-            section = zip(*map(sorted, zip(*section)))
-
-            try:
-
-                subsection = self._img[
-                    section[0][0]: section[1][0],
-                    section[0][1]: section[1][1]]
-
-                """
-                    left * self._conversion_factor):
-                    int(right * self._conversion_factor),
-                    int(upper * self._conversion_factor):
-                    int(lower * self._conversion_factor)]
-                """
-            except:
-
-                subsection = None
-
-            return subsection
-
-        return None
 
 
 class Analyse_Grayscale(object):
@@ -480,6 +432,10 @@ class Analyse_Grayscale(object):
     def get_target_values(self):
 
         return self._grayscale_targets
+
+    def get_source_values(self):
+
+        return self._grayscale
 
     def get_grayscale_X(self, grayscale_pos=None):
 

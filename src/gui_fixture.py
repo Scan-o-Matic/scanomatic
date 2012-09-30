@@ -35,7 +35,7 @@ import numpy as np
 # SCANNOMATIC LIBRARIES
 #
 
-import src.resource_fixture as fixture_settings
+import src.resource_fixture_image as resource_fixture_image
 import src.gui_grayscale as grayscale
 #
 # CLASSES
@@ -78,7 +78,8 @@ class Fixture_GUI(gtk.Frame):
         vbox2.pack_start(hbox)
 
 
-        analysis_img = self._fixture_config_root + os.sep + self.f_settings.fixture_name + ".tiff"
+        analysis_img = self._fixture_config_root + os.sep + \
+                self.f_settings['name'] + ".tiff"
 
         hbox = gtk.HBox()
         vbox2.pack_start(hbox, False, False, 0)
@@ -307,15 +308,19 @@ class Fixture_GUI(gtk.Frame):
 
             image = self._fixture_config_root + os.sep + self._current_fixture\
                 + ".tiff"
+            im_scale = 0.25
             if not os.path.isfile(image):
                 image = None
+                im_scale = 1
 
-            self.f_settings = fixture_settings.Fixture_Settings(\
-                self._fixture_config_root, fixture=self._current_fixture, 
-                image = image) 
+            self.f_settings = resource_fixture_image.Fixture_Image(
+                self._current_fixture,
+                fixture_directory=self._fixture_config_root, 
+                image_path=image, im_scale=im_scale,
+                define_reference=True) 
 
             if image != None:
-                self.fixture_analysis_image = plt_img.imread(self.f_settings.image_path)
+                self.fixture_analysis_image = self.f_settings['image']
             else:
                 self.fixture_analysis_image = None #np.ones((1500, 1200))
 
@@ -387,8 +392,12 @@ class Fixture_GUI(gtk.Frame):
 
             else: 
             
-                self.f_settings = fixture_settings.Fixture_Settings(self._fixture_config_root, fixture='fixture_a')
                 self._current_fixture = 'fixture_a'
+                self.f_settings = resource_fixture_image.Fixture_Image(
+                    self._current_fixture,
+                    fixture_directory=self._fixture_config_root,
+                    define_reference=True)
+
                 self.reload_fixtures()
 
         self._fixture_gui_updating = False
@@ -434,9 +443,10 @@ class Fixture_GUI(gtk.Frame):
         if response == gtk.RESPONSE_OK:
 
 
-            self.f_settings = fixture_settings.Fixture_Settings(\
-                self._fixture_config_root, fixture=new_fixture,
-                image = None)
+            self.f_settings = resource_fixture_image.Fixture_Image(
+                new_fixture,
+                fixture_directory=self._fixture_config_root,
+                define_reference=True)
 
             self._current_fixture = new_fixture
 
@@ -656,7 +666,7 @@ class Fixture_GUI(gtk.Frame):
             self.DMS("SELECTION", "AREA: {0}".format(area), level="L", 
                 debug_level='debug')
             text = self.get_settings_initial()
-            self.f_settings.fixture_config_file.set(self.get_settings_name(), area)
+            self.f_settings['fixture'].set(self.get_settings_name(), area)
             
             self.change_fixture_overlay(by_name=text, area=area)
             self.fixture_area_ul.set_text( str(area[0]) )
@@ -676,7 +686,7 @@ class Fixture_GUI(gtk.Frame):
 
     def config_file_save(self, widget=None, event=None, data=None):
         self.f_settings.reset_all_pinning_histories()
-        self.f_settings.fixture_config_file.save()
+        self.f_settings['fixture'].save()
 
     def get_settings_initial(self, active=None, text=None):
 
@@ -718,15 +728,19 @@ class Fixture_GUI(gtk.Frame):
         if self.fixture_active_pos != None and self.fixture_active_pos_setting != None:
             self.fixture_active_pos(str((x_pos, y_pos)))
             area = [eval(self.fixture_area_ul.get_text()), eval(self.fixture_area_lr.get_text())] 
-            self.f_settings.fixture_config_file.set(self.get_settings_name(), area)
+            self.f_settings['fixture'].set(self.get_settings_name(), area)
 
         else:
             self.DMS("Clicked Image", "Pos: " + str((x_pos, y_pos)), level="A")
 
     def marker_analysis(self, widget=None, event=None, data=None):
-        analysis_img = self.f_settings.marker_analysis(fixture_setup=True, output_function=self.DMS)
-        if analysis_img != None:
-            self.fixture_analysis_image = plt_img.imread(analysis_img)
+
+        analysis_img_path = self.f_settings.run_marker_analysis(
+            output_function=self.DMS)
+
+        if analysis_img_path is not None:
+
+            self.fixture_analysis_image = plt_img.imread(analysis_img_path)
             
             self.fix_image_ax.set_data(self.fixture_analysis_image)
             self.fix_image_ax.set_visible(True)
@@ -752,9 +766,10 @@ class Fixture_GUI(gtk.Frame):
         
         if result == gtk.RESPONSE_APPLY:
             self.fixture_image.set_text(newimg.get_filename())
-            self.f_settings.image_path = newimg.get_filename()
-            if os.path.isfile(self.f_settings.image_path):
-                self.fixture_analysis_image = plt_img.imread(self.f_settings.image_path)
+            self.f_settings.set_image(newimg.get_filename())
+            if self.f_settings['image'] is not None
+
+                self.fixture_analysis_image = self.f_settings['image'] 
                 self.fix_image_ax.set_data(self.fixture_analysis_image)
                 self.fix_image_ax.set_visible(True)
                 self.image_fig.canvas.draw()
@@ -782,15 +797,18 @@ class Fixture_GUI(gtk.Frame):
         result = newimg.run()
         
         if result == gtk.RESPONSE_APPLY:
+
             self.fixture_marking.set_text(newimg.get_filename())
-            self.f_settings.marking_path = newimg.get_filename()
+            self.f_settings.set_marking_path(newimg.get_filename())
+
             try:
-                self.f_settings.markings = int(self.fixture_markings_count.get_text())
+
+                self.f_settings.set_number_of_markings(
+                    int(self.fixture_markings_count.get_text()))
+
             except ValueError:
-                self.f_settings.markings = 0
- 
-            self.f_settings.fixture_config_file.set("marker_path",self.fixture_marking.get_text())
-            self.f_settings.fixture_config_file.set("marker_count", self.f_settings.markings)
+
+                self.f_settings.set_number_of_markings(0)
  
         newimg.destroy()
 
@@ -803,8 +821,8 @@ class Fixture_GUI(gtk.Frame):
                 except ValueError:
                     widget.set_text("")
 
-            self.f_settings.markings = int(self.fixture_markings_count.get_text())
-            self.f_settings.fixture_config_file.set("marker_count", self.f_settings.markings)
+            self.f_settings.set_number_of_markings(
+                int(self.fixture_markings_count.get_text()))
 
     def reset_drop_down(self, widget=None, event=None, data=None):
 
@@ -878,9 +896,12 @@ class Fixture_GUI(gtk.Frame):
             self.fixture_area_selection.set_active(active)
  
             if active > 0:
+
                 active_name = self.get_settings_name()
-                cur_area = self.f_settings.fixture_config_file.get(active_name)
+                cur_area = self.f_settings['fixture'][active_name]
+
                 if cur_area is None:
+
                     cur_area = (("N/A", "N/A"),("N/A", "N/A"))
         
                 self.fixture_area_ul.set_text(str(cur_area[0]))
@@ -893,13 +914,17 @@ class Fixture_GUI(gtk.Frame):
 
     def set_grayscale(self, scale_factor=1.0, dpi=150):
 
-        coords = self.f_settings.fixture_config_file.get("grayscale_area")
+        coords = self.f_settings['fixture']["grayscale_area"]
+
         if coords is not None:
+
             xs = np.asarray((coords[0][0],coords[1][0]))/scale_factor
             ys = np.asarray((coords[0][1],coords[1][1]))/scale_factor
             im_section = self.fixture_analysis_image[xs.min():xs.max(), ys.min():ys.max()].copy()
             self.grayscale.set_grayscale(im_section.T, dpi=dpi)
+
         else:
+
             self.DMS('FIXTURE', 'Settings are missing grayscale area', "L", debug_level='warning')
             self.grayscale.set_grayscale(None)
 
@@ -913,22 +938,26 @@ class Fixture_GUI(gtk.Frame):
         #
         # SET FILENAME OF MARKER
         #
-        self.fixture_marking.set_text(str(\
-            self.f_settings.fixture_config_file.get("marker_path")))
+        self.fixture_marking.set_text(str(
+            self.f_settings['fixture']["marker_path"]))
 
         #
         # SET NUMBER OF MARKERS EXPECTED
         #
-        self.fixture_markings_count.set_text(str(\
-            self.f_settings.fixture_config_file.get("marker_count")))
+        self.fixture_markings_count.set_text(str(
+            self.f_settings['fixture']["marker_count"]))
 
         #
         # SET IF THERE'S A GRAY-SCALE
         #
-        grayscale = self.f_settings.fixture_config_file.get("grayscale") 
+        grayscale = self.f_settings['fixture']["grayscale"]
+
         try:
+
             self.fixture_grayscale_checkbox.set_active(grayscale)
+
         except TypeError:
+
             self.fixture_grayscale_checkbox.set_active(False)
             grayscales = 0
 
@@ -945,9 +974,10 @@ class Fixture_GUI(gtk.Frame):
         #
 
         overlays = self.get_total_overlays() 
+
         for i in xrange(overlays):
-            cur_area = self.f_settings.fixture_config_file.get(\
-                self.get_settings_name(i+1))
+            cur_area = self.f_settings['fixture'][
+                self.get_settings_name(i+1)]
 
             text = self.get_settings_initial(active=i+1)
             
@@ -961,7 +991,7 @@ class Fixture_GUI(gtk.Frame):
                 self.change_fixture_overlay(by_name=text, area=cur_area)
 
 
-        mark_X, mark_Y = self.f_settings.get_markers_from_conf()
+        mark_X, mark_Y = self.f_settings['ref-markers']
 
         if mark_Y is not None and mark_X is not None:
             if self.ctd_markings is None: 
@@ -1013,7 +1043,7 @@ class Fixture_GUI(gtk.Frame):
 
             
             if active_name != None:
-                cur_area = self.f_settings.fixture_config_file.get(active_name)
+                cur_area = self.f_settings['fixture'][active_name]
                 if cur_area != None:
                     self.fixture_area_ul.set_text(str(cur_area[0]))
                     self.fixture_area_lr.set_text(str(cur_area[1]))
@@ -1027,11 +1057,11 @@ class Fixture_GUI(gtk.Frame):
     def set_grayscale_toggle(self, widget=None, event=None, data=None):
 
         if self.fixture_grayscale_checkbox.get_active():
-            self.f_settings.fixture_config_file.set("grayscale", True)
+            self.f_settings['fixture'].set("grayscale", True)
             #self.reactivate_fixture_overlay(by_name='G')
         else:
-            self.f_settings.fixture_config_file.set("grayscale", False)
-            self.f_settings.fixture_config_file.delete("grayscale_area")
+            self.f_settings['fixture'].set("grayscale", False)
+            self.f_settings["fixture"].delete("grayscale_area")
             self.remove_fixture_overlay(by_name='G')
 
         self.reset_drop_down()
@@ -1055,8 +1085,8 @@ class Fixture_GUI(gtk.Frame):
         if plate_diff < 0:
             for i in xrange(abs(plate_diff)):
                 self.remove_fixture_overlay(by_name=str(plates+i))
-                self.f_settings.fixture_config_file.set("plate_%d_area" %\
-                    (plates+i),[(-1,-1),(-1,-1)], overwrite=False)
+                self.f_settings['fixture'].set("plate_{0}_area".format(
+                    plates+i),[(-1,-1),(-1,-1)], overwrite=False)
         elif plate_diff > 0:
             for i in xrange(abs(plate_diff)):
 

@@ -29,11 +29,8 @@ import uuid
 # SCANNOMATIC LIBRARIES
 #
 
-import src.resource_log_maker as log_maker
-import src.resource_log_reader as log_reader
 import src.resource_power_manager as power_manager
-import src.resource_image as img_base
-import src.resource_fixture as fixture_settings
+import src.resource_fixture_image as fixture_settings_image
 import src.resource_os as os_tools
 
 #
@@ -93,8 +90,8 @@ class Scanning_Experiment(gtk.Frame):
         gtk.Frame.__init__(self, prefix)
 
         self._fixture_config_root = self.owner._program_config_root + os.sep + "fixtures"
-        self.f_settings = fixture_settings.Fixture_Settings(\
-            self._fixture_config_root, fixture=fixture)
+        self.f_settings = resource_fixture_image.Fixture_Image(\
+            fixture, fixture_directory=self._fixture_config_root)
 
         self.pinning_string = ""
         self._matrices = matrices
@@ -225,7 +222,7 @@ class Scanning_Experiment(gtk.Frame):
 
         if continue_load:
             try:
-                shutil.copy(self.f_settings.conf_location,
+                shutil.copy(self.f_settings['fixture-path'],
                     self._root + os.sep + self._prefix + os.sep + fixture + ".config") 
                 
             except:
@@ -332,44 +329,44 @@ class Scanning_Experiment(gtk.Frame):
 
     def _write_log(self, file_list=None):
         if file_list:
-            gs_data = []
+            data = []
 
             if type(file_list) != types.ListType:
                 file_list = [file_list]
 
             for f in file_list:
-                gs_data.append({'Time':time.time()})
+                im_data = {'Time':time.time(), 'File': f}
                 self.DMS("Analysis", "Grayscale analysis of" + str(f), 
                     level="LA", debug_level='debug')
 
-                self.f_settings.image_path = f
-                self.f_settings.marker_analysis()
-                self.f_settings.set_areas_positions()
-                dpi_factor = 4.0
-                self.f_settings.A.load_other_size(f, dpi_factor)
-                grayscale = self.f_settings.A.get_subsection(\
-                    self.f_settings.current_analysis_image_config.get("grayscale_area"))
+                self.f_settings.set_image(image_path=f)
 
-                gs_data[-1]['mark_X'] = list(self.f_settings.mark_X)
-                gs_data[-1]['mark_Y'] = list(self.f_settings.mark_Y)
+                self.f_settings.run_marker_analysis()
+                self.f_settings.set_current_areas()
+                self.f_settings.analyse_grayscale()
 
-                if grayscale != None:
-                    gs = img_base.Analyse_Grayscale(image=grayscale)
-                    gs_data[-1]['grayscale_values'] = gs._grayscale
-                    gs_data[-1]['grayscale_indices'] = gs.get_target_values()
-                else:
-                    gs_data[-1]['grayscale_values'] = None
-                    gs_data[-1]['grayscale_indices'] = None
-            
-                sections_areas = self.f_settings.current_analysis_image_config.get_all("plate_%n_area")
+                gs_indices, gs_values = self.f_settings['grayscale']
+                
+                im_data['grayscale_values'] = gs_values
+                im_data['grayscale_indices'] = gs_indices
+                im_data['mark_X'], im_data['mark_Y'] = self.f_settings['markers']            
+
+                sections_areas = self.f_settings['plates']
+
+                im_data['plates'] = len(sections_areas)
+
+                plate_str = "plate_{0}_area"
                 for i, a in enumerate(sections_areas):
-                    #s = self.f_settings.A.get_subsection(a)
-                    gs_data[-1]['plate_' + str(i) + '_area'] = list(a)
+                    im_data[plate_str.format(i)] = list(a)
 
-            fs = open(self._analysis_log_file_path,'a')
-            log_maker.make_entries(fs, file_list=file_list, extra_info=gs_data,
-                verbose=False, quiet=False)
-            fs.close()
+                data.append(im_data)
+
+            if resource_project_log.append_image_dicts(
+                self._analysis_log_file_path, data) == False:
+
+                self.DMS("Analysis", "Failed to append image data", level=LA,
+                    debug_level="error")
+
             self.DMS("Analysis","Done. Nothing more to do for that image...", 
                 level="LA", debug_level='debug')
 

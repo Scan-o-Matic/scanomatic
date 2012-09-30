@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-"""
-The script takes a list of scanned images and as far as possible creates a
-logfile that can be used to run the analys work-flow.
-"""
+"""This script is for recompiling a log file from a list of images."""
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]

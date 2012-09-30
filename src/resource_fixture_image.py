@@ -1,0 +1,554 @@
+#!/usr/bin/env python
+"""Deals with fixture analysis of an image"""
+
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson", "Andreas Skyman"]
+__license__ = "GPL v3.0"
+__version__ = "0.997"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
+
+
+#
+# DEPENDENCIES
+#
+
+import os
+import time
+import sys
+import types
+import itertools
+import logging
+import numpy as np
+from matplotlib.pyplot import imread
+
+#
+# SCANNOMATIC LIBRARIES
+#
+
+import resource_image as img_base
+import resource_config as conf
+
+
+class Fixture_Image(object):
+
+    def __init__(self, fixture, image_path=None,
+            image=None, markings=None, define_reference=False,
+            fixture_directory=None, markings_path=None,
+            im_scale=None):
+
+        self._define_reference = define_reference
+        self.fixture_name = fixture
+        self.im_scale = im_scale
+        self.im_original_sacle = im_scale
+
+        self.set_reference_file(fixture,
+            fixture_directory=fixture_directory,
+            image_path=image_path)
+
+        self.set_markings_path(markings_path)
+
+        self.set_number_of_markings(markings)
+
+        self._markers_X = None
+        self._markers_Y = None
+        self._gs_values = None
+        self._gs_indices = None
+        self.im = None
+
+        self.set_image(image=image, image_path=image_path)
+
+    def _output_f(self, *args, **kwargs):
+
+        print "Debug output function: ", args, kwargs
+
+    def __getitem__(self, key):
+
+        if key in ['image']:
+
+            return self.im
+
+        elif key in ['current']:
+
+            return self.fixture_current
+
+        elif key in ['fixture']:
+
+            return self.fixture_reference
+
+        elif key in ['fixture-path']:
+
+            return self._fixture_reference_path
+
+        elif key in ['name']:
+
+            return self.fixture_name
+
+        elif key in  ["grayscale", "greyscale"]:
+
+            return self._gs_indices, self._gs_values
+
+        elif key in ["markers", "marks"]:
+
+            return self._markers_X, self._markers_Y
+
+        elif key in ["ref-markers"]:
+
+            return self._get_markings(source="fixture")
+
+        elif key in ["plates"]:
+
+            return self.get_plates()
+
+    def _load_reference(self)
+
+        fixture_path = self._fixture_reference_path
+
+        self.fixture_reference = conf.Config_File(fixture_path)
+        self.fixture_current = conf.Config_File(fixture_path + "_tmp")
+
+    def set_number_of_markings(self, markings):
+
+        if markings is not None:
+
+            self.markings = markings
+
+        else:
+
+            self.markings = self.fixture_reference.get("marker_count")
+
+        if self._define_reference:
+
+            self['fixture'].set("marker_count", self.markings)
+
+    def set_marking_path(self, marking_path):
+
+        if markings_path is not None:
+
+            self.marking_path = marking_path
+
+        else:
+
+            self.marking_path = self.fixture_reference.get("marker_path")
+
+        if self._define_reference:
+
+            self['fixture'].set("marker_path", self.marking_path)
+
+    def set_image(self, image=None, image_path=None):
+
+        if image is not None:
+
+            self.im = image
+
+        elif image_path is not None:
+
+            self.im = imread(image_path)
+
+        else:
+
+            self.im = None
+
+    def set_reference_file(self, fixture_name, fixture_directory=None,
+            image_path=None):
+
+        if fixture_directory is not None:
+
+            self._fixture_reference_path = \
+                fixture_directory + os.sep + fixture_name + ".config"
+
+        elif image_path is not None:
+
+            self._fixture_reference_path = \
+                os.sep.join(image_path.split(os.sep)[:-1]) + \
+                os.sep + fixture_name + ".config"
+
+        else:
+
+            self._fixture_reference_path = fixture_name + ".config"
+
+        self._load_reference()
+
+    def threaded(self, output_function=None):
+
+        if output_function is None:
+            output_function = self._output_f
+
+        t = time.time()
+        output_function('Fixture calibration',
+                    "Threading invokes marker analysis", "LA",
+                    debug_level='info')
+
+        self.run_marker_analysis()
+
+        output_function('Fixture calibration',
+                    "Threading marker detection complete, invokes setting area positions" +
+                    " (acc-time {0} s)".format(time.time()-t), "LA",
+                    debug_level='info')
+
+        self.set_current_areas()
+
+        output_function('Fixture calibration',
+                    "Threading areas set(acc-time: {0} s)".format(time.time()-t),
+                    "LA", debug_level='info')
+
+        self.analyse_grayscale()
+
+        output_function('Fixture calibration',
+                    "Threading done (took: {0} s)".format(time.time()-t),
+                    "LA", debug_level='info')
+
+
+
+    def _get_markings(self, source='fixture'):
+
+        X = []
+        Y = []
+
+        if self.markings == 0 or self.markings is None:
+
+            return None, None
+
+        for m in xrange(self.markings):
+
+            Z = self[source]['marking_{0}'.format(m)]
+
+            if Z is not None:
+
+                X.append(Z[0])
+                Y.append(Z[1])
+
+        if len(X) == 0:
+
+            return None, None
+
+        return np.array(X), np.array(Y)
+
+    def run_marker_analysis(self, output_function=None):
+
+        if output_function is None:
+
+            output_function = self._output_f
+
+        t = time.time()
+
+        if self.marking_path == None or self.markings < 1:
+
+            msg = "Error, no marker set ('%s') or no markings (%s)." % (
+                self.marking_path, self.markings)
+
+            output_function('Fixture calibration: Marker Detection', msg, "LA",
+                        debug_level='error')
+
+            return None
+
+        if self._define_reference:
+
+            analysis_im_path = self._fixture_config_root + os.sep + \
+                    self.fixture_name + ".tiff"
+
+            target_conf_file = self.fixture_reference
+
+        else:
+
+            analysis_im_path = None
+            target_conf_file = self.fixture_current
+
+        target_conf_file.set("version", __version__)
+
+        output_function('Fixture calibration: Marker Detection', "Scaling image", "LA",
+                        debug_level='info')
+
+        if self.im_scale is not None:
+
+            analysis_img = self.im
+
+        else:
+
+            analysis_img = img_base.Quick_Scale_To_im(self.im, scale=0.25)
+            self.im_scale = 0.25
+
+        output_function('Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
+                        time.time()-t), "LA",
+                        debug_level='info')
+
+        if analysis_im_path is not None:
+
+            np.save(analysis_im_path, analysis_img)
+
+        msg = "Setting up Image Analysis (acc {0} s)".format(time.time()-t)
+
+        output_function('Fixture calibration: Marker Detection', msg, 'A',
+                    debug_level='debug')
+
+        im_analysis = img_base.Image_Analysis(
+                    image=analysis_img,
+                    pattern_image_path=self.marking_path,
+                    scale=self.im_scale)
+
+        msg = "Finding pattern (acc {0} s)".format(time.time()-t)
+
+        output_function('Fixture calibration, Marker Detection', msg, 'A',
+                    debug_level='debug')
+
+        Xs, Ys = im_analysis.find_pattern(markings=self.markings)
+
+        self._markers_X = Xs
+        self._markers_Y = Ys
+
+        if Xs is None or Ys is None:
+
+            output_function('Fixture error', "No markers found")
+
+        elif len(Xs) == self.markings:
+
+            self._set_markings_in_conf(target_conf_file, Xs, Ys)
+
+        msg = "Marker Detection complete (acc {0} s)".format(time.time()-t)
+        output_function('Fixture calibration: Marker Detection', msg, 'A',
+                    debug_level='debug')
+
+        return analysis_im_path
+
+    def _set_markings_in_conf(self, conf_file, Xs, Ys):
+
+        for i in xrange(len(Xs)):
+
+            conf_file.set("marking_" + str(i), (Xs[i], Ys[i]))
+
+        conf_file.set("marking_center_of_mass", (Xs.mean(), Ys.mean()))
+
+    def _get_markings_rotations(self):
+
+        #CURRENT SETTINGS
+        X, Y = self._get_markings(source="current")
+        X = np.array(X)
+        Y = np.array(Y)
+        Mcom = self['current']['marking_center_of_mass']
+        dX = X - Mcom[0]
+        dY = Y - Mcom[1]
+
+        L = np.sqrt(dX ** 2 + dY ** 2)
+
+        #FIXTURE SETTINGS
+        version = self['fixture']['version']
+        refX, refY = self._get_markings(source="fixture")
+        refX = np.array(refX)
+        refY = np.array(refY)
+        ref_Mcom = self['fixture']["marking_center_of_mass"]
+
+        if version is None or version < 0.998:
+            refX *= 4
+            refY *= 4
+            ref_Mcom *= 4
+
+        ref_dX = refX - ref_Mcom[0]
+        ref_dY = refY - ref_Mcom[1]
+
+        ref_L = np.sqrt(ref_dX ** 2 + ref_dY ** 2)
+
+        if len(tmpY) == len(ref_X) == len(ref_Y):
+
+            #Find min diff order
+            s_reseed = range(len(ref_L))
+            s = range(len(L))
+
+            tmp_dL = []
+            tmp_s = []
+            for i in itertools.permutations(s):
+
+                tmp_dL.append((L[list(i)] - ref_L) ** 2)
+                tmp_s.append(i)
+
+            dLs = np.array(tmp_dL).sum(1)
+            s = list(tmp_s[dLs.argmin()])
+
+            print "** Found sort order that matches the reference", s,
+            print ". Error:", np.sqrt(dLs.min())
+
+            #Quality control of all the markers so that none is bad
+            #Later
+
+            #Rotations
+            A = np.arccos(dX / L)
+            A = A * (dY > 0) + -1 * A * (dY < 0)
+
+            ref_A = np.arccos(ref_dX / ref_L)
+            ref_A = ref_A * (ref_dY > 0) + -1 * ref_A * (ref_dY < 0)
+
+            dA = A[s] - ref_A
+
+            d_alpha = dA.mean()
+            print "** Found average rotation", d_alpha,
+            print "from set of delta_rotations:", dA
+
+            return d_alpha, Mcom
+
+        else:
+
+            print "*** ERROR: Missmatch in number of markings"
+            return None
+
+    def get_subsection(self, section):
+
+        im = self['image']
+
+        if im is not None and section is not None:
+
+            section = zip(*map(sorted, zip(*section)))
+
+            try:
+
+                subsection = im[
+                    section[0][0]: section[1][0],
+                    section[0][1]: section[1][1]]
+
+            except:
+
+                subsection = None
+
+            return subsection
+
+        return None
+
+
+    def analyse_grayscale(self):
+
+        im = self.get_subsection(self['current']['grayscale_area'])
+
+        if im is None:
+            return False
+
+        ag = resource_image.Analyse_Grayscale(target_type="Kodak", 
+            image=im, scale_factor=self.im_original_sacle)
+        
+        gs_indices = ag.get_target_values()
+        gs_values = ag.get_source_values()
+        self._gs_values = gs_values
+        self._gs_indices = gs_indices
+
+        if self._define_reference:
+
+            self['fixture'].set('grayscale_indices', gs_indices)
+
+    def _get_rotated_point(self, point, alpha, offset=(0, 0)):
+
+        tmp_l = np.sqrt(point[0] ** 2 + point[1] ** 2)
+        tmp_alpha = np.arccos(point[0] / tmp_l)
+
+        tmp_alpha = tmp_alpha * (point[1] > 0) + -1 * tmp_alpha * \
+                            (point[1] < 0)
+
+        new_alpha = tmp_alpha + alpha
+        new_y = np.cos(new_alpha) * tmp_l + offset[0]
+        new_x = np.sin(new_alpha) * tmp_l + offset[1]
+
+        return (new_x, new_y)
+
+    def set_current_areas(self):
+
+        X, Y = self._get_markings(source='current') 
+        alpha, Mcom = self._get_markings_rotations()
+
+        ref_Mcom = self['fixture']["marking_center_of_mass"]
+
+        self['current'].flush()
+        self._set_markings_in_conf(self['current']. X, Y)
+
+        ref_gs = self['fixture']["grayscale_area"]
+        version = self['fixture']['version']
+        if version is None or version < 0.998:
+            ref_Mcom *= 4
+            scale_factor = 4
+        else:
+            scale_factor = 1
+ 
+        if ref_gs is not None and bool(self['fixture']["grayscale"]) == True:
+
+            dGs1 = scale_factor * np.array(ref_gs[0]) - ref_Mcom
+            dGs2 = scale_factor * np.array(ref_gs[1]) - ref_Mcom
+
+            self['current'].set("grayscale_area",
+                [self._get_rotated_point(dGs1, alpha, offset=Mcom),
+                self._get_rotated_point(dGs2, alpha, offset=Mcom)])
+
+        i = 0
+        ref_m = True
+        p_str = "plate_{0}_area"
+        f_plates = self['fixture'].get_all("plate_%n_area")
+
+        for i, p in enumerate(f_plates):
+
+                dM1 = scale_factor * np.array(p[0]) - ref_Mcom
+                dM2 = scale_factor * np.array(p[1]) - ref_Mcom
+
+                self['current'].set(p_str.format(i),
+                    [self._get_rotated_point(dM1, alpha, offset=Mcom),
+                    self._get_rotated_point(dM2, alpha, offset=Mcom)])
+
+    def get_plates(self, source="current", indices=False):
+
+        plate_list = []
+
+        p = True
+        ps = "plate_{0}_area"
+        i = 0
+
+        while p is not None:
+
+            p = self[source][ps.format(i)]
+
+            if p is not None:
+
+                if indices:
+                    plate_list.append(i)
+                else:
+                    plate_list.append(p)
+
+            i += 1
+
+        return plate_list
+
+    def get_pinning_history(self, plate, pin_format):
+
+        ph = "plate_{0}_pinning_{1}"
+
+        return self['fixture'][ph.format(plate, pin_format)]
+
+    def set_append_pinning_position(self, plate, pin_format, position):
+
+        ph = "plate_{0}_pinning_{1}"
+        h = self.get_pinning_history(plate, pin_format)
+
+        if h is None:
+
+            h = []
+
+        h.append(position)
+
+        self['fixture'].set(ph.format(plate, pin_format), h)
+        self['fixture'].save()
+
+    def set_pinning_positions(self, plate, pin_format, position_list):
+
+        ph = "plate_{0}_pinning_{1}"
+
+        self['fixture'].set(ph.format(plate, pin_format),
+                        position_list)
+
+        self['fixture'].save()
+
+    def reset_pinning_history(self, plate):
+
+        ph = "plate_{0}_pinning_{1}"
+        pin_formats = [(8, 12), (16, 24), (32, 48), (64, 96)]
+        for pin_format in pin_formats:
+            self['fixture'].set(ph.format(plate, pin_format), [])
+        self['fixture'].save()
+
+    def reset_all_pinning_histories(self):
+
+        for p in self.get_plates(indices=True):
+            self.reset_pinning_history(p)

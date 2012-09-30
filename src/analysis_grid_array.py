@@ -42,6 +42,7 @@ class Grid_Array():
         grid_cell_settings=None):
 
         self._parent = parent
+        self.fixture = parent.fixture
 
         if parent is None:
 
@@ -162,7 +163,7 @@ class Grid_Array():
 
     def set_history(self, adjusted_by_history=False):
 
-        topleft_history = self._parent.fixture.get_pinning_history(
+        topleft_history = self.fixture.get_pinning_history(
                 self._identifier[1], self._pinning_matrix)
 
         if topleft_history is None:
@@ -193,7 +194,7 @@ class Grid_Array():
                 if len(topleft_history) > 20:
                     del topleft_history[0]
 
-                self._parent.fixture.set_pinning_positions(\
+                self.fixture.set_pinning_positions(\
                     self._identifier[1], self._pinning_matrix, topleft_history)
 
     def set_grid(self, im):
@@ -222,7 +223,7 @@ class Grid_Array():
 
         if self._parent is not None:
 
-            topleft_history = self._parent.fixture.get_pinning_history(
+            topleft_history = self.fixture.get_pinning_history(
                         self._identifier[1], self._pinning_matrix)
 
         else:
