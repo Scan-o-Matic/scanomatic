@@ -250,6 +250,7 @@ class Analysis_Top_Root(Analysis_Top):
 
         self.show_all()
 
+
 class Analysis_Top_Project(Analysis_Top):
 
     def __init__(self, controller, model):
@@ -260,11 +261,11 @@ class Analysis_Top_Project(Analysis_Top):
 
         self._start_button = Analysis_Top_Project_Start_Button(controller, model)
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
-        self.set_allow_start(False)
+        self.set_allow_next(False)
 
         self.show_all()
 
-    def set_allow_start(self, val):
+    def set_allow_next(self, val):
 
         self._start_button.set_sensitive(val)
 
@@ -476,9 +477,11 @@ class Analysis_Stage_Project(gtk.VBox):
         #File - dialog
         frame = gtk.Frame(model['analysis-stage-project-file'])
         self.pack_start(frame, False, False, PADDING_SMALL)
-        hbox = gtk.HBox()
+        vbox = gtk.VBox(0, False)
+        frame.add(vbox)
+        hbox = gtk.HBox(0, False)
         hbox.set_border_width(PADDING_MEDIUM)
-        frame.add(hbox)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
         self.log_file = gtk.Entry()
         self.log_file.set_text(sm['analysis-project-log_file'])
         self.log_file.set_sensitive(False)
@@ -487,8 +490,36 @@ class Analysis_Stage_Project(gtk.VBox):
             label=model['analysis-stage-project-log_file_button-text'])
         button.connect("clicked", controller.project.set_log_file)
         hbox.pack_end(button, False, False, PADDING_SMALL)
-        frame.show_all()
+        #File - info
+        hbox = gtk.HBox(0, False)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
+        vbox_labels = gtk.VBox(0, False)
+        vbox_data = gtk.VBox(0, False)
+        hbox.pack_start(vbox_labels, False, False, PADDING_SMALL)
+        hbox.pack_start(vbox_data, True, True, PADDING_SMALL)
+        #File - prefix
+        label = gtk.Label(model['analysis-stage-project-file-prefix'])
+        label.set_justify(gtk.JUSTIFY_LEFT)
+        vbox_labels.pack_start(label, True, True, PADDING_SMALL)
+        self.file_prefix = gtk.Label("")
+        self.file_prefix.set_justify(gtk.JUSTIFY_LEFT)
+        vbox_data.pack_start(self.file_prefix, True, True, PADDING_SMALL)
+        #File - description
+        label = gtk.Label(model['analysis-stage-project-file-desc'])
+        label.set_justify(gtk.JUSTIFY_LEFT)
+        vbox_labels.pack_start(label, True, True, PADDING_SMALL)
+        self.file_desc = gtk.Label("")
+        self.file_desc.set_justify(gtk.JUSTIFY_LEFT)
+        vbox_data.pack_start(self.file_desc, True, True, PADDING_SMALL)
+        #File - images
+        label = gtk.Label(model['analysis-stage-project-file-images'])
+        label.set_justify(gtk.JUSTIFY_LEFT)
+        vbox_labels.pack_start(label, True, True, PADDING_SMALL)
+        self.file_images = gtk.Label("")
+        self.file_images.set_justify(gtk.JUSTIFY_LEFT)
+        vbox_data.pack_start(self.file_images, True, True, PADDING_SMALL)
  
+        #OUTPUT
         frame = gtk.Frame(model['analysis-stage-project-output_folder'])
         self.pack_start(frame, False, False, PADDING_MEDIUM)
         hbox = gtk.HBox()
@@ -503,8 +534,8 @@ class Analysis_Stage_Project(gtk.VBox):
         self.output_warning = gtk.Image()
         controller.project.set_output(self.output, self, "exit")
         hbox.pack_end(self.output_warning, False, False, PADDING_LARGE)
-        frame.show_all()
- 
+
+        #PINNING
         frame = gtk.Frame(model['analysis-stage-project-plates'])
         self.pack_start(frame, False, False, PADDING_MEDIUM)
         vbox = gtk.VBox()
@@ -519,13 +550,18 @@ class Analysis_Stage_Project(gtk.VBox):
         self.pm_box = gtk.HBox()
         vbox.pack_start(self.pm_box, False, True, PADDING_SMALL)
         self.keep_gridding.clicked()
-        frame.show_all()
 
-        self.show()
+        self.show_all()
 
     def _output_focus_out(self, widget, *args, **kwargs):
 
         self._controller.project.set_output(widget, self, "exit")
+
+    def set_log_file_data(self, file_prefix, file_desc, file_images):
+
+        self.file_prefix.set_text(file_prefix)
+        self.file_desc.set_text(file_desc)
+        self.file_images.set_text(file_images)
 
     def correct_output_path(self, new_path):
 
@@ -551,41 +587,46 @@ class Analysis_Stage_Project(gtk.VBox):
 
         self.log_file.set_text(self._specific_model['analysis-project-log_file'])
 
-    def set_pinning(self, pinnings_list, sensitive):
+    def set_pinning(self, pinnings_list, sensitive=None):
 
         box = self.pm_box
 
         children = box.children()
 
-        if len(children) < len(pinnings_list):
+        if pinnings_list is not None:
 
-           for p in xrange(len(pinnings_list) - len(children)):
+            if len(children) < len(pinnings_list):
 
-                box.pack_start(Analysis_Stage_Project_Pinning(
-                    self._controller, self._model, self,
-                    len(children) + p + 1))
+               for p in xrange(len(pinnings_list) - len(children)):
 
-           children = box.children()
+                    box.pack_start(Analysis_Stage_Project_Pinning(
+                        self._controller, self._model, self,
+                        len(children) + p + 1, self._specific_model,
+                        pinning=pinnings_list[p]))
 
-        if len(children) > len(pinnings_list):
+               children = box.children()
 
-            for p in xrange(len(children) - len(pinnings_list)):
-                box.remove[children[-1 - p]]
+            if len(children) > len(pinnings_list):
 
-            children = box.children()
+                for p in xrange(len(children) - len(pinnings_list)):
+                    box.remove(children[-1 - p])
 
-        for i, child in enumerate(children):
+                children = box.children()
 
-            child.set_sensitive(sensitive)
-            child.set_pinning(pinnings_list[i])
+            for i, child in enumerate(children):
 
+                child.set_sensitive(sensitive)
+                child.set_pinning(pinnings_list[i])
+
+        box.show_all()
 
 class Analysis_Stage_Project_Pinning(gtk.VBox):
 
     def __init__(self, controller, model, project_veiw, 
-            plate_number, pinning = None):
+            plate_number, specific_model, pinning = None):
 
             self._model = model
+            self._specific_model = specific_model
             self._controller = controller
             self._project_view = project_veiw
 
@@ -600,12 +641,12 @@ class Analysis_Stage_Project_Pinning(gtk.VBox):
 
             if pinning is None:
 
-                pinning = model['analysis-project-pinning-default']
+                pinning = specific_model['analysis-project-pinning-default']
 
             self.dropbox = gtk.combo_box_new_text()                   
 
             def_key = 0
-            for i, m in enumerate(sorted(model['pinning_matrices'].keys())):
+            for i, m in enumerate(sorted(model['pinning-matrices'].keys())):
 
                 self.dropbox.append_text(m)
 
@@ -614,11 +655,17 @@ class Analysis_Stage_Project_Pinning(gtk.VBox):
 
             self.dropbox.set_active(def_key)
             
-            self.dropbox.connect("changed",
-                self.controller.project.set_pinning, project_veiw,
+            self.dropbox_signal = self.dropbox.connect("changed",
+                self._controller.project.set_pinning,
                 plate_number)
 
+
+            self.pack_start(self.dropbox, True, True, PADDING_SMALL)
+
     def set_sensitive(self, val):
+
+        if val is None:
+            val = False
 
         self.dropbox.set_sensitive(val)
 
@@ -627,15 +674,18 @@ class Analysis_Stage_Project_Pinning(gtk.VBox):
 
         orig_key = self.dropbox.get_active()
         new_key = -2
+        pinning_text = self._model['pinning-matrices-reversed'][pinning]
 
-        for i, m in enumerate(sorted(model['pinning_matrices'].keys())):
+        for i, m in enumerate(sorted(self._model['pinning-matrices'].keys())):
 
-            if pinning in m:
+            if pinning_text == m:
                 new_key = i
 
         if new_key != orig_key:
 
+            self.dropbox.handler_block(self.dropbox_signal)
             self.dropbox.set_active(new_key)
+            self.dropbox.handler_unblock(self.dropbox_signal)
            
 class Analysis_Stage_Image_Selection(gtk.VBox):
 

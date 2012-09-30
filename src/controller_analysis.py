@@ -3,12 +3,13 @@ import types
 import gobject
 import threading
 import math
+import copy
 
 import model_analysis
 import view_analysis
 import controller_generic
 import resource_os
-import resource_log_reader
+import resource_project_log
 import analysis_wrapper as a_wrapper
 import resource_fixture
 import resource_image
@@ -348,7 +349,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         for f in log_files:
 
-            data = resource_log_reader.get_im_data(f, image)
+            data = resource_project_log.get_image_from_log_file(f, image)
 
             if data is not None:
 
@@ -905,11 +906,45 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         if len(log_files) > 0:
 
-            self._specific_model['analysis-project-log_file'] = log_files[0]
-            self._specific_model['analysis-project-log_file_dir'] = \
+            sm = self._specific_model
+            view = self._view.get_stage()
+
+            sm['analysis-project-log_file'] = log_files[0]
+            sm['analysis-project-log_file_dir'] = \
                 os.sep.join(log_files[0].split(os.sep)[: -1])
 
-            self._view.get_stage().set_log_file()
+            sm['analysis-project-pinnings-active'] = 'file'
+
+            meta_data, images = resource_project_log.get_log_file(
+                                log_files[0])
+
+            if 'Pinning Matrices' in meta_data:
+
+                pinning_matrices = meta_data['Pinning Matrices']
+
+            else:
+
+                plates=resource_project_log.get_number_of_plates(
+                                meta_data=meta_data, images=images)
+                if plates > 0:
+
+                    pinning_matrices = [None] * plates
+
+                else:
+
+                    pinning_matrices = None
+
+            sm['analysis-project-pinnings-from-file'] = pinning_matrices
+            sm['analysis-project-pinnings'] = copy.copy(pinning_matrices)
+
+            view.set_log_file()
+
+            view.set_log_file_data(
+                meta_data['Prefix'], meta_data['Description'],
+                str(len(images)))
+
+            view.set_pinning(pinning_matrices)
+
             self.set_output_dupe()
 
     def set_output(self, widget, view, event):
@@ -954,17 +989,53 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         if widget.get_active():
 
+            sm['analysis-project-pinnings-active'] = 'file'
             view.set_pinning(
-                sm['analysis-project-pinnings-from-file'], False)
+                sm['analysis-project-pinnings-from-file'],
+                sensitive=False)
 
         else:
 
+            sm['analysis-project-pinnings-active'] = 'gui'
             view.set_pinning(
-                sm['analysis-project-pinnings'], True)
-            
-    def set_pinning(self, widget, view, *args, **kwargs):
+                sm['analysis-project-pinnings'],
+                sensitive=True)
 
-        print view, args, kwargs
+        self.set_ready_to_run()
+            
+    def set_pinning(self, widget, plate, *args, **kwargs):
+
+        sm = self._specific_model
+        m = self._model
+
+        pinning_txt = widget.get_active_text()
+
+        if pinning_txt in m['pinning-matrices']:
+            pinning = m['pinning-matrices'][pinning_txt]
+        else:
+            pinning = None
+
+        sm['analysis-project-pinnings'][plate - 1] = pinning
+
+        self.set_ready_to_run()
+
+    def set_ready_to_run(self):
+
+        sm = self._specific_model
+
+        if sm['analysis-project-pinnings-active'] == 'file':
+
+            sm_key = 'analysis-project-pinnings-from-file'
+
+        else:
+
+            sm_key = 'analysis-project-pinnings'
+
+        plates_ok = sum([p != None for p in sm[sm_key]]) > 0
+
+        file_loaded = sm['analysis-project-log_file'] != ""
+
+        self._view.get_top().set_allow_next(file_loaded and plates_ok)
 
 class Analysis_Log_Controller(controller_generic.Controller):
 

@@ -38,7 +38,7 @@ from argparse import ArgumentParser
 import analysis_grid_array as grid_array
 import resource_config as conf
 import resource_fixture as r_fixture
-import resource_log_edit as rle
+import resource_project_log as rpl
 
 #
 # GLOBALS
@@ -291,11 +291,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
     if 'Description' not in image_dictionaries[0].keys():
 
-        fake_proj_metadata = \
-                rle.create_place_holder_meta_info(path=log_file_path)
-
-        rle.rewrite(log_file_path, {0: {'mode': 'a',
-                'data': str(fake_proj_metadata) + '\n'}})
+        rpl.write_meta_data(log_file_path)
 
         log_file = conf.Config_File(log_file_path)
 

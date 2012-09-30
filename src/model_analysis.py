@@ -106,6 +106,9 @@ to get quatitative values of average pigmentation.</i></span>
 
 'analysis-stage-project-file': 'Select Log File to Process',
 'analysis-stage-project-log_file_button-text': 'Browse...',
+'analysis-stage-project-file-prefix': 'Prefix',
+'analysis-stage-project-file-desc': 'Description',
+'analysis-stage-project-file-images': 'Images',
 
 'analysis-stage-project-output_folder': 
 'Output Folder (relative log-file path)',
@@ -117,7 +120,7 @@ to get quatitative values of average pigmentation.</i></span>
 
 'analysis-stage-project-plates': 'Tweak gridding',
 'analysis-stage-project-keep_gridding': 'Keep grids as specified in log-file',
-'analysis-stage-project-plate-label': 'Plate {0]',
+'analysis-stage-project-plate-label': 'Plate {0}',
 'analysis-stage-project-select-log-file-dialog': 'Select Log File',
 
 'analysis-stage-project-select-log-file-filter': {'filter_name': 'Log Files',
@@ -210,6 +213,12 @@ in the same order and watch the magic!</i>""",
                     'D: 64 x 96 (6144)': (64, 96),
                     '--Empty--': None},
 
+'pinning-matrices-reversed': {(8, 12): 'A: 8 x 12 (96)', 
+                    (16, 24): 'B: 16 x 24 (384)',
+                    (32, 48): 'C: 32 x 48 (1536)',
+                    (64, 96): 'D: 64 x 96 (6144)',
+                    None: '--Empty--'},
+
 'fixtures': list(),
 'fixtures-path': 'src{0}config{0}fixtures{0}'.format(os.sep),
 'not-implemented': "That feature hasn't been implemented yet!"
@@ -224,7 +233,8 @@ specific_project = {
 'analysis-project-plates': 0,
 'analysis-project-pinning-default': '1536',
 'analysis-project-pinnings': (),
-'analysis-project-pinnings-from-file': ()
+'analysis-project-pinnings-from-file': (),
+'analysis-project-pinnings-active': 'file'
 }
 
 specific_transparency = {

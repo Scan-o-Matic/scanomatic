@@ -157,6 +157,51 @@ def get_log_file(path):
     return get_meta_data(path=path), get_image_entries(path)
 
 
+def get_image_from_log_file(path, image):
+
+    meta_data, images = get_log_file(path)
+
+    res = [im for im in images if image in im['File']]
+
+    if len(res) > 0:
+
+        return res[0]
+
+    return None
+
+
+def get_number_of_plates(path=None, meta_data=None, images=None):
+
+    plates = -1
+
+    if path is not None:
+
+        meta_data, images = get_log_file(path)
+
+    if meta_data is not None:
+
+        if 'Pinning Matrices' in meta_data:
+
+            plates = len(meta_data['Pinning Matrices'])
+
+    if plates < 0 and images is not None:
+
+        image = images[0]
+
+        p_str = "plate_{0}_area"
+        i = 0
+
+        while p_str.format(i) in image:
+
+            i += 1
+
+        if i > 0:
+
+            plates = i
+
+    return plates
+        
+
 def write_meta_data(path, meta_data=None, over_write=False):
     """Will write new data to file, over_write flag, if true
     will throw everything away that was there, else as much
