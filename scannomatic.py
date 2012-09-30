@@ -90,7 +90,6 @@ class Application_Window():
         </menu>
         <menu action="Analysis">
             <menuitem action="Analyse Project"/>
-            <menuitem action="Analyse One Image"/>
             <menuitem action="Inspect and Adjust Gridding"/>
         </menu>
         <menu action="Settings">
@@ -247,8 +246,6 @@ class Application_Window():
                 ("Analysis",   None,   "Analysis",    None,    None,   None),
                 ("Analyse Project", None, "Analyse Project", None, None,
                     self.menu_Project),
-                ("Analyse One Image", None, "Analyse One Image", None, None,
-                    self.menu_Analysis),
                 ("Inspect and Adjust Gridding", None,
                     "Inspect and Adjust Gridding", None, None, self.menu_Grid),
                 ("Settings", None, "Settings", None, None,   None),
@@ -300,11 +297,12 @@ class Application_Window():
         self.vbox.pack_start(self.fixture_config, False, False, 2)
 
         #Analyis GUI
+        """
         self.DMS("Program startup", "Initialising analysis GUI", "L",
                                                     debug_level='info')
         self.analyse_one = analysis.Analyse_One(self)
         self.vbox.pack_start(self.analyse_one, False, False, 2)
-
+        """
         #Analyse Project GUI
         self.DMS("Program startup", "Initialising project analysis GUI",
                                                 "L", debug_level='info')
@@ -420,11 +418,12 @@ class Application_Window():
     # ANALYSIS FUNCTIONS
     #
 
+    """
     def menu_Analysis(self, widget=None, event=None, data=None):
         self.DMS('Analysis', 'Activated', "L", debug_level='info')
         self.show_config(self.analyse_one)
         #self.analyse_one.f_settings.load()
-
+    """
     #
     #   FIXTURE FUNCTIONS
     #
@@ -568,7 +567,7 @@ class Application_Window():
 
         found_scanners = re.findall(pattern, out)
 
-        addresses = "libusb:{0}:{1}".format(*a) for a in found_scanners]
+        addresses = ["libusb:{0}:{1}".format(*a) for a in found_scanners]
 
         #Do stuff to live scanners
 
@@ -774,7 +773,6 @@ class Application_Window():
 
         self.DMS('Project Analysis', 'Activated', debug_level='info')
         self.show_config(self.analyse_project)
-        #self.analyse_one.f_settings.load()
 
     def analysis_Start_New(self, widget=None, event=None, data=None):
 

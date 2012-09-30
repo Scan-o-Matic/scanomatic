@@ -30,7 +30,8 @@ import analysis as project
 # Globals
 #
 
-_ga = grid_array.Grid_Array(None, (0,) ,None)
+_pi = project.Project_Image([])
+_ga = grid_array.Grid_Array(_pi, (0,) ,None)
 POLY = _ga.get_polynomial_coeffs()
 
 

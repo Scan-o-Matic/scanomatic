@@ -767,7 +767,7 @@ class Fixture_GUI(gtk.Frame):
         if result == gtk.RESPONSE_APPLY:
             self.fixture_image.set_text(newimg.get_filename())
             self.f_settings.set_image(newimg.get_filename())
-            if self.f_settings['image'] is not None
+            if self.f_settings['image'] is not None:
 
                 self.fixture_analysis_image = self.f_settings['image'] 
                 self.fix_image_ax.set_data(self.fixture_analysis_image)

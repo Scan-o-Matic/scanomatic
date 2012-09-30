@@ -32,8 +32,6 @@ import signal
 
 import src.resource_project_log as rpl
 import src.resource_power_manager as power_manager
-import src.resource_image as img_base
-import src.resource_fixture as fixture_settings
 import src.resource_os as os_tools
 
 

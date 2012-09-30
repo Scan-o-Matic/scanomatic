@@ -27,7 +27,7 @@ import numpy as np
 #
 
 import resource_config as conf
-import resource_fixture as r_fixture
+import resource_fixture_image as r_fixture_image
 import resource_signal as r_signal
 import analysis as analysis_module
 import resource_project_log as rpl
@@ -441,9 +441,10 @@ class Grid(gtk.Frame):
                 self.repinnings = {}
 
             if self._fixture_name is not None:
-                self.fixture = r_fixture.Fixture_Settings(\
-                    self._program_config_root + os.sep + "fixtures", 
-                    fixture = self._fixture_name)
+                self.fixture = r_fixture_image.Fixture_Image(
+                    self._fixture_name,
+                    fixture_directory=self._program_config_root \
+                    + os.sep + "fixtures")
 
                 while len(self.plate_selector.get_model()) > 0:
                     self.plate_selector.remove_text(0)
@@ -452,7 +453,7 @@ class Grid(gtk.Frame):
                 if self._pinning_matrices is not None:
                     self._set_number_of_plates(len(self._pinning_matrices))
                 else:
-                    self._set_number_of_plates(len(self.fixture.get_plates_list()))
+                    self._set_number_of_plates(len(self.fixture.get_plates()))
 
             self.analysis_image = None
 

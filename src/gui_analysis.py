@@ -30,7 +30,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 #
 
 import src.resource_image as img_base
-import src.resource_fixture as fixture_settings
+import src.resource_fixture_image as resource_fixture_image
 import src.analysis_wrapper as colonies
 import src.gui_grayscale as grayscale
 #

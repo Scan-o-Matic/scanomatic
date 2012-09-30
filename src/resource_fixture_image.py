@@ -48,7 +48,7 @@ class Fixture_Image(object):
             fixture_directory=fixture_directory,
             image_path=image_path)
 
-        self.set_markings_path(markings_path)
+        self.set_marking_path(markings_path)
 
         self.set_number_of_markings(markings)
 
@@ -102,7 +102,7 @@ class Fixture_Image(object):
 
             return self.get_plates()
 
-    def _load_reference(self)
+    def _load_reference(self):
 
         fixture_path = self._fixture_reference_path
 
@@ -125,7 +125,7 @@ class Fixture_Image(object):
 
     def set_marking_path(self, marking_path):
 
-        if markings_path is not None:
+        if marking_path is not None:
 
             self.marking_path = marking_path
 
