@@ -326,7 +326,7 @@ class Fixture_Image(object):
         X, Y = self._get_markings(source="current")
 
         if X is None or Y is None:
-            return None
+            return None, None
 
         X = np.array(X)
         Y = np.array(Y)
@@ -459,6 +459,7 @@ class Fixture_Image(object):
         X, Y = self._get_markings(source='current') 
         alpha, Mcom = self._get_markings_rotations()
 
+        Mcom = np.array(Mcom)
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
 
         self['current'].flush()
@@ -467,8 +468,9 @@ class Fixture_Image(object):
         ref_gs = self['fixture']["grayscale_area"]
         version = self['fixture']['version']
         if version is None or version < 0.998:
-            ref_Mcom *= 4
             scale_factor = 4
+            ref_Mcom *= scale_factor
+            Mcom *= scale_factor
         else:
             scale_factor = 1
  

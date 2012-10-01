@@ -442,11 +442,11 @@ class Analysis_Image_Controller(controller_generic.Controller):
  
                 for i, p in enumerate(pl):
 
-                    if back_compatible:
+                    """if back_compatible:
                         plate_coords[i] = self._get_scale_slice(p,
                             flip_coords=False)
-                    else:
-                        plate_coords[i] = p
+                    else:"""
+                    plate_coords[i] = p
 
             self._specific_model['plate-coords'] = plate_coords
 
