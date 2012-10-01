@@ -28,7 +28,7 @@ from matplotlib.pyplot import imread
 # SCANNOMATIC LIBRARIES
 #
 
-import resource_image as img_base
+import resource_image as resource_image
 import resource_config as conf
 
 
@@ -267,7 +267,7 @@ class Fixture_Image(object):
 
         else:
 
-            analysis_img = img_base.Quick_Scale_To_im(self.im, scale=0.25)
+            analysis_img = resource_image.Quick_Scale_To_im(im=self.im, scale=0.25)
             self.im_scale = 0.25
 
         output_function('Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
@@ -283,7 +283,7 @@ class Fixture_Image(object):
         output_function('Fixture calibration: Marker Detection', msg, 'A',
                     debug_level='debug')
 
-        im_analysis = img_base.Image_Analysis(
+        im_analysis = resource_image.Image_Analysis(
                     image=analysis_img,
                     pattern_image_path=self.marking_path,
                     scale=self.im_scale)
@@ -349,7 +349,7 @@ class Fixture_Image(object):
 
         ref_L = np.sqrt(ref_dX ** 2 + ref_dY ** 2)
 
-        if len(tmpY) == len(ref_X) == len(ref_Y):
+        if Y.shape == refX.shape == refY.shape:
 
             #Find min diff order
             s_reseed = range(len(ref_L))
@@ -452,10 +452,10 @@ class Fixture_Image(object):
         X, Y = self._get_markings(source='current') 
         alpha, Mcom = self._get_markings_rotations()
 
-        ref_Mcom = self['fixture']["marking_center_of_mass"]
+        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
 
         self['current'].flush()
-        self._set_markings_in_conf(self['current']. X, Y)
+        self._set_markings_in_conf(self['current'], X, Y)
 
         ref_gs = self['fixture']["grayscale_area"]
         version = self['fixture']['version']
@@ -488,6 +488,10 @@ class Fixture_Image(object):
                     [self._get_rotated_point(dM1, alpha, offset=Mcom),
                     self._get_rotated_point(dM2, alpha, offset=Mcom)])
 
+    def _get_coords_sorted(self, coords):
+
+        return zip(*map(sorted, zip(*coords)))
+
     def get_plates(self, source="current", indices=False):
 
         plate_list = []
@@ -505,6 +509,7 @@ class Fixture_Image(object):
                 if indices:
                     plate_list.append(i)
                 else:
+                    p = self._get_coords_sorted(p)
                     plate_list.append(p)
 
             i += 1

@@ -340,6 +340,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         im_dir = os.sep.join(image.split(os.sep)[:-1])
 
+        image = image.split(os.sep)[-1]
+
         extension = ".log"
 
         log_files = [im_dir + os.sep + f for f in os.listdir(im_dir) 
@@ -347,9 +349,11 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         data = None
 
+        
         for f in log_files:
 
             data = resource_project_log.get_image_from_log_file(f, image)
+            print f, data
 
             if data is not None:
 
@@ -423,19 +427,25 @@ class Analysis_Image_Controller(controller_generic.Controller):
             gs_targets, gs = self.fixture['grayscale']
             self.set_auto_grayscale(gs, gs_targets) 
 
-            pl = self.fixture.get_plates_list()
+            pl = self.fixture.get_plates()
+            version = self.fixture['fixture']['version']
+            if version is None or version < 0.998:
+                back_compatible=True
+            else:
+                back_compatible=False
 
             plate_coords = dict()
             if pl is not None:
 
-                imd = self.fixture['current']
                 s_pattern = "plate_{0}_area"
  
                 for i, p in enumerate(pl):
 
-                    if p is not None:
+                    if back_compatible:
                         plate_coords[i] = self._get_scale_slice(imd.get(s_pattern.format(p)),
                             flip_coords=True)
+                    else:
+                        plate_coords[i] = p
 
             self._specific_model['plate-coords'] = plate_coords
 

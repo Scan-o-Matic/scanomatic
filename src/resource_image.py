@@ -469,6 +469,9 @@ class Analyse_Grayscale(object):
 
         orth_diff = -1
 
+        if scale_factor is None:
+            scale_factor = 1.0
+
         kern = np.asarray([-1, 0, 1])
         Aorth = A.mean(0)
         Aorth_edge = abs(fftconvolve(kern, Aorth, 'same'))
@@ -532,6 +535,8 @@ class Analyse_Grayscale(object):
 
     def _get_para_trimmed(self, rect, scale_factor):
 
+        if scale_factor is None:
+            scale_factor = 1.0
 
         i = (rect[1][0] - rect[0][0]) / 2.0
 
@@ -594,7 +599,7 @@ class Analyse_Grayscale(object):
 
         return [[0, 0], [self._img.shape[0], self._img.shape[1]]]
 
-    def get_grayscale(self, image=None, scale_factor=1.0, dpi=600):
+    def get_grayscale(self, image=None, scale_factor=None, dpi=600):
 
         if image != None:
 
@@ -608,6 +613,9 @@ class Analyse_Grayscale(object):
         #plt.imshow(self._img)
         #plt.show()
         #DEBUG PLOT END
+
+        if scale_factor is None:
+            scale_factor = 1.0
 
         if scale_factor == 1 and dpi != 600:
 
