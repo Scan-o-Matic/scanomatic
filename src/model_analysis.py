@@ -143,6 +143,8 @@ to get quatitative values of average pigmentation.</i></span>
 
 'analysis-stage-image-selection-list-column-title': 'Image Path(s)',
 
+'analysis-stage-image-selection-continue-log': 'Continue previous log session',
+'analysis-stage-image-selection-continue-button': 'Select CSV-file...',
 'analysis-stage-image-selection-logging-title': 'Logging interests',
 'analysis-stage-image-selection-compartments': 'Compartments',
 'analysis-stage-image-selection-measures': 'Measures',
@@ -261,6 +263,7 @@ specific_transparency = {
 'selection-size': None,
 'selection-drawing': False,
 'image-array': None,
+'log-previous-file': None,
 'log-interests': [None, None],
 'log-meta-features': ('image','plate-coords','plate-index','plate-media',
 'selected-plate-area', 'strain'),

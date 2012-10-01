@@ -279,12 +279,13 @@ class Analysis_Controller(controller_generic.Controller):
             elif stage_call == "log_book":
 
                 specific_model = args[1]
-                specific_model['stage'] = 'plate'
+                specific_model['stage'] = 'done'
 
                 view.set_top(
                     view_analysis.Analysis_Top_Done(
                     self, model))
 
+                self.transparency._log.set_view()
                 view.set_stage(
                     self.transparency._log.get_view())
 
@@ -457,6 +458,47 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         self._specific_model['fixture'] = widget.get_active()
 
+    def load_previous_log_file(self, widget, view):
+
+        log_file = view_analysis.select_file(
+            self._model['analysis-stage-log-title'],
+            multiple_files=False,
+            file_filter=
+            self._model['analysis-stage-log-save-file-filter'])
+
+        if len(log_file) > 0:
+
+            log_file = log_file[0]
+
+            try:
+
+                fs = open(log_file, 'r')
+
+            except:
+
+                return
+
+            headers = fs.readline().strip().split("\t")
+            fs.close()
+
+            headers = [h[1:-1] for h in headers]
+            interests = [h.split(": ") for h in headers if ":" in h]
+            compartments = {i[0] for i in interests}
+            measures = {i[1] for i in interests}
+
+            self._specific_model['log-interests'] = [list(compartments),
+                list(measures)]
+
+            self._specific_model['log-previous-file'] = log_file
+
+            view.set_interests_from_model()
+            view.set_lock_selection_of_interests(True)
+            view.set_previous_log_file(log_file)
+
+        else:
+
+            view.set_lock_selection_of_interests(False)
+            view.set_previous_log_file("")
 
     def set_new_images(self, widget, view, *args, **kwargs):
 
@@ -1062,6 +1104,10 @@ class Analysis_Log_Controller(controller_generic.Controller):
             view=view_analysis.Analysis_Stage_Log(self, general_model,
             model, parent_model))
 
+        if self._parent_model['log-previous-file'] is not None:
+            self._load_previous_file_contents()
+
+
     def _get_default_view(self):
 
         view = view_analysis.Analysis_Stage_Log(self, self._general_model,
@@ -1069,19 +1115,37 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
         return view
 
+    def _load_previous_file_contents(self):
+
+        log_file = self._parent_model['log-previous-file']
+        try:
+
+            fs = open(log_file, 'r')
+
+        except:
+
+            return False
+
+        measures = self._model['measures']
+        headers = fs.readline().strip().split("\t")
+
+        for data_row in fs:
+
+            data_row = data_row.strip().replace("\t",", ")
+            data = eval("[{0}]".format(data_row))
+            measures.append(data)
+            self._view.add_data_row(data)
+
+
+        fs.close()
+
+        return True
+
     def get_all_meta_filled(self):
 
         m = self._model
         pm = self._parent_model
 
-        print
-
-        print 'plate-names', m['plate-names']
-        print 'image', pm['image']
-        print 'plate', pm['plate']
-        print 'current-strain', m['current-strain']
-
-        print
         try:
 
             all_ok = m['plate-names'][pm['image']] is not None and \
@@ -1168,6 +1232,11 @@ class Analysis_Log_Controller(controller_generic.Controller):
         if len(file_name) > 0:
 
             file_name = file_name[0]
+
+            #Check so endin was filled in
+            ext_str = ".csv"
+            if ext_str not in file_name or file_name[-4:] != ext_str:
+                file_name += ext_str
 
             try:
 

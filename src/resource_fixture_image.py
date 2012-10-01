@@ -324,9 +324,16 @@ class Fixture_Image(object):
 
         #CURRENT SETTINGS
         X, Y = self._get_markings(source="current")
+
+        if X is None or Y is None:
+            return None
+
         X = np.array(X)
         Y = np.array(Y)
         Mcom = self['current']['marking_center_of_mass']
+        if Mcom is None:
+            Mcom = np.array((X.mean(), Y.mean()))
+
         dX = X - Mcom[0]
         dY = Y - Mcom[1]
 

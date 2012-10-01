@@ -698,11 +698,13 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         self._model = model
         self._specific_model = specific_model
 
+        #TITLE
         label = gtk.Label()
         label.set_markup(model['analysis-stage-image-selection-title'])
         self.pack_start(label, False, False, PADDING_LARGE)
         label.show()
 
+        #LEFT AND RIGHT SIDE BOXES
         hbox = gtk.HBox(0, False)
         self.pack_start(hbox, True, True, PADDING_SMALL)
         left_vbox = gtk.VBox(0, False)
@@ -710,6 +712,7 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         right_vbox = gtk.VBox(0, False)
         hbox.pack_start(right_vbox, True, True, PADDING_SMALL)
 
+        #SELECTED FILE LIST
         treemodel = gtk.ListStore(str)
         specific_model['images-list-model'] = treemodel
         self.treeview = gtk.TreeView(treemodel)
@@ -728,13 +731,27 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         hbox.pack_start(button, False, False, PADDING_SMALL)
         left_vbox.pack_end(hbox, False, False, PADDING_SMALL)
 
+        #USE FIXTURE FOR CALIBRATION ETC
         check_button = gtk.CheckButton(
             label=model['analysis-stage-image-selection-fixture'])
         check_button.set_active(specific_model['fixture'])
         check_button.connect("clicked", specific_controller.set_images_has_fixture)
         self.pack_start(check_button, False, False, PADDING_LARGE)
-        check_button.show()
 
+        #CONTINUE ON PREVIOUS LOG FILE
+        frame = gtk.Frame(
+            label=model['analysis-stage-image-selection-continue-log'])
+        hbox = gtk.HBox(0, False)
+        frame.add(hbox)
+        self.previous_log = gtk.Label("")
+        hbox.pack_start(self.previous_log, True, True, PADDING_SMALL)
+        button = gtk.Button(
+            label=model['analysis-stage-image-selection-continue-button'])
+        hbox.pack_end(button, False, False, PADDING_SMALL)
+        button.connect('clicked', specific_controller.load_previous_log_file, self)
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+
+        #LOGGING INTEREST SELECTION
         frame = gtk.Frame(
             label=model['analysis-stage-image-selection-logging-title'])
         vbox = gtk.VBox(0, False)
@@ -745,6 +762,9 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
             ('analysis-stage-image-selection-measures',
             'log-measures-default',
             specific_controller.log_measures))
+
+        self._interests = {'model': list(), 'selection': list(),
+            'handler': list(), 'widget': list()}
 
         for item_list_title, item_list, callback in selections:
 
@@ -758,17 +778,58 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
             treeview.set_reorderable(False)
             for s in specific_model[item_list]:
                 treemodel.append((s,))
-            selecton = treeview.get_selection()
-            selecton.set_mode(gtk.SELECTION_MULTIPLE)
-            selecton.connect("changed", callback)
+            selection = treeview.get_selection()
+            selection.set_mode(gtk.SELECTION_MULTIPLE)
+            selection_handler = selection.connect("changed", callback)
             for i in xrange(len(treemodel)):
-                selecton.select_path("{0}".format(i))
+                selection.select_path("{0}".format(i))
             vbox.pack_start(treeview, False, False, PADDING_SMALL)
+            self._interests['model'].append(treemodel)
+            self._interests['selection'].append(selection)
+            self._interests['handler'].append(selection_handler)
+            self._interests['widget'].append(treeview)
 
         frame.add(vbox)
         right_vbox.pack_start(frame, False, True, PADDING_LARGE)
 
         self.show_all()
+
+    def set_previous_log_file(self, path):
+
+        self.previous_log.set_text(path)
+
+    def set_lock_selection_of_interests(self, val):
+
+        val = not(val)
+
+        for i in xrange(2):
+
+            self._interests['widget'][i].set_sensitive(val)
+
+    def set_interests_from_model(self):
+
+        interests = self._specific_model['log-interests']
+
+        #Checking both 0: Compartments, 1: Measures
+        for i in xrange(2):
+
+            selection = self._interests['selection'][i]
+            selection_handler = self._interests['handler'][i]
+            treemodel = self._interests['model'][i]
+
+            selection.handler_block(selection_handler)
+
+            for row in xrange(len(treemodel)):
+
+                if treemodel[row][0] in interests[i]:
+
+                    selection.select_path("{0}".format(row))
+
+                else:
+
+                    selection.unselect_path("{0}".format(row))
+
+            selection.handler_unblock(selection_handler)
 
     def delete_selection(self):
 
