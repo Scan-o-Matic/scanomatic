@@ -443,7 +443,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 for i, p in enumerate(pl):
 
                     if back_compatible:
-                        plate_coords[i] = self._get_scale_slice(imd.get(s_pattern.format(p)),
+                        plate_coords[i] = self._get_scale_slice(p,
                             flip_coords=True)
                     else:
                         plate_coords[i] = p
