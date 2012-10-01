@@ -444,7 +444,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
                     if back_compatible:
                         plate_coords[i] = self._get_scale_slice(p,
-                            flip_coords=True)
+                            flip_coords=False)
                     else:
                         plate_coords[i] = p
 
