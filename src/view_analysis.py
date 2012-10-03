@@ -900,19 +900,60 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         hbox.pack_start(self.run_button, False, False, PADDING_SMALL)
 
 
+        #Progress bar
         hbox = gtk.HBox(0, False)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
-
         self.progress = gtk.ProgressBar()
         hbox.pack_start(self.progress, False, False, PADDING_SMALL)
         
-        hbox = gtk.HBox(0, False)
-        self.pack_start(hbox, False, False, PADDING_SMALL)
+        #Gray-Scale plot frame
+        frame = gtk.Frame(
+            self._model['analysis-stage-auto-norm-and-section-gs-title'])
+        vbox = gtk.VBox(0, False)
+        frame.add(vbox)
+        self.pack_start(frame, False, False, PADDING_SMALL)
+        
+        #Gray-Scale plot
+        self.figure = plt.Figure(figsize=(300, 400), dpi=150)
+        self.figure.add_axes()
+        self.figure_ax = self.figure.gca()
+        self.figure.subplots_adjust(left=0.10, bottom=0.15)
 
+        self.image_canvas = FigureCanvas(self.figure)
+
+        self.image_canvas.set_size_request(500, 180)
+        hbox = gtk.HBox(0, False)
+        hbox.pack_start(self.image_canvas, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        label = gtk.Label(
+            model['analysis-stage-auto-norm-and-section-gs-help'])
+        hbox = gtk.HBox(0, False)
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
         self.set_fixtures_from_model()
         self.cb.set_active(True)
+        self.set_image()
 
         self.show_all()
+
+    def set_image(self, X=None, Y=None):
+
+        sm = self._specific_model
+        self.figure_ax.cla()
+
+        if X is None or Y is None:
+            Y, X = sm['auto-transpose'][sm['image']].get_source_and_target()
+
+        if X is not None and Y is not None:
+
+            self.figure_ax.plot(X, Y)
+
+        plt.setp(self.figure_ax.get_yticklabels(), 
+            fontsize='xx-small')
+        plt.setp(self.figure_ax.get_xticklabels(), 
+            fontsize='xx-small')
+        self.image_canvas.draw()
 
     def set_detect_lock(self, val=True):
 
@@ -1207,6 +1248,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self.pack_end(self._specific_controller._log.get_view(),
             True, True, PADDING_LARGE)
 
+        #TITLE
         label = gtk.Label()
         label.set_markup(model['analysis-stage-image-plate-title'].format(
             specific_model['plate'] + 1))
@@ -1214,10 +1256,19 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         hbox = gtk.HBox(0, False)
 
+        #PLATE DESCIPTION
         label = gtk.Label(model['analysis-stage-image-plate-name'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.plate_description = gtk.Entry()
-        self.plate_description.connect("changed", specific_controller.set_in_log, "plate")
+
+        plate = specific_controller._log.get_suggested_plate_name(
+            specific_model['plate'])
+
+        if plate is not None:
+            self.plate_description.set_text(plate)
+
+        self.plate_description.connect("changed",
+            specific_controller.set_in_log, "plate")
         hbox.pack_start(self.plate_description, True, True, PADDING_SMALL)
         left_vbox.pack_start(hbox, False, True, PADDING_SMALL)
 
@@ -1228,9 +1279,12 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
             cmap=plt.cm.gray_r)
 
         self.image_canvas = FigureCanvas(self.figure)
-        self.image_canvas.mpl_connect('button_press_event', specific_controller.mouse_button_press)
-        self.image_canvas.mpl_connect('button_release_event', specific_controller.mouse_button_release)
-        self.image_canvas.mpl_connect('motion_notify_event', specific_controller.mouse_move)
+        self.image_canvas.mpl_connect('button_press_event',
+                specific_controller.mouse_button_press)
+        self.image_canvas.mpl_connect('button_release_event',
+                specific_controller.mouse_button_release)
+        self.image_canvas.mpl_connect('motion_notify_event',
+                specific_controller.mouse_move)
 
         self.figure_ax.get_xaxis().set_visible(False)
         self.figure_ax.get_yaxis().set_visible(False)
@@ -1343,6 +1397,14 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
             specific_controller.set_selection(pos=None, wh=None)
 
         self.show_all()
+
+    def set_strain(self, value):
+
+        self.strain_name.set_text(value)
+
+    def set_plate(self, value):
+
+        self.plate_description.set_text(value)
 
     def run_lock_select_check(self):
 

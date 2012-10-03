@@ -2,7 +2,7 @@ import os
 import types
 import gobject
 import threading
-import math
+import numpy as np
 import copy
 
 import model_analysis
@@ -70,7 +70,7 @@ class Analysis_Controller(controller_generic.Controller):
                 if user_data['view-data'] is None:
 
                     user_data['cb'] += 1
-                    user_data['view-function'](1 - math.exp(-0.01 * user_data['cb']))
+                    user_data['view-function'](1 - np.exp(-0.01 * user_data['cb']))
 
                 else:
 
@@ -354,7 +354,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
         for f in log_files:
 
             data = resource_project_log.get_image_from_log_file(f, image)
-            print f, data
 
             if data is not None:
 
@@ -411,22 +410,9 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         if self.fixture is not None:
 
-            """
-            self.fixture['image'].load_other_size()
-
-            gs_a = self._get_scale_slice(
-                self.fixture['current'].get("grayscale_area"))
-
-            grayscale_im = self.fixture['image'].get_subsection(gs_a)
-
-            ag = resource_image.Analyse_Grayscale(target_type="Kodak",
-                image=grayscale_im, scale_factor=1.0, dpi=600)
-
-            gs_pos, gs = ag.get_grayscale()
-            gs_targets = ag.get_target_values()
-            """
             gs_targets, gs = self.fixture['grayscale']
             self.set_auto_grayscale(gs, gs_targets) 
+            self.get_view().get_stage().set_image(gs, gs_targets)
 
             pl = self.fixture.get_plates()
             version = self.fixture['fixture']['version']
@@ -442,10 +428,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
  
                 for i, p in enumerate(pl):
 
-                    """if back_compatible:
-                        plate_coords[i] = self._get_scale_slice(p,
-                            flip_coords=False)
-                    else:"""
                     plate_coords[i] = p
 
             self._specific_model['plate-coords'] = plate_coords
@@ -782,13 +764,16 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
                 self._view.get_stage().set_section_image()
                 self._view.get_stage().set_analysis_image()
+
+                strain = self._log.get_suggested_strain_name(pos1)
+                if strain is not None:
+                    self._view.get_stage().set_strain(strain)
+
                 self.set_allow_logging()
 
     def set_allow_logging(self):
 
         sm = self._specific_model
-
-        print "Selection exists:", not(sm['plate-section-features'] is None)
 
         self._view.get_stage().set_allow_logging(not(sm['plate-section-features'] is None)
             and self._log.get_all_meta_filled())
@@ -1099,6 +1084,8 @@ class Analysis_Log_Controller(controller_generic.Controller):
         self._parent_model = parent_model
         self._general_model = general_model
         self._window = window
+        self._look_up_coords = list()
+        self._look_up_names = list()
 
         super(Analysis_Log_Controller, self).__init__(model=model,
             view=view_analysis.Analysis_Stage_Log(self, general_model,
@@ -1158,6 +1145,66 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
         return all_ok
 
+    def _set_look_up(self, m):
+
+        self._look_up_coords.append(m[4][0])
+        self._look_up_names.append(m[5])
+
+    def _set_look_up_strains(self, plate_index=None):
+
+        self._look_up_coords = list()
+        self._look_up_names = list()
+
+        measures = self._model['measures']
+        
+        if plate_index is not None:
+
+            for m in measures:
+
+                if m[2] == plate_index:
+
+                    self._set_look_up(m)
+
+        if len(self._look_up_coords) == 0:
+
+            for m in measures:
+
+                self._set_look_up(m)
+
+        self._look_up_coords = np.array(self._look_up_coords)
+
+    def get_suggested_strain_name(self, coords):
+
+        if len(self._look_up_names) == 0 :
+
+            self._set_look_up_strains(self._parent_model['plate'])
+
+        if self._look_up_coords.size > 0:
+
+            strain_pos = ((self._look_up_coords - coords)**2).sum(1).argmin()
+
+            if len(self._look_up_names) > strain_pos >= 0:
+                strain = self._look_up_names[strain_pos]
+                return strain
+
+        return None
+
+    def get_suggested_plate_name(self, index):
+
+        measures = self._model['measures']
+
+        plate_name = None
+
+        for m in measures:
+
+            if m[2] == index:
+
+                plate_name = m[3] 
+
+        self._set_look_up_strains(index)
+
+        return plate_name
+
     def set(self, key, item):
 
         if key == 'plate':
@@ -1188,10 +1235,12 @@ class Analysis_Log_Controller(controller_generic.Controller):
             m = self._model
 
             #META INFO
-            measures = [m['images'][-1], pm['plate-coords'][pm['plate']],
-                pm['plate'], m['plate-names'][pm['image']][pm['plate']],
-                (pm['selection-origin'], pm['selection-size']),
-                m['current-strain']]
+            measures = [m['images'][-1],  # pos 0, image-path
+                pm['plate-coords'][pm['plate']],  # pos 1 plate coordinates
+                pm['plate'],  # pos 2 plate index
+                m['plate-names'][pm['image']][pm['plate']],  # pos 3 plate name
+                (pm['selection-origin'], pm['selection-size']),  # pos 4 selection coords
+                m['current-strain']]  # 5 strain name
 
             features = pm['plate-section-features']
 
@@ -1213,6 +1262,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
             m['measures'].append(measures)
 
+            self._set_look_up_strains(plate_index=pm['plate'])
 
             self._view.add_data_row(measures)
 

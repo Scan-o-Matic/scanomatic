@@ -17,10 +17,8 @@ __status__ = "Development"
 
 import os
 import time
-import sys
 import types
 import itertools
-import logging
 import numpy as np
 from matplotlib.pyplot import imread
 
@@ -315,10 +313,17 @@ class Fixture_Image(object):
     def _set_markings_in_conf(self, conf_file, Xs, Ys):
 
         for i in xrange(len(Xs)):
-
             conf_file.set("marking_" + str(i), (Xs[i], Ys[i]))
 
         conf_file.set("marking_center_of_mass", (Xs.mean(), Ys.mean()))
+
+    def _version_check_positoins(self, *args):
+        """Note that it only works for NP-ARRAYS and NOT for lists"""
+        version = self['fixture']['version']
+        if version is None or version < 0.998:
+
+            for a in args:
+                a *= 4
 
     def _get_markings_rotations(self):
 
@@ -333,7 +338,8 @@ class Fixture_Image(object):
         Mcom = self['current']['marking_center_of_mass']
         if Mcom is None:
             Mcom = np.array((X.mean(), Y.mean()))
-
+        else:
+            Mcom = np.array(Mcom)
         dX = X - Mcom[0]
         dY = Y - Mcom[1]
 
@@ -344,13 +350,8 @@ class Fixture_Image(object):
         refX, refY = self._get_markings(source="fixture")
         refX = np.array(refX)
         refY = np.array(refY)
-        ref_Mcom = self['fixture']["marking_center_of_mass"]
-
-        if version is None or version < 0.998:
-            refX *= 4
-            refY *= 4
-            ref_Mcom *= 4
-
+        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
+        self._version_check_positoins(ref_Mcom, refX, refY)
         ref_dX = refX - ref_Mcom[0]
         ref_dY = refY - ref_Mcom[1]
 
@@ -374,7 +375,6 @@ class Fixture_Image(object):
 
             print "** Found sort order that matches the reference", s,
             print ". Error:", np.sqrt(dLs.min())
-
             #Quality control of all the markers so that none is bad
             #Later
 
@@ -390,6 +390,10 @@ class Fixture_Image(object):
             d_alpha = dA.mean()
             print "** Found average rotation", d_alpha,
             print "from set of delta_rotations:", dA
+
+            #Setting the current marker order so it matches the
+            #Reference one according to the returns variables!
+            self._set_markings_in_conf(self['current'], X[s], Y[s])
 
             return d_alpha, Mcom
 
@@ -409,8 +413,8 @@ class Fixture_Image(object):
             try:
 
                 subsection = im[
-                    section[0][0]: section[1][0],
-                    section[0][1]: section[1][1]]
+                    section[0][1]: section[1][1],
+                    section[0][0]: section[1][0]]
 
             except:
 
@@ -449,17 +453,15 @@ class Fixture_Image(object):
                             (point[1] < 0)
 
         new_alpha = tmp_alpha + alpha
-        new_y = np.cos(new_alpha) * tmp_l + offset[0]
-        new_x = np.sin(new_alpha) * tmp_l + offset[1]
+        new_x = np.cos(new_alpha) * tmp_l + offset[0]
+        new_y = np.sin(new_alpha) * tmp_l + offset[1]
 
         return (new_x, new_y)
 
     def set_current_areas(self):
 
-        X, Y = self._get_markings(source='current') 
         alpha, Mcom = self._get_markings_rotations()
-
-        Mcom = np.array(Mcom)
+        X, Y = self._get_markings(source='current') 
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
 
         self['current'].flush()
@@ -467,10 +469,11 @@ class Fixture_Image(object):
 
         ref_gs = self['fixture']["grayscale_area"]
         version = self['fixture']['version']
+
+        self._version_check_positoins(ref_Mcom)
+
         if version is None or version < 0.998:
             scale_factor = 4
-            ref_Mcom *= scale_factor
-            Mcom *= scale_factor
         else:
             scale_factor = 1
  

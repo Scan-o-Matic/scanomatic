@@ -207,6 +207,9 @@ in the same order and watch the magic!</i>""",
 'analysis-stage-auto-norm-and-section-file': 'Use already detected',
 'analysis-stage-auto-norm-and-section-fixture': 'Detect:',
 'analysis-stage-auto-norm-and-section-run': 'Run it!',
+'analysis-stage-auto-norm-and-section-gs-title': 'Grayscale',
+'analysis-stage-auto-norm-and-section-gs-help': 
+'Note that the curve should be monotonic (no bumps)',
 
 #GENERIC
 'pinning-matrices': {'A: 8 x 12 (96)': (8, 12), 

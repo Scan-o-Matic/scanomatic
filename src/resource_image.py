@@ -84,6 +84,9 @@ class Image_Transpose(object):
         self.gs_c = 1
         self.gs_d = 0
 
+        self.gs = None
+        self.gs_targets = None
+
         self.set_matrix(*args, **kwargs)
 
     def _get_p3(self, x):
@@ -175,7 +178,14 @@ class Image_Transpose(object):
                 x = float(y)
                 tf_matrix.append(x)
 
+        self.gs = gs_values
+        self.gs_targets = gs_indices
+
         self.tf_matrix = tf_matrix
+
+    def get_source_and_target(self):
+
+        return self.gs, self.gs_targets
 
     def get_transposed_im(self, im):
 
@@ -358,6 +368,8 @@ class Image_Analysis():
         return max_coord, conv_img
 
     def get_best_locations(self, conv_img, stencil_size, n, refine_hit=True):
+        """This returns the best locations as a list of coordinates on the
+        CURRENT IMAGE regardless of if it was scaled"""
 
         m_locations = []
         c_img = conv_img.copy()
@@ -372,13 +384,15 @@ class Image_Analysis():
         return m_locations
 
     def find_pattern(self, markings=3, img_threshold=130):
+        """This function returns the image positions as numpy arrays that
+        are scaled to match the ORIGINAL IMAGE size"""
 
         if self.get_loaded():
 
             c1 = self.get_convolution(threshold=img_threshold)
 
             m1 = np.array(self.get_best_locations(c1, self._pattern_img.shape,
-                markings, refine_hit=False))
+                markings, refine_hit=False)) * self._conversion_factor
 
             return m1[:, 1], m1[:, 0]
 
