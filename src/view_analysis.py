@@ -943,7 +943,8 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         self.figure_ax.cla()
 
         if X is None or Y is None:
-            Y, X = sm['auto-transpose'][sm['image']].get_source_and_target()
+            if len(sm['auto-transpose']) > sm['image']:
+                Y, X = sm['auto-transpose'][sm['image']].get_source_and_target()
 
         if X is not None and Y is not None:
 
