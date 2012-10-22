@@ -646,11 +646,12 @@ class Analysis_Stage_Project_Pinning(gtk.VBox):
             self.dropbox = gtk.combo_box_new_text()                   
 
             def_key = 0
+            ref_matrices = model['pinning-matrices-reversed']
             for i, m in enumerate(sorted(model['pinning-matrices'].keys())):
 
                 self.dropbox.append_text(m)
 
-                if pinning in m:
+                if pinning in ref_matrices and ref_matrices[pinning] == m:
                     def_key = i
 
             self.dropbox.set_active(def_key)

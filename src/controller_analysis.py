@@ -735,7 +735,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 view = self._view.get_stage()
                 view.set_image_sensitivity(False)
                 origin_pos = sm['selection-origin']
-t
+
                 if sm['selection-move-source'] is not None:
 
                     self.set_selection(pos=self._get_new_selection_origin(pos))
