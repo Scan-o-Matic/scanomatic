@@ -1,3 +1,8 @@
+
+#
+# DEPENDENCIES
+#
+
 import os
 import types
 import gobject
@@ -5,14 +10,22 @@ import threading
 import numpy as np
 import copy
 
-import model_analysis
-import view_analysis
-import controller_generic
-import resource_os
-import resource_project_log
-import analysis_wrapper as a_wrapper
-import resource_fixture_image
-import resource_image
+#
+# INTERNAL DEPENDENCIES
+#
+
+import src.model_analysis as model_analysis
+import src.view_analysis as view_analysis
+import src.controller_generic as controller_generic
+import src.resource_os as resource_os
+import src.resource_project_log as resource_project_log
+import src.analysis_wrapper as a_wrapper
+import src.resource_fixture_image as resource_fixture_image
+import src.resource_image as resource_image
+
+#
+# EXCEPTIONS
+#
 
 class Bad_Stage_Call(Exception): pass
 class No_View_Loaded(Exception): pass
@@ -20,6 +33,9 @@ class Not_Yet_Implemented(Exception): pass
 class Unknown_Log_Request(Exception): pass
 class UnDocumented_Error(Exception): pass
 
+#
+# CLASSES
+#
 
 class Analysis_Controller(controller_generic.Controller):
 
@@ -332,7 +348,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
     def _get_scale_slice(self, the_slice, flip_coords=False, factor=4):
 
         data_sorted = zip(*map(sorted, zip(*the_slice)))
-        return [[factor*p[flip_coords], factor*p[not(flip_coords)]] for p in data_sorted]
+        ret = [[factor*p[flip_coords], factor*p[not(flip_coords)]]
+                for p in data_sorted]
+
+        return ret
 
     def get_previously_detected(self, view, specific_model):
 
@@ -648,7 +667,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
             return False
 
         s_origin = self._specific_model['selection-origin']
-        s_target = [p + s for p, s in zip(s_origin,  self._specific_model['selection-size'])]
+        s_target = [p + s for p, s in zip(s_origin,
+            self._specific_model['selection-size'])]
 
         for d in xrange(2):
 
@@ -756,14 +776,17 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 wh = view.get_selection_size()
                 pos2 = [p + s for p, s in zip(pos1, wh)]
 
-                sm['plate-section-im-array'] = sm['plate-im-array'][pos1[1]:pos2[1], pos1[0]:pos2[0]]
+                sm['plate-section-im-array'] = \
+                    sm['plate-im-array'][pos1[1]:pos2[1], pos1[0]:pos2[0]]
 
-                sm['plate-section-grid-cell'] = a_wrapper.get_grid_cell_from_array(
+                sm['plate-section-grid-cell'] = \
+                            a_wrapper.get_grid_cell_from_array(
                             sm['plate-section-im-array'], center=None,
                             radius=None,
                             invoke_transform=sm['plate-is-normed'])
 
-                sm['plate-section-features'] = sm['plate-section-grid-cell'].get_analysis()
+                sm['plate-section-features'] = \
+                    sm['plate-section-grid-cell'].get_analysis()
 
                 view.set_section_image()
                 view.set_analysis_image()
@@ -779,7 +802,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         sm = self._specific_model
 
-        self._view.get_stage().set_allow_logging(not(sm['plate-section-features'] is None)
+        self._view.get_stage().set_allow_logging(
+            not(sm['plate-section-features'] is None)
             and self._log.get_all_meta_filled())
  
     def _get_new_selection_origin(self, pos):
@@ -856,7 +880,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 self._view.get_stage().move_patch_origin(
                         self._get_new_selection_origin(pos))
 
-            elif sm['lock-selection'] is None and sm['selection-origin'] is not None \
+            elif sm['lock-selection'] is None and \
+                sm['selection-origin'] is not None \
                 and sm['selection-drawing'] == True:
 
                 origin_pos = sm['selection-origin']
@@ -1079,6 +1104,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
         file_loaded = sm['analysis-project-log_file'] != ""
 
         self._view.get_top().set_allow_next(file_loaded and plates_ok)
+
 
 class Analysis_Log_Controller(controller_generic.Controller):
 
