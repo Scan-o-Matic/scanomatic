@@ -19,6 +19,7 @@ import gobject
 import threading
 import numpy as np
 import copy
+from subprocess import Popen
 
 #
 # INTERNAL DEPENDENCIES
@@ -169,6 +170,7 @@ class Analysis_Controller(controller_generic.Controller):
             elif stage_call == "normalisation":
 
                 specific_model = args[1]
+                self.set_unsaved()
 
 
                 if specific_model['mode'] == 'transparency':
@@ -225,6 +227,7 @@ class Analysis_Controller(controller_generic.Controller):
 
             elif stage_call == "sectioning":
 
+                self.set_unsaved()
                 specific_model = args[1]
                 specific_model['stage'] = 'sectioning'
                 specific_model['plate-coords'] = list()
@@ -245,6 +248,8 @@ class Analysis_Controller(controller_generic.Controller):
                 specific_model['plate'] = -1
 
             elif stage_call == "plate":
+
+                self.set_unsaved()
 
                 specific_model = args[1]
                 specific_model['plate'] += 1
@@ -975,6 +980,42 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
     def start(self, *args, **kwargs):
 
+        sm = self._specific_model
+        tc = self.get_top_controller()
+
+        analysis_log = open(sm['analysis-project-log_file_dir'] + os.sep +
+            ".analysis.log", 'w')
+
+        analysis_query = [tc.paths.analysis, "-i", 
+            sm['analysis-project-log_file'],
+            "-o", sm['analysis-project-output-path'], "-t", 
+            100, '--xml-short', 'True', 
+            '--xml-omit-compartments', 'background,cell',
+            '--xml-omit-measures',
+            'mean,median,IQR,IQR_mean,centroid,perimeter,area',
+            '--debug', 'info']
+
+        if sm['analysis-project-pinnings-active'] != 'file':
+            pm = ""
+            for plate in sm['analysis-project-pinnings']:
+                pm += str(plate).replace(" ","") + ":"
+            pm = pm[:-1]
+            analysis_query += ["-m", pm]
+        """
+        if self._watch_colony is not None:
+            analysis_query += ["-w", self._watch_colony]
+        if self._supress_other is True: 
+            analysis_query += ["-s", "True"]
+        """
+        proc = Popen(map(str, analysis_query), 
+            stdout=analysis_log, shell=False)
+
+        pid = proc.pid
+
+        self.get_top_controller().add_subprocess(proc, pid=pid,
+            stdout=analysis_log,
+            proc_name='analysis')
+
         print args, kwargs
 
     def set_log_file(self, *args, **kwargs):
@@ -1411,6 +1452,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
                 fs.close()
 
                 file_saved = True
+                self._parent.set_saved()
 
                 view_analysis.dialog(self._window,
                     self._general_model['analysis-stage-log-saved'],

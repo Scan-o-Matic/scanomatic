@@ -10,6 +10,10 @@ __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
 #
+# DEPENDENCIES
+#
+
+#
 # INTERNAL DEPENDENCIES
 #
 
@@ -22,7 +26,8 @@ import src.view_generic as view_generic
 class Controller(object):
 
     def __init__(self, window, parent_controller,
-            model=None, view=None, specific_model=None):
+            model=None, view=None,
+            specific_model=None):
 
         self._parent = parent_controller
         self._window = window
@@ -31,6 +36,15 @@ class Controller(object):
         self.set_model(model)
         self.set_specific_model(specific_model)
         self.set_view(view)
+
+        self._allow_friendly_remove = True
+        self._controllers = list()
+
+    def set_unsaved(self):
+
+        self._allow_friendly_remove = False
+
+    def set_saved(self):
 
         self._allow_friendly_remove = True
 
@@ -44,13 +58,31 @@ class Controller(object):
 
             return self._parent.get_top_controller()
 
+    def add_subcontroller(self, controller):
+
+        self._controllers.append(controller)
+
+    def get_saved(self):
+
+        if self._allow_friendly_remove == False:
+
+            return False
+
+        for c in self._controllers:
+
+            if c.get_saved() == False:
+
+                return False
+
+        return True
+
     def ask_destroy(self):
 
         top_controller = self.get_top_controller()
         view = top_controller.get_view()
         m = top_controller.get_model()
 
-        if view is not None and self._allow_friendly_remove == False:
+        if view is not None and self.get_saved() == False:
 
             d_text = m['content-page-close']
 

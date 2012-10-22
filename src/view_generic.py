@@ -176,7 +176,7 @@ class Pinning(gtk.VBox):
             self._controller = controller
             self._project_view = project_veiw
 
-            super(Analysis_Stage_Project_Pinning, self).__init__()
+            super(Pinning, self).__init__()
 
             label = gtk.Label(
                 model['analysis-stage-project-plate-label'].format(

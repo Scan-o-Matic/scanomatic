@@ -13,6 +13,9 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import gobject
+import os
+
 #
 # INTERNAL DEPENDENCIES
 #
@@ -27,18 +30,47 @@ import src.resource_os as resource_os
 # CLASSES
 #
 
+class Paths(object):
+
+    def __init__(self, program_path, config_file=None):
+
+        self.root = program_path
+        self.scanomatic = self.root + os.sep + "run_analysis.py"
+        self.src = self.root + os.sep + "src"
+        self.analysis = self.src + os.sep + "analysis.py"
+
+
 class Controller(controller_generic.Controller):
 
-    def __init__(self, model, view):
+    def __init__(self, model, view, program_path):
 
         super(Controller, self).__init__(view, None)
 
+        self.paths = Paths(program_path)
+
         self._model = model
         self._view = view
-        self._controllers = list()
+        self._subprocesses = list()
+        gobject.timeout_add(1000, self._subprocess_callback)
 
         if view is not None:
             view.set_controller(self)
+
+    def add_subprocess(self, proc, stdin=None, stdout=None, stderr=None,
+                        pid=None, proc_name=None):
+
+        self._subprocesses.append((proc, pid, stdin, stdout, stderr, proc_name))
+
+    def get_subprocesses(self, by_name=None):
+
+        ret = [p for p in self._subprocesses 
+                if (by_name is not None and p[-1] == by_name or True)]
+
+        return ret
+
+    def _subprocess_callback(self):
+
+        return True
 
     def add_contents(self, widget, content_name):
 
@@ -47,7 +79,7 @@ class Controller(controller_generic.Controller):
         c = controller_analysis.Analysis_Controller(self._view, self)
         page = c.get_view()
         self._view.add_notebook_page(page, title, c)
-        self._controllers.append(c)
+        self.add_subcontroller(c)
 
     def remove_contents(self, widget, page_controller):
 

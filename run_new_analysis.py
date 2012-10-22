@@ -19,6 +19,7 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import threading
+import os
 
 #
 # THREADING
@@ -40,8 +41,13 @@ import src.model_main as model
 
 if __name__ == "__main__":
 
+    program_path = os.path.dirname(os.path.abspath(__file__))
+    if os.getcwd() != program_path:
+        os.chdir(program_path)
+
     m = model.load_app_model()
     w = view.Main_Window(model=m)
-    c = controller.Controller(view=w, model=m)
+    c = controller.Controller(view=w, model=m,
+        program_path=program_path)
 
     gtk.main()

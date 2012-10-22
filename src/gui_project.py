@@ -100,8 +100,6 @@ class Project_Analysis_Running(gtk.Frame):
         self._gui_status_text = gtk.Label("")
         vbox.pack_start(self._gui_status_text, False, False, 2)
 
-        
-            
         self._gtk_target.pack_start(self, False, False, 20)
         self.show_all()
 
