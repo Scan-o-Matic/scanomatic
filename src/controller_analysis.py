@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+"""The Analysis Controller"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL v3.0"
+__version__ = "0.997"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 #
 # DEPENDENCIES
@@ -39,18 +49,16 @@ class UnDocumented_Error(Exception): pass
 
 class Analysis_Controller(controller_generic.Controller):
 
-    def __init__(self, window):
+    def __init__(self, window, main_controller):
 
-        self._window = window
 
-        super(Analysis_Controller, self).__init__()
+        super(Analysis_Controller, self).__init__(window, main_controller)
 
-        self.project = Analysis_Project_Controller(view=self._view,
-                                model=self._model)
+        self.project = Analysis_Project_Controller(window, self,
+                view=self._view, model=self._model)
 
-        self.transparency = Analysis_Transparency_Controller(view=self._view,
-                                model=self._model,
-                                parent=self)
+        self.transparency = Analysis_Transparency_Controller(
+                window, self, view=self._view, model=self._model)
 
         self.fixture = None
 
@@ -167,7 +175,8 @@ class Analysis_Controller(controller_generic.Controller):
 
                     specific_model['image'] += 1
 
-                    if specific_model['image'] >= len(specific_model['images-list-model']):
+                    if specific_model['image'] >= len(
+                                specific_model['images-list-model']):
 
                         raise Bad_Stage_Call("Image position overflow")
 
@@ -243,7 +252,8 @@ class Analysis_Controller(controller_generic.Controller):
 
                 if self.transparency._log is None:
                     self.transparency._log = Analysis_Log_Controller(
-                        self._model, specific_model, self._window)
+                        self._window, self, self._model, 
+                        specific_model)
 
                 else:
 
@@ -252,7 +262,9 @@ class Analysis_Controller(controller_generic.Controller):
 
                 if specific_model['plate'] < len(specific_model['plate-coords']):
 
-                    coords = specific_model['plate-coords'][specific_model['plate']]
+                    coords = specific_model['plate-coords'][
+                            specific_model['plate']]
+
                     image = specific_model['image']
                     
                     if image in specific_model['auto-transpose']:
@@ -312,12 +324,12 @@ class Analysis_Controller(controller_generic.Controller):
 
 class Analysis_Image_Controller(controller_generic.Controller):
 
-    def __init__(self, view=None, model=None, parent=None):
+    def __init__(self, window, parent, view=None, model=None):
 
-        super(Analysis_Image_Controller, self).__init__(view=view,
-                model=model)
+        super(Analysis_Image_Controller, self).__init__(
+                window, parent, 
+                view=view, model=model)
 
-        self._parent = parent
         self._specific_model = None
         self._log = None
 
@@ -936,10 +948,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
 class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
-    def __init__(self, view=None, model=None, parent=None):
+    def __init__(self, window, parent, view=None, model=None):
 
-        super(Analysis_Transparency_Controller, self).__init__(view=view,
-                model=model, parent=parent)
+        super(Analysis_Transparency_Controller, self).__init__(window,
+                parent, view=view, model=model)
 
     def build_blank_specific_model(self):
 
@@ -949,10 +961,10 @@ class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
 class Analysis_Project_Controller(controller_generic.Controller):
 
-    def __init__(self, view=None, model=None):
+    def __init__(self, window, parent, view=None, model=None):
 
-        super(Analysis_Project_Controller, self).__init__(view=view,
-                model=model) 
+        super(Analysis_Project_Controller, self).__init__(
+                window, parent, view=view, model=model) 
 
         self.build_blank_specific_model()
 
@@ -1108,16 +1120,16 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
 class Analysis_Log_Controller(controller_generic.Controller):
 
-    def __init__(self, general_model, parent_model, window):
+    def __init__(self, window, parent, general_model, parent_model):
 
         model = model_analysis.copy_model(model_analysis.specific_log_book)
         self._parent_model = parent_model
         self._general_model = general_model
-        self._window = window
         self._look_up_coords = list()
         self._look_up_names = list()
 
-        super(Analysis_Log_Controller, self).__init__(model=model,
+        super(Analysis_Log_Controller, self).__init__(window, 
+            parent, model=model,
             view=view_analysis.Analysis_Stage_Log(self, general_model,
             model, parent_model))
 

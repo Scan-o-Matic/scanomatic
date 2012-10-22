@@ -128,7 +128,7 @@ def overwrite(text, file_name, window):
 
     return resp
 
-def dialog(window, text, d_type="info"):
+def dialog(window, text, d_type="info", yn_buttons=False):
 
     d_types = {'info': gtk.MESSAGE_INFO, 'error': gtk.MESSAGE_ERROR,
         'warning': gtk.MESSAGE_WARNING, 'question': gtk.MESSAGE_QUESTION,
@@ -146,12 +146,20 @@ def dialog(window, text, d_type="info"):
         gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
         text)
 
+    if yn_buttons:
 
-    d.add_button(gtk.STOCK_OK, -1)
+        d.add_button(gtk.STOCK_YES, True)
+        d.add_button(gtk.STOCK_NO, False)
+
+    else:
+
+        d.add_button(gtk.STOCK_OK, -1)
 
     result = d.run()
 
     d.destroy()
+
+    return result
 
 #
 # CLASSES

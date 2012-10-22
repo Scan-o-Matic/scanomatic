@@ -1,13 +1,68 @@
+#!/usr/bin/env python
+"""The Generic Controller"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL v3.0"
+__version__ = "0.997"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
+#
+# INTERNAL DEPENDENCIES
+#
+
+import src.view_generic as view_generic
+
+#
+# CLASSES
+#
 
 class Controller(object):
 
-    def __init__(self, model=None, view=None, specific_model=None):
+    def __init__(self, window, parent_controller,
+            model=None, view=None, specific_model=None):
+
+        self._parent = parent_controller
+        self._window = window
 
         #MODEL SHOULD BE SET BEFORE VIEW!
         self.set_model(model)
         self.set_specific_model(specific_model)
         self.set_view(view)
+
+        self._allow_friendly_remove = True
+
+    def get_top_controller(self):
+
+        if self._parent is None:
+
+            return self
+
+        else:
+
+            return self._parent.get_top_controller()
+
+    def ask_destroy(self):
+
+        top_controller = self.get_top_controller()
+        view = top_controller.get_view()
+        m = top_controller.get_model()
+
+        if view is not None and self._allow_friendly_remove == False:
+
+            d_text = m['content-page-close']
+
+            return view_generic.dialog(view,
+                        d_text,
+                        d_type='question', yn_buttons=True)
+
+        return self._allow_friendly_remove
+
+    def destroy(self):
+
+        pass
 
     def set_view(self, view=None):
 

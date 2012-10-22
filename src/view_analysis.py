@@ -61,6 +61,10 @@ class Analysis(gtk.VBox):
 
             self.remove(children[pos])
             
+    def get_controller(self):
+
+        return self._controller
+
     def set_top(self, widget=None):
 
         if widget is None:
