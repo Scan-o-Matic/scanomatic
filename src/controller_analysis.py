@@ -732,25 +732,28 @@ class Analysis_Image_Controller(controller_generic.Controller):
             elif self._specific_model['stage'] == 'plate':
 
                 sm = self._specific_model
-
+                view = self._view.get_stage()
+                view.set_image_sensitivity(False)
+                origin_pos = sm['selection-origin']
+t
                 if sm['selection-move-source'] is not None:
 
                     self.set_selection(pos=self._get_new_selection_origin(pos))
-                    self._view.get_stage().move_patch_origin(sm['selection-origin'])
+                    view.move_patch_origin(sm['selection-origin'])
 
-                elif sm['lock-selection'] is None and sm['selection-origin'] is not None:
+                elif sm['lock-selection'] is None and origin_pos is not None \
+                        and None not in origin_pos and None not in pos:
 
-                    origin_pos = sm['selection-origin']
                     w = pos[0] - origin_pos[0]
                     h = pos[1] - origin_pos[1]
 
-                    self._view.get_stage().move_patch_target(w, h)
+                    view.move_patch_target(w, h)
                     self.set_selection(wh=(w, h))
                     sm['selection-drawing'] = False
 
                 sm['selection-move-source'] = None
                 pos1 = sm['selection-origin']
-                wh = self._view.get_stage().get_selection_size()
+                wh = view.get_selection_size()
                 pos2 = [p + s for p, s in zip(pos1, wh)]
 
                 sm['plate-section-im-array'] = sm['plate-im-array'][pos1[1]:pos2[1], pos1[0]:pos2[0]]
@@ -762,14 +765,15 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
                 sm['plate-section-features'] = sm['plate-section-grid-cell'].get_analysis()
 
-                self._view.get_stage().set_section_image()
-                self._view.get_stage().set_analysis_image()
+                view.set_section_image()
+                view.set_analysis_image()
 
                 strain = self._log.get_suggested_strain_name(pos1)
                 if strain is not None:
-                    self._view.get_stage().set_strain(strain)
+                    view.set_strain(strain)
 
                 self.set_allow_logging()
+                view.set_image_sensitivity(True)
 
     def set_allow_logging(self):
 

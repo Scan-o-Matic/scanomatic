@@ -187,7 +187,12 @@ class Image_Transpose(object):
 
         return self.gs, self.gs_targets
 
+
     def get_transposed_im(self, im):
+
+        return self.tf_matrix.take(im.astype(np.int)) 
+
+    def get_transposed_im_old(self, im):
 
         im2 = np.zeros(im.shape) * np.nan
         tf = self.tf_matrix

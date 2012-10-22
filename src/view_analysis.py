@@ -1280,12 +1280,16 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
             cmap=plt.cm.gray_r)
 
         self.image_canvas = FigureCanvas(self.figure)
-        self.image_canvas.mpl_connect('button_press_event',
-                specific_controller.mouse_button_press)
-        self.image_canvas.mpl_connect('button_release_event',
-                specific_controller.mouse_button_release)
-        self.image_canvas.mpl_connect('motion_notify_event',
-                specific_controller.mouse_move)
+        self.image_signals = list()
+        self.image_signals.append(
+                self.image_canvas.mpl_connect('button_press_event',
+                specific_controller.mouse_button_press))
+        self.image_signals.append(
+                self.image_canvas.mpl_connect('button_release_event',
+                specific_controller.mouse_button_release))
+        self.image_signals.append(
+                self.image_canvas.mpl_connect('motion_notify_event',
+                specific_controller.mouse_move))
 
         self.figure_ax.get_xaxis().set_visible(False)
         self.figure_ax.get_yaxis().set_visible(False)
@@ -1399,6 +1403,24 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         self.show_all()
 
+    def set_image_sensitivity(self, value):
+
+
+        if value:
+            self.image_canvas.flush_events()
+
+        self.image_canvas.set_sensitive(value)
+
+        """
+        for signal in self.image_signals:
+
+            if value:
+                self.image_canvas.handler_unblock(signal)
+            else:
+                self.image_canvas.handler_block(signal)
+        
+        """
+
     def set_strain(self, value):
 
         self.strain_name.set_text(value)
@@ -1417,7 +1439,8 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
     def set_section_image(self):
 
-        if self._specific_model['plate-section-im-array'] is not None:
+        if self._specific_model['plate-section-im-array'] is not None and \
+                self._specific_model['plate-section-im-array'].size > 0:
  
             self.section_figure_ax.imshow(self._specific_model['plate-section-im-array'],
                 cmap=plt.cm.gray_r)
@@ -1427,13 +1450,13 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
     def set_analysis_image(self):
 
         if self._specific_model['plate-section-grid-cell'] is not None:
+            blob = self._specific_model[
+                    'plate-section-grid-cell'].get_item("blob").filter_array
  
-            self.analysis_figure_ax.imshow(
-                self._specific_model['plate-section-grid-cell'].get_item(
-                "blob").filter_array,
-                cmap=plt.cm.gray_r)
-            self.analysis_image_canvas.set_size_request(150, 150)
-            self.analysis_image_canvas.draw()
+            if blob is not None and blob.size > 0:
+                self.analysis_figure_ax.imshow(blob, cmap=plt.cm.gray_r)
+                self.analysis_image_canvas.set_size_request(150, 150)
+                self.analysis_image_canvas.draw()
 
     def place_patch_origin(self, pos, wh):
 
