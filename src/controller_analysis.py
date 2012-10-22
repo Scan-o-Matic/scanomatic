@@ -1124,6 +1124,15 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
             data_row = data_row.strip().replace("\t",", ")
             data = eval("[{0}]".format(data_row))
+            for i, d in enumerate(data):
+                if type(d) == types.StringType and len(d) > 0 and \
+                            d[0] in ('[', '(') and d[-1] in (']', ')'):
+
+                    try:
+                        data[i] = eval(d)
+                    except:
+                        pass
+
             measures.append(data)
             self._view.add_data_row(data)
 
