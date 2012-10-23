@@ -420,7 +420,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
             self.set_auto_grayscale(data['grayscale_values'],
                 data[gs_i_key])
 
-
     def set_no_auto_norm(self):
 
         sm = self._specific_model
@@ -475,6 +474,17 @@ class Analysis_Image_Controller(controller_generic.Controller):
     def set_images_has_fixture(self, widget, *args, **kwargs):
 
         self._specific_model['fixture'] = widget.get_active()
+
+    def toggle_calibration(self, widget, *args, **kwargs):
+
+        view = self.get_view().get_stage()
+        val = widget.get_active()
+        sm = self._specific_model
+        sm['log-only-calibration'] = val
+        if val:
+            sm['log-previous-file'] = None
+
+        view.set_is_calibration(val)
 
     def load_previous_log_file(self, widget, view):
 
@@ -1001,7 +1011,8 @@ class Analysis_Project_Controller(controller_generic.Controller):
                 pm += str(plate).replace(" ","") + ":"
             pm = pm[:-1]
             analysis_query += ["-m", pm]
-        """
+
+        """Functionality not implemented:
         if self._watch_colony is not None:
             analysis_query += ["-w", self._watch_colony]
         if self._supress_other is True: 
@@ -1015,8 +1026,6 @@ class Analysis_Project_Controller(controller_generic.Controller):
         self.get_top_controller().add_subprocess(proc, pid=pid,
             stdout=analysis_log,
             proc_name='analysis')
-
-        print args, kwargs
 
     def set_log_file(self, *args, **kwargs):
 
@@ -1174,6 +1183,9 @@ class Analysis_Log_Controller(controller_generic.Controller):
             view=view_analysis.Analysis_Stage_Log(self, general_model,
             model, parent_model))
 
+        if self._parent_model['log-only-calibration']:
+            self._model['calibration-measures'] = True
+
         if self._parent_model['log-previous-file'] is not None:
             self._load_previous_file_contents()
 
@@ -1234,6 +1246,12 @@ class Analysis_Log_Controller(controller_generic.Controller):
         except:
 
             return False
+
+        if all_ok and m['calibration-measures']:
+
+            if m['indie-count'] is None:
+
+                all_ok = False
 
         return all_ok
 
@@ -1321,6 +1339,15 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
             self._model['current-strain'] = item.get_text()
 
+        elif key == 'indie-count':
+
+            try:
+                self._model['indie-count'] = float(item.get_text())
+
+            except:
+
+                self._model['indie-count'] = None
+
         elif key == 'measures':
 
             pm = self._parent_model
@@ -1334,23 +1361,42 @@ class Analysis_Log_Controller(controller_generic.Controller):
                 (pm['selection-origin'], pm['selection-size']),  # pos 4 selection coords
                 m['current-strain']]  # 5 strain name
 
-            features = pm['plate-section-features']
+            if m['calibration-measures']:
 
-            for compartment in pm['log-interests'][0]:
+                #SHOULD BE IN RESOURCE
+                blob = pm['plate-section-grid-cell'].get_item(
+                    "blob").filter_array
+                bg = pm['plate-section-grid-cell'].get_item(
+                    "background").filter_array
+                bg_mean = pm['plate-section-im-array'][bg].mean()
+                blob_pixels = pm['plate-section-im-array'][blob] - bg_mean
+                blob_pixels[blob_pixels<0] = 0
+                k = np.unique(blob_pixels)
+                c = list()
+                for v in k:
+                    c.append(blob_pixels[blob_pixels==v].size)
 
-                if compartment in features.keys():
+                measures += [m['indie-count'], list(k), c]
 
-                    c = features[compartment]
+            else:
 
-                    for measure in pm['log-interests'][1]:
+                features = pm['plate-section-features']
 
-                        if measure in c.keys():
+                for compartment in pm['log-interests'][0]:
 
-                            measures.append(c[measure])
+                    if compartment in features.keys():
 
-                        else:
+                        c = features[compartment]
 
-                            measures.append(None)
+                        for measure in pm['log-interests'][1]:
+
+                            if measure in c.keys():
+
+                                measures.append(c[measure])
+
+                            else:
+
+                                measures.append(None)
 
             m['measures'].append(measures)
 
@@ -1360,7 +1406,11 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
         else:
 
-            raise Unknown_Log_Request("The key '{0}' not recognized (item {1} lost)".format(key, item))
+            err = Unknown_Log_Request(
+                "The key '{0}' not recognized (item {1} lost)".format(
+                key, item))
+
+            raise err
 
     def save_data(self, widget):
 

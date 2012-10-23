@@ -148,6 +148,7 @@ to get quatitative values of average pigmentation.</i></span>
 'analysis-stage-image-selection-logging-title': 'Logging interests',
 'analysis-stage-image-selection-compartments': 'Compartments',
 'analysis-stage-image-selection-measures': 'Measures',
+'analysis-stage-image-selection-calibration': 'Only calibration vector',
 
 #ANALYSIS TOP IMAGE NORMALISATION
 'analysis-top-image-normalisation-next': 'Plate Sectioning',
@@ -184,6 +185,7 @@ in the same order and watch the magic!</i>""",
 'analysis-stage-image-plate-selection-height': 'Selection Height:',
 'analysis-stage-image-plate-colony-name': 'Name specific experiment:',
 'analysis-stage-image-plate-log-button': 'Record data for this experiment',
+'analysis-stage-image-plate-calibration': 'Independent measure',
 
 #ANALYSIS STAGE LOG
 'analysis-stage-log-title': 'Log Book',
@@ -267,7 +269,9 @@ specific_transparency = {
 'selection-drawing': False,
 'image-array': None,
 'log-previous-file': None,
+'log-only-calibration': False,
 'log-interests': [None, None],
+'calibration-interests': ('Independent Count','Keys','Key Count'),
 'log-meta-features': ('image','plate-coords','plate-index','plate-media',
 'selected-plate-area', 'strain'),
 'log-compartments-default': ('blob','background','cell'),
@@ -282,5 +286,7 @@ specific_log_book = {
 'images': list(),
 'plate-names': list(),
 'current-strain': None,
-'measures': list()
+'measures': list(),
+'calibration-measures': False,
+'indie-count': None
 }

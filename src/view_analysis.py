@@ -157,14 +157,15 @@ class Analysis_Top_Image_Generic(Analysis_Top):
 
     def __init__(self, controller, model, specific_model,
             specific_controller, next_text=None,
-            next_stage_signal=None):
+            next_stage_signal=None, back_to_root=True):
 
         super(Analysis_Top_Image_Generic, self).__init__(controller, model)
 
         self._specific_model = specific_model
         self._specific_controller = specific_controller
 
-        self._pack_root_button()
+        if back_to_root:
+            self._pack_root_button()
 
         if next_text is not None:
 
@@ -189,7 +190,7 @@ class Analysis_Top_Done(Analysis_Top_Image_Generic):
         next_stage_signal = 'plate'
 
         super(Analysis_Top_Done, self).__init__(controller,
-            model, None, None)
+            model, None, None, back_to_root=False)
 
 
 class Analysis_Top_Image_Sectioning(Analysis_Top_Image_Generic):
@@ -201,7 +202,7 @@ class Analysis_Top_Image_Sectioning(Analysis_Top_Image_Generic):
 
         super(Analysis_Top_Image_Sectioning, self).__init__(controller,
             model, specific_model, specific_controller, next_text,
-            next_stage_signal)
+            next_stage_signal, back_to_root=False)
 
 
 class Analysis_Top_Auto_Norm_and_Section(Analysis_Top_Image_Generic):
@@ -213,7 +214,7 @@ class Analysis_Top_Auto_Norm_and_Section(Analysis_Top_Image_Generic):
 
         super(Analysis_Top_Auto_Norm_and_Section, self).__init__(controller,
             model, specific_model, specific_controller, next_text,
-            next_stage_signal)
+            next_stage_signal, back_to_root=False)
 
 
 class Analysis_Top_Image_Normalisation(Analysis_Top_Image_Generic):
@@ -225,7 +226,7 @@ class Analysis_Top_Image_Normalisation(Analysis_Top_Image_Generic):
 
         super(Analysis_Top_Image_Normalisation, self).__init__(controller,
             model, specific_model, specific_controller, next_text,
-            next_stage_signal)
+            next_stage_signal, back_to_root=False)
 
 
 class Analysis_Top_Image_Selection(Analysis_Top_Image_Generic):
@@ -261,7 +262,7 @@ class Analysis_Top_Image_Plate(Analysis_Top_Image_Generic):
 
         super(Analysis_Top_Image_Plate, self).__init__(controller,
             model, specific_model, specific_controller, next_text,
-            next_stage_signal)
+            next_stage_signal, back_to_root=False)
 
 class Analysis_Top_Next_Button(gtk.Button):
 
@@ -562,10 +563,11 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         frame.add(hbox)
         self.previous_log = gtk.Label("")
         hbox.pack_start(self.previous_log, True, True, PADDING_SMALL)
-        button = gtk.Button(
+        self.log_file_button = gtk.Button(
             label=model['analysis-stage-image-selection-continue-button'])
-        hbox.pack_end(button, False, False, PADDING_SMALL)
-        button.connect('clicked', specific_controller.load_previous_log_file, self)
+        hbox.pack_end(self.log_file_button, False, False, PADDING_SMALL)
+        self.log_file_button.connect('clicked',
+            specific_controller.load_previous_log_file, self)
         self.pack_start(frame, False, False, PADDING_MEDIUM)
 
         #LOGGING INTEREST SELECTION
@@ -606,10 +608,28 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
             self._interests['handler'].append(selection_handler)
             self._interests['widget'].append(treeview)
 
+        self.only_calibration = gtk.CheckButton(
+            label=model['analysis-stage-image-selection-calibration'])
+        self.only_calibration.set_active(False)
+        self.only_calibration.connect("clicked",
+            specific_controller.toggle_calibration)
+        vbox.pack_end(self.only_calibration, False, False, PADDING_LARGE)
+
         frame.add(vbox)
         right_vbox.pack_start(frame, False, True, PADDING_LARGE)
 
         self.show_all()
+
+    def set_is_calibration(self, val):
+
+        for w in self._interests['widget']:
+            w.set_sensitive(val==False)
+
+        self.log_file_button.set_sensitive(val==False)
+
+        if True:
+
+            self.previous_log.set_text("")
 
     def set_previous_log_file(self, path):
 
@@ -1088,6 +1108,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self.plate_description.connect("changed",
             specific_controller.set_in_log, "plate")
         hbox.pack_start(self.plate_description, True, True, PADDING_SMALL)
+
         left_vbox.pack_start(hbox, False, True, PADDING_SMALL)
 
         self.figure = plt.Figure(figsize=(300, 400), dpi=150)
@@ -1159,8 +1180,21 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         right_vbox.pack_start(label, False, False, PADDING_SMALL)
 
         self.strain_name = gtk.Entry()
-        self.strain_name.connect("changed", specific_controller.set_in_log, 'strain')
+        self.strain_name.connect("changed",
+            specific_controller.set_in_log, 'strain')
         right_vbox.pack_start(self.strain_name, False, False, PADDING_SMALL)
+
+        #INDIE CALIBRATION MEASURE
+        if specific_model['log-only-calibration']:
+            label = gtk.Label(model['analysis-stage-image-plate-calibration'])
+            right_vbox.pack_start(label, False, False, PADDING_SMALL)
+            self.colony_indie_count = gtk.Entry()
+            self.colony_indie_count.connect("changed",
+                specific_controller.set_in_log, 'indie-count')
+            self.colony_indie_count.connect("focus",
+                self.select_everything)
+            right_vbox.pack_start(self.colony_indie_count,
+                False, False, PADDING_SMALL)
 
         #STRAIN SECTION IM
         self.section_figure = plt.Figure(figsize=(40, 40), dpi=150)
@@ -1204,8 +1238,10 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         hbox.pack_start(self.analysis_image_canvas, False, False, PADDING_SMALL)
         right_vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
-        self.log_button = gtk.Button(label=model['analysis-stage-image-plate-log-button'])
-        self.log_button.connect("clicked", specific_controller.set_in_log, 'measures')
+        self.log_button = gtk.Button(
+            label=model['analysis-stage-image-plate-log-button'])
+        self.log_button.connect("clicked", 
+            specific_controller.set_in_log, 'measures')
         right_vbox.pack_start(self.log_button, False, False, PADDING_LARGE)
         self.set_allow_logging(False)
 
@@ -1219,6 +1255,10 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
             specific_controller.set_selection(pos=None, wh=None)
 
         self.show_all()
+
+    def select_everything(self, widget, *args, **kwargs):
+
+        widget.select_region(0, -1)
 
     def set_image_sensitivity(self, value):
 
@@ -1342,10 +1382,17 @@ class Analysis_Stage_Log(gtk.VBox):
         label = gtk.Label(model['analysis-stage-log-title'])
         self.pack_start(label, False, False, PADDING_MEDIUM)
 
-        self.treemodel = gtk.ListStore(*([str] * (
-            len(parent_model['log-meta-features']) +
-            len(parent_model['log-interests'][0]) *
-            len(parent_model['log-interests'][1]))))
+        if parent_model['log-only-calibration']:
+
+            #MEASURES ARE INDIE-COUNT, KEYS, COUNTS
+            self.treemodel = gtk.ListStore(*([str] * ( 
+                len(parent_model['log-meta-features']) + 3)))
+        else:
+
+            self.treemodel = gtk.ListStore(*([str] * (
+                len(parent_model['log-meta-features']) +
+                len(parent_model['log-interests'][0]) *
+                len(parent_model['log-interests'][1]))))
 
         for row in specific_model['measures']:
 
@@ -1366,17 +1413,31 @@ class Analysis_Stage_Log(gtk.VBox):
 
         start_col = len(parent_model['log-meta-features'])
 
-        for c_i, compartment in enumerate(parent_model['log-interests'][0]):
+        if parent_model['log-only-calibration']:
 
-            for m_i, measure in enumerate(parent_model['log-interests'][1]):
+            for c_i, calibration in enumerate(
+                    parent_model['calibration-interests']):
 
                 tv_column = gtk.TreeViewColumn(
-                    "{0}: {1}".format(compartment, measure),
-                    tv_cell, text=start_col + (c_i + 1) * m_i)
+                    calibration,
+                    tv_cell, text=start_col + c_i)
 
                 tv_column.set_resizable(True)
                 tv_column.set_reorderable(True)
                 self.treeview.append_column(tv_column)
+        else:
+
+            for c_i, compartment in enumerate(parent_model['log-interests'][0]):
+
+                for m_i, measure in enumerate(parent_model['log-interests'][1]):
+
+                    tv_column = gtk.TreeViewColumn(
+                        "{0}: {1}".format(compartment, measure),
+                        tv_cell, text=start_col + (c_i + 1) * m_i)
+
+                    tv_column.set_resizable(True)
+                    tv_column.set_reorderable(True)
+                    self.treeview.append_column(tv_column)
 
         scrolled_window = gtk.ScrolledWindow()
         scrolled_window.add_with_viewport(self.treeview)
