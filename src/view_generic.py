@@ -233,3 +233,111 @@ class Pinning(gtk.VBox):
             self.dropbox.handler_block(self.dropbox_signal)
             self.dropbox.set_active(new_key)
             self.dropbox.handler_unblock(self.dropbox_signal)
+
+class Page(gtk.VBox):
+
+    def __init__(self, controller, model, top=None, stage=None):
+
+        super(Page, self).__init__(False, 0)
+
+        self._controller = controller
+        self._model = model
+
+        self.set_top(top)
+        self.set_stage(stage)
+
+    def _remove_child(self, pos=0):
+
+        children = self.get_children()
+
+        if len(children) - pos > 0:
+
+            self.remove(children[pos])
+            
+    def get_controller(self):
+
+        return self._controller
+
+    def set_top(self, widget=None):
+
+        if widget is None:
+
+            widget = self._default_top()
+
+        self._top = widget
+        self._remove_child(pos=0)
+        self.pack_start(widget, False, True, PADDING_LARGE)
+
+    def _default_top(self):
+
+        return gtk.VBox()
+
+    def get_top(self):
+
+        return self._top
+
+    def set_stage(self, widget=None):
+
+        if widget is None:
+
+            widget = self._default_stage()
+
+        self._stage = widget
+        self._remove_child(pos=1)
+        self.pack_end(widget, True, True, 10)
+        widget.show_all()
+
+    def _default_stage(self):
+
+        return gtk.VBox()
+
+    def get_stage(self):
+
+        return self._stage
+
+
+class Top(gtk.HBox):
+
+    def __init__(self, controller, model):
+
+        super(Top, self).__init__(False, 0)
+
+        self._controller = controller
+        self._model = model
+
+    def pack_back_button(self, label, callback, message):
+
+        button = gtk.Button(stock=gtk.STOCK_GO_BACK)
+        al = button.get_children()[0]
+        hbox = al.get_children()[0]
+        im, l = hbox.get_children()
+        l.set_text(label)
+        button.connect("clicked", callback, message)
+        self.pack_start(button, False, False, PADDING_SMALL)
+        button.show()
+
+
+class Top_Next_Button(gtk.Button):
+
+    def __init__(self, controller, model, specific_model, label_text,
+        callback, stage_signal_text):
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        super(Top_Next_Button, self).__init__(
+                                stock=gtk.STOCK_GO_FORWARD)
+
+        al = self.get_children()[0]
+        hbox = al.get_children()[0]
+        im, l = hbox.get_children()
+
+        l.set_text(label_text)
+        hbox.remove(im)
+        hbox.remove(l)
+        hbox.pack_start(l, False, False, PADDING_SMALL)
+        hbox.pack_end(im, False, False, PADDING_SMALL)
+
+        self.connect("clicked", callback,
+                            stage_signal_text, specific_model)

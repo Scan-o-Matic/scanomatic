@@ -150,7 +150,10 @@ class Analysis_Controller(controller_generic.Controller):
 
             elif stage_call == "transparency":
 
-                self.transparency.build_blank_specific_model()
+                #IF CALLED WITHOUT MODEL CREATE ONE
+                if len(args) < 2:
+                    self.transparency.build_blank_specific_model()
+
                 self.transparency._specific_model['stage'] = 'image-selection'
 
                 view.set_top(view_analysis.Analysis_Top_Image_Selection(
@@ -189,11 +192,24 @@ class Analysis_Controller(controller_generic.Controller):
 
                         model['fixtures'] = self.get_available_fixtures()
 
-                        view.set_top(
-                            view_analysis.Analysis_Top_Auto_Norm_and_Section(
+                        top = view_analysis.Analysis_Top_Auto_Norm_and_Section(
                             self, model,
                             specific_model,
-                            self.transparency))
+                            self.transparency)
+
+                        if specific_model['image'] > 0:
+                            message = 'previous-image'
+                            label = model[
+                                'analysis-top-auto-norm-and-section-prev-image']
+                        else:
+                            message = 'select-images'
+                            label = model[
+                                'analysis-top-auto-norm-and-section-sel-images']
+
+                        top.pack_back_button(label, 
+                            self.transparency.step_back, message)
+
+                        view.set_top(top)
 
                         view.set_stage(
                             view_analysis.Analysis_Stage_Auto_Norm_and_Section(
@@ -293,13 +309,24 @@ class Analysis_Controller(controller_generic.Controller):
 
                         specific_model['plate-is-normed'] = False
 
-                    view.set_top(
-                        view_analysis.Analysis_Top_Image_Plate(
+                    top = view_analysis.Analysis_Top_Image_Plate(
                         self, model,
                         specific_model,
-                        self.transparency))
+                        self.transparency)
 
-                    view.get_top().set_allow_next(True)
+                    if specific_model['plate'] > 0:
+                        message = 'previous-plate'
+                        label = model[
+                            'analysis-top-image-plate-prev_plate']
+                    else:
+                        message = 'normalisation'
+                        label = model[
+                            'analysis-top-image-plate-prev_norm']
+
+                    top.pack_back_button(label, 
+                        self.transparency.step_back, message)
+                    view.set_top(top)
+                    top.set_allow_next(True)
 
                     view.set_stage(
                         view_analysis.Analysis_Stage_Image_Plate(
@@ -337,6 +364,36 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         self._specific_model = None
         self._log = None
+
+    def step_back(self, widget, message):
+
+        sm = self._specific_model
+
+        if message == 'select-images':
+
+            sm['image'] = -1
+            sm['plate'] = -1
+            stage_call = sm['mode']
+
+        elif message == 'previous-image':
+
+            sm['image'] -= 2
+            sm['plate'] = -1
+
+            stage_call = 'normalisation'
+
+        elif message == 'previous-plate':
+
+            sm['plate'] -= 2
+            stage_call = 'plate'
+
+        elif message == 'normalisation':
+
+            sm['image'] -= 1
+            sm['plate'] = -1
+            stage_call = 'normalisation'
+
+        self._parent.set_analysis_stage(None, stage_call, sm)
 
     def execute_fixture(self, widget, data):
 
@@ -447,7 +504,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             gs_targets, gs = self.fixture['grayscale']
             self.set_auto_grayscale(gs, gs_targets) 
-            self.get_view().get_stage().set_image(gs, gs_targets)
+            self.get_view().get_stage().set_image()
 
             pl = self.fixture.get_plates()
             version = self.fixture['fixture']['version']
@@ -1077,6 +1134,8 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
             self.set_output_dupe()
 
+        self.set_ready_to_run()
+
     def set_output(self, widget, view, event):
 
         output_path = widget.get_text()
@@ -1097,6 +1156,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
             view.correct_output_path(output_path)
 
         self.set_output_dupe(output_path, view)
+        self.set_ready_to_run()
 
     def set_output_dupe(self, rel_path=None, view=None):
 

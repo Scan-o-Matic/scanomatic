@@ -59,8 +59,12 @@ class Main_Window(gtk.Window):
             self.set_window_properties()
 
 
-        self.connect("delete_event", gtk.main_quit)
+        self.connect("delete_event", self._win_close_event)
         self.show_all()
+
+    def _win_close_event(self, widget, *args, **kwargs):
+
+        self._controller.ask_quit()
 
     def set_model(self, model):
 
@@ -102,10 +106,25 @@ class Main_Window(gtk.Window):
         frame.add(vbox)
 
         button = gtk.Button()
+        button.set_label(m['panel-actions-experiment'])
+        button.connect("clicked", c.add_contents, 'experiment')
+        vbox.pack_start(button, False, False, PADDING_MEDIUM)
+
+        button = gtk.Button()
         button.set_label(m['panel-actions-analysis'])
         button.connect("clicked", c.add_contents, 'analysis')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
         
+        button = gtk.Button()
+        button.set_label(m['panel-actions-calibration'])
+        button.connect("clicked", c.add_contents, 'calibration')
+        vbox.pack_start(button, False, False, PADDING_MEDIUM)
+
+        button = gtk.Button()
+        button.set_label(m['panel-actions-quit'])
+        button.connect("clicked", c.ask_quit, 'quit')
+        vbox.pack_start(button, False, False, PADDING_MEDIUM)
+
         panel.show_all()
 
     def add_notebook_page(self, page, title_text, specific_controller):

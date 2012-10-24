@@ -1,71 +1,14 @@
-import copy
+#
+# DEPENDENCIES
+#
+
 import os
 
 #
-# FUNCTIONS
+# INTERNAL DEPENDENCIES
 #
 
-def copy_model(model):
-
-    tmp_model = dict()
-
-    for k in model.keys():
-
-        tmp_model[k] = model[k]
-
-    return copy.deepcopy(tmp_model)
-
-
-def copy_part_of_model(model, keys):
-
-    tmp_model = dict()
-
-    for k in keys:
-
-        tmp_model[k] = model[k]
-
-    return copy.deepcopy(model)
-
-
-def link_to_part_of_model(model, keys):
-
-    return Model_Link(model, keys)
-
-#
-# MODEL LINK
-#
-
-class Model_Link(object):
-
-    def __init__(self, source_model, link_keys):
-
-        self._source_model = source_model
-        self._private_model = dict()
-        self._link_keys = link_keys
-
-    def __getattr__(self, key):
-
-        if key in self._link_keys:
-
-            return self._source_model[key]
-
-        else:
-
-            return self._private_model[key]
-
-    def __setattr__(self, key, val):
-
-        if key in self._link_keys:
-
-            self._source_model[key] = val
-
-        else:
-
-            self._private_model[key] = val
-
-    def keys(self):
-
-        return link_keys + self._private_model.keys()
+from src.model_generic import *
 
 #
 # MODELS
@@ -170,10 +113,12 @@ to get quatitative values of average pigmentation.</i></span>
 """<i>If you have the same stuff in several images, mark out the plates
 in the same order and watch the magic!</i>""",
 
-#ANALYSIS TOP IMAGE SECTIONING
+#ANALYSIS TOP PLATE 
 'analysis-top-image-plate-next_plate': 'Next Plate',
 'analysis-top-image-plate-next_image': 'Next Image',
 'analysis-top-image-plate-next_done': 'Done!',
+'analysis-top-image-plate-prev_plate': 'Previous Plate',
+'analysis-top-image-plate-prev_norm': 'Previous Normalisation',
 
 #ANALYSIS STAGE IMAGE PLATE
 'analysis-stage-image-plate-title':
@@ -201,6 +146,8 @@ in the same order and watch the magic!</i>""",
 
 #ANALYSIS TOP AUTO NORMALISATION AND SECTIONING
 'analysis-top-auto-norm-and-section-next': 'Plate 1',
+'analysis-top-auto-norm-and-section-prev-image': 'Previous Image',
+'analysis-top-auto-norm-and-section-sel-images': 'Select Images',
 
 #ANALYSIS STAGE AUTO NORMALISATION AND SECTIONING
 'analysis-stage-auto-norm-and-section-title':

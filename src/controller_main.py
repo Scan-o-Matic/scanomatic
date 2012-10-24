@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import gobject
 import os
+import gtk
 
 #
 # INTERNAL DEPENDENCIES
@@ -24,7 +25,15 @@ import src.model_main as model_main
 import src.view_main as view_main
 import src.controller_generic as controller_generic
 import src.controller_analysis as controller_analysis
+import src.controller_experiment as controller_experiment
+import src.controller_calibration as controller_calibration
 import src.resource_os as resource_os
+
+#
+# EXCEPTIONS
+#
+
+class UnknownContent(Exception): pass
 
 #
 # CLASSES
@@ -38,7 +47,10 @@ class Paths(object):
         self.scanomatic = self.root + os.sep + "run_analysis.py"
         self.src = self.root + os.sep + "src"
         self.analysis = self.src + os.sep + "analysis.py"
-
+        self.config = self.src + os.sep + "config"
+        self.fixtures = self.config + os.sep + "fixtures"
+        self.images = self.src + os.sep + "images"
+        self.log = self.src + os.sep + "log"
 
 class Controller(controller_generic.Controller):
 
@@ -75,8 +87,19 @@ class Controller(controller_generic.Controller):
     def add_contents(self, widget, content_name):
 
         m = self._model
-        title = m['content-page-title-{0}'.format(content_name)]
-        c = controller_analysis.Analysis_Controller(self._view, self)
+        if content_name in ('analysis', 'experiment', 'calibration'):
+            title = m['content-page-title-{0}'.format(content_name)]
+
+        if content_name == 'analysis':
+            c = controller_analysis.Analysis_Controller(self._view, self)
+        elif content_name == 'experiment':
+            c = controller_experiment.Experiment_Controller(self._view, self)
+        elif content_name == 'calibration':
+            c = controller_calibration.Calibration_Controller(self._view, self)
+        else:
+            err = UnknownContent("{0}".format(content_name))
+            raise err
+
         page = c.get_view()
         self._view.add_notebook_page(page, title, c)
         self.add_subcontroller(c)
@@ -90,3 +113,10 @@ class Controller(controller_generic.Controller):
                 if c == page_controller:
                     del self._controllers[i]
                     break
+
+    def ask_quit(self, *args):
+
+        #INTERIM SOLUTION, SHOULD HANDLE SUBPROCS
+        if self.ask_destroy():
+
+            gtk.main_quit()

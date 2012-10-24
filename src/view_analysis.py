@@ -41,76 +41,29 @@ PADDING_SMALL = 2
 #
 
 
-class Analysis(gtk.VBox):
+class Analysis(Page):
 
     def __init__(self, controller, model, top=None, stage=None):
 
-        super(Analysis, self).__init__()
+        super(Analysis, self).__init__(controller, model, top=top,
+            stage=stage)
 
-        self._controller = controller
-        self._model = model
+    def _default_top(self):
 
-        self.set_top(top)
-        self.set_stage(stage)
+        widget = Analysis_Top_Root(self._controller,
+                    self._model)
 
-    def _remove_child(self, pos=0):
+        return widget
 
-        children = self.get_children()
+    def _default_stage(self):
 
-        if len(children) - pos > 0:
+        widget = Analysis_Stage_About(self._controller,
+                    self._model)
 
-            self.remove(children[pos])
-            
-    def get_controller(self):
+        return widget
 
-        return self._controller
 
-    def set_top(self, widget=None):
-
-        if widget is None:
-
-            widget = Analysis_Top_Root(self._controller,
-                        self._model)
-
-        self._top = widget
-        self._remove_child(pos=0)
-        self.pack_start(widget, False, True, PADDING_LARGE)
-
-    def get_top(self):
-
-        return self._top
-
-    def set_stage(self, widget=None):
-
-        if widget is None:
-
-            widget = Analysis_Stage_About(self._controller,
-                        self._model)
-
-        self._stage = widget
-        self._remove_child(pos=1)
-        self.pack_end(widget, True, True, 10)
-        widget.show_all()
-
-    def get_stage(self):
-
-        return self._stage
-
-class Analysis_Top(gtk.HBox):
-
-    def __init__(self, controller, model):
-
-        super(Analysis_Top, self).__init__()
-
-        self._controller = controller
-        self._model = model
-
-    def _pack_root_button(self):
-
-        self.pack_start(Analysis_Top_Root_Button(
-                self._controller, self._model), False, False, PADDING_SMALL)
-
-class Analysis_Top_Root(Analysis_Top):
+class Analysis_Top_Root(Top):
 
     def __init__(self, controller, model):
 
@@ -134,13 +87,14 @@ class Analysis_Top_Root(Analysis_Top):
         self.show_all()
 
 
-class Analysis_Top_Project(Analysis_Top):
+class Analysis_Top_Project(Top):
 
     def __init__(self, controller, model):
 
         super(Analysis_Top_Project, self).__init__(controller, model)
 
-        self._pack_root_button()
+        self.pack_back_button(model['analysis-top-root_button-text'],
+            controller.set_analysis_stage, "about")
 
         self._start_button = Analysis_Top_Project_Start_Button(controller, model)
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
@@ -153,7 +107,7 @@ class Analysis_Top_Project(Analysis_Top):
         self._start_button.set_sensitive(val)
 
 
-class Analysis_Top_Image_Generic(Analysis_Top):
+class Analysis_Top_Image_Generic(Top):
 
     def __init__(self, controller, model, specific_model,
             specific_controller, next_text=None,
@@ -165,12 +119,15 @@ class Analysis_Top_Image_Generic(Analysis_Top):
         self._specific_controller = specific_controller
 
         if back_to_root:
-            self._pack_root_button()
+            self.pack_back_button(model['analysis-top-root_button-text'],
+                controller.set_analysis_stage, "about")
 
         if next_text is not None:
 
-            self._next_button = Analysis_Top_Next_Button(controller,
-                model, specific_model, next_text, next_stage_signal)
+            self._next_button = Top_Next_Button(controller,
+                model, specific_model, next_text,
+                controller.set_analysis_stage, next_stage_signal)
+
 
             self.pack_end(self._next_button, False, False, PADDING_LARGE)
             self.set_allow_next(False)
@@ -263,49 +220,6 @@ class Analysis_Top_Image_Plate(Analysis_Top_Image_Generic):
         super(Analysis_Top_Image_Plate, self).__init__(controller,
             model, specific_model, specific_controller, next_text,
             next_stage_signal, back_to_root=False)
-
-class Analysis_Top_Next_Button(gtk.Button):
-
-    def __init__(self, controller, model, specific_model, label_text,
-        stage_signal_text):
-
-        self._controller = controller
-        self._model = model
-        self._specific_model = specific_model
-
-        super(Analysis_Top_Next_Button, self).__init__(
-                                stock=gtk.STOCK_GO_FORWARD)
-
-        al = self.get_children()[0]
-        hbox = al.get_children()[0]
-        im, l = hbox.get_children()
-
-        l.set_text(label_text)
-        hbox.remove(im)
-        hbox.remove(l)
-        hbox.pack_start(l, False, False, PADDING_SMALL)
-        hbox.pack_end(im, False, False, PADDING_SMALL)
-
-        self.connect("clicked", controller.set_analysis_stage, 
-                            stage_signal_text, specific_model)
-
-class Analysis_Top_Root_Button(gtk.Button):
-
-    def __init__(self, controller, model):
-
-        self._controller = controller
-        self._model = model
-
-        super(Analysis_Top_Root_Button, self).__init__(
-                                stock=gtk.STOCK_GO_BACK)
-
-        al = self.get_children()[0]
-        hbox = al.get_children()[0]
-        im, l = hbox.get_children()
-
-        l.set_text(model['analysis-top-root_button-text'])
-
-        self.connect("clicked", controller.set_analysis_stage, "about")
 
 class Analysis_Top_Project_Start_Button(gtk.Button):
 
@@ -531,8 +445,12 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         hbox.pack_start(right_vbox, True, True, PADDING_SMALL)
 
         #SELECTED FILE LIST
-        treemodel = gtk.ListStore(str)
-        specific_model['images-list-model'] = treemodel
+        if specific_model['images-list-model'] is None:
+            treemodel = gtk.ListStore(str)
+            specific_model['images-list-model'] = treemodel
+        else:
+            treemodel = specific_model['images-list-model']
+
         self.treeview = gtk.TreeView(treemodel)
         tv_cell = gtk.CellRendererText()
         tv_column = gtk.TreeViewColumn(
@@ -705,6 +623,14 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         label.set_markup(model['analysis-stage-auto-norm-and-section-title'])
         hbox.pack_start(label, False, False, PADDING_LARGE)
 
+        hbox = gtk.HBox(0, False)
+        self.pack_start(hbox, False, False, PADDING_LARGE)
+
+        label = gtk.Label()
+        label.set_text(specific_model['images-list-model'][
+            specific_model['image']][0])
+
+        hbox.pack_start(label, False, False, PADDING_LARGE)
         #Previously detected option
 
         hbox = gtk.HBox(0, False)
@@ -781,7 +707,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
         if X is None or Y is None:
             if len(sm['auto-transpose']) > sm['image']:
-                Y, X = sm['auto-transpose'][sm['image']].get_source_and_target()
+                X, Y = sm['auto-transpose'][sm['image']].get_source_and_target()
 
         if X is not None and Y is not None:
 
