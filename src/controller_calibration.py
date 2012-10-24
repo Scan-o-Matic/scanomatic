@@ -52,9 +52,13 @@ class Calibration_Controller(controller_generic.Controller):
 
     def set_mode(self, widget, calibration_mode):
 
+        view = self._view
+        model = self._model
+
         if calibration_mode == 'fixture':
 
-            self._specific_controller = Fixture_Controller(self)
+            self._specific_controller = Fixture_Controller(self._window,
+                self, model=model, view=view)
 
         elif calibration_mode == "poly":
 
@@ -66,8 +70,54 @@ class Calibration_Controller(controller_generic.Controller):
 
             raise Bad_Stage_Call(calibration_mode)
 
-class Fixture_Controller(object):
+class Fixture_Controller(controller_generic.Controller):
 
-    def __init__(self, parent):
+    def __init__(self, window, parent, view=None, model=None,
+        specific_model=None):
 
-        pass
+        super(Fixture_Controller, self).__init__(window, parent,
+            view=view, model=model)
+
+        #MODEL
+        if specific_model is not None:
+            self._specific_model = specific_model
+        else:
+            self.build_new_specific_model()
+
+        #VIEW
+        view.set_controller(self)
+        self.set_view_stage(None, 'fixture-select')
+
+    def set_view_stage(self, widget, stage_call, *args, **kwargs):
+
+        if len(args) > 0:
+            sm = args[0]
+        else:
+            sm = self._specific_model
+
+        m = self._model
+        view = self._view
+
+        if stage_call == 'fixture-select':
+
+            top = view_calibration.Fixture_Select_Top(self,
+                m, sm)
+            stage = view_calibration.Fixture_Select_Stage(self,
+                m, sm)
+
+        else:
+
+            err = Bad_Stage_Call("{0} recieved call '{1}' from {2}".format(
+                self, stage_call, widget))
+
+            raise err
+
+        view.set_top(top)
+        view.set_stage(stage)
+
+    def build_new_specific_model(self):
+
+        sm = model_calibration.copy_model(
+            model_calibration.specific_fixture_model)
+        self._specific_model = sm
+        return sm

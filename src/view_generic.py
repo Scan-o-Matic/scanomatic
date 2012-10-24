@@ -258,6 +258,10 @@ class Page(gtk.VBox):
 
         return self._controller
 
+    def set_controller(self, c):
+
+        self._controller = c
+
     def set_top(self, widget=None):
 
         if widget is None:

@@ -25,6 +25,16 @@ an image taken of the fixture in question.</i></span>
 <span><i>If a calibration experiment has been performed and the
 results have been analysed, then here the csv-file can be used
 to invoke a new calibration polynomial.</i></span>
-"""
+""",
 
+'fixture-select-radio-edit': 'Edit Existing Fixture:',
+'fixture-select-radio-new': 'Create New Fixture:',
+'fixture-select-column-header': 'Fixtures'
+}
+
+
+specific_fixture_model = {
+
+'fixture': None,
+'original-image-path': None
 }

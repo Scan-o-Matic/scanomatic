@@ -39,6 +39,7 @@ class UnknownContent(Exception): pass
 # CLASSES
 #
 
+
 class Paths(object):
 
     def __init__(self, program_path, config_file=None):
@@ -52,6 +53,47 @@ class Paths(object):
         self.images = self.src + os.sep + "images"
         self.log = self.src + os.sep + "log"
 
+
+class Fixture_Settings(object):
+
+    def __init__(self, dir_path, name):
+
+        self.dir_path = dir_path
+        self.file_name = name
+        self.name = name.replace("_", " ").capitalize()
+
+
+class Fixtures(object):
+
+    def __init__(self, paths):
+
+        self._paths = paths
+        self._fixtures = None
+        self.update()
+
+    def update(self):
+
+        directory = self._paths.fixtures
+        extension = ".config"
+
+        list_fixtures = map(lambda x: x.split(extension,1)[0], 
+            [file for file in os.listdir(directory) 
+            if file.lower().endswith(extension)])
+
+        self._fixtures = list()
+
+        for f in list_fixtures:
+
+            self._fixtures.append(Fixture_Settings(directory, f))
+
+    def names(self):
+
+        if self._fixtures is None:
+            self.update()
+
+        return [f.name for f in self._fixtures]
+
+
 class Controller(controller_generic.Controller):
 
     def __init__(self, model, view, program_path):
@@ -59,6 +101,7 @@ class Controller(controller_generic.Controller):
         super(Controller, self).__init__(view, None)
 
         self.paths = Paths(program_path)
+        self.fixtures = Fixtures(self.paths)
 
         self._model = model
         self._view = view
