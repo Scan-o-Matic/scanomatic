@@ -71,6 +71,14 @@ class Fixtures(object):
         self._fixtures = None
         self.update()
 
+    def __getitem__(self, fixture):
+
+        if self._fixtures is not None and fixture in self._fixtures:
+
+            return self._fixtures[fixture]
+
+        return None
+
     def update(self):
 
         directory = self._paths.fixtures
@@ -80,18 +88,18 @@ class Fixtures(object):
             [file for file in os.listdir(directory) 
             if file.lower().endswith(extension)])
 
-        self._fixtures = list()
+        self._fixtures = dict()
 
         for f in list_fixtures:
-
-            self._fixtures.append(Fixture_Settings(directory, f))
+            fixture = Fixture_Settings(directory, f)
+            self._fixtures[fixture.name] = fixture
 
     def names(self):
 
         if self._fixtures is None:
-            self.update()
+            return list()
 
-        return [f.name for f in self._fixtures]
+        return self._fixtures.keys()
 
 
 class Controller(controller_generic.Controller):

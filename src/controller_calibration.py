@@ -105,6 +105,14 @@ class Fixture_Controller(controller_generic.Controller):
             stage = view_calibration.Fixture_Select_Stage(self,
                 m, sm)
 
+        elif stage_call == 'marker-calibration':
+
+            self.set_unsaved()
+            top = view_calibration.Fixture_Marker_Calibration_Top(self,
+                m, sm)
+            stage = view_calibration.Fixture_Marker_Calibration_Stage(self,
+                m, sm)
+
         else:
 
             err = Bad_Stage_Call("{0} recieved call '{1}' from {2}".format(
@@ -121,3 +129,43 @@ class Fixture_Controller(controller_generic.Controller):
             model_calibration.specific_fixture_model)
         self._specific_model = sm
         return sm
+
+    def check_fixture_select(self, widget, is_new):
+
+        stage = self._view.get_stage()
+        top = self._view.get_top()
+
+        if is_new:
+
+            new_name = stage.new_name.get_text()
+            if new_name == "" or new_name in \
+                    self.get_top_controller().fixtures.names():
+
+                warn = True
+                allow_next = False
+
+            else:
+
+                warn = False
+                allow_next = True
+
+        else:
+
+            treemodel, rows = stage.selection.get_selected_rows()
+            allow_next = len(rows) > 0
+            warn = None
+
+        stage.set_bad_name_warning(warn)
+        top.set_allow_next(allow_next)
+
+    def mouse_press(self, widget, *args, **kwargs):
+
+        print widget, args, kwargs
+
+    def mouse_release(self, widget, *args, **kwargs):
+
+        print widget, args, kwargs
+
+    def mouse_move(self, widget, *args, **kwargs):
+
+        print widget, args, kwargs

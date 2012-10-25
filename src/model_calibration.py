@@ -10,9 +10,12 @@ from src.model_generic import *
 
 model = {
 
+#ABOUT
+##TOP
 'mode-selection-top-fixture': 'Fixture',
 'mode-selection-top-poly': 'Cell Count Polynomial',
 
+##STAGE
 'calibration-stage-about-text': """
 <span size="x-large"><u>Calibration Options</u></span>
 
@@ -27,14 +30,29 @@ results have been analysed, then here the csv-file can be used
 to invoke a new calibration polynomial.</i></span>
 """,
 
+#FIXTURE SELECT
+'fixture-select-title': """<span size="large">Fixture To Work With</span>""",
+
 'fixture-select-radio-edit': 'Edit Existing Fixture:',
 'fixture-select-radio-new': 'Create New Fixture:',
-'fixture-select-column-header': 'Fixtures'
+'fixture-select-column-header': 'Fixtures',
+'fixture-select-new-name-duplicate': 'Illegal name, probably because it is a duplicate...',
+'fixture-select-new-name-ok': 'Good choice!',
+'fixture-select-next': 'Marker Calibration',
+
+#FIXTURE MARKER CALIBRATION
+'fixture-calibration-next': 'Segmenting Fixture'
 }
 
 
 specific_fixture_model = {
 
 'fixture': None,
-'original-image-path': None
+'original-image-path': None,
+'im': None,
+'im-path': None,
+'im-not-loaded': 'No image selected',
+'plate-coords': list(),
+'markers': 0,
+'marker-positions': list()
 }

@@ -234,6 +234,7 @@ class Pinning(gtk.VBox):
             self.dropbox.set_active(new_key)
             self.dropbox.handler_unblock(self.dropbox_signal)
 
+
 class Page(gtk.VBox):
 
     def __init__(self, controller, model, top=None, stage=None):
@@ -319,7 +320,8 @@ class Top(gtk.HBox):
         button.connect("clicked", callback, message)
         self.pack_start(button, False, False, PADDING_SMALL)
         button.show()
-
+        return button
+    
 
 class Top_Next_Button(gtk.Button):
 

@@ -111,12 +111,7 @@ class Analysis_Controller(controller_generic.Controller):
 
     def get_available_fixtures(self):
 
-        directory = self._model['fixtures-path']
-        extension = ".config"
-        list_fixtures = map(lambda x: x.split(extension,1)[0], [file for file\
-            in os.listdir(directory) if file.lower().endswith(extension)])
-
-        return sorted(list_fixtures)
+        return self.get_top_controller().fixtures.names()
 
     def set_analysis_stage(self, widget, *args, **kwargs):
 
