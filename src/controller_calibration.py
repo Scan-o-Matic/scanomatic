@@ -134,6 +134,7 @@ class Fixture_Controller(controller_generic.Controller):
 
         stage = self._view.get_stage()
         top = self._view.get_top()
+        model = self._model
 
         if is_new:
 
@@ -149,11 +150,18 @@ class Fixture_Controller(controller_generic.Controller):
                 warn = False
                 allow_next = True
 
+            model['fixture'] = new_name
+            model['new_fixture'] = True
+
         else:
 
             treemodel, rows = stage.selection.get_selected_rows()
             allow_next = len(rows) > 0
             warn = None
+            if allow_next:
+                model['fixture'] = treemodel[rows][0]
+            model['new_fixture'] = False
+
 
         stage.set_bad_name_warning(warn)
         top.set_allow_next(allow_next)
