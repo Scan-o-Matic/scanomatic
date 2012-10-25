@@ -101,6 +101,9 @@ class Fixtures(object):
 
         return self._fixtures.keys()
 
+    def fill_model(self, model):
+
+        pass
 
 class Controller(controller_generic.Controller):
 

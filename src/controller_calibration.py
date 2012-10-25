@@ -28,6 +28,7 @@ import src.controller_generic as controller_generic
 class Bad_Stage_Call(Exception): pass
 class No_View_Loaded(Exception): pass
 class Not_Yet_Implemented(Exception): pass
+class Impossible_Fixture(Exception): pass
 class UnDocumented_Error(Exception): pass
 
 #
@@ -108,8 +109,15 @@ class Fixture_Controller(controller_generic.Controller):
         elif stage_call == 'marker-calibration':
 
             self.set_unsaved()
+            if sm['new_fixture']:
+                self.get_top_controller.fixtures.fill_model(sm)
+
             top = view_calibration.Fixture_Marker_Calibration_Top(self,
                 m, sm)
+
+            if len(sm['marker-positions']) > 3:
+                top.set_allow_next(True)
+
             stage = view_calibration.Fixture_Marker_Calibration_Stage(self,
                 m, sm)
 
@@ -159,12 +167,69 @@ class Fixture_Controller(controller_generic.Controller):
             allow_next = len(rows) > 0
             warn = None
             if allow_next:
-                model['fixture'] = treemodel[rows][0]
+                model['fixture'] = treemodel[rows[0]][0]
             model['new_fixture'] = False
 
 
         stage.set_bad_name_warning(warn)
         top.set_allow_next(allow_next)
+
+    def set_image_path(self, widget):
+
+        image_list = view_calibration.select_file(
+            self._model['fixture-image-dialog'],
+            multiple_files=False,
+            file_filter=self._model['fixture-image-file-filter'])
+
+        if len(image_list) > 0:
+
+            self._specific_model['im-path'] = image_list[0]
+            self._specific_model['marker-positions'] = list()
+            self._view.get_stage().set_new_image()
+
+            self._view.get_stage().check_allow_marker_detection()
+
+
+    def set_number_of_markers(self, widget):
+
+        s = widget.get_text()
+
+        if s != "":
+
+            try:
+
+                n = int(widget.get_text())
+
+            except:
+
+                n = 0
+                widget.set_text(str(n))
+
+        else:
+
+            n = 0
+
+        self._specific_model['markers'] = n
+        self._view.get_stage().check_allow_marker_detection()
+
+    def run_marker_detect(self, widget):
+
+        sm = self._specific_model
+
+        if sm['markers'] >= 3 and sm['im'] is not None:
+
+            pass
+
+        else:
+
+            err = Impossible_Fixture(
+                "Markers must be at least 3 (you have '{0}')".format(
+                sm['markers']) + " and you need an image too")
+
+            raise err
+
+        if len(sm['marker-positions']) > 3:
+            top.set_allow_next(True)
 
     def mouse_press(self, widget, *args, **kwargs):
 

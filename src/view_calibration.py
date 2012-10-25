@@ -228,15 +228,61 @@ class Fixture_Marker_Calibration_Stage(gtk.VBox):
         self._model = model
         self._specific_model = specific_model
 
-        fixture_callbacks={'button_press_event': controller.mouse_press,
-            'button_release_event': controller.mouse_release,
-            'button_notify_event': controller.mouse_move}
+        #SELECT IMAGE
+        hbox = gtk.HBox(0, False)
+        self.im_path = gtk.Label()
+        hbox.pack_start(self.im_path, True, True, PADDING_SMALL)
+        button = gtk.Button()
+        button.set_label(model['fixture-calibration-select-im'])
+        button.connect("clicked", controller.set_image_path)
+        hbox.pack_end(button, False, False, PADDING_SMALL)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
 
+        #IMAGE DISPLAY
+        """fixture_callbacks={'button_press_event': controller.mouse_press,
+            'button_release_event': controller.mouse_release,
+            'motion_notify_event': controller.mouse_move}
+        """
+        fixture_callbacks = None
         self.fixture_image = Fixture_Image(self._specific_model,
             event_callbacks=fixture_callbacks)
+        self.fixture_image.set_marker_overlays()
+        self.pack_start(self.fixture_image.get_canvas(), True, True,
+            PADDING_SMALL)
 
-        self.pack_start(self.fixture_image.get_canvas())
+        #MARKERS
+        hbox = gtk.HBox(0, False)
+        label = gtk.Label()
+        label.set_text(model['fixture-calibration-marker-number'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self.number_of_markers = gtk.Entry()
+        self.number_of_markers.connect("changed",
+            controller.set_number_of_markers)
+        hbox.pack_start(self.number_of_markers, False, False, PADDING_MEDIUM)
+        self.run_detect = gtk.Button(
+            label=model['fixture-calibration-marker-detect'])
+        self.run_detect.set_sensitive(False)
+        self.run_detect.connect("clicked", controller.run_marker_detect)
+        hbox.pack_start(self.run_detect, False, False, PADDING_SMALL)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
 
+    def set_new_image(self):
+
+        sm = self._specific_model
+
+        if sm['im-path'] is not None:
+            self.im_path.set_text(sm['im-path'])
+            self.fixture_image.load_from_path()
+        else:
+            self.fixture_image.load_from_array()
+
+    def check_allow_marker_detection(self):
+
+        sm = self._specific_model
+
+        self.run_detect.set_sensitive(sm['im'] is not None and
+            sm['markers'] >= 3)
+        
 class Fixture_Image(object):
 
     def __init__(self, model, event_callbacks=None, full_size=False):
@@ -255,7 +301,7 @@ class Fixture_Image(object):
         """
         self._model = model 
         self._im_overlays = dict()
-        image_size=(300, 200)
+        image_size=(200, 300)
 
         self.image_fig = plt.Figure(figsize=image_size, dpi=150)
         self.image_ax = self.image_fig.add_subplot(111)
@@ -278,8 +324,7 @@ class Fixture_Image(object):
     def load_from_array(self):
 
         model = self._model
-        self.image_ax.imshow(model['im'])
-        self._im = im
+        self.image_ax.imshow(model['im'], cmap=plt.cm.Greys_r)
         self.clear_overlays()
         self.image_fig.canvas.draw()
 
@@ -287,8 +332,9 @@ class Fixture_Image(object):
 
         model = self._model
         im = plt.imread(model['im-path'])
+        model['im'] = im
         if im is not None:
-            self.load_from_array(im)
+            self.load_from_array()
         else:
             model['im-path'] = None
 
@@ -345,13 +391,13 @@ class Fixture_Image(object):
 
         for overlay in self._im_overlays:
 
-            self.image_ax.remove(overlay)
+            self._im_overlays[overlay].remove()
 
         self._im_overlays = dict()
 
     def clear_overlay(self, overlay):
 
-        self.image_ax.remove(self._im_overlays[overlay])
+        self._im_overlays[overlay].remove()
         del self._im_overlays[overlay]
 
     def clear_overlay_markers(self):

@@ -41,13 +41,22 @@ to invoke a new calibration polynomial.</i></span>
 'fixture-select-next': 'Marker Calibration',
 
 #FIXTURE MARKER CALIBRATION
-'fixture-calibration-next': 'Segmenting Fixture'
+'fixture-calibration-next': 'Segmenting Fixture',
+'fixture-calibration-select-im': 'Select Image',
+'fixture-calibration-marker-number': 'Number of calibration points',
+'fixture-calibration-marker-detect': 'Run Detection',
+'fixture-image-dialog': 'Select Image Using The Particular Fixture',
+'fixture-image-file-filter': {'filter_name': 'Image Files',
+'mime_and_patterns': (('IMAGE/TIFF', '*.[tT][iI][fF]'),
+('IMAGE/TIF','*.[tT][iI][fF][fF]'))},
+
 }
 
 
 specific_fixture_model = {
 
 'fixture': None,
+'new_fixture': False,
 'original-image-path': None,
 'im': None,
 'im-path': None,
