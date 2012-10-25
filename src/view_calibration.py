@@ -261,6 +261,9 @@ class Fixture_Image(object):
         self.image_ax = self.image_fig.add_subplot(111)
         image_canvas = FigureCanvas(self.image_fig)
 
+        self.image_ax.get_xaxis().set_visible(False)
+        self.image_ax.get_yaxis().set_visible(False)
+
         if event_callbacks is not None:
             for event, callback in event_callbacks.items():
                 self.image_fig.canvas.mpl_connect(event, callback)
@@ -272,125 +275,125 @@ class Fixture_Image(object):
         elif 'im-not-loaded' in model and model['im-not-loaded'] is not None:
             self.set_not_loaded_text()
 
-        def load_from_array(self):
+    def load_from_array(self):
 
-            model = self._model
-            self.image_ax.imshow(model['im'])
-            self._im = im
-            self.clear_overlays()
-            self.image_fig.canvas.draw()
+        model = self._model
+        self.image_ax.imshow(model['im'])
+        self._im = im
+        self.clear_overlays()
+        self.image_fig.canvas.draw()
 
-        def load_from_path(self):
+    def load_from_path(self):
 
-            model = self._model
-            im = plt.imread(model['im-path'])
-            if im is not None:
-                self.load_from_array(im)
-            else:
-                model['im-path'] = None
+        model = self._model
+        im = plt.imread(model['im-path'])
+        if im is not None:
+            self.load_from_array(im)
+        else:
+            model['im-path'] = None
 
-        def set_not_loaded_text(self): 
+    def set_not_loaded_text(self): 
 
-            model = self._model
+        model = self._model
 
-            self._set_text(text=model['im-not-loaded'], x=0.5, y=0.5,
-                overlay_key='no-im')
+        self._set_text(text=model['im-not-loaded'], x=0.5, y=0.5,
+            overlay_key='no-im')
 
-        def _set_text(self, text, x, y, overlay_key, alpha=0.75,
-                color='#001166'):
+    def _set_text(self, text, x, y, overlay_key, alpha=0.75,
+            color='#001166'):
 
-            if overlay_key in self._im_overlays.keys():
+        if overlay_key in self._im_overlays.keys():
 
-                t = self._im_overlays[overlay_key]
-                t.set_x(x)
-                t.set_y(y)
-                t.set_text(text)
+            t = self._im_overlays[overlay_key]
+            t.set_x(x)
+            t.set_y(y)
+            t.set_text(text)
 
-            else:
+        else:
 
-                self._im_overlays[overlay_key] = plt_text.Text(x=x, y=y,
-                    text=text, alpha=alpha,
-                    horizontalalignment='center', family='serif',
-                    verticalalignment='center', size='large',
-                    weight='bold', color=color)
+            self._im_overlays[overlay_key] = plt_text.Text(x=x, y=y,
+                text=text, alpha=alpha,
+                horizontalalignment='center', family='serif',
+                verticalalignment='center', size='large',
+                weight='bold', color=color)
 
-                self.image_ax.add_artist(self._im_overlays[overlay_key])
+            self.image_ax.add_artist(self._im_overlays[overlay_key])
 
-        def _set_rect(self, coords, overlay_key, color='#228822', lw=2,
-                alpha=0.5):
+    def _set_rect(self, coords, overlay_key, color='#228822', lw=2,
+            alpha=0.5):
 
-            x, y = map(min, zip(*coords))
-            w, h = [a-b for a,b in zip(map(sum, zip(*coords)), (x,y))]
+        x, y = map(min, zip(*coords))
+        w, h = [a-b for a,b in zip(map(sum, zip(*coords)), (x,y))]
 
-            if overlay_key in self._im_overalys.keys():
+        if overlay_key in self._im_overalys.keys():
 
-                rect = self._im_overlays[overlay_key]
-                rect.set_xy((x, y))
-                rect.set_width(w)
-                rect.set_height(h)
+            rect = self._im_overlays[overlay_key]
+            rect.set_xy((x, y))
+            rect.set_width(w)
+            rect.set_height(h)
 
-            else:
+        else:
 
-                rect = plt_patches.Rectangle((x, y), w, h, color=color,
-                    lw=lw, alpha=alpha, fill=False)
-                rect.get_axes()
-                rect.get_transform()
-                self.image_ax.add_patch(rect)
-                self._im_overlays[overlay_key] = rect
+            rect = plt_patches.Rectangle((x, y), w, h, color=color,
+                lw=lw, alpha=alpha, fill=False)
+            rect.get_axes()
+            rect.get_transform()
+            self.image_ax.add_patch(rect)
+            self._im_overlays[overlay_key] = rect
 
-        def clear_overlays(self):
+    def clear_overlays(self):
 
-            for overlay in self._im_overlays:
+        for overlay in self._im_overlays:
 
-                self.image_ax.remove(overlay)
+            self.image_ax.remove(overlay)
 
-            self._im_overlays = dict()
+        self._im_overlays = dict()
 
-        def clear_overlay(self, overlay):
+    def clear_overlay(self, overlay):
 
-            self.image_ax.remove(self._im_overlays[overlay])
-            del self._im_overlays[overlay]
+        self.image_ax.remove(self._im_overlays[overlay])
+        del self._im_overlays[overlay]
 
-        def clear_overlay_markers(self):
+    def clear_overlay_markers(self):
 
-            model = self._model
+        model = self._model
 
-            for m in xrange(len(model['marker-positions'])):
+        for m in xrange(len(model['marker-positions'])):
 
-                overlay = "marker_{0}".format(m)
-                self.clear_overlay(overlay)
+            overlay = "marker_{0}".format(m)
+            self.clear_overlay(overlay)
 
-        def clear_plate_overlay(self, plate_index):
+    def clear_plate_overlay(self, plate_index):
 
-            plate_patch_overlay = "plate_{0}_rect".format(plate_index)
-            plate_text_overlay = "plate_{0}_text".format(plate_index)
+        plate_patch_overlay = "plate_{0}_rect".format(plate_index)
+        plate_text_overlay = "plate_{0}_text".format(plate_index)
 
-            self.clear_overlays(plate_patch_overlay)
-            self.clear_overlays(plate_text_overlay)
-            
-        def set_marker_overlays(self):
+        self.clear_overlays(plate_patch_overlay)
+        self.clear_overlays(plate_text_overlay)
+        
+    def set_marker_overlays(self):
 
-            model = self._model
+        model = self._model
 
-            for i, (x, y) in enumerate(model['marker-positions']):
+        for i, (x, y) in enumerate(model['marker-positions']):
 
-                self._set_text('x', x, y, 'marker_{0}'.format(i),
-                    alpha=0.5)
+            self._set_text('x', x, y, 'marker_{0}'.format(i),
+                alpha=0.5)
 
-        def set_plate_overlay(self, plate_index):
+    def set_plate_overlay(self, plate_index):
 
-            plate_patch_overlay = "plate_{0}_rect".format(plate_index)
-            plate_text_overlay = "plate_{0}_text".format(plate_index)
+        plate_patch_overlay = "plate_{0}_rect".format(plate_index)
+        plate_text_overlay = "plate_{0}_text".format(plate_index)
 
-            model = self._model
-            plate = model['plate-coords'][plate_index]
-            center_x, center_y = [p/2.0 for p in map(sum, zip(*plate))]
+        model = self._model
+        plate = model['plate-coords'][plate_index]
+        center_x, center_y = [p/2.0 for p in map(sum, zip(*plate))]
 
-            self._set_text(plate_index, center_x, center_y,
-                plate_text_overlay, alpha=0.5)
-            
-            self._set_rect(plate, plate_patch_overlay)
+        self._set_text(plate_index, center_x, center_y,
+            plate_text_overlay, alpha=0.5)
+        
+        self._set_rect(plate, plate_patch_overlay)
 
-        def get_canvas(self):
+    def get_canvas(self):
 
-            return self.image_fig.canvas
+        return self.image_fig.canvas

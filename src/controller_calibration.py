@@ -160,12 +160,12 @@ class Fixture_Controller(controller_generic.Controller):
 
     def mouse_press(self, widget, *args, **kwargs):
 
-        print widget, args, kwargs
+        print "press", widget, args, kwargs
 
     def mouse_release(self, widget, *args, **kwargs):
 
-        print widget, args, kwargs
+        print "release", widget, args, kwargs
 
     def mouse_move(self, widget, *args, **kwargs):
 
-        print widget, args, kwargs
+        print "notify", widget, args, kwargs
