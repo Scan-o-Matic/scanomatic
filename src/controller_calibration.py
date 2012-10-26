@@ -20,6 +20,7 @@ __status__ = "Development"
 import src.model_calibration as model_calibration
 import src.view_calibration as view_calibration
 import src.controller_generic as controller_generic
+import src.resource_fixture_image as resource_fixture_image
 
 #
 # EXCEPTIONS
@@ -109,8 +110,7 @@ class Fixture_Controller(controller_generic.Controller):
         elif stage_call == 'marker-calibration':
 
             self.set_unsaved()
-            if sm['new_fixture']:
-                self.get_top_controller.fixtures.fill_model(sm)
+            self.get_top_controller().fixtures.fill_model(sm)
 
             top = view_calibration.Fixture_Marker_Calibration_Top(self,
                 m, sm)
@@ -142,7 +142,7 @@ class Fixture_Controller(controller_generic.Controller):
 
         stage = self._view.get_stage()
         top = self._view.get_top()
-        model = self._model
+        sm = self._specific_model
 
         if is_new:
 
@@ -158,8 +158,8 @@ class Fixture_Controller(controller_generic.Controller):
                 warn = False
                 allow_next = True
 
-            model['fixture'] = new_name
-            model['new_fixture'] = True
+            sm['fixture'] = new_name
+            sm['new_fixture'] = True
 
         else:
 
@@ -167,8 +167,8 @@ class Fixture_Controller(controller_generic.Controller):
             allow_next = len(rows) > 0
             warn = None
             if allow_next:
-                model['fixture'] = treemodel[rows[0]][0]
-            model['new_fixture'] = False
+                sm['fixture'] = treemodel[rows[0]][0]
+            sm['new_fixture'] = False
 
 
         stage.set_bad_name_warning(warn)
@@ -185,10 +185,10 @@ class Fixture_Controller(controller_generic.Controller):
 
             self._specific_model['im-path'] = image_list[0]
             self._specific_model['marker-positions'] = list()
+            self._specific_model['im-scale'] = 1.0
             self._view.get_stage().set_new_image()
 
             self._view.get_stage().check_allow_marker_detection()
-
 
     def set_number_of_markers(self, widget):
 
@@ -218,7 +218,29 @@ class Fixture_Controller(controller_generic.Controller):
 
         if sm['markers'] >= 3 and sm['im'] is not None:
 
-            pass
+            if sm['marker-path'] is None:
+                sm['marker-path'] = self.get_top_controller().paths.marker
+
+            self.f_settings = resource_fixture_image.Fixture_Image(
+                sm['fixture-file'],
+                fixture_directory=self.get_top_controller().paths.fixtures, 
+                image_path=sm['im-path'], im_scale=sm['im-scale'],
+                define_reference=True, markings_path=sm['marker-path'],
+                markings=sm['markers'])
+
+            self.f_settings.run_marker_analysis()
+            X = self.f_settings._markers_X
+            Y = self.f_settings._markers_Y
+
+            if X is not None and Y is not None:
+
+                sm['marker-positions'] = zip(X, Y)
+
+            else:
+   
+                sm['marker-positions'] = None
+
+            self._view.get_stage().set_markers()
 
         else:
 

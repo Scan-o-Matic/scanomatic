@@ -51,6 +51,7 @@ class Paths(object):
         self.config = self.src + os.sep + "config"
         self.fixtures = self.config + os.sep + "fixtures"
         self.images = self.src + os.sep + "images"
+        self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
         self.log = self.src + os.sep + "log"
 
 
@@ -60,6 +61,8 @@ class Fixture_Settings(object):
 
         self.dir_path = dir_path
         self.file_name = name
+        self.im_path = dir_path + os.sep + name + ".tiff"
+        self.scale = 0.25
         self.name = name.replace("_", " ").capitalize()
 
 
@@ -103,7 +106,18 @@ class Fixtures(object):
 
     def fill_model(self, model):
 
-        pass
+        fixture=model['fixture']
+        if fixture in self._fixtures.keys():
+
+            model['im-scale'] = self._fixtures[fixture].scale
+            model['im-path'] = self._fixtures[fixture].im_path
+            model['fixture-file'] = self._fixtures[fixture].file_name
+
+        else:
+
+            model['im-scale'] = 1.0
+            model['im-path'] = None
+            model['fixture-file'] = model['fixture'].lower().replace(" ","_")
 
 class Controller(controller_generic.Controller):
 

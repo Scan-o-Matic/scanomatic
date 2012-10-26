@@ -56,12 +56,15 @@ to invoke a new calibration polynomial.</i></span>
 specific_fixture_model = {
 
 'fixture': None,
+'fixutre-file': None,
 'new_fixture': False,
 'original-image-path': None,
 'im': None,
 'im-path': None,
+'im-scale': 1.0,
 'im-not-loaded': 'No image selected',
 'plate-coords': list(),
 'markers': 0,
+'marker-path': None,
 'marker-positions': list()
 }

@@ -276,6 +276,10 @@ class Fixture_Marker_Calibration_Stage(gtk.VBox):
         else:
             self.fixture_image.load_from_array()
 
+    def set_markers(self):
+
+        self.fixture_image.set_marker_overlays()
+
     def check_allow_marker_detection(self):
 
         sm = self._specific_model

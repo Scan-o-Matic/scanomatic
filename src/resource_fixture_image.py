@@ -157,14 +157,19 @@ class Fixture_Image(object):
             self._fixture_reference_path = \
                 fixture_directory + os.sep + fixture_name + ".config"
 
+            self._fixture_config_root = fixture_directory
+
         elif image_path is not None:
 
-            self._fixture_reference_path = \
-                os.sep.join(image_path.split(os.sep)[:-1]) + \
+            self._fixture_config_root = \
+                os.sep.join(image_path.split(os.sep)[:-1])
+
+            self._fixture_reference_path = self._fixture_config_root + \
                 os.sep + fixture_name + ".config"
 
         else:
 
+            self._fixture_config_root = "."
             self._fixture_reference_path = fixture_name + ".config"
 
         self._load_reference()
@@ -312,10 +317,12 @@ class Fixture_Image(object):
 
     def _set_markings_in_conf(self, conf_file, Xs, Ys):
 
-        for i in xrange(len(Xs)):
-            conf_file.set("marking_" + str(i), (Xs[i], Ys[i]))
+        if Xs is not None:
 
-        conf_file.set("marking_center_of_mass", (Xs.mean(), Ys.mean()))
+            for i in xrange(len(Xs)):
+                conf_file.set("marking_" + str(i), (Xs[i], Ys[i]))
+
+            conf_file.set("marking_center_of_mass", (Xs.mean(), Ys.mean()))
 
     def _version_check_positoins(self, *args):
         """Note that it only works for NP-ARRAYS and NOT for lists"""
@@ -445,6 +452,9 @@ class Fixture_Image(object):
             self['fixture'].set('grayscale_indices', gs_indices)
 
     def _get_rotated_point(self, point, alpha, offset=(0, 0)):
+
+        if alpha is None:
+            return (None, None)
 
         tmp_l = np.sqrt(point[0] ** 2 + point[1] ** 2)
         tmp_alpha = np.arccos(point[0] / tmp_l)
