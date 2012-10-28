@@ -115,7 +115,7 @@ class Fixture_Controller(controller_generic.Controller):
             top = view_calibration.Fixture_Marker_Calibration_Top(self,
                 m, sm)
 
-            if len(sm['marker-positions']) > 3:
+            if len(sm['marker-positions']) >= 3:
                 top.set_allow_next(True)
 
             stage = view_calibration.Fixture_Marker_Calibration_Stage(self,
@@ -224,13 +224,13 @@ class Fixture_Controller(controller_generic.Controller):
             self.f_settings = resource_fixture_image.Fixture_Image(
                 sm['fixture-file'],
                 fixture_directory=self.get_top_controller().paths.fixtures, 
-                image_path=sm['im-path'], im_scale=sm['im-scale'],
+                image_path=sm['im-path'],
+                im_scale=(sm['im-scale']<1 and sm['im-scale'] or None),
                 define_reference=True, markings_path=sm['marker-path'],
                 markings=sm['markers'])
 
             self.f_settings.run_marker_analysis()
-            X = self.f_settings._markers_X
-            Y = self.f_settings._markers_Y
+            X, Y = self.f_settings['markers']
 
             if X is not None and Y is not None:
 
@@ -242,6 +242,9 @@ class Fixture_Controller(controller_generic.Controller):
 
             self._view.get_stage().set_markers()
 
+            if len(sm['marker-positions']) >= 3:
+                self._view.get_top().set_allow_next(True)
+
         else:
 
             err = Impossible_Fixture(
@@ -252,6 +255,45 @@ class Fixture_Controller(controller_generic.Controller):
 
         if len(sm['marker-positions']) > 3:
             top.set_allow_next(True)
+
+    def toggle_grayscale(self, widget):
+
+        self._specific_model['grayscale-exists'] = widget.get_active()
+        self._view.get_stage().set_segments_in_list()
+        self.check_segments_ok()
+
+    def set_number_of_plates(self, widget):
+
+        try:
+            plates = int(widget.get_text())
+        except:
+            plates == 0
+            if widget.get_text() != "":
+                widget.set_text("{0}".format(plates))
+
+        sm['plate-coords'] += [None] * (plates - len(sm['plate-coord']))
+        sm['plate-coords'] = sm['plate-coords'][:plates]
+
+        self._view.get_stage().set_segments_in_list()
+        self.check_segments_ok()
+
+    def set_active_segment(self, selection):
+
+        store, rows = selection.get_selected_rows()
+        sm = self._specific_model
+
+        if len(rows) == 0:
+
+            sm['active-segment'] = None
+
+        else:
+
+            row = rows[0]
+            sm['active-segment'] = store[row][2]
+
+    def check_segments_ok(self):
+
+        return False
 
     def mouse_press(self, widget, *args, **kwargs):
 

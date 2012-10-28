@@ -267,11 +267,15 @@ class Fixture_Image(object):
         if self.im_scale is not None:
 
             analysis_img = self.im
-
+            scale_str = "Kept scale {0}".format(self.im_scale)
         else:
 
             analysis_img = resource_image.Quick_Scale_To_im(im=self.im, scale=0.25)
+            scale_str = "New scale {0}".format(0.25)
             self.im_scale = 0.25
+
+        output_function('Fixture calibration: Marker Detection', scale_str, "LA",
+                        debug_level='info')
 
         output_function('Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
                         time.time()-t), "LA",
@@ -308,6 +312,8 @@ class Fixture_Image(object):
         elif len(Xs) == self.markings:
 
             self._set_markings_in_conf(target_conf_file, Xs, Ys)
+            output_function("Fixture calibration", "Setting makers {0}, {1}".format(
+                Xs, Ys))
 
         msg = "Marker Detection complete (acc {0} s)".format(time.time()-t)
         output_function('Fixture calibration: Marker Detection', msg, 'A',

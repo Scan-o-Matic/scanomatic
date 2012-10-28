@@ -287,6 +287,171 @@ class Fixture_Marker_Calibration_Stage(gtk.VBox):
         self.run_detect.set_sensitive(sm['im'] is not None and
             sm['markers'] >= 3)
         
+
+class Fixture_Segmentation_Top(Top):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Fixture_Segmentation_Top, self).__init__(controller, model)
+        self._specific_model = specific_model
+
+        self._next_button = Top_Next_Button(controller, model, specific_model,
+            model['fixture-segmentation-next'], controller.set_view_stage, 
+            'save')
+        self.set_allow_next(False)
+
+        self.pack_end(self._next_button, False, False, PADDING_SMALL)
+        self.show_all()
+
+    def set_allow_next(self, val):
+
+        self._next_button.set_sensitive(val)
+
+
+class Fixture_Segmentation_Stage(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Fixture_Marker_Calibration_Stage, self).__init__(0, False)
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        #TITLE
+        label = gtk.Label()
+        label.set_markup(model['fixture-segmentation-title'])
+        self.pack_start(label, False, False, PADDING_SMALL)
+
+        #MAKING TWO VBOXES
+        hbox = gtk.HBox(False, 0)
+        self.pack_start(hbox, True, True, PADDING_SMALL)
+        left_side = gtk.VBox(False, 0)
+        right_side = gtk.VBox(False, 0)
+        hbox.pack_start(left_side, True, True, PADDING_SMALL)
+        hbox.pack_end(right_side, False, False, PADDING_SMALL)
+
+        #IMAGE DISPLAY - LEFT
+        fixture_callbacks={'button_press_event': controller.mouse_press,
+            'button_release_event': controller.mouse_release,
+            'motion_notify_event': controller.mouse_move}
+        self.fixture_image = Fixture_Image(self._specific_model,
+            event_callbacks=fixture_callbacks)
+        self.fixture_image.set_marker_overlays()
+        left_side.pack_start(self.fixture_image.get_canvas(), True, True,
+            PADDING_SMALL)
+
+        #SEGMENTATION SETTINGS - RIGHT
+
+        ##Gray Scale
+        self.has_grayscale = gtk.CheckButton(label=model['fixture-sementation-gs'])
+        self.has_grayscale.set_active(specific_model['grayscale-exists'])
+        self.has_grayscale.connect("clicked", controller.toggle_grayscale)
+        right_side.pack_start(self.has_grayscale, False, False, PADDING_SMALL)
+
+        ##Number of plates
+        self.number_of_plates = gtk.Entry(1)
+        self.number_of_plates.connect("changed", controller.set_number_of_plates)
+        right_side.pack_start(self.number_of_plates, False, False, PADDING_SMALL)
+
+        ##What area are you working with
+        self.segments = gtk.ListStore(str, str, str)
+        self.treeview = gtk.TreeView(self.segments)
+        tv_cell = gtk.CellRendererText()
+        tv_column = gtk.TreeViewColumn(
+            model['fixture-segmentation-column-header-segment'],
+            tv_cell, text=0)
+        tv_cell = gtk.CellRendererText()
+        self.treeview.append_column(tv_column)
+        tv_column = gtk.TreeViewColumn(
+            model['fixture-segmentation-column-header-ok'],
+            tv_cell, text=1)
+        self.treeview.append_column(tv_column)
+        self.selection = self.treeview.get_selection()
+        self.selection_signal = self.selection.connect('changed', 
+            controller.set_active_segment)
+        right_side.pack_start(self.treeview, True, True, PADDING_SMALL)
+        
+
+    def set_segments_in_list(self):
+
+        sm = self._specific_model
+        m = self._model
+
+        store = self.segments
+
+        #Grayscale
+        if sm['grayscale-exists']:
+
+            if not(len(store) > 0 and store[0][2] == 'G'):
+
+                store.insert(0, (m['fixture-segmentation-grayscale'], 
+                    m['fixture-segmentation-nok', 'G'))
+
+        else:
+
+            for r in store:
+
+                label, ok_nok, segment_type = r
+                if segment_type == 'G':
+
+                    store.remove(r.iter)
+
+        #Plates
+        plates = len(sm['plate-coords'])
+        found_plates = 0
+        for r in store:
+
+            label, ok_nok, segment_type = r 
+            
+            if segment_type[0] == 'P':
+
+                found_plates += 1
+
+            if found_plates > plates:
+
+                store.remove(r.iter)
+
+        if found_plates < plates:
+
+            for plate_index in xrange(found_plates + 1, plates + 1):
+
+                store.append((m['fixture-segmentation-plate'].format(plate_index),
+                    m['fixture-segmentation-nok'], 'P{0}'.format(plate_index)))
+
+        self.set_ok_nok()
+
+    def set_ok_nok(self):
+
+        store = self.segments
+        m =  self._model
+        sm = self._specific_model
+
+        for r in store:
+
+            label, ok_nok, segment_type = r
+
+            if segment_type == 'G':
+                if len(sm['grayscale-coords']) == 4 and sm['grayscale-source'] is not None:
+                    row_ok = True
+                else:
+                    row_ok = False
+            else:
+                try:
+                    plate = int(segment_type[-1]) - 1
+                except:
+                    plate = None
+
+                if plate is not None and len(sm['plate-coord'][plate]) == 4:
+                    row_ok = True
+                else:
+                    row_ok = False
+
+            if row_ok:
+                r[1] = m['fixture-segmentation-ok']
+            else:
+                r[1] = m['fixture-segmentation-nok']
+
+
 class Fixture_Image(object):
 
     def __init__(self, model, event_callbacks=None, full_size=False):
@@ -349,6 +514,8 @@ class Fixture_Image(object):
         self._set_text(text=model['im-not-loaded'], x=0.5, y=0.5,
             overlay_key='no-im')
 
+        self.image_fig.canvas.draw()
+
     def _set_text(self, text, x, y, overlay_key, alpha=0.75,
             color='#001166'):
 
@@ -398,6 +565,7 @@ class Fixture_Image(object):
             self._im_overlays[overlay].remove()
 
         self._im_overlays = dict()
+        self.image_fig.canvas.draw()
 
     def clear_overlay(self, overlay):
 
@@ -413,6 +581,8 @@ class Fixture_Image(object):
             overlay = "marker_{0}".format(m)
             self.clear_overlay(overlay)
 
+        self.image_fig.canvas.draw()
+
     def clear_plate_overlay(self, plate_index):
 
         plate_patch_overlay = "plate_{0}_rect".format(plate_index)
@@ -420,6 +590,8 @@ class Fixture_Image(object):
 
         self.clear_overlays(plate_patch_overlay)
         self.clear_overlays(plate_text_overlay)
+
+        self.image_fig.canvas.draw()
         
     def set_marker_overlays(self):
 
@@ -429,6 +601,8 @@ class Fixture_Image(object):
 
             self._set_text('x', x, y, 'marker_{0}'.format(i),
                 alpha=0.5)
+
+        self.image_fig.canvas.draw()
 
     def set_plate_overlay(self, plate_index):
 
@@ -443,6 +617,8 @@ class Fixture_Image(object):
             plate_text_overlay, alpha=0.5)
         
         self._set_rect(plate, plate_patch_overlay)
+
+        self.image_fig.canvas.draw()
 
     def get_canvas(self):
 
