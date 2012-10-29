@@ -639,7 +639,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
             if sm['stage'] == 'image-selection' or \
                 sm['stage'] == 'manual-calibration':
 
-                self._view.get_stage().delete_selection()  
+                self._view.get_stage().delete_selection()
 
     def remove_selection(self, *stuff):
 

@@ -109,12 +109,14 @@ class Fixtures(object):
         fixture=model['fixture']
         if fixture in self._fixtures.keys():
 
+            model['im-original-scale'] = self._fixtures[fixture].scale
             model['im-scale'] = self._fixtures[fixture].scale
             model['im-path'] = self._fixtures[fixture].im_path
             model['fixture-file'] = self._fixtures[fixture].file_name
 
         else:
 
+            model['im-original-scale'] = 1.0
             model['im-scale'] = 1.0
             model['im-path'] = None
             model['fixture-file'] = model['fixture'].lower().replace(" ","_")

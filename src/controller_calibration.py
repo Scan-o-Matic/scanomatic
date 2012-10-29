@@ -121,6 +121,13 @@ class Fixture_Controller(controller_generic.Controller):
             stage = view_calibration.Fixture_Marker_Calibration_Stage(self,
                 m, sm)
 
+        elif stage_call == 'segmentation':
+
+            top = view_calibration.Fixture_Segmentation_Top(self, 
+                m, sm)
+
+            stage = view_calibration.Fixture_Segmentation_Stage(self,
+                m, sm)
         else:
 
             err = Bad_Stage_Call("{0} recieved call '{1}' from {2}".format(
@@ -190,6 +197,32 @@ class Fixture_Controller(controller_generic.Controller):
 
             self._view.get_stage().check_allow_marker_detection()
 
+    def handle_keypress(self, widget, event):
+
+        sm = self._specific_model
+
+        if sm['active-segment'] is not None:
+
+            if view_calibration.gtk.gdk.keyval_name(event.keyval) == "Delete":
+
+                if sm['active-segment'] == 'G':
+
+                    sm['grayscale-coords'] = list()
+                    sm['grayscale-sources'] = None
+
+                else:
+
+                    try:
+                        plate = int(sm['active-segment'][-1]) - 1
+                    except:
+                        plate = None
+
+                    if plate is not None:
+                        sm['plate-coords'][plate] = None
+
+            self._view.get_stage().update_segment(sm['active-segment'],
+                scale=sm['im-original-scale'])
+
     def set_number_of_markers(self, widget):
 
         s = widget.get_text()
@@ -258,24 +291,39 @@ class Fixture_Controller(controller_generic.Controller):
 
     def toggle_grayscale(self, widget):
 
-        self._specific_model['grayscale-exists'] = widget.get_active()
-        self._view.get_stage().set_segments_in_list()
-        self.check_segments_ok()
+        has_gs = widget.get_active()
+        stage = self._view.get_stage()
+        sm = self._specific_model
+        sm['grayscale-exists'] = has_gs
+        if has_gs == False:
+            sm['grayscale-coords'] = list()
+            sm['grayscale-sources'] = None
+            stage.update_segment('G',
+                scale=sm['im-original-scale'])
+        
+        stage.set_segments_in_list()
+        
 
     def set_number_of_plates(self, widget):
 
         try:
             plates = int(widget.get_text())
         except:
-            plates == 0
+            plates = 0
             if widget.get_text() != "":
                 widget.set_text("{0}".format(plates))
 
-        sm['plate-coords'] += [None] * (plates - len(sm['plate-coord']))
+        sm = self._specific_model
+
+        stage = self._view.get_stage()
+        old_number_of_plates = len(sm['plate-coords'])
+        for p in xrange(plates, old_number_of_plates):
+            sm['plate-coords'][p] = None
+            stage.update_segment("P{0}".format(p + 1))
+        sm['plate-coords'] += [None] * (plates - len(sm['plate-coords']))
         sm['plate-coords'] = sm['plate-coords'][:plates]
 
         self._view.get_stage().set_segments_in_list()
-        self.check_segments_ok()
 
     def set_active_segment(self, selection):
 
@@ -291,18 +339,72 @@ class Fixture_Controller(controller_generic.Controller):
             row = rows[0]
             sm['active-segment'] = store[row][2]
 
-    def check_segments_ok(self):
+    def get_segments_ok(self, pos1, pos2):
 
-        return False
+        if pos1 is None or None in pos1 or pos2 is None or None in pos2:
 
-    def mouse_press(self, widget, *args, **kwargs):
+            return None
 
-        print "press", widget, args, kwargs
+        return zip(*map(sorted, zip(*(pos1, pos2))))
 
-    def mouse_release(self, widget, *args, **kwargs):
+    def mouse_press(self, event, *args, **kwargs):
 
-        print "release", widget, args, kwargs
+        sm = self._specific_model
+        scale = sm['im-original-scale']
 
-    def mouse_move(self, widget, *args, **kwargs):
+        if sm['active-segment'] is not None:
+            if event.xdata is not None and event.ydata is not None:
+                sm['active-source'] = (event.xdata / scale,
+                    event.ydata / scale)
+            else:
+                sm['active-source'] = None
 
-        print "notify", widget, args, kwargs
+    def mouse_release(self, event, *args, **kwargs):
+
+        sm = self._specific_model
+        scale = sm['im-original-scale']
+
+        if sm['active-segment'] is not None:
+            if event.xdata is not None and event.ydata is not None:
+
+                sm['active-target'] = (event.xdata / scale,
+                    event.ydata / scale)
+            
+            coords = self.get_segments_ok(sm['active-source'],
+                sm['active-target'])
+
+            if coords is not None:
+
+                if sm['active-segment'] == "G":
+                    sm['grayscale-coords'] = coords
+            
+                else:
+                    try:
+
+                        plate = int(sm['active-segment'][-1]) - 1
+                    except:
+                        plate = None
+
+                    if plate is not None:
+                        sm['plate-coords'][plate] = coords
+
+                self._view.get_stage().draw_active_segment(
+                    scale=scale)
+
+        sm['active-source'] = None
+        sm['active-target'] = None
+
+    def mouse_move(self, event, *args, **kwargs):
+
+        sm = self._specific_model
+        scale = sm['im-original-scale']
+
+        if sm['active-segment'] is not None and \
+                sm['active-source'] is not None:
+
+            if event.xdata is not None and event.ydata is not None:
+
+                sm['active-target'] = (event.xdata / scale,
+                    event.ydata / scale)
+ 
+            self._view.get_stage().draw_active_segment(scale=scale)

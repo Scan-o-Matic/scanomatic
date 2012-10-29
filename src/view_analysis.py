@@ -458,7 +458,8 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
             tv_cell, text=0)
         self.treeview.append_column(tv_column)
         self.treeview.set_reorderable(True)
-        self.treeview.connect('key_press_event', specific_controller.handle_keypress)
+        self.treeview.connect('key_press_event',
+            specific_controller.handle_keypress)
         left_vbox.pack_start(self.treeview, True, True, PADDING_SMALL)
         hbox = gtk.HBox()
         button = gtk.Button(
@@ -471,7 +472,8 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         check_button = gtk.CheckButton(
             label=model['analysis-stage-image-selection-fixture'])
         check_button.set_active(specific_model['fixture'])
-        check_button.connect("clicked", specific_controller.set_images_has_fixture)
+        check_button.connect("clicked",
+            specific_controller.set_images_has_fixture)
         self.pack_start(check_button, False, False, PADDING_LARGE)
 
         #CONTINUE ON PREVIOUS LOG FILE

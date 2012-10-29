@@ -16,11 +16,11 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
+from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 import matplotlib.image as plt_img
 import matplotlib.pyplot as plt
 import matplotlib.text as plt_text
 import matplotlib.patches as plt_patches
-from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
 
 #
@@ -89,6 +89,7 @@ class Stage_About(gtk.Label):
 
         self.show()
 
+
 class Fixture_Select_Top(Top):
 
     def __init__(self, controller, model, specific_model):
@@ -107,6 +108,7 @@ class Fixture_Select_Top(Top):
     def set_allow_next(self, val):
 
         self._next_button.set_sensitive(val)
+
 
 class Fixture_Select_Stage(gtk.VBox):
 
@@ -174,6 +176,11 @@ class Fixture_Select_Stage(gtk.VBox):
             self.treeview.set_sensitive(is_new==False)
             self.new_name.set_sensitive(is_new)
 
+            if is_new:
+                self.new_name.grab_focus()
+            else:
+                self.treeview.grab_focus()
+
             self._controller.check_fixture_select(None, is_new)
 
     def set_bad_name_warning(self, warn):
@@ -227,6 +234,11 @@ class Fixture_Marker_Calibration_Stage(gtk.VBox):
         self._controller = controller
         self._model = model
         self._specific_model = specific_model
+
+        #TITLE
+        label = gtk.Label()
+        label.set_markup(model['fixture-calibration-title'])
+        self.pack_start(label, False, False, PADDING_SMALL)
 
         #SELECT IMAGE
         hbox = gtk.HBox(0, False)
@@ -312,7 +324,7 @@ class Fixture_Segmentation_Stage(gtk.VBox):
 
     def __init__(self, controller, model, specific_model):
 
-        super(Fixture_Marker_Calibration_Stage, self).__init__(0, False)
+        super(Fixture_Segmentation_Stage, self).__init__(0, False)
         self._controller = controller
         self._model = model
         self._specific_model = specific_model
@@ -343,19 +355,27 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         #SEGMENTATION SETTINGS - RIGHT
 
         ##Gray Scale
-        self.has_grayscale = gtk.CheckButton(label=model['fixture-sementation-gs'])
+        self.has_grayscale = gtk.CheckButton(
+            label=model['fixture-segmentation-gs'])
         self.has_grayscale.set_active(specific_model['grayscale-exists'])
         self.has_grayscale.connect("clicked", controller.toggle_grayscale)
         right_side.pack_start(self.has_grayscale, False, False, PADDING_SMALL)
 
         ##Number of plates
+        hbox = gtk.HBox(False, 0)
+        label = gtk.Label()
+        label.set_text(model['fixture-segmentation-plates'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
         self.number_of_plates = gtk.Entry(1)
         self.number_of_plates.connect("changed", controller.set_number_of_plates)
-        right_side.pack_start(self.number_of_plates, False, False, PADDING_SMALL)
+        hbox.pack_start(self.number_of_plates, False, False, PADDING_SMALL)
+        right_side.pack_start(hbox, False, False, PADDING_SMALL)
 
         ##What area are you working with
         self.segments = gtk.ListStore(str, str, str)
         self.treeview = gtk.TreeView(self.segments)
+        self.treeview.connect('key_press_event',
+            controller.handle_keypress)
         tv_cell = gtk.CellRendererText()
         tv_column = gtk.TreeViewColumn(
             model['fixture-segmentation-column-header-segment'],
@@ -371,6 +391,8 @@ class Fixture_Segmentation_Stage(gtk.VBox):
             controller.set_active_segment)
         right_side.pack_start(self.treeview, True, True, PADDING_SMALL)
         
+        self.set_segments_in_list()
+        self.fixture_image.set_plate_overlays()
 
     def set_segments_in_list(self):
 
@@ -385,7 +407,7 @@ class Fixture_Segmentation_Stage(gtk.VBox):
             if not(len(store) > 0 and store[0][2] == 'G'):
 
                 store.insert(0, (m['fixture-segmentation-grayscale'], 
-                    m['fixture-segmentation-nok', 'G'))
+                    m['fixture-segmentation-nok'], 'G'))
 
         else:
 
@@ -415,7 +437,8 @@ class Fixture_Segmentation_Stage(gtk.VBox):
 
             for plate_index in xrange(found_plates + 1, plates + 1):
 
-                store.append((m['fixture-segmentation-plate'].format(plate_index),
+                store.append(
+                    (m['fixture-segmentation-plate'].format(plate_index),
                     m['fixture-segmentation-nok'], 'P{0}'.format(plate_index)))
 
         self.set_ok_nok()
@@ -431,25 +454,59 @@ class Fixture_Segmentation_Stage(gtk.VBox):
             label, ok_nok, segment_type = r
 
             if segment_type == 'G':
-                if len(sm['grayscale-coords']) == 4 and sm['grayscale-source'] is not None:
+                if len(sm['grayscale-coords']) == 4 and \
+                        sm['grayscale-source'] is not None and \
+                        None not in sm['grayscale-coords']:
+
                     row_ok = True
+
                 else:
+
                     row_ok = False
             else:
+
                 try:
                     plate = int(segment_type[-1]) - 1
+
                 except:
+
                     plate = None
 
-                if plate is not None and len(sm['plate-coord'][plate]) == 4:
+                if plate is not None and sm['plate-coords'][plate] is not None \
+                        and None not in sm['plate-coords'][plate]:
+
                     row_ok = True
+
                 else:
+
                     row_ok = False
 
             if row_ok:
                 r[1] = m['fixture-segmentation-ok']
             else:
                 r[1] = m['fixture-segmentation-nok']
+
+
+    def update_segment(self, segment_name, scale=1.0):
+
+        if segment_name == 'G':
+           self.fixture_image.set_grayscale_overlay(scale=scale)
+        else:
+            try:
+                plate = int(segment_name[-1])
+            except:
+                plate = None
+
+            if plate is not None:
+                self.fixture_image.set_plate_overlay(plate,
+                    scale=scale)
+ 
+        self.set_ok_nok()
+
+    def draw_active_segment(self, scale=1.0):
+
+        self.fixture_image.set_active_overlay(scale=scale)
+        self.set_ok_nok()
 
 
 class Fixture_Image(object):
@@ -517,18 +574,19 @@ class Fixture_Image(object):
         self.image_fig.canvas.draw()
 
     def _set_text(self, text, x, y, overlay_key, alpha=0.75,
-            color='#001166'):
+            color='#004400', scale=1.0):
 
         if overlay_key in self._im_overlays.keys():
 
             t = self._im_overlays[overlay_key]
-            t.set_x(x)
-            t.set_y(y)
+            t.set_x(x * scale)
+            t.set_y(y * scale)
             t.set_text(text)
 
         else:
 
-            self._im_overlays[overlay_key] = plt_text.Text(x=x, y=y,
+            self._im_overlays[overlay_key] = plt_text.Text(
+                x=x * scale, y=y * scale,
                 text=text, alpha=alpha,
                 horizontalalignment='center', family='serif',
                 verticalalignment='center', size='large',
@@ -537,26 +595,52 @@ class Fixture_Image(object):
             self.image_ax.add_artist(self._im_overlays[overlay_key])
 
     def _set_rect(self, coords, overlay_key, color='#228822', lw=2,
-            alpha=0.5):
+            alpha=0.5, scale=1.0):
 
+        """
         x, y = map(min, zip(*coords))
         w, h = [a-b for a,b in zip(map(sum, zip(*coords)), (x,y))]
+        """
+        x, y = coords[0]
+        w = coords[1][0] - x
+        h = coords[1][1] - y
 
-        if overlay_key in self._im_overalys.keys():
+        if overlay_key in self._im_overlays.keys():
 
             rect = self._im_overlays[overlay_key]
-            rect.set_xy((x, y))
-            rect.set_width(w)
-            rect.set_height(h)
+            rect.set_xy((x * scale, y * scale))
+            rect.set_width(w * scale)
+            rect.set_height(h * scale)
 
         else:
 
-            rect = plt_patches.Rectangle((x, y), w, h, color=color,
+            rect = plt_patches.Rectangle((x * scale, y * scale),
+                w * scale, h * scale, color=color,
                 lw=lw, alpha=alpha, fill=False)
             rect.get_axes()
             rect.get_transform()
             self.image_ax.add_patch(rect)
             self._im_overlays[overlay_key] = rect
+
+    def _set_circle(self, x, y, overlay_key, alpha=0.75,
+            color='#771100', radius=136, scale=1.0):
+
+        if overlay_key in self._im_overlays.keys():
+
+            circ = self._im_overlays[overlay_key]
+            #circ.set_xy()
+            circ.set_radius(radius)
+            circ.set_edgecolor(color)
+            circ.set_alpha(alpha)
+
+        else:
+
+            circ = plt_patches.Circle((x*scale, y*scale), lw=2,
+                color=color, radius=radius, alpha=alpha, fill=False)
+            circ.get_axes()
+            circ.get_transform()
+            self.image_ax.add_patch(circ)
+            self._im_overlays[overlay_key] = circ
 
     def clear_overlays(self):
 
@@ -569,8 +653,9 @@ class Fixture_Image(object):
 
     def clear_overlay(self, overlay):
 
-        self._im_overlays[overlay].remove()
-        del self._im_overlays[overlay]
+        if overlay in self._im_overlays:
+            self._im_overlays[overlay].remove()
+            del self._im_overlays[overlay]
 
     def clear_overlay_markers(self):
 
@@ -588,37 +673,96 @@ class Fixture_Image(object):
         plate_patch_overlay = "plate_{0}_rect".format(plate_index)
         plate_text_overlay = "plate_{0}_text".format(plate_index)
 
-        self.clear_overlays(plate_patch_overlay)
-        self.clear_overlays(plate_text_overlay)
+        self.clear_overlay(plate_patch_overlay)
+        self.clear_overlay(plate_text_overlay)
 
         self.image_fig.canvas.draw()
         
-    def set_marker_overlays(self):
+    def clear_grayscale_overlay(self):
+
+        self.clear_overlay("grayscale_text")
+        self.clear_overlay("grayscale_rect")
+        self.image_fig.canvas.draw()
+
+    def set_marker_overlays(self, scale=1.0):
 
         model = self._model
 
         for i, (x, y) in enumerate(model['marker-positions']):
 
-            self._set_text('x', x, y, 'marker_{0}'.format(i),
-                alpha=0.5)
+            self._set_circle(x*model['im-original-scale'], 
+                y*model['im-original-scale'], 'marker_{0}'.format(i),
+                alpha=0.5,
+                radius=int(136.0*model['im-original-scale']),
+                scale=scale)
 
         self.image_fig.canvas.draw()
 
-    def set_plate_overlay(self, plate_index):
+    def set_plate_overlay(self, plate_index, plate=None, scale=1.0):
 
         plate_patch_overlay = "plate_{0}_rect".format(plate_index)
         plate_text_overlay = "plate_{0}_text".format(plate_index)
 
         model = self._model
-        plate = model['plate-coords'][plate_index]
-        center_x, center_y = [p/2.0 for p in map(sum, zip(*plate))]
 
-        self._set_text(plate_index, center_x, center_y,
-            plate_text_overlay, alpha=0.5)
+        if plate is None:
+            plate = model['plate-coords'][plate_index - 1]
+
+        if plate is not None and None not in plate:
+            self._set_segment_overlay(str(plate_index), plate,
+                plate_text_overlay, plate_patch_overlay, scale=scale)
+        else:
+            self.clear_plate_overlay(plate_index)
+
+    def set_plate_overlays(self, scale=1.0):
+
+        model = self._model
+        for i, p in enumerate(model['plate-coords']):
+            self.set_plate_overlay(i + 1, p, scale=scale)
+
+    def set_grayscale_overlay(self, coords=None, scale=1.0):
+
+        model = self._model
+        if coords is None:
+            coords = model['grayscale-coords']
+
+        if coords is not None and None not in coords and len(coords) > 0:
+            self._set_segment_overlay(model['grayscale-image-text'],
+                coords, 'grayscale_text', 'grayscale_rect', scale=scale)
+        else:
+            self.clear_grayscale_overlay()
+
+    def _set_segment_overlay(self, segment_text, coords, segment_text_key,
+            segment_rect_key, scale=1.0):
+
+        center_x, center_y = [p/2.0 for p in map(sum, zip(*coords))]
+
+        self._set_text(segment_text, center_x, center_y,
+            segment_text_key, alpha=0.5, scale=scale)
         
-        self._set_rect(plate, plate_patch_overlay)
+        self._set_rect(coords, segment_rect_key, scale=scale)
 
         self.image_fig.canvas.draw()
+
+    def set_active_overlay(self, scale=1.0):
+
+        model = self._model
+
+        coords = (model['active-source'], model['active-target'])
+        plate_index = model['active-segment'][-1]
+
+        if plate_index == 'G':
+
+            self.set_grayscale_overlay(coords=coords, scale=scale)
+
+        else:
+            try:
+                plate_index = int(plate_index)
+            except:
+                plate_index = None
+
+            if plate_index is not None:
+                self.set_plate_overlay(plate_index, plate=coords, scale=scale) 
 
     def get_canvas(self):
 

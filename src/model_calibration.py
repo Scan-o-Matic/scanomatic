@@ -47,6 +47,8 @@ to invoke a new calibration polynomial.</i></span>
 'fixture-select-next': 'Marker Calibration',
 
 #FIXTURE MARKER CALIBRATION
+'fixture-calibration-title': 
+"""<span size="large">Image Selection and Marker Detection</span>""",
 'fixture-calibration-next': 'Segmenting Fixture',
 'fixture-calibration-select-im': 'Select Image',
 'fixture-calibration-marker-number': 'Number of calibration points',
@@ -57,15 +59,15 @@ to invoke a new calibration polynomial.</i></span>
 ('IMAGE/TIF','*.[tT][iI][fF][fF]'))},
 
 #FIXTURE SEGMENTATION
-'fixutre-segmentation-title': """<span size="Large">Segmenting Out Interests
+'fixture-segmentation-title': """<span size="large">Segmenting Out Interests
 </span>""",
 'fixture-segmentation-gs': 'Fixture has a Kodak Grayscale',
 'fixture-segmentation-next': 'Save the Fixture Calibration',
+'fixture-segmentation-plates': 'Number of Plates',
 'fixture-segmentation-column-header-segment': 'Segment',
 'fixture-segmentation-column-header-ok': 'OK',
 'fixture-segmentation-grayscale': 'Grayscale',
 'fixture-segmentation-plate': 'Plate {0}',
-'fixture-segmentation-image-grayscale': 'G',
 'fixture-segmentation-nok': '',
 'fixture-segmentation-ok': 'Yes',
 }
@@ -80,10 +82,12 @@ specific_fixture_model = {
 'original-image-path': None,
 'im': None,
 'im-path': None,
+'im-original-scale': 1.0,
 'im-scale': 1.0,
 'im-not-loaded': 'No image selected',
 
 'grayscale-exists': True,
+'grayscale-image-text': 'G',
 'grayscale-coords': list(),
 'grayscale-targets': np.asarray([82, 78, 74, 70, 66, 62, 58, 54, 50, 46,
                             42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0]),
@@ -96,4 +100,6 @@ specific_fixture_model = {
 'marker-positions': list(),
 
 'active-segment': None,
+'active-source': None,
+'active-target': None,
 }
