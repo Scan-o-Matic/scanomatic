@@ -448,14 +448,15 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         store = self.segments
         m =  self._model
         sm = self._specific_model
+        all_rows = list()
 
         for r in store:
 
             label, ok_nok, segment_type = r
 
             if segment_type == 'G':
-                if len(sm['grayscale-coords']) == 4 and \
-                        sm['grayscale-source'] is not None and \
+                if len(sm['grayscale-coords']) == 2 and \
+                        sm['grayscale-sources'] is not None and \
                         None not in sm['grayscale-coords']:
 
                     row_ok = True
@@ -481,11 +482,15 @@ class Fixture_Segmentation_Stage(gtk.VBox):
 
                     row_ok = False
 
+            all_rows.append(row_ok)
+
             if row_ok:
                 r[1] = m['fixture-segmentation-ok']
             else:
                 r[1] = m['fixture-segmentation-nok']
 
+
+        self._controller.set_allow_save(sum(all_rows) == len(all_rows))
 
     def update_segment(self, segment_name, scale=1.0):
 
@@ -508,6 +513,31 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         self.fixture_image.set_active_overlay(scale=scale)
         self.set_ok_nok()
 
+
+class Fixture_Save_Top(Top):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Fixture_Save_Top, self).__init__(controller, model)
+        self._specific_model = specific_model
+
+        self.show_all()
+
+
+class Fixture_Save_Stage(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Fixture_Save_Stage, self).__init__(0, False)
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        label = gtk.Label()
+        label.set_markup(model['fixture-save-title'])
+        self.pack_start(label, True, True, PADDING_SMALL)
+
+        self.show_all()
 
 class Fixture_Image(object):
 

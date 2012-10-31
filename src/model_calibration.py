@@ -70,6 +70,10 @@ to invoke a new calibration polynomial.</i></span>
 'fixture-segmentation-plate': 'Plate {0}',
 'fixture-segmentation-nok': '',
 'fixture-segmentation-ok': 'Yes',
+
+#FIXTURE SEGMENTATION
+'fixture-save-title': 
+"""<span size="large">Fixture is saved and ready to use!</span>""",
 }
 
 

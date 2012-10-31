@@ -40,7 +40,7 @@ class Fixture_Image(object):
         self._define_reference = define_reference
         self.fixture_name = fixture
         self.im_scale = im_scale
-        self.im_original_sacle = im_scale
+        self.im_original_scale = (im_scale is None and 1.0 or im_scale)
 
         self.set_reference_file(fixture,
             fixture_directory=fixture_directory,
@@ -100,12 +100,52 @@ class Fixture_Image(object):
 
             return self.get_plates()
 
+        else:
+
+            print "***ERROR: Unknown key {0}".format(key)
+
+    def __setitem__(self, key, val):
+
+        if key in ['grayscale-area', 'grayscale-coords', 'gs-area',
+            'gs-coords', 'greyscale-area', 'greyscale-coords']:
+
+            self.fixture_current['grayscale_area'] = val
+
+        elif key in ['grayscale', 'greyscale', 'gs']:
+
+            if val is None or len(val) == 0:
+                has_gs = False
+            else:
+                has_gs = True
+
+            self.fixture_current['grayscale'] = has_gs
+            self.fixture_current['grayscale_indices'] = val
+
+        elif key in ['plate-coords']:
+
+            try:
+                plate, coords = val
+                plate = int(plate)
+            except:
+                print "***ERROR: Must be a tuple/list of plate index and coords"
+                return
+
+            plate_str = "plate_{0}_area".format(plate)
+            self.fixture_current[plate_str] = coords
+
+        else:
+
+            print "***ERROR: Failed to set {0} to {1}".format(key, val)
+
     def _load_reference(self):
 
         fixture_path = self._fixture_reference_path
 
         self.fixture_reference = conf.Config_File(fixture_path)
-        self.fixture_current = conf.Config_File(fixture_path + "_tmp")
+        if self._define_reference:
+            self.fixture_current = self.fixture_reference
+        else:
+            self.fixture_current = conf.Config_File(fixture_path + "_tmp")
 
     def set_number_of_markings(self, markings):
 
@@ -283,7 +323,8 @@ class Fixture_Image(object):
 
         if analysis_im_path is not None:
 
-            np.save(analysis_im_path, analysis_img)
+            from matplotlib.image import imsave
+            imsave(analysis_im_path, analysis_img, format='tiff')
 
         msg = "Setting up Image Analysis (acc {0} s)".format(time.time()-t)
 
@@ -415,7 +456,7 @@ class Fixture_Image(object):
             print "*** ERROR: Missmatch in number of markings"
             return None
 
-    def get_subsection(self, section):
+    def get_subsection(self, section, scale=1.0):
 
         im = self['image']
 
@@ -426,8 +467,8 @@ class Fixture_Image(object):
             try:
 
                 subsection = im[
-                    section[0][1]: section[1][1],
-                    section[0][0]: section[1][0]]
+                    section[0][1] * scale: section[1][1] * scale,
+                    section[0][0] * scale: section[1][0] * scale]
 
             except:
 
@@ -440,13 +481,15 @@ class Fixture_Image(object):
 
     def analyse_grayscale(self):
 
-        im = self.get_subsection(self['current']['grayscale_area'])
+        im = self.get_subsection(self['current']['grayscale_area'],
+                scale=self.im_original_scale)
 
-        if im is None:
+
+        if im is None or 0 in im.shape:
             return False
 
         ag = resource_image.Analyse_Grayscale(target_type="Kodak", 
-            image=im, scale_factor=self.im_original_sacle)
+            image=im, scale_factor=self.im_original_scale)
         
         gs_indices = ag.get_target_values()
         gs_values = ag.get_source_values()

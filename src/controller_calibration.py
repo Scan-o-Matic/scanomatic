@@ -13,6 +13,8 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import numpy as np
+
 #
 # INTERNAL DEPENDENCIES
 #
@@ -128,6 +130,15 @@ class Fixture_Controller(controller_generic.Controller):
 
             stage = view_calibration.Fixture_Segmentation_Stage(self,
                 m, sm)
+
+        elif stage_call == 'save':
+
+            top = view_calibration.Fixture_Save_Top(self, m, sm)
+ 
+            stage = view_calibration.Fixture_Save_Stage(self, m , sm)
+
+            self.save_fixture()
+
         else:
 
             err = Bad_Stage_Call("{0} recieved call '{1}' from {2}".format(
@@ -222,6 +233,19 @@ class Fixture_Controller(controller_generic.Controller):
 
             self._view.get_stage().update_segment(sm['active-segment'],
                 scale=sm['im-original-scale'])
+
+    def save_fixture(self):
+
+        sm = self._specific_model
+        self.f_settings.reset_all_pinning_histories()
+
+        for plate in enumerate(sm['plate-coords']):
+            self.f_settings['plate-coords'] = plate
+
+        self.f_settings['grayscale'] = sm['grayscale-targets']
+        self.f_settings.reset_all_pinning_histories()
+        self.f_settings['current'].save()
+        self.get_top_controller().fixtures.update()
 
     def set_number_of_markers(self, widget):
 
@@ -339,13 +363,56 @@ class Fixture_Controller(controller_generic.Controller):
             row = rows[0]
             sm['active-segment'] = store[row][2]
 
-    def get_segments_ok(self, pos1, pos2):
+    def set_allow_save(self, val):
+
+        if val and len(self._specific_model['plate-coords']) > 0:
+            self._view.get_top().set_allow_next(True)
+        else:
+            self._view.get_top().set_allow_next(False)
+
+    def get_segment_ok(self, pos1, pos2):
 
         if pos1 is None or None in pos1 or pos2 is None or None in pos2:
 
             return None
 
         return zip(*map(sorted, zip(*(pos1, pos2))))
+
+    def get_grayscale(self):
+
+        sm = self._specific_model
+
+        if len(sm['grayscale-coords']) != 2:
+
+            gs_ok = False
+
+        else:
+
+            self.f_settings['grayscale-coords'] = sm['grayscale-coords']
+ 
+            self.f_settings.analyse_grayscale()
+            gs_target, gs_source =  self.f_settings['grayscale']
+            print gs_source
+            if gs_source is not None:
+                gs_source = np.array(gs_source)
+
+            if gs_source is not None and gs_target is not None and \
+                ((sm['grayscale-targets'] - gs_target) == 0).all() and \
+                ((gs_source[:-1] - gs_source[1:]) > 0).sum() \
+                in (0, len(gs_source) - 1):
+
+                sm['grayscale-sources'] = gs_source
+                gs_ok = True
+
+            else:
+
+                gs_ok = False
+
+        if gs_ok == False:
+
+            sm['grayscale-sources'] = None
+
+        return gs_ok
 
     def mouse_press(self, event, *args, **kwargs):
 
@@ -370,14 +437,16 @@ class Fixture_Controller(controller_generic.Controller):
                 sm['active-target'] = (event.xdata / scale,
                     event.ydata / scale)
             
-            coords = self.get_segments_ok(sm['active-source'],
+            coords = self.get_segment_ok(sm['active-source'],
                 sm['active-target'])
 
             if coords is not None:
 
                 if sm['active-segment'] == "G":
+
                     sm['grayscale-coords'] = coords
-            
+                    self.get_grayscale()
+
                 else:
                     try:
 
