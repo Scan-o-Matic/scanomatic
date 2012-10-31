@@ -75,6 +75,7 @@ class Top_Root(Top):
         button.connect("clicked", controller.set_mode, 'poly')
         self.pack_start(button, False, False, PADDING_MEDIUM)
 
+
 class Stage_About(gtk.Label):
 
     def __init__(self, controller, model):

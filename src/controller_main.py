@@ -121,6 +121,7 @@ class Fixtures(object):
             model['im-path'] = None
             model['fixture-file'] = model['fixture'].lower().replace(" ","_")
 
+
 class Controller(controller_generic.Controller):
 
     def __init__(self, model, view, program_path):

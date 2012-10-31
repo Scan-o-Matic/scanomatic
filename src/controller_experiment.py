@@ -39,3 +39,66 @@ class Experiment_Controller(controller_generic.Controller):
     def __init__(self, window, main_controller):
 
         super(Experiment_Controller, self).__init__(window, main_controller)
+        self._specific_controller = None
+
+    def _get_default_view(self):
+
+        return view_experiment.Experiment_View(self, self._model)
+
+    def _get_default_model(self):
+
+        return model_experiment.model
+
+    def set_mode(self, widget, experiment_mode):
+
+        view = self._view
+        model = self._model
+
+        if experiment_mode == 'project':
+
+            self._specific_controller = Project_Controller(self._window,
+                self, model=model, view=view)
+
+        elif experiment_mode == "gray":
+
+            err = Not_Yet_Implemented("Mode 'One Gray-Scale Scan'")
+            raise err
+
+        elif experiment_mode == 'color':
+
+            err = Not_Yet_Implemented("Mode 'One Color Scan'")
+            raise err
+
+        else:
+
+            raise Bad_Stage_Call(experiment_mode)
+
+
+class Project_Controller(controller_generic.Controller):
+
+    def __init__(self, window, parent, view=None, model=None,
+        specific_model=None):
+
+        super(Project_Controller, self).__init__(window, parent,
+            view=view, model=model)
+
+        #MODEL
+        if specific_model is not None:
+            self._specific_model = specific_model
+        else:
+            self.build_new_specific_model()
+
+        #VIEW
+        view.set_controller(self)
+        self.set_view_stage(None, 'setup')
+
+    def set_view_stage(self, widget, stage_call, *args, **kwargs):
+
+        print widget, stage_call
+
+    def build_new_specific_model(self):
+
+        sm = model_experiment.copy_model(
+            model_experiment.specific_project_model)
+        self._specific_model = sm
+        return sm
