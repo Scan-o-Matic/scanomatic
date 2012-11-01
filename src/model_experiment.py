@@ -40,6 +40,29 @@ cell count transpose.</i></span>
 <span><i>This is for color images such as those used for
 pigmentation analysis.</i></span>
 """,
+
+#PROJECT - SETUP
+##TOP
+
+##STAGE
+###METADATA
+'project-stage-meta': 'Meta-Data',
+'project-stage-select_root':'Select Experiments Root Directory',
+'project-stage-prefix': 'Project Prefix',
+'project-stage-planning-id': 'Project ID from Planner',
+'project-stage-desc': 'Project Description',
+###FIXTURE AND SCANNER
+'project-stage-fixture_scanner': 'Scanner and Fixture',
+'project-stage-scanner': 'Scanner:',
+'project-stage-fixture': 'Fixture:',
+###TIME SETTINGS
+'project-stage-time_settings': 'Time Settings',
+'project-stage-duration': 'Duration',
+'project-stage-interval': 'Interval',
+'project-stage-scans': 'Scans',
+###PINNING
+'project-stage-plates': 'Pinnings / Plate Formats',
+
 }
 
 specific_project_model = {

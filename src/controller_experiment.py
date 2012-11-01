@@ -94,7 +94,22 @@ class Project_Controller(controller_generic.Controller):
 
     def set_view_stage(self, widget, stage_call, *args, **kwargs):
 
-        print widget, stage_call
+        sm = self._specific_model
+        m = self._model
+        view = self.get_view()
+
+        if stage_call == "setup":
+
+            top = view_experiment.Top_Project_Setup(self, m , sm)
+            stage = view_experiment.Stage_Project_Setup(self, m , sm)
+
+        else:
+
+            err = "{0} called for {1}".format(widget, stage_call)
+            raise Bad_Stage_Call(err)
+
+        view.set_top(top)
+        view.set_stage(stage)
 
     def build_new_specific_model(self):
 

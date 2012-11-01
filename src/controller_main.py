@@ -122,6 +122,86 @@ class Fixtures(object):
             model['fixture-file'] = model['fixture'].lower().replace(" ","_")
 
 
+class Scanner(object):
+
+    def __init__(self, paths, config, name):
+
+        self._paths = paths
+        self._config = config
+        self._name = name
+        self._claimed = False
+        self._master_process = None
+
+    def _write_to_lock_file(self):
+
+        pass
+
+    def get_claimed(self):
+
+        return self._claimed
+
+    def get_name(self):
+
+        return self._name
+
+    def set_claimed(self, val, master_proc=None):
+
+        self._claimed = val
+        if val == True and master_proc is not None:
+            self._master_process = master_proc
+        
+        self._write_to_lock_file()
+
+
+class Scanners(object):
+
+    def __init__(self, paths, config):
+
+        self._paths = paths
+        self._config = config
+        self._scanners = dict()
+        self._generic_naming = True
+
+    def update(self):
+
+        scanner_count = self._config.number_of_scanners
+        if self._generic_naming:
+            scanner_name_pattern = "Scanner {0}"
+            scanners = [scanner_name_pattern.format(s + 1) for s in xrange(scanner_count)]
+        else:
+            scanners = self._config.scanner_names
+
+        for s in scanners:
+
+            if s not in self._scanners.keys():
+                self._scanners[s] = Scanner(self._paths, self._config, s)
+
+        for s in self._scanners.keys():
+
+            if s not in scanners:
+
+                del self._scanners[s]
+
+    def names(self, available=True):
+
+        self.update()
+
+        scanners = [s_name for s_name, s in self._scanners.items() if available and \
+            (s.get_claimed() == False) or True]
+
+        return sorted(scanners)
+
+
+class Config(object):
+
+    def __init__(self, paths):
+
+        self._paths = paths
+
+        #TMP SOLUTION TO BIGGER PROBLEMS
+        self.number_of_scanners = 3
+        self.scanner_names = list()
+
 class Controller(controller_generic.Controller):
 
     def __init__(self, model, view, program_path):
@@ -130,6 +210,8 @@ class Controller(controller_generic.Controller):
 
         self.paths = Paths(program_path)
         self.fixtures = Fixtures(self.paths)
+        self.config = Config(self.paths)
+        self.scanners = Scanners(self.paths, self.config)
 
         self._model = model
         self._view = view
