@@ -28,6 +28,7 @@ import src.controller_analysis as controller_analysis
 import src.controller_experiment as controller_experiment
 import src.controller_calibration as controller_calibration
 import src.resource_os as resource_os
+import src.resource_config as resource_config
 
 #
 # EXCEPTIONS
@@ -57,13 +58,107 @@ class Paths(object):
 
 class Fixture_Settings(object):
 
-    def __init__(self, dir_path, name):
+    def __init__(self, dir_path, name, paths):
 
+        self._paths = paths
         self.dir_path = dir_path
         self.file_name = name
         self.im_path = dir_path + os.sep + name + ".tiff"
         self.scale = 0.25
         self.name = name.replace("_", " ").capitalize()
+        self.marker_name = None
+
+        for attrib in ('marker_path', 'marker_count', 'grayscale',
+            'marker_positions', 'plate_areas', 'grayscale_area'):
+
+            self.__setattr__(attrib, None)
+             
+        self.load_from_file()
+
+    def get_location(self):
+
+        return self.dir_path + os.sep + self.file_name
+
+    def load_from_file(self):
+
+        f = resource_config.Config_File(self.get_location())
+
+        #Version
+        self.version = f['version']
+
+        #Marker path and name
+        self.marker_path = f['marker_path']
+        if self.marker_path is not None:
+            self.marker_name = self.marker_path.split(os.sep)[-1]
+        else:
+            self.marker_name = None
+
+        #Marker count
+        self.marker_count = f['marker_count']
+
+        #Marker positions
+        if self.marker_count is None:
+            self.marker_positions = None
+        else:
+            m_str = 'marking_{0}'
+            markings = list()
+            for m in range(self.marker_count):
+                markings.append(f[m_str.format(m)])
+            self.marker_positions = markings
+
+        #Plate areas
+        p_str = 'plate_{0}_area'
+        p = 0
+        plates = list()
+        while f[p_str.format(p)] is not None:
+            plates.append(f[p_str.format(p)])
+            p += 1
+        self.plate_areas = plates
+
+        #Grayscale
+        self.grayscale = f['grayscale']
+        self.grayscale_area = f['grayscale_area']
+
+    def get_marker_path(self):
+
+        #Evaluate math from settings-file
+        good_path = True
+        try:
+
+            fs = open(self.marker_path, 'rb')
+            fs.close()
+        except:
+            good_path = False
+
+        if good_path:
+            return self.marker_path
+
+        #Evaluate name of file from settings-file with default path
+        good_name = True
+        try:
+            fs = open(self._paths.images + os.sep + self.marker_name, 'rb')
+            fs.close()
+        except:
+            good_name = False
+       
+        if good_name:
+            return self._paths.images + os.sep + self.marker_name
+
+        #Evalutate default marker path
+        good_default = True
+        try:
+
+            fs = open(self._paths.marker, 'rb')
+            fs.close()
+
+        except:
+            good_default = False
+
+        if good_default:
+
+            return self._paths.marker
+
+        return None
 
 
 class Fixtures(object):
@@ -92,9 +187,10 @@ class Fixtures(object):
             if file.lower().endswith(extension)])
 
         self._fixtures = dict()
+        paths = self._paths
 
         for f in list_fixtures:
-            fixture = Fixture_Settings(directory, f)
+            fixture = Fixture_Settings(directory, f, paths)
             self._fixtures[fixture.name] = fixture
 
     def names(self):
