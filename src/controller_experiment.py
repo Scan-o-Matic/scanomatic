@@ -87,6 +87,12 @@ class Experiment_Controller(controller_generic.Controller):
 
 class Project_Controller(controller_generic.Controller):
 
+    #Input Bounds Validity
+    bounds = {
+        'duration': (14/60.0, 24*7),  # Hours
+        'interval': (7, 3*60),  # Minutes
+        'scans': (2, 1000)}
+
     def __init__(self, window, parent, view=None, model=None,
         specific_model=None):
 
@@ -155,11 +161,6 @@ class Project_Controller(controller_generic.Controller):
         sm = self._specific_model
         stage = self._view.get_stage()
 
-        #Input Bounds Validity
-        bounds = {
-            'duration': (14, 24*7),  # Hours
-            'interval': (7, 3*60),  # Minutes
-            'scans': (2, 1000)}
 
         #Parsing input
         str_val = widget.get_text()
@@ -198,28 +199,68 @@ class Project_Controller(controller_generic.Controller):
         if val is not None:
 
             #Checking bounds
-            val_is_adjusted = False
-            if bounds[widget_name][0] > val:
-                val = bounds[widget_name][0]
-                val_is_adjusted = True
-            elif val < bounds[widget_name][1]:
-                val = bounds[widget_name][1]
-                val_is_adjusted = True
-
+            val_is_adjusted = self._set_duration_in_model(widget_name, val)
             if val_is_adjusted:
                 stage.set_duration_warning(widget_name)    
             else:
                 stage.remove_duration_warning(widget_name)
 
-            sm[widget_name] = val
-             
             #Update order of entry made
             dso = sm['duration-settings-order']
             dso.pop(dso.index(widget_name))
             dso.append(widget_name)
 
+            self._check_duration_consistencies()
+            stage.set_other_duration_values()
+
         else:
 
             stage.set_duration_warning(widget_name)    
 
-        print widget_name, val
+
+    def _check_duration_consistencies(self):
+
+        sm = self._specific_model
+        dso = sm['duration-settings-order']
+        inconsistent = True
+
+        for pos in range(len(dso)):
+
+            if dso[pos] == 'interval':
+
+                t = sm['duration'] * 60.0 / (sm['scans'] - 1)
+                inconsistent = self._set_duration_in_model('interval', t)
+
+            elif dso[pos] == 'duration':
+
+                t = sm['interval'] * (sm['scans'] - 1) / 60.0
+                inconsistent = self._set_duration_in_model('duration', t)
+            
+            else:
+
+                t = int(sm['duration'] * 60 / sm['interval']) + 1
+                inconsistent = self._set_duration_in_model('scans', t)
+
+            if inconsistent == False:
+
+                break
+
+    def _set_duration_in_model(self, duration_name, val):
+
+        sm = self._specific_model
+        got_adjusted = True
+
+        if val != sm[duration_name]:
+
+            if val <= self.bounds[duration_name][1] and \
+                val >= self.bounds[duration_name][0]:
+
+                got_adjusted = False
+                sm[duration_name] = val
+
+            elif val < self.bounds[duration_name][0]:
+                sm[duration_name] = self.bounds[duration_name][0]
+            else:
+                sm[duration_name] = self.bounds[duration_name][1]
+
+        return got_adjusted

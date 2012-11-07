@@ -116,6 +116,7 @@ class Stage_Project_Setup(gtk.VBox):
         self._specific_model = specific_model
 
         sm = self._specific_model
+        self.gtk_handlers = dict()
 
         super(Stage_Project_Setup, self).__init__(0, False)
 
@@ -141,7 +142,8 @@ class Stage_Project_Setup(gtk.VBox):
         label = gtk.Label(model['project-stage-prefix'])
         label.set_alignment(0, 0.5)
         self.prefix = gtk.Entry()
-        self.prefix.connect('changed', controller.check_prefix_dupe)
+        self.gtk_handlers['prefix'] = self.prefix.connect('changed', 
+            controller.check_prefix_dupe)
         table.attach(label, 0, 1, 0, 1)
         self.warn_image = gtk.Image()
         self.set_prefix_status(False)
@@ -192,28 +194,52 @@ class Stage_Project_Setup(gtk.VBox):
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 0, 1)
         self.project_duration = gtk.Entry()
-        self.project_duration.connect("changed", 
+        self.project_duration.set_text(self._get_human_duration('duration'))
+        self.gtk_handlers['duration-changed'] = self.project_duration.connect("changed", 
             controller.check_experiment_duration,
             "duration")
-        table.attach(self.project_duration, 1, 2, 0, 1)
+        self.gtk_handlers['duration-exit'] = self.project_duration.connect(
+            "focus-out-event",
+            self._set_duration_value, 'duration')
+        self.duration_warning = gtk.Image()
+        hbox = gtk.HBox(False, 0)
+        hbox.pack_start(self.project_duration, False, False, PADDING_SMALL)
+        hbox.pack_start(self.duration_warning, False, False, PADDING_SMALL)
+        table.attach(hbox, 1, 2, 0, 1)
         ##INTERVAL
         label = gtk.Label(model['project-stage-interval'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 1, 2)
         self.project_interval = gtk.Entry()
-        self.project_interval.connect("changed", 
+        self.project_interval.set_text(self._get_human_duration('interval'))
+        self.gtk_handlers['interval-changed'] = self.project_interval.connect("changed", 
             controller.check_experiment_duration,
             "interval")
-        table.attach(self.project_interval, 1, 2, 1, 2)
+        self.gtk_handlers['interval-exit'] = self.project_interval.connect(
+            "focus-out-event",
+            self._set_duration_value, 'interval')
+        self.interval_warning = gtk.Image()
+        hbox = gtk.HBox(False, 0)
+        hbox.pack_start(self.project_interval, False, False, PADDING_SMALL)
+        hbox.pack_start(self.interval_warning, False, False, PADDING_SMALL)
+        table.attach(hbox, 1, 2, 1, 2)
         ##SCANS
         label = gtk.Label(model['project-stage-scans'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 2, 3)
         self.project_scans = gtk.Entry()
-        self.project_scans.connect("changed", 
+        self.project_scans.set_text(self._get_human_duration('scans'))
+        self.gtk_handlers['scans-changed'] = self.project_scans.connect("changed", 
             controller.check_experiment_duration,
             "scans")
-        table.attach(self.project_scans, 1, 2, 2, 3)
+        self.gtk_handlers['scans-exit'] = self.project_scans.connect(
+            "focus-out-event",
+            self._set_duration_value, 'scans')
+        self.scans_warning = gtk.Image()
+        hbox = gtk.HBox(False, 0)
+        hbox.pack_start(self.project_scans, False, False, PADDING_SMALL)
+        hbox.pack_start(self.scans_warning, False, False, PADDING_SMALL)
+        table.attach(hbox, 1, 2, 2, 3)
 
         #PINNING
         frame = gtk.Frame(model['project-stage-plates'])
@@ -226,6 +252,84 @@ class Stage_Project_Setup(gtk.VBox):
 
         self.set_fixtures()
         self.set_scanners()
+
+
+    def _get_human_duration(self, w_type):
+
+        sm = self._specific_model
+        m = self._model
+
+        if w_type == "duration":
+            t = sm['duration']
+            td = int(t / 24)
+            t = t % 24
+            th = int(t)
+            tm = int((t-th)*60)
+
+            return m['project-stage-duration-format'].format(td, th, tm)
+
+        elif w_type == "scans":
+
+            return m['project-stage-scans-format'].format(sm['scans'])
+
+        else:
+
+            return m['project-stage-interval-format'].format(sm['interval'])
+
+    def _get_warn_image(self, w_type):
+
+        if w_type == "duration":
+
+            cur_img = self.duration_warning
+
+        elif w_type == "scans":
+
+            cur_img = self.scans_warning
+
+        else:
+
+            cur_img = self.interval_warning
+
+        return cur_img
+
+    def set_duration_warning(self, w_type):
+
+        cur_img = self._get_warn_image(w_type)
+        cur_img.set_from_stock(gtk.STOCK_DIALOG_WARNING,
+            gtk.ICON_SIZE_SMALL_TOOLBAR)
+        cur_img.set_tooltip_text(self._model['project-stage-duration-warn'])
+
+    def remove_duration_warning(self, w_type):
+
+        cur_img = self._get_warn_image(w_type)
+        cur_img.set_from_stock(gtk.STOCK_APPLY,
+            gtk.ICON_SIZE_SMALL_TOOLBAR)
+        cur_img.set_tooltip_text(self._model['project-stage-duration-ok'])
+
+    def set_other_duration_values(self):
+
+        for duration_name in self._specific_model['duration-settings-order'][0:2]:
+
+            self._set_duration_value(None, None, duration_name)
+
+    def _set_duration_value(self, widget, event, duration_name):
+
+        if widget is None:
+            if duration_name == "interval":
+                widget = self.project_interval
+            elif duration_name == 'scans':
+                widget = self.project_scans
+            elif duration_name == 'duration':
+                widget = self.project_duration
+
+        if widget is None:
+            return
+
+        widget.handler_block(self.gtk_handlers[duration_name+"-changed"])
+
+        widget.set_text(self._get_human_duration(duration_name))
+        self.remove_duration_warning(duration_name)
+        widget.handler_unblock(self.gtk_handlers[duration_name+"-changed"])
 
     def set_prefix_status(self, is_ok):
 

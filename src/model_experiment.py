@@ -62,6 +62,15 @@ pigmentation analysis.</i></span>
 'project-stage-duration': 'Duration',
 'project-stage-interval': 'Interval',
 'project-stage-scans': 'Scans',
+'project-stage-duration-ok': 'Great choice!',
+
+'project-stage-duration-warn': 
+'Invalid request, previous/default value will be used',
+
+'project-stage-duration-format': "{0} days {1} hours {2} mins",
+'project-stage-interval-format': "{0} mins",
+'project-stage-scans-format': "{0}",
+
 ###PINNING
 'project-stage-plates': 'Pinnings / Plate Formats',
 
@@ -70,4 +79,8 @@ pigmentation analysis.</i></span>
 specific_project_model = {
 'fixture': None,
 'experiments-root': '',
+'duration-settings-order': ['duration', 'scans', 'interval'],
+'interval': 20,
+'scans': 217,
+'duration': 72,
 }
