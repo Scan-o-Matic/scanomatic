@@ -8,7 +8,23 @@ import numpy as np
 # INTERNAL DEPENDENCIES
 #
 
-from src.model_generic import *
+import src.model_generic as model_generic
+
+#
+# FUNCTIONS
+#
+
+def get_gui_model():
+
+    m = model_generic.Model(private_model=model,
+        generic_model=model_generic.get_model())
+
+    return m
+
+
+def copy_model(model):
+
+    return model_generic.copy.deepcopy(model)
 
 #
 # MODELS
@@ -78,6 +94,13 @@ pigmentation analysis.</i></span>
 
 specific_project_model = {
 'fixture': None,
+'plate-areas': 0,
+'pinnings-list': None,
+'marker-count': 0,
+'grayscale': False,
+'grayscale-area': None,
+'ref-marker-positions': None,
+'marker-path': None,
 'experiments-root': '',
 'duration-settings-order': ['duration', 'scans', 'interval'],
 'interval': 20,

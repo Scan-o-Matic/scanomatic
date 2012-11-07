@@ -41,6 +41,10 @@ class Config_File(object):
 
         return self.set(key, value)
 
+    def __str__(self):
+
+        return "{0} has structure:\n{1}".format(self._location, str(self._data))
+
     def reload(self):
 
         return self.read()

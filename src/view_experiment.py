@@ -179,6 +179,8 @@ class Stage_Project_Setup(gtk.VBox):
         label = gtk.Label(model['project-stage-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.fixture = gtk.combo_box_new_text()
+        self.gtk_handlers['fixture-changed'] = self.fixture.connect(
+            "changed", self._set_new_fixture)
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
 
         #TIME, INTERVAL, SCANS
@@ -369,8 +371,12 @@ class Stage_Project_Setup(gtk.VBox):
         for s in scanners:
             self.scanner.append_text(s)
 
-    def set_pinning(self, pinnings_list, sensitive=None):
+    def set_pinning(self, pinnings_list=None, sensitive=True):
 
+        if pinnings_list is None:
+            pinnings_list = self._specific_model['pinnings-list']
+
+        print self._specific_model 
         box = self.pm_box
 
         children = box.children()
@@ -383,7 +389,7 @@ class Stage_Project_Setup(gtk.VBox):
 
                     box.pack_start(Pinning(
                         self._controller, self._model, self,
-                        len(children) + p + 1, self._specific_model,
+                        len(children) + p + 1, 
                         pinning=pinnings_list[p]))
 
                children = box.children()
@@ -401,3 +407,13 @@ class Stage_Project_Setup(gtk.VBox):
                 child.set_pinning(pinnings_list[i])
 
         box.show_all()
+
+    def _set_new_fixture(self, widget):
+
+        row = widget.get_active()
+        model = widget.get_model()
+
+        fixtures = self._controller.get_top_controller().fixtures
+
+        fixtures[model[row][0]].set_experiment_model(self._specific_model)
+        self.set_pinning()

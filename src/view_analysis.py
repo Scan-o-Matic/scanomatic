@@ -398,8 +398,8 @@ class Analysis_Stage_Project(gtk.VBox):
                for p in xrange(len(pinnings_list) - len(children)):
 
                     box.pack_start(Pinning(
-                        self._controller, self._model, self,
-                        len(children) + p + 1, self._specific_model,
+                        self._controller.project, self._model, self,
+                        len(children) + p + 1, 
                         pinning=pinnings_list[p]))
 
                children = box.children()

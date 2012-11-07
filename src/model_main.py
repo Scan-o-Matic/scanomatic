@@ -2,15 +2,19 @@
 # INTERNAL DEPENDENCIES
 #
 
-from src.model_generic import *
+import src.model_generic as model_generic
 
 #
 # FUNCTIONS
 #
 
 def load_app_model():
-    return model
+    return model_generic.Model(private_model=model)
 
+
+def copy_model(model):
+
+    return model_generic.copy.deepcopy(model)
 #
 # MODELS
 #

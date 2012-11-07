@@ -58,7 +58,7 @@ class Experiment_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_experiment.model
+        return model_experiment.get_gui_model()
 
     def set_mode(self, widget, experiment_mode):
 
@@ -264,3 +264,14 @@ class Project_Controller(controller_generic.Controller):
                 sm[duration_name] = self.bounds[duration_name][1]
 
         return got_adjusted
+
+    def set_pinning(self, widget, plate):
+
+        plate_i = plate - 1
+        model = widget.get_model()
+        row = widget.get_active()
+        key = model[row][0]
+        pm = self._model['pinning-matrices'][key]
+        self._specific_model['pinnings-list'][plate_i] = pm
+        #print plate, plate_i, row, key, pm
+        print self._specific_model['pinnings-list']

@@ -170,17 +170,16 @@ def dialog(window, text, d_type="info", yn_buttons=False):
 class Pinning(gtk.VBox):
 
     def __init__(self, controller, model, project_veiw, 
-            plate_number, specific_model, pinning = None):
+            plate_number, pinning = None):
 
             self._model = model
-            self._specific_model = specific_model
             self._controller = controller
             self._project_view = project_veiw
 
             super(Pinning, self).__init__()
 
             label = gtk.Label(
-                model['analysis-stage-project-plate-label'].format(
+                model['plate-label'].format(
                 plate_number))
 
 
@@ -188,7 +187,7 @@ class Pinning(gtk.VBox):
 
             if pinning is None:
 
-                pinning = specific_model['analysis-project-pinning-default']
+                pinning = model['pinning-default']
 
             self.dropbox = gtk.combo_box_new_text()                   
 
@@ -204,7 +203,7 @@ class Pinning(gtk.VBox):
             self.dropbox.set_active(def_key)
             
             self.dropbox_signal = self.dropbox.connect("changed",
-                self._controller.project.set_pinning,
+                self._controller.set_pinning,
                 plate_number)
 
 

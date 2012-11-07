@@ -8,66 +8,98 @@ import copy
 # FUNCTIONS
 #
 
-def copy_model(model):
+def get_model():
 
-    tmp_model = dict()
-
-    for k in model.keys():
-
-        tmp_model[k] = model[k]
-
-    return copy.deepcopy(tmp_model)
-
-
-def copy_part_of_model(model, keys):
-
-    tmp_model = dict()
-
-    for k in keys:
-
-        tmp_model[k] = model[k]
-
-    return copy.deepcopy(model)
-
-
-def link_to_part_of_model(model, keys):
-
-    return Model_Link(model, keys)
+    m = Model(private_model=generic_gui_model)
+    return m
 
 #
-# MODEL LINK
+# MODEL CLASS
 #
 
-class Model_Link(object):
 
-    def __init__(self, source_model, link_keys):
+class Model(object):
 
-        self._source_model = source_model
-        self._private_model = dict()
-        self._link_keys = link_keys
+    def __init__(self, private_model=None, generic_model=None):
 
-    def __getattr__(self, key):
-
-        if key in self._link_keys:
-
-            return self._source_model[key]
-
+        if private_model is None:
+            self._pm = dict()
+            self.build_private_model()
         else:
+            self._pm = private_model
 
-            return self._private_model[key]
+        self._gm = generic_model
 
-    def __setattr__(self, key, val):
+    def __getitem__(self, key):
 
-        if key in self._link_keys:
-
-            self._source_model[key] = val
-
+        if key in self._pm.keys():
+            return self._pm[key]
+        elif self._gm is not None:
+            return self._gm[key]
         else:
+            return None
 
-            self._private_model[key] = val
+    def __setitem__(self, key, val):
 
+        self._pm[key] = val
+            
     def keys(self):
 
-        return link_keys + self._private_model.keys()
+        return self._pm.keys()
 
+    def items(self):
 
+        return self._pm.items()
+
+    def values(self):
+
+        return self._pm.values()
+
+    def copy_model(self):
+
+        m = Model(private_model=copy.deepcopy(self._pm),
+                generic_model=self._gm)
+
+        return m
+
+    def copy_part(self, keys):
+
+        pm = dict()
+
+        for k in keys:
+
+            pm[k] = copy.deepcopy(self._pm[k])
+
+        m = Model(private_model=pm, generic_model=self._gm)
+        return m
+
+    def build_private_model():
+
+        self._pm = dict()
+
+#
+# GENERIC GUI MODEL VALUES
+#
+
+generic_gui_model = {
+
+#FIXTURES
+'plate-label': 'Plate {0}',
+
+'pinning-matrices': {'A: 8 x 12 (96)': (8, 12), 
+                    'B: 16 x 24 (384)': (16, 24),
+                    'C: 32 x 48 (1536)': (32, 48),
+                    'D: 64 x 96 (6144)': (64, 96),
+                    '--Empty--': None},
+
+'pinning-matrices-reversed': {(8, 12): 'A: 8 x 12 (96)', 
+                    (16, 24): 'B: 16 x 24 (384)',
+                    (32, 48): 'C: 32 x 48 (1536)',
+                    (64, 96): 'D: 64 x 96 (6144)',
+                    None: '--Empty--'},
+
+'pinning-default': '1536',
+
+#ERRORS
+'error-not-implemented': "That feature hasn't been implemented yet!"
+}

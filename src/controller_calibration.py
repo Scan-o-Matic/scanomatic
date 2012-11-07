@@ -52,7 +52,7 @@ class Calibration_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_calibration.model
+        return model_calibration.get_gui_model()
 
     def set_mode(self, widget, calibration_mode):
 

@@ -16,6 +16,7 @@ __status__ = "Development"
 import gobject
 import os
 import gtk
+import copy
 
 #
 # INTERNAL DEPENDENCIES
@@ -62,7 +63,7 @@ class Fixture_Settings(object):
 
         self._paths = paths
         self.dir_path = dir_path
-        self.file_name = name
+        self.file_name = name + ".config"
         self.im_path = dir_path + os.sep + name + ".tiff"
         self.scale = 0.25
         self.name = name.replace("_", " ").capitalize()
@@ -160,6 +161,16 @@ class Fixture_Settings(object):
 
         return None
 
+    def set_experiment_model(self, model):
+
+        model['fixture'] = self.name
+        model['plate-areas'] = copy.copy(self.plate_areas)
+        model['pinnings-list'] = [None] * len(self.plate_areas)
+        model['marker-count'] = self.marker_count
+        model['grayscale'] = self.grayscale
+        model['grayscale-area'] = copy.copy(self.grayscale_area)
+        model['ref-marker-positions'] = copy.copy(self.marker_positions)
+        model['marker-path'] = self.get_marker_path()
 
 class Fixtures(object):
 
