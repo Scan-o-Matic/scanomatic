@@ -141,9 +141,13 @@ class Stage_Project_Setup(gtk.VBox):
         label = gtk.Label(model['project-stage-prefix'])
         label.set_alignment(0, 0.5)
         self.prefix = gtk.Entry()
-        table.attach(label, 0, 1, 0, 1) 
+        self.prefix.connect('changed', controller.check_prefix_dupe)
+        table.attach(label, 0, 1, 0, 1)
+        self.warn_image = gtk.Image()
+        self.set_prefix_status(False)
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self.prefix, False, False, PADDING_NONE)
+        hbox.pack_start(self.warn_image, False, False, PADDING_NONE)
         table.attach(hbox, 1, 2, 0, 1)
         ##IDENTIFIER
         label = gtk.Label(model['project-stage-planning-id'])
@@ -188,18 +192,27 @@ class Stage_Project_Setup(gtk.VBox):
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 0, 1)
         self.project_duration = gtk.Entry()
+        self.project_duration.connect("changed", 
+            controller.check_experiment_duration,
+            "duration")
         table.attach(self.project_duration, 1, 2, 0, 1)
         ##INTERVAL
         label = gtk.Label(model['project-stage-interval'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 1, 2)
         self.project_interval = gtk.Entry()
+        self.project_interval.connect("changed", 
+            controller.check_experiment_duration,
+            "interval")
         table.attach(self.project_interval, 1, 2, 1, 2)
         ##SCANS
         label = gtk.Label(model['project-stage-scans'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 2, 3)
         self.project_scans = gtk.Entry()
+        self.project_scans.connect("changed", 
+            controller.check_experiment_duration,
+            "scans")
         table.attach(self.project_scans, 1, 2, 2, 3)
 
         #PINNING
@@ -213,6 +226,22 @@ class Stage_Project_Setup(gtk.VBox):
 
         self.set_fixtures()
         self.set_scanners()
+
+    def set_prefix_status(self, is_ok):
+
+        m = self._model
+
+        if is_ok:
+
+            self.warn_image.set_from_stock(gtk.STOCK_APPLY,
+                    gtk.ICON_SIZE_SMALL_TOOLBAR)
+            self.warn_image.set_tooltip_text(m['project-stage-prefix-ok'])
+
+        else:
+
+            self.warn_image.set_from_stock(gtk.STOCK_DIALOG_WARNING,
+                    gtk.ICON_SIZE_SMALL_TOOLBAR)
+            self.warn_image.set_tooltip_text(m['project-stage-prefix-warn'])
 
     def set_fixtures(self):
 

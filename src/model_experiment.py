@@ -49,6 +49,8 @@ pigmentation analysis.</i></span>
 'project-stage-meta': 'Meta-Data',
 'project-stage-select_root':'Select Experiments Root Directory',
 'project-stage-prefix': 'Project Prefix',
+'project-stage-prefix-ok': 'Prefix is good',
+'project-stage-prefix-warn': 'Duplcate prefix name or illegal name',
 'project-stage-planning-id': 'Project ID from Planner',
 'project-stage-desc': 'Project Description',
 ###FIXTURE AND SCANNER
@@ -67,4 +69,5 @@ pigmentation analysis.</i></span>
 
 specific_project_model = {
 'fixture': None,
+'experiments-root': '',
 }
