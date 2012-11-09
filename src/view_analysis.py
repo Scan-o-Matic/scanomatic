@@ -96,7 +96,7 @@ class Analysis_Top_Project(Top):
         self.pack_back_button(model['analysis-top-root_button-text'],
             controller.set_analysis_stage, "about")
 
-        self._start_button = Analysis_Top_Project_Start_Button(controller, model)
+        self._start_button = Start_Button(controller.project, model)
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
         self.set_allow_next(False)
 
@@ -220,24 +220,6 @@ class Analysis_Top_Image_Plate(Analysis_Top_Image_Generic):
         super(Analysis_Top_Image_Plate, self).__init__(controller,
             model, specific_model, specific_controller, next_text,
             next_stage_signal, back_to_root=False)
-
-class Analysis_Top_Project_Start_Button(gtk.Button):
-
-    def __init__(self, controller, model):
-
-        self._controller = controller
-        self._model = model
-
-        super(Analysis_Top_Project_Start_Button, self).__init__(
-                                stock=gtk.STOCK_EXECUTE)
-
-        al = self.get_children()[0]
-        hbox = al.get_children()[0]
-        im, l = hbox.get_children()
-
-        l.set_text(model['analysis-top-project-start-text'])
-
-        self.connect("clicked", controller.project.start)
 
 
 class Analysis_Stage_About(gtk.Label):

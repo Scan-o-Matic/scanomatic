@@ -16,7 +16,7 @@ import src.model_generic as model_generic
 
 def get_gui_model():
 
-    m = model_generic.Model(private_model=model,
+    m = Analysis_GUI_Model(private_model=model,
         generic_model=model_generic.get_model())
 
     return m
@@ -25,6 +25,12 @@ def get_gui_model():
 def copy_model(model):
 
     return model_generic.copy.deepcopy(model)
+
+#
+# SUBCLASSING
+#
+
+class Analysis_GUI_Model(model_generic.Model): pass
 
 #
 # MODELS

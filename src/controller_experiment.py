@@ -104,10 +104,31 @@ class Project_Controller(controller_generic.Controller):
             self._specific_model = specific_model
         else:
             self.build_new_specific_model()
+        self._specific_model['experiments-root'] = \
+            self.get_top_controller().paths.experiment_root
 
         #VIEW
         view.set_controller(self)
         self.set_view_stage(None, 'setup')
+
+    def set_project_root(self, widget):
+
+        dir_list = view_experiment.select_dir(
+            self._model['project-stage-select_root'])
+
+        if dir_list is not None:
+
+            self._specific_model['experiments-root'] = dir_list[0]
+            self.check_prefix_dupe(widget=None)
+            self._view.get_stage().update_experiment_root()
+
+    def set_project_id(self, widget, event):
+
+        self._specific_model['experiment-id'] = widget.get_text()
+
+    def set_project_description(self, widget, event):
+
+        self._specific_model['experiment-desc'] = widget.get_text()
 
     def set_view_stage(self, widget, stage_call, *args, **kwargs):
 
@@ -135,26 +156,30 @@ class Project_Controller(controller_generic.Controller):
         self._specific_model = sm
         return sm
 
-    def check_prefix_dupe(self, widget):
+    def check_prefix_dupe(self, widget=None):
 
         stage = self._view.get_stage()
         sm = self._specific_model
-        t = widget.get_text()
+        if widget is None:
+            t = sm['experiment-prefix']
+        else:
+            t = widget.get_text()
 
-        if re.match("^[A-Za-z0-9_-]*$", t) and t != "":
+        if t is not None and re.match("^[A-Za-z0-9_-]*$", t) and t != "":
 
             if os.path.isdir(sm['experiments-root'] + os.sep + t):
 
                 stage.set_prefix_status(False)
-
+                sm['experiment-prefix'] = None
             else:
 
                 stage.set_prefix_status(True)
-
+                sm['experiment-prefix'] = t
         else:
 
             stage.set_prefix_status(False)
 
+        self.set_allow_run()
 
     def check_experiment_duration(self, widget, widget_name):
 
@@ -265,6 +290,38 @@ class Project_Controller(controller_generic.Controller):
 
         return got_adjusted
 
+    def set_new_scanner(self, widget):
+
+        row = widget.get_active()
+        w_model = widget.get_model()
+        sm = self._specific_model
+
+        scanners = self.get_top_controller().scanners
+
+        scanner = w_model[row][0]
+
+        if scanners.claim(scanner):
+            if sm['scanner'] is not None:
+                scanners.free(sm['scanner'])
+
+            sm['scanners'] = scanners
+
+        else:
+
+            self._view.get_stage().warn_scanner_claim_fail()
+
+    def set_new_fixture(self, widget):
+
+        row = widget.get_active()
+        model = widget.get_model()
+
+        fixtures = self.get_top_controller().fixtures
+
+        fixtures[model[row][0]].set_experiment_model(self._specific_model, 
+            default_pinning = self._model['pinning-default'])
+        self._view.get_stage().set_pinning()
+        self.set_allow_run()
+
     def set_pinning(self, widget, plate):
 
         plate_i = plate - 1
@@ -273,5 +330,40 @@ class Project_Controller(controller_generic.Controller):
         key = model[row][0]
         pm = self._model['pinning-matrices'][key]
         self._specific_model['pinnings-list'][plate_i] = pm
-        #print plate, plate_i, row, key, pm
-        print self._specific_model['pinnings-list']
+        self.set_allow_run()
+
+    def start(self):
+
+        print "!!START"
+        print  self._specific_model
+
+    def set_allow_run(self):
+
+        self._view.get_top().set_allow_next(self.get_ready_to_run())
+
+    def get_ready_to_run(self):
+
+        sm = self._specific_model
+        is_ok = True
+
+        if sm['fixture'] is None or sm['scanner'] is None:
+
+            is_ok = False
+
+        if sm['experiment-prefix'] is None:
+
+            is_ok = False
+
+        if sm['pinnings-list'] is None or \
+            sum([p is None for p in sm['pinnings-list']]) == \
+            len(sm['pinnings-list']):
+
+            is_ok = False
+
+        if sm['marker-path'] is None or sm['grayscale'] == False or \
+            sm['grayscale-area'] is None or ['plate-areas'] == 0 or \
+            sm['plate-areas'] is None:
+
+            is_ok = False
+
+        return is_ok

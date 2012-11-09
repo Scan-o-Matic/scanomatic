@@ -16,7 +16,7 @@ import src.model_generic as model_generic
 
 def get_gui_model():
 
-    m = model_generic.Model(private_model=model,
+    m = Experiment_GUI_Model(private_model=model,
         generic_model=model_generic.get_model())
 
     return m
@@ -25,6 +25,12 @@ def get_gui_model():
 def copy_model(model):
 
     return model_generic.copy.deepcopy(model)
+
+#
+# SUBCLASSING
+#
+
+class Experiment_GUI_Model(model_generic.Model): pass
 
 #
 # MODELS
@@ -71,6 +77,7 @@ pigmentation analysis.</i></span>
 'project-stage-desc': 'Project Description',
 ###FIXTURE AND SCANNER
 'project-stage-fixture_scanner': 'Scanner and Fixture',
+'project-stage-scanner-claim-fail': 'Failed to claim the scanner!',
 'project-stage-scanner': 'Scanner:',
 'project-stage-fixture': 'Fixture:',
 ###TIME SETTINGS
@@ -93,15 +100,30 @@ pigmentation analysis.</i></span>
 }
 
 specific_project_model = {
+##PHYSICAL STUFF
+'scanner': None,
 'fixture': None,
+
+##DATA
+'experiments-root': '',
+'experiment-prefix': None,
+'experiment-desc': None,
+'experiment-id': None,
+
+##PLATES
 'plate-areas': 0,
 'pinnings-list': None,
+
+##MARKERS
 'marker-count': 0,
-'grayscale': False,
-'grayscale-area': None,
 'ref-marker-positions': None,
 'marker-path': None,
-'experiments-root': '',
+
+##GRAYSCALE
+'grayscale': False,
+'grayscale-area': None,
+
+##DURATION
 'duration-settings-order': ['duration', 'scans', 'interval'],
 'interval': 20,
 'scans': 217,

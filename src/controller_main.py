@@ -55,6 +55,7 @@ class Paths(object):
         self.images = self.src + os.sep + "images"
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
         self.log = self.src + os.sep + "log"
+        self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"
 
 
 class Fixture_Settings(object):
@@ -161,11 +162,13 @@ class Fixture_Settings(object):
 
         return None
 
-    def set_experiment_model(self, model):
+    def set_experiment_model(self, model, default_pinning=None):
+
+        print "DP: '{0}'".format(default_pinning)
 
         model['fixture'] = self.name
         model['plate-areas'] = copy.copy(self.plate_areas)
-        model['pinnings-list'] = [None] * len(self.plate_areas)
+        model['pinnings-list'] = [default_pinning] * len(self.plate_areas)
         model['marker-count'] = self.marker_count
         model['grayscale'] = self.grayscale
         model['grayscale-area'] = copy.copy(self.grayscale_area)
@@ -251,11 +254,26 @@ class Scanner(object):
 
         return self._name
 
-    def set_claimed(self, val, master_proc=None):
+    def claim(self):
+
+        if self.get_claimed():
+            return False
+        else:
+            self._set_claimed(True)
+            return True
+
+    def free(self):
+
+        self._set_claimed(False)
+        return True
+
+    def _set_claimed(self, val, master_proc=None):
 
         self._claimed = val
         if val == True and master_proc is not None:
             self._master_process = master_proc
+        elif val == False:
+            self._master_process = None
         
         self._write_to_lock_file()
 
@@ -297,6 +315,21 @@ class Scanners(object):
             (s.get_claimed() == False) or True]
 
         return sorted(scanners)
+
+    def claim(self, scanner_name):
+
+        if scanner_name in self._scanners:
+            return self._scanners[scanner_name].claim()
+        else:
+            print "***WARNING:\tUnknown scanner requested"
+            return False
+
+    def free(self, scanner_name):
+        if scanner_name in self._scanners:
+            return self._scanners[scanner_name].free()
+        else:
+            print "***WARNING:\tUnknown scanner requested"
+            return False
 
 
 class Config(object):

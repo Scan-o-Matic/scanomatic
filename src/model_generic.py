@@ -37,6 +37,7 @@ class Model(object):
         elif self._gm is not None:
             return self._gm[key]
         else:
+            print "***WARNING:\tRequested key '{0}' not found in {1}".format(key, self)
             return None
 
     def __setitem__(self, key, val):
@@ -83,6 +84,9 @@ class Model(object):
 
 generic_gui_model = {
 
+#COMMON OBJECTS
+'start-text': 'Run',
+
 #FIXTURES
 'plate-label': 'Plate {0}',
 
@@ -98,7 +102,7 @@ generic_gui_model = {
                     (64, 96): 'D: 64 x 96 (6144)',
                     None: '--Empty--'},
 
-'pinning-default': '1536',
+'pinning-default': (32, 48),
 
 #ERRORS
 'error-not-implemented': "That feature hasn't been implemented yet!"

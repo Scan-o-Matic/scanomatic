@@ -102,7 +102,17 @@ class Top_Project_Setup(Top):
 
         self._specific_model = specific_model
 
+        self._start_button = Start_Button(controller, model)
+        self.pack_end(self._start_button, False, False, PADDING_LARGE)
+        self.set_allow_next(False)
+
+        self.show_all()
+
+    def set_allow_next(self, val):
+
+        self._start_button.set_sensitive(val)
         
+
 class Stage_Project_Setup(gtk.VBox):
 
     def __init__(self, controller, model, specific_model=None):
@@ -127,9 +137,10 @@ class Stage_Project_Setup(gtk.VBox):
         frame.add(vbox)
         ##FOLDER
         hbox = gtk.HBox(False, 0)
-        self.project_root = gtk.Label()
+        self.project_root = gtk.Label(specific_model['experiments-root'])
         hbox.pack_start(self.project_root, True, True, PADDING_MEDIUM)
         button = gtk.Button(label=model['project-stage-select_root'])
+        button.connect("clicked", controller.set_project_root)
         hbox.pack_end(button, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
         ##THE REST...
@@ -155,6 +166,7 @@ class Stage_Project_Setup(gtk.VBox):
         label = gtk.Label(model['project-stage-planning-id'])
         label.set_alignment(0, 0.5)
         self.project_id = gtk.Entry()
+        self.project_id.connect("focus-out-event", controller.set_project_id)
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self.project_id, False, False, PADDING_NONE)
         table.attach(label, 0, 1, 1, 2)
@@ -163,6 +175,8 @@ class Stage_Project_Setup(gtk.VBox):
         label = gtk.Label(model['project-stage-desc'])
         label.set_alignment(0, 0.5)
         self.project_desc = gtk.Entry()
+        self.project_desc.connect("focus-out-event", 
+            controller.set_project_description)
         self.project_desc.set_width_chars(55)
         table.attach(label, 0, 1, 2, 3)
         table.attach(self.project_desc, 1, 2, 2, 3)
@@ -175,12 +189,14 @@ class Stage_Project_Setup(gtk.VBox):
         label = gtk.Label(model['project-stage-scanner'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.scanner = gtk.combo_box_new_text()
+        self.gtk_handlers['scanner-changed'] = self.scanner.connect(
+            "changed", controller.set_new_scanner)
         hbox.pack_start(self.scanner, False, False, PADDING_MEDIUM)
         label = gtk.Label(model['project-stage-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.fixture = gtk.combo_box_new_text()
         self.gtk_handlers['fixture-changed'] = self.fixture.connect(
-            "changed", self._set_new_fixture)
+            "changed", controller.set_new_fixture)
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
 
         #TIME, INTERVAL, SCANS
@@ -293,6 +309,23 @@ class Stage_Project_Setup(gtk.VBox):
             cur_img = self.interval_warning
 
         return cur_img
+
+    def warn_scanner_claim_fail(self):
+
+        self.scanner.handler_block(self.gtk_handlers['scanner-changed'])
+        
+        self.scanner.set_active(-1)
+
+        dialog(self._controller._window,
+            self._model['project-stage-scanner-claim-fail'],
+            d_type="warning", yn_buttons=False)
+
+        self.scanner.handler_unblock(self.gtk_handlers['scanner-changed'])
+
+    def update_experiment_root(self):
+
+        t = self._specific_model['experiments-root']
+        self.project_root.set_text(t is None and "" or t)
 
     def set_duration_warning(self, w_type):
 
@@ -408,12 +441,3 @@ class Stage_Project_Setup(gtk.VBox):
 
         box.show_all()
 
-    def _set_new_fixture(self, widget):
-
-        row = widget.get_active()
-        model = widget.get_model()
-
-        fixtures = self._controller.get_top_controller().fixtures
-
-        fixtures[model[row][0]].set_experiment_model(self._specific_model)
-        self.set_pinning()

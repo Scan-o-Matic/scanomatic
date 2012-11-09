@@ -167,6 +167,25 @@ def dialog(window, text, d_type="info", yn_buttons=False):
 #
 
 
+class Start_Button(gtk.Button):
+
+    def __init__(self, controller, model):
+
+        self._controller = controller
+        self._model = model
+
+        super(Start_Button, self).__init__(
+                                stock=gtk.STOCK_EXECUTE)
+
+        al = self.get_children()[0]
+        hbox = al.get_children()[0]
+        im, l = hbox.get_children()
+
+        l.set_text(model['start-text'])
+
+        self.connect("clicked", controller.start)
+
+
 class Pinning(gtk.VBox):
 
     def __init__(self, controller, model, project_veiw, 
