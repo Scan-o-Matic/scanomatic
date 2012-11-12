@@ -446,6 +446,8 @@ class Fixture_Controller(controller_generic.Controller):
 
                     sm['grayscale-coords'] = coords
                     self.get_grayscale()
+                    self._view.get_stage().draw_active_segment(
+                        scale=scale)
 
                 else:
                     try:
@@ -455,10 +457,10 @@ class Fixture_Controller(controller_generic.Controller):
                         plate = None
 
                     if plate is not None:
-                        sm['plate-coords'][plate] = coords
+                        self.set_plates(plate, coords)
+                        #sm['plate-coords'][plate] = coords
 
-                self._view.get_stage().draw_active_segment(
-                    scale=scale)
+                    self._view.get_stage().draw_all_plates(scale=scale)
 
         sm['active-source'] = None
         sm['active-target'] = None
@@ -477,3 +479,49 @@ class Fixture_Controller(controller_generic.Controller):
                     event.ydata / scale)
  
             self._view.get_stage().draw_active_segment(scale=scale)
+
+    def set_plates(self, replace_index, new_coords):
+
+        sm = self._specific_model
+        sm['plate-coords'][replace_index] = new_coords
+
+        self._sort_plates()
+
+    def _sort_plates(self):
+        """Sorts plate names according to UL -> UR -> LL -> LR scheme"""
+
+        plates = self._specific_model['plate-coords']
+
+        p_indices = [i for i, p in enumerate(plates) if p is not None]
+        p_names = [pn + 1 for pn in range(len(p_indices))]
+        p_new_indices = list()
+
+        for pn in p_names:
+
+            if pn == 1:
+
+                tmp_eval = np.array([p[0][0] + p[0][1] for i, p in enumerate(plates) if i in p_indices])
+            
+            elif pn == 2:
+
+                tmp_eval = np.array([p[0][1] for i, p in enumerate(plates) if i in p_indices])
+
+            elif pn == 3:
+
+                tmp_eval = np.array([p[0][0] for i, p in enumerate(plates) if i in p_indices])
+
+            else:
+
+                tmp_eval = np.array([p[0][1] for i, p in enumerate(plates) if i in p_indices])
+
+            p_new_indices.append(p_indices[tmp_eval.argmin()])
+            p_indices.remove(p_new_indices[-1])
+
+
+        new_plates = [None] * 4
+        for new_index, old_index in enumerate(p_new_indices):
+            new_plates[new_index] = plates[old_index]
+
+        self._specific_model['plate-coords'] = new_plates
+
+

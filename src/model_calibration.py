@@ -119,7 +119,7 @@ specific_fixture_model = {
                             42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0]),
 'grayscale-sources': None,
 
-'plate-coords': list(),
+'plate-coords': [None, None, None, None],
 
 'markers': 0,
 'marker-path': None,

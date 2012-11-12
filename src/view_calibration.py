@@ -359,6 +359,7 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         self.has_grayscale = gtk.CheckButton(
             label=model['fixture-segmentation-gs'])
         self.has_grayscale.set_active(specific_model['grayscale-exists'])
+        self.has_grayscale.set_sensitive(False)
         self.has_grayscale.connect("clicked", controller.toggle_grayscale)
         right_side.pack_start(self.has_grayscale, False, False, PADDING_SMALL)
 
@@ -368,6 +369,8 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         label.set_text(model['fixture-segmentation-plates'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.number_of_plates = gtk.Entry(1)
+        self.number_of_plates.set_text("{0}".format(len(specific_model['plate-coords'])))
+        self.number_of_plates.set_sensitive(False)
         self.number_of_plates.connect("changed", controller.set_number_of_plates)
         hbox.pack_start(self.number_of_plates, False, False, PADDING_SMALL)
         right_side.pack_start(hbox, False, False, PADDING_SMALL)
@@ -507,6 +510,11 @@ class Fixture_Segmentation_Stage(gtk.VBox):
                 self.fixture_image.set_plate_overlay(plate,
                     scale=scale)
  
+        self.set_ok_nok()
+
+    def draw_all_plates(self, scale=1.0):
+
+        self.fixture_image.set_plate_overlays(scale=scale)
         self.set_ok_nok()
 
     def draw_active_segment(self, scale=1.0):
