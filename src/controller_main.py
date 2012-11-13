@@ -57,7 +57,7 @@ class Paths(object):
         self.fixtures = self.config + os.sep + "fixtures"
         self.images = self.src + os.sep + "images"
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
-        self.log = self.src + os.sep + "log"
+        self.log = self.root + os.sep + "log"
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"
 
 

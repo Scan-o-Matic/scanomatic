@@ -76,6 +76,7 @@ class Subprocs_View(gtk.Frame):
 
         self.scanners = gtk.Button()
         self.scanners.set_label(str(specific_model['running-scanners']))
+        self.scanners.connect("clicked", controller.produce_running_scanners)
         table.attach(self.scanners, 1, 2, 1, 2)
 
         label = gtk.Label(model['running-analysis'])
@@ -84,6 +85,7 @@ class Subprocs_View(gtk.Frame):
 
         self.analysis = gtk.Button()
         self.analysis.set_label(str(specific_model['running-analysis']))
+        self.analysis.connect("clicked", controller.produce_running_analysis)
         table.attach(self.analysis, 1, 2, 2, 3)
 
         label = gtk.Label(model['collected-messages'])

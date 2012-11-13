@@ -74,3 +74,11 @@ class Subprocs_Controller(controller_generic.Controller):
 
         return True
 
+
+    def produce_running_scanners(self, widget):
+
+        pass
+
+    def produce_running_analysis(self, widget):
+
+        pass
