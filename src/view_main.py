@@ -50,6 +50,7 @@ class Main_Window(gtk.Window):
         hbox = gtk.HBox(False, 0)
         self.add(hbox)
         self._panel = gtk.VBox(False, 0)
+        self._stats_area = None
         hbox.pack_start(self._panel, False, False, PADDING_SMALL)
         self._content_notebook = gtk.Notebook()
         hbox.pack_end(self._content_notebook, True, True, PADDING_SMALL)
@@ -125,7 +126,14 @@ class Main_Window(gtk.Window):
         button.connect("clicked", c.ask_quit, 'quit')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
 
+        if self._stats_area is not None:
+            panel.pack_start(self._stats_area, False, False, PADDING_LARGE)
+            
         panel.show_all()
+
+    def populate_stats_area(self, stats_widget):
+
+        self._stats_area = stats_widget
 
     def add_notebook_page(self, page, title_text, specific_controller):
 

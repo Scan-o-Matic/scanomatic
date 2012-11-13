@@ -5,6 +5,12 @@
 import copy
 
 #
+# EXCEPTIONS
+#
+
+class Invalid_Key_Assignment(Exception): pass
+
+#
 # FUNCTIONS
 #
 
@@ -28,11 +34,15 @@ class Model(object):
         else:
             self._pm = private_model
 
+        self._counters = dict()
+
         self._gm = generic_model
 
     def __getitem__(self, key):
 
-        if key in self._pm.keys():
+        if key in self._counters.keys():
+            return self._count_key(key)
+        elif key in self._pm.keys():
             return self._pm[key]
         elif self._gm is not None:
             return self._gm[key]
@@ -42,8 +52,26 @@ class Model(object):
 
     def __setitem__(self, key, val):
 
-        self._pm[key] = val
+        if key in self._counters.keys():
+
+            raise Invalid_Key_Assignment(
+                "'{0}' cannot be set directly as it is a counter".format(key))
+
+        else:
+            self._pm[key] = val
             
+    def add_counter(self, key, counted_key):
+
+        self._counters[key] = counted_key
+
+    def remove_counter(self, key):
+
+        del self._counter[key]
+
+    def _count_key(self, key):
+
+        return len(self.__getitem__(self._counters[key]))
+
     def keys(self):
 
         return self._pm.keys()

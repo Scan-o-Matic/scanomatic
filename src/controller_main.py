@@ -13,7 +13,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import gobject
 import os
 import gtk
 import copy
@@ -22,11 +21,15 @@ import copy
 # INTERNAL DEPENDENCIES
 #
 
+#Own Model and View
 import src.model_main as model_main
 import src.view_main as view_main
+#Controllers
 import src.controller_generic as controller_generic
+import src.controller_subprocs as controller_subprocs
 import src.controller_analysis as controller_analysis
 import src.controller_experiment as controller_experiment
+#Resources
 import src.controller_calibration as controller_calibration
 import src.resource_os as resource_os
 import src.resource_config as resource_config
@@ -347,35 +350,20 @@ class Controller(controller_generic.Controller):
     def __init__(self, model, view, program_path):
 
         super(Controller, self).__init__(view, None)
+        self._model = model
+        self._view = view
 
         self.paths = Paths(program_path)
         self.fixtures = Fixtures(self.paths)
         self.config = Config(self.paths)
         self.scanners = Scanners(self.paths, self.config)
-
-        self._model = model
-        self._view = view
-        self._subprocesses = list()
-        gobject.timeout_add(1000, self._subprocess_callback)
+        #Subprocs
+        self.subprocs = controller_subprocs.Subprocs_Controller(self._view, self)
+        self.add_subprocess = self.subprocs.add_subprocess
+        self._view.populate_stats_area(self.subprocs.get_view())
 
         if view is not None:
             view.set_controller(self)
-
-    def add_subprocess(self, proc, stdin=None, stdout=None, stderr=None,
-                        pid=None, proc_name=None):
-
-        self._subprocesses.append((proc, pid, stdin, stdout, stderr, proc_name))
-
-    def get_subprocesses(self, by_name=None):
-
-        ret = [p for p in self._subprocesses 
-                if (by_name is not None and p[-1] == by_name or True)]
-
-        return ret
-
-    def _subprocess_callback(self):
-
-        return True
 
     def add_contents(self, widget, content_name):
 
