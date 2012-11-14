@@ -334,8 +334,17 @@ class Project_Controller(controller_generic.Controller):
 
     def start(self):
 
-        print "!!START"
-        print  self._specific_model
+        sm = self._specific_model
+        tc = self.get_top_controller()
+
+        tc.paths.experiment_analysis_relative
+        tc.paths.experiment_first_pass_analysis_relative
+
+        """
+        self.get_top_controller().add_subprocess(proc, proc_type, 
+            stdin=None, stdout=None, stderr=None,
+            pid=None, sm=sm, proc_name=sm['scanner'])
+        """
 
     def set_allow_run(self):
 

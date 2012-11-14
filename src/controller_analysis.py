@@ -1045,17 +1045,20 @@ class Analysis_Project_Controller(controller_generic.Controller):
         sm = self._specific_model
         tc = self.get_top_controller()
 
-        analysis_log = open(sm['analysis-project-log_file_dir'] + os.sep +
-            ".analysis.log", 'w')
+        tc.paths.experiment_analysis_relative
+        analysis_log = open(os.sep.join(sm['analysis-project-log_file_dir'],
+            sm['analysis-project-output-path'],
+            tc.paths.experiment_analysis_file_name) , 'w')
 
-        analysis_query = [tc.paths.analysis, "-i", 
-            sm['analysis-project-log_file'],
-            "-o", sm['analysis-project-output-path'], "-t", 
-            100, '--xml-short', 'True', 
-            '--xml-omit-compartments', 'background,cell',
-            '--xml-omit-measures',
-            'mean,median,IQR,IQR_mean,centroid,perimeter,area',
-            '--debug', 'info']
+        a_dict = tc.config.get_default_analysis_query()
+        a_dict['-i'] = sm['analysis-project-log_file']
+        a_dict['-o'] = sm['analysis-project-output-path']
+
+        analysis_query = [tc.paths.analysis]
+
+        for a_flag, a_val in a_dict.items()
+
+            analysis_query += [a_flag, a_val]
 
         if sm['analysis-project-pinnings-active'] != 'file':
             pm = ""
@@ -1075,9 +1078,9 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         pid = proc.pid
 
-        self.get_top_controller().add_subprocess(proc, pid=pid,
-            stdout=analysis_log,
-            proc_name='analysis')
+        self.get_top_controller().add_subprocess(proc, 'analysis', pid=pid,
+            stdout=analysis_log, sm=sm,
+            proc_name=sm['analysis-project-log_file'])
 
     def set_log_file(self, *args, **kwargs):
 

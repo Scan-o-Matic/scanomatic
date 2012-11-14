@@ -59,7 +59,10 @@ class Paths(object):
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
         self.log = self.root + os.sep + "log"
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"
-
+        self.experiment_analysis_relative = "analysis"
+        self.experiment_analysis_file_name = "analysis.log"
+        self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
+        self.experiment_first_pass_log_relative = ".1_pass.log"
 
 class Fixture_Settings(object):
 
@@ -345,6 +348,22 @@ class Config(object):
         self.number_of_scanners = 3
         self.scanner_names = list()
 
+    def get_default_analysis_query(self):
+
+
+        analysis_query =  {
+            "-i": "",  # No default input file
+            "-o", self._paths.experiment_analysis_relative_path,  # Default subdir
+            "-t" : 100,  # Time to set grid
+            '--xml-short': 'True',  # Short output format
+            '--xml-omit-compartments': 'background,cell',  # Only look at blob
+            '--xml-omit-measures':
+            'mean,median,IQR,IQR_mean,centroid,perimeter,area',  # only get pixelsum
+            '--debug', 'info'  # Report everything that is info and above in seriousness
+            }
+
+        return analysis_query
+
 class Controller(controller_generic.Controller):
 
     def __init__(self, model, view, program_path):
@@ -360,16 +379,27 @@ class Controller(controller_generic.Controller):
         #Subprocs
         self.subprocs = controller_subprocs.Subprocs_Controller(self._view, self)
         self.add_subprocess = self.subprocs.add_subprocess
+        self.add_subcontroller(self.subprocs)
         self._view.populate_stats_area(self.subprocs.get_view())
 
         if view is not None:
             view.set_controller(self)
+
+    def add_contents_by_controller(self, c):
+
+        page = c.get_view()
+        title = c.get_page_title()
+        self._view.add_notebook_page(page, title, c)
+        self.add_subcontroller(c)
 
     def add_contents(self, widget, content_name):
 
         m = self._model
         if content_name in ('analysis', 'experiment', 'calibration'):
             title = m['content-page-title-{0}'.format(content_name)]
+        else:
+            err = UnknownContent("{0}".format(content_name))
+            raise err
 
         if content_name == 'analysis':
             c = controller_analysis.Analysis_Controller(self._view, self)

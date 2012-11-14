@@ -50,8 +50,8 @@ class Subproc_Generic_Specific_Model(model_generic.Model): pass
 composite_model = {
 
 'composite-stat-title': 'Status',
-'composite-stat-type-header': '<u>Process</u>',
-'composite-stat-count-header': '<u>Running</u>',
+'composite-stat-type-header': '',  # '<u>Process</u>',
+'composite-stat-count-header': '<u>Active</u>',
 'running-scanners': 'Scanners',
 'running-analysis': 'Analysis',
 'collected-messages': 'Warnings & Errors',
