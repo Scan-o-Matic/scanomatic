@@ -1056,7 +1056,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         analysis_query = [tc.paths.analysis]
 
-        for a_flag, a_val in a_dict.items()
+        for a_flag, a_val in a_dict.items():
 
             analysis_query += [a_flag, a_val]
 

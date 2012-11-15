@@ -15,6 +15,7 @@ __status__ = "Development"
 #
 
 import gobject
+import logging
 import os
 from argparse import ArgumentParser
 
@@ -24,11 +25,89 @@ from argparse import ArgumentParser
 
 import src.resource_power_manager as resource_power_manager
 import src.resource_fixture_image as resource_fixture_settings_image
+import src.resource_scanner as resource_scanner
+import src.resource_fixture as resource_fixture
+import src.resource_path as resource_path
+import src.resource_app_config as resource_app_config
+
+#
+# CLASSES
+#
+
+class Fallback_Logger(object):
+
+    def warning(self, *args):
+
+        self._output("WARNING", args)
+
+    def debug(self, *args):
+
+        self._output("DEBUG", args)
+
+    def info(self, *args):
+
+        self._output("INFO", args)
+
+    def error(self, *args):
+
+        self._output("ERROR", args)
+
+    def critical(self, *args):
+
+        self._output("CRITICAL", args)
+
+    def _output(self, lvl, args):
+
+        print "*{0}:\t{1}".format(lvl, args)
 
 
-def run(args, logging_level):
+class Experiment(object):
 
-    pass
+    def __init__(self, run_args=None, logger=None, **kwargs):
+
+        self.paths = resource_path.Paths(program_path)
+        self.fixtures = resource_fixture.Fixtures(self.paths)
+        self.config = resource_app_config.Config(self.paths)
+        self.scanners = resource_scanner.Scanners(self.paths, self.config)
+
+        self.set_logger(logger)
+
+        self._initialized = False
+        
+        if run_args is not None:
+            self._set_settings_from_run_args(run_args)
+        elif kwargs is not None:
+            self._set_settings_from_kwargs(kwargs)
+
+    def _set_settings_from_kwargs(self):
+
+        pass
+
+    def _set_settings_from_run_args(self, run_args):
+
+        self._interval = run_args.interval
+        self._max_scans = run_arsg.number_of_scans
+
+        self._scanner = self.scanners[run_args.scanner]
+        self._fixture = self.fixtures[run_args.fixture]
+
+        self._root = run_args.root
+        self._prefix = run_args.prefix
+        self._description = run_args.description
+        self._code = run_args.code
+
+        self._initialized = True
+
+    def set_logger(self, logger):
+
+        if logger is None:
+            self._logger = Fallback_Logger()
+        else:
+            self._logger = logger
+
+    def start(self):
+
+        pass
 
 #
 # COMMAND LINE BEHAVIOUR
@@ -139,3 +218,5 @@ input file for the analysis script.""")
     logger.setLevel(logging_level)
 
     logger.debug("Logger is ready! Arguments are ready! Lets roll!")
+
+    e = Experiment(run_args = args, logger=logger)
