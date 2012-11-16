@@ -16,19 +16,26 @@ __status__ = "Development"
 
 import gobject
 import logging
+import threading
 import os
+import time
 from argparse import ArgumentParser
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import src.resource_power_manager as resource_power_manager
-import src.resource_fixture_image as resource_fixture_settings_image
 import src.resource_scanner as resource_scanner
+import src.resource_first_pass_analysis as resource_first_pass_analysis
 import src.resource_fixture as resource_fixture
 import src.resource_path as resource_path
 import src.resource_app_config as resource_app_config
+
+#
+# EXCEPTIONS
+#
+
+class Not_Initialized(exception): pass
 
 #
 # CLASSES
@@ -72,6 +79,8 @@ class Experiment(object):
 
         self.set_logger(logger)
 
+        self._scanned = 0
+
         self._initialized = False
         
         if run_args is not None:
@@ -93,6 +102,9 @@ class Experiment(object):
 
         self._root = run_args.root
         self._prefix = run_args.prefix
+        self._im_filename_pattern = os.sep.join(self._root, self._prefix,
+            self.paths.scan_image_name_pattern)
+
         self._description = run_args.description
         self._code = run_args.code
 
@@ -107,7 +119,66 @@ class Experiment(object):
 
     def start(self):
 
+        if not self._initialized:
+            raise Not_Initialized()
+
+        gobject.timeout_add(self._interval*60*1000, self._get_image)
+
+    def _get_image(self):
+
+        self._logger.info("Aquiring image {0}".format(self._scanned)
+
+        #THREAD IMAGE AQ AND ANALYSIS
+        thread = threading.Thread(target=self._scan_and_analyse, self._scanned)
+
+        thread.start()
+
+
+        #CHECK IF ALL IS DONE
+        self._scanned += 1
+
+        if self._scanned <= self._max_scans:
+
+            return True
+
+        else:
+
+            self._logger.info("That was the last image")
+
+            #WAIT FOR ALL THREADS
+            self._join_threads()
+
+            return False
+
+    def _scan_and_analyse(self, im_index):
+
+        #SCAN
+        self._scanner.scan(filename=self._im_filename_pattern.format(im_index))
+
+        #ANALYSE
+        im_dict = resource_first_pass_analysis.analyse(
+            file_name=self._im_filename_pattern.format(im_index),
+            fixture=self._fixture)
+
+        #APPEND TO FILE
+        self._write_im_row(im_index, im_dict)
+
+    def _write_header_row(self):
+
         pass
+
+    def _write_im_row(self, im_index, im_dict):
+
+        pass
+
+    def _join_threads(self):
+
+        self._logger.info("Waiting for all scans and analysis to finnish")
+
+        while threading.active_count() > 0:
+            time.sleep(50)            
+
+        self._logger.info("All threads are finnished, experiment run is done")
 
 #
 # COMMAND LINE BEHAVIOUR
@@ -220,3 +291,4 @@ input file for the analysis script.""")
     logger.debug("Logger is ready! Arguments are ready! Lets roll!")
 
     e = Experiment(run_args = args, logger=logger)
+    e.run()
