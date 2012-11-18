@@ -35,7 +35,7 @@ import src.resource_app_config as resource_app_config
 # EXCEPTIONS
 #
 
-class Not_Initialized(exception): pass
+class Not_Initialized(Exception): pass
 
 #
 # CLASSES
@@ -126,10 +126,10 @@ class Experiment(object):
 
     def _get_image(self):
 
-        self._logger.info("Aquiring image {0}".format(self._scanned)
+        self._logger.info("Aquiring image {0}".format(self._scanned))
 
         #THREAD IMAGE AQ AND ANALYSIS
-        thread = threading.Thread(target=self._scan_and_analyse, self._scanned)
+        thread = threading.Thread(target=self._scan_and_analyse, args=self._scanned)
 
         thread.start()
 

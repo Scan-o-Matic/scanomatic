@@ -26,6 +26,8 @@ class Config(object):
         #TMP SOLUTION TO BIGGER PROBLEMS
         self.number_of_scanners = 3
         self.scanner_names = list()
+        self.scan_program = "scanimage"
+        self.scan_program_version_flag = "-V"
 
     def get_default_analysis_query(self):
 
