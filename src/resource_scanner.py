@@ -17,6 +17,11 @@ from subprocess import Popen, PIPE
 import re
 import copy
 
+#
+# INTERNAL DEPENDENCIES
+#
+
+import src.resource_sane as resource_sane
 
 #
 # EXCEPTION
@@ -58,6 +63,8 @@ def get_uuid():
 
 
 class Scanner(object):
+
+    _USE_CALLBACK = False
 
     def __init__(self, parent, paths, config, name, uuid=None):
 
@@ -311,8 +318,13 @@ class Scanner(object):
             self._remove_from_power_up_queue()
 
             #Scan
-            sc = self._parent._current_sane_setting[self._model][mode]
-            #MAKE CALL TO SCANNER
+            scanner = resource_scanner.Sane_Base(owner=self,
+                model=_model
+                scan_mode=mode,
+                output_function=self._logger,
+                scan_settings=self._parent._current_sane_setting)
+
+            scanner.AcquireByFile()
 
             #Power down and remove scanner address lock
             self._pm.off()
@@ -349,6 +361,7 @@ class Scanners(object):
                     "--resolution", "300", "--mode", "Color", "-l", "0",
                     "-t", "0", "-x", "215.9", "-y", "297.18", "--depth", "8"]} }
 
+        #Highest version that takes a setting
         self._sane_flags_replace = {
             (1,0,22): [], 
             (1,0,24): [(('EPSON V700', 'TPU', '--source'), 'TPU8x10')] }

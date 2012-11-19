@@ -17,11 +17,17 @@ import os
 import sys
 import time
 from subprocess import Popen, PIPE
+
 #LAN-specific dependencies
 import urllib2
 from urllib import urlencode
+#FURTHER LAN-specific dependenies further down
 
-#FUTHER LAN-specific dependenies further down
+#
+# EXCEPTIONS
+#
+
+class Invalid_Init(Exception): pass
 
 #
 # CLASSES
@@ -87,7 +93,7 @@ class LAN_PM(object):
     host may be None if MAC is supplied. 
     If no password is supplied, default password is used."""
 
-    def __init__(self, host, socket, password, verify_name = False,
+    def __init__(self, socket, host=None, password=None, verify_name=False,
             pm_name="Server 1", MAC=None, DMS=None):
 
         self.name ="LAN connected PM"
@@ -109,11 +115,18 @@ class LAN_PM(object):
         self._set_urls()
         self.test_ip()
 
-        if self._host is None and MAC is not None:
+        if self._host is None:
 
-            self.DMS("LAN PM", "No valid host known, searching...")
-            res = self._find_ip()
-            self.DMS("LAN PM", "Found {0}".format(res))
+            if  MAC is not None:
+
+                self.DMS("LAN PM", "No valid host known, searching...")
+                res = self._find_ip()
+                self.DMS("LAN PM", "Found {0}".format(res))
+
+            else:
+
+                self.DMS("LAN PM", "No knowon host and no MAC...no way to find PM")
+                raise Invalid_Init()
     
     def _set_urls(self):
 
@@ -286,7 +299,7 @@ class Power_Manager():
         if DMS is not None:
             self._DMS = DMS
         else:
-            self._DMS = self.no_view
+            self._DMS = resource_logger.Log_Garbage_Collector()
 
         if pm is not None:
             self._DMS("Power", "Hooked up {0}, Socket {1}".format(pm.name, 
@@ -296,10 +309,6 @@ class Power_Manager():
 
         else:
             self._DMS("Power", "Power Manager has no device to talk to")
-
-    def no_view(self, *args, **args2):
-
-        pass
 
     def on(self):
         

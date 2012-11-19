@@ -29,6 +29,7 @@ import src.resource_scanner as resource_scanner
 import src.resource_first_pass_analysis as resource_first_pass_analysis
 import src.resource_fixture as resource_fixture
 import src.resource_path as resource_path
+import src.resource_logger as resource_logger
 import src.resource_app_config as resource_app_config
 
 #
@@ -40,33 +41,6 @@ class Not_Initialized(Exception): pass
 #
 # CLASSES
 #
-
-class Fallback_Logger(object):
-
-    def warning(self, *args):
-
-        self._output("WARNING", args)
-
-    def debug(self, *args):
-
-        self._output("DEBUG", args)
-
-    def info(self, *args):
-
-        self._output("INFO", args)
-
-    def error(self, *args):
-
-        self._output("ERROR", args)
-
-    def critical(self, *args):
-
-        self._output("CRITICAL", args)
-
-    def _output(self, lvl, args):
-
-        print "*{0}:\t{1}".format(lvl, args)
-
 
 class Experiment(object):
 
@@ -113,7 +87,7 @@ class Experiment(object):
     def set_logger(self, logger):
 
         if logger is None:
-            self._logger = Fallback_Logger()
+            self._logger = resource_logger.Fallback_Logger()
         else:
             self._logger = logger
 

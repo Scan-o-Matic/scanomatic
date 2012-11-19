@@ -17,10 +17,17 @@ __status__ = "Development"
 
 from PIL import Image, ImageWin
 
-import os, os.path, sys
+import os
+import sys
 from subprocess import call, Popen
 import time
 import types
+
+#
+# INTERNAL DEPENDENCIES
+#
+
+import src.resource_logger import resource_logger
 
 #
 # CLASSES
@@ -28,14 +35,25 @@ import types
 
 class Sane_Base():
 
-    def __init__(self, owner=None, model=None, scan_mode=None):
+    def __init__(self, owner=None, model=None, scan_mode=None,
+            output_function=None, scan_settings=None):
+
         self.owner = owner
+
+        if output_function is not None:
+            self._logger = output_function
+        else:
+            self._logger = resource_logger.Fallback_Logger()
+
         self.next_file_name = None
         self._scanner_name = None
         self._program_name = "scanimage"
         self._scan_settings = None
 
-        self._scan_settings_repo = \
+        if scan_settings is not None:
+            self._scan_settings_repo = scan_settings
+        else:
+            self._scan_settings_repo = \
             {"EPSON V700" : \
                 {'TPU': \
                     ["--source", "Transparency" ,"--format", "tiff", 
@@ -45,6 +63,7 @@ class Sane_Base():
                     ["--source", "Flatbed", "--format", "tiff",
                     "--resolution", "300", "--mode", "Color", "-l", "0",
                     "-t", "0", "-x", "215.9", "-y", "297.18", "--depth", "8"]} }
+
         if model is not None:
             model = model.upper()
 
@@ -75,13 +94,13 @@ class Sane_Base():
 
     def AcquireByFile(self, scanner=None, handle=None):
         if self.next_file_name:
-            self.owner.owner.DMS("Scanning", str(self.next_file_name), level="LA")
+            self._logger("Scanning", str(self.next_file_name), level="LA")
             #os.system(self._scan_settings + self.next_file_name) 
             
             try:
                 im = open(self.next_file_name,'w')
             except:
-                self.owner.owner.DMS("ERROR", "Could not write to file: " + str(self.next_file_name),
+                self._logger("ERROR", "Could not write to file: " + str(self.next_file_name),
                     level="DL", debug_level="error")
                 return False
 
@@ -91,8 +110,10 @@ class Sane_Base():
   
             scan_query.insert(0, self._program_name)  
 
-            if self.owner and self.owner.USE_CALLBACK:
-                return ("SANE-CALLBACK", im, Popen(scan_query, stdout=im, shell=False),self.next_file_name)
+            if self.owner is not None and self.owner.USE_CALLBACK:
+                args = ("SANE-CALLBACK", im, Popen(scan_query, stdout=im, shell=False),
+                        self.next_file_name)
+                return args
             else:
                 call(scan_query,  stdout=im, shell=False) 
 
