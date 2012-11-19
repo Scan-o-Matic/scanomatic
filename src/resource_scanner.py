@@ -23,6 +23,12 @@ import copy
 #
 
 class Incompatible_Tuples(Exception): pass
+class Failed_To_Claim_Scanner(Exception): pass
+class Forbidden_Scanner_Owned_By_Other_Process(Exception): pass
+class Unable_To_Open(Exception): pass
+class Corrupted_Lock_File(Exception): pass
+class More_Than_One_Unknown_Scanner(Exception): pass
+
 
 #
 # FUNCTIONS
@@ -42,6 +48,10 @@ def version_lq(a, b):
     return True
 
 
+def get_uuid():
+
+    return uuid.uuid1().get_urn().split(":")[-1]
+
 #
 # CLASSES
 #
@@ -49,55 +59,274 @@ def version_lq(a, b):
 
 class Scanner(object):
 
-    def __init__(self, parent, paths, config, name):
+    def __init__(self, parent, paths, config, name, uuid=None):
 
         self._parent = parent
         self._paths = paths
         self._config = config
         self._name = name
-        self._claimed = False
-        self._master_process = None
+
+        self._pm = self._config.get_pm()
+
+        self._lock_path = self._config.lock_new_scanner.format(self._name)
+        self._queue_power_up_tries = 0
+
+        if uuid is None:
+            self._uuid = get_uuid()
+        else:
+            self._uuid = uuid
+
         self._model = self._config.scanner_model
 
-    def _write_to_lock_file(self):
+    """
+            LOCK FILES
+    """
+    def _get_check_in_file(self):
 
-        pass
+        lock_uuid = ""
 
-    def get_claimed(self):
+        try:
+            fs = open(self._lock_path, 'r')
+            lock_uuid = fs.read().strip()
+            fs.close()
+        except:
+            pass
 
-        return self._claimed
+        return lock_uuid
+
+    def _free_in_file(self):
+
+        if self.get_claimed_by_other():
+            raise Forbidden_Scanner_Owned_By_Other_Process(
+                "Trying to free '{0}'".format(self._name))
+            return
+
+        try:
+            fs = open(self._lock_path, 'w')
+            fs.close()
+        except:
+            Failed_To_Free_Scanner(self._name)
+
+    def _lock_in_file(self):
+
+        fs_path = self._config.lock_new_scanner.format(self._name)
+
+        lock_uuid = self._get_check_in_file()
+
+        if lock_uuid == "" or lock_uuid == self._uuid        
+
+            if lock_uuid == "":
+
+                try:-
+                    fs = open(self._lock_path, 'w')
+                    fs.write(self._uuid)
+                    fs.close()
+                except:
+                    raise Failed_To_Claim_Scanner(self._name)
+
+            return True
+
+        else:
+
+            return False
+
+    def _queue_power_up_scan(self):
+
+        self._queue_power_up_tries = 0
+
+        while True:
+
+            try:
+                fs = open(self._config.lock_power_up_new_scanner, 'a')
+                fs.write("{0}\n".format(self._uuid))
+                fs.close()
+                break
+            except:
+                self._queue_power_up_tries += 1
+                if self._queue_power_up_tries >= 40:
+                    raise Unable_To_Write_To_Power_Up_Queue(
+                        "Tried {0} times".format(self._queue_power_up_tries))
+
+                    return False
+
+                time.sleep(0.005)
+
+        return True
+
+    def _wait_for_power_up_turn(self):
+
+        while cur_uuid != self.__uuid:
+
+            elf._config.lock_power_up_new_scanner)ry:
+                fs = open(self._config.lock_power_up_new_scanner, 'r')
+                cur_uuid = fs.readline().strip()
+                fs.close()
+            except:
+                raise Unable_To_Open(self._config.lock_power_up_new_scanner)
+
+            if cur_uuid == "":
+                raise Corrupted_Lock_File(self._config.lock_power_up_new_scanner)
+
+            time.sleep(1)
+
+    def _remove_from_power_up_queue(self):
+
+        try:
+            fs = open(self._config.lock_power_up_new_scanner, 'r')
+            queue = fs.readlines()
+            fs.close()
+        except:
+            raise Unable_To_Open(self._config.lock_power_up_new_scanner)
+
+        if queue[0].strip() != self._uuid:
+            return False
+
+        while True:
+
+            try:
+                fs = open(self._config.lock_power_up_new_scanner, 'w')
+                fs.writelines(queue[1:])
+                fs.close()
+                return True
+
+            except:
+
+                time.sleep(0.005)
+
+    def _get_awake_scanners(self):
+
+        p = subprocess.Popen("sane-find-scanner -v -v |" +
+            " sed -n -E 's/^found USB.*(libusb.*$)/\\1/p'",
+            shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+
+        out, err = p.communicate()
+
+        return map(str, out.split('\n'))
+
+    def _get_scanner_address_lock(self):
+
+        lock_states = dict()
+        try:
+            fs = open(self._config.lock_scanner_addresses, 'r')
+            lines = fs.readlines()
+            fs.close()
+        except:
+            raise Unable_To_Open(self._config.lock_scanner_addresses)
+
+        for line in lines:
+            line_list = line.strip().split("\t")
+            lock_states[line_list[0]] = line_list[1:]
+    
+    def _write_scanner_address_claim(self):
+
+        while True:
+            scanners = self._get_awake_scanners()
+            lock_states = self._get_scanner_address_lock()
+            free_scanners = [s for s in scanners if s not in lock_states.keys()]
+
+            if len(free_scanners) == 1:
+
+                try:
+                    fs = open(self._config.lock_scanner_addresses, 'a')
+                    fs.write("{0}\t{1}\n".format(free_scanners[0], self._name)
+                    fs.close()
+                except:
+                    raise Unable_To_Open(self._config.lock_scanner_addresses)
+                return True
+
+            elif len(free_scanners)
+                raise More_Than_One_Unknown_Scanner(free_scanners)
+
+            time.sleep(2)
+
+    def _remove_scanner_address_lock(self):
+
+        while True:
+
+            s_list = list()
+            my_addr = list()
+
+            scanners = self._get_scanner_address_lock()
+            for addr, s in scanners.items():
+                if s[0] != self._uuid:
+                    s_list.append([addr]+s)
+                else:
+                    my_addr.append(addr)
+
+            awake_scanners = self._get_awake_scanners()
+            awake_scanners = [s[0] for s in awake_scanner]
+
+            my_addr = [a for a in my_addr if a not in awake_scanners]
+            
+            if len(my_addr) == 0:
+                try:
+                    fs = open(self._config.lock_scanner_addresses, 'w')
+                    fs.writelines(["{0}\t{1}\n".format(*l) for l in s_list])
+                    fs.close()
+                    break
+                except:
+                    pass
+
+            time.sleep(0.005)
+
+    """
+            GETs
+    """
+
+    def get_claimed_by_other(self):
+        """True if owned by other, else False"""
+        owner_uuid = self._get_check_in_file()
+        return not(owner_uuid == "" or owner_uuid == self._uuid)
 
     def get_name(self):
 
         return self._name
 
+    def get_uuid(self):
+
+        return self._uuid
+
+    """
+            ACTIONS
+    """
     def claim(self):
 
-        if self.get_claimed():
-            return False
-        else:
-            self._set_claimed(True)
-            return True
+        return self._lock_in_file()
 
     def scan(self, mode):
 
-        sc = self._parent._current_sane_setting[self._model][mode]
-        self._parent.request_scan(self, sc)
+        if self.get_claimed_by_other() == False:
+
+            #Place self in queue to start scanner
+            self._queue_power_up_scan()
+
+            #Wait for turn
+            self._wait_for_power_up_turn()
+
+            #Power up and catch new scanner
+            self._pm.on()
+            self._get_scanner_address_lock()
+
+            #Allow next proc to power up scanner
+            self._remove_from_power_up_queue()
+
+            #Scan
+            sc = self._parent._current_sane_setting[self._model][mode]
+            #MAKE CALL TO SCANNER
+
+            #Power down and remove scanner address lock
+            self._pm.off()
+            self._remove_scanner_address_lock()
+
+        else:
+
+            raise Forbidden_Scanner_Owned_By_Other_Process(
+                "Trying to scan on '{0}'".format(self._name))
 
     def free(self):
 
-        self._set_claimed(False)
+        self._free_in_file()
         return True
-
-    def _set_claimed(self, val, master_proc=None):
-
-        self._claimed = val
-        if val == True and master_proc is not None:
-            self._master_process = master_proc
-        elif val == False:
-            self._master_process = None
-        
-        self._write_to_lock_file()
 
 
 class Scanners(object):
@@ -131,10 +360,6 @@ class Scanners(object):
     def __getitem__(self, key):
 
         return self._scanners[key]
-
-    def _request_scan(self, scanner, args):
-
-        pass
 
     def _get_sane_version(self):
 
@@ -207,7 +432,7 @@ class Scanners(object):
         self.update()
 
         scanners = [s_name for s_name, s in self._scanners.items() if available and \
-            (s.get_claimed() == False) or True]
+            (s.get_claimed_by_other() == False) or True]
 
         return sorted(scanners)
 
