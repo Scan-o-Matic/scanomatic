@@ -60,7 +60,7 @@ class Subprocs_Controller(controller_generic.Controller):
         return model_subprocs.get_gui_model()
 
     def add_subprocess(self, proc, proc_type, stdin=None, stdout=None, stderr=None,
-                        pid=None, sm=None, proc_name=None):
+                        pid=None, psm=None, proc_name=None):
 
         sm = self._specific_model
         if proc_type == 'scanner':
@@ -77,7 +77,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
 
         plist.append({'proc': proc, 'type': proc_type, 'pid': pid, 'stdin': stdin,
-            'stdout': stdout, 'stderr': stderr, 'sm': sm, 'name': proc_name})
+            'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name})
 
         #IF THIS IS THE ONLY PROC WE NEED TO START CALLBACKING
         if sm['running-scanners'] + sm['running-analysis'] == 1:

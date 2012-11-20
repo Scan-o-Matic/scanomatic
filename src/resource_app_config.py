@@ -30,18 +30,26 @@ class Config(object):
         self._paths = paths
 
         #TMP SOLUTION TO BIGGER PROBLEMS
+
+        #SCANNER
         self.number_of_scanners = 3
         self.scanner_names = list()
         self.scan_program = "scanimage"
         self.scan_program_version_flag = "-V"
+        self._scanner_models = {
+            'Scanner 1': 'EPSON V700',
+            'Scanner 2': 'EPSON V700',
+            'Scanner 3': 'EPSON V700',
+            'Scanner 4': 'EPSON V700'}
 
-        self._scanner_names = {
+        #POWER MANAGER
+        self._scanner_sockets = {
             'Scanner 1': 1,
             'Scanner 2': 2,
             'Scanner 3': 3,
             'Scanner 4': 4}
 
-        self.pm_type = 'LAN'
+        self.pm_type = 'USB'
         self._pm_host = None
         self._pm_pwd = None
         self._pm_verify_name = False
@@ -50,7 +58,7 @@ class Config(object):
 
         if self.pm_type == 'USB':
 
-            self._PM = resource_power_manager.USB_PM_LINX
+            self._PM = resource_power_manager.USB_PM_LINUX
             self._pm_arguments={}
 
         elif self.pm_type == 'LAN':
@@ -63,11 +71,39 @@ class Config(object):
                 'MAC':self._pm_MAC,
                 'DMS':None}
 
-    def get_pm(self, self._scanner_names[scanner_name],
-            self._pm_arguments):
+    def get_scanner_model(self, scanner):
 
+        return self._scanner_models[scanner]
 
-        return self._PM(scanner_name)
+    def get_scanner_socket(self, scanner):
+
+        return self._scanner_sockets[scanner]
+
+    def get_pm(self, scanner_name, **pm_kwargs):
+
+        scanner_pm_socket = self._scanner_sockets[scanner_name]
+        if pm_kwargs == {}:
+            pm_kwargs = self._pm_arguments
+
+        return self._PM(scanner_pm_socket, **pm_kwargs)
+
+    def get_default_experiment_query(self):
+
+        experiment_query = {
+
+                '-f': None,  # FIXTURE: path to conf-file
+                '-s': "",  # SCANNER to be used
+                '-i': 20,  # INTERVAL in minutes
+                '-n': 217,  # NUMBER OF SCANS
+                '-r': self._paths.experiment_root,  # ROOT of experiments
+                '-p': "",  # PREFIX for experiment
+                '-d': "",  # DESCRIPTION
+                '-c': "",  # PROJECT ID CODE
+                '-u': "",  # UUID
+                '--debug': 'info'  # LEVEL OF VERBOSITY
+            }
+
+        return experiment_query
 
     def get_default_analysis_query(self):
 

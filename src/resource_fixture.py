@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import os
+import copy
 
 #
 # INTERNAL DEPENDENCIES

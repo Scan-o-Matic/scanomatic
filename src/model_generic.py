@@ -9,6 +9,7 @@ import copy
 #
 
 class Invalid_Key_Assignment(Exception): pass
+class Unknown_Key_Request(Exception): pass
 
 #
 # FUNCTIONS
@@ -47,7 +48,7 @@ class Model(object):
         elif self._gm is not None:
             return self._gm[key]
         else:
-            print "***WARNING:\tRequested key '{0}' not found in {1}".format(key, self)
+            raise Unknown_Key_Request("'{0}' not found in {1}".format(key, self))
             return None
 
     def __setitem__(self, key, val):

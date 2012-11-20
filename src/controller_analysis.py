@@ -1079,7 +1079,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
         pid = proc.pid
 
         self.get_top_controller().add_subprocess(proc, 'analysis', pid=pid,
-            stdout=analysis_log, sm=sm,
+            stdout=analysis_log, psm=sm,
             proc_name=sm['analysis-project-log_file'])
 
     def set_log_file(self, *args, **kwargs):

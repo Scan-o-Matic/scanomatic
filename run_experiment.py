@@ -18,7 +18,9 @@ import gobject
 import logging
 import threading
 import os
+import sys
 import time
+import uuid
 from argparse import ArgumentParser
 
 #
@@ -51,6 +53,12 @@ class Experiment(object):
         self.config = resource_app_config.Config(self.paths)
         self.scanners = resource_scanner.Scanners(self.paths, self.config)
 
+        self._running = True
+        self._stdin_pipe_deamon = threading.Thread(target=self._stdin_deamon, args=self)
+        self._stdin_pipe_deamon.start()
+
+        self._scan_threads = list()
+
         self.set_logger(logger)
 
         self._scanned = 0
@@ -61,6 +69,19 @@ class Experiment(object):
             self._set_settings_from_run_args(run_args)
         elif kwargs is not None:
             self._set_settings_from_kwargs(kwargs)
+
+    def _stdin_deamon(self):
+
+        while self._running:
+            line = sys.stdin.readline().strip()
+            sys.stdin.flush()
+            if line == "__QUIT__":
+                self._running = False
+                #REPORT THAT GOT QUIT REQUEST
+
+    def _generate_uuid(self):
+
+        self._uuid = uuid.uuid1().get_urn().split(":")[-1]
 
     def _set_settings_from_kwargs(self):
 
@@ -82,6 +103,10 @@ class Experiment(object):
         self._description = run_args.description
         self._code = run_args.code
 
+        self._uuid = run_args.uuid
+        if self._uuid is None or self._uuid == "":
+            self._generate_uuid()
+
         self._initialized = True
 
     def set_logger(self, logger):
@@ -91,7 +116,17 @@ class Experiment(object):
         else:
             self._logger = logger
 
-    def start(self):
+    def run(self):
+
+        self._start()
+
+        while self._running:
+
+            time.sleep(0.1)
+
+        self._join_threads()
+
+    def _start(self):
 
         if not self._initialized:
             raise Not_Initialized()
@@ -100,28 +135,33 @@ class Experiment(object):
 
     def _get_image(self):
 
-        self._logger.info("Aquiring image {0}".format(self._scanned))
+        if self._running:
 
-        #THREAD IMAGE AQ AND ANALYSIS
-        thread = threading.Thread(target=self._scan_and_analyse, args=self._scanned)
+            self._logger.info("Aquiring image {0}".format(self._scanned))
 
-        thread.start()
+            #THREAD IMAGE AQ AND ANALYSIS
+            thread = threading.Thread(target=self._scan_and_analyse, args=self._scanned)
+
+            thread.start()
 
 
-        #CHECK IF ALL IS DONE
-        self._scanned += 1
+            #CHECK IF ALL IS DONE
+            self._scanned += 1
 
-        if self._scanned <= self._max_scans:
+            if self._scanned <= self._max_scans:
 
-            return True
+                return True
+
+            else:
+
+                self._logger.info("That was the last image")
+                self._running = False
+
+                return False
 
         else:
 
-            self._logger.info("That was the last image")
-
-            #WAIT FOR ALL THREADS
-            self._join_threads()
-
+            self._logger.info("Aborting, no image aquired")
             return False
 
     def _scan_and_analyse(self, im_index):
@@ -150,7 +190,9 @@ class Experiment(object):
         self._logger.info("Waiting for all scans and analysis to finnish")
 
         while threading.active_count() > 0:
-            time.sleep(50)            
+            time.sleep(0.5)
+
+        self._scanner.free()
 
         self._logger.info("All threads are finnished, experiment run is done")
 
@@ -189,6 +231,9 @@ input file for the analysis script.""")
 
     parser.add_argument('-c', '--code', type=str, dest='code',
         help='Identification code for the project as supplied by the planner')
+
+    parser.add_argument('-u', '--uuid', type=str, dest='uuid',
+        help='UUID to indentify self with scanner reservation')
 
     parser.add_argument("--debug", dest="debug", default="warning",
         type=str, help="Sets debugging level")

@@ -16,6 +16,7 @@ __status__ = "Development"
 from subprocess import Popen, PIPE
 import re
 import copy
+import uuid
 
 #
 # INTERNAL DEPENDENCIES
@@ -33,6 +34,7 @@ class Forbidden_Scanner_Owned_By_Other_Process(Exception): pass
 class Unable_To_Open(Exception): pass
 class Corrupted_Lock_File(Exception): pass
 class More_Than_One_Unknown_Scanner(Exception): pass
+class Unknown_Scanner(Exception): pass
 
 
 #
@@ -66,24 +68,25 @@ class Scanner(object):
 
     _USE_CALLBACK = False
 
-    def __init__(self, parent, paths, config, name, uuid=None):
+    def __init__(self, parent, paths, config, name, s_uuid=None):
 
         self._parent = parent
         self._paths = paths
         self._config = config
         self._name = name
 
-        self._pm = self._config.get_pm()
+        self._pm = self._config.get_pm(name)
 
-        self._lock_path = self._config.lock_new_scanner.format(self._name)
+        self._lock_path = self._paths.lock_scanner_pattern.format(
+            self._config.get_scanner_socket(self._name))
         self._queue_power_up_tries = 0
 
-        if uuid is None:
+        if s_uuid is None:
             self._uuid = get_uuid()
         else:
-            self._uuid = uuid
+            self._uuid = s_uuid
 
-        self._model = self._config.scanner_model
+        self._model = self._config.get_scanner_model(self._name)
 
     """
             LOCK FILES
@@ -116,15 +119,13 @@ class Scanner(object):
 
     def _lock_in_file(self):
 
-        fs_path = self._config.lock_new_scanner.format(self._name)
-
         lock_uuid = self._get_check_in_file()
 
-        if lock_uuid == "" or lock_uuid == self._uuid        
+        if lock_uuid == "" or lock_uuid == self._uuid:
 
             if lock_uuid == "":
 
-                try:-
+                try:
                     fs = open(self._lock_path, 'w')
                     fs.write(self._uuid)
                     fs.close()
@@ -144,7 +145,7 @@ class Scanner(object):
         while True:
 
             try:
-                fs = open(self._config.lock_power_up_new_scanner, 'a')
+                fs = open(self._paths.lock_power_up_new_scanner, 'a')
                 fs.write("{0}\n".format(self._uuid))
                 fs.close()
                 break
@@ -162,28 +163,28 @@ class Scanner(object):
 
     def _wait_for_power_up_turn(self):
 
-        while cur_uuid != self.__uuid:
+        while cur_uuid != self._uuid:
 
-            elf._config.lock_power_up_new_scanner)ry:
-                fs = open(self._config.lock_power_up_new_scanner, 'r')
+            try:
+                fs = open(self._paths.lock_power_up_new_scanner, 'r')
                 cur_uuid = fs.readline().strip()
                 fs.close()
             except:
-                raise Unable_To_Open(self._config.lock_power_up_new_scanner)
+                raise Unable_To_Open(self._paths.lock_power_up_new_scanner)
 
             if cur_uuid == "":
-                raise Corrupted_Lock_File(self._config.lock_power_up_new_scanner)
+                raise Corrupted_Lock_File(self._paths.lock_power_up_new_scanner)
 
             time.sleep(1)
 
     def _remove_from_power_up_queue(self):
 
         try:
-            fs = open(self._config.lock_power_up_new_scanner, 'r')
+            fs = open(self._paths.lock_power_up_new_scanner, 'r')
             queue = fs.readlines()
             fs.close()
         except:
-            raise Unable_To_Open(self._config.lock_power_up_new_scanner)
+            raise Unable_To_Open(self._paths.lock_power_up_new_scanner)
 
         if queue[0].strip() != self._uuid:
             return False
@@ -191,7 +192,7 @@ class Scanner(object):
         while True:
 
             try:
-                fs = open(self._config.lock_power_up_new_scanner, 'w')
+                fs = open(self._paths.lock_power_up_new_scanner, 'w')
                 fs.writelines(queue[1:])
                 fs.close()
                 return True
@@ -214,11 +215,11 @@ class Scanner(object):
 
         lock_states = dict()
         try:
-            fs = open(self._config.lock_scanner_addresses, 'r')
+            fs = open(self._lock_path, 'r')
             lines = fs.readlines()
             fs.close()
         except:
-            raise Unable_To_Open(self._config.lock_scanner_addresses)
+            raise Unable_To_Open(self._lock_path)
 
         for line in lines:
             line_list = line.strip().split("\t")
@@ -234,14 +235,14 @@ class Scanner(object):
             if len(free_scanners) == 1:
 
                 try:
-                    fs = open(self._config.lock_scanner_addresses, 'a')
-                    fs.write("{0}\t{1}\n".format(free_scanners[0], self._name)
+                    fs = open(self._lock_path, 'a')
+                    fs.write("{0}\t{1}\n".format(free_scanners[0], self._name))
                     fs.close()
                 except:
-                    raise Unable_To_Open(self._config.lock_scanner_addresses)
+                    raise Unable_To_Open(self._lock_path)
                 return True
 
-            elif len(free_scanners)
+            elif len(free_scanners):
                 raise More_Than_One_Unknown_Scanner(free_scanners)
 
             time.sleep(2)
@@ -267,7 +268,7 @@ class Scanner(object):
             
             if len(my_addr) == 0:
                 try:
-                    fs = open(self._config.lock_scanner_addresses, 'w')
+                    fs = open(self._lock_path, 'w')
                     fs.writelines(["{0}\t{1}\n".format(*l) for l in s_list])
                     fs.close()
                     break
@@ -292,6 +293,10 @@ class Scanner(object):
     def get_uuid(self):
 
         return self._uuid
+
+    def get_socket(self):
+
+        return self._config.get_scanner_socket(self._name)
 
     """
             ACTIONS
@@ -319,7 +324,7 @@ class Scanner(object):
 
             #Scan
             scanner = resource_scanner.Sane_Base(owner=self,
-                model=_model
+                model=_model,
                 scan_mode=mode,
                 output_function=self._logger,
                 scan_settings=self._parent._current_sane_setting)
@@ -382,27 +387,29 @@ class Scanners(object):
 
         stdout, stderr = p.communicate()
 
-        sefl._backend_version = re.findall(r' ([0-9]+\.[0-9]+\.[0-9]+)', 
+        self._backend_version = re.findall(r' ([0-9]+\.[0-9]+\.[0-9]+)', 
             stdout.strip('\n'))
 
         return self._backend_version
 
     def _set_sane_version(self):
 
-        backend_version = self._get_sanve_version()
+        #POS 0 is front-ends, 1 backends. Version is dot-serparated
+        backend_version = map(int , self._get_sane_version()[1].split("."))
 
-        for v in sorted(self._sane_versions.keys()):
+        for v in sorted(self._sane_flags_replace.keys()):
 
             if version_lq(backend_version, v):
 
                 self._sane_version = v
+                break
 
         if self._sane_version is None:
             
             print "***WARNING:\tHoping driver works as last known version"
-            self._sane_versoin = v
+            self._sane_versi0n = v
 
-        curent = copy.deepcopy(self._sane_generic)
+        current = copy.deepcopy(self._sane_generic)
 
         #Changes values in the call tuple according to what is needed
         #for the specific version
@@ -432,7 +439,7 @@ class Scanners(object):
         for s in scanners:
 
             if s not in self._scanners.keys():
-                self._scanners[s] = Scanner(self._paths, self._config, s)
+                self._scanners[s] = Scanner(self, self._paths, self._config, s)
 
         for s in self._scanners.keys():
 
@@ -454,14 +461,14 @@ class Scanners(object):
         if scanner_name in self._scanners:
             return self._scanners[scanner_name].claim()
         else:
-            print "***WARNING:\tUnknown scanner requested"
+            raise Unknown_Scanner(scanner_name)
             return False
 
     def free(self, scanner_name):
         if scanner_name in self._scanners:
             return self._scanners[scanner_name].free()
         else:
-            print "***WARNING:\tUnknown scanner requested"
+            raise Unknown_Scanner(scanner_name)
             return False
 
 

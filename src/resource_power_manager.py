@@ -213,24 +213,28 @@ class LAN_PM(object):
 
     def test_ip(self):
 
-        u = self._logout()
+        print "***\t'{0}' as host".format(self._host)
 
-        if u is None:
+        if self._host is not None:
 
-            self._host = None
+            u = self._logout()
 
-        else:
-        
-            s = u.read()
-            u.close()
-
-            if "EnerGenie" not in s:
+            if u is None:
 
                 self._host = None
 
-            if self._pm_server_name not in s:
+            else:
+            
+                s = u.read()
+                u.close()
 
-                self._host = None
+                if "EnerGenie" not in s:
+
+                    self._host = None
+
+                if self._pm_server_name not in s:
+
+                    self._host = None
 
         return self._host is not None
             

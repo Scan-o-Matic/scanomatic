@@ -16,6 +16,8 @@ __status__ = "Development"
 import re
 import os
 import collections
+from itertools import chain
+from subprocess import Popen, PIPE
 
 #
 # INTERNAL DEPENDENCIES
@@ -118,7 +120,7 @@ class Project_Controller(controller_generic.Controller):
 
         if dir_list is not None:
 
-            self._specific_model['experiments-root'] = dir_list[0]
+            self._specific_model['experiments-root'] = dir_list
             self.check_prefix_dupe(widget=None)
             self._view.get_stage().update_experiment_root()
 
@@ -301,10 +303,13 @@ class Project_Controller(controller_generic.Controller):
         scanner = w_model[row][0]
 
         if scanners.claim(scanner):
+
+            #REMOVE PREVIOUS CLAIM
             if sm['scanner'] is not None:
                 scanners.free(sm['scanner'])
 
-            sm['scanners'] = scanners
+            #UPDATE MODEL FOR CURRENT CLAIM
+            sm['scanner'] = scanner
 
         else:
 
@@ -332,19 +337,39 @@ class Project_Controller(controller_generic.Controller):
         self._specific_model['pinnings-list'][plate_i] = pm
         self.set_allow_run()
 
-    def start(self):
+    def start(self, *args):
 
         sm = self._specific_model
         tc = self.get_top_controller()
+        scanner = tc.scanners[sm['scanner']]
 
-        tc.paths.experiment_analysis_relative
-        tc.paths.experiment_first_pass_analysis_relative
+        experiment_query = tc.config.get_default_experiment_query()
+        experiment_query['-f'] = sm['fixture']
+        experiment_query['-s'] = sm['scanner']
+        experiment_query['-i'] = sm['interval']
+        experiment_query['-n'] = sm['scans']
 
-        """
+        if sm['experiments-root'] != '':
+            experiment_query['-r'] == sm['experiments-root']
+
+        experiment_query['-p'] = sm['experiment-prefix']
+        experiment_query['-d'] = sm['experiment-desc']
+        experiment_query['-c'] = sm['experiment-id']
+        experiment_query['-u'] = scanner.get_uuid()
+
+        e_query_list = [tc.paths.experiment]
+        e_query_list += list(chain.from_iterable(experiment_query.items()))
+        e_query_list = map(str, e_query_list)
+
+        stdout=open(tc.paths.log_scanner_out.format(scanner.get_socket()), 'w')
+        stderr=open(tc.paths.log_scanner_err.format(scanner.get_socket()), 'w')
+
+        proc = Popen(e_query_list, stdout=stdout, stderr=stderr, stdin=PIPE, shell=False)
+        proc_type = 'scanner'
+
         self.get_top_controller().add_subprocess(proc, proc_type, 
-            stdin=None, stdout=None, stderr=None,
-            pid=None, sm=sm, proc_name=sm['scanner'])
-        """
+            stdin=proc.stdin, stdout=stdout, stderr=stderr,
+            pid=proc.pid, psm=sm, proc_name=sm['scanner'])
 
     def set_allow_run(self):
 

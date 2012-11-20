@@ -2,14 +2,21 @@
 ##### THE WHAT NEXT PLACE #####
    ##########################
 
+--- HOT ---
+
+*** ANALYSE: Loading CSV messes up columns in display
+
+*** ALL: Rotate and flip image display so that it matches the user perspective
+
+*** CALIBRATION: Fixtures' analysis of GS indices is written badly to config
+    Maybe due to being array?
+
+*** EXPERIMENT: Need to pass pinning-arrays
+
 --- DEBUGGING ---
 
-*** Gray-scale fails to analyse at 150 dpi
+--- GUI ---
 
-*** The Analyse One GUI have strange behaviour in why extra im-array is
-    needed to have toggling between Cell Estimate and Kodak
-
-*** gui_anal.. 623 f_sel....mark(... -> r_fixt 120 Xs, Ys set.A.find... -> None not iterable
 
 --- SPACE-TRANSITIONS ---
 
@@ -41,20 +48,6 @@
 
 *** http://www.scipy.org/Cookbook/Least_Squares_Circle
 
---- GUI ---
-
-*** Make Analyse One use the grid if one pleases...
-
-*** Make scanner-queue lay outside program so several instances of program
-    will be OK.
-
-(*** Extend functionality in fixture view (Gray-scale values)
-    Status: Begun. Something wrong in fixture)
-
-*** Extend functionality in config view
-
-(*** Use a queue for all things to be done and a scheduler)
-
 --- OTHER ---
 
 *** Most fungii see blue light at 450 nm - How is the pattern of our lamp??
@@ -69,6 +62,29 @@
 
 *** Checking of space left on HD
 
+
+  ########################################
+##### OUTDATED DUE TO SWITCH TO NEW GUI #####
+   ########################################
+
+*** Gray-scale fails to analyse at 150 dpi
+
+*** The Analyse One GUI have strange behaviour in why extra im-array is
+    needed to have toggling between Cell Estimate and Kodak
+
+*** gui_anal.. 623 f_sel....mark(... -> r_fixt 120 Xs, Ys set.A.find... -> None not iterable
+
+*** Make Analyse One use the grid if one pleases...
+
+*** Make scanner-queue lay outside program so several instances of program
+    will be OK.
+
+(*** Extend functionality in fixture view (Gray-scale values)
+    Status: Begun. Something wrong in fixture)
+
+*** Extend functionality in config view
+
+(*** Use a queue for all things to be done and a scheduler)
 
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####

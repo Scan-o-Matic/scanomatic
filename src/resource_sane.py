@@ -27,7 +27,7 @@ import types
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_logger import resource_logger
+import src.resource_logger as resource_logger
 
 #
 # CLASSES
