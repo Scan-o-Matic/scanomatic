@@ -50,6 +50,7 @@ class Subprocs_Controller(controller_generic.Controller):
         super(Subprocs_Controller, self).__init__(window, main_controller,
             specific_model=model_subprocs.get_composite_specific_model())
 
+        gobject.timeout_add(1000, self._subprocess_callback)
 
     def _get_default_view(self):
 
@@ -75,15 +76,9 @@ class Subprocs_Controller(controller_generic.Controller):
 
             raise Unknown_Subprocess_Type(proc_type)
 
-
         plist.append({'proc': proc, 'type': proc_type, 'pid': pid, 'stdin': stdin,
             'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name})
 
-        #IF THIS IS THE ONLY PROC WE NEED TO START CALLBACKING
-        if sm['running-scanners'] + sm['running-analysis'] == 1:
-
-            gobject.timeout_add(1000, self._subprocess_callback)
-        
     def get_subprocesses(self, by_name=None, by_type=None):
 
         sm = self._specific_model
@@ -159,16 +154,13 @@ class Subprocs_Controller(controller_generic.Controller):
                 if p_exit != 0:
                     pass
 
+        #UPDATE FREE SCANNERS
+        sm['free-scanners'] = tc.scanners.count()
+
         #UPDATE SUMMARY TABLE
         self._view.update()
 
-        #IF ANY PROCS ARE ALIVE KEEP CHECKING
-        if sm['running-scanners'] > 0 or sm['running-analysis'] > 0:
-            self.set_unsaved()
-            return True
-        else:
-            self.set_saved()
-            return False
+        return True
 
     def _close_proc_files(self, stdin, stdout, stderr):
 
@@ -198,7 +190,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
         raise Unknown_Subprocess("{0}".format(p))
 
-    def produce_running_scanners(self, widget):
+    def produce_running_experiments(self, widget):
 
         pass
 

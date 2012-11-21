@@ -95,6 +95,7 @@ class Config(object):
                 '-s': "",  # SCANNER to be used
                 '-i': 20,  # INTERVAL in minutes
                 '-n': 217,  # NUMBER OF SCANS
+                '-m': "",  # PINNING LIST STRING
                 '-r': self._paths.experiment_root,  # ROOT of experiments
                 '-p': "",  # PREFIX for experiment
                 '-d': "",  # DESCRIPTION

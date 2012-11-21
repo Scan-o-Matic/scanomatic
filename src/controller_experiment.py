@@ -43,9 +43,30 @@ class UnDocumented_Error(Exception): pass
 def zero_generator():
     return 0
 
+
+def get_pinnings_str(pinning_list):
+
+    pinning_string = ""
+
+    for p in pinning_list:
+
+        if p is None:
+
+            pinning_string += "None,"
+
+        else:
+
+            try:
+                pinning_string += "{0}x{1},".format(*p)
+            except:
+                pinning_string += "None,"
+
+    return pinning_string[:-1]
+
 #
 # CLASSES
 #
+
 
 class Experiment_Controller(controller_generic.Controller):
 
@@ -53,6 +74,18 @@ class Experiment_Controller(controller_generic.Controller):
 
         super(Experiment_Controller, self).__init__(window, main_controller)
         self._specific_controller = None
+
+    def ask_destroy(self,*args, **kwargs):
+
+        if self._specific_controller is not None:
+            return self._specific_controller.ask_destroy(*args, **kwargs)
+        else:
+            return True
+
+    def destroy(self):
+
+        if self._specific_controller is not None:
+            self._specific_controller.destroy()
 
     def _get_default_view(self):
 
@@ -112,6 +145,14 @@ class Project_Controller(controller_generic.Controller):
         #VIEW
         view.set_controller(self)
         self.set_view_stage(None, 'setup')
+
+    def destroy(self):
+
+        sm = self._specific_model
+        tc = self.get_top_controller()
+
+        if sm['scanner'] is not None:
+            tc.scanners.free(sm['scanner'])
 
     def set_project_root(self, widget):
 
@@ -357,14 +398,19 @@ class Project_Controller(controller_generic.Controller):
         experiment_query['-c'] = sm['experiment-id']
         experiment_query['-u'] = scanner.get_uuid()
 
+        experiment_query['-m'] = get_pinnings_str(sm['pinnings-list'])
+
         e_query_list = [tc.paths.experiment]
         e_query_list += list(chain.from_iterable(experiment_query.items()))
         e_query_list = map(str, e_query_list)
 
+        #print "\n\n" + " ".join(e_query_list) + "\n\n"
+
         stdout=open(tc.paths.log_scanner_out.format(scanner.get_socket()), 'w')
         stderr=open(tc.paths.log_scanner_err.format(scanner.get_socket()), 'w')
 
-        proc = Popen(e_query_list, stdout=stdout, stderr=stderr, stdin=PIPE, shell=False)
+        #proc = Popen(e_query_list, stdout=stdout, stderr=stderr, stdin=PIPE, shell=False)
+        proc = Popen(e_query_list, stdout=None, stderr=None, stdin=None, shell=False)
         proc_type = 'scanner'
 
         self.get_top_controller().add_subprocess(proc, proc_type, 

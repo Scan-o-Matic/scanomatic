@@ -32,6 +32,7 @@ import src.resource_fixture as resource_fixture
 import src.resource_path as resource_path
 import src.resource_logger as resource_logger
 import src.resource_app_config as resource_app_config
+import src.resource_project_log as resource_project_log
 
 #
 # EXCEPTIONS
@@ -40,20 +41,54 @@ import src.resource_app_config as resource_app_config
 class Not_Initialized(Exception): pass
 
 #
+# FUNCTIONS
+#
+
+def get_pinnings_list(pinning_string):
+
+    try:
+
+        pinning_str_list = pinning_string.split(",")
+
+    except:
+
+        return None
+
+
+    pinning_list = list()
+    for p in pinning_str_list:
+
+        try:
+
+            p_list = map(int, p.split("x"))
+
+        except:
+
+            p_list = None
+
+        pinning_list.append(p_list)
+
+    return pinning_list
+
+#
 # CLASSES
 #
 
 class Experiment(object):
 
+    SCAN_MODE = 'TPU'
+
     def __init__(self, run_args=None, logger=None, **kwargs):
 
-        self.paths = resource_path.Paths(program_path)
+        self.paths = resource_path.Paths()
         self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
-        self.scanners = resource_scanner.Scanners(self.paths, self.config)
+        self.scanners = resource_scanner.Scanners(self.paths, self.config, logger=logger)
 
+        self._orphan = False
         self._running = True
-        self._stdin_pipe_deamon = threading.Thread(target=self._stdin_deamon, args=self)
+
+        self._stdin_pipe_deamon = threading.Thread(target=self._stdin_deamon)
         self._stdin_pipe_deamon.start()
 
         self._scan_threads = list()
@@ -71,9 +106,21 @@ class Experiment(object):
 
     def _stdin_deamon(self):
 
+        line = ""
         while self._running:
-            line = sys.stdin.readline().strip()
-            sys.stdin.flush()
+
+            if self._orphan:
+                line = ""
+                time.sleep(100)
+            else:
+
+                try:
+                    line = sys.stdin.readline().strip()
+                    sys.stdin.flush()
+                except:
+                    self._orphan = True
+                    self._logger.warning("Lost contact with GUI, will run as orphan!")
+
             if line == "__QUIT__":
                 self._running = False
                 #REPORT THAT GOT QUIT REQUEST
@@ -89,15 +136,22 @@ class Experiment(object):
     def _set_settings_from_run_args(self, run_args):
 
         self._interval = run_args.interval
-        self._max_scans = run_arsg.number_of_scans
+        self._max_scans = run_args.number_of_scans
 
+        self._pinning = run_args.pinning
         self._scanner = self.scanners[run_args.scanner]
         self._fixture = self.fixtures[run_args.fixture]
-
+        self._fixture_name = run_args.fixture
         self._root = run_args.root
         self._prefix = run_args.prefix
-        self._im_filename_pattern = os.sep.join(self._root, self._prefix,
-            self.paths.scan_image_name_pattern)
+        self._out_data_path = run_args.outdata_path
+
+        self._first_pass_analysis_file = os.sep.join((self._out_data_path,
+            self.paths.experiment_first_pass_analysis_relative.format(
+            self._prefix)))
+
+        self._im_filename_pattern = os.sep.join((self._root, self._prefix,
+            self.paths.experiment_scan_image_relative_pattern))
 
         self._description = run_args.description
         self._code = run_args.code
@@ -105,6 +159,8 @@ class Experiment(object):
         self._uuid = run_args.uuid
         if self._uuid is None or self._uuid == "":
             self._generate_uuid()
+
+        self._scanner.set_uuid(self._uuid)
 
         self._initialized = True
 
@@ -120,12 +176,16 @@ class Experiment(object):
         if not self._initialized:
             raise Not_Initialized()
 
-        self._logger.info("Entering main loop")
+        self._logger.info("Experiment is initialized...starting!")
+
+        self._write_header_row()
+
         timer = time.time()
 
         while self._running:
 
-            if (time.time() - timer)*60 > self._interval:
+            #If time for next of first image: Get IT!
+            if (time.time() - timer) > self._interval * 60 or self._scanned == 0:
 
                 timer = time.time()
                 self._get_image()
@@ -138,13 +198,15 @@ class Experiment(object):
 
         if self._running:
 
-            self._logger.info("Aquiring image {0}".format(self._scanned))
+            self._logger.info("Acquiring image {0}".format(self._scanned))
 
             #THREAD IMAGE AQ AND ANALYSIS
-            thread = threading.Thread(target=self._scan_and_analyse, args=self._scanned)
+            thread = threading.Thread(target=self._scan_and_analyse, args=(self._scanned,))
 
             thread.start()
 
+            #SAFETY MARGIN SO THAT 
+            time.sleep(0.1)
 
             #CHECK IF ALL IS DONE
             self._scanned += 1
@@ -163,28 +225,68 @@ class Experiment(object):
 
     def _scan_and_analyse(self, im_index):
 
+        self._logger.info("Image {0} started!".format(im_index))
+        im_path = self._im_filename_pattern.format(self._prefix,
+            str(im_index).zfill(4))
+
         #SCAN
-        self._scanner.scan(filename=self._im_filename_pattern.format(im_index))
+        self._logger.info("Requesting scan to file '{0}'".format(im_path))
+        scan_success = self._scanner.scan(
+                        mode=self.SCAN_MODE, filename=im_path)
+
+        scan_time = time.time()
 
         #FREE SCANNER IF LAST
-        if not self._running or self._scanned => self._max_scans:
+        if not self._running or im_index >= self._max_scans:
             self._scanner.free()
 
         #ANALYSE
-        im_dict = resource_first_pass_analysis.analyse(
-            file_name=self._im_filename_pattern.format(im_index),
-            fixture=self._fixture)
+        if scan_success:
 
-        #APPEND TO FILE
-        self._write_im_row(im_index, im_dict)
+            self._logger.info("Requesting first pass analysis of file '{0}'".format(im_path))
+            im_dict = resource_first_pass_analysis.analyse(
+                file_name=im_path,
+                fixture=self._fixture,
+                logger=self._logger)
+
+            #APPEND TO FILE
+            self._logger.info("Writing first pass analysis results")
+
+            im_dict = resource_project_log.get_image_dict(
+                im_path,
+                scan_time,
+                im_dict['mark_X'],
+                im_dict['mark_Y'],
+                im_dict['grayscale_indices'],
+                im_dict['grayscale_values'],
+                im_dict['plate_areas'])
+
+            resource_project_log.append_image_dicts(
+                self._first_pass_analysis_file,
+                images=[im_dict])
+
+        self._logger.info("Image {0} done!".format(im_index))
 
     def _write_header_row(self):
 
-        pass
+        self._logger.info("Writing header row")
 
-    def _write_im_row(self, im_index, im_dict):
+        meta_data = resource_project_log.get_meta_data_dict(
+                **{'Start Time': time.time(),
+                    'Prefix': self._prefix,
+                    'Description': self._description,
+                    'Measures': self._max_scans,
+                    'Interval': self._interval,
+                    'UUID': self._uuid,
+                    'Fixture': self._fixture_name,
+                    'Pinning Matrices': self._pinning,
+                    'Manual Gridding': None,
+                    'Project ID': self._code,
+                }
+                )
 
-        pass
+        resource_project_log.write_log_file(self._first_pass_analysis_file, 
+            meta_data=meta_data)
 
     def _join_threads(self):
 
@@ -221,7 +323,7 @@ input file for the analysis script.""")
         dest='number_of_scans',
         help='Number of scans requested')
 
-    parser.add_argument('m', '--matrices', type=str, dest='pinning',
+    parser.add_argument('-m', '--matrices', type=str, dest='pinning',
         help='List of pinning matrices')
 
     parser.add_argument('-r', '--root', type=str, dest='root',
@@ -252,7 +354,15 @@ input file for the analysis script.""")
                       'debug': logging.DEBUG}
 
 
+    #PATHS
+    paths = resource_path.Paths()
+
     #TESTING FIXTURE FILE
+    if args.fixture is None or args.fixture == "":
+        parser.error("Must have fixture file")
+
+    args.fixture = paths.get_fixture_path(args.fixture)
+
     try:
         fs = open(args.fixture, 'r')
         fs.close()
@@ -277,6 +387,7 @@ input file for the analysis script.""")
     if args.root is None or os.path.isdir(args.root) == "False":
         parser.error("Experiments root is not a directory")
 
+    #PINNING MATRICSE
     if args.pinning is not None:
         args.pinning = get_pinnings_list(args.pinning)
 
@@ -285,9 +396,11 @@ input file for the analysis script.""")
 
     #PREFIX
     if args.prefix is None or \
-        os.path.isdir(os.sep.join(args.root, args.prefix)):
+        os.path.isdir(os.sep.join((args.root, args.prefix))):
 
         parser.error("Prefix is a duplicate or invalid")
+
+    args.outdata_path = os.sep.join((args.root, args.prefix))
 
     #CODE
     if args.code is None or args.code == "":
@@ -310,8 +423,11 @@ input file for the analysis script.""")
                     ' %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S\n')
 
+    #CREATE DIRECTORY
+    os.mkdir(args.outdata_path)
+
     #NEED NICER PATH THING
-    hdlr = logging.FileHandler(outdata_files_path + "analysis.run", mode='w')
+    hdlr = logging.FileHandler(args.outdata_path + os.sep + "experiment.run", mode='w')
     hdlr.setFormatter(log_formatter)
     logger.addHandler(hdlr)
 

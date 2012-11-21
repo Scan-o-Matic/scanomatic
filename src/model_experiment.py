@@ -77,7 +77,7 @@ pigmentation analysis.</i></span>
 'project-stage-desc': 'Project Description',
 ###FIXTURE AND SCANNER
 'project-stage-fixture_scanner': 'Scanner and Fixture',
-'project-stage-scanner-claim-fail': 'Failed to claim the scanner!',
+'project-stage-scanner-claim-fail': 'Failed to claim the scanner!\nSomeone is probably using it...',
 'project-stage-scanner': 'Scanner:',
 'project-stage-fixture': 'Fixture:',
 ###TIME SETTINGS

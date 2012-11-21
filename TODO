@@ -4,6 +4,12 @@
 
 --- HOT ---
 
+*** ASK QUIT: Doesn't work
+
+*** DIALOGUE: Sel dir should start in fit place
+
+*** FIXTURE: All should use path-resource to get filenames
+
 *** ANALYSE: Loading CSV messes up columns in display
 
 *** ALL: Rotate and flip image display so that it matches the user perspective

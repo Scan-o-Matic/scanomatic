@@ -60,6 +60,7 @@ class Subprocs_View(gtk.Frame):
         table.set_row_spacing(3, PADDING_MEDIUM)
         self.add(table)
 
+        """ HEADER ROW REMOVED
         label = gtk.Label()
         label.set_markup(model['composite-stat-type-header']) 
         label.set_alignment(0, 0.5)
@@ -69,15 +70,23 @@ class Subprocs_View(gtk.Frame):
         label.set_markup(model['composite-stat-count-header'])
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 0, 1)
+        """
+        label = gtk.Label(model['free-scanners']) 
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1 , 0, 1)
 
-        label = gtk.Label(model['running-scanners'])
+        self.scanners = gtk.Label(specific_model['free-scanners']) 
+        self.scanners.set_alignment(0, 0.5)
+        table.attach(self.scanners, 1, 2, 0, 1)
+
+        label = gtk.Label(model['running-experiments'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 1, 2)
 
-        self.scanners = gtk.Button()
-        self.scanners.set_label(str(specific_model['running-scanners']))
-        self.scanners.connect("clicked", controller.produce_running_scanners)
-        table.attach(self.scanners, 1, 2, 1, 2)
+        self.experiments = gtk.Button()
+        self.experiments.set_label(str(specific_model['running-scanners']))
+        self.experiments.connect("clicked", controller.produce_running_experiments)
+        table.attach(self.experiments, 1, 2, 1, 2)
 
         label = gtk.Label(model['running-analysis'])
         label.set_alignment(0, 0.5)
@@ -103,6 +112,7 @@ class Subprocs_View(gtk.Frame):
 
         specific_model = self._specific_model
         
-        self.scanners.set_label(str(specific_model['running-scanners']))
+        self.scanners.set_text(str(specific_model['free-scanners']))
+        self.experiments.set_label(str(specific_model['running-scanners']))
         self.analysis.set_label(str(specific_model['running-analysis']))
         self.messages.set_label(str(specific_model['collected-messages']))

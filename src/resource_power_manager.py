@@ -24,6 +24,12 @@ from urllib import urlencode
 #FURTHER LAN-specific dependenies further down
 
 #
+# INTERNAL DEPENDENCIES
+#
+
+import src.resource_logger as resource_logger
+
+#
 # EXCEPTIONS
 #
 
@@ -35,57 +41,58 @@ class Invalid_Init(Exception): pass
 
 class USB_PM(object):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
-    def __init__(self, path, on_string="", off_string=""):
+    def __init__(self, path, on_args=[], off_args=[], logger=None):
+
         self.name ="USB connected PM"
-        self._path = path
-        self._on_string = on_string
-        self._off_string = off_string
-        self.DMS = self._DMS
+        self._on_cmd = [path] + on_args
+        self._off_cmd = [path] + off_args
+        self._fail_error = "No GEMBIRD SiS-PM found"
+
+        if logger is None:
+            self._logger = logger
+        else:
+            self._logger = resource_logger.Log_Garbage_Collector()
 
     def on(self):
-        #print "*** Calling", self._path, self._on_string
-        os.system(str(self._path)+' '+str(self._on_string))
+        return self._exec(self._on_cmd)
 
-    def off(self): 
-        #print "*** Calling", self._path, self._off_string
-        os.system(str(self._path)+' '+str(self._off_string))
+    def off(self):
+        return self._exec(self._off_cmd)
 
-    def set_DMS(self, DMS):
+    def _exec(self, cmd):
+        proc = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = proc.communicate()
+        if self._fail_error in stderr:
+            return False
 
-        if DMS is None:
+        return True
 
-            self.DMS = self._DMS
-
-        else:
-
-            self.DMS = DMS
-
-    def _DMS(self, *args, **kwargs):
-
-        pass
 
 
 class USB_PM_LINUX(USB_PM):
     """Class for handling USB connected PM:s on linux."""
-    def __init__(self, socket, path = "sispmctl"):
+    def __init__(self, socket, path = "sispmctl", logger=None):
+
+        super(USB_PM_LINUX, self).__init__(path,
+            on_args=["-o", "{0}".format(socket)],
+            off_args=["-f", "{0}".format(socket)],
+            logger=logger)
 
         self.name ="USB connected PM (Linux)"
         self._socket = socket
-        self._path = path
-        self._on_string = "-o {0}".format(socket)
-        self._off_string = "-f {0}".format(socket)
-        self.DMS = self._DMS
 
 class USB_PM_WIN(USB_PM):
     """Class for handling USB connected PM:s on windows."""
-    def __init__(self, socket, path = r"C:\Program Files\Gembird\Power Manager\pm.exe"):
+    def __init__(self, socket, path = r"C:\Program Files\Gembird\Power Manager\pm.exe",
+            logger=None):
+
+        super(USB_PM_LINUX, self).__init__(path,
+            on_args=["-on", "-PW1", "-Scanner{0}".format(socket)],
+            off_args=["-off", "-PW1", "-Scanner{0}".format(socket)],
+            logger=logger)
 
         self.name ="USB connected PM (Windows)"
         self._socket = socket
-        self._path = path
-        self._on_string = "-on -PW1 -Scanner{0}".format(socket)
-        self._off_string = "-off -PW1 -Scanner{0}".format(socket)
-        self.DMS = self._DMS
 
 class LAN_PM(object):
     """Class for handling LAN-connected PM:s.
@@ -94,7 +101,7 @@ class LAN_PM(object):
     If no password is supplied, default password is used."""
 
     def __init__(self, socket, host=None, password=None, verify_name=False,
-            pm_name="Server 1", MAC=None, DMS=None):
+            pm_name="Server 1", MAC=None, logger=None):
 
         self.name ="LAN connected PM"
         self._host = host
@@ -102,7 +109,10 @@ class LAN_PM(object):
         self._socket = socket
         self._password = password is not None and password or "1"
 
-        self.set_DMS(DMS)
+        if logger is None:
+            self._logger = resource_logger.Log_Garbage_Collector()
+        else:
+            self._logger = logger
 
         self._pm_server_name = pm_name
         self._pm_server_str = "<h2>{0}".format(pm_name)
@@ -119,13 +129,13 @@ class LAN_PM(object):
 
             if  MAC is not None:
 
-                self.DMS("LAN PM", "No valid host known, searching...")
+                self._logger.info("LAN PM, No valid host known, searching...")
                 res = self._find_ip()
-                self.DMS("LAN PM", "Found {0}".format(res))
+                self._logger.info("LAN PM, Found {0}".format(res))
 
             else:
 
-                self.DMS("LAN PM", "No knowon host and no MAC...no way to find PM")
+                self._logger.error("LAN PM, No knowon host and no MAC...no way to find PM")
                 raise Invalid_Init()
     
     def _set_urls(self):
@@ -135,10 +145,6 @@ class LAN_PM(object):
         self._login_out_url = "http://{0}/login.html".format(host)
         self._ctrl_panel_url = "http://{0}/".format(host)
 
-    def _DMS(self, *args, **kwargs):
-
-        print args, kwargs
-
     def _find_ip(self):
         """Looks up the MAC-address supplied on the local router"""
 
@@ -146,27 +152,27 @@ class LAN_PM(object):
         import nmap
 
         #PINGSCAN ALL IP:S
-        self.DMS("LAN PM", "Scanning hosts (may take a while...)")
+        self._logger.info("LAN PM, Scanning hosts (may take a while...)")
         nm = nmap.PortScanner()
         nm_res = nm.scan(hosts="192.168.0.1-255", arguments="-sP")
 
 
         #FILTER OUT THOSE RESPONDING
-        self.DMS("LAN PM", "Evaluating all alive hosts")
+        self._logger.debug("LAN PM, Evaluating all alive hosts")
         up_ips = [k for k in nm_res['scan'] if nm_res['scan'][k]['status']['state'] == u'up']
 
         #LET THE OS PING THEM AGAIN SO THEY END UP IN ARP
-        self.DMS("LAN PM", "Scanning pinning alive hosts")
+        self._logger.debug("LAN PM, Scanning pinning alive hosts")
         for ip in up_ips:
 
             os.system('ping -c 1 {0}'.format(ip))
 
         #RUN ARP
-        self.DMS("LAN PM", "Searching arp")
+        self._logger.debug("LAN PM, Searching arp")
         p = Popen(['arp','-n'], stdout=PIPE)
 
         #FILTER LIST ON ROWS WITH SOUGHT MAC-ADDRESS
-        self.DMS("LAN PM", "Keeping those with correct MAC-addr")
+        self._logger.debug("LAN PM, Keeping those with correct MAC-addr")
 
         res = [l for l in p.communicate()[0].split("\n") if self._MAC in l]
 
@@ -191,29 +197,29 @@ class LAN_PM(object):
 
         if self._host is None or self._host == "":
 
-            self.DMS("LAN PM", "Loging in failed, no host")
+            self._logger.error("LAN PM, Loging in failed, no host")
             return None
  
         else:
 
-            self.DMS("LAN PM", "Logging in")
+            self._logger.info("LAN PM, Logging in")
             return urllib2.urlopen(self._login_out_url, self._pwd_params)
 
     def _logout(self):
 
         if self._host is None or self._host == "":
 
-            self.DMS("LAN PM", "Log out failed, no host")
+            self._logger.error("LAN PM, Log out failed, no host")
             return None
  
         else:
 
-            self.DMS("LAN PM", "Logging out")
+            self._logger.info("LAN PM, Logging out")
             return urllib2.urlopen(self._login_out_url)
 
     def test_ip(self):
 
-        print "***\t'{0}' as host".format(self._host)
+        self._logger.debug("LAN PM, Testing current host '{0}'".format(self._host))
 
         if self._host is not None:
 
@@ -244,18 +250,20 @@ class LAN_PM(object):
 
         if u is None:
 
-            return None
+            return False
 
         if not self._verify_name or self._pm_server_str in u.read():
 
-            self.DMS("LAN PM", "Turning on")
+            self._logger.info("LAN PM, Turning on")
             urllib2.urlopen(self._ctrl_panel_url, self._on_params)
 
             self._logout()
+            return True
 
         else:
 
-            self.DMS("LAN PM", "Failed to turn on")
+            self._logger.error("LAN PM, Failed to turn on")
+            return False
 
     def off(self):
 
@@ -263,33 +271,20 @@ class LAN_PM(object):
 
         if u is None:
 
-            return None
+            return False
 
         if not self._verify_name or self._pm_server_str in u.read():
 
-            self.DMS("LAN PM", "Turning off")
+            self._logger.info("LAN PM, Turning off")
             urllib2.urlopen(self._ctrl_panel_url, self._off_params)
 
             self._logout()
-
-
-        else:
-
-            self.DMS("LAN PM", "Failed to turn off")
-
-    def set_DMS(self, DMS):
-
-        #HACK
-        DMS = None
-
-        if DMS is None:
-
-            self.DMS = self._DMS
+            return True
 
         else:
 
-            self.DMS = DMS
-
+            self._logger.error("LAN PM, Failed to turn off")
+            return False
 
 class Power_Manager():
     """Interface that takes a PM-class and emits messages as well as introduces

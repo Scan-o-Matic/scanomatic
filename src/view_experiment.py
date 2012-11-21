@@ -409,7 +409,6 @@ class Stage_Project_Setup(gtk.VBox):
         if pinnings_list is None:
             pinnings_list = self._specific_model['pinnings-list']
 
-        print self._specific_model 
         box = self.pm_box
 
         children = box.children()

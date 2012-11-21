@@ -89,10 +89,14 @@ class Sane_Base():
     def Terminate(self):
         pass
 
-    def AcquireNatively(self, scanner=None, handle=None):
-        return self.AcquireByFile(scanner=None, handle=handle)
+    def AcquireNatively(self, scanner=None, handle=None, filename=None):
+        return self.AcquireByFile(scanner=None, handle=handle, filename=filename)
 
-    def AcquireByFile(self, scanner=None, handle=None):
+    def AcquireByFile(self, scanner=None, handle=None, filename=None):
+
+        if filename is not None:
+            self.next_file_name = filename
+
         if self.next_file_name:
             self._logger("Scanning", str(self.next_file_name), level="LA")
             #os.system(self._scan_settings + self.next_file_name) 

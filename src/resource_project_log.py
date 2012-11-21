@@ -22,13 +22,19 @@ import os
 import copy
 
 #
+# EXCEPTIONS
+#
+
+class Unknown_Meta_Data_Key(Exception): pass
+
+#
 # GLOBALS
 #
 
 META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0, 
    'Description': 'Automatic placeholder description',
    'UUID': None, 'Measures': 0, 'Fixture': 'fixture_a',
-   'Pinning Matrices': None, 'Manual Gridding': None}
+   'Pinning Matrices': None, 'Manual Gridding': None, 'Project ID': ''}
 
 IMAGE_ENTRY_KEYS = ['plate_1_area', 'grayscale_indices', 'grayscale_values',
     'plate_0_area', 'mark_X', 'mark_Y', 'plate_3_area', 'Time',
@@ -38,6 +44,17 @@ IMAGE_ENTRY_KEYS = ['plate_1_area', 'grayscale_indices', 'grayscale_values',
 # FUNCTIONS
 #
 
+
+def get_meta_data_dict(**kwargs):
+
+    md = copy.deepcopy(META_DATA)
+    for k in kwargs:
+        if k in md:
+            md[k] = kwargs[k]
+        else:
+            raise Unkown_Meta_Data_Key(k)
+
+    return md
 
 def get_image_dict(path, time, mark_X, mark_Y, grayscale_indices,
     grayscale_values, plate_areas):

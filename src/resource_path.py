@@ -22,7 +22,12 @@ import os
 
 class Paths(object):
 
-    def __init__(self, program_path, config_file=None):
+    def __init__(self, program_path=None, config_file=None):
+
+
+        if program_path is None:
+            program_path = os.sep.join(
+                os.path.dirname(os.path.abspath(__file__)).split(os.sep)[:-1])
 
         #DIRECTORIES
         self.root = program_path
@@ -39,6 +44,10 @@ class Paths(object):
         #IMAGES
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
 
+        #FIXTURE_FILES
+        self.fixture_conf_file_pattern = self.fixtures + os.sep + "{0}.config"
+        self.fixture_image_file_pattern = self.fixtures + os.sep + "{0}.tiff"
+
         #LOG
         self.log = self.root + os.sep + "log"
         self.log_scanner_out = os.sep.join((self.log, "scanner_{0}.stdout"))
@@ -46,6 +55,7 @@ class Paths(object):
 
         #EXPERIMENT
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"
+        self.experiment_scan_image_relative_pattern = "{0}_{1}.tiff"
         self.experiment_analysis_relative_path = "analysis"
         self.experiment_analysis_file_name = "analysis.log"
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
@@ -55,3 +65,13 @@ class Paths(object):
         self.lock_root = os.sep.join((os.path.expanduser("~"), ".scan_o_matic"))
         self.lock_power_up_new_scanner = self.lock_root + ".new_scanner.lock"
         self.lock_scanner_pattern = self.lock_root + ".scanner.{0}.lock"
+
+    def get_fixture_path(self, fixture_name, conf_file=True):
+
+        fixture_name = fixture_name.lower().replace(" ", "_")
+
+        if conf_file:
+            return self.fixture_conf_file_pattern.format(fixture_name)
+        else:
+            return self.fixture_image_file_pattern.format(fixture_name)
+

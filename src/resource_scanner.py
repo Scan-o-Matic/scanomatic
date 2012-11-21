@@ -15,6 +15,7 @@ __status__ = "Development"
 
 from subprocess import Popen, PIPE
 import re
+import time
 import copy
 import uuid
 
@@ -23,6 +24,7 @@ import uuid
 #
 
 import src.resource_sane as resource_sane
+import src.resource_logger as resource_logger
 
 #
 # EXCEPTION
@@ -68,23 +70,21 @@ class Scanner(object):
 
     _USE_CALLBACK = False
 
-    def __init__(self, parent, paths, config, name, s_uuid=None):
+    def __init__(self, parent, paths, config, name, logger):
 
+        self._logger = logger
         self._parent = parent
         self._paths = paths
         self._config = config
         self._name = name
 
-        self._pm = self._config.get_pm(name)
+        self._pm = self._config.get_pm(name, logger=logger)
 
         self._lock_path = self._paths.lock_scanner_pattern.format(
             self._config.get_scanner_socket(self._name))
         self._queue_power_up_tries = 0
 
-        if s_uuid is None:
-            self._uuid = get_uuid()
-        else:
-            self._uuid = s_uuid
+        self._uuid = get_uuid()
 
         self._model = self._config.get_scanner_model(self._name)
 
@@ -162,6 +162,8 @@ class Scanner(object):
         return True
 
     def _wait_for_power_up_turn(self):
+
+        cur_uuid = None 
 
         while cur_uuid != self._uuid:
 
@@ -281,6 +283,10 @@ class Scanner(object):
             GETs
     """
 
+    def get_claimed(self):
+
+        return self._get_check_in_file() != "" 
+
     def get_claimed_by_other(self):
         """True if owned by other, else False"""
         owner_uuid = self._get_check_in_file()
@@ -299,46 +305,65 @@ class Scanner(object):
         return self._config.get_scanner_socket(self._name)
 
     """
+            SETs
+    """
+
+    def set_uuid(self, s_uuid):
+
+        self._uuid = s_uuid
+
+    """
             ACTIONS
     """
     def claim(self):
 
         return self._lock_in_file()
 
-    def scan(self, mode):
+    def scan(self, mode, filename):
 
         if self.get_claimed_by_other() == False:
 
             #Place self in queue to start scanner
+            self._logger.debug("SCANNER, Queuing self for power up")
             self._queue_power_up_scan()
 
             #Wait for turn
+            self._logger.debug("SCANNER, Waiting for turn to power up")
             self._wait_for_power_up_turn()
 
             #Power up and catch new scanner
-            self._pm.on()
-            self._get_scanner_address_lock()
+            is_on = self._pm.on()
+            if is_on:
+                self._get_scanner_address_lock()
+            else:
+                self._logger.error("SCANNER, Could not turn on!")
 
             #Allow next proc to power up scanner
             self._remove_from_power_up_queue()
 
             #Scan
-            scanner = resource_scanner.Sane_Base(owner=self,
-                model=_model,
-                scan_mode=mode,
-                output_function=self._logger,
-                scan_settings=self._parent._current_sane_setting)
+            if is_on:
+                scanner = resource_sane.Sane_Base(owner=self,
+                    model=_model,
+                    scan_mode=mode,
+                    output_function=self._logger,
+                    scan_settings=self._parent._current_sane_setting)
 
-            scanner.AcquireByFile()
+                scanner.AcquireByFile(filename=filename)
 
-            #Power down and remove scanner address lock
-            self._pm.off()
-            self._remove_scanner_address_lock()
+                #Power down and remove scanner address lock
+                self._pm.off()
+                self._remove_scanner_address_lock()
+
+                return True
 
         else:
 
             raise Forbidden_Scanner_Owned_By_Other_Process(
-                "Trying to scan on '{0}'".format(self._name))
+                "Trying to scan on '{0}' with {1} while owned by {2}".format(
+                self._name, self._uuid, self._get_check_in_file()))
+
+        return False
 
     def free(self):
 
@@ -348,7 +373,12 @@ class Scanner(object):
 
 class Scanners(object):
 
-    def __init__(self, paths, config):
+    def __init__(self, paths, config, logger=None):
+
+        if logger is not None:
+            self._logger = logger
+        else:
+            self._logger = resource_logger.Fallback_Logger()
 
         self._paths = paths
         self._config = config
@@ -374,6 +404,7 @@ class Scanners(object):
         self._current_sane_settings = None
 
         self._set_sane_version()
+        self.update()
 
     def __getitem__(self, key):
 
@@ -439,7 +470,7 @@ class Scanners(object):
         for s in scanners:
 
             if s not in self._scanners.keys():
-                self._scanners[s] = Scanner(self, self._paths, self._config, s)
+                self._scanners[s] = Scanner(self, self._paths, self._config, s, self._logger)
 
         for s in self._scanners.keys():
 
@@ -447,12 +478,20 @@ class Scanners(object):
 
                 del self._scanners[s]
 
+    def count(self, only_free=True):
+
+        self.update()
+        c = len([s for s in self._scanners.values() 
+                    if s.get_claimed() == False])
+
+        return c
+
     def names(self, available=True):
 
         self.update()
 
         scanners = [s_name for s_name, s in self._scanners.items() if available and \
-            (s.get_claimed_by_other() == False) or True]
+            s.get_claimed() == False or available == False]
 
         return sorted(scanners)
 
