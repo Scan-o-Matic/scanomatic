@@ -14,7 +14,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import gobject
 import logging
 import threading
 import os
@@ -85,7 +84,7 @@ class Experiment(object):
 
     def _set_settings_from_kwargs(self):
 
-        pass
+        raise Not_Initialized("Setting from kwarg not done yet")
 
     def _set_settings_from_run_args(self, run_args):
 
@@ -118,20 +117,22 @@ class Experiment(object):
 
     def run(self):
 
-        self._start()
+        if not self._initialized:
+            raise Not_Initialized()
+
+        self._logger.info("Entering main loop")
+        timer = time.time()
 
         while self._running:
+
+            if (time.time() - timer)*60 > self._interval:
+
+                timer = time.time()
+                self._get_image()
 
             time.sleep(0.1)
 
         self._join_threads()
-
-    def _start(self):
-
-        if not self._initialized:
-            raise Not_Initialized()
-
-        gobject.timeout_add(self._interval*60*1000, self._get_image)
 
     def _get_image(self):
 
@@ -148,11 +149,7 @@ class Experiment(object):
             #CHECK IF ALL IS DONE
             self._scanned += 1
 
-            if self._scanned <= self._max_scans:
-
-                return True
-
-            else:
+            if self._scanned > self._max_scans:
 
                 self._logger.info("That was the last image")
                 self._running = False
@@ -168,6 +165,10 @@ class Experiment(object):
 
         #SCAN
         self._scanner.scan(filename=self._im_filename_pattern.format(im_index))
+
+        #FREE SCANNER IF LAST
+        if not self._running or self._scanned => self._max_scans:
+            self._scanner.free()
 
         #ANALYSE
         im_dict = resource_first_pass_analysis.analyse(
@@ -219,6 +220,9 @@ input file for the analysis script.""")
     parser.add_argument('-n', '--number-of-scans', type=int, default=217,
         dest='number_of_scans',
         help='Number of scans requested')
+
+    parser.add_argument('m', '--matrices', type=str, dest='pinning',
+        help='List of pinning matrices')
 
     parser.add_argument('-r', '--root', type=str, dest='root',
         help='Projects root')
@@ -272,6 +276,12 @@ input file for the analysis script.""")
     #EXPERIMENTS ROOT
     if args.root is None or os.path.isdir(args.root) == "False":
         parser.error("Experiments root is not a directory")
+
+    if args.pinning is not None:
+        args.pinning = get_pinnings_list(args.pinning)
+
+    if args.pinning is None:
+        parser.error("Bad pinning supplied")        
 
     #PREFIX
     if args.prefix is None or \
