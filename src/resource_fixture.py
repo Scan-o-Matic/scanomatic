@@ -31,12 +31,18 @@ class Fixture_Settings(object):
 
     def __init__(self, dir_path, name, paths):
 
+        name = paths.get_fixture_path(name, only_name=True)
         self._paths = paths
         self.dir_path = dir_path
-        self.file_name = name + ".config"
-        self.im_path = dir_path + os.sep + name + ".tiff"
+        self.conf_rel_path = paths.fixture_conf_file_rel_pattern.format(name)
+        self.conf_path = os.sep.join((dir_path, self.conf_rel_path))
+        self.im_path = os.sep.join((dir_path,
+            paths.fixture_image_file_rel_pattern.format(name))) 
         self.scale = 0.25
+
+        #THIS SHOULD BE DONE ELSEWHERE
         self.name = name.replace("_", " ").capitalize()
+
         self.marker_name = None
 
         for attrib in ('marker_path', 'marker_count', 'grayscale',
@@ -48,11 +54,11 @@ class Fixture_Settings(object):
 
     def get_location(self):
 
-        return self.dir_path + os.sep + self.file_name
+        return self.cont_path
 
     def load_from_file(self):
 
-        f = resource_config.Config_File(self.get_location())
+        f = resource_config.Config_File(self.conf_path)
 
         #Version
         self.version = f['version']

@@ -152,7 +152,7 @@ class Project_Controller(controller_generic.Controller):
         tc = self.get_top_controller()
 
         if sm['scanner'] is not None:
-            tc.scanners.free(sm['scanner'])
+            tc.scanners.free(sm['scanner'], soft=True)
 
     def set_project_root(self, widget):
 
@@ -183,6 +183,11 @@ class Project_Controller(controller_generic.Controller):
 
             top = view_experiment.Top_Project_Setup(self, m , sm)
             stage = view_experiment.Stage_Project_Setup(self, m , sm)
+
+        elif stage_call == "running":
+
+            top = view_experiment.Top_Project_Running(self, m, sm)
+            stage = view_experiment.Stage_Project_Running(self, m , sm)
 
         else:
 
@@ -404,18 +409,20 @@ class Project_Controller(controller_generic.Controller):
         e_query_list += list(chain.from_iterable(experiment_query.items()))
         e_query_list = map(str, e_query_list)
 
-        #print "\n\n" + " ".join(e_query_list) + "\n\n"
-
         stdout=open(tc.paths.log_scanner_out.format(scanner.get_socket()), 'w')
         stderr=open(tc.paths.log_scanner_err.format(scanner.get_socket()), 'w')
 
-        #proc = Popen(e_query_list, stdout=stdout, stderr=stderr, stdin=PIPE, shell=False)
-        proc = Popen(e_query_list, stdout=None, stderr=None, stdin=None, shell=False)
+        proc = Popen(e_query_list, stdout=stdout, stderr=stderr, stdin=PIPE, shell=False)
+        #proc = Popen(e_query_list, stdout=None, stderr=None, stdin=None, shell=False)
         proc_type = 'scanner'
+
+        scanner.set_uuid()
 
         self.get_top_controller().add_subprocess(proc, proc_type, 
             stdin=proc.stdin, stdout=stdout, stderr=stderr,
             pid=proc.pid, psm=sm, proc_name=sm['scanner'])
+
+        self.set_view_stage(None, 'running')
 
     def set_allow_run(self):
 

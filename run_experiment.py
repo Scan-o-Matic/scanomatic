@@ -20,6 +20,7 @@ import os
 import sys
 import time
 import uuid
+import shutil
 from argparse import ArgumentParser
 
 #
@@ -88,7 +89,9 @@ class Experiment(object):
         self._orphan = False
         self._running = True
 
+        sys.excepthook = self.__excepthook
         self._stdin_pipe_deamon = threading.Thread(target=self._stdin_deamon)
+        self._stdin_pipe_deamon.deamon = True
         self._stdin_pipe_deamon.start()
 
         self._scan_threads = list()
@@ -104,6 +107,15 @@ class Experiment(object):
         elif kwargs is not None:
             self._set_settings_from_kwargs(kwargs)
 
+    def __excepthook(self, excType, excValue, traceback):
+
+        self._running = False
+
+        self._logger.critical("Uncaught exception:",
+                 exc_info=(excType, excValue, traceback))
+
+        #Thread will never quit if stuck on stdin-readline!
+
     def _stdin_deamon(self):
 
         line = ""
@@ -111,7 +123,6 @@ class Experiment(object):
 
             if self._orphan:
                 line = ""
-                time.sleep(100)
             else:
 
                 try:
@@ -124,6 +135,8 @@ class Experiment(object):
             if line == "__QUIT__":
                 self._running = False
                 #REPORT THAT GOT QUIT REQUEST
+
+            time.sleep(0.42)
 
     def _generate_uuid(self):
 
@@ -140,11 +153,12 @@ class Experiment(object):
 
         self._pinning = run_args.pinning
         self._scanner = self.scanners[run_args.scanner]
-        self._fixture = self.fixtures[run_args.fixture]
         self._fixture_name = run_args.fixture
         self._root = run_args.root
         self._prefix = run_args.prefix
         self._out_data_path = run_args.outdata_path
+
+        self._set_fixture(self.paths.fixtures, self._fixture_name)
 
         self._first_pass_analysis_file = os.sep.join((self._out_data_path,
             self.paths.experiment_first_pass_analysis_relative.format(
@@ -170,6 +184,20 @@ class Experiment(object):
             self._logger = resource_logger.Fallback_Logger()
         else:
             self._logger = logger
+
+    def _set_fixture(self, dir_path, fixture_name):
+
+        self._logger.info("Making local copy of fixture settings.")
+        
+        shutil.copyfile(
+            self.paths.get_fixture_path(fixture_name, own_path=dir_path),
+            os.sep.join((self._out_data_path,
+            self.paths.experiment_local_fixturename)))
+
+        self._fixture = resource_fixture.Fixture_Settings(
+                self._out_data_path, 
+                self.paths.experiment_local_fixturename, 
+                self.paths)
 
     def run(self):
 
@@ -246,7 +274,9 @@ class Experiment(object):
             self._logger.info("Requesting first pass analysis of file '{0}'".format(im_path))
             im_dict = resource_first_pass_analysis.analyse(
                 file_name=im_path,
-                fixture=self._fixture,
+                im_acq_time=scan_time,
+                experiment_directory=self._out_data_path,
+                paths=self.paths,
                 logger=self._logger)
 
             #APPEND TO FILE
@@ -361,13 +391,13 @@ input file for the analysis script.""")
     if args.fixture is None or args.fixture == "":
         parser.error("Must have fixture file")
 
-    args.fixture = paths.get_fixture_path(args.fixture)
+    fixture = paths.get_fixture_path(args.fixture)
 
     try:
-        fs = open(args.fixture, 'r')
+        fs = open(fixture, 'r')
         fs.close()
     except:
-        parser.error("Can't find any file at '{0}'".format(args.fixture))
+        parser.error("Can't find any file at '{0}'".format(fixture))
 
 
     #SCANNER

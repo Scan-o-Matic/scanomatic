@@ -104,11 +104,20 @@ class Scanner(object):
 
         return lock_uuid
 
-    def _free_in_file(self):
+    def _free_in_file(self, soft):
 
         if self.get_claimed_by_other():
-            raise Forbidden_Scanner_Owned_By_Other_Process(
-                "Trying to free '{0}'".format(self._name))
+
+            if not soft:
+
+                raise Forbidden_Scanner_Owned_By_Other_Process(
+                    "Trying to free '{0}'".format(self._name))
+
+            else:
+
+                self._logger.info(
+                    "Won't free scanner {0} since owned by other".format(self._name))
+
             return
 
         try:
@@ -308,9 +317,12 @@ class Scanner(object):
             SETs
     """
 
-    def set_uuid(self, s_uuid):
+    def set_uuid(self, s_uuid=None):
 
-        self._uuid = s_uuid
+        if s_uuid is None:
+            self._uuid = get_uuid()
+        else:
+            self._uuid = s_uuid
 
     """
             ACTIONS
@@ -365,9 +377,9 @@ class Scanner(object):
 
         return False
 
-    def free(self):
+    def free(self, soft=False):
 
-        self._free_in_file()
+        self._free_in_file(soft)
         return True
 
 
@@ -503,9 +515,9 @@ class Scanners(object):
             raise Unknown_Scanner(scanner_name)
             return False
 
-    def free(self, scanner_name):
+    def free(self, scanner_name, soft=False):
         if scanner_name in self._scanners:
-            return self._scanners[scanner_name].free()
+            return self._scanners[scanner_name].free(soft=soft)
         else:
             raise Unknown_Scanner(scanner_name)
             return False

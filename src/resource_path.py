@@ -45,8 +45,14 @@ class Paths(object):
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
 
         #FIXTURE_FILES
-        self.fixture_conf_file_pattern = self.fixtures + os.sep + "{0}.config"
-        self.fixture_image_file_pattern = self.fixtures + os.sep + "{0}.tiff"
+        self.fixture_conf_file_suffix = ".config"
+        self.fixture_conf_file_rel_pattern = "{0}" + \
+            self.fixture_conf_file_suffix
+        self.fixture_image_file_rel_pattern = "{0}.tiff"
+        self.fixture_conf_file_pattern = os.sep.join((
+            self.fixtures, self.fixture_conf_file_rel_pattern))
+        self.fixture_image_file_pattern = os.sep.join((
+            self.fixtures, self.fixture_image_file_rel_pattern))
 
         #LOG
         self.log = self.root + os.sep + "log"
@@ -60,15 +66,47 @@ class Paths(object):
         self.experiment_analysis_file_name = "analysis.log"
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
         self.experiment_first_pass_log_relative = ".1_pass.log"
+        self.experiment_local_fixturename = \
+            self.fixture_conf_file_rel_pattern.format("fixture")
 
         #LOCK FILES
         self.lock_root = os.sep.join((os.path.expanduser("~"), ".scan_o_matic"))
         self.lock_power_up_new_scanner = self.lock_root + ".new_scanner.lock"
         self.lock_scanner_pattern = self.lock_root + ".scanner.{0}.lock"
 
-    def get_fixture_path(self, fixture_name, conf_file=True):
+    def _is_fixture_file_name(self, fixture_name):
+
+        suffix_l = len(self.fixture_conf_file_suffix)
+        if len(fixture_name) > suffix_l and \
+            fixture_name[-suffix_l:] == self.fixture_conf_file_suffix:
+
+            return True
+
+        else:
+
+            return False
+
+    def get_fixture_path(self, fixture_name, conf_file=True, own_path=None,
+            only_name=False):
 
         fixture_name = fixture_name.lower().replace(" ", "_")
+
+        if self._is_fixture_file_name(fixture_name):
+            fixture_name = fixture_name[:-len(self.fixture_conf_file_suffix)]
+
+        if only_name:
+            return fixture_name
+
+        if own_path is not None:
+            if conf_file:
+                f_pattern = self.fixture_conf_file_rel_pattern
+            else:
+                f_pattern = self.fixture_image_file_rel_pattern
+
+            if own_path == "":
+                return f_pattern.format(fixture_name)
+            else:
+                return os.sep.join((own_path, f_pattern.format(fixture_name)))
 
         if conf_file:
             return self.fixture_conf_file_pattern.format(fixture_name)

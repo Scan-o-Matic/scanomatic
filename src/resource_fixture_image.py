@@ -27,6 +27,7 @@ from matplotlib.pyplot import imread
 #
 
 import resource_image as resource_image
+import resource_path as resource_path
 import resource_config as conf
 
 
@@ -37,6 +38,7 @@ class Fixture_Image(object):
             fixture_directory=None, markings_path=None,
             im_scale=None):
 
+        self._paths = resource_path.Paths()
         self._define_reference = define_reference
         self.fixture_name = fixture
         self.im_scale = im_scale
@@ -195,7 +197,8 @@ class Fixture_Image(object):
         if fixture_directory is not None:
 
             self._fixture_reference_path = \
-                fixture_directory + os.sep + fixture_name + ".config"
+                self._paths.get_fixture_path(fixture_name,
+                own_path=fixture_directory)
 
             self._fixture_config_root = fixture_directory
 
@@ -204,13 +207,15 @@ class Fixture_Image(object):
             self._fixture_config_root = \
                 os.sep.join(image_path.split(os.sep)[:-1])
 
-            self._fixture_reference_path = self._fixture_config_root + \
-                os.sep + fixture_name + ".config"
+            self._fixture_reference_path = \
+                self._paths.get_fixture_path(fixture_name,
+                own_path=self._fixture_config_root)
 
         else:
 
             self._fixture_config_root = "."
-            self._fixture_reference_path = fixture_name + ".config"
+            self._fixture_reference_path = self._paths.get_fixture_path(
+                fixture_name, own_path="")
 
         self._load_reference()
 

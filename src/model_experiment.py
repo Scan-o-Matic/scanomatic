@@ -97,6 +97,12 @@ pigmentation analysis.</i></span>
 ###PINNING
 'project-stage-plates': 'Pinnings / Plate Formats',
 
+#PROJECT - RUNNING
+'project-running': """
+<span weight="heavy">Project {0} is now running...</span>
+<span><i>You may close this tab now.
+If you want details about the progress, look under status.</i></span>
+"""
 }
 
 specific_project_model = {

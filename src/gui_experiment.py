@@ -30,7 +30,7 @@ import uuid
 #
 
 import src.resource_power_manager as power_manager
-import src.resource_fixture_image as fixture_settings_image
+import src.resource_fixture_image as resource_fixture_image
 import src.resource_os as os_tools
 
 #

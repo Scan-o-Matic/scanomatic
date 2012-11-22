@@ -113,6 +113,33 @@ class Top_Project_Setup(Top):
         self._start_button.set_sensitive(val)
         
 
+class Top_Project_Running(Top):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Top_Project_Running, self).__init__(controller, model)
+
+        self._specific_model = specific_model
+
+        self.show_all()
+
+class Stage_Project_Running(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        super(Stage_Project_Running, self).__init__(0, False)
+
+        label = gtk.Label()
+        label.set_markup(self._model['project-running'].format(
+            self._specific_model['experiment-prefix']))
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        self.show_all()
+
 class Stage_Project_Setup(gtk.VBox):
 
     def __init__(self, controller, model, specific_model=None):

@@ -20,40 +20,57 @@ import os
 #
 
 import src.resource_logger as resource_logger
+import src.resource_fixture_image as resource_fixture_image
+import src.resource_path as resource_path
 
-def analyse(file_name, fixture, logger=None):
+#
+# EXCEPTIONS
+#
+
+class Marker_Detection_Failed(Exception): pass
+
+#
+# FUNCTION
+#
+
+def analyse(file_name, im_acq_time, experiment_directory,
+        paths, logger=None):
 
     analysis = dict()
     if logger is None:
-        logger = resource.Log_Garbage_Collector()
+        logger = resource_logger.Log_Garbage_Collector()
 
-    """
-            im_data = {'Time':time.time(), 'File': f}
-            self.DMS("Analysis", "Grayscale analysis of" + str(f), 
-                level="LA", debug_level='debug')
+    im_data = {'Time':im_acq_time, 'File': file_name}
 
-            self.f_settings.set_image(image_path=f)
+    fixture = resource_fixture_image.Fixture_Image(
+            paths.experiment_local_fixturename,
+            fixture_directory=experiment_directory)
 
-            self.f_settings.run_marker_analysis()
-            self.f_settings.set_current_areas()
-            self.f_settings.analyse_grayscale()
+    fixture.set_image(image_path=file_name)
 
-            gs_indices, gs_values = self.f_settings['grayscale']
-            
-            im_data['grayscale_values'] = gs_values
-            im_data['grayscale_indices'] = gs_indices
-            im_data['mark_X'], im_data['mark_Y'] = self.f_settings['markers']            
+    fixture.run_marker_analysis()
 
-            sections_areas = self.f_settings['plates']
+    im_data['mark_X'], im_data['mark_Y'] = fixture['markers']            
 
-            im_data['plates'] = len(sections_areas)
+    if im_data['mark_X'] is None:
+        raise Marker_Detection_Failed()
+        return None
 
-            plate_str = "plate_{0}_area"
-            for i, a in enumerate(sections_areas):
-                im_data[plate_str.format(i)] = list(a)
+    fixture.set_current_areas()
+    fixture.analyse_grayscale()
 
-            data.append(im_data)
-    """
+    gs_indices, gs_values = fixture['grayscale']
+    
+    im_data['grayscale_values'] = gs_values
+    im_data['grayscale_indices'] = gs_indices
 
-    return dict()
+    sections_areas = fixture['plates']
+
+    im_data['plates'] = len(sections_areas)
+
+    plate_str = "plate_{0}_area"
+    for i, a in enumerate(sections_areas):
+        im_data[plate_str.format(i)] = list(a)
+
+    return im_data
 

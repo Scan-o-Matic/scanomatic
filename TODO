@@ -4,6 +4,10 @@
 
 --- HOT ---
 
+*** FIXTURE: Add so conf has its own name
+
+*** ANALYSE: Cut Cell Estimate at 2000 and warn
+
 *** ASK QUIT: Doesn't work
 
 *** DIALOGUE: Sel dir should start in fit place
