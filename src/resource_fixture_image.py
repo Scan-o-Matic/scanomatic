@@ -144,6 +144,11 @@ class Fixture_Image(object):
         fixture_path = self._fixture_reference_path
 
         self.fixture_reference = conf.Config_File(fixture_path)
+
+        cur_name = self.fixture_reference.get('name')
+        if cur_name is None or cur_name == "":
+            self.fixture_reference.set('name', self.fixture_name)
+
         if self._define_reference:
             self.fixture_current = self.fixture_reference
         else:

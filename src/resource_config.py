@@ -176,14 +176,16 @@ class Config_File(object):
 
                 else:
 
-                    if type(self._data[data_row]) == types.StringType:
+                    d = self._data[data_row]
 
-                        line = str(data_row) +"\t\"" + \
-                                str(self._data[data_row]) + "\""
+                    try:
+                        d.itemsize  # HACK FOR CHECKING IF np.array
+                        d = list(d)
+                    except:
+                        pass
 
-                    else:
-
-                        line = str(data_row) + "\t" + str(self._data[data_row])
+                    d = str(d)
+                    line = "{0}\t\"{1}\"".format(str(data_row), d)
 
                 line += "\r\n"
                 fs.write(line)

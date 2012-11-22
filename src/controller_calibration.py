@@ -69,10 +69,14 @@ class Calibration_Controller(controller_generic.Controller):
             err = Not_Yet_Implemented("Mode 'Cell Count Calibration'")
 
             raise err
+            return
 
         else:
 
             raise Bad_Stage_Call(calibration_mode)
+            return
+
+        self.add_subcontroller(self._specific_controller)        
 
 class Fixture_Controller(controller_generic.Controller):
 

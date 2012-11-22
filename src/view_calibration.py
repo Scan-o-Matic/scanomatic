@@ -21,6 +21,7 @@ import matplotlib.image as plt_img
 import matplotlib.pyplot as plt
 import matplotlib.text as plt_text
 import matplotlib.patches as plt_patches
+import numpy as np
 
 
 #
@@ -589,7 +590,9 @@ class Fixture_Image(object):
     def load_from_array(self):
 
         model = self._model
-        self.image_ax.imshow(model['im'], cmap=plt.cm.Greys_r)
+        self.image_ax.imshow(np.fliplr(model['im']), cmap=plt.cm.Greys_r, 
+            origin='lower',
+            interpolation='none')
         self.clear_overlays()
         self.image_fig.canvas.draw()
 

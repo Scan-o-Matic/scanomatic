@@ -4,8 +4,6 @@
 
 --- HOT ---
 
-*** FIXTURE: Add so conf has its own name
-
 *** ANALYSE: Cut Cell Estimate at 2000 and warn
 
 *** ASK QUIT: Doesn't work
@@ -17,9 +15,11 @@
 *** ANALYSE: Loading CSV messes up columns in display
 
 *** ALL: Rotate and flip image display so that it matches the user perspective
-
-*** CALIBRATION: Fixtures' analysis of GS indices is written badly to config
-    Maybe due to being array?
+    GOOD DISPLAY:
+        self.image_ax.imshow(np.fliplr(model['im']), cmap=plt.cm.Greys_r, 
+            origin='lower',
+    NEED:
+        fix all other... make a lr-display-value converter eg. im.shape[1] - x
 
 *** EXPERIMENT: Need to pass pinning-arrays
 
@@ -99,6 +99,11 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** FIXTURE: Add so conf has its own name
+
+*** CALIBRATION: Fixtures' analysis of GS indices is written badly to config
+    Maybe due to being array?
 
 *** Images show distinct blob-detection failiour at early stages using
     current detection algorithms

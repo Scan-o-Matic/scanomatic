@@ -197,13 +197,11 @@ class Fixtures(object):
             model['im-original-scale'] = self._fixtures[fixture].scale
             model['im-scale'] = self._fixtures[fixture].scale
             model['im-path'] = self._fixtures[fixture].im_path
-            model['fixture-file'] = self._fixtures[fixture].file_name
+            model['fixture-file'] = self._fixtures[fixture].conf_rel_path
 
         else:
 
             model['im-original-scale'] = 1.0
             model['im-scale'] = 1.0
             model['im-path'] = None
-            model['fixture-file'] = model['fixture'].lower().replace(" ","_")
-
-
+            model['fixture-file'] = self._paths.get_fixture_path(model['fixture'], only_name=True)
