@@ -49,8 +49,8 @@ class Config(object):
             'Scanner 3': 3,
             'Scanner 4': 4}
 
-        self.pm_type = 'USB'
-        self._pm_host = None
+        self.pm_type = 'LAN'
+        self._pm_host = "192.168.0.100"
         self._pm_pwd = None
         self._pm_verify_name = False
         self._pm_MAC = None
@@ -69,7 +69,7 @@ class Config(object):
                 'verify_name': self._pm_verify_name,
                 'pm_name':self._pm_name,
                 'MAC':self._pm_MAC,
-                'DMS':None}
+                }
 
     def get_scanner_model(self, scanner):
 
@@ -79,13 +79,14 @@ class Config(object):
 
         return self._scanner_sockets[scanner]
 
-    def get_pm(self, scanner_name, **pm_kwargs):
+    def get_pm(self, scanner_name, logger=None, **pm_kwargs):
 
         scanner_pm_socket = self._scanner_sockets[scanner_name]
         if pm_kwargs == {}:
             pm_kwargs = self._pm_arguments
 
-        return self._PM(scanner_pm_socket, **pm_kwargs)
+        print "Creating scanner for socket {0} and settings {1}".format(scanner_pm_socket, pm_kwargs)
+        return self._PM(scanner_pm_socket, logger=logger, **pm_kwargs)
 
     def get_default_experiment_query(self):
 

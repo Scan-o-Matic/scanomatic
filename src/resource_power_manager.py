@@ -135,7 +135,7 @@ class LAN_PM(object):
 
             else:
 
-                self._logger.error("LAN PM, No knowon host and no MAC...no way to find PM")
+                self._logger.error("LAN PM, No known host and no MAC...no way to find PM")
                 raise Invalid_Init()
     
     def _set_urls(self):
