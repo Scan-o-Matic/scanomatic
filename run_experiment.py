@@ -16,6 +16,7 @@ __status__ = "Development"
 
 import logging
 import threading
+from multiprocessing import Process
 import os
 import signal
 import sys
@@ -92,7 +93,6 @@ class Experiment(object):
 
         sys.excepthook = self.__excepthook
         self._stdin_pipe_deamon = threading.Thread(target=self._stdin_deamon)
-        self._stdin_pipe_deamon.deamon = True
         self._stdin_pipe_deamon.start()
 
         self._scan_threads = list()
@@ -110,8 +110,6 @@ class Experiment(object):
 
     def __excepthook(self, excType, excValue, traceback):
 
-        self._running = False
-
         self._logger.critical("Uncaught exception:",
                  exc_info=(excType, excValue, traceback))
 
@@ -120,6 +118,8 @@ class Experiment(object):
 
         self._logger.info("Making sure scanner is freed")
         self._scanner.free()
+
+        self._running = False
 
     def _stdin_deamon(self):
 
@@ -234,7 +234,7 @@ class Experiment(object):
             self._logger.info("Acquiring image {0}".format(self._scanned))
 
             #THREAD IMAGE AQ AND ANALYSIS
-            thread = threading.Thread(target=self._scan_and_analyse, args=(self._scanned,))
+            thread = Process(target=self._scan_and_analyse, args=(self._scanned,))
 
             thread.start()
 
