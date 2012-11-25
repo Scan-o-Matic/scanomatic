@@ -5,6 +5,12 @@
 import copy
 
 #
+# INTERNAL DEPENDENCIES
+#
+
+import src.resource_path as resource_path
+
+#
 # EXCEPTIONS
 #
 
@@ -36,6 +42,8 @@ class Model(object):
             self._pm = private_model
 
         self._counters = dict()
+
+        self._paths = resource_path.Paths()
 
         self._gm = generic_model
 

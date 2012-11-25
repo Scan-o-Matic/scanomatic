@@ -23,6 +23,9 @@ import src.model_calibration as model_calibration
 import src.view_calibration as view_calibration
 import src.controller_generic as controller_generic
 import src.resource_fixture_image as resource_fixture_image
+import src.resource_scanner as resource_scanner
+import src.resource_path as resource_path
+import src.resource_app_config as resource_app_config
 
 #
 # EXCEPTIONS
@@ -85,6 +88,10 @@ class Fixture_Controller(controller_generic.Controller):
 
         super(Fixture_Controller, self).__init__(window, parent,
             view=view, model=model)
+
+        self._paths = resource_path.Paths()
+        self._config = resource_app_config.Config(self._paths)
+        self._scanners = resource_scanner.Scanners(self._paths, self._config)
 
         #MODEL
         if specific_model is not None:
@@ -211,6 +218,18 @@ class Fixture_Controller(controller_generic.Controller):
             self._view.get_stage().set_new_image()
 
             self._view.get_stage().check_allow_marker_detection()
+
+    def set_image_scan(self, widget):
+
+        m = self._model
+
+        scanner_name = view_calibration.claim_a_scanner_dialog(
+            window, m['scan-fixture-text'], m['scan-fixture-im-path'],
+            self._scanners)
+
+        if scanner_name is not None:
+            scanner = self._scanners[scanner_name]
+            print scanner_name
 
     def handle_keypress(self, widget, event):
 

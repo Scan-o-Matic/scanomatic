@@ -17,6 +17,7 @@ __status__ = "Development"
 import logging
 import threading
 import os
+import signal
 import sys
 import time
 import uuid
@@ -114,7 +115,11 @@ class Experiment(object):
         self._logger.critical("Uncaught exception:",
                  exc_info=(excType, excValue, traceback))
 
-        #Thread will never quit if stuck on stdin-readline!
+        self._logger.info("Killing deamon")
+        os.kill(self._stdin_pipe_deamon.pid, signal.SIGTERM)
+
+        self._logger.info("Making sure scanner is freed")
+        self._scanner.free()
 
     def _stdin_deamon(self):
 

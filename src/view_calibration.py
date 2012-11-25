@@ -150,7 +150,9 @@ class Fixture_Select_Stage(gtk.VBox):
         for f in sorted(fixtures):
             self.fixtures.append([f])
 
-        self.pack_start(self.treeview, False, False, PADDING_LARGE)
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.add_with_viewport(self.treeview)
+        self.pack_start(scrolled_window, False, False, PADDING_LARGE)
 
         #NEW BUTTON
         self.new_fixture = gtk.RadioButton(group=self.edit_fixture,
@@ -246,6 +248,10 @@ class Fixture_Marker_Calibration_Stage(gtk.VBox):
         hbox = gtk.HBox(0, False)
         self.im_path = gtk.Label()
         hbox.pack_start(self.im_path, True, True, PADDING_SMALL)
+        button = gtk.Button()
+        button.set_label(model['fixture-calibration-select-scan'])
+        button.connect("clicked", controller.set_image_scan)
+        hbox.pack_end(button, False, False, PADDING_SMALL)
         button = gtk.Button()
         button.set_label(model['fixture-calibration-select-im'])
         button.connect("clicked", controller.set_image_path)

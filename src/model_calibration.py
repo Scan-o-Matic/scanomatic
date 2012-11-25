@@ -73,12 +73,15 @@ to invoke a new calibration polynomial.</i></span>
 """<span size="large">Image Selection and Marker Detection</span>""",
 'fixture-calibration-next': 'Segmenting Fixture',
 'fixture-calibration-select-im': 'Select Image',
+'fixture-calibration-select-scan': 'Scan Fixture Now',
 'fixture-calibration-marker-number': 'Number of calibration points',
 'fixture-calibration-marker-detect': 'Run Detection',
 'fixture-image-dialog': 'Select Image Using The Particular Fixture',
 'fixture-image-file-filter': {'filter_name': 'Image Files',
 'mime_and_patterns': (('IMAGE/TIFF', '*.[tT][iI][fF]'),
 ('IMAGE/TIF','*.[tT][iI][fF][fF]'))},
+'scan-fixture-text': "Select scanner that you've placed the fixture in",
+'scan-fixture-im-path': '',
 
 #FIXTURE SEGMENTATION
 'fixture-segmentation-title': """<span size="large">Segmenting Out Interests

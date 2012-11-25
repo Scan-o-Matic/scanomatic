@@ -18,6 +18,12 @@ pygtk.require('2.0')
 import gtk
 
 #
+# INTERNAL DEPENDENCIES
+#
+
+import src.resource_scanner as resource_scanner
+
+#
 # STATIC GLOBALS
 #
 
@@ -129,6 +135,7 @@ def overwrite(text, file_name, window):
 
     return resp
 
+
 def dialog(window, text, d_type="info", yn_buttons=False):
 
     d_types = {'info': gtk.MESSAGE_INFO, 'error': gtk.MESSAGE_ERROR,
@@ -161,6 +168,35 @@ def dialog(window, text, d_type="info", yn_buttons=False):
     d.destroy()
 
     return result
+
+
+def claim_a_scanner_dialog(window, text, image_path, scanners):
+
+    scanners.update()
+    scanner_names = scanners.get_names()
+
+    dialog = gtk.MessageDialog(window, gtk.DIALOG_DESTROY_WITH_PARENT,
+        gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+        text)
+
+    for i, s in enumerate(scanner_names):
+        dialog.add_button(s, i)
+
+    dialog.add_button(gtk.STOCK_CANCEL, -1)
+
+    img = gtk.Image()
+    img.set_from_file(image_path)
+    dialog.set_image(img)
+    dialog.show_all()
+
+    resp = dialog.run()
+
+    dialog.destroy()
+
+    if resp >= 0:
+        return scanner_names[resp]
+    else:
+        return None
 
 #
 # CLASSES

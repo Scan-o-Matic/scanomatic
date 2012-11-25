@@ -36,6 +36,12 @@ import src.resource_logger as resource_logger
 class Invalid_Init(Exception): pass
 
 #
+# GLOBALS
+#
+
+URL_TIMEOUT = 2
+
+#
 # CLASSES
 #
 
@@ -203,7 +209,11 @@ class LAN_PM(object):
         else:
 
             self._logger.info("LAN PM, Logging in")
-            return urllib2.urlopen(self._login_out_url, self._pwd_params)
+            try:
+                return urllib2.urlopen(self._login_out_url, self._pwd_params, timeout=URL_TIMEOUT)
+            except:
+                self._logger.error("Connection error to PM")
+                return None
 
     def _logout(self):
 
@@ -215,7 +225,11 @@ class LAN_PM(object):
         else:
 
             self._logger.info("LAN PM, Logging out")
-            return urllib2.urlopen(self._login_out_url)
+            try:
+                return urllib2.urlopen(self._login_out_url, timeout=URL_TIMEOUT)
+            except:
+                self._logger.error("Connection error to PM")
+                return None
 
     def test_ip(self):
 
@@ -255,7 +269,11 @@ class LAN_PM(object):
         if not self._verify_name or self._pm_server_str in u.read():
 
             self._logger.info("LAN PM, Turning on")
-            urllib2.urlopen(self._ctrl_panel_url, self._on_params)
+            try:
+                urllib2.urlopen(self._ctrl_panel_url, self._on_params, timeout=URL_TIMEOUT)
+            except:
+                self._logger.error("Connection error to PM")
+                return False
 
             self._logout()
             return True
@@ -276,7 +294,11 @@ class LAN_PM(object):
         if not self._verify_name or self._pm_server_str in u.read():
 
             self._logger.info("LAN PM, Turning off")
-            urllib2.urlopen(self._ctrl_panel_url, self._off_params)
+            try:
+                urllib2.urlopen(self._ctrl_panel_url, self._off_params, timeout=URL_TIMEOUT)
+            except:
+                self._logger.error("Connection error to PM")
+                return False
 
             self._logout()
             return True

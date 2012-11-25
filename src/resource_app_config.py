@@ -49,7 +49,7 @@ class Config(object):
             'Scanner 3': 3,
             'Scanner 4': 4}
 
-        self.pm_type = 'LAN'
+        self.pm_type = 'USB'
         self._pm_host = "192.168.0.100"
         self._pm_pwd = None
         self._pm_verify_name = False
