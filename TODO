@@ -4,6 +4,10 @@
 
 --- HOT ---
 
+*** MAIN: Why doesn't the program allow for not closing?
+
+*** ANALYSIS: Investigate why calibration step never ends
+
 *** LAN-PM 1: Init takes some time, should only need to test once per PM and not
     per socket <- scanner should get socket, not get pm!
 
@@ -25,7 +29,7 @@
         self.image_ax.imshow(np.fliplr(model['im']), cmap=plt.cm.Greys_r, 
             origin='lower',
     NEED:
-        fix all other... make a lr-display-value converter eg. im.shape[1] - x
+        fix all other... make a lr-display-value converter eg. im.shape[0] - x
 
 *** EXPERIMENT: Need to pass pinning-arrays
 

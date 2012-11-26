@@ -114,4 +114,8 @@ class Controller(controller_generic.Controller):
         #INTERIM SOLUTION, SHOULD HANDLE SUBPROCS
         if self.ask_destroy():
 
+            self.get_view().destroy()
             gtk.main_quit()
+            return False
+
+        return True

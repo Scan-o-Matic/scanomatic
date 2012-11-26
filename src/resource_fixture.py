@@ -71,7 +71,10 @@ class Fixture_Settings(object):
             self.marker_name = None
 
         #Marker count
-        self.marker_count = f['marker_count']
+        try:
+            self.marker_count = int(f['marker_count'])
+        except:
+            self.marker_count = 0
 
         #Marker positions
         if self.marker_count is None:
@@ -138,8 +141,6 @@ class Fixture_Settings(object):
         return None
 
     def set_experiment_model(self, model, default_pinning=None):
-
-        print "DP: '{0}'".format(default_pinning)
 
         model['fixture'] = self.name
         model['plate-areas'] = copy.copy(self.plate_areas)

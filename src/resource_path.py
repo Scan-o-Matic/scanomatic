@@ -89,6 +89,17 @@ class Paths(object):
 
             return False
 
+    def get_fixture_name(self, fixture_path):
+
+        fixture = fixture_path.split(os.sep)[-1]
+        if len(fixture) > len(self.fixture_conf_file_suffix):
+            if fixture[-len(self.fixture_conf_file_suffix):] == \
+                self.fixture_conf_file_suffix:
+
+                fixture = fixture[:-len(self.fixture_conf_file_suffix)]
+
+        return fixture.capitalize().replace("_", " ")
+
     def get_fixture_path(self, fixture_name, conf_file=True, own_path=None,
             only_name=False):
 

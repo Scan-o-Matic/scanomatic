@@ -584,7 +584,18 @@ class Fixture_Image(object):
 
         if event_callbacks is not None:
             for event, callback in event_callbacks.items():
-                self.image_fig.canvas.mpl_connect(event, callback)
+                if event == 'button_press_event':
+                    c_proxy = self.__click_proxy
+                    self._click_down_callback = callback
+                elif event == 'button_release_event':
+                    c_proxy = self.__click_proxy
+                    self._click_up_callback = callback
+                elif event == 'motion_notify_event':
+                    c_proxy = self.__move_proxy
+                    self._move_callback = callback
+                else:
+                    c_proxy = callback
+                self.image_fig.canvas.mpl_connect(event, c_proxy)
 
         if 'im' in model and model['im'] is not None:
             self.load_from_array()
@@ -593,19 +604,39 @@ class Fixture_Image(object):
         elif 'im-not-loaded' in model and model['im-not-loaded'] is not None:
             self.set_not_loaded_text()
 
+    def __click_proxy(self, event):
+
+        event.xdata, event.ydata = self.get_data_coordinate(event.xdata,
+            event.ydata)
+
+        if event.name == 'button_press_event':
+            self._click_down_callback(event)
+        else:
+            self._click_up_callback(event)
+
+    def __move_proxy(self, event):
+
+        event.xdata, event.ydata = self.get_data_coordinate(event.xdata,
+            event.ydata)
+
+        self._move_callback(event)
+
     def load_from_array(self):
 
         model = self._model
         self.image_ax.imshow(np.fliplr(model['im']), cmap=plt.cm.Greys_r, 
             origin='lower',
-            interpolation='none')
+            interpolation='nearest')
         self.clear_overlays()
         self.image_fig.canvas.draw()
 
     def load_from_path(self):
 
         model = self._model
-        im = plt.imread(model['im-path'])
+        try:
+            im = plt.imread(model['im-path'])
+        except:
+            im = None
         model['im'] = im
         if im is not None:
             self.load_from_array()
@@ -623,6 +654,8 @@ class Fixture_Image(object):
 
     def _set_text(self, text, x, y, overlay_key, alpha=0.75,
             color='#004400', scale=1.0):
+
+        x, y = self.get_display_coordinate(x, y)
 
         if overlay_key in self._im_overlays.keys():
 
@@ -649,9 +682,11 @@ class Fixture_Image(object):
         x, y = map(min, zip(*coords))
         w, h = [a-b for a,b in zip(map(sum, zip(*coords)), (x,y))]
         """
-        x, y = coords[0]
-        w = coords[1][0] - x
-        h = coords[1][1] - y
+        x, y = self.get_display_coordinate(coords[0][0], coords[0][1])
+        x2, y2 = self.get_display_coordinate(coords[1][0], coords[1][1])
+
+        w = x2 - x
+        h = y2 - y
 
         if overlay_key in self._im_overlays.keys():
 
@@ -672,6 +707,8 @@ class Fixture_Image(object):
 
     def _set_circle(self, x, y, overlay_key, alpha=0.75,
             color='#771100', radius=136, scale=1.0):
+
+        x, y = self.get_display_coordinate(x, y)
 
         if overlay_key in self._im_overlays.keys():
 
@@ -704,6 +741,19 @@ class Fixture_Image(object):
         if overlay in self._im_overlays:
             self._im_overlays[overlay].remove()
             del self._im_overlays[overlay]
+
+    def get_display_coordinate(self, x, y):
+
+        im = self._model['im']
+        if x is None or im is None:
+            return (x, y)
+
+        c = (im.shape[1] - x, y)
+        return c
+
+    def get_data_coordinate(self, x, y):
+
+        return self.get_display_coordinate(x, y)
 
     def clear_overlay_markers(self):
 

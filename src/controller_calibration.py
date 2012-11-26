@@ -223,6 +223,7 @@ class Fixture_Controller(controller_generic.Controller):
         sm['im-path'] = im_path
         sm['marker-positions'] = list()
         sm['im-scale'] = 1.0
+        sm['im-original-scale'] = 1.0
 
         stage = self.get_view().get_stage()
         stage.set_new_image()
@@ -284,6 +285,7 @@ class Fixture_Controller(controller_generic.Controller):
         self.f_settings['grayscale'] = sm['grayscale-targets']
         self.f_settings.reset_all_pinning_histories()
         self.f_settings['current'].save()
+        self.set_saved()
         self.get_top_controller().fixtures.update()
 
     def set_number_of_markers(self, widget):
@@ -529,7 +531,9 @@ class Fixture_Controller(controller_generic.Controller):
     def _sort_plates(self):
         """Sorts plate names according to UL -> UR -> LL -> LR scheme"""
 
-        plates = self._specific_model['plate-coords']
+        sm = self._specific_model
+        plates = sm['plate-coords']
+        im = sm['im']
 
         p_indices = [i for i, p in enumerate(plates) if p is not None]
         p_names = [pn + 1 for pn in range(len(p_indices))]
@@ -539,7 +543,8 @@ class Fixture_Controller(controller_generic.Controller):
 
             if pn == 1:
 
-                tmp_eval = np.array([p[0][0] + p[0][1] for i, p in enumerate(plates) if i in p_indices])
+                tmp_eval = np.array([p[0][0] + p[0][1] \
+                    for i, p in enumerate(plates) if i in p_indices])
             
             elif pn == 2:
 
@@ -553,7 +558,7 @@ class Fixture_Controller(controller_generic.Controller):
 
                 tmp_eval = np.array([p[0][1] for i, p in enumerate(plates) if i in p_indices])
 
-            p_new_indices.append(p_indices[tmp_eval.argmin()])
+            p_new_indices.append(p_indices[tmp_eval.argmax()])
             p_indices.remove(p_new_indices[-1])
 
 
@@ -561,6 +566,6 @@ class Fixture_Controller(controller_generic.Controller):
         for new_index, old_index in enumerate(p_new_indices):
             new_plates[new_index] = plates[old_index]
 
-        self._specific_model['plate-coords'] = new_plates
+        sm['plate-coords'] = new_plates
 
 

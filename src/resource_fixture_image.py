@@ -147,7 +147,7 @@ class Fixture_Image(object):
 
         cur_name = self.fixture_reference.get('name')
         if cur_name is None or cur_name == "":
-            self.fixture_reference.set('name', self.fixture_name)
+            self.fixture_reference.set('name', self._paths.get_fixture_name(self.fixture_name))
 
         if self._define_reference:
             self.fixture_current = self.fixture_reference

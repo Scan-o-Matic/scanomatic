@@ -394,12 +394,13 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         view, specific_model = data
         view.run_lock()
+        fixture_path = self.get_top_controller().paths.fixtures
 
         self.fixture = resource_fixture_image.Fixture_Image(
             specific_model["fixture-name"],
             image_path=specific_model['images-list-model'][
             specific_model['image']][0],
-            fixture_directory=self._model['fixtures-path']
+            fixture_directory=fixture_path
             )
 
         thread = threading.Thread(target=self.fixture.threaded)
