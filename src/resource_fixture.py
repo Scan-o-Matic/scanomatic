@@ -182,7 +182,7 @@ class Fixtures(object):
             fixture = Fixture_Settings(directory, f, paths)
             self._fixtures[fixture.name] = fixture
 
-    def names(self):
+    def get_names(self):
 
         if self._fixtures is None:
             return list()

@@ -128,6 +128,11 @@ class Controller(object):
 
         return self._model
 
+    def get_window(self):
+
+        tc = self.get_top_controller()
+        return tc.get_view()
+
     def set_specific_model(self, specific_model):
 
         self._specific_model = specific_model

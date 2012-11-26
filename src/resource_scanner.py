@@ -498,7 +498,7 @@ class Scanners(object):
 
         return c
 
-    def names(self, available=True):
+    def get_names(self, available=True):
 
         self.update()
 

@@ -146,13 +146,13 @@ class Fixture_Select_Stage(gtk.VBox):
         self.selection_signal = self.selection.connect('changed', 
             controller.check_fixture_select, False)
  
-        fixtures = controller.get_top_controller().fixtures.names()
+        fixtures = controller.get_top_controller().fixtures.get_names()
         for f in sorted(fixtures):
             self.fixtures.append([f])
 
         scrolled_window = gtk.ScrolledWindow()
         scrolled_window.add_with_viewport(self.treeview)
-        self.pack_start(scrolled_window, False, False, PADDING_LARGE)
+        self.pack_start(scrolled_window, True, True, PADDING_LARGE)
 
         #NEW BUTTON
         self.new_fixture = gtk.RadioButton(group=self.edit_fixture,

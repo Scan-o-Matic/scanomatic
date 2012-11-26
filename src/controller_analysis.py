@@ -111,7 +111,7 @@ class Analysis_Controller(controller_generic.Controller):
 
     def get_available_fixtures(self):
 
-        return self.get_top_controller().fixtures.names()
+        return self.get_top_controller().fixtures.get_names()
 
     def set_analysis_stage(self, widget, *args, **kwargs):
 

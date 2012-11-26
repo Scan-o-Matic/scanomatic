@@ -43,6 +43,7 @@ class Paths(object):
 
         #IMAGES
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
+        self.martin = os.sep.join((self.images, "martin3.png"))
 
         #FIXTURE_FILES
         self.fixture_conf_file_suffix = ".config"
@@ -53,6 +54,8 @@ class Paths(object):
             self.fixtures, self.fixture_conf_file_rel_pattern))
         self.fixture_image_file_pattern = os.sep.join((
             self.fixtures, self.fixture_image_file_rel_pattern))
+        self.fixture_tmp_scan_image = \
+            self.fixture_image_file_pattern.format(".tmp")
 
         #LOG
         self.log = self.root + os.sep + "log"

@@ -36,6 +36,7 @@ class No_View_Loaded(Exception): pass
 class Not_Yet_Implemented(Exception): pass
 class Impossible_Fixture(Exception): pass
 class UnDocumented_Error(Exception): pass
+class Scan_Failed(Exception): pass
 
 #
 # CLASSES
@@ -92,6 +93,8 @@ class Fixture_Controller(controller_generic.Controller):
         self._paths = resource_path.Paths()
         self._config = resource_app_config.Config(self._paths)
         self._scanners = resource_scanner.Scanners(self._paths, self._config)
+
+        self._window = self.get_window()
 
         #MODEL
         if specific_model is not None:
@@ -177,7 +180,7 @@ class Fixture_Controller(controller_generic.Controller):
 
             new_name = stage.new_name.get_text()
             if new_name == "" or new_name in \
-                    self.get_top_controller().fixtures.names():
+                    self.get_top_controller().fixtures.get_names():
 
                 warn = True
                 allow_next = False
@@ -212,24 +215,37 @@ class Fixture_Controller(controller_generic.Controller):
 
         if len(image_list) > 0:
 
-            self._specific_model['im-path'] = image_list[0]
-            self._specific_model['marker-positions'] = list()
-            self._specific_model['im-scale'] = 1.0
-            self._view.get_stage().set_new_image()
+            self._set_new_image(image_list[0])
 
-            self._view.get_stage().check_allow_marker_detection()
+    def _set_new_image(self, im_path):
+
+        sm = self._specific_model
+        sm['im-path'] = im_path
+        sm['marker-positions'] = list()
+        sm['im-scale'] = 1.0
+
+        stage = self.get_view().get_stage()
+        stage.set_new_image()
+        stage.check_allow_marker_detection()
 
     def set_image_scan(self, widget):
 
         m = self._model
 
         scanner_name = view_calibration.claim_a_scanner_dialog(
-            window, m['scan-fixture-text'], m['scan-fixture-im-path'],
+            self._window, m['scan-fixture-text'], self._paths.martin,
             self._scanners)
 
         if scanner_name is not None:
             scanner = self._scanners[scanner_name]
-            print scanner_name
+            scanner.claim()
+            if scanner.scan("TPU", self._paths.fixture_tmp_scan_image):
+                scanner.free()
+                self._set_new_image(self._paths.fixture_tmp_scan_image)
+                
+            else:
+                scanner.free()
+                raise Scan_Failed()
 
     def handle_keypress(self, widget, event):
 

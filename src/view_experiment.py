@@ -411,7 +411,7 @@ class Stage_Project_Setup(gtk.VBox):
 
     def set_fixtures(self):
 
-        fixtures = self._controller.get_top_controller().fixtures.names()
+        fixtures = self._controller.get_top_controller().fixtures.get_names()
         for f in self.fixture:
             if f not in fixtures:
                 self.fixture.remove(f)
@@ -422,7 +422,7 @@ class Stage_Project_Setup(gtk.VBox):
         
     def set_scanners(self):
 
-        scanners = self._controller.get_top_controller().scanners.names(available=True)
+        scanners = self._controller.get_top_controller().scanners.get_names(available=True)
         for s in self.scanner:
             if s not in scanners:
                 self.scanner.remove(s)

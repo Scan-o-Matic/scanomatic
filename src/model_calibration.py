@@ -81,7 +81,6 @@ to invoke a new calibration polynomial.</i></span>
 'mime_and_patterns': (('IMAGE/TIFF', '*.[tT][iI][fF]'),
 ('IMAGE/TIF','*.[tT][iI][fF][fF]'))},
 'scan-fixture-text': "Select scanner that you've placed the fixture in",
-'scan-fixture-im-path': '',
 
 #FIXTURE SEGMENTATION
 'fixture-segmentation-title': """<span size="large">Segmenting Out Interests
