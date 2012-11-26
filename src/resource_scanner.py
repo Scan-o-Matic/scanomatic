@@ -68,7 +68,7 @@ def get_uuid():
 
 class Scanner(object):
 
-    _USE_CALLBACK = False
+    USE_CALLBACK = False
 
     def __init__(self, parent, paths, config, name, logger):
 
@@ -214,13 +214,13 @@ class Scanner(object):
 
     def _get_awake_scanners(self):
 
-        p = subprocess.Popen("sane-find-scanner -v -v |" +
+        p = Popen("sane-find-scanner -v -v |" +
             " sed -n -E 's/^found USB.*(libusb.*$)/\\1/p'",
-            shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+            shell=True, stdout=PIPE, stdin=PIPE)
 
         out, err = p.communicate()
 
-        return map(str, out.split('\n'))
+        return [s for s in map(str, out.split('\n')) if len(s) > 0]
 
     def _get_scanner_address_lock(self):
 
@@ -235,6 +235,8 @@ class Scanner(object):
         for line in lines:
             line_list = line.strip().split("\t")
             lock_states[line_list[0]] = line_list[1:]
+
+        return lock_states
     
     def _write_scanner_address_claim(self):
 
@@ -267,13 +269,14 @@ class Scanner(object):
 
             scanners = self._get_scanner_address_lock()
             for addr, s in scanners.items():
-                if s[0] != self._uuid:
-                    s_list.append([addr]+s)
-                else:
-                    my_addr.append(addr)
+                if s is not None and len(s) > 0:
+                    if s[0] != self._uuid:
+                        s_list.append([addr]+s)
+                    else:
+                        my_addr.append(addr)
 
             awake_scanners = self._get_awake_scanners()
-            awake_scanners = [s[0] for s in awake_scanner]
+            awake_scanners = [s[0] for s in awake_scanners]
 
             my_addr = [a for a in my_addr if a not in awake_scanners]
             
@@ -356,10 +359,10 @@ class Scanner(object):
             #Scan
             if is_on:
                 scanner = resource_sane.Sane_Base(owner=self,
-                    model=_model,
+                    model=self._model,
                     scan_mode=mode,
                     output_function=self._logger,
-                    scan_settings=self._parent._current_sane_setting)
+                    scan_settings=self._parent._current_sane_settings)
 
                 scanner.AcquireByFile(filename=filename)
 
@@ -464,7 +467,7 @@ class Scanners(object):
 
             for c_i, c_v in enumerate(c_path[:-1]):
                 if c_v == sane_path[-1]:
-                    c_path[c_i] = sane_value
+                    c_path[c_i + 1] = sane_value
 
 
         self._current_sane_settings = current

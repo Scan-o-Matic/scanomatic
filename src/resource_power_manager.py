@@ -39,7 +39,8 @@ class Invalid_Init(Exception): pass
 # GLOBALS
 #
 
-URL_TIMEOUT = 2
+URL_TIMEOUT = 10
+MAX_CONNECTION_TRIES = 10
 
 #
 # CLASSES
@@ -106,14 +107,16 @@ class LAN_PM(object):
     host may be None if MAC is supplied. 
     If no password is supplied, default password is used."""
 
-    def __init__(self, socket, host=None, password=None, verify_name=False,
+    def __init__(self, socket, host=None, password="1", verify_name=False,
             pm_name="Server 1", MAC=None, logger=None):
 
         self.name ="LAN connected PM"
         self._host = host
         self._MAC = MAC
         self._socket = socket
-        self._password = password is not None and password or "1"
+        if password is None:
+            password = "1"
+        self._password = password
 
         if logger is None:
             self._logger = resource_logger.Log_Garbage_Collector()
@@ -199,6 +202,25 @@ class LAN_PM(object):
 
         return self._host
 
+    def _run_url(self, *args, **kwargs):
+
+        success = False
+        connects = 0
+        p = None
+
+        while not success and connects < MAX_CONNECTION_TRIES:
+
+            try:
+                p = urllib2.urlopen(*args, **kwarsg)
+                success = True
+            except:
+                connects += 1
+
+        if connects == MAX_CONNECTION_TRIES:
+            self._logger.error("Failed to reach PM ({0} tries)".format(connects))
+
+        return p
+
     def _login(self):
 
         if self._host is None or self._host == "":
@@ -209,11 +231,7 @@ class LAN_PM(object):
         else:
 
             self._logger.info("LAN PM, Logging in")
-            try:
-                return urllib2.urlopen(self._login_out_url, self._pwd_params, timeout=URL_TIMEOUT)
-            except:
-                self._logger.error("Connection error to PM")
-                return None
+            return self._run_url(self._login_out_url, self._pwd_params, timeout=URL_TIMEOUT)
 
     def _logout(self):
 
@@ -225,11 +243,7 @@ class LAN_PM(object):
         else:
 
             self._logger.info("LAN PM, Logging out")
-            try:
-                return urllib2.urlopen(self._login_out_url, timeout=URL_TIMEOUT)
-            except:
-                self._logger.error("Connection error to PM")
-                return None
+            return self._run_url(self._login_out_url, timeout=URL_TIMEOUT)
 
     def test_ip(self):
 
@@ -269,10 +283,7 @@ class LAN_PM(object):
         if not self._verify_name or self._pm_server_str in u.read():
 
             self._logger.info("LAN PM, Turning on")
-            try:
-                urllib2.urlopen(self._ctrl_panel_url, self._on_params, timeout=URL_TIMEOUT)
-            except:
-                self._logger.error("Connection error to PM")
+            if self._run_url(self._ctrl_panel_url, self._on_params, timeout=URL_TIMEOUT) is None:
                 return False
 
             self._logout()
@@ -294,10 +305,10 @@ class LAN_PM(object):
         if not self._verify_name or self._pm_server_str in u.read():
 
             self._logger.info("LAN PM, Turning off")
-            try:
-                urllib2.urlopen(self._ctrl_panel_url, self._off_params, timeout=URL_TIMEOUT)
-            except:
-                self._logger.error("Connection error to PM")
+
+            if self._run_url(self._ctrl_panel_url, self._off_params,
+                        timeout=URL_TIMEOUT) is None:
+
                 return False
 
             self._logout()

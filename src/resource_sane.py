@@ -112,7 +112,8 @@ class Sane_Base():
             if scanner != None:
                 scan_query = ['-d', scanner] + scan_query
   
-            scan_query.insert(0, self._program_name)  
+            scan_query.insert(0, self._program_name)
+            self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
 
             if self.owner is not None and self.owner.USE_CALLBACK:
                 args = ("SANE-CALLBACK", im, Popen(scan_query, stdout=im, shell=False),
