@@ -81,6 +81,8 @@ class Scanner(object):
         self._config = config
         self._name = name
 
+        self._usb_address = None
+
         self._pm = self._config.get_pm(name, logger=logger)
 
         self._lock_path = self._paths.lock_scanner_pattern.format(
@@ -259,13 +261,13 @@ class Scanner(object):
     def _get_scanner_address_lock(self):
 
         lock_states = dict()
+	lines = list()
         try:
             fs = open(self._lock_address_path, 'r')
             lines = fs.readlines()
             fs.close()
         except:
-            raise Unable_To_Open(self._lock_address_path)
-            return None
+            pass
 
         for line in lines:
             line_list = line.strip().split("\t")
@@ -286,6 +288,8 @@ class Scanner(object):
                     "Scanner {0} located at address {1}".format(self._name,
                     free_scanners[0]))
 
+                self._usb_address = free_scanners[0]
+
                 try:
                     fs = open(self._lock_address_path, 'a')
                     fs.write("{0}\t{1}\n".format(free_scanners[0], self._name))
@@ -295,9 +299,11 @@ class Scanner(object):
                 return True
 
             elif len(free_scanners) > 1:
+                self._usb_address = None
                 raise More_Than_One_Unknown_Scanner(free_scanners)
 
             else:
+                self._usb_address = None
                 raise No_Scanner()
 
             time.sleep(2)
@@ -323,6 +329,9 @@ class Scanner(object):
             my_addr = [a for a in my_addr if a not in awake_scanners]
             
             if len(my_addr) == 0:
+
+                self._usb_address = None
+
                 try:
                     fs = open(self._lock_address_path, 'w')
                     fs.writelines(["{0}\t{1}\n".format(*l) for l in s_list])
@@ -375,6 +384,10 @@ class Scanner(object):
 
         return self._config.get_scanner_socket(self._name)
 
+    def get_address(self):
+
+        return self._usb_address
+
     """
             SETs
     """
@@ -412,7 +425,8 @@ class Scanner(object):
             #Power up and catch new scanner
             is_on = self._pm.on()
             if is_on:
-                self._get_scanner_address_lock()
+                self._logger.info("Getting scanner address")
+                self._write_scanner_address_claim()
             else:
                 self._logger.error("SCANNER, Could not turn on!")
 
@@ -421,13 +435,15 @@ class Scanner(object):
 
             #Scan
             if is_on:
+
+                self._logger.info("Configurating for scan")
                 scanner = resource_sane.Sane_Base(owner=self,
                     model=self._model,
                     scan_mode=mode,
                     output_function=self._logger,
                     scan_settings=self._parent._current_sane_settings)
 
-                scanner.AcquireByFile(filename=filename)
+                scanner.AcquireByFile(filename=filename, scanner=self._usb_address)
 
                 #Power down and remove scanner address lock
                 self._pm.off()
