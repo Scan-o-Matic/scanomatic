@@ -422,6 +422,8 @@ class Project_Controller(controller_generic.Controller):
             "in directory {0} ".format(sm['experiments-root']) + \
             "on scanner {0}, fixture {1}".format(sm['scanner'], sm['fixture']))
 
+        self._logger.debug("Command:\n" + " ".join(e_query_list))
+
         scanner.set_uuid()
 
         self.get_top_controller().add_subprocess(proc, proc_type, 
