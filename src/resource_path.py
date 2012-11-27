@@ -76,6 +76,7 @@ class Paths(object):
         self.lock_root = os.sep.join((os.path.expanduser("~"), ".scan_o_matic"))
         self.lock_power_up_new_scanner = self.lock_root + ".new_scanner.lock"
         self.lock_scanner_pattern = self.lock_root + ".scanner.{0}.lock"
+        self.lock_scanner_addresses = self.lock_root + ".addresses.lock"
 
     def _is_fixture_file_name(self, fixture_name):
 

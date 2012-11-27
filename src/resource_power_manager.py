@@ -211,7 +211,7 @@ class LAN_PM(object):
         while not success and connects < MAX_CONNECTION_TRIES:
 
             try:
-                p = urllib2.urlopen(*args, **kwarsg)
+                p = urllib2.urlopen(*args, **kwargs)
                 success = True
             except:
                 connects += 1

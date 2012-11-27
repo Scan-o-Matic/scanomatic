@@ -70,9 +70,10 @@ def get_pinnings_str(pinning_list):
 
 class Experiment_Controller(controller_generic.Controller):
 
-    def __init__(self, window, main_controller):
+    def __init__(self, window, main_controller, logger=None):
 
-        super(Experiment_Controller, self).__init__(window, main_controller)
+        super(Experiment_Controller, self).__init__(window, main_controller,
+            logger=logger)
         self._specific_controller = None
 
     def ask_destroy(self,*args, **kwargs):
@@ -129,10 +130,10 @@ class Project_Controller(controller_generic.Controller):
         'scans': (2, 1000)}
 
     def __init__(self, window, parent, view=None, model=None,
-        specific_model=None):
+        specific_model=None, logger=None):
 
         super(Project_Controller, self).__init__(window, parent,
-            view=view, model=model)
+            view=view, model=model, logger=logger)
 
         #MODEL
         if specific_model is not None:
@@ -415,6 +416,11 @@ class Project_Controller(controller_generic.Controller):
         proc = Popen(e_query_list, stdout=stdout, stderr=stderr, stdin=PIPE, shell=False)
         #proc = Popen(e_query_list, stdout=None, stderr=None, stdin=None, shell=False)
         proc_type = 'scanner'
+
+        self._logger.info(
+            "Started experiment {0} ".format(sm['experiment-prefix']) + \
+            "in directory {0} ".format(sm['experiments-root']) + \
+            "on scanner {0}, fixture {1}".format(sm['scanner'], sm['fixture']))
 
         scanner.set_uuid()
 

@@ -158,6 +158,7 @@ class Experiment(object):
 
         self._pinning = run_args.pinning
         self._scanner = self.scanners[run_args.scanner]
+        self._scanner_name = run_args.scanner
         self._fixture_name = run_args.fixture
         self._root = run_args.root
         self._prefix = run_args.prefix
@@ -314,6 +315,7 @@ class Experiment(object):
                     'Interval': self._interval,
                     'UUID': self._uuid,
                     'Fixture': self._fixture_name,
+                    'Scanner': self._scanner_name,
                     'Pinning Matrices': self._pinning,
                     'Manual Gridding': None,
                     'Project ID': self._code,

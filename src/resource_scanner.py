@@ -32,11 +32,14 @@ import src.resource_logger as resource_logger
 
 class Incompatible_Tuples(Exception): pass
 class Failed_To_Claim_Scanner(Exception): pass
+class Failed_To_Free_Scanner(Exception): pass
 class Forbidden_Scanner_Owned_By_Other_Process(Exception): pass
 class Unable_To_Open(Exception): pass
 class Corrupted_Lock_File(Exception): pass
 class More_Than_One_Unknown_Scanner(Exception): pass
 class Unknown_Scanner(Exception): pass
+class No_Scanner(Exception): pass
+class Risk_For_Orphaned_Scanner(Exception): pass
 
 
 #
@@ -82,6 +85,9 @@ class Scanner(object):
 
         self._lock_path = self._paths.lock_scanner_pattern.format(
             self._config.get_scanner_socket(self._name))
+
+        self._lock_address_path = self._paths.lock_scanner_addresses
+
         self._queue_power_up_tries = 0
 
         self._uuid = get_uuid()
@@ -118,13 +124,16 @@ class Scanner(object):
                 self._logger.info(
                     "Won't free scanner {0} since owned by other".format(self._name))
 
-            return
+            return False
 
         try:
             fs = open(self._lock_path, 'w')
             fs.close()
+            self._logger.info("Scanner {0} was freed in lock-file".format(self._name))
         except:
-            Failed_To_Free_Scanner(self._name)
+            raise Failed_To_Free_Scanner(self._name)
+
+        return True
 
     def _lock_in_file(self):
 
@@ -141,9 +150,13 @@ class Scanner(object):
                 except:
                     raise Failed_To_Claim_Scanner(self._name)
 
+            self._logger.info("Scanner {0} locked in file".format(self._name))
             return True
 
         else:
+            self._logger.warning(
+                "Scanner {0} failed to lock in file since owned by other".\
+                format(self._name))
 
             return False
 
@@ -154,11 +167,16 @@ class Scanner(object):
         while True:
 
             try:
+
                 fs = open(self._paths.lock_power_up_new_scanner, 'a')
                 fs.write("{0}\n".format(self._uuid))
                 fs.close()
+                self._logger.info("Queued scanner {0} for power up".format(
+                    self._name))
                 break
+
             except:
+
                 self._queue_power_up_tries += 1
                 if self._queue_power_up_tries >= 40:
                     raise Unable_To_Write_To_Power_Up_Queue(
@@ -174,6 +192,8 @@ class Scanner(object):
 
         cur_uuid = None 
 
+        self._logger.info("Scanner {0} waiting for power up turn".format(self._name))
+
         while cur_uuid != self._uuid:
 
             try:
@@ -182,13 +202,21 @@ class Scanner(object):
                 fs.close()
             except:
                 raise Unable_To_Open(self._paths.lock_power_up_new_scanner)
+                return False
 
             if cur_uuid == "":
                 raise Corrupted_Lock_File(self._paths.lock_power_up_new_scanner)
+                return False
 
             time.sleep(1)
 
+        self._logger.info("Scanner {0} has power up rights".format(self._name))
+        return True
+
     def _remove_from_power_up_queue(self):
+
+        self._logger.info(
+            "Scanner {0} will be removed from power up queue".format(self._name))
 
         try:
             fs = open(self._paths.lock_power_up_new_scanner, 'r')
@@ -196,6 +224,7 @@ class Scanner(object):
             fs.close()
         except:
             raise Unable_To_Open(self._paths.lock_power_up_new_scanner)
+            return False
 
         if queue[0].strip() != self._uuid:
             return False
@@ -203,14 +232,19 @@ class Scanner(object):
         while True:
 
             try:
+
                 fs = open(self._paths.lock_power_up_new_scanner, 'w')
                 fs.writelines(queue[1:])
                 fs.close()
+                self._logger.info(
+                    "Scanner {0} removed from queue".format(self._name))
                 return True
 
             except:
 
                 time.sleep(0.005)
+
+        return False
 
     def _get_awake_scanners(self):
 
@@ -226,11 +260,12 @@ class Scanner(object):
 
         lock_states = dict()
         try:
-            fs = open(self._lock_path, 'r')
+            fs = open(self._lock_address_path, 'r')
             lines = fs.readlines()
             fs.close()
         except:
-            raise Unable_To_Open(self._lock_path)
+            raise Unable_To_Open(self._lock_address_path)
+            return None
 
         for line in lines:
             line_list = line.strip().split("\t")
@@ -247,16 +282,23 @@ class Scanner(object):
 
             if len(free_scanners) == 1:
 
+                self._logger.info(
+                    "Scanner {0} located at address {1}".format(self._name,
+                    free_scanners[0]))
+
                 try:
-                    fs = open(self._lock_path, 'a')
+                    fs = open(self._lock_address_path, 'a')
                     fs.write("{0}\t{1}\n".format(free_scanners[0], self._name))
                     fs.close()
                 except:
-                    raise Unable_To_Open(self._lock_path)
+                    raise Unable_To_Open(self._lock_address_path)
                 return True
 
-            elif len(free_scanners):
+            elif len(free_scanners) > 1:
                 raise More_Than_One_Unknown_Scanner(free_scanners)
+
+            else:
+                raise No_Scanner()
 
             time.sleep(2)
 
@@ -282,12 +324,29 @@ class Scanner(object):
             
             if len(my_addr) == 0:
                 try:
-                    fs = open(self._lock_path, 'w')
+                    fs = open(self._lock_address_path, 'w')
                     fs.writelines(["{0}\t{1}\n".format(*l) for l in s_list])
                     fs.close()
+                    self._info("{0} no longer has address lock".format(
+                        self._name))
+
                     break
+
                 except:
-                    pass
+
+                    self.critical(
+                        "{0} is still on when address lock removal is requested".\
+                        format(self._name))
+
+                    raise Risk_For_Orphaned_Scanner(self._name)
+
+            else:
+
+                self.critical(
+                    "{0} is still on when address lock removal is requested".\
+                    format(self._name))
+
+                raise Risk_For_Orphaned_Scanner(self._name)
 
             time.sleep(0.005)
 
@@ -327,9 +386,13 @@ class Scanner(object):
         else:
             self._uuid = s_uuid
 
+        self._logger.info("{0} has new uuid {1}".format(self._name,
+            self._uuid))
+
     """
             ACTIONS
     """
+
     def claim(self):
 
         return self._lock_in_file()

@@ -49,9 +49,9 @@ class UnknownContent(Exception): pass
 
 class Controller(controller_generic.Controller):
 
-    def __init__(self, model, view, program_path):
+    def __init__(self, model, view, program_path, logger=None):
 
-        super(Controller, self).__init__(view, None)
+        super(Controller, self).__init__(view, None, logger=logger)
         self._model = model
         self._view = view
 
@@ -85,11 +85,14 @@ class Controller(controller_generic.Controller):
             raise err
 
         if content_name == 'analysis':
-            c = controller_analysis.Analysis_Controller(self._view, self)
+            c = controller_analysis.Analysis_Controller(self._view, self,
+                    logger=self._logger)
         elif content_name == 'experiment':
-            c = controller_experiment.Experiment_Controller(self._view, self)
+            c = controller_experiment.Experiment_Controller(self._view, self,
+                    logger=self._logger)
         elif content_name == 'calibration':
-            c = controller_calibration.Calibration_Controller(self._view, self)
+            c = controller_calibration.Calibration_Controller(self._view,
+                    self, logger=self._logger)
         else:
             err = UnknownContent("{0}".format(content_name))
             raise err
