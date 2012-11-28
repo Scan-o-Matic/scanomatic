@@ -42,13 +42,21 @@ def analyse(file_name, im_acq_time, experiment_directory,
 
     im_data = {'Time':im_acq_time, 'File': file_name}
 
+    logger.info("Fixture init for {0}".format(file_name))
+
     fixture = resource_fixture_image.Fixture_Image(
             paths.experiment_local_fixturename,
             fixture_directory=experiment_directory)
 
+    logger.info("Fixture set for {0}".format(file_name))
+
     fixture.set_image(image_path=file_name)
 
+    logger.info("Image loaded for fixture {0}".format(file_name))
+
     fixture.run_marker_analysis()
+
+    logger.info("Marker analysis run".format(file_name))
 
     im_data['mark_X'], im_data['mark_Y'] = fixture['markers']            
 
@@ -57,7 +65,12 @@ def analyse(file_name, im_acq_time, experiment_directory,
         return None
 
     fixture.set_current_areas()
+
+    logger.info("Setting current image areas for {0}".format(file_name))
+
     fixture.analyse_grayscale()
+
+    logger.info("Grayscale analysed for {0}".format(file_name))
 
     gs_indices, gs_values = fixture['grayscale']
     
@@ -71,6 +84,8 @@ def analyse(file_name, im_acq_time, experiment_directory,
     plate_str = "plate_{0}_area"
     for i, a in enumerate(sections_areas):
         im_data[plate_str.format(i)] = list(a)
+
+    logger.info("First pass analysis done for {0}".format(file_name))
 
     return im_data
 
