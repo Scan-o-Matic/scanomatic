@@ -98,14 +98,14 @@ class Sane_Base():
             self.next_file_name = filename
 
         if self.next_file_name:
-            self._logger("Scanning", str(self.next_file_name), level="LA")
+            self._logger.info("Scanning {0}".format(self.next_file_name))
             #os.system(self._scan_settings + self.next_file_name) 
             
             try:
                 im = open(self.next_file_name,'w')
             except:
-                self._logger("ERROR", "Could not write to file: " + str(self.next_file_name),
-                    level="DL", debug_level="error")
+                self._logger.error("Could not write to file: {0}".format(
+                    self.next_file_name))
                 return False
 
             scan_query = list(self._scan_settings)

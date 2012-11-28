@@ -16,7 +16,7 @@ __status__ = "Development"
 
 class Log_Garbage_Collector(object):
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
 
         pass
 
