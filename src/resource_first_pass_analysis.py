@@ -39,6 +39,8 @@ def analyse(file_name, im_acq_time, experiment_directory,
     analysis = dict()
     if logger is None:
         logger = resource_logger.Log_Garbage_Collector()
+    else:
+        logger = resource_logger.Logging_Log(logger)
 
     im_data = {'Time':im_acq_time, 'File': file_name}
 
@@ -46,7 +48,8 @@ def analyse(file_name, im_acq_time, experiment_directory,
 
     fixture = resource_fixture_image.Fixture_Image(
             paths.experiment_local_fixturename,
-            fixture_directory=experiment_directory)
+            fixture_directory=experiment_directory,
+            logger=logger)
 
     logger.info("Fixture set for {0}".format(file_name))
 
@@ -54,7 +57,7 @@ def analyse(file_name, im_acq_time, experiment_directory,
 
     logger.info("Image loaded for fixture {0}".format(file_name))
 
-    fixture.run_marker_analysis()
+    fixture.run_marker_analysis(output_function=logger)
 
     logger.info("Marker analysis run".format(file_name))
 

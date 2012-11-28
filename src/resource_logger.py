@@ -14,6 +14,37 @@ __status__ = "Development"
 # CLASSES
 #
 
+class Logging_Log(object):
+
+    def __init__(self, logging_logger):
+
+        self._logger = logger
+
+    def __call__(self, *args, **kwargs):
+
+        self._logger.info(*args, **kwargs)
+
+    def warning(self, *args, **kwargs):
+
+        self._logger.warning(*args, **kwargs)
+
+    def info(self, *args, **kwargs):
+
+        self._logger.info(*args, **kwargs)
+
+    def debug(self, *args, **kwargs):
+
+        self._logger.debug(*args, **kwargs)
+
+    def error(self, *args, **kwargs):
+
+        self._logger.error(*args, **kwargs)
+
+    def critical(self, *args, **kwargs):
+
+        self._logger.critical(*args, **kwargs)
+
+    
 class Log_Garbage_Collector(object):
 
     def __call__(self, *args, **kwargs):

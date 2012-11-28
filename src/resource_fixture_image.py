@@ -36,7 +36,12 @@ class Fixture_Image(object):
     def __init__(self, fixture, image_path=None,
             image=None, markings=None, define_reference=False,
             fixture_directory=None, markings_path=None,
-            im_scale=None):
+            im_scale=None, logger=None):
+
+        if logger is None:
+            logger = resource_logger.Log_Garbage_Collector()
+
+        self._logger = logger
 
         self._paths = resource_path.Paths()
         self._define_reference = define_reference
