@@ -338,7 +338,7 @@ class Scanner(object):
                     fs = open(self._lock_address_path, 'w')
                     fs.writelines(["{0}\t{1}\n".format(*l) for l in s_list])
                     fs.close()
-                    self._info("{0} no longer has address lock".format(
+                    self._logger.info("{0} no longer has address lock".format(
                         self._name))
 
                     break
