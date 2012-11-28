@@ -49,11 +49,11 @@ def analyse(file_name, im_acq_time, experiment_directory,
     fixture = resource_fixture_image.Fixture_Image(
             paths.experiment_local_fixturename,
             fixture_directory=experiment_directory,
-            logger=logger)
+            logger=logger, image_path=file_name)
 
-    logger.info("Fixture set for {0}".format(file_name))
+    #logger.info("Fixture set for {0}".format(file_name))
 
-    fixture.set_image(image_path=file_name)
+    #fixture.set_image(image_path=file_name)
 
     logger.info("Image loaded for fixture {0}".format(file_name))
 
