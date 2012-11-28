@@ -410,6 +410,7 @@ class Project_Controller(controller_generic.Controller):
         e_query_list += list(chain.from_iterable(experiment_query.items()))
         e_query_list = map(str, e_query_list)
 
+        #stdin=open(tc.paths.log_scanner_in.format(scanner.get_sockets()), 'w')
         stdout=open(tc.paths.log_scanner_out.format(scanner.get_socket()), 'w')
         stderr=open(tc.paths.log_scanner_err.format(scanner.get_socket()), 'w')
 

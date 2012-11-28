@@ -44,6 +44,7 @@ class Paths(object):
         #IMAGES
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
         self.martin = os.sep.join((self.images, "martin3.png"))
+        self.logo = os.sep.join((self.images, "scan-o-matic.png"))
 
         #FIXTURE_FILES
         self.fixture_conf_file_suffix = ".config"
@@ -61,6 +62,7 @@ class Paths(object):
         self.log = self.root + os.sep + "log"
         self.log_scanner_out = os.sep.join((self.log, "scanner_{0}.stdout"))
         self.log_scanner_err = os.sep.join((self.log, "scanner_{0}.stderr"))
+        self.log_scanner_in = os.sep.join((self.log, "scanner_{0}.stdin"))
 
         #EXPERIMENT
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"

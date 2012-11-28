@@ -64,6 +64,7 @@ class Controller(controller_generic.Controller):
         self.add_subprocess = self.subprocs.add_subprocess
         self.add_subcontroller(self.subprocs)
         self._view.populate_stats_area(self.subprocs.get_view())
+        self._view.show_notebook_or_logo()
 
         if view is not None:
             view.set_controller(self)

@@ -54,6 +54,9 @@ class Main_Window(gtk.Window):
         hbox.pack_start(self._panel, False, False, PADDING_SMALL)
         self._content_notebook = gtk.Notebook()
         hbox.pack_end(self._content_notebook, True, True, PADDING_SMALL)
+        self.logo = gtk.Image()
+        self.logo.set_from_file('src/images/scan-o-matic.png')
+        hbox.pack_end(self.logo, True, True, PADDING_SMALL)
 
         if model is not None:
             self.populate_panel()
@@ -135,6 +138,18 @@ class Main_Window(gtk.Window):
 
         self._stats_area = stats_widget
 
+    def show_notebook_or_logo(self):
+
+        if self._content_notebook.get_n_pages() > 0:
+
+            self._content_notebook.show_all()
+            self.logo.hide()
+
+        else:
+
+            self._content_notebook.hide()
+            self.logo.show()
+
     def add_notebook_page(self, page, title_text, specific_controller):
 
         button = gtk.Button()
@@ -153,8 +168,9 @@ class Main_Window(gtk.Window):
         title.show_all()
 
         self._content_notebook.append_page(page, title)
-        self._content_notebook.show_all()
 
+        self.show_notebook_or_logo()
+        
     def remove_notebook_page(self, page):
 
         for i, c in enumerate(self._content_notebook.children()):
@@ -163,3 +179,5 @@ class Main_Window(gtk.Window):
 
                 self._content_notebook.remove_page(i)
                 break
+
+        self.show_notebook_or_logo()
