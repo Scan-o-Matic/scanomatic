@@ -18,7 +18,7 @@ class Logging_Log(object):
 
     def __init__(self, logging_logger):
 
-        self._logger = logger
+        self._logger = logging_logger
 
     def __call__(self, *args, **kwargs):
 
