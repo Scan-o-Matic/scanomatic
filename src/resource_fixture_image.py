@@ -29,6 +29,7 @@ from matplotlib.pyplot import imread
 import resource_image as resource_image
 import resource_path as resource_path
 import resource_config as conf
+import resource_logger as resource_logger
 
 
 class Fixture_Image(object):
