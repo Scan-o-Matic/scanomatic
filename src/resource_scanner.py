@@ -263,7 +263,7 @@ class Scanner(object):
     def _get_scanner_address_lock(self):
 
         lock_states = dict()
-	lines = list()
+        lines = list()
         try:
             fs = open(self._lock_address_path, 'r')
             lines = fs.readlines()
@@ -327,7 +327,7 @@ class Scanner(object):
 
             awake_scanners = self._get_awake_scanners()
             awake_scanners = [s[0] for s in awake_scanners]
-
+            s_list = [s for s in s_list if s in awake_scanners]
             my_addr = [a for a in my_addr if a not in awake_scanners]
             
             if len(my_addr) == 0:
