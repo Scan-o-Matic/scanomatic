@@ -250,8 +250,9 @@ class Scanner(object):
 
     def _get_awake_scanners(self):
 
-        p = Popen("sane-find-scanner -v -v |" +
-            " sed -n -E 's/^found USB.*(libusb.*$)/\\1/p'",
+        p = Popen("sane-find-scanner -v -v | " +
+            r"""sed -n -E "s/^.*found USB[^']*'(.*libusb[^']*).*$/\1/p""""
+            #" sed -n -E 's/^found USB.*(libusb.*$)/\\1/p'",
             shell=True, stdout=PIPE, stdin=PIPE)
 
         out, err = p.communicate()
