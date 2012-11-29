@@ -22,7 +22,7 @@ class Logging_Log(object):
 
     def __call__(self, *args, **kwargs):
 
-        self._logger.info(*args, **kwargs)
+        self._logger.info("\t".join((str(args), str(kwargs))))
 
     def warning(self, *args, **kwargs):
 
