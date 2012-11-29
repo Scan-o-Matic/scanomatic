@@ -341,20 +341,25 @@ class Image_Analysis():
 
         max_coord = np.where(conv_img == conv_img.max())
 
+        print "Max Coord found"
+
         if len(max_coord[0]) == 0:
 
+            print "Best is nothing"
             return None, conv_img
 
         max_coord = np.array((max_coord[0][0], max_coord[1][0]))
+        print "First hit"
 
         #Refining
         if refine_hit:
-
+            print "Refine"
             max_coord = self.get_hit_refined(max_coord, conv_img)
 
         #Zeroing out hit
         half_stencil = map(lambda x: x / 2.0, stencil_size)
 
+        
         d1_min = (max_coord[0] - half_stencil[0] > 0 and \
                 max_coord[0] - half_stencil[0] or 0)
 

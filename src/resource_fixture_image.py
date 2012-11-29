@@ -392,8 +392,9 @@ class Fixture_Image(object):
         version = self['fixture']['version']
         if version is None or version < 0.998:
 
-            for a in args:
-                a *= 4
+            for i, a in args:
+                if a is not None:
+                    args[i] *= 4
 
     def _get_markings_rotations(self):
 
