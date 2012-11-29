@@ -162,13 +162,21 @@ class Fixture_Image(object):
 
     def set_number_of_markings(self, markings):
 
+        self.markings = None
         if markings is not None:
 
-            self.markings = markings
+            try:
+                self.markings = int(markings)
+            except:
+                pass
 
-        else:
+        if self.markings is None:
 
-            self.markings = self.fixture_reference.get("marker_count")
+            try:
+
+                self.markings = int(self.fixture_reference.get("marker_count"))
+            except:
+                self.markings = 3
 
         if self._define_reference:
 
@@ -274,10 +282,16 @@ class Fixture_Image(object):
 
             Z = self[source]['marking_{0}'.format(m)]
 
+            if type(Z) == types.StringType:
+                Z = eval(Z)
+
+            print type(Z), Z
+
             if Z is not None:
 
                 X.append(Z[0])
                 Y.append(Z[1])
+
 
         if len(X) == 0:
 
@@ -387,14 +401,15 @@ class Fixture_Image(object):
 
             conf_file.set("marking_center_of_mass", (Xs.mean(), Ys.mean()))
 
-    def _version_check_positoins(self, *args):
+    def _version_check_positions_arr(self, *args):
         """Note that it only works for NP-ARRAYS and NOT for lists"""
-        version = self['fixture']['version']
+        version = eval(self['fixture']['version'])
         if version is None or version < 0.998:
 
-            for i, a in args:
+            args = list(args)
+            for a in args:
                 if a is not None:
-                    args[i] *= 4
+                    a *= 4
 
     def _get_markings_rotations(self):
 
@@ -417,12 +432,12 @@ class Fixture_Image(object):
         L = np.sqrt(dX ** 2 + dY ** 2)
 
         #FIXTURE SETTINGS
-        version = self['fixture']['version']
+        version = eval(self['fixture']['version'])
         refX, refY = self._get_markings(source="fixture")
         refX = np.array(refX)
         refY = np.array(refY)
-        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        self._version_check_positoins(ref_Mcom, refX, refY)
+        ref_Mcom = np.array(eval(self['fixture']["marking_center_of_mass"]))
+        self._version_check_positions_arr(ref_Mcom, refX, refY)
         ref_dX = refX - ref_Mcom[0]
         ref_dY = refY - ref_Mcom[1]
 
@@ -538,22 +553,22 @@ class Fixture_Image(object):
 
         alpha, Mcom = self._get_markings_rotations()
         X, Y = self._get_markings(source='current') 
-        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
+        ref_Mcom = np.array(eval(self['fixture']["marking_center_of_mass"]))
 
         self['current'].flush()
         self._set_markings_in_conf(self['current'], X, Y)
 
-        ref_gs = self['fixture']["grayscale_area"]
-        version = self['fixture']['version']
+        ref_gs = eval(self['fixture']["grayscale_area"])
+        version = eval(self['fixture']['version'])
 
-        self._version_check_positoins(ref_Mcom)
+        self._version_check_positions_arr(ref_Mcom)
 
         if version is None or version < 0.998:
             scale_factor = 4
         else:
             scale_factor = 1
  
-        if ref_gs is not None and bool(self['fixture']["grayscale"]) == True:
+        if ref_gs is not None and bool(eval(self['fixture']["grayscale"])) == True:
 
             dGs1 = scale_factor * np.array(ref_gs[0]) - ref_Mcom
             dGs2 = scale_factor * np.array(ref_gs[1]) - ref_Mcom
@@ -568,6 +583,8 @@ class Fixture_Image(object):
         f_plates = self['fixture'].get_all("plate_%n_area")
 
         for i, p in enumerate(f_plates):
+
+		p = eval(p)
 
                 dM1 = scale_factor * np.array(p[0]) - ref_Mcom
                 dM2 = scale_factor * np.array(p[1]) - ref_Mcom
@@ -608,7 +625,7 @@ class Fixture_Image(object):
 
         ph = "plate_{0}_pinning_{1}"
 
-        return self['fixture'][ph.format(plate, pin_format)]
+        return eval(self['fixture'][ph.format(plate, pin_format)])
 
     def set_append_pinning_position(self, plate, pin_format, position):
 

@@ -298,7 +298,7 @@ class Experiment(object):
                 im_dict['mark_Y'],
                 im_dict['grayscale_indices'],
                 im_dict['grayscale_values'],
-                im_dict['plate_areas'])
+                img_dict=im_dict)
 
             self._logger.debug("What really is written = {0}".format(
                 im_dict))

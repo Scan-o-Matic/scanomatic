@@ -57,7 +57,7 @@ def get_meta_data_dict(**kwargs):
     return md
 
 def get_image_dict(path, time, mark_X, mark_Y, grayscale_indices,
-    grayscale_values, plate_areas):
+    grayscale_values, plate_areas=None, img_dict=None):
 
     plate_str = "plate_{0}_area"
 
@@ -66,9 +66,22 @@ def get_image_dict(path, time, mark_X, mark_Y, grayscale_indices,
         'mark_X': mark_X, 'mark_Y': mark_Y,
         'Time': time, 'File': path}
 
-    for i, plate in enumerate(plate_areas):
+    if plate_areas is not None:
+        for i, plate in enumerate(plate_areas):
 
-        image_entry[plate_str.format(i+1)] = plate
+            image_entry[plate_str.format(i+1)] = plate
+
+    elif img_dict is not None:
+
+        i = 0
+        while True:
+
+           try:
+               image_entry[plate_str.format(i+1)] = img_dict[plate_str.format(i)] 
+           except: 
+               break
+
+           i += 1
 
     return image_entry
 

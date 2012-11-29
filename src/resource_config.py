@@ -102,7 +102,7 @@ class Config_File(object):
 
             if len(line) > 0 and line[0] != "#":
 
-                line_list = line.split("\t")
+                line_list = line.split("\t", 1)
                 bad_conf_line = False
 
                 if len(line_list) == 2:
@@ -111,9 +111,10 @@ class Config_File(object):
 
                     try:
 
-                        self._data[str(self._file_data_order[-1])] = \
+                        self._data[str(line_list[0])] = \
                                         eval(line_list[1])
 
+                        print line_list[0], type(self._data[str(line_list[0])]),type(eval(line_list[1])), line_list[1]
                     except:
 
                         bad_conf_line = True
@@ -184,7 +185,7 @@ class Config_File(object):
                     except:
                         pass
 
-                    d = str(d)
+                    #d = str(d)
                     line = "{0}\t\"{1}\"".format(str(data_row), d)
 
                 line += "\r\n"

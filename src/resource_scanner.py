@@ -279,6 +279,7 @@ class Scanner(object):
     
     def _write_scanner_address_claim(self):
 
+        n_checks = 0
         while True:
             scanners = self._get_awake_scanners()
             lock_states = self._get_scanner_address_lock()
@@ -306,8 +307,10 @@ class Scanner(object):
 
             else:
                 self._usb_address = None
-                raise No_Scanner()
 
+            n_checks += 1
+            if n_checks > 10:
+                 raise No_Scanner()
             time.sleep(2)
 
     def _remove_scanner_address_lock(self):

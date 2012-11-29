@@ -383,13 +383,22 @@ class Image_Analysis():
 
         m_locations = []
         c_img = conv_img.copy()
+	i = 0
+        try:
+            n = int(n)
+        except:
+            n = 3
 
-        while len(m_locations) < n:
+        while i < n:
 
             m_loc, c_img = self.get_best_location(c_img, stencil_size,
                         refine_hit)
 
             m_locations.append(m_loc)
+
+            i += 1
+
+        print "Found", i, m_locations
 
         return m_locations
 
