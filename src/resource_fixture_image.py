@@ -282,11 +282,6 @@ class Fixture_Image(object):
 
             Z = self[source]['marking_{0}'.format(m)]
 
-            if type(Z) == types.StringType:
-                Z = eval(Z)
-
-            print type(Z), Z
-
             if Z is not None:
 
                 X.append(Z[0])
@@ -319,8 +314,12 @@ class Fixture_Image(object):
 
         if self._define_reference:
 
-            analysis_im_path = self._fixture_config_root + os.sep + \
-                    self.fixture_name + ".tiff"
+            analysis_im_path = \
+                self._paths.fixture_image_file_pattern.format(
+                self.fixture_name)
+
+            #analysis_im_path = self._fixture_config_root + os.sep + \
+            #        self.fixture_name + ".tiff"
 
             target_conf_file = self.fixture_reference
 
@@ -353,8 +352,9 @@ class Fixture_Image(object):
 
         if analysis_im_path is not None:
 
-            from matplotlib.image import imsave
-            imsave(analysis_im_path, analysis_img, format='tiff')
+            #from matplotlib.image import imsave
+            #imsave(analysis_im_path, analysis_img, format='tiff')
+            np.save(analysis_im_path, analysis_img)
 
         msg = "Setting up Image Analysis (acc {0} s)".format(time.time()-t)
 
@@ -403,8 +403,8 @@ class Fixture_Image(object):
 
     def _version_check_positions_arr(self, *args):
         """Note that it only works for NP-ARRAYS and NOT for lists"""
-        version = eval(self['fixture']['version'])
-        if version is None or version < 0.998:
+        version = self['fixture']['version']
+        if version is None or version < 0.997:
 
             args = list(args)
             for a in args:
@@ -432,11 +432,11 @@ class Fixture_Image(object):
         L = np.sqrt(dX ** 2 + dY ** 2)
 
         #FIXTURE SETTINGS
-        version = eval(self['fixture']['version'])
+        version = self['fixture']['version']
         refX, refY = self._get_markings(source="fixture")
         refX = np.array(refX)
         refY = np.array(refY)
-        ref_Mcom = np.array(eval(self['fixture']["marking_center_of_mass"]))
+        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
         self._version_check_positions_arr(ref_Mcom, refX, refY)
         ref_dX = refX - ref_Mcom[0]
         ref_dY = refY - ref_Mcom[1]
@@ -516,10 +516,12 @@ class Fixture_Image(object):
         im = self.get_subsection(self['current']['grayscale_area'],
                 scale=self.im_original_scale)
 
+        print id(im), type(im), "For save", self['current']['grayscale_area'], self.im_original_scale
 
         if im is None or 0 in im.shape:
             return False
 
+        np.save(".tmp.npy", im)
         ag = resource_image.Analyse_Grayscale(target_type="Kodak", 
             image=im, scale_factor=self.im_original_scale)
         
@@ -553,22 +555,22 @@ class Fixture_Image(object):
 
         alpha, Mcom = self._get_markings_rotations()
         X, Y = self._get_markings(source='current') 
-        ref_Mcom = np.array(eval(self['fixture']["marking_center_of_mass"]))
+        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
 
         self['current'].flush()
         self._set_markings_in_conf(self['current'], X, Y)
 
-        ref_gs = eval(self['fixture']["grayscale_area"])
-        version = eval(self['fixture']['version'])
+        ref_gs = self['fixture']["grayscale_area"]
+        version = self['fixture']['version']
 
         self._version_check_positions_arr(ref_Mcom)
 
-        if version is None or version < 0.998:
+        if version is None or version < 0.997:
             scale_factor = 4
         else:
             scale_factor = 1
  
-        if ref_gs is not None and bool(eval(self['fixture']["grayscale"])) == True:
+        if ref_gs is not None and bool(self['fixture']["grayscale"]) == True:
 
             dGs1 = scale_factor * np.array(ref_gs[0]) - ref_Mcom
             dGs2 = scale_factor * np.array(ref_gs[1]) - ref_Mcom
@@ -584,14 +586,12 @@ class Fixture_Image(object):
 
         for i, p in enumerate(f_plates):
 
-		p = eval(p)
+            dM1 = scale_factor * np.array(p[0]) - ref_Mcom
+            dM2 = scale_factor * np.array(p[1]) - ref_Mcom
 
-                dM1 = scale_factor * np.array(p[0]) - ref_Mcom
-                dM2 = scale_factor * np.array(p[1]) - ref_Mcom
-
-                self['current'].set(p_str.format(i),
-                    [self._get_rotated_point(dM1, alpha, offset=Mcom),
-                    self._get_rotated_point(dM2, alpha, offset=Mcom)])
+            self['current'].set(p_str.format(i),
+                [self._get_rotated_point(dM1, alpha, offset=Mcom),
+                self._get_rotated_point(dM2, alpha, offset=Mcom)])
 
     def _get_coords_sorted(self, coords):
 
@@ -625,7 +625,7 @@ class Fixture_Image(object):
 
         ph = "plate_{0}_pinning_{1}"
 
-        return eval(self['fixture'][ph.format(plate, pin_format)])
+        return self['fixture'][ph.format(plate, pin_format)]
 
     def set_append_pinning_position(self, plate, pin_format, position):
 

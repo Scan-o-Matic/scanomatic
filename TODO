@@ -4,9 +4,7 @@
 
 --- HOT ---
 
-*** TYPE issues with resource config files (fixtures)
-
-*** GS after calibration doesn't seem to match correct place... scaling or im-flipping?
+*** GLOBALS for diff version compatibility -> resourceCONFIG
 
 *** MAIN: Why doesn't the program allow for not closing?
 
@@ -113,6 +111,10 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** GS after calibration doesn't seem to match correct place... scaling or im-flipping?
+
+*** TYPE issues with resource config files (fixtures)
 
 *** SCAN IMAGE IN FIX CALIBRATION OF NEW FIXTURE!
 

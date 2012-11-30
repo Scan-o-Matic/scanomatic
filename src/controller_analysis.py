@@ -506,7 +506,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             pl = self.fixture.get_plates()
             version = self.fixture['fixture']['version']
-            if version is None or version < 0.998:
+            if version is None or version < 0.997:
                 back_compatible=True
             else:
                 back_compatible=False

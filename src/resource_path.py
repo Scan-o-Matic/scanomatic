@@ -50,7 +50,7 @@ class Paths(object):
         self.fixture_conf_file_suffix = ".config"
         self.fixture_conf_file_rel_pattern = "{0}" + \
             self.fixture_conf_file_suffix
-        self.fixture_image_file_rel_pattern = "{0}.tiff"
+        self.fixture_image_file_rel_pattern = "{0}.npy"
         self.fixture_conf_file_pattern = os.sep.join((
             self.fixtures, self.fixture_conf_file_rel_pattern))
         self.fixture_image_file_pattern = os.sep.join((

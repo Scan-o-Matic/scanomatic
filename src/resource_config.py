@@ -111,14 +111,12 @@ class Config_File(object):
 
                     try:
 
-                        self._data[str(line_list[0])] = \
-                                        eval(line_list[1])
+                        self._data[str(line_list[0])] = eval(line_list[1])
 
-                        print line_list[0], type(self._data[str(line_list[0])]),type(eval(line_list[1])), line_list[1]
                     except:
 
-                        bad_conf_line = True
-                        del self._file_data_order[-1]
+                        #IF it doesn't evaluate we think its a string
+                        self._data[str(line_list[0])] = line_list[1]
 
                 elif len(line_list) == 1:
 
@@ -128,7 +126,7 @@ class Config_File(object):
                     try:
 
                         self._data[str(self._file_data_order[-1])] = \
-                                        eval(line_list[0])
+                                        eval(eval(line_list[0]))
                         
                     except:
 
@@ -186,7 +184,7 @@ class Config_File(object):
                         pass
 
                     #d = str(d)
-                    line = "{0}\t\"{1}\"".format(str(data_row), d)
+                    line = "{0}\t{1}".format(str(data_row), d)
 
                 line += "\r\n"
                 fs.write(line)
