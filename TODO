@@ -8,8 +8,6 @@
 
 *** MAIN: Why doesn't the program allow for not closing?
 
-*** ANALYSIS: Investigate why calibration step never ends
-
 *** LAN-PM 1: Init takes some time, should only need to test once per PM and not
     per socket <- scanner should get socket, not get pm!
 
@@ -111,6 +109,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** ANALYSIS: Investigate why calibration step never ends
 
 *** GS after calibration doesn't seem to match correct place... scaling or im-flipping?
 
