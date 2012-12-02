@@ -77,7 +77,7 @@ class Subprocs_View(gtk.Frame):
         table.attach(label, 0, 1 , 0, 1)
 
         self.scanners = gtk.Button()
-        self.scanners.set_label(specific_model['free-scanners']) 
+        self.scanners.set_label(str(specific_model['free-scanners']))
         self.scanners.connect("clicked", controller.produce_free_scanners)
         self.scanners.set_alignment(0, 0.5)
         table.attach(self.scanners, 1, 2, 0, 1)
@@ -115,7 +115,7 @@ class Subprocs_View(gtk.Frame):
 
         specific_model = self._specific_model
         
-        self.scanners.set_text(str(specific_model['free-scanners']))
+        self.scanners.set_label(str(specific_model['free-scanners']))
         self.experiments.set_label(str(specific_model['running-scanners']))
         self.analysis.set_label(str(specific_model['running-analysis']))
         self.messages.set_label(str(specific_model['collected-messages']))
