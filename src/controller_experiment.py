@@ -410,11 +410,14 @@ class Project_Controller(controller_generic.Controller):
         e_query_list += list(chain.from_iterable(experiment_query.items()))
         e_query_list = map(str, e_query_list)
 
-        stdin=open(tc.paths.experiment_stdin.format(scanner.get_name()), 'w')
+        stdin_path = tc.paths.experiment_stdin.format(
+            tc.paths.get_fixture_path(scanner.get_name(), only_name=True))
+        stdin = open(stdin_path, 'w')
+        stdin.close()
         stdout_path = tc.paths.log_scanner_out.format(scanner.get_socket())
-        stdout=open(stdout_path, 'w')
+        stdout = open(stdout_path, 'w')
         stderr_path = tc.paths.log_scanner_err.format(scanner.get_socket())
-        stderr=open(stderr_path, 'w')
+        stderr = open(stderr_path, 'w')
 
         proc = Popen(e_query_list, stdout=stdout, stderr=stderr, shell=False)
         proc_type = 'scanner'
@@ -429,7 +432,7 @@ class Project_Controller(controller_generic.Controller):
         scanner.set_uuid()
 
         self.get_top_controller().add_subprocess(proc, proc_type, 
-            stdin=stdin, stdout=stdout_path, stderr=stderr_path,
+            stdin=stdin_path, stdout=stdout_path, stderr=stderr_path,
             pid=proc.pid, psm=sm, proc_name=sm['scanner'])
 
         self.set_view_stage(None, 'running')

@@ -80,7 +80,7 @@ class Paths(object):
         self.lock_scanner_addresses = self.lock_root + ".addresses.lock"
 
         #EXPERIMENT FILE PIPE
-        self.experiment_stdin = self.lock_root + "{0}.stdin"
+        self.experiment_stdin = self.lock_root + ".{0}.stdin"
   
     def _is_fixture_file_name(self, fixture_name):
 

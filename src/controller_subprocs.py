@@ -190,14 +190,15 @@ class Subprocs_Controller(controller_generic.Controller):
 
         return True
 
-    def _close_proc_files(self, stdin, stdout, stderr):
+    def _close_proc_files(self, *args):
 
-        if type(stdin) == types.FileType:
-            stdin.close()
-        if type(stdout) == types.FileType:
-            stdout.close()
-        if type(stderr) == types.FileType:
-            stderr.close()
+        for f in args:
+            if type(f) == types.FileType:
+                f.close()
+
+    def stop_process(self, p):
+
+        self._drop_process(p)
 
     def _drop_process(self, p):
 
@@ -212,7 +213,12 @@ class Subprocs_Controller(controller_generic.Controller):
 
             if id(p) == id(proc):
 
-                self._close_proc_files(p['stdin'], p['stdout'], p['stderr'])
+                try:
+                    fs = open(p['stdin'], 'a')
+                    fs.write("__QUIT__\n")
+                    fs.close()
+                except:
+                    self._logger.error("Scanner won't be freed!")
                 del plist[i]
                 return True
 

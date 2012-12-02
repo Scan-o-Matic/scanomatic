@@ -63,6 +63,13 @@ composite_model = {
 terminate experiments before their planned end.</i></span>
 """,
 'running-experiments-stop': 'Terminate...',
+'running-experiments-stop-warning':
+"""<span size="x-large">Are you sure you want to stop experiment '{0}'?</span>
+
+<span><i>Stopping is irreversible and will act as soon as current scan is aquired.
+To stop, write 'stop' below and then presss the yes-button.</i></span>
+""",
+'running-experiments-stopping': 'Stopping...',
 }
 
 

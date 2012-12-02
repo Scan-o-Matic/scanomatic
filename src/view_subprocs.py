@@ -158,14 +158,56 @@ class Running_Experiments(gtk.VBox):
 
     def _verify_stop(self, widget, proc):
 
-        pass
+        def _verify_sure(widget, b_yes):
+
+            if widget.get_text().lower() == 'stop':
+                b_yes.set_sensitive(True)
+            else:
+                b_yes.set_sensitive(False)
+
+        m = self._model
+        dialog = gtk.MessageDialog(self._controller.get_window(),
+                        gtk.DIALOG_DESTROY_WITH_PARENT,
+                        gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+                        "")
+
+        b_no = dialog.add_button(gtk.STOCK_NO, False)
+        b_yes = dialog.add_button(gtk.STOCK_YES, True)
+        b_yes.set_sensitive(False)
+
+        vbox = dialog.get_children()[0]
+        hbox, bbox = vbox.get_children()
+        im, vbox2 = hbox.get_children()
+        vbox2.remove(vbox2.get_children()[1])
+        label = vbox2.get_children()[0]
+        label.set_markup(
+            m['running-experiments-stop-warning'].format(
+            proc['sm']['experiment-prefix']))
+
+        entry = gtk.Entry()
+        entry.connect("changed", _verify_sure, b_yes)
+        vbox2.pack_start(entry, False, False, PADDING_SMALL)
+
+        dialog.show_all()
+
+        resp = dialog.run()
+
+        dialog.destroy()
  
+        if resp == True:
+
+            self._controller.stop_process(proc)
+            proc['progress'] = proc['sm']['scans']
+            widget.set_sensitive(False)
+            widget.set_label(m['running-experiments-stopping'])
+            self.update()
+
     def update(self):
 
         sm = self._specific_model
         for p, progress, info in self._stuff:
             
             progress.set_fraction(p['progress']/float(p['sm']['scans']))
-            eta = (p['sm']['scans'] - p['progress']) * p['sm']['interval']
-            progress.set_text("Expected to finnish in {0}h".format(eta))
+            eta = (p['sm']['scans'] - p['progress']) * p['sm']['interval'] / 60.0
+            progress.set_text("Expected to finnish in {0:.2f}h".format(eta))
             info.set_text("Feedback not yet implemented")

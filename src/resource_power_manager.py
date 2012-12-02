@@ -67,9 +67,15 @@ class USB_PM(object):
         return self._exec(self._off_cmd)
 
     def _exec(self, cmd):
-        proc = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = proc.communicate()
-        if self._fail_error in stderr:
+
+        exec_err = False
+        stderr = ""
+        try:
+            proc = Popen(cmd, shell=False, stdout=PIPE, stderr=PIPE)
+            stdout, stderr = proc.communicate()
+        except:
+            exec_err = True
+        if self._fail_error in stderr or exec_err:
             return False
 
         return True

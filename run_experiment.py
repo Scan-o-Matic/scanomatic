@@ -124,35 +124,49 @@ class Experiment(object):
 
     def _stdin_deamon(self):
 
-        line = ""
 
         stdin_path = self.paths.experiment_stdin.format(
-            self.paths.get_fixture_name(self._scanner_name))
+            self.paths.get_fixture_path(self._scanner_name, only_name=True))
+
+        print "DEAMON listens to", stdin_path
+
+        pos = None
         try:
-            fs = open(stdin_path, 'w')
+            fs = open(stdin_path, 'r')
             pos = fs.tell()
             fs.close()
         except:
-            self._orphan = True
+            pass
+            #self._orphan = True
 
         while self._running and not self._orphan:
 
+            lines = []
             try:
                 fs = open(stdin_path)
-                fs.seek(pos)
+                if pos is not None:
+                    fs.seek(pos)
                 lines = fs.readlines()
                 pos = fs.tell()
-            except:
-                self._orphan = True
-                self._logger.warning("Lost contact with GUI, will run as orphan!")
-            finally:
                 fs.close()
+            except:
+                #self._orphan = True
+                self._logger.warning("Lost contact with outside world!")
 
-            if line == "__QUIT__":
-                self._running = False
-                #REPORT THAT GOT QUIT REQUEST
+            print "DEAMON", lines
+
+            for line in lines:
+                line = line.strip()
+                if line == "__QUIT__":
+                    print "DEAMON got quit request"
+                    self._running = False
+                    #REPORT THAT GOT QUIT REQUEST
+                else:
+                    print "DEAMON got unkown request '{0}'".format(line)
 
             time.sleep(0.42)
+
+        print "DEAMON ended", self._orphan, self._running
 
     def _generate_uuid(self):
 
@@ -348,7 +362,7 @@ class Experiment(object):
 
         self._logger.info("Waiting for all scans and analysis to finnish")
 
-        while threading.active_count() > 0:
+        while threading.active_count() > 1:
             time.sleep(0.5)
 
         self._scanner.free()
