@@ -380,12 +380,33 @@ class Analysis_First_Pass(controller_generic.Controller):
                 parent, 
                 view=view, model=model, logger=logger)
 
-        self._specific_model = None
+        self.set_specific_model(model_analysis.copy_model(
+            model_analysis.specific_first))
+
+        self._paths = self.get_top_controller().paths
 
     def start(self, *args, **kwargs):
 
         print "Start", args, kwargs
 
+    def set_output_dir(self, widget):
+        m = self._model
+        sm = self._specific_model
+
+        dir_list = view_analysis.select_dir(
+            title=m['analysis-stage-first-dir'],
+            start_in=sm['output-directory'])
+
+        if dir_list is not None:
+
+            sm['output-directory'] = dir_list
+            sm['experiments-root'] = os.sep.join(dir_list.split(os.sep)[:-1])
+            sm['experiment-prefix'] = dir_list.split(os.sep)[-1]
+            sm['output-file'] = \
+                self._paths.experiment_first_pass_analysis_relative.format(
+                sm['experiment-prefix'])
+
+            self.get_view().get_stage().update()
 
 class Analysis_Image_Controller(controller_generic.Controller):
 

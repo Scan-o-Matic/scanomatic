@@ -271,28 +271,50 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         label.set_markup(model['analysis-stage-first-title'])
         self.pack_start(label, False, False, PADDING_SMALL)
 
-        #BUTTON TO SELECT DIR
+        #WHERE
+        frame = gtk.Frame(model['analysis-stage-first-where'])
+        vbox = gtk.VBox(False, 0)
+        frame.add(vbox)
+        self.pack_start(frame, False, False, PADDING_SMALL)
+    
+        ##BUTTON TO SELECT DIR
         button = gtk.Button()
+        button.connect("clicked", controller.set_output_dir)
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(button, False, False, PADDING_SMALL)
-        self.pack_start(hbox, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
         button.set_label(model['analysis-stage-first-dir'])
         
-        #INFO ON DIRECTORY
+        ##INFO ON DIRECTORY
         hbox = gtk.HBox(False, 0)
         label = gtk.Label(model['analysis-stage-first-dir-title'])
         hbox.pack_start(label, False, False, PADDING_MEDIUM)
         self.dir_label = gtk.Label("")
         hbox.pack_start(self.dir_label, True, True, PADDING_SMALL)
-        self.pack_start(hbox, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
-        #INFO ON FILE
+        ##INFO ON FILE
         hbox = gtk.HBox(False, 0)
         label = gtk.Label(model['analysis-stage-first-file'])
         hbox.pack_start(label, False, False, PADDING_MEDIUM)
         self.file_entry = gtk.Entry()
         hbox.pack_start(self.file_entry, False, False, PADDING_SMALL)
-        self.pack_start(hbox, False, False, PADDING_SMALL)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        #FILES
+        scrolled = gtk.ScrolledWindow()
+        self.pack_start(scrolled, True, True, PADDING_MEDIUM)
+        """HERE MAKE IMAGE LIST THING"""
+
+        #META-DATA
+        """HERE MAKE METADATA THING"""
+
+    def update(self):
+
+        sm = self._specific_model
+        self.dir_label.set_text(sm['output-directory'])
+        self.file_entry.set_text(sm['output-file'])
+
 
 class Analysis_Stage_Project(gtk.VBox):
 

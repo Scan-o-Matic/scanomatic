@@ -33,6 +33,12 @@ def copy_model(model):
 class Analysis_GUI_Model(model_generic.Model): pass
 
 #
+# GLOBALS
+#
+
+PATHS = model_generic.resource_path.Paths()
+
+#
 # MODELS
 #
 
@@ -101,10 +107,11 @@ been acquired by running an experiment.</i></span>
 'analysis-stage-first-title':
 """<span weight='heavy' size='large'>First Pass Analysis</span>
 
-<span><i>Add and order image in the order you consider chronological</i></span>""",
+<span><i>Add and order images in the order you consider chronological</i></span>""",
 'analysis-stage-first-dir': 'Select directory for your project',
 'analysis-stage-first-dir-title': 'Project Directory:',
 'analysis-stage-first-file': 'Output File:',
+'analysis-stage-first-where': 'Where',
 
 #ANALYSIS TOP IMAGE SELECTION
 'analysis-top-image-selection-next': 'Normalisation',
@@ -209,6 +216,13 @@ specific_project = {
 'analysis-project-pinnings': (),
 'analysis-project-pinnings-from-file': (),
 'analysis-project-pinnings-active': 'file'
+}
+
+specific_first = {
+'output-directory': PATHS.experiment_root,
+'experiments-root': '',
+'experiments-prefix': '',
+'output-file':'',
 }
 
 specific_transparency = {
