@@ -212,7 +212,8 @@ class Fixture_Controller(controller_generic.Controller):
         image_list = view_calibration.select_file(
             self._model['fixture-image-dialog'],
             multiple_files=False,
-            file_filter=self._model['fixture-image-file-filter'])
+            file_filter=self._model['fixture-image-file-filter'],
+            start_in=self.get_top_controller().paths.experiment_root)
 
         if len(image_list) > 0:
 

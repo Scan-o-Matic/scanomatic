@@ -14,10 +14,6 @@
 
 *** ANALYSE: Cut Cell Estimate at 2000 and warn
 
-*** ASK QUIT: Doesn't work
-
-*** DIALOGUE: Sel dir should start in fit place
-
 *** FIXTURE: All should use path-resource to get filenames
 
 *** ANALYSE: Loading CSV messes up columns in display
@@ -105,6 +101,10 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** DIALOGUE: Sel dir should start in fit place
+
+*** ASK QUIT: Doesn't work
 
 *** MAIN: Why doesn't the program allow for not closing?
 

@@ -158,7 +158,8 @@ class Project_Controller(controller_generic.Controller):
     def set_project_root(self, widget):
 
         dir_list = view_experiment.select_dir(
-            self._model['project-stage-select_root'])
+            self._model['project-stage-select_root'],
+            start_in=self._specific_model['experiments-root'])
 
         if dir_list is not None:
 

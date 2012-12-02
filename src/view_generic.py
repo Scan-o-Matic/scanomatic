@@ -37,12 +37,15 @@ PADDING_NONE = 0
 #
 
 
-def select_dir(title):
+def select_dir(title, start_in=None):
 
     d = gtk.FileChooserDialog(title=title, 
         action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, 
         buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
         gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+
+    if start_in is not None:
+        d.set_current_folder(start_in)
 
     res = d.run()
     file_list = d.get_filename()
@@ -57,7 +60,8 @@ def select_dir(title):
         return None
 
 
-def select_file(title, multiple_files=False, file_filter=None):
+def select_file(title, multiple_files=False, file_filter=None,
+        start_in=None):
 
     d = gtk.FileChooserDialog(title=title, 
         action=gtk.FILE_CHOOSER_ACTION_OPEN, 
@@ -65,6 +69,9 @@ def select_file(title, multiple_files=False, file_filter=None):
         gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
 
     d.set_select_multiple(multiple_files)
+
+    if start_in is not None:
+        d.set_current_folder(start_in)
 
     if file_filter is not None:
 
@@ -87,7 +94,8 @@ def select_file(title, multiple_files=False, file_filter=None):
 
         return list()
 
-def save_file(title, multiple_files=False, file_filter=None):
+def save_file(title, multiple_files=False, file_filter=None,
+        start_in=None):
 
     d = gtk.FileChooserDialog(title=title, 
         action=gtk.FILE_CHOOSER_ACTION_SAVE, 
@@ -95,6 +103,9 @@ def save_file(title, multiple_files=False, file_filter=None):
         gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
 
     d.set_select_multiple(multiple_files)
+
+    if start_in is not None:
+        d.set_current_folder(start_in)
 
     if file_filter is not None:
 

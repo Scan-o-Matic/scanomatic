@@ -583,7 +583,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
             self._model['analysis-stage-log-title'],
             multiple_files=False,
             file_filter=
-            self._model['analysis-stage-log-save-file-filter'])
+            self._model['analysis-stage-log-save-file-filter'],
+            start_in=self.get_top_controller().paths.experiment_root)
 
         if len(log_file) > 0:
 
@@ -625,7 +626,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
             self._model['analysis-stage-image-selection-file-dialogue-title'],
             multiple_files=True,
             file_filter=
-            self._model['analysis-stage-image-selection-file-filter'])
+            self._model['analysis-stage-image-selection-file-filter'],
+            start_in=self.get_top_controller().paths.experiment_root)
 
         treemodel = self._specific_model['images-list-model']
 
@@ -1131,7 +1133,8 @@ class Analysis_Project_Controller(controller_generic.Controller):
         log_files = view_analysis.select_file(
             self._model['analysis-stage-project-select-log-file-dialog'],
             multiple_files=False, file_filter=
-            self._model['analysis-stage-project-select-log-file-filter'])
+            self._model['analysis-stage-project-select-log-file-filter'],
+            start_in=self.get_top_controller().paths.experiment_root)
 
         if len(log_files) > 0:
 
@@ -1520,8 +1523,9 @@ class Analysis_Log_Controller(controller_generic.Controller):
         file_name = view_analysis.save_file(
             self._general_model['analysis-stage-log-save-dialog'],
             multiple_files=False,
-            file_filter=self._general_model['analysis-stage-log-save-file-filter'])
-            
+            file_filter=self._general_model['analysis-stage-log-save-file-filter'],
+            start_in=self.get_top_controller().paths.experiment_root)
+
         file_saved = False
 
         if len(file_name) > 0:
