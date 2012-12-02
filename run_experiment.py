@@ -73,6 +73,16 @@ def get_pinnings_list(pinning_string):
 
     return pinning_list
 
+
+def free_scanner(scanner, uuid):
+
+    paths = resource_path.Paths()
+    config = resource_app_config.Config(paths)
+    scanners = resource_scanner.Scanners(paths, config)
+    s = scanners[scanner]
+    s.set_uuid(uuid)
+    s.free()
+
 #
 # CLASSES
 #
@@ -427,8 +437,14 @@ input file for the analysis script.""")
     #PATHS
     paths = resource_path.Paths()
 
+    #SCANNER
+    if args.scanner is None:
+        parser.error("Without specifying a scanner, this makes little sense")
+    #elif get_scanner_resource(args.scanner) is None
+
     #TESTING FIXTURE FILE
     if args.fixture is None or args.fixture == "":
+        free_scanner(args.scanner, args.uuid)
         parser.error("Must have fixture file")
 
     fixture = paths.get_fixture_path(args.fixture)
@@ -437,37 +453,38 @@ input file for the analysis script.""")
         fs = open(fixture, 'r')
         fs.close()
     except:
+        free_scanner(args.scanner, args.uuid)
         parser.error("Can't find any file at '{0}'".format(fixture))
-
-
-    #SCANNER
-    if args.scanner is None:
-        parser.error("Without specifying a scanner, this makes little sense")
-    #elif get_scanner_resource(args.scanner) is None
 
     #INTERVAl
     if 7 > args.interval > 4*60:
+        free_scanner(args.scanner, args.uuid)
         parser.error("Interval is out of allowed bounds!")
 
     #NUMBER OF SCANS
     if 2 > args.number_of_scans > 1000:
+        free_scanner(args.scanner, args.uuid)
         parser.error("Number of scans is out of bounds")
 
     #EXPERIMENTS ROOT
     if args.root is None or os.path.isdir(args.root) == "False":
+        free_scanner(args.scanner, args.uuid)
         parser.error("Experiments root is not a directory")
 
     #PINNING MATRICSE
     if args.pinning is not None:
+        free_scanner(args.scanner, args.uuid)
         args.pinning = get_pinnings_list(args.pinning)
 
     if args.pinning is None:
+        free_scanner(args.scanner, args.uuid)
         parser.error("Bad pinning supplied")        
 
     #PREFIX
     if args.prefix is None or \
         os.path.isdir(os.sep.join((args.root, args.prefix))):
 
+        free_scanner(args.scanner, args.uuid)
         parser.error("Prefix is a duplicate or invalid")
 
     args.outdata_path = os.sep.join((args.root, args.prefix))

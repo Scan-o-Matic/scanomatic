@@ -152,7 +152,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
                 self._drop_process(p)
                 scanner = p['sm']['scanner']
-                tc.scanners.free(scanner)
+                #tc.scanners.free(scanner)
 
             else:
 
