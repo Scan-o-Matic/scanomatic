@@ -129,6 +129,10 @@ class Running_Experiments(gtk.VBox):
         self._model = model
         self._specific_model = specific_model
 
+        label = gtk.Label()
+        label.set_markup(model['running-experiments-intro'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+
         self._stuff = list()
 
         for p in controller.get_subprocesses(self, by_type='experiment'):
@@ -138,17 +142,30 @@ class Running_Experiments(gtk.VBox):
             progress = gtk.ProgressBar()
             vbox.pack_start(progress, False, False, PADDING_SMALL)
             self.pack_start(frame, False, False, PADDING_LARGE)
+            hbox = gtk.HBox(False, 0)
+            info = gtk.Label()
+            button = gtk.Button()
+            button.set_label(model['running-experiments-stop'])
+            button.connect("clicked", self._verify_stop, p)
+            hbox.pack_start(info, True, True, PADDING_LARGE)
+            hbox.pack_end(button, False, False, PADDING_LARGE)
+            vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
+            
             self._stuff.append((p, progress))
            
         self.show_all()
         gobject.timeout_add(20, self.update)
 
+    def _verify_stop(self, widget, proc):
+
+        pass
+ 
     def update(self):
 
         sm = self._specific_model
-        for p, progress in self._stuff:
+        for p, progress, info in self._stuff:
             
             progress.set_fraction(p['progress']/float(p['sm']['scans']))
-            progress.set_text("Expected to finnish {0}")
-
-
+            eta = (p['sm']['scans'] - p['progress']) * p['sm']['interval']
+            progress.set_text("Expected to finnish in {0}h".format(eta))
+            info.set_text("Feedback not yet implemented")

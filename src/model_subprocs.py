@@ -55,6 +55,14 @@ composite_model = {
 'running-analysis': 'Running Analysis',
 'collected-messages': 'Warnings & Errors',
 
+#RUNNING EXPERIMENTS
+'running-experiments-intro': 
+"""<span weight=heavy>Running experiments</span>
+
+<span><i>Here you can see how the experiments progress and manually
+terminate experiments before their planned end.</i></span>
+""",
+'running-experiments-stop': 'Terminate...',
 }
 
 
