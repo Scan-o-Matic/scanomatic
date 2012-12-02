@@ -57,7 +57,7 @@ composite_model = {
 
 #RUNNING EXPERIMENTS
 'running-experiments-intro': 
-"""<span weight=heavy>Running experiments</span>
+"""<span size="x-large">Running experiments</span>
 
 <span><i>Here you can see how the experiments progress and manually
 terminate experiments before their planned end.</i></span>

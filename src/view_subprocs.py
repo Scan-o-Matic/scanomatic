@@ -151,7 +151,7 @@ class Running_Experiments(gtk.VBox):
             hbox.pack_end(button, False, False, PADDING_LARGE)
             vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
             
-            self._stuff.append((p, progress))
+            self._stuff.append((p, progress, info))
            
         self.show_all()
         gobject.timeout_add(20, self.update)
