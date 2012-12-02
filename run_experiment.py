@@ -163,8 +163,6 @@ class Experiment(object):
                 #self._orphan = True
                 self._logger.warning("Lost contact with outside world!")
 
-            print "DEAMON", lines
-
             for line in lines:
                 line = line.strip()
                 if line == "__QUIT__":
@@ -473,7 +471,6 @@ input file for the analysis script.""")
 
     #PINNING MATRICSE
     if args.pinning is not None:
-        free_scanner(args.scanner, args.uuid)
         args.pinning = get_pinnings_list(args.pinning)
 
     if args.pinning is None:

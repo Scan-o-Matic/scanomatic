@@ -4,8 +4,6 @@
 
 --- HOT ---
 
-*** EXPERIMENT change in rootdir don't help
-
 *** GLOBALS for diff version compatibility -> resourceCONFIG
 
 *** MAIN: Why doesn't the program allow for not closing?
@@ -32,8 +30,6 @@
             origin='lower',
     NEED:
         fix all other... make a lr-display-value converter eg. im.shape[0] - x
-
-*** EXPERIMENT: Need to pass pinning-arrays
 
 --- DEBUGGING ---
 
@@ -111,6 +107,10 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** EXPERIMENT: Need to pass pinning-arrays
+
+*** EXPERIMENT change in rootdir don't help
 
 *** ANALYSIS: Investigate why calibration step never ends
 

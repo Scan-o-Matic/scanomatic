@@ -76,7 +76,9 @@ class Subprocs_View(gtk.Frame):
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1 , 0, 1)
 
-        self.scanners = gtk.Label(specific_model['free-scanners']) 
+        self.scanners = gtk.Button()
+        self.scanners.set_label(specific_model['free-scanners']) 
+        self.scanners.connect("clicked", controller.produce_free_scanners)
         self.scanners.set_alignment(0, 0.5)
         table.attach(self.scanners, 1, 2, 0, 1)
 

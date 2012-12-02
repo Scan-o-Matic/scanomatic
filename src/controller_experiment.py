@@ -397,7 +397,7 @@ class Project_Controller(controller_generic.Controller):
         experiment_query['-n'] = sm['scans']
 
         if sm['experiments-root'] != '':
-            experiment_query['-r'] == sm['experiments-root']
+            experiment_query['-r'] = sm['experiments-root']
 
         experiment_query['-p'] = sm['experiment-prefix']
         experiment_query['-d'] = sm['experiment-desc']

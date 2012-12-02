@@ -232,6 +232,10 @@ class Subprocs_Controller(controller_generic.Controller):
             self._model['running-experiments'], 
             self)
 
+    def produce_free_scanners(self, widget):
+
+        pass
+
     def produce_running_analysis(self, widget):
 
         pass
