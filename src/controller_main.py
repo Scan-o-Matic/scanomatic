@@ -51,16 +51,19 @@ class Controller(controller_generic.Controller):
 
     def __init__(self, model, view, program_path, logger=None):
 
-        super(Controller, self).__init__(view, None, logger=logger)
+        super(Controller, self).__init__(None, view=view, model=model,
+            logger=logger)
+        """
         self._model = model
         self._view = view
+        """
 
         self.paths = resource_path.Paths(program_path)
         self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
         self.scanners = resource_scanner.Scanners(self.paths, self.config)
         #Subprocs
-        self.subprocs = controller_subprocs.Subprocs_Controller(self._view, self)
+        self.subprocs = controller_subprocs.Subprocs_Controller(self)
         self.add_subprocess = self.subprocs.add_subprocess
         self.add_subcontroller(self.subprocs)
         self._view.populate_stats_area(self.subprocs.get_view())
@@ -86,13 +89,13 @@ class Controller(controller_generic.Controller):
             raise err
 
         if content_name == 'analysis':
-            c = controller_analysis.Analysis_Controller(self._view, self,
+            c = controller_analysis.Analysis_Controller(self,
                     logger=self._logger)
         elif content_name == 'experiment':
-            c = controller_experiment.Experiment_Controller(self._view, self,
+            c = controller_experiment.Experiment_Controller(self,
                     logger=self._logger)
         elif content_name == 'calibration':
-            c = controller_calibration.Calibration_Controller(self._view,
+            c = controller_calibration.Calibration_Controller(
                     self, logger=self._logger)
         else:
             err = UnknownContent("{0}".format(content_name))

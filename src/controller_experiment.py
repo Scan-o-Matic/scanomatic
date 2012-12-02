@@ -70,9 +70,9 @@ def get_pinnings_str(pinning_list):
 
 class Experiment_Controller(controller_generic.Controller):
 
-    def __init__(self, window, main_controller, logger=None):
+    def __init__(self, main_controller, logger=None):
 
-        super(Experiment_Controller, self).__init__(window, main_controller,
+        super(Experiment_Controller, self).__init__(main_controller,
             logger=logger)
         self._specific_controller = None
 
@@ -103,7 +103,7 @@ class Experiment_Controller(controller_generic.Controller):
 
         if experiment_mode == 'project':
 
-            self._specific_controller = Project_Controller(self._window,
+            self._specific_controller = Project_Controller(
                 self, model=model, view=view)
 
         elif experiment_mode == "gray":
@@ -129,10 +129,10 @@ class Project_Controller(controller_generic.Controller):
         'interval': (7, 3*60),  # Minutes
         'scans': (2, 1000)}
 
-    def __init__(self, window, parent, view=None, model=None,
+    def __init__(self, parent, view=None, model=None,
         specific_model=None, logger=None):
 
-        super(Project_Controller, self).__init__(window, parent,
+        super(Project_Controller, self).__init__(parent,
             view=view, model=model, logger=logger)
 
         #MODEL
@@ -410,12 +410,11 @@ class Project_Controller(controller_generic.Controller):
         e_query_list += list(chain.from_iterable(experiment_query.items()))
         e_query_list = map(str, e_query_list)
 
-        #stdin=open(tc.paths.log_scanner_in.format(scanner.get_sockets()), 'w')
+        stdin=open(tc.paths.experiment_stdin.format(scanner.get_name()), 'w')
         stdout=open(tc.paths.log_scanner_out.format(scanner.get_socket()), 'w')
         stderr=open(tc.paths.log_scanner_err.format(scanner.get_socket()), 'w')
 
-        proc = Popen(e_query_list, stdout=stdout, stderr=stderr, stdin=PIPE, shell=False)
-        #proc = Popen(e_query_list, stdout=None, stderr=None, stdin=None, shell=False)
+        proc = Popen(e_query_list, stdout=stdout, stderr=stderr, shell=False)
         proc_type = 'scanner'
 
         self._logger.info(
@@ -428,7 +427,7 @@ class Project_Controller(controller_generic.Controller):
         scanner.set_uuid()
 
         self.get_top_controller().add_subprocess(proc, proc_type, 
-            stdin=proc.stdin, stdout=stdout, stderr=stderr,
+            stdin=stdin, stdout=stdout, stderr=stderr,
             pid=proc.pid, psm=sm, proc_name=sm['scanner'])
 
         self.set_view_stage(None, 'running')

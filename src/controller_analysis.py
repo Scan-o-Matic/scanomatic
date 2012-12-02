@@ -50,18 +50,17 @@ class UnDocumented_Error(Exception): pass
 
 class Analysis_Controller(controller_generic.Controller):
 
-    def __init__(self, window, main_controller, logger=None):
+    def __init__(self, main_controller, logger=None):
 
 
-        super(Analysis_Controller, self).__init__(window,
+        super(Analysis_Controller, self).__init__(
                     main_controller, logger=logger)
 
-        self.project = Analysis_Project_Controller(window, self,
-                view=self._view, model=self._model, logger=logger)
-
         self.transparency = Analysis_Transparency_Controller(
-                window, self, view=self._view, model=self._model,
+                self, view=self._view, model=self._model,
                 logger=logger)
+
+        self._specific_controller = None
 
         self.fixture = None
 
@@ -139,11 +138,34 @@ class Analysis_Controller(controller_generic.Controller):
 
             elif stage_call == "project":
 
+                self._specific_controller = \
+                        Analysis_Project_Controller(self,
+                        view=self._view, model=self._model,
+                        logger=self._logger)
+
+                self.add_subcontroller(self._specific_controller)
+
                 view.set_top(view_analysis.Analysis_Top_Project(
-                                                        self, model))
+                    self._specific_controller, model))
 
                 view.set_stage(view_analysis.Analysis_Stage_Project(
-                                                        self, model))
+                    self._specific_controller, model))
+
+            elif stage_call == "1st_pass":
+
+                self._specific_controller = Analysis_First_Pass(
+                    self, view=view, model=self._model,
+                    logger=self._logger)
+
+                self.add_subcontroller(self._specific_controller)
+
+                view.set_top(
+                    view_analysis.Analysis_First_Pass_Top(
+                        self._specific_controller, model))
+
+                view.set_stage(
+                    view_analysis.Analysis_Stage_First_Pass(
+                        self._specific_controller, model))
 
             elif stage_call == "transparency":
 
@@ -256,7 +278,7 @@ class Analysis_Controller(controller_generic.Controller):
                     self, model,
                     specific_model,
                     self.transparency,
-                    self._window))
+                    self.get_window()))
 
                 specific_model['plate'] = -1
 
@@ -270,8 +292,7 @@ class Analysis_Controller(controller_generic.Controller):
 
                 if self.transparency._log is None:
                     self.transparency._log = Analysis_Log_Controller(
-                        self._window, self, self._model, 
-                        specific_model)
+                        self, self._model, specific_model)
 
                 else:
 
@@ -351,12 +372,27 @@ class Analysis_Controller(controller_generic.Controller):
                 raise Bad_Stage_Call(stage_call)
 
 
+class Analysis_First_Pass(controller_generic.Controller):
+
+    def __init__(self, parent, view=None, model=None, logger=None):
+
+        super(Analysis_First_Pass, self).__init__(
+                parent, 
+                view=view, model=model, logger=logger)
+
+        self._specific_model = None
+
+    def start(self, *args, **kwargs):
+
+        print "Start", args, kwargs
+
+
 class Analysis_Image_Controller(controller_generic.Controller):
 
-    def __init__(self, window, parent, view=None, model=None, logger=None):
+    def __init__(self, parent, view=None, model=None, logger=None):
 
         super(Analysis_Image_Controller, self).__init__(
-                window, parent, 
+                parent, 
                 view=view, model=model, logger=logger)
 
         self._specific_model = None
@@ -1018,9 +1054,9 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
 class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
-    def __init__(self, window, parent, view=None, model=None, logger=None):
+    def __init__(self, parent, view=None, model=None, logger=None):
 
-        super(Analysis_Transparency_Controller, self).__init__(window,
+        super(Analysis_Transparency_Controller, self).__init__(
                 parent, view=view, model=model, logger=logger)
 
     def build_blank_specific_model(self):
@@ -1031,13 +1067,18 @@ class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
 class Analysis_Project_Controller(controller_generic.Controller):
 
-    def __init__(self, window, parent, view=None, model=None, logger=None):
+    def __init__(self, parent, view=None, model=None, logger=None):
 
         super(Analysis_Project_Controller, self).__init__(
-                window, parent, view=view, model=model, logger=logger) 
+                parent, view=view, model=model, logger=logger) 
 
         self.build_blank_specific_model()
 
+
+    def set_abort(self, *args):
+
+        self._parent.set_analysis_stage(None, "about")
+        
     def build_blank_specific_model(self):
 
         self.set_specific_model(model_analysis.copy_model(
@@ -1231,7 +1272,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
 class Analysis_Log_Controller(controller_generic.Controller):
 
-    def __init__(self, window, parent, general_model, parent_model,
+    def __init__(self, parent, general_model, parent_model,
             logger=None):
 
         model = model_analysis.copy_model(model_analysis.specific_log_book)
@@ -1240,7 +1281,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
         self._look_up_coords = list()
         self._look_up_names = list()
 
-        super(Analysis_Log_Controller, self).__init__(window, 
+        super(Analysis_Log_Controller, self).__init__( 
             parent, model=model,
             view=view_analysis.Analysis_Stage_Log(self, general_model,
             model, parent_model), logger=logger)
@@ -1506,7 +1547,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
                 file_exists = not(view_analysis.overwrite(
                     self._general_model['analysis-stage-log-overwrite'],
-                    file_name, self._window))
+                    file_name, self.get_window()))
 
             
 
@@ -1566,13 +1607,13 @@ class Analysis_Log_Controller(controller_generic.Controller):
                 file_saved = True
                 self._parent.set_saved()
 
-                view_analysis.dialog(self._window,
+                view_analysis.dialog(self.get_window(),
                     self._general_model['analysis-stage-log-saved'],
                     d_type='info')
 
         if file_saved == False:
 
-            view_analysis.dialog(self._window,
+            view_analysis.dialog(self.get_window(),
                 self._general_model['analysis-stage-log-not-saved'],
                 d_type='warning')
 

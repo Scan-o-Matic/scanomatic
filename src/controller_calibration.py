@@ -44,9 +44,9 @@ class Scan_Failed(Exception): pass
 
 class Calibration_Controller(controller_generic.Controller):
 
-    def __init__(self, window, main_controller, logger=None):
+    def __init__(self, main_controller, logger=None):
 
-        super(Calibration_Controller, self).__init__(window, main_controller,
+        super(Calibration_Controller, self).__init__(main_controller,
                 logger=logger)
 
         self._specific_controller = None
@@ -66,7 +66,7 @@ class Calibration_Controller(controller_generic.Controller):
 
         if calibration_mode == 'fixture':
 
-            self._specific_controller = Fixture_Controller(self._window,
+            self._specific_controller = Fixture_Controller(
                 self, model=model, view=view, logger=self._logger)
 
         elif calibration_mode == "poly":
@@ -85,10 +85,10 @@ class Calibration_Controller(controller_generic.Controller):
 
 class Fixture_Controller(controller_generic.Controller):
 
-    def __init__(self, window, parent, view=None, model=None,
+    def __init__(self, parent, view=None, model=None,
         specific_model=None, logger=None):
 
-        super(Fixture_Controller, self).__init__(window, parent,
+        super(Fixture_Controller, self).__init__(parent,
             view=view, model=model, logger=logger)
 
         self._paths = resource_path.Paths()

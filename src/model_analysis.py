@@ -41,6 +41,7 @@ model = {
 'analysis-top-root-project_button-text': 'Analyse Project',
 'analysis-top-root-tpu_button-text': 'Manual Analyse Transparency Image',
 'analysis-top-root-color_button-text': 'Manual Analyse Color Image',
+'analysis-top-root-1st_pass-text': '1st Pass Analysis (Make Project)',
 'analysis-top-root_button-text': 'Select Analysis Mode',
 
 #ANALYSIS STAGE ABOUT
@@ -60,6 +61,12 @@ quatative drop-tests or calibration experiments.</i></span>
 <span weight="heavy">Manual Analyse Color Image</span>
 <span><i>This is for analysing reflective color scan image --
 to get quatitative values of average pigmentation.</i></span>
+
+<span weight="heavy">1st Pass Analysis (Make Project)</span>
+<span><i>If you have to remake the first pass analysis so
+that you get a file that can be used for analysing a project, or
+if you have a couple of images that you want to analyse as if they had
+been acquired by running an experiment.</i></span>
 """,
 
 #ANALYSIS TOP PROJECT
@@ -89,6 +96,15 @@ to get quatitative values of average pigmentation.</i></span>
 
 'analysis-stage-project-select-log-file-filter': {'filter_name': 'Log Files',
 'mime_and_patterns': (('TEXT', '*.log'),)},
+
+#ANALYSIS STAGE FIRST PASS
+'analysis-stage-first-title':
+"""<span weight='heavy' size='large'>First Pass Analysis</span>
+
+<span><i>Add and order image in the order you consider chronological</i></span>""",
+'analysis-stage-first-dir': 'Select directory for your project',
+'analysis-stage-first-dir-title': 'Project Directory:',
+'analysis-stage-first-file': 'Output File:',
 
 #ANALYSIS TOP IMAGE SELECTION
 'analysis-top-image-selection-next': 'Normalisation',

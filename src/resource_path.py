@@ -62,7 +62,6 @@ class Paths(object):
         self.log = self.root + os.sep + "log"
         self.log_scanner_out = os.sep.join((self.log, "scanner_{0}.stdout"))
         self.log_scanner_err = os.sep.join((self.log, "scanner_{0}.stderr"))
-        self.log_scanner_in = os.sep.join((self.log, "scanner_{0}.stdin"))
 
         #EXPERIMENT
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"
@@ -80,6 +79,9 @@ class Paths(object):
         self.lock_scanner_pattern = self.lock_root + ".scanner.{0}.lock"
         self.lock_scanner_addresses = self.lock_root + ".addresses.lock"
 
+        #EXPERIMENT FILE PIPE
+        self.experiment_stdin = self.lock_root + "{0}.stdin"
+  
     def _is_fixture_file_name(self, fixture_name):
 
         suffix_l = len(self.fixture_conf_file_suffix)

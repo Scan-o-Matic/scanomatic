@@ -84,7 +84,27 @@ class Analysis_Top_Root(Top):
         self.pack_start(button, False, False, PADDING_SMALL)
         button.connect("clicked", controller.set_analysis_stage, "colour")
 
+        button = gtk.Button()
+        button.set_label(model["analysis-top-root-1st_pass-text"])
+        self.pack_start(button, False, False, PADDING_SMALL)
+        button.connect("clicked", controller.set_analysis_stage, "1st_pass")
+
         self.show_all()
+
+
+class Analysis_First_Pass_Top(Top):
+
+    def __init__(self, controller, model):
+
+        super(Analysis_First_Pass_Top, self).__init__(controller, model)
+
+        self._start_button = Start_Button(controller, model)
+        self.pack_end(self._start_button, False, False, PADDING_LARGE)
+        self.set_allow_next(False)
+
+    def set_allow_next(self, val):
+
+        self._start_button.set_sensitive(val)
 
 
 class Analysis_Top_Project(Top):
@@ -94,9 +114,9 @@ class Analysis_Top_Project(Top):
         super(Analysis_Top_Project, self).__init__(controller, model)
 
         self.pack_back_button(model['analysis-top-root_button-text'],
-            controller.set_analysis_stage, "about")
+            controller.set_abort, None)
 
-        self._start_button = Start_Button(controller.project, model)
+        self._start_button = Start_Button(controller, model)
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
         self.set_allow_next(False)
 
@@ -237,13 +257,50 @@ class Analysis_Stage_About(gtk.Label):
         self.show()
 
 
+class Analysis_Stage_First_Pass(gtk.VBox):
+
+    def __init__(self, controller, model):
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = controller.get_specific_model()
+
+        super(Analysis_Stage_First_Pass, self).__init__(False, 0)
+
+        label = gtk.Label()
+        label.set_markup(model['analysis-stage-first-title'])
+        self.pack_start(label, False, False, PADDING_SMALL)
+
+        #BUTTON TO SELECT DIR
+        button = gtk.Button()
+        hbox = gtk.HBox(False, 0)
+        hbox.pack_start(button, False, False, PADDING_SMALL)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+        button.set_label(model['analysis-stage-first-dir'])
+        
+        #INFO ON DIRECTORY
+        hbox = gtk.HBox(False, 0)
+        label = gtk.Label(model['analysis-stage-first-dir-title'])
+        hbox.pack_start(label, False, False, PADDING_MEDIUM)
+        self.dir_label = gtk.Label("")
+        hbox.pack_start(self.dir_label, True, True, PADDING_SMALL)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+
+        #INFO ON FILE
+        hbox = gtk.HBox(False, 0)
+        label = gtk.Label(model['analysis-stage-first-file'])
+        hbox.pack_start(label, False, False, PADDING_MEDIUM)
+        self.file_entry = gtk.Entry()
+        hbox.pack_start(self.file_entry, False, False, PADDING_SMALL)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+
 class Analysis_Stage_Project(gtk.VBox):
 
     def __init__(self, controller, model):
 
         self._controller = controller
         self._model = model
-        self._specific_model = controller.project.get_specific_model()
+        self._specific_model = controller.get_specific_model()
 
         sm = self._specific_model
 
@@ -268,7 +325,7 @@ class Analysis_Stage_Project(gtk.VBox):
         hbox.pack_start(self.log_file, True, True, PADDING_SMALL)
         button = gtk.Button(
             label=model['analysis-stage-project-log_file_button-text'])
-        button.connect("clicked", controller.project.set_log_file)
+        button.connect("clicked", controller.set_log_file)
         hbox.pack_end(button, False, False, PADDING_SMALL)
         #File - info
         hbox = gtk.HBox(0, False)
@@ -308,11 +365,11 @@ class Analysis_Stage_Project(gtk.VBox):
         self.output = gtk.Entry()
         hbox.pack_start(self.output, True, True, PADDING_MEDIUM)
         self.output.connect("changed",
-            controller.project.set_output, self, "change")
+            controller.set_output, self, "change")
         self.output.connect("focus-out-event",
             self._output_focus_out)
         self.output_warning = gtk.Image()
-        controller.project.set_output(self.output, self, "exit")
+        controller.set_output(self.output, self, "exit")
         hbox.pack_end(self.output_warning, False, False, PADDING_LARGE)
 
         #PINNING
@@ -323,7 +380,7 @@ class Analysis_Stage_Project(gtk.VBox):
         self.keep_gridding = gtk.CheckButton(
             label=model['analysis-stage-project-keep_gridding'])
         self.keep_gridding.connect("clicked", 
-            controller.project.toggle_set_pinning, self)
+            controller.toggle_set_pinning, self)
         hbox = gtk.HBox()
         hbox.pack_start(self.keep_gridding, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
@@ -335,7 +392,7 @@ class Analysis_Stage_Project(gtk.VBox):
 
     def _output_focus_out(self, widget, *args, **kwargs):
 
-        self._controller.project.set_output(widget, self, "exit")
+        self._controller.set_output(widget, self, "exit")
 
     def set_log_file_data(self, file_prefix, file_desc, file_images):
 
@@ -380,7 +437,7 @@ class Analysis_Stage_Project(gtk.VBox):
                for p in xrange(len(pinnings_list) - len(children)):
 
                     box.pack_start(Pinning(
-                        self._controller.project, self._model, self,
+                        self._controller, self._model, self,
                         len(children) + p + 1, 
                         pinning=pinnings_list[p]))
 

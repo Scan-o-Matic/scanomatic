@@ -45,9 +45,9 @@ class UnDocumented_Error(Exception): pass
 
 class Subprocs_Controller(controller_generic.Controller):
 
-    def __init__(self, window, main_controller, logger=None):
+    def __init__(self, main_controller, logger=None):
 
-        super(Subprocs_Controller, self).__init__(window, main_controller,
+        super(Subprocs_Controller, self).__init__(main_controller,
             specific_model=model_subprocs.get_composite_specific_model(),
             logger=logger)
 

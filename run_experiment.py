@@ -92,8 +92,6 @@ class Experiment(object):
         self._running = True
 
         sys.excepthook = self.__excepthook
-        self._stdin_pipe_deamon = threading.Thread(target=self._stdin_deamon)
-        self._stdin_pipe_deamon.start()
 
         self._scan_threads = list()
 
@@ -107,6 +105,9 @@ class Experiment(object):
             self._set_settings_from_run_args(run_args)
         elif kwargs is not None:
             self._set_settings_from_kwargs(kwargs)
+
+        self._stdin_pipe_deamon = threading.Thread(target=self._stdin_deamon)
+        self._stdin_pipe_deamon.start()
 
     def __excepthook(self, excType, excValue, traceback):
 
@@ -124,18 +125,28 @@ class Experiment(object):
     def _stdin_deamon(self):
 
         line = ""
-        while self._running:
 
-            if self._orphan:
-                line = ""
-            else:
+        stdin_path = self.paths.experiment_stdin.format(
+            self.paths.get_fixture_name(self._scanner_name))
+        try:
+            fs = open(stdin_path, 'w')
+            pos = fs.tell()
+            fs.close()
+        except:
+            self._orphan = True
 
-                try:
-                    line = sys.stdin.readline().strip()
-                    sys.stdin.flush()
-                except:
-                    self._orphan = True
-                    self._logger.warning("Lost contact with GUI, will run as orphan!")
+        while self._running and not self._orphan:
+
+            try:
+                fs = open(stdin_path)
+                fs.seek(pos)
+                lines = fs.readlines()
+                pos = fs.tell()
+            except:
+                self._orphan = True
+                self._logger.warning("Lost contact with GUI, will run as orphan!")
+            finally:
+                fs.close()
 
             if line == "__QUIT__":
                 self._running = False

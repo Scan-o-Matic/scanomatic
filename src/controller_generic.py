@@ -26,7 +26,7 @@ import src.resource_logger as resource_logger
 
 class Controller(object):
 
-    def __init__(self, window, parent_controller,
+    def __init__(self, parent_controller,
             model=None, view=None,
             specific_model=None, logger=None):
 
@@ -36,7 +36,6 @@ class Controller(object):
             self._logger = resource_logger.Fallback_Logger()
 
         self._parent = parent_controller
-        self._window = window
 
         #MODEL SHOULD BE SET BEFORE VIEW!
         self.set_model(model)
