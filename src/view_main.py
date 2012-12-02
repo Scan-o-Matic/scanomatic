@@ -171,13 +171,15 @@ class Main_Window(gtk.Window):
 
         self.show_notebook_or_logo()
         
-    def remove_notebook_page(self, page):
+    def remove_notebook_page(self, widget):
 
-        for i, c in enumerate(self._content_notebook.children()):
+        tag_label = widget.get_parent()
+        n = self._content_notebook
+        for i, page in enumerate(n.children()):
 
-            if c == page:
+            if tag_label == n.get_tab_label(page):
 
-                self._content_notebook.remove_page(i)
+                n.remove_page(i)
                 break
 
         self.show_notebook_or_logo()

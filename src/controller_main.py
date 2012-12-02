@@ -114,7 +114,7 @@ class Controller(controller_generic.Controller):
         view = self._view
         if page_controller.ask_destroy():
             page_controller.destroy()
-            view.remove_notebook_page(page_controller.get_view())
+            view.remove_notebook_page(widget)
             for i, c in enumerate(self._controllers):
                 if c == page_controller:
                     del self._controllers[i]

@@ -62,6 +62,14 @@ class Subprocs_Controller(controller_generic.Controller):
 
         return model_subprocs.get_gui_model()
 
+    def ask_destroy(self):
+        """This is to allow the fake destruction always"""
+        return True
+
+    def destroy(self):
+        """Subproc is never destroyed, but its views always allow destruction"""
+        pass
+
     def add_subprocess(self, proc, proc_type, stdin=None, stdout=None, stderr=None,
                         pid=None, psm=None, proc_name=None):
 
