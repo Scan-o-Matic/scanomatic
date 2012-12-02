@@ -16,6 +16,7 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
+import gobject
 """
 from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 import matplotlib.image as plt_img
@@ -116,3 +117,38 @@ class Subprocs_View(gtk.Frame):
         self.experiments.set_label(str(specific_model['running-scanners']))
         self.analysis.set_label(str(specific_model['running-analysis']))
         self.messages.set_label(str(specific_model['collected-messages']))
+
+
+class Running_Experiments(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Running_Experiments, self).__init__(False, 0)
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        self._stuff = list()
+
+        for p in controller.get_subprocesses(self, by_type='experiment'):
+            frame = gtk.Frame(p['sm']['experiment-prefix'])
+            vbox = gtk.VBox(False, 0)
+            frame.add(vbox)
+            progress = gtk.ProgressBar()
+            vbox.pack_start(progress, False, False, PADDING_SMALL)
+            self.pack_start(frame, False, False, PADDING_LARGE)
+            self._stuff.append((p, progress))
+           
+        self.show_all()
+        gobject.timeout_add(20, self.update)
+
+    def update(self):
+
+        sm = self._specific_model
+        for p, progress in self._stuff:
+            
+            progress.set_fraction(p['progress']/float(p['sm']['scans']))
+            progress.set_text("Expected to finnish {0}")
+
+

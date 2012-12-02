@@ -243,6 +243,7 @@ class Experiment(object):
 
         if self._running:
 
+            print "__Is__ {0}".format(self._scanned)
             self._logger.info("Acquiring image {0}".format(self._scanned))
 
             #THREAD IMAGE AQ AND ANALYSIS
@@ -318,6 +319,7 @@ class Experiment(object):
                 self._first_pass_analysis_file,
                 images=[im_dict])
 
+        print "__Id__ {0}".format(self._scanned)
         self._logger.info("Image {0} done!".format(im_index))
 
     def _write_header_row(self):

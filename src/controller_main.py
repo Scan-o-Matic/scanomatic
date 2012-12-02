@@ -79,6 +79,10 @@ class Controller(controller_generic.Controller):
         self._view.add_notebook_page(page, title, c)
         self.add_subcontroller(c)
 
+    def add_contents_from_controller(self, page, title, c):
+
+        self._view.add_notebook_page(page, title, c)
+
     def add_contents(self, widget, content_name):
 
         m = self._model

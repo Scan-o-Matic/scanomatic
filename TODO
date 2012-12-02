@@ -4,6 +4,8 @@
 
 --- HOT ---
 
+*** EXPERIMENT change in rootdir don't help
+
 *** GLOBALS for diff version compatibility -> resourceCONFIG
 
 *** MAIN: Why doesn't the program allow for not closing?

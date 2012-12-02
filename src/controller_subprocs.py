@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import gobject
 import types
+import re
 from subprocess import Popen
 
 #
@@ -78,7 +79,8 @@ class Subprocs_Controller(controller_generic.Controller):
             raise Unknown_Subprocess_Type(proc_type)
 
         plist.append({'proc': proc, 'type': proc_type, 'pid': pid, 'stdin': stdin,
-            'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name})
+            'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name,
+            'progress': 0})
 
     def get_subprocesses(self, by_name=None, by_type=None):
 
@@ -86,7 +88,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
         if by_type is None:
             plist = sm['scanner-procs'] +  sm['analysis-procs']
-        elif by_type == 'scanner':
+        elif by_type in ['scanner', 'experiment']:
             plist = sm['scanner-procs']
         elif by_type == 'analysis':
             plist = sm['analysis-procs']
@@ -144,6 +146,23 @@ class Subprocs_Controller(controller_generic.Controller):
                 scanner = p['sm']['scanner']
                 tc.scanners.free(scanner)
 
+            else:
+
+                try:
+                    fh = open(p['stdout'])
+                    if 'stdout-pos' in p:
+                        fh.seek(p['stdout-pos'])
+                    lines = fh.read()
+                    p['stdout-pos'] = fh.tell()
+                    i_started = re.findall(r'__Is__ (.*)$', lines) 
+                    i_done = re.findall(r'__Id__ (.*)$', lines) 
+                    p['progress'] += len(i_done)
+                    p['progress'] += 0.5 * (len(i_started) != len(i_done))
+                    fh.close()
+                except:
+                    pass
+
+
         #CHECK FOR TERMINATED ANALYSIS
         for p in self.get_subprocesses(by_type='analysis'):
             p_exit = p['proc'].poll()
@@ -193,7 +212,11 @@ class Subprocs_Controller(controller_generic.Controller):
 
     def produce_running_experiments(self, widget):
 
-        pass
+        self.get_top_controller().add_contents_from_controller(
+            view_subprocs.Running_Experiments(self, self._model,
+            self._specific_model), 
+            self._model['running-experiments'], 
+            self)
 
     def produce_running_analysis(self, widget):
 
