@@ -112,6 +112,11 @@ been acquired by running an experiment.</i></span>
 'analysis-stage-first-dir-title': 'Project Directory:',
 'analysis-stage-first-file': 'Output File:',
 'analysis-stage-first-where': 'Where',
+'analysis-stage-first-column-title': 'Files in the order they will be analysed',
+'analysis-stage-first-meta': 'Metadata',
+'analysis-stage-first-meta-prefix': 'Prefix',
+'analysis-stage-first-meta-id': 'ID from Planner',
+'analysis-stage-first-meta-desc': 'Description',
 
 #ANALYSIS TOP IMAGE SELECTION
 'analysis-top-image-selection-next': 'Normalisation',
@@ -223,6 +228,7 @@ specific_first = {
 'experiments-root': '',
 'experiments-prefix': '',
 'output-file':'',
+'image-list-model': None,
 }
 
 specific_transparency = {

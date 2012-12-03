@@ -264,6 +264,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         self._controller = controller
         self._model = model
         self._specific_model = controller.get_specific_model()
+        specific_model = self._specific_model
 
         super(Analysis_Stage_First_Pass, self).__init__(False, 0)
 
@@ -289,31 +290,91 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         hbox = gtk.HBox(False, 0)
         label = gtk.Label(model['analysis-stage-first-dir-title'])
         hbox.pack_start(label, False, False, PADDING_MEDIUM)
-        self.dir_label = gtk.Label("")
-        hbox.pack_start(self.dir_label, True, True, PADDING_SMALL)
+        self._dir_label = gtk.Label("")
+        hbox.pack_start(self._dir_label, True, True, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
         ##INFO ON FILE
         hbox = gtk.HBox(False, 0)
         label = gtk.Label(model['analysis-stage-first-file'])
         hbox.pack_start(label, False, False, PADDING_MEDIUM)
-        self.file_entry = gtk.Entry()
-        hbox.pack_start(self.file_entry, False, False, PADDING_SMALL)
+        self._file_entry = gtk.Entry()
+        self._file_entry.set_width_chars(55)
+        hbox.pack_start(self._file_entry, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
         #FILES
         scrolled = gtk.ScrolledWindow()
         self.pack_start(scrolled, True, True, PADDING_MEDIUM)
-        """HERE MAKE IMAGE LIST THING"""
+
+        ##SELECTED FILE LIST
+        if specific_model['image-list-model'] is None:
+            treemodel = gtk.ListStore(str)
+            specific_model['image-list-model'] = treemodel
+        else:
+            treemodel = specific_model['image-list-model']
+
+        self._treeview = gtk.TreeView(treemodel)
+
+        tv_cell = gtk.CellRendererText()
+        tv_column = gtk.TreeViewColumn(
+            model['analysis-stage-first-column-title'],
+            tv_cell, text=0)
+        self._treeview.append_column(tv_column)
+        self._treeview.set_reorderable(True)
+        self._treeview.connect('key_press_event',
+            controller.handle_keypress)
+        self._treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        self._treeview.set_rubber_banding(True)
+        scrolled.add_with_viewport(self._treeview)
+
 
         #META-DATA
-        """HERE MAKE METADATA THING"""
+        frame = gtk.Frame(model['analysis-stage-first-meta'])
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        vbox = gtk.VBox(False, 0)
+        frame.add(vbox)
+         ##THE REST...
+        hbox = gtk.HBox(False, 0)
+        vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
+        table = gtk.Table(rows=3, columns=2, homogeneous=False) 
+        table.set_col_spacings(PADDING_MEDIUM)
+        hbox.pack_start(table, False, False, PADDING_SMALL)
+        ##PREFIX
+        label = gtk.Label(model['analysis-stage-first-meta-prefix'])
+        label.set_alignment(0, 0.5)
+        self._prefix = gtk.Entry()
+        self._prefix.connect('focus-out-event', 
+            controller.update_model, 'prefix')
+        table.attach(label, 0, 1, 0, 1)
+        hbox = gtk.HBox(False, 0)
+        hbox.pack_start(self._prefix, False, False, PADDING_NONE)
+        table.attach(hbox, 1, 2, 0, 1)
+        ##IDENTIFIER
+        label = gtk.Label(model['analysis-stage-first-meta-id'])
+        label.set_alignment(0, 0.5)
+        self._project_id = gtk.Entry()
+        self._project_id.connect("focus-out-event",
+            controller.update_model, 'id')
+        hbox = gtk.HBox(False, 0)
+        hbox.pack_start(self._project_id, False, False, PADDING_NONE)
+        table.attach(label, 0, 1, 1, 2)
+        table.attach(hbox, 1, 2, 1, 2)
+        ##DESCRIPTION
+        label = gtk.Label(model['analysis-stage-first-meta-desc'])
+        label.set_alignment(0, 0.5)
+        self._project_desc = gtk.Entry()
+        self._project_desc.connect("focus-out-event", 
+            controller.update_model, 'desc')
+        self._project_desc.set_width_chars(55)
+        table.attach(label, 0, 1, 2, 3)
+        table.attach(self._project_desc, 1, 2, 2, 3)
 
     def update(self):
 
         sm = self._specific_model
-        self.dir_label.set_text(sm['output-directory'])
-        self.file_entry.set_text(sm['output-file'])
+        self._dir_label.set_text(sm['output-directory'])
+        self._file_entry.set_text(sm['output-file'])
 
 
 class Analysis_Stage_Project(gtk.VBox):

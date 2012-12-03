@@ -406,7 +406,40 @@ class Analysis_First_Pass(controller_generic.Controller):
                 self._paths.experiment_first_pass_analysis_relative.format(
                 sm['experiment-prefix'])
 
+            self._add_images_in_directory()
             self.get_view().get_stage().update()
+
+    def _add_images_in_directory(self):
+
+        sm = self._specific_model
+        im_model = sm['image-list-model']
+        if im_model is not None:
+
+            extension = '.tiff'
+            directory = sm['output-directory']
+
+            list_images = sorted([os.sep.join((directory, f)) for f
+                    in os.listdir(directory) if f.lower().endswith(extension)])
+
+            #CHECK SO NOT DUPING
+            for im in list_images:
+                in_model = False
+                for row in im_model:
+                    if im == row[0]:
+                        in_model = False
+                        break
+        
+                if not in_model:
+
+                    im_model.append((im,))
+
+    def handle_keypress(self, widget, event):
+
+        pass
+
+    def update_model(self, widget, target):
+
+        pass
 
 class Analysis_Image_Controller(controller_generic.Controller):
 
