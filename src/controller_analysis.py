@@ -377,8 +377,7 @@ class Analysis_First_Pass(controller_generic.Controller):
     def __init__(self, parent, view=None, model=None, logger=None):
 
         super(Analysis_First_Pass, self).__init__(
-                parent, 
-                view=view, model=model, logger=logger)
+                parent, view=view, model=model, logger=logger)
 
         self.set_specific_model(model_analysis.copy_model(
             model_analysis.specific_first))
@@ -406,6 +405,7 @@ class Analysis_First_Pass(controller_generic.Controller):
                 self._paths.experiment_first_pass_analysis_relative.format(
                 sm['experiment-prefix'])
 
+            self._load_meta_from_previous_file()
             self._add_images_in_directory()
             self.get_view().get_stage().update()
 
@@ -432,6 +432,40 @@ class Analysis_First_Pass(controller_generic.Controller):
                 if not in_model:
 
                     im_model.append((im,))
+
+    def _load_meta_from_previous_file(self, f_path=None):
+
+        sm = self._specific_model
+        if f_path is None:
+            f_path = os.sep.join((sm['output-directory'], sm['output-file']))
+
+        meta_data = resource_project_log.get_meta_data(f_path) 
+        pm = meta_data['Pinning Matrices']
+        if pm is not None:
+            meta_data['Pinning Matrices'] = map(tuple, pm)
+            
+        sm['meta-data'] = meta_data
+ 
+    def set_new_plates(self, n_plates):
+
+        md = self._specific_model['meta-data']
+        if md is not None:
+
+            if md['Pinning Matrices'] is None:
+                md['Pinning Matrice'] = [None] * n_plates
+
+            elif len(md['Pinning Matrices']) > n_plates:
+                md['Pinning Matrices'] = md['Pinning Matrices'][:n_plates]
+
+            elif len(md['Pinning Matrices']) < n_plates:
+                md['Pinning Matrices'] += [None] * (n_plates - 
+                    len(md['Pinning Matrices']))
+
+            self.get_view().get_stage().set_pinning()
+
+    def set_pinning(self, widget):
+
+        pass
 
     def handle_keypress(self, widget, event):
 

@@ -370,12 +370,108 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         table.attach(label, 0, 1, 2, 3)
         table.attach(self._project_desc, 1, 2, 2, 3)
 
+        #FIXTURE AND SCANNER
+        frame = gtk.Frame(model['analysis-stage-first-fixture_scanner'])
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        hbox = gtk.HBox(False, 0)
+        frame.add(hbox)
+        label = gtk.Label(model['analysis-stage-first-scanner'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self._scanner = gtk.Entry() 
+        self._scanner.connect(
+            "focus-out-event", controller.update_model, 'scanner')
+        hbox.pack_start(self._scanner, False, False, PADDING_MEDIUM)
+        label = gtk.Label(model['analysis-stage-first-fixture'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self._fixture = gtk.Entry() 
+        self._fixture.connect(
+            "focus-out-event", controller.update_model, 'fixture')
+        hbox.pack_start(self._fixture, False, False, PADDING_SMALL)
+
+        #PINNING
+        frame = gtk.Frame(model['analysis-stage-first-plates'])
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        vbox = gtk.VBox()
+        frame.add(vbox)
+        hbox = gtk.HBox()
+        label = gtk.Label(model['analysis-stage-first-plates-number'])
+        hbox.pack_start(label, False, False, PADDING_MEDIUM)
+        self._plates = gtk.Entry(1)
+        self._plates.set_text("0")
+        self._plates.set_width_chars(2)
+        self._plates.connect('changed', self._update_number_of_plates)
+        hbox.pack_start(self._plates, False, False, PADDING_MEDIUM)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
+        self._pm_box = gtk.HBox()
+        vbox.pack_start(self._pm_box, False, True, PADDING_SMALL)
+
+    def _update_number_of_plates(self, widget):
+
+        t = widget.get_text()
+        if t == "":
+            return
+
+        try:
+            i = int(t)
+        except:
+            self._plates.set_text("0")
+            return
+
+        self._controller.set_new_plates(i)
+
+    def set_pinning(self, sensitive=True):
+
+        pinnings_list = self._specific_model['meta-data']['Pinning Matrices']
+
+        box = self._pm_box
+
+        children = box.children()
+
+        if pinnings_list is not None:
+
+            if len(children) < len(pinnings_list):
+
+               for p in xrange(len(pinnings_list) - len(children)):
+
+                    box.pack_start(Pinning(
+                        self._controller, self._model, self,
+                        len(children) + p + 1, 
+                        pinning=pinnings_list[p]))
+
+               children = box.children()
+
+            if len(children) > len(pinnings_list):
+
+                for p in xrange(len(children) - len(pinnings_list)):
+                    box.remove(children[-1 - p])
+
+                children = box.children()
+
+            for i, child in enumerate(children):
+
+                child.set_sensitive(sensitive)
+                child.set_pinning(pinnings_list[i])
+
+        box.show_all()
+
     def update(self):
 
+        """
+        META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0, 
+           'Description': 'Automatic placeholder description',
+           'UUID': None, 'Measures': 0, 'Fixture': '', 'Scanner': '',
+           'Pinning Matrices': None, 'Manual Gridding': None, 'Project ID': ''}
+        """
         sm = self._specific_model
         self._dir_label.set_text(sm['output-directory'])
         self._file_entry.set_text(sm['output-file'])
-
+        if sm['meta-data'] is not None:
+            md = sm['meta-data']
+            self._project_desc.set_text(md['Description'])
+            self._project_id.set_text(md['Project ID'])
+            self._prefix.set_text(md['Prefix'])
+            self._scanner.set_text(md['Scanner'])
+            self._fixture.set_text(md['Fixture'])
 
 class Analysis_Stage_Project(gtk.VBox):
 
@@ -467,8 +563,8 @@ class Analysis_Stage_Project(gtk.VBox):
         hbox = gtk.HBox()
         hbox.pack_start(self.keep_gridding, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
-        self.pm_box = gtk.HBox()
-        vbox.pack_start(self.pm_box, False, True, PADDING_SMALL)
+        self._pm_box = gtk.HBox()
+        vbox.pack_start(self._pm_box, False, True, PADDING_SMALL)
         self.keep_gridding.clicked()
 
         self.show_all()
@@ -509,7 +605,7 @@ class Analysis_Stage_Project(gtk.VBox):
 
     def set_pinning(self, pinnings_list, sensitive=None):
 
-        box = self.pm_box
+        box = self._pm_box
 
         children = box.children()
 

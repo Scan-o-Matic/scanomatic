@@ -117,6 +117,11 @@ been acquired by running an experiment.</i></span>
 'analysis-stage-first-meta-prefix': 'Prefix',
 'analysis-stage-first-meta-id': 'ID from Planner',
 'analysis-stage-first-meta-desc': 'Description',
+'analysis-stage-first-fixture_scanner': 'Scanner & Fixture',
+'analysis-stage-first-scanner': 'Scanner',
+'analysis-stage-first-fixture': 'Fixture',
+'analysis-stage-first-plates': 'Plates',
+'analysis-stage-first-plates-number': 'Number of Plates:',
 
 #ANALYSIS TOP IMAGE SELECTION
 'analysis-top-image-selection-next': 'Normalisation',
@@ -229,6 +234,7 @@ specific_first = {
 'experiments-prefix': '',
 'output-file':'',
 'image-list-model': None,
+'meta-data': None,
 }
 
 specific_transparency = {
