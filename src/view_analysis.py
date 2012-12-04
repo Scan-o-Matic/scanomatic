@@ -102,6 +102,8 @@ class Analysis_First_Pass_Top(Top):
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
         self.set_allow_next(False)
 
+        self.show_all()
+
     def set_allow_next(self, val):
 
         self._start_button.set_sensitive(val)
@@ -300,8 +302,21 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         hbox.pack_start(label, False, False, PADDING_MEDIUM)
         self._file_entry = gtk.Entry()
         self._file_entry.set_width_chars(55)
+        self._file_entry.connect("focus-out-event",
+            controller.update_model, 'output-file')
         hbox.pack_start(self._file_entry, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        ##USE FIXTURE-CONF IN DIRECTORY
+        hbox = gtk.HBox(False, 0)
+        self._local_fixture = gtk.CheckButton(
+            label=model['analysis-stage-first-local_fixture'])
+        hbox.pack_start(self._local_fixture, False, False, PADDING_SMALL)
+        self._local_fixture.set_sensitive(False)
+        self._local_fixture.set_active(False)
+        self._local_fixture.connect("toggled", 
+            controller.set_local_fixture, 'local-fixture')
+        self.pack_start(hbox, False, False, PADDING_SMALL)
 
         #FILES
         scrolled = gtk.ScrolledWindow()
@@ -334,7 +349,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         self.pack_start(frame, False, False, PADDING_MEDIUM)
         vbox = gtk.VBox(False, 0)
         frame.add(vbox)
-         ##THE REST...
+        ##THE REST...
         hbox = gtk.HBox(False, 0)
         vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
         table = gtk.Table(rows=3, columns=2, homogeneous=False) 
@@ -440,7 +455,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
 
                children = box.children()
 
-            if len(children) > len(pinnings_list):
+            elif len(children) > len(pinnings_list):
 
                 for p in xrange(len(children) - len(pinnings_list)):
                     box.remove(children[-1 - p])
@@ -454,14 +469,27 @@ class Analysis_Stage_First_Pass(gtk.VBox):
 
         box.show_all()
 
+    def delete_selection(self):
+
+        sel = self._treeview.get_selection()
+        result = sel.get_selected_rows()
+
+        if result is not None:
+
+            model, pathlist = result
+
+            if pathlist is not None:
+
+                for i in sorted(pathlist, reverse=True):
+                    del model[i]
+
+    def update_local_fixture(self, has_fixture):
+
+        self._local_fixture.set_sensitive(has_fixture)
+        self._local_fixture.set_active(has_fixture)
+
     def update(self):
 
-        """
-        META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0, 
-           'Description': 'Automatic placeholder description',
-           'UUID': None, 'Measures': 0, 'Fixture': '', 'Scanner': '',
-           'Pinning Matrices': None, 'Manual Gridding': None, 'Project ID': ''}
-        """
         sm = self._specific_model
         self._dir_label.set_text(sm['output-directory'])
         self._file_entry.set_text(sm['output-file'])
@@ -470,8 +498,17 @@ class Analysis_Stage_First_Pass(gtk.VBox):
             self._project_desc.set_text(md['Description'])
             self._project_id.set_text(md['Project ID'])
             self._prefix.set_text(md['Prefix'])
-            self._scanner.set_text(md['Scanner'])
+            try:
+                self._scanner.set_text(md['Scanner'])
+            except:
+                md['Scanner'] = 'Unknown'
+                self._scanner.set_text(md['Scanner'])
+
             self._fixture.set_text(md['Fixture'])
+            try:
+                self._plates.set_text(str(len(md['Pinning Matrices'])))
+            except:
+                self._plates.set_text("0")
 
 class Analysis_Stage_Project(gtk.VBox):
 

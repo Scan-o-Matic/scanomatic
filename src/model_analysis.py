@@ -112,6 +112,7 @@ been acquired by running an experiment.</i></span>
 'analysis-stage-first-dir-title': 'Project Directory:',
 'analysis-stage-first-file': 'Output File:',
 'analysis-stage-first-where': 'Where',
+'analysis-stage-first-local_fixture': 'Use fixture config copy in this directory',
 'analysis-stage-first-column-title': 'Files in the order they will be analysed',
 'analysis-stage-first-meta': 'Metadata',
 'analysis-stage-first-meta-prefix': 'Prefix',
@@ -233,6 +234,7 @@ specific_first = {
 'experiments-root': '',
 'experiments-prefix': '',
 'output-file':'',
+'use-local-fixture': False,
 'image-list-model': None,
 'meta-data': None,
 }

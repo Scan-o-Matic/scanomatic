@@ -387,6 +387,7 @@ class Analysis_First_Pass(controller_generic.Controller):
     def start(self, *args, **kwargs):
 
         print "Start", args, kwargs
+        print self._specific_model
 
     def set_output_dir(self, widget):
         m = self._model
@@ -407,7 +408,44 @@ class Analysis_First_Pass(controller_generic.Controller):
 
             self._load_meta_from_previous_file()
             self._add_images_in_directory()
-            self.get_view().get_stage().update()
+            stage = self.get_view().get_stage()
+
+            f_path =self._paths.get_fixture_path('fixture',
+                own_path=dir_list)
+            lc = os.path.isfile(f_path)
+            stage.update_local_fixture(lc)
+
+            stage.update()
+            self._set_allow_run()
+
+    def _set_allow_run(self):
+
+        set_allow_next = self.get_view().get_top().set_allow_next
+
+        sm = self._specific_model
+        md = sm['meta-data']
+        if len(sm['image-list-model']) == 0:
+            set_allow_next(False)
+            return
+        elif len(sm['output-file']) == 0 or len(sm['output-directory']) == 0:
+            set_allow_next(False)
+            return
+        elif md is None:
+            set_allow_next(False)
+            return
+        elif md['Pinning Matrices'] is None \
+            or len(md['Pinning Matrices']) == 0 \
+            or sum([p is None for p in md['Pinning Matrices']]) == len(md['Pinning Matrices']):
+
+            set_allow_next(False)
+            return
+
+        elif md['Prefix'] == '' and sm['use-local-fixture'] == False:
+
+            set_allow_next(False)
+            return
+
+        set_allow_next(True)
 
     def _add_images_in_directory(self):
 
@@ -433,6 +471,8 @@ class Analysis_First_Pass(controller_generic.Controller):
 
                     im_model.append((im,))
 
+        self._set_allow_run()
+
     def _load_meta_from_previous_file(self, f_path=None):
 
         sm = self._specific_model
@@ -452,7 +492,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         if md is not None:
 
             if md['Pinning Matrices'] is None:
-                md['Pinning Matrice'] = [None] * n_plates
+                md['Pinning Matrices'] = [None] * n_plates
 
             elif len(md['Pinning Matrices']) > n_plates:
                 md['Pinning Matrices'] = md['Pinning Matrices'][:n_plates]
@@ -463,17 +503,55 @@ class Analysis_First_Pass(controller_generic.Controller):
 
             self.get_view().get_stage().set_pinning()
 
-    def set_pinning(self, widget):
+        self._set_allow_run()
 
-        pass
+    def set_pinning(self, widget, plate):
+
+        plate -= 1
+        row = widget.get_active()
+        model = widget.get_model()
+        key = model[row][0]
+        pm = self._model['pinning-matrices'][key]
+
+        self._specific_model['meta-data']['Pinning Matrices'][plate] = pm
+
+        self._set_allow_run()
+
+    def set_local_fixture(self, widget, *args):
+
+        self._specific_model['use-local-fixture'] = widget.get_active()
+        self._set_allow_run()
 
     def handle_keypress(self, widget, event):
 
-        pass
+        if view_analysis.gtk.gdk.keyval_name(event.keyval) == "Delete":
 
-    def update_model(self, widget, target):
+            self.get_view().get_stage().delete_selection() 
 
-        pass
+        self._set_allow_run()
+
+    def update_model(self, widget, event, target):
+
+        sm = self._specific_model
+        md = self._specific_model['meta-data']
+        t = widget.get_text()
+
+        if target == "scanner":
+            md['Scanner'] = t
+        elif target == "fixture":
+            md['Fixture'] = t
+        elif target == "desc":
+            md['Description'] = t
+        elif target == "id":
+            md['Project ID'] = t
+        elif target == "output-file":
+            sm['output-file'] = t
+        elif target == "prefix":
+            md['Prefix'] = t
+        else:
+            print target, t
+
+        self._set_allow_run()
 
 class Analysis_Image_Controller(controller_generic.Controller):
 
