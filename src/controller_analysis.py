@@ -1356,6 +1356,11 @@ class Analysis_Project_Controller(controller_generic.Controller):
         sm = self._specific_model
         tc = self.get_top_controller()
 
+        view = self.get_view()
+        view.get_top().hide_button()
+        view.set_stage(
+            view_analysis.Analysis_Stage_Project_Running(self, self._model))
+
         #tc.paths.experiment_analysis_relative_path
         analysis_log = os.sep.join((sm['analysis-project-log_file_dir'],
             sm['analysis-project-output-path'],

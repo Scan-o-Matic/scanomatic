@@ -102,6 +102,11 @@ been acquired by running an experiment.</i></span>
 
 'analysis-stage-project-select-log-file-filter': {'filter_name': 'Log Files',
 'mime_and_patterns': (('TEXT', '*.analysis'),)},
+'analysis-stage-project-running-info':
+"""<span weight="heavy">Running Analysis on '{0}'</span>
+<span><i>This process runs as its own separate process and will continue
+independently of this program. For further information on how it's progressing,
+click on running analysis to the left</i></span>""",
 
 #ANALYSIS STAGE FIRST PASS
 'analysis-stage-first-title':

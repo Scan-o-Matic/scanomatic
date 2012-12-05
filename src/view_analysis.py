@@ -129,6 +129,11 @@ class Analysis_Top_Project(Top):
 
         self.show_all()
 
+    def hide_button(self):
+
+        for child in self.children():
+            self.remove(child)
+
     def set_allow_next(self, val):
 
         self._start_button.set_sensitive(val)
@@ -560,6 +565,28 @@ class Analysis_Stage_First_Pass(gtk.VBox):
                 self._plates.set_text(str(len(md['Pinning Matrices'])))
             except:
                 self._plates.set_text("0")
+
+
+class Analysis_Stage_Project_Running(gtk.VBox):
+
+    def __init__(self, controller, model):
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = controller.get_specific_model()
+
+        sm = self._specific_model
+
+        super(Analysis_Stage_Project_Running, self).__init__(0, False)
+
+        label = gtk.Label()
+        label.set_markup(
+            model['analysis-stage-project-running-info'].format(
+            sm['analysis-project-log_file']))
+
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        self.show_all()
 
 class Analysis_Stage_Project(gtk.VBox):
 
