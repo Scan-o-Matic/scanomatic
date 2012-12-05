@@ -32,9 +32,10 @@ class Unknown_Meta_Data_Key(Exception): pass
 #
 
 META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0, 
-   'Description': 'Automatic placeholder description',
-   'UUID': None, 'Measures': 0, 'Fixture': '', 'Scanner': '',
-   'Pinning Matrices': None, 'Manual Gridding': None, 'Project ID': ''}
+    'Description': 'Automatic placeholder description',
+    'Version': __version__,
+    'UUID': None, 'Measures': 0, 'Fixture': '', 'Scanner': '',
+    'Pinning Matrices': None, 'Manual Gridding': None, 'Project ID': ''}
 
 IMAGE_ENTRY_KEYS = ['plate_1_area', 'grayscale_indices', 'grayscale_values',
     'plate_0_area', 'mark_X', 'mark_Y', 'plate_3_area', 'Time',

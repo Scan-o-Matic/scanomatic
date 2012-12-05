@@ -412,6 +412,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         #Outdata path
         p = os.sep.join((sm['output-directory'], sm['output-file']))
 
+        md = resource_project_log.get_meta_data_dict(**md)
         #Make header row for file:
         if resource_project_log.write_log_file(p, meta_data=md) == False:
 
@@ -1355,10 +1356,10 @@ class Analysis_Project_Controller(controller_generic.Controller):
         sm = self._specific_model
         tc = self.get_top_controller()
 
-        tc.paths.experiment_analysis_relative
-        analysis_log = open(os.sep.join(sm['analysis-project-log_file_dir'],
+        #tc.paths.experiment_analysis_relative_path
+        analysis_log = os.sep.join((sm['analysis-project-log_file_dir'],
             sm['analysis-project-output-path'],
-            tc.paths.experiment_analysis_file_name) , 'w')
+            tc.paths.experiment_analysis_file_name))
 
         a_dict = tc.config.get_default_analysis_query()
         a_dict['-i'] = sm['analysis-project-log_file']
@@ -1383,8 +1384,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
         if self._supress_other is True: 
             analysis_query += ["-s", "True"]
         """
-        proc = Popen(map(str, analysis_query), 
-            stdout=analysis_log, shell=False)
+        proc = Popen(map(str, analysis_query), shell=False)
 
         pid = proc.pid
 

@@ -125,8 +125,7 @@ class Config_File(object):
 
                     try:
 
-                        self._data[str(self._file_data_order[-1])] = \
-                                        eval(eval(line_list[0]))
+                        self._data[self._file_data_order[-1]] = eval(line_list[0])
                         
                     except:
 

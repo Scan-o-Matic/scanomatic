@@ -169,6 +169,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
     start_time = time.time()
 
     graph_output = None
+    _log_version = 0
     file_path_base = os.sep.join(log_file_path.split(os.sep)[:-1])
 
     #XML STATIC TEMPLATES
@@ -306,6 +307,12 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         description = image_dictionaries[0]['Description']
         interval_time = image_dictionaries[0]['Interval']
 
+        if 'Version' in image_dictionaries[0].keys():
+            try:
+                _log_version = float(image_dictionaries[0]['Version'])
+            except:
+                pass
+
         if pinning_matrices is None and 'Pinning Matrices' \
                             in image_dictionaries[0].keys():
 
@@ -372,12 +379,16 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
                 return False 
 
     plate_position_keys = []
+    if _log_version >= 0.997:
+        v_offset = 1
+    else:
+        v_offset = 0
 
     for i in xrange(len(pinning_matrices)):
         if (suppress_analysis != True or graph_watch[0] == i) and\
             pinning_matrices[i] is not None:
 
-            plate_position_keys.append("plate_" + str(i) + "_area")
+            plate_position_keys.append("plate_{0}_area".format(i+v_offset))
 
     plates = len(plate_position_keys)
 
@@ -389,7 +400,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
                     verbose=verbose, visual=visual,
                     grid_array_settings=grid_array_settings,
                     gridding_settings = gridding_settings,
-                    grid_cell_settings = grid_cell_settings)
+                    grid_cell_settings = grid_cell_settings,
+                    log_version = _log_version)
 
         graph_watch[0] = 0
         plates = 1
@@ -420,7 +432,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
                 verbose=verbose, visual=visual,
                 grid_array_settings=grid_array_settings,
                 gridding_settings = gridding_settings,
-                grid_cell_settings = grid_cell_settings)
+                grid_cell_settings = grid_cell_settings,
+                log_version = _log_version)
 
     if manual_grid and manual_griddings is not None:
 
@@ -958,7 +971,7 @@ class Project_Image():
         p_uuid=None, logger=None, verbose=False, visual=False,
         suppress_analysis=False,
         grid_array_settings=None, gridding_settings=None,
-        grid_cell_settings=None):
+        grid_cell_settings=None, log_version=0):
 
         if logger is not None:
             self.logger = logger
@@ -966,6 +979,7 @@ class Project_Image():
             self.logger = logging.getLogger('Scan-o-Matic Analysis')
 
         self.p_uuid = p_uuid
+        self._log_version = log_version
 
         self._im_path = im_path
         self._im_loaded = False
