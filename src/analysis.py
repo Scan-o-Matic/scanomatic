@@ -228,7 +228,7 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
             " encountered.\n" + \
             "The analysis needs to be re-run when the problem is fixed.\n" + \
             "If you are lucky, the problem may be solved by recompiling" + \
-            " a new log-file for " + \
+            " a new .analysis file for " + \
             "the project.\nIn any a way, please send " + \
             "the file {0} to martin.zackrisson@gu.se".format(run_file_path),
             exc_info=(excType, excValue, traceback))
@@ -1214,7 +1214,10 @@ class Project_Image():
         self.logger.debug("ANALYSIS produced gs-coefficients" + \
                     " {0} ".format(gs_fit))
 
-        scale_factor = 4.0
+        if self._log_version < 0.997:
+            scale_factor = 4.0
+        else:
+            scale_factor = 1.0
 
         if gs_fit is not None:
 

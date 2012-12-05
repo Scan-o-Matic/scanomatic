@@ -106,7 +106,8 @@ class Analysis_First_Pass_Top(Top):
 
     def hide_button(self):
 
-        self._start_button.hide()
+        for child in self.children():
+            self.remove(child)
 
     def set_allow_next(self, val):
 
@@ -392,7 +393,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         self._treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self._treeview.set_rubber_banding(True)
         scrolled.add_with_viewport(self._treeview)
-
+        scrolled.set_size_request(-1, 100)
 
         #META-DATA
         frame = gtk.Frame(model['analysis-stage-first-meta'])
