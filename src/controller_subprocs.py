@@ -206,21 +206,27 @@ class Subprocs_Controller(controller_generic.Controller):
 
         if p['type'] == 'scanner':
             plist = sm['scanner-procs']
+            for i, proc in enumerate(plist):
+
+                if id(p) == id(proc):
+
+                    try:
+                        fs = open(p['stdin'], 'a')
+                        fs.write("__QUIT__\n")
+                        fs.close()
+                    except:
+                        self._logger.error("Scanner won't be freed!")
+                    del plist[i]
+                    return True
+
         elif p['type'] == 'analysis':
+
             plist = sm['analysis-procs']    
 
-        for i, proc in enumerate(plist):
+            if p['proc'].poll() is None:
+                self._logger.info("Analysis will continue in the background...")
 
-            if id(p) == id(proc):
-
-                try:
-                    fs = open(p['stdin'], 'a')
-                    fs.write("__QUIT__\n")
-                    fs.close()
-                except:
-                    self._logger.error("Scanner won't be freed!")
-                del plist[i]
-                return True
+            return True
 
         raise Unknown_Subprocess("{0}".format(p))
 
