@@ -6,7 +6,8 @@ import matplotlib.pylab as plt_lab
 import logging
 import scipy.interpolate as scint
 import scipy.stats as stats
-import sys, os
+import sys
+import os
 
 import resource_xml_read as r_xml
 
