@@ -123,6 +123,16 @@ been acquired by running an experiment.</i></span>
 'analysis-stage-first-fixture': 'Fixture',
 'analysis-stage-first-plates': 'Plates',
 'analysis-stage-first-plates-number': 'Number of Plates:',
+'analysis-stage-first-running-intro':
+"""<span weight='heavy' size='large'>Building project '{0}'</span>
+<span><i>Please allow the process to run to complete before you start
+analysis of the project.</i></span>""",
+'analysis-stage-first-running-working': 'Working...',
+'analysis-stage-first-running-complete': 'Complete!',
+'analysis-stage-first-running-error-path': "Could not create file, invalid path: '{0}'",
+'analysis-stage-first-running-error-access': "Could not append image data to file," +
+    " someone stole write permit to '{0}'",
+'analysis-stage-first-running-error-img': "Image '{0}' failed to analyse .. skipping!\n",
 
 #ANALYSIS TOP IMAGE SELECTION
 'analysis-top-image-selection-next': 'Normalisation',
@@ -237,6 +247,11 @@ specific_first = {
 'use-local-fixture': False,
 'image-list-model': None,
 'meta-data': None,
+'run-cur-image': 0,
+'run-tot-images': 0,
+'run-position': 0,
+'run-complete': False,
+'run-error': None,
 }
 
 specific_transparency = {

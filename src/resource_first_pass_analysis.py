@@ -33,8 +33,8 @@ class Marker_Detection_Failed(Exception): pass
 # FUNCTION
 #
 
-def analyse(file_name, im_acq_time, experiment_directory,
-        paths, logger=None):
+def analyse(file_name, im_acq_time=None, experiment_directory=None,
+        paths=None, logger=None, fixture_name=None, fixture_directory=None):
 
     analysis = dict()
     if logger is None:
@@ -42,13 +42,22 @@ def analyse(file_name, im_acq_time, experiment_directory,
     else:
         logger = resource_logger.Logging_Log(logger)
 
+    if im_acq_time is None:
+        im_acq_time = os.stat(file_name).st_mtime
+
     im_data = {'Time':im_acq_time, 'File': file_name}
 
     logger.info("Fixture init for {0}".format(file_name))
 
+    if fixture_name is None:
+        fixture_name = paths.experiment_local_fixturename
+
+    if fixture_directory is None:
+        fixture_directory = experiment_directory
+
     fixture = resource_fixture_image.Fixture_Image(
-            paths.experiment_local_fixturename,
-            fixture_directory=experiment_directory,
+            fixture_name,
+            fixture_directory=fixture_directory,
             logger=logger, image_path=file_name)
 
     #logger.info("Fixture set for {0}".format(file_name))

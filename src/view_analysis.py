@@ -104,6 +104,10 @@ class Analysis_First_Pass_Top(Top):
 
         self.show_all()
 
+    def hide_button(self):
+
+        self._start_button.hide()
+
     def set_allow_next(self, val):
 
         self._start_button.set_sensitive(val)
@@ -258,6 +262,52 @@ class Analysis_Stage_About(gtk.Label):
 
         self.show()
 
+
+class Analysis_Stage_First_Pass_Running(gtk.VBox):
+
+    def __init__(self, controller, model):
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = controller.get_specific_model()
+        specific_model = self._specific_model
+
+        super(Analysis_Stage_First_Pass_Running, self).__init__(False, 0)
+
+        label = gtk.Label()
+        label.set_markup(model['analysis-stage-first-running-intro'].format(
+            specific_model['meta-data']['Prefix']))
+
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        self._progress = gtk.ProgressBar()
+        self.pack_start(self._progress, False, False, PADDING_LARGE)
+
+        self._errors = gtk.Label()
+        self.pack_start(self._errors, False, False, PADDING_LARGE)
+
+        self.show_all()
+
+    def update(self):
+
+        sm = self._specific_model
+        m = self._model
+
+        self._progress.set_fraction(sm['run-position'])
+
+        if sm['run-complete']:
+            self._progress.set_text(m['analysis-stage-first-running-complete'])
+        else:
+            self._progress.set_text(m['analysis-stage-first-running-working'])
+
+        if sm['run-error'] is not None:
+
+            self._errors.set_text(sm['run-error'])
+            self._errors.show()            
+
+        else:
+
+            self._errors.hide()
 
 class Analysis_Stage_First_Pass(gtk.VBox):
 

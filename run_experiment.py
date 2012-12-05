@@ -319,12 +319,6 @@ class Experiment(object):
                 paths=self.paths,
                 logger=self._logger)
 
-            #APPEND TO FILE
-            self._logger.info(
-                "Writing first pass analysis results {0} to {1}".format(
-                im_dict, self._first_pass_analysis_file
-                ))
-
             im_dict = resource_project_log.get_image_dict(
                 im_path,
                 scan_time,
@@ -334,8 +328,7 @@ class Experiment(object):
                 im_dict['grayscale_values'],
                 img_dict=im_dict)
 
-            self._logger.debug("What really is written = {0}".format(
-                im_dict))
+            self._logger.info("Writing first pass analysis results to file")
 
             resource_project_log.append_image_dicts(
                 self._first_pass_analysis_file,

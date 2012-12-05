@@ -33,6 +33,7 @@ import src.resource_project_log as resource_project_log
 import src.analysis_wrapper as a_wrapper
 import src.resource_fixture_image as resource_fixture_image
 import src.resource_image as resource_image
+import src.resource_first_pass_analysis as resource_first_pass_analysis
 
 #
 # EXCEPTIONS
@@ -386,8 +387,102 @@ class Analysis_First_Pass(controller_generic.Controller):
 
     def start(self, *args, **kwargs):
 
-        print "Start", args, kwargs
-        print self._specific_model
+        m = self._model
+        sm = self._specific_model
+        view = self.get_view()
+        view.get_top().hide_button()
+        view.set_stage(view_analysis.Analysis_Stage_First_Pass_Running(
+                self, m))
+       
+        sm['run-tot-images'] = float(len(sm['image-list-model']))
+ 
+        self._run_thread = threading.Thread(target=self._run_first_pass_analysis)
+        self._run_thread.start()
+        gobject.timeout_add(420, self._running_callback)
+
+    def _run_first_pass_analysis(self):
+
+        m = self._model
+        sm = self._specific_model
+        md = sm['meta-data']
+        tc = self.get_top_controller()
+
+        #Outdata path
+        p = os.sep.join((sm['output-directory'], sm['output-file']))
+
+        #Make header row for file:
+        if resource_project_log.write_log_file(p, meta_data=md) == False:
+
+            
+            sm['run-error'] = \
+                m['analysis-stage-first-running-error-path'].format(p)
+
+            return
+
+        #Variable preparation (rfpa = resource_first_pass_analysis)
+        if sm['use-local-fixture']:
+            rfpa_fixture = tc.paths.experiment_local_fixturename
+            rfpa_f_dir = sm['output-directory']
+        else:
+            rfpa_fixture = md['Fixture']
+            rfpa_f_dir = tc.paths.fixtures
+
+        #Analyse all images in order
+        for i, row in enumerate(sm['image-list-model']):
+
+            sm['run-cur-image'] = i
+            im_path = row[0]
+
+            #Analyse image
+            im_data = resource_first_pass_analysis.analyse(im_path, 
+                im_acq_time = None, 
+                logger=self._logger, 
+                fixture_name=rfpa_fixture, 
+                fixture_directory=rfpa_f_dir)
+
+            if im_data['grayscale_indices'] is None:
+                e = m['analysis-stage-first-running-error-img'].format(im_path)
+                if sm['run-error'] is None:
+                    sm['run-error'] = e
+                else:
+                    sm['run-error'] += e
+            else:
+                #Get proper dict for writing to file
+                im_dict = resource_project_log.get_image_dict(
+                    im_path,
+                    im_data['Time'],
+                    im_data['mark_X'],
+                    im_data['mark_Y'],
+                    im_data['grayscale_indices'],
+                    im_data['grayscale_values'],
+                    img_dict=im_data)
+
+                #Write results
+                if resource_project_log.append_image_dicts(p, images=[im_dict]) == False:
+
+                    sm['run-error'] = \
+                        m['analysis-stage-first-running-error-access'].format(p)
+
+                    return
+
+    def _running_callback(self):
+
+        sm = self._specific_model
+        sm['run-position'] = sm['run-cur-image'] / sm['run-tot-images']                    
+        stage = self.get_view().get_stage()
+
+        if self._run_thread.is_alive():
+
+            stage.update()
+            return True
+
+        else:
+
+            sm['run-position'] = 1.0
+            sm['run-complete'] = True
+            stage.update()
+            self.set_saved()
+            return False
 
     def set_output_dir(self, widget):
         m = self._model
@@ -399,6 +494,7 @@ class Analysis_First_Pass(controller_generic.Controller):
 
         if dir_list is not None:
 
+            self.set_unsaved()
             sm['output-directory'] = dir_list
             sm['experiments-root'] = os.sep.join(dir_list.split(os.sep)[:-1])
             sm['experiment-prefix'] = dir_list.split(os.sep)[-1]
