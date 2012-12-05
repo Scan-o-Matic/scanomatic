@@ -332,7 +332,10 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
         if 'Manual Gridding' in image_dictionaries[0].keys():
             manual_griddings = image_dictionaries[0]['Manual Gridding']
 
+        logging.info("ANALYSIS: Header row with meta-data found.")
+
     else:
+        logging.info("ANALYSIS: No meta-data row found.")
         first_scan_position = 0
         description = None
         interval_time = None
