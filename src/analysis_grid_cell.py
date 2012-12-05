@@ -120,11 +120,17 @@ class Grid_Cell():
 
                 self.data_source = self.data_source - bg_sub
 
+
+            #MIN DETECTION THRESHOLD
             self.logger.debug("ANALYSIS GRID CELL: Transforming -> " + \
                     "Cell Estimate, fixing negative cells counts ({0})".format(
-                    np.where(self.data_source < 0)[0].shape[0]))
-
+                    np.where(self.data_source < 0)[0].size))
             self.data_source[np.where(self.data_source < 0)] = 0
+            #MAX DETECTION THRESHOLD
+            self.logger.debug("ANALYSIS GRID CELL: Transforming -> " + \
+                    "Cell Estimate, fixing max overflow cells counts ({0})".format(
+                    np.where(self.data_source > 2500)[0].size))
+            self.data_source[np.where(self.data_source > 2500)] = 2500
 
             if polynomial_coeffs is not None:
 
