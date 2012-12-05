@@ -341,19 +341,15 @@ class Image_Analysis():
 
         max_coord = np.where(conv_img == conv_img.max())
 
-        print "Max Coord found"
 
         if len(max_coord[0]) == 0:
 
-            print "Best is nothing"
             return None, conv_img
 
         max_coord = np.array((max_coord[0][0], max_coord[1][0]))
-        print "First hit"
 
         #Refining
         if refine_hit:
-            print "Refine"
             max_coord = self.get_hit_refined(max_coord, conv_img)
 
         #Zeroing out hit
@@ -397,8 +393,6 @@ class Image_Analysis():
             m_locations.append(m_loc)
 
             i += 1
-
-        print "Found", i, m_locations
 
         return m_locations
 

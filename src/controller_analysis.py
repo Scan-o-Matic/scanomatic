@@ -390,7 +390,9 @@ class Analysis_First_Pass(controller_generic.Controller):
         m = self._model
         sm = self._specific_model
         view = self.get_view()
+
         view.get_top().hide_button()
+
         view.set_stage(view_analysis.Analysis_Stage_First_Pass_Running(
                 self, m))
        

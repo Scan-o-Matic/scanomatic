@@ -101,7 +101,7 @@ been acquired by running an experiment.</i></span>
 'analysis-stage-project-select-log-file-dialog': 'Select Log File',
 
 'analysis-stage-project-select-log-file-filter': {'filter_name': 'Log Files',
-'mime_and_patterns': (('TEXT', '*.log'),)},
+'mime_and_patterns': (('TEXT', '*.analysis'),)},
 
 #ANALYSIS STAGE FIRST PASS
 'analysis-stage-first-title':
