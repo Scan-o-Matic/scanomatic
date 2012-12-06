@@ -81,10 +81,11 @@ class Config_Controller(controller_generic.Controller):
                 fh = open(target_path, 'w')
                 fh.write(cont)
                 fh.close()
-                os.chmod(target_path, 777)
             except:
                 self._logger.error('Could not create desktop short-cut properly')
                 return
+
+            os.chmod(target_path, 0777)
 
         else:
 
