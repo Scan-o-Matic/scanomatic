@@ -1,0 +1,7 @@
+[Desktop Entry]
+Version={version}
+Type=Application
+Terminal=false
+Icon={icon}
+Exec={exec}
+Name={name}
