@@ -29,6 +29,7 @@ import src.controller_generic as controller_generic
 import src.controller_subprocs as controller_subprocs
 import src.controller_analysis as controller_analysis
 import src.controller_experiment as controller_experiment
+import src.controller_config as controller_config
 #Resources
 import src.controller_calibration as controller_calibration
 import src.resource_os as resource_os
@@ -58,7 +59,7 @@ class Controller(controller_generic.Controller):
         self._view = view
         """
 
-        self.paths = resource_path.Paths(program_path)
+        self.paths = resource_path.Paths(root=program_path)
         self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
         self.scanners = resource_scanner.Scanners(self.paths, self.config)
@@ -100,6 +101,9 @@ class Controller(controller_generic.Controller):
                     logger=self._logger)
         elif content_name == 'calibration':
             c = controller_calibration.Calibration_Controller(
+                    self, logger=self._logger)
+        elif content_name == 'config':
+            c = controller_config.Config_Controller(
                     self, logger=self._logger)
         else:
             err = UnknownContent("{0}".format(content_name))

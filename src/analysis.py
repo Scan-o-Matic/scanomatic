@@ -39,6 +39,7 @@ import analysis_grid_array as grid_array
 import resource_config as conf
 import resource_fixture_image 
 import resource_project_log as rpl
+import resource_path
 
 #
 # GLOBALS
@@ -1001,15 +1002,13 @@ class Project_Image():
         #PATHS
         script_path_root = os.path.dirname(os.path.abspath(__file__))
         scannomatic_root = os.sep.join(script_path_root.split(os.sep)[:-1])
-        self._program_root = scannomatic_root
-        self._program_code_root = scannomatic_root + os.sep + "src"
-        self._program_config_root = self._program_code_root + os.sep + "config"
+        self._paths = resource_path.Paths(root=scannomatic_root)
         self._file_path_base = file_path_base
 
         #Fixture setting is used for pinning history in the arrays
         self.fixture = resource_fixture_image.Fixture_Image(
                 fixture_name,
-                fixture_directory=self._program_config_root + os.sep + "fixtures",
+                fixture_directory=self._paths.fixtures,
                 )
 
         self.im = None

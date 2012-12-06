@@ -16,25 +16,48 @@ __status__ = "Development"
 import os
 
 #
+# EXCEPTIONS
+#
+
+class Invalid_Root(Exception): pass
+
+#
 # CLASSES
 #
 
 
 class Paths(object):
 
-    def __init__(self, program_path=None, config_file=None):
+    def __init__(self, program_path=None, root=None, src_path=None,
+                config_file=None):
 
+        if root is None:
 
-        if program_path is None:
-            program_path = os.sep.join(
+            if program_path is not None:
+                root = os.path.dirname(os.path.abspath(program_path))
+            elif src_path is not None:
+                root = os.path.dirname(src_path.split(os.sep)[:-1])
+            else:
+                root = os.sep.join(
                 os.path.dirname(os.path.abspath(__file__)).split(os.sep)[:-1])
 
-        #DIRECTORIES
-        self.root = program_path
+
+        self.root = root 
+        if os.path.isdir(root) == False:
+            raise Invalid_Root(root)
         self.src = self.root + os.sep + "src"
-        self.config = self.src + os.sep + "config"
+        if os.path.isdir(self.src) == False:
+            raise Invalid_Root(root)
+        self.config = self.root + os.sep + "config"
+        if os.path.isdir(self.config) == False:
+            raise Invalid_Root(root)
         self.fixtures = self.config + os.sep + "fixtures"
         self.images = self.src + os.sep + "images"
+
+        #INSTALL
+        self.desktop_file = "scan-o-matic.desktop"
+        self.desktop_file_path = os.sep.join((self.config, "desktop_icon",
+            self.desktop_file))
 
         #RUN-files
         self.scanomatic = self.root + os.sep + "run_scan_o_matic.py"
@@ -68,6 +91,11 @@ class Paths(object):
         self.experiment_scan_image_relative_pattern = "{0}_{1}.tiff"
         self.experiment_analysis_relative_path = "analysis"
         self.experiment_analysis_file_name = "analysis.log"
+
+        #ANALSYS FILES
+        self.analysis_polynomial = os.sep.join((self.config,
+             "calibration.polynomials"))
+
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
         self.experiment_first_pass_log_relative = ".1_pass.log"
         self.experiment_local_fixturename = \

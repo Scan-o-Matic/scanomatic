@@ -47,10 +47,13 @@ class Grid_Array():
         if parent is None:
 
             self.logger = logger.Log_Garbage_Collector()
+            self._paths = resource_path.Path(
+                src_path=os.path.abspath(__file__))
 
         else:
 
             self.logger = self._parent.logger
+            self._paths = parent._paths
 
         if type(identifier) == types.IntType:
 
@@ -404,21 +407,10 @@ class Grid_Array():
 
         polynomial_coeffs = None
 
-        if self._parent is not None:
-
-            self._config_calibration_polynomial = \
-                            self._parent._program_config_root +\
-                            os.sep + "calibration.polynomials"
-
-        else:
-
-            self._config_calibration_polynomial = \
-                os.path.dirname(os.path.abspath(__file__)) + \
-                os.sep + "config" + os.sep + "calibration.polynomials"
-
         try:
 
-            fs = open(self._config_calibration_polynomial, 'r')
+
+            fs = open(self._paths.analysis_polynomial, 'r')
 
         except:
 

@@ -125,6 +125,11 @@ class Main_Window(gtk.Window):
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
 
         button = gtk.Button()
+        button.set_label(m['panel-actions-config'])
+        button.connect("clickd", c.add_contents, 'config')
+        vbox.pack_start(button, False, False, PADDING_MEDIUM)
+
+        button = gtk.Button()
         button.set_label(m['panel-actions-quit'])
         button.connect("clicked", c.ask_quit, 'quit')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)

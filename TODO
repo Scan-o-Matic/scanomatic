@@ -4,6 +4,10 @@
 
 --- HOT ---
 
+*** INSTALL DESKTOP ICON
+
+*** FIX INCOMPATIBILITY IMAGE SECTIONS
+
 *** GLOBALS for diff version compatibility -> resourceCONFIG
 
 *** LAN-PM 1: Init takes some time, should only need to test once per PM and not
