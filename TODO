@@ -4,8 +4,6 @@
 
 --- HOT ---
 
-*** INSTALL DESKTOP ICON
-
 *** FIX INCOMPATIBILITY IMAGE SECTIONS
 
 *** GLOBALS for diff version compatibility -> resourceCONFIG
@@ -105,6 +103,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** INSTALL DESKTOP ICON
 
 *** DIALOGUE: Sel dir should start in fit place
 
