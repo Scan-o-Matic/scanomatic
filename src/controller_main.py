@@ -87,7 +87,7 @@ class Controller(controller_generic.Controller):
     def add_contents(self, widget, content_name):
 
         m = self._model
-        if content_name in ('analysis', 'experiment', 'calibration'):
+        if content_name in ('analysis', 'experiment', 'calibration', 'config'):
             title = m['content-page-title-{0}'.format(content_name)]
         else:
             err = UnknownContent("{0}".format(content_name))

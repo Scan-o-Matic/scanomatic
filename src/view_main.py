@@ -126,7 +126,7 @@ class Main_Window(gtk.Window):
 
         button = gtk.Button()
         button.set_label(m['panel-actions-config'])
-        button.connect("clickd", c.add_contents, 'config')
+        button.connect("clicked", c.add_contents, 'config')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
 
         button = gtk.Button()

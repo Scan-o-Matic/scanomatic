@@ -38,6 +38,7 @@ model = {
 'content-page-title-analysis': 'Analysis',
 'content-page-title-experiment': 'Experiment',
 'content-page-title-calibration': 'Calibration',
+'content-page-title-config': 'App Config',
 
 #DIALOGS
 'content-page-close': 'Closing content page will cause all unsaved progress to be lost.\n\nDo you wish to continue?'
