@@ -81,12 +81,15 @@ class Config_Controller(controller_generic.Controller):
                 fh = open(target_path, 'w')
                 fh.write(cont)
                 fh.close()
-                os.chmod(target_path, 775)
+                os.chmod(target_path, 777)
             except:
                 self._logger.error('Could not create desktop short-cut properly')
+                return
+
         else:
 
             self._logger.error('Could not find desktop short-cut template')
+            return
 
         view_config.dialog(self.get_window(), 
             self._model['config-desktop-short_cut-made'],
