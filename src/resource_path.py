@@ -61,7 +61,7 @@ class Paths(object):
 
         #RUN-files
         self.scanomatic = self.root + os.sep + "run_scan_o_matic.py"
-        self.analysis = self.src + os.sep + "analysis.py"
+        self.analysis = os.sep.join((self.root, "run_analysis.py"))
         self.experiment = os.sep.join((self.root, "run_experiment.py"))
 
         #IMAGES

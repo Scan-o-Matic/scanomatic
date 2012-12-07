@@ -21,25 +21,20 @@ __status__ = "Development"
 
 import os
 import sys
-import matplotlib
+#import matplotlib
 #matplotlib.use('Agg')
-import matplotlib.image as plt_img
 from matplotlib import pyplot
-import types
 import logging
 import numpy as np
 import time
-from argparse import ArgumentParser
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import analysis_grid_array as grid_array
-import resource_config as conf
-import resource_fixture_image 
-import resource_project_log as rpl
-import resource_path
+import resource_project_log
+import resource_analysis_support
+import analysis_image
 
 #
 # GLOBALS
@@ -50,66 +45,7 @@ import resource_path
 #
 
 
-def get_pinning_matrices(query, sep=':'):
-
-    PINNING_MATRICES = {(8, 12): ['8,12', '96'],
-                        (16, 24): ['16,24', '384'],
-                        (32, 48): ['32,48', '1536'],
-                        (64, 96): ['64,96', '6144'],
-                        None: ['none', 'no', 'n', 'empty', '-', '--']}
-
-    plate_strings = query.split(sep)
-    plates = len(plate_strings) * [None]
-
-    for i, p in enumerate(plate_strings):
-
-        result = [k for k, v in PINNING_MATRICES.items() \
-                if p.lower().replace(" ", "").strip("()") in v]
-
-        if len(result) == 1:
-
-            plates[i] = result[0]
-
-        elif len(result) > 1:
-
-            logger.warning("Ambigous plate pinning matrix statement" + \
-                    " '{0}'".format(p))
-        else:
-
-            logger.warning(
-                "Bad pinning pattern '{0}' - ignoring that plate".format(p))
-
-    return plates
-
-
-def print_progress_bar(fraction=0.0, size=40, start_time=None):
-    prog_str = "["
-    percent = 100 * fraction
-    pfraction = fraction * size
-    pfraction = int(round(pfraction))
-
-    prog_str = "[" + pfraction * "=" + (size - pfraction) * " " + "]"
-    perc_str ="%.1f" % (percent) + " %"
-
-    prog_l = len(prog_str)
-    perc_l = len(perc_str)
-
-    prog_str = prog_str[:prog_l/2 - perc_l/2] + perc_str + \
-                prog_str[prog_l/2 + perc_l:]
-
-    print "\r{0}".format(prog_str),
-
-    if start_time is not None:
-
-        elapsed = time.time() - start_time
-        eta = elapsed / fraction + start_time
-
-        print " ETA: {0}".format(time.asctime(time.localtime(eta))),
-
-    sys.stdout.flush()
-
-
-def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
+def analyse_project(log_file_path, outdata_directory, pinning_matrices,
             graph_watch,
             verbose=False, visual=False, manual_grid=False, grid_times=None, 
             suppress_analysis = False,
@@ -118,7 +54,8 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
             grid_array_settings = {'animate': False},
             gridding_settings = {'use_otsu': True, 'median_coeff': 0.99,
             'manual_threshold': 0.05},
-            grid_cell_settings = {'blob_detect': 'default'}):
+            grid_cell_settings = {'blob_detect': 'default'},
+            logger=None):
     """
         analyse_project parses a log-file and runs a full analysis on all
         images in it. It will step backwards in time, starting with the
@@ -167,389 +104,207 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
     """
 
+    #
+    # VARIABLES - SOME ARE HACK
+    #
+
     start_time = time.time()
-
     graph_output = None
-    _log_version = 0
     file_path_base = os.sep.join(log_file_path.split(os.sep)[:-1])
+    #grid_adjustments = None
 
-    #XML STATIC TEMPLATES
-    XML_OPEN = "<{0}>"
-    XML_OPEN_W_ONE_PARAM = '<{0} {1}="{2}">'
-    XML_OPEN_CONT_CLOSE = "<{0}>{1}</{0}>"
-    XML_OPEN_W_ONE_PARAM_CONT_CLOSE = '<{0} {1}="{2}">{3}</{0}>'
-    XML_OPEN_W_TWO_PARAM = '<{0} {1}="{2}" {3}="{4}">'
 
-    XML_CLOSE = "</{0}>"
+    #
+    # VERIFY OUTDATA DIRECTORY
+    #
 
-    XML_CONT_CLOSE = "{0}</{1}>"
+    outdata_directory = \
+        resource_analysis_support.verify_outdata_directory(outdata_directory)
 
-    XML_SINGLE_W_THREE_PARAM = '<{0} {1}="{2}" {3}="{4}" {5}="{6}" />'
-    #END XML STATIC TEMPLATES
+    #
+    # SET UP LOGGER
+    #
 
-    if not os.path.isdir(outdata_files_path):
-        dir_OK = False
-        if not os.path.exists(outdata_files_path):
-            try:
-                os.makedirs(outdata_files_path)
-                dir_OK = True
-            except:
-                pass
-        if not dir_OK:
-            logger.critical("ANALYSIS, Could not construct outdata directory,"\
-                + " could be a conflict")
-            sys.exit()
-
-    if outdata_files_path[-1] != os.sep:
-        outdata_files_path += os.sep
-
-    #SET UP LOGGER
-    hdlr = logging.FileHandler(outdata_files_path + "analysis.run", mode='w')
+    hdlr = logging.FileHandler(
+        os.sep.join((outdata_directory, "analysis.run")), mode='w')
+    log_formatter = logging.Formatter('\n\n%(asctime)s %(levelname)s:' + \
+                    ' %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S\n')
     hdlr.setFormatter(log_formatter)
     logger.addHandler(hdlr)
-
-    def produce_custom_traceback(excType, excValue, traceback, logger=logger):
-
-        run_file_path = "(sorry couldn't find the name," + \
-                " but it is the analysis.run of your project)"
-
-        if logger is not None:
-
-            for handler in logger.handlers:
-
-                try:
-
-                    run_file_path = handler.baseFilename
-
-                except:
-
-                    pass
-
-        logger.critical("Uncaught exception -- An error in the code was" + \
-            " encountered.\n" + \
-            "The analysis needs to be re-run when the problem is fixed.\n" + \
-            "If you are lucky, the problem may be solved by recompiling" + \
-            " a new .analysis file for " + \
-            "the project.\nIn any a way, please send " + \
-            "the file {0} to martin.zackrisson@gu.se".format(run_file_path),
-            exc_info=(excType, excValue, traceback))
-
-        sys.exit()
-
-    sys.excepthook = produce_custom_traceback
-    #SET UP LOGGER DONE
-
-    #RECORD HOW ANALYSIS WAS STARTED
-    logger.info('Analysis was called with the following arguments:\n' +\
-        'log_file_path\t\t{0}'.format(log_file_path) + \
-        '\noutdata_file_path\t{0}'.format(outdata_files_path) + \
-        '\npinning_matrices\t{0}'.format(pinning_matrices) +\
-        '\ngraph_watch\t\t{0}'.format(graph_watch) +\
-        '\nverbose\t\t\t{0}'.format(verbose) + \
-        '\ngrid_array_settings\t{0}'.format(grid_array_settings) + \
-        '\ngridding_settings\t\t{0}'.format(gridding_settings) + \
-        '\ngrid_cell_settings\t\t{0}'.format(grid_cell_settings) +\
-        '\nxml_format\t\t{0}'.format(xml_format) +\
-        '\nmanual_grid\t\t{0}'.format(manual_grid))
+    resource_analysis_support.set_logger(logger)
 
     logger.info('Analysis started at ' + str(start_time))
 
-    if graph_watch != None:
+    #
+    # SET UP EXCEPT HOOK
+    #
 
-        from matplotlib.font_manager import FontProperties
-        from PIL import Image
+    sys.excepthook = resource_analysis_support.custom_traceback
 
-        watch_reading = []
-        x_labels = []
+    #
+    # CHECK ANALYSIS-FILE FROM FIRST PASS
+    #
 
-        fontP = FontProperties()
-        fontP.set_size('xx-small')
-        plt_watch_colony = pyplot.figure()
-        plt_watch_colony.subplots_adjust(hspace=2, wspace=2)
-        plt_watch_1 = plt_watch_colony.add_subplot(411)
-        plt_watch_1.axis("off")
-        pict_target_width = 40
-        plt_watch_1.axis((0, (pict_target_width + 1) * 217, 0, \
-            pict_target_width * 3), frameon=False,\
-            title='Plate: ' + str(graph_watch[0]) + ', position: (' +\
-             str(graph_watch[1]) + ', ' + str(graph_watch[2]) + ')')
+    ## META-DATA
+    meta_data = resource_project_log.get_meta_data(path=log_file_path)
+    
+    ### METE-DATA BACK COMPATIBILITY
+    if 'Version' not in meta_data:
+        meta_data['Version'] = 0
+    if 'UUID' not in meta_data:
+        meta_data['UUID'] = None
+    if 'Manual Gridding' not in meta_data:
+        meta_data['Manual Gridding'] = None
 
-        plot_labels = []
+    ### OVERWRITE META-DATA WITH USER INPUT
+    if pinning_matrices is not None:
+        meta_data['Pinning Matrices'] = pinning_matrices
+        logger.info('ANALYSIS: Pinning matrices use override: {0}'.format(
+            pinning_matrices))
 
-        graph_output = outdata_files_path + "plate_" + str(graph_watch[0]) + \
-            "_" + str(graph_watch[1]) + '.' + str(graph_watch[2]) + ".png"
+    ### VERIFYING VITAL ASPECTS
 
-    log_file = conf.Config_File(log_file_path)
+    #### Test to find Fixture
+    if 'Fixture' not in meta_data or \
+        resource_analysis_support.get_finds_fixture(
+        meta_data['Fixture']) == False:
 
-    image_dictionaries = log_file.get_all("%n")
-    if image_dictionaries == None:
-        logger.critical("ANALYSIS: Log file seems corrupt - remake one!")
-        return None
+        logger.critical('ANALYSIS: Could not localize fixture settings')
+        return False
 
-    fixture_name = 'fixture_a'
-    p_uuid = None
-    #grid_adjustments = None
-    manual_griddings = None
-
-    if 'Description' not in image_dictionaries[0].keys():
-
-        rpl.write_meta_data(log_file_path)
-
-        log_file = conf.Config_File(log_file_path)
-
-        image_dictionaries = log_file.get_all("%n")
-        if image_dictionaries == None:
-            logger.critical("ANALYSIS: Log file seems corrupt - remake one!")
-            return None
-
-    if 'Description' in image_dictionaries[0].keys():
-
-        first_scan_position = 1
-        description = image_dictionaries[0]['Description']
-        interval_time = image_dictionaries[0]['Interval']
-
-        if 'Version' in image_dictionaries[0].keys():
-            try:
-                _log_version = float(image_dictionaries[0]['Version'])
-            except:
-                pass
-
-        if pinning_matrices is None and 'Pinning Matrices' \
-                            in image_dictionaries[0].keys():
-
-            pinning_matrices = image_dictionaries[0]['Pinning Matrices']
-
-        if 'Fixture' in image_dictionaries[0].keys():
-
-            fixture_name = image_dictionaries[0]['Fixture']
-
-        if 'UUID' in image_dictionaries[0].keys():
-
-            p_uuid = image_dictionaries[0]['UUID']
-
-        #if 'Grid Adjustments' in image_dictionaries[0].keys():
-        #    grid_adjustments =  image_dictionaries[0]['Grid Adjustments']
-
-        if 'Manual Gridding' in image_dictionaries[0].keys():
-            manual_griddings = image_dictionaries[0]['Manual Gridding']
-
-        logging.info("ANALYSIS: Header row with meta-data found.")
-
-    else:
-        logging.info("ANALYSIS: No meta-data row found.")
-        first_scan_position = 0
-        description = None
-        interval_time = None
-
-    #Verifying sanity of request: Are there any pinning matrices?
-    if pinning_matrices is None:
-
+    #### Test if any pinning matrices
+    if meta_data['Pinning Matrices'] is None:
         logger.critical(
             "ANALYSIS: need some pinning matrices to analyse anything")
+        return False
+
+    ## IMAGES
+    image_dictionaries = resource_project_log.get_image_entries(log_file_path)
+
+    if len(image_dictionaries) == 0:
+        logger.critical("ANALYSIS: There are no images to analyse, aborting")
 
         return False
 
-    #Verifying sanity of request: Suppression requires watching?
-    if suppress_analysis:
+    logger.info("ANALYSIS: A total of " + 
+                    "{0} images to analyse in project with UUID {1}".format(
+                    len(image_dictionaries),
+                    meta_data['UUID']))
 
-        if graph_watch is None or len(graph_watch) == 0:
+    meta_data['Images'] = len(image_dictionaries)
+    image_pos = meta_data['Images'] - 1
 
-            logger.critical("ANALYSIS: You are effectively requesting to" +
-                " do nothing,\nso I guess I'm done...\n(If you suppress" +
-                " analysis of non-watched colonies, then you need to watch" +
-                " some as well!)")
-    
-            return False
+    #
+    # SANITY CHECK
+    #
 
-        elif graph_watch[0] >= len(pinning_matrices) or graph_watch[0] < 0 or \
-                pinning_matrices[graph_watch[0]] is None:
+    if resource_analysis_support.get_run_will_do_something(
+            suppress_analysis, graph_watch, meta_data, logger) == False:
 
-            logger.critical("ANALYSIS: That plate ({0}) does not exist"\
-                .format(graph_watch[0]) + " or doesn't have a pinning!")
+        """
+        In principle, if user requests to supress analysis of other
+        colonies than the one watched -- then there should be one
+        watched and that one needs a pinning matrice.
+        """
+        return False
 
-            return False
+    #
+    # INITIALIZE WATCH GRAPH IF REQUESTED
+    #
 
-        else:
+    if graph_watch != None:
 
-            pm = pinning_matrices[graph_watch[0]]
+        watch_graph = resource_analysis_support.Watch_Graph(graph_watch,
+                                outdata_directory)
 
-            if graph_watch[1] >= pm[0] or graph_watch[1] < 0 or \
-                    graph_watch[2] >= pm[1] or graph_watch[2] < 0:
+    #
+    # INITIALIZE XML WRITER
+    #
 
-                logger.critical("ANALYSIS: The watch colony cordinate" + \
-                    " ({0}) is out of bounds on plate {1}.".format(
-                    graph_watch[1:], graph_watch[0]))
+    xml_writer = resource_analysis_support.XML_Writer(outdata_directory,
+                    xml_format, logger)
 
-                return False 
+    if xml_writer.get_initialized() == False:
+        logger.critical('ANALYSIS: XML writer failed to initialize')
+        return False
 
-    plate_position_keys = []
-    if _log_version >= 0.997:
-        v_offset = 1
-    else:
-        v_offset = 0
+    #
+    # RECORD HOW ANALYSIS WAS STARTED
+    #
 
-    for i in xrange(len(pinning_matrices)):
-        if (suppress_analysis != True or graph_watch[0] == i) and\
-            pinning_matrices[i] is not None:
+    logger.info('Analysis was called with the following arguments:\n' +
+        'log_file_path\t\t{0}'.format(log_file_path) + 
+        '\noutdata_file_path\t{0}'.format(outdata_directory) + 
+        '\nmeta_data\t\t{0}'.format(meta_data) +
+        '\ngraph_watch\t\t{0}'.format(graph_watch) +
+        '\nverbose\t\t\t{0}'.format(verbose) + 
+        '\ngrid_array_settings\t{0}'.format(grid_array_settings) + 
+        '\ngridding_settings\t{0}'.format(gridding_settings) + 
+        '\ngrid_cell_settings\t{0}'.format(grid_cell_settings) +
+        '\nxml_format\t\t{0}'.format(xml_writer) +
+        '\nmanual_grid\t\t{0}'.format(meta_data['Manual Gridding']) +
+        '\ngrid_times\t\t{0}'.format(grid_times))
 
-            plate_position_keys.append("plate_{0}_area".format(i+v_offset))
+    #
+    # GET NUMBER OF PLATES AND THEIR NAMES IN THIS ANALYSIS
+    #
 
-    plates = len(plate_position_keys)
+    plates, plate_position_keys = resource_analysis_support.get_active_plates(
+        meta_data, suppress_analysis, graph_watch)
+
+    logger.info('ANALYSIS: These plates ({0}) will be analysed: {1}'.format(
+        plates, plate_position_keys))
 
     if suppress_analysis == True:
 
-        project_image = Project_Image([pinning_matrices[graph_watch[0]]],
-                    file_path_base=file_path_base,
-                    fixture_name=fixture_name, p_uuid=p_uuid, logger=None,
-                    verbose=verbose, visual=visual,
-                    grid_array_settings=grid_array_settings,
-                    gridding_settings = gridding_settings,
-                    grid_cell_settings = grid_cell_settings,
-                    log_version = _log_version)
+        meta_data['Pinning Matrices'] = \
+            [meta_data['Pinning Matrices'][graph_watch[0]]] # Only keep one
 
-        graph_watch[0] = 0
-        plates = 1
+        graph_watch[0] = 0  # Since only this one plate is left, it is now 1st
 
-    else:
+    #
+    # INITIALIZING THE IMAGE OBJECT
+    #
 
-        outdata_analysis_path = outdata_files_path + "analysis.xml"
-        outdata_analysis_slimmed_path = outdata_files_path + \
-                                        "analysis_slimmed.xml"
-
-        try:
-
-            fh = open(outdata_analysis_path, 'w')
-            fhs = open(outdata_analysis_slimmed_path, 'w')
-
-        except:
-
-            logger.critical("ANALYSIS: can't open target file:" + \
-                "'{0}' or '{0}'".format(
-                outdata_analysis_path,
-                outdata_analysis_slimmed_path))
-
-            return False
-
-        project_image = Project_Image(pinning_matrices,
-                file_path_base=file_path_base, fixture_name=fixture_name,
-                p_uuid=p_uuid, logger=None,
-                verbose=verbose, visual=visual,
+    project_image = analysis_image.Project_Image(
+                meta_data['Pinning Matrices'],
+                file_path_base=file_path_base,
+                fixture_name=meta_data['Fixture'],
+                p_uuid=meta_data['UUID'],
+                logger=None,
+                verbose=verbose,
+                visual=visual,
                 grid_array_settings=grid_array_settings,
-                gridding_settings = gridding_settings,
-                grid_cell_settings = grid_cell_settings,
-                log_version = _log_version)
+                gridding_settings=gridding_settings,
+                grid_cell_settings=grid_cell_settings,
+                log_version=meta_data['Version']
+                )
 
-    if manual_grid and manual_griddings is not None:
+    # MANUAL GRIDS
+    if manual_grid and meta_data['Manual Gridding'] is not None:
 
         logger.info("ANALYSIS: Will implement manual adjustments of " + \
                     "grid on plates {0}".format(manual_griddings.keys()))
+        project_image.set_manual_grids(meta_data['Manual Grid'])
 
-        project_image.set_manual_grids(manual_griddings)
+    #
+    # WRITING XML HEADERS AND OPENS SCAN TAG
+    #
 
-    image_pos = len(image_dictionaries) - 1
+    xml_writer.write_header(meta_data, plates)
+    xml_writer.write_segment_start_scans()
 
-    logger.info("ANALYSIS: A total of " + \
-                    "{0} images to analyse in project with UUID {1}".format(
-                    len(image_dictionaries) - first_scan_position, p_uuid))
 
-    if image_pos < first_scan_position:
+    resource_analysis_support.print_progress_bar(size=60)
 
-        logger.critical("ANALYSIS: There are no images to analyse, aborting")
+    #
+    # DEBUG BREAK
+    #
+    xml_writer.close()
+    sys.exit()
 
-        for f in (fh, fhs):
-            f.close()
-
-        return True
-
-    image_tot = image_pos
-
-    if suppress_analysis != True:
-
-        d_type_dict = {('pixelsum', 'ps'): ('cells', 'standard'),
-            ('area', 'a'): ('pixels', 'standard'),
-            ('mean', 'm'): ('cells/pixel', 'standard'),
-            ('median', 'md'): ('cells/pixel', 'standard'),
-            ('centroid', 'cent'): ('(pixels,pixels)', 'coordnate'),
-            ('perimeter', 'per'): ('((pixels, pixels) ...)',
-            'list of coordinates'),
-            ('IQR', 'IQR'): ('cells/pixel to cells/pixel', 'list of standard'),
-            ('IQR_mean', 'IQR_m'): ('cells/pixel', 'standard')}
-
-        for f in (fh, fhs):
-
-            f.write('<project>')
-
-            f.write(XML_OPEN_CONT_CLOSE.format(
-                ['version', 'ver'][xml_format['short']], __version__))
-
-            f.write(XML_OPEN_CONT_CLOSE.format(
-                ['start-time', 'start-t'][xml_format['short']],
-                str(image_dictionaries[first_scan_position]['Time'])))
-
-            f.write(XML_OPEN_CONT_CLOSE.format(
-                ['description', 'desc'][xml_format['short']],
-                str(description)))
-
-            f.write(XML_OPEN_CONT_CLOSE.format(
-                ['number-of-scans', 'n-scans'][xml_format['short']],
-                str(image_pos + 1)))
-
-            f.write(XML_OPEN_CONT_CLOSE.format(
-                ['interval-time', 'int-t'][xml_format['short']],
-                str(interval_time)))
-
-            f.write(XML_OPEN_CONT_CLOSE.format(
-                ['plates-per-scan', 'n-plates'][xml_format['short']],
-                str(plates)))
-
-            f.write(XML_OPEN.format(
-                ['pinning-matrices', 'matrices'][xml_format['short']]))
-
-            p_string = ""
-
-            for pos in xrange(len(pinning_matrices)):
-                if pinning_matrices[pos] is not None:
-
-                    f.write(XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(\
-                            ['pinning-matrix', 'p-m'][xml_format['short']],
-                            ['index', 'i'][xml_format['short']], str(pos),
-                            str(pinning_matrices[pos])))
-
-                    p_string += "Plate {0}: {1}\t".format(pos,
-                            pinning_matrices[pos])
-
-            logger.debug(p_string)
-
-            f.write(XML_CLOSE.format(
-                    ['pinning-matrices', 'matrices'][xml_format['short']]))
-
-            f.write(XML_OPEN.format('d-types'))
-
-            for d_type, info in d_type_dict.items():
-
-                f.write(XML_SINGLE_W_THREE_PARAM.format(\
-                        'd-type',
-                        ['measure', 'm'][xml_format['short']],
-                        d_type[xml_format['short']],
-                        ['unit', 'u'][xml_format['short']],
-                        info[0],
-                        ['type', 't'][xml_format['short']],
-                        info[1]))
-
-            f.write(XML_CLOSE.format('d-types'))
-
-            f.write(XML_OPEN.format('scans'))
-
-    logger.info("Starting analysis of " + \
-            "{0} images, with log-record {1} (first image at {2})".format(
-            image_pos - first_scan_position + 1, image_pos,
-            first_scan_position))
-
-    logger.info("Will save grids at times: {0}".format(grid_times))
-
-    print_progress_bar(size=60)
-
-    while image_pos >= first_scan_position:
+    while image_pos >= 0:
 
         scan_start_time = time.time()
         img_dict_pointer = image_dictionaries[image_pos]
@@ -964,548 +719,3 @@ def analyse_project(log_file_path, outdata_files_path, pinning_matrices,
 
     logger.info('Analysis completed at ' + str(time.time()))
 
-#
-# CLASS Project_Image
-#
-
-
-class Project_Image():
-    def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
-        animate=False, file_path_base="", fixture_name='fixture_a',
-        p_uuid=None, logger=None, verbose=False, visual=False,
-        suppress_analysis=False,
-        grid_array_settings=None, gridding_settings=None,
-        grid_cell_settings=None, log_version=0):
-
-        if logger is not None:
-            self.logger = logger
-        else:
-            self.logger = logging.getLogger('Scan-o-Matic Analysis')
-
-        self.p_uuid = p_uuid
-        self._log_version = log_version
-
-        self._im_path = im_path
-        self._im_loaded = False
-
-        self._plate_positions = plate_positions
-        self._pinning_matrices = pinning_matrices
-
-        self.verbose = verbose
-        self.visual = visual
-        self.suppress_analysis = suppress_analysis
-
-        self.grid_array_settings = grid_array_settings
-        self.gridding_settings = gridding_settings
-        self.grid_cell_settings = grid_cell_settings
-
-        #PATHS
-        script_path_root = os.path.dirname(os.path.abspath(__file__))
-        scannomatic_root = os.sep.join(script_path_root.split(os.sep)[:-1])
-        self._paths = resource_path.Paths(root=scannomatic_root)
-        self._file_path_base = file_path_base
-
-        #Fixture setting is used for pinning history in the arrays
-        self.fixture = resource_fixture_image.Fixture_Image(
-                fixture_name,
-                fixture_directory=self._paths.fixtures,
-                )
-
-        self.im = None
-
-        self.gs_indices = np.asarray([82, 78, 74, 70, 66, 62, 58, 54, 50, 46,
-                            42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0])
-
-        self._timestamp = None
-        self.set_pinning_matrices(pinning_matrices)
-
-    def set_pinning_matrices(self, pinning_matrices):
-
-        self.R = []
-        self.features = []
-        self._grid_arrays = []
-        self._pinning_matrices = pinning_matrices
-
-        for a in xrange(len(pinning_matrices)):
-
-            if pinning_matrices[a] is not None:
-
-                self._grid_arrays.append(grid_array.Grid_Array(self, (a,),
-                        pinning_matrices[a], verbose=self.verbose,
-                        visual=self.visual,
-                        suppress_analysis=self.suppress_analysis,
-                        grid_array_settings=self.grid_array_settings,
-                        gridding_settings=self.gridding_settings,
-                        grid_cell_settings=self.grid_cell_settings))
-
-                self.features.append(None)
-                self.R.append(None)
-
-        if len(pinning_matrices) > len(self._grid_arrays):
-
-            self.logger.info('Analysis will run on " + \
-                    "{0} plates out of {1}'.format(
-                    len(self._grid_arrays), len(pinning_matrices)))
-
-    def set_manual_grids(self, grid_adjustments):
-        """Overrides grid detection with a specified grid supplied in grid
-        adjustments
-
-        @param grid_adjustments:    A dictionary of pinning grids with plate
-                                    numbers as keys and items being tuples of
-                                    row and column position lists.
-        """
-
-        for k in grid_adjustments.keys():
-
-            if self._pinning_matrices[k] is not None:
-
-                try:
-
-                    self._grid_arrays[k].set_manual_grid(grid_adjustments[k])
-
-                except IndexError:
-
-                    self.logger.error('Failed to set manual grid "+ \
-                        "adjustments to {0}, plate non-existent'.format(k))
-
-    def load_image(self):
-
-        try:
-
-            self.im = plt_img.imread(self._im_path)
-            self._im_loaded = True
-
-        except:
-
-            alt_path = os.sep.join((self._file_path_base,
-                    self._im_path.split(os.sep)[-1]))
-
-            self.logger.warning("ANALYSIS IMAGE, Could not open image at " + \
-                    "'{0}' trying in log-file directory ('{1}').".format(
-                    self._im_path, alt_path))
-
-            try:
-
-                self.im = plt_img.imread(alt_path)
-                self._im_loaded = True
-
-            except:
-
-                self.logger.warning("ANALYSIS IMAGE, No image found... sorry")
-                self._im_loaded = False
-
-    def get_plate(self, plate_index):
-
-        if -1 < plate_index < len(self._grid_arrays):
-
-            return self._grid_arrays[plate_index]
-
-        else:
-
-            self.logger.warning("ANALYSIS IMAGE: Plate " + \
-                        "{0} outside expected range (0 - {1}).".format(
-                        plate_index, len(self._grid_arrays)))
-
-            return None
-
-    def get_im_section(self, features, scale_factor=4.0):
-
-        if self._im_loaded:
-
-            x0 = round(features[0][0] * scale_factor)
-            x1 = round(features[1][0] * scale_factor)
-
-            if x0 < x1:
-
-                upper = x0
-                lower = x1
-
-            else:
-
-                upper = x1
-                lower = x0
-
-            y0 = round(features[0][1] * scale_factor)
-            y1 = round(features[1][1] * scale_factor)
-
-            if y0 < y1:
-
-                left = y0
-                right = y1
-
-            else:
-
-                left = y1
-                right = y0
-
-            return self.im[upper: lower, left: right]
-
-        else:
-            return None
-
-    def get_analysis(self, im_path, features, grayscale_values,
-            watch_colony=None, save_grid_name=None,
-            grid_lock=False, identifier_time=None, timestamp=None,
-            grayscale_indices=None):
-
-        """
-            @param im_path: An path to an image
-
-            @param features: A list of pinning grids to look for
-
-            @param grayscale_values : An array of the grayscale pixelvalues,
-            if submittet gs_fit is disregarded
-
-            @param use_fallback : Causes fallback detection to be used.
-
-            @param watch_colony : A particular colony to gather information
-            about.
-
-            @param suppress_other : If only the watched colony should be
-            analysed
-
-            @param save_grid_name : A custom name for the saved image, if none
-            is submitted, it will be grid.png in current directory.
-
-            @param grid_lock : Default False, if true, the grid will only be
-            gotten once and then reused all way through.
-
-            @param identifier_time : A time index to update the identifier with
-
-            The function returns two arrays, one per dimension, of the
-            positions of the spikes and a quality index
-        """
-
-        if im_path != None:
-
-            self._im_path = im_path
-            self.load_image()
-
-        if self._im_loaded == True:
-
-            if len(self.im.shape) > 2:
-
-                self.im = self.im[:, :, 0]
-
-        else:
-
-            return None
-
-        self._timestamp = timestamp
-
-        if len(grayscale_values) > 3:
-
-            gs_values = np.array(grayscale_values)
-
-            if grayscale_indices is None:
-
-                gs_indices = self.gs_indices
-
-            else:
-
-                gs_indices = np.array(grayscale_indices)
-                self.gs_indices = gs_indices
-
-            gs_fit = np.polyfit(gs_indices, gs_values, 3)
-
-        else:
-
-            gs_fit = None
-
-        self.logger.debug("ANALYSIS produced gs-coefficients" + \
-                    " {0} ".format(gs_fit))
-
-        if self._log_version < 0.997:
-            scale_factor = 4.0
-        else:
-            scale_factor = 1.0
-
-        if gs_fit is not None:
-
-            z3_deriv_coeffs = np.array(gs_fit[: -1]) * \
-                        np.arange(gs_fit.shape[0] - 1, 0, -1)
-
-            z3_deriv = np.array(map(lambda x: (z3_deriv_coeffs * np.power(x,
-                np.arange(z3_deriv_coeffs.shape[0], 0, -1))).sum(), range(87)))
-
-            if (z3_deriv > 0).any() and (z3_deriv < 0).any():
-
-                self.logger.warning("ANALYSIS of grayscale seems dubious" + \
-                                " as coefficients don't have the same sign")
-
-                gs_fit = None
-
-        if gs_fit is None:
-
-            return None
-
-        for grid_array in xrange(len(self._grid_arrays)):
-
-            im = self.get_im_section(features[grid_array], scale_factor)
-
-            self._grid_arrays[grid_array].get_analysis(
-                    im,
-                    gs_values=gs_values,
-                    watch_colony=watch_colony,
-                    save_grid_name=save_grid_name,
-                    identifier_time=identifier_time)
-
-            self.features[grid_array] = self._grid_arrays[grid_array]._features
-            self.R[grid_array] = self._grid_arrays[grid_array].R
-
-        if watch_colony != None:
-
-            self.watch_grid_size = \
-                    self._grid_arrays[watch_colony[0]]._grid_cell_size
-
-            self.watch_source = self._grid_arrays[watch_colony[0]].watch_source
-            self.watch_scaled = self._grid_arrays[watch_colony[0]].watch_scaled
-            self.watch_blob = self._grid_arrays[watch_colony[0]].watch_blob
-
-            self.watch_results = \
-                    self._grid_arrays[watch_colony[0]].watch_results
-
-        return self.features
-
-
-if __name__ == "__main__":
-
-    parser = ArgumentParser(description='The analysis script runs through " +\
-                "a log-file (which is created when a project is run). It " + \
-                "creates a XML-file that holds the result of the analysis')
-
-    parser.add_argument("-i", "--input-file", type=str, dest="inputfile",
-        help="Log-file to be parsed", metavar="PATH")
-
-    parser.add_argument("-o", "--ouput-path", type=str, dest="outputpath",
-        help="Path to directory where all data is written (Default is a " +\
-        "subdirectory 'analysis' under where the input file is)",
-        metavar="PATH")
-
-    parser.add_argument("-m", "--matrices", dest="matrices", default=None,
-        help="The pinning matrices for each plate position in the order " + \
-        "set by the fixture config", metavar="(X,Y):(X,Y)...(X,Y)")
-
-    parser.add_argument("-w", "--watch-position", dest="graph_watch",
-        help="The position of a colony to track.", metavar="PLATE:X:Y",
-        type=str)
-
-    parser.add_argument("-t", "--watch-time", dest="grid_times",
-        help="If specified, the gridplacements at the specified timepoints" + \
-        " will be saved in the set output-directory, comma-separeted indices.",
-        metavar="0,1,100", default="0", type=str)
-
-    parser.add_argument("-g", "--manual-grid", dest="manual_grid",
-        help="Boolean used to invoke manually set gridding, default is false",
-        default=False, type=bool)
-
-    parser.add_argument('-a', '--animate', dest="animate", default=False,
-        type=bool, help="If True, it will produce stop motion images of the" +\
-        "watched colony ready for animation")
-
-    parser.add_argument("--grid-otsu", dest="g_otsu", default=False, type=bool,
-        help="Invokes the usage of utso segmentation for detecting the grid")
-
-    parser.add_argument("--blob-detection", dest="b_detect", default="default",
-        type=str,
-        help="Determines which algorithm will be used to detect blobs." +
-        "Currently, only 'default'")
-
-    parser.add_argument("-s", "--suppress-analysis", dest="suppress",
-        default=False, type=bool,
-        help="If submitted, main analysis will be by-passed and only the" + \
-        " plate and position that was specified by the -w flag will be " + \
-        "analysed and reported.")
-
-    parser.add_argument("--xml-short", dest="xml_short", default=False,
-        type=bool,
-        help="If the XML output should use short tag-names")
-
-    parser.add_argument("--xml-omit-compartments",
-        dest="xml_omit_compartments", type=str,
-        help="Comma separated list of compartments to not report")
-
-    parser.add_argument("--xml-omit-measures", dest="xml_omit_measures",
-        type=str,
-        help="Comma seperated list of measures to not report")
-
-    parser.add_argument("--debug", dest="debug_level", default="warning",
-        type=str, help="Set debugging level")
-
-    args = parser.parse_args()
-
-    #THE THREE SETTINGS DICTS
-    grid_array_settings = {'animate': False}
-
-    gridding_settings = {'use_otsu': True, 'median_coeff': 0.99,
-            'manual_threshold': 0.05}
-
-    grid_cell_settings = {'blob_detect': 'default'}
-
-    #DEBUGGING
-    LOGGING_LEVELS = {'critical': logging.CRITICAL,
-                      'error': logging.ERROR,
-                      'warning': logging.WARNING,
-                      'info': logging.INFO,
-                      'debug': logging.DEBUG}
-
-    if args.debug_level in LOGGING_LEVELS.keys():
-
-        logging_level = LOGGING_LEVELS[args.debug_level]
-
-    else:
-
-        logging_level = LOGGING_LEVELS['warning']
-
-    logger = logging.getLogger('Scan-o-Matic Analysis')
-
-    log_formatter = logging.Formatter('\n\n%(asctime)s %(levelname)s:' + \
-                    ' %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S\n')
-
-    #XML
-    xml_format = {'short': args.xml_short, 'omit_compartments': [],
-                        'omit_measures': []}
-
-    if args.xml_omit_compartments is not None:
-
-        xml_format['omit_compartments'] = map(lambda x: x.strip(),
-            args.xml_omit_compartments.split(","))
-
-    if args.xml_omit_measures is not None:
-
-        xml_format['omit_measures'] = map(lambda x: x.strip(),
-            args.xml_omit_measures.split(","))
-
-    logging.debug("XML-formatting is " + \
-                "{0}, omitting compartments {1} and measures {2}.".format(
-                ['long', 'short'][xml_format['short']],
-                xml_format['omit_compartments'],
-                xml_format['omit_measures']))
-
-    #BLOB DETECTION
-    args.b_detect = args.b_detect.lower()
-
-    if args.b_detect not in ('default',):
-
-        args.b_detect = 'default'
-
-    grid_cell_settings['blob_detect'] = args.b_detect
-
-    #GRID OTSU
-    gridding_settings['use_otsu'] = args.g_otsu
-
-    #ANIMATE THE WATCHED COLONY
-    grid_array_settings['animate'] = args.animate
-
-    #MATRICES
-    if args.matrices is not None:
-
-        pm = get_pinning_matrices(args.matrices)
-        logging.debug("Matrices: {0}".format(pm))
-
-        if pm == [None] * len(pm):
-
-            logging.error("No valid pinning matrices, aborting")
-            parser.error("Check that you supplied a valid string...")
-            
-
-    else:
-
-        pm = None
-
-    #TIMES TO SAVE GRIDDING IMAGE
-    if args.grid_times != None:
-
-        try:
-
-            grid_times = [int(grid_times)]
-
-        except:
-
-            try:
-
-                grid_times = map(int, args.grid_times.split(","))
-
-            except:
-
-                logging.warning("ARGUMENTS, could not parse grid_times..." + \
-                    " will only save the first grid placement.")
-
-                grid_times = [-1]
-
-    #INPUT FILE LOCATION
-    if args.inputfile == None:
-
-        parser.error("You need to specify input file!")
-
-    in_path_list = args.inputfile.split(os.sep)
-
-    try:
-
-        fh = open(args.inputfile, 'r')
-
-    except:
-
-        parser.error('Cannot open input file, please check your path...')
-
-    fh.close()
-
-    #OUTPUT LOCATION
-    output_path = ""
-
-    if len(in_path_list) == 1:
-
-        output_path = "."
-
-    else:
-
-        output_path = os.sep.join(in_path_list[:-1])
-
-    if args.outputpath == None:
-
-        output_path += os.sep + "analysis"
-
-    else:
-
-        output_path += os.sep + str(args.outputpath)
-
-    #SPECIAL WATCH GRAPH
-    if args.graph_watch != None:
-
-        args.graph_watch = args.graph_watch.split(":")
-
-        try:
-
-            args.graph_watch = map(int, args.graph_watch)
-
-        except:
-
-            parser.error('The watched colony could not be resolved,' + \
-                                ' make sure that you follow syntax')
-
-        if len(args.graph_watch) != 3:
-
-            parser.error('Bad specification of watched colony')
-
-    #OUTPUT TO USER
-    header_str = "The Project Analysis Script..."
-    under_line = "-"
-
-    print "\n\n{0}\n{1}\n\n".format(header_str.center(80),
-            (len(header_str) * under_line).center(80))
-
-    #LOGGER
-    logger.setLevel(logging_level)
-    logger.debug("Logger is ready!")
-
-    #START ANALYSIS
-    analyse_project(args.inputfile, output_path, pm, args.graph_watch,
-        verbose=True, visual=False, manual_grid=args.manual_grid,
-        grid_times=grid_times,
-        xml_format=xml_format,
-        suppress_analysis=args.suppress,
-        grid_array_settings=grid_array_settings,
-        gridding_settings=gridding_settings,
-        grid_cell_settings=grid_cell_settings)

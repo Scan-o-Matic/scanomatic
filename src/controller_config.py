@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import re
 import os
+import subprocess
 
 #
 # INTERNAL DEPENDENCIES
@@ -98,6 +99,7 @@ class Config_Controller(controller_generic.Controller):
 
     def get_desktop_path(self):
 
+        """
         D_paths = list()
 
         try:
@@ -116,8 +118,9 @@ class Config_Controller(controller_generic.Controller):
 
         else:
             D_path = os.sep.join((os.path.expanduser("~"), 'Desktop'))
-
-        if os.path.isdir(D_path):
+        """
+        try:
+            D_path = subprocess.check_output(['xdg-user-dir', 'DESKTOP'])
             return D_path
-        else:
+        except:
             return None
