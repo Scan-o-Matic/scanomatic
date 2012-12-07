@@ -19,6 +19,7 @@ __status__ = "Development"
 
 import sys
 import os
+import time
 from matplotlib.font_manager import FontProperties
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -277,6 +278,221 @@ class Watch_Graph(object):
                 self._watch[self.Y]))
 
 
+    def add_image(self):
+        
+        pass
+        """
+        x_labels.append(image_pos)
+        pict_size = project_image.watch_grid_size
+        pict_scale = pict_target_width / float(pict_size[1])
+
+        if pict_scale < 1:
+
+            pict_resize = (int(pict_size[0] * pict_scale),
+                            int(pict_size[1] * pict_scale))
+
+            plt_watch_1.imshow(Image.fromstring('L',
+                    (project_image.watch_scaled.shape[1],
+                    project_image.watch_scaled.shape[0]),
+                    project_image.watch_scaled.tostring())\
+                    .resize(pict_resize, Image.BICUBIC),
+                    extent=(image_pos * pict_target_width,
+                    (image_pos + 1) * pict_target_width - 1,
+                    10, 10 + pict_resize[1]))
+
+        tmp_results = []
+
+        if project_image.watch_results is not None:
+
+            for cell_item in project_image.watch_results.keys():
+
+                for measure in project_image.watch_results[\
+                                            cell_item].keys():
+
+                    if type(project_image.watch_results[\
+                                    cell_item][measure])\
+                                    == np.ndarray or \
+                                    project_image.watch_results[\
+                                    cell_item][measure] is None:
+
+                        tmp_results.append(np.nan)
+
+                    else:
+
+                        tmp_results.append(
+                                project_image.watch_results[\
+                                cell_item][measure])
+
+                    if len(watch_reading) == 0:
+
+                        plot_labels.append(cell_item + ':' + measure)
+
+        watch_reading.append(tmp_results)
+
+        """
+
+    def finalize(self):
+
+        pass
+        """
+        omits = []
+        gws = []
+
+        for i in xrange(len(watch_reading[0])):
+
+            gw_i = [gw[i] for gw in watch_reading]
+
+            try:
+
+                map(lambda v: len(v), gw_i)
+                omits.append(i)
+                gw_i = None
+
+            except:
+
+                pass
+
+            if gw_i is not None:
+                gws.append(gw_i)
+
+        Y = np.asarray(gws, dtype=np.float64)
+        X = (np.arange(len(image_dictionaries), 0, -1) + 0.5) *\
+                        pict_target_width
+
+        for xlabel_pos in xrange(len(x_labels)):
+
+            if xlabel_pos % 5 > 0:
+                x_labels[xlabel_pos] = ""
+
+        cur_plt_graph = ""
+        plt_graph_i = 1
+
+        for i in [x for x in range(len(gws)) if x not in omits]:
+
+            ii = i + sum(map(lambda x: x < i, omits))
+
+            Y_good_positions = np.where(np.isnan(Y[i, :]) == False)[0]
+
+            if Y_good_positions.size > 0:
+
+                try:
+
+                    if Y[i, Y_good_positions].max() == \
+                                Y[i, Y_good_positions].min():
+
+                        scale_factor = 0
+
+                    else:
+
+                        scale_factor = 100 / \
+                                float(Y[i, Y_good_positions].max() - \
+                                Y[i, Y_good_positions].min())
+
+                    sub_term = float(Y[i, Y_good_positions].min())
+
+                    if plot_labels[ii] == "cell:area":
+
+                        c_area = Y[i, Y_good_positions]
+
+                    elif plot_labels[ii] == "background:mean":
+
+                        bg_mean = Y[i, Y_good_positions]
+
+                    elif plot_labels[ii] == "cell:pixelsum":
+
+                        c_pixelsum = Y[i, Y_good_positions]
+
+                    elif plot_labels[ii] == "blob:pixelsum":
+
+                        b_pixelsum = Y[i, Y_good_positions]
+
+                    elif plot_labels[ii] == "blob:area":
+
+                        b_area = Y[i, Y_good_positions]
+
+                    logger.debug("WATCH GRAPH:\n%s\n%s\n%s" % \
+                                (str(plot_labels[ii]), str(sub_term),
+                                str(scale_factor)))
+
+                    logger.debug("WATCH GRAPH, Max %.2f Min %.2f." % \
+                            (float(Y[i, Y_good_positions].max()),
+                            float(Y[i, Y_good_positions].min())))
+
+                    if cur_plt_graph != plot_labels[ii].split(":")[0]:
+
+                        cur_plt_graph = plot_labels[ii].split(":")[0]
+
+                        if plt_graph_i > 1:
+
+                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP,
+                                    bbox_to_anchor=(1.0, -0.45))
+
+                        plt_graph_i += 1
+
+                        plt_watch_curves = plt_watch_colony.add_subplot(4, 1,
+                                    plt_graph_i, title=cur_plt_graph)
+
+                        plt_watch_curves.set_xticks(X)
+
+                        plt_watch_curves.set_xticklabels(x_labels,
+                                    fontsize="xx-small", rotation=90)
+
+                    if scale_factor != 0:
+
+                        plt_watch_curves.plot(X[Y_good_positions],
+                            (Y[i, Y_good_positions] - sub_term) * scale_factor,
+                            label=plot_labels[ii][len(cur_plt_graph) + 1:])
+
+                    else:
+
+                        logger.debug("GRAPH WATCH, Got straight line %s, %s" %\
+                                (str(plt_graph_i), str(i)))
+
+                        plt_watch_curves.plot(X[Y_good_positions],
+                                np.zeros(X[Y_good_positions].shape) + \
+                                10 * (i - (plt_graph_i - 1) * 5),
+                                label=plot_labels[ii][len(cur_plt_graph) + 1:])
+
+                except TypeError:
+
+                    logger.warning("GRAPH WATCH, Error processing {0}".format(
+                                                            plot_labels[ii]))
+
+            else:
+
+                    logger.warning("GRAPH WATCH, Cann't plot {0}".format(
+                            plot_labels[ii]) + "since has no good data.")
+
+        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP,
+                            bbox_to_anchor=(1.0, -0.45))
+
+        if graph_output != None:
+
+            try:
+
+                plt_watch_colony.savefig(graph_output, dpi=300)
+
+            except:
+
+                plt_watch_colony.show()
+
+            #DEBUG START:PLOT
+            plt_watch_colony = pyplot.figure()
+            plt_watch_1 = plt_watch_colony.add_subplot(111)
+            plt_watch_1.loglog(b_area, b_pixelsum)
+            plt_watch_1.set_xlabel('Blob:Area')
+            plt_watch_1.set_ylabel('Blob:PixelSum')
+            plt_watch_1.set_title('')
+            plt_watch_colony.savefig("debug_corr.png")
+            #DEBUG END
+
+            pyplot.close(plt_watch_colony)
+
+        else:
+
+            plt_watch_colony.show()
+        """
+
 class XML_Writer(object):
 
     #XML STATIC TEMPLATES
@@ -421,6 +637,155 @@ class XML_Writer(object):
                 f.write(self.XML_OPEN.format('scans'))
 
         self._open_tags.insert(0, 'scans')
+
+    def _write_image_head(self, image_pos, features, img_dict_pointer):
+
+        tag_format = self._formatting['short']
+
+        for f in self._file_handles.values():
+
+            f.write(self.XML_OPEN_W_ONE_PARAM.format(
+                        ['scan', 's'][tag_format],
+                        ['index', 'i'][tag_format],
+                        image_pos))
+
+            f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    ['scan-valid', 'ok'][tag_format],
+                    int(features is not None)))
+
+            if features is not None:
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    ['calibration', 'cal'][tag_format],
+                    img_dict_pointer['grayscale_values']))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    ['time', 't'][tag_format],
+                    img_dict_pointer['Time']))
+
+    def write_image_features(self, image_pos, features, img_dict_pointer,
+                    plates, meta_data):
+
+        self._write_image_head(image_pos, features, img_dict_pointer)
+
+        tag_format = self._formatting['short']
+        omit_compartments = self._formatting['omit_compartments']
+        omit_measures = self._formatting['omit_measures']
+        fh = self._file_handles['full']
+        fhs = self._file_handles['slim']
+
+        if features is not None:
+
+            #OPEN PLATES-tag
+            for f in self._file_handles.values():
+
+                f.write(self.XML_OPEN.format(
+                    ['plates', 'pls'][tag_format]))
+
+            #FOR EACH PLATE
+            for i in xrange(plates):
+
+                for f in self._file_handles.values():
+
+                    f.write(self.XML_OPEN_W_ONE_PARAM.format(
+                        ['plate', 'p'][tag_format],
+                        ['index', 'i'][tag_format],
+                        i))
+
+                    f.write(self.XML_OPEN_CONT_CLOSE.format(
+                        ['plate-matrix', 'pm'][tag_format],
+                        meta_data['Pinning Matrices'][i]))
+
+                    """ DEPRECATED TAG
+                    f.write(XML_OPEN_CONT_CLOSE.format('R',
+                        str(project_image.R[i])))
+                    """
+
+                    f.write(self.XML_OPEN.format(
+                        ['grid-cells', 'gcs'][tag_format]))
+
+                for x, rows in enumerate(features[i]):
+
+                    for y, cell in enumerate(rows):
+
+                        for f in self._file_handles.values():
+
+                            f.write(self.XML_OPEN_W_TWO_PARAM.format(
+                                ['grid-cell', 'gc'][tag_format],
+                                'x', x,
+                                'y', y))
+
+                        if cell != None:
+
+                            for item in cell.keys():
+
+                                i_string = item
+
+                                if tag_format:
+
+                                    i_string = i_string\
+                                            .replace('background', 'bg')\
+                                            .replace('blob', 'bl')\
+                                            .replace('cell', 'cl')
+
+                                if item not in omit_compartments:
+
+                                    fhs.write(self.XML_OPEN.format(i_string))
+
+                                fh.write(self.XML_OPEN.format(i_string))
+
+                                for measure in cell[item].keys():
+
+                                    m_string = self.XML_OPEN_CONT_CLOSE.format(
+                                        measure,
+                                        cell[item][measure])
+
+                                    if tag_format:
+
+                                        m_string = m_string\
+                                            .replace('area', 'a')\
+                                            .replace('pixel', 'p')\
+                                            .replace('mean', 'm')\
+                                            .replace('median', 'md')\
+                                            .replace('sum', 's')\
+                                            .replace('centroid', 'cent')\
+                                            .replace('perimeter', 'per')
+
+                                    if item not in omit_compartments and \
+                                        measure not in omit_measures:
+
+                                        fhs.write(m_string)
+
+                                    fh.write(m_string)
+
+                                if item not in omit_compartments:
+
+                                    fhs.write(self.XML_CLOSE.format(i_string))
+
+                                fh.write(self.XML_CLOSE.format(i_string))
+
+                        for f in (fh, fhs):
+
+                            f.write(self.XML_CLOSE.format(
+                                ['grid-cell', 'gc'][tag_format]))
+
+                for f in (fh, fhs):
+
+                    f.write(self.XML_CLOSE.format(
+                        ['grid-cells', 'gcs'][tag_format]))
+
+                    f.write(self.XML_CLOSE.format(
+                        ['plate', 'p'][tag_format]))
+
+            for f in (fh, fhs):
+
+                f.write(self.XML_CLOSE.format(
+                    ['plates', 'pls'][tag_format]))
+
+        #CLOSING THE SCAN
+        for f in self._file_handles.values():
+            f.write(self.XML_CLOSE.format(
+                    ['scan', 's'][tag_format]))
 
     def get_initialized(self):
 

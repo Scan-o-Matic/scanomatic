@@ -298,421 +298,100 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
 
     resource_analysis_support.print_progress_bar(size=60)
 
-    #
-    # DEBUG BREAK
-    #
-    xml_writer.close()
-    sys.exit()
-
     while image_pos >= 0:
+
+        #
+        # UPDATING LOOP SPECIFIC VARIABLES
+        #
 
         scan_start_time = time.time()
         img_dict_pointer = image_dictionaries[image_pos]
-
         plate_positions = []
 
+        ## PLATE COORDINATES
         for i in xrange(plates):
 
             plate_positions.append(
                 img_dict_pointer[plate_position_keys[i]])
 
-        logger.info("ANALYSIS, Running analysis on '{}'".format( \
+        ## GRID IMAGE SAVE STRING
+        if image_pos in grid_times:
+            save_grid_name = os.sep.join((
+                outdata_directory,
+                "grid__time_{0}_plate_".format(str(image_pos).zfill(4))))
+        else:
+            save_grid_name = None
+
+        #
+        # INFO TO USER
+        #
+
+        logger.info("ANALYSIS, Running analysis on '{}'".format(
             img_dict_pointer['File']))
 
-        if 'grayscale_indices' in img_dict_pointer.keys():
-
-            gs_indices = img_dict_pointer['grayscale_indices']
-
-        else:
-
-            gs_indices = None
+        #
+        # GET ANALYSIS
+        #
 
         features = project_image.get_analysis(img_dict_pointer['File'],
             plate_positions, img_dict_pointer['grayscale_values'],
             watch_colony=graph_watch,
-            save_grid_name=(image_pos - first_scan_position in grid_times) and
-            (outdata_files_path + "time_" + \
-            str(image_pos - first_scan_position).zfill(4) + "_plate_") or None,
+            save_grid_name=save_grid_name,
             identifier_time=image_pos,
             timestamp=img_dict_pointer['Time'],
-            grayscale_indices=gs_indices)
+            grayscale_indices=img_dict_pointer['grayscale_indices'])
 
-        if suppress_analysis != True:
+        #
+        # XML WRITE IT TO FILES
+        #
 
-            for f in (fh, fhs):
+        xml_writer.write_image_features(image_pos, features, img_dict_pointer,
+            plates, meta_data)
 
-                f.write(XML_OPEN_W_ONE_PARAM.format(
-                            ['scan', 's'][xml_format['short']],
-                            ['index', 'i'][xml_format['short']],
-                            str(image_pos)))
+        #
+        # IF WATCHING A COLONY UPDATE WATCH IMAGE
+        #
 
-                f.write(XML_OPEN.format(
-                            ['scan-valid', 'ok'][xml_format['short']]))
+        if graph_watch is not None:
 
-        if features is None:
+            watch_graph.add_image()
 
-            if suppress_analysis != True:
-
-                for f in (fh, fhs):
-
-                    f.write(XML_CONT_CLOSE.format(0,
-                            ['scan-valid', 'ok'][xml_format['short']]))
-
-                    f.write(XML_CLOSE.format(
-                            ['scan', 's'][xml_format['short']]))
-
-        else:
-            if graph_watch != None and  project_image.watch_grid_size != None:
-
-                x_labels.append(image_pos)
-                pict_size = project_image.watch_grid_size
-                pict_scale = pict_target_width / float(pict_size[1])
-
-                if pict_scale < 1:
-
-                    pict_resize = (int(pict_size[0] * pict_scale),
-                                    int(pict_size[1] * pict_scale))
-
-                    plt_watch_1.imshow(Image.fromstring('L',
-                            (project_image.watch_scaled.shape[1],
-                            project_image.watch_scaled.shape[0]),
-                            project_image.watch_scaled.tostring())\
-                            .resize(pict_resize, Image.BICUBIC),
-                            extent=(image_pos * pict_target_width,
-                            (image_pos + 1) * pict_target_width - 1,
-                            10, 10 + pict_resize[1]))
-
-                tmp_results = []
-
-                if project_image.watch_results is not None:
-
-                    for cell_item in project_image.watch_results.keys():
-
-                        for measure in project_image.watch_results[\
-                                                    cell_item].keys():
-
-                            if type(project_image.watch_results[\
-                                            cell_item][measure])\
-                                            == np.ndarray or \
-                                            project_image.watch_results[\
-                                            cell_item][measure] is None:
-
-                                tmp_results.append(np.nan)
-
-                            else:
-
-                                tmp_results.append(
-                                        project_image.watch_results[\
-                                        cell_item][measure])
-
-                            if len(watch_reading) == 0:
-
-                                plot_labels.append(cell_item + ':' + measure)
-
-                watch_reading.append(tmp_results)
-
-            if suppress_analysis != True:
-
-                for f in (fh, fhs):
-
-                    f.write(XML_CONT_CLOSE.format(1,
-                        ['scan-valid>', 'ok'][xml_format['short']]))
-
-                    f.write(XML_OPEN_CONT_CLOSE.format(\
-                        ['calibration', 'cal'][xml_format['short']],
-                        str(img_dict_pointer['grayscale_values'])))
-
-                    f.write(XML_OPEN_CONT_CLOSE.format(\
-                        ['time', 't'][xml_format['short']],
-                        str(img_dict_pointer['Time'])))
-
-                    f.write(XML_OPEN.format(
-                        ['plates', 'pls'][xml_format['short']]))
-
-                for i in xrange(plates):
-
-                    for f in (fh, fhs):
-
-                        f.write(XML_OPEN_W_ONE_PARAM.format(\
-                            ['plate', 'p'][xml_format['short']],
-                            ['index', 'i'][xml_format['short']], str(i)))
-
-                        f.write(XML_OPEN_CONT_CLOSE.format(\
-                            ['plate-matrix', 'pm'][xml_format['short']],
-                            str(pinning_matrices[i])))
-
-                        f.write(XML_OPEN_CONT_CLOSE.format('R',
-                            str(project_image.R[i])))
-
-                        f.write(XML_OPEN.format(\
-                            ['grid-cells', 'gcs'][xml_format['short']]))
-
-                    for x, rows in enumerate(features[i]):
-
-                        for y, cell in enumerate(rows):
-
-                            for f in (fh, fhs):
-                                f.write(XML_OPEN_W_TWO_PARAM.format(\
-                                    ['grid-cell', 'gc'][xml_format['short']],
-                                    'x', str(x),
-                                    'y', str(y)))
-
-                            if cell != None:
-                                for item in cell.keys():
-
-                                    i_string = item
-
-                                    if xml_format['short']:
-
-                                        i_string = i_string\
-                                                .replace('background', 'bg')\
-                                                .replace('blob', 'bl')\
-                                                .replace('cell', 'cl')
-
-                                    if item not in \
-                                            xml_format['omit_compartments']:
-
-                                        fhs.write(XML_OPEN.format(i_string))
-
-                                    fh.write(XML_OPEN.format(i_string))
-
-                                    for measure in cell[item].keys():
-
-                                        m_string = XML_OPEN_CONT_CLOSE.format(\
-                                            str(measure),
-                                            str(cell[item][measure]))
-
-                                        if xml_format['short']:
-
-                                            m_string = m_string\
-                                                .replace('area', 'a')\
-                                                .replace('pixel', 'p')\
-                                                .replace('mean', 'm')\
-                                                .replace('median', 'md')\
-                                                .replace('sum', 's')\
-                                                .replace('centroid', 'cent')\
-                                                .replace('perimeter', 'per')
-
-                                        if item not in \
-                                            xml_format['omit_compartments'] \
-                                            and measure not in \
-                                            xml_format['omit_measures']:
-
-                                            fhs.write(m_string)
-
-                                        fh.write(m_string)
-
-                                    if item not in \
-                                            xml_format['omit_compartments']:
-
-                                        fhs.write(XML_CLOSE.format(i_string))
-
-                                    fh.write(XML_CLOSE.format(i_string))
-
-                            for f in (fh, fhs):
-
-                                f.write(XML_CLOSE.format(\
-                                    ['grid-cell', 'gc'][xml_format['short']]))
-
-                    for f in (fh, fhs):
-
-                        f.write(XML_CLOSE.format(\
-                            ['grid-cells', 'gcs'][xml_format['short']]))
-
-                        f.write(XML_CLOSE.format(\
-                            ['plate', 'p'][xml_format['short']]))
-
-                for f in (fh, fhs):
-
-                    f.write(XML_CLOSE.format(\
-                        ['plates', 'pls'][xml_format['short']]))
-
-                    f.write(XML_CLOSE.format(\
-                        ['scan', 's'][xml_format['short']]))
-
-        image_pos -= 1
+        #
+        # USER INFO
+        #
 
         logger.info("ANALYSIS, Image took %.2f seconds" % \
                          (time.time() - scan_start_time))
 
-        print_progress_bar(
-                        fraction = (image_tot - image_pos) / float(image_tot),
+        resource_analysis_support.print_progress_bar(
+                        fraction = (meta_data['Images'] - image_pos) / \
+                        float(meta_data['Images']),
                         size=60, start_time=start_time)
 
-    if suppress_analysis != True:
+        #
+        # UPDATE IMAGE_POS
+        #
 
-        for f in (fh, fhs):
+        image_pos -= 1
 
-            f.write(XML_CLOSE.format('scans'))
-            f.write(XML_CLOSE.format('project'))
 
-            f.close()
+    #
+    # CLOSING XML TAGS AND FILES
+    #
 
-    if  graph_watch != None:
+    xml_writer.close()
 
-        omits = []
-        gws = []
+    #
+    # FINALIZING WATCH GRAPHS
+    #
 
-        for i in xrange(len(watch_reading[0])):
+    if  graph_watch is not None:
 
-            gw_i = [gw[i] for gw in watch_reading]
+        watch_graph.finalize()
 
-            try:
-
-                map(lambda v: len(v), gw_i)
-                omits.append(i)
-                gw_i = None
-
-            except:
-
-                pass
-
-            if gw_i is not None:
-                gws.append(gw_i)
-
-        Y = np.asarray(gws, dtype=np.float64)
-        X = (np.arange(len(image_dictionaries), 0, -1) + 0.5) *\
-                        pict_target_width
-
-        for xlabel_pos in xrange(len(x_labels)):
-
-            if xlabel_pos % 5 > 0:
-                x_labels[xlabel_pos] = ""
-
-        cur_plt_graph = ""
-        plt_graph_i = 1
-
-        for i in [x for x in range(len(gws)) if x not in omits]:
-
-            ii = i + sum(map(lambda x: x < i, omits))
-
-            Y_good_positions = np.where(np.isnan(Y[i, :]) == False)[0]
-
-            if Y_good_positions.size > 0:
-
-                try:
-
-                    if Y[i, Y_good_positions].max() == \
-                                Y[i, Y_good_positions].min():
-
-                        scale_factor = 0
-
-                    else:
-
-                        scale_factor = 100 / \
-                                float(Y[i, Y_good_positions].max() - \
-                                Y[i, Y_good_positions].min())
-
-                    sub_term = float(Y[i, Y_good_positions].min())
-
-                    if plot_labels[ii] == "cell:area":
-
-                        c_area = Y[i, Y_good_positions]
-
-                    elif plot_labels[ii] == "background:mean":
-
-                        bg_mean = Y[i, Y_good_positions]
-
-                    elif plot_labels[ii] == "cell:pixelsum":
-
-                        c_pixelsum = Y[i, Y_good_positions]
-
-                    elif plot_labels[ii] == "blob:pixelsum":
-
-                        b_pixelsum = Y[i, Y_good_positions]
-
-                    elif plot_labels[ii] == "blob:area":
-
-                        b_area = Y[i, Y_good_positions]
-
-                    logger.debug("WATCH GRAPH:\n%s\n%s\n%s" % \
-                                (str(plot_labels[ii]), str(sub_term),
-                                str(scale_factor)))
-
-                    logger.debug("WATCH GRAPH, Max %.2f Min %.2f." % \
-                            (float(Y[i, Y_good_positions].max()),
-                            float(Y[i, Y_good_positions].min())))
-
-                    if cur_plt_graph != plot_labels[ii].split(":")[0]:
-
-                        cur_plt_graph = plot_labels[ii].split(":")[0]
-
-                        if plt_graph_i > 1:
-
-                            plt_watch_curves.legend(loc=1, ncol=5, prop=fontP,
-                                    bbox_to_anchor=(1.0, -0.45))
-
-                        plt_graph_i += 1
-
-                        plt_watch_curves = plt_watch_colony.add_subplot(4, 1,
-                                    plt_graph_i, title=cur_plt_graph)
-
-                        plt_watch_curves.set_xticks(X)
-
-                        plt_watch_curves.set_xticklabels(x_labels,
-                                    fontsize="xx-small", rotation=90)
-
-                    if scale_factor != 0:
-
-                        plt_watch_curves.plot(X[Y_good_positions],
-                            (Y[i, Y_good_positions] - sub_term) * scale_factor,
-                            label=plot_labels[ii][len(cur_plt_graph) + 1:])
-
-                    else:
-
-                        logger.debug("GRAPH WATCH, Got straight line %s, %s" %\
-                                (str(plt_graph_i), str(i)))
-
-                        plt_watch_curves.plot(X[Y_good_positions],
-                                np.zeros(X[Y_good_positions].shape) + \
-                                10 * (i - (plt_graph_i - 1) * 5),
-                                label=plot_labels[ii][len(cur_plt_graph) + 1:])
-
-                except TypeError:
-
-                    logger.warning("GRAPH WATCH, Error processing {0}".format(
-                                                            plot_labels[ii]))
-
-            else:
-
-                    logger.warning("GRAPH WATCH, Cann't plot {0}".format(
-                            plot_labels[ii]) + "since has no good data.")
-
-        plt_watch_curves.legend(loc=1, ncol=5, prop=fontP,
-                            bbox_to_anchor=(1.0, -0.45))
-
-        if graph_output != None:
-
-            try:
-
-                plt_watch_colony.savefig(graph_output, dpi=300)
-
-            except:
-
-                plt_watch_colony.show()
-
-            #DEBUG START:PLOT
-            plt_watch_colony = pyplot.figure()
-            plt_watch_1 = plt_watch_colony.add_subplot(111)
-            plt_watch_1.loglog(b_area, b_pixelsum)
-            plt_watch_1.set_xlabel('Blob:Area')
-            plt_watch_1.set_ylabel('Blob:PixelSum')
-            plt_watch_1.set_title('')
-            plt_watch_colony.savefig("debug_corr.png")
-            #DEBUG END
-
-            pyplot.close(plt_watch_colony)
-
-        else:
-
-            plt_watch_colony.show()
-
-        logger.info("ANALYSIS, Full analysis took %.2f minutes" %\
-            ((time.time() - start_time) / 60.0))
-
-        logger.info('Analysis completed at ' + str(time.time()))
-
-        return False
+    #
+    # OUTPUTS TO USER
+    #
 
     logger.info("ANALYSIS, Full analysis took %.2f minutes" %\
         ((time.time() - start_time) / 60.0))
