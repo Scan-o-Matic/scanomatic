@@ -35,6 +35,7 @@ import time
 import resource_project_log
 import resource_analysis_support
 import analysis_image
+import resource_xml_writer
 
 #
 # GLOBALS
@@ -222,7 +223,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     # INITIALIZE XML WRITER
     #
 
-    xml_writer = resource_analysis_support.XML_Writer(outdata_directory,
+    xml_writer = resource_xml_writer.XML_Writer(outdata_directory,
                     xml_format, logger)
 
     if xml_writer.get_initialized() == False:
@@ -275,6 +276,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
                 logger=None,
                 verbose=verbose,
                 visual=visual,
+                suppress_analysis=suppress_analysis,
                 grid_array_settings=grid_array_settings,
                 gridding_settings=gridding_settings,
                 grid_cell_settings=grid_cell_settings,
