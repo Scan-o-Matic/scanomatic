@@ -149,6 +149,9 @@ class Fixture_Image(object):
 
         fixture_path = self._fixture_reference_path
 
+        self._logger.info("FIXTURE: Reference loaded from {0}".format(
+            fixture_path))
+
         self.fixture_reference = conf.Config_File(fixture_path)
 
         cur_name = self.fixture_reference.get('name')

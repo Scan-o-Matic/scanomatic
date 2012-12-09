@@ -56,6 +56,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
             gridding_settings = {'use_otsu': True, 'median_coeff': 0.99,
             'manual_threshold': 0.05},
             grid_cell_settings = {'blob_detect': 'default'},
+            use_local_fixture=True,
             logger=None):
     """
         analyse_project parses a log-file and runs a full analysis on all
@@ -163,6 +164,9 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
         meta_data['Pinning Matrices'] = pinning_matrices
         logger.info('ANALYSIS: Pinning matrices use override: {0}'.format(
             pinning_matrices))
+    if use_local_fixture:
+        meta_data['Fixture'] = None
+        logger.info('ANALYSIS: Local fixture copy to be used')
 
     ### VERIFYING VITAL ASPECTS
 

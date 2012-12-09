@@ -34,7 +34,7 @@ import resource_path
 
 class Project_Image():
     def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
-        animate=False, file_path_base="", fixture_name='fixture_a',
+        animate=False, file_path_base="", fixture_name=None,
         p_uuid=None, logger=None, verbose=False, visual=False,
         suppress_analysis=False,
         grid_array_settings=None, gridding_settings=None,
@@ -69,9 +69,17 @@ class Project_Image():
         self._file_path_base = file_path_base
 
         #Fixture setting is used for pinning history in the arrays
+        if fixture_name is None:
+            fixture_name = self._paths.experiment_local_fixturename
+            fixture_directory = self._file_path_base  
+        else:
+            fixture_name = self._paths.get_fixture_path(fixture_name, only_name=True) 
+            fixture_directory = None
+
         self.fixture = resource_fixture_image.Fixture_Image(
                 fixture_name,
-                fixture_directory=self._paths.fixtures,
+                fixture_directory=fixture_directory,
+                logger=self.logger
                 )
 
         self.im = None
