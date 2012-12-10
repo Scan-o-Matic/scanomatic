@@ -25,12 +25,13 @@ import logging
 import analysis_grid_array as grid_array
 import analysis_grid_cell as grid_cell
 import analysis as project
+import analysis_image
 
 #
 # Globals
 #
 
-_pi = project.Project_Image([])
+_pi = analysis_image.Project_Image([])
 _ga = grid_array.Grid_Array(_pi, (0,) ,None)
 POLY = _ga.get_polynomial_coeffs()
 
@@ -135,7 +136,7 @@ class Grid_Cell(grid_cell.Grid_Cell):
     def __init__(self):
         grid_cell.Grid_Cell.__init__(self, (0,0,0))
 
-class Project_Image(project.Project_Image):
+class Project_Image(analysis_image.Project_Image):
     def __init__(self, im_path):
         project.Project_Image.__init__(self, im_path)
 
