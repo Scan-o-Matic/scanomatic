@@ -211,7 +211,10 @@ class Project_Image():
                 left = y1
                 right = y0
 
-            return self.im[upper: lower, left: right]
+            if self.fixture['version'] >= 0.997:
+                return self.im[left: right, upper:lower]
+            else:
+                return self.im[upper: lower, left: right]
 
         else:
             return None

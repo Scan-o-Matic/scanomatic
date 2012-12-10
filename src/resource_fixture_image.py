@@ -108,6 +108,9 @@ class Fixture_Image(object):
 
             return self.get_plates()
 
+        elif key in ['version', 'Version']:
+
+            return self.fixture_reference.get('version')
         else:
 
             print "***ERROR: Unknown key {0}".format(key)
