@@ -538,15 +538,17 @@ def get_offset_quality(s, offset, expected_spikes, wl, raw_signal):
     #Making arrays
     X = Z[0::2]
     rawX = raw_signal[X.astype(np.int)]
-    qX = 1/(1 + np.abs(rawX - np.median(rawX)))
     Y = Z[1::2]
+    rawY = raw_signal[ideal_signal.astype(np.int)]
+    qY = 1/(1 + np.abs(rawY - np.median(rawX)))
     dXY = np.abs(Y - X)
 
     #Assigning quality
-    qOrder = qX.size - qX.argsort()
-    q = dXY.size /float(1 + ((dXY**2) / qOrder).sum())
+    #qOrder = qX.size - qX.argsort()
+    #q = dXY.size /float(1 + ((dXY**2) / qOrder).sum())
+    q = qY.min() / (1 + dXY)
 
-    return q
+    return q.sum()
 
 def get_grid_signal(raw_signal, expected_spikes):
     """Gives grid signals according to number of expected spikes (rows or columns)
@@ -554,7 +556,7 @@ def get_grid_signal(raw_signal, expected_spikes):
 
     #Get slopes
     up_slopes, down_slopes = get_continious_slopes(
-            raw_signal, min_slope_length=20, noise_reduction=4)
+            raw_signal, min_slope_length=10, noise_reduction=4)
 
     #Get signal from slopes
     s = get_signal_spikes(down_slopes, up_slopes)
@@ -575,9 +577,8 @@ def get_grid_signal(raw_signal, expected_spikes):
             wl, raw_signal))
 
     GS = np.array(grid_scores)
-    score_order = GS.argsort()
+    offset = GS.argmax()
 
-    print "Good? Offsets {0} gave {1}".format(score_order[:10], GS[score_order[:10]])
-    print "Bad? Offsets {0} gave {1}".format(score_order[-10:], GS[score_order[-10:]])
+    #Make signal here
 
     return GS
