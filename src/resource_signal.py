@@ -21,6 +21,7 @@ __status__ = "Development"
 import numpy as np
 from math import ceil
 import logging
+from scipy import signal, ndimage
 
 #
 # SCANNOMATIC LIBRARIES
@@ -435,3 +436,148 @@ def move_signal(signals, shifts, frequencies=None, freq_offset=1):
                 signals[i][:] = np.array([sign + s*frequencies[i] for sign in signals[i]])
 
         return signals
+
+def get_continious_slopes(s, min_slope_length=20, noise_reduction=4):
+    """Function takes a 1D noisy signal, e.g. from taking mean of image slice
+    in one dimension and gets regions of continious slopes.
+
+    Returns two arrays, first with all continious up hits
+    Second with all continious down hits"""
+
+    #Get derivative of signal without catching high freq noise
+    ds = signal.fftconvolve(s, np.array([-1, -1, 1, 1]), mode="full")
+
+    #Look for positive slopes
+    s_up = ds > 0
+    continious_s_up = signal.fftconvolve(s_up, 
+        np.ones((min_slope_length,)), mode='full') == min_slope_length
+
+    #Look for negative slopes
+    s_down = ds < 0
+    continious_s_down = signal.fftconvolve(s_down,
+        np.ones((min_slope_length,)), mode='full') == min_slope_length
+
+    #Reduce noise 2
+    for i in range(noise_reduction):
+        continious_s_up = ndimage.binary_dilation(continious_s_up)
+        continious_s_down = ndimage.binary_dilation(continious_s_down)
+    for i in range(noise_reduction):
+        continious_s_up = ndimage.binary_erosion(continious_s_up)
+        continious_s_down = ndimage.binary_erosion(continious_s_down)
+
+
+    return continious_s_up, continious_s_down
+
+
+def get_closest_signal_pair(s1, s2, s1_value=-1, s2_value=1):
+    """The function returns the positions in s1 and s2 for where pairs of
+    patterns s1-value -> s2-value are found (s1-value is assumed to preceed
+    s2-value)."""
+
+    s1_positions = np.where(s1==s1_value)[0]
+    s2_positions = np.where(s2==s2_value)[0]
+
+    #Match all 
+    signals = list()
+    for p in s1_positions:
+        tmp_diff = s2_positions - p
+        tmp_diff = tmp_diff[tmp_diff > 0]
+        if tmp_diff.size > 0:
+            p2 = tmp_diff.min() + p
+            if len(signals) > 0 and p2 == signals[-1][1]:
+                if p2 - p < signals[-1][1] - signals[-1][0]: 
+                    del signals[-1]
+                    signals.append((p, p2))
+            else:
+                signals.append((p, p2))
+                
+    S = np.array(signals)
+    if S.size == 0:
+        return None, None
+
+    return S[:, 0], S[:, 1]
+
+
+def get_signal_spikes(down_slopes, up_slopes):
+    """Returns where valleys are in a signal based on down and up slopes"""
+
+
+    #combined_signal = down_slopes.astype(np.int) * -1 + up_slopes.astype(np.int)
+
+    #Edge-detect so that signal start is >0 and signal end <0
+    kernel = np.array([-1, 1])
+    d_down = np.round(signal.fftconvolve(down_slopes, kernel, mode='full')).astype(np.int)
+    d_up = np.round(signal.fftconvolve(up_slopes, kernel, mode='full')).astype(np.int)
+
+    s1, s2 = get_closest_signal_pair(d_down, d_up, s1_value=-1, s2_value=1)
+    return s2
+
+
+def get_offset_quality(s, offset, expected_spikes, wl, raw_signal):
+
+    #Get the ideal signal from parameters
+    ideal_signal = np.arange(expected_spikes) * wl + offset    
+
+    #Get pairing spikes only
+    new_list = list()
+    for i in ideal_signal:
+        delta_i = np.abs(s - i)
+        delta_reciprocal = np.abs(ideal_signal - s[delta_i.argmin()])
+        if delta_i.min() == delta_reciprocal.min():
+            new_list += ([s[delta_i.argmin()],
+                ideal_signal[delta_reciprocal.argmin()]])
+    Z = np.array(new_list)
+
+    #Alt pairing spikes
+    """
+    dist = np.abs(np.subtract.outer(ideal_signal, s))
+    idx1 = np.argmin(dist, axis = 0)
+    idx2 = np.argmin(dist, axis = 1)
+    Z = np.unique(np.r_[ideal_signal[idx1], s[idx2]])
+    """
+    #Making arrays
+    X = Z[0::2]
+    rawX = raw_signal[X.astype(np.int)]
+    qX = 1/(1 + np.abs(rawX - np.median(rawX)))
+    Y = Z[1::2]
+    dXY = np.abs(Y - X)
+
+    #Assigning quality
+    qOrder = qX.size - qX.argsort()
+    q = dXY.size /float(1 + ((dXY**2) / qOrder).sum())
+
+    return q
+
+def get_grid_signal(raw_signal, expected_spikes):
+    """Gives grid signals according to number of expected spikes (rows or columns)
+    on 1D raw signal"""
+
+    #Get slopes
+    up_slopes, down_slopes = get_continious_slopes(
+            raw_signal, min_slope_length=20, noise_reduction=4)
+
+    #Get signal from slopes
+    s = get_signal_spikes(down_slopes, up_slopes)
+    print s
+
+    #Wave-length 'frequency'
+
+    wl = get_perfect_frequency2(s, get_signal_frequency(s))
+
+    #Signal length is wave-length * expected signals
+    l = wl * expected_spikes
+
+    #Evaluating all allowed offsets:
+    grid_scores = list()
+    for offset in range(int(raw_signal.size - l)):
+        grid_scores.append(
+            get_offset_quality(s, offset, expected_spikes, 
+            wl, raw_signal))
+
+    GS = np.array(grid_scores)
+    score_order = GS.argsort()
+
+    print "Good? Offsets {0} gave {1}".format(score_order[:10], GS[score_order[:10]])
+    print "Bad? Offsets {0} gave {1}".format(score_order[-10:], GS[score_order[-10:]])
+
+    return GS
