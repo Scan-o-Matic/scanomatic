@@ -513,59 +513,61 @@ def get_signal_spikes(down_slopes, up_slopes):
     return s2
 
 
+def _get_closest(X, Y):
+
+    new_list = list()
+    for i in ideal_signal:
+        delta_i = np.abs(X - i)
+        delta_reciprocal = np.abs(Y - X[delta_i.argmin()])
+        if delta_i.min() == delta_reciprocal.min():
+            new_list += ([X[delta_i.argmin()],
+                Y[delta_reciprocal.argmin()]])
+
+    return np.array(new_list)
+
+
+def _get_alt_closest(X, Y):
+
+    dist = np.abs(np.subtract.outer(X, Y))
+    idx1 = np.argmin(dist, axis = 0)
+    idx2 = np.argmin(dist, axis = 1)
+    Z = np.c_[X[idx1[idx2] == np.arange(len(X))], 
+        Y[idx2[idx1] == np.arange(len(Y))]].ravel()
+
+    return Z
+
+
+def _get_orphans(X, shortX):
+
+    return X[np.abs(np.subtract.outer(X, shortX)).min(axis=1).astype(bool)]
+
+
 def get_offset_quality(s, offset, expected_spikes, wl, raw_signal):
 
     #Get the ideal signal from parameters
     ideal_signal = np.arange(expected_spikes) * wl + offset    
 
-    #Get pairing spikes only
-    new_list = list()
-    for i in ideal_signal:
-        delta_i = np.abs(s - i)
-        delta_reciprocal = np.abs(ideal_signal - s[delta_i.argmin()])
-        if delta_i.min() == delta_reciprocal.min():
-            new_list += ([s[delta_i.argmin()],
-                ideal_signal[delta_reciprocal.argmin()]])
-    Z = np.array(new_list)
-
-    #Alt pairing spikes
-    """
-    dist = np.abs(np.subtract.outer(s,ideal_signal))
-    idx1 = np.argmin(dist, axis = 0)
-    idx2 = np.argmin(dist, axis = 1)
-    Z = np.r_[s[idx1[idx2] == np.arange(len(s))], 
-        ideal_signal[idx2[idx1] == np.arange(len(ideal_signal))]]
-    """
+    Z = _get_alt_closest(s, ideal_signal)
 
     #Making arrays
+    #X  is s positions
+    #Y  is ideal_signal positions
     X = Z[0::2]
-    rawX = raw_signal[X.astype(np.int)]
     Y = Z[1::2]
-    rawY = raw_signal[ideal_signal.astype(np.int)]
 
-    #qY = 1/(1 + np.abs(rawY - np.median(rawX)))
-    dY = abs(rawY - np.median(rawX))
-    dY[rawY < np.median(rawX)] = 0
-    qY = (dY < 20).astype(np.float) / (1 + dY)
-    #qY = 1 - 1.0 / (1 + np.power(np.e, -0.4 * 
-    #    dY - 3))
+    new_signal = np.r_[X, _get_orphans(ideal_signal, Y)]
+    new_signal_val = raw_signal[new_signal.astype(int)]
 
-    dXY = np.abs(Y - X)
-    qXY = (dXY < (wl / 4.0)).astype(np.float) / (1 + dXY)
+    dXY = np.abs(np.r_[(Y - X),
+        np.ones(ideal_signal.size - X.size) * (0.5 * wl)])
 
-    #qXY = 1 - 0.5 / (1 + np.power(np.e, -1.0 / wl * dXY.astype(np.float) - 1.0 ))
-    #Assigning quality
-    #qOrder = qX.size - qX.argsort()
-    #q = dXY.size /float(1 + ((dXY**2) / qOrder).sum())
-    q = qY.mean() * qXY
-
-    #print dXY
-    #print qXY
-    #print qY
-    #print dY
-    #print
+    X_val = raw_signal[X.astype(np.int)]
+    dV = 3 * np.abs(new_signal_val - np.median(X_val))
+    dV[new_signal_val > np.median(X_val)*0.8] *= 0.25
+    q = -0.1 * dXY * dV
 
     return q.sum()
+
 
 def get_grid_signal(raw_signal, expected_spikes):
     """Gives grid signals according to number of expected spikes (rows or columns)
