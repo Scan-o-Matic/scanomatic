@@ -530,23 +530,40 @@ def get_offset_quality(s, offset, expected_spikes, wl, raw_signal):
 
     #Alt pairing spikes
     """
-    dist = np.abs(np.subtract.outer(ideal_signal, s))
+    dist = np.abs(np.subtract.outer(s,ideal_signal))
     idx1 = np.argmin(dist, axis = 0)
     idx2 = np.argmin(dist, axis = 1)
-    Z = np.unique(np.r_[ideal_signal[idx1], s[idx2]])
+    Z = np.r_[s[idx1[idx2] == np.arange(len(s))], 
+        ideal_signal[idx2[idx1] == np.arange(len(ideal_signal))]]
     """
+
     #Making arrays
     X = Z[0::2]
     rawX = raw_signal[X.astype(np.int)]
     Y = Z[1::2]
     rawY = raw_signal[ideal_signal.astype(np.int)]
-    qY = 1/(1 + np.abs(rawY - np.median(rawX)))
-    dXY = np.abs(Y - X)
 
+    #qY = 1/(1 + np.abs(rawY - np.median(rawX)))
+    dY = abs(rawY - np.median(rawX))
+    dY[rawY < np.median(rawX)] = 0
+    qY = (dY < 20).astype(np.float) / (1 + dY)
+    #qY = 1 - 1.0 / (1 + np.power(np.e, -0.4 * 
+    #    dY - 3))
+
+    dXY = np.abs(Y - X)
+    qXY = (dXY < (wl / 4.0)).astype(np.float) / (1 + dXY)
+
+    #qXY = 1 - 0.5 / (1 + np.power(np.e, -1.0 / wl * dXY.astype(np.float) - 1.0 ))
     #Assigning quality
     #qOrder = qX.size - qX.argsort()
     #q = dXY.size /float(1 + ((dXY**2) / qOrder).sum())
-    q = qY.min() / (1 + dXY)
+    q = qY.mean() * qXY
+
+    #print dXY
+    #print qXY
+    #print qY
+    #print dY
+    #print
 
     return q.sum()
 
@@ -581,4 +598,4 @@ def get_grid_signal(raw_signal, expected_spikes):
 
     #Make signal here
 
-    return GS
+    return GS, wl, offset, s
