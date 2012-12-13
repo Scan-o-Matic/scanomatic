@@ -123,6 +123,35 @@ class Grid_Analysis():
     #
 
     def get_analysis(self, im, history=[]):
+
+        adjusted_by_history = False
+        d1, wl1 = r_signal.get_grid_signal(im.mean(0), self.pinning_matrix[0])
+        d2, wl2 = r_signal.get_grid_signal(im.mean(1), self.pinning_matrix[1])
+
+        if d1.size != self.pinning_matrix[0] or \
+             d2.size != self.pinning_matrix[1]:
+
+            self.logger.error("Could not localize a grid!")
+
+            self.best_fit_frequency = None
+            self.best_fit_positions = None
+            self.R = -1
+
+        else:
+
+            self.best_fit_frequency = [wl1, wl2]
+            self.best_fit_positions = [d1, d2]
+            self.R = 0
+
+            self.logger.info("Found grid-cell size {0}".format(self.best_fit_frequency))
+
+
+        ret_tuple = (self.best_fit_positions[0], self.best_fit_positions[1],
+            self.R, adjusted_by_history)
+
+        return ret_tuple
+
+    def get_analysis_old(self, im, history=[]):
         """
         get_analysis is a convenience function for get_spikes and
         get_signal_position_and_frequency functions run on both

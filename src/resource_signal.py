@@ -445,17 +445,17 @@ def get_continious_slopes(s, min_slope_length=20, noise_reduction=4):
     Second with all continious down hits"""
 
     #Get derivative of signal without catching high freq noise
-    ds = signal.fftconvolve(s, np.array([-1, -1, 1, 1]), mode="full")
+    ds = signal.fftconvolve(s, np.array([-1, -1, 1, 1]), mode="same")
 
     #Look for positive slopes
     s_up = ds > 0
     continious_s_up = signal.fftconvolve(s_up, 
-        np.ones((min_slope_length,)), mode='full') == min_slope_length
+        np.ones((min_slope_length,)), mode='same') == min_slope_length
 
     #Look for negative slopes
     s_down = ds < 0
     continious_s_down = signal.fftconvolve(s_down,
-        np.ones((min_slope_length,)), mode='full') == min_slope_length
+        np.ones((min_slope_length,)), mode='same') == min_slope_length
 
     #Reduce noise 2
     for i in range(noise_reduction):
@@ -506,11 +506,11 @@ def get_signal_spikes(down_slopes, up_slopes):
 
     #Edge-detect so that signal start is >0 and signal end <0
     kernel = np.array([-1, 1])
-    d_down = np.round(signal.fftconvolve(down_slopes, kernel, mode='full')).astype(np.int)
-    d_up = np.round(signal.fftconvolve(up_slopes, kernel, mode='full')).astype(np.int)
+    d_down = np.round(signal.fftconvolve(down_slopes, kernel, mode='same')).astype(np.int)
+    d_up = np.round(signal.fftconvolve(up_slopes, kernel, mode='same')).astype(np.int)
 
-    s1, s2 = get_closest_signal_pair(d_down, d_up, s1_value=-1, s2_value=1)
-    return s2
+    s1, s2 = get_closest_signal_pair(d_up, d_down, s1_value=-1, s2_value=1)
+    return (s1 + s2) / 2.0  # (s1 + s2) / 2.0
 
 
 def _get_closest(X, Y):
@@ -569,6 +569,142 @@ def get_offset_quality(s, offset, expected_spikes, wl, raw_signal):
     return q.sum()
 
 
+def _get_wave_length_and_errors(s, expected_spikes):
+
+    diff = np.subtract.outer(s, s)
+    proxy_step = diff.diagonal(offset=-1)  # -1 gets step to the right
+    bis_proxy_step = diff.diagonal(offset=-2) / 2.0  # Scaled to proxy step sizes
+
+    #Getting wl from IQR-mean of proximate signal step lengths
+    ps_order = proxy_step.argsort()
+    wl = proxy_step[ps_order[ps_order.size/4: ps_order.size*3/4]].mean()
+
+    #Get the errors in step sizes
+    ps_error = np.abs(proxy_step - wl)
+    bps_error = np.abs(bis_proxy_step - wl)
+
+    #Extend bps-error so it has equal size as ps_error
+    bps_error = np.r_[bps_error, ps_error[-1]]
+
+    #Get the best mesure (In other words, let one vary in size)
+    s_error = np.c_[ps_error, bps_error].min(1)
+
+    return wl, s_error
+
+
+def _insert_spikes_where_missed(s, s_error, expected_spikes, wl):
+
+    #Get distances in terms of k waves:
+    k_wave_d = np.arange(expected_spikes) * wl
+
+    #Investigate if a spike seems to be missed?
+    insert_spikes = np.abs(np.subtract.outer(s_error, k_wave_d)).argmin(axis=1)
+
+    inserted_spikes = 0
+    for pos in np.where(insert_spikes > 0)[0]:
+
+        s = np.r_[
+            # What is leftside of the missed spike(s)
+            s[:pos + 1 + inserted_spikes],
+            # Assumed positions for missed spikes
+            s[pos + inserted_spikes] + k_wave_d[1: insert_spikes[pos]+1],
+            # Right-side of the missed spike(s)
+            s[pos + inserted_spikes:]
+            ]
+        inserted_spikes += insert_spikes[pos]
+
+    return s
+
+def _remove_false_inter_spikes(s, expected_spikes, wl):
+
+    #Get distances in terms of k waves:
+    k_wave_d = np.arange(expected_spikes) * wl
+    steps = np.abs(np.subtract.outer(np.abs(np.subtract.outer(s,s)), k_wave_d)).argmin(2)
+    inter_spikes = (steps == 0).sum(1) > 1
+
+    subtracted = 0
+    for pos in range(inter_spikes.size - 1):
+        if inter_spikes[pos: pos + 2].sum() == 2:
+            s = np.r_[s[:pos + 1 - subtracted], s[pos + 2 - subtracted:]]
+            subtracted += 1
+
+    return s
+
+def _get_candidate_validation(s, s_error, expected_spikes, raw_signal):
+
+    #Get goodness of distances
+    goodness1 = signal.convolve(s_error, np.ones(expected_spikes/4), 'same')
+    g = [goodness1[0]]
+    for g_pos in range(s_error.size - 1):
+        g.append(goodness1[g_pos: g_pos+2].min())
+    g.append(goodness1[-1])
+    goodness1 = np.array(g)
+
+    #goodness1r = np.r_[[0], goodness1]
+    #goodness1 = np.c_[goodness1l, goodness1r].mean(1)
+
+    #Get goodness of values
+    candidate_vals = raw_signal[s.astype(np.int)]
+    m_c_val = np.median(candidate_vals)
+    goodness2 = candidate_vals - m_c_val
+    goodness2[goodness2 > 0] *= 0.5
+    goodness2 = np.abs(goodness2)
+
+    #General goodness
+    goodness = goodness1 * ( goodness2 ** 2)
+    g_order = goodness.argsort()
+
+    #Validated positions
+    s_val = np.zeros(s.size, dtype=np.bool)
+
+    #Validate positions
+    tmp_2_slice = np.array((0,-1))
+    pos = 0
+    while s_val.sum() < expected_spikes and pos < g_order.size:  # Steps is one less
+
+        if s_val[g_order[pos]] == 0:
+
+            eval_s_val = s_val.copy()
+            eval_s_val[g_order[pos]] = True
+            es_true_range = np.where(eval_s_val == True)[0][tmp_2_slice]
+            eval_s_val[es_true_range[0]:es_true_range[1]+1] = True
+            if eval_s_val.sum() < expected_spikes:
+                s_val = eval_s_val
+        pos += 1
+    
+    sb = np.where(s_val == True)[0][tmp_2_slice]
+    if sb[1] == s_val.size - 1:
+        s_val[sb[0]-1] = True
+    else:
+        s_val[sb[1]+1] = True
+
+    return s_val
+
+def get_best_signal_candidates_and_wave_length(s, expected_spikes, raw_signal):
+
+    s = s.copy()  # We might rewrite the signal and should not mess with original
+
+    #Get how candidates err and what is the reasonably assumed wave-length
+    wl, s_error = _get_wave_length_and_errors(s, expected_spikes)
+
+    #Remove spikes if there seems to be bonus ones inbetween good ones
+    s = _remove_false_inter_spikes(s, expected_spikes, wl)
+
+    #Update s_error
+    s_error = _get_wave_length_and_errors(s, expected_spikes)[1]
+
+    #Insert spikes if there seems to be missed ones
+    s = _insert_spikes_where_missed(s, s_error, expected_spikes, wl)
+
+    #Update s_error
+    s_error = _get_wave_length_and_errors(s, expected_spikes)[1]
+
+    #Validate candidates
+    s_val = _get_candidate_validation(s, s_error, expected_spikes, raw_signal)
+
+    return s[s_val], wl
+
+
 def get_grid_signal(raw_signal, expected_spikes):
     """Gives grid signals according to number of expected spikes (rows or columns)
     on 1D raw signal"""
@@ -579,12 +715,13 @@ def get_grid_signal(raw_signal, expected_spikes):
 
     #Get signal from slopes
     s = get_signal_spikes(down_slopes, up_slopes)
-    print s
 
     #Wave-length 'frequency'
+    #wl = get_perfect_frequency2(s, get_signal_frequency(s))
 
-    wl = get_perfect_frequency2(s, get_signal_frequency(s))
+    s, wl = get_best_signal_candidates_and_wave_length(s, expected_spikes, raw_signal)
 
+    """
     #Signal length is wave-length * expected signals
     l = wl * expected_spikes
 
@@ -599,5 +736,6 @@ def get_grid_signal(raw_signal, expected_spikes):
     offset = GS.argmax()
 
     #Make signal here
+    """
 
-    return GS, wl, offset, s
+    return s, wl

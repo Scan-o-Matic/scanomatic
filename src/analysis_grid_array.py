@@ -371,6 +371,8 @@ class Grid_Array():
             plt.close(grid_image)
             del grid_image
 
+            self.logger.info("ANALYSIS GRID: Image saved!")
+
     def _set_pinning_matrix(self, pinning_matrix):
         """
             set_pinning_matrix sets the pinning_matrix.
