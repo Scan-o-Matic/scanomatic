@@ -16,6 +16,7 @@ __status__ = "Development"
 import gobject
 import types
 import re
+import os
 from subprocess import Popen
 
 #
