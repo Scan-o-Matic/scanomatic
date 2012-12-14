@@ -961,6 +961,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         super(Analysis_Stage_Auto_Norm_and_Section, self).__init__(0, False)
 
         self._controller = controller
+        self._paths = controller.get_top_controller().paths
         self._specific_controller = specific_controller
         self._model = model
         self._specific_model = specific_model
@@ -1116,7 +1117,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
         for f_name in self._model['fixtures']:
 
-            self.fixture.append_text(f_name.replace("_"," ").capitalize())
+            self.fixture.append_text(self._paths.get_fixture_name(f_name))
 
         if keep_name:
 

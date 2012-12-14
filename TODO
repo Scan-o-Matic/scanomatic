@@ -4,6 +4,8 @@
 
 --- HOT ---
 
+*** GRIDDING isn't reliable
+
 *** ANALYSE ONE should give visual warning when capping
 
 *** LAN-PM 1: Init takes some time, should only need to test once per PM and not
@@ -13,8 +15,6 @@
 
 *** LAN-PM 2: If host does not exist the urltimeout is too long, maybe also run
     seperate thread anyhow.
-
-*** FIXTURE: All should use path-resource to get filenames
 
 *** ALL: Rotate and flip image display so that it matches the user perspective
     GOOD DISPLAY:
@@ -99,6 +99,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** FIXTURE: All should use path-resource to get filenames
 
 *** GLOBALS for diff version compatibility -> resourceCONFIG
 
