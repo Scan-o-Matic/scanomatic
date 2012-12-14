@@ -225,6 +225,12 @@ class Subprocs_Controller(controller_generic.Controller):
 
             if p['proc'].poll() is None:
                 self._logger.info("Analysis will continue in the background...")
+            else:
+                self._logger.info("Analysis was complete")
+                for i, proc in enumerate(plist):
+                    if id(p) == id(proc):
+                        del plist[i]
+                        return True
 
             return True
 
@@ -244,4 +250,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
     def produce_running_analysis(self, widget):
 
-        pass
+        self.get_top_controller().add_contents_from_controller(
+            view_subprocs.Running_Analysis(self, self._model,
+            self._specific_model), self._model['running-analysis'],
+            self)

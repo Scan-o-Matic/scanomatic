@@ -70,6 +70,16 @@ terminate experiments before their planned end.</i></span>
 To stop, write 'stop' below and then presss the yes-button.</i></span>
 """,
 'running-experiments-stopping': 'Stopping...',
+
+#RUNNING ANALYSIS
+'running-analysis-intro':
+"""<span size="x-large">Running analysis</span>
+
+<span><i>Here you can see which analysis that are running,
+and in the future when to expect the results.</i></span>
+""",
+'running-analysis-running': 'Running...',
+'running-analysis-done': 'Done!',
 }
 
 

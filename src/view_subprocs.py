@@ -17,6 +17,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 import gobject
+import os
 """
 from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 import matplotlib.image as plt_img
@@ -121,6 +122,57 @@ class Subprocs_View(gtk.Frame):
         self.messages.set_label(str(specific_model['collected-messages']))
 
 
+class Running_Analysis(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Running_Analysis, self).__init__(False, 0)
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        label = gtk.Label()
+        label.set_markup(model['running-analysis-intro'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        self._stuff = list()
+
+
+        for p in controller.get_subprocesses(by_type='analysis'):
+
+            if 'experiment-prefix' in p['sm']:
+                frame = gtk.Frame(p['sm']['experiment-prefix'])
+            else:
+                proj_dir = p['sm']['analysis-project-log_file_dir']
+                proj_prefix = proj_dir.split(os.sep)[-1]
+                frame = gtk.Frame(proj_prefix)
+
+            vbox = gtk.VBox(False, 0)
+            frame.add(vbox)
+            hbox = gtk.HBox(False, 0)
+            info = gtk.Label(model['running-analysis-running'])
+            hbox.pack_start(info, True, True, PADDING_LARGE)
+            vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
+            self._stuff.append((p, info))
+            self.pack_start(frame, False, False, PADDING_LARGE)
+        
+           
+        self.show_all()
+        gobject.timeout_add(200, self.update)
+
+    def update(self):
+
+        m = self._model
+        running_procs = self._controller.get_subprocesses(self, by_type='analysis')
+
+        for i, (p, info) in enumerate(self._stuff):
+            
+            if p not in running_procs:
+                info.set_text(m['running-analysis-done'])
+                del self._stuff[i]
+
+
 class Running_Experiments(gtk.VBox):
 
     def __init__(self, controller, model, specific_model):
@@ -207,9 +259,14 @@ class Running_Experiments(gtk.VBox):
     def update(self):
 
         sm = self._specific_model
-        for p, progress, info in self._stuff:
+        running_procs = self._controller.get_subprocesses(self, by_type='experiment')
+
+        for i, (p, progress, info) in enumerate(self._stuff):
             
-            progress.set_fraction(p['progress']/float(p['sm']['scans']))
-            eta = (p['sm']['scans'] - p['progress']) * p['sm']['interval'] / 60.0
-            progress.set_text("Expected to finnish in {0:.2f}h".format(eta))
-            info.set_text("Feedback not yet implemented")
+            if p not in running_procs:
+                del self._stuff[i] 
+            else:
+                progress.set_fraction(p['progress']/float(p['sm']['scans']))
+                eta = (p['sm']['scans'] - p['progress']) * p['sm']['interval'] / 60.0
+                progress.set_text("Expected to finnish in {0:.2f}h".format(eta))
+                info.set_text("Feedback not yet implemented")
