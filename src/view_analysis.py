@@ -896,6 +896,24 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
 
             self._interests['widget'][i].set_sensitive(val)
 
+    def set_interests(self, *args):
+
+        sc = self._specific_controller
+        callbacks = (sc.log_compartments, sc.log_measures)
+
+        for i, interest in enumerate(args):
+
+            s = self._interests['selection'][i]
+            m = self._interests['model'][i]
+
+            for c in interest:
+
+                for row in m:
+                    if c == row[0]:
+                        s.select_path(row.path)
+
+            callbacks[i](s)
+
     def set_interests_from_model(self):
 
         interests = self._specific_model['log-interests']
@@ -1715,7 +1733,10 @@ class Analysis_Stage_Log(gtk.VBox):
 
     def add_data_row(self, measure):
 
-        self.treemodel.append(measure)
+        try:
+            self.treemodel.append(measure)
+        except:
+            print "Could not append {0}".format(measure)
 
     def delete_selection(self):
 

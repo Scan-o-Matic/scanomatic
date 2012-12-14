@@ -871,12 +871,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
             compartments = {i[0] for i in interests}
             measures = {i[1] for i in interests}
 
-            self._specific_model['log-interests'] = [list(compartments),
-                list(measures)]
+            view.set_interests(compartments, measures)
 
             self._specific_model['log-previous-file'] = log_file
 
-            view.set_interests_from_model()
             view.set_lock_selection_of_interests(True)
             view.set_previous_log_file(log_file)
 
@@ -1588,7 +1586,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
         for data_row in fs:
 
-            data_row = data_row.strip().replace("\t",", ")
+            data_row = data_row.strip().replace("\t",',')
             data = eval("[{0}]".format(data_row))
             for i, d in enumerate(data):
                 if type(d) == types.StringType and len(d) > 0 and \
@@ -1776,7 +1774,6 @@ class Analysis_Log_Controller(controller_generic.Controller):
             m['measures'].append(measures)
 
             self._set_look_up_strains(plate_index=pm['plate'])
-
             self._view.add_data_row(measures)
 
         else:
