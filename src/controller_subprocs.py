@@ -123,9 +123,9 @@ class Subprocs_Controller(controller_generic.Controller):
                     psm = p['sm']
                     a_dict = tc.config.get_default_analysis_query()
 
-                    proc_name = os.sep(psm['experiments-root'], 
+                    proc_name = os.sep.join((psm['experiments-root'], 
                         psm['experiment-prefix'],
-                        tc.paths.experiment_first_pass_analysis_relative)
+                        tc.paths.experiment_first_pass_analysis_relative))
 
                     a_dict['-i'] = proc_name
 
