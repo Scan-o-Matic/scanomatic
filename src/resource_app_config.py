@@ -18,6 +18,7 @@ __status__ = "Development"
 #
 
 import src.resource_power_manager as resource_power_manager
+import src.resource_path as resource_path
 
 #
 # CLASSES
@@ -25,11 +26,17 @@ import src.resource_power_manager as resource_power_manager
 
 class Config(object):
 
-    def __init__(self, paths):
+    def __init__(self, paths=None):
+
+        if paths is None:
+            paths = resource_path.Paths()
 
         self._paths = paths
 
         #TMP SOLUTION TO BIGGER PROBLEMS
+
+        #VERSION HANDLING
+        self.version_first_pass_change_1 = 0.997
 
         #SCANNER
         self.number_of_scanners = 3

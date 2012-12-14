@@ -29,6 +29,7 @@ from matplotlib.pyplot import imread
 import resource_image as resource_image
 import resource_path as resource_path
 import resource_config as conf
+import resource_app_config as resource_app_config
 import resource_logger as resource_logger
 
 
@@ -45,6 +46,8 @@ class Fixture_Image(object):
         self._logger = logger
 
         self._paths = resource_path.Paths()
+        self._config = resource_app_config.Config(self._paths)
+
         self._define_reference = define_reference
         self.fixture_name = fixture
         self.im_scale = im_scale
@@ -410,7 +413,8 @@ class Fixture_Image(object):
     def _version_check_positions_arr(self, *args):
         """Note that it only works for NP-ARRAYS and NOT for lists"""
         version = self['fixture']['version']
-        if version is None or version < 0.997:
+        if version is None or \
+            version < self._config.version_first_pass_change_1:
 
             args = list(args)
             for a in args:
@@ -571,7 +575,9 @@ class Fixture_Image(object):
 
         self._version_check_positions_arr(ref_Mcom)
 
-        if version is None or version < 0.997:
+        if version is None or \
+            version < self._config.version_first_pass_change_1:
+
             scale_factor = 4
         else:
             scale_factor = 1

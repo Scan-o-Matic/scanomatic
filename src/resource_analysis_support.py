@@ -29,6 +29,7 @@ from PIL import Image
 # SCANNOMATIC LIBRARIES
 #
 
+import resource_app_config
 
 #
 # GLOBALS
@@ -52,9 +53,11 @@ def get_active_plates(meta_data, suppress_analysis, graph_watch):
     """Makes list of only relevant plates according to how
     analysis was started"""
 
+    config = resource_app_config.Config()
+
     plate_position_keys = []
 
-    if meta_data['Version'] >= 0.997:
+    if meta_data['Version'] >= config.version_first_pass_change_1:
         v_offset = 1
     else:
         v_offset = 0

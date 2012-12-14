@@ -39,7 +39,7 @@ class Invalid_Init(Exception): pass
 # GLOBALS
 #
 
-URL_TIMEOUT = 10
+URL_TIMEOUT = 2
 MAX_CONNECTION_TRIES = 10
 
 #

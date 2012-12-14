@@ -660,6 +660,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 parent, 
                 view=view, model=model, logger=logger)
 
+        self._config = parent.get_top_controller().config
         self._specific_model = None
         self._log = None
 
@@ -807,7 +808,9 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             pl = self.fixture.get_plates()
             version = self.fixture['fixture']['version']
-            if version is None or version < 0.997:
+            if version is None or \
+                version < self._config.version_first_pass_change_1:
+
                 back_compatible=True
             else:
                 back_compatible=False

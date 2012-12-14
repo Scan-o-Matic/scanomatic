@@ -26,6 +26,7 @@ import numpy as np
 import analysis_grid_array
 import resource_fixture_image 
 import resource_path
+import resource_app_config
 
 #
 # CLASS Project_Image
@@ -67,6 +68,9 @@ class Project_Image():
         scannomatic_root = os.sep.join(script_path_root.split(os.sep)[:-1])
         self._paths = resource_path.Paths(root=scannomatic_root)
         self._file_path_base = file_path_base
+
+        #APP CONFIG
+        self._config = resource_app_config.Config(self._paths)
 
         #Fixture setting is used for pinning history in the arrays
         if fixture_name is None:
@@ -211,7 +215,7 @@ class Project_Image():
                 left = y1
                 right = y0
 
-            if self.fixture['version'] >= 0.997:
+            if self.fixture['version'] >= self._config.version_first_pass_change_1:
                 return self.im[left: right, upper:lower]
             else:
                 return self.im[upper: lower, left: right]
@@ -291,7 +295,7 @@ class Project_Image():
         self.logger.debug("ANALYSIS produced gs-coefficients" + \
                     " {0} ".format(gs_fit))
 
-        if self._log_version < 0.997:
+        if self._log_version < self._config.version_first_pass_change_1:
             scale_factor = 4.0
         else:
             scale_factor = 1.0
