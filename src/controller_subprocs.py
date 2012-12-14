@@ -211,12 +211,14 @@ class Subprocs_Controller(controller_generic.Controller):
 
                 if id(p) == id(proc):
 
-                    try:
-                        fs = open(p['stdin'], 'a')
-                        fs.write("__QUIT__\n")
-                        fs.close()
-                    except:
-                        self._logger.error("Scanner won't be freed!")
+                    if p.poll() is None:
+                        try:
+                            fs = open(p['stdin'], 'a')
+                            fs.write("__QUIT__\n")
+                            fs.close()
+                        except:
+                            self._logger.error("Scanner won't be freed!")
+
                     del plist[i]
                     return True
 
