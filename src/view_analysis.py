@@ -1455,6 +1455,14 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         left_vbox.pack_start(vbox, False, False, PADDING_SMALL)
 
+        #WARNING
+        self._warning = gtk.Label('')
+        self._warning_eb = gtk.EventBox()
+        self._warning_eb.add(self._warning)
+        right_vbox.pack_start(self._warning_eb, False, False, PADDING_SMALL)
+        self._warning_eb.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("red"))
+        self._warning.modify_fg(gtk.STATE_NORMAL, gtk.gdk.color_parse("white"))
+
         #STRAIN
         label = gtk.Label(model['analysis-stage-image-plate-colony-name'])
         right_vbox.pack_start(label, False, False, PADDING_SMALL)
@@ -1535,6 +1543,17 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
             specific_controller.set_selection(pos=None, wh=None)
 
         self.show_all()
+        self.unset_warning()
+
+    def unset_warning(self):
+
+        self._warning_eb.hide_all()
+        self._warning.set_text("")
+
+    def set_warning(self, warning):
+
+        self._warning.set_text(warning)
+        self._warning_eb.show_all()
 
     def select_everything(self, widget, *args, **kwargs):
 

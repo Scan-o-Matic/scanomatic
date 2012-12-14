@@ -354,6 +354,7 @@ class Analysis_Controller(controller_generic.Controller):
                         self.transparency))
                     
                     view.get_stage().run_lock_select_check()
+                    view.get_stage().unset_warning()
 
             elif stage_call == "log_book":
 
