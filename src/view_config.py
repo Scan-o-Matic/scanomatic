@@ -79,7 +79,14 @@ class Settings_Cont(gtk.VBox):
         button.set_label(model['config-desktop-short_cut-make'])
         button.connect("clicked", controller.set_desktop_shortcut)
         hbox.pack_end(button, False, False, PADDING_SMALL)
+        self.pack_start(hbox, False, False, PADDING_LARGE)
 
+        hbox = gtk.HBox(False, 0)
+        label = gtk.Label(model['config-log-save'])
+        button = gtk.Button(label=model['config-log-save-button'])
+        button.connect("clicked", controller.make_state_backup)
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        hbox.pack_end(button, False, False, PADDING_SMALL)
         self.pack_start(hbox, False, False, PADDING_LARGE)
 
         self.show_all()

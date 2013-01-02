@@ -16,6 +16,8 @@ __status__ = "Development"
 import re
 import os
 import subprocess
+import tarfile
+import glob
 
 #
 # INTERNAL DEPENDENCIES
@@ -30,6 +32,7 @@ import src.controller_generic as controller_generic
 #
 
 class Bad_Stage_Call(Exception): pass
+class Could_Not_Save_Log_And_State(Exception): pass
 
 #
 # FUNCTIONS
@@ -52,6 +55,45 @@ class Config_Controller(controller_generic.Controller):
     def _get_default_model(self):
 
         return model_config.get_gui_model()
+
+    def make_state_backup(self, widget):
+
+        target_list = view_config.save_file(
+            self._model['config-log-save-dialog'],
+            multiple_files=False,
+            file_filter=self._model['config-log-file-filter'],
+            start_in=self.get_top_controller().paths.experiment_root)
+
+        if target_list is not None and len(target_list) == 1:
+
+            tc = self.get_top_controller()
+            paths = tc.paths
+
+            try:
+                fh = tarfile.open(target_list[0], 'w:gz')
+            except:
+                raise Could_Not_Save_Log_And_State(target_list[0])
+                return False
+
+            save_paths = list()
+            save_paths.append(paths.fixture_conf_file_pattern.format("*"))
+            save_paths.append(paths.lock_root + "*")
+            save_paths.append(paths.log_scanner_out.format("*"))
+            save_paths.append(paths.log_scanner_err.format("*"))
+
+            for pattern in save_paths:
+
+                for p in glob.iglob(pattern):
+
+                    fh.add(p, arcname=os.path.basename(p), recursive=False)
+
+            fh.close()
+
+            view_config.dialog(self.get_window(), 
+                self._model['config-log-save-done'],
+                d_type="info", yn_buttons=False)
+
+            return True
 
     def set_desktop_shortcut(self, widget):
 

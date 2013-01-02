@@ -29,7 +29,7 @@ model = {
 'panel-actions-analysis': 'Analysis',
 'panel-actions-experiment': 'Experiment',
 'panel-actions-calibration': 'Calibration',
-'panel-actions-config': 'App Config',
+'panel-actions-config': 'Application Config',
 'panel-actions-quit': 'Quit',
 
 #MAIN

@@ -36,7 +36,19 @@ model = {
 'config-title': '<span size="x-large"><u>Application Config</u></span>',
 
 #STAGE
+
+##DESKTOP SHORT-CUT
 'config-desktop-short_cut': 'If you want a desktop shortcut...',
 'config-desktop-short_cut-make':'click me!',
 'config-desktop-short_cut-made': 'Success!\nShort-cut was made..',
+
+##BACKUP LOGS AND STATE
+'config-log-save': 
+"""If you run into problems, this allows for backup of logs and program state for later debugging""",
+'config-log-save-button': 'Make back-up...',
+'config-log-save-dialog': 'Select place and friendly name for logs',
+'config-log-file-filter': {'filter_name': 'TAR',
+'mime_and_patterns': (('application/tar', '*.tar.gz'),)},
+'config-log-save-done': 'Success! Save complete!',
+
 }
