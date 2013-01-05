@@ -1,0 +1,46 @@
+1:  Detect blobs
+
+        Use adaptive threshold-surface
+
+2:  Evaluate / discard bad blobs
+
+        Size select only permissable range (~40 - 50*50)
+        
+        Circularity/Compactness:
+            A = ndimage.find_objects
+            abs(A.sum / A.shape - np.pi / 4)
+
+3:  Get Center of Mass for each blob as arrays X, Y
+
+4:  Get grid norm vectors
+
+        For X and Y respectivly
+
+            sort
+            calc neighbour distance ( X[1:] - X[:-1] )
+            argsort distance and select top x that match expected
+                rows/columns - 1
+            segment X/Y based on that
+            for each segment fit a line f(x) = ax + b, r
+                save a, b, r in lists
+
+        determine best a for X and Y jointly (assume 90 degree angle)
+            maybe use r (and b) to evalute the a:s
+            median of a should be OK
+
+5:  Determine the Right and Above neighbour for all points
+
+        Use grid norm vectors to calculate distance to all points
+
+            d = c1 * length along norm + c2 * length along ortho norm **2
+            discard all negative d
+            select the point with smallest d
+            also store the euclidian distance to that point.
+
+4:  Determine grid
+
+        Evaluate points for how other points point to them and how resonable
+            the euclidian distance is to its neighbours
+
+        Assign grid coordinates somehow and fill out where blobs were missing 
+
