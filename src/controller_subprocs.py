@@ -131,18 +131,22 @@ class Subprocs_Controller(controller_generic.Controller):
                     a_dict['-i'] = proc_name
 
                     a_list = list()
+                    a_list.append(tc.paths.analysis)
+
                     for aflag, aval in a_dict.items():
                         a_list += [aflag, aval]
 
                     #START NEW PROC
-                    proc = Popen(map(str, analysis_query), 
-                        stdout=analysis_log, shell=False)
-
-                    pid = proc.pid
-
                     analysis_log = open(os.sep.join(psm['experiments-root'],
                         psm['experiment-prefix'],
                         tc.paths.experiment_analysis_file_name) , 'w')
+
+                    print "Starting Analysis {0}".format(a_list)
+
+                    proc = Popen(map(str, a_list), 
+                        stdout=analysis_log, shell=False)
+
+                    pid = proc.pid
 
                     self.add_subprocess(proc, 'analysis', pid=pid,
                         stdout=analysis_log, sm=psm,
