@@ -47,7 +47,7 @@ model = {
 """If you run into problems, this allows for backup of logs and program state for later debugging""",
 'config-log-save-button': 'Make back-up...',
 'config-log-save-dialog': 'Select place and friendly name for logs',
-'config-log-file-filter': {'filter_name': 'TAR',
+'config-log-file-filter': {'filter_name': '.tar.gz - files',
 'mime_and_patterns': (('application/tar', '*.tar.gz'),)},
 'config-log-save-done': 'Success! Save complete!',
 
