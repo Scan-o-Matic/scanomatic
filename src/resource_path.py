@@ -85,6 +85,9 @@ class Paths(object):
         self.log = self.root + os.sep + "log"
         self.log_scanner_out = os.sep.join((self.log, "scanner_{0}.stdout"))
         self.log_scanner_err = os.sep.join((self.log, "scanner_{0}.stderr"))
+        self.log_main_out = os.sep.join((self.log, "main.stdout"))
+        self.log_main_err = os.sep.join((self.log, "main.stderr"))
+
 
         #EXPERIMENT
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"

@@ -80,6 +80,10 @@ class Config_Controller(controller_generic.Controller):
             save_paths.append(paths.lock_root + "*")
             save_paths.append(paths.log_scanner_out.format("*"))
             save_paths.append(paths.log_scanner_err.format("*"))
+            save_paths.append(paths.log_main_out)
+            save_paths.append(paths.log_main_err)
+
+            tc.close_simple_logger()
 
             for pattern in save_paths:
 
@@ -88,6 +92,7 @@ class Config_Controller(controller_generic.Controller):
                     fh.add(p, arcname=os.path.basename(p), recursive=False)
 
             fh.close()
+            tc.set_simple_logger()
 
             view_config.dialog(self.get_window(), 
                 self._model['config-log-save-done'],

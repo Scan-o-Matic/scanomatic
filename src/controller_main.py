@@ -16,6 +16,7 @@ __status__ = "Development"
 import os
 import gtk
 import copy
+import sys
 
 #
 # INTERNAL DEPENDENCIES
@@ -60,6 +61,7 @@ class Controller(controller_generic.Controller):
         """
 
         self.paths = resource_path.Paths(root=program_path)
+        self.set_simple_logger()
         self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
         self.scanners = resource_scanner.Scanners(self.paths, self.config)
@@ -72,6 +74,16 @@ class Controller(controller_generic.Controller):
 
         if view is not None:
             view.set_controller(self)
+
+    def set_simple_logger(self):
+
+        sys.stdout = open(self.paths.log_main_out,'w')
+        sys.stderr = open(self.paths.log_main_err,'w')
+
+    def close_simple_logger(self):
+
+        sys.stdout.close()
+        sys.stderr.close()
 
     def add_contents_by_controller(self, c):
 
