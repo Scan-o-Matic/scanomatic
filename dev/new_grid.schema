@@ -37,7 +37,7 @@
             select the point with smallest d
             also store the euclidian distance to that point.
 
-4:  Determine grid
+6:  Determine grid
 
         Evaluate points for how other points point to them and how resonable
             the euclidian distance is to its neighbours
