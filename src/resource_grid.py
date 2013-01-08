@@ -113,6 +113,36 @@ def get_segments_by_size(im, min_size, max_size=-1, inplace=True):
         return out
 
 
+def get_neighbour_grid(self, X, Y):
+
+    def neighbours(x, y):
+
+        dX = (X - x) * ((Y - y) ** 2)
+        dY = (Y - y) * ((X - x) ** 2)
+
+        posRight = dX == dX[dX > 0].min()
+        posBelow = dY == dY[dY > 0].min()
+        
+        if posRight.any():
+            nRight = (X[posRight][0], Y[posRight][0])
+        else:
+            nRight = None
+        if posBelow.any():
+            nBelow = (X[posBelow][0], Y[posBelow][0])
+        else:
+            nBelow = None
+
+        return nRight, nBelow
+
+    right_below_neighbours = dict()
+
+    for pos in np.arange(X.size):
+
+        right_below_neighbours[(X[pos], Y[pos])] = neighbours(X[pos], Y[pos])
+
+    return right_below_neighbours
+
+        
 def demo(im, box_size=(105, 105), visual=True):
 
     T = get_adaptive_threshold(im, threshold_filter=None, segments=70, 
