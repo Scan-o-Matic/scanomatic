@@ -21,6 +21,7 @@ import numpy as np
 from skimage import filter as ski_filter
 from scipy import ndimage
 import types
+from collections import defaultdict
 
 #
 # SCANNOMATIC LIBRARIES
@@ -113,37 +114,179 @@ def get_segments_by_size(im, min_size, max_size=-1, inplace=True):
         return out
 
 
-def get_neighbour_grid(self, X, Y):
+def get_neighbour_grid(X, Y, expect_dist=(54, 54)):
+
+    t1 = (expect_dist[0] + expect_dist[1]) / 2.0 * 0.9
+    t2 = t1 * 1.222 
 
     def neighbours(x, y):
 
-        dX = (X - x) * ((Y - y) ** 2)
-        dY = (Y - y) * ((X - x) ** 2)
+        nRight = None
+        ideal = x + expect_dist[0]
+        D = np.sqrt((X - ideal)**2 + (Y - y)**2)
+        candidate = (X[D.argmin()], Y[D.argmin()])
+        if candidate != (x, y) and x + t2 > candidate[0] > x + t1:
+            nRight = candidate
 
-        posRight = dX == dX[dX > 0].min()
-        posBelow = dY == dY[dY > 0].min()
-        
-        if posRight.any():
-            nRight = (X[posRight][0], Y[posRight][0])
-        else:
-            nRight = None
-        if posBelow.any():
-            nBelow = (X[posBelow][0], Y[posBelow][0])
-        else:
-            nBelow = None
+        nBelow = None
+        ideal = y + expect_dist[0]
+        D = np.sqrt((X - x)**2 + (Y - ideal)**2)
+        candidate = (X[D.argmin()], Y[D.argmin()])
+        if candidate != (x, y) and y + t2 > candidate[1] > y + t1:
+            nBelow = candidate
 
         return nRight, nBelow
 
     right_below_neighbours = dict()
+    def _default_val(*args):
+        return list()
+    reverse_lookup = defaultdict(_default_val)
 
     for pos in np.arange(X.size):
 
-        right_below_neighbours[(X[pos], Y[pos])] = neighbours(X[pos], Y[pos])
-
-    return right_below_neighbours
-
+        pos_tuple = (X[pos], Y[pos])
+        n  = neighbours(*pos_tuple)
+        right_below_neighbours[pos_tuple] = n
+        reverse_lookup[n[0]].append(pos_tuple)
+        reverse_lookup[n[1]].append(pos_tuple)
         
-def demo(im, box_size=(105, 105), visual=True):
+    return right_below_neighbours, reverse_lookup
+
+
+def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
+    leeway=1.1):
+
+    #Calculate row/column distances
+    XX = X.reshape((1, X.size))
+    dX = np.abs(XX - XX.T).reshape((1, X.size ** 2))
+    dxs = dX[np.where(np.logical_and(dX > expected_distance / leeway,
+                                     dX < expected_distance * leeway))]
+    dx = dxs.mean()
+
+    YY = Y.reshape((1, Y.size))
+    dY = np.abs(YY - YY.T).reshape((1, Y.size ** 2))
+    dys = dY[np.where(np.logical_and(dY > expected_distance / leeway,
+                                     dY < expected_distance * leeway))]
+    dy = dys.mean()
+
+    #Calculate the offsets
+    Ndx = np.array([np.arange(grid_shape[0])]) * dx
+    x_offsets = XX - Ndx.T
+    x_offset = np.median(x_offsets)
+
+    Ndy = np.array([np.arange(grid_shape[1])]) * dy
+    y_offsets = YY - Ndy.T
+    y_offset = np.median(y_offsets)
+
+    return x_offset, y_offset, dx, dy
+
+
+def build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=(16,24),
+    square_distance_threshold=None):
+
+    if square_distance_threshold is None:
+        square_distance_threshold = ((dx + dy) / 2.0 * 0.05) ** 2
+
+    grid = np.zeros(grid_shape + (2,), dtype=np.float)
+    
+    D = np.zeros(grid_shape)
+    for i in range(grid_shape[0]):
+        for j in range(grid_shape[1]):
+            D[i,j] = i * (1 + 1.0 / (grid_shape[0] + 1)) + j
+
+    rD = D.ravel().copy()
+    rD.sort()
+
+    def find_valid(x, y):
+
+        d = (X - x) ** 2 + (Y - y) ** 2
+        valid = d < square_distance_threshold
+        if valid.any():
+            pos = d == d[valid].min()
+            if pos.sum() == 1:
+                return X[pos], Y[pos]
+
+        return x, y
+
+        x = x_offset
+        y = y_offset
+        first_loop = True
+
+        for v in rD:
+            #get new position
+            coord = np.where(D == v)
+
+            #generate a reference position already passed
+            if coord[0][0] > 0:
+                old_coord = (coord[0] - 1, coord[1])
+            elif coord[1][0] > 0:
+                old_coord = (coord[0], coord[1] - 1)
+
+            if not first_loop:
+                #calculate ideal step
+                x, y = grid[old_coord].ravel()
+                x += (coord[0] - old_coord[0]) * dx
+                y += (coord[1] - old_coord[1]) * dy
+
+            #modify with observed point close to ideal if exists
+            x, y = find_valid(x, y)
+
+            #put in grid
+            #print coord, grid[coord].shape
+            grid[coord] = np.array((x, y)).reshape(grid[coord].shape)
+
+            first_loop = False
+
+    return grid
+
+
+def build_grid_derpricated(pre_grid, reverse_lookup, grid_shape=(16, 24)):
+
+    def _default_val(*args):
+        return 0
+
+    grid_pos_support = defaultdict(_default_val)
+    unsupported = 0
+
+    for l, b in pre_grid.values():
+
+        if l is not None:
+            grid_pos_support[l] += 1
+        else:
+            unsupported += 1
+        if b is not None:
+            grid_pos_support[b] += 1
+        else:
+            unsupported += 1
+
+    well_supported = list()
+    for pos in grid_pos_support:
+        if grid_pos_support[pos] >= 2:
+            well_supported.append(pos)
+
+    well_A = np.asarray(well_supported)
+    ur_pos = well_A[well_A.sum(axis=1).argmax()]
+
+    grid = np.zeros(grid_shape + (2,), dtype=np.float)
+    grid[-1,-1,:] = ur_pos
+
+    def _iter_build_grid(pos, ref_pos=None):
+
+        isX = pre_grid[tuple(pos)][0] == ref_pos
+        if ref_pos is not None:
+            oldCoord = map(lambda x: x[0], np.where(grid == ref_pos)[:-1])
+            myCoord = (oldCoord[0] - int(isX), oldCoord[1] - int(not isiX))
+
+        for p in reverse_lookup[tuple(pos)]:
+
+            _iter_build_grid(p, pos)
+
+    _iter_build_grid(ur_pos)
+
+    return grid
+
+
+def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None, Y=None):
 
     T = get_adaptive_threshold(im, threshold_filter=None, segments=70, 
         sigma=None)
@@ -154,14 +297,32 @@ def demo(im, box_size=(105, 105), visual=True):
         max_size=box_size[0]*box_size[1], inplace=True)
 
     labled, labels = ndimage.label(im_filtered)
-    centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
-    X, Y = np.array(centra).T
+    if X is None or Y is None:
+        centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
+        X, Y = np.array(centra).T
+
+    x_offset, y_offset, dx, dy = get_grid_parameters(X, Y, 
+        expected_distance=box_size[0], grid_shape=grid_shape,
+        leeway=1.1)
+
+    grid = build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=grid_shape,
+        square_distance_threshold=70)
+
+    #pre_grid, reverse_lookup = get_neighbour_grid(X, Y, expect_dist=box_size)
+    #grid = build_grid(pre_grid, reverse_lookup, grid_shape=grid_shape)
 
     if visual:
         from matplotlib import pyplot as plt
         plt.imshow(im_filtered)
         plt.plot(Y, X, 'g+', ms=10, mew=2)
+        plt.plot(grid[:,:,1].ravel(), grid[:,:,0].ravel(),
+            'o', ms=15, mec='w', mew=2, mfc='none')
+        """
+        for k, v in grid.items():
+            plt.plot(k[1], k[0], 'w*', ms=10*v, mew=2)
+        """
         plt.ylim(0, im_filtered.shape[0])
         plt.xlim(0, im_filtered.shape[1])
+        plt.show()
 
-    return X, Y, labled
+    return grid
