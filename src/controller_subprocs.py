@@ -137,9 +137,9 @@ class Subprocs_Controller(controller_generic.Controller):
                         a_list += [aflag, aval]
 
                     #START NEW PROC
-                    analysis_log = open(os.sep.join(psm['experiments-root'],
+                    analysis_log = open(os.sep.join((psm['experiments-root'],
                         psm['experiment-prefix'],
-                        tc.paths.experiment_analysis_file_name) , 'w')
+                        tc.paths.experiment_analysis_file_name)) , 'w')
 
                     print "Starting Analysis {0}".format(a_list)
 
@@ -162,16 +162,26 @@ class Subprocs_Controller(controller_generic.Controller):
             else:
 
                 try:
+
                     fh = open(p['stdout'])
                     if 'stdout-pos' in p:
                         fh.seek(p['stdout-pos'])
                     lines = fh.read()
                     p['stdout-pos'] = fh.tell()
+                    fh.close()
+
                     i_started = re.findall(r'__Is__ (.*)$', lines) 
                     i_done = re.findall(r'__Id__ (.*)$', lines) 
-                    p['progress'] += len(i_done)
-                    p['progress'] += 0.5 * (len(i_started) != len(i_done))
-                    fh.close()
+
+                    if len(i_done) > 0:
+
+                        p['progress'] = int(i_done[-1])
+
+                    if len(i_started) > 0 and \
+                        int(p['progress']) < int(i_started[-1]):
+
+                        p['progress'] += 0.5
+
                 except:
                     pass
 
