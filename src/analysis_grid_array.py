@@ -26,6 +26,7 @@ from matplotlib import pyplot as plt
 #
 
 import analysis_grid_array_dissection as array_dissection
+import resource_grid
 import analysis_grid_cell as grid_cell
 import resource_logger as logger
 
@@ -35,6 +36,14 @@ import resource_logger as logger
 
 
 class Grid_Array():
+
+    _APPROXIMATE_GRID_CELL_SIZES = {
+        (8, 12): (212, 212),
+        (16, 24): (106, 106),
+        (32, 48): (54, 54),
+        (64, 96): (27, 27),
+        None: None
+        }
 
     def __init__(self, parent, identifier, pinning_matrix, 
         verbose=False, visual=False, suppress_analysis=False,
@@ -109,15 +118,15 @@ class Grid_Array():
 
         self.grid_cell_settings = grid_cell_settings
 
+        self._guess_grid_cell_size = None
         self._grid_cell_size = None
         self._grid_cells = None
+        self._grid = None
 
 
         self._features = []
 
         self.R = None
-        self._best_fit_rows = None
-        self._best_fit_columns = None
         self._first_analysis = True
 
         self._old_blob_img = None
@@ -137,23 +146,32 @@ class Grid_Array():
     # SET functions
     #
 
+    def set_manual_ideal_grid(self, grid):
+
+        
+        best_fit_rows = grid[0]
+        r = len(best_fit_rows)
+        best_fit_columns = grid[1]
+        c = len(best_fit_columns)
+
+        X = np.array(best_fit_rows * c).reshape(c, r).T
+        Y = np.array(best_fit_columns * r).reshape(r, c)
+        self._grid = np.zeros((r, c, 2), dtype=np.float)
+        self._grid[:,:,0] = X
+        self._grid[:,:,1] = Y
+        self._set_grid_cell_size()
+
     def set_manual_grid(self, grid):
 
-        best_fit_rows = grid[0]
-        best_fit_columns = grid[1]
+        self._grid = grid
+        self._set_grid_cell_size()
 
-        self._best_fit_rows = best_fit_rows
-        self._best_fit_columns = best_fit_columns
+    def _set_grid_cell_size(self):
 
-        best_fit_rows = np.asarray(best_fit_rows)
-        best_fit_columns = np.asarray(best_fit_columns)
+        dx = (self._grid[1:, :, 0] - self._grid[:-1, :, 0]).mean()
+        dy = (self._grid[:, 1:, 1] - self._grid[:, :-1, 1]).mean()
 
-        fit_frequency = ((best_fit_columns[1:] - best_fit_columns[:-1]).mean(),
-                        (best_fit_rows[1:] - best_fit_rows[:-1]).mean())
-
-        if self._grid_cell_size is None:
-
-            self._grid_cell_size = map(int, map(round, fit_frequency[:]))
+        self._grid_cell_size = map(lambda x: int(round(x)), (dx, dy))
 
         if self._im_dim_order is not None:
             self._grid_cell_size = [
@@ -175,136 +193,44 @@ class Grid_Array():
 
         p_uuid = self._parent.p_uuid
 
-        if p_uuid is not None:
+        if p_uuid is not None and not adjusted_by_history:
 
             is_rerun = [i for i, tl in enumerate(topleft_history) \
                         if tl[0] == p_uuid]
 
-            hist_b_r = np.asarray(self._best_fit_rows)
-            hist_b_c = np.asarray(self._best_fit_columns)
 
             hist_entry = (p_uuid,
-                    (self._best_fit_rows[0], self._best_fit_columns[0]),
-                    ((hist_b_r[1:] - hist_b_r[: -1]).mean(),
-                    (hist_b_c[1:] - hist_b_c[: -1]).mean()))
+                    self._grid[0,0,:].tolist(),
+                    self._grid_cell_size)
 
-            if not adjusted_by_history:
-                if len(is_rerun) == 0:
-                    topleft_history.append(hist_entry)
-                else:
-                    topleft_history[is_rerun[0]] = hist_entry
+            if len(is_rerun) == 0:
+                topleft_history.append(hist_entry)
+            else:
+                topleft_history[is_rerun[0]] = hist_entry
 
-                if len(topleft_history) > 20:
-                    del topleft_history[0]
+            if len(topleft_history) > 20:
+                del topleft_history[0]
 
-                self.fixture.set_pinning_positions(\
-                    self._identifier[1], self._pinning_matrix, topleft_history)
+            self.fixture.set_pinning_positions(\
+                self._identifier[1], self._pinning_matrix, topleft_history)
 
     def set_grid(self, im):
-        """Sets a grid to an image.
 
-        @param im: An array / the image
+        self._grid = resource_grid.get_grid(im, box_size=self._guess_grid_cell_size, 
+                grid_shape=self._pinning_matrix)
 
-        @param use_otsu : Causes thresholding to be done by Otsu
-        algorithm (Default)
-
-        @param median_coeff : Coefficient to threshold from the
-        median when not using Otsu.
-
-        @param save_grid_name : A custom name for the saved image,
-        if left out it is not saved.
-
-        @param verbose : If a lot of things should be printed out
-
-        @param visual : If visual information should be presented.
-
-        The function returns True if it did set the grid.
-        """
-
-        best_fit_rows = self._best_fit_rows
-        best_fit_columns = self._best_fit_columns
-
-        if self._parent is not None:
-
-            topleft_history = self.fixture.get_pinning_history(
-                        self._identifier[1], self._pinning_matrix)
-
-        else:
-
-            topleft_history = []
-
-        if topleft_history is None:
-
-            topleft_history = []
-
-        self.logger.debug('The gridding history is {0}'.format(
-                    topleft_history))
-
-        best_fit_rows, best_fit_columns, R, adjusted_by_history = \
-                self._analysis.get_analysis(im, 
-                history=topleft_history)
-
-        self.logger.debug("GRID ARRAY " + \
-                "{0}, best rows \n{1}\nbest columns\n{2}".format(
-                "unkown", best_fit_rows, best_fit_columns))
-
-        if best_fit_rows == None or best_fit_columns == None:
-
-            self.logger.warning("GRID ARRAY " + \
-                        " {0}, Failed to detect grid.".format(
-                        self._identifier))
-
-            self._best_fit_rows = None
-            self._best_fit_columns = None
-
-            return False
-
-        elif self.R is None or R < 20:
-
-            self._best_fit_rows = best_fit_rows
-            self._best_fit_columns = best_fit_columns
-
-            if self._parent is not None:
-
-                self.set_history(
-                    adjusted_by_history=adjusted_by_history)
-
-        else:
-
-            logger.warning('Pinning matrix seem inconsistent with ' +\
-                    'previous matrices in this project, using old')
-
-        self.R = R
-
-        if self._grid_cell_size is None:
-
-            if self._analysis.best_fit_frequency is None:
-
-                self.logger.critical("GRID ARRAY, No grid cell size" +
-                        " obtained, probably because fixure calibration" +
-                        "is bad.")
-
-                return None
-
-            self._grid_cell_size = map(int, map(round,
-                        self._analysis.best_fit_frequency[:]))
+        self._set_grid_cell_size()
 
         if self.visual:
 
             self.make_grid_im(im)
 
-        if self._best_fit_rows is not None:
-
-            return True
-
-        else:
-
-            return False
+        return True
 
     def make_grid_im(self, im, save_grid_name=None):
 
-        best_fit_columns = self._best_fit_columns
-        best_fit_rows = self._best_fit_rows
+        best_fit_columns = self._grid.mean(0)
+        best_fit_rows = self._grid.mean(1)
 
         grid_image = plt.figure()
         grid_plot = grid_image.add_subplot(111)
@@ -315,16 +241,16 @@ class Grid_Array():
             if self._im_dim_order[0] == 1:
 
                 grid_plot.plot(
-                        np.ones(len(best_fit_columns)) * \
+                        np.ones(best_fit_columns.size) * \
                         best_fit_rows[row],
-                        np.array(best_fit_columns),
+                        best_fit_columns,
                         'r-')
 
             else:
 
                 grid_plot.plot(
-                        np.array(best_fit_columns),
-                        np.ones(len(best_fit_columns)) * \
+                        best_fit_columns,
+                        np.ones(best_fit_columns.size) * \
                         best_fit_rows[row],
                         'r-')
 
@@ -333,17 +259,17 @@ class Grid_Array():
                 if self._im_dim_order[0] == 1:
 
                     grid_plot.plot(
-                            np.array(best_fit_rows),
-                            np.ones(len(best_fit_rows)) * \
+                            best_fit_rows,
+                            np.ones(best_fit_rows.size) * \
                             best_fit_columns[column],
                             'r-')
 
                 else:
 
                     grid_plot.plot(
-                            np.ones(len(best_fit_rows)) * \
+                            np.ones(best_fit_rows.size) * \
                             best_fit_columns[column],
-                            np.array(best_fit_rows),
+                            best_fit_rows,
                             'r-')
 
         ax = grid_image.gca()
@@ -387,6 +313,12 @@ class Grid_Array():
 
         self._pinning_matrix = pinning_matrix
 
+        self._guess_grid_cell_size = self._APPROXIMATE_GRID_CELL_SIZES[
+            pinning_matrix]
+
+        self._grid = None
+        self._grid_cell_size = None
+
         self._grid_cells = []
         self._features = []
 
@@ -396,9 +328,11 @@ class Grid_Array():
             self._features.append([])
 
             for column in xrange(pinning_matrix[1]):
+
                 self._grid_cells[row].append(grid_cell.Grid_Cell(\
                     self, [self._identifier,  [row, column]],
                     grid_cell_settings=self.grid_cell_settings))
+
                 self._features[row].append(None)
 
     #
@@ -668,23 +602,25 @@ class Grid_Array():
                     grid_plot.set_xlim(0, source.shape[axis_order[0]])
                     grid_plot.set_ylim(0, source.shape[axis_order[1]])
 
+                    best_fit_columns = self._grid.mean(0)
+                    best_fit_rows = self._grid.mean(1)
+
                     for row in xrange(self._pinning_matrix[0]):
 
                         grid_plot.plot(
                             np.ones(
-                            len(self._best_fit_columns)) * \
-                            self._best_fit_rows[row],
-                            np.array(self._best_fit_columns),
+                            best_fit_columns.size) * \
+                            best_fit_rows[row],
+                            best_fit_columns,
                             'r-')
 
                         for column in xrange(
                                 self._pinning_matrix[1]):
 
                             grid_plot.plot(
-                                np.array(self._best_fit_rows),
-                                np.ones(
-                                len(self._best_fit_rows)) * \
-                                self._best_fit_columns[column],
+                                best_fit_rows,
+                                np.ones(best_fit_rows.size) * \
+                                best_fit_columns[column],
                                 'r-')
 
                     grid_plot.add_patch(plt.Rectangle((x2,y2),
@@ -698,7 +634,6 @@ class Grid_Array():
                     raise Exception(IndexError, err_str)
 
                     sys.exit()
-
 
     def get_analysis(self, im, gs_values=None, gs_fit=None, gs_indices=None,
             identifier_time=None, watch_colony=None, save_grid_name=None):
@@ -745,9 +680,10 @@ class Grid_Array():
             self.make_grid_im(im, save_grid_name=save_grid_name)
 
         #Setting shortcuts for repeatedly used variable
-        s_bfr = self._best_fit_rows
-        s_bfc = self._best_fit_columns
+        s_g = self._grid.copy()
         s_gcs = self._grid_cell_size
+        s_g[:,:,0] -= s_gcs[0] / 2.0  # To get min-corner
+        s_g[:,:,1] -= s_gcs[1] / 2.0  # To get min-corner
 
         #Setting up target array for trasnformation so it fits axis order
         tm_im = np.zeros(s_gcs, dtype=np.float64)
@@ -764,8 +700,8 @@ class Grid_Array():
                     #Set up shortcuts
                     _cur_gc = self._grid_cells[row][col]
 
-                    row_min = s_bfr[row]
-                    col_min = s_bfc[col]
+                    row_min = s_g[row, col, 0]
+                    col_min = s_g[row, col, 1]
                     rc_min_tuple = (row_min, col_min)
 
                     #
@@ -839,4 +775,3 @@ class Grid_Array():
                             self.watch_results = self._features[row][col]
 
         return self._features
-

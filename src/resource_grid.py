@@ -214,6 +214,7 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
         sigma=None)
 
     im_filtered = get_denoise_segments(im<T, iterations=3)
+    del T
 
     get_segments_by_size(im_filtered, min_size=40,
         max_size=box_size[0]*box_size[1], inplace=True)
@@ -222,6 +223,8 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
     if X is None or Y is None:
         centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
         X, Y = np.array(centra).T
+
+    del labeled
 
     x_offset, y_offset, dx, dy = get_grid_parameters(X, Y, 
         expected_distance=box_size[0], grid_shape=grid_shape,

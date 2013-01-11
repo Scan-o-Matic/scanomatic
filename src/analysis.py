@@ -292,7 +292,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
 
         logger.info("ANALYSIS: Will implement manual adjustments of " + \
                     "grid on plates {0}".format(manual_griddings.keys()))
-        project_image.set_manual_grids(meta_data['Manual Grid'])
+        project_image.set_manual_ideal_grids(meta_data['Manual Grid'])
 
     #
     # WRITING XML HEADERS AND OPENS SCAN TAG

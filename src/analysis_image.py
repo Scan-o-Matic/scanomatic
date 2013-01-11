@@ -123,7 +123,7 @@ class Project_Image():
                     "{0} plates out of {1}'.format(
                     len(self._grid_arrays), len(pinning_matrices)))
 
-    def set_manual_grids(self, grid_adjustments):
+    def set_manual_ideal_grids(self, grid_adjustments):
         """Overrides grid detection with a specified grid supplied in grid
         adjustments
 
@@ -138,7 +138,7 @@ class Project_Image():
 
                 try:
 
-                    self._grid_arrays[k].set_manual_grid(grid_adjustments[k])
+                    self._grid_arrays[k].set_manual_ideal_grid(grid_adjustments[k])
 
                 except IndexError:
 
