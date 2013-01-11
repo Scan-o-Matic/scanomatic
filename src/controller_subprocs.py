@@ -17,6 +17,7 @@ import gobject
 import types
 import re
 import os
+import time
 from subprocess import Popen
 
 #
@@ -89,7 +90,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
         plist.append({'proc': proc, 'type': proc_type, 'pid': pid, 'stdin': stdin,
             'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name,
-            'progress': 0})
+            'progress': 0, 'start-time': time.time()})
 
     def get_subprocesses(self, by_name=None, by_type=None):
 
@@ -161,29 +162,18 @@ class Subprocs_Controller(controller_generic.Controller):
 
             else:
 
-                try:
+                lines = self._get_stdout_since_last_time(p)
+                i_started = re.findall(r'__Is__ (.*)$', lines) 
+                i_done = re.findall(r'__Id__ (.*)$', lines) 
 
-                    fh = open(p['stdout'])
-                    if 'stdout-pos' in p:
-                        fh.seek(p['stdout-pos'])
-                    lines = fh.read()
-                    p['stdout-pos'] = fh.tell()
-                    fh.close()
+                if len(i_done) > 0:
 
-                    i_started = re.findall(r'__Is__ (.*)$', lines) 
-                    i_done = re.findall(r'__Id__ (.*)$', lines) 
+                    p['progress'] = int(i_done[-1])
 
-                    if len(i_done) > 0:
+                if len(i_started) > 0 and \
+                    int(p['progress']) < int(i_started[-1]):
 
-                        p['progress'] = int(i_done[-1])
-
-                    if len(i_started) > 0 and \
-                        int(p['progress']) < int(i_started[-1]):
-
-                        p['progress'] += 0.5
-
-                except:
-                    pass
+                    p['progress'] += 0.5
 
 
         #CHECK FOR TERMINATED ANALYSIS
@@ -197,6 +187,21 @@ class Subprocs_Controller(controller_generic.Controller):
                 if p_exit != 0:
                     pass
 
+            else:
+
+                lines = self._get_stdout_since_last_time(p)
+                #progress = re.findall(r'^\[.*?([0-9]*\.[0-9]*) %.*?\]', lines)
+                progress = re.findall(r'^.*?INFO: __Is__ ([0-9]*)', lines)
+                total = re.findall(r'^ INFO: ANALYSIS: A total of ([0-9]*)', lines)
+
+                if len(total) > 0:
+                    p['progress-total-number'] = int(total)
+
+                if len(progress) > 0 and 'progress-total-number' in p.keys():
+                    print progress
+                    p['progress'] = (float(progress[-1]) - 1) / \
+                        p['progress-total-number']
+
         #UPDATE FREE SCANNERS
         sm['free-scanners'] = tc.scanners.count()
 
@@ -204,6 +209,21 @@ class Subprocs_Controller(controller_generic.Controller):
         self._view.update()
 
         return True
+
+    def _get_stdout_since_last_time(self, p):
+
+        lines = ""
+        try:
+            fh = open(p['stdout'])
+            if 'stdout-pos' in p:
+                fh.seek(p['stdout-pos'])
+            lines = fh.read()
+            p['stdout-pos'] = fh.tell()
+            fh.close()
+        except:
+            pass
+
+        return lines
 
     def _close_proc_files(self, *args):
 

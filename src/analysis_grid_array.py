@@ -25,7 +25,7 @@ from matplotlib import pyplot as plt
 # SCANNOMATIC LIBRARIES
 #
 
-import analysis_grid_array_dissection as array_dissection
+#import analysis_grid_array_dissection as array_dissection
 import resource_grid
 import analysis_grid_cell as grid_cell
 import resource_logger as logger
@@ -78,10 +78,11 @@ class Grid_Array():
 
         self._identifier = identifier
 
-
+        """
         self._analysis = array_dissection.Grid_Analysis(self, 
             pinning_matrix, verbose=verbose, visual=visual,
             gridding_settings=gridding_settings)
+        """
 
         self.watch_source = None
         self.watch_scaled = None
@@ -229,8 +230,8 @@ class Grid_Array():
 
     def make_grid_im(self, im, save_grid_name=None):
 
-        best_fit_columns = self._grid.mean(0)
-        best_fit_rows = self._grid.mean(1)
+        best_fit_rows, best_fit_columns = \
+            self._get_ideal_rows_columns_from_grid()
 
         grid_image = plt.figure()
         grid_plot = grid_image.add_subplot(111)
@@ -474,6 +475,13 @@ class Grid_Array():
         return im_axis_order
 
 
+    def _get_ideal_rows_columns_from_grid(self):
+
+        best_fit_columns = self._grid[:,:,1].mean(0)
+        best_fit_rows = self._grid[:,:,0].mean(1)
+
+        return best_fit_rows, best_fit_columns
+
     def _get_transformation_matrix_for_analysis(self, gs_values=None,
                 gs_indices=None, gs_fit=None):
 
@@ -591,6 +599,9 @@ class Grid_Array():
                     grid_image = plt.figure()
                     grid_plot = grid_image.add_subplot(111)
 
+                    best_fit_rows, best_fit_columns = \
+                        self._get_ideal_rows_columns_from_grid()
+
                     if axis_order[0] > axis_order[1]:
 
                         grid_plot.imshow(source.T, cmap=plt.cm.Greys)
@@ -602,8 +613,6 @@ class Grid_Array():
                     grid_plot.set_xlim(0, source.shape[axis_order[0]])
                     grid_plot.set_ylim(0, source.shape[axis_order[1]])
 
-                    best_fit_columns = self._grid.mean(0)
-                    best_fit_rows = self._grid.mean(1)
 
                     for row in xrange(self._pinning_matrix[0]):
 
@@ -660,12 +669,12 @@ class Grid_Array():
 
             self._im_dim_order = self._get_grid_to_im_axis_mapping(pm, im)
 
-            self._analysis.set_dim_order(self._im_dim_order)
+            #self._analysis.set_dim_order(self._im_dim_order)
 
         im_dim_order = self._im_dim_order
 
         #Only place grid if not yet placed
-        if self._best_fit_columns is None:
+        if self._grid is None:
 
             if not self.set_grid(im):
 

@@ -310,6 +310,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
         # UPDATING LOOP SPECIFIC VARIABLES
         #
 
+        logger.info("__Is__ {0}".format(len(image_dictionaries) - image_pos))
         scan_start_time = time.time()
         img_dict_pointer = image_dictionaries[image_pos]
         plate_positions = []

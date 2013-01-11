@@ -224,7 +224,7 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
         centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
         X, Y = np.array(centra).T
 
-    del labeled
+    del labled
 
     x_offset, y_offset, dx, dy = get_grid_parameters(X, Y, 
         expected_distance=box_size[0], grid_shape=grid_shape,

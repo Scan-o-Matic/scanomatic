@@ -18,13 +18,7 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import os
-"""
-from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
-import matplotlib.image as plt_img
-import matplotlib.pyplot as plt
-import matplotlib.text as plt_text
-import matplotlib.patches as plt_patches
-"""
+import time
 
 #
 # INTERNAL DEPENDENCIES
@@ -150,12 +144,15 @@ class Running_Analysis(gtk.VBox):
 
             vbox = gtk.VBox(False, 0)
             frame.add(vbox)
+            progress = gtk.ProgressBar()
+            vbox.pack_start(progress, False, False, PADDING_SMALL)
             hbox = gtk.HBox(False, 0)
             info = gtk.Label(model['running-analysis-running'])
             hbox.pack_start(info, True, True, PADDING_LARGE)
             vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
-            self._stuff.append((p, info))
             self.pack_start(frame, False, False, PADDING_LARGE)
+
+            self._stuff.append((p, progress, info))
         
            
         self.show_all()
@@ -166,11 +163,26 @@ class Running_Analysis(gtk.VBox):
         m = self._model
         running_procs = self._controller.get_subprocesses(self, by_type='analysis')
 
-        for i, (p, info) in enumerate(self._stuff):
+        for i, (p, progress, info) in enumerate(self._stuff):
             
             if p not in running_procs:
+
                 info.set_text(m['running-analysis-done'])
                 del self._stuff[i]
+
+            else:
+
+                f = p['progress'] / 100
+
+                progress.set_fraction(p['progress']/100)
+
+                dt = time.time() - p['start-time']
+                if f > 0:
+                    eta = dt / f * (1 - f) 
+                    progress.set_text("Expected to finnish in {0:.2f}h".format(
+                        eta / 3600.0))
+
+        return True
 
 
 class Running_Experiments(gtk.VBox):
@@ -274,3 +286,5 @@ class Running_Experiments(gtk.VBox):
             else:
                 progress.set_fraction(1.0)
                 progress.set_text("Done!")
+
+        return True
