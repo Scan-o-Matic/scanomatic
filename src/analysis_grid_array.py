@@ -25,10 +25,14 @@ from matplotlib import pyplot as plt
 # SCANNOMATIC LIBRARIES
 #
 
-#import analysis_grid_array_dissection as array_dissection
 import resource_grid
 import analysis_grid_cell as grid_cell
 import resource_logger as logger
+
+#
+# EXCEPTIONS
+
+class Invalid_Grid(Exception): pass
 
 #
 # CLASS: Grid_Array
@@ -136,9 +140,9 @@ class Grid_Array():
         self.track_values = []
         self._old_timestamp = None
 
-        if pinning_matrix != None:
+        self._pinning_matrix = pinning_matrix
+        #if pinning_matrix != None:
 
-            self._set_pinning_matrix(pinning_matrix)
 
         self._im_dim_order = None
 
@@ -218,7 +222,24 @@ class Grid_Array():
     def set_grid(self, im):
 
         self._grid = resource_grid.get_grid(im, box_size=self._guess_grid_cell_size, 
-                grid_shape=self._pinning_matrix)
+                grid_shape=(self._pinning_matrix[int(self._im_dim_order[0])], 
+                self._pinning_matrix[int(self._im_dim_order[1])]))
+
+        if self._grid.min() < 0:
+            raise Invalid_Grid("Negative positons in grid")
+            return False
+
+        if (self._grid.shape[0] != self._pinning_matrix[self._im_dim_order[0]]
+            and self._grid.shape[1] != 
+            self._pinning_matrix[self._im_dim_order[1]]):
+
+            raise Invalid_Grid(
+                "Grid shape {0} missmatch with pinning matrix {1}".format(
+                self._grid.shape,
+                (self._pinning_matrix[self._im_dim_order[0]],
+                self._pinning_matrix[self._im_dim_order[1]])))
+
+            return False
 
         self._set_grid_cell_size()
 
@@ -236,6 +257,7 @@ class Grid_Array():
         grid_image = plt.figure()
         grid_plot = grid_image.add_subplot(111)
         grid_plot.imshow(im, cmap=plt.cm.gray)
+        ido = self._im_dim_order
 
         for row in xrange(self._pinning_matrix[0]):
 
@@ -300,7 +322,7 @@ class Grid_Array():
 
             self.logger.info("ANALYSIS GRID: Image saved!")
 
-    def _set_pinning_matrix(self, pinning_matrix):
+    def _set_pinning_matrix(self):
         """
             set_pinning_matrix sets the pinning_matrix.
 
@@ -311,8 +333,7 @@ class Grid_Array():
                             is the number of columns to be detected.
 
         """
-
-        self._pinning_matrix = pinning_matrix
+        pinning_matrix = self._pinning_matrix
 
         self._guess_grid_cell_size = self._APPROXIMATE_GRID_CELL_SIZES[
             pinning_matrix]
@@ -323,12 +344,14 @@ class Grid_Array():
         self._grid_cells = []
         self._features = []
 
-        for row in xrange(pinning_matrix[0]):
+        ido = self._im_dim_order
+
+        for row in xrange(pinning_matrix[ido[0]]):
 
             self._grid_cells.append([])
             self._features.append([])
 
-            for column in xrange(pinning_matrix[1]):
+            for column in xrange(pinning_matrix[ido[1]]):
 
                 self._grid_cells[row].append(grid_cell.Grid_Cell(\
                     self, [self._identifier,  [row, column]],
@@ -472,6 +495,9 @@ class Grid_Array():
         im_axis_order = [int(pm_max_pos != im_max_pos)]
         im_axis_order.append(int(im_axis_order[0] == 0)) 
 
+        self.logger.info("Axis order set to {0} based on pm {1} and im {2}".format(
+            im_axis_order, pm, im.shape))
+
         return im_axis_order
 
 
@@ -612,9 +638,10 @@ class Grid_Array():
 
                     grid_plot.set_xlim(0, source.shape[axis_order[0]])
                     grid_plot.set_ylim(0, source.shape[axis_order[1]])
+                    ido = self._im_dim_order
 
 
-                    for row in xrange(self._pinning_matrix[0]):
+                    for row in xrange(self._pinning_matrix[ido[0]]):
 
                         grid_plot.plot(
                             np.ones(
@@ -624,7 +651,7 @@ class Grid_Array():
                             'r-')
 
                         for column in xrange(
-                                self._pinning_matrix[1]):
+                                self._pinning_matrix[ido[1]]):
 
                             grid_plot.plot(
                                 best_fit_rows,
@@ -676,6 +703,8 @@ class Grid_Array():
         #Only place grid if not yet placed
         if self._grid is None:
 
+            self._set_pinning_matrix()
+
             if not self.set_grid(im):
 
                 self.logger.critical('Failed to set grid on ' + \
@@ -693,14 +722,16 @@ class Grid_Array():
         s_gcs = self._grid_cell_size
         s_g[:,:,0] -= s_gcs[0] / 2.0  # To get min-corner
         s_g[:,:,1] -= s_gcs[1] / 2.0  # To get min-corner
+        l_d1 = pm[im_dim_order[0]]
+        l_d2 = pm[im_dim_order[1]]
 
         #Setting up target array for trasnformation so it fits axis order
         tm_im = np.zeros(s_gcs, dtype=np.float64)
 
         #Go through the pinning abstract positions in order designated by pm
-        for row in xrange(pm[0]):
+        for row in xrange(l_d1):
 
-            for col in xrange(pm[1]):
+            for col in xrange(l_d2):
 
                 #Only work on watched colonies if other's are suppressed
                 if self.suppress_analysis == False or (watch_colony != None and \

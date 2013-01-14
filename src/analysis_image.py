@@ -13,8 +13,6 @@ __status__ = "Development"
 #
 
 import os
-#import matplotlib
-#matplotlib.use('Agg')
 import matplotlib.image as plt_img
 import logging
 import numpy as np
@@ -27,6 +25,12 @@ import analysis_grid_array
 import resource_fixture_image 
 import resource_path
 import resource_app_config
+
+#
+# EXCEPTIONS
+#
+
+class Slice_Outside_Image(Exception): pass
 
 #
 # CLASS Project_Image
@@ -85,6 +89,9 @@ class Project_Image():
                 fixture_directory=fixture_directory,
                 logger=self.logger
                 )
+
+        self.logger.info("Fixture is {0}, version {1}".format(
+            self.fixture['name'], self.fixture['version']))
 
         self.im = None
 
@@ -216,12 +223,41 @@ class Project_Image():
                 right = y0
 
             if self.fixture['version'] >= self._config.version_first_pass_change_1:
-                return self.im[left: right, upper:lower]
+                if self._get_slice_sanity_check(d1=right, d2=lower):
+                    return self.im[left: right, upper:lower]
+                else:
+                    raise Slice_Outside_Image(
+                        "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
+                        self.im.shape,
+                        np.s_[left:right, upper:lower],
+                        scale_factor,
+                        self.fixture['name'],
+                        self.fixture['version']))
+
             else:
-                return self.im[upper: lower, left: right]
+                if self._get_slice_sanity_check(d1=lower, d2=right):
+                    return self.im[upper: lower, left: right]
+                else:
+                    raise Slice_Outside_Image(
+                        "im {0} , slice {1}, scaled by {2}, fixture {3} {4}".format(
+                        self.im.shape,
+                        np.s_[upper:lower, left:right],
+                        scale_factor,
+                        self.fixture['name'],
+                        self.fixture['version']))
 
         else:
             return None
+
+    def _get_slice_sanity_check(self, d1=None, d2=None):
+
+        if d1 is not None and self.im.shape[0] < d1:
+            return False
+
+        if d2 is not None and self.im.shape[1] < d2:
+            return False
+
+        return True
 
     def get_analysis(self, im_path, features, grayscale_values,
             watch_colony=None, save_grid_name=None,
