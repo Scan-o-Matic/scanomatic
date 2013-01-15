@@ -172,15 +172,33 @@ class Running_Analysis(gtk.VBox):
 
             else:
 
+                if 'progress-current-image' in p:
+
+                    info.set_text(m['running-analysis-current'].format(
+                        p['progress-current-image'],
+                        p['progress-total-number']))
+
                 f = p['progress'] / 100
 
                 progress.set_fraction(p['progress']/100)
 
-                dt = time.time() - p['start-time']
                 if f > 0:
-                    eta = dt / f * (1 - f) 
-                    progress.set_text("Expected to finnish in {0:.2f}h".format(
+                    dt = time.time() - p['start-time']
+                    full_t = p['progress-elapsed-time'] / f
+                    eta = full_t - dt 
+
+                    if eta < 0:
+                        eta = 0
+
+                    progress.set_text(
+                        m['running-analysis-progress-bar-eta'].format(
                         eta / 3600.0))
+
+                else:
+
+                    progress.set_text(
+                        m['running-analysis-progress-bar-elapsed'].format(
+                        (time.time() - p['start-time'])/60.0))
 
         return True
 

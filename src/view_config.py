@@ -72,21 +72,51 @@ class Settings_Cont(gtk.VBox):
 
         super(Settings_Cont, self).__init__(False, 0)
 
+        #INSTALL
+        frame = gtk.Frame(model['config-install'])
+        self.pack_start(frame, False, False, PADDING_LARGE)
         hbox = gtk.HBox(False, 0)
+        frame.add(hbox)
+
         label = gtk.Label(model['config-desktop-short_cut'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         button = gtk.Button()
         button.set_label(model['config-desktop-short_cut-make'])
         button.connect("clicked", controller.set_desktop_shortcut)
         hbox.pack_end(button, False, False, PADDING_SMALL)
-        self.pack_start(hbox, False, False, PADDING_LARGE)
 
+        #BACKUP
+        frame = gtk.Frame(model['config-backup'])
+        self.pack_start(frame, False, False, PADDING_LARGE)
         hbox = gtk.HBox(False, 0)
+        frame.add(hbox)
+
         label = gtk.Label(model['config-log-save'])
         button = gtk.Button(label=model['config-log-save-button'])
         button.connect("clicked", controller.make_state_backup)
         hbox.pack_start(label, False, False, PADDING_SMALL)
         hbox.pack_end(button, False, False, PADDING_SMALL)
-        self.pack_start(hbox, False, False, PADDING_LARGE)
+
+        #SETTINGS
+        frame = gtk.Frame(model['config-settings'])
+        self.pack_start(frame, False, False, PADDING_LARGE)
+        table = gtk.Table(rows=4, columns=3)
+        frame.add(table)
+
+        ##POWER MANAGER
+        label = gtk.Label(model['config-pm'])
+        table.attach(label, 0, 1, 0, 1)
+        
+        self._pm_usb = gtk.RadioButton(label=model['config-pm-usb'])
+        table.attach(self._pm_usb, 1, 2, 0, 1)
+        self._pm_lan = gtk.RadioButton(group=self._pm_usb,
+            label=model['config-pm-lan'])
+        table.attach(self._pm_lan, 2, 3, 0, 1)
+
+        ##SCANNERS
+        label = gtk.Label(model['config-scanners'])
+        table.attach(label, 0, 1, 1, 2)
+        self._scanners = gtk.Entry(1)
+        table.attach(self._scanners, 1, 2, 1, 2)
 
         self.show_all()

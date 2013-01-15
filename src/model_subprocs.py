@@ -79,7 +79,11 @@ To stop, write 'stop' below and then presss the yes-button.</i></span>
 and in the future when to expect the results.</i></span>
 """,
 'running-analysis-running': 'Running...',
+'running-analysis-current': 'Analysing {0} of {1}',
 'running-analysis-done': 'Done!',
+'running-analysis-progress-bar-elapsed': 'Elapsed time: {0:.1f} min',
+'running-analysis-progress-bar-eta': "Expected to finnish in {0:.2f} h",
+ 
 }
 
 

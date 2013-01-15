@@ -37,12 +37,18 @@ model = {
 
 #STAGE
 
-##DESKTOP SHORT-CUT
+##INSTALL
+'config-install': 'Installation stuff',
+
+###DESKTOP SHORT-CUT
 'config-desktop-short_cut': 'If you want a desktop shortcut...',
 'config-desktop-short_cut-make':'click me!',
 'config-desktop-short_cut-made': 'Success!\nShort-cut was made..',
 
-##BACKUP LOGS AND STATE
+##BACKUP AND ERRORS
+'config-backup': 'Backup and Errors',
+
+###BACKUP LOGS AND STATE
 'config-log-save': 
 """If you run into problems, this allows for backup of logs and program state for later debugging""",
 'config-log-save-button': 'Make back-up...',
@@ -51,4 +57,14 @@ model = {
 'mime_and_patterns': (('application/tar', '*.tar.gz'),)},
 'config-log-save-done': 'Success! Save complete!',
 
+##SETTINGS
+'config-settings': 'Settings',
+
+###POWER MANAGER
+'config-pm': 'Powever Manager Type',
+'config-pm-usb': 'USB',
+'config-pm-lan': 'LAN/NETWORK',
+
+##SCANNERS
+'config-scanners': 'Number of Scanners',
 }

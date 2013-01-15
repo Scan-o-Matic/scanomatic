@@ -119,7 +119,7 @@ class Config(object):
         analysis_query =  {
             "-i": "",  # No default input file
             "-o": self._paths.experiment_analysis_relative_path,  # Default subdir
-            "-t" : 100,  # Time to set grid
+            #"-t" : 100,  # Time to set grid
             '--xml-short': 'True',  # Short output format
             '--xml-omit-compartments': 'background,cell',  # Only look at blob
             '--xml-omit-measures':

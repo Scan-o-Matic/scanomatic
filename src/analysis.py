@@ -48,7 +48,7 @@ import resource_xml_writer
 
 def analyse_project(log_file_path, outdata_directory, pinning_matrices,
             graph_watch,
-            verbose=False, visual=False, manual_grid=False, grid_times=None, 
+            verbose=False, visual=False, manual_grid=False, grid_times=[], 
             suppress_analysis = False,
             xml_format={'short': True, 'omit_compartments': [], 
             'omit_measures': []},
@@ -301,6 +301,29 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     xml_writer.write_header(meta_data, plates)
     xml_writer.write_segment_start_scans()
 
+    #
+    # SETTING GRID FROM REASONABLE TIME POINT
+    if len(grid_times) > 0:
+        pos = grid_times[0]
+        if pos >= len(image_dictionaries):
+            pos = len(image_dictionaries) - 1
+    else:
+        pos = (len(image_dictionaries) > 100 and 100 
+            or len(image_dictionaries) - 1)
+
+    plate_positions = []
+
+    for i in xrange(plates):
+
+        plate_positions.append(
+            image_dictionaries[pos][plate_position_keys[i]])
+
+    project_image.set_grid(image_dictionaries[pos]['File'],
+        plate_positions,
+        save_name = os.sep.join((
+        outdata_directory,
+        "grid___origin_plate_")))
+ 
 
     resource_analysis_support.print_progress_bar(size=60)
 

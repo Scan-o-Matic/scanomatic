@@ -146,6 +146,9 @@ class Grid_Array():
 
         self._im_dim_order = None
 
+        if pinning_matrix is not None:
+            self._init_pinning_matrix()
+
 
     #
     # SET functions
@@ -178,10 +181,14 @@ class Grid_Array():
 
         self._grid_cell_size = map(lambda x: int(round(x)), (dx, dy))
 
+        """ Should be set based on im and not depend on im-orientation
+
         if self._im_dim_order is not None:
             self._grid_cell_size = [
                     self._grid_cell_size[self._im_dim_order[0]],
                     self._grid_cell_size[self._im_dim_order[1]]]
+
+        """
 
         if self._parent is not None:
 
@@ -219,7 +226,13 @@ class Grid_Array():
             self.fixture.set_pinning_positions(\
                 self._identifier[1], self._pinning_matrix, topleft_history)
 
-    def set_grid(self, im):
+    def set_grid(self, im, save_name=None):
+
+        #Map so grid axis concur with image rotation
+        if self._im_dim_order is None:
+
+            self._im_dim_order = self._get_grid_to_im_axis_mapping(
+                self._pinning_matrix, im)
 
         self._grid = resource_grid.get_grid(im, box_size=self._guess_grid_cell_size, 
                 grid_shape=(self._pinning_matrix[int(self._im_dim_order[0])], 
@@ -243,6 +256,9 @@ class Grid_Array():
 
         self._set_grid_cell_size()
 
+        if save_name is not None:
+            self.make_grid_im(im, save_grid_name=save_name)
+
         if self.visual:
 
             self.make_grid_im(im)
@@ -259,41 +275,21 @@ class Grid_Array():
         grid_plot.imshow(im, cmap=plt.cm.gray)
         ido = self._im_dim_order
 
-        for row in xrange(self._pinning_matrix[0]):
+        for row in xrange(self._pinning_matrix[ido[0]]):
 
-            if self._im_dim_order[0] == 1:
+            grid_plot.plot(
+                    best_fit_columns,
+                    np.ones(best_fit_columns.size) * 
+                    best_fit_rows[row],
+                    'r-')
 
-                grid_plot.plot(
-                        np.ones(best_fit_columns.size) * \
-                        best_fit_rows[row],
-                        best_fit_columns,
-                        'r-')
-
-            else:
+            for column in xrange(self._pinning_matrix[ido[1]]):
 
                 grid_plot.plot(
-                        best_fit_columns,
-                        np.ones(best_fit_columns.size) * \
-                        best_fit_rows[row],
+                        np.ones(best_fit_rows.size) * 
+                        best_fit_columns[column],
+                        best_fit_rows,
                         'r-')
-
-            for column in xrange(self._pinning_matrix[1]):
-
-                if self._im_dim_order[0] == 1:
-
-                    grid_plot.plot(
-                            best_fit_rows,
-                            np.ones(best_fit_rows.size) * \
-                            best_fit_columns[column],
-                            'r-')
-
-                else:
-
-                    grid_plot.plot(
-                            np.ones(best_fit_rows.size) * \
-                            best_fit_columns[column],
-                            best_fit_rows,
-                            'r-')
 
         ax = grid_image.gca()
         ax.set_xlim(0, im.shape[1])
@@ -322,7 +318,7 @@ class Grid_Array():
 
             self.logger.info("ANALYSIS GRID: Image saved!")
 
-    def _set_pinning_matrix(self):
+    def _init_pinning_matrix(self):
         """
             set_pinning_matrix sets the pinning_matrix.
 
@@ -344,14 +340,12 @@ class Grid_Array():
         self._grid_cells = []
         self._features = []
 
-        ido = self._im_dim_order
-
-        for row in xrange(pinning_matrix[ido[0]]):
+        for row in xrange(pinning_matrix[0]):
 
             self._grid_cells.append([])
             self._features.append([])
 
-            for column in xrange(pinning_matrix[ido[1]]):
+            for column in xrange(pinning_matrix[1]):
 
                 self._grid_cells[row].append(grid_cell.Grid_Cell(\
                     self, [self._identifier,  [row, column]],
@@ -533,143 +527,20 @@ class Grid_Array():
         return transformation_matrix
 
     def _set_tm_im(self, source, target, ul, tm, c_row, c_column):
-        """Places the transformed image values in target
 
-        Used by algorithm:
-        ------------------
-
-        source      image that has the section that should be transformed
-        target      image with size matching wh (see below) that will take the
-                    transformed im
-        ul          Upper Left corner on source
-        tm          Transformation matrix
-
-        Used only for error reporting:
-        ------------------------------
-
-        c_row       The row on the pinning matrix (dim 0 of pm) currently used
-        c_column    The column / (dim 1)
-        """
-
-        #Clear target of might just be laying there
-        target *= 0
-    
         #wh          Width and Height
         wh = self._grid_cell_size
 
-        #axis_order  Tells the orientation of the grid on the source
-        axis_order = self._im_dim_order
+        source_view = source[ul[0]: ul[0] + wh[0], ul[1]: ul[1] + wh[1]]
 
-        #There's probably some faster way
-        self.logger.debug("ANALYSIS GRID ARRAY Transforming -> Kodak")
+        if source_view.shape != target.shape:
 
-        #Creating shortcut for repeaded lookup
-        im_axis_order = self._im_dim_order
+            raise Invalid_Grid(
+                "Source view {0}, Target {1}, Source {2} ul {3}, wh {4}".format(
+                source_view.shape, target.shape, source.shape, ul, wh))
 
-        #Iteration direction priority is decided by how the pinning matrix
-        #was written and not how the image looks
+        target[:,:] = tm[source_view]
 
-        #x,y        are target coordinates
-        #x2, y2     are source coordinates
-
-        wh_half = [i/2.0 for i in wh]
-
-        for x in xrange(wh[im_axis_order[0]]):
-
-            x2 = int(round(ul[axis_order[0]] - 
-                    wh_half[im_axis_order[0]])) + x
-
-            for y in xrange(wh[axis_order[1]]):
-
-                y2 = int(round(ul[axis_order[1]] -
-                    wh_half[im_axis_order[1]])) + y
-
-                try:
-
-                    #This makes sure that the target and source have the
-                    #same rotation.
-
-                    #Common logic in words: "For each pixel, in source, look
-                    #up the transformed value in the tm and place that value
-                    #in the corresponting positon in target
-
-                    if axis_order[0] > axis_order[1]:
-
-                        target[y, x] = tm[source[x2, y2]]
-
-                    else:
-
-                        target[x, y] = tm[source[x2, y2]]
-                        #print target[x, y], source[x2, y2], tm[source[x2, y2]]
-
-                except IndexError:
-
-                    err_str = (
-                        "Index Error:An image has been " + 
-                        " saved as gridding_error.png\n" + 
-                        "target.shape {0} stopped at ({1}, {2})".format(
-                        (target.shape[axis_order[0]],
-                        target.shape[axis_order[1]]), x, y) + 
-                        ("which corresponds to  ({0}, {1}) on source" +
-                        " (shape {2})").format(x2, y2, 
-                        (source.shape[axis_order[0]],
-                        source.shape[axis_order[1]])) + 
-                        ("Origin on source was: ({0}, {1}) and attempted" +
-                        " size was ({2}, {3}) ").format(
-                        ul[axis_order[0]], ul[axis_order[1]],
-                        wh[im_axis_order[0]], wh[im_axis_order[1]]) +
-                        "from {0}:{1}:{2}".format(
-                        self._identifier, (c_row, self._pinning_matrix[0]),
-                        (c_column, self._pinning_matrix[1])))
-
-                    grid_image = plt.figure()
-                    grid_plot = grid_image.add_subplot(111)
-
-                    best_fit_rows, best_fit_columns = \
-                        self._get_ideal_rows_columns_from_grid()
-
-                    if axis_order[0] > axis_order[1]:
-
-                        grid_plot.imshow(source.T, cmap=plt.cm.Greys)
-
-                    else:
-
-                        grid_plot.imshow(source, cmap=plt.cm.Greys)
-
-                    grid_plot.set_xlim(0, source.shape[axis_order[0]])
-                    grid_plot.set_ylim(0, source.shape[axis_order[1]])
-                    ido = self._im_dim_order
-
-
-                    for row in xrange(self._pinning_matrix[ido[0]]):
-
-                        grid_plot.plot(
-                            np.ones(
-                            best_fit_columns.size) * \
-                            best_fit_rows[row],
-                            best_fit_columns,
-                            'r-')
-
-                        for column in xrange(
-                                self._pinning_matrix[ido[1]]):
-
-                            grid_plot.plot(
-                                best_fit_rows,
-                                np.ones(best_fit_rows.size) * \
-                                best_fit_columns[column],
-                                'r-')
-
-                    grid_plot.add_patch(plt.Rectangle((x2,y2),
-                        wh[axis_order[0]],
-                        wh[axis_order[1]],
-                        ls='solid', lw=2,
-                        fill=False, ec=(0.9, 0.9, .1, 1)))
-
-                    grid_image.savefig("gridding_error.png")
-
-                    raise Exception(IndexError, err_str)
-
-                    sys.exit()
 
     def get_analysis(self, im, gs_values=None, gs_fit=None, gs_indices=None,
             identifier_time=None, watch_colony=None, save_grid_name=None):
@@ -691,19 +562,9 @@ class Grid_Array():
         #Fast access to the pinning matrix
         pm = self._pinning_matrix
 
-        #Map so grid axis concur with image rotation
-        if self._im_dim_order is None:
-
-            self._im_dim_order = self._get_grid_to_im_axis_mapping(pm, im)
-
-            #self._analysis.set_dim_order(self._im_dim_order)
-
-        im_dim_order = self._im_dim_order
 
         #Only place grid if not yet placed
         if self._grid is None:
-
-            self._set_pinning_matrix()
 
             if not self.set_grid(im):
 
@@ -711,6 +572,9 @@ class Grid_Array():
                         '{0} and none to use'.format(self._identifier))
 
                 return None
+
+        im_dim_order = self._im_dim_order
+        dim_reversed = im_dim_order[0] == 1
 
         #Save grid image if requested
         if save_grid_name is not None:
@@ -722,8 +586,8 @@ class Grid_Array():
         s_gcs = self._grid_cell_size
         s_g[:,:,0] -= s_gcs[0] / 2.0  # To get min-corner
         s_g[:,:,1] -= s_gcs[1] / 2.0  # To get min-corner
-        l_d1 = pm[im_dim_order[0]]
-        l_d2 = pm[im_dim_order[1]]
+        l_d1 = pm[0]  # im_dim_order[0]]
+        l_d2 = pm[1]  # im_dim_order[1]]
 
         #Setting up target array for trasnformation so it fits axis order
         tm_im = np.zeros(s_gcs, dtype=np.float64)
@@ -739,9 +603,13 @@ class Grid_Array():
 
                     #Set up shortcuts
                     _cur_gc = self._grid_cells[row][col]
+                    if dim_reversed:
+                        row_min = s_g[col, row, 0]
+                        col_min = s_g[col, row, 1]
+                    else:
+                        row_min = s_g[row, col, 0]
+                        col_min = s_g[row, col, 1]
 
-                    row_min = s_g[row, col, 0]
-                    col_min = s_g[row, col, 1]
                     rc_min_tuple = (row_min, col_min)
 
                     #

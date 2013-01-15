@@ -191,16 +191,17 @@ class Subprocs_Controller(controller_generic.Controller):
 
                 lines = self._get_stdout_since_last_time(p)
                 #progress = re.findall(r'^\[.*?([0-9]*\.[0-9]*) %.*?\]', lines)
-                progress = re.findall(r'^.*?INFO: __Is__ ([0-9]*)', lines)
-                total = re.findall(r'^ INFO: ANALYSIS: A total of ([0-9]*)', lines)
+                progress = re.findall(r'^INFO: __Is__ ([0-9]*)', lines)
+                total = re.findall(r'INFO: ANALYSIS: A total of ([0-9]*)', lines)
 
                 if len(total) > 0:
-                    p['progress-total-number'] = int(total)
+                    p['progress-total-number'] = int(total[0])
 
                 if len(progress) > 0 and 'progress-total-number' in p.keys():
-                    print progress
                     p['progress'] = (float(progress[-1]) - 1) / \
                         p['progress-total-number']
+                    p['progress-elapsed-time'] = time.time() - p['start-time']
+                    p['progress-current-image'] = int(progress[-1])
 
         #UPDATE FREE SCANNERS
         sm['free-scanners'] = tc.scanners.count()
@@ -214,13 +215,16 @@ class Subprocs_Controller(controller_generic.Controller):
 
         lines = ""
         try:
-            fh = open(p['stdout'])
+            fh = open(p['stdout'], 'r')
+            print "Opened", p['stdout']
             if 'stdout-pos' in p:
                 fh.seek(p['stdout-pos'])
             lines = fh.read()
+            print "Length new stuff in stdout", len(lines)
             p['stdout-pos'] = fh.tell()
             fh.close()
         except:
+            print "Error reading", p['stdout']
             pass
 
         return lines

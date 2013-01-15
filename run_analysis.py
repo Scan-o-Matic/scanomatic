@@ -65,7 +65,7 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--watch-time", dest="grid_times",
         help="If specified, the gridplacements at the specified timepoints" + \
         " will be saved in the set output-directory, comma-separeted indices.",
-        metavar="0,1,100", default="0", type=str)
+        metavar="0,1,100", default="", type=str)
 
     parser.add_argument("-g", "--manual-grid", dest="manual_grid",
         help="Boolean used to invoke manually set gridding, default is false",
@@ -197,10 +197,9 @@ if __name__ == "__main__":
 
             except:
 
-                logging.warning("ARGUMENTS, could not parse grid_times..." + \
-                    " will only save the first grid placement.")
+                logging.warning("ARGUMENTS, could not parse grid_times...")
 
-                grid_times = [-1]
+                grid_times = []
 
     #INPUT FILE LOCATION
     if args.inputfile == None:

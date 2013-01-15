@@ -152,6 +152,27 @@ class Project_Image():
                     self.logger.error('Failed to set manual grid "+ \
                         "adjustments to {0}, plate non-existent'.format(k))
 
+    def set_grid(self, im_path, plate_positions, save_name=None):
+
+        self.logger.info("Setting grids from image {0}".format(im_path))
+        self._im_path = im_path
+        self.load_image()
+        if self._im_loaded:
+
+            if self._log_version < self._config.version_first_pass_change_1:
+                scale_factor = 4.0
+            else:
+                scale_factor = 1.0
+
+            for grid_array in xrange(len(self._grid_arrays)):
+
+                self.logger.info("Setting grid on plate {0}".format(
+                    grid_array))
+
+                im = self.get_im_section(plate_positions[grid_array], scale_factor)
+
+                self._grid_arrays[grid_array].set_grid(im, save_name=save_name)
+
     def load_image(self):
 
         try:
