@@ -108,18 +108,46 @@ class Settings_Cont(gtk.VBox):
         table.attach(label, 0, 1, 0, 1)
         
         self._pm_usb = gtk.RadioButton(label=model['config-pm-usb'])
+        self._pm_usb_signal = self._pm_usb.connect('toggled',
+            controller.set_pm_type, 'usb')
         table.attach(self._pm_usb, 1, 2, 0, 1)
         self._pm_lan = gtk.RadioButton(group=self._pm_usb,
             label=model['config-pm-lan'])
+        self._pm_lan_signal = self._pm_lan.connect('toggled',
+            controller.set_pm_type, 'lan')
         table.attach(self._pm_lan, 2, 3, 0, 1)
 
         ##SCANNERS
         label = gtk.Label(model['config-scanners'])
         table.attach(label, 0, 1, 1, 2)
         self._scanners = gtk.Entry(1)
+        self._scanners_signal = self._scanners.connect("changed",
+            controller.set_scanners)
         table.attach(self._scanners, 1, 2, 1, 2)
 
         ##SAVE
         button = gtk.Button(label=model['config-settings-save'])
         table.attach(button, 0, 1, 2, 3)
         self.show_all()
+
+    def set_signal_block(self, s_type):
+
+        if s_type in ('pm', 'usb', 'all'):
+            self._pm_usb.handler_block(self._pm_usb_signal)
+
+        if s_type in ('pm', 'lan', 'all'):
+            self._pm_lan.handler_block(self._pm_lan_signal)
+
+        if s_type in ('scanners', 'all'):
+            self._scanners.handler_block(self._scanners_signal)
+
+    def set_signal_unblock(self, s_type):
+
+        if s_type in ('pm', 'usb', 'all'):
+            self._pm_usb.handler_unblock(self._pm_usb_signal)
+
+        if s_type in ('pm', 'lan', 'all'):
+            self._pm_lan.handler_unblock(self._pm_lan_signal)
+
+        if s_type in ('scanners', 'all'):
+            self._scanners.handler_unblock(self._scanners_signal)
