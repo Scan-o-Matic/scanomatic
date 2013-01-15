@@ -138,19 +138,17 @@ class Subprocs_Controller(controller_generic.Controller):
                         a_list += [aflag, aval]
 
                     #START NEW PROC
-                    analysis_log = open(os.sep.join((psm['experiments-root'],
-                        psm['experiment-prefix'],
-                        tc.paths.experiment_analysis_file_name)) , 'w')
+                    stdout_path, stderr_path = tc.paths.get_new_log_analysis()
+                    stdout = open(stdout_path, 'w')
+                    stderr = open(stderr_path, 'w')
 
+                    proc = Popen(map(str, a_list), stdout=stdout, stderr=stderr, shell=False)
                     print "Starting Analysis {0}".format(a_list)
-
-                    proc = Popen(map(str, a_list), 
-                        stdout=analysis_log, shell=False)
 
                     pid = proc.pid
 
                     self.add_subprocess(proc, 'analysis', pid=pid,
-                        stdout=analysis_log, sm=psm,
+                        stdout=stdout_path, stderr=stderr_path, sm=psm,
                         proc_name=proc_name)
 
                 else:  # Report problem to user!
@@ -190,17 +188,20 @@ class Subprocs_Controller(controller_generic.Controller):
             else:
 
                 lines = self._get_stdout_since_last_time(p)
-                #progress = re.findall(r'^\[.*?([0-9]*\.[0-9]*) %.*?\]', lines)
-                progress = re.findall(r'^INFO: __Is__ ([0-9]*)', lines)
+                progress = re.findall(r'INFO: __Is__ ([0-9]*)', lines)
                 total = re.findall(r'INFO: ANALYSIS: A total of ([0-9]*)', lines)
 
                 if len(total) > 0:
                     p['progress-total-number'] = int(total[0])
 
-                if len(progress) > 0 and 'progress-total-number' in p.keys():
+                if len(progress) > 0 and 'progress-total-number' in p:
                     p['progress'] = (float(progress[-1]) - 1) / \
                         p['progress-total-number']
-                    p['progress-elapsed-time'] = time.time() - p['start-time']
+                    if '1' in progress:
+                        p['progress-init-time'] = time.time() - p['start-time']
+                    if progress != ['1']:
+                        p['progress-elapsed-time'] = (time.time() -
+                            p['start-time']) - p['progress-init-time']
                     p['progress-current-image'] = int(progress[-1])
 
         #UPDATE FREE SCANNERS
@@ -216,15 +217,12 @@ class Subprocs_Controller(controller_generic.Controller):
         lines = ""
         try:
             fh = open(p['stdout'], 'r')
-            print "Opened", p['stdout']
             if 'stdout-pos' in p:
                 fh.seek(p['stdout-pos'])
             lines = fh.read()
-            print "Length new stuff in stdout", len(lines)
             p['stdout-pos'] = fh.tell()
             fh.close()
         except:
-            print "Error reading", p['stdout']
             pass
 
         return lines

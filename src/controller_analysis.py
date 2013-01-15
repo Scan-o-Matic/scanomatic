@@ -1391,12 +1391,16 @@ class Analysis_Project_Controller(controller_generic.Controller):
         if self._supress_other is True: 
             analysis_query += ["-s", "True"]
         """
-        proc = Popen(map(str, analysis_query), shell=False)
+        stdout_path, stderr_path = tc.paths.get_new_log_analysis()
+        stdout = open(stdout_path, 'w')
+        stderr = open(stderr_path, 'w')
+
+        proc = Popen(map(str, analysis_query), stdout=stdout, stderr=stderr, shell=False)
 
         pid = proc.pid
 
         self.get_top_controller().add_subprocess(proc, 'analysis', pid=pid,
-            stdout=analysis_log, psm=sm,
+            stdout=stdout_path, stderr=stderr_path, psm=sm,
             proc_name=sm['analysis-project-log_file'])
 
     def set_log_file(self, *args, **kwargs):

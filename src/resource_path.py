@@ -87,7 +87,9 @@ class Paths(object):
         self.log_scanner_err = os.sep.join((self.log, "scanner_{0}.stderr"))
         self.log_main_out = os.sep.join((self.log, "main.stdout"))
         self.log_main_err = os.sep.join((self.log, "main.stderr"))
-
+        self._last_analysis_log_index = 0
+        self.log_analysis_out = os.sep.join((self.log, "analysis_{0}.stdout"))
+        self.log_analysis_err = os.sep.join((self.log, "analysis_{0}.stderr"))
 
         #EXPERIMENT
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"
@@ -163,3 +165,17 @@ class Paths(object):
         else:
             return self.fixture_image_file_pattern.format(fixture_name)
 
+    def get_new_log_analysis(self):
+
+        f = (self.log_analysis_out.format(
+            self._last_analysis_log_index),
+            self.log_analysis_err.format(
+            self._last_analysis_log_index))
+
+        self._last_analysis_log_index += 1
+
+        #HACK, could cause conflict... but don't want overflow of logs
+        if self._last_analysis_log_index > 20:
+            self._last_analysis_log_index = 0
+
+        return f

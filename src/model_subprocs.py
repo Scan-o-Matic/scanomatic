@@ -76,9 +76,9 @@ To stop, write 'stop' below and then presss the yes-button.</i></span>
 """<span size="x-large">Running analysis</span>
 
 <span><i>Here you can see which analysis that are running,
-and in the future when to expect the results.</i></span>
+and when to expect the results.</i></span>
 """,
-'running-analysis-running': 'Running...',
+'running-analysis-running': 'Running analysis start-up procedures',
 'running-analysis-current': 'Analysing {0} of {1}',
 'running-analysis-done': 'Done!',
 'running-analysis-progress-bar-elapsed': 'Elapsed time: {0:.1f} min',

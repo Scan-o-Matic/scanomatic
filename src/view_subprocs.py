@@ -168,6 +168,8 @@ class Running_Analysis(gtk.VBox):
             if p not in running_procs:
 
                 info.set_text(m['running-analysis-done'])
+                progress.set_fraction(1.0)
+                progress.set_text("")
                 del self._stuff[i]
 
             else:
@@ -178,14 +180,14 @@ class Running_Analysis(gtk.VBox):
                         p['progress-current-image'],
                         p['progress-total-number']))
 
-                f = p['progress'] / 100
+                f = p['progress']
 
-                progress.set_fraction(p['progress']/100)
+                progress.set_fraction(p['progress'])
 
                 if f > 0:
-                    dt = time.time() - p['start-time']
+                    dt = time.time() - p['start-time'] 
                     full_t = p['progress-elapsed-time'] / f
-                    eta = full_t - dt 
+                    eta = full_t - (dt - p['progress-init-time']) 
 
                     if eta < 0:
                         eta = 0

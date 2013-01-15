@@ -67,4 +67,7 @@ model = {
 
 ##SCANNERS
 'config-scanners': 'Number of Scanners',
+
+#SAVE
+'config-settings-save': 'Save Settings',
 }

@@ -119,4 +119,7 @@ class Settings_Cont(gtk.VBox):
         self._scanners = gtk.Entry(1)
         table.attach(self._scanners, 1, 2, 1, 2)
 
+        ##SAVE
+        button = gtk.Button(label=model['config-settings-save'])
+        table.attach(button, 0, 1, 2, 3)
         self.show_all()
