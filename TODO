@@ -6,6 +6,9 @@
 
 *** STARTUP: Reconnect to subprocs and clean up if needed
 
+    * Half-done, progress for running experiment doesn't look nice and
+    probably don't work correctly (psm should be filled out)
+
 *** EXPERIMENT Check that progressbar is nice
 
 *** SUBPROCS ANALYSIS: Make possiblility of inspecting gridding
