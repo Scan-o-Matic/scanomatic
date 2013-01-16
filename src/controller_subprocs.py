@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import gobject
 import types
+import random
 import re
 import os
 import time
@@ -27,6 +28,7 @@ from subprocess import Popen
 import src.controller_generic as controller_generic
 import src.view_subprocs as view_subprocs
 import src.model_subprocs as model_subprocs
+import src.model_experiment as model_experiment
 
 #
 # EXCEPTIONS
@@ -46,6 +48,39 @@ class UnDocumented_Error(Exception): pass
 # CLASSES
 #
 
+class Fake_Proc(object):
+
+    def __init__(self, stdin, stdout):
+
+        self.stdin = stdin
+        self.stdout = stdout
+
+    def poll(self):
+
+        retval = 0
+        t_string = ''
+        try:
+            fh = open(self.stdin, 'a')
+            t_string = "__ECHO__ {0}\n".format(time.time())
+            fh.write(t_string)
+            fh.close()
+        except:
+            pass
+
+        time.sleep(0.55)
+
+        try:
+            fh = open(self.stdout, 'r')
+            lines = fh.read()
+            if t_string in lines:
+                retval = None
+            fh.close()
+        except:
+            pass
+
+        return retval
+
+
 class Subprocs_Controller(controller_generic.Controller):
 
     def __init__(self, main_controller, logger=None):
@@ -54,7 +89,134 @@ class Subprocs_Controller(controller_generic.Controller):
             specific_model=model_subprocs.get_composite_specific_model(),
             logger=logger)
 
+        self._check_scanners()
+        self._find_analysis_procs()
+
         gobject.timeout_add(1000, self._subprocess_callback)
+
+    def _check_scanners(self):
+
+        tc = self.get_top_controller()
+        paths = tc.paths
+        config = tc.config
+        ids = list()
+        logger = self._logger
+
+        for scanner_i in range(1, config.number_of_scanners + 1):
+
+            logger.info("Checking scanner {0}".format(scanner_i))
+            scanner = paths.get_scanner_path_name(
+                config.scanner_name_pattern.format(scanner_i))
+
+            lock_path = paths.lock_scanner_pattern.format(scanner_i)
+            locked = False
+
+            #CHECK LOCK-STATUS
+            lines = ''
+            try:
+                fh = open(lock_path, 'r')
+                lines = fh.read()
+                if lines != '':
+                    locked = True
+                    ids.append(lines.split()[0].strip())
+                fh.close()
+            except:
+                locked = False
+
+            logger.info("{0}: {1}".format(lock_path, lines))
+
+            if locked:
+                #TRY TALKING TO IT
+                logger.info("Scanner {0} is locked".format(scanner_i))
+                stdin = paths.experiment_stdin.format(scanner)
+                alive = True
+                #try:
+                fh = open(stdin, 'a')
+                test_str = "__ECHO__ {0}\n".format(random.random())
+                fh.write(test_str)
+                fh.close()
+                #except:
+                #    alive = False
+
+                if alive:
+
+                    logger.info("Scanner {0} is alive".format(scanner_i))
+                    self._check_scanner(
+                        paths.log_scanner_out.format(scanner_i),
+                        scanner_i, scanner, lines, test_str, 0)
+
+                if not alive:
+                    self._clean_after(scanner_i, scanner, lines)
+
+        #CLEAING OUT PAD UUIDS NOT IN USE ACCORDING TO LOCKFILES
+        try:
+            fh = open(paths.lock_power_up_new_scanner, 'r')
+            lines = fh.readlines()
+            fh.close()
+        except:
+            lines = []
+
+        for i in range(len(lines) - 1, -1, -1):
+            if lines[i].strip() in ids:
+                del lines[i]
+
+        try:
+            fh = open(paths.lock_power_up_new_scanner, 'r')
+            fh.writelines(lines)
+            fh.close()
+        except:
+            pass
+
+    def _check_scanner(self, stdout_path, scanner_i, scanner, scanner_id, 
+        test_str, try_x):
+
+        tc = self.get_top_controller()
+        paths = tc.paths
+        alive = True
+        try:
+            fh = open(stdout_path, 'r')
+            lines = fh.read()
+            fh.close()
+        except:
+            alive = False
+
+        if alive and test_str in lines:
+            #DO STUFF TO REVIVE - NOT DONE
+            stdin_path = paths.experiment_stdin.format(scanner)
+            stderr_path = paths.log_scanner_err.format(scanner_i)
+            proc = Fake_Proc(stdin_path, stdout_path)
+            psm = model_experiment.copy_model(
+                model_experiment.specific_project_model)
+
+            self.add_subprocess(proc, 'scanner', stdin=stdin_path,
+                stdout=stdout_path, stderr=stderr_path,
+                pid=None, psm=psm,
+                proc_name="Scanner {0}".format(scanner_i))
+
+        else:
+
+            if try_x < 10:
+                try_x += 1
+                gobject.timeout_add(100, self._check_scanner, stdout_path, scanner_i,
+                    scanner, scanner_id, test_str, try_x)
+            else:
+                self._clean_after(scanner_i, scanner, scanner_id)
+
+        return False
+
+    def _clean_after(self, scanner_i, scanner, scanner_id):
+
+        tc = self.get_top_controller()
+        scanner_id = scanner_id.strip()
+
+        #FREE SCANNER
+        scanner = tc.scanners["Scanner {0}".format(scanner_i)]
+        scanner.set_uuid(scanner_id)
+        scanner.free()
+
+    def _find_analysis_procs(self):
+
+        pass
 
     def _get_default_view(self):
 
@@ -247,7 +409,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
                 if id(p) == id(proc):
 
-                    if p.poll() is None:
+                    if p['proc'].poll() is None:
                         try:
                             fs = open(p['stdin'], 'a')
                             fs.write("__QUIT__\n")

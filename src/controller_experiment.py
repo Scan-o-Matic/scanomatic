@@ -622,7 +622,7 @@ class Project_Controller(controller_generic.Controller):
         e_query_list = map(str, e_query_list)
 
         stdin_path = tc.paths.experiment_stdin.format(
-            tc.paths.get_fixture_path(scanner.get_name(), only_name=True))
+            tc.paths.get_scanner_path_name(scanner.get_name()))
         stdin = open(stdin_path, 'w')
         stdin.close()
         stdout_path = tc.paths.log_scanner_out.format(scanner.get_socket())

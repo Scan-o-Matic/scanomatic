@@ -141,6 +141,10 @@ class Paths(object):
 
         return fixture.capitalize().replace("_", " ")
 
+    def get_scanner_path_name(self, scanner):
+
+        return scanner.lower().replace(" ", "_")
+
     def get_fixture_path(self, fixture_name, conf_file=True, own_path=None,
             only_name=False):
 

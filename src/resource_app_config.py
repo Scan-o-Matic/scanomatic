@@ -43,6 +43,7 @@ class Config(object):
 
         #SCANNER
         self.number_of_scanners = 3
+        self.scanner_name_pattern = "Scanner {0}"
         self.scanner_names = list()
         self.scan_program = "scanimage"
         self.scan_program_version_flag = "-V"

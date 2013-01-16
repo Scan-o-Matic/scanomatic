@@ -136,6 +136,10 @@ class Scanner(object):
         except:
             raise Failed_To_Free_Scanner(self._name)
 
+        self._remove_from_power_up_queue()
+        if self._is_on != False:
+            self.off()
+
         return True
 
     def _lock_in_file(self):
@@ -221,23 +225,25 @@ class Scanner(object):
         self._logger.info(
             "Scanner {0} will be removed from power up queue".format(self._name))
 
-        try:
-            fs = open(self._paths.lock_power_up_new_scanner, 'r')
-            queue = fs.readlines()
-            fs.close()
-        except:
-            raise Unable_To_Open(self._paths.lock_power_up_new_scanner)
-            return False
-
-        if queue[0].strip() != self._uuid:
-            return False
 
         while True:
 
             try:
+                fs = open(self._paths.lock_power_up_new_scanner, 'r')
+                queue = fs.readlines()
+                fs.close()
+            except:
+                raise Unable_To_Open(self._paths.lock_power_up_new_scanner)
+                return False
+
+            for i in range(len(queue) - 1, -1, -1):
+                if queue[i] == self._uuid:
+                    del queue[i]
+
+            try:
 
                 fs = open(self._paths.lock_power_up_new_scanner, 'w')
-                fs.writelines(queue[1:])
+                fs.writelines(queue)
                 fs.close()
                 self._logger.info(
                     "Scanner {0} removed from queue".format(self._name))
@@ -586,7 +592,7 @@ class Scanners(object):
 
         scanner_count = self._config.number_of_scanners
         if self._generic_naming:
-            scanner_name_pattern = "Scanner {0}"
+            scanner_name_pattern = self._config.scanner_name_pattern
             scanners = [scanner_name_pattern.format(s + 1) for s in xrange(scanner_count)]
         else:
             scanners = self._config.scanner_names

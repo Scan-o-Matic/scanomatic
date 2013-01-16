@@ -87,6 +87,17 @@ def free_scanner(scanner, uuid):
 # CLASSES
 #
 
+
+class Unbuffered:
+   def __init__(self, stream):
+       self.stream = stream
+   def write(self, data):
+       self.stream.write(data)
+       self.stream.flush()
+   def __getattr__(self, attr):
+       return getattr(self.stream, attr)
+
+
 class Experiment(object):
 
     SCAN_MODE = 'TPU'
@@ -135,8 +146,11 @@ class Experiment(object):
     def _stdin_deamon(self):
 
 
-        stdin_path = self.paths.experiment_stdin.format(
-            self.paths.get_fixture_path(self._scanner_name, only_name=True))
+        scanner_name = self.paths.get_scanner_path_name(self._scanner_name)
+        stdin_path = self.paths.experiment_stdin.format(scanner_name)
+        stdout_path = self.paths.log_scanner_out.format(self._scanner_name[-1])
+        stderr_path = self.paths.log_scanner_err.format(self._scanner_name[-1])
+        orphan = False
 
         print "DEAMON listens to", stdin_path
 
@@ -165,12 +179,39 @@ class Experiment(object):
 
             for line in lines:
                 line = line.strip()
+                output = None
                 if line == "__QUIT__":
-                    print "DEAMON got quit request"
+                    output = "DEAMON got quit request"
                     self._running = False
-                    #REPORT THAT GOT QUIT REQUEST
+
+                elif '__ECHO__' in line:
+                    output = line
+
+                elif line == '__INFO__':
+                    output =  '__ALIVE__ {0}'.format(self._running)
+
                 else:
-                    print "DEAMON got unkown request '{0}'".format(line)
+                    output = "DEAMON got unkown request '{0}'".format(line)
+
+                if output is not None:
+                    print output
+
+                    if not orphan:
+                        fs = open(stdout_path, 'r')
+                        lines = fs.read().split()
+                        fs.close()
+                        if output not in lines:
+
+                            try:
+                                stdout = open(stdout_path, 'a', 0)
+                                sys.stdout = Unbuffered(stdout)
+                                stderr = open(stdout_path, 'a', 0)
+                                sys.stderr = Unbuffered(stderr)
+                                orphan = True
+                            except:
+                                pass
+
+                            print output
 
             time.sleep(0.42)
 
