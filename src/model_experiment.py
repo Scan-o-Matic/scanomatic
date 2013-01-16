@@ -142,6 +142,9 @@ allow you to scan one or more images before you free it again.</i></span>
 
 ##PROGRESS
 'one-stage-progress': 'Progress',
+'one-stage-progress-colors': 
+'White (Not run yet), Blue (Running), Green (Completed), Red (Failed), Grey (Omitted)',
+
 ###PATTERNS
 'one-stage-progress-not-run': 
 "<span size='large' background='white' foreground='black'>{0}</span>",

@@ -191,8 +191,12 @@ class Stage_One(gtk.VBox):
         #PROGRESS
         frame = gtk.Frame(model['one-stage-progress'])
         self.pack_start(frame, False, False, PADDING_MEDIUM)
+        vbox = gtk.VBox(False, 0)
+        frame.add(vbox)
+        label = gtk.Label(model['one-stage-progress-colors'])
+        vbox.pack_start(label, False, False, PADDING_MEDIUM)
         hbox = gtk.HBox(False, 0)
-        frame.add(hbox)
+        vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
         self._progress_on = gtk.Label()
         self._progress_on.set_markup(model['one-stage-progress-not-run'].format(
             model['one-stage-progress-power-on']))
