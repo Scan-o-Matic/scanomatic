@@ -102,7 +102,64 @@ pigmentation analysis.</i></span>
 <span weight="heavy">Project {0} is now running...</span>
 <span><i>You may close this tab now.
 If you want details about the progress, look under status.</i></span>
-"""
+""",
+
+#ONE
+
+##INTRO
+'one-stage-intro-transparency': """
+<span weight="heavy">Manually make transparency scan(s)</span>
+<span><i>This will create a new folder using current date and time.
+You will get a first pass analysis run automaticcaly if you select fixture.
+(It can be done later under the analysis-tab).</i></span>
+<span><i>If you select to 'Run Through' it will scan one image and then free the scanner.
+If you select to just power on, you will lock turn the scanner on and it will
+allow you to scan one or more images before you free it again.</i></span>
+""",
+
+'one-stage-intro-color': """
+<span weight="heavy">Manually make reflective color scan(s)</span>
+<span><i>This will create a new folder using current date and time.
+You will get a first pass analysis run automaticcaly if you select fixture.
+(It can be done later under the analysis-tab).</i></span>
+<span><i>If you select to 'Run Through' it will scan one image and then free the scanner.
+If you select to just power on, you will lock turn the scanner on and it will
+allow you to scan one or more images before you free it again.</i></span>
+""",
+
+##FIXTURE AND SCANNER
+'one-stage-fixture_scanner': 'Scanner & Fixture Selection',
+'one-stage-scanner': 'Select Scanner',
+'one-stage-fixture': 'Select Fixture (if any)',
+'one-stage-no-fixture': "No fixture/don't run first pass analysis",
+
+##RUN-TYPES
+'one-stage-run-frame': 'Select Run-Mode/Stage',
+'one-stage-power-up': 'Turn on Power',
+'one-stage-run-all': 'Run Through It All',
+'one-stage-scan': 'Scan',
+'one-stage-complete': 'Complete',
+
+##PROGRESS
+'one-stage-progress': 'Progress',
+###PATTERNS
+'one-stage-progress-not-run': 
+"<span size='large' background='white' foreground='black'>{0}</span>",
+'one-stage-progress-completed':
+"<span size='large' background='green' foreground='black'>{0}</span>",
+'one-stage-progress-running':
+"<span size='large' background='blue' foreground='black'>{0}</span>",
+'one-stage-progress-pass':
+"<span size='large' background='grey' foreground='black'>{0}</span>",
+'one-stage-progress-error':
+"<span size='large' background='red' foreground='black'>{0}</span>",
+
+###TEXTS
+'one-stage-progress-power-on': ' Power On ',
+'one-stage-progress-scan': ' Scan ',
+'one-stage-progress-power-off': ' Power Off ',
+'one-stage-progress-analysis': ' First Pass Analysis ',
+'one-stage-progress-done': ' Done ',
 }
 
 specific_project_model = {
@@ -134,4 +191,22 @@ specific_project_model = {
 'interval': 20,
 'scans': 217,
 'duration': 72,
+}
+
+specific_one_color_model = {
+'type': 'color',
+'scan-mode': 'COLOR',
+'scanner': None,
+'fixture': None,
+'stage': None,
+'image': 0
+}
+
+specific_one_transparency_model = {
+'type': 'transparency',
+'scan-mode': 'TPU',
+'scanner': None,
+'fixture': None,
+'stage': None,
+'image': 0,
 }

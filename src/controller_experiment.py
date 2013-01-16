@@ -15,9 +15,11 @@ __status__ = "Development"
 
 import re
 import os
+import time
 import collections
 from itertools import chain
 from subprocess import Popen, PIPE
+import gobject
 
 #
 # INTERNAL DEPENDENCIES
@@ -96,10 +98,15 @@ class Experiment_Controller(controller_generic.Controller):
 
         return model_experiment.get_gui_model()
 
+    def get_mode(self):
+
+        return self._experiment_mode
+
     def set_mode(self, widget, experiment_mode):
 
         view = self._view
         model = self._model
+        self._experiment_mode = experiment_mode
 
         if experiment_mode == 'project':
 
@@ -108,18 +115,221 @@ class Experiment_Controller(controller_generic.Controller):
 
         elif experiment_mode == "gray":
 
-            err = Not_Yet_Implemented("Mode 'One Gray-Scale Scan'")
-            raise err
+            self._specific_controller = One_Controller(
+                self, model=model, view=view)
 
         elif experiment_mode == 'color':
 
-            err = Not_Yet_Implemented("Mode 'One Color Scan'")
-            raise err
+            self._specific_controller = One_Controller(
+                self, model=model, view=view)
+
+        else:
+            self._experiment_mode = 'about'
+            raise Bad_Stage_Call(experiment_mode)
+
+class One_Controller(controller_generic.Controller):
+
+    def __init__(self, parent, view=None, model=None,
+        specific_model=None, logger=None):
+
+        super(One_Controller, self).__init__(parent,
+            view=view, model=model, logger=logger)
+
+        if specific_model is not None:
+            self._specific_model = specific_model
+        else:
+            self.build_new_specific_model()
+
+        self._specific_model['experiments-root'] = \
+            self.get_top_controller().paths.experiment_root
+
+        view.set_controller(self)
+        top = view_experiment.Top_One(self, model, 
+            self._specific_model)
+        stage = view_experiment.Stage_One(self, model,
+            self._specific_model)
+        view.set_top(top)
+        view.set_stage(stage)
+        stage.force_no_fixture()
+
+    def build_new_specific_model(self):
+
+        if self._parent.get_mode() == 'color': 
+            sm_template = model_experiment.specific_one_color_model
+        else:
+            sm_template = model_experiment.specific_one_transparency_model
+
+        sm = model_experiment.copy_model(sm_template)
+        self._specific_model = sm
+        return sm
+
+    def destroy(self):
+
+        sm = self._specific_model
+        tc = self.get_top_controller()
+
+        if sm['scanner'] is not None:
+            tc.scanners.free(sm['scanner'], soft=True)
+
+    def _set_project_id(self):
+
+        sm = self._specific_model
+
+        sm['experiment-id'] = \
+            time.strftime("%d_%b_%Y__%H_%M_%S", time.gmtime())
+
+        sm['experiment-root'] = os.sep.join((
+            sm['experiments-root'], sm['experiment-id']))
+ 
+        os.makedirs(sm['experiment-root'])
+
+    def get_model_intro_key(self):
+
+        sm = self._specific_model
+
+        if sm['type'] == 'transparency':
+            return 'one-stage-intro-transparency'
+        elif sm['type'] == 'color':
+            return 'one-stage-intro-color'
+
+    def set_new_scanner(self, widget):
+
+        sm = self._specific_model
+        widget_model = widget.get_model()
+        scanner = widget_model[widget.get_active()][0]
+
+        scanners = self.get_top_controller().scanners
+
+        if scanners.claim(scanner):
+
+            #REMOVE PREVIOUS CLAIM
+            if sm['scanner'] is not None:
+                scanners.free(sm['scanner'])
+
+            #UPDATE MODEL FOR CURRENT CLAIM
+            sm['scanner'] = scanner
 
         else:
 
-            raise Bad_Stage_Call(experiment_mode)
+            self.get_view().get_stage().update_scanner()
 
+        self._set_ready_to_run()
+
+    def set_new_fixture(self, widget):
+
+        sm = self._specific_model
+        stage = self.get_view().get_stage()
+        widget_model = widget.get_model()
+
+        val = widget_model[widget.get_active()][0]
+        if val == self._model['one-stage-no-fixture']:
+            stage.set_progress('analysis', surpass=True)
+            sm['fixture'] = False
+        else:
+            stage.set_progress('analysis', surpass=False)
+            sm['fixture'] = val
+
+        self._set_ready_to_run()
+
+    def _set_ready_to_run(self):
+
+        sm = self._specific_model
+        stage = self.get_view().get_stage()
+
+        if sm['fixture'] is not None and sm['scanner'] is not None:
+            stage.set_run_stage('ready')
+            
+    def set_run(self, widget, run_command):
+
+        run_command = run_command[0]
+        stage = self.get_view().get_stage()
+        if run_command == 'power-up':
+            stage.set_run_stage('power-on')
+
+        stage.set_run_stage('started')
+        stage.set_run_stage('running')
+
+        sm = self._specific_model
+        sm['run'] = run_command
+
+        scanners = self.get_top_controller().scanners
+        scanner = scanners[sm['scanner']]
+
+        if sm['stage'] is None:
+            self._set_project_id()
+            stage.set_progress('on')
+            #POWER UP
+            gobject.timeout_add(100, self._power_up, scanner, stage)
+        elif run_command != 'complete':
+            stage.set_progress('scan')
+            gobject.timeout_add(100, self._scan, scanner, stage)
+        else:
+            stage.set_progress('off')    
+            gobject.timeout_add(100, self._power_down, scanner, stage)
+            
+    def _power_up(self, scanner, stage):
+
+        sm = self._specific_model
+        if scanner.on():
+            sm['stage'] = 'on'
+            stage.set_progress('on', completed=True)
+            if sm['run'] == 'power-up':
+                stage.set_run_stage('ready')
+            else:
+                stage.set_progress('scan')
+                gobject.timeout_add(100, self._scan, scanner, stage)
+
+            return False
+        else:
+            scanner.free()
+            stage.set_progress('on', failed=True)
+            stage.set_progress('done', failed=True)
+
+    def _scan(self, scanner, stage):
+
+        sm = self._specific_model
+        stage.set_run_stage('running')
+
+        file_path = os.sep.join((sm['experiment-root'],
+            'scan__{0}.tiff'.format(str(sm['image']).zfill(4))))
+
+        scanner.scan(sm['scan-mode'], file_path, auto_off=False)
+
+        stage.set_progress('scan', completed=True)
+
+        if sm['run'] != 'scan':
+            stage.set_progress('off')
+            gobject.timeout_add(100, self._power_down, scanner, stage)
+        else:
+            sm['image'] += 1
+            stage.set_run_stage('ready')
+
+        return False
+
+    def _power_down(self, scanner, stage):
+
+        sm = self._specific_model
+        stage.set_run_stage('running')
+        if scanner.off():
+            sm['stage'] = 'off'
+            stage.set_progress('off', completed=True)
+        else:
+            stage.set_progress('off', failed=True)
+        
+        if sm['fixture'] != False:
+            stage.set_progress('analysis')
+            gobject.timeout_add(100, self._analysis, scanner, stage)
+        else:
+            scanner.free()
+            sm['stage'] = 'done'
+            stage.set_progress('done', completed=True)
+
+    def _analysis(self, scaner, stage):
+
+        scanner.free()
+        stage.set_progress('done', completed=True)
+        sm['stage'] = 'done'
+        return False
 
 class Project_Controller(controller_generic.Controller):
 

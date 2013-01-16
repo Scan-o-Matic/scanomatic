@@ -84,6 +84,7 @@ class Scanner(object):
         self._usb_address = None
 
         self._pm = self._config.get_pm(name, logger=logger)
+        self._is_on = None
 
         self._lock_path = self._paths.lock_scanner_pattern.format(
             self._config.get_scanner_socket(self._name))
@@ -415,7 +416,9 @@ class Scanner(object):
 
         return self._lock_in_file()
 
-    def scan(self, mode, filename):
+    def on(self):
+
+        is_on = None
 
         if self.get_claimed_by_other() == False:
 
@@ -437,9 +440,32 @@ class Scanner(object):
 
             #Allow next proc to power up scanner
             self._remove_from_power_up_queue()
+            self._is_on = is_on
+
+        return is_on
+
+    def off(self):
+
+        is_on = None
+        if self.get_claimed_by_other() == False:
+
+            #Power down and remove scanner address lock
+            is_on = not self._pm.off()
+            self._remove_scanner_address_lock()
+            self._is_on = is_on
+
+        return is_on
+
+    def scan(self, mode, filename, auto_off=True):
+
+        if self.get_claimed_by_other() == False:
+
+            #Turn on
+            if self._is_on != True:
+                self.on()
 
             #Scan
-            if is_on:
+            if self._is_on:
 
                 self._logger.info("Configurating for scan")
                 scanner = resource_sane.Sane_Base(owner=self,
@@ -450,9 +476,8 @@ class Scanner(object):
 
                 scanner.AcquireByFile(filename=filename, scanner=self._usb_address)
 
-                #Power down and remove scanner address lock
-                self._pm.off()
-                self._remove_scanner_address_lock()
+                if auto_off:
+                    self.off()
 
                 return True
 

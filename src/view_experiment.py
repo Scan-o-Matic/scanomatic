@@ -123,6 +123,219 @@ class Top_Project_Running(Top):
 
         self.show_all()
 
+
+class Top_One(Top):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Top_One, self).__init__(controller, model)
+
+        self._specific_model = specific_model
+
+        self.show_all()
+
+
+class Stage_One(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        super(Stage_One, self).__init__(0, False)
+
+        self.gtk_handlers = dict()
+
+        #INTRO
+        label = gtk.Label()
+        label.set_markup(model[controller.get_model_intro_key()])
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        #FIXTURE AND SCANNER
+        frame = gtk.Frame(model['one-stage-fixture_scanner'])
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        hbox = gtk.HBox(False, 0)
+        frame.add(hbox)
+        label = gtk.Label(model['one-stage-scanner'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self.scanner = gtk.combo_box_new_text()
+        self.gtk_handlers['scanner-changed'] = self.scanner.connect(
+            "changed", controller.set_new_scanner)
+        hbox.pack_start(self.scanner, False, False, PADDING_MEDIUM)
+        label = gtk.Label(model['one-stage-fixture'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self.fixture = gtk.combo_box_new_text()
+        self.gtk_handlers['fixture-changed'] = self.fixture.connect(
+            "changed", controller.set_new_fixture)
+        hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
+
+        #RUN-TYPES
+        frame = gtk.Frame(model['one-stage-run-frame'])
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        vbox = gtk.VBox(False, 0)
+        hbox = gtk.HBox(False, 0)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
+        self._button_1 = gtk.Button(label=model['one-stage-power-up'])
+        self._button_1_command = ['power-up']
+        self._button_1.connect('clicked', controller.set_run,
+            self._button_1_command)
+        hbox.pack_start(self._button_1, False, False, PADDING_MEDIUM)
+        self._button_2 = gtk.Button(label=model['one-stage-run-all'])
+        self._button_2_command = ['run-all']
+        self._button_2.connect('clicked', controller.set_run,
+            self._button_2_command)
+        hbox.pack_start(self._button_2, False, False, PADDING_MEDIUM)
+        frame.add(vbox)
+
+        #PROGRESS
+        frame = gtk.Frame(model['one-stage-progress'])
+        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        hbox = gtk.HBox(False, 0)
+        frame.add(hbox)
+        self._progress_on = gtk.Label()
+        self._progress_on.set_markup(model['one-stage-progress-not-run'].format(
+            model['one-stage-progress-power-on']))
+        hbox.pack_start(self._progress_on, False, False, PADDING_SMALL)
+        self._progress_scan = gtk.Label()
+        self._progress_scan.set_markup(model['one-stage-progress-not-run'].format(
+            model['one-stage-progress-scan']))
+        hbox.pack_start(self._progress_scan, False, False, PADDING_SMALL)
+        self._progress_off = gtk.Label()
+        self._progress_off.set_markup(model['one-stage-progress-not-run'].format(
+            model['one-stage-progress-power-off']))
+        hbox.pack_start(self._progress_off, False, False, PADDING_SMALL)
+        self._progress_analysis = gtk.Label()
+        self._progress_analysis.set_markup(model['one-stage-progress-not-run'].format(
+            model['one-stage-progress-analysis']))
+        hbox.pack_start(self._progress_analysis, False, False, PADDING_SMALL)
+        self._progress_done = gtk.Label()
+        self._progress_done.set_markup(model['one-stage-progress-not-run'].format(
+            model['one-stage-progress-done']))
+        hbox.pack_start(self._progress_done, False, False, PADDING_SMALL)
+
+        self.set_fixtures()
+        self.set_scanners()
+        self.set_run_stage('not-ready')
+
+
+        self.show_all()
+
+    def set_progress(self, stage, completed=False, surpass=None,
+        failed=None):
+
+        m = self._model
+
+        if completed:
+            progress = m['one-stage-progress-completed']
+        else:
+            progress = m['one-stage-progress-running']
+
+        if surpass:
+            progress = m['one-stage-progress-pass']
+        elif surpass == False:
+            progress = m['one-stage-progress-not-run']
+        if failed:
+            progress = m['one-stage-progress-error']
+
+        if stage == 'on':
+            widget = self._progress_on
+            text = m['one-stage-progress-power-on']
+        elif stage == 'scan':
+            widget = self._progress_scan
+            text = m['one-stage-progress-scan']
+        elif stage == 'off':
+            widget = self._progress_off
+            text = m['one-stage-progress-power-off']
+        elif stage == 'analysis':
+            widget = self._progress_analysis
+            text = m['one-stage-progress-analysis']
+        elif stage == 'done':
+            widget = self._progress_done
+            text = m['one-stage-progress-done']
+
+        widget.set_markup(progress.format(text))
+    
+    def set_run_stage(self, stage):
+
+        m = self._model
+
+        if stage in ('running', 'not-ready'):
+
+            self._button_1.set_sensitive(False)
+            self._button_2.set_sensitive(False)
+
+        if stage == 'ready':
+
+            self._button_1.set_sensitive(True)
+            self._button_2.set_sensitive(True)
+
+        elif stage == 'started':
+
+            self.fixture.set_sensitive(False)
+            self.scanner.set_sensitive(False)
+
+        elif stage == 'power-on':
+
+            self._button_1.set_label(m['one-stage-scan'])
+            self._button_1_command[0] = 'scan'
+            self._button_2.set_label(m['one-stage-complete'])
+            self._button_2_command[0] = 'complete'
+
+    def set_fixtures(self):
+
+        fixtures = self._controller.get_top_controller().fixtures.get_names()
+        m = self._model
+
+        widget_model = self.fixture.get_model()
+
+        if len(widget_model) == 0:
+            self.fixture.append_text(m['one-stage-no-fixture'])
+
+
+        for row in widget_model:
+            if row[0] not in fixtures and row[0] != m['one-stage-no-fixture']:
+                widget_model.remove(row.iter)
+            fixtures = [fix for fix in fixtures if fix != row[0]]
+
+        for f in sorted(fixtures):
+            self.fixture.append_text(f)
+        
+    def set_scanners(self):
+
+        scanners = self._controller.get_top_controller().scanners.get_names(available=True)
+        for s in self.scanner:
+            if s not in scanners:
+                self.scanner.remove(s)
+            scanners = [sc for sc in scanners if sc != s]
+
+        for s in scanners:
+            self.scanner.append_text(s)
+
+    def update_scanner(self):
+
+        scanner = self._specific_model['scanner']
+        self.scanner.handler_block(self.gtk_handlers['scanner-changed'])
+        if scanner is None:
+
+            self.scanner.set_active(-1)
+
+        else:
+
+            widget_model = self.scanner.get_model()
+            for i, row in enumerate(widget_model):
+
+                if row[0] == scanner:
+                    self.scanner.set_active(i)
+                    break
+
+        self.scanner.handler_unblock(self.gtk_handlers['scanner-changed'])
+
+    def force_no_fixture(self):
+
+        self.fixture.set_active(0)
+        self.fixture.set_sensitive(False)
+
 class Stage_Project_Running(gtk.VBox):
 
     def __init__(self, controller, model, specific_model):
