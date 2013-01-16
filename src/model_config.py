@@ -61,7 +61,7 @@ model = {
 'config-settings': 'Settings',
 
 ###POWER MANAGER
-'config-pm': 'Powever Manager Type',
+'config-pm': 'Power Manager Type',
 'config-pm-usb': 'USB',
 'config-pm-lan': 'LAN/NETWORK',
 
@@ -69,5 +69,5 @@ model = {
 'config-scanners': 'Number of Scanners',
 
 #SAVE
-'config-settings-save': 'Save Settings',
+'config-settings-save': 'Save and Apply Settings',
 }

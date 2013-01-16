@@ -127,6 +127,7 @@ class Settings_Cont(gtk.VBox):
 
         ##SAVE
         button = gtk.Button(label=model['config-settings-save'])
+        button.connect('clicked', controller.save_current_config)
         table.attach(button, 0, 1, 2, 3)
         self.show_all()
 
@@ -151,3 +152,18 @@ class Settings_Cont(gtk.VBox):
 
         if s_type in ('scanners', 'all'):
             self._scanners.handler_unblock(self._scanners_signal)
+
+    def update_scanners(self, scanners):
+
+        self.set_signal_block('scanners')
+        self._scanners.set_text(str(scanners))
+        self.set_signal_unblock('scanners')
+
+    def update_pm(self, pm_type):
+
+        self.set_signal_block('pm')
+        if pm_type == 'lan':
+            self._pm_lan.set_active(True)
+        elif pm_type == 'usb':
+            self._pm_usb.set_active(True)
+        self.set_signal_unblock('pm')

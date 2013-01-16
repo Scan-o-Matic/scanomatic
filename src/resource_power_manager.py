@@ -81,6 +81,20 @@ class USB_PM(object):
         return True
 
 
+class NO_PM(object):
+
+    def __init__(*args, **kwargs):
+
+        pass
+
+    def on(self):
+
+        return True
+
+    def ofF(self):
+
+        return True
+
 
 class USB_PM_LINUX(USB_PM):
     """Class for handling USB connected PM:s on linux."""

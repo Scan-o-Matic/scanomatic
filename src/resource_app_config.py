@@ -13,12 +13,15 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import types
+
 #
 # INTERNAL DEPENDENCIES
 #
 
 import src.resource_power_manager as resource_power_manager
 import src.resource_path as resource_path
+import src.resource_config as resource_config
 
 #
 # CLASSES
@@ -56,19 +59,39 @@ class Config(object):
             'Scanner 3': 3,
             'Scanner 4': 4}
 
-        self.pm_type = 'USB'
+        self.pm_type = 'usb'
         self._pm_host = "192.168.0.100"
         self._pm_pwd = None
         self._pm_verify_name = False
         self._pm_MAC = None
         self._pm_name = "Server 1"
 
-        if self.pm_type == 'USB':
+        #LOAD CONFIG FROM FILE
+        self._load_config_from_file()
+
+        self._set_pm_extras()
+
+    def _load_config_from_file(self):
+
+        self._config_file = resource_config.Config_File(
+            self._paths.config_main_app)
+
+        scanners = self._config_file['number-of-scanners']
+        if scanners is not None:
+            self.number_of_scanners = scanners
+
+        pm = self._config_file['pm-type']
+        if pm is not None:
+            self.pm_type = pm
+
+    def _set_pm_extras(self):
+
+        if self.pm_type == 'usb':
 
             self._PM = resource_power_manager.USB_PM_LINUX
             self._pm_arguments={}
 
-        elif self.pm_type == 'LAN':
+        elif self.pm_type == 'lan':
             self._PM = resource_power_manager.LAN_PM
 
             self._pm_arguments = {'host': self._pm_host,
@@ -77,6 +100,27 @@ class Config(object):
                 'pm_name':self._pm_name,
                 'MAC':self._pm_MAC,
                 }
+        else:
+            self._PM = resource_power_manager.NO_PM
+            self._pm_arguments={}
+
+    def set(self, key, value):
+
+        if key == 'pm-type':
+            if value in ('usb', 'lan'):
+                self.pm_type = value
+                self._set_pm_extras()
+
+        elif key == 'number-of-scanners':
+
+            if type(value) == types.IntType and 0 <= value <= 4:
+                self.number_of_scanners = value
+
+    def save_settings(self):
+
+        self._config_file['pm-type'] = self.pm_type
+        self._config_file['number-of-scanners'] = self.number_of_scanners
+        self._config_file.save()
 
     def get_scanner_model(self, scanner):
 

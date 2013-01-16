@@ -64,6 +64,9 @@ class Paths(object):
         self.analysis = os.sep.join((self.root, "run_analysis.py"))
         self.experiment = os.sep.join((self.root, "run_experiment.py"))
 
+        #CONFIG
+        self.config_main_app = os.sep.join((self.config, 'main.config'))
+ 
         #IMAGES
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
         self.martin = os.sep.join((self.images, "martin3.png"))

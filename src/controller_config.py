@@ -47,6 +47,31 @@ class Config_Controller(controller_generic.Controller):
             logger=logger)
 
         self._paths = self.get_top_controller().paths
+        self._scanners = 3
+        self._pm_type = 'usb'
+
+        tc = self.get_top_controller()
+        self.config = tc.config
+
+        self.load_current_config()
+        self.update_view()
+
+    def load_current_config(self):
+
+        self._scanners = self.config.number_of_scanners
+        self._pm_type = self.config.pm_type
+
+
+    def _apply_current_config(self):
+
+        self.config.set('pm-type', self._pm_type)
+        self.config.set('number-of-scanners', self._scanners)
+
+    def save_current_config(self, widget=None):
+
+        self._apply_current_config()
+        
+        self.config.save_settings()
 
     def _get_default_view(self):
 
@@ -171,3 +196,32 @@ class Config_Controller(controller_generic.Controller):
             return D_path
         except:
             return None
+
+    def set_pm_type(self, widget, pm_type):
+
+        if widget.get_active() == True:
+            self._pm_type = pm_type
+
+    def set_scanners(self, widget):
+
+        val = widget.get_text()
+
+        if val != "":
+            try:
+                v = int(val)
+            except:
+                v = self._scanners
+
+            if v > 4:
+                v = 4
+
+            if str(v) != val:
+                self.get_view().get_stage().update_scanners(v)
+
+            self._scanners = v
+
+    def update_view(self):
+
+        stage = self.get_view().get_stage()
+        stage.update_scanners(self._scanners)
+        stage.update_pm(self._pm_type)
