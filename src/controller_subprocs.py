@@ -285,11 +285,22 @@ class Subprocs_Controller(controller_generic.Controller):
 
     def produce_free_scanners(self, widget):
 
-        pass
-
+        self.get_top_controller().add_contents_from_controller(
+            view_subprocs.Free_Scanners(self, self._model,
+            self._specific_model), self._model['free-scanners'],
+            self)
+    
     def produce_running_analysis(self, widget):
 
         self.get_top_controller().add_contents_from_controller(
             view_subprocs.Running_Analysis(self, self._model,
             self._specific_model), self._model['running-analysis'],
             self)
+
+    def produce_errors_and_warnings(self, widget):
+
+        self.get_top_controller().add_contents_from_controller(
+            view_subprocs.Errors_And_Warnings(self, self._model,
+            self._specific_model), self._model['collected-messages'],
+            self)
+

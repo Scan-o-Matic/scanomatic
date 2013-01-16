@@ -4,7 +4,11 @@
 
 --- HOT ---
 
-*** GRIDDING isn't reliable
+*** STARTUP: Reconnect to subprocs and clean up if needed
+
+*** EXPERIMENT Check that progressbar is nice
+
+*** SUBPROCS ANALYSIS: Make possiblility of inspecting gridding
 
 *** ANALYSE ONE should give visual warning when capping
 
@@ -101,6 +105,9 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+
+*** GRIDDING isn't reliable
 
 *** FIXTURE: All should use path-resource to get filenames
 

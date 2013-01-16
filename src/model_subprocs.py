@@ -84,6 +84,14 @@ and when to expect the results.</i></span>
 'running-analysis-progress-bar-elapsed': 'Elapsed time: {0:.1f} min',
 'running-analysis-progress-bar-eta': "Expected to finnish in {0:.2f} h",
  
+#FREE SCANNERS
+'free-scanners-intro': """<span size="x-large">Free Scanners</span>""",
+'free-scanners-frame': 'Scanners',
+
+#COLLECTED-MESSAGES / ERRORS AND WARNINGS
+'collected-messages-intro': 
+"""<span size="x-large">Errors and Warnings</span>
+<span><i>Not yet implemented</i></span>""",
 }
 
 

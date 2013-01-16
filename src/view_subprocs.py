@@ -101,6 +101,7 @@ class Subprocs_View(gtk.Frame):
 
         self.messages = gtk.Button()
         self.messages.set_label(str(specific_model['collected-messages']))
+        self.messages.connect("clicked", controller.produce_errors_and_warnings)
         table.attach(self.messages, 1, 2, 3, 4)
 
         self.show_all()
@@ -308,3 +309,60 @@ class Running_Experiments(gtk.VBox):
                 progress.set_text("Done!")
 
         return True
+
+
+class Free_Scanners(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Free_Scanners, self).__init__(False, 0)
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        label = gtk.Label()
+        label.set_markup(model['free-scanners-intro'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        frame = gtk.Frame(model['free-scanners-frame'])
+        self.pack_start(frame, False, False, PADDING_LARGE)
+
+        self._scanners = gtk.HBox(False, 0)
+
+        frame.add(self._scanners)
+
+        self.show_all()
+        gobject.timeout_add(23, self.update,
+            controller.get_top_controller().scanners)
+
+    def update(self, scanners):
+
+        for child in self._scanners:
+            self._scanners.remove(child)
+
+        for scanner in scanners.get_names():
+
+            label = gtk.Label(scanner)
+            self._scanners.pack_start(label, False, False, PADDING_LARGE)
+
+        self._scanners.show_all()
+
+        return True
+
+
+class Errors_And_Warnings(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Errors_And_Warnings, self).__init__(False, 0)
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        label = gtk.Label()
+        label.set_markup(model['collected-messages-intro'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        self.show_all()
