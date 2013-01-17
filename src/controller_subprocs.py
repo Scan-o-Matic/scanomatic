@@ -316,7 +316,7 @@ class Subprocs_Controller(controller_generic.Controller):
                     pid = proc.pid
 
                     self.add_subprocess(proc, 'analysis', pid=pid,
-                        stdout=stdout_path, stderr=stderr_path, sm=psm,
+                        stdout=stdout_path, stderr=stderr_path, psm=psm,
                         proc_name=proc_name)
 
                 else:  # Report problem to user!
