@@ -237,7 +237,7 @@ class Scanner(object):
                 return False
 
             for i in range(len(queue) - 1, -1, -1):
-                if queue[i] == self._uuid:
+                if queue[i].strip() == self._uuid:
                     del queue[i]
 
             try:

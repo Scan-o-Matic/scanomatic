@@ -157,11 +157,17 @@ class Subprocs_Controller(controller_generic.Controller):
             lines = []
 
         for i in range(len(lines) - 1, -1, -1):
-            if lines[i].strip() in ids:
+            if lines[i].strip() not in ids:
+                logger.info(
+                    "Removing scanner uuid {0} from start-up queue".format(
+                    lines[i].strip()))
+
                 del lines[i]
 
+        logger.info('Start-up queue is {0}'.format(lines))
+
         try:
-            fh = open(paths.lock_power_up_new_scanner, 'r')
+            fh = open(paths.lock_power_up_new_scanner, 'w')
             fh.writelines(lines)
             fh.close()
         except:

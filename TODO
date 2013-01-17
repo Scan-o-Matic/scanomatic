@@ -4,12 +4,19 @@
 
 --- HOT ---
 
+*** EXPERIMENT ONE: Make GUI not HANG
+
+*** EXPERIMENT ONE: The gui run all return red on power down?
+
 *** STARTUP: Reconnect to subprocs and clean up if needed
 
     * Half-done, progress for running experiment doesn't look nice and
     probably don't work correctly (psm should be filled out)
 
 *** EXPERIMENT Check that progressbar is nice
+        just make it go on estimated time
+
+*** Make shortcut doesn't work
 
 *** ANALYSE ONE should give visual warning when capping
 
@@ -107,6 +114,8 @@
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
 
+
+*** New Scanner Lock not emptied
 
 *** SUBPROCS ANALYSIS: Make possiblility of inspecting gridding
 
