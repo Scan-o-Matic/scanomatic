@@ -75,14 +75,15 @@ To stop, write 'stop' below and then presss the yes-button.</i></span>
 'running-analysis-intro':
 """<span size="x-large">Running analysis</span>
 
-<span><i>Here you can see which analysis that are running,
-and when to expect the results.</i></span>
+<span><i>Here you can see which analysis that are running, and when to expect the results.
+As soon as gridding is done you can see how it worked.</i></span>
 """,
 'running-analysis-running': 'Running analysis start-up procedures',
 'running-analysis-current': 'Analysing {0} of {1}',
 'running-analysis-done': 'Done!',
 'running-analysis-progress-bar-elapsed': 'Elapsed time: {0:.1f} min',
 'running-analysis-progress-bar-eta': "Expected to finnish in {0:.2f} h",
+'running-analysis-view-gridding': 'Inspect Gridding',
  
 #FREE SCANNERS
 'free-scanners-intro': """<span size="x-large">Free Scanners</span>""",
@@ -92,6 +93,9 @@ and when to expect the results.</i></span>
 'collected-messages-intro': 
 """<span size="x-large">Errors and Warnings</span>
 <span><i>Not yet implemented</i></span>""",
+
+#VIEW GRIDDING
+'view-plate-pattern': '<span size="large">Plate {0}</span>',
 }
 
 

@@ -305,7 +305,7 @@ class Grid_Array():
 
         else:
 
-            save_grid_name += "{0}.png".format(self._identifier[1])
+            save_grid_name += "{0}.png".format(self._identifier[1] + 1)
             self.logger.info("ANALYSIS GRID: Saving grid-image as file" +\
                         " '{0}' for plate {1}".format(
                         save_grid_name, self._identifier[1]))

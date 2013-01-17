@@ -322,7 +322,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
             else:
 
-                lines = self._get_stdout_since_last_time(p)
+                lines = self._get_output_since_last_time(p, 'stdout')
                 i_started = re.findall(r'__Is__ (.*)$', lines) 
                 i_done = re.findall(r'__Id__ (.*)$', lines) 
 
@@ -349,9 +349,9 @@ class Subprocs_Controller(controller_generic.Controller):
 
             else:
 
-                lines = self._get_stdout_since_last_time(p)
-                progress = re.findall(r'INFO: __Is__ ([0-9]*)', lines)
-                total = re.findall(r'INFO: ANALYSIS: A total of ([0-9]*)', lines)
+                lines = self._get_output_since_last_time(p, 'stderr')
+                progress = re.findall(r'__Is__ ([0-9]*)', lines)
+                total = re.findall(r'A total of ([0-9]*)', lines)
 
                 if len(total) > 0:
                     p['progress-total-number'] = int(total[0])
@@ -359,7 +359,7 @@ class Subprocs_Controller(controller_generic.Controller):
                 if len(progress) > 0 and 'progress-total-number' in p:
                     p['progress'] = (float(progress[-1]) - 1) / \
                         p['progress-total-number']
-                    if '1' in progress:
+                    if 'progress-init-time' not in p:
                         p['progress-init-time'] = time.time() - p['start-time']
                     if progress != ['1']:
                         p['progress-elapsed-time'] = (time.time() -
@@ -374,15 +374,15 @@ class Subprocs_Controller(controller_generic.Controller):
 
         return True
 
-    def _get_stdout_since_last_time(self, p):
+    def _get_output_since_last_time(self, p, feed):
 
         lines = ""
         try:
-            fh = open(p['stdout'], 'r')
-            if 'stdout-pos' in p:
-                fh.seek(p['stdout-pos'])
+            fh = open(p[feed], 'r')
+            if 'output-pos' in p:
+                fh.seek(p['output-pos'])
             lines = fh.read()
-            p['stdout-pos'] = fh.tell()
+            p['output-pos'] = fh.tell()
             fh.close()
         except:
             pass
@@ -466,3 +466,11 @@ class Subprocs_Controller(controller_generic.Controller):
             self._specific_model), self._model['collected-messages'],
             self)
 
+    def produce_gridding_images(self, widget, p):
+
+        proj_dir = p['sm']['analysis-project-log_file_dir']
+        proj_prefix = proj_dir.split(os.sep)[-1]
+
+        self.get_top_controller().add_contents_from_controller(
+            view_subprocs.View_Gridding_Images(self, self._model,
+            p['sm']), proj_prefix, self)

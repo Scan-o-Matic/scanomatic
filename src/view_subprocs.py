@@ -150,10 +150,14 @@ class Running_Analysis(gtk.VBox):
             hbox = gtk.HBox(False, 0)
             info = gtk.Label(model['running-analysis-running'])
             hbox.pack_start(info, True, True, PADDING_LARGE)
+            grid_button = gtk.Button(label=model['running-analysis-view-gridding'])
+            grid_button.connect("clicked", controller.produce_gridding_images, p)
+            grid_button.set_sensitive(False)
+            hbox.pack_start(grid_button, False, False, PADDING_MEDIUM)
             vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
             self.pack_start(frame, False, False, PADDING_LARGE)
 
-            self._stuff.append((p, progress, info))
+            self._stuff.append((p, progress, info, grid_button))
         
            
         self.show_all()
@@ -164,7 +168,7 @@ class Running_Analysis(gtk.VBox):
         m = self._model
         running_procs = self._controller.get_subprocesses(self, by_type='analysis')
 
-        for i, (p, progress, info) in enumerate(self._stuff):
+        for i, (p, progress, info, grid_button) in enumerate(self._stuff):
             
             if p not in running_procs:
 
@@ -177,6 +181,7 @@ class Running_Analysis(gtk.VBox):
 
                 if 'progress-current-image' in p:
 
+                    grid_button.set_sensitive(True)
                     info.set_text(m['running-analysis-current'].format(
                         p['progress-current-image'],
                         p['progress-total-number']))
@@ -364,5 +369,44 @@ class Errors_And_Warnings(gtk.VBox):
         label = gtk.Label()
         label.set_markup(model['collected-messages-intro'])
         self.pack_start(label, False, False, PADDING_LARGE)
+
+        self.show_all()
+
+class View_Gridding_Images(gtk.ScrolledWindow):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(View_Gridding_Images, self).__init__()
+
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        sm = specific_model
+
+        plate = 1
+        file_pattern = "grid___origin_plate_{0}.png"
+        file_path = os.sep.join((sm['analysis-project-log_file_dir'],
+            sm['analysis-project-output-path'],
+            file_pattern))
+
+        hbox = gtk.HBox(False, 0)
+        self.add_with_viewport(hbox)
+        
+        while True:
+
+            if os.path.isfile(file_path.format(plate)):
+                vbox = gtk.VBox(False, 0)
+                label = gtk.Label()
+                label.set_markup(model['view-plate-pattern'].format(plate))
+                vbox.pack_start(label, False, False, PADDING_LARGE)
+                image = gtk.Image()
+                image.set_from_file(file_path.format(plate))
+                vbox.pack_start(image, False, False, PADDING_LARGE)
+                hbox.pack_start(vbox, False, False, PADDING_LARGE)
+            else:
+                break
+
+            plate += 1
 
         self.show_all()

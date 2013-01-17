@@ -58,7 +58,7 @@ def get_adaptive_threshold(im, threshold_filter=None, segments=60,
 
     for l in range(1, labels + 1):
 
-        if (labled==l).sum() > 1:
+        if (labled==l).sum() > 1 and im[labled == l].std() !=0:
 
             T[ndimage.binary_dilation(labled == l, iterations=4)] = \
                  threshold_filter(im[labled == l], *args, **kwargs)

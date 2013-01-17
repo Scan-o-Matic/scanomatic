@@ -11,8 +11,6 @@
 
 *** EXPERIMENT Check that progressbar is nice
 
-*** SUBPROCS ANALYSIS: Make possiblility of inspecting gridding
-
 *** ANALYSE ONE should give visual warning when capping
 
     * GUI is there, just need to thread analysis
@@ -109,6 +107,8 @@
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
 
+
+*** SUBPROCS ANALYSIS: Make possiblility of inspecting gridding
 
 *** GRIDDING isn't reliable
 
