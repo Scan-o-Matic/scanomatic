@@ -334,13 +334,14 @@ class Subprocs_Controller(controller_generic.Controller):
 
                 if len(i_done) > 0:
 
-                    p['progress'] = int(i_done[-1])
-
+                    p['progress'] = int(i_done[-1]) + 1
+            
+                """
                 if len(i_started) > 0 and \
                     int(p['progress']) < int(i_started[-1]):
 
                     p['progress'] += 0.5
-
+                """
 
         #CHECK FOR TERMINATED ANALYSIS
         for p in self.get_subprocesses(by_type='analysis'):

@@ -302,16 +302,27 @@ class Running_Experiments(gtk.VBox):
         for i, (p, progress, info) in enumerate(self._stuff):
             
             if p not in running_procs:
-                del self._stuff[i] 
-            elif p['sm']['scans'] is not None and p['sm']['scans'] > p['progress']:
-                
-                progress.set_fraction(p['progress']/float(p['sm']['scans']))
-                eta = (p['sm']['scans'] - p['progress']) * p['sm']['interval'] / 60.0
-                progress.set_text("Expected to finnish in {0:.2f}h".format(eta))
-                info.set_text("Feedback not yet implemented")
-            else:
+
                 progress.set_fraction(1.0)
                 progress.set_text("Done!")
+                del self._stuff[i] 
+
+            elif p['sm']['scans'] is not None:
+                
+                
+                progress.set_fraction(p['progress']/float(p['sm']['scans']))
+                full_time = p['sm']['scans'] * p['sm']['interval'] * 60 + p['start-time']
+                eta = (full_time - time.time()) / 3600.0
+                if eta < 0:
+                    eta = 0
+                progress.set_text("Expected to free scanner in {0:.2f}h".format(eta))
+                info.set_text("Feedback not yet implemented")
+
+            else:
+
+                progress.set_fraction(0.0)
+                progress.set_text("Unable to get progress info...")
+
 
         return True
 
