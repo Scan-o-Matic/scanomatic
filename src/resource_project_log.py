@@ -20,6 +20,7 @@ import logging
 import uuid
 import os
 import copy
+import types
 
 #
 # EXCEPTIONS
@@ -151,6 +152,13 @@ def get_meta_data(path = None):
 
         meta_data = copy.copy(META_DATA)
         set_uuid(meta_data)
+
+    if ('Pinning Matrices' in meta_data and 
+        meta_data['Pinning Matrices'] is not None):
+
+        for i, m in meta_data['Pinning Matrices']:
+            if type(m) == types.ListType:
+                meta_data['Pinning Matrices'][i] = tuple(m)
 
     return meta_data
 
