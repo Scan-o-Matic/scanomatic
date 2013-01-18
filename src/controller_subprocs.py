@@ -295,7 +295,8 @@ class Subprocs_Controller(controller_generic.Controller):
 
                     proc_name = os.sep.join((psm['experiments-root'], 
                         psm['experiment-prefix'],
-                        tc.paths.experiment_first_pass_analysis_relative))
+                        tc.paths.experiment_first_pass_analysis_relative.format(
+                        psm['experiment-prefix'])))
 
                     a_dict['-i'] = proc_name
 

@@ -121,7 +121,7 @@ def get_segments_by_size(im, min_size, max_size=-1, inplace=True):
 
 
 def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
-    leeway=1.1):
+    leeway=1.1, expected_start=(100, 100)):
     """Gets the parameters of the ideal grid based on detected candidate
     intersects.
 
@@ -129,27 +129,42 @@ def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
 
     where offsets describe coordinates for position (0, 0) of the grid.
     """
+
+    if X.size == 0:
+
+        return expected_start[0] , expected_start[1], expected_distance, expected_distance
+
     #Calculate row/column distances
     XX = X.reshape((1, X.size))
     dX = np.abs(XX - XX.T).reshape((1, X.size ** 2))
     dxs = dX[np.where(np.logical_and(dX > expected_distance / leeway,
                                      dX < expected_distance * leeway))]
-    dx = dxs.mean()
+    if dxs.size == 0:
+        dx = expected_distance
+        x_offset = expected_start[0]
+    else:
+        dx = dxs.mean()
+
+        #Calculate the offsets
+        Ndx = np.array([np.arange(grid_shape[0])]) * dx
+        x_offsets = XX - Ndx.T
+        x_offset = np.median(x_offsets)
 
     YY = Y.reshape((1, Y.size))
     dY = np.abs(YY - YY.T).reshape((1, Y.size ** 2))
     dys = dY[np.where(np.logical_and(dY > expected_distance / leeway,
                                      dY < expected_distance * leeway))]
-    dy = dys.mean()
 
-    #Calculate the offsets
-    Ndx = np.array([np.arange(grid_shape[0])]) * dx
-    x_offsets = XX - Ndx.T
-    x_offset = np.median(x_offsets)
+    if dys.size == 0:
+        dy = expected_distance
+        y_offset = expected_start[0]
+    else:
+        dy = dys.mean()
 
-    Ndy = np.array([np.arange(grid_shape[1])]) * dy
-    y_offsets = YY - Ndy.T
-    y_offset = np.median(y_offsets)
+        #Calculate the offsets
+        Ndy = np.array([np.arange(grid_shape[1])]) * dy
+        y_offsets = YY - Ndy.T
+        y_offset = np.median(y_offsets)
 
     return x_offset, y_offset, dx, dy
 
