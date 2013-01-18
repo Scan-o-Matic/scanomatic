@@ -49,6 +49,7 @@ class Config_Controller(controller_generic.Controller):
         self._paths = self.get_top_controller().paths
         self._scanners = 3
         self._pm_type = 'usb'
+        self._experiments_root = self._paths.experiment_root
 
         tc = self.get_top_controller()
         self.config = tc.config
@@ -66,6 +67,7 @@ class Config_Controller(controller_generic.Controller):
 
         self.config.set('pm-type', self._pm_type)
         self.config.set('number-of-scanners', self._scanners)
+        self._paths.experiment_root = self._experiments_root
 
     def save_current_config(self, widget=None):
 
@@ -220,8 +222,15 @@ class Config_Controller(controller_generic.Controller):
 
             self._scanners = v
 
+    def set_new_experiments_root(self, exp_path):
+
+        self._experiments_root = exp_path
+        stage = self.get_view().get_stage()
+        stage.update_experiments_root(exp_path)
+
     def update_view(self):
 
         stage = self.get_view().get_stage()
         stage.update_scanners(self._scanners)
         stage.update_pm(self._pm_type)
+        stage.update_experiments_root(self._experiments_root)

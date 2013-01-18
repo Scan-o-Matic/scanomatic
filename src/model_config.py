@@ -68,6 +68,9 @@ model = {
 ##SCANNERS
 'config-scanners': 'Number of Scanners',
 
+##EXPERIMENTS-ROOT
+'config-settings-experiments-root': 'Select Experiments Root',
+
 #SAVE
 'config-settings-save': 'Save and Apply Settings',
 }

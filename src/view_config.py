@@ -72,6 +72,12 @@ class Settings_Cont(gtk.VBox):
 
         super(Settings_Cont, self).__init__(False, 0)
 
+        self._controller = controller
+        self._model = model
+        tc = controller.get_top_controller()
+        config = tc.config
+        paths = tc.paths
+
         #INSTALL
         frame = gtk.Frame(model['config-install'])
         self.pack_start(frame, False, False, PADDING_LARGE)
@@ -125,11 +131,33 @@ class Settings_Cont(gtk.VBox):
             controller.set_scanners)
         table.attach(self._scanners, 1, 2, 1, 2)
 
+        ##EXPERIMENT ROOT
+        button = gtk.Button(
+            label=model['config-settings-experiments-root'])
+        table.attach(button, 0, 1, 2, 3)
+        self._experiment_root = gtk.Label(
+            "{0}".format(paths.experiment_root))
+        button.connect('clicked', self.set_new_experiments_root,
+            self._experiment_root)
+        table.attach(self._experiment_root, 1, 2, 2, 3)
+
         ##SAVE
         button = gtk.Button(label=model['config-settings-save'])
         button.connect('clicked', controller.save_current_config)
-        table.attach(button, 0, 1, 2, 3)
+        table.attach(button, 0, 1, 3, 4)
         self.show_all()
+
+    def set_new_experiments_root(self, widget, path_widget):
+
+        file_list = select_dir(path_widget.get_text())
+
+        if file_list is not None:
+
+            self._controller.set_new_experiments_root(file_list)
+
+    def update_experiments_root(self, p):
+
+        self._experiment_root.set_text(p)
 
     def set_signal_block(self, s_type):
 

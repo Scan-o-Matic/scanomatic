@@ -85,6 +85,10 @@ class Config(object):
         if pm is not None:
             self.pm_type = pm
 
+        experiments_root = self._config_file['experiments-root']
+        if experiments_root is not None:
+            self._paths.experiment_root = experiments_root
+
     def _set_pm_extras(self):
 
         if self.pm_type == 'usb':
@@ -121,6 +125,7 @@ class Config(object):
 
         self._config_file['pm-type'] = self.pm_type
         self._config_file['number-of-scanners'] = self.number_of_scanners
+        self._config_file['experiments-root'] = self._paths.experiment_root
         self._config_file.save()
 
     def get_scanner_model(self, scanner):
