@@ -369,7 +369,8 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
             save_grid_name=save_grid_name,
             identifier_time=image_pos,
             timestamp=img_dict_pointer['Time'],
-            grayscale_indices=img_dict_pointer['grayscale_indices'])
+            grayscale_indices=img_dict_pointer['grayscale_indices'],
+            image_dict=img_dict_pointer)
 
         #
         # XML WRITE IT TO FILES

@@ -66,9 +66,14 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
 
     logger.info("Image loaded for fixture {0}".format(file_name))
 
+    im_data['im_shape'] = fixture['image'].shape
+
+    logger.info("Image has shape {0}".format(im_data['im_shape']))
+
     fixture.run_marker_analysis(output_function=logger)
 
     logger.info("Marker analysis run".format(file_name))
+
 
     im_data['mark_X'], im_data['mark_Y'] = fixture['markers']            
 

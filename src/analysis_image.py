@@ -174,7 +174,7 @@ class Project_Image():
 
                 self._grid_arrays[grid_array].set_grid(im, save_name=save_name)
 
-    def load_image(self):
+    def load_image(self, image_dict=None):
 
         try:
 
@@ -201,7 +201,12 @@ class Project_Image():
                 self._im_loaded = False
 
         #This makes sure that the image is 'standing' and not a 'landscape'
-        self.im = resource_analysis_support.get_first_rotated(self.im, (0,1))
+        if image_dict is not None and 'Image Shape' in image_dict:
+            ref_shape = image_dict['Image Shape']
+        else:
+            ref_shape = (1, 0)
+
+        self.im = resource_analysis_support.get_first_rotated(self.im, ref_shape)
 
     def get_plate(self, plate_index):
 
@@ -248,18 +253,7 @@ class Project_Image():
                 right = y0
 
             if self.fixture['version'] >= self._config.version_first_pass_change_1:
-                if self._get_slice_sanity_check(d1=lower, d2=right):
-                    return self.im[upper: lower, left: right]
-                else:
-                    raise Slice_Outside_Image(
-                        "im {0} , slice {1}, scaled by {2}, fixture {3} {4}".format(
-                        self.im.shape,
-                        np.s_[upper:lower, left:right],
-                        scale_factor,
-                        self.fixture['name'],
-                        self.fixture['version']))
 
-            else:
                 if self._get_slice_sanity_check(d1=right, d2=lower):
                     return self.im[left: right, upper:lower]
                 else:
@@ -267,6 +261,19 @@ class Project_Image():
                         "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
                         self.im.shape,
                         np.s_[left:right, upper:lower],
+                        scale_factor,
+                        self.fixture['name'],
+                        self.fixture['version']))
+
+            else:
+
+                if self._get_slice_sanity_check(d1=lower, d2=right):
+                    return self.im[upper: lower, left: right]
+                else:
+                    raise Slice_Outside_Image(
+                        "im {0} , slice {1}, scaled by {2}, fixture {3} {4}".format(
+                        self.im.shape,
+                        np.s_[upper:lower, left:right],
                         scale_factor,
                         self.fixture['name'],
                         self.fixture['version']))
@@ -287,7 +294,7 @@ class Project_Image():
     def get_analysis(self, im_path, features, grayscale_values,
             watch_colony=None, save_grid_name=None,
             grid_lock=False, identifier_time=None, timestamp=None,
-            grayscale_indices=None):
+            grayscale_indices=None, image_dict=None):
 
         """
             @param im_path: An path to an image
@@ -320,7 +327,7 @@ class Project_Image():
         if im_path != None:
 
             self._im_path = im_path
-            self.load_image()
+            self.load_image(image_dict=image_dict)
 
         if self._im_loaded == True:
 

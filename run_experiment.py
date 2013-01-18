@@ -360,6 +360,8 @@ class Experiment(object):
                 paths=self.paths,
                 logger=self._logger)
 
+            self._logger.info("{0}".format(im_dict))
+
             im_dict = resource_project_log.get_image_dict(
                 im_path,
                 scan_time,
@@ -367,7 +369,8 @@ class Experiment(object):
                 im_dict['mark_Y'],
                 im_dict['grayscale_indices'],
                 im_dict['grayscale_values'],
-                img_dict=im_dict)
+                img_dict=im_dict,
+                image_shape=im_dict['im_shape'])
 
             self._logger.info("Writing first pass analysis results to file")
 

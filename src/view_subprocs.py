@@ -312,7 +312,7 @@ class Running_Experiments(gtk.VBox):
                 
                 
                 progress.set_fraction(p['progress']/float(p['sm']['scans']))
-                full_time = p['sm']['scans'] * p['sm']['interval'] * 60 + p['start-time']
+                full_time = (1 + p['sm']['scans']) * p['sm']['interval'] * 60 + p['start-time']
                 eta = (full_time - time.time()) / 3600.0
                 if eta < 0:
                     eta = 0
