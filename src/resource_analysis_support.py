@@ -20,6 +20,7 @@ __status__ = "Development"
 import sys
 import os
 import time
+import types
 from matplotlib.font_manager import FontProperties
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -47,6 +48,28 @@ def set_logger(logger):
 
     global _logger
     _logger = logger
+
+
+def get_first_rotated(A, B):
+    """Evaluates if both have the same orientation (lanscape or standing)
+    returns the first so it matches the orientation of the second
+
+    A   numpy arrray to be evaluted
+    B   reference array or a shape-tuple
+
+    returns A
+    """
+
+    landscapeA = A.shape[0] > A.shape[1]
+    if type(B) == types.TupleType:
+        landscapeB = B[0] > B[1]
+    else:
+        landscapeB = B.shape[0] > B.shape[1]
+
+    if landscapeA == landscapeB:
+        return A
+    else:
+        return A.T
 
 
 def get_active_plates(meta_data, suppress_analysis, graph_watch):

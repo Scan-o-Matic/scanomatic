@@ -23,6 +23,7 @@ import numpy as np
 
 import analysis_grid_array
 import resource_fixture_image 
+import resource_analysis_support
 import resource_path
 import resource_app_config
 
@@ -199,6 +200,9 @@ class Project_Image():
                 self.logger.warning("ANALYSIS IMAGE, No image found... sorry")
                 self._im_loaded = False
 
+        #This makes sure that the image is 'standing' and not a 'landscape'
+        self.im = resource_analysis_support.get_first_rotated(self.im, (0,1))
+
     def get_plate(self, plate_index):
 
         if -1 < plate_index < len(self._grid_arrays):
@@ -244,18 +248,6 @@ class Project_Image():
                 right = y0
 
             if self.fixture['version'] >= self._config.version_first_pass_change_1:
-                if self._get_slice_sanity_check(d1=right, d2=lower):
-                    return self.im[left: right, upper:lower]
-                else:
-                    raise Slice_Outside_Image(
-                        "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
-                        self.im.shape,
-                        np.s_[left:right, upper:lower],
-                        scale_factor,
-                        self.fixture['name'],
-                        self.fixture['version']))
-
-            else:
                 if self._get_slice_sanity_check(d1=lower, d2=right):
                     return self.im[upper: lower, left: right]
                 else:
@@ -263,6 +255,18 @@ class Project_Image():
                         "im {0} , slice {1}, scaled by {2}, fixture {3} {4}".format(
                         self.im.shape,
                         np.s_[upper:lower, left:right],
+                        scale_factor,
+                        self.fixture['name'],
+                        self.fixture['version']))
+
+            else:
+                if self._get_slice_sanity_check(d1=right, d2=lower):
+                    return self.im[left: right, upper:lower]
+                else:
+                    raise Slice_Outside_Image(
+                        "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
+                        self.im.shape,
+                        np.s_[left:right, upper:lower],
                         scale_factor,
                         self.fixture['name'],
                         self.fixture['version']))

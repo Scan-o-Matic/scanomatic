@@ -218,7 +218,8 @@ def build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=(16,24),
             y += (coord[1] - old_coord[1]) * dy
 
         #modify with observed point close to ideal if exists
-        x, y = find_valid(x, y)
+        if X.size > 0:
+            x, y = find_valid(x, y)
 
         #put in grid
         #print coord, grid[coord].shape
@@ -229,7 +230,8 @@ def build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=(16,24),
     return grid
 
 
-def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None, Y=None):
+def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None, Y=None, 
+    expected_offset=(100, 100)):
     """Detects grid candidates and constructs a grid"""
 
     T = get_adaptive_threshold(im, threshold_filter=None, segments=70, 
@@ -243,8 +245,12 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
 
     labled, labels = ndimage.label(im_filtered)
     if X is None or Y is None:
-        centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
-        X, Y = np.array(centra).T
+        if labels > 0:
+            centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
+            X, Y = np.array(centra).T
+        else:
+            X = np.array([])
+            Y = np.array([])
 
     del labled
 

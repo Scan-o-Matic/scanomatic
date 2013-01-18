@@ -243,7 +243,7 @@ class Running_Experiments(gtk.VBox):
             hbox.pack_end(button, False, False, PADDING_LARGE)
             vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
             
-            self._stuff.append((p, progress, info))
+            self._stuff.append((p, progress, info, button))
            
         self.show_all()
         gobject.timeout_add(20, self.update)
@@ -299,12 +299,13 @@ class Running_Experiments(gtk.VBox):
         sm = self._specific_model
         running_procs = self._controller.get_subprocesses(self, by_type='experiment')
 
-        for i, (p, progress, info) in enumerate(self._stuff):
+        for i, (p, progress, info, terminate_button) in enumerate(self._stuff):
             
             if p not in running_procs:
 
                 progress.set_fraction(1.0)
                 progress.set_text("Done!")
+                terminate_button.set_sensitive(False)
                 del self._stuff[i] 
 
             elif p['sm']['scans'] is not None:
