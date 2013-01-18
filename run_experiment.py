@@ -63,7 +63,7 @@ def get_pinnings_list(pinning_string):
 
         try:
 
-            p_list = map(int, p.split("x"))
+            p_list = tuple(map(int, p.split("x")))
 
         except:
 

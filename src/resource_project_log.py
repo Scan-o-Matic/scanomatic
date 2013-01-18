@@ -156,9 +156,16 @@ def get_meta_data(path = None):
     if ('Pinning Matrices' in meta_data and 
         meta_data['Pinning Matrices'] is not None):
 
-        for i, m in meta_data['Pinning Matrices']:
+        for i, m in enumerate(meta_data['Pinning Matrices']):
             if type(m) == types.ListType:
                 meta_data['Pinning Matrices'][i] = tuple(m)
+
+    if 'Version' in meta_data:
+
+        try:
+            meta_data['Version'] = float(meta_data['Version'])
+        except:
+            pass
 
     return meta_data
 
