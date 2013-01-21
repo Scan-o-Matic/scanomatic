@@ -263,12 +263,14 @@ class One_Controller(controller_generic.Controller):
             thread.start()
 
         elif run_command != 'complete':
+
             stage.set_progress('scan')
-            thread = threading.Thread(self._scan, args=(scanner, stage))
+            thread = threading.Thread(target=self._scan, args=(scanner, stage))
             thread.start()
+
         else:
             stage.set_progress('off')    
-            thread = threading.Thread(self._power_down, args=(scanner, stage))
+            thread = threading.Thread(target=self._power_down, args=(scanner, stage))
             thread.start()
             
     def _power_up(self, scanner, stage):

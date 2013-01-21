@@ -205,7 +205,7 @@ class Experiment(object):
                             try:
                                 stdout = open(stdout_path, 'a', 0)
                                 sys.stdout = Unbuffered(stdout)
-                                stderr = open(stdout_path, 'a', 0)
+                                stderr = open(stderr_path, 'a', 0)
                                 sys.stderr = Unbuffered(stderr)
                                 orphan = True
                             except:
