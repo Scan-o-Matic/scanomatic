@@ -173,31 +173,12 @@ class Config_Controller(controller_generic.Controller):
 
     def get_desktop_path(self):
 
-        """
-        D_paths = list()
-
         try:
-
-            fs = open(os.sep.join((os.path.expanduser("~"), ".config", "user-dirs.dirs")),'r')
-            data = fs.read()
-            fs.close()
+            D_path = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).strip()
         except:
-            data = ""
-
-        D_paths = re.findall(r'XDG_DESKTOP_DIR=\"([^\"]*)', data)
-
-        if len(D_paths) == 1:
-            D_path = D_paths[0]
-            D_path = re.sub(r'\$HOME', os.path.expanduser("~"), D_path)
-
-        else:
             D_path = os.sep.join((os.path.expanduser("~"), 'Desktop'))
-        """
-        try:
-            D_path = subprocess.check_output(['xdg-user-dir', 'DESKTOP'])
-            return D_path
-        except:
-            return None
+
+        return D_path
 
     def set_pm_type(self, widget, pm_type):
 

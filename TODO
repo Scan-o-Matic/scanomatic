@@ -13,8 +13,6 @@
     * Half-done, progress for running experiment doesn't look nice and
     probably don't work correctly (psm should be filled out)
 
-*** Make shortcut doesn't work
-
 *** ANALYSE ONE should give visual warning when capping
 
     * GUI is there, just need to thread analysis
@@ -111,6 +109,8 @@
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
 
+
+*** Make shortcut doesn't work
 
 *** EXPERIMENT Check that progressbar is nice
         just make it go on estimated time
