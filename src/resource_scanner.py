@@ -452,7 +452,6 @@ class Scanner(object):
 
     def off(self):
 
-        is_on = None
         if self.get_claimed_by_other() == False:
 
             #Power down and remove scanner address lock
@@ -460,7 +459,7 @@ class Scanner(object):
             self._remove_scanner_address_lock()
             self._is_on = is_on
 
-        return is_on
+        return not self._is_on
 
     def scan(self, mode, filename, auto_off=True):
 

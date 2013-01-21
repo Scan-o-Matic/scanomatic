@@ -20,6 +20,7 @@ import collections
 from itertools import chain
 from subprocess import Popen, PIPE
 import gobject
+import threading
 
 #
 # INTERNAL DEPENDENCIES
@@ -259,13 +260,17 @@ class One_Controller(controller_generic.Controller):
             self._set_project_id()
             stage.set_progress('on')
             #POWER UP
-            gobject.timeout_add(100, self._power_up, scanner, stage)
+            thread = threading.Thread(target=self._power_up, args=(scanner, stage))
+            thread.start()
+
         elif run_command != 'complete':
             stage.set_progress('scan')
-            gobject.timeout_add(100, self._scan, scanner, stage)
+            thread = threading.Thread(self._scan, args=(scanner, stage))
+            thread.start()
         else:
             stage.set_progress('off')    
-            gobject.timeout_add(100, self._power_down, scanner, stage)
+            thread = threading.Thread(self._power_down, args=(scanner, stage))
+            thread.start()
             
     def _power_up(self, scanner, stage):
 
@@ -277,9 +282,8 @@ class One_Controller(controller_generic.Controller):
                 stage.set_run_stage('ready')
             else:
                 stage.set_progress('scan')
-                gobject.timeout_add(100, self._scan, scanner, stage)
+                self._scan(scanner, stage)
 
-            return False
         else:
             scanner.free()
             stage.set_progress('on', failed=True)
@@ -299,12 +303,10 @@ class One_Controller(controller_generic.Controller):
 
         if sm['run'] != 'scan':
             stage.set_progress('off')
-            gobject.timeout_add(100, self._power_down, scanner, stage)
+            self._power_down(scanner, stage)
         else:
             sm['image'] += 1
             stage.set_run_stage('ready')
-
-        return False
 
     def _power_down(self, scanner, stage):
 
@@ -318,7 +320,7 @@ class One_Controller(controller_generic.Controller):
         
         if sm['fixture'] != False:
             stage.set_progress('analysis')
-            gobject.timeout_add(100, self._analysis, scanner, stage)
+            self._analysis(scanner, stage)
         else:
             scanner.free()
             sm['stage'] = 'done'
