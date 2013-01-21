@@ -19,7 +19,6 @@ import time
 import collections
 from itertools import chain
 from subprocess import Popen, PIPE
-import gobject
 import threading
 
 #

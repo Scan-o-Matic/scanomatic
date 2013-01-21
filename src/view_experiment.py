@@ -629,23 +629,31 @@ class Stage_Project_Setup(gtk.VBox):
     def set_fixtures(self):
 
         fixtures = self._controller.get_top_controller().fixtures.get_names()
-        for f in self.fixture:
-            if f not in fixtures:
-                self.fixture.remove(f)
-            fixtures = [fix for fix in fixtures if fix != f]
+        m = self._model
 
-        for f in fixtures:
+        widget_model = self.fixture.get_model()
+
+        for row in widget_model:
+            if row[0] not in fixtures:
+                widget_model.remove(row.iter)
+            fixtures = [fix for fix in fixtures if fix != row[0]]
+
+        for f in sorted(fixtures):
             self.fixture.append_text(f)
-        
+
     def set_scanners(self):
 
         scanners = self._controller.get_top_controller().scanners.get_names(available=True)
-        for s in self.scanner:
-            if s not in scanners:
-                self.scanner.remove(s)
-            scanners = [sc for sc in scanners if sc != s]
+        widget_model = self.scanner.get_model()
 
-        for s in scanners:
+        for row in widget_model:
+
+            if row[0] not in scanners:
+                widget_model.remove(row.iter)
+
+            scanners = [sc for sc in scanners if sc != row[0]]
+
+        for s in sorted(scanners):
             self.scanner.append_text(s)
 
     def set_pinning(self, pinnings_list=None, sensitive=True):
