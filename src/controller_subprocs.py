@@ -50,36 +50,73 @@ class UnDocumented_Error(Exception): pass
 
 class Fake_Proc(object):
 
-    def __init__(self, stdin, stdout):
+    def __init__(self, stdin, stdout, stderr, logger=None):
 
         self.stdin = stdin
         self.stdout = stdout
+        self.stderr = stderr
+        self._logger = logger
 
     def poll(self):
 
         retval = 0
-        t_string = ''
-        try:
-            fh = open(self.stdin, 'a')
-            t_string = "__ECHO__ {0}\n".format(time.time())
-            fh.write(t_string)
-            fh.close()
-        except:
-            pass
 
-        time.sleep(0.55)
+        t_string = "__ECHO__ {0}\n".format(time.time())
+        lines = self._get_feedback(t_string)
 
-        try:
-            fh = open(self.stdout, 'r')
-            lines = fh.read()
-            if t_string in lines:
-                retval = None
-            fh.close()
-        except:
-            pass
+        if t_string in lines:
+            retval = None
 
         return retval
 
+    def _get_feedback(self, c):
+
+        try:
+            fh = open(self.stdout, 'r')
+            fh.read()
+            fh_pos = fh.tell()
+            fh.close()
+        except:
+            fh_pos = None
+
+        try:
+            fh = open(self.stdin, 'a')
+            fh.write(c)
+            fh.close()
+        except:
+            self._logger.error('Could not write to stdin')
+
+
+        lines = ""
+        i = 0
+
+        #self._logger.info('stdout pos: {0}, sent to stdin: {1}'.format(
+        #    fh_pos, c))
+
+        while i < 10 and "__DONE__" not in lines:
+
+            try:
+                fh = open(self.stdout, 'r')
+                if fh_pos is not None:
+                    fh.seek(fh_pos)
+                lines += fh.read()
+                fh_pos = fh.tell()
+                fh.close()
+            except:
+                self._logger.error('Could not read stdout')
+
+            if "__DONE__" not in lines:
+                time.sleep(0.1)
+                i += 1
+
+        #self._logger.info('stdout pos: {0}, got response: "{1}"'.format(
+        #    fh_pos, lines))
+
+        return lines
+
+    def communicate(self, c):
+
+        return self._get_feedback(c)        
 
 class Subprocs_Controller(controller_generic.Controller):
 
@@ -128,24 +165,19 @@ class Subprocs_Controller(controller_generic.Controller):
             if locked:
                 #TRY TALKING TO IT
                 logger.info("Scanner {0} is locked".format(scanner_i))
-                stdin = paths.experiment_stdin.format(scanner)
-                alive = True
-                #try:
-                fh = open(stdin, 'a')
-                test_str = "__ECHO__ {0}\n".format(random.random())
-                fh.write(test_str)
-                fh.close()
-                #except:
-                #    alive = False
+                stdin_path = paths.experiment_stdin.format(scanner)
+                stdout_path = paths.log_scanner_out.format(scanner_i)
+                stderr_path = paths.log_scanner_err.format(scanner_i)
+                proc = Fake_Proc(stdin_path, stdout_path, stderr_path, logger=self._logger)
 
-                if alive:
+                if proc.poll() is None:
 
                     logger.info("Scanner {0} is alive".format(scanner_i))
-                    self._check_scanner(
-                        paths.log_scanner_out.format(scanner_i),
-                        scanner_i, scanner, lines, test_str, 0)
+                    self._revive_scanner(scanner, scanner_i, proc=proc)
 
-                if not alive:
+                else:
+
+                    logger.info("Scanner {0} was dead".format(scanner_i))
                     self._clean_after(scanner_i, scanner, lines)
 
         #CLEAING OUT PAD UUIDS NOT IN USE ACCORDING TO LOCKFILES
@@ -173,42 +205,60 @@ class Subprocs_Controller(controller_generic.Controller):
         except:
             pass
 
-    def _check_scanner(self, stdout_path, scanner_i, scanner, scanner_id, 
-        test_str, try_x):
+    def _revive_scanner(self, scanner, scanner_i, proc=None):
 
         tc = self.get_top_controller()
         paths = tc.paths
-        alive = True
-        try:
-            fh = open(stdout_path, 'r')
-            lines = fh.read()
-            fh.close()
-        except:
-            alive = False
+        stdin_path = paths.experiment_stdin.format(scanner)
+        stdout_path = paths.log_scanner_out.format(scanner_i)
+        stderr_path = paths.log_scanner_err.format(scanner_i)
+ 
+        if proc is None:
+            proc = Fake_Proc(stdin_path, stdout_path, stderr_path, logger=self._logger)
 
-        if alive and test_str in lines:
-            #DO STUFF TO REVIVE - NOT DONE
-            stdin_path = paths.experiment_stdin.format(scanner)
-            stderr_path = paths.log_scanner_err.format(scanner_i)
-            proc = Fake_Proc(stdin_path, stdout_path)
-            psm = model_experiment.copy_model(
-                model_experiment.specific_project_model)
+        psm_in_text = proc.communicate("__INFO__")
+        self._logger.info("Got INFO:\n{0}".format(psm_in_text))
 
-            self.add_subprocess(proc, 'scanner', stdin=stdin_path,
-                stdout=stdout_path, stderr=stderr_path,
-                pid=None, psm=psm,
-                proc_name="Scanner {0}".format(scanner_i))
+        psm = model_experiment.copy_model(
+            model_experiment.specific_project_model)
 
-        else:
+        psm_prefix = re.findall(r'__PREFIX__ (.*)', psm_in_text)
+        if len(psm_prefix) > 0:
+            psm['experiment-prefix'] = psm_prefix[0]
 
-            if try_x < 10:
-                try_x += 1
-                gobject.timeout_add(100, self._check_scanner, stdout_path, scanner_i,
-                    scanner, scanner_id, test_str, try_x)
-            else:
-                self._clean_after(scanner_i, scanner, scanner_id)
+        psm_fixture = re.findall(r'__FIXTURE__ (.*)', psm_in_text)
+        if len(psm_fixture) > 0:
+            psm['fixture'] = psm_fixture[0]
 
-        return False
+        psm_scanner = re.findall(r'__SCANNER__ (.*)', psm_in_text)
+        if len(psm_scanner) > 0:
+            psm['scanner'] = psm_scanner[0]
+
+        psm_root = re.findall(r'__ROOT__ (.*)', psm_in_text)
+        if len(psm_root) > 0:
+            psm['experiments-root'] = psm_root[0]
+
+        psm_pinning = re.findall(r'__PINNING__ (.*)', psm_in_text)
+        if len(psm_pinning) > 0:
+            psm['pinnings-list'] = map(tuple, eval(psm_pinning[0]))
+
+        psm_interval = re.findall(r'__INTERVAL__ (.*)', psm_in_text)
+        if len(psm_interval) > 0:
+            psm['interval'] = float(psm_interval[0])
+
+        psm_scans = re.findall(r'__SCANS__ ([0-9]*)', psm_in_text)
+        if len(psm_scans) > 0:
+            psm['scans'] = int(psm_scans[0])
+
+        if psm['interval'] is not None and psm['scans'] is not None:
+            psm['duration'] = psm['interval'] * psm['scans'] / 60.0
+
+        self._logger.info('Revived experiment {0}'.format(psm))
+
+        self.add_subprocess(proc, 'scanner', stdin=stdin_path,
+            stdout=stdout_path, stderr=stderr_path,
+            pid=None, psm=psm,
+            proc_name="Scanner {0}".format(scanner_i))
 
     def _clean_after(self, scanner_i, scanner, scanner_id):
 

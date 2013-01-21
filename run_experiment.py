@@ -23,6 +23,7 @@ import sys
 import time
 import uuid
 import shutil
+import time
 from argparse import ArgumentParser
 
 #
@@ -111,6 +112,7 @@ class Experiment(object):
 
         self._orphan = False
         self._running = True
+        self._printing = False
 
         sys.excepthook = self.__excepthook
 
@@ -152,7 +154,7 @@ class Experiment(object):
         stderr_path = self.paths.log_scanner_err.format(self._scanner_name[-1])
         orphan = False
 
-        print "DEAMON listens to", stdin_path
+        self._gated_print("DEAMON listens to", stdin_path)
 
         pos = None
         try:
@@ -188,13 +190,24 @@ class Experiment(object):
                     output = line
 
                 elif line == '__INFO__':
-                    output =  '__ALIVE__ {0}'.format(self._running)
+                    output =  ('__ALIVE__ {0}\n'.format(self._running) +
+                        '__PREFIX__ {0}\n'.format(self._prefix) +
+                        '__FIXTURE__ {0}\n'.format(self._fixture_name) +
+                        '__SCANNER__ {0}\n'.format(self._scanner_name) +
+                        '__ROOT__ {0}\n'.format(self._root) +
+                        #'__ID__ {0}\n'.format(self._id)
+                        '__PINNING__ {0}\n'.format(self._pinning) +
+                        '__INTERVAL__ {0}\n'.format(self._interval) +
+                        '__SCANS__ {0}\n'.format(self._max_scans) 
+                        )
 
                 else:
                     output = "DEAMON got unkown request '{0}'".format(line)
 
                 if output is not None:
-                    print output
+                    
+                    output += "\n__DONE__"
+                    self._gated_print(output)
 
                     if not orphan:
                         fs = open(stdout_path, 'r')
@@ -211,11 +224,22 @@ class Experiment(object):
                             except:
                                 pass
 
-                            print output
+                            self._gated_print(output)
 
             time.sleep(0.42)
 
-        print "DEAMON ended", self._orphan, self._running
+        self._gated_print("DEAMON ended", self._orphan, self._running)
+
+    def _gated_print(self, *args):
+
+        while self._printing == True:
+            time.sleep(0.02)
+
+        self._printing = True
+        for arg in args:
+            print arg,
+        print
+        self._printing = False
 
     def _generate_uuid(self):
 
@@ -306,7 +330,7 @@ class Experiment(object):
 
         if self._running:
 
-            print "__Is__ {0}".format(self._scanned)
+            self._gated_print("__Is__ {0}".format(self._scanned))
             self._logger.info("Acquiring image {0}".format(self._scanned))
 
             #THREAD IMAGE AQ AND ANALYSIS
@@ -378,7 +402,7 @@ class Experiment(object):
                 self._first_pass_analysis_file,
                 images=[im_dict])
 
-        print "__Id__ {0}".format(self._scanned)
+        self._gated_print("__Id__ {0}".format(self._scanned))
         self._logger.info("Image {0} done!".format(im_index))
 
     def _write_header_row(self):

@@ -4,12 +4,12 @@
 
 --- HOT ---
 
-*** EXPERIMENT ONE: The gui run all return red on power down?
-
 *** STARTUP: Reconnect to subprocs and clean up if needed
 
     * Half-done, progress for running experiment doesn't look nice and
     probably don't work correctly (psm should be filled out)
+
+    * More-done, progress-bar is not correct on revive, but much info is retrieved
 
 *** ANALYSE ONE should give visual warning when capping
 
@@ -107,6 +107,8 @@
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
 
+
+*** EXPERIMENT ONE: The gui run all return red on power down?
 
 *** EXPERIMENT ONE: Make GUI not HANG
 
