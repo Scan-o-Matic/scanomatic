@@ -49,6 +49,17 @@ class UnknownContent(Exception): pass
 # CLASSES
 #
 
+
+class Unbuffered:
+   def __init__(self, stream):
+       self.stream = stream
+   def write(self, data):
+       self.stream.write(data)
+       self.stream.flush()
+   def __getattr__(self, attr):
+       return getattr(self.stream, attr)
+
+
 class Controller(controller_generic.Controller):
 
     def __init__(self, model, view, program_path, logger=None):
@@ -77,8 +88,10 @@ class Controller(controller_generic.Controller):
 
     def set_simple_logger(self):
 
-        sys.stdout = open(self.paths.log_main_out,'w')
-        sys.stderr = open(self.paths.log_main_err,'w')
+        stdout = open(self.paths.log_main_out, 'w', 0)
+        sys.stdout = Unbuffered(stdout)
+        stderr = open(self.paths.log_main_err, 'w', 0)
+        sys.stderr = Unbuffered(stderr)
 
     def close_simple_logger(self):
 
