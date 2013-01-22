@@ -60,6 +60,8 @@ class Splash(gtk.Window):
         self._keep_alive = True
 
         self.show_all()
+        width, height = self.get_size()
+        self.move((gtk.gdk.screen_width() - width) / 2, (gtk.gdk.screen_height() - height) / 2)
 
     def main_is_loaded(self):
 
@@ -74,7 +76,7 @@ class Main_Window(gtk.Window):
         super(Main_Window, self).__init__()
 
         self.set_default_size(800,600)
-
+        self.move(0, 0)
         self._model = model
         self._controller = controller
 
