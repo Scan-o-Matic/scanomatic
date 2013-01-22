@@ -88,6 +88,7 @@ class Controller(controller_generic.Controller):
         self._view.populate_stats_area(self.subprocs.get_view())
         self._view.show_notebook_or_logo()
 
+        view.populate_panel()
         view.show_all()
 
     def set_simple_logger(self):
