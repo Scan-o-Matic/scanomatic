@@ -311,8 +311,9 @@ class Running_Experiments(gtk.VBox):
 
             elif p['sm']['scans'] is not None and p['start-time'] is not None:
                 
-                
-                progress.set_fraction(p['progress']/float(p['sm']['scans']))
+                if p['progress'] is not None: 
+                    progress.set_fraction(p['progress']/float(p['sm']['scans']))
+
                 full_time = p['sm']['scans'] * p['sm']['interval'] * 60 + p['start-time']
                 eta = (full_time - time.time()) / 3600.0
                 if eta < 0:
