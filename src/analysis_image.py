@@ -252,9 +252,19 @@ class Project_Image():
                 left = y1
                 right = y0
 
+            if top < 0:
+                top = 0
+            if left < 0:
+                left = 0
+
             if self.fixture['version'] >= self._config.version_first_pass_change_1:
 
-                if self._get_slice_sanity_check(d1=right, d2=lower):
+                if lower > self.im.shape[1]:
+                    right = self.im.shape[1]
+                if right > self.im.shape[0]:
+                    right = self.im.shape[0]
+
+                if self._get_slice_sanity_check(d1=right-left, d2=lower-upper):
                     return self.im[left: right, upper:lower]
                 else:
                     raise Slice_Outside_Image(
@@ -267,7 +277,12 @@ class Project_Image():
 
             else:
 
-                if self._get_slice_sanity_check(d1=lower, d2=right):
+                if lower > self.im.shape[0]:
+                    right = self.im.shape[0]
+                if right > self.im.shape[1]:
+                    right = self.im.shape[1]
+
+                if self._get_slice_sanity_check(d1=lower-upper, d2=right-left):
                     return self.im[upper: lower, left: right]
                 else:
                     raise Slice_Outside_Image(
@@ -283,10 +298,28 @@ class Project_Image():
 
     def _get_slice_sanity_check(self, d1=None, d2=None):
 
-        if d1 is not None and self.im.shape[0] < d1:
-            return False
+        if self.ref_plate_d1 is None and self.ref_plate_d2 is None:
 
-        if d2 is not None and self.im.shape[1] < d2:
+            plate_list = self.fixture['plates']
+
+            f = self.fixture['fixture']
+
+            dd1 = list()
+            dd2 = list()
+
+            for p in plate_list:
+
+                coords = f[p]
+                dd1.append(coords[1][0] - coords[0][0])
+                dd2.append(coords[1][1] - coords[0][1])
+
+            self.ref_plate_d1 = np.mean(dd1)
+            self.ref_plate_d2 = np.mean(dd2)
+
+
+        if (abs(d1 - self.ref_plate_d1) > abs(d1 - self.ref_plate_d2) or
+            abs(d2 - self.ref_plate_d2) > abs(d2 - self.ref_plate_d1)):
+
             return False
 
         return True

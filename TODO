@@ -4,12 +4,20 @@
 
 --- HOT ---
 
+*** PLATE SECTIONING: Im overflow by rounding or mass center shift
+
+*** GRIDDING:  Increase robustness when few edgecolonies
+
+*** GRIDDING: Check effect of heuristics on bad grids
+
 *** STARTUP: Reconnect to subprocs and clean up if needed
 
     * Half-done, progress for running experiment doesn't look nice and
     probably don't work correctly (psm should be filled out)
 
     * More-done, progress-bar is not correct on revive, but much info is retrieved
+
+*** EXPERIMENT progress bar seems to count wrong
 
 *** ANALYSE ONE should give visual warning when capping
 
@@ -40,12 +48,6 @@
 *** The 'Pixel Value Space' to 'Kodak Value Space' could use the advanced 
     algorithm
 
---- GRIDDING ---
-
-*** Investigate resolving equal grid start pos with using most 
-    centric, and using the R-value as well...(some missed peaks will
-    affect placement)
-
 --- BLOB-DETECTION ---
 
 *** New structure needed for all the grid cell abstract layers (Blob, Bg, Trash, Cell)
@@ -69,8 +71,6 @@
 
 *** Most fungii see blue light at 450 nm - How is the pattern of our lamp??
 
-*** SANE should discover scanner better
-
 *** Think about PIL I16 support
     http://old.nabble.com/import-16-bit-tiff---byte-order-problem--td20374391.html
     http://blog.philippklaus.de/2011/08/handle-16bit-tiff-images-in-python/
@@ -80,9 +80,13 @@
 *** Checking of space left on HD
 
 
-  ########################################
-##### OUTDATED DUE TO SWITCH TO NEW GUI #####
-   ########################################
+  ###########################################
+##### OUTDATED DUE TO SWITCH TO NEW METHODS #####
+   ###########################################
+
+*** Investigate resolving equal grid start pos with using most 
+    centric, and using the R-value as well...(some missed peaks will
+    affect placement)
 
 *** Gray-scale fails to analyse at 150 dpi
 
@@ -107,6 +111,8 @@
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
 
+
+*** SANE should discover scanner better
 
 *** EXPERIMENT ONE: The gui run all return red on power down?
 
