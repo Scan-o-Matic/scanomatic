@@ -118,6 +118,7 @@ class Fake_Proc(object):
 
         return self._get_feedback(c)        
 
+
 class Subprocs_Controller(controller_generic.Controller):
 
     def __init__(self, main_controller, logger=None):
@@ -217,7 +218,6 @@ class Subprocs_Controller(controller_generic.Controller):
             proc = Fake_Proc(stdin_path, stdout_path, stderr_path, logger=self._logger)
 
         psm_in_text = proc.communicate("__INFO__")
-        self._logger.info("Got INFO:\n{0}".format(psm_in_text))
 
         psm = model_experiment.copy_model(
             model_experiment.specific_project_model)
@@ -265,7 +265,9 @@ class Subprocs_Controller(controller_generic.Controller):
         if psm['interval'] is not None and psm['scans'] is not None:
             psm['duration'] = psm['interval'] * psm['scans'] / 60.0
 
-        self._logger.info('Revived experiment {0}'.format(psm))
+        if 'experiment-prefix' in psm:
+            self._logger.info('Revived experiment {0}'.format(
+                psm['experiment-prefix']))
 
         self.add_subprocess(proc, 'scanner', stdin=stdin_path,
             stdout=stdout_path, stderr=stderr_path,

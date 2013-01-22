@@ -224,9 +224,12 @@ class Project_Image():
 
             return None
 
-    def get_im_section(self, features, scale_factor=4.0):
+    def get_im_section(self, features, scale_factor=4.0, im=None, run_insane=False):
 
-        if self._im_loaded:
+        if self._im_loaded or im is not None:
+ 
+            if im is None:
+                im = self.im
 
             x0 = round(features[0][0] * scale_factor)
             x1 = round(features[1][0] * scale_factor)
@@ -261,17 +264,17 @@ class Project_Image():
 
             if self.fixture['version'] >= self._config.version_first_pass_change_1:
 
-                if lower > self.im.shape[1]:
-                    right = self.im.shape[1]
-                if right > self.im.shape[0]:
-                    right = self.im.shape[0]
+                if lower > im.shape[1]:
+                    right = im.shape[1]
+                if right > im.shape[0]:
+                    right = im.shape[0]
 
-                if self._get_slice_sanity_check(d1=right-left, d2=lower-upper):
-                    return self.im[left: right, upper:lower]
+                if self._get_slice_sanity_check(d1=right-left, d2=lower-upper) or run_insane:
+                    return im[left: right, upper:lower]
                 else:
                     raise Slice_Outside_Image(
                         "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
-                        self.im.shape,
+                        im.shape,
                         np.s_[left:right, upper:lower],
                         scale_factor,
                         self.fixture['name'],
@@ -279,17 +282,17 @@ class Project_Image():
 
             else:
 
-                if lower > self.im.shape[0]:
-                    right = self.im.shape[0]
-                if right > self.im.shape[1]:
-                    right = self.im.shape[1]
+                if lower > im.shape[0]:
+                    right = im.shape[0]
+                if right > im.shape[1]:
+                    right = im.shape[1]
 
-                if self._get_slice_sanity_check(d1=lower-upper, d2=right-left):
-                    return self.im[upper: lower, left: right]
+                if self._get_slice_sanity_check(d1=lower-upper, d2=right-left) or run_insane:
+                    return im[upper: lower, left: right]
                 else:
                     raise Slice_Outside_Image(
                         "im {0} , slice {1}, scaled by {2}, fixture {3} {4}".format(
-                        self.im.shape,
+                        im.shape,
                         np.s_[upper:lower, left:right],
                         scale_factor,
                         self.fixture['name'],
@@ -302,22 +305,20 @@ class Project_Image():
 
         if self._ref_plate_d1 is None and self._ref_plate_d2 is None:
 
-            plate_list = self.fixture['plates']
+            plate_list = self.fixture.get_plates('fixture')
 
             f = self.fixture['fixture']
 
             dd1 = list()
             dd2 = list()
 
-            for p in plate_list:
+            for coords in plate_list:
 
-                coords = f[p]
                 dd1.append(coords[1][0] - coords[0][0])
                 dd2.append(coords[1][1] - coords[0][1])
 
             self._ref_plate_d1 = np.mean(dd1)
             self._ref_plate_d2 = np.mean(dd2)
-
 
         if (abs(d1 - self._ref_plate_d1) > abs(d1 - self._ref_plate_d2) or
             abs(d2 - self._ref_plate_d2) > abs(d2 - self._ref_plate_d1)):

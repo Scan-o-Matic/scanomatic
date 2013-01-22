@@ -114,7 +114,7 @@ def get_segments_by_size(im, min_size, max_size=-1, inplace=True):
     mask_sizes = np.logical_or(sizes < min_size, sizes > max_size)
     remove_pixels = mask_sizes[labled_im]
 
-    out[remove_pixels] = 0
+    out[remove_pixels] = False
 
     if not inplace:
         return out
@@ -229,6 +229,18 @@ def build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=(16,24),
 
     return grid
 
+
+def get_blob_centra(im_filtered):
+
+    labled, labels = ndimage.label(im_filtered)
+    if labels > 0:
+        centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
+        X, Y = np.array(centra).T
+    else:
+        X = np.array([])
+        Y = np.array([])
+
+    return X, Y
 
 def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None, Y=None, 
     expected_offset=(100, 100)):
