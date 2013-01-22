@@ -250,6 +250,18 @@ class Subprocs_Controller(controller_generic.Controller):
         if len(psm_scans) > 0:
             psm['scans'] = int(psm_scans[0])
 
+        psm_init_time = re.findall(r'__INIT-TIME__ (.*)', psm_in_text)
+        if len(psm_init_time) > 0:
+            start_time = float(psm_init_time[0])
+        else:
+            start_time = None
+
+        psm_cur_image = re.findall(r'__CUR-IM__ ([0-9])', psm_in_text)
+        if len(psm_cur_image) > 0:
+            current_progress = int(psm_cur_image[0])
+        else:
+            current_progress = None
+
         if psm['interval'] is not None and psm['scans'] is not None:
             psm['duration'] = psm['interval'] * psm['scans'] / 60.0
 
@@ -258,7 +270,9 @@ class Subprocs_Controller(controller_generic.Controller):
         self.add_subprocess(proc, 'scanner', stdin=stdin_path,
             stdout=stdout_path, stderr=stderr_path,
             pid=None, psm=psm,
-            proc_name="Scanner {0}".format(scanner_i))
+            proc_name="Scanner {0}".format(scanner_i), 
+            start_time=start_time,
+            progress=current_progress)
 
     def _clean_after(self, scanner_i, scanner, scanner_id):
 
@@ -290,8 +304,9 @@ class Subprocs_Controller(controller_generic.Controller):
         """Subproc is never destroyed, but its views always allow destruction"""
         pass
 
-    def add_subprocess(self, proc, proc_type, stdin=None, stdout=None, stderr=None,
-                        pid=None, psm=None, proc_name=None):
+    def add_subprocess(self, proc, proc_type, stdin=None, stdout=None,
+            stderr=None, pid=None, psm=None, proc_name=None,
+            start_time=time.time(), progress=None):
 
         sm = self._specific_model
         if proc_type == 'scanner':
@@ -308,7 +323,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
         plist.append({'proc': proc, 'type': proc_type, 'pid': pid, 'stdin': stdin,
             'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name,
-            'progress': 0, 'start-time': time.time()})
+            'progress': progress, 'start-time': start_time})
 
     def get_subprocesses(self, by_name=None, by_type=None):
 
@@ -380,12 +395,12 @@ class Subprocs_Controller(controller_generic.Controller):
             else:
 
                 lines = self._get_output_since_last_time(p, 'stdout')
-                i_started = re.findall(r'__Is__ (.*)$', lines) 
-                i_done = re.findall(r'__Id__ (.*)$', lines) 
+                #i_started = re.findall(r'__Is__ (.*)$', lines) 
+                i_done = re.findall(r'__Id__ (.*)', lines) 
 
                 if len(i_done) > 0:
 
-                    p['progress'] = int(i_done[-1]) + 1
+                    p['progress'] = int(i_done[-1]) 
             
                 """
                 if len(i_started) > 0 and \

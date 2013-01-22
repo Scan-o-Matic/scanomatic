@@ -16,12 +16,14 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
+import gobject
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 from src.view_generic import *
+import resource_path
 
 #
 # STATIC GLOBALS
@@ -37,11 +39,41 @@ PADDING_SMALL = 2
 # CLASSES
 #
 
+class Splash(gtk.Window):
+
+    def __init__(self, program_path):
+
+        super(Splash, self).__init__()
+
+        paths = resource_path.Paths(root=program_path)
+
+        vbox = gtk.VBox(False, 0)
+        self.add(vbox)
+
+        image = gtk.Image()
+        image.set_from_file(paths.logo)
+        vbox.pack_start(image, False, False, PADDING_NONE)
+
+        label = gtk.Label("Loading...")
+        vbox.pack_start(label, False, False, PADDING_NONE)
+
+        self._keep_alive = True
+
+        self.show_all()
+
+    def main_is_loaded(self):
+
+        self._keep_alive = False
+        self.hide()
+        self.destroy()
+
 class Main_Window(gtk.Window):
 
     def __init__(self, controller=None, model=None):
 
         super(Main_Window, self).__init__()
+
+        self.set_default_size(800,600)
 
         self._model = model
         self._controller = controller
@@ -55,7 +87,7 @@ class Main_Window(gtk.Window):
         self._content_notebook = gtk.Notebook()
         hbox.pack_end(self._content_notebook, True, True, PADDING_SMALL)
         self.logo = gtk.Image()
-        self.logo.set_from_file('src/images/scan-o-matic.png')
+        self.logo.set_from_file(controller.paths.logo)
         hbox.pack_end(self.logo, True, True, PADDING_SMALL)
 
         if model is not None:
@@ -64,7 +96,6 @@ class Main_Window(gtk.Window):
 
 
         self.connect("delete_event", self._win_close_event)
-        self.show_all()
 
     def _win_close_event(self, widget, *args, **kwargs):
 

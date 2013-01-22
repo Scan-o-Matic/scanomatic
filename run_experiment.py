@@ -114,6 +114,8 @@ class Experiment(object):
         self._running = True
         self._printing = False
 
+        self._init_time = time.time()
+
         sys.excepthook = self.__excepthook
 
         self._scan_threads = list()
@@ -198,7 +200,9 @@ class Experiment(object):
                         #'__ID__ {0}\n'.format(self._id)
                         '__PINNING__ {0}\n'.format(self._pinning) +
                         '__INTERVAL__ {0}\n'.format(self._interval) +
-                        '__SCANS__ {0}\n'.format(self._max_scans) 
+                        '__SCANS__ {0}\n'.format(self._max_scans) +
+                        '__INIT-TIME__ {0}\n'.format(self._init_time) +
+                        '__CUR-IM__ {0}\n'.format(self._scanned)
                         )
 
                 else:

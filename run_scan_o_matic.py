@@ -18,8 +18,8 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 import gobject
-import threading
 import os
+from multiprocessing.pool import ThreadPool
 
 #
 # THREADING
@@ -32,8 +32,8 @@ gobject.threads_init()
 #
 
 import src.controller_main as controller
-import src.view_main as view
-import src.model_main as model
+import src.view_main as view_main
+import src.model_main as model_main
 
 #
 # EXECUTION BEHAVIOUR
@@ -45,9 +45,18 @@ if __name__ == "__main__":
     if os.getcwd() != program_path:
         os.chdir(program_path)
 
-    m = model.load_app_model()
-    w = view.Main_Window(model=m)
-    c = controller.Controller(view=w, model=m,
-        program_path=program_path)
+    gobject.threads_init()
+    splash = view_main.Splash(program_path)
+
+    pool = ThreadPool(processes=1)
+    async_result = pool.apply_async(controller.Controller,
+        (program_path,))
+    
+    while gtk.events_pending():
+       gtk.main_iteration() 
+
+    c = async_result.get()
+
+    splash.main_is_loaded()
 
     gtk.main()

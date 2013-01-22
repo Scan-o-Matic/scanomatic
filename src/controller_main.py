@@ -62,7 +62,13 @@ class Unbuffered:
 
 class Controller(controller_generic.Controller):
 
-    def __init__(self, model, view, program_path, logger=None):
+    def __init__(self, program_path, logger=None):
+
+        #PATHS NEED TO INIT BEFORE GUI
+        self.paths = resource_path.Paths(root=program_path)
+
+        model = model_main.load_app_model()
+        view = view_main.Main_Window(controller=self, model=model)
 
         super(Controller, self).__init__(None, view=view, model=model,
             logger=logger)
@@ -71,7 +77,6 @@ class Controller(controller_generic.Controller):
         self._view = view
         """
 
-        self.paths = resource_path.Paths(root=program_path)
         self.set_simple_logger()
         self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
@@ -83,8 +88,7 @@ class Controller(controller_generic.Controller):
         self._view.populate_stats_area(self.subprocs.get_view())
         self._view.show_notebook_or_logo()
 
-        if view is not None:
-            view.set_controller(self)
+        view.show_all()
 
     def set_simple_logger(self):
 

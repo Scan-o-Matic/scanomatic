@@ -59,6 +59,8 @@ class Project_Image():
 
         self._plate_positions = plate_positions
         self._pinning_matrices = pinning_matrices
+        self._ref_plate_d1 = None
+        self._ref_plate_d2 = None
 
         self.verbose = verbose
         self.visual = visual
@@ -252,8 +254,8 @@ class Project_Image():
                 left = y1
                 right = y0
 
-            if top < 0:
-                top = 0
+            if upper < 0:
+                upper = 0
             if left < 0:
                 left = 0
 
@@ -298,7 +300,7 @@ class Project_Image():
 
     def _get_slice_sanity_check(self, d1=None, d2=None):
 
-        if self.ref_plate_d1 is None and self.ref_plate_d2 is None:
+        if self._ref_plate_d1 is None and self._ref_plate_d2 is None:
 
             plate_list = self.fixture['plates']
 
@@ -313,12 +315,12 @@ class Project_Image():
                 dd1.append(coords[1][0] - coords[0][0])
                 dd2.append(coords[1][1] - coords[0][1])
 
-            self.ref_plate_d1 = np.mean(dd1)
-            self.ref_plate_d2 = np.mean(dd2)
+            self._ref_plate_d1 = np.mean(dd1)
+            self._ref_plate_d2 = np.mean(dd2)
 
 
-        if (abs(d1 - self.ref_plate_d1) > abs(d1 - self.ref_plate_d2) or
-            abs(d2 - self.ref_plate_d2) > abs(d2 - self.ref_plate_d1)):
+        if (abs(d1 - self._ref_plate_d1) > abs(d1 - self._ref_plate_d2) or
+            abs(d2 - self._ref_plate_d2) > abs(d2 - self._ref_plate_d1)):
 
             return False
 

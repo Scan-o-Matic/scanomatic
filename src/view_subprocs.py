@@ -188,9 +188,10 @@ class Running_Analysis(gtk.VBox):
 
                 f = p['progress']
 
-                progress.set_fraction(p['progress'])
+                if f is not None:
+                    progress.set_fraction(p['progress'])
 
-                if f > 0:
+                if f is not None and f > 0:
                     dt = time.time() - p['start-time'] 
                     full_t = p['progress-elapsed-time'] / f
                     eta = full_t - (dt - p['progress-init-time']) 
@@ -308,11 +309,11 @@ class Running_Experiments(gtk.VBox):
                 terminate_button.set_sensitive(False)
                 del self._stuff[i] 
 
-            elif p['sm']['scans'] is not None:
+            elif p['sm']['scans'] is not None and p['start-time'] is not None:
                 
                 
                 progress.set_fraction(p['progress']/float(p['sm']['scans']))
-                full_time = (1 + p['sm']['scans']) * p['sm']['interval'] * 60 + p['start-time']
+                full_time = p['sm']['scans'] * p['sm']['interval'] * 60 + p['start-time']
                 eta = (full_time - time.time()) / 3600.0
                 if eta < 0:
                     eta = 0
@@ -397,7 +398,7 @@ class View_Gridding_Images(gtk.ScrolledWindow):
         sm = specific_model
 
         plate = 1
-        file_pattern = "grid___origin_plate_{0}.png"
+        file_pattern = "grid___origin_plate_{0}.svg"
         file_path = os.sep.join((sm['analysis-project-log_file_dir'],
             sm['analysis-project-output-path'],
             file_pattern))
