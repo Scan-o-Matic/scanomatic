@@ -270,10 +270,6 @@ class Grid_Array():
 
     def make_grid_im(self, im, save_grid_name=None):
 
-        """
-        best_fit_rows, best_fit_columns = \
-            self._get_ideal_rows_columns_from_grid()
-        """
         grid_image = plt.figure()
         grid_plot = grid_image.add_subplot(111)
         grid_plot.imshow(im, cmap=plt.cm.gray)
@@ -293,24 +289,6 @@ class Grid_Array():
                 self._grid[:,col,0],
                 'r-')
 
-
-        """
-        for row in xrange(self._pinning_matrix[ido[0]]):
-
-            grid_plot.plot(
-                    best_fit_columns,
-                    np.ones(best_fit_columns.size) * 
-                    best_fit_rows[row],
-                    'r-')
-
-        for column in xrange(self._pinning_matrix[ido[1]]):
-
-            grid_plot.plot(
-                    np.ones(best_fit_rows.size) * 
-                    best_fit_columns[column],
-                    best_fit_rows,
-                    'r-')
-        """
         ax = grid_image.gca()
         ax.set_xlim(0, im.shape[1])
         ax.set_ylim(0, im.shape[0])
@@ -513,14 +491,6 @@ class Grid_Array():
             im_axis_order, pm, im.shape))
 
         return im_axis_order
-
-
-    def _get_ideal_rows_columns_from_grid(self):
-
-        best_fit_columns = self._grid[:,:,1].mean(0)
-        best_fit_rows = self._grid[:,:,0].mean(1)
-
-        return best_fit_rows, best_fit_columns
 
     def _get_transformation_matrix_for_analysis(self, gs_values=None,
                 gs_indices=None, gs_fit=None):
