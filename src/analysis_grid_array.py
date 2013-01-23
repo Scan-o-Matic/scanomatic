@@ -226,7 +226,7 @@ class Grid_Array():
             self.fixture.set_pinning_positions(\
                 self._identifier[1], self._pinning_matrix, topleft_history)
 
-    def set_grid(self, im, save_name=None):
+    def set_grid(self, im, save_name=None, grid_correction=None):
 
         #Map so grid axis concur with image rotation
         if self._im_dim_order is None:
@@ -237,6 +237,9 @@ class Grid_Array():
         self._grid = resource_grid.get_grid(im, box_size=self._guess_grid_cell_size, 
                 grid_shape=(self._pinning_matrix[int(self._im_dim_order[0])], 
                 self._pinning_matrix[int(self._im_dim_order[1])]))
+
+        if grid_correction is not None:
+            self._grid -= grid_correction
 
         if self._grid.min() < 0:
             raise Invalid_Grid("Negative positons in grid")
@@ -543,7 +546,8 @@ class Grid_Array():
 
 
     def get_analysis(self, im, gs_values=None, gs_fit=None, gs_indices=None,
-            identifier_time=None, watch_colony=None, save_grid_name=None):
+            identifier_time=None, watch_colony=None, save_grid_name=None,
+            grid_correction=None):
 
         #Resetting the values of the indepth watch colony
         self.watch_source = None
@@ -583,6 +587,8 @@ class Grid_Array():
 
         #Setting shortcuts for repeatedly used variable
         s_g = self._grid.copy()
+        if grid_correction is not None:
+            s_g += grid_correction  # Compensate if part of plate is outside im
         s_gcs = self._grid_cell_size
         s_g[:,:,0] -= s_gcs[0] / 2.0  # To get min-corner
         s_g[:,:,1] -= s_gcs[1] / 2.0  # To get min-corner

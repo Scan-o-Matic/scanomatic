@@ -32,6 +32,7 @@ import resource_app_config
 #
 
 class Slice_Outside_Image(Exception): pass
+class Slice_Error(Exception): pass
 
 #
 # CLASS Project_Image
@@ -61,6 +62,7 @@ class Project_Image():
         self._pinning_matrices = pinning_matrices
         self._ref_plate_d1 = None
         self._ref_plate_d2 = None
+        self._grid_corrections = None
 
         self.verbose = verbose
         self.visual = visual
@@ -174,7 +176,8 @@ class Project_Image():
 
                 im = self.get_im_section(plate_positions[grid_array], scale_factor)
 
-                self._grid_arrays[grid_array].set_grid(im, save_name=save_name)
+                self._grid_arrays[grid_array].set_grid(im, save_name=save_name,
+                    grid_correction=self._grid_corrections)
 
     def load_image(self, image_dict=None):
 
@@ -224,13 +227,76 @@ class Project_Image():
 
             return None
 
-    def get_im_section(self, features, scale_factor=4.0, im=None, run_insane=False):
+    def get_im_section(self, features, scale_factor=4.0, im=None,
+            run_insane=False):
 
         if self._im_loaded or im is not None:
- 
+
+            #SCALE AND ORDER BOUNDS 
+            F = np.round(np.array(features, dtype=np.float) *
+                scale_factor).astype(np.int)
+
+            F.sort(axis=0)
+
+            #SET AXIS ORDER DEPENDING ON VERSION
+            if (self.fixture['version'] >= 
+                self._config.version_first_pass_change_1):
+
+                dim1 = 1
+                dim2 = 0
+
+            else:
+
+                dim1 = 0
+                dim2 = 1
+
+            #TAKE LOADED IM IF NON SUPPLIED
             if im is None:
                 im = self.im
 
+            #CORRECT FOR IM OUT OF BOUNDS
+            low = 0
+            high = 1
+            d1_correction = 0
+            d2_correction = 0
+
+            if F[low, dim1] < 0:
+                upper_correction = F[0, dim1]
+                F[low, dim1] = 0
+            if F[low, dim2] < 0:
+                upper_correction = F[0, dim2]
+                F[low, dim2] = 0
+
+            if F[high, dim1] > im.shape[0]:
+                F[high, dim1] = im.shape[0]
+            if F[high, dim2] > im.shape[1]:
+                F[high, dim2] = im.shape[1]
+
+            #RECORD LOW VALUE CORRECTION ON EITHER DIM (THIS MEANS GRID
+            #NEEDS TO BE OFFSET
+            self._set_current_grid_move(d1=d1_correction, d2=d2_correction)
+
+
+            #CHECK SO THAT PLATE SHAPE IS AGREEING WITH IM SHAPE
+            #(MUST HAVE THE SAME ORIENTATION)
+            if self._get_slice_sanity_check(im,
+                    d1=F[high, dim1]-F[low, dim1],
+                    d2=F[high, dim2] - F[low, dim2]) or run_insane:
+
+                return im[F[low, dim1]: F[high, dim1], F[low, dim2]: F[high, dim2]]
+
+            else:
+
+                raise Slice_Outside_Image(
+                    "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
+                    im.shape,
+                    np.s_[F[low, dim1]:F[high, dim1], F[low, dim2],
+                    F[high, dim2]],
+                    scale_factor,
+                    self.fixture['name'],
+                    self.fixture['version']))
+
+            """
             x0 = round(features[0][0] * scale_factor)
             x1 = round(features[1][0] * scale_factor)
 
@@ -257,9 +323,14 @@ class Project_Image():
                 left = y1
                 right = y0
 
+            upper_correction = 0
+            left_correction = 0
+
             if upper < 0:
+                upper_correction = upper
                 upper = 0
             if left < 0:
+                left_correction = left
                 left = 0
 
             if self.fixture['version'] >= self._config.version_first_pass_change_1:
@@ -268,6 +339,8 @@ class Project_Image():
                     right = im.shape[1]
                 if right > im.shape[0]:
                     right = im.shape[0]
+
+                self._set_current_grid_move(d1=left_correction, d2=upper_correction)
 
                 if self._get_slice_sanity_check(d1=right-left, d2=lower-upper) or run_insane:
                     return im[left: right, upper:lower]
@@ -287,6 +360,8 @@ class Project_Image():
                 if right > im.shape[1]:
                     right = im.shape[1]
 
+                self._set_current_grid_move(d1=left_correction, d2=upper_correction)
+
                 if self._get_slice_sanity_check(d1=lower-upper, d2=right-left) or run_insane:
                     return im[upper: lower, left: right]
                 else:
@@ -297,31 +372,24 @@ class Project_Image():
                         scale_factor,
                         self.fixture['name'],
                         self.fixture['version']))
-
+            
         else:
             return None
 
-    def _get_slice_sanity_check(self, d1=None, d2=None):
+        """
 
-        if self._ref_plate_d1 is None and self._ref_plate_d2 is None:
+    def _set_current_grid_move(self, d1, d2):
 
-            plate_list = self.fixture.get_plates('fixture')
+        self._grid_corrections = np.array((d1, d2))
 
-            f = self.fixture['fixture']
+    def _get_slice_sanity_check(self, im, d1=None, d2=None):
 
-            dd1 = list()
-            dd2 = list()
+        if ((float(im.shape[0]) / im.shape[1] > 0) !=
+            (float(d1/d2) > 0)):
 
-            for coords in plate_list:
-
-                dd1.append(coords[1][0] - coords[0][0])
-                dd2.append(coords[1][1] - coords[0][1])
-
-            self._ref_plate_d1 = np.mean(dd1)
-            self._ref_plate_d2 = np.mean(dd2)
-
-        if (abs(d1 - self._ref_plate_d1) > abs(d1 - self._ref_plate_d2) or
-            abs(d2 - self._ref_plate_d2) > abs(d2 - self._ref_plate_d1)):
+            s = "Current shape is {0} x {1}.".format(d1, d2)
+            s += " Image is {0} x {1}.".format(self._ref_plate_d1, self._ref_plate_d2)
+            raise Slice_Error(s)
 
             return False
 
@@ -432,7 +500,8 @@ class Project_Image():
                     gs_values=gs_values,
                     watch_colony=watch_colony,
                     save_grid_name=save_grid_name,
-                    identifier_time=identifier_time)
+                    identifier_time=identifier_time,
+                    grid_correction=self._grid_corrections)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
             self.R[grid_array] = self._grid_arrays[grid_array].R
