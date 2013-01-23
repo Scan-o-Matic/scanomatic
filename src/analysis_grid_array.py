@@ -270,14 +270,31 @@ class Grid_Array():
 
     def make_grid_im(self, im, save_grid_name=None):
 
+        """
         best_fit_rows, best_fit_columns = \
             self._get_ideal_rows_columns_from_grid()
-
+        """
         grid_image = plt.figure()
         grid_plot = grid_image.add_subplot(111)
         grid_plot.imshow(im, cmap=plt.cm.gray)
         ido = self._im_dim_order
 
+        for row in xrange(self._grid.shape[0]):
+
+            grid_plot.plot(
+                self._grid[row,:,1],
+                self._grid[row,:,0],
+                'r-')
+
+        for col in xrange(self._grid.shape[1]):
+
+            grid_plot.plot(
+                self._grid[:,col,1],
+                self._grid[:,col,0],
+                'r-')
+
+
+        """
         for row in xrange(self._pinning_matrix[ido[0]]):
 
             grid_plot.plot(
@@ -286,14 +303,14 @@ class Grid_Array():
                     best_fit_rows[row],
                     'r-')
 
-            for column in xrange(self._pinning_matrix[ido[1]]):
+        for column in xrange(self._pinning_matrix[ido[1]]):
 
-                grid_plot.plot(
-                        np.ones(best_fit_rows.size) * 
-                        best_fit_columns[column],
-                        best_fit_rows,
-                        'r-')
-
+            grid_plot.plot(
+                    np.ones(best_fit_rows.size) * 
+                    best_fit_columns[column],
+                    best_fit_rows,
+                    'r-')
+        """
         ax = grid_image.gca()
         ax.set_xlim(0, im.shape[1])
         ax.set_ylim(0, im.shape[0])
