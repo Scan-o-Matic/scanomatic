@@ -28,6 +28,7 @@ from matplotlib import pyplot as plt
 import resource_grid
 import analysis_grid_cell as grid_cell
 import resource_logger as logger
+import resource_path
 
 #
 # EXCEPTIONS
@@ -55,18 +56,19 @@ class Grid_Array():
         grid_cell_settings=None):
 
         self._parent = parent
-        self.fixture = parent.fixture
 
         if parent is None:
 
             self.logger = logger.Log_Garbage_Collector()
-            self._paths = resource_path.Path(
+            self._paths = resource_path.Paths(
                 src_path=os.path.abspath(__file__))
+            self.fixture = None
 
         else:
 
             self.logger = self._parent.logger
             self._paths = parent._paths
+            self.fixture = parent.fixture
 
         if type(identifier) == types.IntType:
 
@@ -298,8 +300,7 @@ class Grid_Array():
         if save_grid_name is None:
 
             grid_image.show()
-            plt.close(grid_image)
-            del grid_image
+            return grid_image
 
         else:
 

@@ -120,6 +120,47 @@ def get_segments_by_size(im, min_size, max_size=-1, inplace=True):
         return out
 
 
+def get_segments_by_shape(im, max_shape, check_roundness=True,
+        inplace=True):
+
+    if inplace:
+        out = im
+    else:
+        out = im.copy()
+
+    labled_im, labels = ndimage.label(im)
+    segments = ndimage.find_objects(labled_im)
+
+    bound_d1, bound_d2 = max_shape
+    roundness_k = np.pi / 4.0
+    roundness_t1 = 0.25
+    roundness_t2 = 0.1
+
+    for i, segment in enumerate(segments):
+
+        s_d1, s_d2 = segment
+        if (abs(s_d1.stop - s_d1.start) > bound_d1 or
+            abs(s_d2.stop - s_d2.start) > bound_d2):
+
+            out[segment][labled_im[segment] == i + 1] = False
+
+        elif check_roundness:
+
+            s = im[segment]
+            blob = s[labled_im[segment] == i + 1]
+
+            #CHECK IF a) The outer shape is square
+            # b) The blob area is close to expected value given
+            # outer size
+            if (abs(1 - float(s.shape[0]) / s.shape[1]) > roundness_t1 or
+                abs(1 - s.size * roundness_k / blob.sum()) > roundness_t2):
+
+                out[segment][labled_im[segment] == i + 1] = False
+
+    if not inplace:
+        return out
+
+
 def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
     leeway=1.1, expected_start=(100, 100)):
     """Gets the parameters of the ideal grid based on detected candidate
@@ -254,6 +295,8 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
 
     get_segments_by_size(im_filtered, min_size=40,
         max_size=box_size[0]*box_size[1], inplace=True)
+
+    get_segments_by_shape(im_filtered, box_size, inplace=True)
 
     labled, labels = ndimage.label(im_filtered)
     if X is None or Y is None:

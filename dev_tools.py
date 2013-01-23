@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 
 import src.analysis_image as analysis_image
 import src.resource_grid as resource_grid
+import src.analysis_grid_array as analysis_grid_array
 
 def get_plate(im=None, im_path=None, plate_index=0, log_version=1.0, run_insane=True):
 
@@ -55,10 +56,22 @@ def get_thresholded_plate(p):
     tim = p < T
 
     ftim = resource_grid.get_denoise_segments(tim)
-    ftim = resource_grid.get_segments_by_size(tim, 40, 54*54, inplace=False)
+    resource_grid.get_segments_by_size(ftim, 40, 54*54)
+    resource_grid.get_segments_by_shape(ftim, (54, 54))
 
     return ftim
+
 
 def get_blob_centra(p):
 
     return resource_grid.get_blob_centra(p)
+
+
+def show_grid(p, grid):
+
+
+    aga = analysis_grid_array.Grid_Array(None, [None, None],
+        tuple(sorted(grid.shape[:-1])))
+
+    aga.set_manual_grid(grid)
+    aga.make_grid_im(p)

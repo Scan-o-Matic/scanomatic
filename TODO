@@ -43,6 +43,8 @@
 
 *** Let the subtracted BG be a plane and not a single value.
 
+    Exists for GRIDDING
+
 *** The iterative roundness test could use the threshold of otsu as start
     and could use fsolve too!
 
