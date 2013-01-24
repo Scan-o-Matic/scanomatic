@@ -58,30 +58,39 @@ def get_adaptive_threshold(im, threshold_filter=None, segments=60,
 
     for l in range(1, labels + 1):
 
-        if (labled==l).sum() > 1:
+        l_filter = labled == l
+        if (l_filter).sum() > 1:
 
-            if im[labled == l].std() !=0:
+            i_slice = im[l_filter]
+            if i_slice.std() !=0:
 
-                T[ndimage.binary_dilation(labled == l, iterations=4)] = \
-                    threshold_filter(im[labled == l], *args, **kwargs)
+                T[ndimage.binary_dilation(l_filter, iterations=4)] = \
+                    threshold_filter(i_slice, *args, **kwargs)
 
             else:
 
-                T[ndimage.binary_dilation(labled == l, iterations=4)] = \
-                    im[labled == l].mean()
+                T[ndimage.binary_dilation(l_filter, iterations=4)] = \
+                    i_slice.mean()
 
+        print "*** Done label", l
+
+    print "*** Will smooth it out"
     return ndimage.gaussian_filter(T, sigma=sigma)
 
 
 def _get_sectioned_image(im):
     """Sections image in proximity regions for points of interests"""
 
+    print "*** Ready to section"
     d = ndimage.distance_transform_edt(im==0)
+    print "*** Distances made"
     k = np.array([[-1, 2, -1]])
     d2 = ndimage.convolve(d, k) + ndimage.convolve(d, k.T)
+    print "*** Edges detected"
     d2 = ndimage.binary_dilation(d2 > d2.mean(), border_value=1) == 0
+    print "*** Areas defined"
     labled, labels = ndimage.label(d2)
-
+    print "*** Areas labled"
     return labled, labels
 
 
@@ -161,7 +170,7 @@ def get_segments_by_shape(im, max_shape, check_roundness=True,
         return out
 
 
-def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
+def _old_get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
     leeway=1.1, expected_start=(100, 100)):
     """Gets the parameters of the ideal grid based on detected candidate
     intersects.
@@ -206,6 +215,107 @@ def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
         Ndy = np.array([np.arange(grid_shape[1])]) * dy
         y_offsets = YY - Ndy.T
         y_offset = np.median(y_offsets)
+
+    return x_offset, y_offset, dx, dy
+
+
+def get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=0.1):
+
+    dXs = np.abs(np.subtract.outer(X, X))
+    dx = dXs[np.logical_and(dXs > expected_dx * (1 - leeway),
+            dXs < expected_dx * (1 + leeway))].mean()
+
+    dYs = np.abs(np.subtract.outer(Y, Y))
+    dy = dYs[np.logical_and(dYs > expected_dy * (1 - leeway),
+            dYs < expected_dy * (1 + leeway))].mean()
+
+    return dx, dy
+
+
+def get_prior(H, I=None):
+
+    if I == None:
+        Prior = np.ones(H.shape[1:], dtype=np.float16)
+    else:
+        Hx, Hy = H
+        x0, y0, sx, sy, ns = I
+        N = 2 * np.pi * sx * sy * ns ** 2  # this is REALLY not important!
+        Prior = np.exp(-0.5 * ((Hx - x0) ** 2 / (ns * sx) ** 2 + \
+                               (Hy - y0) ** 2 / (ns * sy) ** 2)) / N
+
+    return Prior
+
+
+def get_likelyhood(H, X, Y, I0, S, I=None):
+    """
+    This is the most important function. It describes how likely/expected the
+    actual Data is, given a certain hypothesis H.
+
+    The assumptions of this particular Likelyhood function is that the grid is
+    equally spaced, has no rotation, and that the measured grid points will be
+    Normal/Gaussian distributed around the real grid points with a spread
+    S=(sx, sy). Further, it is assumed that X and Y jitter is uncorrelated,
+    and of equal magnitude for all data points.
+
+    For sx and sy, a good value to start with is probably 1 or 2 times the
+    leeway * (dx, dy), as defined by get_spacing().
+    """
+
+    Hx, Hy = H  # These are 1D arrays 
+    grid_X, grid_Y = I0.reshape((2, I0.shape[1] * I0.shape[2]))  # Thesse too
+    sx, sy = S  # Scalars
+
+    grid_Hx = np.add.outer(Hx, grid_X)
+    grid_Hy = np.add.outer(Hy, grid_Y)
+
+    N = X.size * grid_X.size * 2 * np.pi * S.prod()  # still not important...
+    del I0, grid_X, grid_Y
+
+    print "Attempting array size", X.size * grid_Hx.size
+
+    L = np.exp(-0.5 * 
+        (np.subtract.outer(X, grid_Hx, dtype=np.float16) ** 2 / sx ** 2 + 
+        np.subtract.outer(Y, grid_Hy, dtype=np.float16) ** 2 / sy ** 2)) / N
+
+    return L.sum(axis=0).sum(axis=1)
+
+
+def get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
+    leeway=0.1, expected_start=(100, 100), im_shape=None, ns=1.0):
+
+    D = np.array(get_grid_spacings(X, Y, expected_distance, expected_distance,
+        leeway))
+
+    dx = D[0]
+    dy = D[1] 
+
+    S = D * ns * leeway
+
+    #DEFINE SEARCHSPACE
+    if im_shape is not None:
+        H = np.mgrid[
+            np.floor(0.5 * Y.min()): np.floor(im_shape[1] - dy * grid_shape[1]),
+            np.floor(0.5 * X.min()): np.floor(im_shape[0] - dx * grid_shape[0])]
+
+    else:
+        H = np.mgrid[np.floor(0.5 * Y.min()): 1.1 * np.ceil(Y.mean()): 1,
+                          np.floor(0.5 * X.min()): 1.1 * np.ceil(X.mean()): 1]
+
+    H = H.reshape((2, H.shape[1] * H.shape[2])).astype(np.float16)
+
+    print "Hypothesis", H.min(axis=1), 'to', H.max(axis=1)
+
+    #DEFINE IDEAL GRID AT ZERO OFFSET
+    I0 = (np.mgrid[: grid_shape[1], : grid_shape[0]]).astype(np.float16)
+    I0[0, :, :] *= dx
+    I0[1, :, :] *= dy
+
+
+    #SEARCHING
+    P = get_likelyhood(H, X, Y, I0, S) * get_prior(H)
+
+    #GET MOST PROBABLE
+    x_offset, y_offset = H[:, P.argmax()]
 
     return x_offset, y_offset, dx, dy
 
@@ -287,16 +397,26 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
     expected_offset=(100, 100)):
     """Detects grid candidates and constructs a grid"""
 
-    T = get_adaptive_threshold(im, threshold_filter=None, segments=70, 
-        sigma=None)
+    print "** Will threshold"
+
+    T = get_adaptive_threshold(im, threshold_filter=None, segments=40, 
+        sigma=30)
+
+    print "** Got T"
 
     im_filtered = get_denoise_segments(im<T, iterations=3)
     del T
 
+    print "** Filtered 1st pass the im<T, removed T"
+
     get_segments_by_size(im_filtered, min_size=40,
         max_size=box_size[0]*box_size[1], inplace=True)
 
+    print "** Filtered on size"
+
     get_segments_by_shape(im_filtered, box_size, inplace=True)
+
+    print "** Filtered on shape"
 
     labled, labels = ndimage.label(im_filtered)
     if X is None or Y is None:
@@ -309,12 +429,18 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
 
     del labled
 
+    print "** Got X and Y"
+
     x_offset, y_offset, dx, dy = get_grid_parameters(X, Y, 
         expected_distance=box_size[0], grid_shape=grid_shape,
-        leeway=1.1)
+        im_shape=im.shape)
+
+    print "** Got grid parameters"
 
     grid = build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=grid_shape,
         square_distance_threshold=70)
+
+    print "** Got grid"
 
     if visual:
         from matplotlib import pyplot as plt
