@@ -22,6 +22,7 @@ from skimage import filter as ski_filter
 from scipy import ndimage
 import types
 from collections import defaultdict
+import functools
 
 #
 # SCANNOMATIC LIBRARIES
@@ -170,7 +171,7 @@ def get_segments_by_shape(im, max_shape, check_roundness=True,
         return out
 
 
-def _old_get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
+def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
     leeway=1.1, expected_start=(100, 100)):
     """Gets the parameters of the ideal grid based on detected candidate
     intersects.
@@ -279,8 +280,28 @@ def get_likelyhood(H, X, Y, I0, S, I=None):
 
     return L.sum(axis=0).sum(axis=1)
 
+def get_vectorized_prototypes(X, Y, I0, S, I=None):
 
-def get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
+    grid_X, grid_Y = I0.reshape((2, I0.shape[1] * I0.shape[2]))  # arrays
+    sx, sy = S  # Scalars
+
+    X_grid = np.subtract.outer(X, grid_X)
+    Y_grid = np.subtract.outer(Y, grid_Y)
+
+    N = X.size * grid_X.size * 2 * np.pi * S.prod()  # still not important...
+
+    return X_grid, Y_grid, N
+
+def get_likelyhood_vectorized(hx, hy, X_grid, Y_grid, sx, sy, N, I=None):
+
+    L = np.exp(-0.5 * 
+        (X_grid + hx) ** 2 / sx ** 2 + 
+        (Y_grid + hy) ** 2 / sy ** 2) / N
+
+    return L.sum()
+
+
+def dev_get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
     leeway=0.1, expected_start=(100, 100), im_shape=None, ns=1.0):
 
     D = np.array(get_grid_spacings(X, Y, expected_distance, expected_distance,
@@ -289,7 +310,7 @@ def get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
     dx = D[0]
     dy = D[1] 
 
-    S = D * ns * leeway
+    S = D * ns * leeway / np.sqrt(2)
 
     #DEFINE SEARCHSPACE
     if im_shape is not None:
@@ -311,8 +332,17 @@ def get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
     I0[1, :, :] *= dy
 
 
+    print "Search space given ideal grid and X, Y:", I0.size * X.size
+
+    #INIT FOR VECTORIZED SEARCHING
+    X_grid, Y_grid, N = get_vectorized_prototypes(X, Y, I0, S, I=None)
+    partial_get_likelyhood = functools.partial(get_likelyhood_vectorized,
+        X_grid=X_grid, Y_grid=Y_grid, sx=S[0], sy=S[1], N=N, I=None)
+
+    vectorized_likelyhood = np.frompyfunc(partial_get_likelyhood, 2, 1)
+
     #SEARCHING
-    P = get_likelyhood(H, X, Y, I0, S) * get_prior(H)
+    P = vectorized_likelyhood(H[0], H[1]) * get_prior(H)
 
     #GET MOST PROBABLE
     x_offset, y_offset = H[:, P.argmax()]
@@ -394,7 +424,7 @@ def get_blob_centra(im_filtered):
     return X, Y
 
 def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None, Y=None, 
-    expected_offset=(100, 100)):
+    expected_offset=(100, 100), run_dev=False, dev_filter_XY=None):
     """Detects grid candidates and constructs a grid"""
 
     print "** Will threshold"
@@ -430,10 +460,19 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
     del labled
 
     print "** Got X and Y"
+    if dev_filter_XY is not None:
+        f_XY = np.random.random(X.shape) < dev_filter_XY
+        X = X[f_XY]
+        Y = Y[f_XY]
 
-    x_offset, y_offset, dx, dy = get_grid_parameters(X, Y, 
-        expected_distance=box_size[0], grid_shape=grid_shape,
-        im_shape=im.shape)
+    if run_dev:
+        x_offset, y_offset, dx, dy = dev_get_grid_parameters(X, Y, 
+            expected_distance=box_size[0], grid_shape=grid_shape,
+            im_shape=im.shape)
+    else:
+        x_offset, y_offset, dx, dy = get_grid_parameters(X, Y,
+            expected_distance=box_size[0], grid_shape=grid_shape,
+            leeway=1.1, expected_start=expected_offset)
 
     print "** Got grid parameters"
 
