@@ -238,7 +238,7 @@ class Grid_Array():
 
         self._grid = resource_grid.get_grid(im, box_size=self._guess_grid_cell_size, 
                 grid_shape=(self._pinning_matrix[int(self._im_dim_order[0])], 
-                self._pinning_matrix[int(self._im_dim_order[1])]))
+                self._pinning_matrix[int(self._im_dim_order[1])]))[0]
 
         if grid_correction is not None:
             self._grid -= grid_correction
@@ -270,7 +270,7 @@ class Grid_Array():
 
         return True
 
-    def make_grid_im(self, im, save_grid_name=None):
+    def make_grid_im(self, im, save_grid_name=None, X=None, Y=None):
 
         grid_image = plt.figure()
         grid_plot = grid_image.add_subplot(111)
@@ -290,6 +290,11 @@ class Grid_Array():
                 self._grid[:,col,1],
                 self._grid[:,col,0],
                 'r-')
+
+        if X is not None and Y is not None:
+
+            grid_plot.plot(Y,X, 'o', alpha=0.75,
+            ms=5, mfc='none', mec='red', mew=1)
 
         ax = grid_image.gca()
         ax.set_xlim(0, im.shape[1])

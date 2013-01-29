@@ -54,6 +54,7 @@ class USB_PM(object):
         self._on_cmd = [path] + on_args
         self._off_cmd = [path] + off_args
         self._fail_error = "No GEMBIRD SiS-PM found"
+        self._socket = "None"
 
         if logger is None:
             self._logger = logger
@@ -61,10 +62,16 @@ class USB_PM(object):
             self._logger = resource_logger.Log_Garbage_Collector()
 
     def on(self):
-        return self._exec(self._on_cmd)
+        on_success = self._exec(self._on_cmd)
+        self._logger.info('USB PM, Turning on socket {0} ({1})'.format(self._socket,
+            on_success))
+        return on_success
 
     def off(self):
-        return self._exec(self._off_cmd)
+        off_success = self._exec(self._off_cmd)
+        self._logger.info('USB PM, Turning off socket {0} ({1})'.format(self._socket,
+            off_success))
+        return off_success
 
     def _exec(self, cmd):
 
@@ -302,7 +309,7 @@ class LAN_PM(object):
 
         if not self._verify_name or self._pm_server_str in u.read():
 
-            self._logger.info("LAN PM, Turning on")
+            self._logger.info('USB PM, Turning on socket {0}'.format(self._socket))
             if self._run_url(self._ctrl_panel_url, self._on_params, timeout=URL_TIMEOUT) is None:
                 return False
 
@@ -311,7 +318,7 @@ class LAN_PM(object):
 
         else:
 
-            self._logger.error("LAN PM, Failed to turn on")
+            self._logger.error("LAN PM, Failed to turn on socket {0}".format(self._socket))
             return False
 
     def off(self):
@@ -324,7 +331,7 @@ class LAN_PM(object):
 
         if not self._verify_name or self._pm_server_str in u.read():
 
-            self._logger.info("LAN PM, Turning off")
+            self._logger.info('USB PM, Turning off socket {0}'.format(self._socket))
 
             if self._run_url(self._ctrl_panel_url, self._off_params,
                         timeout=URL_TIMEOUT) is None:
@@ -336,7 +343,7 @@ class LAN_PM(object):
 
         else:
 
-            self._logger.error("LAN PM, Failed to turn off")
+            self._logger.error("LAN PM, Failed to turn off socked {0}".format(self._socket))
             return False
 
 class Power_Manager():

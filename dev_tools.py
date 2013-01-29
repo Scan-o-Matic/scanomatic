@@ -67,11 +67,11 @@ def get_blob_centra(p):
     return resource_grid.get_blob_centra(p)
 
 
-def show_grid(p, grid):
+def show_grid(p, grid, X=None, Y=None):
 
 
     aga = analysis_grid_array.Grid_Array(None, [None, None],
         tuple(sorted(grid.shape[:-1])))
 
     aga.set_manual_grid(grid)
-    aga.make_grid_im(p)
+    aga.make_grid_im(p, X=X, Y=Y)

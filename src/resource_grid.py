@@ -23,6 +23,7 @@ from scipy import ndimage
 import types
 from collections import defaultdict
 import functools
+from scipy.optimize import fsolve
 
 #
 # SCANNOMATIC LIBRARIES
@@ -220,6 +221,38 @@ def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
     return x_offset, y_offset, dx, dy
 
 
+def get_grid_parameters_3(X, Y, im, expected_distance=105, 
+    grid_shape=(16, 24), leeway=0.1, expected_start=(100, 100)):
+
+    dx, dy = get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=leeway)
+
+    pos_list = np.arange(X.size)
+
+    rowL = grid_shape[0] ** 2 * grid_shape[1] / float(X.size)
+    colL = grid_shape[1] ** 2 * grid_shape[0] / float(Y.size)
+
+    #Guess what row (only works for evenly detected...
+    Xis = (pos_list[X.argsort()] / colL).astype(np.int)
+    Yis = (pos_list[Y.argsort()] / rowL).astype(np.int)
+
+    #Midpoint:
+    mx = grid_shape[1] / 2.0
+    my = grid_shape[0] / 2.0
+
+    dXis = (Xis - mx) * dx
+    dYis = (Yis - my) * dy
+
+    #Vote
+    votes = np.zeros(im.shape)
+    for pos in xrange(X.size):
+        votes[np.int(np.round(X[pos] + dXis)),
+            np.int(np.round(Y[pos] + dYis))] += 1
+
+    votes = ndimage.gaussian_filter(votes, sigma=(dx + dy)/2*leeway)
+
+    return np.unravel_index(votes.argmax(), votes.shape), dx, dy
+
+
 def get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=0.1):
 
     dXs = np.abs(np.subtract.outer(X, X))
@@ -348,6 +381,52 @@ def dev_get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
     x_offset, y_offset = H[:, P.argmax()]
 
     return x_offset, y_offset, dx, dy
+
+
+def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
+ 
+    iX = iGrid[0]
+    iY = iGrid[1]
+
+    def _get_replacement(x, y):
+
+        D = (X - x)**2 + (Y - y)**2 
+        if (D < max_sq_dist).any():
+            x = X[D.argmin()]
+            y = Y[D.argmin()]
+
+        return x, y
+ 
+    vectorized_replacement = np.frompyfunc(_get_replacement, 2, 2)
+
+    grid = np.array(vectorized_replacement(iX, iY))
+
+    return grid    
+
+
+def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=25):
+
+    grid0 = (((np.mgrid[0: grid_shape[0], 0: grid_shape[1]]).astype(np.float)
+        - np.array(grid_shape).reshape(2, 1, 1) / 2.0) + 0.5
+        ) * np.array((dx, dy)).reshape(2, 1, 1)
+
+    def grid_energy(c, grid0):
+
+        gGrid = grid0 + c.reshape(2, 1, 1)
+        gX = gGrid[0].ravel()
+        gY = gGrid[1].ravel()
+        obs_guess_G = replace_ideal_with_observed(gGrid, X, Y, max_sq_dist)
+        ogX = obs_guess_G[0]
+        ogY = obs_guess_G[1]
+
+        f = np.logical_or(gX != ogX, gY != ogY)
+        return np.log(np.sqrt(np.power((gGrid[f] - obs_guss_G[f]), 2))).sum()
+
+    #Solve grid_energy
+    center = fsolve(grid_energy, x0=np.array(center), args=(grid0,))
+    grid = grid0 + center.reshape(2, 1, 1)
+
+    return replace_ideal_with_observed(grid, X, Y, max_sq_dist)
 
 
 def build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=(16,24),
@@ -491,4 +570,4 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
         plt.xlim(0, im_filtered.shape[1])
         plt.show()
 
-    return grid
+    return grid, X, Y
