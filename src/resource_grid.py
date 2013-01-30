@@ -25,6 +25,8 @@ from collections import defaultdict
 import functools
 from scipy.optimize import fsolve
 
+import matplotlib.pyplot as plt
+
 #
 # SCANNOMATIC LIBRARIES
 #
@@ -73,8 +75,6 @@ def get_adaptive_threshold(im, threshold_filter=None, segments=60,
 
                 T[ndimage.binary_dilation(l_filter, iterations=4)] = \
                     i_slice.mean()
-
-        print "*** Done label", l
 
     print "*** Will smooth it out"
     return ndimage.gaussian_filter(T, sigma=sigma)
@@ -186,71 +186,76 @@ def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
 
         return expected_start[0] , expected_start[1], expected_distance, expected_distance
 
-    #Calculate row/column distances
+    dx, dy = get_grid_spacings(X, Y, expected_distance, expected_distance, leeway=leeway-1)
+    #Calculate the offsets
     XX = X.reshape((1, X.size))
-    dX = np.abs(XX - XX.T).reshape((1, X.size ** 2))
-    dxs = dX[np.where(np.logical_and(dX > expected_distance / leeway,
-                                     dX < expected_distance * leeway))]
-    if dxs.size == 0:
-        dx = expected_distance
-        x_offset = expected_start[0]
-    else:
-        dx = dxs.mean()
-
-        #Calculate the offsets
-        Ndx = np.array([np.arange(grid_shape[0])]) * dx
-        x_offsets = XX - Ndx.T
-        x_offset = np.median(x_offsets)
+    Ndx = np.array([np.arange(grid_shape[0])]) * dx
+    x_offsets = (XX - Ndx.T).ravel()
+    #x_offsets.sort()
+    #x_offset = x_offsets[x_offsets.size/4: -x_offsets.size/4].mean()
+    x_offset = np.median(x_offsets)
 
     YY = Y.reshape((1, Y.size))
-    dY = np.abs(YY - YY.T).reshape((1, Y.size ** 2))
-    dys = dY[np.where(np.logical_and(dY > expected_distance / leeway,
-                                     dY < expected_distance * leeway))]
-
-    if dys.size == 0:
-        dy = expected_distance
-        y_offset = expected_start[0]
-    else:
-        dy = dys.mean()
-
-        #Calculate the offsets
-        Ndy = np.array([np.arange(grid_shape[1])]) * dy
-        y_offsets = YY - Ndy.T
-        y_offset = np.median(y_offsets)
+    Ndy = np.array([np.arange(grid_shape[1])]) * dy
+    y_offsets = (YY - Ndy.T).ravel()
+    #y_offsets.sort()
+    #y_offset = y_offsets[y_offsets.size/4: -y_offsets.size/4].mean()
+    y_offset = np.median(y_offsets)
 
     return x_offset, y_offset, dx, dy
 
 
 def get_grid_parameters_3(X, Y, im, expected_distance=105, 
-    grid_shape=(16, 24), leeway=0.1, expected_start=(100, 100)):
+    grid_shape=(16, 24), leeway=0.1, expected_start=None):
 
-    dx, dy = get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=leeway)
+    dx, dy = get_grid_spacings(X, Y, expected_distance, expected_distance, leeway=leeway)
 
-    pos_list = np.arange(X.size)
-
-    rowL = grid_shape[0] ** 2 * grid_shape[1] / float(X.size)
-    colL = grid_shape[1] ** 2 * grid_shape[0] / float(Y.size)
+    fraction_found = float(X.size) / (grid_shape[0] * grid_shape[1])
+    rowL = grid_shape[0] * fraction_found
+    colL = grid_shape[1] * fraction_found
 
     #Guess what row (only works for evenly detected...
-    Xis = (pos_list[X.argsort()] / colL).astype(np.int)
-    Yis = (pos_list[Y.argsort()] / rowL).astype(np.int)
+    Xis = np.zeros(X.shape)
+    Yis = np.zeros(Y.shape)
+    Xis[X.argsort()] = np.arange(X.size)
+    Yis[Y.argsort()] = np.arange(Y.size)
+    Xis = (Xis / colL).astype(np.int)
+    Yis = (Yis / rowL).astype(np.int)
 
     #Midpoint:
-    mx = grid_shape[1] / 2.0
-    my = grid_shape[0] / 2.0
+    my = grid_shape[1] / 2.0 + 0.5
+    mx = grid_shape[0] / 2.0 + 0.5
 
     dXis = (Xis - mx) * dx
     dYis = (Yis - my) * dy
 
+    print dXis.min(), dXis.max(), dYis.min(), dYis.max()
+    print X.max(), Y.max()
+    print dXis[X.argmax()], dYis[Y.argmax()]
+
     #Vote
     votes = np.zeros(im.shape)
     for pos in xrange(X.size):
-        votes[np.int(np.round(X[pos] + dXis)),
-            np.int(np.round(Y[pos] + dYis))] += 1
-
+        try:
+            votes[np.round(X[pos] - dXis[pos]).astype(np.int),
+                np.round(Y[pos] - dYis[pos]).astype(np.int)] += 1
+        except IndexError:
+            pass
     votes = ndimage.gaussian_filter(votes, sigma=(dx + dy)/2*leeway)
+    center = np.array(np.unravel_index(votes.argmax(), votes.shape))
 
-    return np.unravel_index(votes.argmax(), votes.shape), dx, dy
+    plt.imshow(votes)
+    plt.plot(center[1], center[0], 'ro', ms=4)
+    plt.show()
+
+
+    if expected_start is None:
+        expected_start = np.array(im.shape) / 2.0
+
+    if ((center - expected_start)**2).sum() > 3 * expected_distance**2:
+        pass  # center = expected_start
+
+    return center, dx, dy
 
 
 def get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=0.1):
@@ -391,6 +396,7 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
     def _get_replacement(x, y):
 
         D = (X - x)**2 + (Y - y)**2 
+        # print (D.min(), x, y),
         if (D < max_sq_dist).any():
             x = X[D.argmin()]
             y = Y[D.argmin()]
@@ -409,10 +415,21 @@ def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=25):
     grid0 = (((np.mgrid[0: grid_shape[0], 0: grid_shape[1]]).astype(np.float)
         - np.array(grid_shape).reshape(2, 1, 1) / 2.0) + 0.5
         ) * np.array((dx, dy)).reshape(2, 1, 1)
+    """
+
+    grid0 = np.mgrid[(-grid_shape[0]/2.0 + 0.5) * dx:
+                    (grid_shape[0]/2.0 + 0.5) * dx: dx,
+                    (-grid_shape[1]/2.0 + 0.5) * dy:
+                    (grid_shape[1]/2.0 + 0.5) * dy: dy]
+
+    """
+    print grid0.shape
 
     def grid_energy(c, grid0):
 
         gGrid = grid0 + c.reshape(2, 1, 1)
+        print gGrid[0].min(), gGrid[0].max(), gGrid[1].min(), gGrid[1].max()
+        print X.min(), X.max(), Y.min(), Y.max()
         gX = gGrid[0].ravel()
         gY = gGrid[1].ravel()
         obs_guess_G = replace_ideal_with_observed(gGrid, X, Y, max_sq_dist)
@@ -420,11 +437,19 @@ def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=25):
         ogY = obs_guess_G[1]
 
         f = np.logical_or(gX != ogX, gY != ogY)
-        return np.log(np.sqrt(np.power((gGrid[f] - obs_guss_G[f]), 2))).sum()
+        dG = np.power(gGrid[f] - obs_guess_G[f], 2)
+        print f
 
+        if dG.any() == False:
+            return 0
+
+        return np.sqrt(dG).sum()
+
+    print "***Will improve center {0}".format(center)
     #Solve grid_energy
-    center = fsolve(grid_energy, x0=np.array(center), args=(grid0,))
+    #center = fsolve(grid_energy, x0=np.array(center), args=(grid0,))
     grid = grid0 + center.reshape(2, 1, 1)
+    print "***Will move ideal to observed center"
 
     return replace_ideal_with_observed(grid, X, Y, max_sq_dist)
 
@@ -545,18 +570,28 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
         Y = Y[f_XY]
 
     if run_dev:
+        """
         x_offset, y_offset, dx, dy = dev_get_grid_parameters(X, Y, 
             expected_distance=box_size[0], grid_shape=grid_shape,
             im_shape=im.shape)
+        """
+        center, dx, dy =  get_grid_parameters_3(X, Y, im,
+            expected_distance=box_size[0], 
+            grid_shape=grid_shape, leeway=0.1)
+
+        print "** Got grid parameters"
+
+        grid = build_grid_from_center(X, Y, center, dx, dy, grid_shape)
+
     else:
         x_offset, y_offset, dx, dy = get_grid_parameters(X, Y,
             expected_distance=box_size[0], grid_shape=grid_shape,
             leeway=1.1, expected_start=expected_offset)
 
-    print "** Got grid parameters"
+        print "** Got grid parameters"
 
-    grid = build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=grid_shape,
-        square_distance_threshold=70)
+        grid = build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=grid_shape,
+            square_distance_threshold=70)
 
     print "** Got grid"
 
