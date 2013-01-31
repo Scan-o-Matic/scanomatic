@@ -338,7 +338,7 @@ def get_heatmap(data, votes, weights, sigma):
     votes_y = np.round(votes_y).astype(np.int)
 
     #This ravels the indices to match a raveled heatmap
-    flat_votes_xy = votes_y * heatmap.shape[0] + votes_x
+    flat_votes_xy = votes_y * heatmap.shape[1] + votes_x
 
     #Get unique coordinates and sort
     unique_votes = np.unique(flat_votes_xy)
