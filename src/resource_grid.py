@@ -205,6 +205,27 @@ def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
     return x_offset, y_offset, dx, dy
 
 
+def get_grid_parameters_4(X, Y, grid_shape, spacings=(54, 54), center=None):
+
+    #grid_shape = (grid_shape[1], grid_shape[0])
+
+    data = (X, Y)
+    new_spacings = get_grid_spacings(X, Y, *spacings)
+    centers = get_centre_candidates(grid_shape, new_spacings)
+    votes = get_votes(data, centers)
+    weights = get_weights(votes, data, 1.0)
+    sigma = np.max((spacings[0], new_spacings[1])) * 0.1 / np.sqrt(2) + 0.5
+    heatmap = get_heatmap(data, votes, weights, sigma)
+
+    new_center = np.unravel_index(heatmap.argmax(), heatmap.shape)
+
+    plt.imshow(heatmap)
+    plt.plot(new_center[1], new_center[0], 'ro', ms=4)
+    plt.show()
+
+    return new_center, new_spacings
+
+
 def get_grid_parameters_3(X, Y, im, expected_distance=105, 
     grid_shape=(16, 24), leeway=0.1, expected_start=None):
 
@@ -256,6 +277,103 @@ def get_grid_parameters_3(X, Y, im, expected_distance=105,
         pass  # center = expected_start
 
     return center, dx, dy
+
+
+def get_weights(votes, data, width=1):
+    """
+    Get weights for votes. If width > 0, a Gaussian weight is assigend based
+    on the distance of the vote to the mean of the data. The width of the
+    Gaussian is set from the spread of the data, and scaled by the width
+    parameter. By default, width is set to be 1, which is a very weak
+    weighting.
+    """
+
+    X, Y = data
+    VX, VY = votes
+
+    if width > 0:
+        weights = (np.exp(-((VX - X.mean()) ** 2 / (width * X.std()) ** 2 +
+                  (VY - Y.mean()) ** 2 / (width * Y.std()) ** 2)) /
+                  (2 * np.pi * X.std() * Y.std() * width ** 2))
+    else:
+        weights = np.ones(VX.shape)
+
+    return weights
+
+
+def get_votes(data, centres):
+    """
+    Get votes from all data points.
+    """
+
+    X, Y = data
+    GX, GY = centres
+
+    VX = np.add.outer(X, GX)
+    VY = np.add.outer(Y, GY)
+
+    return VX.ravel(), VY.ravel()
+
+
+def get_heatmap(data, votes, weights, sigma):
+    """
+    Get smoothed histogram.
+
+    A good value for sigma is probably  max(dx, dy) * leeway /sqrt(2) + 0.5.
+    """
+
+    X, Y = data
+    VX, VY = votes
+
+    vote_slice = np.logical_and(np.logical_and(VX >= 0, VY >= 0),
+                np.logical_and(VX <= X.max(), VY <= Y.max()))
+
+    votes_x = VX[vote_slice]
+    votes_y = VY[vote_slice]
+    W = weights[vote_slice]
+
+    heatmap = np.zeros((np.ceil(Y.max()) + 1, np.ceil(X.max()) + 1))
+
+    votes_x = np.round(votes_x).astype(np.int)
+    votes_y = np.round(votes_y).astype(np.int)
+
+    #This ravels the indices to match a raveled heatmap
+    flat_votes_xy = votes_y * heatmap.shape[0] + votes_x
+
+    #Get unique coordinates and sort
+    unique_votes = np.unique(flat_votes_xy)
+    unique_votes.sort()
+
+    #Make weighted histogram (the returning array will match the
+    #sorted unique_votes, +0.5 is OK since we know indices will be
+    #ints and the lowest be 0 (thus -1 is also safe)
+    unique_vote_weights = np.histogram(flat_votes_xy, bins=np.hstack(((-1,),
+        unique_votes)) + 0.5, weights=W)[0]
+
+    print np.c_[unique_votes, unique_vote_weights].T
+
+    #Assign the weighted votes
+    heatmap.ravel()[unique_votes] = unique_vote_weights
+
+    if sigma > 0:
+        heatmap = ndimage.gaussian_filter(heatmap, sigma)
+
+    heatmap /= heatmap.sum()
+
+    return heatmap
+
+
+def get_centre_candidates(grid_size, spacings):
+    """
+    Get coordinates of all possible grid centres without offset.
+    """
+
+    dx, dy = spacings
+
+    GY, GX = np.mgrid[-(grid_size[1] - 1) * 0.5: (grid_size[1] - 1) * 0.5 + 1,
+                      -(grid_size[0] - 1) * 0.5: (grid_size[0] - 1) * 0.5 + 1]
+
+    return GX.ravel() * dx, GY.ravel() * dy
 
 
 def get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=0.1):
@@ -423,7 +541,9 @@ def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=25):
                     (grid_shape[1]/2.0 + 0.5) * dy: dy]
 
     """
-    print grid0.shape
+    center = np.array(center)
+
+    print "***Building grid from center", center
 
     def grid_energy(c, grid0):
 
@@ -574,10 +694,13 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
         x_offset, y_offset, dx, dy = dev_get_grid_parameters(X, Y, 
             expected_distance=box_size[0], grid_shape=grid_shape,
             im_shape=im.shape)
-        """
         center, dx, dy =  get_grid_parameters_3(X, Y, im,
             expected_distance=box_size[0], 
             grid_shape=grid_shape, leeway=0.1)
+
+        """
+        center, spacings = get_grid_parameters_4(X, Y, grid_shape, spacings=box_size, center=None)
+        dx, dy = spacings
 
         print "** Got grid parameters"
 

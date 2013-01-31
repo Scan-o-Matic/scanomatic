@@ -2,6 +2,7 @@
 
 import os
 from matplotlib import pyplot as plt
+import numpy as np
 
 import src.analysis_image as analysis_image
 import src.resource_grid as resource_grid
@@ -66,6 +67,12 @@ def get_blob_centra(p):
 
     return resource_grid.get_blob_centra(p)
 
+
+def show_new_grid(p, grid, X=None, Y=None):
+
+    gX, gY = grid
+    old_grid = np.c_[gX, gY].reshape(48, 32, 2, order='A')
+    show_grid(p, old_grid, X=X, Y=Y)
 
 def show_grid(p, grid, X=None, Y=None):
 
