@@ -217,7 +217,10 @@ def get_grid_parameters_4(X, Y, grid_shape, spacings=(54, 54), center=None):
     sigma = np.max((spacings[0], new_spacings[1])) * 0.1 / np.sqrt(2) + 0.5
     heatmap = get_heatmap(data, votes, weights, sigma)
 
-    new_center = np.unravel_index(heatmap.argmax(), heatmap.shape)
+    _cD2, _cD1 = np.unravel_index(heatmap.argmax(), heatmap.shape)
+
+    new_center = (_cD1, _cD2)
+
     """
     plt.imshow(heatmap)
     plt.plot(new_center[1], new_center[0], 'ro', ms=4)
@@ -506,7 +509,7 @@ def dev_get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
     return x_offset, y_offset, dx, dy
 
 
-def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
+def replace_ideal_with_observed_depricated(iGrid, X, Y, max_sq_dist):
  
     iX = iGrid[0]
     iY = iGrid[1]
@@ -525,14 +528,84 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
 
     grid = np.array(vectorized_replacement(iX, iY))
 
-    return grid    
+    return grid
 
+def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
 
-def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=25):
+    shape = np.array(iGrid.shape[1:])
+    gUpdated = np.ones(shape, dtype=np.bool)
+
+    rings = shape / 2
+
+    def _look_replace(array_view, filt):
+
+        iX = array_view[0].ravel()
+        iY = array_view[1].ravel()
+        D = np.subtract.outer(iX, X) ** 2 + np.subtract.outer(iY, Y) ** 2 
+        print D.shape
+        rPos = D.min(axis=1) <= max_sq_dist
+        minD = D.argmin(axis=1)[rPos]
+        where_pos = np.unravel_index(np.where(rPos)[0], filt.shape)
+        for i in xrange(where_pos[0].size):
+            d1 = where_pos[0][i]
+            d2 = where_pos[1][i]
+            if filt[d1, d2]:
+                sect[0, d1, d2] = X[minD[i]]
+                sect[1, d1, d2] = Y[minD[i]]
+
+    def _push_ideal(array_view, r):
+
+        if (rings[0] - r - 1) >= 0:
+            dLD1 = iGrid[0, rings[0] - r - 1, :].mean() - array_view[0, 0, :].mean()
+            dUD1 = iGrid[0, rings[0] + r, :].mean() - array_view[0, -1, :].mean()
+            lD1slice = np.s_[0, : rings[0] - r, :]
+            iGrid[lD1slice][gUpdated[lD1slice[1:]]] += dLD1
+            uD1slice = np.s_[0, rings[0] + r: , :]
+            iGrid[uD1slice][gUpdated[uD1slice[1:]]] += dUD1
+            print dLD1, dUD1
+
+        if (rings[1] - r - 1) >= 0:
+            dLD2 = iGrid[1, :, rings[1] - r - 1].mean() - array_view[1, :, 0].mean()
+            dUD2 = iGrid[1, :, rings[1] + r].mean() - array_view[1, :, -1].mean()
+            lD2slice = np.s_[1, :, : rings[0] - r]
+            iGrid[lD2slice][gUpdated[lD2slice[1:]]] += dLD2
+            uD2slice = np.s_[1, :, rings[0] + r:]
+            iGrid[uD2slice][gUpdated[uD2slice[1:]]] += dUD2
+            print dLD2, dUD2
+
+    for r in xrange(rings.max()):
+
+        if (rings[0] - r - 1) > 0:
+            s1L = rings[0] - r - 1
+            s1U = rings[0] + r + 1
+        else:
+            s1L = 0
+            s1U = shape[0] + 1 
+
+        if (rings[1] - r - 1) > 0:
+            s2L = rings[1] - r - 1
+            s2U = rings[1] + r + 1
+        else:
+            s2L = 0
+            s2U = shape[1] + 1
+
+        filt = gUpdated[s1L: s1U, s2L: s2U]
+        sect = iGrid[:, s1L: s1U, s2L: s2U]
+
+        _look_replace(sect, filt)
+
+        _push_ideal(sect, r)
+
+        filt.fill(0)
+
+    return iGrid
+
+def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=54):
 
     grid0 = (((np.mgrid[0: grid_shape[0], 0: grid_shape[1]]).astype(np.float)
         - np.array(grid_shape).reshape(2, 1, 1) / 2.0) + 0.5
         ) * np.array((dx, dy)).reshape(2, 1, 1)
+
     """
 
     grid0 = np.mgrid[(-grid_shape[0]/2.0 + 0.5) * dx:
@@ -694,6 +767,7 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
         x_offset, y_offset, dx, dy = dev_get_grid_parameters(X, Y, 
             expected_distance=box_size[0], grid_shape=grid_shape,
             im_shape=im.shape)
+
         center, dx, dy =  get_grid_parameters_3(X, Y, im,
             expected_distance=box_size[0], 
             grid_shape=grid_shape, leeway=0.1)
