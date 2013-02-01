@@ -82,3 +82,26 @@ def show_grid(p, grid, X=None, Y=None):
 
     aga.set_manual_grid(grid)
     aga.make_grid_im(p, X=X, Y=Y)
+
+def benchmark_algoritm(plate, remove_fraction=0.5, times=1000, box_size=(54, 54),
+    grid_shape=(48, 32), run_dev=True):
+
+    #Just to get X and Y
+    grid, X, Y = resource_grid.get_grid(plate, box_size=box_size,
+        grid_shape=grid_shape, run_dev=run_dev)
+    
+    results = list()
+    fh = open('./dev/run2.test', 'w')
+    for x in xrange(times):
+        f_XY = np.random.random(X.shape) > remove_fraction 
+        tX = X[f_XY]
+        tY = Y[f_XY]
+
+        center, spacings = resource_grid.get_grid_parameters_4(
+                tX, tY, grid_shape, spacings=box_size, center=None)
+
+        results.append(center + spacings)
+        fh.write("{0}\n".format(results[-1]))
+
+    fh.close()
+    return results

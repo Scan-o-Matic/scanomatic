@@ -14,6 +14,10 @@ __status__ = "Development"
 
 import os
 import time
+from subprocess import Popen, PIPE
+import uuid
+import socket
+import re
 
 #
 # CLASSES
@@ -48,11 +52,12 @@ class XML_Writer(object):
         ('IQR_mean', 'IQR_m'): ('cells/pixel', 'standard')
         }
 
-    def __init__(self, output_directory, xml_format, logger):
+    def __init__(self, output_directory, xml_format, logger, paths):
 
         self._directory = output_directory
         self._formatting = xml_format
         self._logger = logger
+        self._paths = paths
 
         self._outdata_full = os.sep.join((output_directory, "analysis.xml"))
         self._outdata_slim = os.sep.join((output_directory,
@@ -86,11 +91,81 @@ class XML_Writer(object):
 
         return True
 
+    def _get_computer_ID(self):
+
+        mac = uuid.getnode()
+
+        """If failed to get actual mac the 8th bit will be a zero
+        according to documentation and RFC 4122. The binary string
+        of mac has two leading positions '0b'. Thus the 1st position
+        will be [2] and the eighth [9]"""
+
+        if bin(mac)[9] == '0':
+
+            """Fallback solution will try to get mac from a combination
+            of ping and arp"""
+            IP = socket.gethostbyname(socket.gethostname())
+            p = Popen(["ping", '-c', '1', IP], stdout=PIPE)
+            p.communicate()
+            p = Popen(["arp", '-n', IP], stdout=PIPE)
+            s = p.communicate()[0]
+            try:
+                mac = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", s).groups()[0]
+            except AttributeError:
+                mac = None
+
+        else:
+            """Convert mac-long to human readable hex format"""
+            mac = ":".join(re.findall(r'([a-f\d]{2,2})', hex(mac)))
+
+
+        if mac is None:
+
+            self._logger.warning("Could not locate computer MAC address, "
+                "will use random/fake for computer ID in XML.")
+
+            mac = self._get_saved_mac()
+
+        else:
+ 
+            self._set_saved_mac(mac)
+ 
+        return mac
+
+    def _get_saved_mac(self):
+
+        try:
+            fh = open(self._paths.config_mac, 'r')
+            lines = fh.read()
+            fh.close()
+            mac = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", lines).groups()[0]
+        except:
+            mac = self._set_saved_mac()
+
+        return mac
+
+    def _set_saved_mac(self, mac=None):
+
+        if mac is None:
+            mac = uuid.getnode()
+            mac = ":".join(re.findall(r'([a-f\d]{2,2})', hex(mac)))
+
+        try:
+            fh = open(self._paths.config_mac, 'w')
+            fh.write("{0}\n".format(mac))
+            fh.close()
+        except:
+            mac = None
+
+        return mac
+
     def write_header(self, meta_data, plates):
 
         tag_format = self._formatting['short']
 
         self._open_tags.insert(0, 'project')
+
+        mac = self._get_computer_ID()
 
         for f in self._file_handles.values():
 
@@ -100,6 +175,10 @@ class XML_Writer(object):
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['version', 'ver'][tag_format],  __version__))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    ['computer-mac', 'mac'][tag_format],
+                    mac))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['start-time', 'start-t'][tag_format],

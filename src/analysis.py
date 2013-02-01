@@ -36,6 +36,7 @@ import resource_project_log
 import resource_analysis_support
 import analysis_image
 import resource_xml_writer
+import resource_path
 
 #
 # GLOBALS
@@ -115,6 +116,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     file_path_base = os.sep.join(log_file_path.split(os.sep)[:-1])
     #grid_adjustments = None
 
+    paths = resource_path.Paths(src_path=__file__)
 
     #
     # VERIFY OUTDATA DIRECTORY
@@ -228,7 +230,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     #
 
     xml_writer = resource_xml_writer.XML_Writer(outdata_directory,
-                    xml_format, logger)
+                    xml_format, logger, paths)
 
     if xml_writer.get_initialized() == False:
         logger.critical('ANALYSIS: XML writer failed to initialize')

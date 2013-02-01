@@ -66,6 +66,7 @@ class Paths(object):
 
         #CONFIG
         self.config_main_app = os.sep.join((self.config, 'main.config'))
+        self.config_mac = os.sep.join((self.config, 'mac_address.config'))
  
         #IMAGES
         self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 

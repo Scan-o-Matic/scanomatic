@@ -218,11 +218,11 @@ def get_grid_parameters_4(X, Y, grid_shape, spacings=(54, 54), center=None):
     heatmap = get_heatmap(data, votes, weights, sigma)
 
     new_center = np.unravel_index(heatmap.argmax(), heatmap.shape)
-
+    """
     plt.imshow(heatmap)
     plt.plot(new_center[1], new_center[0], 'ro', ms=4)
     plt.show()
-
+    """
     return new_center, new_spacings
 
 
@@ -350,7 +350,7 @@ def get_heatmap(data, votes, weights, sigma):
     unique_vote_weights = np.histogram(flat_votes_xy, bins=np.hstack(((-1,),
         unique_votes)) + 0.5, weights=W)[0]
 
-    print np.c_[unique_votes, unique_vote_weights].T
+    #print np.c_[unique_votes, unique_vote_weights].T
 
     #Assign the weighted votes
     heatmap.ravel()[unique_votes] = unique_vote_weights
