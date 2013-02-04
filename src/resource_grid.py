@@ -20,10 +20,8 @@ __status__ = "Development"
 import numpy as np
 from skimage import filter as ski_filter
 from scipy import ndimage
-import types
-from collections import defaultdict
-import functools
-from scipy.optimize import fsolve
+#import functools
+#from scipy.optimize import fsolve
 
 import matplotlib.pyplot as plt
 
@@ -76,23 +74,23 @@ def get_adaptive_threshold(im, threshold_filter=None, segments=60,
                 T[ndimage.binary_dilation(l_filter, iterations=4)] = \
                     i_slice.mean()
 
-    print "*** Will smooth it out"
+    #print "*** Will smooth it out"
     return ndimage.gaussian_filter(T, sigma=sigma)
 
 
 def _get_sectioned_image(im):
     """Sections image in proximity regions for points of interests"""
 
-    print "*** Ready to section"
+    #print "*** Ready to section"
     d = ndimage.distance_transform_edt(im==0)
-    print "*** Distances made"
+    #print "*** Distances made"
     k = np.array([[-1, 2, -1]])
     d2 = ndimage.convolve(d, k) + ndimage.convolve(d, k.T)
-    print "*** Edges detected"
+    #print "*** Edges detected"
     d2 = ndimage.binary_dilation(d2 > d2.mean(), border_value=1) == 0
-    print "*** Areas defined"
+    #print "*** Areas defined"
     labled, labels = ndimage.label(d2)
-    print "*** Areas labled"
+    #print "*** Areas labled"
     return labled, labels
 
 
@@ -171,6 +169,7 @@ def get_segments_by_shape(im, max_shape, check_roundness=True,
     if not inplace:
         return out
 
+''' NOT IN USE
 
 def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
     leeway=1.1, expected_start=(100, 100)):
@@ -204,6 +203,8 @@ def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
 
     return x_offset, y_offset, dx, dy
 
+'''
+
 
 def get_grid_parameters_4(X, Y, grid_shape, spacings=(54, 54), center=None):
 
@@ -228,6 +229,7 @@ def get_grid_parameters_4(X, Y, grid_shape, spacings=(54, 54), center=None):
     """
     return new_center, new_spacings
 
+''' NOT IN USE
 
 def get_grid_parameters_3(X, Y, im, expected_distance=105, 
     grid_shape=(16, 24), leeway=0.1, expected_start=None):
@@ -253,9 +255,9 @@ def get_grid_parameters_3(X, Y, im, expected_distance=105,
     dXis = (Xis - mx) * dx
     dYis = (Yis - my) * dy
 
-    print dXis.min(), dXis.max(), dYis.min(), dYis.max()
-    print X.max(), Y.max()
-    print dXis[X.argmax()], dYis[Y.argmax()]
+    #print dXis.min(), dXis.max(), dYis.min(), dYis.max()
+    #print X.max(), Y.max()
+    #print dXis[X.argmax()], dYis[Y.argmax()]
 
     #Vote
     votes = np.zeros(im.shape)
@@ -281,6 +283,7 @@ def get_grid_parameters_3(X, Y, im, expected_distance=105,
 
     return center, dx, dy
 
+'''
 
 def get_weights(votes, data, width=1):
     """
@@ -392,6 +395,8 @@ def get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=0.1):
     return dx, dy
 
 
+''' NOT IN USE
+
 def get_prior(H, I=None):
 
     if I == None:
@@ -431,13 +436,17 @@ def get_likelyhood(H, X, Y, I0, S, I=None):
     N = X.size * grid_X.size * 2 * np.pi * S.prod()  # still not important...
     del I0, grid_X, grid_Y
 
-    print "Attempting array size", X.size * grid_Hx.size
+    #print "Attempting array size", X.size * grid_Hx.size
 
     L = np.exp(-0.5 * 
         (np.subtract.outer(X, grid_Hx, dtype=np.float16) ** 2 / sx ** 2 + 
         np.subtract.outer(Y, grid_Hy, dtype=np.float16) ** 2 / sy ** 2)) / N
 
     return L.sum(axis=0).sum(axis=1)
+
+'''
+
+''' NOT IN USE
 
 def get_vectorized_prototypes(X, Y, I0, S, I=None):
 
@@ -459,6 +468,9 @@ def get_likelyhood_vectorized(hx, hy, X_grid, Y_grid, sx, sy, N, I=None):
 
     return L.sum()
 
+'''
+
+''' NOT IN USE
 
 def dev_get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
     leeway=0.1, expected_start=(100, 100), im_shape=None, ns=1.0):
@@ -483,7 +495,7 @@ def dev_get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
 
     H = H.reshape((2, H.shape[1] * H.shape[2])).astype(np.float16)
 
-    print "Hypothesis", H.min(axis=1), 'to', H.max(axis=1)
+    #print "Hypothesis", H.min(axis=1), 'to', H.max(axis=1)
 
     #DEFINE IDEAL GRID AT ZERO OFFSET
     I0 = (np.mgrid[: grid_shape[1], : grid_shape[0]]).astype(np.float16)
@@ -491,7 +503,7 @@ def dev_get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
     I0[1, :, :] *= dy
 
 
-    print "Search space given ideal grid and X, Y:", I0.size * X.size
+    #print "Search space given ideal grid and X, Y:", I0.size * X.size
 
     #INIT FOR VECTORIZED SEARCHING
     X_grid, Y_grid, N = get_vectorized_prototypes(X, Y, I0, S, I=None)
@@ -508,6 +520,9 @@ def dev_get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
 
     return x_offset, y_offset, dx, dy
 
+'''
+
+''' NOT IN USE
 
 def replace_ideal_with_observed_depricated(iGrid, X, Y, max_sq_dist):
  
@@ -530,6 +545,9 @@ def replace_ideal_with_observed_depricated(iGrid, X, Y, max_sq_dist):
 
     return grid
 
+'''
+
+
 def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
 
     shape = np.array(iGrid.shape[1:])
@@ -542,7 +560,6 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
         iX = array_view[0].ravel()
         iY = array_view[1].ravel()
         D = np.subtract.outer(iX, X) ** 2 + np.subtract.outer(iY, Y) ** 2 
-        print D.shape
         rPos = D.min(axis=1) <= max_sq_dist
         minD = D.argmin(axis=1)[rPos]
         where_pos = np.unravel_index(np.where(rPos)[0], filt.shape)
@@ -550,6 +567,7 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
             d1 = where_pos[0][i]
             d2 = where_pos[1][i]
             if filt[d1, d2]:
+                #print "r {0}: {1} -> {2}".format((d1, d2), sect[:,d1, d2], (X[minD[i]], Y[minD[i]]))
                 sect[0, d1, d2] = X[minD[i]]
                 sect[1, d1, d2] = Y[minD[i]]
 
@@ -559,19 +577,19 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
             dLD1 = iGrid[0, rings[0] - r - 1, :].mean() - array_view[0, 0, :].mean()
             dUD1 = iGrid[0, rings[0] + r, :].mean() - array_view[0, -1, :].mean()
             lD1slice = np.s_[0, : rings[0] - r, :]
-            iGrid[lD1slice][gUpdated[lD1slice[1:]]] += dLD1
+            iGrid[lD1slice][gUpdated[lD1slice[1:]]] -= dLD1
             uD1slice = np.s_[0, rings[0] + r: , :]
-            iGrid[uD1slice][gUpdated[uD1slice[1:]]] += dUD1
-            print dLD1, dUD1
+            iGrid[uD1slice][gUpdated[uD1slice[1:]]] -= dUD1
+            #print dLD1, dUD1, gUpdated[lD1slice[1:]].sum(), gUpdated[uD1slice[1:]].sum()
 
         if (rings[1] - r - 1) >= 0:
             dLD2 = iGrid[1, :, rings[1] - r - 1].mean() - array_view[1, :, 0].mean()
             dUD2 = iGrid[1, :, rings[1] + r].mean() - array_view[1, :, -1].mean()
-            lD2slice = np.s_[1, :, : rings[0] - r]
-            iGrid[lD2slice][gUpdated[lD2slice[1:]]] += dLD2
-            uD2slice = np.s_[1, :, rings[0] + r:]
-            iGrid[uD2slice][gUpdated[uD2slice[1:]]] += dUD2
-            print dLD2, dUD2
+            lD2slice = np.s_[1, :, : rings[1] - r]
+            iGrid[lD2slice][gUpdated[lD2slice[1:]]] -= dLD2
+            uD2slice = np.s_[1, :, rings[1] + r:]
+            iGrid[uD2slice][gUpdated[uD2slice[1:]]] -= dUD2
+            #print dLD2, dUD2
 
     for r in xrange(rings.max()):
 
@@ -594,13 +612,13 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
 
         _look_replace(sect, filt)
 
-        _push_ideal(sect, r)
-
         filt.fill(0)
+
+        _push_ideal(sect, r)
 
     return iGrid
 
-def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=54):
+def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=105):
 
     grid0 = (((np.mgrid[0: grid_shape[0], 0: grid_shape[1]]).astype(np.float)
         - np.array(grid_shape).reshape(2, 1, 1) / 2.0) + 0.5
@@ -616,13 +634,13 @@ def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=54):
     """
     center = np.array(center)
 
-    print "***Building grid from center", center
-
+    #print "***Building grid from center", center
+    '''
     def grid_energy(c, grid0):
 
         gGrid = grid0 + c.reshape(2, 1, 1)
-        print gGrid[0].min(), gGrid[0].max(), gGrid[1].min(), gGrid[1].max()
-        print X.min(), X.max(), Y.min(), Y.max()
+        #print gGrid[0].min(), gGrid[0].max(), gGrid[1].min(), gGrid[1].max()
+        #print X.min(), X.max(), Y.min(), Y.max()
         gX = gGrid[0].ravel()
         gY = gGrid[1].ravel()
         obs_guess_G = replace_ideal_with_observed(gGrid, X, Y, max_sq_dist)
@@ -631,21 +649,25 @@ def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=54):
 
         f = np.logical_or(gX != ogX, gY != ogY)
         dG = np.power(gGrid[f] - obs_guess_G[f], 2)
-        print f
+        #print f
 
         if dG.any() == False:
             return 0
 
         return np.sqrt(dG).sum()
 
-    print "***Will improve center {0}".format(center)
+    #print "***Will improve center {0}".format(center)
     #Solve grid_energy
     #center = fsolve(grid_energy, x0=np.array(center), args=(grid0,))
+    '''
+
     grid = grid0 + center.reshape(2, 1, 1)
-    print "***Will move ideal to observed center"
+    #print "***Will move ideal to observed center"
 
     return replace_ideal_with_observed(grid, X, Y, max_sq_dist)
 
+
+''' NOT IN USE
 
 def build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=(16,24),
     square_distance_threshold=None):
@@ -707,6 +729,9 @@ def build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=(16,24),
 
     return grid
 
+'''
+
+""" NOT IN USE
 
 def get_blob_centra(im_filtered):
 
@@ -720,30 +745,61 @@ def get_blob_centra(im_filtered):
 
     return X, Y
 
+"""
+
+def get_validated_grid(im, grid, dD1, dD2):
+
+    """Check so grid coordinates actually fall inside image"""
+
+    #Work with both types of grids
+    if grid.shape[0] == 2:
+        D1 = np.s_[0,:,:]
+        D2 = np.s_[1,:,:]
+    else:
+        D1 = np.s_[:,:,0]
+        D2 = np.s_[:,:,1]
+
+    #If any place has negative numbers, it's an overshoot
+    if (grid[D1].min() < np.ceil(dD1 * 0.5) or
+        grid[D2].min() < np.ceil(dD2 * 0.5)):
+
+        print "*** Invalid grid (less than 0)"
+        return None
+    
+    #If max plus half grid cell is larger than im it's an overshoot too
+    if (grid[D1].max() >= im.shape[0] + np.ceil(dD1 * 0.5) or
+        grid[D2].max() >= im.shape[1] + np.ceil(dD2 * 0.5)):
+
+        print "*** Invalid grid (more than max)"
+        return None
+
+    #Grid is OK
+    return grid
+
 def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None, Y=None, 
     expected_offset=(100, 100), run_dev=False, dev_filter_XY=None):
     """Detects grid candidates and constructs a grid"""
 
-    print "** Will threshold"
+    #print "** Will threshold"
 
-    T = get_adaptive_threshold(im, threshold_filter=None, segments=40, 
+    T = get_adaptive_threshold(im, threshold_filter=None, segments=100, 
         sigma=30)
 
-    print "** Got T"
+    #print "** Got T"
 
     im_filtered = get_denoise_segments(im<T, iterations=3)
     del T
 
-    print "** Filtered 1st pass the im<T, removed T"
+    #print "** Filtered 1st pass the im<T, removed T"
 
     get_segments_by_size(im_filtered, min_size=40,
         max_size=box_size[0]*box_size[1], inplace=True)
 
-    print "** Filtered on size"
+    #print "** Filtered on size"
 
     get_segments_by_shape(im_filtered, box_size, inplace=True)
 
-    print "** Filtered on shape"
+    #print "** Filtered on shape"
 
     labled, labels = ndimage.label(im_filtered)
     if X is None or Y is None:
@@ -756,7 +812,7 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
 
     del labled
 
-    print "** Got X and Y"
+    #print "** Got X and Y"
     if dev_filter_XY is not None:
         f_XY = np.random.random(X.shape) < dev_filter_XY
         X = X[f_XY]
@@ -776,21 +832,38 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
         center, spacings = get_grid_parameters_4(X, Y, grid_shape, spacings=box_size, center=None)
         dx, dy = spacings
 
-        print "** Got grid parameters"
+        #print "** Got grid parameters"
 
         grid = build_grid_from_center(X, Y, center, dx, dy, grid_shape)
+        #Reshape to fit old scheme
+        gX, gY = grid
+        grid = np.c_[gX, gY].reshape(grid_shape[0], grid_shape[1], 2, order='A')
 
     else:
+
+        center, spacings = get_grid_parameters_4(X, Y, grid_shape, spacings=box_size, center=None)
+        dx, dy = spacings
+
+        #print "** Got grid parameters"
+
+        grid = build_grid_from_center(X, Y, center, dx, dy, grid_shape)
+        #Reshape to fit old scheme
+        gX, gY = grid
+        grid = np.c_[gX, gY].reshape(grid_shape[0], grid_shape[1], 2, order='A')
+
+        """
         x_offset, y_offset, dx, dy = get_grid_parameters(X, Y,
             expected_distance=box_size[0], grid_shape=grid_shape,
             leeway=1.1, expected_start=expected_offset)
 
-        print "** Got grid parameters"
+        #print "** Got grid parameters"
 
         grid = build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=grid_shape,
             square_distance_threshold=70)
 
-    print "** Got grid"
+        """
+
+    #print "** Got grid"
 
     if visual:
         from matplotlib import pyplot as plt
@@ -801,5 +874,7 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
         plt.ylim(0, im_filtered.shape[0])
         plt.xlim(0, im_filtered.shape[1])
         plt.show()
+
+    grid = get_validated_grid(im, grid, dy, dx)
 
     return grid, X, Y

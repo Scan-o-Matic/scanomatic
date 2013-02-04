@@ -240,6 +240,9 @@ class Grid_Array():
                 grid_shape=(self._pinning_matrix[int(self._im_dim_order[0])], 
                 self._pinning_matrix[int(self._im_dim_order[1])]))[0]
 
+        if self._grid is None:
+            return False
+
         if grid_correction is not None:
             self._grid -= grid_correction
 
