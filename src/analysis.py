@@ -305,12 +305,13 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
 
     #
     # SETTING GRID FROM REASONABLE TIME POINT
+    default_gridtime = 217
     if len(grid_times) > 0:
         pos = grid_times[0]
         if pos >= len(image_dictionaries):
             pos = len(image_dictionaries) - 1
     else:
-        pos = (len(image_dictionaries) > 100 and 100 
+        pos = (len(image_dictionaries) > default_gridtime and default_gridtime
             or len(image_dictionaries) - 1)
 
     plate_positions = []
