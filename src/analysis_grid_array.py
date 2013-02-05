@@ -45,7 +45,7 @@ class Grid_Array():
     _APPROXIMATE_GRID_CELL_SIZES = {
         (8, 12): (212, 212),
         (16, 24): (106, 106),
-        (32, 48): (54, 54),
+        (32, 48): (53.64928854, 52.69155633),
         (64, 96): (27, 27),
         None: None
         }
@@ -236,9 +236,17 @@ class Grid_Array():
             self._im_dim_order = self._get_grid_to_im_axis_mapping(
                 self._pinning_matrix, im)
 
-        self._grid = resource_grid.get_grid(im, box_size=self._guess_grid_cell_size, 
-                grid_shape=(self._pinning_matrix[int(self._im_dim_order[0])], 
-                self._pinning_matrix[int(self._im_dim_order[1])]))[0]
+        #IF NO REAL HISTORY GUESS SHOULDN'T BE USED TO VALIDATE
+        validate_parameters = False
+        expected_spacings = self._guess_grid_cell_size
+        grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])], 
+                self._pinning_matrix[int(self._im_dim_order[1])])
+        expected_center = tuple([s/2.0 for s in im.shape])
+
+        self._grid, X, Y, center, spacings = resource_grid.get_grid(im,
+                expected_spacing=expected_spacings,
+                expected_center=expected_center,
+                grid_shape=grid_shape)
 
         if self._grid is None:
             return False

@@ -55,7 +55,6 @@ def get_adaptive_threshold(im, threshold_filter=None, segments=60,
         p = 1 - np.float(segments)/im.size
         T = (np.random.random(im.shape) > p).astype(np.uint8)
 
-
     labled, labels = _get_sectioned_image(T)
 
     for l in range(1, labels + 1):
@@ -776,8 +775,49 @@ def get_validated_grid(im, grid, dD1, dD2):
     #Grid is OK
     return grid
 
-def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None, Y=None, 
-    expected_offset=(100, 100), run_dev=False, dev_filter_XY=None):
+
+def get_valid_parameters(center, spacing, expected_center, expected_spacing,
+        sigma_spacing=0.55, t=0.95):
+
+    """This function validates observed spacing and center and uses
+    expected values when deemed unrealistic.
+
+    The sigma_spacing is set heuristically to reflect acceptable varation.
+
+    The sigma for center is set from mean spacing so that the allowed
+    variation relates to the inter-colony distance with a large safty
+    margin. 
+    """
+
+    #Gauss function
+    def _get_p(a, b, c, x):
+        """a is height, b is position, c is width"""
+        p = a * np.exp(-(x - b) ** 2 / (2 * c ** 2))
+        return p
+
+    print "*** Got center {0} and spacing {1}".format(center, spacing)
+
+    spacing = np.array(spacing)
+    expected_spacing = np.array(expected_spacing)
+
+    p_spacing = _get_p(1.0, expected_spacing, sigma_spacing, spacing)
+    spacing[p_spacing < t] = expected_spacing[p_spacing < t]
+
+    center = np.array(center)
+    expected_center = np.array(expected_center)
+    sigma_center = np.sqrt(spacing.mean())
+    p_center = _get_p(1.0, expected_center, sigma_center, center)
+    center[p_center < t] = expected_center[p_center < t]
+
+    print "*** Returning center {0} and spacing {1}".format(center, spacing)
+
+    return tuple(center), tuple(spacing)
+
+
+def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
+    visual=False, X=None, Y=None, 
+    expected_center=(100, 100), run_dev=False, dev_filter_XY=None, 
+    validate_parameters=False):
     """Detects grid candidates and constructs a grid"""
 
     #print "** Will threshold"
@@ -793,11 +833,11 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
     #print "** Filtered 1st pass the im<T, removed T"
 
     get_segments_by_size(im_filtered, min_size=40,
-        max_size=box_size[0]*box_size[1], inplace=True)
+        max_size=expected_spacing[0]*expected_spacing[1], inplace=True)
 
     #print "** Filtered on size"
 
-    get_segments_by_shape(im_filtered, box_size, inplace=True)
+    get_segments_by_shape(im_filtered, expected_spacing, inplace=True)
 
     #print "** Filtered on shape"
 
@@ -829,9 +869,14 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
             grid_shape=grid_shape, leeway=0.1)
 
         """
-        center, spacings = get_grid_parameters_4(X, Y, grid_shape, spacings=box_size, center=None)
-        dx, dy = spacings
+        center, spacings = get_grid_parameters_4(X, Y, grid_shape,
+            spacings=expected_spacing, center=None)
 
+        if validate_parameters:
+            center, spacings = validate_parameters(center, spacings,
+                expected_center, expected_spacing)
+
+        dx, dy = spacings
         #print "** Got grid parameters"
 
         grid = build_grid_from_center(X, Y, center, dx, dy, grid_shape)
@@ -841,7 +886,13 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
 
     else:
 
-        center, spacings = get_grid_parameters_4(X, Y, grid_shape, spacings=box_size, center=None)
+        center, spacings = get_grid_parameters_4(X, Y, grid_shape,
+            spacings=expected_spacing, center=None)
+
+        if validate_parameters:
+            center, spacings = get_valid_parameters(center, spacings,
+                expected_center, expected_spacing)
+
         dx, dy = spacings
 
         #print "** Got grid parameters"
@@ -877,4 +928,4 @@ def get_grid(im, box_size=(105, 105), grid_shape=(16, 24), visual=False, X=None,
 
     grid = get_validated_grid(im, grid, dy, dx)
 
-    return grid, X, Y
+    return grid, X, Y, center, spacings
