@@ -151,6 +151,7 @@ class Fixture_Settings(object):
         model['ref-marker-positions'] = copy.copy(self.marker_positions)
         model['marker-path'] = self.get_marker_path()
 
+
 class Fixtures(object):
 
     def __init__(self, paths):

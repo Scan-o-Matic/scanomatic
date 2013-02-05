@@ -73,6 +73,7 @@ class Config_File(object):
 
             except:
 
+                self._location = None
                 return None
 
             fs.close()
@@ -81,6 +82,10 @@ class Config_File(object):
         self._location = location
 
         return fs
+
+    def get_loaded(self):
+
+        return self._location is not None
 
     def read(self, fs=None, location=None):
 

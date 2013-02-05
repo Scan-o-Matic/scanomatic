@@ -33,6 +33,130 @@ import resource_app_config as resource_app_config
 import resource_logger as resource_logger
 
 
+#
+# DECORATORS
+#
+
+
+def GH_loaded_decorator(f):
+    """Intended to work with Gridding History class"""
+    def wrap(*args, **kwargs):
+        self = args[0]
+        if self._settings is None:
+            if self._load() == False:
+                return None
+        
+        return f(*args, **kwargs)
+
+    return wrap
+
+#
+# CLASSES
+#
+
+
+class Gridding_History(object):
+    """This class keeps track of the gridding-histories of the fixture
+    using the configuration-file in the fixtures-directory"""
+
+    plate_pinning_pattern = "plate_{0}_pinning_{1}"
+    pinning_formats = ((8, 12), (16, 24), (32, 48), (64, 96))
+
+    def __init__(self, parent, fixture_name, paths, logger=None):
+
+        if logger is None:
+            logger = resource_logger.Log_Garbage_Collector()
+
+        self._parent = parent
+        self._logger = logger
+        self._name = fixture_name
+        self._paths = paths
+
+        self._settings = None
+
+    def _get_plate_pinning_str(self, plate, pinning_format):
+
+        return self.plate_pinning_pattern.format(plate, pinning_format)
+
+    def _get_gridding_history(self, plate, pinning_format):
+
+        self._settings.reload()
+        return self._settings[self._get_plate_pinning_str(plate, pinning_format)]
+
+    def _load(self):
+
+        conf_file = conf.Config_File(self._paths.get_fixture_path(self.name))
+        if conf_file.get_loaded() == False:
+            self._settings = None
+            return False
+        else:
+            self._settings = conf_file
+            return True
+
+    @GH_loaded_decorator
+    def get_gridding_history(self, plate, pinning_format):
+
+        h = self._get_gridding_history(plate, pin_format)
+
+        if h is None:
+            return None
+
+        return np.array(h.values())
+
+    @GH_loaded_decorator
+    def set_gridding_parameters(self, project_id, pinning_format, plate,
+            center, spacings):
+
+        h = self._get_gridding_history(plate, pinning_format)
+
+        if h is None:
+
+            h = {}
+
+        h[project_id] = center + spacings
+
+        f = self._settings
+        f.set(self._get_plate_pinning_str(plate, pinning_format), h)
+        f.save()
+
+    @GH_loaded_decorator
+    def unset_gridding_parameters(self, project_id, pinning_format, plate):
+
+        h = self._get_gridding_history(plate, pinning_format)
+
+        if h is None:
+
+            return None
+
+        try:
+            del h[project_id]
+        except:
+            self._logger.warning(("Gridding history for {0} project {1}"
+                " plate {2} pinning format {3} did not exist, thus"
+                " nothing to delete").format(self._name,
+                project_id, plate, pinning_format))
+
+        f = self._settings
+        f.set(self._get_plate_pinning_str(plate, pinning_format), h)
+        f.save()
+        
+    @GH_loaded_decorator
+    def reset_gridding_history(self, plate):
+
+        f = self._settings
+
+        for pin_format in self.pinning_formats:
+            f.set(self._get_plate_pinning_str(plate, pin_format), {})
+
+        f.save()
+
+    @GH_loaded_decorator
+    def reset_all_gridding_histories(self):
+
+        for p in self._parent.get_plates(indices=True):
+            self.reset_gridding_history(p)
+
+
 class Fixture_Image(object):
 
     def __init__(self, fixture, image_path=None,
@@ -46,6 +170,10 @@ class Fixture_Image(object):
         self._logger = logger
 
         self._paths = resource_path.Paths()
+
+        self._history = Gridding_History(self, fixture, self._paths, 
+            logger=logger)
+
         self._config = resource_app_config.Config(self._paths)
 
         self._define_reference = define_reference
@@ -114,6 +242,11 @@ class Fixture_Image(object):
         elif key in ['version', 'Version']:
 
             return self.fixture_reference.get('version')
+ 
+        elif key in ['history', 'pinning', 'pinnings', 'gridding']:
+
+            return self._history
+
         else:
 
             print "***ERROR: Unknown key {0}".format(key)
@@ -632,45 +765,3 @@ class Fixture_Image(object):
             i += 1
 
         return plate_list
-
-    def get_pinning_history(self, plate, pin_format):
-
-        ph = "plate_{0}_pinning_{1}"
-
-        return self['fixture'][ph.format(plate, pin_format)]
-
-    def set_append_pinning_position(self, plate, pin_format, position):
-
-        ph = "plate_{0}_pinning_{1}"
-        h = self.get_pinning_history(plate, pin_format)
-
-        if h is None:
-
-            h = []
-
-        h.append(position)
-
-        self['fixture'].set(ph.format(plate, pin_format), h)
-        self['fixture'].save()
-
-    def set_pinning_positions(self, plate, pin_format, position_list):
-
-        ph = "plate_{0}_pinning_{1}"
-
-        self['fixture'].set(ph.format(plate, pin_format),
-                        position_list)
-
-        self['fixture'].save()
-
-    def reset_pinning_history(self, plate):
-
-        ph = "plate_{0}_pinning_{1}"
-        pin_formats = [(8, 12), (16, 24), (32, 48), (64, 96)]
-        for pin_format in pin_formats:
-            self['fixture'].set(ph.format(plate, pin_format), [])
-        self['fixture'].save()
-
-    def reset_all_pinning_histories(self):
-
-        for p in self.get_plates(indices=True):
-            self.reset_pinning_history(p)
