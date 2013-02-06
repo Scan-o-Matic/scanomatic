@@ -5,7 +5,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL v3.0"
-__version__ = "0.997"
+__version__ = "0.998"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -170,11 +170,13 @@ class Grid_Array():
         self._grid[:,:,0] = X
         self._grid[:,:,1] = Y
         self._set_grid_cell_size()
+        self.unset_history()
 
     def set_manual_grid(self, grid):
 
         self._grid = grid
         self._set_grid_cell_size()
+        self.unset_history()
 
     def _set_grid_cell_size(self):
 
@@ -192,41 +194,30 @@ class Grid_Array():
 
         """
 
-        if self._parent is not None:
+    def unset_history(self):
 
-            self.set_history()
-
-    def set_history(self, adjusted_by_history=False):
-
-        topleft_history = self.fixture.get_pinning_history(
-                self._identifier[1], self._pinning_matrix)
-
-        if topleft_history is None:
-
-            topleft_history = []
+        grid_history = self.fixture['history']
 
         p_uuid = self._parent.p_uuid
+        plate = self._identifier[1]
 
-        if p_uuid is not None and not adjusted_by_history:
+        if p_uuid is not None:
 
-            is_rerun = [i for i, tl in enumerate(topleft_history) \
-                        if tl[0] == p_uuid]
+            grid_history.unset_gridding_parameters(p_uuid,
+                self._pinning_matrix, plate)
 
 
-            hist_entry = (p_uuid,
-                    self._grid[0,0,:].tolist(),
-                    self._grid_cell_size)
+    def set_history(self, center, spacings):
 
-            if len(is_rerun) == 0:
-                topleft_history.append(hist_entry)
-            else:
-                topleft_history[is_rerun[0]] = hist_entry
+        grid_history = self.fixture['history']
 
-            if len(topleft_history) > 20:
-                del topleft_history[0]
+        p_uuid = self._parent.p_uuid
+        plate = self._identifier[1]
 
-            self.fixture.set_pinning_positions(\
-                self._identifier[1], self._pinning_matrix, topleft_history)
+        if p_uuid is not None:
+
+            grid_history.set_gridding_parameters(p_uuid, self._pinning_matrix,
+                plate, center, spacings)
 
     def set_grid(self, im, save_name=None, grid_correction=None):
 
@@ -236,14 +227,24 @@ class Grid_Array():
             self._im_dim_order = self._get_grid_to_im_axis_mapping(
                 self._pinning_matrix, im)
 
-        #IF NO REAL HISTORY GUESS SHOULDN'T BE USED TO VALIDATE
-        validate_parameters = False
-        expected_spacings = self._guess_grid_cell_size
         grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])], 
                 self._pinning_matrix[int(self._im_dim_order[1])])
-        expected_center = tuple([s/2.0 for s in im.shape])
 
-        self._grid, X, Y, center, spacings = resource_grid.get_grid(im,
+        gh = np.array(self.get_history(self))
+
+        if gh.size < 40:  # Require 10 projects (4 measures per project)
+            gh_median = np.median(gh, axis=0)
+            validate_parameters = True
+            expected_spacings = tuple(gh_median[2:])
+            expected_center = tuple(gh_median[:2])    
+        else:
+            #If too little reference data, use very rough guesses
+            validate_parameters = False
+            expected_spacings = self._guess_grid_cell_size
+            expected_center = tuple([s/2.0 for s in im.shape])
+
+        self._grid, X, Y, center, spacings, adjusted_values = \
+                resource_grid.get_grid(im,
                 expected_spacing=expected_spacings,
                 expected_center=expected_center,
                 grid_shape=grid_shape)
@@ -253,6 +254,7 @@ class Grid_Array():
 
         if grid_correction is not None:
             self._grid -= grid_correction
+            adjusted_values = True
 
         if self._grid.min() < 0:
             raise Invalid_Grid("Negative positons in grid")
@@ -270,7 +272,12 @@ class Grid_Array():
 
             return False
 
-        self._set_grid_cell_size()
+        self._grid_cell_size = map(lambda x: int(round(x)), spacings)
+
+        if adjusted_values:
+            self.unset_history()
+        else:
+            self.set_history(center, spacings)
 
         if save_name is not None:
             self.make_grid_im(im, save_grid_name=save_name)
@@ -371,6 +378,16 @@ class Grid_Array():
     #
     # Get functions
     #
+
+    def get_history(self):
+
+        grid_history = self.fixture['history']
+
+        plate = self._identifier[1]
+
+        gh = grid_history.get_gridding_history(plate, self._pinning_matrix)
+
+        return gh
 
     def get_polynomial_coeffs(self):
 

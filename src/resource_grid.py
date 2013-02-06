@@ -7,7 +7,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.997"
+__version__ = "0.998"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -809,9 +809,11 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
     p_center = _get_p(1.0, expected_center, sigma_center, center)
     center[p_center < t] = expected_center[p_center < t]
 
+    adjusted_values = (p_center < t).any() or (p_spacing < t).any()
+
     print "*** Returning center {0} and spacing {1}".format(center, spacing)
 
-    return tuple(center), tuple(spacing)
+    return tuple(center), tuple(spacing), adjusted_values
 
 
 def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
@@ -873,8 +875,8 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
             spacings=expected_spacing, center=None)
 
         if validate_parameters:
-            center, spacings = validate_parameters(center, spacings,
-                expected_center, expected_spacing)
+            center, spacings, adjusted_values = get_valid_parameters(center,
+                spacings, expected_center, expected_spacing)
 
         dx, dy = spacings
         #print "** Got grid parameters"
@@ -890,8 +892,8 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
             spacings=expected_spacing, center=None)
 
         if validate_parameters:
-            center, spacings = get_valid_parameters(center, spacings,
-                expected_center, expected_spacing)
+            center, spacings, adjusted_values = get_valid_parameters(center,
+                spacings, expected_center, expected_spacing)
 
         dx, dy = spacings
 
@@ -928,4 +930,4 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
 
     grid = get_validated_grid(im, grid, dy, dx)
 
-    return grid, X, Y, center, spacings
+    return grid, X, Y, center, spacings, adjusted_values

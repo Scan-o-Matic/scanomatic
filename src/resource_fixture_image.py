@@ -5,7 +5,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Andreas Skyman"]
 __license__ = "GPL v3.0"
-__version__ = "0.997"
+__version__ = "0.998"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -45,7 +45,9 @@ def GH_loaded_decorator(f):
         if self._settings is None:
             if self._load() == False:
                 return None
-        
+        else:
+            self._settings.reload()
+
         return f(*args, **kwargs)
 
     return wrap
@@ -61,8 +63,9 @@ class Gridding_History(object):
 
     plate_pinning_pattern = "plate_{0}_pinning_{1}"
     pinning_formats = ((8, 12), (16, 24), (32, 48), (64, 96))
+    plate_area_pattern = "plate_{0}_area"
 
-    def __init__(self, parent, fixture_name, paths, logger=None):
+    def __init__(self, parent, fixture_name, paths, logger=None, app_config=None):
 
         if logger is None:
             logger = resource_logger.Log_Garbage_Collector()
@@ -71,8 +74,18 @@ class Gridding_History(object):
         self._logger = logger
         self._name = fixture_name
         self._paths = paths
+        self._app_config = app_config
 
         self._settings = None
+        self._compatibility_check()
+
+    def __getitem__(self, key):
+        #This is purposly insecure function
+
+        if self._settings is None:
+            return None
+
+        return self._settings.get(key)
 
     def _get_plate_pinning_str(self, plate, pinning_format):
 
@@ -85,7 +98,7 @@ class Gridding_History(object):
 
     def _load(self):
 
-        conf_file = conf.Config_File(self._paths.get_fixture_path(self.name))
+        conf_file = conf.Config_File(self._paths.get_fixture_path(self._name))
         if conf_file.get_loaded() == False:
             self._settings = None
             return False
@@ -153,10 +166,33 @@ class Gridding_History(object):
     @GH_loaded_decorator
     def reset_all_gridding_histories(self):
 
-        for p in self._parent.get_plates(indices=True):
-            self.reset_gridding_history(p)
+        f = self._settings
+        plate = True
+        i = 0
 
+        while plate is not None:
 
+            plate = f.get(self.plate_area_pattern.format(i))
+            if plate is not None:
+
+                self.reset_gridding_history(i)
+
+            i += 1
+
+    @GH_loaded_decorator
+    def _compatibility_check(self):
+        '''As of version 0.998 a change was made to the structure of pinning
+        history storing, both what is stored and how. Thus older histories must
+        be cleared. When done, version is changed to 0.998'''
+
+        f = self._settings
+        v = f.get('version')
+        if (v < self._app_config.version_fixture_grid_history_change_1):
+
+            self.reset_all_gridding_histories()
+            f.set('version', self._app_config.version_fixture_grid_history_change_1)
+            f.save()
+        
 class Fixture_Image(object):
 
     def __init__(self, fixture, image_path=None,
@@ -170,11 +206,11 @@ class Fixture_Image(object):
         self._logger = logger
 
         self._paths = resource_path.Paths()
+        self._config = resource_app_config.Config(self._paths)
 
         self._history = Gridding_History(self, fixture, self._paths, 
-            logger=logger)
+            logger=logger, app_config = self._config)
 
-        self._config = resource_app_config.Config(self._paths)
 
         self._define_reference = define_reference
         self.fixture_name = fixture

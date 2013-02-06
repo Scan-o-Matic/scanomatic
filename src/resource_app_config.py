@@ -4,7 +4,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.997"
+__version__ = "0.998"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -40,6 +40,7 @@ class Config(object):
 
         #VERSION HANDLING
         self.version_first_pass_change_1 = 0.997
+        self.version_fixture_grid_history_change_1 = 0.998
 
         #SCANNER
         self.number_of_scanners = 3
