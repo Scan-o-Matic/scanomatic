@@ -237,6 +237,11 @@ class Grid_Array():
             validate_parameters = True
             expected_spacings = tuple(gh_median[2:])
             expected_center = tuple(gh_median[:2])    
+        elif gh.size > 8:  # If some measures (3-9), use them
+            validate_parameters = False  # But don't enforce
+            gh_mean = np.mean(gh, axis=0)
+            expected_spacings = tuple(gh_mean[2:])
+            expected_center = tuple(gh_mean[:2])    
         else:
             #If too little reference data, use very rough guesses
             validate_parameters = False

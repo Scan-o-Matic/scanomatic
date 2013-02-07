@@ -805,7 +805,7 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
 
     center = np.array(center)
     expected_center = np.array(expected_center)
-    sigma_center = np.sqrt(spacing.mean())
+    sigma_center = 0.5 * spacing.mean()
     p_center = _get_p(1.0, expected_center, sigma_center, center)
     center[p_center < t] = expected_center[p_center < t]
 

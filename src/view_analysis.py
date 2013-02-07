@@ -89,8 +89,23 @@ class Analysis_Top_Root(Top):
         self.pack_start(button, False, False, PADDING_SMALL)
         button.connect("clicked", controller.set_analysis_stage, "1st_pass")
 
+        button = gtk.Button()
+        button.set_label(model["analysis-top-root-inspect-text"])
+        self.pack_start(button, False, False, PADDING_SMALL)
+        button.connect("clicked", controller.set_analysis_stage, "inspect")
+
         self.show_all()
 
+class Analysis_Inspect_Top(Top):
+
+    def __init__(self, controller, model):
+
+        super(Analysis_Inspect_Top, self).__init__(controller, model)
+        
+        label = gtk.Label(model['analysis-top-inspect-text'])
+        self.pack_start(label, True, True, PADDING_SMALL)
+
+        self.show_all()
 
 class Analysis_First_Pass_Top(Top):
 
@@ -253,6 +268,90 @@ class Analysis_Top_Image_Plate(Analysis_Top_Image_Generic):
             model, specific_model, specific_controller, next_text,
             next_stage_signal, back_to_root=False)
 
+
+class Analysis_Inspect_Stage(gtk.VBox):
+
+    def __init__(self, controller, model):
+
+        self._controller = controller
+        self._model = model
+        tc = controller.get_top_controller()
+        self._app_config = tc.config
+        self._paths = tc.paths
+
+        super(Analysis_Inspect_Stage, self).__init__()
+
+        self._project_title = gtk.Label(model['analysis-stage-inspect-not_selected'])
+        self.pack_start(self._project_title, False, False, PADDING_LARGE)
+
+        button = gtk.Button()
+        button.set_label(model['analysis-stage-inspect-select_button'])
+        button.connect("clicked", self._select_analysis)
+        hbox = gtk.HBox(False, 0)
+        hbox.pack_start(button, False, False, PADDING_SMALL)
+        self.pack_start(hbox, False, False, PADDING_SMALL)
+
+        self._warning = gtk.Label()
+        self.pack_start(self._warning, False, False, PADDING_SMALL)
+
+        scrolled_window = gtk.ScrolledWindow()
+        self._display = gtk.HBox()
+        scrolled_window.add_with_viewport(self._display)
+        self.pack_start(scrolled_window, True, True, PADDING_SMALL)
+
+        self.show_all()
+
+    def _select_analysis(self, widget):
+
+        m = self._model
+        base_dir = self._paths.experiment_root
+        file_names = select_file(
+                m['analysis-stage-inspect-analysis-popup'], 
+                multiple_files=False,
+                file_filter=m['analysis-stage-inspect-file-filter'],
+                start_in=base_dir)
+
+        if len(file_names) > 0:
+            run_file = file_names[0]
+            self._project_title.set_text(run_file)
+            self._controller.set_analysis(run_file)
+
+    def set_project_name(self, project_name):
+
+            self._project_title.set_text(project_name)
+
+    def set_inconsistency_warning(self):
+
+        m = self._model
+        self._warning.set_text(m['analysis-stage-inspect-warning'])
+
+    def set_display(self, sm):
+
+        d = self._display
+        m = self._model
+        p_title = m['analysis-stage-inspect-plate-title']
+        p_button = m['analysis-stage-inspect-plate-bad']
+
+        for child in d.children():
+            d.remove(child)
+
+        for i, plate in enumerate(sm['pinnigs']):
+
+            if plate:
+
+                vbox = gtk.VBox()
+                label = gtk.Label(p_title.format(i+1))
+                vbox.pack_start(label, False, False, PADDING_SMALL)
+                image = gtk.Image()
+                image.set_from_file(sm['grid-image'][i])
+                vbox.pack_start(image, True, True, PADDING_SMALL)
+                button = gtk.Button()
+                button.set_label(p_button)
+                button.connect("clicked", self._verify_bad, i)
+                vbox.pack_start(button, False, False, PADDING_SMALL)
+                d.pack_start(d, True, True, PADDING_MEDIUM)
+
+        d.show_all()
 
 class Analysis_Stage_About(gtk.Label):
 

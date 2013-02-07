@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import os
+import re
 import types
 import gobject
 import threading
@@ -167,6 +168,22 @@ class Analysis_Controller(controller_generic.Controller):
                 view.set_stage(
                     view_analysis.Analysis_Stage_First_Pass(
                         self._specific_controller, model))
+
+            elif stage_call == "inspect":
+
+                self._specific_controller = Analysis_Inspect(
+                    self, view=view, model=self._model,
+                    logger=self._logger)
+
+                self.add_subcontroller(self._specific_controller)
+
+                view.set_top(
+                    view_analysis.Analysis_Inspect_Top(
+                    self._specific_controller, model))
+
+                view.set_stage(
+                    view_analysis.Analysis_Inspect_Stage(
+                    self._specific_controller, model))
 
             elif stage_call == "transparency":
 
@@ -372,6 +389,110 @@ class Analysis_Controller(controller_generic.Controller):
             else:
 
                 raise Bad_Stage_Call(stage_call)
+
+
+class Analysis_Inspect(controller_generic.Controller):
+
+    def __init__(self, parent, view=None, model=None, logger=None):
+
+        super(Analysis_Inspect, self).__init__(
+                parent, view=view, model=model, logger=logger)
+
+        tc = self.get_top_controller()
+        self._paths = tc.paths
+        self._app_config = tc.config
+
+    def set_analysis(self, run_file):
+
+        self.set_specific_model(model_analysis.copy_model(
+            model_analysis.specific_inspect))
+
+        sm = self._specific_model
+        sm['run-file'] = run_file
+        sm['analysis-dir'] = os.path.dirname(run_file)
+        self._parse_run_file()
+        if sm['prefix'] is not None:
+            self.get_view().get_stage().set_project_name(sm['prefix'])
+        self._look_for_grid_images()
+        if (sm['pinnings'] is None or 
+            sum(sm['pinnings']) != 
+            sum([gi is not None for gi in sm['grid-images']])):
+
+            self.get_view().get_stage().set_inconsistency_warning()
+
+        self.get_view().get_stage().set_display(sm)
+
+    def _look_for_grid_images(self):
+
+        sm = self._specific_model
+        im_pattern = os.sep.join((
+            sm['analysis-dir'],
+            self._paths.experiment_grid_image_pattern))
+
+        sm['grid-images'] = []
+        if sm['pinnings'] is not None:
+
+            for i, p in enumerate(sm['pinnings']):
+
+                if p:
+
+                    if os.path.isfile(im_pattern.format(i+1)):
+
+                        sm['grid-images'].append(im_pattern.format(i+1))
+                    else:
+                        sm['grid-images'].append(None)
+
+                else:
+                    sm['grid-images'].append(None)
+
+    def _parse_run_file(self):
+
+        sm = self._specific_model
+        if sm['run-file'] is not None:
+            try:
+                fh = open(sm['run-file'], 'r')
+            except:
+                return False
+
+            fh_data = fh.read()
+            fh.close()
+
+            #UUID
+            p_uuid = re.findall(r"\'UUID\': \'([a-f\d-].*)\'", fh_data)
+            if len(p_uuid) > 0:
+                sm['uuid'] = p_uuid[0]
+
+            #FIXTURE
+            fixture = re.findall(r"\'Fixture\': ([^,]*)", fh_data)
+            if len(fixture) > 0:
+                fixture = fixture[0]
+                if (fixture != 'None' and len(fixture) > 2 and
+                    fixture[0] == "'" and fixture[-1] == "'"):
+
+                    sm['fixture'] = fixture[1:-1]  # Trim the single quoutes
+
+            #PREFIX
+            prefix = re.findall(r"\'Prefix\': ([^,]*)", fh_data)
+            if len(prefix) > 0:
+                prefix = prefix[0]
+                if (prefix != 'None' and len(prefix) > 2 and
+                    prefix[0] == "'" and prefix[-1] == "'"):
+               
+                    sm['prefix'] = prefix[1:-1]
+
+            #PINNING
+            pinnings = re.findall(r"\'Pinning Matrices\': ([^']*)", fh_data)
+            if len(pinnings) > 0:
+                pinnings = pinnings[0]
+                try:
+                    pinnings = eval(pinnings[:-2])
+                    sm['pinnings'] = [p is not None for p in pinnings]
+                except:
+                    pass
+
+            return True
+
+        return False
 
 
 class Analysis_First_Pass(controller_generic.Controller):

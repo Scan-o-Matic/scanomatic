@@ -109,6 +109,7 @@ class Paths(object):
         self.experiment_first_pass_log_relative = ".1_pass.log"
         self.experiment_local_fixturename = \
             self.fixture_conf_file_rel_pattern.format("fixture")
+        self.experiment_grid_image_pattern = "grid___origin_plate_{0}.svg"
 
         #LOCK FILES
         self.lock_root = os.sep.join((os.path.expanduser("~"), ".scan_o_matic"))

@@ -44,36 +44,48 @@ PATHS = model_generic.resource_path.Paths()
 
 model = {
 #ANALYSIS TOP ROOT
-'analysis-top-root-project_button-text': 'Analyse Project',
-'analysis-top-root-tpu_button-text': 'Manual Analyse Transparency Image',
-'analysis-top-root-color_button-text': 'Manual Analyse Color Image',
-'analysis-top-root-1st_pass-text': '1st Pass Analysis (Make Project)',
+'analysis-top-root-project_button-text': 'Project',
+'analysis-top-root-tpu_button-text': 'Transparency Image',
+'analysis-top-root-color_button-text': 'Color Image',
+'analysis-top-root-1st_pass-text': 'Make Project',
+'analysis-top-root-inspect-text': 'Inspect Analysis',
 'analysis-top-root_button-text': 'Select Analysis Mode',
 
 #ANALYSIS STAGE ABOUT
 'analysis-stage-about-text':
 """<span size="x-large"><u>Analysis Options</u></span>
 
-<span weight="heavy">Project Analysis</span>
-<span><i>This is for when you want to re-run the analysis of a project.
-That is, projects normally, automatically starts an analysis themselves
+<span weight="heavy">Project</span>
+<span><i>This is for when you want to re-run the analysis of a project. That is, projects normally, automatically starts an analysis themselves
 as soon as they are done.</i></span>
 
-<span weight="heavy">Manual Analyse Transparency Image</span>
-<span><i>This is for manually selecting colonies of transparency
-images and getting information about them. That is, for example,
+<span weight="heavy">Transparency Image</span>
+<span><i>This is for manually selecting colonies of transparency images and getting information about them. That is, for example,
 quatative drop-tests or calibration experiments.</i></span>
 
-<span weight="heavy">Manual Analyse Color Image</span>
-<span><i>This is for analysing reflective color scan image --
-to get quatitative values of average pigmentation.</i></span>
+<span weight="heavy">Color Image</span>
+<span><i>This is for analysing reflective color scan image -- to get quatitative values of average pigmentation.</i></span>
 
-<span weight="heavy">1st Pass Analysis (Make Project)</span>
-<span><i>If you have to remake the first pass analysis so
-that you get a file that can be used for analysing a project, or
-if you have a couple of images that you want to analyse as if they had
-been acquired by running an experiment.</i></span>
+<span weight="heavy">Make Project</span>
+<span><i>If you have to remake the first pass analysis so that you get a file that can be used for analysing a project, or
+if you have a couple of images that you want to analyse as if they had been acquired by running an experiment.</i></span>
+
+<span weight="heavy">Inspect Analysis</span>
+<span><i>Inspect how griding worked (and in the future, maybe to manual adjustments to it)</i></span>
 """,
+
+#ANALYSIS TOP INSPECT
+'analysis-top-inspect-text': 'Select an analysis folder to get started',
+
+#ANALYSIS STAGE INSPECT
+'analysis-stage-inspect-not_selected': '--No Project Selected--',
+'analysis-stage-inspect-select_button': 'Select Analysis To Inspect',
+'analysis-stage-inspect-analysis-popup': "Select an analysis.run file in an analysis subfolder to your experiment",
+'analysis-stage-inspect-file-filter': {'filter_name': 'Analysis Log Files',
+'mime_and_patterns': (('TEXT', 'analysis.run'),)},
+'analysis-stage-inspect-warning': 'Not all plates seem to have been gridded!',
+'analysis-stage-inspect-plate-title': 'Plate {0}',
+'analysis-stage-inspect-plate-bad': 'This is a bad grid!',
 
 #ANALYSIS TOP PROJECT
 'analysis-top-project-start-text': 'Start',
@@ -304,4 +316,14 @@ specific_log_book = {
 'measures': list(),
 'calibration-measures': False,
 'indie-count': None
+}
+
+specific_inspect = {
+'run-file': None,
+'analysis-dir': None,
+'uuid': None,
+'fixture': None,
+'prefix': None,
+'grid-images': [],
+'pinnings': None,
 }
