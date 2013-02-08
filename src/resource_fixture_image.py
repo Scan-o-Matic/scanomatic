@@ -109,12 +109,22 @@ class Gridding_History(object):
     @GH_loaded_decorator
     def get_gridding_history(self, plate, pinning_format):
 
-        h = self._get_gridding_history(plate, pin_format)
+        h = self._get_gridding_history(plate, pinning_format)
 
         if h is None:
             return None
 
         return np.array(h.values())
+
+    @GH_loaded_decorator
+    def get_gridding_history_specific_plate(self, p_uuid, plate,
+        pinning_format):
+
+        h = self._get_gridding_history(plate, pinning_format)
+        if h is None or p_uuid not in h:
+            return None
+
+        return h[p_uuid]
 
     @GH_loaded_decorator
     def set_gridding_parameters(self, project_id, pinning_format, plate,
@@ -148,10 +158,13 @@ class Gridding_History(object):
                 " plate {2} pinning format {3} did not exist, thus"
                 " nothing to delete").format(self._name,
                 project_id, plate, pinning_format))
+            return False
 
         f = self._settings
         f.set(self._get_plate_pinning_str(plate, pinning_format), h)
         f.save()
+
+        return True
         
     @GH_loaded_decorator
     def reset_gridding_history(self, plate):

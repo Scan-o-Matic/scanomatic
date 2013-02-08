@@ -71,7 +71,7 @@ quatative drop-tests or calibration experiments.</i></span>
 if you have a couple of images that you want to analyse as if they had been acquired by running an experiment.</i></span>
 
 <span weight="heavy">Inspect Analysis</span>
-<span><i>Inspect how griding worked (and in the future, maybe to manual adjustments to it)</i></span>
+<span><i>Inspect how griding worked to improve future griddings (and one day, maybe to manual adjustments to it)</i></span>
 """,
 
 #ANALYSIS TOP INSPECT
@@ -86,6 +86,10 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'analysis-stage-inspect-warning': 'Not all plates seem to have been gridded!',
 'analysis-stage-inspect-plate-title': 'Plate {0}',
 'analysis-stage-inspect-plate-bad': 'This is a bad grid!',
+'analysis-stage-inspect-plate-yn': 'This will cause the pinning of plate {0} to be removed. Do you wish to continue?',
+'analysis-stage-inspect-plate-gone': 'Plate was removed',
+'analysis-stage-inspect-plate-nohistory': 'Not in history',
+'analysis-stage-inspect-plate-remove-warn': 'Failed to remove the selected plate from fixture history',
 
 #ANALYSIS TOP PROJECT
 'analysis-top-project-start-text': 'Start',
@@ -326,4 +330,7 @@ specific_inspect = {
 'prefix': None,
 'grid-images': [],
 'pinnings': None,
+'pinning-formats': None,
+'gridding-history': None,
+'gridding-in-history': None,
 }

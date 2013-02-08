@@ -295,8 +295,10 @@ class Analysis_Inspect_Stage(gtk.VBox):
         self.pack_start(self._warning, False, False, PADDING_SMALL)
 
         scrolled_window = gtk.ScrolledWindow()
+        vbox = gtk.VBox()
         self._display = gtk.HBox()
-        scrolled_window.add_with_viewport(self._display)
+        vbox.pack_start(self._display, False, False, PADDING_NONE)
+        scrolled_window.add_with_viewport(vbox)
         self.pack_start(scrolled_window, True, True, PADDING_SMALL)
 
         self.show_all()
@@ -322,8 +324,11 @@ class Analysis_Inspect_Stage(gtk.VBox):
 
     def set_inconsistency_warning(self):
 
+        w = self._controller.get_window()
         m = self._model
         self._warning.set_text(m['analysis-stage-inspect-warning'])
+        dialog(w, m['analysis-stage-inspect-warning'],
+            d_type='error', yn_buttons=False)
 
     def set_display(self, sm):
 
@@ -331,11 +336,12 @@ class Analysis_Inspect_Stage(gtk.VBox):
         m = self._model
         p_title = m['analysis-stage-inspect-plate-title']
         p_button = m['analysis-stage-inspect-plate-bad']
+        p_no_button = m['analysis-stage-inspect-plate-nohistory']
 
         for child in d.children():
             d.remove(child)
 
-        for i, plate in enumerate(sm['pinnigs']):
+        for i, plate in enumerate(sm['pinnings']):
 
             if plate:
 
@@ -343,15 +349,46 @@ class Analysis_Inspect_Stage(gtk.VBox):
                 label = gtk.Label(p_title.format(i+1))
                 vbox.pack_start(label, False, False, PADDING_SMALL)
                 image = gtk.Image()
-                image.set_from_file(sm['grid-image'][i])
+                image.set_from_file(sm['grid-images'][i])
                 vbox.pack_start(image, True, True, PADDING_SMALL)
                 button = gtk.Button()
-                button.set_label(p_button)
-                button.connect("clicked", self._verify_bad, i)
+
+                if (sm['gridding-in-history'] is not None and
+                    sm['gridding-in-history'][i] != True):
+
+                    button.set_label(p_no_button)
+                    button.set_sensitive(False)
+                else:
+
+                    button.set_label(p_button)
+                    button.connect("clicked", self._verify_bad, i)
+
                 vbox.pack_start(button, False, False, PADDING_SMALL)
-                d.pack_start(d, True, True, PADDING_MEDIUM)
+                d.pack_start(vbox, True, True, PADDING_MEDIUM)
 
         d.show_all()
+
+    def warn_remove_failed(self):
+
+        w = self._controller.get_window()
+        m = self._model
+        dialog(w, m['analysis-stage-inspect-plate-remove-warn'],
+            d_type='error', yn_buttons=False)
+
+    def _verify_bad(self, widget, plate):
+
+        w = self._controller.get_window()
+        m = self._model
+        if dialog(w, m['analysis-stage-inspect-plate-yn'].format(plate),
+            d_type="info", yn_buttons=True):
+
+            widget.set_sensitive(False)
+            if self._controller.remove_grid(plate):
+
+                widget.set_label(m['analysis-stage-inspect-plate-gone'])
+            else:
+                widget.set_label(m['analysis-stage-inspect-plate-nohistory'])
+
 
 class Analysis_Stage_About(gtk.Label):
 

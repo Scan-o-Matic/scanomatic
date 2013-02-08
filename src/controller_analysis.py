@@ -422,6 +422,32 @@ class Analysis_Inspect(controller_generic.Controller):
 
         self.get_view().get_stage().set_display(sm)
 
+    def remove_grid(self, plate):
+
+        sm = self._specific_model
+        gh = sm['gridding-history']
+        failed_remove = False
+
+        if (sm['uuid'] is not None and
+            gh is not None and
+            sm['pinning-formats'][plate] is not None and
+            sm['fixture'] is not None):
+
+            if gh.unset_gridding_parameters(sm['uuid'],
+                sm['pinning-formats'][plate],
+                plate) != True:
+
+                failed_remove = True
+
+        else:
+
+            failed_remove = True
+
+        if failed_remove:
+            self.get_view().get_stage().warn_remove_failed()
+
+        return failed_remove == False
+
     def _look_for_grid_images(self):
 
         sm = self._specific_model
@@ -458,7 +484,7 @@ class Analysis_Inspect(controller_generic.Controller):
             fh.close()
 
             #UUID
-            p_uuid = re.findall(r"\'UUID\': \'([a-f\d-].*)\'", fh_data)
+            p_uuid = re.findall(r"\'UUID\': \'([a-f\d-]*)\'", fh_data)
             if len(p_uuid) > 0:
                 sm['uuid'] = p_uuid[0]
 
@@ -470,6 +496,10 @@ class Analysis_Inspect(controller_generic.Controller):
                     fixture[0] == "'" and fixture[-1] == "'"):
 
                     sm['fixture'] = fixture[1:-1]  # Trim the single quoutes
+
+                    sm['gridding-history'] = resource_fixture_image.Gridding_History(self,
+                        sm['fixture'], self._paths,
+                        logger=self._logger, app_config=self._app_config)
 
             #PREFIX
             prefix = re.findall(r"\'Prefix\': ([^,]*)", fh_data)
@@ -487,8 +517,21 @@ class Analysis_Inspect(controller_generic.Controller):
                 try:
                     pinnings = eval(pinnings[:-2])
                     sm['pinnings'] = [p is not None for p in pinnings]
+                    sm['pinning-formats'] = pinnings
                 except:
                     pass
+
+            #CHECK WHICH PLATES HAVE PLACE IN HISTORY
+            if (sm['gridding-history'] is not None and sm['pinnings'] is not None
+                and sm['uuid'] is not None and sm['pinning-formats'] is not None):
+
+                    gh = sm['gridding-history']
+                    sm['gridding-in-history'] = [
+                        gh.get_gridding_history_specific_plate(
+                        sm['uuid'], sm['pinning-formats'][p], p) for p in
+                        xrange(len(sm['pinnings']))]
+
+            print sm
 
             return True
 
