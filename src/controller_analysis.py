@@ -483,6 +483,9 @@ class Analysis_Inspect(controller_generic.Controller):
             fh_data = fh.read()
             fh.close()
 
+            experiment_dir = os.path.abspath(os.path.join(
+                sm['analysis-dir'], os.pardir))
+
             #UUID
             p_uuid = re.findall(r"\'UUID\': \'([a-f\d-]*)\'", fh_data)
             if len(p_uuid) > 0:
@@ -497,9 +500,20 @@ class Analysis_Inspect(controller_generic.Controller):
 
                     sm['fixture'] = fixture[1:-1]  # Trim the single quoutes
 
-                    sm['gridding-history'] = resource_fixture_image.Gridding_History(self,
-                        sm['fixture'], self._paths,
-                        logger=self._logger, app_config=self._app_config)
+            #CHECK FOR FIXTURE NAME IN LOCAL FIXTURE COPY
+            if sm['fixture'] is None:
+                fixture = resource_fixture_image.Fixture_Image(
+                    self._paths.experiment_local_fixturename,
+                    fixture_directory=experiment_dir)
+
+                sm['fixture'] = fixture['fixture']['name']
+
+            #LOAD GRIDDING HISTORY
+            if sm['fixture'] is not None:
+                sm['gridding-history'] = resource_fixture_image.Gridding_History(self,
+                    sm['fixture'], self._paths,
+                    logger=self._logger, app_config=self._app_config)
+
 
             #PREFIX
             prefix = re.findall(r"\'Prefix\': ([^,]*)", fh_data)
