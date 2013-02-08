@@ -16,6 +16,7 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
+import numpy
 
 #
 # INTERNAL DEPENDENCIES
@@ -213,6 +214,74 @@ def claim_a_scanner_dialog(window, text, image_path, scanners):
 #
 # CLASSES
 #
+
+
+class Fixture_Drawing(gtk.DrawingArea):
+
+    HEIGHT = 0
+    WIDTH = 1
+    PADDING = 0.01
+
+    def __init__(self, fixture, width=None, height=None):
+
+        super(Fixture_Drawing, self).__init__()
+        self.connect("expose_event", self.expose)
+
+        self._fixture = fixture
+        self._set_data()
+
+        if width is not None and height is not None:
+            self.set_size_request(width, height)
+
+    def _set_data(self):
+
+        self._plates = np.array(self._fixture.get_plates('fixture'))
+        self._grayscale = np.array(self._fixture['fixture']['grayscale_area'])
+
+        self._data_height = max(self._plates[:,:,self.HEIGHT].max(),
+            self._grayscale[:,self.HEIGHT].max())
+    
+        self._data_width = max(self._plates[:,:,self.WIDTH].max(),
+            self._grayscale[:,self.WIDTH].max())
+
+
+    def _get_pos(self, d2, d1)
+
+        new_pos = (d1 / self._data_width * self._cr_active_w + 
+            self._cr_padding_w, d2 / self._data_height * self._cr_active_h +
+            self._cr_padding_h)
+
+        return new_pos
+
+    def _draw_rect(self, cr, positions, stroke_args=None, fill_args=None):
+
+        cr.move_to(*self._get_pos(*positions[0]))
+ 
+        for pos in positions[1:]:
+
+            cr.line_to(*self._get_pos(*pos))
+
+        cr.close_path()
+
+        if stroke_args is not None:
+            cr.stroke()
+
+        if fill_arggs is not None:
+            cr.fill()
+
+    def expose(self. widget, event):
+
+        cr = widget.window.cairo_create()
+        rect = self.get_allocation()
+
+        w = rect.width
+        h = rect.height
+
+        #CALCULATE CURRENT PARAMETERS
+        self._cr_padding_w = w * self.PADDING
+        self._cr_padding_h = h * self.PADDING
+        self._cr_active_w = w - 2 * self._cr_padding_w
+        self._cr_active_h = h - 2 * self._cr_padding_h
 
 
 class Start_Button(gtk.Button):
