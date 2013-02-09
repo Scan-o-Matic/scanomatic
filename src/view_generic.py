@@ -245,7 +245,7 @@ class Fixture_Drawing(gtk.DrawingArea):
             self._grayscale[:,self.WIDTH].max())
 
 
-    def _get_pos(self, d2, d1)
+    def _get_pos(self, d2, d1):
 
         new_pos = (d1 / self._data_width * self._cr_active_w + 
             self._cr_padding_w, d2 / self._data_height * self._cr_active_h +
@@ -253,7 +253,7 @@ class Fixture_Drawing(gtk.DrawingArea):
 
         return new_pos
 
-    def _draw_rect(self, cr, positions, stroke_args=None, fill_args=None):
+    def _draw_rect(self, cr, positions, stroke_rgba=None, stroke_width=0.5, fill_rgba=None):
 
         cr.move_to(*self._get_pos(*positions[0]))
  
@@ -263,10 +263,13 @@ class Fixture_Drawing(gtk.DrawingArea):
 
         cr.close_path()
 
-        if stroke_args is not None:
+        if stroke_rgba is not None:
+            cr.set_line_width(stroke_width)
+            cr.set_source_rgba(*stroke_rgba)
             cr.stroke()
 
         if fill_arggs is not None:
+            cr.set_source_rgba(*fill_rgba)
             cr.fill()
 
     def expose(self. widget, event):
