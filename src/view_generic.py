@@ -16,13 +16,14 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
-import numpy
+import numpy as np
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 import src.resource_scanner as resource_scanner
+import src.resource_logger as resource_logger
 
 #
 # STATIC GLOBALS
@@ -215,19 +216,33 @@ def claim_a_scanner_dialog(window, text, image_path, scanners):
 # CLASSES
 #
 
-
 class Fixture_Drawing(gtk.DrawingArea):
 
-    HEIGHT = 0
-    WIDTH = 1
+    HEIGHT = 1
+    WIDTH = 0
     PADDING = 0.01
+    VIEW_STATE = ('Image', 'Scanner')
 
-    def __init__(self, fixture, width=None, height=None):
+    def __init__(self, fixture, width=None, height=None, logger=None,
+        scanner_view=False):
 
         super(Fixture_Drawing, self).__init__()
         self.connect("expose_event", self.expose)
 
         self._fixture = fixture
+        self._scanner_view = scanner_view
+
+        self._plate_fill_rgba=tuple(np.array((242, 122 ,17, 255))/255.0)
+        self._gs_fill_rgba=tuple(np.array((17, 163 ,242, 255))/255.0)
+        self._plate_stroke_rgba = (1, 1, 1, 0.5)
+        self._gs_stroke_rgba = (1, 1, 1, 0.5)
+        self._text_rgba = (1, 1, 1, 0.9)
+
+        if logger is not None:
+            self._logger = logger
+        else:
+            self._logger = resource_logger.Log_Garbage_Collector()
+
         self._set_data()
 
         if width is not None and height is not None:
@@ -244,8 +259,17 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._data_width = max(self._plates[:,:,self.WIDTH].max(),
             self._grayscale[:,self.WIDTH].max())
 
+        if self._scanner_view:
+            self._flipflip()
 
-    def _get_pos(self, d2, d1):
+    def _flipflip(self):
+
+        self._grayscale[:, self.WIDTH] = self._data_width - self._grayscale[:, self.WIDTH]
+        self._grayscale[:, self.HEIGHT] = self._data_height - self._grayscale[:, self.HEIGHT]
+        self._plates[:,:, self.WIDTH] = self._data_width - self._plates[:,:, self.WIDTH]
+        self._plates[:,:, self.HEIGHT] = self._data_height - self._plates[:,:, self.HEIGHT]
+
+    def _get_pos(self, d1, d2):
 
         new_pos = (d1 / self._data_width * self._cr_active_w + 
             self._cr_padding_w, d2 / self._data_height * self._cr_active_h +
@@ -255,24 +279,81 @@ class Fixture_Drawing(gtk.DrawingArea):
 
     def _draw_rect(self, cr, positions, stroke_rgba=None, stroke_width=0.5, fill_rgba=None):
 
+        #self._logger.info("Will draw {0}".format(positions))
+
         cr.move_to(*self._get_pos(*positions[0]))
  
-        for pos in positions[1:]:
-
-            cr.line_to(*self._get_pos(*pos))
+        cr.line_to(*self._get_pos(*positions.diagonal()))
+        cr.line_to(*self._get_pos(*positions[1]))
+        cr.line_to(*self._get_pos(*positions[::-1].diagonal()))
 
         cr.close_path()
 
         if stroke_rgba is not None:
             cr.set_line_width(stroke_width)
             cr.set_source_rgba(*stroke_rgba)
-            cr.stroke()
+            if fill_rgba is not None:
+                cr.stroke_preserve()
+            else:
+                cr.stroke()
 
-        if fill_arggs is not None:
+        if fill_rgba is not None:
             cr.set_source_rgba(*fill_rgba)
             cr.fill()
 
-    def expose(self. widget, event):
+    def _draw_text(self, cr, positions, text, text_rgba=None,
+            fsize=20):
+
+        if text_rgba is None:
+            text_rgba = self._text_rgba
+
+        rect_x, rect_y = self._get_pos(*positions.mean(axis=0))
+        text = str(text)
+
+        cr.set_font_size(fsize)
+
+        fascent, fdescent, fheight, fxadvance, fyadvance = cr.font_extents()
+        xbearing, ybearing, width, height, xadvance, yadvance = (
+                cr.text_extents(text))
+
+        cr.move_to(rect_x - xbearing - width / 2,
+                rect_y - fdescent + fheight / 2)
+
+        cr.set_source_rgba(*text_rgba)
+        cr.show_text(text)
+
+    def toggle_view_mode(self):
+
+        self._flipflip()
+        self._scanner_view = self._scanner_view == False
+        self.window.clear()
+        self.expose(self, None)
+        return self.get_view_state()
+
+    def set_view_state(self, wstate):
+
+        wstate = wstate.capitalize()
+
+        try:
+            scanner_view = self.VIEW_STATE.index(wstate)
+        except:
+            self._logger.error(
+                'Unknown view state {0}, accepted are {1}'.format(
+                wstate, self.VIEW_STATE))
+            return False
+
+        if scanner_view != self._scanner_view:
+            self.toggle_view_mode()
+        else:
+            self._logger.warning('Already in state {0}'.format(wstate))
+
+        return True
+
+    def get_view_state(self):
+
+        return self.VIEW_STATE[self._scanner_view]
+
+    def expose(self, widget, event):
 
         cr = widget.window.cairo_create()
         rect = self.get_allocation()
@@ -286,6 +367,15 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._cr_active_w = w - 2 * self._cr_padding_w
         self._cr_active_h = h - 2 * self._cr_padding_h
 
+        self._draw_rect(cr, self._grayscale, stroke_rgba=self._gs_stroke_rgba,
+            fill_rgba=self._gs_fill_rgba)
+
+        for i, plate in enumerate(self._plates):
+
+            self._draw_rect(cr, plate, stroke_rgba=self._plate_stroke_rgba,
+                fill_rgba=self._plate_fill_rgba)
+
+            self._draw_text(cr, plate, i+1, fsize=h/10)
 
 class Start_Button(gtk.Button):
 

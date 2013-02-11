@@ -426,6 +426,7 @@ class Fixture_Image(object):
             self._fixture_config_root = "."
             self._fixture_reference_path = self._paths.get_fixture_path(
                 fixture_name, own_path="")
+            self._logger.info(self._fixture_reference_path)
 
         self._load_reference()
 

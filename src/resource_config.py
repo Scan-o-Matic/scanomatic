@@ -51,6 +51,7 @@ class Config_File(object):
 
     def load(self, location=None):
 
+        print "** Loading file", location
         if location is None:
 
             location = self.get_location()
