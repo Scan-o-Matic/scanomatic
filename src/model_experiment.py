@@ -69,12 +69,13 @@ pigmentation analysis.</i></span>
 ##STAGE
 ###METADATA
 'project-stage-meta': 'Meta-Data',
-'project-stage-select_root':'Select Experiments Root Directory',
+'project-stage-select_root':'Set Root Directory',
 'project-stage-prefix': 'Project Prefix',
 'project-stage-prefix-ok': 'Prefix is good',
 'project-stage-prefix-warn': 'Duplcate prefix name or illegal name',
 'project-stage-planning-id': 'Project ID from Planner',
 'project-stage-desc': 'Project Description',
+'project-stage-view_of_fixture': 'View in Scanner',
 ###FIXTURE AND SCANNER
 'project-stage-fixture_scanner': 'Scanner and Fixture',
 'project-stage-scanner-claim-fail': 'Failed to claim the scanner!\nSomeone is probably using it...',

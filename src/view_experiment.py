@@ -29,6 +29,7 @@ import matplotlib.patches as plt_patches
 #
 
 from src.view_generic import *
+import src.resource_fixture_image as resource_fixture_image
 
 #
 # STATIC GLOBALS
@@ -374,9 +375,22 @@ class Stage_Project_Setup(gtk.VBox):
 
         super(Stage_Project_Setup, self).__init__(0, False)
 
+        #SPLIT IN THE MIDDLE
+        split_box = gtk.HBox(False, 0)
+        left_box = gtk.VBox(False, 0)
+        right_box = gtk.VBox(False, 0)
+        split_box.pack_start(left_box, False, False, PADDING_MEDIUM)
+        split_box.pack_start(right_box, True, True, PADDING_MEDIUM)
+        self.pack_start(split_box, False, False, PADDING_NONE)
+
+        #VIEW OF FIXTURE
+        self._fixture_image = gtk.Frame(model['project-stage-view_of_fixture'])
+        right_box.pack_start(self._fixture_image, True, True, PADDING_NONE)
+        self._fixture_drawing = None
+
         #METADATA
         frame = gtk.Frame(model['project-stage-meta'])
-        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        left_box.pack_start(frame, False, False, PADDING_MEDIUM)
         vbox = gtk.VBox(False, 0)
         frame.add(vbox)
         ##FOLDER
@@ -427,7 +441,7 @@ class Stage_Project_Setup(gtk.VBox):
 
         #FIXTURE AND SCANNER
         frame = gtk.Frame(model['project-stage-fixture_scanner'])
-        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        left_box.pack_start(frame, False, False, PADDING_MEDIUM)
         hbox = gtk.HBox(False, 0)
         frame.add(hbox)
         label = gtk.Label(model['project-stage-scanner'])
@@ -445,12 +459,12 @@ class Stage_Project_Setup(gtk.VBox):
 
         #TIME, INTERVAL, SCANS
         frame = gtk.Frame(model['project-stage-time_settings'])
+        left_box.pack_start(frame, False, False, PADDING_MEDIUM)
         hbox = gtk.HBox(0, False)
         frame.add(hbox)
         table = gtk.Table(rows=3, columns=2, homogeneous=False)
         table.set_col_spacings(PADDING_MEDIUM)
         hbox.pack_start(table, False, False, PADDING_SMALL)
-        self.pack_start(frame, False, False, PADDING_MEDIUM)
         ##DURATION
         label = gtk.Label(model['project-stage-duration'])
         label.set_alignment(0, 0.5)
@@ -640,6 +654,24 @@ class Stage_Project_Setup(gtk.VBox):
 
         for f in sorted(fixtures):
             self.fixture.append_text(f)
+
+    def set_fixture_image(self, fixture):
+
+        if self._fixture_drawing is not None: 
+            self._fixture_image.remove(self._fixture_drawing)
+
+        tc = self._controller.get_top_controller()
+        
+        f = resource_fixture_image.Fixture_Image(fixture,
+            fixture_directory=tc.paths.fixtures)
+
+        self._fixture_drawing = Fixture_Drawing(f,
+            scanner_view=True)
+
+        self._fixture_image.add(self._fixture_drawing)
+
+
+        self._fixture_image.show_all()
 
     def set_scanners(self):
 

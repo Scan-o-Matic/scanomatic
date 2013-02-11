@@ -230,7 +230,7 @@ class Grid_Array():
         grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])], 
                 self._pinning_matrix[int(self._im_dim_order[1])])
 
-        gh = np.array(self.get_history(self))
+        gh = np.array(self.get_history())
 
         if gh.size < 40:  # Require 10 projects (4 measures per project)
             gh_median = np.median(gh, axis=0)

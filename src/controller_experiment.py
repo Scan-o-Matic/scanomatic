@@ -585,7 +585,9 @@ class Project_Controller(controller_generic.Controller):
 
         fixtures[model[row][0]].set_experiment_model(self._specific_model, 
             default_pinning = self._model['pinning-default'])
-        self._view.get_stage().set_pinning()
+        stage = self._view.get_stage()
+        stage.set_pinning()
+        stage.set_fixture_image(model[row][0])
         self.set_allow_run()
 
     def set_pinning(self, widget, plate):
