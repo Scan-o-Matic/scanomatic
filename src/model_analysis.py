@@ -90,6 +90,7 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'analysis-stage-inspect-plate-gone': 'Plate was removed',
 'analysis-stage-inspect-plate-nohistory': 'Not in history',
 'analysis-stage-inspect-plate-remove-warn': 'Failed to remove the selected plate from fixture history',
+'analysis-stage-inspect-plate-drawing': 'Layout drawing as seen in:',
 
 #ANALYSIS TOP PROJECT
 'analysis-top-project-start-text': 'Start',
@@ -325,6 +326,7 @@ specific_log_book = {
 specific_inspect = {
 'run-file': None,
 'analysis-dir': None,
+'experiment-dir': None,
 'uuid': None,
 'fixture': None,
 'prefix': None,

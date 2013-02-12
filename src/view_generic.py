@@ -322,7 +322,7 @@ class Fixture_Drawing(gtk.DrawingArea):
         cr.set_source_rgba(*text_rgba)
         cr.show_text(text)
 
-    def toggle_view_mode(self):
+    def toggle_view_state(self):
 
         self._flipflip()
         self._scanner_view = self._scanner_view == False
@@ -343,7 +343,7 @@ class Fixture_Drawing(gtk.DrawingArea):
             return False
 
         if scanner_view != self._scanner_view:
-            self.toggle_view_mode()
+            self.toggle_view_state()
         else:
             self._logger.warning('Already in state {0}'.format(wstate))
 
@@ -352,6 +352,10 @@ class Fixture_Drawing(gtk.DrawingArea):
     def get_view_state(self):
 
         return self.VIEW_STATE[self._scanner_view]
+
+    def get_other_state(self):
+
+        return self.VIEW_STATE[self._scanner_view == False]
 
     def expose(self, widget, event):
 

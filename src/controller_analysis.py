@@ -410,6 +410,8 @@ class Analysis_Inspect(controller_generic.Controller):
         sm = self._specific_model
         sm['run-file'] = run_file
         sm['analysis-dir'] = os.path.dirname(run_file)
+        sm['experiment-dir'] = os.path.abspath(os.path.join(sm['analysis-dir'], os.path.pardir))
+
         self._parse_run_file()
         if sm['prefix'] is not None:
             self.get_view().get_stage().set_project_name(sm['prefix'])
