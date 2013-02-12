@@ -877,6 +877,8 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
         if validate_parameters:
             center, spacings, adjusted_values = get_valid_parameters(center,
                 spacings, expected_center, expected_spacing)
+        else:
+            adjusted_values = False
 
         dx, dy = spacings
         #print "** Got grid parameters"
@@ -894,6 +896,8 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
         if validate_parameters:
             center, spacings, adjusted_values = get_valid_parameters(center,
                 spacings, expected_center, expected_spacing)
+        else:
+            adjusted_values = False
 
         dx, dy = spacings
 

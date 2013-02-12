@@ -4,6 +4,8 @@
 
 --- HOT ---
 
+*** 1st Pass Run, check how records Image Shape!
+
 *** FIX random startup-crash:
 
     [xcb] Unknown request in queue while dequeuing

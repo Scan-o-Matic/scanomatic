@@ -206,9 +206,13 @@ class Project_Image():
                 self._im_loaded = False
 
         #This makes sure that the image is 'standing' and not a 'landscape'
-        if image_dict is not None and 'Image Shape' in image_dict:
+        if (image_dict is not None and 'Image Shape' in image_dict and 
+            image_dict['Image Shape'] is not None):
+
             ref_shape = image_dict['Image Shape']
+
         else:
+
             ref_shape = (1, 0)
 
         self.im = resource_analysis_support.get_first_rotated(self.im, ref_shape)

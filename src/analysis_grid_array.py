@@ -232,21 +232,21 @@ class Grid_Array():
 
         gh = np.array(self.get_history())
 
-        if gh.size < 40:  # Require 10 projects (4 measures per project)
-            gh_median = np.median(gh, axis=0)
-            validate_parameters = True
-            expected_spacings = tuple(gh_median[2:])
-            expected_center = tuple(gh_median[:2])    
-        elif gh.size > 8:  # If some measures (3-9), use them
-            validate_parameters = False  # But don't enforce
-            gh_mean = np.mean(gh, axis=0)
-            expected_spacings = tuple(gh_mean[2:])
-            expected_center = tuple(gh_mean[:2])    
-        else:
+        if gh.size < 12:
             #If too little reference data, use very rough guesses
             validate_parameters = False
             expected_spacings = self._guess_grid_cell_size
             expected_center = tuple([s/2.0 for s in im.shape])
+        elif gh.size >= 40:  # Require 10 projects (4 measures per project)
+            gh_median = np.median(gh, axis=0)
+            validate_parameters = True
+            expected_spacings = tuple(gh_median[2:])
+            expected_center = tuple(gh_median[:2])    
+        else:  # If some measures (3-9), use them
+            validate_parameters = False  # But don't enforce
+            gh_mean = np.mean(gh, axis=0)
+            expected_spacings = tuple(gh_mean[2:])
+            expected_center = tuple(gh_mean[:2])    
 
         self._grid, X, Y, center, spacings, adjusted_values = \
                 resource_grid.get_grid(im,
