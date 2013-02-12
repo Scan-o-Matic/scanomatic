@@ -138,6 +138,9 @@ class Gridding_History(object):
 
         h[project_id] = center + spacings
 
+        self._logger.info("Setting history {0} on {1} for {2} {3}".format(
+            center + spacings, self._name, project_id, plate))
+
         f = self._settings
         f.set(self._get_plate_pinning_str(plate, pinning_format), h)
         f.save()
@@ -221,10 +224,6 @@ class Fixture_Image(object):
         self._paths = resource_path.Paths()
         self._config = resource_app_config.Config(self._paths)
 
-        self._history = Gridding_History(self, fixture, self._paths, 
-            logger=logger, app_config = self._config)
-
-
         self._define_reference = define_reference
         self.fixture_name = fixture
         self.im_scale = im_scale
@@ -235,6 +234,12 @@ class Fixture_Image(object):
             image_path=image_path)
 
         self.set_marking_path(markings_path)
+
+        f_name = self.get_name_in_ref()
+        if f_name is None:
+            f_name = fixture
+        self._history = Gridding_History(self, f_name, self._paths,
+            logger=logger, app_config = self._config)
 
         self.set_number_of_markings(markings)
 
@@ -350,6 +355,10 @@ class Fixture_Image(object):
             self.fixture_current = self.fixture_reference
         else:
             self.fixture_current = conf.Config_File(fixture_path + "_tmp")
+
+    def get_name_in_ref(self):
+
+        return self.fixture_reference.get('name')
 
     def set_number_of_markings(self, markings):
 
