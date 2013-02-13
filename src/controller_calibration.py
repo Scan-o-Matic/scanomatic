@@ -279,13 +279,13 @@ class Fixture_Controller(controller_generic.Controller):
     def save_fixture(self):
 
         sm = self._specific_model
-        self.f_settings.reset_all_pinning_histories()
+        self.f_settings['history'].reset_all_gridding_histories()
 
         for plate in enumerate(sm['plate-coords']):
             self.f_settings['plate-coords'] = plate
 
         self.f_settings['grayscale'] = sm['grayscale-targets']
-        self.f_settings.reset_all_pinning_histories()
+        #self.f_settings.reset_all_pinning_histories()
         self.f_settings['current'].save()
         self.set_saved()
         self.get_top_controller().fixtures.update()
