@@ -222,6 +222,7 @@ class Fixture_Drawing(gtk.DrawingArea):
     WIDTH = 0
     PADDING = 0.01
     VIEW_STATE = ('Image', 'Scanner')
+    BACKGROUND = (0.25, 0.25, 0.25, 0.3)
 
     def __init__(self, fixture, width=None, height=None, logger=None,
         scanner_view=False):
@@ -276,6 +277,12 @@ class Fixture_Drawing(gtk.DrawingArea):
             self._cr_padding_h)
 
         return new_pos
+
+    def _draw_bg(self, cr, w, h):
+
+        cr.set_source_rgba(*self.BACKGROUND)
+        cr.rectangle(0, 0, w, h)
+        cr.fill()
 
     def _draw_rect(self, cr, positions, stroke_rgba=None, stroke_width=0.5, fill_rgba=None):
 
@@ -370,6 +377,9 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._cr_padding_h = h * self.PADDING
         self._cr_active_w = w - 2 * self._cr_padding_w
         self._cr_active_h = h - 2 * self._cr_padding_h
+
+        #DRAWING
+        self._draw_bg(cr, w, h)
 
         self._draw_rect(cr, self._grayscale, stroke_rgba=self._gs_stroke_rgba,
             fill_rgba=self._gs_fill_rgba)

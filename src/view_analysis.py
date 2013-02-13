@@ -385,11 +385,12 @@ class Analysis_Inspect_Stage(gtk.VBox):
                 vbox.pack_start(image, True, True, PADDING_SMALL)
                 button = gtk.Button()
 
-                if (sm['gridding-in-history'] is not None and
-                    sm['gridding-in-history'][i] != True):
+                if (sm['gridding-in-history'] is None or 
+                    sm['gridding-in-history'][i] is None):
 
                     button.set_label(p_no_button)
                     button.set_sensitive(False)
+
                 else:
 
                     button.set_label(p_button)

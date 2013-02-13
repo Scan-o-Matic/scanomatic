@@ -285,7 +285,6 @@ class Fixture_Controller(controller_generic.Controller):
             self.f_settings['plate-coords'] = plate
 
         self.f_settings['grayscale'] = sm['grayscale-targets']
-        #self.f_settings.reset_all_pinning_histories()
         self.f_settings['current'].save()
         self.set_saved()
         self.get_top_controller().fixtures.update()

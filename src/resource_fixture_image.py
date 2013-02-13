@@ -112,8 +112,14 @@ class Gridding_History(object):
         h = self._get_gridding_history(plate, pinning_format)
 
         if h is None:
+            self._logger.info(
+                "No history in {2} on plate {0} format {1}".format(
+                plate, pinning_format,self._name))
             return None
 
+        self._logger.info(
+            "Returning history for {0} plate {1} forat {2}".format(
+            self._name, plate, pinning_format))
         return np.array(h.values())
 
     @GH_loaded_decorator
@@ -122,7 +128,14 @@ class Gridding_History(object):
 
         h = self._get_gridding_history(plate, pinning_format)
         if h is None or p_uuid not in h:
+            self._logger.info(
+                "No history in {2} on plate {0} format {1}".format(
+                plate, pinning_format,self._name))
             return None
+
+        self._logger.info(
+            "Returning history for {0} plate {1} forat {2} uuid {3}".format(
+            self._name, plate, pinning_format, p_uuid))
 
         return h[p_uuid]
 

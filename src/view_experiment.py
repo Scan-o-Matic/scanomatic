@@ -666,7 +666,7 @@ class Stage_Project_Setup(gtk.VBox):
             fixture_directory=tc.paths.fixtures)
 
         self._fixture_drawing = Fixture_Drawing(f,
-            scanner_view=True)
+            scanner_view=True, width=250, height=400)
 
         self._fixture_image.add(self._fixture_drawing)
 

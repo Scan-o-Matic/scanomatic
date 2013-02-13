@@ -544,7 +544,7 @@ class Analysis_Inspect(controller_generic.Controller):
                     gh = sm['gridding-history']
                     sm['gridding-in-history'] = [
                         gh.get_gridding_history_specific_plate(
-                        sm['uuid'], sm['pinning-formats'][p], p) for p in
+                        sm['uuid'], p, sm['pinning-formats'][p]) for p in
                         xrange(len(sm['pinnings']))]
 
             print sm
