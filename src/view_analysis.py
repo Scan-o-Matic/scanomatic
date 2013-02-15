@@ -1837,6 +1837,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self.selection_height.set_sensitive(val)
         self.selection_width.set_sensitive(val)
 
+
 class Analysis_Stage_Log(gtk.VBox):
 
     def __init__(self, controller, model, specific_model, parent_model):

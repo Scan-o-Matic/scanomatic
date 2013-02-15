@@ -112,6 +112,23 @@ class Analysis_Controller(controller_generic.Controller):
         gobject.timeout_add(250, self._callback, user_data)
         return None
 
+    def _get_safe_slice(self, coords, im_shape):
+
+        self._logger.info("Slice coords before boundry check {0}".format(coords))
+        if coords[0][0] < 0:
+            coords[0][0] = 0
+        if coords[0][1] < 0:
+            coords[0][1] = 0
+
+        if coords[1][0] >= im_shape[1]:
+            coords[1][0] = im_shape[1] - 1
+        if coords[1][1] >= im_shape[0]:
+            coords[1][1] = im_shape[0] - 1
+
+        self._logger.info("Slice coords after boundry check {0}".format(coords))
+
+        return coords
+
     def get_available_fixtures(self):
 
         return self.get_top_controller().fixtures.get_names()
@@ -319,8 +336,8 @@ class Analysis_Controller(controller_generic.Controller):
 
                 if specific_model['plate'] < len(specific_model['plate-coords']):
 
-                    coords = specific_model['plate-coords'][
-                            specific_model['plate']]
+                    coords = self._get_safe_slice(specific_model['plate-coords'][
+                            specific_model['plate']], specific_model['image-array'].shape)
 
                     image = specific_model['image']
                     
@@ -909,20 +926,6 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         return ret
 
-    def _get_safe_slice(self, coords, im_shape):
-
-        if coords[0][0] < 0:
-            coords[0][0] = 0
-        if coords[0][1] < 0:
-            coords[0][1] = 0
-
-        if coords[1][0] >= im_shape[0]:
-            coords[1][0] = im_shape[0] - 1
-        if coords[1][1] >= im_shape[1]:
-            coords[1][1] = im_shape[1] - 1
-
-        return coords
-
     def get_previously_detected(self, view, specific_model):
 
         image=specific_model['images-list-model'][
@@ -963,9 +966,9 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             while 'plate_{0}_area'.format(i) in data:
 
-                plate_coords[i] = self._get_safe_slice(self._get_scale_slice(
+                plate_coords[i] = self._get_scale_slice(
                     data['plate_{0}_area'.format(i)],
-                    flip_coords=True), image.shape)
+                    flip_coords=True)
 
                 i += 1
 
@@ -1463,9 +1466,9 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 self._view.get_stage().move_patch_origin(
                         self._get_new_selection_origin(pos))
 
-            elif sm['lock-selection'] is None and \
-                sm['selection-origin'] is not None \
-                and sm['selection-drawing'] == True:
+            elif (sm['lock-selection'] is None and
+                sm['selection-origin'] is not None and
+                sm['selection-drawing'] == True):
 
                 origin_pos = sm['selection-origin']
                 w = pos[0] - origin_pos[0]
