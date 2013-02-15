@@ -909,6 +909,20 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         return ret
 
+    def _get_safe_slice(self, coords, im_shape):
+
+        if coords[0][0] < 0:
+            coords[0][0] = 0
+        if coords[0][1] < 0:
+            coords[0][1] = 0
+
+        if coords[1][0] >= im_shape[0]:
+            coords[1][0] = im_shape[0] - 1
+        if coords[1][1] >= im_shape[1]:
+            coords[1][1] = im_shape[1] - 1
+
+        return coords
+
     def get_previously_detected(self, view, specific_model):
 
         image=specific_model['images-list-model'][
@@ -949,9 +963,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             while 'plate_{0}_area'.format(i) in data:
 
-                plate_coords[i] = self._get_scale_slice(
+                plate_coords[i] = self._get_safe_slice(self._get_scale_slice(
                     data['plate_{0}_area'.format(i)],
-                    flip_coords=True)
+                    flip_coords=True), image.shape)
+
                 i += 1
 
             specific_model['plate-coords'] = plate_coords
