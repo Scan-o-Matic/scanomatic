@@ -221,25 +221,27 @@ class Config_Controller(controller_generic.Controller):
 
         git = sh.git.bake(_cwd=self._paths.root)
 
-        git_result = git.pull()
+        try:
+            git_result = git.pull()
+        except:
+            view_config.dialog(self.get_window(),
+                self._model['configt-update-warning'],
+                d_type='warning', yn_buttons=False)
+
+            return
+
         if 'Already up-to-date' in git_result:
 
             view_config.dialog(self.get_window(),
                 self._model['config-update-up_to_date'],
                 d_type='info', yn_buttons=False)
 
-        elif 'xx' in git_result:
-            view_config.dialog(self.get_window(),
-                self._model['configt-update-warning'],
-                d_type='warning', yn_buttons=False)
         else:
             stage = self.get_view().get_stage()
             stage.set_activate_restart()
             view_config.dialog(self.get_window(),
                 self._model['config-update-success'],
                 d_type='info', yn_buttons=False)
-
-        print "GIT says:", git_result
 
     def run_restart(self):
 
