@@ -103,7 +103,7 @@ class Settings_Cont(gtk.VBox):
         hbox.pack_start(button, False, False, PADDING_SMALL)
 
         self._restart = gtk.Button()
-        self._restart.set_label(model['config-update-button'])
+        self._restart.set_label(model['config-update-restart'])
         self._restart.connect("clicked", controller.run_restart)
         self._restart.set_sensitive(False)
         hbox.pack_start(self._restart, False, False, PADDING_SMALL)

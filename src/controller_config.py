@@ -243,9 +243,20 @@ class Config_Controller(controller_generic.Controller):
                 self._model['config-update-success'],
                 d_type='info', yn_buttons=False)
 
-    def run_restart(self):
+    def run_restart(self, widget):
 
-        pass
+        prog = self._paths.scanomatic
+        args = ""
+        try:
+            os.execl(prog, args)
+            reloaded = True
+        except:
+            reloaded = False
+
+        if reloaded:
+            tc = self.get_top_controller()
+            tc.ask_quit()
+
 
     def update_view(self):
 
