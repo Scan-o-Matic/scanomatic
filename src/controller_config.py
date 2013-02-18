@@ -237,6 +237,8 @@ class Config_Controller(controller_generic.Controller):
                 self._model['config-update-success'],
                 d_type='info', yn_buttons=False)
 
+        print git_result
+
     def run_restart(self):
 
         pass
