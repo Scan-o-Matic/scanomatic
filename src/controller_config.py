@@ -223,9 +223,11 @@ class Config_Controller(controller_generic.Controller):
 
         git_result = git.pull()
         if 'Already up-to-date' in git_result:
+
             view_config.dialog(self.get_window(),
                 self._model['config-update-up_to_date'],
                 d_type='info', yn_buttons=False)
+
         elif 'xx' in git_result:
             view_config.dialog(self.get_window(),
                 self._model['configt-update-warning'],
@@ -237,7 +239,7 @@ class Config_Controller(controller_generic.Controller):
                 self._model['config-update-success'],
                 d_type='info', yn_buttons=False)
 
-        print git_result
+        print "GIT says:", git_result
 
     def run_restart(self):
 
