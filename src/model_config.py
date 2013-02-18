@@ -45,6 +45,15 @@ model = {
 'config-desktop-short_cut-make':'click me!',
 'config-desktop-short_cut-made': 'Success!\nShort-cut was made..',
 
+###UPDATE
+'config-update': 'Update',
+'config-update-button': 'Check for Updates',
+'config-update-restart': 'Restart for updates to take place',
+'config-update-no-sh': 'Please install python module sh via easy_install',
+'config-update-up_to_date': 'Your system was allready up to date',
+'config-update-warning': 'Someone has been tinkering with your copy, get a hacker to fix that so you can download the update',
+'config-update-success': 'Update was successful, but you need to restart for the changes to take place',
+
 ##BACKUP AND ERRORS
 'config-backup': 'Backup and Errors',
 

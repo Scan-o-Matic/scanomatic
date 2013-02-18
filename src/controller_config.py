@@ -46,12 +46,12 @@ class Config_Controller(controller_generic.Controller):
         super(Config_Controller, self).__init__(main_controller,
             logger=logger)
 
-        self._paths = self.get_top_controller().paths
+        tc = self.get_top_controller()
+        self._paths = tc.paths
         self._scanners = 3
         self._pm_type = 'usb'
         self._experiments_root = self._paths.experiment_root
 
-        tc = self.get_top_controller()
         self.config = tc.config
 
         self.load_current_config()
@@ -90,12 +90,11 @@ class Config_Controller(controller_generic.Controller):
             self._model['config-log-save-dialog'],
             multiple_files=False,
             file_filter=self._model['config-log-file-filter'],
-            start_in=self.get_top_controller().paths.experiment_root)
+            start_in=self._paths.experiment_root)
 
         if target_list is not None and len(target_list) == 1:
 
-            tc = self.get_top_controller()
-            paths = tc.paths
+            paths = self._paths
 
             try:
                 fh = tarfile.open(target_list[0], 'w:gz')
@@ -209,6 +208,38 @@ class Config_Controller(controller_generic.Controller):
         self._experiments_root = exp_path
         stage = self.get_view().get_stage()
         stage.update_experiments_root(exp_path)
+
+    def run_update(self, widget=None):
+
+        try:
+            import sh
+        except:
+            view_config.dialog(self.get_window(),
+                self._model['config-update-no-sh'],
+                d_type='error', yn_buttons=False)
+            return
+
+        git = sh.git.bake(_cwd=self._paths.root)
+
+        git_result = git.pull()
+        if 'Already up-to-date' in git_result:
+            view_config.dialog(self.get_window(),
+                self._model['config-update-up_to_date'],
+                d_type='info', yn_buttons=False)
+        elif 'xx' in git_result:
+            view_config.dialog(self.get_window(),
+                self._model['configt-update-warning'],
+                d_type='warning', yn_buttons=False)
+        else:
+            stage = self.get_view().get_stage()
+            stage.set_activate_restart()
+            view_config.dialog(self.get_window(),
+                self._model['config-update-success'],
+                d_type='info', yn_buttons=False)
+
+    def run_restart(self):
+
+        pass
 
     def update_view(self):
 

@@ -91,6 +91,23 @@ class Settings_Cont(gtk.VBox):
         button.connect("clicked", controller.set_desktop_shortcut)
         hbox.pack_end(button, False, False, PADDING_SMALL)
 
+        #UPDATE
+        frame = gtk.Frame(model['config-update'])
+        self.pack_start(frame, False, False, PADDING_LARGE)
+        hbox = gtk.HBox(False, 0)
+        frame.add(hbox)
+
+        button = gtk.Button()
+        button.set_label(model['config-update-button'])
+        button.connect("clicked", controller.run_update)
+        hbox.pack_start(button, False, False, PADDING_SMALL)
+
+        self._restart = gtk.Button()
+        self._restart.set_label(model['config-update-button'])
+        self._restart.connect("clicked", controller.run_restart)
+        self._restart.set_sensitive(False)
+        hbox.pack_start(self._restart, False, False, PADDING_SMALL)
+        
         #BACKUP
         frame = gtk.Frame(model['config-backup'])
         self.pack_start(frame, False, False, PADDING_LARGE)
@@ -146,6 +163,10 @@ class Settings_Cont(gtk.VBox):
         button.connect('clicked', controller.save_current_config)
         table.attach(button, 0, 1, 3, 4)
         self.show_all()
+
+    def set_activate_restart(self):
+
+        self._restart.set_sensitive(True)
 
     def set_new_experiments_root(self, widget, path_widget):
 
