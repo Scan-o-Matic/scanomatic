@@ -258,7 +258,7 @@ class Grid_Array():
                 grid_shape=grid_shape)
 
         if self._grid is None:
-            self.logger.error("Could not produce a grid")
+            self.logger.error("Could not produce a grid for im-shape {0}".format(im.shape))
             return False
 
         if grid_correction is not None and grid_correction.any():

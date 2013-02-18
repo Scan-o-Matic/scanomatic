@@ -37,6 +37,7 @@ import resource_analysis_support
 import analysis_image
 import resource_xml_writer
 import resource_path
+import resource_app_config
 
 #
 # GLOBALS
@@ -58,7 +59,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
             'manual_threshold': 0.05},
             grid_cell_settings = {'blob_detect': 'default'},
             use_local_fixture=True,
-            logger=None):
+            logger=None, app_config=None):
     """
         analyse_project parses a log-file and runs a full analysis on all
         images in it. It will step backwards in time, starting with the
@@ -117,6 +118,8 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     #grid_adjustments = None
 
     paths = resource_path.Paths(src_path=__file__)
+    if app_config is None:
+        app_config = resource_app_config.Config(paths=paths)
 
     #
     # VERIFY OUTDATA DIRECTORY
@@ -258,7 +261,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     #
 
     plates, plate_position_keys = resource_analysis_support.get_active_plates(
-        meta_data, suppress_analysis, graph_watch)
+        meta_data, suppress_analysis, graph_watch, config=app_config)
 
     logger.info('ANALYSIS: These plates ({0}) will be analysed: {1}'.format(
         plates, plate_position_keys))
@@ -286,7 +289,9 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
                 grid_array_settings=grid_array_settings,
                 gridding_settings=gridding_settings,
                 grid_cell_settings=grid_cell_settings,
-                log_version=meta_data['Version']
+                log_version=meta_data['Version'],
+                paths=paths,
+                app_config=app_config
                 )
 
     # MANUAL GRIDS

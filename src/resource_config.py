@@ -69,7 +69,7 @@ class Config_File(object):
             location = self.get_location()
  
         self._logger.info("Loading file {0}".format(location))
-        self._logger.exception("Call for {0} came from...".format(location))
+        #self._logger.exception("Call for {0} came from...".format(location))
 
         no_file = False
 

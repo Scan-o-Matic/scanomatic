@@ -93,7 +93,7 @@ class Gridding_History(object):
 
     def _get_gridding_history(self, plate, pinning_format):
 
-        self._settings.reload()
+        #self._settings.reload()
         return self._settings[self._get_plate_pinning_str(plate, pinning_format)]
 
     def _load(self):
@@ -227,15 +227,21 @@ class Fixture_Image(object):
     def __init__(self, fixture, image_path=None,
             image=None, markings=None, define_reference=False,
             fixture_directory=None, markings_path=None,
-            im_scale=None, logger=None):
+            im_scale=None, logger=None, paths=None, app_config=None):
 
         if logger is None:
             logger = resource_logger.Log_Garbage_Collector()
 
         self._logger = logger
 
-        self._paths = resource_path.Paths()
-        self._config = resource_app_config.Config(self._paths)
+        if paths is None:
+            self._paths = resource_path.Paths()
+        else:
+            self._paths = paths
+        if app_config is None:
+            self._config = resource_app_config.Config(self._paths)
+        else:
+            self._config = app_config
 
         self._define_reference = define_reference
         self.fixture_name = fixture

@@ -26,6 +26,7 @@ import resource_fixture_image
 import resource_analysis_support
 import resource_path
 import resource_app_config
+import resource_path
 
 #
 # EXCEPTIONS
@@ -45,7 +46,8 @@ class Project_Image():
         p_uuid=None, logger=None, verbose=False, visual=False,
         suppress_analysis=False,
         grid_array_settings=None, gridding_settings=None,
-        grid_cell_settings=None, log_version=0):
+        grid_cell_settings=None, log_version=0, paths=None,
+        app_config=None):
 
         if logger is not None:
             self.logger = logger
@@ -73,13 +75,17 @@ class Project_Image():
         self.grid_cell_settings = grid_cell_settings
 
         #PATHS
-        script_path_root = os.path.dirname(os.path.abspath(__file__))
-        scannomatic_root = os.sep.join(script_path_root.split(os.sep)[:-1])
-        self._paths = resource_path.Paths(root=scannomatic_root)
+        if paths is None:
+            self._paths = resource_path.Paths(src_path=__file__)
+        else:
+            self._paths = paths
         self._file_path_base = file_path_base
 
         #APP CONFIG
-        self._config = resource_app_config.Config(self._paths)
+        if app_config is None:
+            self._config = resource_app_config.Config(paths=self._paths)
+        else:
+            self._config = app_config
 
         #Fixture setting is used for pinning history in the arrays
         if fixture_name is None:
@@ -92,7 +98,8 @@ class Project_Image():
         self.fixture = resource_fixture_image.Fixture_Image(
                 fixture_name,
                 fixture_directory=fixture_directory,
-                logger=self.logger
+                logger=self.logger, paths=self._paths,
+                app_config=self._config
                 )
 
         self.logger.info("Fixture is {0}, version {1}".format(
