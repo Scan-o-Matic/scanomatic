@@ -81,7 +81,8 @@ class Config_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_config.get_gui_model()
+        tc = self.get_top_controller()
+        return model_config.get_gui_model(tc.paths)
 
     def make_state_backup(self, widget):
 

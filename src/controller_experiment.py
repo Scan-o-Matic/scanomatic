@@ -96,7 +96,8 @@ class Experiment_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_experiment.get_gui_model()
+        tc = self.get_top_controller()
+        return model_experiment.get_gui_model(paths=tc.paths)
 
     def get_mode(self):
 

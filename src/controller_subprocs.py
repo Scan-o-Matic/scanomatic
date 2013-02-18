@@ -296,7 +296,8 @@ class Subprocs_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_subprocs.get_gui_model()
+        tc = self.get_top_controller()
+        return model_subprocs.get_gui_model(paths=tc.paths)
 
     def ask_destroy(self):
         """This is to allow the fake destruction always"""

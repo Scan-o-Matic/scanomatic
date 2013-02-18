@@ -57,7 +57,8 @@ class Calibration_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_calibration.get_gui_model()
+        tc = self.get_top_controller()
+        return model_calibration.get_gui_model(tc.paths)
 
     def set_mode(self, widget, calibration_mode):
 
@@ -91,8 +92,9 @@ class Fixture_Controller(controller_generic.Controller):
         super(Fixture_Controller, self).__init__(parent,
             view=view, model=model, logger=logger)
 
-        self._paths = resource_path.Paths()
-        self._config = resource_app_config.Config(self._paths)
+        tc = self.get_top_controller()
+        self._paths = tc.paths
+        self._config = tc.config
         self._scanners = resource_scanner.Scanners(self._paths, self._config)
 
         self._window = self.get_window()

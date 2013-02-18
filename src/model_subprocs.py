@@ -14,10 +14,10 @@ import src.model_generic as model_generic
 # FUNCTIONS
 #
 
-def get_gui_model():
+def get_gui_model(paths=None):
 
     m = Composite_Subproc_GUI_Model(private_model=composite_model,
-        generic_model=model_generic.get_model())
+        generic_model=model_generic.get_model(), paths=paths)
 
     return m
 

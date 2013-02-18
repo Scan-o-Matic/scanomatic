@@ -33,7 +33,8 @@ def get_model():
 
 class Model(object):
 
-    def __init__(self, private_model=None, generic_model=None):
+    def __init__(self, private_model=None, generic_model=None,
+        paths=None):
 
         if private_model is None:
             self._pm = dict()
@@ -43,7 +44,10 @@ class Model(object):
 
         self._counters = dict()
 
-        self._paths = resource_path.Paths()
+        if paths is None:
+            self._paths = resource_path.Paths()
+        else:
+            self._paths = paths
 
         self._gm = generic_model
 
