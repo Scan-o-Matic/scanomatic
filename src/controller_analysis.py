@@ -114,6 +114,8 @@ class Analysis_Controller(controller_generic.Controller):
 
     def _get_safe_slice(self, coords, im_shape):
 
+        coords = list(map(list, coords))
+
         self._logger.info("Slice coords before boundry check {0}".format(coords))
         if coords[0][0] < 0:
             coords[0][0] = 0

@@ -308,7 +308,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
     def add_subprocess(self, proc, proc_type, stdin=None, stdout=None,
             stderr=None, pid=None, psm=None, proc_name=None,
-            start_time=time.time(), progress=None):
+            start_time=None, progress=None):
 
         sm = self._specific_model
         if proc_type == 'scanner':
@@ -322,6 +322,9 @@ class Subprocs_Controller(controller_generic.Controller):
         else:
 
             raise Unknown_Subprocess_Type(proc_type)
+
+        if start_time is None:
+            start_time = time.time()
 
         plist.append({'proc': proc, 'type': proc_type, 'pid': pid, 'stdin': stdin,
             'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name,

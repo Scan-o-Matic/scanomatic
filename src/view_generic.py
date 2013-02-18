@@ -222,7 +222,7 @@ class Fixture_Drawing(gtk.DrawingArea):
     WIDTH = 0
     PADDING = 0.01
     VIEW_STATE = ('Image', 'Scanner')
-    BACKGROUND = (0.25, 0.25, 0.25, 0.3)
+    BACKGROUND = (0.75, 0.75, 0.95, 0.9)
 
     def __init__(self, fixture, width=None, height=None, logger=None,
         scanner_view=False):
@@ -234,7 +234,7 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._scanner_view = scanner_view
 
         self._plate_fill_rgba=tuple(np.array((242, 122 ,17, 255))/255.0)
-        self._gs_fill_rgba=tuple(np.array((17, 163 ,242, 255))/255.0)
+        self._gs_fill_rgba = (0.5, 0.5, 0.5, 0.9)
         self._plate_stroke_rgba = (1, 1, 1, 0.5)
         self._gs_stroke_rgba = (1, 1, 1, 0.5)
         self._text_rgba = (1, 1, 1, 0.9)
