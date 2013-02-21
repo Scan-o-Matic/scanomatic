@@ -73,14 +73,8 @@ class Locator(object):
 
         return scanner_locks
 
-    def _revive_experiments(self, experiment_files):
-
-
-        revive_experiments = []
-
-        #Checking if uuid in scanner locks
-        scanner_locks = self._get_scanner_locks()
-
+    def _match_uuids(self, scanner_locks, experiment_files):
+        
         if len(scanner_locks) > 0:
             for e in experiment_files:
                 try:
@@ -90,13 +84,36 @@ class Locator(object):
                             e_settings['UUID'] in scanner_locks):
 
                         revive_experiments.append([e_settings,
-                                scanner_locks[e['UUID']]])
+                                scanner_locks[e_settings['UUID']]])
 
                     fh.close()
                 except:
                     pass
 
+        return revive_experiments
+
+    def _filter_experiment_dupes(self, revive_experiments):
+
+        return revive_experiments
+
+    def _revive_experiments(self, experiment_files):
+
+        revive_experiments = []
+
+        #Checking if uuid in scanner locks
+        scanner_locks = self._get_scanner_locks()
+
+        #Match UUIDs
+        revive_experiments = self._match_uuids(scanner_locks, experiment_files)
+
+        revive_experiments = self._filter_experiment_dupes(revive_experiments)
+
+        if len(revive_experiments) < len(scanner_locks):
+
+            pass
+            
         for e in revive_experiments:
+
             pass
 
     def _revive_analysis(self, analysis_files):
