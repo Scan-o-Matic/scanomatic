@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sh
 import src.resource_path as resource_path
 
 desktop = """[Desktop Entry]
@@ -11,7 +12,9 @@ X-Ubuntu-Gettext-Domain=gdm"""
 
 xsession = """#! /bin/bash
 {0} &
-gnome-screensaver-command --lock &"""
+gnome-screensaver-command --lock &
+gnome-session --session=gnome
+"""
 
 paths = resource_path.Paths()
 
@@ -23,6 +26,8 @@ xsession_file_path = os.path.join(
 fh = open(xsession_file_path, 'w')
 fh.write(xsession.format(paths.revive))
 fh.close()
+chmod = sh.chmod.bake("+x")
+chmod(xsession_file_path)
 
 #make temp desktopfile
 desktop_path = os.path.join(paths.config, 'tmp.desktop')
