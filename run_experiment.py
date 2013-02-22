@@ -114,7 +114,10 @@ class Experiment(object):
         self._running = True
         self._printing = False
 
-        self._init_time = time.time()
+        if run_args is None or run_args.init_time is None:
+            self._init_time = time.time()
+        else:
+            self._init_time = run_args.init_time
 
         sys.excepthook = self.__excepthook
 
@@ -122,11 +125,14 @@ class Experiment(object):
 
         self.set_logger(logger)
 
-        self._scanned = 0
+        if run_args is None or run_args.scanned is None:
+            self._scanned = 0
+        else:
+            self._scanned = run_args.scanned
 
         self._initialized = False
         
-        if run_args is not None:
+        if run_args is None or run_args is not None:
             self._set_settings_from_run_args(run_args)
         elif kwargs is not None:
             self._set_settings_from_kwargs(kwargs)
@@ -257,6 +263,7 @@ class Experiment(object):
 
         self._interval = run_args.interval
         self._max_scans = run_args.number_of_scans
+        self._last_scan = run_args.last_scan
 
         self._pinning = run_args.pinning
         self._scanner = self.scanners[run_args.scanner]
@@ -314,9 +321,13 @@ class Experiment(object):
 
         self._logger.info("Experiment is initialized...starting!")
 
-        self._write_header_row()
+        if self._scanned == 0:
+            self._write_header_row()
 
-        timer = time.time()
+        if self._last_scan is None:
+            timer = time.time()
+        else:
+            timer = self._last_scan
 
         while self._running:
 
@@ -348,7 +359,9 @@ class Experiment(object):
             #CHECK IF ALL IS DONE
             self._scanned += 1
 
-            if self._scanned > self._max_scans:
+            if (self._scanned > self._max_scans or 
+                    self._init_time + self._interval * 60 *
+                    (self._max_scans + 1) < time.time()):
 
                 self._logger.info("That was the last image")
                 self._running = False
@@ -484,6 +497,9 @@ input file for the analysis script.""")
     parser.add_argument('-u', '--uuid', type=str, dest='uuid',
         help='UUID to indentify self with scanner reservation')
 
+    parser.add_argument('-e', '--experiment-file', type=str, dest='file',
+        help='Path to experiment file to continue on')
+
     parser.add_argument("--debug", dest="debug", default="warning",
         type=str, help="Sets debugging level")
 
@@ -499,6 +515,41 @@ input file for the analysis script.""")
 
     #PATHS
     paths = resource_path.Paths()
+
+    #HIDDEN ARGS DEALING WITH CONTIUNUING PROJECTS
+    args.last_image = None
+    args.init_time = None
+    args.scanned = None
+
+    #EXPERIMENT FILE TAKES OVER OTHER THINGS
+    if args.file is not None:
+        try:
+            fh = open(args.file, 'r')
+            file_settings = eval(fh.readline().strip())
+        except:
+            parser.error("Could not load experiemtfile")
+
+        args.scanner = file_settings['Scanner']
+        args.fixture = file_settings['Fixture']
+        args.interval = file_settings['Interval']
+        args.number_of_scans = file_settings['Measures']
+        args.pinning = file_settings['Pinning Matrices']
+        args.prefix = file_settings['Prefix']
+        args.uuid = file_settings['UUID']
+        args.init_time = file_settings['Start Time']
+
+        args.root = os.path.abspath(os.path.join(args.file, os.path.pardir,
+            os.path.pardir))
+
+        args.scanned = 0
+        for line in fh:
+            try:
+                args.last_scan = eval(line.strip())['Time']
+                args.scanned += 1
+            except:
+                pass
+        fh.close()
+
 
     #SCANNER
     if args.scanner is None:
@@ -530,21 +581,21 @@ input file for the analysis script.""")
         parser.error("Number of scans is out of bounds")
 
     #EXPERIMENTS ROOT
-    if args.root is None or os.path.isdir(args.root) == "False":
+    if args.root is None or os.path.isdir(args.root) == False:
         free_scanner(args.scanner, args.uuid)
         parser.error("Experiments root is not a directory")
 
     #PINNING MATRICSE
-    if args.pinning is not None:
+    if type(args.pinning) == str:
         args.pinning = get_pinnings_list(args.pinning)
 
     if args.pinning is None:
         free_scanner(args.scanner, args.uuid)
-        parser.error("Bad pinning supplied")        
+        parser.error("Bad pinnings supplied")        
 
     #PREFIX
-    if args.prefix is None or \
-        os.path.isdir(os.sep.join((args.root, args.prefix))):
+    if (args.prefix is None or args.file is None and
+        os.path.isdir(os.path.join(args.root, args.prefix))):
 
         free_scanner(args.scanner, args.uuid)
         parser.error("Prefix is a duplicate or invalid")
@@ -573,7 +624,8 @@ input file for the analysis script.""")
                     datefmt='%Y-%m-%d %H:%M:%S\n')
 
     #CREATE DIRECTORY
-    os.mkdir(args.outdata_path)
+    if args.file is None:
+        os.mkdir(args.outdata_path)
 
     #NEED NICER PATH THING
     hdlr = logging.FileHandler(args.outdata_path + os.sep + "experiment.run", mode='w')
