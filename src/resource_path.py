@@ -63,6 +63,9 @@ class Paths(object):
         self.scanomatic = self.root + os.sep + "run_scan_o_matic.py"
         self.analysis = os.sep.join((self.root, "run_analysis.py"))
         self.experiment = os.sep.join((self.root, "run_experiment.py"))
+        self.revive = os.path.join(self.root, 'revive.py')
+        self.install_autostart = os.path.join(self.root,
+            'install_autostart.py')
 
         #CONFIG
         self.config_main_app = os.sep.join((self.config, 'main.config'))
