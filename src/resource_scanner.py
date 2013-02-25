@@ -396,6 +396,10 @@ class Scanner(object):
 
         return self._config.get_scanner_socket(self._name)
 
+    def get_power_status(self):
+
+        return self._pm.status()
+
     def get_address(self):
 
         return self._usb_address
@@ -450,9 +454,9 @@ class Scanner(object):
 
         return is_on
 
-    def off(self):
+    def off(self, byforce=False):
 
-        if self.get_claimed_by_other() == False:
+        if self.get_claimed_by_other() == False or byforce:
 
             #Power down and remove scanner address lock
             is_on = not self._pm.off()

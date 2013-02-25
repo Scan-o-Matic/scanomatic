@@ -15,7 +15,7 @@ __status__ = "Development"
 
 import os
 import time
-from subprocess import Popen
+from subprocess import Popen, PIPE
 
 #
 # INTERNAL DEPENDENCIES
@@ -23,11 +23,14 @@ from subprocess import Popen
 
 import src.resource_path as resource_path
 import src.resource_app_config as resource_app_config
+import src.resource_logger as resource_logger
+import src.resource_scanner as resource_scanner
 
 class Locator(object):
 
     def __init__(self):
 
+        self._logger = resource_logger.Fallback_Logger()
         self._paths = resource_path.Paths()
         self._app_config = resource_app_config.Config(paths=self._paths)
 
@@ -54,8 +57,44 @@ class Locator(object):
 
         _search(os.path.abspath(dir))
 
+        self._kill_orphan_scanners()
         self._revive_experiments(experiment_files)
         self._revive_analysis(analysis_files)
+
+    def _kill_orphan_scanners(self):
+
+        scanners = resource_scanner.Scanners(self._paths, self._app_config, logger=self._logger)
+        names = scanners.get_names(available=False)
+        statuses = []
+
+        for name in names:
+            scanner = scanners[name]
+            if scanner.get_claimed() == False:
+                scanner.off()
+            statuses.append(scanner.get_power_status() in (None, True))
+
+        scanners.update()
+
+        #IF THERE ARE ANY POTENTIALLY ON PM-SOCKETS
+        if True in statuses:
+
+            if scanners.get_names() == scanners.get_names(available=False):
+
+                p = Popen('ps -A | grep python -c', stdout=PIPE, stderr=PIPE,
+                    shell=True)
+
+                python_procs, stderr = p.communicate()
+
+                if python_procs.strip() != '1':
+
+                    self._logger.warning('Scanners are on but should not be and could not be turned off safly')
+
+                else:
+
+                    for name in names:
+                        scanner = scanners[name]
+                        scanner.off(byforce=True)
+
 
     def _get_scanner_locks(self):
         """Returns a list of all UUIDs currently locking scanners"""
