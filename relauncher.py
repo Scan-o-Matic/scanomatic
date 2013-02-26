@@ -199,7 +199,7 @@ class Locator(object):
 
         if len(revive_experiments) < len(scanner_locks):
 
-            self._write_warnings("Not all experiments that were running could be revived")
+            self._write_warning("Not all experiments that might have been running could be revived")
             
         for e in revive_experiments:
 
