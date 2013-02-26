@@ -4,6 +4,8 @@
 
 --- HOT ---
 
+*** Make EXPERIMENT ONE be unsaved after power-up and saved on complete
+
 *** FIX random startup-crash:
 
     [xcb] Unknown request in queue while dequeuing

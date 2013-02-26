@@ -156,3 +156,27 @@ class Fallback_Logger(object):
     def _output(self, lvl, args):
 
         print "*{0}:\t{1}".format(lvl, args)
+
+
+class File_Logger(Fallback_Logger):
+
+    def __init__(self, path):
+
+        self._path = path
+        try:
+            fh = open(path, 'w')
+            self._loaded = True
+            fh.close()
+        except:
+            self._loaded = False
+
+    def _output(self, lvl, args):
+
+        super(File_Logger, self)._output(lvl, args)
+        if self._loaded:
+            try:
+                fh = open(self._path, 'a')
+                fh.write("*{0}:\t{1}\n".format(lvl, args))
+                fh.close()
+            except:
+                pass

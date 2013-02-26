@@ -28,10 +28,11 @@ import src.resource_scanner as resource_scanner
 
 class Locator(object):
 
-    def __init__(self):
+    def __init__(self, log_path=None):
 
-        self._logger = resource_logger.Fallback_Logger()
         self._paths = resource_path.Paths()
+        self._logger = resource_logger.File_Logger(
+            path=self._paths.log_relaunch)
         self._app_config = resource_app_config.Config(paths=self._paths)
 
     def run(self):
@@ -39,14 +40,14 @@ class Locator(object):
         experiment_files = []
         analysis_files = []
 
-        dir = self._paths.experiment_root
+        curdir = self._paths.experiment_root
         e_pattern = self._paths.experiment_first_pass_analysis_relative[3:]
         a_pattern = self._paths.analysis_run_log
 
-        def _search(dir):
+        def _search(curdir):
 
-            files = os.listdir(dir)
-            files = [os.path.join(dir, f) for f in files]
+            files = os.listdir(curdir)
+            files = [os.path.join(curdir, f) for f in files]
             for f in files:
                 if f.endswith(e_pattern) and os.path.isfile(f):
                     experiment_files.append(f)
@@ -55,7 +56,7 @@ class Locator(object):
                 elif os.path.isdir(f):
                         _search(f)
 
-        _search(os.path.abspath(dir))
+        _search(os.path.abspath(curdir))
 
         self._kill_orphan_scanners()
         self._revive_experiments(experiment_files)

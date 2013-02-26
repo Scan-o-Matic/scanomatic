@@ -86,6 +86,8 @@ class Config_Controller(controller_generic.Controller):
 
     def make_state_backup(self, widget):
 
+        tc = self.get_top_controller()
+
         target_list = view_config.save_file(
             self._model['config-log-save-dialog'],
             multiple_files=False,
@@ -109,6 +111,7 @@ class Config_Controller(controller_generic.Controller):
             save_paths.append(paths.log_scanner_err.format("*"))
             save_paths.append(paths.log_main_out)
             save_paths.append(paths.log_main_err)
+            save_paths.append(paths.log_relaunch)
 
             tc.close_simple_logger()
 
