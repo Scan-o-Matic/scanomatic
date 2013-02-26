@@ -112,6 +112,7 @@ class Locator(object):
             except:
                 pass
 
+        self._logger.info("Current scanner locks are: {0}".format(scanner_locks))
         return scanner_locks
 
     def _match_uuids(self, scanner_locks, experiment_files):
@@ -137,6 +138,7 @@ class Locator(object):
                 except:
                     pass
 
+        self._logger.info("The following experiments were found matching locks: {0}".format(revive_experiments))
         return revive_experiments
 
 
@@ -183,6 +185,7 @@ class Locator(object):
                     if dupe[1] == True:
                         del revive_experiments[dupe[0]]
 
+        self._logger.info("After duplicate filter the following were still considered: {0}".format(revive_experiments))
         return revive_experiments
 
     def _revive_experiments(self, experiment_files):
@@ -199,7 +202,7 @@ class Locator(object):
 
         if len(revive_experiments) < len(scanner_locks):
 
-            self._write_warning("Not all experiments that might have been running could be revived")
+            self._logger.error("Not all experiments that might have been running could be revived")
             
         for e in revive_experiments:
 
@@ -215,7 +218,7 @@ class Locator(object):
             stderr_path = self._paths.log_scanner_err.format(e[1])
             stderr = open(stderr_path, 'w')
 
-            print "Launching experiment with", stdin, stdout, stderr
+            self._logger.info("Re-Launching experiment {0} ".format(e[3]))
 
             proc = Popen(e_query_list, stdout=stdout, stderr=stderr,
                 shell=False)
