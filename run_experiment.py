@@ -517,7 +517,7 @@ input file for the analysis script.""")
     paths = resource_path.Paths()
 
     #HIDDEN ARGS DEALING WITH CONTIUNUING PROJECTS
-    args.last_image = None
+    args.last_scan = None
     args.init_time = None
     args.scanned = None
 
