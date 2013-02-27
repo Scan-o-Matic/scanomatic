@@ -74,6 +74,7 @@ class Settings_Cont(gtk.VBox):
 
         self._controller = controller
         self._model = model
+        self._specific_model = controller.get_specific_model()
         tc = controller.get_top_controller()
         config = tc.config
         paths = tc.paths
@@ -120,6 +121,20 @@ class Settings_Cont(gtk.VBox):
         hbox.pack_start(label, False, False, PADDING_SMALL)
         hbox.pack_end(button, False, False, PADDING_SMALL)
 
+        #REMOVE FIXTURES
+        frame = gtk.Frame(model['config-fixtures'])
+        hbox = gtk.HBox(False, 0)
+        frame.add(hbox)
+        self.pack_start(frame, False, False, PADDING_LARGE)
+        self._fixtures = gtk.combo_box_new_text()                   
+        self._fill_fixtures(self._fixtures)
+        self._fixtures.connect('changed', self._set_cur_fixture)
+        hbox.pack_start(self._fixtures, False, False, PADDING_MEDIUM)
+        button = gtk.Button()
+        button.set_label(model['config-fixture-remove'])
+        button.connect('clicked', self.ask_remove)
+        hbox.pack_start(button, False, False, PADDING_SMALL)
+
         #SETTINGS
         frame = gtk.Frame(model['config-settings'])
         self.pack_start(frame, False, False, PADDING_LARGE)
@@ -163,6 +178,33 @@ class Settings_Cont(gtk.VBox):
         button.connect('clicked', controller.save_current_config)
         table.attach(button, 0, 1, 3, 4)
         self.show_all()
+
+    def _set_cur_fixture(self, widget):
+
+        sm = self._specific_model
+        sm['delete-fixture'] = widget.get_active_text()
+
+    def _fill_fixtures(self, widget):
+
+        m = widget.get_model()
+        m.clear()
+
+        fixtures = self._controller.get_fixture_list()
+        for fixture in fixtures:
+            widget.append_text(fixture)
+
+    def ask_remove(self, widget):
+
+        c = self._controller
+        w = c.get_window()
+        fixture = self._specific_model['delete-fixture']
+
+        if fixture is not None and fixture != "":
+            if dialog(w, self._model['config-fixture-dialog'].format(fixture),
+                    'warning', yn_buttons=True):
+
+                c.remove_fixture(fixture)
+                self._fill_fixtures(self._fixtures)
 
     def set_activate_restart(self):
 

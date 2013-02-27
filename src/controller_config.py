@@ -18,6 +18,7 @@ import os
 import subprocess
 import tarfile
 import glob
+import sh
 
 #
 # INTERNAL DEPENDENCIES
@@ -267,3 +268,16 @@ class Config_Controller(controller_generic.Controller):
         stage.update_scanners(self._scanners)
         stage.update_pm(self._pm_type)
         stage.update_experiments_root(self._experiments_root)
+
+    def get_fixture_list(self):
+
+        paths = self.get_top_controller().paths
+        fixtures = [f for f in os.listdir(paths.fixtures)
+                if f.endswith(paths.fixture_conf_file_suffix)]
+        return fixtures 
+
+    def remove_fixture(self, fixture):
+
+        paths = self.get_top_controller().paths
+        mv = sh.mv.bake(_cwd=paths.fixtures)
+        mv(fixture, fixture + ".deleted")

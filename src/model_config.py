@@ -66,6 +66,11 @@ model = {
 'mime_and_patterns': (('application/tar', '*.tar.gz'),)},
 'config-log-save-done': 'Success! Save complete!',
 
+##REMOVE FIXUTRES
+'config-fixtures': 'Remove fixture(s)',
+'config-fixture-remove': 'Remove',
+'config-fixture-dialog': 'Are you sure you wish to remove {0}?',
+
 ##SETTINGS
 'config-settings': 'Settings',
 
