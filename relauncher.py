@@ -103,7 +103,7 @@ class Locator(object):
 
     def _get_scanner_locks(self):
         """Returns a list of all UUIDs currently locking scanners"""
-        lock_files = [self._paths.lock_scanner_pattern.format(s) 
+        lock_files = [self._paths.lock_scanner_pattern.format(s + 1) 
             for s in range(self._app_config.number_of_scanners)]
 
         self._logger.info("Investigating current scanner lock-files: {0}".format(lock_files))
