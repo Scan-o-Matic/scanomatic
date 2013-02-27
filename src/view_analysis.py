@@ -378,7 +378,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
             if plate:
 
                 vbox = gtk.VBox()
-                label = gtk.Label(p_title.format(i+1))
+                label = gtk.Label(p_title.format(i+1, sm['plate-names'][i]))
                 vbox.pack_start(label, False, False, PADDING_SMALL)
                 image = gtk.Image()
                 image.set_from_file(sm['grid-images'][i])

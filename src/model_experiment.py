@@ -75,6 +75,7 @@ pigmentation analysis.</i></span>
 'project-stage-prefix-warn': 'Duplcate prefix name or illegal name',
 'project-stage-planning-id': 'Project ID from Planner',
 'project-stage-desc': 'Project Description',
+'project-stage-desc-suggestion': 'Plate 1 ""; Plate 2 ""; Plate 3 ""; Plate 4 ""',
 'project-stage-view_of_fixture': 'View in Scanner',
 ###FIXTURE AND SCANNER
 'project-stage-fixture_scanner': 'Scanner and Fixture',

@@ -557,6 +557,18 @@ class Analysis_Inspect(controller_generic.Controller):
                 except:
                     pass
 
+            #DESCRIPTION
+            description = re.findall(r"\'Description\': \'([^']*)\',", fh_data)
+            sm['plate-names'] = [''] * len(sm['pinnings'])
+            if len(description) > 0:
+                plates = re.findall("Plate +(\d) +\"([^\"]*)", description[0])
+                for i, name in plates:
+                    try:
+                        i = int(i)
+                        sm['plate-names'][i-1] = name
+                    except:
+                        self._logger.error("Could not parse plate {0} ({1})".format(i, name))
+
             #CHECK WHICH PLATES HAVE PLACE IN HISTORY
             if (sm['gridding-history'] is not None and sm['pinnings'] is not None
                 and sm['uuid'] is not None and sm['pinning-formats'] is not None):
@@ -566,8 +578,6 @@ class Analysis_Inspect(controller_generic.Controller):
                         gh.get_gridding_history_specific_plate(
                         sm['uuid'], p, sm['pinning-formats'][p]) for p in
                         xrange(len(sm['pinnings']))]
-
-            print sm
 
             return True
 

@@ -433,6 +433,7 @@ class Stage_Project_Setup(gtk.VBox):
         label = gtk.Label(model['project-stage-desc'])
         label.set_alignment(0, 0.5)
         self.project_desc = gtk.Entry()
+        self.project_desc.set_text(model['project-stage-desc-suggestion'])
         self.project_desc.connect("focus-out-event", 
             controller.set_project_description)
         self.project_desc.set_width_chars(55)
