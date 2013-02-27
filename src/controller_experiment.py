@@ -244,6 +244,7 @@ class One_Controller(controller_generic.Controller):
 
         run_command = run_command[0]
         stage = self.get_view().get_stage()
+        self.set_unsaved()
         if run_command == 'power-up':
             stage.set_run_stage('power-on')
 
@@ -290,6 +291,7 @@ class One_Controller(controller_generic.Controller):
             scanner.free()
             stage.set_progress('on', failed=True)
             stage.set_progress('done', failed=True)
+            self.set_saved()
 
     def _scan(self, scanner, stage):
 
@@ -327,11 +329,13 @@ class One_Controller(controller_generic.Controller):
             scanner.free()
             sm['stage'] = 'done'
             stage.set_progress('done', completed=True)
+            self.saved()
 
     def _analysis(self, scaner, stage):
 
         scanner.free()
         stage.set_progress('done', completed=True)
+        self.set_saved()
         sm['stage'] = 'done'
         return False
 
@@ -648,7 +652,7 @@ class Project_Controller(controller_generic.Controller):
 
         scanner.set_uuid()
 
-        self.get_top_controller().add_subprocess(proc, proc_type, 
+        tc.add_subprocess(proc, proc_type, 
             stdin=stdin_path, stdout=stdout_path, stderr=stderr_path,
             pid=proc.pid, psm=sm, proc_name=sm['scanner'])
 

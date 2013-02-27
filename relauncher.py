@@ -81,12 +81,7 @@ class Locator(object):
 
             if scanners.get_names() == scanners.get_names(available=False):
 
-                p = Popen('ps -A | grep python -c', stdout=PIPE, stderr=PIPE,
-                    shell=True)
-
-                python_procs, stderr = p.communicate()
-
-                if python_procs.strip() != '1':
+                if not(self._check_if_only_me()):
 
                     self._logger.warning('Scanners are on but should not be and could not be turned off safly')
 
@@ -97,11 +92,21 @@ class Locator(object):
                         scanner.off(byforce=True)
 
 
+    def _check_if_only_me(self):
+
+        p = Popen('ps -A | grep python -c', stdout=PIPE, stderr=PIPE,
+            shell=True)
+
+        python_procs, stderr = p.communicate()
+
+        return python_procs.strip() == '1'
+
     def _get_scanner_locks(self):
         """Returns a list of all UUIDs currently locking scanners"""
         lock_files = [self._paths.lock_scanner_pattern.format(s) 
             for s in range(self._app_config.number_of_scanners)]
 
+        self._logger.info("Investigating current scanner lock-files: {0}".format(lock_files))
         scanner_locks = {}
         for i, lf in enumerate(lock_files):
             try:
@@ -205,6 +210,11 @@ class Locator(object):
 
             self._logger.error("Not all experiments that might have been running could be revived")
             
+        if not(self._check_if_only_me()):
+
+            self._logger.error("Other pyton procs are running, won't revive if I'm not solo!")
+            return False
+
         for e in revive_experiments:
 
             e_query_list = [self._paths.experiment, '-e', e[3]]
@@ -224,9 +234,7 @@ class Locator(object):
             proc = Popen(e_query_list, stdout=stdout, stderr=stderr,
                 shell=False)
 
-    def _write_warning(self, msg):
-
-        print msg
+        return True
 
     def _revive_analysis(self, analysis_files):
 

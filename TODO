@@ -4,7 +4,7 @@
 
 --- HOT ---
 
-*** Make EXPERIMENT ONE be unsaved after power-up and saved on complete
+*** Transfer file over LAN
 
 *** FIX random startup-crash:
 
@@ -75,8 +75,6 @@
 ##### OUTDATED DUE TO SWITCH TO NEW METHODS #####
    ###########################################
 
-*** PLATE SECTIONING: Im overflow by rounding or mass center shift
-
 *** Investigate resolving equal grid start pos with using most 
     centric, and using the R-value as well...(some missed peaks will
     affect placement)
@@ -104,6 +102,9 @@
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
 
+*** Make EXPERIMENT ONE be unsaved after power-up and saved on complete
+
+*** PLATE SECTIONING: Im overflow by rounding or mass center shift
 
 *** 1st Pass Run, check how records Image Shape!
 
