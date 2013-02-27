@@ -69,7 +69,7 @@ case "$1" in
     probe)
     ;;
     *)
-    echo "Usage: mailtome{start|stop|status|reload|restart[|probe]"
+    echo "Usage: scanomatic{start|stop|status|reload|restart[|probe]"
     exit 1
     ;;
 esac
