@@ -331,6 +331,8 @@ class Subprocs_Controller(controller_generic.Controller):
             'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name,
             'progress': progress, 'start-time': start_time})
 
+        self.set_unsaved()
+
     def get_subprocesses(self, by_name=None, by_type=None):
 
         sm = self._specific_model
@@ -444,6 +446,11 @@ class Subprocs_Controller(controller_generic.Controller):
                         p['progress-elapsed-time'] = (time.time() -
                             p['start-time']) - p['progress-init-time']
                     p['progress-current-image'] = int(progress[-1])
+
+
+        #SET SAVED IF NO PROCS RUNNING
+        if len(self.get_subprocesses()) == 0:
+            self.set_saved()
 
         #UPDATE FREE SCANNERS
         sm['free-scanners'] = tc.scanners.count()

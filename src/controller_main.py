@@ -84,7 +84,7 @@ class Controller(controller_generic.Controller):
         #Subprocs
         self.subprocs = controller_subprocs.Subprocs_Controller(self)
         self.add_subprocess = self.subprocs.add_subprocess
-        self.add_subcontroller(self.subprocs)
+        #self.add_subcontroller(self.subprocs)
         self._view.populate_stats_area(self.subprocs.get_view())
         self._view.show_notebook_or_logo()
 
@@ -156,7 +156,16 @@ class Controller(controller_generic.Controller):
 
     def ask_quit(self, *args):
 
-        #INTERIM SOLUTION, SHOULD HANDLE SUBPROCS
+        #CHECK SO NOT ORPHANING SUBPROCS
+        if self.subprocs.get_saved() == False:
+            if view_main.dialog(self.get_window(),
+                    self._model['content-app-close-orphan-warning'],
+                    'warning',
+                    yn_buttons=True) != True:
+
+                return True
+
+        #THEN IF UNSAVED EXISTS
         if self.ask_destroy():
 
             for c in self._controllers:
