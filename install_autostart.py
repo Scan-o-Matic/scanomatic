@@ -15,66 +15,6 @@ xsession = """#! /bin/bash
 gnome-screensaver-command --lock &
 gnome-session --session=gnome
 """
-
-scanomatic_proc = """#!/bin/bash
-# chkconfig: 0356 99 1 
-# description: Scan-o-Matic daemon
-# processname: scanomatic
-#   /etc/rc.d/init.d/scanomatic
- 
-# Source function library.
-. /etc/init.d/functions
- 
-#<define any local shell functions used by the code that follows>
-
-name='Scan-o-Matic daemon'
-
-# Functions
- 
-start() {
-    echo -n "Starting $name"
-    #start daemons, perhaps with the daemon function>
-
-    success
-}   
- 
-stop() {
-    echo -n "Stopping $name"
-
-    success
-}
-
-
-# Run-behaviour
- 
-case "$1" in
-    start)
-    start
-    ;;
-    stop)
-    stop
-    ;;
-    status)
-    echo "Not applied to service"
-    ;;
-    restart)
-    echo "Not applied to service"
-    ;;
-    reload) 
-    echo "Not applied to service"
-    ;;
-    condrestart)
-    echo "Not applied to service"
-    ;;
-    probe)
-    ;;
-    *)
-    echo "Usage: scanomatic{start|stop|status|reload|restart[|probe]"
-    exit 1
-    ;;
-esac
-exit $?"""
-
 paths = resource_path.Paths()
 
 xsession_file_path = os.path.join(
