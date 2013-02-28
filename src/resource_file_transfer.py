@@ -28,8 +28,8 @@ class NotACorrectPath(Exception): pass
 # GLOBALS
 #
 
-GREET_TEXT = "test"
-RESPONSE_TEXT = "fuckyou"
+GREET_TEXT = "NwJEmle0itBT"
+RESPONSE_TEXT = "1i3P1x8E1OnV"
 PORT = 5500
 BUFF_SIZE = 4096
 COMPLETE_TEXT = ["You are refused", "File transferred", "Nothing recieved"]
@@ -67,7 +67,10 @@ def _greet(sock):
 
    if _recieve_msg(sock) == GREET_TEXT:
        _send_msg(sock, RESPONSE_TEXT)
-       return True
+       if _recieve_msg(sock) == "1":
+           return True
+       else:
+           return False
    else:
        return False
 
@@ -94,9 +97,9 @@ def send_file(IP, port, f_path):
         send_success = True
 
         #_send_msg(sock, "")
-        transfer_success = _recieve_msg(sock)
 
     fh.close()
+    transfer_success = _recieve_msg(sock)
     sock.close()
     return transfer_success
 
@@ -119,9 +122,10 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
             self._accepted = 0
             print "Connection denied"
 
+        self.request.send(str(self._accepted), self.BUFF_SIZE)
+
     def handle(self):
 
-        print "Ready to recieve file!"
         #Recieve file
         data = ""
         while self._connection:
