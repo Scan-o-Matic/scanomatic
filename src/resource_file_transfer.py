@@ -16,6 +16,7 @@ __status__ = "Development"
 import os
 import socket
 import SocketServer
+from time import sleep
 
 #
 # EXCEPTIONS
@@ -54,10 +55,11 @@ def _send_msg(sock, msg):
     totalsent = 0
     msglen = len(msg)
     while totalsent < msglen:
-        sent = sock.send(msg[totalsent:], BUFF_SIZE)
+        sent = sock.send(msg[totalsent:])
         if sent == 0:
             raise RuntimeError("Socket connection broken")
         totalsent += sent
+        sleep(0.1)
 
 def _recieve_msg(sock):
     msg = ""
@@ -99,8 +101,10 @@ def send_file(IP, f_path, port=PORT):
             msg = fh.read(BUFF_SIZE)
             _send_msg(sock, msg)
             cur = fh.tell()
+            print "Sending chunk size", len(msg), "Total sent {0}kb".format(cur / 1024)
         send_success = True
 
+        print "All was sent"
         #_send_msg(sock, "")
 
     fh.close()
@@ -133,7 +137,7 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
         while self._connection:
             msg = self.request.recv(BUFF_SIZE)
             data += msg
-            print "Got chunk {0}".format(len(msg))
+            print "Got chunk of size {0} total size is {1}kb".format(len(msg), len(data)/1024)
             if len(msg) < BUFF_SIZE:
                 self._connection = False
 
