@@ -16,7 +16,6 @@ __status__ = "Development"
 import os
 import socket
 import SocketServer
-from time import sleep
 
 #
 # EXCEPTIONS
@@ -105,14 +104,11 @@ def send_file(IP, port, f_path):
 
 class EchoRequestHandler(SocketServer.BaseRequestHandler):
 
-    BUFF_SIZE = 4096
-
-
     def setup(self):
 
         print self.client_address, 'connected!'
-        self.request.send(GREET_TEXT, self.BUFF_SIZE)
-        msg = self.request.recv(self.BUFF_SIZE)
+        self.request.send(GREET_TEXT, BUFF_SIZE)
+        msg = self.request.recv(BUFF_SIZE)
         if msg == RESPONSE_TEXT:
             self._connection = True
             self._accepted = 1
@@ -122,16 +118,16 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
             self._accepted = 0
             print "Connection denied"
 
-        self.request.send(str(self._accepted), self.BUFF_SIZE)
+        self.request.send(str(self._accepted), BUFF_SIZE)
 
     def handle(self):
 
         #Recieve file
         data = ""
         while self._connection:
-            msg = self.request.recv(self.BUFF_SIZE)
+            msg = self.request.recv(BUFF_SIZE)
             data += msg
-            if len(msg) < self.BUFF_SIZE:
+            if len(msg) < BUFF_SIZE:
                 self._connection = False    
 
         #Save file
@@ -151,7 +147,7 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
     def finish(self):
         print self.client_address, 'disconnected!'
         self.request.send(COMPLETE_TEXT[self._accepted],
-                self.BUFF_SIZE)
+                BUFF_SIZE)
 
 
 #server host is a tuple ('host', port)
