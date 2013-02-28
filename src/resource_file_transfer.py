@@ -31,6 +31,7 @@ class NotACorrectPath(Exception): pass
 GREET_TEXT = "test"
 RESPONSE_TEXT = "fuckyou"
 PORT = 5500
+BUFF_SIZE = 4096
 COMPLETE_TEXT = ["You are refused", "File transferred", "Nothing recieved"]
 
 #
@@ -39,6 +40,7 @@ COMPLETE_TEXT = ["You are refused", "File transferred", "Nothing recieved"]
 
 def _connect(IP, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #s.settimeout(2)
     s.connect((IP, port))
     return s
 
@@ -46,21 +48,19 @@ def _send_msg(sock, msg):
     totalsent = 0
     msglen = len(msg)
     while totalsent < msglen:
-        sent = sock.send(msg[totalsent:])
+        sent = sock.send(msg[totalsent:], BUFF_SIZE)
         if sent == 0:
             raise RuntimeError("Socket connection broken")
         totalsent += sent
-    sleep(1)
 
 def _recieve_msg(sock):
-    totalgot = 0
-    prevgot = -1
     msg = ""
-    while prevgot < totalgot:
-        prevgot = totalgot
-        msg += sock.recv(4096)
+    while True:
+        tmp_msg = sock.recv(BUFF_SIZE)
+        msg += tmp_msg
+        if len(tmp_msg) < BUFF_SIZE:
+            break
 
-    sleep(1)
     return msg
 
 def _greet(sock):
@@ -93,9 +93,10 @@ def send_file(IP, port, f_path):
             cur = fh.tell()
         send_success = True
 
-        _send_msg(sock, "")
+        #_send_msg(sock, "")
+        transfer_success = _recieve_msg(sock)
+
     fh.close()
-    transfer_success = _recieve_msg(sock)
     sock.close()
     return transfer_success
 
@@ -111,11 +112,11 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
         msg = self.request.recv(self.BUFF_SIZE)
         if msg == RESPONSE_TEXT:
             self._connection = True
-            self._accepted = 0
+            self._accepted = 1
             print "Connection accepted"
         else:
             self._connection = False
-            self._accepted = 1
+            self._accepted = 0
             print "Connection denied"
 
     def handle(self):
@@ -123,14 +124,10 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
         print "Ready to recieve file!"
         #Recieve file
         data = ""
-        old_size = -1
-        new_size = 0
         while self._connection:
-            old_size = new_size
-            data += self.request.recv(self.BUFF_SIZE)
-            new_size = len(data)
-            print "Chunk received", new_size, old_size
-            if old_size == new_size:
+            msg = self.request.recv(self.BUFF_SIZE)
+            data += msg
+            if len(msg) < self.BUFF_SIZE:
                 self._connection = False    
 
         #Save file
@@ -143,8 +140,9 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
             except:
                 self._accepted = 2
                 print "Could not save"
+
         elif data=="" and self._accepted==1:
-            sefl._accepted = 2
+            self._accepted = 2
 
     def finish(self):
         print self.client_address, 'disconnected!'
