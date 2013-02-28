@@ -30,12 +30,19 @@ class NotACorrectPath(Exception): pass
 GREET_TEXT = "NwJEmle0itBT"
 RESPONSE_TEXT = "1i3P1x8E1OnV"
 PORT = 5500
-BUFF_SIZE = 4096
+BUFF_SIZE = 2048
 COMPLETE_TEXT = ["You are refused", "File transferred", "Nothing recieved"]
 
 #
 # FUNCTIONS
 #
+
+def get_my_ip(remote_addr='google.com'):
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect((remote_addr, 0))
+    return s.getsockname()[0]
+
 
 def _connect(IP, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -73,7 +80,7 @@ def _greet(sock):
    else:
        return False
 
-def send_file(IP, port, f_path):
+def send_file(IP, f_path, port=PORT):
 
     send_success = False
     try:
@@ -85,7 +92,6 @@ def send_file(IP, port, f_path):
 
     if _greet(sock):
         
-        BUFF_SIZE = 4096
         prev = -1
         cur = 0
         while prev < cur:
@@ -127,12 +133,13 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
         while self._connection:
             msg = self.request.recv(BUFF_SIZE)
             data += msg
+            print "Got chunk {0}".format(len(msg))
             if len(msg) < BUFF_SIZE:
-                self._connection = False    
+                self._connection = False
 
         #Save file
         if data != "":
-            print "Will now save file"
+            print "Will now save file of size {0}kb".format(len(data) / 1024)
             try:
                 fh = open('test.data', 'w')
                 fh.write(data)
@@ -145,7 +152,7 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
             self._accepted = 2
 
     def finish(self):
-        print self.client_address, 'disconnected!'
+        print self.client_address, 'disconnected!\n'
         self.request.send(COMPLETE_TEXT[self._accepted],
                 BUFF_SIZE)
 
@@ -153,5 +160,7 @@ class EchoRequestHandler(SocketServer.BaseRequestHandler):
 #server host is a tuple ('host', port)
 if __name__ == "__main__":
 
-    server = SocketServer.ThreadingTCPServer(('localhost', PORT), EchoRequestHandler)
+    IP = get_my_ip()
+    server = SocketServer.ThreadingTCPServer((IP, PORT), EchoRequestHandler)
+    print "\n\nServer is up an listening to {0}:{1}\n".format(IP, PORT)
     server.serve_forever()
