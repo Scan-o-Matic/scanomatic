@@ -59,7 +59,7 @@ def _send_msg(sock, msg):
         if sent == 0:
             raise RuntimeError("Socket connection broken")
         totalsent += sent
-        sleep(0.1)
+        sleep(0.05)
 
 def _recieve_msg(sock):
     msg = ""

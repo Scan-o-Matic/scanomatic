@@ -20,7 +20,7 @@ import gobject
 import threading
 import numpy as np
 import copy
-from subprocess import Popen
+from subprocess import Popen, PIPE
 
 #
 # INTERNAL DEPENDENCIES
@@ -430,7 +430,8 @@ class Analysis_Inspect(controller_generic.Controller):
         sm = self._specific_model
         sm['run-file'] = run_file
         sm['analysis-dir'] = os.path.dirname(run_file)
-        sm['experiment-dir'] = os.path.abspath(os.path.join(sm['analysis-dir'], os.path.pardir))
+        sm['experiment-dir'] = os.path.abspath(os.path.join(
+            sm['analysis-dir'], os.path.pardir))
 
         self._parse_run_file()
         if sm['prefix'] is not None:
@@ -443,6 +444,30 @@ class Analysis_Inspect(controller_generic.Controller):
             self.get_view().get_stage().set_inconsistency_warning()
 
         self.get_view().get_stage().set_display(sm)
+
+    def launch_filezilla(self, widget):
+
+        if (Popen('which filezilla', stdout=PIPE,
+            shell=True).communicate()[0] != ""):
+
+            os.system("filezilla &")
+
+        else:
+
+            if analysis_view.dialog(self.get_window(),
+                    self._model['analysis-stage-inspect-upload-install'],
+                    'info',
+                    yn_buttons=True):
+
+                if os.system("gksu apt-get install filezilla") == 0:
+
+                    os.system("filezilla &")
+
+                else:
+                    analysis_view.dialog(self.get_window(),
+                            self._model['analysis-stage-inspect-upload-error'],
+                            'error',
+                            yn_buttons=False)
 
     def remove_grid(self, plate):
 

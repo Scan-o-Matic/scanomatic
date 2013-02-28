@@ -298,10 +298,8 @@ class Analysis_Inspect_Stage(gtk.VBox):
         self.pack_start(self._warning, False, False, PADDING_SMALL)
 
         scrolled_window = gtk.ScrolledWindow()
-        vbox = gtk.VBox()
-        self._display = gtk.HBox()
-        vbox.pack_start(self._display, False, False, PADDING_NONE)
-        scrolled_window.add_with_viewport(vbox)
+        self._display = gtk.VBox()
+        scrolled_window.add_with_viewport(self._display)
         self.pack_start(scrolled_window, True, True, PADDING_SMALL)
 
         self.show_all()
@@ -349,6 +347,9 @@ class Analysis_Inspect_Stage(gtk.VBox):
         for child in d.children():
             d.remove(child)
 
+        hd = gtk.HBox(False, 0)
+        d.pack_start(hd, False, False, PADDING_MEDIUM)
+
         #ADD DRAWING
         fixture = resource_fixture_image.Fixture_Image(
             self._paths.experiment_local_fixturename,
@@ -370,7 +371,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
         vbox.pack_start(self._fixture_drawing, False, False, PADDING_SMALL)
         self._fd_op1.connect('clicked', self._toggle_drawing)
         self._fd_op2.connect('clicked', self._toggle_drawing)
-        d.pack_start(vbox, False, False, PADDING_MEDIUM)
+        hd.pack_start(vbox, False, False, PADDING_MEDIUM)
 
         #ADD THE PLATES
         for i, plate in enumerate(sm['pinnings']):
@@ -397,7 +398,14 @@ class Analysis_Inspect_Stage(gtk.VBox):
                     button.connect("clicked", self._verify_bad, i)
 
                 vbox.pack_start(button, False, False, PADDING_SMALL)
-                d.pack_start(vbox, True, True, PADDING_MEDIUM)
+                hd.pack_start(vbox, True, True, PADDING_MEDIUM)
+
+        
+        hbox = gtk.HBox(False, 0)
+        button = gtk.Button(m['analysis-stage-inspect-upload-button'])
+        button.connect('clicked', self._controller.launch_filezilla)
+        hbox.pack_end(button, False, False, PADDING_NONE)
+        d.pack_start(hbox, False, False, PADDING_SMALL)
 
         d.show_all()
 

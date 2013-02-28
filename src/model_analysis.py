@@ -91,6 +91,9 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'analysis-stage-inspect-plate-nohistory': 'Not in history',
 'analysis-stage-inspect-plate-remove-warn': 'Failed to remove the selected plate from fixture history',
 'analysis-stage-inspect-plate-drawing': 'Layout drawing as seen in:',
+'analysis-stage-inspect-upload-button': 'Upload files to Precog-computer',
+'analysis-stage-inspect-upload-install': 'Filezilla is lacking on your system, do you want to install it?',
+'analysis-stage-inspect-upload-error': "Could not install.\n\nEither you didn't get the password right or decided not to install.\nOr this is not a debian-linux with filezilla in the repo!",
 
 #ANALYSIS TOP PROJECT
 'analysis-top-project-start-text': 'Start',
