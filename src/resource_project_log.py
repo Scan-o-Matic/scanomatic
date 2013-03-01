@@ -181,6 +181,7 @@ def get_image_entries(path):
         return None
 
     images = list()
+    nan = None
 
     for line in fs:
 
