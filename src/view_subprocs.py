@@ -136,12 +136,7 @@ class Running_Analysis(gtk.VBox):
 
         for p in controller.get_subprocesses(by_type='analysis'):
 
-            if 'experiment-prefix' in p['sm']:
-                frame = gtk.Frame(p['sm']['experiment-prefix'])
-            else:
-                proj_dir = p['sm']['analysis-project-log_file_dir']
-                proj_prefix = proj_dir.split(os.sep)[-1]
-                frame = gtk.Frame(proj_prefix)
+            frame = gtk.Frame(p['sm']['experiment-prefix'])
 
             vbox = gtk.VBox(False, 0)
             frame.add(vbox)
