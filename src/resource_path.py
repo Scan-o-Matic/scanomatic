@@ -99,6 +99,7 @@ class Paths(object):
         self.log_analysis_out = os.sep.join((self.log, "analysis_{0}.stdout"))
         self.log_analysis_err = os.sep.join((self.log, "analysis_{0}.stderr"))
         self.log_relaunch = os.path.join(self.log, "relaunch.log")
+        self.log_project_progress = os.path.join(self.log, "progress.projects")
 
         #EXPERIMENT
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"

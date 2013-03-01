@@ -46,7 +46,7 @@ from pkg_resources import WorkingSet , DistributionNotFound
 working_set = WorkingSet()
 
 package_dependencies = ('cython', 'argparse', 'matplotlib', 'multiprocessing',
-    'numpy', 'sh', 'nmap',
+    'numpy', 'sh', 'nmap', 'configparse',
     'uuid', 'PIL', 'scipy', 'scikits-image', 'logging', 'unittest', 'pygtk') 
 
 install_dependencies = []
@@ -82,6 +82,6 @@ setup(name="Scan-o-Matic",
         url="www.gitorious.org/scannomatic",
         )
 
-        #packages=['numpy', 'scipy', 'matplotlib', 'gtk+', 'nmap', 'sh', 'scikits-image'])
-
+        #packages=['numpy', 'scipy', 'matplotlib', 'gtk+', 'nmap', 'sh', 'scikits-image',
+            ])
 """

@@ -730,7 +730,11 @@ class Analyse_Grayscale(object):
             2.0 * safety_coeff
 
         top = self._mid_orth_strip - self.ortho_half_height
+        if top < 0:
+            top = 0
         bottom = self._mid_orth_strip + self.ortho_half_height
+        if bottom >= self._img.shape[1]:
+            bottom = self._img.shape[1] - 1
 
         for pos in xrange(signal.size - 1):
 
@@ -739,7 +743,11 @@ class Analyse_Grayscale(object):
             gray_scale_pos.append(mid)
 
             left = gray_scale_pos[-1] - 0.5 * frequency * safety_coeff
+            if left < 0:
+                left = 0
             right = gray_scale_pos[-1] + 0.5 * frequency * safety_coeff
+            if right >= self._img.shape[0]:
+                right = self._img.shape[0] - 1
 
             gray_scale.append(self._img[left: right, top: bottom].mean())
 

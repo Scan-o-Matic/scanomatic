@@ -19,6 +19,7 @@ import random
 import re
 import os
 import time
+import ConfigParser
 from subprocess import Popen
 
 #
@@ -47,6 +48,41 @@ class UnDocumented_Error(Exception): pass
 #
 # CLASSES
 #
+
+class Handle_Progress(object):
+
+    #STAGES
+    EXPERIMENT = 0
+    ANALYSIS = 1
+    INSPECT = 2
+    UPLOAD = 3
+
+    #STAGE STATUSES
+    NOT_YET = 0
+    AUTOMATIC = 1
+    LAUNCH = 2
+    TERMINATED = 3
+    RUNNING = 4
+    COMPLETED = 5
+
+    def __init__(self, paths, model):
+
+        self._config = ConfigParser.ConfigParser(allow_no_value=True)
+        self._paths = paths
+        self._model = model
+
+        try:
+            self._config.load(paths.log_project_progress)
+        except:
+            pass
+
+    def add_project(self, project_prefix):
+
+        self._config.add_section(project_prefix)
+        self._config.set(project_prefix, str(self.EXPERIMENT), "0")
+        self._config.set(project_prefix, str(self.ANALYSIS), "0")
+        self._config.set(project_prefix, str(self.INSPECT), "0")
+        self._config.set(project_prefix, str(self.UPLOAD), "0")
 
 class Fake_Proc(object):
 

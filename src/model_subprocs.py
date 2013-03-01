@@ -96,6 +96,11 @@ As soon as gridding is done you can see how it worked.</i></span>
 
 #VIEW GRIDDING
 'view-plate-pattern': '<span size="large">Plate {0}</span>',
+
+#PROJECT PRGRESS
+'project-progress-states' = ['Experiment', 'Analysis', 'Inspect Gridding', 'Upload to Precog'],
+'project-progress-state-statuses' = ['Not yet available','Will Start Automatically', 'Launch', 'Terminated', 'Running', 'Completed'],
+
 }
 
 
