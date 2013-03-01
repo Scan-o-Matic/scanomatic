@@ -94,6 +94,7 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'analysis-stage-inspect-upload-button': 'Upload files to Precog-computer',
 'analysis-stage-inspect-upload-install': 'Filezilla is lacking on your system, do you want to install it?',
 'analysis-stage-inspect-upload-error': "Could not install.\n\nEither you didn't get the password right or decided not to install.\nOr this is not a debian-linux with filezilla in the repo!",
+'analysis-stage-inspect-upload-gksu': "Please write password for administrative priviledges to install Filezilla",
 
 #ANALYSIS TOP PROJECT
 'analysis-top-project-start-text': 'Start',

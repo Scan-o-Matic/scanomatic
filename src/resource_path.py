@@ -58,6 +58,7 @@ class Paths(object):
         self.desktop_file = "scan-o-matic.desktop"
         self.desktop_file_path = os.sep.join((self.config, "desktop_icon",
             self.desktop_file))
+        self.install_filezilla = os.path.join(self.src, "install_filezilla.sh")
 
         #RUN-files
         self.scanomatic = self.root + os.sep + "run_scan_o_matic.py"

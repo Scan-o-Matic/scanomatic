@@ -31,7 +31,7 @@ class NotACorrectPath(Exception): pass
 GREET_TEXT = "NwJEmle0itBT"
 RESPONSE_TEXT = "1i3P1x8E1OnV"
 PORT = 5500
-BUFF_SIZE = 2048
+BUFF_SIZE = 4096
 COMPLETE_TEXT = ["You are refused", "File transferred", "Nothing recieved"]
 
 #

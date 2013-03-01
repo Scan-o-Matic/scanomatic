@@ -447,6 +447,9 @@ class Analysis_Inspect(controller_generic.Controller):
 
     def launch_filezilla(self, widget):
 
+        paths = self.get_top_controller().paths
+        m = self._model
+
         if (Popen('which filezilla', stdout=PIPE,
             shell=True).communicate()[0] != ""):
 
@@ -454,17 +457,20 @@ class Analysis_Inspect(controller_generic.Controller):
 
         else:
 
-            if analysis_view.dialog(self.get_window(),
+            if view_analysis.dialog(self.get_window(),
                     self._model['analysis-stage-inspect-upload-install'],
                     'info',
                     yn_buttons=True):
 
-                if os.system("gksu apt-get install filezilla") == 0:
+                if os.system('gksu {0} --message="{1}"'.format(
+                        paths.install_filezilla,
+                        m['analysis-stage-inspect-upload-gksu'])) == 0:
 
                     os.system("filezilla &")
 
                 else:
-                    analysis_view.dialog(self.get_window(),
+
+                    view_analysis.dialog(self.get_window(),
                             self._model['analysis-stage-inspect-upload-error'],
                             'error',
                             yn_buttons=False)
