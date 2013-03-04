@@ -73,15 +73,17 @@ class Handle_Progress(object):
         self._paths = paths
         self._model = model
 
+        self._count = 0
         self._load()
 
     def _load(self):
 
         try:
-            self._config.load(self._paths.log_project_progress)
+            self._config.read(self._paths.log_project_progress)
         except:
             pass
 
+        self._count = len(self._config.sections())
     def _save(self):
 
         with open(self._paths.log_project_progress, 'wb') as configfile:
@@ -98,6 +100,8 @@ class Handle_Progress(object):
         self._config.set(project_prefix, str(self.INSPECT), "0")
         self._config.set(project_prefix, str(self.UPLOAD), "0")
         self._save()
+
+        self._count += 1
 
     def set_status(self, project_prefix, stage, status):
 
@@ -168,6 +172,9 @@ class Handle_Progress(object):
 
         self._save()
 
+    def get_project_count(self):
+
+        return self._count
 
 class Fake_Proc(object):
 
@@ -622,6 +629,9 @@ class Subprocs_Controller(controller_generic.Controller):
         #UPDATE FREE SCANNERS
         sm['free-scanners'] = tc.scanners.count()
 
+        #UPDATE LIVE PROJECTS
+        sm['live-projects'] = self._project_progress.get_project_count()
+
         #UPDATE SUMMARY TABLE
         self._view.update()
 
@@ -706,6 +716,13 @@ class Subprocs_Controller(controller_generic.Controller):
             self._specific_model), 
             self._model['running-experiments'], 
             self)
+
+    def produce_live_projects(self, widget):
+
+        self.get_top_controller().add_contents_from_controller(
+                view_subprocs.Live_Projects(self, self._model,
+                self._specific_model), self._model['live-projects'],
+                self)
 
     def produce_free_scanners(self, widget):
 

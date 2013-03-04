@@ -50,7 +50,7 @@ class Subprocs_View(gtk.Frame):
         self._controller = controller
         self._specific_model = specific_model
 
-        table = gtk.Table(rows=4, columns=2)
+        table = gtk.Table(rows=5, columns=2)
         table.set_col_spacings(PADDING_MEDIUM)
         table.set_row_spacing(0, PADDING_MEDIUM)
         table.set_row_spacing(3, PADDING_MEDIUM)
@@ -67,6 +67,8 @@ class Subprocs_View(gtk.Frame):
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 0, 1)
         """
+
+        #FREE SCANNERS
         label = gtk.Label(model['free-scanners']) 
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1 , 0, 1)
@@ -77,32 +79,46 @@ class Subprocs_View(gtk.Frame):
         self.scanners.set_alignment(0, 0.5)
         table.attach(self.scanners, 1, 2, 0, 1)
 
-        label = gtk.Label(model['running-experiments'])
+        #PROJECTS
+        label = gtk.Label(model['live-projects'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 1, 2)
 
-        self.experiments = gtk.Button()
-        self.experiments.set_label(str(specific_model['running-scanners']))
-        self.experiments.connect("clicked", controller.produce_running_experiments)
-        table.attach(self.experiments, 1, 2, 1, 2)
+        self.projects = gtk.Button()
+        self.projects.set_label(str(specific_model['live-projects']))
+        self.projects.connect("clicked", controller.produce_live_projects)
+        table.attach(self.projects, 1, 2, 1, 2)
 
-        label = gtk.Label(model['running-analysis'])
+        #RUNNING EXPERIMENTS
+        label = gtk.Label(model['running-experiments'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 2, 3)
+
+        self.experiments = gtk.Button()
+        self.experiments.set_label(str(specific_model['running-scanners']))
+        self.experiments.connect("clicked",
+                controller.produce_running_experiments)
+        table.attach(self.experiments, 1, 2, 2, 3)
+
+        #RUNNING ANALYSIS
+        label = gtk.Label(model['running-analysis'])
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 3, 4)
 
         self.analysis = gtk.Button()
         self.analysis.set_label(str(specific_model['running-analysis']))
         self.analysis.connect("clicked", controller.produce_running_analysis)
-        table.attach(self.analysis, 1, 2, 2, 3)
+        table.attach(self.analysis, 1, 2, 3, 4)
 
+        #ERRORS AND WARNINGS
         label = gtk.Label(model['collected-messages'])
         label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 3, 4)
+        table.attach(label, 0, 1, 4, 5)
 
         self.messages = gtk.Button()
         self.messages.set_label(str(specific_model['collected-messages']))
         self.messages.connect("clicked", controller.produce_errors_and_warnings)
-        table.attach(self.messages, 1, 2, 3, 4)
+        table.attach(self.messages, 1, 2, 4, 5)
 
         self.show_all()
 
@@ -111,6 +127,7 @@ class Subprocs_View(gtk.Frame):
 
         specific_model = self._specific_model
         
+        self.projects.set_label(str(specific_model['live-projects']))
         self.scanners.set_label(str(specific_model['free-scanners']))
         self.experiments.set_label(str(specific_model['running-scanners']))
         self.analysis.set_label(str(specific_model['running-analysis']))
@@ -380,6 +397,95 @@ class Errors_And_Warnings(gtk.VBox):
         self.pack_start(label, False, False, PADDING_LARGE)
 
         self.show_all()
+
+class Live_Projects(gtk.ScrolledWindow):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Live_Projects, self).__init__()
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        #TITLE
+        vbox = gtk.VBox(False, 0)
+        label = gtk.Label()
+        label.set_markup(model['project-progress-title'])
+        vbox.pack_start(label, False, False, PADDING_LARGE)
+
+        #PROJECTS CONAINER
+        self._projects = gtk.VBox()
+        vbox.pack_start(self._projects, False, False, PADDING_NONE)
+
+        #FINALIZE
+        self.add_with_viewport(vbox)
+        self.show_all()
+
+        self.update(controller._project_progress)
+
+        gobject.timeout_add(61, self.update,
+            controller._project_progress)
+
+    def update(self, project_progress):
+
+        m = self._model
+        pstages = m['project-progress-stages']
+        pstage_title = m['project-progress-stage-title']
+        pstage_spacer = m['project-progress-stage-spacer']
+        #pstatus = m['project-progress-stage-status']
+        pview = self._projects
+
+        cur_status = project_progress.get_all_stages_status(as_text=True)
+        cur_keys = cur_status.keys()
+
+        for view_proj in pview.get_children():
+
+            pname = view_proj.get_name()
+            if pname not in cur_keys:
+
+                pview.remove(view_proj)
+
+            else:
+
+                for i in range(len(pstages)):
+                    view_proj.my_status[i].set_label(cur_status[pname][i])
+
+                del cur_status[pname]
+
+        #APPEND NEW
+        for k, val in cur_status.items():
+
+            frame = gtk.Frame(k)
+            frame.set_name(k)
+
+            hbox = gtk.HBox()
+            frame.add(hbox)
+
+            frame.my_status = []
+
+            for i in range(len(pstages)):
+
+                vbox = gtk.VBox()
+                label = gtk.Label()
+                label.set_markup(pstage_title.format(pstages[i]))
+                vbox.pack_start(label, False, False, PADDING_SMALL)
+
+                button = gtk.Button()
+                button.set_label(val[i])
+                button.set_sensitive(False)
+                frame.my_status.append(button)
+                vbox.pack_start(button, False, False, PADDING_SMALL)
+
+                hbox.pack_start(vbox, False, False, PADDING_LARGE)
+
+                if i < len(pstages) - 1:
+                    label = gtk.Label()
+                    label.set_markup(pstage_spacer)
+                    hbox.pack_start(label, False, False, PADDING_LARGE)
+
+            pview.pack_start(frame, False, False, PADDING_MEDIUM)
+
+        pview.show_all()
 
 class View_Gridding_Images(gtk.ScrolledWindow):
 

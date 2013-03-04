@@ -51,6 +51,7 @@ composite_model = {
 
 'composite-stat-title': 'Status',
 'free-scanners': 'Free Scanners',
+'live-projects': 'Live Projects',
 'running-experiments': 'Running Experiments',
 'running-analysis': 'Running Analysis',
 'collected-messages': 'Warnings & Errors',
@@ -100,11 +101,18 @@ As soon as gridding is done you can see how it worked.</i></span>
 #PROJECT PRGRESS
 'project-progress-stages': ['Experiment', 'Analysis', 'Inspect Gridding', 'Upload to Precog'],
 'project-progress-stage-status': ['Not yet available', 'Will Start Automatically', 'Launch', 'Running', 'Terminated', 'Completed'],
+
+#LIVE PROJCES VIEW
+'project-progress-title': """<span size="x-large">Live Projects</span>
+<span><i>Here you get an overview of how far each scanning-project has progressed</i></span>
+""",
+'project-progress-stage-title': """<b>{0}</b>""",
+'project-progress-stage-spacer': "<span size='x-large'>></span>"
 }
 
 
 composite_specific_model = {
-
+'live-projects': 0,
 'free-scanners': 0,
 'scanner-procs': list(),
 'analysis-procs': list(),
