@@ -142,6 +142,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     resource_analysis_support.set_logger(logger)
 
     logger.info('Analysis started at ' + str(start_time))
+    logger.info('ANALYSIS using file {0}'.format(log_file_path))
 
     #
     # SET UP EXCEPT HOOK
@@ -155,14 +156,15 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
 
     ## META-DATA
     meta_data = resource_project_log.get_meta_data(path=log_file_path)
-    
+
     ### METE-DATA BACK COMPATIBILITY
-    if 'Version' not in meta_data:
-        meta_data['Version'] = 0
-    if 'UUID' not in meta_data:
-        meta_data['UUID'] = None
-    if 'Manual Gridding' not in meta_data:
-        meta_data['Manual Gridding'] = None
+    for key, val in (('Version', 0), ('UUID', None),
+            ('Manual Gridding', None), ('Prefix', ""),
+            ('Project ID', ""), ('Scanner Layout ID', "")):
+
+        if key not in meta_data:
+            meta_data[key] = val
+    logger.info('ANALYSIS met-data is\n{0}\n'.format(meta_data))
 
     ### OVERWRITE META-DATA WITH USER INPUT
     if pinning_matrices is not None:
@@ -190,7 +192,8 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
         return False
 
     ## IMAGES
-    image_dictionaries = resource_project_log.get_image_entries(log_file_path)
+    image_dictionaries = resource_project_log.get_image_entries(log_file_path,
+            logger=logger)
 
     if len(image_dictionaries) == 0:
         logger.critical("ANALYSIS: There are no images to analyse, aborting")
@@ -210,7 +213,8 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     #
 
     if resource_analysis_support.get_run_will_do_something(
-            suppress_analysis, graph_watch, meta_data, logger) == False:
+            suppress_analysis, graph_watch, meta_data,
+            image_dictionaries, logger) == False:
 
         """
         In principle, if user requests to supress analysis of other

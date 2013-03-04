@@ -73,7 +73,7 @@ pigmentation analysis.</i></span>
 'project-stage-prefix': 'Project Prefix',
 'project-stage-prefix-ok': 'Prefix is good',
 'project-stage-prefix-warn': 'Duplcate prefix name or illegal name',
-'project-stage-planning-id': 'Project ID from Planner',
+'project-stage-planning-id': 'Project & Scan Layout Tags',
 'project-stage-desc': 'Project Description',
 'project-stage-desc-suggestion': 'Plate 1 ""; Plate 2 ""; Plate 3 ""; Plate 4 ""',
 'project-stage-view_of_fixture': 'View in Scanner',
@@ -175,8 +175,9 @@ specific_project_model = {
 ##DATA
 'experiments-root': '',
 'experiment-prefix': None,
-'experiment-desc': None,
-'experiment-id': None,
+'experiment-desc': '',
+'experiment-id': '',
+'experiment-scan-layout-id': '',
 
 ##PLATES
 'plate-areas': 0,

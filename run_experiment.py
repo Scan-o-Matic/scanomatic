@@ -284,6 +284,7 @@ class Experiment(object):
 
         self._description = run_args.description
         self._code = run_args.code
+        self._layout_id = run_args.layout_id
 
         self._uuid = run_args.uuid
         if self._uuid is None or self._uuid == "":
@@ -438,6 +439,7 @@ class Experiment(object):
                     'Pinning Matrices': self._pinning,
                     'Manual Gridding': None,
                     'Project ID': self._code,
+                    'Scanner Layout ID': self._layout_id
                 }
                 )
 
@@ -492,7 +494,10 @@ input file for the analysis script.""")
         help='Project description')
 
     parser.add_argument('-c', '--code', type=str, dest='code',
-        help='Identification code for the project as supplied by the planner')
+        help='Identification code for the project from the planner')
+
+    parser.add_argument('-l', '--scan-layout-tag', dest='layout_id',
+            help="Identification code for the scanner layout being run")
 
     parser.add_argument('-u', '--uuid', type=str, dest='uuid',
         help='UUID to indentify self with scanner reservation')
@@ -603,10 +608,12 @@ input file for the analysis script.""")
     args.outdata_path = os.sep.join((args.root, args.prefix))
 
     #CODE
-    if args.code is None or args.code == "":
+    if args.code is None:
+        args.code == ""
 
-        pass
-        #args.code = uuid.
+    #LAYOUT TAG
+    if args.layout_id is None:
+        args.layout_id = ""
 
     #LOGGING
     if args.debug in LOGGING_LEVELS.keys():

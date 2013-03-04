@@ -385,9 +385,15 @@ class Project_Controller(controller_generic.Controller):
             self.check_prefix_dupe(widget=None)
             self._view.get_stage().update_experiment_root()
 
-    def set_project_id(self, widget, event):
+    def set_project_id(self, widget, event=None):
 
-        self._specific_model['experiment-id'] = widget.get_text()
+        pass
+        #self._specific_model['experiment-id'] = widget.get_text()
+
+    def set_scan_layout_id(self, widget, event=None):
+
+        pass
+        #self._specific_model['experiment-scan-laout-id']
 
     def set_project_description(self, widget, event):
 
@@ -623,6 +629,7 @@ class Project_Controller(controller_generic.Controller):
         experiment_query['-p'] = sm['experiment-prefix']
         experiment_query['-d'] = sm['experiment-desc']
         experiment_query['-c'] = sm['experiment-id']
+        experiment_query['-l'] = sm['experiment-scan-layout-id']
         experiment_query['-u'] = scanner.get_uuid()
 
         experiment_query['-m'] = get_pinnings_str(sm['pinnings-list'])

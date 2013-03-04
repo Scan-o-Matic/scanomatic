@@ -36,7 +36,8 @@ META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0,
     'Description': 'Automatic placeholder description',
     'Version': __version__,
     'UUID': None, 'Measures': 0, 'Fixture': '', 'Scanner': '',
-    'Pinning Matrices': None, 'Manual Gridding': None, 'Project ID': ''}
+    'Pinning Matrices': None, 'Manual Gridding': None, 'Project ID': '',
+    'Scanner Layout ID': ''}
 
 IMAGE_ENTRY_KEYS = ['plate_1_area', 'grayscale_indices', 'grayscale_values',
     'plate_0_area', 'mark_X', 'mark_Y', 'plate_3_area', 'Time',
@@ -54,7 +55,7 @@ def get_meta_data_dict(**kwargs):
         if k in md:
             md[k] = kwargs[k]
         else:
-            raise Unkown_Meta_Data_Key(k)
+            raise Unknown_Meta_Data_Key(k)
 
     return md
 
@@ -170,13 +171,18 @@ def get_meta_data(path = None):
     return meta_data
 
 
-def get_image_entries(path):
+def get_image_entries(path, logger=None):
+
+    if logger:
+        logger.info("Reading Image Entries {0}".format(path))
 
     try:
 
         fs = open(path, 'r')
 
     except:
+        if logger is not None:
+            logger.critical("Could not load 1-pass file '{0}'".format(path))
 
         return None
 

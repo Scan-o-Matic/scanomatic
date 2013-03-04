@@ -221,7 +221,7 @@ def get_finds_fixture(name, directory=None):
 
 
 def get_run_will_do_something(suppress_analysis, graph_watch, 
-                meta_data, logger):
+                meta_data, image_dictionaries, logger):
 
 
     #Verifying sanity of request: Suppression requires watching?

@@ -420,13 +420,18 @@ class Stage_Project_Setup(gtk.VBox):
         hbox.pack_start(self.prefix, False, False, PADDING_NONE)
         hbox.pack_start(self.warn_image, False, False, PADDING_NONE)
         table.attach(hbox, 1, 2, 0, 1)
-        ##IDENTIFIER
+        ##IDENTIFIERS
         label = gtk.Label(model['project-stage-planning-id'])
         label.set_alignment(0, 0.5)
-        self.project_id = gtk.Entry()
-        self.project_id.connect("focus-out-event", controller.set_project_id)
+        self.project_id = gtk.combo_box_new_text()                   
+        self.project_id.set_sensitive(False)
+        self.project_id.connect("changed", controller.set_project_id)
+        self.scan_layout_id = gtk.combo_box_new_text()
+        self.scan_layout_id.set_sensitive(False)
+        self.scan_layout_id.connect("changed", controller.set_scan_layout_id)
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self.project_id, False, False, PADDING_NONE)
+        hbox.pack_start(self.scan_layout_id, False, False, PADDING_SMALL)
         table.attach(label, 0, 1, 1, 2)
         table.attach(hbox, 1, 2, 1, 2)
         ##DESCRIPTION

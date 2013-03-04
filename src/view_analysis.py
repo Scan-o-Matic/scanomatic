@@ -602,10 +602,16 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         label = gtk.Label(model['analysis-stage-first-meta-id'])
         label.set_alignment(0, 0.5)
         self._project_id = gtk.Entry()
+        self._project_id.set_sensitive(False)
         self._project_id.connect("focus-out-event",
             controller.update_model, 'id')
+        self._scan_layout_id = gtk.Entry()
+        self._scan_layout_id.set_sensitive(False)
+        self._scan_layout_id.connect("focus-out-event",
+            controller.update_model, 'scan layout id')
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self._project_id, False, False, PADDING_NONE)
+        hbox.pack_start(self._scan_layout_id, False, False, PADDING_SMALL)
         table.attach(label, 0, 1, 1, 2)
         table.attach(hbox, 1, 2, 1, 2)
         ##DESCRIPTION

@@ -886,6 +886,8 @@ class Analysis_First_Pass(controller_generic.Controller):
             md['Description'] = t
         elif target == "id":
             md['Project ID'] = t
+        elif target == 'scan layout id':
+            md['Scanner Layout ID'] = t
         elif target == "output-file":
             sm['output-file'] = t
         elif target == "prefix":
