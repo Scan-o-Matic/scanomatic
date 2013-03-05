@@ -60,6 +60,7 @@ class Handle_Progress(object):
     UPLOAD = 3
 
     #STAGE STATUSES
+    FAILED = -1
     NOT_YET = 0
     AUTOMATIC = 1
     LAUNCH = 2
@@ -438,9 +439,14 @@ class Subprocs_Controller(controller_generic.Controller):
         """Subproc is never destroyed, but its views always allow destruction"""
         pass
 
+    def get_remaining_scans(self):
+
+        sm = self._specific_model
+        return sm['images-in-queue']
+
     def add_subprocess(self, proc, proc_type, stdin=None, stdout=None,
             stderr=None, pid=None, psm=None, proc_name=None,
-            start_time=None, progress=None):
+            start_time=None, progress=0):
 
         sm = self._specific_model
         _pp = self._project_progress
@@ -512,6 +518,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
         sm = self._specific_model
         tc = self.get_top_controller()
+        sm['images-in-queue'] = 0
 
         _pp = self._project_progress
 
@@ -577,6 +584,9 @@ class Subprocs_Controller(controller_generic.Controller):
 
                     p['progress'] = int(i_done[-1]) 
             
+                #COUNTING TOTAL SUM OF IMAGES TO TAKE
+                sm['images-in-queue'] += psm['scans'] - p['progress']
+
                 """
                 if len(i_started) > 0 and \
                     int(p['progress']) < int(i_started[-1]):
@@ -593,10 +603,14 @@ class Subprocs_Controller(controller_generic.Controller):
 
                 psm = p['sm']
 
-                _pp.set_status(psm['experiment-prefix'],
-                        'ANALYSIS', 'COMPLETED')
-                _pp.set_status(psm['experiment-prefix'],
-                        'INSPECT', 'LAUNCH')
+                if p_exit == 0:
+                    _pp.set_status(psm['experiment-prefix'],
+                            'ANALYSIS', 'COMPLETED')
+                    _pp.set_status(psm['experiment-prefix'],
+                            'INSPECT', 'LAUNCH')
+                else:
+                    _pp.set_status(psm['experiment-prefix'],
+                            'ANALYSIS', 'FAILED')
 
                 #DO A WARNING HERE SINCE NOT NICE QUIT!
                 if p_exit != 0:

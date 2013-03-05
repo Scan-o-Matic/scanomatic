@@ -165,6 +165,12 @@ allow you to scan one or more images before you free it again.</i></span>
 'one-stage-progress-power-off': ' Power Off ',
 'one-stage-progress-analysis': ' First Pass Analysis ',
 'one-stage-progress-done': ' Done ',
+
+#SPACE LEFT WARNING
+'space-warning-im-size': 28800222 / 1024,
+'space-warning-coeff': 1.5,
+'space-warning-text': """There is a risk that disk space will run out during the project.\n
+You should really dealete some old projects"""
 }
 
 specific_project_model = {

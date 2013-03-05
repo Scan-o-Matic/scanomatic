@@ -100,7 +100,7 @@ As soon as gridding is done you can see how it worked.</i></span>
 
 #PROJECT PRGRESS
 'project-progress-stages': ['Experiment', 'Analysis', 'Inspect Gridding', 'Upload to Precog'],
-'project-progress-stage-status': ['Not yet available', 'Will Start Automatically', 'Launch', 'Running', 'Terminated', 'Completed'],
+'project-progress-stage-status': ['Not yet available', 'Will Start Automatically', 'Launch', 'Running', 'Terminated', 'Completed', 'Failed'],
 
 #LIVE PROJCES VIEW
 'project-progress-title': """<span size="x-large">Live Projects</span>
@@ -112,6 +112,7 @@ As soon as gridding is done you can see how it worked.</i></span>
 
 
 composite_specific_model = {
+'images-in-queue': 0,
 'live-projects': 0,
 'free-scanners': 0,
 'scanner-procs': list(),

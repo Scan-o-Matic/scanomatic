@@ -20,6 +20,7 @@ import collections
 from itertools import chain
 from subprocess import Popen, PIPE
 import threading
+import sh
 
 #
 # INTERNAL DEPENDENCIES
@@ -460,7 +461,6 @@ class Project_Controller(controller_generic.Controller):
         sm = self._specific_model
         stage = self._view.get_stage()
 
-
         #Parsing input
         str_val = widget.get_text()
         val = None
@@ -516,6 +516,36 @@ class Project_Controller(controller_generic.Controller):
 
             stage.set_duration_warning(widget_name)    
 
+        self.check_free_disk_space()
+
+    def check_free_disk_space(self):
+
+        sm = self._specific_model
+        m = self._model
+        tc = self.get_top_controller()
+        stage = self._view.get_stage()
+
+        df_val = -1
+        try:
+            df_text = sh.df(sm['experiments-root'])
+            df_val = int(df_text.split()[-3])
+        except:
+            pass
+
+        if df_val < 0:
+
+            stage.set_free_space_warning(known_space=True)
+
+        elif (m['space-warning-im-size'] * 
+               (sm['scans'] + tc.subprocs.get_remaining_scans()) 
+               * m['space-warning-coeff']) > df_val:
+
+            stage.set_free_space_warning(known_space=False)
+
+        print (df_val, tc.subprocs.get_remaining_scans(),
+                (m['space-warning-im-size'] * 
+               (sm['scans'] + tc.subprocs.get_remaining_scans()) 
+               * m['space-warning-coeff']))
 
     def _check_duration_consistencies(self):
 

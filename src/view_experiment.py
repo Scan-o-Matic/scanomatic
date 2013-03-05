@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import pygtk
 pygtk.require('2.0')
+import gobject
 import gtk
 """
 from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
@@ -369,6 +370,7 @@ class Stage_Project_Setup(gtk.VBox):
             specific_model = controller.get_specific_model()
 
         self._specific_model = specific_model
+        self._window = controller.get_window()
 
         sm = self._specific_model
         self.gtk_handlers = dict()
@@ -534,7 +536,9 @@ class Stage_Project_Setup(gtk.VBox):
 
         self.set_fixtures()
         self.set_scanners()
-
+        
+        gobject.timeout_add(400,
+            controller.check_free_disk_space)
 
     def _get_human_duration(self, w_type):
 
@@ -574,13 +578,20 @@ class Stage_Project_Setup(gtk.VBox):
 
         return cur_img
 
+    def set_free_space_warning(self, known_space):
+
+        m = self._model
+        dialog(self._window,
+                m['space-warning-text'],
+                d_type='warning', yn_buttons=False)
+
     def warn_scanner_claim_fail(self):
 
         self.scanner.handler_block(self.gtk_handlers['scanner-changed'])
         
         self.scanner.set_active(-1)
 
-        dialog(self._controller._window,
+        dialog(self._window,
             self._model['project-stage-scanner-claim-fail'],
             d_type="warning", yn_buttons=False)
 
