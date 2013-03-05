@@ -260,15 +260,23 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._data_width = max(self._plates[:,:,self.WIDTH].max(),
             self._grayscale[:,self.WIDTH].max())
 
+        print "SCANNER VIEW", self._scanner_view
         if self._scanner_view:
-            self._flipflip()
+            self._flipflip(xflip=True, yflip=True)
+        else:
+            self._flipflip(xflip=False, yflip=True)
 
-    def _flipflip(self):
+    def _flipflip(self, xflip=True, yflip=False):
+        """This doesn't flip the Y-axis when toggling since the 'normal' way to 
+        display an image is with inverted y-axis, it does it the first time when
+        loading the image."""
 
-        self._grayscale[:, self.WIDTH] = self._data_width - self._grayscale[:, self.WIDTH]
-        self._grayscale[:, self.HEIGHT] = self._data_height - self._grayscale[:, self.HEIGHT]
-        self._plates[:,:, self.WIDTH] = self._data_width - self._plates[:,:, self.WIDTH]
-        self._plates[:,:, self.HEIGHT] = self._data_height - self._plates[:,:, self.HEIGHT]
+        if xflip:
+            self._grayscale[:, self.WIDTH] = self._data_width - self._grayscale[:, self.WIDTH]
+            self._plates[:,:, self.WIDTH] = self._data_width - self._plates[:,:, self.WIDTH]
+        if yflip:
+            self._grayscale[:, self.HEIGHT] = self._data_height - self._grayscale[:, self.HEIGHT]
+            self._plates[:,:, self.HEIGHT] = self._data_height - self._plates[:,:, self.HEIGHT]
 
     def _get_pos(self, d1, d2):
 
