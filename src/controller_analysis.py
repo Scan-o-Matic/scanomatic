@@ -15,7 +15,6 @@ __status__ = "Development"
 
 import os
 import re
-import types
 import gobject
 import threading
 import numpy as np
@@ -40,31 +39,47 @@ import src.resource_first_pass_analysis as resource_first_pass_analysis
 # EXCEPTIONS
 #
 
-class Bad_Stage_Call(Exception): pass
-class No_View_Loaded(Exception): pass
-class Not_Yet_Implemented(Exception): pass
-class Unknown_Log_Request(Exception): pass
-class UnDocumented_Error(Exception): pass
+
+class Bad_Stage_Call(Exception):
+    pass
+
+
+class No_View_Loaded(Exception):
+    pass
+
+
+class Not_Yet_Implemented(Exception):
+    pass
+
+
+class Unknown_Log_Request(Exception):
+    pass
+
+
+class UnDocumented_Error(Exception):
+    pass
 
 #
 # CLASSES
 #
 
+
 class Analysis_Controller(controller_generic.Controller):
 
-    def __init__(self, main_controller, logger=None):
-
+    def __init__(self, main_controller, logger=None, **kwargs):
 
         super(Analysis_Controller, self).__init__(
-                    main_controller, logger=logger)
+            main_controller, logger=logger)
 
         self.transparency = Analysis_Transparency_Controller(
-                self, view=self._view, model=self._model,
-                logger=logger)
+            self, view=self._view, model=self._model,
+            logger=logger)
 
         self._specific_controller = None
-
         self.fixture = None
+
+        if 'stage' in kwargs:
+            self.set_analysis_stage(None, kwargs['stage'], **kwargs)
 
     def _get_default_view(self):
 
@@ -83,7 +98,7 @@ class Analysis_Controller(controller_generic.Controller):
 
                 user_data['cb'] = 9
 
-            if user_data['thread'].is_alive() == False:
+            if user_data['thread'].is_alive() is False:
 
                 user_data['view-function'](user_data['view-complete'])
                 user_data['view'].run_release()
@@ -161,9 +176,10 @@ class Analysis_Controller(controller_generic.Controller):
             elif stage_call == "project":
 
                 self._specific_controller = \
-                        Analysis_Project_Controller(self,
+                    Analysis_Project_Controller(
+                        self,
                         view=self._view, model=self._model,
-                        logger=self._logger)
+                        logger=self._logger, **kwargs)
 
                 self.add_subcontroller(self._specific_controller)
 
@@ -199,11 +215,11 @@ class Analysis_Controller(controller_generic.Controller):
 
                 view.set_top(
                     view_analysis.Analysis_Inspect_Top(
-                    self._specific_controller, model))
+                        self._specific_controller, model))
 
                 view.set_stage(
                     view_analysis.Analysis_Inspect_Stage(
-                    self._specific_controller, model))
+                        self._specific_controller, model))
 
             elif stage_call == "transparency":
 
@@ -214,31 +230,30 @@ class Analysis_Controller(controller_generic.Controller):
                 self.transparency._specific_model['stage'] = 'image-selection'
 
                 view.set_top(view_analysis.Analysis_Top_Image_Selection(
-                                self, model,
-                                self.transparency.get_specific_model(),
-                                self.transparency))
+                    self, model,
+                    self.transparency.get_specific_model(),
+                    self.transparency))
 
                 view.set_stage(view_analysis.Analysis_Stage_Image_Selection(
-                                self, model,
-                                self.transparency.get_specific_model(),
-                                self.transparency))
+                    self, model,
+                    self.transparency.get_specific_model(),
+                    self.transparency))
 
             elif stage_call == "colour":
 
                 raise Not_Yet_Implemented()
-        
+
             elif stage_call == "normalisation":
 
                 specific_model = args[1]
                 self.set_unsaved()
-
 
                 if specific_model['mode'] == 'transparency':
 
                     specific_model['image'] += 1
 
                     if specific_model['image'] >= len(
-                                specific_model['images-list-model']):
+                            specific_model['images-list-model']):
 
                         raise Bad_Stage_Call("Image position overflow")
 
@@ -263,16 +278,17 @@ class Analysis_Controller(controller_generic.Controller):
                             label = model[
                                 'analysis-top-auto-norm-and-section-sel-images']
 
-                        top.pack_back_button(label, 
+                        top.pack_back_button(
+                            label,
                             self.transparency.step_back, message)
 
                         view.set_top(top)
 
                         view.set_stage(
                             view_analysis.Analysis_Stage_Auto_Norm_and_Section(
-                            self, model,
-                            specific_model,
-                            self.transparency))
+                                self, model,
+                                specific_model,
+                                self.transparency))
 
                     else:
 
@@ -280,15 +296,15 @@ class Analysis_Controller(controller_generic.Controller):
 
                         view.set_top(
                             view_analysis.Analysis_Top_Image_Normalisation(
-                            self, model,
-                            specific_model,
-                            self.transparency))
+                                self, model,
+                                specific_model,
+                                self.transparency))
 
                         view.set_stage(
                             view_analysis.Analysis_Stage_Image_Norm_Manual(
-                            self, model,
-                            specific_model,
-                            self.transparency))
+                                self, model,
+                                specific_model,
+                                self.transparency))
 
                 elif specific_model['mode'] == 'colour':
 
@@ -307,16 +323,16 @@ class Analysis_Controller(controller_generic.Controller):
 
                 view.set_top(
                     view_analysis.Analysis_Top_Image_Sectioning(
-                    self, model,
-                    specific_model,
-                    self.transparency))
+                        self, model,
+                        specific_model,
+                        self.transparency))
 
                 view.set_stage(
                     view_analysis.Analysis_Stage_Image_Sectioning(
-                    self, model,
-                    specific_model,
-                    self.transparency,
-                    self.get_window()))
+                        self, model,
+                        specific_model,
+                        self.transparency,
+                        self.get_window()))
 
                 specific_model['plate'] = -1
 
@@ -339,20 +355,21 @@ class Analysis_Controller(controller_generic.Controller):
 
                 if specific_model['plate'] < len(specific_model['plate-coords']):
 
-                    coords = self._get_safe_slice(specific_model['plate-coords'][
-                            specific_model['plate']], specific_model['image-array'].shape)
+                    coords = self._get_safe_slice(
+                        specific_model['plate-coords'][
+                            specific_model['plate']],
+                        specific_model['image-array'].shape)
 
                     image = specific_model['image']
-                    
-                    if image in specific_model['auto-transpose']:
 
+                    if image in specific_model['auto-transpose']:
 
                         specific_model['plate-im-array'] = \
                             specific_model['auto-transpose'][image]\
                             .get_transposed_im(
-                            specific_model['image-array'][
-                            coords[0][1]: coords[1][1],
-                            coords[0][0]: coords[1][0]])
+                                specific_model['image-array'][
+                                    coords[0][1]: coords[1][1],
+                                    coords[0][0]: coords[1][0]])
 
                         specific_model['plate-is-normed'] = True
 
@@ -360,8 +377,8 @@ class Analysis_Controller(controller_generic.Controller):
 
                         specific_model['plate-im-array'] = \
                             specific_model['image-array'][
-                            coords[0][1]: coords[1][1],
-                            coords[0][0]: coords[1][0]]
+                                coords[0][1]: coords[1][1],
+                                coords[0][0]: coords[1][0]]
 
                         specific_model['plate-is-normed'] = False
 
@@ -379,17 +396,19 @@ class Analysis_Controller(controller_generic.Controller):
                         label = model[
                             'analysis-top-image-plate-prev_norm']
 
-                    top.pack_back_button(label, 
+                    top.pack_back_button(
+                        label,
                         self.transparency.step_back, message)
+
                     view.set_top(top)
                     top.set_allow_next(True)
 
                     view.set_stage(
                         view_analysis.Analysis_Stage_Image_Plate(
-                        self, model,
-                        specific_model,
-                        self.transparency))
-                    
+                            self, model,
+                            specific_model,
+                            self.transparency))
+
                     view.get_stage().run_lock_select_check()
                     view.get_stage().unset_warning()
 
@@ -400,7 +419,7 @@ class Analysis_Controller(controller_generic.Controller):
 
                 view.set_top(
                     view_analysis.Analysis_Top_Done(
-                    self, model))
+                        self, model))
 
                 self.transparency._log.set_view()
                 view.set_stage(
@@ -416,7 +435,7 @@ class Analysis_Inspect(controller_generic.Controller):
     def __init__(self, parent, view=None, model=None, logger=None):
 
         super(Analysis_Inspect, self).__init__(
-                parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model, logger=logger)
 
         tc = self.get_top_controller()
         self._paths = tc.paths
@@ -437,9 +456,9 @@ class Analysis_Inspect(controller_generic.Controller):
         if sm['prefix'] is not None:
             self.get_view().get_stage().set_project_name(sm['prefix'])
         self._look_for_grid_images()
-        if (sm['pinnings'] is None or 
-            sum(sm['pinnings']) != 
-            sum([gi is not None for gi in sm['grid-images']])):
+        if (sm['pinnings'] is None or
+                sum(sm['pinnings']) !=
+                sum([gi is not None for gi in sm['grid-images']])):
 
             self.get_view().get_stage().set_inconsistency_warning()
 
@@ -451,13 +470,14 @@ class Analysis_Inspect(controller_generic.Controller):
         m = self._model
 
         if (Popen('which filezilla', stdout=PIPE,
-            shell=True).communicate()[0] != ""):
+                  shell=True).communicate()[0] != ""):
 
             os.system("filezilla &")
 
         else:
 
-            if view_analysis.dialog(self.get_window(),
+            if view_analysis.dialog(
+                    self.get_window(),
                     self._model['analysis-stage-inspect-upload-install'],
                     'info',
                     yn_buttons=True):
@@ -470,10 +490,11 @@ class Analysis_Inspect(controller_generic.Controller):
 
                 else:
 
-                    view_analysis.dialog(self.get_window(),
-                            self._model['analysis-stage-inspect-upload-error'],
-                            'error',
-                            yn_buttons=False)
+                    view_analysis.dialog(
+                        self.get_window(),
+                        self._model['analysis-stage-inspect-upload-error'],
+                        'error',
+                        yn_buttons=False)
 
     def remove_grid(self, plate):
 
@@ -482,13 +503,14 @@ class Analysis_Inspect(controller_generic.Controller):
         failed_remove = False
 
         if (sm['uuid'] is not None and
-            gh is not None and
-            sm['pinning-formats'][plate] is not None and
-            sm['fixture'] is not None):
+                gh is not None and
+                sm['pinning-formats'][plate] is not None and
+                sm['fixture'] is not None):
 
-            if gh.unset_gridding_parameters(sm['uuid'],
-                sm['pinning-formats'][plate],
-                plate) != True:
+            if gh.unset_gridding_parameters(
+                    sm['uuid'],
+                    sm['pinning-formats'][plate],
+                    plate) is not True:
 
                 failed_remove = True
 
@@ -499,7 +521,7 @@ class Analysis_Inspect(controller_generic.Controller):
         if failed_remove:
             self.get_view().get_stage().warn_remove_failed()
 
-        return failed_remove == False
+        return failed_remove is False
 
     def _look_for_grid_images(self):
 
@@ -515,9 +537,9 @@ class Analysis_Inspect(controller_generic.Controller):
 
                 if p:
 
-                    if os.path.isfile(im_pattern.format(i+1)):
+                    if os.path.isfile(im_pattern.format(i + 1)):
 
-                        sm['grid-images'].append(im_pattern.format(i+1))
+                        sm['grid-images'].append(im_pattern.format(i + 1))
                     else:
                         sm['grid-images'].append(None)
 
@@ -549,7 +571,7 @@ class Analysis_Inspect(controller_generic.Controller):
             if len(fixture) > 0:
                 fixture = fixture[0]
                 if (fixture != 'None' and len(fixture) > 2 and
-                    fixture[0] == "'" and fixture[-1] == "'"):
+                        fixture[0] == "'" and fixture[-1] == "'"):
 
                     sm['fixture'] = fixture[1:-1]  # Trim the single quoutes
 
@@ -563,18 +585,19 @@ class Analysis_Inspect(controller_generic.Controller):
 
             #LOAD GRIDDING HISTORY
             if sm['fixture'] is not None:
-                sm['gridding-history'] = resource_fixture_image.Gridding_History(self,
+
+                sm['gridding-history'] = resource_fixture_image.Gridding_History(
+                    self,
                     sm['fixture'], self._paths,
                     logger=self._logger, app_config=self._app_config)
-
 
             #PREFIX
             prefix = re.findall(r"\'Prefix\': ([^,]*)", fh_data)
             if len(prefix) > 0:
                 prefix = prefix[0]
                 if (prefix != 'None' and len(prefix) > 2 and
-                    prefix[0] == "'" and prefix[-1] == "'"):
-               
+                        prefix[0] == "'" and prefix[-1] == "'"):
+
                     sm['prefix'] = prefix[1:-1]
 
             #PINNING
@@ -596,19 +619,19 @@ class Analysis_Inspect(controller_generic.Controller):
                 for i, name in plates:
                     try:
                         i = int(i)
-                        sm['plate-names'][i-1] = name
+                        sm['plate-names'][i - 1] = name
                     except:
                         self._logger.error("Could not parse plate {0} ({1})".format(i, name))
 
             #CHECK WHICH PLATES HAVE PLACE IN HISTORY
             if (sm['gridding-history'] is not None and sm['pinnings'] is not None
-                and sm['uuid'] is not None and sm['pinning-formats'] is not None):
+                    and sm['uuid'] is not None and sm['pinning-formats'] is not None):
 
-                    gh = sm['gridding-history']
-                    sm['gridding-in-history'] = [
-                        gh.get_gridding_history_specific_plate(
-                        sm['uuid'], p, sm['pinning-formats'][p]) for p in
-                        xrange(len(sm['pinnings']))]
+                gh = sm['gridding-history']
+                sm['gridding-in-history'] = [
+                    gh.get_gridding_history_specific_plate(
+                        sm['uuid'], p, sm['pinning-formats'][p])
+                    for p in xrange(len(sm['pinnings']))]
 
             return True
 
@@ -620,7 +643,7 @@ class Analysis_First_Pass(controller_generic.Controller):
     def __init__(self, parent, view=None, model=None, logger=None):
 
         super(Analysis_First_Pass, self).__init__(
-                parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model, logger=logger)
 
         self.set_specific_model(model_analysis.copy_model(
             model_analysis.specific_first))
@@ -636,10 +659,10 @@ class Analysis_First_Pass(controller_generic.Controller):
         view.get_top().hide_button()
 
         view.set_stage(view_analysis.Analysis_Stage_First_Pass_Running(
-                self, m))
-       
+            self, m))
+
         sm['run-tot-images'] = float(len(sm['image-list-model']))
- 
+
         self._run_thread = threading.Thread(target=self._run_first_pass_analysis)
         self._run_thread.start()
         gobject.timeout_add(420, self._running_callback)
@@ -656,9 +679,8 @@ class Analysis_First_Pass(controller_generic.Controller):
 
         md = resource_project_log.get_meta_data_dict(**md)
         #Make header row for file:
-        if resource_project_log.write_log_file(p, meta_data=md) == False:
+        if resource_project_log.write_log_file(p, meta_data=md) is False:
 
-            
             sm['run-error'] = \
                 m['analysis-stage-first-running-error-path'].format(p)
 
@@ -679,10 +701,11 @@ class Analysis_First_Pass(controller_generic.Controller):
             im_path = row[0]
 
             #Analyse image
-            im_data = resource_first_pass_analysis.analyse(im_path, 
-                im_acq_time = None, 
-                logger=self._logger, 
-                fixture_name=rfpa_fixture, 
+            im_data = resource_first_pass_analysis.analyse(
+                im_path,
+                im_acq_time=None,
+                logger=self._logger,
+                fixture_name=rfpa_fixture,
                 fixture_directory=rfpa_f_dir)
 
             if im_data['grayscale_indices'] is None:
@@ -704,7 +727,7 @@ class Analysis_First_Pass(controller_generic.Controller):
                     image_shape=im_data['im_shape'])
 
                 #Write results
-                if resource_project_log.append_image_dicts(p, images=[im_dict]) == False:
+                if resource_project_log.append_image_dicts(p, images=[im_dict]) is False:
 
                     sm['run-error'] = \
                         m['analysis-stage-first-running-error-access'].format(p)
@@ -714,7 +737,7 @@ class Analysis_First_Pass(controller_generic.Controller):
     def _running_callback(self):
 
         sm = self._specific_model
-        sm['run-position'] = sm['run-cur-image'] / sm['run-tot-images']                    
+        sm['run-position'] = sm['run-cur-image'] / sm['run-tot-images']
         stage = self.get_view().get_stage()
 
         if self._run_thread.is_alive():
@@ -746,14 +769,14 @@ class Analysis_First_Pass(controller_generic.Controller):
             sm['experiment-prefix'] = dir_list.split(os.sep)[-1]
             sm['output-file'] = \
                 self._paths.experiment_first_pass_analysis_relative.format(
-                sm['experiment-prefix'])
+                    sm['experiment-prefix'])
 
             self._load_meta_from_previous_file()
             self._add_images_in_directory()
             stage = self.get_view().get_stage()
 
-            f_path =self._paths.get_fixture_path('fixture',
-                own_path=dir_list)
+            f_path = self._paths.get_fixture_path('fixture',
+                                                  own_path=dir_list)
             lc = os.path.isfile(f_path)
             stage.update_local_fixture(lc)
 
@@ -775,14 +798,15 @@ class Analysis_First_Pass(controller_generic.Controller):
         elif md is None:
             set_allow_next(False)
             return
-        elif md['Pinning Matrices'] is None \
-            or len(md['Pinning Matrices']) == 0 \
-            or sum([p is None for p in md['Pinning Matrices']]) == len(md['Pinning Matrices']):
+        elif (md['Pinning Matrices'] is None
+                or len(md['Pinning Matrices']) == 0
+                or sum([p is None for p in md['Pinning Matrices']]) ==
+                len(md['Pinning Matrices'])):
 
             set_allow_next(False)
             return
 
-        elif md['Prefix'] == '' and sm['use-local-fixture'] == False:
+        elif md['Prefix'] == '' and sm['use-local-fixture'] is False:
 
             set_allow_next(False)
             return
@@ -798,8 +822,9 @@ class Analysis_First_Pass(controller_generic.Controller):
             extension = '.tiff'
             directory = sm['output-directory']
 
-            list_images = sorted([os.sep.join((directory, f)) for f
-                    in os.listdir(directory) if f.lower().endswith(extension)])
+            list_images = sorted([os.sep.join((directory, f))
+                                  for f in os.listdir(directory)
+                                  if f.lower().endswith(extension)])
 
             #CHECK SO NOT DUPING
             for im in list_images:
@@ -808,7 +833,7 @@ class Analysis_First_Pass(controller_generic.Controller):
                     if im == row[0]:
                         in_model = False
                         break
-        
+
                 if not in_model:
 
                     im_model.append((im,))
@@ -821,13 +846,13 @@ class Analysis_First_Pass(controller_generic.Controller):
         if f_path is None:
             f_path = os.sep.join((sm['output-directory'], sm['output-file']))
 
-        meta_data = resource_project_log.get_meta_data(f_path) 
+        meta_data = resource_project_log.get_meta_data(f_path)
         pm = meta_data['Pinning Matrices']
         if pm is not None:
             meta_data['Pinning Matrices'] = map(tuple, pm)
-            
+
         sm['meta-data'] = meta_data
- 
+
     def set_new_plates(self, n_plates):
 
         md = self._specific_model['meta-data']
@@ -840,8 +865,10 @@ class Analysis_First_Pass(controller_generic.Controller):
                 md['Pinning Matrices'] = md['Pinning Matrices'][:n_plates]
 
             elif len(md['Pinning Matrices']) < n_plates:
-                md['Pinning Matrices'] += [None] * (n_plates - 
-                    len(md['Pinning Matrices']))
+
+                md['Pinning Matrices'] += ([None] *
+                                           (n_plates -
+                                            len(md['Pinning Matrices'])))
 
             self.get_view().get_stage().set_pinning()
 
@@ -868,7 +895,7 @@ class Analysis_First_Pass(controller_generic.Controller):
 
         if view_analysis.gtk.gdk.keyval_name(event.keyval) == "Delete":
 
-            self.get_view().get_stage().delete_selection() 
+            self.get_view().get_stage().delete_selection()
 
         self._set_allow_run()
 
@@ -897,13 +924,14 @@ class Analysis_First_Pass(controller_generic.Controller):
 
         self._set_allow_run()
 
+
 class Analysis_Image_Controller(controller_generic.Controller):
 
     def __init__(self, parent, view=None, model=None, logger=None):
 
         super(Analysis_Image_Controller, self).__init__(
-                parent, 
-                view=view, model=model, logger=logger)
+            parent,
+            view=view, model=model, logger=logger)
 
         self._config = parent.get_top_controller().config
         self._specific_model = None
@@ -948,9 +976,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
         self.fixture = resource_fixture_image.Fixture_Image(
             specific_model["fixture-name"],
             image_path=specific_model['images-list-model'][
-            specific_model['image']][0],
-            fixture_directory=fixture_path
-            )
+                specific_model['image']][0],
+            fixture_directory=fixture_path)
 
         thread = threading.Thread(target=self.fixture.threaded)
 
@@ -959,7 +986,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
         gobject.timeout_add(250, self._parent._callback, {
             'view': view,
             'view-function': view.set_progress,
-            'view-data':None,
+            'view-data': None,
             'view-complete': 1.0,
             'complete-function': self.set_grayscale,
             'thread': thread})
@@ -967,15 +994,15 @@ class Analysis_Image_Controller(controller_generic.Controller):
     def _get_scale_slice(self, the_slice, flip_coords=False, factor=4):
 
         data_sorted = zip(*map(sorted, zip(*the_slice)))
-        ret = [[factor*p[flip_coords], factor*p[not(flip_coords)]]
-                for p in data_sorted]
+        ret = [[factor * p[flip_coords], factor * p[not(flip_coords)]]
+               for p in data_sorted]
 
         return ret
 
     def get_previously_detected(self, view, specific_model):
 
-        image=specific_model['images-list-model'][
-                specific_model['image']][0]
+        image = specific_model['images-list-model'][
+            specific_model['image']][0]
 
         im_dir = os.sep.join(image.split(os.sep)[:-1])
 
@@ -983,12 +1010,11 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         extension = ".log"
 
-        log_files = [im_dir + os.sep + f for f in os.listdir(im_dir) 
-                        if f.lower().endswith(extension)]
+        log_files = [im_dir + os.sep + f for f in os.listdir(im_dir)
+                     if f.lower().endswith(extension)]
 
         data = None
 
-        
         for f in log_files:
 
             data = resource_project_log.get_image_from_log_file(f, image)
@@ -1021,7 +1047,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
             specific_model['plate-coords'] = plate_coords
 
             self.set_auto_grayscale(data['grayscale_values'],
-                data[gs_i_key])
+                                    data[gs_i_key])
 
     def set_no_auto_norm(self):
 
@@ -1039,9 +1065,9 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         sm['auto-transpose'][sm['image']] = \
             resource_image.Image_Transpose(
-            gs_values=vals,
-            gs_indices=indices)
-            
+                gs_values=vals,
+                gs_indices=indices)
+
         self.get_view().get_top().set_allow_next(True)
 
     def set_grayscale(self):
@@ -1049,23 +1075,26 @@ class Analysis_Image_Controller(controller_generic.Controller):
         if self.fixture is not None:
 
             gs_targets, gs = self.fixture['grayscale']
-            self.set_auto_grayscale(gs, gs_targets) 
+            self.set_auto_grayscale(gs, gs_targets)
             self.get_view().get_stage().set_image()
 
             pl = self.fixture.get_plates()
+            """
             version = self.fixture['fixture']['version']
-            if version is None or \
-                version < self._config.version_first_pass_change_1:
+            if (version is None or
+                    version < self._config.version_first_pass_change_1):
 
-                back_compatible=True
+                back_compatible = True
+
             else:
-                back_compatible=False
 
+                back_compatible = False
+            """
             plate_coords = dict()
             if pl is not None:
 
-                s_pattern = "plate_{0}_area"
- 
+                #s_pattern = "plate_{0}_area"
+
                 for i, p in enumerate(pl):
 
                     plate_coords[i] = p
@@ -1164,14 +1193,14 @@ class Analysis_Image_Controller(controller_generic.Controller):
         rows = widget.get_selected_rows()[1]
         self._specific_model['log-interests'][0] = \
             [self._specific_model['log-compartments-default'][r[0]]
-            for r in rows]
-        
+             for r in rows]
+
     def log_measures(self, widget):
 
         rows = widget.get_selected_rows()[1]
         self._specific_model['log-interests'][1] = \
             [self._specific_model['log-measures-default'][r[0]]
-            for r in rows]
+             for r in rows]
 
     def handle_mpl_keypress(self, event):
 
@@ -1180,8 +1209,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
             if len(self._specific_model['plate-coords']) > 0:
 
                 del self._specific_model['plate-coords'][-1]
-                self._view.get_stage().remove_patch()  
- 
+                self._view.get_stage().remove_patch()
 
     def handle_keypress(self, widget, event):
 
@@ -1189,8 +1217,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         if view_analysis.gtk.gdk.keyval_name(event.keyval) == "Delete":
 
-            if sm['stage'] == 'image-selection' or \
-                sm['stage'] == 'manual-calibration':
+            if (sm['stage'] == 'image-selection' or
+                    sm['stage'] == 'manual-calibration'):
 
                 self._view.get_stage().delete_selection()
 
@@ -1278,7 +1306,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 else:
 
                     if sm['lock-selection'] is not None:
- 
+
                         self.set_selection(pos=pos)
                         self._view.get_stage().move_patch_origin(pos)
 
@@ -1293,13 +1321,14 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
     def _get_inside_selection(self, pos):
 
-        if self._specific_model['selection-origin'] is None or \
-            self._specific_model['selection-size'] is None:
+        if (self._specific_model['selection-origin'] is None or
+                self._specific_model['selection-size'] is None):
 
             return False
 
         s_origin = self._specific_model['selection-origin']
-        s_target = [p + s for p, s in zip(s_origin,
+        s_target = [p + s for p, s in zip(
+            s_origin,
             self._specific_model['selection-size'])]
 
         for d in xrange(2):
@@ -1312,10 +1341,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
     def set_selection(self, pos=False, wh=False):
 
-        if pos != False:
+        if pos is not False:
             self._specific_model['selection-origin'] = pos
 
-        if wh != False:
+        if wh is not False:
             self._specific_model['selection-size'] = wh
 
     def mouse_button_release(self, event, *args, **kwargs):
@@ -1412,10 +1441,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
                     sm['plate-im-array'][pos1[1]:pos2[1], pos1[0]:pos2[0]]
 
                 sm['plate-section-grid-cell'] = \
-                            a_wrapper.get_grid_cell_from_array(
-                            sm['plate-section-im-array'], center=None,
-                            radius=None,
-                            invoke_transform=sm['plate-is-normed'])
+                    a_wrapper.get_grid_cell_from_array(
+                        sm['plate-section-im-array'], center=None,
+                        radius=None,
+                        invoke_transform=sm['plate-is-normed'])
 
                 sm['plate-section-features'] = \
                     sm['plate-section-grid-cell'].get_analysis()
@@ -1437,7 +1466,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
         self._view.get_stage().set_allow_logging(
             not(sm['plate-section-features'] is None)
             and self._log.get_all_meta_filled())
- 
+
     def _get_new_selection_origin(self, pos):
 
         sm = self._specific_model
@@ -1460,8 +1489,9 @@ class Analysis_Image_Controller(controller_generic.Controller):
             mcv.append(list())
 
         mcv[-1]. append(
-            self._specific_model['image-array'][coords[0][1]: coords[1][1],
-            coords[0][0]: coords[1][0]].mean())
+            self._specific_model['image-array'][
+                coords[0][1]: coords[1][1],
+                coords[0][0]: coords[1][0]].mean())
 
         self._view.get_stage().add_measure(mcv[-1][-1])
 
@@ -1486,9 +1516,9 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             mc = sm['manual-calibration-positions']
 
-            if mc is not None and mc[-1] is not None and len(mc[-1]) > 0 \
-                and len(mc[-1][-1]) == 1:
-                
+            if (mc is not None and mc[-1] is not None and len(mc[-1]) > 0
+                    and len(mc[-1][-1]) == 1):
+
                 origin_pos = mc[-1][-1][0]
                 w = pos[0] - origin_pos[0]
                 h = pos[1] - origin_pos[1]
@@ -1499,7 +1529,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
             pc = self._specific_model['plate-coords']
 
             if len(pc) > 0 and len(pc[-1]) == 1:
-                
+
                 origin_pos = pc[-1][0]
                 w = pos[0] - origin_pos[0]
                 h = pos[1] - origin_pos[1]
@@ -1510,11 +1540,11 @@ class Analysis_Image_Controller(controller_generic.Controller):
             if sm['selection-move-source'] is not None:
 
                 self._view.get_stage().move_patch_origin(
-                        self._get_new_selection_origin(pos))
+                    self._get_new_selection_origin(pos))
 
             elif (sm['lock-selection'] is None and
-                sm['selection-origin'] is not None and
-                sm['selection-drawing'] == True):
+                    sm['selection-origin'] is not None and
+                    sm['selection-drawing'] is True):
 
                 origin_pos = sm['selection-origin']
                 w = pos[0] - origin_pos[0]
@@ -1527,7 +1557,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
         stage = self._view.get_stage()
 
         wh = list(stage.get_selection_size())
-        if type_of_value ==  "height":
+
+        if type_of_value == "height":
             try:
                 h = int(widget.get_text())
             except:
@@ -1535,7 +1566,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
         else:
             h = wh[1]
 
-        if type_of_value ==  "width":
+        if type_of_value == "width":
             try:
                 w = int(widget.get_text())
             except:
@@ -1558,7 +1589,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
             self._specific_model['lock-selection'] = None
 
         self._view.get_stage().set_allow_selection_size_change(
-            self._specific_model['lock-selection'] == None)
+            self._specific_model['lock-selection'] is None)
 
     def set_in_log(self, widget, key):
 
@@ -1571,7 +1602,7 @@ class Analysis_Transparency_Controller(Analysis_Image_Controller):
     def __init__(self, parent, view=None, model=None, logger=None):
 
         super(Analysis_Transparency_Controller, self).__init__(
-                parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model, logger=logger)
 
     def build_blank_specific_model(self):
 
@@ -1581,18 +1612,27 @@ class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
 class Analysis_Project_Controller(controller_generic.Controller):
 
-    def __init__(self, parent, view=None, model=None, logger=None):
+    def __init__(self, parent, view=None, model=None, logger=None, **kwargs):
 
         super(Analysis_Project_Controller, self).__init__(
-                parent, view=view, model=model, logger=logger) 
+            parent, view=view, model=model, logger=logger)
 
         self.build_blank_specific_model()
 
+        sm = self._specific_model
+        for k in kwargs:
+
+            if k in sm:
+                sm[k] = kwargs[k]
+
+        if sm['analysis-project-log_file'] != '':
+            gobject.timeout_add(200, self.set_log_file, None,
+                                [sm['analysis-project-log_file']])
 
     def set_abort(self, *args):
 
         self._parent.set_analysis_stage(None, "about")
-        
+
     def build_blank_specific_model(self):
 
         self.set_specific_model(model_analysis.copy_model(
@@ -1608,11 +1648,13 @@ class Analysis_Project_Controller(controller_generic.Controller):
         view.set_stage(
             view_analysis.Analysis_Stage_Project_Running(self, self._model))
 
-        #tc.paths.experiment_analysis_relative_path
-        analysis_log = os.sep.join((sm['analysis-project-log_file_dir'],
-            sm['analysis-project-output-path'],
-            tc.paths.experiment_analysis_file_name))
-
+        """
+        tc.paths.experiment_analysis_relative_path
+        analysis_log = os.sep.join(
+            (sm['analysis-project-log_file_dir'],
+             sm['analysis-project-output-path'],
+             tc.paths.experiment_analysis_file_name))
+        """
         a_dict = tc.config.get_default_analysis_query()
         a_dict['-i'] = sm['analysis-project-log_file']
         a_dict['-o'] = sm['analysis-project-output-path']
@@ -1624,16 +1666,20 @@ class Analysis_Project_Controller(controller_generic.Controller):
             analysis_query += [a_flag, a_val]
 
         if sm['analysis-project-pinnings-active'] != 'file':
+
             pm = ""
+
             for plate in sm['analysis-project-pinnings']:
-                pm += str(plate).replace(" ","") + ":"
+
+                pm += str(plate).replace(" ", "") + ":"
+
             pm = pm[:-1]
             analysis_query += ["-m", pm]
 
         """Functionality not implemented:
         if self._watch_colony is not None:
             analysis_query += ["-w", self._watch_colony]
-        if self._supress_other is True: 
+        if self._supress_other is True:
             analysis_query += ["-s", "True"]
         """
         stdout_path, stderr_path = tc.paths.get_new_log_analysis()
@@ -1644,17 +1690,19 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         pid = proc.pid
 
-        self.get_top_controller().add_subprocess(proc, 'analysis', pid=pid,
+        self.get_top_controller().add_subprocess(
+            proc, 'analysis', pid=pid,
             stdout=stdout_path, stderr=stderr_path, psm=sm,
             proc_name=sm['analysis-project-log_file'])
 
-    def set_log_file(self, *args, **kwargs):
+    def set_log_file(self, widget, log_files=None):
 
-        log_files = view_analysis.select_file(
-            self._model['analysis-stage-project-select-log-file-dialog'],
-            multiple_files=False, file_filter=
-            self._model['analysis-stage-project-select-log-file-filter'],
-            start_in=self.get_top_controller().paths.experiment_root)
+        if log_files is None:
+            log_files = view_analysis.select_file(
+                self._model['analysis-stage-project-select-log-file-dialog'],
+                multiple_files=False, file_filter=
+                self._model['analysis-stage-project-select-log-file-filter'],
+                start_in=self.get_top_controller().paths.experiment_root)
 
         if len(log_files) > 0:
 
@@ -1668,7 +1716,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
             sm['analysis-project-pinnings-active'] = 'file'
 
             meta_data, images = resource_project_log.get_log_file(
-                                log_files[0])
+                log_files[0])
 
             if 'Pinning Matrices' in meta_data:
 
@@ -1676,8 +1724,9 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
             else:
 
-                plates=resource_project_log.get_number_of_plates(
-                                meta_data=meta_data, images=images)
+                plates = resource_project_log.get_number_of_plates(
+                    meta_data=meta_data, images=images)
+
                 if plates > 0:
 
                     pinning_matrices = [None] * plates
@@ -1704,9 +1753,8 @@ class Analysis_Project_Controller(controller_generic.Controller):
     def set_output(self, widget, view, event):
 
         output_path = widget.get_text()
-        
-        output_path = resource_os.get_valid_relative_dir(output_path,
-                "")
+
+        output_path = resource_os.get_valid_relative_dir(output_path, "")
 
         sm = self._specific_model
 
@@ -1757,7 +1805,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
                 sensitive=True)
 
         self.set_ready_to_run()
-            
+
     def set_pinning(self, widget, plate, *args, **kwargs):
 
         sm = self._specific_model
@@ -1786,7 +1834,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
             sm_key = 'analysis-project-pinnings'
 
-        plates_ok = sum([p != None for p in sm[sm_key]]) > 0
+        plates_ok = sum([p is not None for p in sm[sm_key]]) > 0
 
         file_loaded = sm['analysis-project-log_file'] != ""
 
@@ -1796,7 +1844,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 class Analysis_Log_Controller(controller_generic.Controller):
 
     def __init__(self, parent, general_model, parent_model,
-            logger=None):
+                 logger=None):
 
         model = model_analysis.copy_model(model_analysis.specific_log_book)
         self._parent_model = parent_model
@@ -1804,10 +1852,10 @@ class Analysis_Log_Controller(controller_generic.Controller):
         self._look_up_coords = list()
         self._look_up_names = list()
 
-        super(Analysis_Log_Controller, self).__init__( 
+        super(Analysis_Log_Controller, self).__init__(
             parent, model=model,
-            view=view_analysis.Analysis_Stage_Log(self, general_model,
-            model, parent_model), logger=logger)
+            view=view_analysis.Analysis_Stage_Log(
+                self, general_model, model, parent_model), logger=logger)
 
         if self._parent_model['log-only-calibration']:
             self._model['calibration-measures'] = True
@@ -1815,10 +1863,10 @@ class Analysis_Log_Controller(controller_generic.Controller):
         if self._parent_model['log-previous-file'] is not None:
             self._load_previous_file_contents()
 
-
     def _get_default_view(self):
 
-        view = view_analysis.Analysis_Stage_Log(self, self._general_model,
+        view = view_analysis.Analysis_Stage_Log(
+            self, self._general_model,
             self._model, self._parent_model)
 
         return view
@@ -1835,15 +1883,15 @@ class Analysis_Log_Controller(controller_generic.Controller):
             return False
 
         measures = self._model['measures']
-        headers = fs.readline().strip().split("\t")
+        #headers = fs.readline().strip().split("\t")
 
         for data_row in fs:
 
-            data_row = data_row.strip().replace("\t",',')
+            data_row = data_row.strip().replace("\t", ',')
             data = eval("[{0}]".format(data_row))
             for i, d in enumerate(data):
-                if type(d) == types.StringType and len(d) > 0 and \
-                            d[0] in ('[', '(') and d[-1] in (']', ')'):
+                if (isinstance(d, str) and len(d) > 0 and
+                        d[0] in ('[', '(') and d[-1] in (']', ')')):
 
                     try:
                         data[i] = eval(d)
@@ -1852,7 +1900,6 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
             measures.append(data)
             self._view.add_data_row(data)
-
 
         fs.close()
 
@@ -1892,7 +1939,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
         self._look_up_names = list()
 
         measures = self._model['measures']
-        
+
         if plate_index is not None:
 
             for m in measures:
@@ -1911,13 +1958,14 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
     def get_suggested_strain_name(self, coords):
 
-        if len(self._look_up_names) == 0 :
+        if len(self._look_up_names) == 0:
 
             self._set_look_up_strains(self._parent_model['plate'])
 
         if self._look_up_coords.size > 0:
 
-            strain_pos = ((self._look_up_coords - coords)**2).sum(1).argmin()
+            strain_pos = (
+                (self._look_up_coords - coords) ** 2).sum(1).argmin()
 
             if len(self._look_up_names) > strain_pos >= 0:
                 strain = self._look_up_names[strain_pos]
@@ -1935,7 +1983,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
             if m[2] == index:
 
-                plate_name = m[3] 
+                plate_name = m[3]
 
         self._set_look_up_strains(index)
 
@@ -1980,7 +2028,8 @@ class Analysis_Log_Controller(controller_generic.Controller):
             m = self._model
 
             #META INFO
-            measures = [m['images'][-1],  # pos 0, image-path
+            measures = [
+                m['images'][-1],  # pos 0, image-path
                 pm['plate-coords'][pm['plate']],  # pos 1 plate coordinates
                 pm['plate'],  # pos 2 plate index
                 m['plate-names'][pm['image']][pm['plate']],  # pos 3 plate name
@@ -1996,11 +2045,11 @@ class Analysis_Log_Controller(controller_generic.Controller):
                     "background").filter_array
                 bg_mean = pm['plate-section-im-array'][bg].mean()
                 blob_pixels = pm['plate-section-im-array'][blob] - bg_mean
-                blob_pixels[blob_pixels<0] = 0
+                blob_pixels[blob_pixels < 0] = 0
                 k = np.unique(blob_pixels)
                 c = list()
                 for v in k:
-                    c.append(blob_pixels[blob_pixels==v].size)
+                    c.append(blob_pixels[blob_pixels == v].size)
 
                 measures += [m['indie-count'], list(k), c]
 
@@ -2072,10 +2121,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
                     self._general_model['analysis-stage-log-overwrite'],
                     file_name, self.get_window()))
 
-            
-
-            if file_exists == False:
-
+            if file_exists is False:
 
                 fs = open(file_name, 'w')
 
@@ -2092,8 +2138,8 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
                     for j, measure in enumerate(pm['log-interests'][1]):
 
-                        fs.write("{0}{1}: {2}{0}".format(quoute,
-                            compartment, measure) )
+                        fs.write("{0}{1}: {2}{0}".format(
+                            quoute, compartment, measure))
 
                         if j + 1 != len(pm['log-interests'][1]):
 
@@ -2104,12 +2150,12 @@ class Analysis_Log_Controller(controller_generic.Controller):
                         fs.write(sep)
 
                 fs.write("\n\r")
- 
+
                 for i, measure in enumerate(m['measures']):
 
                     for j, val in enumerate(measure):
 
-                        if type(val) == types.IntType or type(val) == types.FloatType:
+                        if isinstance(val, int) or isinstance(val, float):
 
                             fs.write(str(val))
 
@@ -2121,7 +2167,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
                             fs.write(sep)
 
-                    if i + 1  != len(m['measures']):
+                    if i + 1 != len(m['measures']):
 
                         fs.write("\n\r")
 
@@ -2130,13 +2176,15 @@ class Analysis_Log_Controller(controller_generic.Controller):
                 file_saved = True
                 self._parent.set_saved()
 
-                view_analysis.dialog(self.get_window(),
+                view_analysis.dialog(
+                    self.get_window(),
                     self._general_model['analysis-stage-log-saved'],
                     d_type='info')
 
-        if file_saved == False:
+        if file_saved is False:
 
-            view_analysis.dialog(self.get_window(),
+            view_analysis.dialog(
+                self.get_window(),
                 self._general_model['analysis-stage-log-not-saved'],
                 d_type='warning')
 
@@ -2144,7 +2192,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
         if view_analysis.gtk.gdk.keyval_name(event.keyval) == "Delete":
 
-            self._view.delete_selection()  
+            self._view.delete_selection()
 
     def remove_selection(self, *stuff):
 
@@ -2156,9 +2204,9 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
         for i in xrange(len(m['measures'])):
 
-            if im_path == m['measures'][i][0] and \
-                plate == m['measures'][i][2] and \
-                pos == m['measures'][i][4]:
+            if (im_path == m['measures'][i][0] and
+                    plate == m['measures'][i][2] and
+                    pos == m['measures'][i][4]):
 
                 del m['measures'][i]
 

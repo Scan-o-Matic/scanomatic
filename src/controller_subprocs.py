@@ -110,12 +110,20 @@ class Handle_Progress(object):
         with open(self._paths.log_project_progress, 'wb') as configfile:
                 self._config.write(configfile)
 
-    def add_project(self, project_prefix, experiment_dir):
+    def add_project(self, project_prefix, experiment_dir,
+                    first_pass_file=None, analysis_path=None):
 
         if project_prefix not in self._config.sections():
             self._config.add_section(project_prefix)
 
+        if first_pass_file is None:
+            first_pass_file = \
+                self._paths.experiment_first_pass_analysis_relative.format(
+                    project_prefix)
+
         self._config.set(project_prefix, 'basedir', experiment_dir)
+        self._config.set(project_prefix, '1st_pass_file', first_pass_file)
+        self._config.set(project_prefix, 'analysis_path', analysis_path)
         self._config.set(project_prefix, str(self.EXPERIMENT), "0")
         self._config.set(project_prefix, str(self.ANALYSIS), "0")
         self._config.set(project_prefix, str(self.INSPECT), "0")
@@ -197,6 +205,30 @@ class Handle_Progress(object):
     def get_project_count(self):
 
         return self._count
+
+    def get_path(self, project, supress_load=False):
+
+        if supress_load is False:
+            self._load()
+        return self._config.get(project, 'basedir')
+
+    def get_analysis_path(self, project):
+
+        self._load()
+        analysis_path = os.path.join(
+            self.get_path(project, supress_load=True),
+            self._config.get(project, 'analysis_path'))
+
+        return analysis_path
+
+    def get_first_pass_file(self, project):
+
+        self._load()
+        first_pass_file = os.path.join(
+            self.get_path(project, supress_load=True),
+            self._config.get(project, '1st_pass_file'))
+
+        return first_pass_file
 
 
 class Fake_Proc(object):
@@ -471,13 +503,23 @@ class Subprocs_Controller(controller_generic.Controller):
                        start_time=None, progress=0):
 
         sm = self._specific_model
+
         _pp = self._project_progress
+        paths = self.get_top_controller().paths
+        analysis_path = os.sep.join(
+            paths.experiment_analysis_relative_path,
+            paths.experiment_analysis_file_name)
+
         if proc_type == 'scanner':
 
             plist = sm['scanner-procs']
 
-            _pp.add_project(psm['experiment-prefix'],
-                            psm['experiments-root'])
+            _pp.add_project(
+                psm['experiment-prefix'],
+                os.path.join(
+                    psm['experiments-root'],
+                    psm['experiment-prefix']),
+                analysis_path=analysis_path)
 
             _pp.set_status(psm['experiment-prefix'],
                            'EXPERIMENT', 'RUNNING')
@@ -485,19 +527,29 @@ class Subprocs_Controller(controller_generic.Controller):
         elif proc_type == 'analysis':
 
             plist = sm['analysis-procs']
-
+            log_file_path = None
             if 'experiment-prefix' not in psm:
 
                 proj_file = psm['analysis-project-log_file_dir']
                 psm['experiments-root'] = os.path.abspath(
-                    os.path.join(os.path.dirname(proj_file),
-                                 os.pardir))
+                    os.path.join(proj_file, os.pardir))
 
-                psm['experiment-prefix'] = os.path.dirname(
-                    proj_file).split(os.path.sep)[-1]
+                psm['experiment-prefix'] = proj_file.split(os.path.sep)[-1]
 
-            _pp.add_project(psm['experiment-prefix'],
-                            psm['experiments-root'])
+                log_file_path = os.path.basename(psm['analysis-project-log_file'])
+
+            if 'analysis-project-output-path' in psm:
+                analysis_path = os.sep.join(
+                    psm['analysis-project-output-path'],
+                    paths.experiment_analysis_file_name)
+
+            _pp.add_project(
+                psm['experiment-prefix'],
+                os.path.join(
+                    psm['experiments-root'],
+                    psm['experiment-prefix']),
+                first_pass_file=log_file_path,
+                analysis_path=analysis_path)
 
             if _pp.get_status(psm['experiment-prefix'],
                               'EXPERIMENT', as_text=False) == 0:
@@ -622,17 +674,14 @@ class Subprocs_Controller(controller_generic.Controller):
         #CHECK FOR TERMINATED ANALYSIS
         for p in self.get_subprocesses(by_type='analysis'):
             p_exit = p['proc'].poll()
+            psm = p['sm']
             if p_exit is not None:
 
                 self._drop_process(p)
 
-                psm = p['sm']
-
                 if p_exit == 0:
                     _pp.set_status(psm['experiment-prefix'],
                                    'ANALYSIS', 'COMPLETED')
-                    _pp.set_status(psm['experiment-prefix'],
-                                   'INSPECT', 'LAUNCH')
                 else:
                     _pp.set_status(psm['experiment-prefix'],
                                    'ANALYSIS', 'FAILED')
@@ -648,6 +697,7 @@ class Subprocs_Controller(controller_generic.Controller):
                 total = re.findall(r'A total of ([0-9]*)', lines)
 
                 if len(total) > 0:
+
                     p['progress-total-number'] = int(total[0])
 
                 if len(progress) > 0 and 'progress-total-number' in p:
@@ -661,6 +711,11 @@ class Subprocs_Controller(controller_generic.Controller):
                             p['progress-init-time']
 
                     p['progress-current-image'] = int(progress[-1])
+
+                if 'progress-current-image' in p:
+
+                    _pp.set_status(psm['experiment-prefix'],
+                                   'INSPECT', 'LAUNCH')
 
         #SET SAVED IF NO PROCS RUNNING
         if len(self.get_subprocesses()) == 0:
@@ -790,19 +845,25 @@ class Subprocs_Controller(controller_generic.Controller):
             self._model['collected-messages'],
             self)
 
-    def produce_gridding_images(self, widget, p):
+    def produce_gridding_images(self, widget, prefix):
 
-        proj_dir = p['sm']['analysis-project-log_file_dir']
-        proj_prefix = proj_dir.split(os.sep)[-1]
+        a_file = self._project_progress.get_analysis_path(prefix)
 
-        self.get_top_controller().add_contents_from_controller(
-            view_subprocs.View_Gridding_Images(
-                self, self._model,
-                p['sm']), proj_prefix, self)
+        data = {'stage': 'inspect', 'analysis-file': a_file}
 
-    def produce_launch_analysis(self, widget, data):
+        tc = self.get_top_controller()
+        tc.add_contents(widget, 'analysis', **data)
+
+    def produce_launch_analysis(self, widget, prefix):
         """produce_launch_analysis, short-cuts to displaying a
-        view for analysing a specific project as defined in data
+        view for analysing a specific project as defined in prefix
+        """
+        proj_dir = self._project_progress.get_path(prefix)
+        data = {
+            'stage': 'project',
+            'analysis-project-log_file_dir': proj_dir,
+            'analysis-project-log_file':
+            self._project_progress.get_first_pass_file(prefix)}
 
-        data is the keyword for the project"""
-        pass
+        tc = self.get_top_controller()
+        tc.add_contents(widget, 'analysis', **data)

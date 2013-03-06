@@ -152,7 +152,8 @@ class Running_Analysis(gtk.VBox):
 
         for p in controller.get_subprocesses(by_type='analysis'):
 
-            frame = gtk.Frame(p['sm']['experiment-prefix'])
+            prefix = p['sm']['experiment-prefix']
+            frame = gtk.Frame(prefix)
 
             vbox = gtk.VBox(False, 0)
             frame.add(vbox)
@@ -162,7 +163,8 @@ class Running_Analysis(gtk.VBox):
             info = gtk.Label(model['running-analysis-running'])
             hbox.pack_start(info, True, True, PADDING_LARGE)
             grid_button = gtk.Button(label=model['running-analysis-view-gridding'])
-            grid_button.connect("clicked", controller.produce_gridding_images, p)
+            grid_button.connect("clicked", controller.produce_gridding_images,
+                                prefix)
             grid_button.set_sensitive(False)
             hbox.pack_start(grid_button, False, False, PADDING_MEDIUM)
             vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
@@ -480,6 +482,12 @@ class Live_Projects(gtk.ScrolledWindow):
                         button.connect(
                             "clicked",
                             self._controller.produce_launch_analysis,
+                            k)
+
+                    elif i in (2, 3):  # Both inspect and upload share view
+                        button.connect(
+                            "clicked",
+                            self._controller.produce_gridding_images,
                             k)
 
                 elif val[i] == pstatus[3]:

@@ -116,7 +116,10 @@ class Controller(controller_generic.Controller):
 
         self._view.add_notebook_page(page, title, c)
 
-    def add_contents(self, widget, content_name):
+    def add_contents(self, widget, content_name, **kwargs):
+        """Adds a content to the notebook, and allows for passing of
+        content specific keyword kwargs to the content controller such that
+        specific view-modes and can be inited (and with specific variables"""
 
         m = self._model
         if content_name in ('analysis', 'experiment', 'calibration', 'config'):
@@ -127,18 +130,20 @@ class Controller(controller_generic.Controller):
 
         if content_name == 'analysis':
             c = controller_analysis.Analysis_Controller(
-                self,
-                logger=self._logger)
+                self, logger=self._logger, **kwargs)
+
         elif content_name == 'experiment':
             c = controller_experiment.Experiment_Controller(
-                self,
-                logger=self._logger)
+                self, logger=self._logger, **kwargs)
+
         elif content_name == 'calibration':
             c = controller_calibration.Calibration_Controller(
-                self, logger=self._logger)
+                self, logger=self._logger, **kwargs)
+
         elif content_name == 'config':
             c = controller_config.Config_Controller(
-                self, logger=self._logger)
+                self, logger=self._logger, **kwargs)
+
         else:
             err = UnknownContent("{0}".format(content_name))
             raise err
