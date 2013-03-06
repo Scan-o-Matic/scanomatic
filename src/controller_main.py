@@ -13,9 +13,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import os
 import gtk
-import copy
 import sys
 
 #
@@ -33,7 +31,6 @@ import src.controller_experiment as controller_experiment
 import src.controller_config as controller_config
 #Resources
 import src.controller_calibration as controller_calibration
-import src.resource_os as resource_os
 import src.resource_scanner as resource_scanner
 import src.resource_fixture as resource_fixture
 import src.resource_path as resource_path
@@ -43,7 +40,9 @@ import src.resource_app_config as resource_app_config
 # EXCEPTIONS
 #
 
-class UnknownContent(Exception): pass
+
+class UnknownContent(Exception):
+    pass
 
 #
 # CLASSES
@@ -51,13 +50,16 @@ class UnknownContent(Exception): pass
 
 
 class Unbuffered:
-   def __init__(self, stream):
-       self.stream = stream
-   def write(self, data):
-       self.stream.write(data)
-       self.stream.flush()
-   def __getattr__(self, attr):
-       return getattr(self.stream, attr)
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
 
 
 class Controller(controller_generic.Controller):
@@ -71,7 +73,7 @@ class Controller(controller_generic.Controller):
         view = view_main.Main_Window(controller=self, model=model)
 
         super(Controller, self).__init__(None, view=view, model=model,
-            logger=logger)
+                                         logger=logger)
         """
         self._model = model
         self._view = view
@@ -124,17 +126,19 @@ class Controller(controller_generic.Controller):
             raise err
 
         if content_name == 'analysis':
-            c = controller_analysis.Analysis_Controller(self,
-                    logger=self._logger)
+            c = controller_analysis.Analysis_Controller(
+                self,
+                logger=self._logger)
         elif content_name == 'experiment':
-            c = controller_experiment.Experiment_Controller(self,
-                    logger=self._logger)
+            c = controller_experiment.Experiment_Controller(
+                self,
+                logger=self._logger)
         elif content_name == 'calibration':
             c = controller_calibration.Calibration_Controller(
-                    self, logger=self._logger)
+                self, logger=self._logger)
         elif content_name == 'config':
             c = controller_config.Config_Controller(
-                    self, logger=self._logger)
+                self, logger=self._logger)
         else:
             err = UnknownContent("{0}".format(content_name))
             raise err
@@ -157,11 +161,13 @@ class Controller(controller_generic.Controller):
     def ask_quit(self, *args):
 
         #CHECK SO NOT ORPHANING SUBPROCS
-        if self.subprocs.get_saved() == False:
-            if view_main.dialog(self.get_window(),
+        if self.subprocs.get_saved() is False:
+
+            if view_main.dialog(
+                    self.get_window(),
                     self._model['content-app-close-orphan-warning'],
                     'warning',
-                    yn_buttons=True) != True:
+                    yn_buttons=True) is not True:
 
                 return True
 

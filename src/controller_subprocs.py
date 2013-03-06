@@ -14,8 +14,6 @@ __status__ = "Development"
 #
 
 import gobject
-import types
-import random
 import re
 import os
 import time
@@ -35,13 +33,33 @@ import src.model_experiment as model_experiment
 # EXCEPTIONS
 #
 
-class No_View_Loaded(Exception): pass
-class Not_Yet_Implemented(Exception): pass
-class Unknown_Subprocess_Type(Exception): pass
-class Unknown_Subprocess(Exception): pass
-class UnDocumented_Error(Exception): pass
-class InvalidStageOrStatus(Exception): pass
-class InvalidProjectOrStage(Exception): pass
+
+class No_View_Loaded(Exception):
+    pass
+
+
+class Not_Yet_Implemented(Exception):
+    pass
+
+
+class Unknown_Subprocess_Type(Exception):
+    pass
+
+
+class Unknown_Subprocess(Exception):
+    pass
+
+
+class UnDocumented_Error(Exception):
+    pass
+
+
+class InvalidStageOrStatus(Exception):
+    pass
+
+
+class InvalidProjectOrStage(Exception):
+    pass
 
 #
 # FUNCTIONS
@@ -50,6 +68,7 @@ class InvalidProjectOrStage(Exception): pass
 #
 # CLASSES
 #
+
 
 class Handle_Progress(object):
 
@@ -85,6 +104,7 @@ class Handle_Progress(object):
             pass
 
         self._count = len(self._config.sections())
+
     def _save(self):
 
         with open(self._paths.log_project_progress, 'wb') as configfile:
@@ -94,7 +114,7 @@ class Handle_Progress(object):
 
         if project_prefix not in self._config.sections():
             self._config.add_section(project_prefix)
-        
+
         self._config.set(project_prefix, 'basedir', experiment_dir)
         self._config.set(project_prefix, str(self.EXPERIMENT), "0")
         self._config.set(project_prefix, str(self.ANALYSIS), "0")
@@ -108,25 +128,26 @@ class Handle_Progress(object):
 
         try:
             self._config.set(project_prefix,
-                    str(eval("self." + stage)),
-                    str(eval("self." + status)))
+                             str(eval("self." + stage)),
+                             str(eval("self." + status)))
         except:
             raise InvalidStageOrStatus("{0} {1}".format(stage, status))
 
         self._save()
 
     def get_status(self, project_prefix, stage, as_text=True,
-            supress_load=False):
+                   supress_load=False):
 
-        if supress_load == False:
+        if supress_load is False:
             self._load()
 
         try:
             if type(stage) == int:
                 val = self._config.getint(project_prefix, str(stage))
             else:
-                val = self._config.getint(project_prefix,
-                        str(eval("self." + stage)))
+                val = self._config.getint(
+                    project_prefix,
+                    str(eval("self." + stage)))
 
         except:
             raise InvalidProjectOrStage("{0} {1}".format(project_prefix, stage))
@@ -138,12 +159,12 @@ class Handle_Progress(object):
 
     def get_all_status(self, project_prefix, as_text=True, supress_load=False):
 
-        if supress_load == False:
+        if supress_load is False:
             self._load()
         ret = []
         for stage in range(self.UPLOAD + 1):
             ret.append(self.get_status(project_prefix, stage,
-                    as_text=as_text, supress_load=True))
+                       as_text=as_text, supress_load=True))
 
         return ret
 
@@ -153,14 +174,14 @@ class Handle_Progress(object):
         ret = {}
         for project in self._config.sections():
             ret[project] = self.get_all_status(project, as_text=as_text,
-                    supress_load=True)
+                                               supress_load=True)
 
         return ret
 
     def remove_project(self, project_prefix, supress_save=False):
 
         self._config.remove_section(project_prefix)
-        if supress_save == False:
+        if supress_save is False:
             self._save()
 
     def clear_done_projects(self):
@@ -176,6 +197,7 @@ class Handle_Progress(object):
     def get_project_count(self):
 
         return self._count
+
 
 class Fake_Proc(object):
 
@@ -215,7 +237,6 @@ class Fake_Proc(object):
         except:
             self._logger.error('Could not write to stdin')
 
-
         lines = ""
         i = 0
 
@@ -245,19 +266,20 @@ class Fake_Proc(object):
 
     def communicate(self, c):
 
-        return self._get_feedback(c)        
+        return self._get_feedback(c)
 
 
 class Subprocs_Controller(controller_generic.Controller):
 
     def __init__(self, main_controller, logger=None):
 
-        super(Subprocs_Controller, self).__init__(main_controller,
+        super(Subprocs_Controller, self).__init__(
+            main_controller,
             specific_model=model_subprocs.get_composite_specific_model(),
             logger=logger)
 
         self._project_progress = Handle_Progress(main_controller.paths,
-                self._model)
+                                                 self._model)
 
         self._check_scanners()
         self._find_analysis_procs()
@@ -345,7 +367,7 @@ class Subprocs_Controller(controller_generic.Controller):
         stdin_path = paths.experiment_stdin.format(scanner)
         stdout_path = paths.log_scanner_out.format(scanner_i)
         stderr_path = paths.log_scanner_err.format(scanner_i)
- 
+
         if proc is None:
             proc = Fake_Proc(stdin_path, stdout_path, stderr_path, logger=self._logger)
 
@@ -402,11 +424,11 @@ class Subprocs_Controller(controller_generic.Controller):
                 psm['experiment-prefix']))
 
         self.add_subprocess(proc, 'scanner', stdin=stdin_path,
-            stdout=stdout_path, stderr=stderr_path,
-            pid=None, psm=psm,
-            proc_name="Scanner {0}".format(scanner_i), 
-            start_time=start_time,
-            progress=current_progress)
+                            stdout=stdout_path, stderr=stderr_path,
+                            pid=None, psm=psm,
+                            proc_name="Scanner {0}".format(scanner_i),
+                            start_time=start_time,
+                            progress=current_progress)
 
     def _clean_after(self, scanner_i, scanner, scanner_id):
 
@@ -445,18 +467,20 @@ class Subprocs_Controller(controller_generic.Controller):
         return sm['images-in-queue']
 
     def add_subprocess(self, proc, proc_type, stdin=None, stdout=None,
-            stderr=None, pid=None, psm=None, proc_name=None,
-            start_time=None, progress=0):
+                       stderr=None, pid=None, psm=None, proc_name=None,
+                       start_time=None, progress=0):
 
         sm = self._specific_model
         _pp = self._project_progress
         if proc_type == 'scanner':
 
             plist = sm['scanner-procs']
+
             _pp.add_project(psm['experiment-prefix'],
-                    psm['experiments-root'])
+                            psm['experiments-root'])
+
             _pp.set_status(psm['experiment-prefix'],
-                    'EXPERIMENT', 'RUNNING')
+                           'EXPERIMENT', 'RUNNING')
 
         elif proc_type == 'analysis':
 
@@ -465,24 +489,24 @@ class Subprocs_Controller(controller_generic.Controller):
             if 'experiment-prefix' not in psm:
 
                 proj_file = psm['analysis-project-log_file_dir']
-                psm['experiments-root'] = os.path.abspath(os.path.join(
-                        os.path.dirname(proj_file),
-                        os.pardir))
+                psm['experiments-root'] = os.path.abspath(
+                    os.path.join(os.path.dirname(proj_file),
+                                 os.pardir))
 
-                psm['experiment-prefix'] = os.path.dirname(proj_file).split(
-                        os.path.sep)[-1]
-
+                psm['experiment-prefix'] = os.path.dirname(
+                    proj_file).split(os.path.sep)[-1]
 
             _pp.add_project(psm['experiment-prefix'],
-                    psm['experiments-root'])
+                            psm['experiments-root'])
+
             if _pp.get_status(psm['experiment-prefix'],
-                    'EXPERIMENT', as_text=False) == 0:
+                              'EXPERIMENT', as_text=False) == 0:
+
                 _pp.set_status(psm['experiment-prefix'],
-                        'EXPERIMENT', 'COMPLETED')
+                               'EXPERIMENT', 'COMPLETED')
 
             _pp.set_status(psm['experiment-prefix'],
-                    'ANALYSIS', 'RUNNING')
-
+                           'ANALYSIS', 'RUNNING')
 
         else:
 
@@ -491,9 +515,10 @@ class Subprocs_Controller(controller_generic.Controller):
         if start_time is None:
             start_time = time.time()
 
-        plist.append({'proc': proc, 'type': proc_type, 'pid': pid, 'stdin': stdin,
-            'stdout': stdout, 'stderr': stderr, 'sm': psm, 'name': proc_name,
-            'progress': progress, 'start-time': start_time})
+        plist.append({'proc': proc, 'type': proc_type, 'pid': pid,
+                      'stdin': stdin, 'stdout': stdout, 'stderr': stderr,
+                      'sm': psm, 'name': proc_name, 'progress': progress,
+                      'start-time': start_time})
 
         self.set_unsaved()
 
@@ -502,13 +527,13 @@ class Subprocs_Controller(controller_generic.Controller):
         sm = self._specific_model
 
         if by_type is None:
-            plist = sm['scanner-procs'] +  sm['analysis-procs']
+            plist = sm['scanner-procs'] + sm['analysis-procs']
         elif by_type in ['scanner', 'experiment']:
             plist = sm['scanner-procs']
         elif by_type == 'analysis':
             plist = sm['analysis-procs']
         else:
-            raise Unknown_Subprocess_Type(proc_name)
+            raise Unknown_Subprocess_Type("")
 
         ret = [p for p in plist if (by_name is not None and p['name'] == by_name or True)]
 
@@ -533,17 +558,18 @@ class Subprocs_Controller(controller_generic.Controller):
                     psm = p['sm']
 
                     _pp.set_status(psm['experiment-prefix'],
-                            'EXPERIMENT', 'COMPLETED')
+                                   'EXPERIMENT', 'COMPLETED')
 
                     _pp.set_status(psm['experiment-prefix'],
-                            'ANALYSIS', 'AUTOMATIC')
+                                   'ANALYSIS', 'AUTOMATIC')
 
                     a_dict = tc.config.get_default_analysis_query()
 
-                    proc_name = os.sep.join((psm['experiments-root'], 
-                        psm['experiment-prefix'],
-                        tc.paths.experiment_first_pass_analysis_relative.format(
-                        psm['experiment-prefix'])))
+                    proc_name = os.sep.join(
+                        (psm['experiments-root'],
+                         psm['experiment-prefix'],
+                         tc.paths.experiment_first_pass_analysis_relative.format(
+                         psm['experiment-prefix'])))
 
                     a_dict['-i'] = proc_name
 
@@ -563,27 +589,26 @@ class Subprocs_Controller(controller_generic.Controller):
 
                     pid = proc.pid
 
-                    self.add_subprocess(proc, 'analysis', pid=pid,
-                        stdout=stdout_path, stderr=stderr_path, psm=psm,
-                        proc_name=proc_name)
+                    self.add_subprocess(
+                        proc, 'analysis', pid=pid, stdout=stdout_path,
+                        stderr=stderr_path, psm=psm, proc_name=proc_name)
 
                 else:  # Report problem to user!
                     pass
 
                 self._drop_process(p)
-                scanner = p['sm']['scanner']
                 #tc.scanners.free(scanner)
 
             else:
 
                 lines = self._get_output_since_last_time(p, 'stdout')
-                #i_started = re.findall(r'__Is__ (.*)$', lines) 
-                i_done = re.findall(r'__Id__ (.*)', lines) 
+                #i_started = re.findall(r'__Is__ (.*)$', lines)
+                i_done = re.findall(r'__Id__ (.*)', lines)
 
                 if len(i_done) > 0:
 
-                    p['progress'] = int(i_done[-1]) 
-            
+                    p['progress'] = int(i_done[-1])
+
                 #COUNTING TOTAL SUM OF IMAGES TO TAKE
                 sm['images-in-queue'] += psm['scans'] - p['progress']
 
@@ -605,12 +630,12 @@ class Subprocs_Controller(controller_generic.Controller):
 
                 if p_exit == 0:
                     _pp.set_status(psm['experiment-prefix'],
-                            'ANALYSIS', 'COMPLETED')
+                                   'ANALYSIS', 'COMPLETED')
                     _pp.set_status(psm['experiment-prefix'],
-                            'INSPECT', 'LAUNCH')
+                                   'INSPECT', 'LAUNCH')
                 else:
                     _pp.set_status(psm['experiment-prefix'],
-                            'ANALYSIS', 'FAILED')
+                                   'ANALYSIS', 'FAILED')
 
                 #DO A WARNING HERE SINCE NOT NICE QUIT!
                 if p_exit != 0:
@@ -631,10 +656,11 @@ class Subprocs_Controller(controller_generic.Controller):
                     if 'progress-init-time' not in p:
                         p['progress-init-time'] = time.time() - p['start-time']
                     if progress != ['1']:
-                        p['progress-elapsed-time'] = (time.time() -
-                            p['start-time']) - p['progress-init-time']
-                    p['progress-current-image'] = int(progress[-1])
+                        p['progress-elapsed-time'] = \
+                            (time.time() - p['start-time']) - \
+                            p['progress-init-time']
 
+                    p['progress-current-image'] = int(progress[-1])
 
         #SET SAVED IF NO PROCS RUNNING
         if len(self.get_subprocesses()) == 0:
@@ -669,7 +695,7 @@ class Subprocs_Controller(controller_generic.Controller):
     def _close_proc_files(self, *args):
 
         for f in args:
-            if type(f) == types.FileType:
+            if hasattr(f, 'close'):
                 f.close()
 
     def stop_process(self, p):
@@ -678,10 +704,10 @@ class Subprocs_Controller(controller_generic.Controller):
         psm = p['sm']
 
         _pp.set_status(psm['experiment-prefix'],
-                'EXPERIMENT', 'TERMINATED')
+                       'EXPERIMENT', 'TERMINATED')
 
         _pp.set_status(psm['experiment-prefix'],
-                'ANALYSIS', 'LAUNCH')
+                       'ANALYSIS', 'LAUNCH')
 
         self._drop_process(p)
 
@@ -708,7 +734,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
         elif p['type'] == 'analysis':
 
-            plist = sm['analysis-procs']    
+            plist = sm['analysis-procs']
 
             if p['proc'].poll() is None:
                 self._logger.info("Analysis will continue in the background...")
@@ -726,37 +752,42 @@ class Subprocs_Controller(controller_generic.Controller):
     def produce_running_experiments(self, widget):
 
         self.get_top_controller().add_contents_from_controller(
-            view_subprocs.Running_Experiments(self, self._model,
-            self._specific_model), 
-            self._model['running-experiments'], 
+            view_subprocs.Running_Experiments(
+                self, self._model,
+                self._specific_model),
+            self._model['running-experiments'],
             self)
 
     def produce_live_projects(self, widget):
 
         self.get_top_controller().add_contents_from_controller(
-                view_subprocs.Live_Projects(self, self._model,
-                self._specific_model), self._model['live-projects'],
-                self)
+            view_subprocs.Live_Projects(self, self._model,
+                                        self._specific_model),
+            self._model['live-projects'],
+            self)
 
     def produce_free_scanners(self, widget):
 
         self.get_top_controller().add_contents_from_controller(
             view_subprocs.Free_Scanners(self, self._model,
-            self._specific_model), self._model['free-scanners'],
+                                        self._specific_model),
+            self._model['free-scanners'],
             self)
-    
+
     def produce_running_analysis(self, widget):
 
         self.get_top_controller().add_contents_from_controller(
             view_subprocs.Running_Analysis(self, self._model,
-            self._specific_model), self._model['running-analysis'],
+                                           self._specific_model),
+            self._model['running-analysis'],
             self)
 
     def produce_errors_and_warnings(self, widget):
 
         self.get_top_controller().add_contents_from_controller(
             view_subprocs.Errors_And_Warnings(self, self._model,
-            self._specific_model), self._model['collected-messages'],
+                                              self._specific_model),
+            self._model['collected-messages'],
             self)
 
     def produce_gridding_images(self, widget, p):
@@ -765,5 +796,13 @@ class Subprocs_Controller(controller_generic.Controller):
         proj_prefix = proj_dir.split(os.sep)[-1]
 
         self.get_top_controller().add_contents_from_controller(
-            view_subprocs.View_Gridding_Images(self, self._model,
-            p['sm']), proj_prefix, self)
+            view_subprocs.View_Gridding_Images(
+                self, self._model,
+                p['sm']), proj_prefix, self)
+
+    def produce_launch_analysis(self, widget, data):
+        """produce_launch_analysis, short-cuts to displaying a
+        view for analysing a specific project as defined in data
+
+        data is the keyword for the project"""
+        pass
