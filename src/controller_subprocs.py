@@ -504,6 +504,10 @@ class Subprocs_Controller(controller_generic.Controller):
     def set_project_progress(self, prefix, stage, value):
         return self._project_progress.set_status(prefix, stage, value)
 
+    def remove_live_project(self, prefix):
+
+        self._project_progress.remove_project(prefix)
+
     def get_remaining_scans(self):
 
         sm = self._specific_model

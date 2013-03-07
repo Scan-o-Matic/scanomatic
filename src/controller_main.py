@@ -178,6 +178,7 @@ class Controller(controller_generic.Controller):
 
                 return True
 
+        print "I WANNA QUIT"
         #THEN IF UNSAVED EXISTS
         if self.ask_destroy():
 
@@ -188,4 +189,5 @@ class Controller(controller_generic.Controller):
             gtk.main_quit()
             return False
 
+        print "I DONT"
         return True

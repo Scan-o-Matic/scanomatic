@@ -463,14 +463,14 @@ class Live_Projects(gtk.ScrolledWindow):
                             prefix)
                     elif i == 2:
                             b_signal = button.connect(
-                            "clicked",
-                            self._controller.produce_inspect_gridding,
-                            prefix)
+                                "clicked",
+                                self._controller.produce_inspect_gridding,
+                                prefix)
                     elif i == 3:
                             b_signal = button.connect(
-                            "clicked",
-                            self._controller.produce_upload,
-                            prefix)
+                                "clicked",
+                                self._controller.produce_upload,
+                                prefix)
 
                 elif new_text == pstatus[3]:
                     if i == 0:
@@ -483,15 +483,14 @@ class Live_Projects(gtk.ScrolledWindow):
                             self._controller.produce_running_analysis)
                     elif i == 2:
                             b_signal = button.connect(
-                            "clicked",
-                            self._controller.produce_inspect_gridding,
-                            prefix)
+                                "clicked",
+                                self._controller.produce_inspect_gridding,
+                                prefix)
                     elif i == 3:
                             b_signal = button.connect(
-                            "clicked",
-                            self._controller.produce_upload,
-                            prefix)
-
+                                "clicked",
+                                self._controller.produce_upload,
+                                prefix)
 
                 if b_signal:
                     button._current_signal = b_signal
@@ -543,10 +542,26 @@ class Live_Projects(gtk.ScrolledWindow):
                     label.set_markup(pstage_spacer)
                     hbox.pack_start(label, False, False, PADDING_LARGE)
 
+            button = gtk.Button()
+            button.set_label(m['project-progress-manual_remove'])
+            button.connect('clicked', self._ask_manual_remove, k)
+            hbox.pack_end(button, False, False, PADDING_LARGE)
+
             pview.pack_start(frame, False, False, PADDING_MEDIUM)
 
         pview.show_all()
         return True
+
+    def _ask_manual_remove(self, widget, prefix):
+
+        m = self._model
+        c = self._controller
+        if dialog(c.get_window(),
+                  m['project-progress-dialog'],
+                  d_type='warning',
+                  yn_buttons=True):
+
+            c.remove_live_project(prefix)
 
 
 class View_Gridding_Images(gtk.ScrolledWindow):
