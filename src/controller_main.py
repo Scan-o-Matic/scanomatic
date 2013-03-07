@@ -110,6 +110,7 @@ class Controller(controller_generic.Controller):
         page = c.get_view()
         title = c.get_page_title()
         self._view.add_notebook_page(page, title, c)
+        self._view.set_current_page(-1)
         self.add_subcontroller(c)
 
     def add_contents_from_controller(self, page, title, c):
@@ -150,6 +151,7 @@ class Controller(controller_generic.Controller):
 
         page = c.get_view()
         self._view.add_notebook_page(page, title, c)
+        self._view.set_current_page(-1)
         self.add_subcontroller(c)
 
     def remove_contents(self, widget, page_controller):

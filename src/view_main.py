@@ -16,7 +16,7 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
-import gobject
+#import gobject
 
 #
 # INTERNAL DEPENDENCIES
@@ -38,6 +38,7 @@ PADDING_SMALL = 2
 #
 # CLASSES
 #
+
 
 class Splash(gtk.Window):
 
@@ -69,13 +70,14 @@ class Splash(gtk.Window):
         self.hide()
         self.destroy()
 
+
 class Main_Window(gtk.Window):
 
     def __init__(self, controller=None, model=None):
 
         super(Main_Window, self).__init__()
 
-        self.set_default_size(800,600)
+        self.set_default_size(800, 600)
         self.move(0, 0)
         self._model = model
         self._controller = controller
@@ -96,12 +98,15 @@ class Main_Window(gtk.Window):
             self.populate_panel()
             self.set_window_properties()
 
-
         self.connect("delete_event", self._win_close_event)
 
     def _win_close_event(self, widget, *args, **kwargs):
 
         self._controller.ask_quit()
+
+    def set_current_page(self, val=-1):
+
+        self._content_notebook.set_current_page(val)
 
     def set_model(self, model):
 
@@ -119,7 +124,7 @@ class Main_Window(gtk.Window):
         self.set_title(m['window-title'])
 
     def populate_panel(self):
-        
+
         if self._model is None or self._controller is None:
             return None
         else:
@@ -151,7 +156,7 @@ class Main_Window(gtk.Window):
         button.set_label(m['panel-actions-analysis'])
         button.connect("clicked", c.add_contents, 'analysis')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
-        
+
         button = gtk.Button()
         button.set_label(m['panel-actions-calibration'])
         button.connect("clicked", c.add_contents, 'calibration')
@@ -169,7 +174,7 @@ class Main_Window(gtk.Window):
 
         if self._stats_area is not None:
             panel.pack_start(self._stats_area, False, False, PADDING_LARGE)
-            
+
         panel.show_all()
 
     def populate_stats_area(self, stats_widget):
@@ -195,7 +200,7 @@ class Main_Window(gtk.Window):
         im.set_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_SMALL_TOOLBAR)
         button.add(im)
         button.connect("clicked", self._controller.remove_contents,
-                        specific_controller)
+                       specific_controller)
 
         label = gtk.Label(title_text)
 
@@ -208,7 +213,7 @@ class Main_Window(gtk.Window):
         self._content_notebook.append_page(page, title)
 
         self.show_notebook_or_logo()
-        
+
     def remove_notebook_page(self, widget):
 
         tag_label = widget.get_parent()

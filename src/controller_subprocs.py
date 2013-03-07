@@ -134,14 +134,22 @@ class Handle_Progress(object):
 
     def set_status(self, project_prefix, stage, status):
 
+        if project_prefix not in self._config.sections():
+            return False
+
         try:
-            self._config.set(project_prefix,
-                             str(eval("self." + stage)),
-                             str(eval("self." + status)))
+            stage_num = eval("self." + stage)
+            status_num = eval("self." + status)
         except:
             raise InvalidStageOrStatus("{0} {1}".format(stage, status))
 
+        self._config.set(project_prefix, str(stage_num), str(status_num))
         self._save()
+
+        if stage_num == self.UPLOAD and status_num == self.COMPLETED:
+            self.clear_done_projects()
+
+        return True
 
     def get_status(self, project_prefix, stage, as_text=True,
                    supress_load=False):
@@ -493,6 +501,9 @@ class Subprocs_Controller(controller_generic.Controller):
         """Subproc is never destroyed, but its views always allow destruction"""
         pass
 
+    def set_project_progress(self, prefix, stage, value):
+        return self._project_progress.set_status(prefix, stage, value)
+
     def get_remaining_scans(self):
 
         sm = self._specific_model
@@ -506,9 +517,9 @@ class Subprocs_Controller(controller_generic.Controller):
 
         _pp = self._project_progress
         paths = self.get_top_controller().paths
-        analysis_path = os.sep.join(
+        analysis_path = os.path.join(
             paths.experiment_analysis_relative_path,
-            paths.experiment_analysis_file_name)
+            paths.analysis_run_log)
 
         if proc_type == 'scanner':
 
@@ -539,9 +550,9 @@ class Subprocs_Controller(controller_generic.Controller):
                 log_file_path = os.path.basename(psm['analysis-project-log_file'])
 
             if 'analysis-project-output-path' in psm:
-                analysis_path = os.sep.join(
+                analysis_path = os.path.join(
                     psm['analysis-project-output-path'],
-                    paths.experiment_analysis_file_name)
+                    paths.analysis_run_log)
 
             _pp.add_project(
                 psm['experiment-prefix'],
@@ -617,11 +628,11 @@ class Subprocs_Controller(controller_generic.Controller):
 
                     a_dict = tc.config.get_default_analysis_query()
 
-                    proc_name = os.sep.join(
-                        (psm['experiments-root'],
-                         psm['experiment-prefix'],
-                         tc.paths.experiment_first_pass_analysis_relative.format(
-                         psm['experiment-prefix'])))
+                    proc_name = os.path.join(
+                        psm['experiments-root'],
+                        psm['experiment-prefix'],
+                        tc.paths.experiment_first_pass_analysis_relative.format(
+                            psm['experiment-prefix']))
 
                     a_dict['-i'] = proc_name
 
@@ -682,6 +693,8 @@ class Subprocs_Controller(controller_generic.Controller):
                 if p_exit == 0:
                     _pp.set_status(psm['experiment-prefix'],
                                    'ANALYSIS', 'COMPLETED')
+                    _pp.set_status(psm['experiment-prefix'],
+                                   'UPLOAD', 'LAUNCH')
                 else:
                     _pp.set_status(psm['experiment-prefix'],
                                    'ANALYSIS', 'FAILED')
@@ -845,14 +858,21 @@ class Subprocs_Controller(controller_generic.Controller):
             self._model['collected-messages'],
             self)
 
-    def produce_gridding_images(self, widget, prefix):
+    def produce_inspect_gridding(self, widget, prefix, data={}):
 
         a_file = self._project_progress.get_analysis_path(prefix)
 
-        data = {'stage': 'inspect', 'analysis-file': a_file}
+        data['stage'] = 'inspect'
+        data['analysis-run-file'] = a_file
+        data['project-name'] = prefix
 
         tc = self.get_top_controller()
         tc.add_contents(widget, 'analysis', **data)
+
+    def produce_upload(self, widget, prefix):
+
+        data = {'launch-filezilla': True}
+        self.produce_inspect_gridding(widget, prefix, data=data)
 
     def produce_launch_analysis(self, widget, prefix):
         """produce_launch_analysis, short-cuts to displaying a

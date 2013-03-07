@@ -163,7 +163,7 @@ class Running_Analysis(gtk.VBox):
             info = gtk.Label(model['running-analysis-running'])
             hbox.pack_start(info, True, True, PADDING_LARGE)
             grid_button = gtk.Button(label=model['running-analysis-view-gridding'])
-            grid_button.connect("clicked", controller.produce_gridding_images,
+            grid_button.connect("clicked", controller.produce_inspect_gridding,
                                 prefix)
             grid_button.set_sensitive(False)
             hbox.pack_start(grid_button, False, False, PADDING_MEDIUM)
@@ -426,7 +426,7 @@ class Live_Projects(gtk.ScrolledWindow):
 
         self.update(controller._project_progress)
 
-        gobject.timeout_add(61, self.update,
+        gobject.timeout_add(1439, self.update,
                             controller._project_progress)
 
     def update(self, project_progress):
@@ -441,6 +441,61 @@ class Live_Projects(gtk.ScrolledWindow):
         cur_status = project_progress.get_all_stages_status(as_text=True)
         cur_keys = cur_status.keys()
 
+        def _update_button(button, new_text, i, prefix):
+
+            if button.get_label() != new_text:
+                if hasattr(button, '_current_signal'):
+                    button.handler_disconnect(button._current_signal)
+
+                b_signal = None
+
+                button.set_label(new_text)
+                if new_text not in pstatus[2:4]:  # Launch or Running
+                    button.set_sensitive(False)
+                else:
+                    button.set_sensitive(True)
+
+                if new_text == pstatus[2]:
+                    if i == 1:
+                        b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_launch_analysis,
+                            prefix)
+                    elif i == 2:
+                            b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_inspect_gridding,
+                            prefix)
+                    elif i == 3:
+                            b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_upload,
+                            prefix)
+
+                elif new_text == pstatus[3]:
+                    if i == 0:
+                        b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_running_experiments)
+                    elif i == 1:
+                        b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_running_analysis)
+                    elif i == 2:
+                            b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_inspect_gridding,
+                            prefix)
+                    elif i == 3:
+                            b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_upload,
+                            prefix)
+
+
+                if b_signal:
+                    button._current_signal = b_signal
+
         for view_proj in pview.get_children():
 
             pname = view_proj.get_name()
@@ -451,7 +506,9 @@ class Live_Projects(gtk.ScrolledWindow):
             else:
 
                 for i in range(len(pstages)):
-                    view_proj.my_status[i].set_label(cur_status[pname][i])
+                    _update_button(view_proj.my_status[i],
+                                   cur_status[pname][i], i,
+                                   pname)
 
                 del cur_status[pname]
 
@@ -474,31 +531,7 @@ class Live_Projects(gtk.ScrolledWindow):
                 vbox.pack_start(label, False, False, PADDING_SMALL)
 
                 button = gtk.Button()
-                button.set_label(val[i])
-                if val[i] not in pstatus[2:4]:  # Launch or Running
-                    button.set_sensitive(False)
-                elif val[i] == pstatus[2]:
-                    if i == 1:
-                        button.connect(
-                            "clicked",
-                            self._controller.produce_launch_analysis,
-                            k)
-
-                    elif i in (2, 3):  # Both inspect and upload share view
-                        button.connect(
-                            "clicked",
-                            self._controller.produce_gridding_images,
-                            k)
-
-                elif val[i] == pstatus[3]:
-                    if i == 0:
-                        button.connect(
-                            "clicked",
-                            self._controller.produce_running_experiments)
-                    elif i == 1:
-                        button.connect(
-                            "clicked",
-                            self._controller.produce_running_analysis)
+                _update_button(button, val[i], i, k)
 
                 frame.my_status.append(button)
                 vbox.pack_start(button, False, False, PADDING_SMALL)
@@ -513,6 +546,7 @@ class Live_Projects(gtk.ScrolledWindow):
             pview.pack_start(frame, False, False, PADDING_MEDIUM)
 
         pview.show_all()
+        return True
 
 
 class View_Gridding_Images(gtk.ScrolledWindow):

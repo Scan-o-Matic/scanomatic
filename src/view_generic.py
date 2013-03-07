@@ -22,7 +22,7 @@ import numpy as np
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_scanner as resource_scanner
+#import src.resource_scanner as resource_scanner
 import src.resource_logger as resource_logger
 
 #
@@ -41,10 +41,11 @@ PADDING_NONE = 0
 
 def select_dir(title, start_in=None):
 
-    d = gtk.FileChooserDialog(title=title, 
-        action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, 
-        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
-        gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+    d = gtk.FileChooserDialog(
+        title=title,
+        action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                 gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
 
     if start_in is not None:
         d.set_current_folder(start_in)
@@ -63,12 +64,13 @@ def select_dir(title, start_in=None):
 
 
 def select_file(title, multiple_files=False, file_filter=None,
-        start_in=None):
+                start_in=None):
 
-    d = gtk.FileChooserDialog(title=title, 
-        action=gtk.FILE_CHOOSER_ACTION_OPEN, 
-        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
-        gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+    d = gtk.FileChooserDialog(
+        title=title,
+        action=gtk.FILE_CHOOSER_ACTION_OPEN,
+        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                 gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
 
     d.set_select_multiple(multiple_files)
 
@@ -96,13 +98,15 @@ def select_file(title, multiple_files=False, file_filter=None,
 
         return list()
 
-def save_file(title, multiple_files=False, file_filter=None,
-        start_in=None):
 
-    d = gtk.FileChooserDialog(title=title, 
-        action=gtk.FILE_CHOOSER_ACTION_SAVE, 
-        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
-        gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+def save_file(title, multiple_files=False, file_filter=None,
+              start_in=None):
+
+    d = gtk.FileChooserDialog(
+        title=title,
+        action=gtk.FILE_CHOOSER_ACTION_SAVE,
+        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                 gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
 
     d.set_select_multiple(multiple_files)
 
@@ -133,10 +137,10 @@ def save_file(title, multiple_files=False, file_filter=None,
 
 def overwrite(text, file_name, window):
 
-    dialog = gtk.MessageDialog(window,
-                    gtk.DIALOG_DESTROY_WITH_PARENT,
-                    gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
-                    text.format(file_name))
+    dialog = gtk.MessageDialog(
+        window, gtk.DIALOG_DESTROY_WITH_PARENT,
+        gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+        text.format(file_name))
 
     dialog.add_button(gtk.STOCK_NO, False)
     dialog.add_button(gtk.STOCK_YES, True)
@@ -153,8 +157,9 @@ def overwrite(text, file_name, window):
 def dialog(window, text, d_type="info", yn_buttons=False):
 
     d_types = {'info': gtk.MESSAGE_INFO, 'error': gtk.MESSAGE_ERROR,
-        'warning': gtk.MESSAGE_WARNING, 'question': gtk.MESSAGE_QUESTION,
-        'other': gtk.MESSAGE_OTHER}
+               'warning': gtk.MESSAGE_WARNING,
+               'question': gtk.MESSAGE_QUESTION,
+               'other': gtk.MESSAGE_OTHER}
 
     if d_type in d_types.keys():
 
@@ -165,8 +170,8 @@ def dialog(window, text, d_type="info", yn_buttons=False):
         d_type = gtk.MESSAGE_INFO
 
     d = gtk.MessageDialog(window, gtk.DIALOG_DESTROY_WITH_PARENT,
-        gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
-        text)
+                          gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+                          text)
 
     if yn_buttons:
 
@@ -190,8 +195,8 @@ def claim_a_scanner_dialog(window, text, image_path, scanners):
     scanner_names = scanners.get_names()
 
     dialog = gtk.MessageDialog(window, gtk.DIALOG_DESTROY_WITH_PARENT,
-        gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
-        text)
+                               gtk.MESSAGE_INFO, gtk.BUTTONS_NONE,
+                               text)
 
     for i, s in enumerate(scanner_names):
         dialog.add_button(s, i)
@@ -216,6 +221,7 @@ def claim_a_scanner_dialog(window, text, image_path, scanners):
 # CLASSES
 #
 
+
 class Fixture_Drawing(gtk.DrawingArea):
 
     HEIGHT = 1
@@ -225,7 +231,7 @@ class Fixture_Drawing(gtk.DrawingArea):
     BACKGROUND = (0.75, 0.75, 0.95, 0.9)
 
     def __init__(self, fixture, width=None, height=None, logger=None,
-        scanner_view=False):
+                 scanner_view=False):
 
         super(Fixture_Drawing, self).__init__()
         self.connect("expose_event", self.expose)
@@ -233,7 +239,7 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._fixture = fixture
         self._scanner_view = scanner_view
 
-        self._plate_fill_rgba=tuple(np.array((242, 122 ,17, 255))/255.0)
+        self._plate_fill_rgba = tuple(np.array((242, 122, 17, 255)) / 255.0)
         self._gs_fill_rgba = (0.5, 0.5, 0.5, 0.9)
         self._plate_stroke_rgba = (1, 1, 1, 0.5)
         self._gs_stroke_rgba = (1, 1, 1, 0.5)
@@ -254,11 +260,11 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._plates = np.array(self._fixture.get_plates('fixture'))
         self._grayscale = np.array(self._fixture['fixture']['grayscale_area'])
 
-        self._data_height = max(self._plates[:,:,self.HEIGHT].max(),
-            self._grayscale[:,self.HEIGHT].max())
-    
-        self._data_width = max(self._plates[:,:,self.WIDTH].max(),
-            self._grayscale[:,self.WIDTH].max())
+        self._data_height = max(self._plates[:, :, self.HEIGHT].max(),
+                                self._grayscale[:, self.HEIGHT].max())
+
+        self._data_width = max(self._plates[:, :, self.WIDTH].max(),
+                               self._grayscale[:, self.WIDTH].max())
 
         print "SCANNER VIEW", self._scanner_view
         if self._scanner_view:
@@ -267,22 +273,26 @@ class Fixture_Drawing(gtk.DrawingArea):
             self._flipflip(xflip=False, yflip=True)
 
     def _flipflip(self, xflip=True, yflip=False):
-        """This doesn't flip the Y-axis when toggling since the 'normal' way to 
+        """This doesn't flip the Y-axis when toggling since the 'normal' way to
         display an image is with inverted y-axis, it does it the first time when
         loading the image."""
 
         if xflip:
-            self._grayscale[:, self.WIDTH] = self._data_width - self._grayscale[:, self.WIDTH]
-            self._plates[:,:, self.WIDTH] = self._data_width - self._plates[:,:, self.WIDTH]
+            self._grayscale[:, self.WIDTH] = \
+                self._data_width - self._grayscale[:, self.WIDTH]
+            self._plates[:, :, self.WIDTH] = \
+                self._data_width - self._plates[:, :, self.WIDTH]
         if yflip:
-            self._grayscale[:, self.HEIGHT] = self._data_height - self._grayscale[:, self.HEIGHT]
-            self._plates[:,:, self.HEIGHT] = self._data_height - self._plates[:,:, self.HEIGHT]
+            self._grayscale[:, self.HEIGHT] = \
+                self._data_height - self._grayscale[:, self.HEIGHT]
+            self._plates[:, :, self.HEIGHT] = \
+                self._data_height - self._plates[:, :, self.HEIGHT]
 
     def _get_pos(self, d1, d2):
 
-        new_pos = (d1 / self._data_width * self._cr_active_w + 
-            self._cr_padding_w, d2 / self._data_height * self._cr_active_h +
-            self._cr_padding_h)
+        new_pos = (d1 / self._data_width * self._cr_active_w +
+                   self._cr_padding_w, d2 / self._data_height *
+                   self._cr_active_h + self._cr_padding_h)
 
         return new_pos
 
@@ -297,7 +307,7 @@ class Fixture_Drawing(gtk.DrawingArea):
         #self._logger.info("Will draw {0}".format(positions))
 
         cr.move_to(*self._get_pos(*positions[0]))
- 
+
         cr.line_to(*self._get_pos(*positions.diagonal()))
         cr.line_to(*self._get_pos(*positions[1]))
         cr.line_to(*self._get_pos(*positions[::-1].diagonal()))
@@ -317,7 +327,7 @@ class Fixture_Drawing(gtk.DrawingArea):
             cr.fill()
 
     def _draw_text(self, cr, positions, text, text_rgba=None,
-            fsize=20):
+                   fsize=20):
 
         if text_rgba is None:
             text_rgba = self._text_rgba
@@ -329,10 +339,10 @@ class Fixture_Drawing(gtk.DrawingArea):
 
         fascent, fdescent, fheight, fxadvance, fyadvance = cr.font_extents()
         xbearing, ybearing, width, height, xadvance, yadvance = (
-                cr.text_extents(text))
+            cr.text_extents(text))
 
         cr.move_to(rect_x - xbearing - width / 2,
-                rect_y - fdescent + fheight / 2)
+                   rect_y - fdescent + fheight / 2)
 
         cr.set_source_rgba(*text_rgba)
         cr.show_text(text)
@@ -340,7 +350,7 @@ class Fixture_Drawing(gtk.DrawingArea):
     def toggle_view_state(self):
 
         self._flipflip()
-        self._scanner_view = self._scanner_view == False
+        self._scanner_view = self._scanner_view is False
         self.window.clear()
         self.expose(self, None)
         return self.get_view_state()
@@ -370,7 +380,7 @@ class Fixture_Drawing(gtk.DrawingArea):
 
     def get_other_state(self):
 
-        return self.VIEW_STATE[self._scanner_view == False]
+        return self.VIEW_STATE[self._scanner_view is False]
 
     def expose(self, widget, event):
 
@@ -390,14 +400,15 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._draw_bg(cr, w, h)
 
         self._draw_rect(cr, self._grayscale, stroke_rgba=self._gs_stroke_rgba,
-            fill_rgba=self._gs_fill_rgba)
+                        fill_rgba=self._gs_fill_rgba)
 
         for i, plate in enumerate(self._plates):
 
             self._draw_rect(cr, plate, stroke_rgba=self._plate_stroke_rgba,
-                fill_rgba=self._plate_fill_rgba)
+                            fill_rgba=self._plate_fill_rgba)
 
-            self._draw_text(cr, plate, i+1, fsize=h/10)
+            self._draw_text(cr, plate, i + 1, fsize=h / 10)
+
 
 class Start_Button(gtk.Button):
 
@@ -406,8 +417,7 @@ class Start_Button(gtk.Button):
         self._controller = controller
         self._model = model
 
-        super(Start_Button, self).__init__(
-                                stock=gtk.STOCK_EXECUTE)
+        super(Start_Button, self).__init__(stock=gtk.STOCK_EXECUTE)
 
         al = self.get_children()[0]
         hbox = al.get_children()[0]
@@ -420,8 +430,8 @@ class Start_Button(gtk.Button):
 
 class Pinning(gtk.VBox):
 
-    def __init__(self, controller, model, project_veiw, 
-            plate_number, pinning = None):
+    def __init__(self, controller, model, project_veiw,
+                 plate_number, pinning=None):
 
             self._model = model
             self._controller = controller
@@ -429,10 +439,7 @@ class Pinning(gtk.VBox):
 
             super(Pinning, self).__init__()
 
-            label = gtk.Label(
-                model['plate-label'].format(
-                plate_number))
-
+            label = gtk.Label(model['plate-label'].format(plate_number))
 
             self.pack_start(label, False, False, PADDING_SMALL)
 
@@ -440,7 +447,7 @@ class Pinning(gtk.VBox):
 
                 pinning = model['pinning-default']
 
-            self.dropbox = gtk.combo_box_new_text()                   
+            self.dropbox = gtk.combo_box_new_text()
 
             def_key = 0
             ref_matrices = model['pinning-matrices-reversed']
@@ -452,11 +459,9 @@ class Pinning(gtk.VBox):
                     def_key = i
 
             self.dropbox.set_active(def_key)
-            
-            self.dropbox_signal = self.dropbox.connect("changed",
-                self._controller.set_pinning,
-                plate_number)
 
+            self.dropbox_signal = self.dropbox.connect(
+                "changed", self._controller.set_pinning, plate_number)
 
             self.pack_start(self.dropbox, True, True, PADDING_SMALL)
 
@@ -466,7 +471,6 @@ class Pinning(gtk.VBox):
             val = False
 
         self.dropbox.set_sensitive(val)
-
 
     def set_pinning(self, pinning):
 
@@ -505,7 +509,7 @@ class Page(gtk.VBox):
         if len(children) - pos > 0:
 
             self.remove(children[pos])
-            
+
     def get_controller(self):
 
         return self._controller
@@ -572,19 +576,18 @@ class Top(gtk.HBox):
         self.pack_start(button, False, False, PADDING_SMALL)
         button.show()
         return button
-    
+
 
 class Top_Next_Button(gtk.Button):
 
     def __init__(self, controller, model, specific_model, label_text,
-        callback, stage_signal_text):
+                 callback, stage_signal_text):
 
         self._controller = controller
         self._model = model
         self._specific_model = specific_model
 
-        super(Top_Next_Button, self).__init__(
-                                stock=gtk.STOCK_GO_FORWARD)
+        super(Top_Next_Button, self).__init__(stock=gtk.STOCK_GO_FORWARD)
 
         al = self.get_children()[0]
         hbox = al.get_children()[0]
@@ -597,4 +600,4 @@ class Top_Next_Button(gtk.Button):
         hbox.pack_end(im, False, False, PADDING_SMALL)
 
         self.connect("clicked", callback,
-                            stage_signal_text, specific_model)
+                     stage_signal_text, specific_model)

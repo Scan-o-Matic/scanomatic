@@ -81,6 +81,21 @@ class Analysis_Controller(controller_generic.Controller):
         if 'stage' in kwargs:
             self.set_analysis_stage(None, kwargs['stage'], **kwargs)
 
+    def ask_destroy(self, *args, **kwargs):
+
+        if self._specific_controller is not None:
+            val = self._specific_controller.ask_destroy(*args, **kwargs)
+            if val:
+                self.destroy()
+            return val
+        else:
+            return True
+
+    def destroy(self):
+
+        if self._specific_controller is not None:
+            self._specific_controller.destroy()
+
     def _get_default_view(self):
 
         return view_analysis.Analysis(self, self._model)
@@ -209,7 +224,7 @@ class Analysis_Controller(controller_generic.Controller):
 
                 self._specific_controller = Analysis_Inspect(
                     self, view=view, model=self._model,
-                    logger=self._logger)
+                    logger=self._logger, **kwargs)
 
                 self.add_subcontroller(self._specific_controller)
 
@@ -432,7 +447,7 @@ class Analysis_Controller(controller_generic.Controller):
 
 class Analysis_Inspect(controller_generic.Controller):
 
-    def __init__(self, parent, view=None, model=None, logger=None):
+    def __init__(self, parent, view=None, model=None, logger=None, **kwargs):
 
         super(Analysis_Inspect, self).__init__(
             parent, view=view, model=model, logger=logger)
@@ -441,7 +456,24 @@ class Analysis_Inspect(controller_generic.Controller):
         self._paths = tc.paths
         self._app_config = tc.config
 
-    def set_analysis(self, run_file):
+        print kwargs
+        if 'analysis-run-file' in kwargs:
+            gobject.timeout_add(223, self.set_analysis,
+                                kwargs['analysis-run-file'],
+                                kwargs['project-name'])
+
+        if 'launch-filezilla' in kwargs and kwargs['launch-filezilla']:
+            gobject.timeout_add(331, self.launch_filezilla, None)
+
+    def destroy(self):
+
+        sm = self._specific_model
+        if sm is not None and 'filezilla' in sm and sm['filezilla']:
+            subprocs = self.get_top_controller().subprocs
+            subprocs.set_project_progress(
+                sm['prefix'], 'UPLOAD', 'COMPLETED')
+
+    def set_analysis(self, run_file, project_name=None):
 
         self.set_specific_model(model_analysis.copy_model(
             model_analysis.specific_inspect))
@@ -462,18 +494,33 @@ class Analysis_Inspect(controller_generic.Controller):
 
             self.get_view().get_stage().set_inconsistency_warning()
 
-        self.get_view().get_stage().set_display(sm)
+        stage = self.get_view().get_stage()
+        if project_name:
+            stage.set_project_name(project_name)
+        stage.set_display(sm)
+
+        subprocs = self.get_top_controller().subprocs
+        subprocs.set_project_progress(
+            sm['prefix'], 'INSPECT', 'RUNNING')
+        subprocs.set_project_progress(
+            sm['prefix'], 'UPLOAD', 'LAUNCH')
 
     def launch_filezilla(self, widget):
 
         paths = self.get_top_controller().paths
         m = self._model
+        sm = self._specific_model
+        subprocs = self.get_top_controller().subprocs
 
         if (Popen('which filezilla', stdout=PIPE,
                   shell=True).communicate()[0] != ""):
 
+            subprocs.set_project_progress(
+                sm['prefix'], 'INSPECT', 'COMPLETED')
+            subprocs.set_project_progress(
+                sm['prefix'], 'UPLOAD', 'RUNNING')
             os.system("filezilla &")
-
+            sm['filezilla'] = True
         else:
 
             if view_analysis.dialog(
@@ -486,7 +533,12 @@ class Analysis_Inspect(controller_generic.Controller):
                         paths.install_filezilla,
                         m['analysis-stage-inspect-upload-gksu'])) == 0:
 
+                    subprocs.set_project_progress(
+                        sm['prefix'], 'INSPECT', 'COMPLETED')
+                    subprocs.set_project_progress(
+                        sm['prefix'], 'UPLOAD', 'RUNNING')
                     os.system("filezilla &")
+                    sm['filezilla'] = True
 
                 else:
 
@@ -550,6 +602,7 @@ class Analysis_Inspect(controller_generic.Controller):
 
         sm = self._specific_model
         if sm['run-file'] is not None:
+            print "Will look into file", sm['run-file']
             try:
                 fh = open(sm['run-file'], 'r')
             except:

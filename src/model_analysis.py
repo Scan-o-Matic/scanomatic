@@ -100,7 +100,7 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'analysis-top-project-start-text': 'Start',
 
 #ANALYSIS STAGE PROJECT
-'analysis-stage-project-title': 
+'analysis-stage-project-title':
 "<span weight='heavy' size='large'>Analyse Project</span>",
 
 'analysis-stage-project-file': 'Select Log File to Process',
@@ -109,12 +109,12 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'analysis-stage-project-file-desc': 'Description',
 'analysis-stage-project-file-images': 'Images',
 
-'analysis-stage-project-output_folder': 
+'analysis-stage-project-output_folder':
 'Output Folder (relative log-file path)',
 
 'analysis-stage-project-output_folder-ok': 'Nice choice!',
 
-'analysis-stage-project-output_folder-warning': 
+'analysis-stage-project-output_folder-warning':
 'That folder exists, might not be optimal to write into previous analysis',
 
 'analysis-stage-project-plates': 'Tweak gridding',
@@ -204,7 +204,7 @@ analysis of the project.</i></span>""",
 """<i>If you have the same stuff in several images, mark out the plates
 in the same order and watch the magic!</i>""",
 
-#ANALYSIS TOP PLATE 
+#ANALYSIS TOP PLATE
 'analysis-top-image-plate-next_plate': 'Next Plate',
 'analysis-top-image-plate-next_image': 'Next Image',
 'analysis-top-image-plate-next_done': 'Done!',
@@ -248,7 +248,7 @@ in the same order and watch the magic!</i>""",
 'analysis-stage-auto-norm-and-section-fixture': 'Detect:',
 'analysis-stage-auto-norm-and-section-run': 'Run it!',
 'analysis-stage-auto-norm-and-section-gs-title': 'Grayscale',
-'analysis-stage-auto-norm-and-section-gs-help': 
+'analysis-stage-auto-norm-and-section-gs-help':
 'Note that the curve should be monotonic (no bumps)',
 
 
@@ -340,4 +340,5 @@ specific_inspect = {
 'pinning-formats': None,
 'gridding-history': None,
 'gridding-in-history': None,
+'filezilla': False,
 }
