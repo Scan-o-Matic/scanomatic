@@ -4,11 +4,7 @@
 
 --- HOT ---
 
-*** Show projects not checked after analysis
-
 *** Planner?
-
-*** Transfer file over LAN (Filezilla connect in place and resource for TCPtransfer)
 
 *** FIX random startup-crash:
 
@@ -105,6 +101,10 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Show projects not checked after analysis
+
+*** Transfer file over LAN (Filezilla connect in place and resource for TCPtransfer)
 
 *** Check so not orphanining on shutdown
 

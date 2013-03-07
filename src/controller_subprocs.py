@@ -617,6 +617,7 @@ class Subprocs_Controller(controller_generic.Controller):
         #CHECK FOR SCANNERS THAT ARE DONE
         for p in self.get_subprocesses(by_type='scanner'):
             p_exit = p['proc'].poll()
+            psm = p['sm']
             if p_exit is not None:
 
                 #PROCESS WAS TERMINATED
