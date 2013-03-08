@@ -13,7 +13,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import re
+#import re
 import os
 import subprocess
 import tarfile
@@ -31,8 +31,13 @@ import src.controller_generic as controller_generic
 # EXCEPTIONS
 #
 
-class Bad_Stage_Call(Exception): pass
-class Could_Not_Save_Log_And_State(Exception): pass
+
+class Bad_Stage_Call(Exception):
+    pass
+
+
+class Could_Not_Save_Log_And_State(Exception):
+    pass
 
 #
 # FUNCTIONS
@@ -44,7 +49,7 @@ class Config_Controller(controller_generic.Controller):
     def __init__(self, main_controller, logger=None):
 
         super(Config_Controller, self).__init__(main_controller,
-            logger=logger)
+                                                logger=logger)
 
         self._paths = self.get_top_controller().paths
         self._scanners = 3
@@ -62,7 +67,6 @@ class Config_Controller(controller_generic.Controller):
         self._scanners = self.config.number_of_scanners
         self._pm_type = self.config.pm_type
 
-
     def _apply_current_config(self):
 
         self.config.set('pm-type', self._pm_type)
@@ -72,7 +76,7 @@ class Config_Controller(controller_generic.Controller):
     def save_current_config(self, widget=None):
 
         self._apply_current_config()
-        
+
         self.config.save_settings()
 
     def _get_default_view(self):
@@ -121,8 +125,8 @@ class Config_Controller(controller_generic.Controller):
             fh.close()
             tc.set_simple_logger()
 
-            view_config.dialog(self.get_window(), 
-                self._model['config-log-save-done'],
+            view_config.dialog(
+                self.get_window(), self._model['config-log-save-done'],
                 d_type="info", yn_buttons=False)
 
             return True
@@ -144,15 +148,14 @@ class Config_Controller(controller_generic.Controller):
 
             f_dict = {
                 'version': __version__,
-                'icon': os.sep.join((self._paths.images, 
-                        'scan-o-matic_icon_48_48.png')),
+                'icon': os.sep.join((self._paths.images,
+                                     'scan-o-matic_icon_48_48.png')),
                 'exec': self._paths.scanomatic,
-                'name': 'Scan-o-Matic' }
+                'name': 'Scan-o-Matic'}
 
             cont = cont.format(**f_dict)
 
             try:
-
                 fh = open(target_path, 'w')
                 fh.write(cont)
                 fh.close()
@@ -167,8 +170,8 @@ class Config_Controller(controller_generic.Controller):
             self._logger.error('Could not find desktop short-cut template')
             return
 
-        view_config.dialog(self.get_window(), 
-            self._model['config-desktop-short_cut-made'],
+        view_config.dialog(
+            self.get_window(), self._model['config-desktop-short_cut-made'],
             d_type="info", yn_buttons=False)
 
     def get_desktop_path(self):
@@ -182,7 +185,7 @@ class Config_Controller(controller_generic.Controller):
 
     def set_pm_type(self, widget, pm_type):
 
-        if widget.get_active() == True:
+        if widget.get_active() is True:
             self._pm_type = pm_type
 
     def set_scanners(self, widget):
