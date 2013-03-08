@@ -41,5 +41,11 @@ model = {
 'content-page-title-config': 'App Config',
 
 #DIALOGS
-'content-page-close': 'Closing content page will cause all unsaved progress to be lost.\n\nDo you wish to continue?'
+'content-page-close': ("Closing content page will cause all unsaved progress"
+    " to be lost.\n\nDo you wish to continue?"),
+'content-app-close-orphan-warning': ("You are about to make some subprocesses"
+    " orphans.\nThat's a no-no and could well mean that the next person,\n"
+    "oblivious to your cruelty happens to terminate them for good.\n"
+    "Destroying someones work in the process.\n\n"
+    "Are you really really super sure you want to quit?"),
 }

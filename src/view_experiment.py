@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import pygtk
 pygtk.require('2.0')
+import gobject
 import gtk
 """
 from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
@@ -29,6 +30,7 @@ import matplotlib.patches as plt_patches
 #
 
 from src.view_generic import *
+import src.resource_fixture_image as resource_fixture_image
 
 #
 # STATIC GLOBALS
@@ -368,15 +370,29 @@ class Stage_Project_Setup(gtk.VBox):
             specific_model = controller.get_specific_model()
 
         self._specific_model = specific_model
+        self._window = controller.get_window()
 
         sm = self._specific_model
         self.gtk_handlers = dict()
 
         super(Stage_Project_Setup, self).__init__(0, False)
 
+        #SPLIT IN THE MIDDLE
+        split_box = gtk.HBox(False, 0)
+        left_box = gtk.VBox(False, 0)
+        right_box = gtk.VBox(False, 0)
+        split_box.pack_start(left_box, False, False, PADDING_MEDIUM)
+        split_box.pack_start(right_box, True, True, PADDING_MEDIUM)
+        self.pack_start(split_box, False, False, PADDING_NONE)
+
+        #VIEW OF FIXTURE
+        self._fixture_image = gtk.Frame(model['project-stage-view_of_fixture'])
+        right_box.pack_start(self._fixture_image, True, True, PADDING_NONE)
+        self._fixture_drawing = None
+
         #METADATA
         frame = gtk.Frame(model['project-stage-meta'])
-        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        left_box.pack_start(frame, False, False, PADDING_MEDIUM)
         vbox = gtk.VBox(False, 0)
         frame.add(vbox)
         ##FOLDER
@@ -406,19 +422,25 @@ class Stage_Project_Setup(gtk.VBox):
         hbox.pack_start(self.prefix, False, False, PADDING_NONE)
         hbox.pack_start(self.warn_image, False, False, PADDING_NONE)
         table.attach(hbox, 1, 2, 0, 1)
-        ##IDENTIFIER
+        ##IDENTIFIERS
         label = gtk.Label(model['project-stage-planning-id'])
         label.set_alignment(0, 0.5)
-        self.project_id = gtk.Entry()
-        self.project_id.connect("focus-out-event", controller.set_project_id)
+        self.project_id = gtk.combo_box_new_text()                   
+        self.project_id.set_sensitive(False)
+        self.project_id.connect("changed", controller.set_project_id)
+        self.scan_layout_id = gtk.combo_box_new_text()
+        self.scan_layout_id.set_sensitive(False)
+        self.scan_layout_id.connect("changed", controller.set_scan_layout_id)
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self.project_id, False, False, PADDING_NONE)
+        hbox.pack_start(self.scan_layout_id, False, False, PADDING_SMALL)
         table.attach(label, 0, 1, 1, 2)
         table.attach(hbox, 1, 2, 1, 2)
         ##DESCRIPTION
         label = gtk.Label(model['project-stage-desc'])
         label.set_alignment(0, 0.5)
         self.project_desc = gtk.Entry()
+        self.project_desc.set_text(model['project-stage-desc-suggestion'])
         self.project_desc.connect("focus-out-event", 
             controller.set_project_description)
         self.project_desc.set_width_chars(55)
@@ -427,7 +449,7 @@ class Stage_Project_Setup(gtk.VBox):
 
         #FIXTURE AND SCANNER
         frame = gtk.Frame(model['project-stage-fixture_scanner'])
-        self.pack_start(frame, False, False, PADDING_MEDIUM)
+        left_box.pack_start(frame, False, False, PADDING_MEDIUM)
         hbox = gtk.HBox(False, 0)
         frame.add(hbox)
         label = gtk.Label(model['project-stage-scanner'])
@@ -445,12 +467,12 @@ class Stage_Project_Setup(gtk.VBox):
 
         #TIME, INTERVAL, SCANS
         frame = gtk.Frame(model['project-stage-time_settings'])
+        left_box.pack_start(frame, False, False, PADDING_MEDIUM)
         hbox = gtk.HBox(0, False)
         frame.add(hbox)
         table = gtk.Table(rows=3, columns=2, homogeneous=False)
         table.set_col_spacings(PADDING_MEDIUM)
         hbox.pack_start(table, False, False, PADDING_SMALL)
-        self.pack_start(frame, False, False, PADDING_MEDIUM)
         ##DURATION
         label = gtk.Label(model['project-stage-duration'])
         label.set_alignment(0, 0.5)
@@ -514,7 +536,9 @@ class Stage_Project_Setup(gtk.VBox):
 
         self.set_fixtures()
         self.set_scanners()
-
+        
+        gobject.timeout_add(400,
+            controller.check_free_disk_space)
 
     def _get_human_duration(self, w_type):
 
@@ -554,13 +578,20 @@ class Stage_Project_Setup(gtk.VBox):
 
         return cur_img
 
+    def set_free_space_warning(self, known_space):
+
+        m = self._model
+        dialog(self._window,
+                m['space-warning-text'],
+                d_type='warning', yn_buttons=False)
+
     def warn_scanner_claim_fail(self):
 
         self.scanner.handler_block(self.gtk_handlers['scanner-changed'])
         
         self.scanner.set_active(-1)
 
-        dialog(self._controller._window,
+        dialog(self._window,
             self._model['project-stage-scanner-claim-fail'],
             d_type="warning", yn_buttons=False)
 
@@ -640,6 +671,24 @@ class Stage_Project_Setup(gtk.VBox):
 
         for f in sorted(fixtures):
             self.fixture.append_text(f)
+
+    def set_fixture_image(self, fixture):
+
+        if self._fixture_drawing is not None: 
+            self._fixture_image.remove(self._fixture_drawing)
+
+        tc = self._controller.get_top_controller()
+        
+        f = resource_fixture_image.Fixture_Image(fixture,
+            fixture_directory=tc.paths.fixtures)
+
+        self._fixture_drawing = Fixture_Drawing(f,
+            scanner_view=True, width=250, height=400)
+
+        self._fixture_image.add(self._fixture_drawing)
+
+
+        self._fixture_image.show_all()
 
     def set_scanners(self):
 

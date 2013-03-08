@@ -14,10 +14,10 @@ import src.model_generic as model_generic
 # FUNCTIONS
 #
 
-def get_gui_model():
+def get_gui_model(paths=None):
 
     m = Experiment_GUI_Model(private_model=model,
-        generic_model=model_generic.get_model())
+        generic_model=model_generic.get_model(), paths=paths)
 
     return m
 
@@ -69,12 +69,14 @@ pigmentation analysis.</i></span>
 ##STAGE
 ###METADATA
 'project-stage-meta': 'Meta-Data',
-'project-stage-select_root':'Select Experiments Root Directory',
+'project-stage-select_root':'Set Root Directory',
 'project-stage-prefix': 'Project Prefix',
 'project-stage-prefix-ok': 'Prefix is good',
 'project-stage-prefix-warn': 'Duplcate prefix name or illegal name',
-'project-stage-planning-id': 'Project ID from Planner',
+'project-stage-planning-id': 'Project & Scan Layout Tags',
 'project-stage-desc': 'Project Description',
+'project-stage-desc-suggestion': 'Plate 1 ""; Plate 2 ""; Plate 3 ""; Plate 4 ""',
+'project-stage-view_of_fixture': 'View in Scanner',
 ###FIXTURE AND SCANNER
 'project-stage-fixture_scanner': 'Scanner and Fixture',
 'project-stage-scanner-claim-fail': 'Failed to claim the scanner!\nSomeone is probably using it...',
@@ -163,6 +165,12 @@ allow you to scan one or more images before you free it again.</i></span>
 'one-stage-progress-power-off': ' Power Off ',
 'one-stage-progress-analysis': ' First Pass Analysis ',
 'one-stage-progress-done': ' Done ',
+
+#SPACE LEFT WARNING
+'space-warning-im-size': 28800222 / 1024,
+'space-warning-coeff': 1.5,
+'space-warning-text': """There is a risk that disk space will run out during the project.\n
+You should really dealete some old projects"""
 }
 
 specific_project_model = {
@@ -173,8 +181,9 @@ specific_project_model = {
 ##DATA
 'experiments-root': '',
 'experiment-prefix': None,
-'experiment-desc': None,
-'experiment-id': None,
+'experiment-desc': '',
+'experiment-id': '',
+'experiment-scan-layout-id': '',
 
 ##PLATES
 'plate-areas': 0,

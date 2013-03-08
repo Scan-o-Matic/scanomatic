@@ -21,11 +21,7 @@ __status__ = "Development"
 
 import os
 import sys
-#import matplotlib
-#matplotlib.use('Agg')
-from matplotlib import pyplot
 import logging
-import numpy as np
 import time
 
 #
@@ -37,6 +33,7 @@ import resource_analysis_support
 import analysis_image
 import resource_xml_writer
 import resource_path
+import resource_app_config
 
 #
 # GLOBALS
@@ -48,17 +45,16 @@ import resource_path
 
 
 def analyse_project(log_file_path, outdata_directory, pinning_matrices,
-            graph_watch,
-            verbose=False, visual=False, manual_grid=False, grid_times=[], 
-            suppress_analysis = False,
-            xml_format={'short': True, 'omit_compartments': [], 
-            'omit_measures': []},
-            grid_array_settings = {'animate': False},
-            gridding_settings = {'use_otsu': True, 'median_coeff': 0.99,
-            'manual_threshold': 0.05},
-            grid_cell_settings = {'blob_detect': 'default'},
-            use_local_fixture=True,
-            logger=None):
+                    graph_watch, verbose=False, visual=False,
+                    manual_grid=False, grid_times=[],
+                    suppress_analysis=False,
+                    xml_format={'short': True, 'omit_compartments': [],
+                                'omit_measures': []},
+                    grid_array_settings={'animate': False},
+                    gridding_settings={'use_otsu': True, 'median_coeff': 0.99,
+                                       'manual_threshold': 0.05},
+                    grid_cell_settings={'blob_detect': 'default'},
+                    use_local_fixture=True, logger=None, app_config=None):
     """
         analyse_project parses a log-file and runs a full analysis on all
         images in it. It will step backwards in time, starting with the
@@ -112,11 +108,13 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     #
 
     start_time = time.time()
-    graph_output = None
+    #graph_output = None
     file_path_base = os.sep.join(log_file_path.split(os.sep)[:-1])
     #grid_adjustments = None
 
     paths = resource_path.Paths(src_path=__file__)
+    if app_config is None:
+        app_config = resource_app_config.Config(paths=paths)
 
     #
     # VERIFY OUTDATA DIRECTORY
@@ -131,14 +129,16 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
 
     hdlr = logging.FileHandler(
         os.sep.join((outdata_directory, "analysis.run")), mode='w')
-    log_formatter = logging.Formatter('\n\n%(asctime)s %(levelname)s:' + \
-                    ' %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S\n')
+
+    log_formatter = logging.Formatter('\n\n%(asctime)s %(levelname)s:'
+                                      ' %(message)s',
+                                      datefmt='%Y-%m-%d %H:%M:%S\n')
     hdlr.setFormatter(log_formatter)
     logger.addHandler(hdlr)
     resource_analysis_support.set_logger(logger)
 
     logger.info('Analysis started at ' + str(start_time))
+    logger.info('ANALYSIS using file {0}'.format(log_file_path))
 
     #
     # SET UP EXCEPT HOOK
@@ -152,14 +152,16 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
 
     ## META-DATA
     meta_data = resource_project_log.get_meta_data(path=log_file_path)
-    
+
     ### METE-DATA BACK COMPATIBILITY
-    if 'Version' not in meta_data:
-        meta_data['Version'] = 0
-    if 'UUID' not in meta_data:
-        meta_data['UUID'] = None
-    if 'Manual Gridding' not in meta_data:
-        meta_data['Manual Gridding'] = None
+    for key, val in (('Version', 0), ('UUID', None),
+                     ('Manual Gridding', None), ('Prefix', ""),
+                     ('Project ID', ""), ('Scanner Layout ID', "")):
+
+        if key not in meta_data:
+            meta_data[key] = val
+
+    logger.info('ANALYSIS met-data is\n{0}\n'.format(meta_data))
 
     ### OVERWRITE META-DATA WITH USER INPUT
     if pinning_matrices is not None:
@@ -173,9 +175,9 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     ### VERIFYING VITAL ASPECTS
 
     #### Test to find Fixture
-    if 'Fixture' not in meta_data or \
-        resource_analysis_support.get_finds_fixture(
-        meta_data['Fixture']) == False:
+    if ('Fixture' not in meta_data or
+            resource_analysis_support.get_finds_fixture(
+            meta_data['Fixture']) is False):
 
         logger.critical('ANALYSIS: Could not localize fixture settings')
         return False
@@ -187,17 +189,17 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
         return False
 
     ## IMAGES
-    image_dictionaries = resource_project_log.get_image_entries(log_file_path)
+    image_dictionaries = resource_project_log.get_image_entries(log_file_path,
+                                                                logger=logger)
 
     if len(image_dictionaries) == 0:
         logger.critical("ANALYSIS: There are no images to analyse, aborting")
 
         return False
 
-    logger.info("ANALYSIS: A total of " + 
-                    "{0} images to analyse in project with UUID {1}".format(
-                    len(image_dictionaries),
-                    meta_data['UUID']))
+    logger.info("ANALYSIS: A total of "
+                "{0} images to analyse in project with UUID {1}".format(
+                len(image_dictionaries), meta_data['UUID']))
 
     meta_data['Images'] = len(image_dictionaries)
     image_pos = meta_data['Images'] - 1
@@ -207,7 +209,8 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     #
 
     if resource_analysis_support.get_run_will_do_something(
-            suppress_analysis, graph_watch, meta_data, logger) == False:
+            suppress_analysis, graph_watch, meta_data,
+            image_dictionaries, logger) is False:
 
         """
         In principle, if user requests to supress analysis of other
@@ -220,19 +223,20 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     # INITIALIZE WATCH GRAPH IF REQUESTED
     #
 
-    if graph_watch != None:
+    if graph_watch is not None:
 
         watch_graph = resource_analysis_support.Watch_Graph(graph_watch,
-                                outdata_directory)
+                                                            outdata_directory)
 
     #
     # INITIALIZE XML WRITER
     #
 
     xml_writer = resource_xml_writer.XML_Writer(outdata_directory,
-                    xml_format, logger, paths)
+                                                xml_format, logger, paths)
 
-    if xml_writer.get_initialized() == False:
+    if xml_writer.get_initialized() is False:
+
         logger.critical('ANALYSIS: XML writer failed to initialize')
         return False
 
@@ -240,33 +244,33 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     # RECORD HOW ANALYSIS WAS STARTED
     #
 
-    logger.info('Analysis was called with the following arguments:\n' +
-        'log_file_path\t\t{0}'.format(log_file_path) + 
-        '\noutdata_file_path\t{0}'.format(outdata_directory) + 
-        '\nmeta_data\t\t{0}'.format(meta_data) +
-        '\ngraph_watch\t\t{0}'.format(graph_watch) +
-        '\nverbose\t\t\t{0}'.format(verbose) + 
-        '\ngrid_array_settings\t{0}'.format(grid_array_settings) + 
-        '\ngridding_settings\t{0}'.format(gridding_settings) + 
-        '\ngrid_cell_settings\t{0}'.format(grid_cell_settings) +
-        '\nxml_format\t\t{0}'.format(xml_writer) +
-        '\nmanual_grid\t\t{0}'.format(meta_data['Manual Gridding']) +
-        '\ngrid_times\t\t{0}'.format(grid_times))
+    logger.info('Analysis was called with the following arguments:\n'
+                'log_file_path\t\t{0}'.format(log_file_path) +
+                '\noutdata_file_path\t{0}'.format(outdata_directory) +
+                '\nmeta_data\t\t{0}'.format(meta_data) +
+                '\ngraph_watch\t\t{0}'.format(graph_watch) +
+                '\nverbose\t\t\t{0}'.format(verbose) +
+                '\ngrid_array_settings\t{0}'.format(grid_array_settings) +
+                '\ngridding_settings\t{0}'.format(gridding_settings) +
+                '\ngrid_cell_settings\t{0}'.format(grid_cell_settings) +
+                '\nxml_format\t\t{0}'.format(xml_writer) +
+                '\nmanual_grid\t\t{0}'.format(meta_data['Manual Gridding']) +
+                '\ngrid_times\t\t{0}'.format(grid_times))
 
     #
     # GET NUMBER OF PLATES AND THEIR NAMES IN THIS ANALYSIS
     #
 
     plates, plate_position_keys = resource_analysis_support.get_active_plates(
-        meta_data, suppress_analysis, graph_watch)
+        meta_data, suppress_analysis, graph_watch, config=app_config)
 
     logger.info('ANALYSIS: These plates ({0}) will be analysed: {1}'.format(
         plates, plate_position_keys))
 
-    if suppress_analysis == True:
+    if suppress_analysis is True:
 
         meta_data['Pinning Matrices'] = \
-            [meta_data['Pinning Matrices'][graph_watch[0]]] # Only keep one
+            [meta_data['Pinning Matrices'][graph_watch[0]]]  # Only keep one
 
         graph_watch[0] = 0  # Since only this one plate is left, it is now 1st
 
@@ -274,26 +278,28 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     # INITIALIZING THE IMAGE OBJECT
     #
 
-    project_image = analysis_image.Project_Image(
-                meta_data['Pinning Matrices'],
-                file_path_base=file_path_base,
-                fixture_name=meta_data['Fixture'],
-                p_uuid=meta_data['UUID'],
-                logger=None,
-                verbose=verbose,
-                visual=visual,
-                suppress_analysis=suppress_analysis,
-                grid_array_settings=grid_array_settings,
-                gridding_settings=gridding_settings,
-                grid_cell_settings=grid_cell_settings,
-                log_version=meta_data['Version']
-                )
+    project_image = analysis_image.Project_Image(meta_data['Pinning Matrices'],
+                                                 file_path_base=file_path_base,
+                                                 fixture_name=meta_data['Fixture'],
+                                                 p_uuid=meta_data['UUID'],
+                                                 logger=None,
+                                                 verbose=verbose,
+                                                 visual=visual,
+                                                 suppress_analysis=suppress_analysis,
+                                                 grid_array_settings=grid_array_settings,
+                                                 gridding_settings=gridding_settings,
+                                                 grid_cell_settings=grid_cell_settings,
+                                                 log_version=meta_data['Version'],
+                                                 paths=paths,
+                                                 app_config=app_config
+                                                 )
 
     # MANUAL GRIDS
     if manual_grid and meta_data['Manual Gridding'] is not None:
 
-        logger.info("ANALYSIS: Will implement manual adjustments of " + \
-                    "grid on plates {0}".format(manual_griddings.keys()))
+        logger.info("ANALYSIS: Will implement manual adjustments of "
+                    "grid on plates {0}".format(meta_data['Maunual Gridding'].keys()))
+
         project_image.set_manual_ideal_grids(meta_data['Manual Grid'])
 
     #
@@ -312,7 +318,7 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
             pos = len(image_dictionaries) - 1
     else:
         pos = (len(image_dictionaries) > default_gridtime and default_gridtime
-            or len(image_dictionaries) - 1)
+               or len(image_dictionaries) - 1)
 
     plate_positions = []
 
@@ -322,11 +328,10 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
             image_dictionaries[pos][plate_position_keys[i]])
 
     project_image.set_grid(image_dictionaries[pos]['File'],
-        plate_positions,
-        save_name = os.sep.join((
-        outdata_directory,
-        "grid___origin_plate_")))
- 
+                           plate_positions,
+                           save_name=os.sep.join((
+                               outdata_directory,
+                               "grid___origin_plate_")))
 
     resource_analysis_support.print_progress_bar(size=60)
 
@@ -367,20 +372,25 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
         #
 
         features = project_image.get_analysis(img_dict_pointer['File'],
-            plate_positions, img_dict_pointer['grayscale_values'],
-            watch_colony=graph_watch,
-            save_grid_name=save_grid_name,
-            identifier_time=image_pos,
-            timestamp=img_dict_pointer['Time'],
-            grayscale_indices=img_dict_pointer['grayscale_indices'],
-            image_dict=img_dict_pointer)
+                                              plate_positions,
+                                              img_dict_pointer[
+                                                  'grayscale_values'],
+                                              watch_colony=graph_watch,
+                                              save_grid_name=save_grid_name,
+                                              identifier_time=image_pos,
+                                              timestamp=img_dict_pointer[
+                                                  'Time'],
+                                              grayscale_indices=
+                                              img_dict_pointer[
+                                                  'grayscale_indices'],
+                                              image_dict=img_dict_pointer)
 
         #
         # XML WRITE IT TO FILES
         #
 
         xml_writer.write_image_features(image_pos, features, img_dict_pointer,
-            plates, meta_data)
+                                        plates, meta_data)
 
         #
         # IF WATCHING A COLONY UPDATE WATCH IMAGE
@@ -394,20 +404,20 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
         # USER INFO
         #
 
-        logger.info("ANALYSIS, Image took %.2f seconds" % \
-                         (time.time() - scan_start_time))
+        logger.info(
+            "ANALYSIS, Image took {0} seconds".format(
+                (time.time() - scan_start_time)))
 
         resource_analysis_support.print_progress_bar(
-                        fraction = (meta_data['Images'] - image_pos) / \
-                        float(meta_data['Images']),
-                        size=60, start_time=start_time)
+            fraction=(meta_data['Images'] - image_pos) /
+            float(meta_data['Images']),
+            size=60, start_time=start_time)
 
         #
         # UPDATE IMAGE_POS
         #
 
         image_pos -= 1
-
 
     #
     # CLOSING XML TAGS AND FILES
@@ -427,8 +437,9 @@ def analyse_project(log_file_path, outdata_directory, pinning_matrices,
     # OUTPUTS TO USER
     #
 
-    logger.info("ANALYSIS, Full analysis took %.2f minutes" %\
-        ((time.time() - start_time) / 60.0))
+    logger.info("ANALYSIS, Full analysis took {0} minutes".format(
+        ((time.time() - start_time) / 60.0)))
 
     logger.info('Analysis completed at ' + str(time.time()))
 
+    return True

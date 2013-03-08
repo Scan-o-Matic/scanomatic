@@ -174,7 +174,7 @@ class XML_Writer(object):
                 f.write('<project>')
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['version', 'ver'][tag_format],  __version__))
+                    ['version', 'ver'][tag_format], __version__))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['computer-mac', 'mac'][tag_format],
@@ -183,6 +183,16 @@ class XML_Writer(object):
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['start-time', 'start-t'][tag_format],
                     meta_data['Start Time']))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    ['prefix','pref'][tag_format], meta_data['Prefix']))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    ['project_tag','ptag'][tag_format], meta_data['Project ID']))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    ['scanner_layout_tag','sltag'][tag_format],
+                    meta_data['Scanner Layout ID']))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['description', 'desc'][tag_format],

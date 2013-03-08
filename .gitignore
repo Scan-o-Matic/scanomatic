@@ -6,11 +6,8 @@ _*.lock
 .git/*
 data
 dev/*
-src/log/*.log
-src/config/main.config
-src/config/fixtures/fixture*
-src/config/fixtures/current*
-src/config/fixtures/tmp_grid*
+config
+log
 versions/*
 gs_test*.png
 .exclude.list

@@ -14,10 +14,10 @@ import src.model_generic as model_generic
 # FUNCTIONS
 #
 
-def get_gui_model():
+def get_gui_model(paths=None):
 
     m = Analysis_GUI_Model(private_model=model,
-        generic_model=model_generic.get_model())
+        generic_model=model_generic.get_model(), paths=paths)
 
     return m
 
@@ -84,18 +84,23 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'analysis-stage-inspect-file-filter': {'filter_name': 'Analysis Log Files',
 'mime_and_patterns': (('TEXT', 'analysis.run'),)},
 'analysis-stage-inspect-warning': 'Not all plates seem to have been gridded!',
-'analysis-stage-inspect-plate-title': 'Plate {0}',
+'analysis-stage-inspect-plate-title': 'Plate {0} "{1}"',
 'analysis-stage-inspect-plate-bad': 'This is a bad grid!',
 'analysis-stage-inspect-plate-yn': 'This will cause the pinning of plate {0} to be removed. Do you wish to continue?',
 'analysis-stage-inspect-plate-gone': 'Plate was removed',
 'analysis-stage-inspect-plate-nohistory': 'Not in history',
 'analysis-stage-inspect-plate-remove-warn': 'Failed to remove the selected plate from fixture history',
+'analysis-stage-inspect-plate-drawing': 'Layout drawing as seen in:',
+'analysis-stage-inspect-upload-button': 'Upload files to Precog-computer',
+'analysis-stage-inspect-upload-install': 'Filezilla is lacking on your system, do you want to install it?',
+'analysis-stage-inspect-upload-error': "Could not install.\n\nEither you didn't get the password right or decided not to install.\nOr this is not a debian-linux with filezilla in the repo!",
+'analysis-stage-inspect-upload-gksu': "Please write password for administrative priviledges to install Filezilla",
 
 #ANALYSIS TOP PROJECT
 'analysis-top-project-start-text': 'Start',
 
 #ANALYSIS STAGE PROJECT
-'analysis-stage-project-title': 
+'analysis-stage-project-title':
 "<span weight='heavy' size='large'>Analyse Project</span>",
 
 'analysis-stage-project-file': 'Select Log File to Process',
@@ -104,12 +109,12 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'analysis-stage-project-file-desc': 'Description',
 'analysis-stage-project-file-images': 'Images',
 
-'analysis-stage-project-output_folder': 
+'analysis-stage-project-output_folder':
 'Output Folder (relative log-file path)',
 
 'analysis-stage-project-output_folder-ok': 'Nice choice!',
 
-'analysis-stage-project-output_folder-warning': 
+'analysis-stage-project-output_folder-warning':
 'That folder exists, might not be optimal to write into previous analysis',
 
 'analysis-stage-project-plates': 'Tweak gridding',
@@ -137,7 +142,7 @@ click on running analysis to the left</i></span>""",
 'analysis-stage-first-column-title': 'Files in the order they will be analysed',
 'analysis-stage-first-meta': 'Metadata',
 'analysis-stage-first-meta-prefix': 'Prefix',
-'analysis-stage-first-meta-id': 'ID from Planner',
+'analysis-stage-first-meta-id': 'Tags from planner',
 'analysis-stage-first-meta-desc': 'Description',
 'analysis-stage-first-fixture_scanner': 'Scanner & Fixture',
 'analysis-stage-first-scanner': 'Scanner',
@@ -199,7 +204,7 @@ analysis of the project.</i></span>""",
 """<i>If you have the same stuff in several images, mark out the plates
 in the same order and watch the magic!</i>""",
 
-#ANALYSIS TOP PLATE 
+#ANALYSIS TOP PLATE
 'analysis-top-image-plate-next_plate': 'Next Plate',
 'analysis-top-image-plate-next_image': 'Next Image',
 'analysis-top-image-plate-next_done': 'Done!',
@@ -243,7 +248,7 @@ in the same order and watch the magic!</i>""",
 'analysis-stage-auto-norm-and-section-fixture': 'Detect:',
 'analysis-stage-auto-norm-and-section-run': 'Run it!',
 'analysis-stage-auto-norm-and-section-gs-title': 'Grayscale',
-'analysis-stage-auto-norm-and-section-gs-help': 
+'analysis-stage-auto-norm-and-section-gs-help':
 'Note that the curve should be monotonic (no bumps)',
 
 
@@ -325,12 +330,15 @@ specific_log_book = {
 specific_inspect = {
 'run-file': None,
 'analysis-dir': None,
+'experiment-dir': None,
 'uuid': None,
 'fixture': None,
 'prefix': None,
 'grid-images': [],
+'plate-names': [],
 'pinnings': None,
 'pinning-formats': None,
 'gridding-history': None,
 'gridding-in-history': None,
+'filezilla': False,
 }

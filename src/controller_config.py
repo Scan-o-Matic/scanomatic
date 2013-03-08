@@ -18,6 +18,7 @@ import os
 import subprocess
 import tarfile
 import glob
+import sh
 
 #
 # INTERNAL DEPENDENCIES
@@ -51,12 +52,12 @@ class Config_Controller(controller_generic.Controller):
         super(Config_Controller, self).__init__(main_controller,
                                                 logger=logger)
 
-        self._paths = self.get_top_controller().paths
+        tc = self.get_top_controller()
+        self._paths = tc.paths
         self._scanners = 3
         self._pm_type = 'usb'
         self._experiments_root = self._paths.experiment_root
 
-        tc = self.get_top_controller()
         self.config = tc.config
 
         self.load_current_config()
@@ -85,20 +86,22 @@ class Config_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_config.get_gui_model()
+        tc = self.get_top_controller()
+        return model_config.get_gui_model(tc.paths)
 
     def make_state_backup(self, widget):
+
+        tc = self.get_top_controller()
 
         target_list = view_config.save_file(
             self._model['config-log-save-dialog'],
             multiple_files=False,
             file_filter=self._model['config-log-file-filter'],
-            start_in=self.get_top_controller().paths.experiment_root)
+            start_in=self._paths.experiment_root)
 
         if target_list is not None and len(target_list) == 1:
 
-            tc = self.get_top_controller()
-            paths = tc.paths
+            paths = self._paths
 
             try:
                 fh = tarfile.open(target_list[0], 'w:gz')
@@ -113,6 +116,7 @@ class Config_Controller(controller_generic.Controller):
             save_paths.append(paths.log_scanner_err.format("*"))
             save_paths.append(paths.log_main_out)
             save_paths.append(paths.log_main_err)
+            save_paths.append(paths.log_relaunch)
 
             tc.close_simple_logger()
 
@@ -212,9 +216,71 @@ class Config_Controller(controller_generic.Controller):
         stage = self.get_view().get_stage()
         stage.update_experiments_root(exp_path)
 
+    def run_update(self, widget=None):
+
+        try:
+            import sh
+        except:
+            view_config.dialog(self.get_window(),
+                self._model['config-update-no-sh'],
+                d_type='error', yn_buttons=False)
+            return
+
+        git = sh.git.bake(_cwd=self._paths.root)
+
+        try:
+            git_result = git.pull()
+        except:
+            view_config.dialog(self.get_window(),
+                self._model['configt-update-warning'],
+                d_type='warning', yn_buttons=False)
+
+            return
+
+        if 'Already up-to-date' in git_result:
+
+            view_config.dialog(self.get_window(),
+                self._model['config-update-up_to_date'],
+                d_type='info', yn_buttons=False)
+
+        else:
+            stage = self.get_view().get_stage()
+            stage.set_activate_restart()
+            view_config.dialog(self.get_window(),
+                self._model['config-update-success'],
+                d_type='info', yn_buttons=False)
+
+    def run_restart(self, widget):
+
+        prog = self._paths.scanomatic
+        args = ""
+        try:
+            os.execl(prog, args)
+            reloaded = True
+        except:
+            reloaded = False
+
+        if reloaded:
+            tc = self.get_top_controller()
+            tc.ask_quit()
+
+
     def update_view(self):
 
         stage = self.get_view().get_stage()
         stage.update_scanners(self._scanners)
         stage.update_pm(self._pm_type)
         stage.update_experiments_root(self._experiments_root)
+
+    def get_fixture_list(self):
+
+        paths = self.get_top_controller().paths
+        fixtures = [f for f in os.listdir(paths.fixtures)
+                if f.endswith(paths.fixture_conf_file_suffix)]
+        return fixtures 
+
+    def remove_fixture(self, fixture):
+
+        paths = self.get_top_controller().paths
+        mv = sh.mv.bake(_cwd=paths.fixtures)
+        mv(fixture, fixture + ".deleted")

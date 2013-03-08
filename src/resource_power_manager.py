@@ -46,7 +46,28 @@ MAX_CONNECTION_TRIES = 10
 # CLASSES
 #
 
-class USB_PM(object):
+
+class NO_PM(object):
+
+    def __init__(*args, **kwargs):
+
+        pass
+
+    def on(self):
+
+        return True
+
+    def off(self):
+
+        return True
+
+    def status(self):
+
+        print "NO PM, claiming to be off"
+        return False
+
+
+class USB_PM(NO_PM):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
     def __init__(self, path, on_args=[], off_args=[], logger=None):
 
@@ -88,23 +109,12 @@ class USB_PM(object):
         return True
 
 
-class NO_PM(object):
-
-    def __init__(*args, **kwargs):
-
-        pass
-
-    def on(self):
-
-        return True
-
-    def ofF(self):
-
-        return True
-
-
 class USB_PM_LINUX(USB_PM):
     """Class for handling USB connected PM:s on linux."""
+
+    ON_TEXT = "on"
+    OFF_TEXT = "off"
+
     def __init__(self, socket, path = "sispmctl", logger=None):
 
         super(USB_PM_LINUX, self).__init__(path,
@@ -114,6 +124,25 @@ class USB_PM_LINUX(USB_PM):
 
         self.name ="USB connected PM (Linux)"
         self._socket = socket
+
+    def status(self):
+
+        self._logger.info('USB PM, trying to connect')
+        proc = Popen('sispmctl -g {0}'.format(self._socket), 
+            stdout=PIPE, stderr=PIPE, shell=True)
+
+        stdout, stderr = proc.communicate()
+        stdout = stdout.strip()
+
+        if stdout.endswith(self.ON_TEXT):
+            return True
+        elif stdout.endswith(self.OFF_TEXT):
+            return False
+
+        self._logger.warning('USB PM, could not reach or understand PM')
+
+        return None
+
 
 class USB_PM_WIN(USB_PM):
     """Class for handling USB connected PM:s on windows."""
@@ -128,7 +157,8 @@ class USB_PM_WIN(USB_PM):
         self.name ="USB connected PM (Windows)"
         self._socket = socket
 
-class LAN_PM(object):
+
+class LAN_PM(NO_PM):
     """Class for handling LAN-connected PM:s.
 
     host may be None if MAC is supplied. 
@@ -346,12 +376,37 @@ class LAN_PM(object):
             self._logger.error("LAN PM, Failed to turn off socked {0}".format(self._socket))
             return False
 
+    def status(self):
+
+        u = self._login()
+
+        if u is None:
+            self._logger.error('Could not reach LAN-PM')
+            return None
+
+        page = u.read()
+        self._logger.info('LAN PM, trying to report status')
+        if not self._verify_name or self._pm_server_str in page:
+
+            states = re.findall(r'sockstates = ([^;])', page)[0].strip()
+            try:
+                states = eval(states)
+                if len(states) > self._socket:
+                    return states[self._socket] == 1
+            except:
+                pass
+
+        return None
+
+
 class Power_Manager():
     """Interface that takes a PM-class and emits messages as well as introduces
     a power toggle switch"""
 
     def __init__(self, pm=None, DMS=None):
 
+        if pm is None:
+            pm = NO_PM()
         self._pm = pm 
         self._installed = pm is not None
         self._on = None
@@ -387,6 +442,10 @@ class Power_Manager():
                 self._DMS("Power","Switching off {0}, Socket {1}".format(
                     self._pm.name, self._pm._socket),
                     level="LA", debug_level='debug')     
+
+    def status(self):
+        print "Power Manager, checking status"
+        return self._pm.status()
 
     def toggle(self):
         if self.on is None or self.on == False:

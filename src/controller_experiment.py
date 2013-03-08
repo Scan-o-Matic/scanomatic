@@ -20,6 +20,7 @@ import collections
 from itertools import chain
 from subprocess import Popen, PIPE
 import threading
+import sh
 
 #
 # INTERNAL DEPENDENCIES
@@ -96,7 +97,8 @@ class Experiment_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_experiment.get_gui_model()
+        tc = self.get_top_controller()
+        return model_experiment.get_gui_model(paths=tc.paths)
 
     def get_mode(self):
 
@@ -243,6 +245,7 @@ class One_Controller(controller_generic.Controller):
 
         run_command = run_command[0]
         stage = self.get_view().get_stage()
+        self.set_unsaved()
         if run_command == 'power-up':
             stage.set_run_stage('power-on')
 
@@ -289,6 +292,7 @@ class One_Controller(controller_generic.Controller):
             scanner.free()
             stage.set_progress('on', failed=True)
             stage.set_progress('done', failed=True)
+            self.set_saved()
 
     def _scan(self, scanner, stage):
 
@@ -326,11 +330,13 @@ class One_Controller(controller_generic.Controller):
             scanner.free()
             sm['stage'] = 'done'
             stage.set_progress('done', completed=True)
+            self.saved()
 
     def _analysis(self, scaner, stage):
 
         scanner.free()
         stage.set_progress('done', completed=True)
+        self.set_saved()
         sm['stage'] = 'done'
         return False
 
@@ -380,9 +386,15 @@ class Project_Controller(controller_generic.Controller):
             self.check_prefix_dupe(widget=None)
             self._view.get_stage().update_experiment_root()
 
-    def set_project_id(self, widget, event):
+    def set_project_id(self, widget, event=None):
 
-        self._specific_model['experiment-id'] = widget.get_text()
+        pass
+        #self._specific_model['experiment-id'] = widget.get_text()
+
+    def set_scan_layout_id(self, widget, event=None):
+
+        pass
+        #self._specific_model['experiment-scan-laout-id']
 
     def set_project_description(self, widget, event):
 
@@ -449,7 +461,6 @@ class Project_Controller(controller_generic.Controller):
         sm = self._specific_model
         stage = self._view.get_stage()
 
-
         #Parsing input
         str_val = widget.get_text()
         val = None
@@ -505,6 +516,36 @@ class Project_Controller(controller_generic.Controller):
 
             stage.set_duration_warning(widget_name)    
 
+        self.check_free_disk_space()
+
+    def check_free_disk_space(self):
+
+        sm = self._specific_model
+        m = self._model
+        tc = self.get_top_controller()
+        stage = self._view.get_stage()
+
+        df_val = -1
+        try:
+            df_text = sh.df(sm['experiments-root'])
+            df_val = int(df_text.split()[-3])
+        except:
+            pass
+
+        if df_val < 0:
+
+            stage.set_free_space_warning(known_space=True)
+
+        elif (m['space-warning-im-size'] * 
+               (sm['scans'] + tc.subprocs.get_remaining_scans()) 
+               * m['space-warning-coeff']) > df_val:
+
+            stage.set_free_space_warning(known_space=False)
+
+        print (df_val, tc.subprocs.get_remaining_scans(),
+                (m['space-warning-im-size'] * 
+               (sm['scans'] + tc.subprocs.get_remaining_scans()) 
+               * m['space-warning-coeff']))
 
     def _check_duration_consistencies(self):
 
@@ -585,7 +626,9 @@ class Project_Controller(controller_generic.Controller):
 
         fixtures[model[row][0]].set_experiment_model(self._specific_model, 
             default_pinning = self._model['pinning-default'])
-        self._view.get_stage().set_pinning()
+        stage = self._view.get_stage()
+        stage.set_pinning()
+        stage.set_fixture_image(model[row][0])
         self.set_allow_run()
 
     def set_pinning(self, widget, plate):
@@ -616,6 +659,7 @@ class Project_Controller(controller_generic.Controller):
         experiment_query['-p'] = sm['experiment-prefix']
         experiment_query['-d'] = sm['experiment-desc']
         experiment_query['-c'] = sm['experiment-id']
+        experiment_query['-l'] = sm['experiment-scan-layout-id']
         experiment_query['-u'] = scanner.get_uuid()
 
         experiment_query['-m'] = get_pinnings_str(sm['pinnings-list'])
@@ -645,7 +689,7 @@ class Project_Controller(controller_generic.Controller):
 
         scanner.set_uuid()
 
-        self.get_top_controller().add_subprocess(proc, proc_type, 
+        tc.add_subprocess(proc, proc_type, 
             stdin=stdin_path, stdout=stdout_path, stderr=stderr_path,
             pid=proc.pid, psm=sm, proc_name=sm['scanner'])
 

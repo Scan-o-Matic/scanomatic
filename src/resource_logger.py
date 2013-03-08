@@ -9,6 +9,41 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+#
+# DEPENDENICES
+#
+
+import logging
+import traceback
+import sys
+
+#
+# METHODS
+#
+
+
+def print_more_exc():
+
+    tb = sys.exc_info()[2]  # Get the traceback object
+
+    while tb.tb_next:
+        tb = tb.tb_next
+
+    stack = []
+
+    f = tb.tb_frame
+    while f:
+        stack.append(f)
+        f = f.f_back
+
+    stack.reverse()
+
+    #traceback.print_exc()
+    for frame in stack[:-3]:
+        print "\n\tFrame {0} in {1} at line {2}".format(frame.f_code.co_name, frame.f_code.co_filename, frame.f_lineno)
+
+    print "\n\n"
+
 
 #
 # CLASSES
@@ -44,6 +79,10 @@ class Logging_Log(object):
 
         self._logger.critical(*args, **kwargs)
 
+    def exception(self, *args, **kwargs):
+
+        self._logger.exception(*args, **kwargs)
+                
     
 class Log_Garbage_Collector(object):
 
@@ -71,6 +110,9 @@ class Log_Garbage_Collector(object):
 
         pass
 
+    def exception(self, *args, **kwargs):
+
+        pass
 
 class Fallback_Logger(object):
 
@@ -103,7 +145,38 @@ class Fallback_Logger(object):
 
         self._output("CRITICAL", args)
 
+    def exception(self, *args):
+
+        self._output("INVOKED EXCEPTION", args)
+        try:
+            x = 1/0
+        except Exception, err:
+            print_more_exc()
+
     def _output(self, lvl, args):
 
         print "*{0}:\t{1}".format(lvl, args)
 
+
+class File_Logger(Fallback_Logger):
+
+    def __init__(self, path):
+
+        self._path = path
+        try:
+            fh = open(path, 'w')
+            self._loaded = True
+            fh.close()
+        except:
+            self._loaded = False
+
+    def _output(self, lvl, args):
+
+        super(File_Logger, self)._output(lvl, args)
+        if self._loaded:
+            try:
+                fh = open(self._path, 'a')
+                fh.write("*{0}:\t{1}\n".format(lvl, args))
+                fh.close()
+            except:
+                pass

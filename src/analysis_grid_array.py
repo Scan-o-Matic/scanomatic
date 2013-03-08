@@ -219,6 +219,9 @@ class Grid_Array():
             grid_history.set_gridding_parameters(p_uuid, self._pinning_matrix,
                 plate, center, spacings)
 
+        else:
+            self.logger.error("Gridding could not be saved because of no uuid")
+
     def set_grid(self, im, save_name=None, grid_correction=None):
 
         #Map so grid axis concur with image rotation
@@ -230,23 +233,23 @@ class Grid_Array():
         grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])], 
                 self._pinning_matrix[int(self._im_dim_order[1])])
 
-        gh = np.array(self.get_history(self))
+        gh = np.array(self.get_history())
 
-        if gh.size < 40:  # Require 10 projects (4 measures per project)
-            gh_median = np.median(gh, axis=0)
-            validate_parameters = True
-            expected_spacings = tuple(gh_median[2:])
-            expected_center = tuple(gh_median[:2])    
-        elif gh.size > 8:  # If some measures (3-9), use them
-            validate_parameters = False  # But don't enforce
-            gh_mean = np.mean(gh, axis=0)
-            expected_spacings = tuple(gh_mean[2:])
-            expected_center = tuple(gh_mean[:2])    
-        else:
+        if gh.size < 12:
             #If too little reference data, use very rough guesses
             validate_parameters = False
             expected_spacings = self._guess_grid_cell_size
             expected_center = tuple([s/2.0 for s in im.shape])
+        elif gh.size >= 40:  # Require 10 projects (4 measures per project)
+            gh_median = np.median(gh, axis=0)
+            validate_parameters = True
+            expected_spacings = tuple(gh_median[2:])
+            expected_center = tuple(gh_median[:2])    
+        else:  # If some measures (3-9), use them
+            validate_parameters = False  # But don't enforce
+            gh_mean = np.mean(gh, axis=0)
+            expected_spacings = tuple(gh_mean[2:])
+            expected_center = tuple(gh_mean[:2])    
 
         self._grid, X, Y, center, spacings, adjusted_values = \
                 resource_grid.get_grid(im,
@@ -255,9 +258,13 @@ class Grid_Array():
                 grid_shape=grid_shape)
 
         if self._grid is None:
+            self.logger.error("Could not produce a grid for im-shape {0}".format(im.shape))
             return False
 
-        if grid_correction is not None:
+        if grid_correction is not None and grid_correction.any():
+            self.logger.warning(
+                "Invoking manual grid correction {0},".format(
+                grid_correction) + " this is dubious practice!")
             self._grid -= grid_correction
             adjusted_values = True
 
@@ -280,8 +287,10 @@ class Grid_Array():
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
 
         if adjusted_values:
+            self.logger.info("Gridding got adjusted by history")
             self.unset_history()
         else:
+            self.logger.info("Setting gridding history")
             self.set_history(center, spacings)
 
         if save_name is not None:
@@ -613,8 +622,10 @@ class Grid_Array():
 
         #Setting shortcuts for repeatedly used variable
         s_g = self._grid.copy()
-        if grid_correction is not None:
+        """THIS IS DONE IN SET GRID NOW
+        if grid_correction is not None and grid_correction.any():
             s_g += grid_correction  # Compensate if part of plate is outside im
+        """
         s_gcs = self._grid_cell_size
         s_g[:,:,0] -= s_gcs[0] / 2.0  # To get min-corner
         s_g[:,:,1] -= s_gcs[1] / 2.0  # To get min-corner

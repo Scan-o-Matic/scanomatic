@@ -40,6 +40,7 @@ PADDING_SMALL = 2
 # CLASSES
 #
 
+
 class Subprocs_View(gtk.Frame):
 
     def __init__(self, controller, model, specific_model):
@@ -50,7 +51,7 @@ class Subprocs_View(gtk.Frame):
         self._controller = controller
         self._specific_model = specific_model
 
-        table = gtk.Table(rows=4, columns=2)
+        table = gtk.Table(rows=5, columns=2)
         table.set_col_spacings(PADDING_MEDIUM)
         table.set_row_spacing(0, PADDING_MEDIUM)
         table.set_row_spacing(3, PADDING_MEDIUM)
@@ -58,7 +59,7 @@ class Subprocs_View(gtk.Frame):
 
         """ HEADER ROW REMOVED
         label = gtk.Label()
-        label.set_markup(model['composite-stat-type-header']) 
+        label.set_markup(model['composite-stat-type-header'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1 , 0, 1)
 
@@ -67,9 +68,11 @@ class Subprocs_View(gtk.Frame):
         label.set_alignment(0, 0.5)
         table.attach(label, 1, 2, 0, 1)
         """
-        label = gtk.Label(model['free-scanners']) 
+
+        #FREE SCANNERS
+        label = gtk.Label(model['free-scanners'])
         label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1 , 0, 1)
+        table.attach(label, 0, 1, 0, 1)
 
         self.scanners = gtk.Button()
         self.scanners.set_label(str(specific_model['free-scanners']))
@@ -77,40 +80,54 @@ class Subprocs_View(gtk.Frame):
         self.scanners.set_alignment(0, 0.5)
         table.attach(self.scanners, 1, 2, 0, 1)
 
-        label = gtk.Label(model['running-experiments'])
+        #PROJECTS
+        label = gtk.Label(model['live-projects'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 1, 2)
 
-        self.experiments = gtk.Button()
-        self.experiments.set_label(str(specific_model['running-scanners']))
-        self.experiments.connect("clicked", controller.produce_running_experiments)
-        table.attach(self.experiments, 1, 2, 1, 2)
+        self.projects = gtk.Button()
+        self.projects.set_label(str(specific_model['live-projects']))
+        self.projects.connect("clicked", controller.produce_live_projects)
+        table.attach(self.projects, 1, 2, 1, 2)
 
-        label = gtk.Label(model['running-analysis'])
+        #RUNNING EXPERIMENTS
+        label = gtk.Label(model['running-experiments'])
         label.set_alignment(0, 0.5)
         table.attach(label, 0, 1, 2, 3)
+
+        self.experiments = gtk.Button()
+        self.experiments.set_label(str(specific_model['running-scanners']))
+        self.experiments.connect("clicked",
+                                 controller.produce_running_experiments)
+        table.attach(self.experiments, 1, 2, 2, 3)
+
+        #RUNNING ANALYSIS
+        label = gtk.Label(model['running-analysis'])
+        label.set_alignment(0, 0.5)
+        table.attach(label, 0, 1, 3, 4)
 
         self.analysis = gtk.Button()
         self.analysis.set_label(str(specific_model['running-analysis']))
         self.analysis.connect("clicked", controller.produce_running_analysis)
-        table.attach(self.analysis, 1, 2, 2, 3)
+        table.attach(self.analysis, 1, 2, 3, 4)
 
+        #ERRORS AND WARNINGS
         label = gtk.Label(model['collected-messages'])
         label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1, 3, 4)
+        table.attach(label, 0, 1, 4, 5)
 
         self.messages = gtk.Button()
         self.messages.set_label(str(specific_model['collected-messages']))
         self.messages.connect("clicked", controller.produce_errors_and_warnings)
-        table.attach(self.messages, 1, 2, 3, 4)
+        table.attach(self.messages, 1, 2, 4, 5)
 
         self.show_all()
-
 
     def update(self):
 
         specific_model = self._specific_model
-        
+
+        self.projects.set_label(str(specific_model['live-projects']))
         self.scanners.set_label(str(specific_model['free-scanners']))
         self.experiments.set_label(str(specific_model['running-scanners']))
         self.analysis.set_label(str(specific_model['running-analysis']))
@@ -133,15 +150,10 @@ class Running_Analysis(gtk.VBox):
 
         self._stuff = list()
 
-
         for p in controller.get_subprocesses(by_type='analysis'):
 
-            if 'experiment-prefix' in p['sm']:
-                frame = gtk.Frame(p['sm']['experiment-prefix'])
-            else:
-                proj_dir = p['sm']['analysis-project-log_file_dir']
-                proj_prefix = proj_dir.split(os.sep)[-1]
-                frame = gtk.Frame(proj_prefix)
+            prefix = p['sm']['experiment-prefix']
+            frame = gtk.Frame(prefix)
 
             vbox = gtk.VBox(False, 0)
             frame.add(vbox)
@@ -151,15 +163,15 @@ class Running_Analysis(gtk.VBox):
             info = gtk.Label(model['running-analysis-running'])
             hbox.pack_start(info, True, True, PADDING_LARGE)
             grid_button = gtk.Button(label=model['running-analysis-view-gridding'])
-            grid_button.connect("clicked", controller.produce_gridding_images, p)
+            grid_button.connect("clicked", controller.produce_inspect_gridding,
+                                prefix)
             grid_button.set_sensitive(False)
             hbox.pack_start(grid_button, False, False, PADDING_MEDIUM)
             vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
             self.pack_start(frame, False, False, PADDING_LARGE)
 
             self._stuff.append((p, progress, info, grid_button))
-        
-           
+
         self.show_all()
         gobject.timeout_add(200, self.update)
 
@@ -169,7 +181,7 @@ class Running_Analysis(gtk.VBox):
         running_procs = self._controller.get_subprocesses(self, by_type='analysis')
 
         for i, (p, progress, info, grid_button) in enumerate(self._stuff):
-            
+
             if p not in running_procs:
 
                 info.set_text(m['running-analysis-done'])
@@ -192,22 +204,22 @@ class Running_Analysis(gtk.VBox):
                     progress.set_fraction(p['progress'])
 
                 if f is not None and f > 0:
-                    dt = time.time() - p['start-time'] 
+                    dt = time.time() - p['start-time']
                     full_t = p['progress-elapsed-time'] / f
-                    eta = full_t - (dt - p['progress-init-time']) 
+                    eta = full_t - (dt - p['progress-init-time'])
 
                     if eta < 0:
                         eta = 0
 
                     progress.set_text(
                         m['running-analysis-progress-bar-eta'].format(
-                        eta / 3600.0))
+                            eta / 3600.0))
 
                 else:
 
                     progress.set_text(
                         m['running-analysis-progress-bar-elapsed'].format(
-                        (time.time() - p['start-time'])/60.0))
+                            (time.time() - p['start-time']) / 60.0))
 
         return True
 
@@ -243,9 +255,9 @@ class Running_Experiments(gtk.VBox):
             hbox.pack_start(info, True, True, PADDING_LARGE)
             hbox.pack_end(button, False, False, PADDING_LARGE)
             vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
-            
+
             self._stuff.append((p, progress, info, button))
-           
+
         self.show_all()
         gobject.timeout_add(20, self.update)
 
@@ -259,12 +271,13 @@ class Running_Experiments(gtk.VBox):
                 b_yes.set_sensitive(False)
 
         m = self._model
-        dialog = gtk.MessageDialog(self._controller.get_window(),
-                        gtk.DIALOG_DESTROY_WITH_PARENT,
-                        gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
-                        "")
+        dialog = gtk.MessageDialog(
+            self._controller.get_window(),
+            gtk.DIALOG_DESTROY_WITH_PARENT,
+            gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+            "")
 
-        b_no = dialog.add_button(gtk.STOCK_NO, False)
+        dialog.add_button(gtk.STOCK_NO, False)
         b_yes = dialog.add_button(gtk.STOCK_YES, True)
         b_yes.set_sensitive(False)
 
@@ -275,7 +288,7 @@ class Running_Experiments(gtk.VBox):
         label = vbox2.get_children()[0]
         label.set_markup(
             m['running-experiments-stop-warning'].format(
-            proc['sm']['experiment-prefix']))
+                proc['sm']['experiment-prefix']))
 
         entry = gtk.Entry()
         entry.connect("changed", _verify_sure, b_yes)
@@ -286,8 +299,8 @@ class Running_Experiments(gtk.VBox):
         resp = dialog.run()
 
         dialog.destroy()
- 
-        if resp == True:
+
+        if resp is True:
 
             self._controller.stop_process(proc)
             proc['progress'] = proc['sm']['scans']
@@ -297,24 +310,26 @@ class Running_Experiments(gtk.VBox):
 
     def update(self):
 
-        sm = self._specific_model
         running_procs = self._controller.get_subprocesses(self, by_type='experiment')
 
         for i, (p, progress, info, terminate_button) in enumerate(self._stuff):
-            
+
             if p not in running_procs:
 
                 progress.set_fraction(1.0)
                 progress.set_text("Done!")
                 terminate_button.set_sensitive(False)
-                del self._stuff[i] 
+                del self._stuff[i]
 
             elif p['sm']['scans'] is not None and p['start-time'] is not None:
-                
-                if p['progress'] is not None: 
-                    progress.set_fraction(p['progress']/float(p['sm']['scans']))
 
-                full_time = p['sm']['scans'] * p['sm']['interval'] * 60 + p['start-time']
+                if p['progress'] is not None:
+                    progress.set_fraction(
+                        p['progress'] / float(p['sm']['scans']))
+
+                full_time = (p['sm']['scans'] * p['sm']['interval'] * 60 +
+                             p['start-time'])
+
                 eta = (full_time - time.time()) / 3600.0
                 if eta < 0:
                     eta = 0
@@ -325,7 +340,6 @@ class Running_Experiments(gtk.VBox):
 
                 progress.set_fraction(0.0)
                 progress.set_text("Unable to get progress info...")
-
 
         return True
 
@@ -353,7 +367,7 @@ class Free_Scanners(gtk.VBox):
 
         self.show_all()
         gobject.timeout_add(23, self.update,
-            controller.get_top_controller().scanners)
+                            controller.get_top_controller().scanners)
 
     def update(self, scanners):
 
@@ -386,6 +400,170 @@ class Errors_And_Warnings(gtk.VBox):
 
         self.show_all()
 
+
+class Live_Projects(gtk.ScrolledWindow):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Live_Projects, self).__init__()
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        #TITLE
+        vbox = gtk.VBox(False, 0)
+        label = gtk.Label()
+        label.set_markup(model['project-progress-title'])
+        vbox.pack_start(label, False, False, PADDING_LARGE)
+
+        #PROJECTS CONAINER
+        self._projects = gtk.VBox()
+        vbox.pack_start(self._projects, False, False, PADDING_NONE)
+
+        #FINALIZE
+        self.add_with_viewport(vbox)
+        self.show_all()
+
+        self.update(controller._project_progress)
+
+        gobject.timeout_add(1439, self.update,
+                            controller._project_progress)
+
+    def update(self, project_progress):
+
+        m = self._model
+        pstages = m['project-progress-stages']
+        pstage_title = m['project-progress-stage-title']
+        pstage_spacer = m['project-progress-stage-spacer']
+        pstatus = m['project-progress-stage-status']
+        pview = self._projects
+
+        cur_status = project_progress.get_all_stages_status(as_text=True)
+        cur_keys = cur_status.keys()
+
+        def _update_button(button, new_text, i, prefix):
+
+            if button.get_label() != new_text:
+                if hasattr(button, '_current_signal'):
+                    button.handler_disconnect(button._current_signal)
+
+                b_signal = None
+
+                button.set_label(new_text)
+                if new_text not in pstatus[2:4]:  # Launch or Running
+                    button.set_sensitive(False)
+                else:
+                    button.set_sensitive(True)
+
+                if new_text == pstatus[2]:
+                    if i == 1:
+                        b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_launch_analysis,
+                            prefix)
+                    elif i == 2:
+                            b_signal = button.connect(
+                                "clicked",
+                                self._controller.produce_inspect_gridding,
+                                prefix)
+                    elif i == 3:
+                            b_signal = button.connect(
+                                "clicked",
+                                self._controller.produce_upload,
+                                prefix)
+
+                elif new_text == pstatus[3]:
+                    if i == 0:
+                        b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_running_experiments)
+                    elif i == 1:
+                        b_signal = button.connect(
+                            "clicked",
+                            self._controller.produce_running_analysis)
+                    elif i == 2:
+                            b_signal = button.connect(
+                                "clicked",
+                                self._controller.produce_inspect_gridding,
+                                prefix)
+                    elif i == 3:
+                            b_signal = button.connect(
+                                "clicked",
+                                self._controller.produce_upload,
+                                prefix)
+
+                if b_signal:
+                    button._current_signal = b_signal
+
+        for view_proj in pview.get_children():
+
+            pname = view_proj.get_name()
+            if pname not in cur_keys:
+
+                pview.remove(view_proj)
+
+            else:
+
+                for i in range(len(pstages)):
+                    _update_button(view_proj.my_status[i],
+                                   cur_status[pname][i], i,
+                                   pname)
+
+                del cur_status[pname]
+
+        #APPEND NEW
+        for k, val in cur_status.items():
+
+            frame = gtk.Frame(k)
+            frame.set_name(k)
+
+            hbox = gtk.HBox()
+            frame.add(hbox)
+
+            frame.my_status = []
+
+            for i in range(len(pstages)):
+
+                vbox = gtk.VBox()
+                label = gtk.Label()
+                label.set_markup(pstage_title.format(pstages[i]))
+                vbox.pack_start(label, False, False, PADDING_SMALL)
+
+                button = gtk.Button()
+                _update_button(button, val[i], i, k)
+
+                frame.my_status.append(button)
+                vbox.pack_start(button, False, False, PADDING_SMALL)
+
+                hbox.pack_start(vbox, False, False, PADDING_LARGE)
+
+                if i < len(pstages) - 1:
+                    label = gtk.Label()
+                    label.set_markup(pstage_spacer)
+                    hbox.pack_start(label, False, False, PADDING_LARGE)
+
+            button = gtk.Button()
+            button.set_label(m['project-progress-manual_remove'])
+            button.connect('clicked', self._ask_manual_remove, k)
+            hbox.pack_end(button, False, False, PADDING_LARGE)
+
+            pview.pack_start(frame, False, False, PADDING_MEDIUM)
+
+        pview.show_all()
+        return True
+
+    def _ask_manual_remove(self, widget, prefix):
+
+        m = self._model
+        c = self._controller
+        if dialog(c.get_window(),
+                  m['project-progress-dialog'],
+                  d_type='warning',
+                  yn_buttons=True):
+
+            c.remove_live_project(prefix)
+
+
 class View_Gridding_Images(gtk.ScrolledWindow):
 
     def __init__(self, controller, model, specific_model):
@@ -400,13 +578,14 @@ class View_Gridding_Images(gtk.ScrolledWindow):
 
         plate = 1
         file_pattern = "grid___origin_plate_{0}.svg"
-        file_path = os.sep.join((sm['analysis-project-log_file_dir'],
-            sm['analysis-project-output-path'],
-            file_pattern))
+        file_path = os.sep.join(
+            (sm['analysis-project-log_file_dir'],
+                sm['analysis-project-output-path'],
+                file_pattern))
 
         hbox = gtk.HBox(False, 0)
         self.add_with_viewport(hbox)
-        
+
         while True:
 
             if os.path.isfile(file_path.format(plate)):

@@ -17,14 +17,27 @@ import os
 import sys
 import types
 
+#
+# INTERNAT DEPENDENCIES
+#
+
+import src.resource_logger as resource_logger
+
+
+#
+# CLASSES
+#
 
 class Config_File(object):
 
-    def __init__(self, location):
+    def __init__(self, location, logger=None):
 
         self._location = None
         self._data = None
         self._file_data_order = None
+        if logger is None:
+            self._logger = resource_logger.Fallback_Logger()
+
         self._no_name_enumerator = 0
 
         fs = self.load(location)
@@ -55,6 +68,9 @@ class Config_File(object):
 
             location = self.get_location()
  
+        self._logger.info("Loading file {0}".format(location))
+        #self._logger.exception("Call for {0} came from...".format(location))
+
         no_file = False
 
         try:
@@ -62,6 +78,8 @@ class Config_File(object):
             fs = open(location, 'r')          
 
         except:
+
+            self._logger.exception("NOT loading file {0}".format(location))
 
             no_file = True
 

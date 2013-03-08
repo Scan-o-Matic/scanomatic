@@ -26,6 +26,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 #
 
 from src.view_generic import *
+import src.resource_fixture_image as resource_fixture_image
 
 #
 # STATIC GLOBALS
@@ -279,6 +280,8 @@ class Analysis_Inspect_Stage(gtk.VBox):
         self._app_config = tc.config
         self._paths = tc.paths
 
+        self._fixture_drawing = None
+
         super(Analysis_Inspect_Stage, self).__init__()
 
         self._project_title = gtk.Label(model['analysis-stage-inspect-not_selected'])
@@ -295,10 +298,8 @@ class Analysis_Inspect_Stage(gtk.VBox):
         self.pack_start(self._warning, False, False, PADDING_SMALL)
 
         scrolled_window = gtk.ScrolledWindow()
-        vbox = gtk.VBox()
-        self._display = gtk.HBox()
-        vbox.pack_start(self._display, False, False, PADDING_NONE)
-        scrolled_window.add_with_viewport(vbox)
+        self._display = gtk.VBox()
+        scrolled_window.add_with_viewport(self._display)
         self.pack_start(scrolled_window, True, True, PADDING_SMALL)
 
         self.show_all()
@@ -330,6 +331,11 @@ class Analysis_Inspect_Stage(gtk.VBox):
         dialog(w, m['analysis-stage-inspect-warning'],
             d_type='error', yn_buttons=False)
 
+    def _toggle_drawing(self, widget, *args):
+
+        if self._fixture_drawing is not None and widget.get_active():
+            self._fixture_drawing.toggle_view_state()
+
     def set_display(self, sm):
 
         d = self._display
@@ -341,30 +347,65 @@ class Analysis_Inspect_Stage(gtk.VBox):
         for child in d.children():
             d.remove(child)
 
+        hd = gtk.HBox(False, 0)
+        d.pack_start(hd, False, False, PADDING_MEDIUM)
+
+        #ADD DRAWING
+        fixture = resource_fixture_image.Fixture_Image(
+            self._paths.experiment_local_fixturename,
+            fixture_directory=sm['experiment-dir'])
+
+        vbox = gtk.VBox()
+        label = gtk.Label(m['analysis-stage-inspect-plate-drawing'])
+        hbox = gtk.HBox()
+        self._fixture_drawing = Fixture_Drawing(fixture, width=300, height=400)
+        self._fd_op1 = gtk.RadioButton(
+            label=self._fixture_drawing.get_view_state())
+        self._fd_op2 = gtk.RadioButton(group=self._fd_op1,
+            label=self._fixture_drawing.get_other_state())
+
+        vbox.pack_start(label, False, False, PADDING_SMALL)
+        hbox.pack_start(self._fd_op1, False, False, PADDING_MEDIUM)
+        hbox.pack_start(self._fd_op2, False, False, PADDING_MEDIUM)
+        vbox.pack_start(hbox, False, False, PADDING_SMALL)
+        vbox.pack_start(self._fixture_drawing, False, False, PADDING_SMALL)
+        self._fd_op1.connect('clicked', self._toggle_drawing)
+        self._fd_op2.connect('clicked', self._toggle_drawing)
+        hd.pack_start(vbox, False, False, PADDING_MEDIUM)
+
+        #ADD THE PLATES
         for i, plate in enumerate(sm['pinnings']):
 
             if plate:
 
                 vbox = gtk.VBox()
-                label = gtk.Label(p_title.format(i+1))
+                label = gtk.Label(p_title.format(i+1, sm['plate-names'][i]))
                 vbox.pack_start(label, False, False, PADDING_SMALL)
                 image = gtk.Image()
                 image.set_from_file(sm['grid-images'][i])
                 vbox.pack_start(image, True, True, PADDING_SMALL)
                 button = gtk.Button()
 
-                if (sm['gridding-in-history'] is not None and
-                    sm['gridding-in-history'][i] != True):
+                if (sm['gridding-in-history'] is None or 
+                    sm['gridding-in-history'][i] is None):
 
                     button.set_label(p_no_button)
                     button.set_sensitive(False)
+
                 else:
 
                     button.set_label(p_button)
                     button.connect("clicked", self._verify_bad, i)
 
                 vbox.pack_start(button, False, False, PADDING_SMALL)
-                d.pack_start(vbox, True, True, PADDING_MEDIUM)
+                hd.pack_start(vbox, True, True, PADDING_MEDIUM)
+
+        
+        hbox = gtk.HBox(False, 0)
+        button = gtk.Button(m['analysis-stage-inspect-upload-button'])
+        button.connect('clicked', self._controller.launch_filezilla)
+        hbox.pack_end(button, False, False, PADDING_NONE)
+        d.pack_start(hbox, False, False, PADDING_SMALL)
 
         d.show_all()
 
@@ -561,10 +602,16 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         label = gtk.Label(model['analysis-stage-first-meta-id'])
         label.set_alignment(0, 0.5)
         self._project_id = gtk.Entry()
+        self._project_id.set_sensitive(False)
         self._project_id.connect("focus-out-event",
             controller.update_model, 'id')
+        self._scan_layout_id = gtk.Entry()
+        self._scan_layout_id.set_sensitive(False)
+        self._scan_layout_id.connect("focus-out-event",
+            controller.update_model, 'scan layout id')
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self._project_id, False, False, PADDING_NONE)
+        hbox.pack_start(self._scan_layout_id, False, False, PADDING_SMALL)
         table.attach(label, 0, 1, 1, 2)
         table.attach(hbox, 1, 2, 1, 2)
         ##DESCRIPTION
@@ -1803,6 +1850,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         self.selection_height.set_sensitive(val)
         self.selection_width.set_sensitive(val)
+
 
 class Analysis_Stage_Log(gtk.VBox):
 

@@ -13,9 +13,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import os
 import gtk
-import copy
 import sys
 
 #
@@ -33,7 +31,6 @@ import src.controller_experiment as controller_experiment
 import src.controller_config as controller_config
 #Resources
 import src.controller_calibration as controller_calibration
-import src.resource_os as resource_os
 import src.resource_scanner as resource_scanner
 import src.resource_fixture as resource_fixture
 import src.resource_path as resource_path
@@ -43,7 +40,9 @@ import src.resource_app_config as resource_app_config
 # EXCEPTIONS
 #
 
-class UnknownContent(Exception): pass
+
+class UnknownContent(Exception):
+    pass
 
 #
 # CLASSES
@@ -51,13 +50,16 @@ class UnknownContent(Exception): pass
 
 
 class Unbuffered:
-   def __init__(self, stream):
-       self.stream = stream
-   def write(self, data):
-       self.stream.write(data)
-       self.stream.flush()
-   def __getattr__(self, attr):
-       return getattr(self.stream, attr)
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
 
 
 class Controller(controller_generic.Controller):
@@ -71,7 +73,7 @@ class Controller(controller_generic.Controller):
         view = view_main.Main_Window(controller=self, model=model)
 
         super(Controller, self).__init__(None, view=view, model=model,
-            logger=logger)
+                                         logger=logger)
         """
         self._model = model
         self._view = view
@@ -84,7 +86,7 @@ class Controller(controller_generic.Controller):
         #Subprocs
         self.subprocs = controller_subprocs.Subprocs_Controller(self)
         self.add_subprocess = self.subprocs.add_subprocess
-        self.add_subcontroller(self.subprocs)
+        #self.add_subcontroller(self.subprocs)
         self._view.populate_stats_area(self.subprocs.get_view())
         self._view.show_notebook_or_logo()
 
@@ -108,13 +110,17 @@ class Controller(controller_generic.Controller):
         page = c.get_view()
         title = c.get_page_title()
         self._view.add_notebook_page(page, title, c)
+        self._view.set_current_page(-1)
         self.add_subcontroller(c)
 
     def add_contents_from_controller(self, page, title, c):
 
         self._view.add_notebook_page(page, title, c)
 
-    def add_contents(self, widget, content_name):
+    def add_contents(self, widget, content_name, **kwargs):
+        """Adds a content to the notebook, and allows for passing of
+        content specific keyword kwargs to the content controller such that
+        specific view-modes and can be inited (and with specific variables"""
 
         m = self._model
         if content_name in ('analysis', 'experiment', 'calibration', 'config'):
@@ -124,23 +130,28 @@ class Controller(controller_generic.Controller):
             raise err
 
         if content_name == 'analysis':
-            c = controller_analysis.Analysis_Controller(self,
-                    logger=self._logger)
+            c = controller_analysis.Analysis_Controller(
+                self, logger=self._logger, **kwargs)
+
         elif content_name == 'experiment':
-            c = controller_experiment.Experiment_Controller(self,
-                    logger=self._logger)
+            c = controller_experiment.Experiment_Controller(
+                self, logger=self._logger, **kwargs)
+
         elif content_name == 'calibration':
             c = controller_calibration.Calibration_Controller(
-                    self, logger=self._logger)
+                self, logger=self._logger, **kwargs)
+
         elif content_name == 'config':
             c = controller_config.Config_Controller(
-                    self, logger=self._logger)
+                self, logger=self._logger, **kwargs)
+
         else:
             err = UnknownContent("{0}".format(content_name))
             raise err
 
         page = c.get_view()
         self._view.add_notebook_page(page, title, c)
+        self._view.set_current_page(-1)
         self.add_subcontroller(c)
 
     def remove_contents(self, widget, page_controller):
@@ -156,7 +167,18 @@ class Controller(controller_generic.Controller):
 
     def ask_quit(self, *args):
 
-        #INTERIM SOLUTION, SHOULD HANDLE SUBPROCS
+        #CHECK SO NOT ORPHANING SUBPROCS
+        if self.subprocs.get_saved() is False:
+
+            if view_main.dialog(
+                    self.get_window(),
+                    self._model['content-app-close-orphan-warning'],
+                    'warning',
+                    yn_buttons=True) is not True:
+
+                return True
+
+        #THEN IF UNSAVED EXISTS
         if self.ask_destroy():
 
             for c in self._controllers:

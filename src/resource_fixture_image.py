@@ -93,7 +93,7 @@ class Gridding_History(object):
 
     def _get_gridding_history(self, plate, pinning_format):
 
-        self._settings.reload()
+        #self._settings.reload()
         return self._settings[self._get_plate_pinning_str(plate, pinning_format)]
 
     def _load(self):
@@ -112,8 +112,14 @@ class Gridding_History(object):
         h = self._get_gridding_history(plate, pinning_format)
 
         if h is None:
+            self._logger.info(
+                "No history in {2} on plate {0} format {1}".format(
+                plate, pinning_format,self._name))
             return None
 
+        self._logger.info(
+            "Returning history for {0} plate {1} forat {2}".format(
+            self._name, plate, pinning_format))
         return np.array(h.values())
 
     @GH_loaded_decorator
@@ -122,7 +128,14 @@ class Gridding_History(object):
 
         h = self._get_gridding_history(plate, pinning_format)
         if h is None or p_uuid not in h:
+            self._logger.info(
+                "No history in {2} on plate {0} format {1}".format(
+                plate, pinning_format,self._name))
             return None
+
+        self._logger.info(
+            "Returning history for {0} plate {1} forat {2} uuid {3}".format(
+            self._name, plate, pinning_format, p_uuid))
 
         return h[p_uuid]
 
@@ -137,6 +150,9 @@ class Gridding_History(object):
             h = {}
 
         h[project_id] = center + spacings
+
+        self._logger.info("Setting history {0} on {1} for {2} {3}".format(
+            center + spacings, self._name, project_id, plate))
 
         f = self._settings
         f.set(self._get_plate_pinning_str(plate, pinning_format), h)
@@ -211,19 +227,21 @@ class Fixture_Image(object):
     def __init__(self, fixture, image_path=None,
             image=None, markings=None, define_reference=False,
             fixture_directory=None, markings_path=None,
-            im_scale=None, logger=None):
+            im_scale=None, logger=None, paths=None, app_config=None):
 
         if logger is None:
             logger = resource_logger.Log_Garbage_Collector()
 
         self._logger = logger
 
-        self._paths = resource_path.Paths()
-        self._config = resource_app_config.Config(self._paths)
-
-        self._history = Gridding_History(self, fixture, self._paths, 
-            logger=logger, app_config = self._config)
-
+        if paths is None:
+            self._paths = resource_path.Paths()
+        else:
+            self._paths = paths
+        if app_config is None:
+            self._config = resource_app_config.Config(self._paths)
+        else:
+            self._config = app_config
 
         self._define_reference = define_reference
         self.fixture_name = fixture
@@ -235,6 +253,12 @@ class Fixture_Image(object):
             image_path=image_path)
 
         self.set_marking_path(markings_path)
+
+        f_name = self.get_name_in_ref()
+        if f_name is None:
+            f_name = fixture
+        self._history = Gridding_History(self, f_name, self._paths,
+            logger=logger, app_config = self._config)
 
         self.set_number_of_markings(markings)
 
@@ -351,6 +375,10 @@ class Fixture_Image(object):
         else:
             self.fixture_current = conf.Config_File(fixture_path + "_tmp")
 
+    def get_name_in_ref(self):
+
+        return self.fixture_reference.get('name')
+
     def set_number_of_markings(self, markings):
 
         self.markings = None
@@ -426,6 +454,7 @@ class Fixture_Image(object):
             self._fixture_config_root = "."
             self._fixture_reference_path = self._paths.get_fixture_path(
                 fixture_name, own_path="")
+            self._logger.info(self._fixture_reference_path)
 
         self._load_reference()
 

@@ -168,42 +168,6 @@ def get_segments_by_shape(im, max_shape, check_roundness=True,
     if not inplace:
         return out
 
-''' NOT IN USE
-
-def get_grid_parameters(X, Y, expected_distance=105, grid_shape=(16, 24),
-    leeway=1.1, expected_start=(100, 100)):
-    """Gets the parameters of the ideal grid based on detected candidate
-    intersects.
-
-    returns x_offset, y_offset, dx, dy
-
-    where offsets describe coordinates for position (0, 0) of the grid.
-    """
-
-    if X.size == 0:
-
-        return expected_start[0] , expected_start[1], expected_distance, expected_distance
-
-    dx, dy = get_grid_spacings(X, Y, expected_distance, expected_distance, leeway=leeway-1)
-    #Calculate the offsets
-    XX = X.reshape((1, X.size))
-    Ndx = np.array([np.arange(grid_shape[0])]) * dx
-    x_offsets = (XX - Ndx.T).ravel()
-    #x_offsets.sort()
-    #x_offset = x_offsets[x_offsets.size/4: -x_offsets.size/4].mean()
-    x_offset = np.median(x_offsets)
-
-    YY = Y.reshape((1, Y.size))
-    Ndy = np.array([np.arange(grid_shape[1])]) * dy
-    y_offsets = (YY - Ndy.T).ravel()
-    #y_offsets.sort()
-    #y_offset = y_offsets[y_offsets.size/4: -y_offsets.size/4].mean()
-    y_offset = np.median(y_offsets)
-
-    return x_offset, y_offset, dx, dy
-
-'''
-
 
 def get_grid_parameters_4(X, Y, grid_shape, spacings=(54, 54), center=None):
 
@@ -228,61 +192,6 @@ def get_grid_parameters_4(X, Y, grid_shape, spacings=(54, 54), center=None):
     """
     return new_center, new_spacings
 
-''' NOT IN USE
-
-def get_grid_parameters_3(X, Y, im, expected_distance=105, 
-    grid_shape=(16, 24), leeway=0.1, expected_start=None):
-
-    dx, dy = get_grid_spacings(X, Y, expected_distance, expected_distance, leeway=leeway)
-
-    fraction_found = float(X.size) / (grid_shape[0] * grid_shape[1])
-    rowL = grid_shape[0] * fraction_found
-    colL = grid_shape[1] * fraction_found
-
-    #Guess what row (only works for evenly detected...
-    Xis = np.zeros(X.shape)
-    Yis = np.zeros(Y.shape)
-    Xis[X.argsort()] = np.arange(X.size)
-    Yis[Y.argsort()] = np.arange(Y.size)
-    Xis = (Xis / colL).astype(np.int)
-    Yis = (Yis / rowL).astype(np.int)
-
-    #Midpoint:
-    my = grid_shape[1] / 2.0 + 0.5
-    mx = grid_shape[0] / 2.0 + 0.5
-
-    dXis = (Xis - mx) * dx
-    dYis = (Yis - my) * dy
-
-    #print dXis.min(), dXis.max(), dYis.min(), dYis.max()
-    #print X.max(), Y.max()
-    #print dXis[X.argmax()], dYis[Y.argmax()]
-
-    #Vote
-    votes = np.zeros(im.shape)
-    for pos in xrange(X.size):
-        try:
-            votes[np.round(X[pos] - dXis[pos]).astype(np.int),
-                np.round(Y[pos] - dYis[pos]).astype(np.int)] += 1
-        except IndexError:
-            pass
-    votes = ndimage.gaussian_filter(votes, sigma=(dx + dy)/2*leeway)
-    center = np.array(np.unravel_index(votes.argmax(), votes.shape))
-
-    plt.imshow(votes)
-    plt.plot(center[1], center[0], 'ro', ms=4)
-    plt.show()
-
-
-    if expected_start is None:
-        expected_start = np.array(im.shape) / 2.0
-
-    if ((center - expected_start)**2).sum() > 3 * expected_distance**2:
-        pass  # center = expected_start
-
-    return center, dx, dy
-
-'''
 
 def get_weights(votes, data, width=1):
     """
@@ -392,159 +301,6 @@ def get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=0.1):
             dYs < expected_dy * (1 + leeway))].mean()
 
     return dx, dy
-
-
-''' NOT IN USE
-
-def get_prior(H, I=None):
-
-    if I == None:
-        Prior = np.ones(H.shape[1:], dtype=np.float16)
-    else:
-        Hx, Hy = H
-        x0, y0, sx, sy, ns = I
-        N = 2 * np.pi * sx * sy * ns ** 2  # this is REALLY not important!
-        Prior = np.exp(-0.5 * ((Hx - x0) ** 2 / (ns * sx) ** 2 + \
-                               (Hy - y0) ** 2 / (ns * sy) ** 2)) / N
-
-    return Prior
-
-
-def get_likelyhood(H, X, Y, I0, S, I=None):
-    """
-    This is the most important function. It describes how likely/expected the
-    actual Data is, given a certain hypothesis H.
-
-    The assumptions of this particular Likelyhood function is that the grid is
-    equally spaced, has no rotation, and that the measured grid points will be
-    Normal/Gaussian distributed around the real grid points with a spread
-    S=(sx, sy). Further, it is assumed that X and Y jitter is uncorrelated,
-    and of equal magnitude for all data points.
-
-    For sx and sy, a good value to start with is probably 1 or 2 times the
-    leeway * (dx, dy), as defined by get_spacing().
-    """
-
-    Hx, Hy = H  # These are 1D arrays 
-    grid_X, grid_Y = I0.reshape((2, I0.shape[1] * I0.shape[2]))  # Thesse too
-    sx, sy = S  # Scalars
-
-    grid_Hx = np.add.outer(Hx, grid_X)
-    grid_Hy = np.add.outer(Hy, grid_Y)
-
-    N = X.size * grid_X.size * 2 * np.pi * S.prod()  # still not important...
-    del I0, grid_X, grid_Y
-
-    #print "Attempting array size", X.size * grid_Hx.size
-
-    L = np.exp(-0.5 * 
-        (np.subtract.outer(X, grid_Hx, dtype=np.float16) ** 2 / sx ** 2 + 
-        np.subtract.outer(Y, grid_Hy, dtype=np.float16) ** 2 / sy ** 2)) / N
-
-    return L.sum(axis=0).sum(axis=1)
-
-'''
-
-''' NOT IN USE
-
-def get_vectorized_prototypes(X, Y, I0, S, I=None):
-
-    grid_X, grid_Y = I0.reshape((2, I0.shape[1] * I0.shape[2]))  # arrays
-    sx, sy = S  # Scalars
-
-    X_grid = np.subtract.outer(X, grid_X)
-    Y_grid = np.subtract.outer(Y, grid_Y)
-
-    N = X.size * grid_X.size * 2 * np.pi * S.prod()  # still not important...
-
-    return X_grid, Y_grid, N
-
-def get_likelyhood_vectorized(hx, hy, X_grid, Y_grid, sx, sy, N, I=None):
-
-    L = np.exp(-0.5 * 
-        (X_grid + hx) ** 2 / sx ** 2 + 
-        (Y_grid + hy) ** 2 / sy ** 2) / N
-
-    return L.sum()
-
-'''
-
-''' NOT IN USE
-
-def dev_get_grid_parameters(X, Y, expected_distance=54, grid_shape=(32, 48),
-    leeway=0.1, expected_start=(100, 100), im_shape=None, ns=1.0):
-
-    D = np.array(get_grid_spacings(X, Y, expected_distance, expected_distance,
-        leeway))
-
-    dx = D[0]
-    dy = D[1] 
-
-    S = D * ns * leeway / np.sqrt(2)
-
-    #DEFINE SEARCHSPACE
-    if im_shape is not None:
-        H = np.mgrid[
-            np.floor(0.5 * Y.min()): np.floor(im_shape[1] - dy * grid_shape[1]),
-            np.floor(0.5 * X.min()): np.floor(im_shape[0] - dx * grid_shape[0])]
-
-    else:
-        H = np.mgrid[np.floor(0.5 * Y.min()): 1.1 * np.ceil(Y.mean()): 1,
-                          np.floor(0.5 * X.min()): 1.1 * np.ceil(X.mean()): 1]
-
-    H = H.reshape((2, H.shape[1] * H.shape[2])).astype(np.float16)
-
-    #print "Hypothesis", H.min(axis=1), 'to', H.max(axis=1)
-
-    #DEFINE IDEAL GRID AT ZERO OFFSET
-    I0 = (np.mgrid[: grid_shape[1], : grid_shape[0]]).astype(np.float16)
-    I0[0, :, :] *= dx
-    I0[1, :, :] *= dy
-
-
-    #print "Search space given ideal grid and X, Y:", I0.size * X.size
-
-    #INIT FOR VECTORIZED SEARCHING
-    X_grid, Y_grid, N = get_vectorized_prototypes(X, Y, I0, S, I=None)
-    partial_get_likelyhood = functools.partial(get_likelyhood_vectorized,
-        X_grid=X_grid, Y_grid=Y_grid, sx=S[0], sy=S[1], N=N, I=None)
-
-    vectorized_likelyhood = np.frompyfunc(partial_get_likelyhood, 2, 1)
-
-    #SEARCHING
-    P = vectorized_likelyhood(H[0], H[1]) * get_prior(H)
-
-    #GET MOST PROBABLE
-    x_offset, y_offset = H[:, P.argmax()]
-
-    return x_offset, y_offset, dx, dy
-
-'''
-
-''' NOT IN USE
-
-def replace_ideal_with_observed_depricated(iGrid, X, Y, max_sq_dist):
- 
-    iX = iGrid[0]
-    iY = iGrid[1]
-
-    def _get_replacement(x, y):
-
-        D = (X - x)**2 + (Y - y)**2 
-        # print (D.min(), x, y),
-        if (D < max_sq_dist).any():
-            x = X[D.argmin()]
-            y = Y[D.argmin()]
-
-        return x, y
- 
-    vectorized_replacement = np.frompyfunc(_get_replacement, 2, 2)
-
-    grid = np.array(vectorized_replacement(iX, iY))
-
-    return grid
-
-'''
 
 
 def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
@@ -663,90 +419,13 @@ def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=105):
     grid = grid0 + center.reshape(2, 1, 1)
     #print "***Will move ideal to observed center"
 
-    return replace_ideal_with_observed(grid, X, Y, max_sq_dist)
-
-
-''' NOT IN USE
-
-def build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=(16,24),
-    square_distance_threshold=None):
-    """Builds grids based on candidates and parameters"""
-
-    if square_distance_threshold is None:
-        square_distance_threshold = ((dx + dy) / 2.0 * 0.05) ** 2
-
-    grid = np.zeros(grid_shape + (2,), dtype=np.float)
-    
-    D = np.zeros(grid_shape)
-    for i in range(grid_shape[0]):
-        for j in range(grid_shape[1]):
-            D[i,j] = i * (1 + 1.0 / (grid_shape[0] + 1)) + j
-
-    rD = D.ravel().copy()
-    rD.sort()
-
-    def find_valid(x, y):
-
-        d = (X - x) ** 2 + (Y - y) ** 2
-        valid = d < square_distance_threshold
-        if valid.any():
-            pos = d == d[valid].min()
-            if pos.sum() == 1:
-                return X[pos], Y[pos]
-
-        return x, y
-
-    x = x_offset
-    y = y_offset
-    first_loop = True
-
-    for v in rD:
-        #get new position
-        coord = np.where(D == v)
-
-        #generate a reference position already passed
-        if coord[0][0] > 0:
-            old_coord = (coord[0] - 1, coord[1])
-        elif coord[1][0] > 0:
-            old_coord = (coord[0], coord[1] - 1)
-
-        if not first_loop:
-            #calculate ideal step
-            x, y = grid[old_coord].ravel()
-            x += (coord[0] - old_coord[0]) * dx
-            y += (coord[1] - old_coord[1]) * dy
-
-        #modify with observed point close to ideal if exists
-        if X.size > 0:
-            x, y = find_valid(x, y)
-
-        #put in grid
-        #print coord, grid[coord].shape
-        grid[coord] = np.array((x, y)).reshape(grid[coord].shape)
-
-        first_loop = False
-
-    return grid
-
-'''
-
-""" NOT IN USE
-
-def get_blob_centra(im_filtered):
-
-    labled, labels = ndimage.label(im_filtered)
-    if labels > 0:
-        centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
-        X, Y = np.array(centra).T
+    if X is not None and Y is not None:
+        return replace_ideal_with_observed(grid, X, Y, max_sq_dist)
     else:
-        X = np.array([])
-        Y = np.array([])
+        return grid
 
-    return X, Y
 
-"""
-
-def get_validated_grid(im, grid, dD1, dD2):
+def get_validated_grid(im, grid, dD1, dD2, adjusted_values):
 
     """Check so grid coordinates actually fall inside image"""
 
@@ -763,17 +442,17 @@ def get_validated_grid(im, grid, dD1, dD2):
         grid[D2].min() < np.ceil(dD2 * 0.5)):
 
         print "*** Invalid grid (less than 0)"
-        return None
+        return None, True
     
     #If max plus half grid cell is larger than im it's an overshoot too
     if (grid[D1].max() >= im.shape[0] + np.ceil(dD1 * 0.5) or
         grid[D2].max() >= im.shape[1] + np.ceil(dD2 * 0.5)):
 
         print "*** Invalid grid (more than max)"
-        return None
+        return None, True
 
     #Grid is OK
-    return grid
+    return grid, adjusted_values
 
 
 def get_valid_parameters(center, spacing, expected_center, expected_spacing,
@@ -823,6 +502,7 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
     """Detects grid candidates and constructs a grid"""
 
     #print "** Will threshold"
+    adjusted_values = False
 
     T = get_adaptive_threshold(im, threshold_filter=None, segments=100, 
         sigma=30)
@@ -849,8 +529,11 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
             centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
             X, Y = np.array(centra).T
         else:
-            X = np.array([])
-            Y = np.array([])
+
+            #IF cant detect any potential colonies anywhere then stop
+            center = expected_center
+            spacings = expected_spacing
+            adjusted_values = True
 
     del labled
 
@@ -860,65 +543,63 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
         X = X[f_XY]
         Y = Y[f_XY]
 
-    if run_dev:
-        """
-        x_offset, y_offset, dx, dy = dev_get_grid_parameters(X, Y, 
-            expected_distance=box_size[0], grid_shape=grid_shape,
-            im_shape=im.shape)
+    if adjusted_values == False:
 
-        center, dx, dy =  get_grid_parameters_3(X, Y, im,
-            expected_distance=box_size[0], 
-            grid_shape=grid_shape, leeway=0.1)
+        if run_dev:
+            """
+            x_offset, y_offset, dx, dy = dev_get_grid_parameters(X, Y, 
+                expected_distance=box_size[0], grid_shape=grid_shape,
+                im_shape=im.shape)
 
-        """
-        center, spacings = get_grid_parameters_4(X, Y, grid_shape,
-            spacings=expected_spacing, center=None)
+            center, dx, dy =  get_grid_parameters_3(X, Y, im,
+                expected_distance=box_size[0], 
+                grid_shape=grid_shape, leeway=0.1)
 
-        if validate_parameters:
-            center, spacings, adjusted_values = get_valid_parameters(center,
-                spacings, expected_center, expected_spacing)
+            """
+            center, spacings = get_grid_parameters_4(X, Y, grid_shape,
+                spacings=expected_spacing, center=None)
 
-        dx, dy = spacings
-        #print "** Got grid parameters"
+            if validate_parameters:
+                center, spacings, adjusted_values = get_valid_parameters(center,
+                    spacings, expected_center, expected_spacing)
+            else:
+                adjusted_values = False
 
-        grid = build_grid_from_center(X, Y, center, dx, dy, grid_shape)
-        #Reshape to fit old scheme
-        gX, gY = grid
-        grid = np.c_[gX, gY].reshape(grid_shape[0], grid_shape[1], 2, order='A')
+        else:
 
-    else:
+            center, spacings = get_grid_parameters_4(X, Y, grid_shape,
+                spacings=expected_spacing, center=None)
 
-        center, spacings = get_grid_parameters_4(X, Y, grid_shape,
-            spacings=expected_spacing, center=None)
+            if validate_parameters:
+                center, spacings, adjusted_values = get_valid_parameters(center,
+                    spacings, expected_center, expected_spacing)
+            else:
+                adjusted_values = False
 
-        if validate_parameters:
-            center, spacings, adjusted_values = get_valid_parameters(center,
-                spacings, expected_center, expected_spacing)
+    dx, dy = spacings
 
-        dx, dy = spacings
+    #print "** Got grid parameters"
 
-        #print "** Got grid parameters"
+    grid = build_grid_from_center(X, Y, center, dx, dy, grid_shape)
+    #Reshape to fit old scheme
+    gX, gY = grid
+    grid = np.c_[gX, gY].reshape(grid_shape[0], grid_shape[1], 2, order='A')
 
-        grid = build_grid_from_center(X, Y, center, dx, dy, grid_shape)
-        #Reshape to fit old scheme
-        gX, gY = grid
-        grid = np.c_[gX, gY].reshape(grid_shape[0], grid_shape[1], 2, order='A')
+    """
+    x_offset, y_offset, dx, dy = get_grid_parameters(X, Y,
+        expected_distance=box_size[0], grid_shape=grid_shape,
+        leeway=1.1, expected_start=expected_offset)
 
-        """
-        x_offset, y_offset, dx, dy = get_grid_parameters(X, Y,
-            expected_distance=box_size[0], grid_shape=grid_shape,
-            leeway=1.1, expected_start=expected_offset)
+    #print "** Got grid parameters"
 
-        #print "** Got grid parameters"
+    grid = build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=grid_shape,
+        square_distance_threshold=70)
 
-        grid = build_grid(X, Y, x_offset, y_offset, dx, dy, grid_shape=grid_shape,
-            square_distance_threshold=70)
-
-        """
+    """
 
     #print "** Got grid"
 
-    if visual:
+    if visual and X is not None and Y is not None:
         from matplotlib import pyplot as plt
         plt.imshow(im_filtered)
         plt.plot(Y, X, 'g+', ms=10, mew=2)
@@ -928,6 +609,6 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
         plt.xlim(0, im_filtered.shape[1])
         plt.show()
 
-    grid = get_validated_grid(im, grid, dy, dx)
+    grid, adjusted_values = get_validated_grid(im, grid, dy, dx, adjusted_values)
 
     return grid, X, Y, center, spacings, adjusted_values

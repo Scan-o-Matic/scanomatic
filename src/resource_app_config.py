@@ -143,7 +143,10 @@ class Config(object):
         if pm_kwargs == {}:
             pm_kwargs = self._pm_arguments
 
-        print "Creating scanner for socket {0} and settings {1}".format(scanner_pm_socket, pm_kwargs)
+        if logger is not None:
+            logger.info("Creating scanner PM for socket {0} and settings {1}".format(
+            scanner_pm_socket, pm_kwargs))
+
         return self._PM(scanner_pm_socket, logger=logger, **pm_kwargs)
 
     def get_default_experiment_query(self):

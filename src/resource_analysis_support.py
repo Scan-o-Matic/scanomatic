@@ -72,11 +72,12 @@ def get_first_rotated(A, B):
         return A.T
 
 
-def get_active_plates(meta_data, suppress_analysis, graph_watch):
+def get_active_plates(meta_data, suppress_analysis, graph_watch, config=None):
     """Makes list of only relevant plates according to how
     analysis was started"""
 
-    config = resource_app_config.Config()
+    if config is None:
+        config = resource_app_config.Config()
 
     plate_position_keys = []
 
@@ -220,7 +221,7 @@ def get_finds_fixture(name, directory=None):
 
 
 def get_run_will_do_something(suppress_analysis, graph_watch, 
-                meta_data, logger):
+                meta_data, image_dictionaries, logger):
 
 
     #Verifying sanity of request: Suppression requires watching?

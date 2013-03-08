@@ -8,10 +8,10 @@ import src.model_generic as model_generic
 # FUNCTIONS
 #
 
-def get_gui_model():
+def get_gui_model(paths=None):
 
     m = Config_GUI_Model(private_model=model,
-        generic_model=model_generic.get_model())
+        generic_model=model_generic.get_model(), paths=paths)
 
     return m
 
@@ -45,6 +45,15 @@ model = {
 'config-desktop-short_cut-make':'click me!',
 'config-desktop-short_cut-made': 'Success!\nShort-cut was made..',
 
+###UPDATE
+'config-update': 'Update',
+'config-update-button': 'Check for Updates',
+'config-update-restart': 'Restart for updates to take place',
+'config-update-no-sh': 'Please install python module sh via easy_install',
+'config-update-up_to_date': 'Your system was allready up to date',
+'config-update-warning': 'Someone has been tinkering with your copy, get a hacker to fix that so you can download the update',
+'config-update-success': 'Update was successful, but you need to restart for the changes to take place',
+
 ##BACKUP AND ERRORS
 'config-backup': 'Backup and Errors',
 
@@ -56,6 +65,11 @@ model = {
 'config-log-file-filter': {'filter_name': '.tar.gz - files',
 'mime_and_patterns': (('application/tar', '*.tar.gz'),)},
 'config-log-save-done': 'Success! Save complete!',
+
+##REMOVE FIXUTRES
+'config-fixtures': 'Remove fixture(s)',
+'config-fixture-remove': 'Remove',
+'config-fixture-dialog': 'Are you sure you wish to remove {0}?',
 
 ##SETTINGS
 'config-settings': 'Settings',

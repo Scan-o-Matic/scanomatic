@@ -19,7 +19,9 @@ import os
 # EXCEPTIONS
 #
 
-class Invalid_Root(Exception): pass
+
+class Invalid_Root(Exception):
+    pass
 
 #
 # CLASSES
@@ -29,7 +31,7 @@ class Invalid_Root(Exception): pass
 class Paths(object):
 
     def __init__(self, program_path=None, root=None, src_path=None,
-                config_file=None):
+                 config_file=None):
 
         if root is None:
 
@@ -39,37 +41,42 @@ class Paths(object):
                 root = os.path.dirname(os.sep.join(src_path.split(os.sep)[:-1]))
             else:
                 root = os.sep.join(
-                os.path.dirname(os.path.abspath(__file__)).split(os.sep)[:-1])
+                    os.path.dirname(os.path.abspath(
+                        __file__)).split(os.sep)[:-1])
 
-
-        self.root = root 
-        if os.path.isdir(root) == False:
+        self.root = root
+        if os.path.isdir(root) is False:
             raise Invalid_Root(root)
         self.src = self.root + os.sep + "src"
-        if os.path.isdir(self.src) == False:
+        if os.path.isdir(self.src) is False:
             raise Invalid_Root(root)
         self.config = self.root + os.sep + "config"
-        if os.path.isdir(self.config) == False:
+        if os.path.isdir(self.config) is False:
             raise Invalid_Root(root)
         self.fixtures = self.config + os.sep + "fixtures"
         self.images = self.src + os.sep + "images"
 
         #INSTALL
         self.desktop_file = "scan-o-matic.desktop"
-        self.desktop_file_path = os.sep.join((self.config, "desktop_icon",
-            self.desktop_file))
+        self.desktop_file_path = os.sep.join(
+            (self.config, "desktop_icon", self.desktop_file))
+        self.install_filezilla = os.path.join(
+            self.src, "install_filezilla.sh")
 
         #RUN-files
         self.scanomatic = self.root + os.sep + "run_scan_o_matic.py"
         self.analysis = os.sep.join((self.root, "run_analysis.py"))
         self.experiment = os.sep.join((self.root, "run_experiment.py"))
+        self.revive = os.path.join(self.root, 'relauncher.py')
+        self.install_autostart = os.path.join(
+            self.root, 'install_autostart.py')
 
         #CONFIG
         self.config_main_app = os.sep.join((self.config, 'main.config'))
         self.config_mac = os.sep.join((self.config, 'mac_address.config'))
- 
+
         #IMAGES
-        self.marker = self.images + os.sep + "orientation_marker_150dpi.png" 
+        self.marker = self.images + os.sep + "orientation_marker_150dpi.png"
         self.martin = os.sep.join((self.images, "martin3.png"))
         self.logo = os.sep.join((self.images, "scan-o-matic.png"))
 
@@ -94,6 +101,8 @@ class Paths(object):
         self._last_analysis_log_index = 0
         self.log_analysis_out = os.sep.join((self.log, "analysis_{0}.stdout"))
         self.log_analysis_err = os.sep.join((self.log, "analysis_{0}.stderr"))
+        self.log_relaunch = os.path.join(self.log, "relaunch.log")
+        self.log_project_progress = os.path.join(self.log, "progress.projects")
 
         #EXPERIMENT
         self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"
@@ -102,8 +111,10 @@ class Paths(object):
         self.experiment_analysis_file_name = "analysis.log"
 
         #ANALSYS FILES
-        self.analysis_polynomial = os.sep.join((self.config,
-             "calibration.polynomials"))
+        self.analysis_polynomial = os.sep.join(
+            (self.config, "calibration.polynomials"))
+
+        self.analysis_run_log = 'analysis.run'
 
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
         self.experiment_first_pass_log_relative = ".1_pass.log"
@@ -119,7 +130,7 @@ class Paths(object):
 
         #EXPERIMENT FILE PIPE
         self.experiment_stdin = self.lock_root + ".{0}.stdin"
-  
+
     def _is_fixture_file_name(self, fixture_name):
 
         suffix_l = len(self.fixture_conf_file_suffix)
