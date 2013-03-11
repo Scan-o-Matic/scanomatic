@@ -174,7 +174,7 @@ class Controller(controller_generic.Controller):
                     self.get_window(),
                     self._model['content-app-close-orphan-warning'],
                     'warning',
-                    yn_buttons=True) is not True:
+                    yn_buttons=True) != 1:
 
                 return True
 

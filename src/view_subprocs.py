@@ -300,7 +300,7 @@ class Running_Experiments(gtk.VBox):
 
         dialog.destroy()
 
-        if resp is True:
+        if resp == 1:
 
             self._controller.stop_process(proc)
             proc['progress'] = proc['sm']['scans']
