@@ -102,7 +102,7 @@ class Analysis_Inspect_Top(Top):
     def __init__(self, controller, model):
 
         super(Analysis_Inspect_Top, self).__init__(controller, model)
-        
+
         label = gtk.Label(model['analysis-top-inspect-text'])
         self.pack_start(label, True, True, PADDING_SMALL)
 
@@ -309,7 +309,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
         m = self._model
         base_dir = self._paths.experiment_root
         file_names = select_file(
-                m['analysis-stage-inspect-analysis-popup'], 
+                m['analysis-stage-inspect-analysis-popup'],
                 multiple_files=False,
                 file_filter=m['analysis-stage-inspect-file-filter'],
                 start_in=base_dir)
@@ -386,7 +386,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
                 vbox.pack_start(image, True, True, PADDING_SMALL)
                 button = gtk.Button()
 
-                if (sm['gridding-in-history'] is None or 
+                if (sm['gridding-in-history'] is None or
                     sm['gridding-in-history'][i] is None):
 
                     button.set_label(p_no_button)
@@ -400,7 +400,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
                 vbox.pack_start(button, False, False, PADDING_SMALL)
                 hd.pack_start(vbox, True, True, PADDING_MEDIUM)
 
-        
+
         hbox = gtk.HBox(False, 0)
         button = gtk.Button(m['analysis-stage-inspect-upload-button'])
         button.connect('clicked', self._controller.launch_filezilla)
@@ -486,7 +486,7 @@ class Analysis_Stage_First_Pass_Running(gtk.VBox):
         if sm['run-error'] is not None:
 
             self._errors.set_text(sm['run-error'])
-            self._errors.show()            
+            self._errors.show()
 
         else:
 
@@ -512,7 +512,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         vbox = gtk.VBox(False, 0)
         frame.add(vbox)
         self.pack_start(frame, False, False, PADDING_SMALL)
-    
+
         ##BUTTON TO SELECT DIR
         button = gtk.Button()
         button.connect("clicked", controller.set_output_dir)
@@ -520,7 +520,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         hbox.pack_start(button, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
         button.set_label(model['analysis-stage-first-dir'])
-        
+
         ##INFO ON DIRECTORY
         hbox = gtk.HBox(False, 0)
         label = gtk.Label(model['analysis-stage-first-dir-title'])
@@ -547,7 +547,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         hbox.pack_start(self._local_fixture, False, False, PADDING_SMALL)
         self._local_fixture.set_sensitive(False)
         self._local_fixture.set_active(False)
-        self._local_fixture.connect("toggled", 
+        self._local_fixture.connect("toggled",
             controller.set_local_fixture, 'local-fixture')
         self.pack_start(hbox, False, False, PADDING_SMALL)
 
@@ -585,14 +585,14 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         ##THE REST...
         hbox = gtk.HBox(False, 0)
         vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
-        table = gtk.Table(rows=3, columns=2, homogeneous=False) 
+        table = gtk.Table(rows=3, columns=2, homogeneous=False)
         table.set_col_spacings(PADDING_MEDIUM)
         hbox.pack_start(table, False, False, PADDING_SMALL)
         ##PREFIX
         label = gtk.Label(model['analysis-stage-first-meta-prefix'])
         label.set_alignment(0, 0.5)
         self._prefix = gtk.Entry()
-        self._prefix.connect('focus-out-event', 
+        self._prefix.connect('focus-out-event',
             controller.update_model, 'prefix')
         table.attach(label, 0, 1, 0, 1)
         hbox = gtk.HBox(False, 0)
@@ -618,7 +618,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         label = gtk.Label(model['analysis-stage-first-meta-desc'])
         label.set_alignment(0, 0.5)
         self._project_desc = gtk.Entry()
-        self._project_desc.connect("focus-out-event", 
+        self._project_desc.connect("focus-out-event",
             controller.update_model, 'desc')
         self._project_desc.set_width_chars(55)
         table.attach(label, 0, 1, 2, 3)
@@ -631,13 +631,13 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         frame.add(hbox)
         label = gtk.Label(model['analysis-stage-first-scanner'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
-        self._scanner = gtk.Entry() 
+        self._scanner = gtk.Entry()
         self._scanner.connect(
             "focus-out-event", controller.update_model, 'scanner')
         hbox.pack_start(self._scanner, False, False, PADDING_MEDIUM)
         label = gtk.Label(model['analysis-stage-first-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
-        self._fixture = gtk.Entry() 
+        self._fixture = gtk.Entry()
         self._fixture.connect(
             "focus-out-event", controller.update_model, 'fixture')
         hbox.pack_start(self._fixture, False, False, PADDING_SMALL)
@@ -689,7 +689,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
 
                     box.pack_start(Pinning(
                         self._controller, self._model, self,
-                        len(children) + p + 1, 
+                        len(children) + p + 1,
                         pinning=pinnings_list[p]))
 
                children = box.children()
@@ -832,7 +832,7 @@ class Analysis_Stage_Project(gtk.VBox):
         self.file_images = gtk.Label("")
         self.file_images.set_justify(gtk.JUSTIFY_LEFT)
         vbox_data.pack_start(self.file_images, True, True, PADDING_SMALL)
- 
+
         #OUTPUT
         frame = gtk.Frame(model['analysis-stage-project-output_folder'])
         self.pack_start(frame, False, False, PADDING_MEDIUM)
@@ -856,7 +856,7 @@ class Analysis_Stage_Project(gtk.VBox):
         frame.add(vbox)
         self.keep_gridding = gtk.CheckButton(
             label=model['analysis-stage-project-keep_gridding'])
-        self.keep_gridding.connect("clicked", 
+        self.keep_gridding.connect("clicked",
             controller.toggle_set_pinning, self)
         hbox = gtk.HBox()
         hbox.pack_start(self.keep_gridding, False, False, PADDING_SMALL)
@@ -879,7 +879,7 @@ class Analysis_Stage_Project(gtk.VBox):
 
     def correct_output_path(self, new_path):
 
-        self.output.set_text(new_path) 
+        self.output.set_text(new_path)
 
     def set_output_warning(self, val=False):
 
@@ -915,7 +915,7 @@ class Analysis_Stage_Project(gtk.VBox):
 
                     box.pack_start(Pinning(
                         self._controller, self._model, self,
-                        len(children) + p + 1, 
+                        len(children) + p + 1,
                         pinning=pinnings_list[p]))
 
                children = box.children()
@@ -976,7 +976,9 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         self.treeview.set_reorderable(True)
         self.treeview.connect('key_press_event',
             specific_controller.handle_keypress)
-        left_vbox.pack_start(self.treeview, True, True, PADDING_SMALL)
+        scrolled_window = gtk.ScrolledWindow()
+        scrolled_window.add_with_viewport(self.treeview)
+        left_vbox.pack_start(scrolled_window, True, True, PADDING_SMALL)
         hbox = gtk.HBox()
         button = gtk.Button(
             label=model['analysis-stage-image-selection-dialog-button'])
@@ -1205,14 +1207,14 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
         self.progress = gtk.ProgressBar()
         hbox.pack_start(self.progress, False, False, PADDING_SMALL)
-        
+
         #Gray-Scale plot frame
         frame = gtk.Frame(
             self._model['analysis-stage-auto-norm-and-section-gs-title'])
         vbox = gtk.VBox(0, False)
         frame.add(vbox)
         self.pack_start(frame, False, False, PADDING_SMALL)
-        
+
         #Gray-Scale plot
         self.figure = plt.Figure(figsize=(300, 400), dpi=150)
         self.figure.add_axes()
@@ -1250,9 +1252,9 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
             self.figure_ax.plot(X, Y)
 
-        plt.setp(self.figure_ax.get_yticklabels(), 
+        plt.setp(self.figure_ax.get_yticklabels(),
             fontsize='xx-small')
-        plt.setp(self.figure_ax.get_xticklabels(), 
+        plt.setp(self.figure_ax.get_xticklabels(),
             fontsize='xx-small')
         self.image_canvas.draw()
 
@@ -1262,7 +1264,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         self.cb.set_active(val)
         self.fixture.set_sensitive(val==False)
         self.cb.handler_unblock(self._cb_signal)
-        
+
     def run_lock(self):
 
         self.run_button.set_sensitive(False)
@@ -1320,7 +1322,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
                         break
 
         self.fixture.handler_unblock(self._fixture_signal)
-        
+
     def _pre_process_fixture_signal(self, widget, *args, **kwargs):
 
         active = self.fixture.get_active()
@@ -1399,7 +1401,7 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
             tv_cell, text=0)
         self.treeview.append_column(tv_column)
         self.treeview.set_reorderable(False)
-        
+
         hbox.pack_start(self.treeview, True, True, PADDING_SMALL)
 
         self.show_all()
@@ -1459,7 +1461,7 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
         self.patches[i].remove()
         self.image_canvas.draw()
         del self.patches[i]
-        
+
 
 class Analysis_Stage_Image_Sectioning(gtk.VBox):
 
@@ -1478,7 +1480,7 @@ class Analysis_Stage_Image_Sectioning(gtk.VBox):
         label = gtk.Label()
         label.set_markup(model['analysis-stage-image-sectioning-title'])
         self.pack_start(label, False, False, PADDING_LARGE)
-        
+
         label = gtk.Label()
         label.set_markup(model['analysis-stage-image-sectioning-help_text'])
         self.pack_start(label, False, False, PADDING_LARGE)
@@ -1711,7 +1713,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         self.log_button = gtk.Button(
             label=model['analysis-stage-image-plate-log-button'])
-        self.log_button.connect("clicked", 
+        self.log_button.connect("clicked",
             specific_controller.set_in_log, 'measures')
         right_vbox.pack_start(self.log_button, False, False, PADDING_LARGE)
         self.set_allow_logging(False)
@@ -1757,7 +1759,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
                 self.image_canvas.handler_unblock(signal)
             else:
                 self.image_canvas.handler_block(signal)
-        
+
         """
 
     def set_strain(self, value):
@@ -1780,7 +1782,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         if self._specific_model['plate-section-im-array'] is not None and \
                 self._specific_model['plate-section-im-array'].size > 0:
- 
+
             self.section_figure_ax.imshow(self._specific_model['plate-section-im-array'],
                 cmap=plt.cm.gray_r)
             self.section_image_canvas.set_size_request(150, 150)
@@ -1791,7 +1793,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         if self._specific_model['plate-section-grid-cell'] is not None:
             blob = self._specific_model[
                     'plate-section-grid-cell'].get_item("blob").filter_array
- 
+
             if blob is not None and blob.size > 0:
                 self.analysis_figure_ax.imshow(blob, cmap=plt.cm.gray_r)
                 self.analysis_image_canvas.set_size_request(150, 150)
@@ -1868,7 +1870,7 @@ class Analysis_Stage_Log(gtk.VBox):
         if parent_model['log-only-calibration']:
 
             #MEASURES ARE INDIE-COUNT, KEYS, COUNTS
-            self.treemodel = gtk.ListStore(*([str] * ( 
+            self.treemodel = gtk.ListStore(*([str] * (
                 len(parent_model['log-meta-features']) + 3)))
         else:
 
@@ -1926,7 +1928,7 @@ class Analysis_Stage_Log(gtk.VBox):
         scrolled_window.add_with_viewport(self.treeview)
 
         self.pack_start(scrolled_window, True, True, PADDING_SMALL)
-        
+
         button = gtk.Button(label=model['analysis-stage-log-save'])
         hbox = gtk.HBox(0, False)
         hbox.pack_end(button, False, False, PADDING_SMALL)

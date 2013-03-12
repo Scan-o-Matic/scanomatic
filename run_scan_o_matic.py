@@ -19,22 +19,13 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import os
-#from multiprocessing.pool import ThreadPool
 from argparse import ArgumentParser
-
-#
-# THREADING
-#
-
-#gobject.threads_init()
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 import src.controller_main as controller
-#import src.view_main as view_main
-#import src.model_main as model_main
 
 #
 # EXECUTION BEHAVIOUR
@@ -48,7 +39,7 @@ if __name__ == "__main__":
 
     gobject.threads_init()
 
-    parser = ArgumentParser(description="""Launch the Scan-o-Matic GUI""")
+    parser = ArgumentParser(description="""The Scan-o-Matic GUI""")
 
     parser.add_argument("-d", "--debug", dest="debug", type=bool,
                         default=False, help="Run in debug mode")
@@ -56,17 +47,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     controller.Controller(program_path, debug_mode=args.debug)
-    #splash = view_main.Splash(program_path)
-
-    #pool = ThreadPool(processes=1)
-    #async_result = pool.apply_async(controller.Controller,
-        #(program_path,))
-
-    #while gtk.events_pending():
-       #gtk.main_iteration()
-
-    #c = async_result.get()
-
-    #splash.main_is_loaded()
 
     gtk.main()

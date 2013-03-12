@@ -1489,7 +1489,8 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 pos1 = sm['selection-origin']
                 wh = view.get_selection_size()
                 pos2 = [p + s for p, s in zip(pos1, wh)]
-
+                pos1, pos2 = zip(*map(sorted, zip(pos1, pos2)))
+                print pos1, pos2
                 sm['plate-section-im-array'] = \
                     sm['plate-im-array'][pos1[1]:pos2[1], pos1[0]:pos2[0]]
 
