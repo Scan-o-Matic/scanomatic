@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import gtk
 import sys
+import gobject
 
 #
 # INTERNAL DEPENDENCIES
@@ -64,7 +65,7 @@ class Unbuffered:
 
 class Controller(controller_generic.Controller):
 
-    def __init__(self, program_path, logger=None):
+    def __init__(self, program_path, logger=None, debug_mode=False):
 
         #PATHS NEED TO INIT BEFORE GUI
         self.paths = resource_path.Paths(root=program_path)
@@ -79,19 +80,27 @@ class Controller(controller_generic.Controller):
         self._view = view
         """
 
-        self.set_simple_logger()
+        if debug_mode is False:
+            self.set_simple_logger()
+
         self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
         self.scanners = resource_scanner.Scanners(self.paths, self.config)
+
+        self._view.show_notebook_or_logo()
+
+        view.show_all()
+        gobject.timeout_add(100, self._second_init_step)
+
+    def _second_init_step(self):
+
         #Subprocs
         self.subprocs = controller_subprocs.Subprocs_Controller(self)
         self.add_subprocess = self.subprocs.add_subprocess
         #self.add_subcontroller(self.subprocs)
-        self._view.populate_stats_area(self.subprocs.get_view())
-        self._view.show_notebook_or_logo()
-
+        view = self._view
+        view.populate_stats_area(self.subprocs.get_view())
         view.populate_panel()
-        view.show_all()
 
     def set_simple_logger(self):
 
