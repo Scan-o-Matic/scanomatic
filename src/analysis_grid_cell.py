@@ -17,7 +17,7 @@ __status__ = "Development"
 #
 
 import numpy as np
-import math
+#import math
 #import logging
 
 #
@@ -33,17 +33,22 @@ import analysis_grid_cell_dissection as cell_dissection
 
 class Grid_Cell():
 
+    #Limits for number of cells in cell-space
+    MAX_THRESHOLD = 2500
+    MIN_THRESHOLD = 0
+
     def __init__(self, parent, identifier, grid_cell_settings=None):
 
         self._parent = parent
         self.logger = self._parent.logger
 
         self._identifier = identifier
+        self._adjustment_warning = False
 
-        default_settings = {'data_source': None,
-                'no_analysis': False, 'no_detect': False,
-                'blob_detect': 'default', 'remember_filter': True,
-                'polynomial_coeffs': None}
+        default_settings = {
+            'data_source': None, 'no_analysis': False, 'no_detect': False,
+            'blob_detect': 'default', 'remember_filter': True,
+            'polynomial_coeffs': None}
 
         if grid_cell_settings is None:
 
@@ -75,13 +80,13 @@ class Grid_Cell():
 
         if self.data_source is None:
 
-            s+= " No image set"
+            s += " No image set"
 
         else:
 
-            s+= " Image size: {0}".format(self.data_source.shape)
+            s += " Image size: {0}".format(self.data_source.shape)
 
-        s+= " Layers: {0} >".format(self._analysis_items.keys())
+        s += " Layers: {0} >".format(self._analysis_items.keys())
 
         return s
 
@@ -97,40 +102,52 @@ class Grid_Cell():
 
         self.data_source = data_source
 
-    def set_new_data_source_space(self, space='cell estimate',
-                bg_sub_source=None, polynomial_coeffs=None):
+    def get_overshoot_warning(self):
+
+        return self._adjustment_warning
+
+    def set_new_data_source_space(
+            self, space='cell estimate',
+            bg_sub_source=None, polynomial_coeffs=None):
 
         if space == 'cell estimate':
 
-            self.logger.debug("ANALYSIS GRID CELL: Kodak values ran" + \
-                            " ({0} - {1})".format(self.data_source.min(),
-                            self.data_source.max()))
+            self.logger.debug(
+                "ANALYSIS GRID CELL: Kodak values ran" +
+                " ({0} - {1})".format(self.data_source.min(),
+                                      self.data_source.max()))
 
             if bg_sub_source is not None:
 
                 bg_sub = np.mean(self.data_source[np.where(bg_sub_source)])
-                self.logger.debug("ANALYSIS GRID CELL: Using " + \
-                        "{0} as background estimation {1} - {2})".format(
+                self.logger.debug(
+                    "ANALYSIS GRID CELL: Using " +
+                    "{0} as background estimation {1} - {2})".format(
                         bg_sub,
                         (self.data_source[np.where(bg_sub_source)]).min(),
                         (self.data_source[np.where(bg_sub_source)]).max()))
 
-                self.logger.debug("ANALYSIS GRID CELL: Good bg_sub_source =" +\
-                        " {0}".format(bg_sub_source.max() == 1))
+                self.logger.debug(
+                    "ANALYSIS GRID CELL: Good bg_sub_source = {0}".format(
+                        bg_sub_source.max() == 1))
 
                 self.data_source = self.data_source - bg_sub
 
-
             #MIN DETECTION THRESHOLD
-            self.logger.debug("ANALYSIS GRID CELL: Transforming -> " + \
-                    "Cell Estimate, fixing negative cells counts ({0})".format(
+            self.logger.debug(
+                "ANALYSIS GRID CELL: Transforming -> " +
+                "Cell Estimate, fixing negative cells counts ({0})".format(
                     np.where(self.data_source < 0)[0].size))
-            self.data_source[np.where(self.data_source < 0)] = 0
+            self.data_source[self.data_source < self.MIN_THRESHOLD] = self.MIN_THRESHOLD
+
             #MAX DETECTION THRESHOLD
-            self.logger.debug("ANALYSIS GRID CELL: Transforming -> " + \
-                    "Cell Estimate, fixing max overflow cells counts ({0})".format(
-                    np.where(self.data_source > 2500)[0].size))
-            self.data_source[np.where(self.data_source > 2500)] = 2500
+            self.logger.debug(
+                "ANALYSIS GRID CELL: Transforming -> " +
+                "Cell Estimate, fixing max overflow cells counts ({0})".format(
+                    (self.data_source > self.MAX_THRESHOLD).sum()))
+            max_detect_filter = self.data_source > self.MAX_THRESHOLD
+            self._adjustment_warning = max_detect_filter.any()
+            self.data_source[max_detect_filter] = self.MAX_THRESHOLD
 
             if polynomial_coeffs is not None:
 
@@ -142,9 +159,10 @@ class Grid_Cell():
                 self.logger.warning(
                     "ANALYSIS GRID CELL: Was not fed any polynomial")
 
-            self.logger.debug("ANALYSIS GRID CELL: Cell Estimate values run" +\
-                    " ({0} - {1})".format(self.data_source.min(),
-                    self.data_source.max()))
+            self.logger.debug(
+                "ANALYSIS GRID CELL: Cell Estimate values run" +
+                " ({0} - {1})".format(self.data_source.min(),
+                                      self.data_source.max()))
 
         self.set_grid_array_pointers()
 
@@ -167,7 +185,7 @@ class Grid_Cell():
             return None
 
     def get_analysis(self, no_detect=None, no_analysis=None,
-            remember_filter=None, use_fallback=None):
+                     remember_filter=None, use_fallback=None):
         """get_analysis iterates through all possible cell items
         and runs their detect and do_analysis if they are attached.
 
@@ -209,15 +227,15 @@ class Grid_Cell():
         if bg_filter.sum() == 0:
 
             self.logger.warning('Grid Cell {0}'.format(self._identifier) +
-                    ' has no background (skipping)')
+                                ' has no background (skipping)')
 
             return None
 
         else:
 
             self.set_new_data_source_space(
-                    space='cell estimate', bg_sub_source=bg_filter,
-                    polynomial_coeffs=self.polynomial_coeffs)
+                space='cell estimate', bg_sub_source=bg_filter,
+                polynomial_coeffs=self.polynomial_coeffs)
 
             for item_name in self._analysis_item_names:
 
@@ -242,8 +260,8 @@ class Grid_Cell():
     #
 
     def attach_analysis(self, blob=True, background=True, cell=True,
-                blob_detect='default', run_detect=None, center=None,
-                radius=None):
+                        blob_detect='default', run_detect=None, center=None,
+                        radius=None):
 
         """attach_analysis connects the analysis modules to the Grid_Cell.
 
@@ -281,19 +299,19 @@ class Grid_Cell():
 
         if blob:
 
-            self._analysis_items['blob'] = cell_dissection.Blob(self,
-                    [self._identifier, ['blob']], self.data_source,
-                    blob_detect=blob_detect,
-                    run_detect=run_detect, center=center, radius=radius)
+            self._analysis_items['blob'] = cell_dissection.Blob(
+                self, [self._identifier, ['blob']], self.data_source,
+                blob_detect=blob_detect, run_detect=run_detect,
+                center=center, radius=radius)
 
         if background and self._analysis_items['blob']:
 
             self._analysis_items['background'] = \
-                    cell_dissection.Background(self,
-                    [self._identifier, ['background']], self.data_source,
+                cell_dissection.Background(
+                    self, [self._identifier, ['background']], self.data_source,
                     self._analysis_items['blob'], run_detect=run_detect)
 
         if cell:
-            self._analysis_items['cell'] = cell_dissection.Cell(self,
-                    [self._identifier, ['cell']], self.data_source,
-                    run_detect=run_detect)
+            self._analysis_items['cell'] = cell_dissection.Cell(
+                self, [self._identifier, ['cell']], self.data_source,
+                run_detect=run_detect)

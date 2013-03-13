@@ -222,6 +222,7 @@ in the same order and watch the magic!</i>""",
 'analysis-stage-image-plate-colony-name': 'Name specific experiment:',
 'analysis-stage-image-plate-log-button': 'Record data for this experiment',
 'analysis-stage-image-plate-calibration': 'Independent measure',
+'analysis-stage-image-plate-overshoot-warning': '\nThe colony is to thick.\nIt can\'t be reliably measured.\n\nIt should not be used!\n',
 
 #ANALYSIS STAGE LOG
 'analysis-stage-log-title': 'Log Book',

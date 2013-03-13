@@ -1734,11 +1734,14 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         self._warning_eb.hide_all()
         self._warning.set_text("")
+        print "NO WARNING"
 
-    def set_warning(self, warning):
+    def set_warning(self):
 
-        self._warning.set_text(warning)
+        m = self._model
+        self._warning.set_text(m['analysis-stage-image-plate-overshoot-warning'])
         self._warning_eb.show_all()
+        print "WARNING"
 
     def select_everything(self, widget, *args, **kwargs):
 

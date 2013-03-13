@@ -1503,6 +1503,11 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 sm['plate-section-features'] = \
                     sm['plate-section-grid-cell'].get_analysis()
 
+                if sm['plate-section-grid-cell'].get_overshoot_warning():
+                    view.set_warning()
+                else:
+                    view.unset_warning()
+
                 view.set_section_image()
                 view.set_analysis_image()
 
