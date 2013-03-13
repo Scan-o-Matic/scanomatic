@@ -78,9 +78,10 @@ def get_grid_cell_from_array(arr, fallback_detection=False, center=None,
 
         poly = None
 
-    settings = {'data_source': arr, 'no_analysis': True, 'no_detect': True,
-        'blob_detect': 'default', 'remember_filter': False,
-        'polynomial_coeffs':poly}
+    settings = {'data_source': arr, 'no_analysis': True,
+                'no_detect': (center is None or radius is None),
+                'blob_detect': 'default', 'remember_filter': False,
+                'polynomial_coeffs': poly}
 
     cell = grid_cell.Grid_Cell(Log_Parent(), (0,0,0), grid_cell_settings=settings)
 
@@ -119,7 +120,7 @@ def get_gray_scale_transformation_matrix(gs_values):
 
     arr = grid_array.Grid_Array(None, (0,) ,None)
 
-    return arr.get_transformation_matrix(gs_values=gs_values, 
+    return arr.get_transformation_matrix(gs_values=gs_values,
         gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,
             22,18,14,10,6,4,2,0]))
 

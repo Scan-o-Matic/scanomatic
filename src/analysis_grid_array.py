@@ -33,7 +33,9 @@ import resource_path
 #
 # EXCEPTIONS
 
-class Invalid_Grid(Exception): pass
+
+class Invalid_Grid(Exception):
+    pass
 
 #
 # CLASS: Grid_Array
@@ -50,7 +52,7 @@ class Grid_Array():
         None: None
         }
 
-    def __init__(self, parent, identifier, pinning_matrix, 
+    def __init__(self, parent, identifier, pinning_matrix,
         verbose=False, visual=False, suppress_analysis=False,
         grid_array_settings=None, gridding_settings=None,
         grid_cell_settings=None):
@@ -85,7 +87,7 @@ class Grid_Array():
         self._identifier = identifier
 
         """
-        self._analysis = array_dissection.Grid_Analysis(self, 
+        self._analysis = array_dissection.Grid_Analysis(self,
             pinning_matrix, verbose=verbose, visual=visual,
             gridding_settings=gridding_settings)
         """
@@ -158,7 +160,7 @@ class Grid_Array():
 
     def set_manual_ideal_grid(self, grid):
 
-        
+
         best_fit_rows = grid[0]
         r = len(best_fit_rows)
         best_fit_columns = grid[1]
@@ -230,7 +232,7 @@ class Grid_Array():
             self._im_dim_order = self._get_grid_to_im_axis_mapping(
                 self._pinning_matrix, im)
 
-        grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])], 
+        grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])],
                 self._pinning_matrix[int(self._im_dim_order[1])])
 
         gh = np.array(self.get_history())
@@ -244,12 +246,12 @@ class Grid_Array():
             gh_median = np.median(gh, axis=0)
             validate_parameters = True
             expected_spacings = tuple(gh_median[2:])
-            expected_center = tuple(gh_median[:2])    
+            expected_center = tuple(gh_median[:2])
         else:  # If some measures (3-9), use them
             validate_parameters = False  # But don't enforce
             gh_mean = np.mean(gh, axis=0)
             expected_spacings = tuple(gh_mean[2:])
-            expected_center = tuple(gh_mean[:2])    
+            expected_center = tuple(gh_mean[:2])
 
         self._grid, X, Y, center, spacings, adjusted_values = \
                 resource_grid.get_grid(im,
@@ -273,7 +275,7 @@ class Grid_Array():
             return False
 
         if (self._grid.shape[0] != self._pinning_matrix[self._im_dim_order[0]]
-            and self._grid.shape[1] != 
+            and self._grid.shape[1] !=
             self._pinning_matrix[self._im_dim_order[1]]):
 
             raise Invalid_Grid(
@@ -533,7 +535,7 @@ class Grid_Array():
         im_max_pos = int(max(im.shape) == im.shape[1])
 
         im_axis_order = [int(pm_max_pos != im_max_pos)]
-        im_axis_order.append(int(im_axis_order[0] == 0)) 
+        im_axis_order.append(int(im_axis_order[0] == 0))
 
         self.logger.info("Axis order set to {0} based on pm {1} and im {2}".format(
             im_axis_order, pm, im.shape))
@@ -706,9 +708,9 @@ class Grid_Array():
                     #----------------------------------------------------
                     #
 
+
                     self._features[row][col] = \
-                            _cur_gc.get_analysis(no_analysis=True,
-                            remember_filter=True)
+                            _cur_gc.get_analysis(remember_filter=True)
 
                     #Info on the watched colony hooked up if that's the one
                     #analysed

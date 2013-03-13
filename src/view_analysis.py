@@ -1675,14 +1675,19 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self.section_figure_ax = self.section_figure.gca()
 
         self.section_image_canvas = FigureCanvas(self.section_figure)
-        """
-        self.section_image_canvas.mpl_connect('button_press_event',
-            specific_controller.mouse_button_press)
-        self.section_image_canvas.mpl_connect('button_release_event',
-            specific_controller.mouse_button_release)
-        self.section_image_canvas.mpl_connect('motion_notify_event',
-            specific_controller.mouse_move)
-        """
+        self.section_image_canvas.mpl_connect(
+            'button_press_event',
+            specific_controller.man_detect_mouse_press)
+        self.section_image_canvas.mpl_connect(
+            'button_release_event',
+            specific_controller.man_detect_mouse_release)
+        self.section_image_canvas.mpl_connect(
+            'motion_notify_event',
+            specific_controller.man_detect_mouse_move)
+        self._man_selection = plt_patches.Circle(
+            (-10, -10), 0, ec='b', fill=False, lw=1)
+        self.section_figure_ax.add_patch(self._man_selection)
+
         self.section_figure_ax.get_xaxis().set_visible(False)
         self.section_figure_ax.get_yaxis().set_visible(False)
 
@@ -1713,14 +1718,14 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         self.log_button = gtk.Button(
             label=model['analysis-stage-image-plate-log-button'])
-        self.log_button.connect("clicked",
-            specific_controller.set_in_log, 'measures')
+        self.log_button.connect("clicked",specific_controller.set_in_log,
+                                'measures')
         right_vbox.pack_start(self.log_button, False, False, PADDING_LARGE)
         self.set_allow_logging(False)
 
         self._selection = None
         if specific_model['lock-selection'] is not None:
-            pos = [d/2 for d in specific_model['plate-im-array'].shape][:2]
+            pos = [d / 2 for d in specific_model['plate-im-array'].shape][:2]
             pos.reverse()
             self.place_patch_origin(pos, specific_model['lock-selection'])
             self.set_section_image()
@@ -1734,14 +1739,18 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         self._warning_eb.hide_all()
         self._warning.set_text("")
-        print "NO WARNING"
 
     def set_warning(self):
 
         m = self._model
         self._warning.set_text(m['analysis-stage-image-plate-overshoot-warning'])
         self._warning_eb.show_all()
-        print "WARNING"
+
+    def set_man_detect_circle(self, origo=(-10, -10), radius=0):
+
+        self._man_selection.center = origo
+        self._man_selection.set_radius(radius)
+        self.section_image_canvas.draw()
 
     def select_everything(self, widget, *args, **kwargs):
 
@@ -1783,11 +1792,11 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
     def set_section_image(self):
 
-        if self._specific_model['plate-section-im-array'] is not None and \
-                self._specific_model['plate-section-im-array'].size > 0:
+        if (self._specific_model['plate-section-im-array'] is not None and
+                self._specific_model['plate-section-im-array'].size > 0):
 
             self.section_figure_ax.imshow(self._specific_model['plate-section-im-array'],
-                cmap=plt.cm.gray_r)
+                                          cmap=plt.cm.gray_r)
             self.section_image_canvas.set_size_request(150, 150)
             self.section_image_canvas.draw()
 

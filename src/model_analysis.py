@@ -313,7 +313,8 @@ specific_transparency = {
 'selected-plate-area', 'strain'),
 'log-compartments-default': ('blob','background','cell'),
 'log-measures-default': ('pixelsum', 'area', 'mean', 'median', 'IQR',
-'IQR_mean', 'centroid', 'perimeter')
+'IQR_mean', 'centroid', 'perimeter'),
+'man-detection': [None, None],
 }
 
 specific_log_book = {

@@ -1400,6 +1400,62 @@ class Analysis_Image_Controller(controller_generic.Controller):
         if wh is not False:
             self._specific_model['selection-size'] = wh
 
+    def man_detect_mouse_release(self, event, run_analysis=True):
+
+        pos = (event.xdata, event.ydata)
+
+        if None not in pos and event.button == 1:
+
+            stage = self._view.get_stage()
+            center, radius = self._calculate_man_selection_circle(posTarget=pos)
+            stage.set_man_detect_circle(center, radius)
+
+            if run_analysis:
+
+                sm = self._specific_model
+                sm['plate-section-grid-cell'] = \
+                    a_wrapper.get_grid_cell_from_array(
+                        sm['plate-section-im-array'], center=center,
+                        radius=radius,
+                        invoke_transform=sm['plate-is-normed'])
+
+                sm['plate-section-features'] = \
+                    sm['plate-section-grid-cell'].get_analysis(no_detect=True)
+
+                stage.set_analysis_image()
+                self.set_allow_logging()
+
+    def man_detect_mouse_move(self, event):
+
+        self.man_detect_mouse_release(event, run_analysis=False)
+
+    def man_detect_mouse_press(self, event):
+
+        pos = (event.xdata, event.ydata)
+        if None not in pos and event.button == 1:
+
+            stage = self._view.get_stage()
+            stage.set_man_detect_circle(*self._calculate_man_selection_circle(
+                posOrigin=pos, posTarget=pos))
+
+    def _calculate_man_selection_circle(self, posOrigin=None, posTarget=None):
+
+        prevValues = self._specific_model['man-detection']
+
+        if posOrigin is None:
+            posOrigin = prevValues[0]
+        if posTarget is None:
+            posTarget = prevValues[1]
+
+        origo = [(a + b) / 2.0 for a, b in zip(posOrigin, posTarget)]
+        radius = sum([abs(a - b) ** 2 for a, b in
+                      zip(posOrigin, posTarget)]) ** 0.5 / 2
+
+        prevValues[0] = posOrigin
+        prevValues[1] = posTarget
+
+        return origo, radius
+
     def mouse_button_release(self, event, *args, **kwargs):
 
         pos = (event.xdata, event.ydata)
@@ -1501,7 +1557,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                         invoke_transform=sm['plate-is-normed'])
 
                 sm['plate-section-features'] = \
-                    sm['plate-section-grid-cell'].get_analysis()
+                    sm['plate-section-grid-cell'].get_analysis(no_detect=False)
 
                 if sm['plate-section-grid-cell'].get_overshoot_warning():
                     view.set_warning()
@@ -1509,6 +1565,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                     view.unset_warning()
 
                 view.set_section_image()
+                view.set_man_detect_circle()
                 view.set_analysis_image()
 
                 strain = self._log.get_suggested_strain_name(pos1)

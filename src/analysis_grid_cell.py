@@ -140,15 +140,6 @@ class Grid_Cell():
                     np.where(self.data_source < 0)[0].size))
             self.data_source[self.data_source < self.MIN_THRESHOLD] = self.MIN_THRESHOLD
 
-            #MAX DETECTION THRESHOLD
-            self.logger.debug(
-                "ANALYSIS GRID CELL: Transforming -> " +
-                "Cell Estimate, fixing max overflow cells counts ({0})".format(
-                    (self.data_source > self.MAX_THRESHOLD).sum()))
-            max_detect_filter = self.data_source > self.MAX_THRESHOLD
-            self._adjustment_warning = max_detect_filter.any()
-            self.data_source[max_detect_filter] = self.MAX_THRESHOLD
-
             if polynomial_coeffs is not None:
 
                 self.data_source = \
@@ -158,6 +149,15 @@ class Grid_Cell():
 
                 self.logger.warning(
                     "ANALYSIS GRID CELL: Was not fed any polynomial")
+
+            #MAX DETECTION THRESHOLD
+            self.logger.debug(
+                "ANALYSIS GRID CELL: Transforming -> " +
+                "Cell Estimate, fixing max overflow cells counts ({0})".format(
+                    (self.data_source > self.MAX_THRESHOLD).sum()))
+            max_detect_filter = self.data_source > self.MAX_THRESHOLD
+            self._adjustment_warning = max_detect_filter.any()
+            self.data_source[max_detect_filter] = self.MAX_THRESHOLD
 
             self.logger.debug(
                 "ANALYSIS GRID CELL: Cell Estimate values run" +
@@ -197,7 +197,7 @@ class Grid_Cell():
 
         Function takes one optional argument:
 
-        @no_detect      If set to true, it will re-use the
+        @no_detect      If true, it will re-use the
                         previously used detection.
 
         @no_analysis    If set to true, there will be no
@@ -215,11 +215,16 @@ class Grid_Cell():
 
             remember_filter = self.remember_filter
 
+        if no_detect is None:
+            no_detect = self.no_detect
+
         features_dict = {}
 
         #This step only detects the objects
-        self.get_item('blob').detect(remember_filter=remember_filter)
-        self.get_item('background').detect()
+        if no_detect is not True:
+
+            self.get_item('blob').detect(remember_filter=remember_filter)
+            self.get_item('background').detect()
 
         #Transfer data to 'Cell Estimate Space'
         bg_filter = self.get_item('background').filter_array
