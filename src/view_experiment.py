@@ -113,7 +113,7 @@ class Top_Project_Setup(Top):
     def set_allow_next(self, val):
 
         self._start_button.set_sensitive(val)
-        
+
 
 class Top_Project_Running(Top):
 
@@ -261,7 +261,7 @@ class Stage_One(gtk.VBox):
             text = m['one-stage-progress-done']
 
         widget.set_markup(progress.format(text))
-    
+
     def set_run_stage(self, stage):
 
         m = self._model
@@ -298,15 +298,14 @@ class Stage_One(gtk.VBox):
         if len(widget_model) == 0:
             self.fixture.append_text(m['one-stage-no-fixture'])
 
-
         for row in widget_model:
             if row[0] not in fixtures and row[0] != m['one-stage-no-fixture']:
                 widget_model.remove(row.iter)
             fixtures = [fix for fix in fixtures if fix != row[0]]
 
-        for f in sorted(fixtures):
+        for f in fixtures:
             self.fixture.append_text(f)
-        
+
     def set_scanners(self):
 
         scanners = self._controller.get_top_controller().scanners.get_names(available=True)
@@ -406,14 +405,14 @@ class Stage_Project_Setup(gtk.VBox):
         ##THE REST...
         hbox = gtk.HBox(False, 0)
         vbox.pack_start(hbox, False, False, PADDING_MEDIUM)
-        table = gtk.Table(rows=3, columns=2, homogeneous=False) 
+        table = gtk.Table(rows=3, columns=2, homogeneous=False)
         table.set_col_spacings(PADDING_MEDIUM)
         hbox.pack_start(table, False, False, PADDING_SMALL)
         ##PREFIX
         label = gtk.Label(model['project-stage-prefix'])
         label.set_alignment(0, 0.5)
         self.prefix = gtk.Entry()
-        self.gtk_handlers['prefix'] = self.prefix.connect('changed', 
+        self.gtk_handlers['prefix'] = self.prefix.connect('changed',
             controller.check_prefix_dupe)
         table.attach(label, 0, 1, 0, 1)
         self.warn_image = gtk.Image()
@@ -425,7 +424,7 @@ class Stage_Project_Setup(gtk.VBox):
         ##IDENTIFIERS
         label = gtk.Label(model['project-stage-planning-id'])
         label.set_alignment(0, 0.5)
-        self.project_id = gtk.combo_box_new_text()                   
+        self.project_id = gtk.combo_box_new_text()
         self.project_id.set_sensitive(False)
         self.project_id.connect("changed", controller.set_project_id)
         self.scan_layout_id = gtk.combo_box_new_text()
@@ -441,7 +440,7 @@ class Stage_Project_Setup(gtk.VBox):
         label.set_alignment(0, 0.5)
         self.project_desc = gtk.Entry()
         self.project_desc.set_text(model['project-stage-desc-suggestion'])
-        self.project_desc.connect("focus-out-event", 
+        self.project_desc.connect("focus-out-event",
             controller.set_project_description)
         self.project_desc.set_width_chars(55)
         table.attach(label, 0, 1, 2, 3)
@@ -479,7 +478,7 @@ class Stage_Project_Setup(gtk.VBox):
         table.attach(label, 0, 1, 0, 1)
         self.project_duration = gtk.Entry()
         self.project_duration.set_text(self._get_human_duration('duration'))
-        self.gtk_handlers['duration-changed'] = self.project_duration.connect("changed", 
+        self.gtk_handlers['duration-changed'] = self.project_duration.connect("changed",
             controller.check_experiment_duration,
             "duration")
         self.gtk_handlers['duration-exit'] = self.project_duration.connect(
@@ -496,7 +495,7 @@ class Stage_Project_Setup(gtk.VBox):
         table.attach(label, 0, 1, 1, 2)
         self.project_interval = gtk.Entry()
         self.project_interval.set_text(self._get_human_duration('interval'))
-        self.gtk_handlers['interval-changed'] = self.project_interval.connect("changed", 
+        self.gtk_handlers['interval-changed'] = self.project_interval.connect("changed",
             controller.check_experiment_duration,
             "interval")
         self.gtk_handlers['interval-exit'] = self.project_interval.connect(
@@ -513,7 +512,7 @@ class Stage_Project_Setup(gtk.VBox):
         table.attach(label, 0, 1, 2, 3)
         self.project_scans = gtk.Entry()
         self.project_scans.set_text(self._get_human_duration('scans'))
-        self.gtk_handlers['scans-changed'] = self.project_scans.connect("changed", 
+        self.gtk_handlers['scans-changed'] = self.project_scans.connect("changed",
             controller.check_experiment_duration,
             "scans")
         self.gtk_handlers['scans-exit'] = self.project_scans.connect(
@@ -536,7 +535,7 @@ class Stage_Project_Setup(gtk.VBox):
 
         self.set_fixtures()
         self.set_scanners()
-        
+
         gobject.timeout_add(400,
             controller.check_free_disk_space)
 
@@ -588,7 +587,7 @@ class Stage_Project_Setup(gtk.VBox):
     def warn_scanner_claim_fail(self):
 
         self.scanner.handler_block(self.gtk_handlers['scanner-changed'])
-        
+
         self.scanner.set_active(-1)
 
         dialog(self._window,
@@ -674,11 +673,11 @@ class Stage_Project_Setup(gtk.VBox):
 
     def set_fixture_image(self, fixture):
 
-        if self._fixture_drawing is not None: 
+        if self._fixture_drawing is not None:
             self._fixture_image.remove(self._fixture_drawing)
 
         tc = self._controller.get_top_controller()
-        
+
         f = resource_fixture_image.Fixture_Image(fixture,
             fixture_directory=tc.paths.fixtures)
 
@@ -722,7 +721,7 @@ class Stage_Project_Setup(gtk.VBox):
 
                     box.pack_start(Pinning(
                         self._controller, self._model, self,
-                        len(children) + p + 1, 
+                        len(children) + p + 1,
                         pinning=pinnings_list[p]))
 
                children = box.children()

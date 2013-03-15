@@ -1289,37 +1289,18 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
         self.fixture.handler_block(self._fixture_signal)
 
-        active_name = None
+        fixtures = self._controller.get_top_controller().fixtures.get_names()
+        #m = self._model
 
-        if keep_name and len(self.fixture.get_model()) > 0:
+        widget_model = self.fixture.get_model()
 
-            active_name = self.fixture.get_model()[
-                        self.fixture.get_active()][0]
+        for row in widget_model:
+            if row[0] not in fixtures:  # and row[0] != m['one-stage-no-fixture']:
+                widget_model.remove(row.iter)
+            fixtures = [fix for fix in fixtures if fix != row[0]]
 
-        while len(self.fixture.get_model()) > 0:
-
-            self.fixture.remove_text(0)
-
-        for f_name in self._model['fixtures']:
-
-            self.fixture.append_text(self._paths.get_fixture_name(f_name))
-
-        if keep_name:
-
-            if active_name is None:
-
-                self.fixture.set_active(-1)
-
-            else:
-
-                model = self.fixture.get_model()
-
-                for row in xrange(len(model)):
-
-                    if model[row][0] == active_name:
-
-                        self.fixture.set_active(row)
-                        break
+        for f in fixtures:
+            self.fixture.append_text(f)
 
         self.fixture.handler_unblock(self._fixture_signal)
 

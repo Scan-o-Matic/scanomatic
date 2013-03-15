@@ -6,8 +6,6 @@
 
 *** Planner?
 
-*** Hide/Remove the fixture "Fixture" that gets autocreated.
-
 *** GRIDDING:  Increase robustness when few edgecolonies
 
 *** GRIDDING: Check effect of heuristics on bad grids
@@ -93,6 +91,8 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Hide/Remove the fixture "Fixture" that gets autocreated.
 
 *** ANALYSE ONE should give visual warning when capping
 

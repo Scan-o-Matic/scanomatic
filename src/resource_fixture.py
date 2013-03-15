@@ -36,8 +36,8 @@ class Fixture_Settings(object):
         self.dir_path = dir_path
         self.conf_rel_path = paths.fixture_conf_file_rel_pattern.format(name)
         self.conf_path = os.sep.join((dir_path, self.conf_rel_path))
-        self.im_path = os.sep.join((dir_path,
-            paths.fixture_image_file_rel_pattern.format(name))) 
+        self.im_path = os.sep.join(
+            (dir_path, paths.fixture_image_file_rel_pattern.format(name)))
         self.scale = 0.25
 
         #THIS SHOULD BE DONE ELSEWHERE
@@ -46,10 +46,10 @@ class Fixture_Settings(object):
         self.marker_name = None
 
         for attrib in ('marker_path', 'marker_count', 'grayscale',
-            'marker_positions', 'plate_areas', 'grayscale_area'):
+                       'marker_positions', 'plate_areas', 'grayscale_area'):
 
             self.__setattr__(attrib, None)
-             
+
         self.load_from_file()
 
     def get_location(self):
@@ -120,7 +120,7 @@ class Fixture_Settings(object):
             fs.close()
         except:
             good_name = False
-       
+
         if good_name:
             return self._paths.images + os.sep + self.marker_name
 
@@ -173,27 +173,28 @@ class Fixtures(object):
         directory = self._paths.fixtures
         extension = ".config"
 
-        list_fixtures = map(lambda x: x.split(extension,1)[0], 
-            [file for file in os.listdir(directory) 
-            if file.lower().endswith(extension)])
+        list_fixtures = map(lambda x: x.split(extension, 1)[0],
+                            [file for file in os.listdir(directory)
+                                if file.lower().endswith(extension)])
 
         self._fixtures = dict()
         paths = self._paths
 
         for f in list_fixtures:
-            fixture = Fixture_Settings(directory, f, paths)
-            self._fixtures[fixture.name] = fixture
+            if f.lower() != "fixture":
+                fixture = Fixture_Settings(directory, f, paths)
+                self._fixtures[fixture.name] = fixture
 
     def get_names(self):
 
         if self._fixtures is None:
             return list()
 
-        return self._fixtures.keys()
+        return sorted(self._fixtures.keys())
 
     def fill_model(self, model):
 
-        fixture=model['fixture']
+        fixture = model['fixture']
         if fixture in self._fixtures.keys():
 
             model['im-original-scale'] = self._fixtures[fixture].scale
