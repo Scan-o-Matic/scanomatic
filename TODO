@@ -6,19 +6,11 @@
 
 *** Planner?
 
-*** FIX random startup-crash:
-
-    [xcb] Unknown request in queue while dequeuing
-    [xcb] Most likely this is a multi-threaded client and XInitThreads has not been called
-    [xcb] Aborting, sorry about that.
+*** Hide/Remove the fixture "Fixture" that gets autocreated.
 
 *** GRIDDING:  Increase robustness when few edgecolonies
 
 *** GRIDDING: Check effect of heuristics on bad grids
-
-*** ANALYSE ONE should give visual warning when capping
-
-    * GUI is there, just need to thread analysis
 
 *** ALL: Rotate and flip image display so that it matches the user perspective
     GOOD DISPLAY:
@@ -101,6 +93,16 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** ANALYSE ONE should give visual warning when capping
+
+    * GUI is there, just need to thread analysis
+
+*** FIX random startup-crash:
+
+    [xcb] Unknown request in queue while dequeuing
+    [xcb] Most likely this is a multi-threaded client and XInitThreads has not been called
+    [xcb] Aborting, sorry about that.
 
 *** Is there something odd with number of cells??
 
