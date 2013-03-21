@@ -314,20 +314,24 @@ class Grid_Array():
         for row in xrange(self._grid.shape[0]):
 
             grid_plot.plot(
-                self._grid[row,:,1],
-                self._grid[row,:,0],
+                self._grid[row, :, 1],
+                self._grid[row, :, 0],
                 'r-')
 
         for col in xrange(self._grid.shape[1]):
 
             grid_plot.plot(
-                self._grid[:,col,1],
-                self._grid[:,col,0],
+                self._grid[:, col, 1],
+                self._grid[:, col, 0],
                 'r-')
+
+        grid_plot.plot(self._grid[0, 0, 1],
+                       self._grid[0, 0, 0],
+                       'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
         if X is not None and Y is not None:
 
-            grid_plot.plot(Y,X, 'o', alpha=0.75,
+            grid_plot.plot(Y, X, 'o', alpha=0.75,
             ms=5, mfc='none', mec='red', mew=1)
 
         ax = grid_image.gca()

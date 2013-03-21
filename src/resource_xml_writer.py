@@ -52,6 +52,8 @@ class XML_Writer(object):
         ('IQR_mean', 'IQR_m'): ('cells/pixel', 'standard')
         }
 
+    COMPARTMENTS = ('cell', 'blob', 'background')
+
     def __init__(self, output_directory, xml_format, logger, paths):
 
         self._directory = output_directory
@@ -127,9 +129,9 @@ class XML_Writer(object):
             mac = self._get_saved_mac()
 
         else:
- 
+
             self._set_saved_mac(mac)
- 
+
         return mac
 
     def _get_saved_mac(self):
@@ -162,6 +164,8 @@ class XML_Writer(object):
     def write_header(self, meta_data, plates):
 
         tag_format = self._formatting['short']
+        omit_compartments = self._formatting['omit_compartments']
+        omit_measures = self._formatting['omit_measures']
 
         self._open_tags.insert(0, 'project')
 
@@ -188,10 +192,10 @@ class XML_Writer(object):
                     ['prefix','pref'][tag_format], meta_data['Prefix']))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['project_tag','ptag'][tag_format], meta_data['Project ID']))
+                    ['project_tag', 'ptag'][tag_format], meta_data['Project ID']))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['scanner_layout_tag','sltag'][tag_format],
+                    ['scanner_layout_tag', 'sltag'][tag_format],
                     meta_data['Scanner Layout ID']))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
@@ -235,16 +239,31 @@ class XML_Writer(object):
 
                 for d_type, info in self.DATA_TYPES.items():
 
-                    f.write(self.XML_SINGLE_W_THREE_PARAM.format(
-                            'd-type',
-                            ['measure', 'm'][tag_format],
-                            d_type[tag_format],
-                            ['unit', 'u'][tag_format],
-                            info[0],
-                            ['type', 't'][tag_format],
-                            info[1]))
+                    if (f is not self._file_handles['slim'] or
+                            d_type[0] not in omit_measures):
+
+                        f.write(self.XML_SINGLE_W_THREE_PARAM.format(
+                                'd-type',
+                                ['measure', 'm'][tag_format],
+                                d_type[tag_format],
+                                ['unit', 'u'][tag_format],
+                                info[0],
+                                ['type', 't'][tag_format],
+                                info[1]))
 
                 f.write(self.XML_CLOSE.format('d-types'))
+
+                f.write(self.XML_OPEN.format('compartments'))
+
+                for compartment in self.COMPARTMENTS:
+
+                    if (f is not self._file_handles['slim'] or
+                            compartment not in omit_compartments):
+
+                        f.write(self.XML_OPEN_CONT_CLOSE.format(
+                            'compartment', compartment))
+
+                f.write(self.XML_CLOSE.format('compartments'))
 
     def write_segment_start_scans(self):
 
@@ -280,7 +299,7 @@ class XML_Writer(object):
                     img_dict_pointer['Time']))
 
     def write_image_features(self, image_pos, features, img_dict_pointer,
-                    plates, meta_data):
+                             plates, meta_data):
 
         self._write_image_head(image_pos, features, img_dict_pointer)
 

@@ -38,23 +38,25 @@ from matplotlib.font_manager import FontProperties
 
 class XML_Reader():
 
-    def __init__(self, file_path):
+    def __init__(self, file_path=None, data=None, meta_data=None):
 
         self._file_path = file_path
-        self._logger = logging.getLogger('XML_Reader.{0}'.format(file_path.split(os.sep)[-1]))
-        self._loaded = False
-        self._data = None
-        self._meta_data = None
-
-        if not self.read():
-            self._logger.error("XML Reader not fully initialized!")
+        self._loaded = (data is not None or meta_data is not None)
+        self._data = data
+        self._meta_data = meta_data
+        if file_path:
+            self._logger = logging.getLogger('XML_Reader.{0}'.format(file_path.split(os.sep)[-1]))
+            if not self.read():
+                self._logger.error("XML Reader not fully initialized!")
+            else:
+                self._loaded = True
         else:
-            self._loaded = True
+            self._logger = logging.getLogger('XML_READER')
 
     def read(self, file_path=None):
         """Reads the file_path file using short-format xml"""
         try:
-            fs  = open(self._file_path, 'r')
+            fs = open(self._file_path, 'r')
         except:
             self._logger.error("XML-file '{0}' not found".format(self._file_path))
             return False
@@ -65,7 +67,7 @@ class XML_Reader():
         self._meta_data = {}
 
         XML_TAG_CONT = "{0}>(.*)</{0}"
-        XML_TAG_INDEX_VALUE_CONT  =  "<{0} {1}..(\d).>([^<]*)</{0}>"
+        XML_TAG_INDEX_VALUE_CONT = "<{0} {1}..(\d).>([^<]*)</{0}>"
         XML_TAG_INDEX_VALUE = "<{0} {1}..(\d*).>"
         XML_TAG_2_INDEX_VALUE = "<{0} {1}..(\d*). {2}..(\d*).>"
         XML_TAG_2_INDEX_FULL_NONGREEDY = "<{0} {1}..{3}. {2}..{4}.>(.*?)</{0}>"
@@ -97,11 +99,11 @@ class XML_Reader():
         for pm in pms:
             if pm[1] is not None:
                 self._data[pm[0]] = np.zeros((pm[1] + (nscans, m_types)),dtype=np.float64)
-        
+
         print "Ready for {0} plates ({1} scans, {2} measures per colony)".format(
-                len(self._data), nscans, m_types) 
+                len(self._data), nscans, m_types)
         colonies_done = 0
-        
+
         for x in xrange(max_pm[0]):
             for y in xrange(max_pm[1]):
 
@@ -160,13 +162,13 @@ class XML_Reader():
                 slicers = [False] * len(pms)
                 for i,pm in enumerate(pms):
                     if pm[1] is not None:
-                        if x < pm[1][0] and y < pm[1][1]:                        
+                        if x < pm[1][0] and y < pm[1][1]:
                             slicers[i] = True
                 #print "Data should go into Plates {0}".format(slicers)
                 slice_start = 0
                 for i,pm in enumerate(slicers):
                     if pm:
-                        well_as_list = list((np.array(v)[range(slice_start, 
+                        well_as_list = list((np.array(v)[range(slice_start,
                             len(v), sum(slicers))])[-1::-1])
 
                         for bs in bad_scans:
@@ -186,8 +188,8 @@ class XML_Reader():
                         colonies_done += 1
 
             print "Completed {0}%\r".format(100*colonies_done/float(colonies))
-           
-                    
+
+
         return True
 
     def set_file_path(self, file_path):
@@ -197,6 +199,10 @@ class XML_Reader():
     def get_meta_data(self):
         """Returns meta-data dictionary"""
         return self._meta_data
+
+    def get_data(self):
+
+        return self._data
 
     def get_file_path(self):
         """Returns the currently set file-path"""
@@ -298,10 +304,10 @@ def random_plot_on_separate_panels(xml_parser, n=10):
             for j in xrange(n):
                 tx = np.random.randint(0,x)
                 ty = np.random.randint(0,y)
-                ax.semilogy(d[tx, ty,:], basey=2, 
+                ax.semilogy(d[tx, ty,:], basey=2,
                     label="{0}:{1}".format(tx,ty), color=colors[j] )
-        
-        ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,0), 
+
+        ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,0),
             ncol=len(cats), prop=fontP)
 
     return fig
@@ -334,10 +340,10 @@ def random_plot_on_same_panel(xml_parser, different_line_styles=False, measureme
                     color=list(col_maps[i]*(1 + 0.75*(j+1))) + [1] )
 
     ax.legend(loc = 4, ncol=4, title='Plate Colony_ X:Colony_Y')
-    
+
     return fig
 
-def plot_from_list(xml_parser, position_list, fig=None, measurement=0):
+def plot_from_list(xml_parser, position_list, fig=None, measurement=0, phenotypes=None):
     """
     Plots curves from an xml_parser-instance given the position_list where locations are
     described as (plate, row, column)
@@ -353,12 +359,14 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0):
     plates = sorted([p[0] for p in position_list])
     pl = [plates[0]]
     map(lambda x: x != pl[-1] and pl.append(x) , plates)
-   
+
+    """
     print "These are the plates {0}".format(pl)
+    """
 
     p_pos = 1
     rows = 1
-    cols = 1 
+    cols = 1
     while rows * cols < len(pl):
         if cols < rows:
             cols += 1
@@ -369,12 +377,14 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0):
 
         coords = [c[1:] for c in position_list if c[0] == p]
 
-        print "Plate {0} has {1} curves to plot ({2})".format(p, 
+        """
+        print "Plate {0} has {1} curves to plot ({2})".format(p,
             len(coords), coords)
+        """
 
         cats = []
         i = len(coords)
-        cat_max = 5 
+        cat_max = 5
         while i > cat_max:
             cats.append(cat_max)
             i -= cat_max
@@ -382,18 +392,22 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0):
             cats.append(i)
         styles, colors = get_graph_styles(per_cat_list=cats)
 
-        ax = fig.add_subplot(rows,cols,p_pos, title='Plate {0}'.format(p))
+        ax = fig.add_subplot(rows, cols, p_pos, title='Plate {0}'.format(p))
+
         for j, c in enumerate(coords):
-            d = xml_parser.get_colony(p,c[0],c[1])        
+
+            d = xml_parser.get_colony(p, c[0], c[1])
+
             if d is not None and np.isnan(d).all() == False:
                 try:
                     ax.semilogy(d[:, measurement], basey=2,
-                        label="{0}".format(c), color=colors[j] )
+                                label="{0}".format(c), color=colors[j])
                 except:
                     try:
 
-                        ax.plot(d[:, measurement], 
-                            label="Not logged! {0}".format(c), color=colors[j])
+                        ax.plot(d[:, measurement],
+                                label="Not logged! {0}".format(c),
+                                color=colors[j])
 
                     except:
 
@@ -401,10 +415,14 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0):
 
             else:
                 print "Curve {0} is bad!".format(c)
-    
-        if len(ax.lines) > 0: 
-            ax.legend(loc = 'upper center', bbox_to_anchor=(0.5,-0.015), 
-                ncol=len(cats), prop=fontP)
+
+        if phenotypes is not None:
+
+            ax.text(0.5, 0.05, str(phenotypes[p]), transform=ax.transAxes)
+
+        if len(ax.lines) > 0:
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.015),
+                      ncol=len(cats), prop=fontP)
 
         p_pos += 1
 

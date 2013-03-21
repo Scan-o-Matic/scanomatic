@@ -4,6 +4,12 @@
 
 --- HOT ---
 
+*** Proc Phenotypes:	Keep with names
+
+*** Proc Phenotypes:	Multiphenotype-support
+
+*** Proc Phenotypes:	Regret removed
+
 *** Planner?
 
 *** GRIDDING:  Increase robustness when few edgecolonies
@@ -91,6 +97,16 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Gridding SVG: Mark 0,0 position
+
+*** XML: Write proper d-types and compartments data in XML meta data header
+
+*** Proc Phenotypes:	LSC
+
+*** Proc Phenotypes:	Ref-array
+
+*** Proc Phenotypes:	Save everything
 
 *** Hide/Remove the fixture "Fixture" that gets autocreated.
 
