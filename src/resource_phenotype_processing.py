@@ -120,7 +120,8 @@ def get_default_surface_matrix(data):
     return surface_matrix
 
 
-def get_norm_surface_origin(data, p, norm_surface, surface_matrix=None):
+def get_norm_surface_origin(data, p, cur_phenotype, norm_surface,
+                            surface_matrix=None):
 
     if surface_matrix is None:
         surface_matrix = get_default_surface_matrix(data)
@@ -130,14 +131,14 @@ def get_norm_surface_origin(data, p, norm_surface, surface_matrix=None):
     for x in xrange(data[p].shape[0]):
         for y in xrange(data[p].shape[1]):
             if surface_matrix[p][x % 2][y % 2] == 1:
-                if np.isnan(data[p][x, y]) or data[p][x, y] == 48:
+                if np.isnan(data[p][x, y, cur_phenotype]) or data[p][x, y, cur_phenotype] == 48:
                     logging.warning(
                         "Discarded grid point ({0},{1})".format(x, y) +
                         " on plate {0} because it {1}.".format(
                             p, ["had no data", "had no growth"][
-                                data[p][x, y] == 48]))
+                                data[p][x, y, cur_phenotype] == 48]))
                 else:
-                    norm_surface[x, y] = data[p][x, y]
+                    norm_surface[x, y] = data[p][x, y, cur_phenotype]
 
                 original_norm_surface[x, y] = np.nan
                 #print x, y
@@ -146,17 +147,19 @@ def get_norm_surface_origin(data, p, norm_surface, surface_matrix=None):
 
 
 #USING 1/4th AS NORMALISING GRID
-def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
+def get_norm_surface(data, cur_phenotype, sigma=3, only_linear=False,
+                     surface_matrix=None):
 
     if surface_matrix is None:
         surface_matrix = get_default_surface_matrix(data)
 
-    norm_surfaces = data.copy() * 0
+    norm_surfaces = np.array([plate[...,cur_phenotype].copy()*0
+                              for plate in data])
     norm_vals = []
 
     for p in xrange(data.shape[0]):
 
-        if len(data[p].shape) == 2:
+        if len(data[p].shape) == 3:
             #exp_pp = map(lambda x: x/2, data[p].shape)
             #X, Y = np.mgrid[0:exp_pp[0],0:exp_pp[1]]*2
             norm_surface = norm_surfaces[p]
@@ -165,15 +168,15 @@ def get_norm_surface(data, sigma=3, only_linear=False, surface_matrix=None):
             #sd = norm_surface[X, Y].std()#.std(1)
 
             norm_surface, original_norm_surface = get_norm_surface_origin(
-                data, p, norm_surface, surface_matrix)
+                data, p, cur_phenotype, norm_surface, surface_matrix)
 
             original_norms = norm_surface[
-                np.where(np.logical_and(norm_surface != 0,
-                                        np.isnan(norm_surface) == False))]
+                np.logical_and(norm_surface != 0,
+                               np.isnan(norm_surface) == False)]
 
             norm_vals.append(original_norms)
             m = original_norms.mean()
-            v = original_norms.var()
+            #v = original_norms.var()
             sd = original_norms.std()
 
             logging.info(
@@ -370,21 +373,27 @@ def get_dubious_phenotypes(meta_data_store, plate, max_row, max_column):
     return dubious, dubious2
 
 
-def show_heatmap(data, plate_texts, plate_text_pattern, vlim=(0, 48)):
+def show_heatmap(data, cur_phenotype, plate_texts, plate_text_pattern, vlim=(0, 48)):
     #PLOT A SIMPLE HEAT MAP
     fig = plt.figure()
     rows = np.ceil(data.shape[0] / 2.0)
     columns = np.ceil(data.shape[0] / 2.0)
     for p in xrange(data.shape[0]):
-        if len(data[p].shape) == 2:
-            fig.add_subplot(
+        if len(data[p].shape) >= 2:
+            ax = fig.add_subplot(
                 rows, columns, p + 1, title=plate_text_pattern.format(
                     plate_texts[p]))
-            plt.imshow(data[p], vmin=vlim[0], vmax=vlim[1], interpolation="nearest",
-                       cmap=plt.cm.jet)
-            #plt.colorbar(ax = ax, orientation='horizontal')
+            if len(data[p].shape) == 3:
+                pdata = data[p][..., cur_phenotype]
+            else:
+                pdata = data[p]
+            ax.imshow(pdata, vmin=vlim[0],
+                      vmax=vlim[1], interpolation="nearest",
+                      cmap=plt.cm.jet)
         else:
             logging.warning("Plate {0} has no values (shape {1})".format(p, data[p].shape))
+
+    fig.tight_layout()
     fig.show()
     #PLOT DONE
 
@@ -451,13 +460,13 @@ def get_interactive_norm_surface_matrix(data):
     return norm_surface_matrices
 
 
-def get_normalised_values(data, surface_matrices=None, do_log=None):
+def get_normalised_values(data, cur_phenotype, surface_matrices=None, do_log=None):
     #THIS RETURNS LSC VALUES!
 
     norm_surface, norm_vals = get_norm_surface(
-        data, surface_matrix=surface_matrices)
+        data, cur_phenotype, surface_matrix=surface_matrices)
 
-    normed_data = data.copy() * np.nan
+    normed_data = np.array([p[..., cur_phenotype].copy() * np.nan for p in data])
 
     logging.info(
         "The norm-grid means where {0} (surface mean was {1})".format(
@@ -469,9 +478,9 @@ def get_normalised_values(data, surface_matrices=None, do_log=None):
 
     for p in xrange(data.shape[0]):
         if do_log:
-            normed_data[p] = (np.log2(data[p]) - np.log2(norm_surface[p]))  # + norm_means[p]
+            normed_data[p] = (np.log2(data[p][..., cur_phenotype]) - np.log2(norm_surface[p]))  # + norm_means[p]
         else:
-            normed_data[p] = (data[p] - norm_surface[p])  # + norm_means[p]
+            normed_data[p] = (data[p][..., cur_phenotype] - norm_surface[p])  # + norm_means[p]
 
     return normed_data, norm_vals
 
@@ -753,6 +762,7 @@ class Interactive_Menu():
                             str(self._original_phenotypes[
                                 s[0]][s[1], s[2], self._cur_phenotype]),)
 
+                    print phenotypes, s
                     fig = r_xml.plot_from_list(
                         self._xml_file, [s], fig=fig, measurement=measurement,
                         phenotypes=phenotypes)
@@ -1022,8 +1032,14 @@ class Interactive_Menu():
             self._LSC_phenotypes, self._normalisation_vals = \
                 get_normalised_values(
                     self._original_phenotypes,
+                    self._cur_phenotype,
                     self._grid_surface_matrices,
                     do_log=(self._is_logged is False))
+
+            self._LSC_min = min([p[np.isnan(p) == False].min() for p in self._LSC_phenotypes])
+            self._LSC_max = min([p[np.isnan(p) == False].max() for p in self._LSC_phenotypes])
+
+            print self._LSC_max, self._LSC_min
 
             self._experiments, self._experiments_sd, self._experiments_data =\
                 get_experiment_results(self._LSC_phenotypes,
@@ -1156,6 +1172,7 @@ class Interactive_Menu():
 
             show_heatmap(
                 self._original_phenotypes,
+                self._cur_phenotype,
                 self._plate_labels,
                 "Phenotypes with position effect (Plate {0})",
                 vlim=(0, [48, 5.58][self._is_logged]))
@@ -1164,21 +1181,26 @@ class Interactive_Menu():
 
             show_heatmap(
                 self._LSC_phenotypes,
+                self._cur_phenotype,
                 self._plate_labels,
                 "Phenotypes (Plate {0})",
-                vlim=(0, 5.58))
+                vlim=(self._LSC_min, self._LSC_max))
 
         elif task == "P4":
 
             show_heatmap(
                 self._experiments,
+                self._cur_phenotype,
                 self._plate_labels,
-                "Mean experiment phenotype (Plate {0})", vlim=(0, 5.58))
+                "Mean experiment phenotype (Plate {0})",
+                vlim=(self._LSC_min, self._LSC_max))
 
             show_heatmap(
                 self._experiments_sd,
+                self._cur_phenotype,
                 self._plate_labels,
-                "Experiment phenotype std (Plate {0})", vlim=(0, 5.58))
+                "Experiment phenotype std (Plate {0})",
+                vlim=(self._LSC_min, self._LSC_max))
 
         elif task == "S":
 

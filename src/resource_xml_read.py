@@ -418,7 +418,7 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0, phenotype
 
         if phenotypes is not None:
 
-            ax.text(0.5, 0.05, str(phenotypes[p]), transform=ax.transAxes)
+            ax.text(0.5, 0.05, str(phenotypes[0]), transform=ax.transAxes)
 
         if len(ax.lines) > 0:
             ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.015),
