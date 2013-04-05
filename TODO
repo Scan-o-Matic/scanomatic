@@ -4,12 +4,6 @@
 
 --- HOT ---
 
-*** Proc Phenotypes:	Keep with names
-
-*** Proc Phenotypes:	Multiphenotype-support
-
-*** Proc Phenotypes:	Regret removed
-
 *** Planner?
 
 *** GRIDDING:  Increase robustness when few edgecolonies
@@ -97,6 +91,12 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Proc Phenotypes:	Keep with names
+
+*** Proc Phenotypes:	Multiphenotype-support
+
+*** Proc Phenotypes:	Regret removed
 
 *** Gridding SVG: Mark 0,0 position
 

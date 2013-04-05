@@ -38,12 +38,15 @@ from matplotlib.font_manager import FontProperties
 
 class XML_Reader():
 
-    def __init__(self, file_path=None, data=None, meta_data=None):
+    def __init__(self, file_path=None, data=None, meta_data=None,
+                 scan_times=None):
 
         self._file_path = file_path
         self._loaded = (data is not None or meta_data is not None)
         self._data = data
         self._meta_data = meta_data
+        self._scan_times = scan_times
+
         if file_path:
             self._logger = logging.getLogger('XML_Reader.{0}'.format(file_path.split(os.sep)[-1]))
             if not self.read():
@@ -66,7 +69,7 @@ class XML_Reader():
         self._data = {}
         self._meta_data = {}
 
-        XML_TAG_CONT = "{0}>(.*)</{0}"
+        XML_TAG_CONT = "<{0}>([^<]*)</{0}>"
         XML_TAG_INDEX_VALUE_CONT = "<{0} {1}..(\d).>([^<]*)</{0}>"
         XML_TAG_INDEX_VALUE = "<{0} {1}..(\d*).>"
         XML_TAG_2_INDEX_VALUE = "<{0} {1}..(\d*). {2}..(\d*).>"
@@ -90,6 +93,7 @@ class XML_Reader():
         measures = colonies * nscans
         max_pm = np.max(np.array([p[1] for p in pms]),0)
 
+
         #GET NUMBER OF MEASURES
         v = re.findall(XML_TAG_2_INDEX_FULL_NONGREEDY.format(
                     'gc', 'x', 'y', 0, 0), f)[0]
@@ -99,6 +103,13 @@ class XML_Reader():
         for pm in pms:
             if pm[1] is not None:
                 self._data[pm[0]] = np.zeros((pm[1] + (nscans, m_types)),dtype=np.float64)
+
+        #SCAN TIMES
+        self._scan_times = np.array(map(float, re.findall(XML_TAG_CONT.format('t'),
+                                                          f)))
+        self._scan_times.sort()  # Scans come in chronological order
+        self._scan_times -= self._scan_times[0]  # Make it relative
+        self._scan_times /= 3600  # Make it in hours
 
         print "Ready for {0} plates ({1} scans, {2} measures per colony)".format(
                 len(self._data), nscans, m_types)
@@ -189,8 +200,11 @@ class XML_Reader():
 
             print "Completed {0}%\r".format(100*colonies_done/float(colonies))
 
-
         return True
+
+    def get_scan_times(self):
+
+        return self._scan_times
 
     def set_file_path(self, file_path):
         """Sets file-path"""
@@ -343,7 +357,8 @@ def random_plot_on_same_panel(xml_parser, different_line_styles=False, measureme
 
     return fig
 
-def plot_from_list(xml_parser, position_list, fig=None, measurement=0, phenotypes=None):
+def plot_from_list(xml_parser, position_list, fig=None, measurement=0, phenotypes=None,
+                   ax_title=None):
     """
     Plots curves from an xml_parser-instance given the position_list where locations are
     described as (plate, row, column)
@@ -352,9 +367,10 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0, phenotype
     if fig is None:
         fig = plt.figure()
 
-    fig.subplots_adjust(hspace = .5)
     fontP = FontProperties()
     fontP.set_size('xx-small')
+
+    X = xml_parser.get_scan_times()
 
     plates = sorted([p[0] for p in position_list])
     pl = [plates[0]]
@@ -392,7 +408,9 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0, phenotype
             cats.append(i)
         styles, colors = get_graph_styles(per_cat_list=cats)
 
-        ax = fig.add_subplot(rows, cols, p_pos, title='Plate {0}'.format(p))
+        ax = fig.add_subplot(rows, cols, p_pos,
+                             title=(ax_title is None and 'Plate {0}'.format(p)
+                                    or ax_title))
 
         for j, c in enumerate(coords):
 
@@ -400,12 +418,12 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0, phenotype
 
             if d is not None and np.isnan(d).all() == False:
                 try:
-                    ax.semilogy(d[:, measurement], basey=2,
+                    ax.semilogy(X, d[:, measurement], basey=2,
                                 label="{0}".format(c), color=colors[j])
                 except:
                     try:
 
-                        ax.plot(d[:, measurement],
+                        ax.plot(X, d[:, measurement],
                                 label="Not logged! {0}".format(c),
                                 color=colors[j])
 
@@ -421,9 +439,10 @@ def plot_from_list(xml_parser, position_list, fig=None, measurement=0, phenotype
             ax.text(0.5, 0.05, str(phenotypes[0]), transform=ax.transAxes)
 
         if len(ax.lines) > 0:
-            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.015),
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.040),
                       ncol=len(cats), prop=fontP)
 
         p_pos += 1
 
+    fig.subplots_adjust(hspace = .5)
     return fig

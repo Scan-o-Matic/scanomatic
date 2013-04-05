@@ -2,6 +2,7 @@
 #IMPORTS
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 #import matplotlib.pylab as plt_lab
 import logging
 import scipy.interpolate as scint
@@ -115,7 +116,7 @@ def get_empty_data_structure(plate, max_row, max_column, depth=None, default_val
 def get_default_surface_matrix(data):
 
     surface_matrix = {}
-    for p in xrange(data.shape[0]):
+    for p in xrange(len(data)):
         surface_matrix[p] = [[0, 1], [0, 0]]
 
     return surface_matrix
@@ -158,7 +159,7 @@ def get_norm_surface(data, cur_phenotype, sigma=3, only_linear=False,
                               for plate in data])
     norm_vals = []
 
-    for p in xrange(data.shape[0]):
+    for p in range(len(data)):
 
         if len(data[p].shape) == 3:
             #exp_pp = map(lambda x: x/2, data[p].shape)
@@ -377,9 +378,10 @@ def get_dubious_phenotypes(meta_data_store, plate, max_row, max_column):
 def show_heatmap(data, cur_phenotype, plate_texts, plate_text_pattern, vlim=(0, 48)):
     #PLOT A SIMPLE HEAT MAP
     fig = plt.figure()
-    rows = np.ceil(data.shape[0] / 2.0)
-    columns = np.ceil(data.shape[0] / 2.0)
-    for p in xrange(data.shape[0]):
+    nplates = len(data)
+    rows = np.ceil(nplates / 2.0)
+    columns = np.ceil(nplates / 2.0)
+    for p in xrange(nplates):
         if len(data[p].shape) >= 2:
             ax = fig.add_subplot(
                 rows, columns, p + 1, title=plate_text_pattern.format(
@@ -388,9 +390,16 @@ def show_heatmap(data, cur_phenotype, plate_texts, plate_text_pattern, vlim=(0, 
                 pdata = data[p][..., cur_phenotype]
             else:
                 pdata = data[p]
-            ax.imshow(pdata, vmin=vlim[0],
+            im = ax.imshow(pdata, vmin=vlim[0],
                       vmax=vlim[1], interpolation="nearest",
                       cmap=plt.cm.jet)
+
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", "5%", pad="3%")
+            plt.colorbar(im, cax=cax)
+
+            #ax.set_axis_off()
+
         else:
             logging.warning("Plate {0} has no values (shape {1})".format(p, data[p].shape))
 
@@ -415,11 +424,16 @@ def get_interactive_info(info_list, margin=6):
     print "\n"
 
 
-def get_interactive_labels(header, labels):
+def get_interactive_labels(header, labels, meta_data):
 
     get_interactive_header(header)
 
     plate_labels = {}
+
+    try:
+        print "\t{0}\n".format(meta_data['desc'])
+    except:
+        pass
 
     for i in xrange(labels):
         plate_labels[i] = raw_input("Label for Plate {0}: ".format(i))
@@ -439,7 +453,7 @@ def get_interactive_norm_surface_matrix(data, cur_grids):
 
     norm_surface_matrices = {}
     default_grid = [[0, 1], [0, 0]]
-    for p in xrange(data.shape[0]):
+    for p in xrange(len(data)):
         norm_matrix = [None, None]
         if cur_grids is not None and cur_grids[p] is not None:
             cur_grid = cur_grids[p]
@@ -480,7 +494,7 @@ def get_normalised_values(data, cur_phenotype, surface_matrices=None, do_log=Non
     logging.info(
         "Zero positions in normsurface: {0}".format([(p == 0).sum() for p in norm_surface]))
 
-    for p in xrange(data.shape[0]):
+    for p in xrange(len(data)):
         if do_log:
             normed_data[p] = (np.log2(data[p][..., cur_phenotype]) - np.log2(norm_surface[p]))  # + norm_means[p]
         else:
@@ -489,11 +503,13 @@ def get_normalised_values(data, cur_phenotype, surface_matrices=None, do_log=Non
     return normed_data, norm_vals
 
 
-def get_experiment_results(data, surface_matrices=None):
-    exp_pp = map(lambda x: map(lambda y: y / 2, x.shape), data)
-    e_mean = np.array([None] * data.shape[0], dtype=np.object)
-    e_data = np.array([None] * data.shape[0], dtype=np.object)
-    e_sd = np.array([None] * data.shape[0], dtype=np.object)
+def get_experiment_results(data, surface_matrices=None, cur_phenotype=0):
+
+    nplates = len(data)
+    exp_pp = map(lambda x: map(lambda y: y / 2, x.shape[:-1]), data)
+    e_mean = np.array([None] * nplates, dtype=np.object)
+    e_data = np.array([None] * nplates, dtype=np.object)
+    e_sd = np.array([None] * nplates, dtype=np.object)
 
     """
     e_max = 0
@@ -505,9 +521,9 @@ def get_experiment_results(data, surface_matrices=None):
         surface_matrices = get_default_surface_matrix(data)
 
     #CALC EXPERIMENTS
-    for p in range(data.shape[0]):
+    for p in range(len(data)):
 
-        if len(data[p].shape) == 2:
+        if len(data[p].shape) == 3:
             exp_filter = np.array(surface_matrices[p]) == 0
             exp_data = np.zeros(
                 exp_pp[p] + [exp_filter.sum()], dtype=np.float64)
@@ -515,7 +531,7 @@ def get_experiment_results(data, surface_matrices=None):
             exp_sd = np.zeros(exp_pp[p], dtype=np.float64)
             for x in range(exp_pp[p][0]):
                 for y in range(exp_pp[p][1]):
-                    cell = data[p][x * 2:x * 2 + 2, y * 2:y * 2 + 2]
+                    cell = data[p][x * 2:x * 2 + 2, y * 2:y * 2 + 2, cur_phenotype]
                     cell_data = cell[np.where(exp_filter)]
                     exp_data[x, y, :] = cell_data
                     exp_mean[x, y] = cell_data[
@@ -552,6 +568,7 @@ class Interactive_Menu():
         self._menu = {
             '1A': 'Load data',
             '1B': 'Select Phenotype To Work With',
+            '1C': 'Name Phenotypes',
             'Q1': 'Weed out superbad curves automatically (requires xml-file)',
             'Q2': 'Inspect/remove outliers (requires xml-file)',
             'Q3': 'Inspect/remove based on bad friends (requires xml-file)',
@@ -566,10 +583,11 @@ class Interactive_Menu():
             'P2': 'Show heatmap(s) of original data',
             'P3': 'Show heatmap(s) of normalised data',
             'P4': 'Show heatmap(s) of per experment data',
+            'U': 'Undo back to last save',
             'S': 'Save all available data (will overwrite files if they exist)',
             'T': 'Terminate! (Quit)'}
-        self._menu_order = ('1A', '1B', 'Q1', 'Q2', 'Q3', 'Q4', '2A', '2B', '2C', 'R1',
-                            'R2', 'R3', 'P1', 'P2', 'P3', 'P4', 'S', 'T')
+        self._menu_order = ('1A', '1B', '1C', 'Q1', 'Q2', 'Q3', 'Q4', '2A', '2B', '2C', 'R1',
+                            'R2', 'R3', 'P1', 'P2', 'P3', 'P4', 'U', 'S', 'T')
 
         self._enabled_menus = {}
         self.set_start_menu_state()
@@ -591,6 +609,9 @@ class Interactive_Menu():
         self._original_meta_data = None
         self._data_shapes = None
         self._is_logged = False
+        self._is_normed = None
+        self._phenotype_names = None
+        self._meta_data = None
 
     def set_start_menu_state(self):
         for k in self._menu.keys():
@@ -601,9 +622,9 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1B', 'Q1', 'Q2', 'Q3', 'Q4',
+        self.set_enable_menu_items(['1B', '1C', 'Q1', 'Q2', 'Q3', 'Q4',
                                     '2A', '2B', 'P1',
-                                    'R1', 'R2', 'R3', 'S'])
+                                    'R1', 'R2', 'R3', 'U', 'S'])
 
     def set_enable_menu_items(self, itemlist):
 
@@ -617,19 +638,33 @@ class Interactive_Menu():
 
     def set_enable_menu_plots(self):
 
+        disables = []
+        enables = []
+
         if self._plate_labels is not None:
 
             if self._original_phenotypes is not None:
 
-                self.set_enable_menu_items(["P2"])
+                enables.append("P2")
+            else:
+                disables.append("P2")
 
-            if self._LSC_phenotypes is not None:
+            if (self._is_normed[self._cur_phenotype] and
+                    self._LSC_phenotypes is not None):
 
-                self.set_enable_menu_items(["P3"])
+                enables.append("P3")
+            else:
+                disables.append("P3")
 
-            if self._experiments is not None:
+            if (self._is_normed[self._cur_phenotype] and
+                    self._experiments is not None):
 
-                self.set_enable_menu_items(["P4"])
+                enables.append("P4")
+            else:
+                disables.append("P4")
+
+        self.set_enable_menu_items(enables)
+        self.set_disable_menu_items(disables)
 
     def print_menu(self):
 
@@ -637,7 +672,14 @@ class Interactive_Menu():
             "Menu{0}".format([" ({0})".format(self._file_path), ""][
             self._file_path is None]))
 
-        print "\t### PHENOTYPE {0} ###\n".format(self._cur_phenotype + 1)
+        try:
+            print "\t{0}\n".format(self._meta_data['desc'])
+        except:
+            pass
+
+        print "\t### PHENOTYPE {0} ###\n".format(
+            self._phenotype_names is None and self._cur_phenotype + 1 or
+            self._phenotype_names[self._cur_phenotype])
 
         old_k = None
         for k in self._menu_order:
@@ -664,7 +706,7 @@ class Interactive_Menu():
     def set_plate_labels(self):
 
         self._plate_labels = get_interactive_labels(
-            "Setting plate names", self._original_phenotypes.shape[0])
+            "Setting plate names", self._original_phenotypes.shape[0], self._meta_data)
         logging.info("New labels set")
         self.set_enable_menu_plots()
 
@@ -674,6 +716,10 @@ class Interactive_Menu():
 
             self._original_phenotypes[pos[0]][pos[1], pos[2], self._cur_phenotype] = np.nan
 
+
+        self._is_normed[self._cur_phenotype] = False
+        self.set_phenotype_is_normed_state()
+
     def set_xml_file(self):
 
         if self._file_path is None:
@@ -681,21 +727,38 @@ class Interactive_Menu():
 
         file_path = self._file_path.split(".")
         pickle_data_file = ".".join(file_path[:-1]) + ".data.pickle"
+        pickle_scantimes_file = ".".join(file_path[:-1]) + "scantimes.pickle"
         pickle_metadata_file = ".".join(file_path[:-1]) + ".metadata.pickle"
         pickle_matrix_file = ".".join(file_path[:-1]) + ".matrix.pickle"
         pickle_current_phenotype_file = ".".join(file_path[:-1]) + ".cur_pheno.pickle"
+        pickle_is_normed_file = ".".join(file_path[:-1]) + ".isnormed.pickle"
+        pickle_pheno_names_file = ".".join(file_path[:-1]) + ".pheno_names.pickle"
 
         if os.path.isfile(pickle_data_file) and os.path.isfile(pickle_metadata_file):
 
             data = pickle.load(open(pickle_data_file, 'rb'))
             meta_data = pickle.load(open(pickle_metadata_file, 'rb'))
-            self._xml_file = r_xml.XML_Reader(data=data, meta_data=meta_data)
+            scan_times = pickle.load(open(pickle_scantimes_file, 'rb'))
+
+            self._xml_file = r_xml.XML_Reader(data=data, meta_data=meta_data,
+                                              scan_times=scan_times)
+            self._meta_data = meta_data
             if os.path.isfile(pickle_matrix_file):
                 self._grid_surface_matrices = pickle.load(open(
                     pickle_matrix_file, 'rb'))
             if os.path.isfile(pickle_current_phenotype_file):
                 self._cur_phenotype = pickle.load(open(
                     pickle_current_phenotype_file, 'rb'))
+
+            """
+            if os.path.isfile(pickle_is_normed_file):
+                self._is_normed = pickle.load(open(
+                    pickle_is_normed_file, 'rb'))
+            """
+
+            if os.path.isfile(pickle_pheno_names_file):
+                self._phenotype_names = pickle.load(open(
+                    pickle_pheno_names_file, 'rb'))
 
         else:
 
@@ -720,6 +783,9 @@ class Interactive_Menu():
             self._xml_file = r_xml.XML_Reader(file_path)
             pickle.dump(self._xml_file.get_data(), open(pickle_data_file, 'wb'))
             pickle.dump(self._xml_file.get_meta_data(), open(pickle_metadata_file, 'wb'))
+            pickle.dump(self._xml_file.get_scan_times(), open(pickle_scantimes_file, 'wb'))
+
+        self.set_enable_menu_plots()
 
     def review_positions_for_deletion(self, suspect_list=None):
 
@@ -782,7 +848,11 @@ class Interactive_Menu():
                     print phenotypes, s
                     fig = r_xml.plot_from_list(
                         self._xml_file, [s], fig=fig, measurement=measurement,
-                        phenotypes=phenotypes)
+                        phenotypes=phenotypes,
+                        ax_title="Plate {0} Pos {1}: Phenotype {2}".format(
+                            s[0], s[1:],
+                            (self._phenotype_names is None and self._cur_phenotype or
+                             self._phenotype_names[self._cur_phenotype])))
 
                     fig.show()
                     if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
@@ -830,6 +900,7 @@ class Interactive_Menu():
             self._plate_labels = {}
             for i in xrange(self._original_phenotypes.shape[0]):
                 self._plate_labels[i] = str(i)
+            self._is_normed = [False] * self._original_phenotypes.shape[0]
             logging.info("Temporary plate labels set")
             self.set_enable_menu_plots()
             self.set_xml_file()
@@ -838,6 +909,32 @@ class Interactive_Menu():
 
         else:
             return False
+
+    def set_phenotype_is_normed_state(self):
+
+        if self._is_normed[self._cur_phenotype]:
+
+            plates = [p[..., self._cur_phenotype] for p in self._LSC_phenotypes]
+
+            self._LSC_min = min([p[np.isnan(p) == False].min() for
+                                 p in plates])
+            self._LSC_max = min([p[np.isnan(p) == False].max() for
+                                 p in plates])
+
+            self._experiments, self._experiments_sd, self._experiments_data =\
+                get_experiment_results(self._LSC_phenotypes,
+                                       self._grid_surface_matrices,
+                                       self._cur_phenotype)
+
+            #self.set_enable_menu_items(["2C"])
+
+            logging.info(
+                "These values are indicative of the general" +
+                " quality of the experiment (lower better " +
+                "(variance of the grid before normalisation)):\n{0}".format(
+                    [p.var() for p in self._normalisation_vals[self._cur_phenotype]]))
+
+        self.set_enable_menu_plots()
 
     def get_interactive_plate(self):
 
@@ -877,10 +974,20 @@ class Interactive_Menu():
             try:
                 phenotype = int(phenotype)
                 if self._original_phenotypes[0].shape[-1] >= phenotype:
+                    self._is_normed[self._cur_phenotype] = False
                     self._cur_phenotype = phenotype - 1
                     logging.info("Phenotype changed to {0}".format(phenotype))
             except:
                 pass
+
+            self.set_enable_menu_plots()
+
+        elif task == "1C":
+
+            self._phenotype_names = []
+            for i in range(3):
+                phenotype_name = str(raw_input("Name of phenotype {0}: ".format(i+1)))
+                self._phenotype_names.append(phenotype_name)
 
         elif task == "Q1":
 
@@ -1050,30 +1157,28 @@ class Interactive_Menu():
 
         elif task == "2B":
 
-            self._LSC_phenotypes, self._normalisation_vals = \
+            if self._LSC_phenotypes is None:
+
+                self._LSC_phenotypes = [np.zeros(p.shape) for p in
+                    self._original_phenotypes]
+
+                self._normalisation_vals = [None] * 3
+
+            LSC_phenotypes, normalisation_vals = \
                 get_normalised_values(
                     self._original_phenotypes,
                     self._cur_phenotype,
                     self._grid_surface_matrices,
                     do_log=(self._is_logged is False))
 
-            self._LSC_min = min([p[np.isnan(p) == False].min() for p in self._LSC_phenotypes])
-            self._LSC_max = min([p[np.isnan(p) == False].max() for p in self._LSC_phenotypes])
+            for i in range(len(self._LSC_phenotypes)):
 
-            print self._LSC_max, self._LSC_min
+                self._LSC_phenotypes[i][..., self._cur_phenotype] = LSC_phenotypes[i]
 
-            self._experiments, self._experiments_sd, self._experiments_data =\
-                get_experiment_results(self._LSC_phenotypes,
-                                       self._grid_surface_matrices)
+            self._normalisation_vals[self._cur_phenotype] = normalisation_vals
 
-            self.set_enable_menu_items(["2C"])
-            self.set_enable_menu_plots()
-
-            logging.info(
-                "These values are indicative of the general" +
-                " quality of the experiment (lower better " +
-                "(variance of the grid before normalisation)):\n{0}".format(
-                    [p.var() for p in self._normalisation_vals]))
+            self._is_normed[self._cur_phenotype] = True
+            self.set_phenotype_is_normed_state()
 
         elif task == "R1":
 
@@ -1195,7 +1300,7 @@ class Interactive_Menu():
                 self._original_phenotypes,
                 self._cur_phenotype,
                 self._plate_labels,
-                "Phenotypes with position effect (Plate {0})",
+                "Original Phenotypes (Plate {0})",
                 vlim=(0, [48, 5.58][self._is_logged]))
 
         elif task == "P3":
@@ -1204,7 +1309,7 @@ class Interactive_Menu():
                 self._LSC_phenotypes,
                 self._cur_phenotype,
                 self._plate_labels,
-                "Phenotypes (Plate {0})",
+                "LSC (Plate {0})",
                 vlim=(self._LSC_min, self._LSC_max))
 
         elif task == "P4":
@@ -1213,15 +1318,28 @@ class Interactive_Menu():
                 self._experiments,
                 self._cur_phenotype,
                 self._plate_labels,
-                "Mean experiment phenotype (Plate {0})",
+                "Mean LSC (Plate {0})",
                 vlim=(self._LSC_min, self._LSC_max))
 
             show_heatmap(
                 self._experiments_sd,
                 self._cur_phenotype,
                 self._plate_labels,
-                "Experiment phenotype std (Plate {0})",
+                "LSC std (Plate {0})",
                 vlim=(self._LSC_min, self._LSC_max))
+
+        elif task == "U":
+
+            try:
+                undo = (raw_input(
+                    "Are you sure you want to undo all unsaved work (y/N)?")[0].upper() ==
+                    "Y")
+
+            except:
+                undo = False
+
+            if undo:
+                self.set_xml_file()
 
         elif task == "S":
 
@@ -1251,11 +1369,25 @@ class Interactive_Menu():
                 logging.warning("Could not save Grid Lawn position")
 
             """
+            file_path = self._get_save_file_guess(file_guess=".isnormed.pickle")
+            try:
+                pickle.dump(self._is_normed, open(file_path, 'wb'))
+            except:
+                logging.warning("Could not save normalisation status")
+            """
+
+            file_path = self._get_save_file_guess(file_guess=".pheno_names.pickle")
+            try:
+                pickle.dump(self._phenotype_names, open(file_path, 'wb'))
+            except:
+                logging.warning("Could not save normalisation status")
+
+            """
             if self._original_meta_data is not None:
 
                 header = "Saving metadata"
                 self._set_save_intro(header)
-                file_path = self._get_save_file_guess(file_guess="_meta_data.pickle")
+                file_path = self._get_save_file_guess(file_guess=".strain_metadata.pickle")
                 try:
                     pickle.dump(self._original_meta_data, open(file_path, 'wb'))
                     logging.info("Data saved!")
@@ -1265,12 +1397,12 @@ class Interactive_Menu():
 
             if self._normalisation_vals is not None:
 
-                for t in range(2):
-                    dtype = ('csv', 'npy')[t]
+                for t in range(1):
+                    dtype = ('npy',)[t]
                     header = "Saving values from normalisation grid ({0})".format(dtype)
                     if self._save(
-                            self._normalisation_vals, header,
-                            save_as_np_array=t,
+                            np.array(self._normalisation_vals), header,
+                            save_as_np_array=True,
                             file_guess="_norm_array.{0}".format(dtype)):
 
                         logging.info("Data saved!")
@@ -1306,7 +1438,9 @@ class Interactive_Menu():
                     if self._save(
                             self._experiments_data, header,
                             save_as_np_array=(task == "S4"),
-                            file_guess='_LSC_experment.{0}'.format(['csv', 'npy'][task == 'S4'])):
+                            file_guess='_LSC_experment.phenotype_{0}.{1}'.format(
+                                self._cur_phenotype + 1,
+                                ['csv', 'npy'][task == 'S4'])):
 
                         logging.info("Data saved!")
 
@@ -1367,7 +1501,7 @@ class Interactive_Menu():
             except:
                 return False
 
-            for p in xrange(data.shape[0]):
+            for p in range(len(data)):
                 fs.write("START PLATE {0}\n".format(self._plate_labels[p]))
 
                 if data[p].ndim >= 2:
@@ -1383,7 +1517,13 @@ class Interactive_Menu():
                                                     list(map(
                                                         str,
                                                         data[p][x, y, :])))))
+                                except KeyError:
+
+                                    logging.warning(
+                                        "Position {0} does not exist".format((
+                                            p, x, y)))
                                 except:
+
                                     fs.write(
                                         "{0}\t{1}\t{2}\t\"{3}\"\t{4}\n".format(
                                             p, x, y,
