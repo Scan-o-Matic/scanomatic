@@ -197,7 +197,7 @@ class Scanner(object):
 
     def _wait_for_power_up_turn(self):
 
-        cur_uuid = None 
+        cur_uuid = None
 
         self._logger.info("Scanner {0} waiting for power up turn".format(self._name))
 
@@ -283,7 +283,7 @@ class Scanner(object):
             lock_states[line_list[0]] = line_list[1:]
 
         return lock_states
-    
+
     def _write_scanner_address_claim(self):
 
         n_checks = 0
@@ -339,7 +339,7 @@ class Scanner(object):
             awake_scanners = [s[0] for s in awake_scanners]
             s_list = [s for s in s_list if s in awake_scanners]
             my_addr = [a for a in my_addr if a not in awake_scanners]
-            
+
             if len(my_addr) == 0:
 
                 self._usb_address = None
@@ -377,7 +377,7 @@ class Scanner(object):
 
     def get_claimed(self):
 
-        return self._get_check_in_file() != "" 
+        return self._get_check_in_file() != ""
 
     def get_claimed_by_other(self):
         """True if owned by other, else False"""
@@ -520,9 +520,9 @@ class Scanners(object):
         self._sane_version = None
         self._sane_generic = \
             {"EPSON V700" :
-                {'TPU': 
-                    ["--source", "Transparency" ,"--format", "tiff", 
-                    "--resolution", "600", "--mode", "Gray", "-l", "0",  
+                {'TPU':
+                    ["--source", "Transparency" ,"--format", "tiff",
+                    "--resolution", "600", "--mode", "Gray", "-l", "0",
                     "-t", "0", "-x", "203.2", "-y", "254", "--depth", "8"],
                 'COLOR':
                     ["--source", "Flatbed", "--format", "tiff",
@@ -531,7 +531,7 @@ class Scanners(object):
 
         #Highest version that takes a setting
         self._sane_flags_replace = {
-            (1,0,22): [], 
+            (1,0,22): [],
             (1,0,24): [(('EPSON V700', 'TPU', '--source'), 'TPU8x10')] }
 
         self._current_sane_settings = None
@@ -545,13 +545,13 @@ class Scanners(object):
 
     def _get_sane_version(self):
 
-        p = Popen([self._config.scan_program, 
+        p = Popen([self._config.scan_program,
             self._config.scan_program_version_flag],
             shell=False, stdout=PIPE)
 
         stdout, stderr = p.communicate()
 
-        self._backend_version = re.findall(r' ([0-9]+\.[0-9]+\.[0-9]+)', 
+        self._backend_version = re.findall(r' ([0-9]+\.[0-9]+\.[0-9]+)',
             stdout.strip('\n'))
 
         return self._backend_version
@@ -569,7 +569,7 @@ class Scanners(object):
                 break
 
         if self._sane_version is None:
-            
+
             print "***WARNING:\tHoping driver works as last known version"
             self._sane_versi0n = v
 
@@ -590,6 +590,11 @@ class Scanners(object):
 
         self._current_sane_settings = current
 
+    def update_sane_setting(self, key, value):
+
+        if self._current_sane_settings is not None:
+
+            self._current_sane_settings[key] = value
 
     def update(self):
 
@@ -614,7 +619,7 @@ class Scanners(object):
     def count(self, only_free=True):
 
         self.update()
-        c = len([s for s in self._scanners.values() 
+        c = len([s for s in self._scanners.values()
                     if s.get_claimed() == False])
 
         return c

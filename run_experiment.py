@@ -131,7 +131,7 @@ class Experiment(object):
             self._scanned = run_args.scanned
 
         self._initialized = False
-        
+
         if run_args is None or run_args is not None:
             self._set_settings_from_run_args(run_args)
         elif kwargs is not None:
@@ -215,7 +215,7 @@ class Experiment(object):
                     output = "DEAMON got unkown request '{0}'".format(line)
 
                 if output is not None:
-                    
+
                     output += "\n__DONE__"
                     self._gated_print(output)
 
@@ -266,6 +266,10 @@ class Experiment(object):
         self._last_scan = run_args.last_scan
 
         self._pinning = run_args.pinning
+        if (64, 96) in self._pinning:
+            self._logger.info("Changing resolution to 900 due to 6144 format")
+            self.scanners.update_sane_setting('--resolution', "900")
+
         self._scanner = self.scanners[run_args.scanner]
         self._scanner_name = run_args.scanner
         self._fixture_name = run_args.fixture
@@ -304,15 +308,15 @@ class Experiment(object):
     def _set_fixture(self, dir_path, fixture_name):
 
         self._logger.info("Making local copy of fixture settings.")
-        
+
         shutil.copyfile(
             self.paths.get_fixture_path(fixture_name, own_path=dir_path),
             os.sep.join((self._out_data_path,
             self.paths.experiment_local_fixturename)))
 
         self._fixture = resource_fixture.Fixture_Settings(
-                self._out_data_path, 
-                self.paths.experiment_local_fixturename, 
+                self._out_data_path,
+                self.paths.experiment_local_fixturename,
                 self.paths)
 
     def run(self):
@@ -354,13 +358,13 @@ class Experiment(object):
 
             thread.start()
 
-            #SAFETY MARGIN SO THAT 
+            #SAFETY MARGIN SO THAT
             time.sleep(0.1)
 
             #CHECK IF ALL IS DONE
             self._scanned += 1
 
-            if (self._scanned > self._max_scans or 
+            if (self._scanned > self._max_scans or
                     self._init_time + self._interval * 60 *
                     (self._max_scans + 1) < time.time()):
 
@@ -443,7 +447,7 @@ class Experiment(object):
                 }
                 )
 
-        resource_project_log.write_log_file(self._first_pass_analysis_file, 
+        resource_project_log.write_log_file(self._first_pass_analysis_file,
             meta_data=meta_data)
 
     def _join_threads(self):
@@ -596,7 +600,7 @@ input file for the analysis script.""")
 
     if args.pinning is None:
         free_scanner(args.scanner, args.uuid)
-        parser.error("Bad pinnings supplied")        
+        parser.error("Bad pinnings supplied")
 
     #PREFIX
     if (args.prefix is None or args.file is None and
