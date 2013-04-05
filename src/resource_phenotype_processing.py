@@ -9,6 +9,7 @@ import scipy.interpolate as scint
 import sys
 import os
 import pickle
+import itertools
 
 import resource_xml_read as r_xml
 
@@ -426,7 +427,7 @@ def get_interactive_labels(header, labels):
     return plate_labels
 
 
-def get_interactive_norm_surface_matrix(data):
+def get_interactive_norm_surface_matrix(data, cur_grids):
 
     get_interactive_header("This sets up the normalisation grid per plate")
 
@@ -434,26 +435,29 @@ def get_interactive_norm_surface_matrix(data):
         "Each 2x2 square of colonies is expected to have both",
         "norm-grid positions and experiment posistions",
         "1 means it's a norm-grid position",
-        "0 means it's an experiment position",
-        "",
-        "Default is:",
-        "0 1 (first row)",
-        "0 0 (second row)"])
+        "0 means it's an experiment position"])
 
     norm_surface_matrices = {}
-    default_matrix = [[0, 1], [0, 0]]
+    default_grid = [[0, 1], [0, 0]]
     for p in xrange(data.shape[0]):
         norm_matrix = [None, None]
-        print "-- For Plate {0} --".format(p)
+        if cur_grids is not None and cur_grids[p] is not None:
+            cur_grid = cur_grids[p]
+        else:
+            cur_grid = default_grid
+
+        print "\n-- For Plate {0} --".format(p)
+        print "\nCurrent format is:"
+        print "{0} {1}\n{2} {3}".format(*itertools.chain(*cur_grid))
         for row in xrange(2):
             r = raw_input(
-                "Row {0} ('enter for deafault') :".format(
-                    ["one", "two"][row > 0]))
+                "\n** ROW {0} ('Press <ENTER> to keep current') :".format(
+                    ["ONE", "TWO"][row > 0]))
             try:
                 norm_matrix[row] = map(int, r.split(" ", 1))
             except:
-                logging.info("Default is used for row {0}".format(row + 1))
-                norm_matrix[row] = default_matrix[row]
+                logging.info("Current is used for row {0}".format(row + 1))
+                norm_matrix[row] = cur_grid[row]
 
         norm_surface_matrices[p] = norm_matrix
 
@@ -633,6 +637,8 @@ class Interactive_Menu():
             "Menu{0}".format([" ({0})".format(self._file_path), ""][
             self._file_path is None]))
 
+        print "\t### PHENOTYPE {0} ###\n".format(self._cur_phenotype + 1)
+
         old_k = None
         for k in self._menu_order:
 
@@ -670,15 +676,26 @@ class Interactive_Menu():
 
     def set_xml_file(self):
 
+        if self._file_path is None:
+            return
+
         file_path = self._file_path.split(".")
         pickle_data_file = ".".join(file_path[:-1]) + ".data.pickle"
         pickle_metadata_file = ".".join(file_path[:-1]) + ".metadata.pickle"
+        pickle_matrix_file = ".".join(file_path[:-1]) + ".matrix.pickle"
+        pickle_current_phenotype_file = ".".join(file_path[:-1]) + ".cur_pheno.pickle"
 
         if os.path.isfile(pickle_data_file) and os.path.isfile(pickle_metadata_file):
 
             data = pickle.load(open(pickle_data_file, 'rb'))
             meta_data = pickle.load(open(pickle_metadata_file, 'rb'))
             self._xml_file = r_xml.XML_Reader(data=data, meta_data=meta_data)
+            if os.path.isfile(pickle_matrix_file):
+                self._grid_surface_matrices = pickle.load(open(
+                    pickle_matrix_file, 'rb'))
+            if os.path.isfile(pickle_current_phenotype_file):
+                self._cur_phenotype = pickle.load(open(
+                    pickle_current_phenotype_file, 'rb'))
 
         else:
 
@@ -815,6 +832,8 @@ class Interactive_Menu():
                 self._plate_labels[i] = str(i)
             logging.info("Temporary plate labels set")
             self.set_enable_menu_plots()
+            self.set_xml_file()
+
             return True
 
         else:
@@ -1024,7 +1043,9 @@ class Interactive_Menu():
 
         elif task == "2A":
 
-            self._grid_surface_matrices = get_interactive_norm_surface_matrix(self._original_phenotypes)
+            self._grid_surface_matrices = get_interactive_norm_surface_matrix(
+                self._original_phenotypes,
+                self._grid_surface_matrices)
             logging.info("New normalisation grid set!")
 
         elif task == "2B":
@@ -1217,6 +1238,19 @@ class Interactive_Menu():
 
                     logging.warning("Could not save data, probably path is not valid")
 
+            file_path = self._get_save_file_guess(file_guess=".cur_pheno.pickle")
+            try:
+                pickle.dump(self._cur_phenotype, open(file_path, 'wb'))
+            except:
+                logging.warning("Could not save current phenotype state")
+
+            file_path = self._get_save_file_guess(file_guess=".matrix.pickle")
+            try:
+                pickle.dump(self._grid_surface_matrices, open(file_path, 'wb'))
+            except:
+                logging.warning("Could not save Grid Lawn position")
+
+            """
             if self._original_meta_data is not None:
 
                 header = "Saving metadata"
@@ -1227,6 +1261,7 @@ class Interactive_Menu():
                     logging.info("Data saved!")
                 except:
                     logging.warning("Could not save meta-data")
+            """
 
             if self._normalisation_vals is not None:
 
@@ -1235,7 +1270,7 @@ class Interactive_Menu():
                     header = "Saving values from normalisation grid ({0})".format(dtype)
                     if self._save(
                             self._normalisation_vals, header,
-                            save_as_np_array=d,
+                            save_as_np_array=t,
                             file_guess="_norm_array.{0}".format(dtype)):
 
                         logging.info("Data saved!")
