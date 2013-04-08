@@ -268,7 +268,7 @@ class Experiment(object):
         self._pinning = run_args.pinning
         if (64, 96) in self._pinning:
             self._logger.info("Changing resolution to 900 due to 6144 format")
-            self.scanners.update_sane_setting('--resolution', "900")
+            self.scanners.update_sane_setting('--resolution', "900", modes=['TPU'])
 
         self._scanner = self.scanners[run_args.scanner]
         self._scanner_name = run_args.scanner

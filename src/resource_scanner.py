@@ -476,7 +476,9 @@ class Scanner(object):
             #Scan
             if self._is_on:
 
-                self._logger.info("Configurating for scan")
+                self._logger.info("Configurating for scan {0}".format(
+                    self._parent._current_sane_settings))
+
                 scanner = resource_sane.Sane_Base(owner=self,
                     model=self._model,
                     scan_mode=mode,
@@ -587,14 +589,26 @@ class Scanners(object):
                 if c_v == sane_path[-1]:
                     c_path[c_i + 1] = sane_value
 
-
         self._current_sane_settings = current
 
-    def update_sane_setting(self, key, value):
+    def update_sane_setting(self, key, value, modes=['TPU', 'COLOR']):
 
         if self._current_sane_settings is not None:
 
-            self._current_sane_settings[key] = value
+            for model in self._current_sane_settings:
+
+                for scan_mode in self._current_sane_settings[model]:
+
+                    if (key in self._current_sane_settings[model][scan_mode]
+                            and scan_mode in modes):
+
+                        i = self._current_sane_settings[model][scan_mode].index(key)
+                        if 0 <= i < len(self._current_sane_settings[model][scan_mode]) - 1:
+                            self._current_sane_settings[model][scan_mode][i + 1] = value
+
+                            self._logger.info(
+                                "Updated scanning settings {2} for {0} in mode {1} to {3}".format(
+                                    model, scan_mode, key, value))
 
     def update(self):
 

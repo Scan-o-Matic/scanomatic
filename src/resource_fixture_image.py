@@ -17,7 +17,6 @@ __status__ = "Development"
 
 import os
 import time
-import types
 import itertools
 import numpy as np
 from matplotlib.pyplot import imread
@@ -43,7 +42,7 @@ def GH_loaded_decorator(f):
     def wrap(*args, **kwargs):
         self = args[0]
         if self._settings is None:
-            if self._load() == False:
+            if self._load() is False:
                 return None
         else:
             self._settings.reload()
@@ -99,7 +98,7 @@ class Gridding_History(object):
     def _load(self):
 
         conf_file = conf.Config_File(self._paths.get_fixture_path(self._name))
-        if conf_file.get_loaded() == False:
+        if conf_file.get_loaded() is False:
             self._settings = None
             return False
         else:
@@ -114,7 +113,7 @@ class Gridding_History(object):
         if h is None:
             self._logger.info(
                 "No history in {2} on plate {0} format {1}".format(
-                plate, pinning_format,self._name))
+                    plate, pinning_format, self._name))
             return None
 
         self._logger.info(
@@ -124,13 +123,13 @@ class Gridding_History(object):
 
     @GH_loaded_decorator
     def get_gridding_history_specific_plate(self, p_uuid, plate,
-        pinning_format):
+                                            pinning_format):
 
         h = self._get_gridding_history(plate, pinning_format)
         if h is None or p_uuid not in h:
             self._logger.info(
                 "No history in {2} on plate {0} format {1}".format(
-                plate, pinning_format,self._name))
+                    plate, pinning_format, self._name))
             return None
 
         self._logger.info(
@@ -141,7 +140,7 @@ class Gridding_History(object):
 
     @GH_loaded_decorator
     def set_gridding_parameters(self, project_id, pinning_format, plate,
-            center, spacings):
+                                center, spacings):
 
         h = self._get_gridding_history(plate, pinning_format)
 
@@ -170,10 +169,11 @@ class Gridding_History(object):
         try:
             del h[project_id]
         except:
-            self._logger.warning(("Gridding history for {0} project {1}"
+            self._logger.warning((
+                "Gridding history for {0} project {1}"
                 " plate {2} pinning format {3} did not exist, thus"
-                " nothing to delete").format(self._name,
-                project_id, plate, pinning_format))
+                " nothing to delete").format(
+                    self._name, project_id, plate, pinning_format))
             return False
 
         f = self._settings
@@ -181,7 +181,7 @@ class Gridding_History(object):
         f.save()
 
         return True
-        
+
     @GH_loaded_decorator
     def reset_gridding_history(self, plate):
 
@@ -221,13 +221,17 @@ class Gridding_History(object):
             self.reset_all_gridding_histories()
             f.set('version', self._app_config.version_fixture_grid_history_change_1)
             f.save()
-        
+
+
 class Fixture_Image(object):
 
+    MARKER_DETECTION_SCALE = 0.25
+    EXPECTED_IM_SIZE = (6000, 4800)
+
     def __init__(self, fixture, image_path=None,
-            image=None, markings=None, define_reference=False,
-            fixture_directory=None, markings_path=None,
-            im_scale=None, logger=None, paths=None, app_config=None):
+                 image=None, markings=None, define_reference=False,
+                 fixture_directory=None, markings_path=None,
+                 im_scale=None, logger=None, paths=None, app_config=None):
 
         if logger is None:
             logger = resource_logger.Log_Garbage_Collector()
@@ -246,9 +250,10 @@ class Fixture_Image(object):
         self._define_reference = define_reference
         self.fixture_name = fixture
         self.im_scale = im_scale
-        self.im_original_scale = (im_scale is None and 1.0 or im_scale)
+        self.im_original_scale = im_scale
 
-        self.set_reference_file(fixture,
+        self.set_reference_file(
+            fixture,
             fixture_directory=fixture_directory,
             image_path=image_path)
 
@@ -257,8 +262,9 @@ class Fixture_Image(object):
         f_name = self.get_name_in_ref()
         if f_name is None:
             f_name = fixture
-        self._history = Gridding_History(self, f_name, self._paths,
-            logger=logger, app_config = self._config)
+        self._history = Gridding_History(
+            self, f_name, self._paths,
+            logger=logger, app_config=self._config)
 
         self.set_number_of_markings(markings)
 
@@ -296,7 +302,7 @@ class Fixture_Image(object):
 
             return self.fixture_name
 
-        elif key in  ["grayscale", "greyscale"]:
+        elif key in ["grayscale", "greyscale"]:
 
             return self._gs_indices, self._gs_values
 
@@ -315,7 +321,7 @@ class Fixture_Image(object):
         elif key in ['version', 'Version']:
 
             return self.fixture_reference.get('version')
- 
+
         elif key in ['history', 'pinning', 'pinnings', 'gridding']:
 
             return self._history
@@ -327,7 +333,7 @@ class Fixture_Image(object):
     def __setitem__(self, key, val):
 
         if key in ['grayscale-area', 'grayscale-coords', 'gs-area',
-            'gs-coords', 'greyscale-area', 'greyscale-coords']:
+                   'gs-coords', 'greyscale-area', 'greyscale-coords']:
 
             self.fixture_current['grayscale_area'] = val
 
@@ -415,6 +421,19 @@ class Fixture_Image(object):
 
             self['fixture'].set("marker_path", self.marking_path)
 
+    def set_im_scale(self):
+
+        if self.im is not None and self.im_original_scale is None:
+
+            #Check so equally scaled both dimensions
+            scale_d1, scale_d2 = [
+                self.im.shape[i] / float(self.EXPECTED_IM_SIZE[i])
+                for i in range(2)]
+
+            if scale_d1 == scale_d2:
+
+                self.im_original_scale = scale_d1
+
     def set_image(self, image=None, image_path=None):
 
         if image is not None:
@@ -429,14 +448,17 @@ class Fixture_Image(object):
 
             self.im = None
 
+        self.set_im_scale()
+
     def set_reference_file(self, fixture_name, fixture_directory=None,
-            image_path=None):
+                           image_path=None):
 
         if fixture_directory is not None:
 
             self._fixture_reference_path = \
-                self._paths.get_fixture_path(fixture_name,
-                own_path=fixture_directory)
+                self._paths.get_fixture_path(
+                    fixture_name,
+                    own_path=fixture_directory)
 
             self._fixture_config_root = fixture_directory
 
@@ -446,8 +468,9 @@ class Fixture_Image(object):
                 os.sep.join(image_path.split(os.sep)[:-1])
 
             self._fixture_reference_path = \
-                self._paths.get_fixture_path(fixture_name,
-                own_path=self._fixture_config_root)
+                self._paths.get_fixture_path(
+                    fixture_name,
+                    own_path=self._fixture_config_root)
 
         else:
 
@@ -464,30 +487,32 @@ class Fixture_Image(object):
             output_function = self._output_f
 
         t = time.time()
-        output_function('Fixture calibration',
-                    "Threading invokes marker analysis", "LA",
-                    debug_level='info')
+        output_function(
+            'Fixture calibration',
+            "Threading invokes marker analysis", "LA",
+            debug_level='info')
 
         self.run_marker_analysis()
 
-        output_function('Fixture calibration',
-                    "Threading marker detection complete, invokes setting area positions" +
-                    " (acc-time {0} s)".format(time.time()-t), "LA",
-                    debug_level='info')
+        output_function(
+            'Fixture calibration',
+            "Threading marker detection complete, invokes setting area positions" +
+            " (acc-time {0} s)".format(time.time() - t), "LA",
+            debug_level='info')
 
         self.set_current_areas()
 
-        output_function('Fixture calibration',
-                    "Threading areas set(acc-time: {0} s)".format(time.time()-t),
-                    "LA", debug_level='info')
+        output_function(
+            'Fixture calibration',
+            "Threading areas set(acc-time: {0} s)".format(time.time() - t),
+            "LA", debug_level='info')
 
         self.analyse_grayscale()
 
-        output_function('Fixture calibration',
-                    "Threading done (took: {0} s)".format(time.time()-t),
-                    "LA", debug_level='info')
-
-
+        output_function(
+            'Fixture calibration',
+            "Threading done (took: {0} s)".format(time.time() - t),
+            "LA", debug_level='info')
 
     def _get_markings(self, source='fixture'):
 
@@ -507,7 +532,6 @@ class Fixture_Image(object):
                 X.append(Z[0])
                 Y.append(Z[1])
 
-
         if len(X) == 0:
 
             return None, None
@@ -522,13 +546,14 @@ class Fixture_Image(object):
 
         t = time.time()
 
-        if self.marking_path == None or self.markings < 1:
+        if self.marking_path is None or self.markings < 1:
 
             msg = "Error, no marker set ('%s') or no markings (%s)." % (
                 self.marking_path, self.markings)
 
-            output_function('Fixture calibration: Marker Detection', msg, "LA",
-                        debug_level='error')
+            output_function(
+                'Fixture calibration: Marker Detection', msg, "LA",
+                debug_level='error')
 
             return None
 
@@ -536,7 +561,7 @@ class Fixture_Image(object):
 
             analysis_im_path = \
                 self._paths.fixture_image_file_pattern.format(
-                self.fixture_name)
+                    self.fixture_name)
 
             #analysis_im_path = self._fixture_config_root + os.sep + \
             #        self.fixture_name + ".tiff"
@@ -559,16 +584,21 @@ class Fixture_Image(object):
             scale_str = "Kept scale {0}".format(self.im_scale)
         else:
 
-            analysis_img = resource_image.Quick_Scale_To_im(im=self.im, scale=0.25)
-            scale_str = "New scale {0}".format(0.25)
-            self.im_scale = 0.25
+            analysis_img = resource_image.Quick_Scale_To_im(
+                im=self.im,
+                scale=self.MARKER_DETECTION_SCALE / self.im_original_scale)
+
+            scale_str = "New scale {0}".format(
+                self.MARKER_DETECTION_SCALE / self.im_original_scale)
+
+            self.im_scale = self.MARKER_DETECTION_SCALE / self.im_original_scale
 
         output_function('Fixture calibration: Marker Detection', scale_str, "LA",
                         debug_level='info')
 
-        output_function('Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
-                        time.time()-t), "LA",
-                        debug_level='info')
+        output_function(
+            'Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
+                time.time() - t), "LA", debug_level='info')
 
         if analysis_im_path is not None:
 
@@ -576,20 +606,21 @@ class Fixture_Image(object):
             #imsave(analysis_im_path, analysis_img, format='tiff')
             np.save(analysis_im_path, analysis_img)
 
-        msg = "Setting up Image Analysis (acc {0} s)".format(time.time()-t)
+        msg = "Setting up Image Analysis (acc {0} s)".format(time.time() - t)
 
-        output_function('Fixture calibration: Marker Detection', msg, 'A',
-                    debug_level='debug')
+        output_function(
+            'Fixture calibration: Marker Detection', msg, 'A',
+            debug_level='debug')
 
         im_analysis = resource_image.Image_Analysis(
-                    image=analysis_img,
-                    pattern_image_path=self.marking_path,
-                    scale=self.im_scale)
+            image=analysis_img,
+            pattern_image_path=self.marking_path,
+            scale=self.im_scale)
 
-        msg = "Finding pattern (acc {0} s)".format(time.time()-t)
+        msg = "Finding pattern (acc {0} s)".format(time.time() - t)
 
         output_function('Fixture calibration, Marker Detection', msg, 'A',
-                    debug_level='debug')
+                        debug_level='debug')
 
         Xs, Ys = im_analysis.find_pattern(markings=self.markings)
 
@@ -606,9 +637,9 @@ class Fixture_Image(object):
             output_function("Fixture calibration", "Setting makers {0}, {1}".format(
                 Xs, Ys))
 
-        msg = "Marker Detection complete (acc {0} s)".format(time.time()-t)
+        msg = "Marker Detection complete (acc {0} s)".format(time.time() - t)
         output_function('Fixture calibration: Marker Detection', msg, 'A',
-                    debug_level='debug')
+                        debug_level='debug')
 
         return analysis_im_path
 
@@ -625,7 +656,7 @@ class Fixture_Image(object):
         """Note that it only works for NP-ARRAYS and NOT for lists"""
         version = self['fixture']['version']
         if version is None or \
-            version < self._config.version_first_pass_change_1:
+                version < self._config.version_first_pass_change_1:
 
             args = list(args)
             for a in args:
@@ -653,11 +684,12 @@ class Fixture_Image(object):
         L = np.sqrt(dX ** 2 + dY ** 2)
 
         #FIXTURE SETTINGS
-        version = self['fixture']['version']
+        #version = self['fixture']['version']
         refX, refY = self._get_markings(source="fixture")
-        refX = np.array(refX)
-        refY = np.array(refY)
+        refX = np.array(refX) * self.im_original_scale
+        refY = np.array(refY) * self.im_original_scale
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
+        ref_Mcom *= self.im_original_scale
         self._version_check_positions_arr(ref_Mcom, refX, refY)
         ref_dX = refX - ref_Mcom[0]
         ref_dY = refY - ref_Mcom[1]
@@ -667,7 +699,7 @@ class Fixture_Image(object):
         if Y.shape == refX.shape == refY.shape:
 
             #Find min diff order
-            s_reseed = range(len(ref_L))
+            #s_reseed = range(len(ref_L))
             s = range(len(L))
 
             tmp_dL = []
@@ -731,11 +763,10 @@ class Fixture_Image(object):
 
         return None
 
-
     def analyse_grayscale(self):
 
         im = self.get_subsection(self['current']['grayscale_area'],
-                scale=self.im_original_scale)
+                                 scale=self.im_original_scale)
 
         print id(im), type(im), "For save", self['current']['grayscale_area'], self.im_original_scale
 
@@ -743,9 +774,10 @@ class Fixture_Image(object):
             return False
 
         np.save(".tmp.npy", im)
-        ag = resource_image.Analyse_Grayscale(target_type="Kodak", 
-            image=im, scale_factor=self.im_original_scale)
-        
+        ag = resource_image.Analyse_Grayscale(
+            target_type="Kodak", image=im,
+            scale_factor=self.im_original_scale)
+
         gs_indices = ag.get_target_values()
         gs_values = ag.get_source_values()
         self._gs_values = gs_values
@@ -763,8 +795,8 @@ class Fixture_Image(object):
         tmp_l = np.sqrt(point[0] ** 2 + point[1] ** 2)
         tmp_alpha = np.arccos(point[0] / tmp_l)
 
-        tmp_alpha = tmp_alpha * (point[1] > 0) + -1 * tmp_alpha * \
-                            (point[1] < 0)
+        tmp_alpha = (tmp_alpha * (point[1] > 0) + -1 * tmp_alpha *
+                     (point[1] < 0))
 
         new_alpha = tmp_alpha + alpha
         new_x = np.cos(new_alpha) * tmp_l + offset[0]
@@ -775,46 +807,51 @@ class Fixture_Image(object):
     def set_current_areas(self):
 
         alpha, Mcom = self._get_markings_rotations()
-        X, Y = self._get_markings(source='current') 
+        X, Y = self._get_markings(source='current')
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
+        ref_Mcom *= self.im_original_scale
 
         self['current'].flush()
         self._set_markings_in_conf(self['current'], X, Y)
 
-        ref_gs = self['fixture']["grayscale_area"]
         version = self['fixture']['version']
+        ref_gs = np.array(self['fixture']["grayscale_area"])
+        ref_gs *= self.im_original_scale
 
         self._version_check_positions_arr(ref_Mcom)
 
-        if version is None or \
-            version < self._config.version_first_pass_change_1:
+        if (version is None or
+                version < self._config.version_first_pass_change_1):
 
             scale_factor = 4
-        else:
-            scale_factor = 1
- 
-        if ref_gs is not None and bool(self['fixture']["grayscale"]) == True:
 
-            dGs1 = scale_factor * np.array(ref_gs[0]) - ref_Mcom
-            dGs2 = scale_factor * np.array(ref_gs[1]) - ref_Mcom
+        else:
+
+            scale_factor = 1
+
+        if ref_gs is not None and bool(self['fixture']["grayscale"]) is True:
+
+            dGs1 = scale_factor * ref_gs[0] - ref_Mcom
+            dGs2 = scale_factor * ref_gs[1] - ref_Mcom
 
             self['current'].set("grayscale_area",
                 [self._get_rotated_point(dGs1, alpha, offset=Mcom),
-                self._get_rotated_point(dGs2, alpha, offset=Mcom)])
+                 self._get_rotated_point(dGs2, alpha, offset=Mcom)])
 
         i = 0
-        ref_m = True
+        #ref_m = True
         p_str = "plate_{0}_area"
         f_plates = self['fixture'].get_all("plate_%n_area")
 
         for i, p in enumerate(f_plates):
-
-            dM1 = scale_factor * np.array(p[0]) - ref_Mcom
-            dM2 = scale_factor * np.array(p[1]) - ref_Mcom
+            p = np.array(p)
+            p *= self.im_original_scale
+            dM1 = scale_factor * p[0] - ref_Mcom
+            dM2 = scale_factor * p[1] - ref_Mcom
 
             self['current'].set(p_str.format(i),
                 [self._get_rotated_point(dM1, alpha, offset=Mcom),
-                self._get_rotated_point(dM2, alpha, offset=Mcom)])
+                 self._get_rotated_point(dM2, alpha, offset=Mcom)])
 
     def _get_coords_sorted(self, coords):
 
