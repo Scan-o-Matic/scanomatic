@@ -94,19 +94,34 @@ def make_griddata_interpolation(plate, method='cubic'):
 #NEWEST PRECOG RATES
 def get_empty_data_structure(plate, max_row, max_column, depth=None, default_value=48):
 
+    def _allowed_size(val):
+        ok = (8, 12, 16, 24, 32, 48, 64)
+        if val in ok:
+            return val
+        else:
+            for i in range(len(ok)):
+                if ok[i] < val:
+                    break
+
+            if i == 0:
+                return ok[0]
+            else:
+                return ok[i]
+
     data = np.array([None] * (plate + 1), dtype=np.object)
 
     for p in xrange(plate + 1):
         if depth is None:
             if max_row[p] > 0 and max_column[p] > 0:
-                data[p] = np.ones((max_row[p] + 1,
-                                   max_column[p] + 1)) * default_value
+                data[p] = np.ones((_allowed_size(max_row[p]),
+                                   _allowed_size(max_column[p]))) * default_value
             else:
                 data[p] = np.array([])
         else:
             if max_row[p] > 0 and max_column[p] > 0:
-                data[p] = np.ones((max_row[p] + 1,
-                                   max_column[p] + 1, depth)) * default_value
+                data[p] = np.ones((_allowed_size(max_row[p]),
+                                   _allowed_size(max_column[p]),
+                                   depth)) * default_value
             else:
                 data[p] = np.array([])
 

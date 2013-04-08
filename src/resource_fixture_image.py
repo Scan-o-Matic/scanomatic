@@ -257,16 +257,12 @@ class Fixture_Image(object):
             fixture_directory=fixture_directory,
             image_path=image_path)
 
-        self.set_marking_path(markings_path)
-
         f_name = self.get_name_in_ref()
         if f_name is None:
             f_name = fixture
         self._history = Gridding_History(
             self, f_name, self._paths,
             logger=logger, app_config=self._config)
-
-        self.set_number_of_markings(markings)
 
         self._markers_X = None
         self._markers_Y = None
@@ -275,6 +271,8 @@ class Fixture_Image(object):
         self.im = None
 
         self.set_image(image=image, image_path=image_path)
+        self.set_marking_path(markings_path)
+        self.set_number_of_markings(markings)
 
     def _output_f(self, *args, **kwargs):
 
@@ -416,6 +414,8 @@ class Fixture_Image(object):
         else:
 
             self.marking_path = self.fixture_reference.get("marker_path")
+
+        self._logger.info("Marker set to: {0} {1}".format(self.marking_path, type(self.marking_path)))
 
         if self._define_reference:
 
@@ -766,7 +766,7 @@ class Fixture_Image(object):
     def analyse_grayscale(self):
 
         im = self.get_subsection(self['current']['grayscale_area'],
-                                 scale=self.im_original_scale)
+                                 scale=1.0)
 
         print id(im), type(im), "For save", self['current']['grayscale_area'], self.im_original_scale
 

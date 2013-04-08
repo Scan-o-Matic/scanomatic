@@ -38,81 +38,81 @@ class Paths(object):
             if program_path is not None:
                 root = os.path.dirname(os.path.abspath(program_path))
             elif src_path is not None:
-                root = os.path.dirname(os.sep.join(src_path.split(os.sep)[:-1]))
+                root = os.path.abspath(os.path.join(
+                    os.path.dirname(src_path, os.path.pardir)))
             else:
-                root = os.sep.join(
-                    os.path.dirname(os.path.abspath(
-                        __file__)).split(os.sep)[:-1])
+                root = os.path.abspath(os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), os.path.pardir))
 
         self.root = root
         if os.path.isdir(root) is False:
             raise Invalid_Root(root)
-        self.src = self.root + os.sep + "src"
+        self.src = os.path.join(self.root, "src")
         if os.path.isdir(self.src) is False:
             raise Invalid_Root(root)
-        self.config = self.root + os.sep + "config"
+        self.config = os.path.join(self.root, "config")
         if os.path.isdir(self.config) is False:
             raise Invalid_Root(root)
-        self.fixtures = self.config + os.sep + "fixtures"
-        self.images = self.src + os.sep + "images"
+        self.fixtures = os.path.join(self.config, "fixtures")
+        self.images = os.path.join(self.src, "images")
 
         #INSTALL
         self.desktop_file = "scan-o-matic.desktop"
-        self.desktop_file_path = os.sep.join(
-            (self.config, "desktop_icon", self.desktop_file))
+        self.desktop_file_path = os.path.join(
+            self.config, "desktop_icon", self.desktop_file)
         self.install_filezilla = os.path.join(
             self.src, "install_filezilla.sh")
 
         #RUN-files
-        self.scanomatic = self.root + os.sep + "run_scan_o_matic.py"
-        self.analysis = os.sep.join((self.root, "run_analysis.py"))
-        self.experiment = os.sep.join((self.root, "run_experiment.py"))
+        self.scanomatic = os.path.join(self.root, "run_scan_o_matic.py")
+        self.analysis = os.path.join(self.root, "run_analysis.py")
+        self.experiment = os.path.join(self.root, "run_experiment.py")
         self.revive = os.path.join(self.root, 'relauncher.py')
         self.install_autostart = os.path.join(
             self.root, 'install_autostart.py')
 
         #CONFIG
-        self.config_main_app = os.sep.join((self.config, 'main.config'))
-        self.config_mac = os.sep.join((self.config, 'mac_address.config'))
+        self.config_main_app = os.path.join(self.config, 'main.config')
+        self.config_mac = os.path.join(self.config, 'mac_address.config')
 
         #IMAGES
-        self.marker = self.images + os.sep + "orientation_marker_150dpi.png"
-        self.martin = os.sep.join((self.images, "martin3.png"))
-        self.logo = os.sep.join((self.images, "scan-o-matic.png"))
+        self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
+        self.martin = os.path.join(self.images, "martin3.png")
+        self.logo = os.path.join(self.images, "scan-o-matic.png")
 
         #FIXTURE_FILES
         self.fixture_conf_file_suffix = ".config"
         self.fixture_conf_file_rel_pattern = "{0}" + \
             self.fixture_conf_file_suffix
         self.fixture_image_file_rel_pattern = "{0}.npy"
-        self.fixture_conf_file_pattern = os.sep.join((
-            self.fixtures, self.fixture_conf_file_rel_pattern))
-        self.fixture_image_file_pattern = os.sep.join((
-            self.fixtures, self.fixture_image_file_rel_pattern))
+        self.fixture_conf_file_pattern = os.path.join(
+            self.fixtures, self.fixture_conf_file_rel_pattern)
+        self.fixture_image_file_pattern = os.path.join(
+            self.fixtures, self.fixture_image_file_rel_pattern)
         self.fixture_tmp_scan_image = \
             self.fixture_image_file_pattern.format(".tmp")
 
         #LOG
-        self.log = self.root + os.sep + "log"
-        self.log_scanner_out = os.sep.join((self.log, "scanner_{0}.stdout"))
-        self.log_scanner_err = os.sep.join((self.log, "scanner_{0}.stderr"))
-        self.log_main_out = os.sep.join((self.log, "main.stdout"))
-        self.log_main_err = os.sep.join((self.log, "main.stderr"))
+        self.log = os.path.join(self.root, "log")
+        self.log_scanner_out = os.path.join(self.log, "scanner_{0}.stdout")
+        self.log_scanner_err = os.path.join(self.log, "scanner_{0}.stderr")
+        self.log_main_out = os.path.join(self.log, "main.stdout")
+        self.log_main_err = os.path.join(self.log, "main.stderr")
         self._last_analysis_log_index = 0
-        self.log_analysis_out = os.sep.join((self.log, "analysis_{0}.stdout"))
-        self.log_analysis_err = os.sep.join((self.log, "analysis_{0}.stderr"))
+        self.log_analysis_out = os.path.join(self.log, "analysis_{0}.stdout")
+        self.log_analysis_err = os.path.join(self.log, "analysis_{0}.stderr")
         self.log_relaunch = os.path.join(self.log, "relaunch.log")
         self.log_project_progress = os.path.join(self.log, "progress.projects")
 
         #EXPERIMENT
-        self.experiment_root = os.path.expanduser("~") + os.sep + "Documents"
+        self.experiment_root = os.path.join(os.path.expanduser("~"), "Documents")
         self.experiment_scan_image_relative_pattern = "{0}_{1}.tiff"
         self.experiment_analysis_relative_path = "analysis"
         self.experiment_analysis_file_name = "analysis.log"
 
         #ANALSYS FILES
-        self.analysis_polynomial = os.sep.join(
-            (self.config, "calibration.polynomials"))
+        self.analysis_polynomial = os.path.join(
+            self.config, "calibration.polynomials")
 
         self.analysis_run_log = 'analysis.run'
 
@@ -123,7 +123,7 @@ class Paths(object):
         self.experiment_grid_image_pattern = "grid___origin_plate_{0}.svg"
 
         #LOCK FILES
-        self.lock_root = os.sep.join((os.path.expanduser("~"), ".scan_o_matic"))
+        self.lock_root = os.path.join(os.path.expanduser("~"), ".scan_o_matic")
         self.lock_power_up_new_scanner = self.lock_root + ".new_scanner.lock"
         self.lock_scanner_pattern = self.lock_root + ".scanner.{0}.lock"
         self.lock_scanner_addresses = self.lock_root + ".addresses.lock"
@@ -134,8 +134,9 @@ class Paths(object):
     def _is_fixture_file_name(self, fixture_name):
 
         suffix_l = len(self.fixture_conf_file_suffix)
-        if len(fixture_name) > suffix_l and \
-            fixture_name[-suffix_l:] == self.fixture_conf_file_suffix:
+        if (len(fixture_name) > suffix_l and
+                fixture_name[-suffix_l:] ==
+                self.fixture_conf_file_suffix):
 
             return True
 
@@ -145,10 +146,10 @@ class Paths(object):
 
     def get_fixture_name(self, fixture_path):
 
-        fixture = fixture_path.split(os.sep)[-1]
+        fixture = os.path.basename(fixture_path)
         if len(fixture) > len(self.fixture_conf_file_suffix):
             if fixture[-len(self.fixture_conf_file_suffix):] == \
-                self.fixture_conf_file_suffix:
+                    self.fixture_conf_file_suffix:
 
                 fixture = fixture[:-len(self.fixture_conf_file_suffix)]
 
@@ -159,7 +160,7 @@ class Paths(object):
         return scanner.lower().replace(" ", "_")
 
     def get_fixture_path(self, fixture_name, conf_file=True, own_path=None,
-            only_name=False):
+                         only_name=False):
 
         fixture_name = fixture_name.lower().replace(" ", "_")
 
@@ -176,9 +177,14 @@ class Paths(object):
                 f_pattern = self.fixture_image_file_rel_pattern
 
             if own_path == "":
-                return f_pattern.format(fixture_name)
+
+                f = f_pattern.format(fixture_name)
+                if os.path.isfile(f):
+                    return f
             else:
-                return os.sep.join((own_path, f_pattern.format(fixture_name)))
+                f = os.path.join(own_path, f_pattern.format(fixture_name))
+                if os.path.isfile(f):
+                    return f
 
         if conf_file:
             return self.fixture_conf_file_pattern.format(fixture_name)
@@ -189,8 +195,7 @@ class Paths(object):
 
         f = (self.log_analysis_out.format(
             self._last_analysis_log_index),
-            self.log_analysis_err.format(
-            self._last_analysis_log_index))
+            self.log_analysis_err.format(self._last_analysis_log_index))
 
         self._last_analysis_log_index += 1
 

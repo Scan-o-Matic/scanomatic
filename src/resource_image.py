@@ -14,9 +14,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import sys
-import os
-import types
 from scipy.ndimage import zoom
 from scipy.signal import fftconvolve
 from scipy.optimize import fsolve
@@ -38,7 +35,7 @@ import resource_signal as r_signal
 def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
 
     small_im = Quick_Scale_To_im(source_path, source_dpi=source_dpi,
-        target_dpi=target_dpi)
+                                 target_dpi=target_dpi)
 
     try:
 
@@ -52,7 +49,7 @@ def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
 
 
 def Quick_Scale_To_im(path=None, im=None, source_dpi=600, target_dpi=150,
-    scale=None):
+                      scale=None):
 
     if im is None:
 
@@ -70,7 +67,7 @@ def Quick_Scale_To_im(path=None, im=None, source_dpi=600, target_dpi=150,
         scale = target_dpi / float(source_dpi)
 
     small_im = zoom(im, scale, order=1)
- 
+
     return small_im
 
 
@@ -98,12 +95,12 @@ class Image_Transpose(object):
         """
 
         p = self.gs_a * (x ** 3) + self.gs_b * (x ** 2) + \
-                self.gs_c * x + self.gs_d
+            self.gs_c * x + self.gs_d
 
         return p
 
     def set_matrix(self, gs_values=None, gs_fit=None,
-                gs_indices=None, y_max=255, fix_axis=False):
+                   gs_indices=None, y_max=255, fix_axis=False):
         """get_transformation_matrix takes an coefficient array of a
         polynomial fit of the 3rd degree and calculates a matrix
         of all solutions for all the integer steps of the y-range
@@ -131,10 +128,10 @@ class Image_Transpose(object):
         The function returns a list of transformation values
         """
 
-        if gs_values != None:
+        if gs_values is not None:
 
             #Create value - indices if not supplied
-            if gs_indices == None:
+            if gs_indices is None:
 
                 gs_indices = range(len(gs_values))
 
@@ -187,10 +184,9 @@ class Image_Transpose(object):
 
         return self.gs, self.gs_targets
 
-
     def get_transposed_im(self, im):
 
-        return self.tf_matrix.take(im.astype(np.int)) 
+        return self.tf_matrix.take(im.astype(np.int))
 
     def get_transposed_im_old(self, im):
 
@@ -198,7 +194,7 @@ class Image_Transpose(object):
         tf = self.tf_matrix
         for i in xrange(tf.size):
 
-            np.place(im2, im==i, tf[i])
+            np.place(im2, im == i, tf[i])
 
         return im2
 
@@ -206,7 +202,7 @@ class Image_Transpose(object):
 class Image_Analysis():
 
     def __init__(self, path=None, image=None, pattern_image_path=None,
-        scale=1.0):
+                 scale=1.0):
 
         self._path = path
         self._img = None
@@ -224,11 +220,11 @@ class Image_Analysis():
             except:
 
                 logging.error("Could not open orientation guide image at " +
-                        str(pattern_image_path))
+                              str(pattern_image_path))
 
                 self._load_error = True
 
-            if self._load_error != True:
+            if self._load_error is not True:
 
                 if len(pattern_img.shape) > 2:
 
@@ -237,7 +233,6 @@ class Image_Analysis():
                 self._pattern_img = pattern_img
 
         if image is not None:
-
 
             self._img = np.asarray(image)
 
@@ -258,13 +253,11 @@ class Image_Analysis():
                     logging.error("Could not open image at " + str(path))
                     self._load_error = True
 
-
-        if self._load_error != True:
+        if self._load_error is not True:
 
             if len(self._img.shape) > 2:
 
                 self._img = self._img[:, :, 0]
-
 
     def load_other_size(self, path=None, conversion_factor=1.0):
 
@@ -285,7 +278,7 @@ class Image_Analysis():
             logging.error("Could not reload image at " + str(path))
             self._load_error = True
 
-        if self._load_error != True:
+        if self._load_error is not True:
 
             if len(self._img.shape) > 2:
 
@@ -296,7 +289,6 @@ class Image_Analysis():
             logging.info("Scaling to {0}".format(conversion_factor))
             self._img = Quick_Scale_To_im(conversion_factor)
             logging.info("Scaled")
-
 
     def get_hit_refined(self, hit, conv_img):
 
@@ -341,7 +333,6 @@ class Image_Analysis():
 
         max_coord = np.where(conv_img == conv_img.max())
 
-
         if len(max_coord[0]) == 0:
 
             return None, conv_img
@@ -355,21 +346,19 @@ class Image_Analysis():
         #Zeroing out hit
         half_stencil = map(lambda x: x / 2.0, stencil_size)
 
-        
-        d1_min = (max_coord[0] - half_stencil[0] > 0 and \
-                max_coord[0] - half_stencil[0] or 0)
+        d1_min = (max_coord[0] - half_stencil[0] > 0 and
+                  max_coord[0] - half_stencil[0] or 0)
 
-        d1_max = (max_coord[0] + half_stencil[0] < conv_img.shape[0] \
-                and max_coord[0] + half_stencil[0] or conv_img.shape[0] - 1)
+        d1_max = (max_coord[0] + half_stencil[0] < conv_img.shape[0]
+                  and max_coord[0] + half_stencil[0] or conv_img.shape[0] - 1)
 
-        d2_min = (max_coord[1] - half_stencil[1] > 0 and \
-                max_coord[1] - half_stencil[1] or 0)
+        d2_min = (max_coord[1] - half_stencil[1] > 0 and
+                  max_coord[1] - half_stencil[1] or 0)
 
-        d2_max = (max_coord[1] + half_stencil[1] < conv_img.shape[1] \
-                and max_coord[1] + half_stencil[1] or conv_img.shape[1] - 1)
+        d2_max = (max_coord[1] + half_stencil[1] < conv_img.shape[1]
+                  and max_coord[1] + half_stencil[1] or conv_img.shape[1] - 1)
 
-        conv_img[d1_min: d1_max, d2_min:d2_max] = \
-                conv_img.min() - 1
+        conv_img[d1_min: d1_max, d2_min:d2_max] = conv_img.min() - 1
 
         return max_coord, conv_img
 
@@ -379,7 +368,7 @@ class Image_Analysis():
 
         m_locations = []
         c_img = conv_img.copy()
-	i = 0
+        i = 0
         try:
             n = int(n)
         except:
@@ -388,7 +377,7 @@ class Image_Analysis():
         while i < n:
 
             m_loc, c_img = self.get_best_location(c_img, stencil_size,
-                        refine_hit)
+                                                  refine_hit)
 
             m_locations.append(m_loc)
 
@@ -404,7 +393,8 @@ class Image_Analysis():
 
             c1 = self.get_convolution(threshold=img_threshold)
 
-            m1 = np.array(self.get_best_locations(c1, self._pattern_img.shape,
+            m1 = np.array(self.get_best_locations(
+                c1, self._pattern_img.shape,
                 markings, refine_hit=False)) * self._conversion_factor
 
             return m1[:, 1], m1[:, 0]
@@ -415,31 +405,42 @@ class Image_Analysis():
 
     def get_loaded(self):
 
-        return (self._img != None) and (self._load_error != True)
-
+        return (self._img is not None) and (self._load_error is not True)
 
 
 class Analyse_Grayscale(object):
 
-    def __init__(self, target_type="Kodak", image=None, scale_factor=1.0, dpi=600):
+    ORTH_EDGE_T = 0.2
+    ORTH_T1 = 0.15
+    ORTH_T2 = 0.3
+    GS_ROUGH_INTENSITY_T1 = (256 * 1 / 4)
+    GS_ROUGH_INTENSITY_T2 = 125
+    GS_ROUGH_INTENSITY_T3 = 170
+    SPIKE_UP_T = 1.2
+    SPIKE_BEST_TOLLERANCE = 0.05
+    SAFETY_PADDING = 0.2
+    SAFETY_COEFF = 0.5
+
+    def __init__(self, target_type="Kodak", image=None, scale_factor=1.0):
 
         self.grayscale_type = target_type
         self._grayscale_dict = {
             'Kodak': {
                 'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
-                    38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
-                'width': 55,
+                            38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
+                'width': 55 * scale_factor,
+                'min_width': 30 * scale_factor,
                 'sections': 23,
-                'lower_than_half_width': 350,
-                'higher_than_half_width': 150,
-                'length': 28.57
-                }
+                'lower_than_half_width': 350 * scale_factor,
+                'higher_than_half_width': 150 * scale_factor,
+                'length': 28.57 * scale_factor,
             }
+        }
 
         for k in self._grayscale_dict[target_type]:
 
             setattr(self, "_grayscale_{0}".format(k),
-                self._grayscale_dict[target_type][k])
+                    self._grayscale_dict[target_type][k])
 
         self._img = image
         np.save("tmp_img.npy", image)
@@ -449,10 +450,9 @@ class Analyse_Grayscale(object):
         self._grayscale = None
         self._grayscale_X = None
 
-        if image != None:
+        if image is not None:
 
-            self._grayscale_pos, self._grayscale = self.get_grayscale(
-                scale_factor=scale_factor, dpi=dpi)
+            self._grayscale_pos, self._grayscale = self.get_grayscale()
 
             self._grayscale_X = self.get_grayscale_X(self._grayscale_pos)
 
@@ -466,11 +466,11 @@ class Analyse_Grayscale(object):
 
     def get_grayscale_X(self, grayscale_pos=None):
 
-        if grayscale_pos == None:
+        if grayscale_pos is None:
 
             grayscale_pos = self._grayscale_pos
 
-        if grayscale_pos == None:
+        if grayscale_pos is None:
 
             return None
 
@@ -484,32 +484,31 @@ class Analyse_Grayscale(object):
         for i in range(1, len(grayscale_pos)):
 
             pos += int(round((grayscale_pos[i] - grayscale_pos[i - 1])
-                        / median_distance))
+                             / median_distance))
 
             self._grayscale_X.append(pos)
 
         return self._grayscale_X
 
-    def _get_ortho_trimmed(self, rect, scale_factor):
+    def _get_ortho_trimmed(self, rect):
 
-        A = (self._img[self._img.shape[0] / 2:, :] < (256 * 1 / 4)).astype(int)
+        A = (self._img[self._img.shape[0] / 2:, :] <
+             self.GS_ROUGH_INTENSITY_T1).astype(int)
 
         orth_diff = -1
 
-        if scale_factor is None:
-            scale_factor = 1.0
-
         kern = np.asarray([-1, 0, 1])
-        Aorth = A.mean(0)
+        Aorth = A.mean(axis=0)
         Aorth_edge = abs(fftconvolve(kern, Aorth, 'same'))
-        Aorth_edge_threshold = 0.2  # Aorth_edge.max() * 0.70
-        Aorth_signals = Aorth_edge > Aorth_edge_threshold
+        Aorth_signals = Aorth_edge > self.ORTH_EDGE_T
         Aorth_positions = np.where(Aorth_signals)
 
         if len(Aorth_positions[0]) > 1:
 
-            Aorth_pos_diff = abs(1 - ((Aorth_positions[0][1:] - \
-                Aorth_positions[0][:-1]) / float(self._grayscale_width)))
+            Aorth_pos_diff = abs(
+                1 - (Aorth_positions[0][1:] - Aorth_positions[0][:-1]) /
+                float(self._grayscale_width))
+
             rect[0][1] = Aorth_positions[0][Aorth_pos_diff.argmin()]
             rect[1][1] = Aorth_positions[0][Aorth_pos_diff.argmin() + 1]
             orth_diff = rect[1][1] - rect[0][1]
@@ -519,10 +518,8 @@ class Analyse_Grayscale(object):
             #Orthagonal trim second try
             firstPass = True
             in_strip = False
-            threshold = 0.15
-            threshold2 = 0.3
 
-            for i, orth in enumerate(A.mean(0)):
+            for i, orth in enumerate(A.mean(axis=0)):
 
                 if firstPass:
 
@@ -530,11 +527,11 @@ class Analyse_Grayscale(object):
 
                 else:
 
-                    if abs(old_orth - orth) > threshold:
+                    if abs(old_orth - orth) > self.ORTH_T1:
 
-                        if in_strip == False:
+                        if in_strip is False:
 
-                            if orth > threshold2:
+                            if orth > self.ORTH_T2:
 
                                 rect[0][1] = i
                                 in_strip = True
@@ -548,22 +545,19 @@ class Analyse_Grayscale(object):
 
             orth_diff = rect[1][1] - rect[0][1]
 
-        #safty margin
-        min_orths = 30 / scale_factor
+        #safety margin
 
-        if orth_diff > min_orths:
+        if orth_diff < self._grayscale_min_width:
 
-            rect[0][1] += (orth_diff - min_orths) / 2
-            rect[1][1] -= (orth_diff - min_orths) / 2
+            delta = abs(orth_diff - self._grayscale_min_width) / 2
+            rect[0][1] -= delta
+            rect[1][1] += delta
 
         self._mid_orth_strip = rect[0][1] + (rect[1][1] - rect[0][1]) / 2
 
         return rect
 
-    def _get_para_trimmed(self, rect, scale_factor):
-
-        if scale_factor is None:
-            scale_factor = 1.0
+    def _get_para_trimmed(self, rect):
 
         i = (rect[1][0] - rect[0][0]) / 2.0
 
@@ -573,40 +567,38 @@ class Analyse_Grayscale(object):
         #END DEBUG PLOT
 
         strip_values = self._img[rect[0][0]: rect[1][0],
-                            rect[0][1]: rect[1][1]].mean(1)
+                                 rect[0][1]: rect[1][1]].mean(axis=1)
 
         #GET HIGH VALUE SECTION
-        A2 = strip_values > 125
+        A2 = strip_values > self.GS_ROUGH_INTENSITY_T2
         A2_edges = np.convolve(A2, np.array([-1, 1]), mode='same')
         A2_up = np.where(A2_edges == -1)[0]
         A2_down = np.where(A2_edges == 1)[0]
 
-        box_need = self._grayscale_higher_than_half_width / \
-                                                scale_factor
+        box_need = self._grayscale_higher_than_half_width
 
         for i, v in enumerate(A2_up):
 
-            if len(A2_down) >= i+1:
+            if len(A2_down) >= i + 1:
 
                 if A2_down[i] - v > box_need:
 
-                    rect[0][0] =  v
+                    rect[0][0] = v
                     rect[1][0] = A2_down[i]
 
                     break
 
         #GET LOW VALUE SECTION
-        A2 = strip_values < 170
+        A2 = strip_values < self.GS_ROUGH_INTENSITY_T3
         A2_edges = np.convolve(A2, np.array([-1, 1]), mode='same')
         A2_up = np.where(A2_edges == -1)[0]
         A2_down = np.where(A2_edges == 1)[0]
 
-        box_need = self._grayscale_lower_than_half_width / \
-                                 scale_factor
+        box_need = self._grayscale_lower_than_half_width
 
         for i, v in enumerate(A2_up):
 
-            if len(A2_down) >= i+1:
+            if len(A2_down) >= i + 1:
 
                 if A2_down[i] - v > box_need:
 
@@ -626,9 +618,22 @@ class Analyse_Grayscale(object):
 
         return [[0, 0], [self._img.shape[0], self._img.shape[1]]]
 
-    def get_grayscale(self, image=None, scale_factor=None, dpi=600):
+    def _get_clean_im_and_rect(self):
 
-        if image != None:
+        rect = self._get_start_rect()
+
+        rect = self._get_ortho_trimmed(rect)
+
+        rect = self._get_para_trimmed(rect)
+
+        im = self._img[rect[0][0]: rect[1][0],
+                       rect[0][1]: rect[1][1]]
+
+        return im, rect
+
+    def get_grayscale(self, image=None):
+
+        if image is not None:
 
             self._img = image
 
@@ -641,57 +646,45 @@ class Analyse_Grayscale(object):
         #plt.show()
         #DEBUG PLOT END
 
-        if scale_factor is None:
-            scale_factor = 1.0
+        logging.debug("GRAYSCALE ANALYSIS: Of shape {0}".format(
+                      self._img.shape))
 
-        if scale_factor == 1 and dpi != 600:
+        im_slice, rect = self._get_clean_im_and_rect()
+        strip_values = im_slice.mean(axis=0)
 
-            scale_factor = 600.0 / dpi
-
-        logging.debug("GRAYSCALE ANALYSIS: Of images "
-            "{0} at dpi={1} and scale_factor={2}".format(
-            self._img.shape, dpi, scale_factor))
-        
-        rect = self._get_start_rect()
-
-        rect = self._get_ortho_trimmed(rect, scale_factor)
-
-        rect = self._get_para_trimmed(rect, scale_factor)
-
-        strip_values = self._img[rect[0][0]: rect[1][0],
-                        rect[0][1]: rect[1][1]].mean(1)
-
-        threshold = 1.2
         kernel = [-1, 1]  # old [-1,2,-1]
 
         up_spikes = np.abs(np.convolve(strip_values, kernel,
-                "same")) > threshold
+                           "same")) > self.SPIKE_UP_T
 
         up_spikes = r_signal.get_center_of_spikes(up_spikes)
 
-        best_spikes = r_signal.get_best_spikes(up_spikes,
-            self._grayscale_length / scale_factor,
-            tollerance=0.05,
+        best_spikes = r_signal.get_best_spikes(
+            up_spikes,
+            self._grayscale_length,
+            tollerance=self.SPIKE_BEST_TOLLERANCE,
             require_both_sides=False)
 
-        frequency = r_signal.get_perfect_frequency2(best_spikes,
-            self._grayscale_length / scale_factor)
+        frequency = r_signal.get_perfect_frequency2(
+            best_spikes, self._grayscale_length)
 
         #Sections + 1 because actually looking at edges to sections
         offset = r_signal.get_best_offset(
             self._grayscale_sections + 1,
             best_spikes, frequency=frequency)
 
-        signal = r_signal.get_true_signal(self._img.shape[0],
+        signal = r_signal.get_true_signal(
+            self._img.shape[0],
             self._grayscale_sections + 1,
             up_spikes, frequency=frequency,
             offset=offset)
 
         if signal is None:
 
-            logging.warning(("GRAYSCALE, no signal detected for f={0} and"
+            logging.warning((
+                "GRAYSCALE, no signal detected for f={0} and"
                 " offset={1} in best_spikes={2} from spikes={3}").format(
-                frequency, offset, best_spikes, up_spikes))
+                    frequency, offset, best_spikes, up_spikes))
 
             return None, None
 
@@ -706,32 +699,34 @@ class Analyse_Grayscale(object):
         """
         ###DEBUG END
 
-        safety_buffer = 0.2
+        if signal[0] + frequency * self.SAFETY_PADDING < 0:
 
-        if signal[0] + frequency * safety_buffer < 0:
-
-            logging.warning("GRAYSCALE, the signal got adjusted one interval"
+            logging.warning(
+                "GRAYSCALE, the signal got adjusted one interval"
                 " due to lower bound overshoot")
 
             signal += frequency
 
-        if signal[-1] - frequency * safety_buffer > strip_values.size:
+        if signal[-1] - frequency * self.SAFETY_PADDING > strip_values.size:
 
-            logging.warning("GRAYSCALE, the signal got adjusted one interval"
+            logging.warning(
+                "GRAYSCALE, the signal got adjusted one interval"
                 " due to upper bound overshoot")
 
             signal -= frequency
 
-        safety_coeff = 0.5
         gray_scale = []
         gray_scale_pos = []
 
         self.ortho_half_height = self._grayscale_width / \
-            2.0 * safety_coeff
+            2.0 * self.SAFETY_COEFF
 
+        #SETTING TOP
         top = self._mid_orth_strip - self.ortho_half_height
         if top < 0:
             top = 0
+
+        #SETTING BOTTOM
         bottom = self._mid_orth_strip + self.ortho_half_height
         if bottom >= self._img.shape[1]:
             bottom = self._img.shape[1] - 1
@@ -742,10 +737,13 @@ class Analyse_Grayscale(object):
 
             gray_scale_pos.append(mid)
 
-            left = gray_scale_pos[-1] - 0.5 * frequency * safety_coeff
+            left = gray_scale_pos[-1] - 0.5 * frequency * self.SAFETY_COEFF
+
             if left < 0:
                 left = 0
-            right = gray_scale_pos[-1] + 0.5 * frequency * safety_coeff
+
+            right = gray_scale_pos[-1] + 0.5 * frequency * self.SAFETY_COEFF
+
             if right >= self._img.shape[0]:
                 right = self._img.shape[0] - 1
 
