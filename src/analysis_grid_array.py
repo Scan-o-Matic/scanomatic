@@ -17,7 +17,6 @@ __status__ = "Development"
 import numpy as np
 from scipy.optimize import fsolve
 import os
-import types
 from matplotlib import pyplot as plt
 
 #
@@ -156,7 +155,6 @@ class Grid_Array():
 
     def set_manual_ideal_grid(self, grid):
 
-
         best_fit_rows = grid[0]
         r = len(best_fit_rows)
         best_fit_columns = grid[1]
@@ -165,8 +163,8 @@ class Grid_Array():
         X = np.array(best_fit_rows * c).reshape(c, r).T
         Y = np.array(best_fit_columns * r).reshape(r, c)
         self._grid = np.zeros((r, c, 2), dtype=np.float)
-        self._grid[:,:,0] = X
-        self._grid[:,:,1] = Y
+        self._grid[:, :, 0] = X
+        self._grid[:, :, 1] = Y
         self._set_grid_cell_size()
         self.unset_history()
 
@@ -201,9 +199,8 @@ class Grid_Array():
 
         if p_uuid is not None:
 
-            grid_history.unset_gridding_parameters(p_uuid,
-                self._pinning_matrix, plate)
-
+            grid_history.unset_gridding_parameters(
+                p_uuid, self._pinning_matrix, plate)
 
     def set_history(self, center, spacings):
 
@@ -214,7 +211,8 @@ class Grid_Array():
 
         if p_uuid is not None:
 
-            grid_history.set_gridding_parameters(p_uuid, self._pinning_matrix,
+            grid_history.set_gridding_parameters(
+                p_uuid, self._pinning_matrix,
                 plate, center, spacings)
 
         else:
@@ -229,7 +227,7 @@ class Grid_Array():
                 self._pinning_matrix, im)
 
         grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])],
-                self._pinning_matrix[int(self._im_dim_order[1])])
+                      self._pinning_matrix[int(self._im_dim_order[1])])
 
         gh = np.array(self.get_history())
 
@@ -237,27 +235,24 @@ class Grid_Array():
             #If too little reference data, use very rough guesses
             validate_parameters = False
             expected_spacings = self._guess_grid_cell_size
-            expected_center = tuple([s/2.0 for s in im.shape])
+            expected_center = tuple([s / 2.0 for s in im.shape])
         elif gh.size >= 40:  # Require 10 projects (4 measures per project)
             gh_median = np.median(gh, axis=0)
             validate_parameters = True
             expected_spacings = tuple(gh_median[2:])
             expected_center = tuple(gh_median[:2])
-        elif gh.size > 0:  # If some measures (3-9), use them
+        else:  # If some measures (3-9), use them
             validate_parameters = False  # But don't enforce
             gh_mean = np.mean(gh, axis=0)
             expected_spacings = tuple(gh_mean[2:])
             expected_center = tuple(gh_mean[:2])
-        else:
-            validate_parameters = False
-            expected_center = map(d/2.0 for d in im.shape)
-            expected_spacings = self._APPROXIMATE_GRID_CELL_SIZES[grid_shape]
-
 
         self._grid, X, Y, center, spacings, adjusted_values = \
-                resource_grid.get_grid(im,
+            resource_grid.get_grid(
+                im,
                 expected_spacing=expected_spacings,
                 expected_center=expected_center,
+                validate_parameters=validate_parameters,
                 grid_shape=grid_shape)
 
         if self._grid is None:
@@ -276,8 +271,8 @@ class Grid_Array():
             return False
 
         if (self._grid.shape[0] != self._pinning_matrix[self._im_dim_order[0]]
-            and self._grid.shape[1] !=
-            self._pinning_matrix[self._im_dim_order[1]]):
+                and self._grid.shape[1] !=
+                self._pinning_matrix[self._im_dim_order[1]]):
 
             raise Invalid_Grid(
                 "Grid shape {0} missmatch with pinning matrix {1}".format(
@@ -286,6 +281,9 @@ class Grid_Array():
                 self._pinning_matrix[self._im_dim_order[1]])))
 
             return False
+
+        self.logger.debug("Got center {0} and Spacings {1}".format(
+            center, spacings))
 
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
 
@@ -310,7 +308,6 @@ class Grid_Array():
         grid_image = plt.figure()
         grid_plot = grid_image.add_subplot(111)
         grid_plot.imshow(im, cmap=plt.cm.gray)
-        ido = self._im_dim_order
 
         for row in xrange(self._grid.shape[0]):
 
@@ -333,7 +330,7 @@ class Grid_Array():
         if X is not None and Y is not None:
 
             grid_plot.plot(Y, X, 'o', alpha=0.75,
-            ms=5, mfc='none', mec='red', mew=1)
+                           ms=5, mfc='none', mec='red', mew=1)
 
         ax = grid_image.gca()
         ax.set_xlim(0, im.shape[1])
@@ -349,12 +346,13 @@ class Grid_Array():
         else:
 
             save_grid_name += "{0}.svg".format(self._identifier[1] + 1)
-            self.logger.info("ANALYSIS GRID: Saving grid-image as file" +\
-                        " '{0}' for plate {1}".format(
-                        save_grid_name, self._identifier[1]))
+            self.logger.info(
+                "ANALYSIS GRID: Saving grid-image as file" +
+                " '{0}' for plate {1}".format(
+                save_grid_name, self._identifier[1]))
 
             grid_image.savefig(save_grid_name, pad_inches=0.01,
-                format='svg', bbox_inches='tight')
+                               format='svg', bbox_inches='tight')
 
             plt.close(grid_image)
             del grid_image
@@ -390,7 +388,7 @@ class Grid_Array():
 
             for column in xrange(pinning_matrix[1]):
 
-                self._grid_cells[row].append(grid_cell.Grid_Cell(\
+                self._grid_cells[row].append(grid_cell.Grid_Cell(
                     self, [self._identifier,  [row, column]],
                     grid_cell_settings=self.grid_cell_settings))
 
@@ -416,13 +414,12 @@ class Grid_Array():
 
         try:
 
-
             fs = open(self._paths.analysis_polynomial, 'r')
 
         except:
 
-            self.logger.critical("GRID ARRAY, " + \
-                        "Cannot open polynomial info file")
+            self.logger.critical(
+                "GRID ARRAY, Cannot open polynomial info file")
 
             return None
 
@@ -432,7 +429,7 @@ class Grid_Array():
 
             l_data = eval(l.strip("\n"))
 
-            if type(l_data) == types.ListType:
+            if isinstance(l_data, list):
 
                 polynomial_coeffs = l_data[-1]
                 break
@@ -454,7 +451,7 @@ class Grid_Array():
         """
 
         p = self.gs_a * (x ** 3) + self.gs_b * (x ** 2) + \
-                self.gs_c * x + self.gs_d
+            self.gs_c * x + self.gs_d
 
         return p
 

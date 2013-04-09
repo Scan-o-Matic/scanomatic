@@ -688,16 +688,19 @@ class Interactive_Menu():
             "Menu{0}".format([" ({0})".format(self._file_path), ""][
             self._file_path is None]))
 
-        try:
-            print "\tDESC: {0}".format(self._meta_data['desc'][0])
-        except:
-            pass
+        if (self._plate_labels is not None and self._plate_labels.values() !=
+                map(str, range(4))):
 
-        try:
-            print "\tPLATES: " + "  ".join(["{0}: {1}".format(k, v) for k, v
-                                              in self._plate_labels.items()])
-        except:
-            pass
+            print "\t### PLATES ###\n\t\t" + "\n\t\t".join(
+                ["{0}: {1}".format(k, v) for k, v in
+                 self._plate_labels.items()])
+
+        else:
+
+            try:
+                print "\tDESC: {0}".format(self._meta_data['desc'][0])
+            except:
+                pass
 
         print "\t### PHENOTYPE {0} ###\n".format(
             self._phenotype_names is None and self._cur_phenotype + 1 or
@@ -1046,7 +1049,8 @@ class Interactive_Menu():
 
             self._phenotype_names = []
             for i in range(3):
-                phenotype_name = str(raw_input("Name of phenotype {0}: ".format(i+1)))
+                phenotype_name = str(raw_input(
+                    "Name of phenotype {0}: ".format(i + 1)))
                 self._phenotype_names.append(phenotype_name)
 
         elif task == "Q1":
