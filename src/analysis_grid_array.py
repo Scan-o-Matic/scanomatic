@@ -18,7 +18,6 @@ import numpy as np
 from scipy.optimize import fsolve
 import os
 import types
-import sys
 from matplotlib import pyplot as plt
 
 #
@@ -50,12 +49,12 @@ class Grid_Array():
         (32, 48): (53.64928854, 52.69155633),
         (64, 96): (27, 27),
         None: None
-        }
+    }
 
     def __init__(self, parent, identifier, pinning_matrix,
-        verbose=False, visual=False, suppress_analysis=False,
-        grid_array_settings=None, gridding_settings=None,
-        grid_cell_settings=None):
+                 verbose=False, visual=False, suppress_analysis=False,
+                 grid_array_settings=None, gridding_settings=None,
+                 grid_cell_settings=None):
 
         self._parent = parent
 
@@ -72,7 +71,7 @@ class Grid_Array():
             self._paths = parent._paths
             self.fixture = parent.fixture
 
-        if type(identifier) == types.IntType:
+        if isinstance(identifier, int):
 
             identifier = ("unknown", identifier)
 
@@ -123,7 +122,7 @@ class Grid_Array():
             grid_cell_settings = dict()
 
         grid_cell_settings['polynomial_coeffs'] = \
-                self.get_polynomial_coeffs()
+            self.get_polynomial_coeffs()
 
         self.grid_cell_settings = grid_cell_settings
 
@@ -131,7 +130,6 @@ class Grid_Array():
         self._grid_cell_size = None
         self._grid_cells = None
         self._grid = None
-
 
         self._features = []
 
@@ -147,12 +145,10 @@ class Grid_Array():
         self._pinning_matrix = pinning_matrix
         #if pinning_matrix != None:
 
-
         self._im_dim_order = None
 
         if pinning_matrix is not None:
             self._init_pinning_matrix()
-
 
     #
     # SET functions
@@ -247,11 +243,16 @@ class Grid_Array():
             validate_parameters = True
             expected_spacings = tuple(gh_median[2:])
             expected_center = tuple(gh_median[:2])
-        else:  # If some measures (3-9), use them
+        elif gh.size > 0:  # If some measures (3-9), use them
             validate_parameters = False  # But don't enforce
             gh_mean = np.mean(gh, axis=0)
             expected_spacings = tuple(gh_mean[2:])
             expected_center = tuple(gh_mean[:2])
+        else:
+            validate_parameters = False
+            expected_center = map(d/2.0 for d in im.shape)
+            expected_spacings = self._APPROXIMATE_GRID_CELL_SIZES[grid_shape]
+
 
         self._grid, X, Y, center, spacings, adjusted_values = \
                 resource_grid.get_grid(im,

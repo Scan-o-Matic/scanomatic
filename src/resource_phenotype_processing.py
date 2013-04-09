@@ -817,12 +817,16 @@ class Interactive_Menu():
 
     def _guess_plate_names(self):
 
-        msg = self._meta_data['desc'][0]
+        try:
+            msg = self._meta_data['desc'][0]
+        except:
+            return
+
         i = 0
         p_i1 = []
         p_i2 = []
         while True:
-            m = re.search(r'[0-4][:,\- ]?', msg[i:])
+            m = re.search(r'[0-4][:\-]?', msg[i:])
             if m is None or m.end() == 0:
                 break
             i += m.end()
