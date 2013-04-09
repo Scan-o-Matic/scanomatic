@@ -1058,8 +1058,8 @@ class Interactive_Menu():
 
                             if (1 - d.sum() / float(d.shape[0]) < 0.6 and
                                     np.isnan(
-                                        self._original_phenotypes[
-                                            p, c, r, self._cur_phenotype
+                                        self._original_phenotypes[p][
+                                            c, r, self._cur_phenotype
                                         ]).any() is False):
 
                                 removal_list.append((p, c, r))
