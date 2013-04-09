@@ -39,7 +39,7 @@ class Paths(object):
                 root = os.path.dirname(os.path.abspath(program_path))
             elif src_path is not None:
                 root = os.path.abspath(os.path.join(
-                    os.path.dirname(src_path, os.path.pardir)))
+                    os.path.dirname(src_path), os.path.pardir))
             else:
                 root = os.path.abspath(os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), os.path.pardir))

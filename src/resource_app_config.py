@@ -13,8 +13,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import types
-
 #
 # INTERNAL DEPENDENCIES
 #
@@ -26,6 +24,7 @@ import src.resource_config as resource_config
 #
 # CLASSES
 #
+
 
 class Config(object):
 
@@ -90,25 +89,42 @@ class Config(object):
         if experiments_root is not None:
             self._paths.experiment_root = experiments_root
 
+        pm_name = self._config_file['pm-name']
+        if pm_name is not None:
+            self._pm_name = pm_name
+
+        pm_host = self._config_file['pm-host']
+        if pm_host is not None:
+            self._pm_host = pm_host
+
+        pm_pwd = self._config_file['pm-pwd']
+        if pm_pwd is not None:
+            self._pm_pwd = pm_pwd
+
+        pm_mac = self._config_file['pm-MAC']
+        if pm_mac is not None:
+            self._pm_MAC = pm_mac
+
     def _set_pm_extras(self):
 
         if self.pm_type == 'usb':
 
             self._PM = resource_power_manager.USB_PM_LINUX
-            self._pm_arguments={}
+            self._pm_arguments = {}
 
         elif self.pm_type == 'lan':
             self._PM = resource_power_manager.LAN_PM
 
-            self._pm_arguments = {'host': self._pm_host,
+            self._pm_arguments = {
+                'host': self._pm_host,
                 'password': self._pm_pwd,
                 'verify_name': self._pm_verify_name,
-                'pm_name':self._pm_name,
-                'MAC':self._pm_MAC,
-                }
+                'pm_name': self._pm_name,
+                'MAC': self._pm_MAC,
+            }
         else:
             self._PM = resource_power_manager.NO_PM
-            self._pm_arguments={}
+            self._pm_arguments = {}
 
     def set(self, key, value):
 
@@ -119,7 +135,7 @@ class Config(object):
 
         elif key == 'number-of-scanners':
 
-            if type(value) == types.IntType and 0 <= value <= 4:
+            if isinstance(value, int) and 0 <= value <= 4:
                 self.number_of_scanners = value
 
     def save_settings(self):
@@ -145,32 +161,31 @@ class Config(object):
 
         if logger is not None:
             logger.info("Creating scanner PM for socket {0} and settings {1}".format(
-            scanner_pm_socket, pm_kwargs))
+                        scanner_pm_socket, pm_kwargs))
 
         return self._PM(scanner_pm_socket, logger=logger, **pm_kwargs)
 
     def get_default_experiment_query(self):
 
         experiment_query = {
-
-                '-f': None,  # FIXTURE: path to conf-file
-                '-s': "",  # SCANNER to be used
-                '-i': 20,  # INTERVAL in minutes
-                '-n': 217,  # NUMBER OF SCANS
-                '-m': "",  # PINNING LIST STRING
-                '-r': self._paths.experiment_root,  # ROOT of experiments
-                '-p': "",  # PREFIX for experiment
-                '-d': "",  # DESCRIPTION
-                '-c': "",  # PROJECT ID CODE
-                '-u': "",  # UUID
-                '--debug': 'info'  # LEVEL OF VERBOSITY
-            }
+            '-f': None,  # FIXTURE: path to conf-file
+            '-s': "",  # SCANNER to be used
+            '-i': 20,  # INTERVAL in minutes
+            '-n': 217,  # NUMBER OF SCANS
+            '-m': "",  # PINNING LIST STRING
+            '-r': self._paths.experiment_root,  # ROOT of experiments
+            '-p': "",  # PREFIX for experiment
+            '-d': "",  # DESCRIPTION
+            '-c': "",  # PROJECT ID CODE
+            '-u': "",  # UUID
+            '--debug': 'info'  # LEVEL OF VERBOSITY
+        }
 
         return experiment_query
 
     def get_default_analysis_query(self):
 
-        analysis_query =  {
+        analysis_query = {
             "-i": "",  # No default input file
             "-o": self._paths.experiment_analysis_relative_path,  # Default subdir
             #"-t" : 100,  # Time to set grid
@@ -179,7 +194,6 @@ class Config(object):
             '--xml-omit-measures':
             'mean,median,IQR,IQR_mean,centroid,perimeter,area',  # only get pixelsum
             '--debug': 'info'  # Report everything that is info and above in seriousness
-            }
+        }
 
         return analysis_query
-
