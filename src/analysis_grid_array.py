@@ -46,7 +46,7 @@ class Grid_Array():
         (8, 12): (212, 212),
         (16, 24): (106, 106),
         (32, 48): (53.64928854, 52.69155633),
-        (64, 96): (27, 27),
+        (64, 96): (40.23696640, 39.5186672475),
         None: None
     }
 
@@ -255,6 +255,9 @@ class Grid_Array():
                 validate_parameters=validate_parameters,
                 grid_shape=grid_shape)
 
+        self.logger.info("Expecting center {0} and Spacings {1}".format(
+            expected_center, expected_spacings))
+
         if self._grid is None:
             self.logger.error("Could not produce a grid for im-shape {0}".format(im.shape))
             return False
@@ -282,7 +285,7 @@ class Grid_Array():
 
             return False
 
-        self.logger.debug("Got center {0} and Spacings {1}".format(
+        self.logger.info("Got center {0} and Spacings {1}".format(
             center, spacings))
 
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
@@ -582,7 +585,6 @@ class Grid_Array():
                 source_view.shape, target.shape, source.shape, ul, wh))
 
         target[:,:] = tm[source_view]
-
 
     def get_analysis(self, im, gs_values=None, gs_fit=None, gs_indices=None,
             identifier_time=None, watch_colony=None, save_grid_name=None,

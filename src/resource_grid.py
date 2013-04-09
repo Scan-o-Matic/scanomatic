@@ -34,10 +34,10 @@ import matplotlib.pyplot as plt
 #
 
 
-def get_adaptive_threshold(im, threshold_filter=None, segments=60, 
+def get_adaptive_threshold(im, threshold_filter=None, segments=60,
         sigma=None, *args, **kwargs):
     """Gives a 2D surface of threshold based on smoothed local measures"""
-    
+
     if threshold_filter is None:
         threshold_filter = ski_filter.threshold_otsu
     if sigma is None:
@@ -314,7 +314,7 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
 
         iX = array_view[0].ravel()
         iY = array_view[1].ravel()
-        D = np.subtract.outer(iX, X) ** 2 + np.subtract.outer(iY, Y) ** 2 
+        D = np.subtract.outer(iX, X) ** 2 + np.subtract.outer(iY, Y) ** 2
         rPos = D.min(axis=1) <= max_sq_dist
         minD = D.argmin(axis=1)[rPos]
         where_pos = np.unravel_index(np.where(rPos)[0], filt.shape)
@@ -353,7 +353,7 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
             s1U = rings[0] + r + 1
         else:
             s1L = 0
-            s1U = shape[0] + 1 
+            s1U = shape[0] + 1
 
         if (rings[1] - r - 1) > 0:
             s2L = rings[1] - r - 1
@@ -443,7 +443,7 @@ def get_validated_grid(im, grid, dD1, dD2, adjusted_values):
 
         print "*** Invalid grid (less than 0)"
         return None, True
-    
+
     #If max plus half grid cell is larger than im it's an overshoot too
     if (grid[D1].max() >= im.shape[0] + np.ceil(dD1 * 0.5) or
         grid[D2].max() >= im.shape[1] + np.ceil(dD2 * 0.5)):
@@ -465,7 +465,7 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
 
     The sigma for center is set from mean spacing so that the allowed
     variation relates to the inter-colony distance with a large safty
-    margin. 
+    margin.
     """
 
     #Gauss function
@@ -496,15 +496,15 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
 
 
 def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
-    visual=False, X=None, Y=None, 
-    expected_center=(100, 100), run_dev=False, dev_filter_XY=None, 
+    visual=False, X=None, Y=None,
+    expected_center=(100, 100), run_dev=False, dev_filter_XY=None,
     validate_parameters=False):
     """Detects grid candidates and constructs a grid"""
 
     #print "** Will threshold"
     adjusted_values = False
 
-    T = get_adaptive_threshold(im, threshold_filter=None, segments=100, 
+    T = get_adaptive_threshold(im, threshold_filter=None, segments=100,
         sigma=30)
 
     #print "** Got T"
@@ -547,12 +547,12 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
 
         if run_dev:
             """
-            x_offset, y_offset, dx, dy = dev_get_grid_parameters(X, Y, 
+            x_offset, y_offset, dx, dy = dev_get_grid_parameters(X, Y,
                 expected_distance=box_size[0], grid_shape=grid_shape,
                 im_shape=im.shape)
 
             center, dx, dy =  get_grid_parameters_3(X, Y, im,
-                expected_distance=box_size[0], 
+                expected_distance=box_size[0],
                 grid_shape=grid_shape, leeway=0.1)
 
             """

@@ -324,6 +324,10 @@ class Fixture_Image(object):
 
             return self._history
 
+        elif key in ['scale']:
+
+            return self.im_original_scale
+
         else:
 
             print "***ERROR: Unknown key {0}".format(key)

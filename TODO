@@ -4,7 +4,10 @@
 
 --- HOT ---
 
-*** Planner?
+*** FIRST PASS needs to store DPI setting because analysis needs to know how
+    to scale history and default expectencies accordingly.
+
+        - Recording should work, but analysis needs compatibilities....
 
 *** GRIDDING:  Increase robustness when few edgecolonies
 

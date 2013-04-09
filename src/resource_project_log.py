@@ -32,7 +32,7 @@ class Unknown_Meta_Data_Key(Exception): pass
 # GLOBALS
 #
 
-META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0, 
+META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0,
     'Description': 'Automatic placeholder description',
     'Version': __version__,
     'UUID': None, 'Measures': 0, 'Fixture': '', 'Scanner': '',
@@ -60,14 +60,15 @@ def get_meta_data_dict(**kwargs):
     return md
 
 def get_image_dict(path, time, mark_X, mark_Y, grayscale_indices,
-    grayscale_values, plate_areas=None, img_dict=None, image_shape=None):
+    grayscale_values, scale, plate_areas=None, img_dict=None, image_shape=None):
 
     plate_str = "plate_{0}_area"
 
     image_entry = {'grayscale_indices': grayscale_indices,
-        'grayscale_values': grayscale_values,
-        'mark_X': mark_X, 'mark_Y': mark_Y,
-        'Time': time, 'File': path, 'Image Shape': image_shape}
+                   'grayscale_values': grayscale_values,
+                   'mark_X': mark_X, 'mark_Y': mark_Y,
+                   'Time': time, 'File': path, 'Image Shape': image_shape,
+                   'Scale': scale}
 
     if plate_areas is not None:
         for i, plate in enumerate(plate_areas):
@@ -80,8 +81,8 @@ def get_image_dict(path, time, mark_X, mark_Y, grayscale_indices,
         while True:
 
            try:
-               image_entry[plate_str.format(i+1)] = img_dict[plate_str.format(i)] 
-           except: 
+               image_entry[plate_str.format(i+1)] = img_dict[plate_str.format(i)]
+           except:
                break
 
            i += 1
@@ -98,7 +99,7 @@ def get_is_valid_meta_data(data):
 
     d_check = [k in data.keys() for k in META_DATA]
 
-    return sum(d_check) > 3 
+    return sum(d_check) > 3
 
 def get_is_valid_image_entry(data):
 
@@ -119,7 +120,7 @@ def get_meta_data_from_file(path):
     for l in fs:
 
         l = l.strip()
- 
+
         if len(l) > 0:
 
             if l[0] == '{':
@@ -154,7 +155,7 @@ def get_meta_data(path = None):
         meta_data = copy.copy(META_DATA)
         set_uuid(meta_data)
 
-    if ('Pinning Matrices' in meta_data and 
+    if ('Pinning Matrices' in meta_data and
         meta_data['Pinning Matrices'] is not None):
 
         for i, m in enumerate(meta_data['Pinning Matrices']):
@@ -256,7 +257,7 @@ def get_number_of_plates(path=None, meta_data=None, images=None):
             plates = i
 
     return plates
-        
+
 
 def write_meta_data(path, meta_data=None, over_write=False):
     """Will write new data to file, over_write flag, if true
@@ -311,7 +312,7 @@ def write_to_log_meta(path, partial_meta_data):
         meta_data[k] = partial_meta_data[k]
 
     write_log_file(path, meta_data=meta_data, images=images)
-    
+
 def _approve_image_dicts(images):
 
     for i_dict in images:

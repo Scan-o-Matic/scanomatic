@@ -75,7 +75,7 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
     logger.info("Marker analysis run".format(file_name))
 
 
-    im_data['mark_X'], im_data['mark_Y'] = fixture['markers']            
+    im_data['mark_X'], im_data['mark_Y'] = fixture['markers']
 
     if im_data['mark_X'] is None:
         raise Marker_Detection_Failed()
@@ -85,12 +85,13 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
 
     logger.info("Setting current image areas for {0}".format(file_name))
 
+    im_data['scale'] = fixture['scale']
     fixture.analyse_grayscale()
 
     logger.info("Grayscale analysed for {0}".format(file_name))
 
     gs_indices, gs_values = fixture['grayscale']
-    
+
     im_data['grayscale_values'] = gs_values
     im_data['grayscale_indices'] = gs_indices
 
