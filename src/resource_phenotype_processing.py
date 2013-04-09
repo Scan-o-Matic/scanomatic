@@ -1020,7 +1020,7 @@ class Interactive_Menu():
             print("\n")
             if self._phenotype_names != []:
                 phenotype = str(raw_input(
-                    "\n".join(["  {0}: {1}".format(i, p) for i, p in
+                    "\n".join(["  {0}: {1}".format(i + 1, p) for i, p in
                                enumerate(self._phenotype_names)]) +
                     "\n\nWhat phenotype?\t"))
             else:
