@@ -822,6 +822,7 @@ class Interactive_Menu():
         except:
             return
 
+        """
         i = 0
         p_i1 = []
         p_i2 = []
@@ -837,6 +838,11 @@ class Interactive_Menu():
 
         for i in range(len(p_i1)):
             self._plate_labels[i] = msg[p_i1[i]: p_i2[i]].strip()
+        """
+
+        plates = re.findall("Plate [0-4] ?\"([^\"]*)\"", msg)
+        for i, p in enumerate(plates):
+            self._plate_labels[i] = p
 
     def review_positions_for_deletion(self, suspect_list=None):
 
