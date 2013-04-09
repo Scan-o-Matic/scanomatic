@@ -8,6 +8,7 @@ import logging
 import scipy.interpolate as scint
 #import scipy.stats as stats
 import sys
+import re
 import os
 import pickle
 import itertools
@@ -46,7 +47,7 @@ def make_linear_interpolation2(data):
 
 
 def make_cubic_interpolation(data):
-    y, x = np.where(data !=0)
+    y, x = np.where(data != 0)
     Y, X = np.mgrid[0:data.shape[0], 0:data.shape[1]]
     f = scint.griddata((x, y), data[y, x], (X, Y), 'cubic')
     #logging.warning('Done some shit')
@@ -100,7 +101,7 @@ def get_empty_data_structure(plate, max_row, max_column, depth=None, default_val
             return val
         else:
             for i in range(len(ok)):
-                if ok[i] < val:
+                if ok[i] > val:
                     break
 
             if i == 0:
@@ -170,7 +171,7 @@ def get_norm_surface(data, cur_phenotype, sigma=3, only_linear=False,
     if surface_matrix is None:
         surface_matrix = get_default_surface_matrix(data)
 
-    norm_surfaces = np.array([plate[...,cur_phenotype].copy()*0
+    norm_surfaces = np.array([plate[..., cur_phenotype].copy() * 0
                               for plate in data])
     norm_vals = []
 
@@ -406,8 +407,8 @@ def show_heatmap(data, cur_phenotype, plate_texts, plate_text_pattern, vlim=(0, 
             else:
                 pdata = data[p]
             im = ax.imshow(pdata, vmin=vlim[0],
-                      vmax=vlim[1], interpolation="nearest",
-                      cmap=plt.cm.jet)
+                           vmax=vlim[1], interpolation="nearest",
+                           cmap=plt.cm.jet)
 
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", "5%", pad="3%")
@@ -688,7 +689,13 @@ class Interactive_Menu():
             self._file_path is None]))
 
         try:
-            print "\t{0}\n".format(self._meta_data['desc'])
+            print "\tDESC: {0}".format(self._meta_data['desc'][0])
+        except:
+            pass
+
+        try:
+            print "\tPLATES: " + "  ".join(["{0}: {1}".format(k, v) for k, v
+                                              in self._plate_labels.items()])
         except:
             pass
 
@@ -731,7 +738,6 @@ class Interactive_Menu():
 
             self._original_phenotypes[pos[0]][pos[1], pos[2], self._cur_phenotype] = np.nan
 
-
         self._is_normed[self._cur_phenotype] = False
         self.set_phenotype_is_normed_state()
 
@@ -746,7 +752,7 @@ class Interactive_Menu():
         pickle_metadata_file = ".".join(file_path[:-1]) + ".metadata.pickle"
         pickle_matrix_file = ".".join(file_path[:-1]) + ".matrix.pickle"
         pickle_current_phenotype_file = ".".join(file_path[:-1]) + ".cur_pheno.pickle"
-        pickle_is_normed_file = ".".join(file_path[:-1]) + ".isnormed.pickle"
+        #pickle_is_normed_file = ".".join(file_path[:-1]) + ".isnormed.pickle"
         pickle_pheno_names_file = ".".join(file_path[:-1]) + ".pheno_names.pickle"
 
         if os.path.isfile(pickle_data_file) and os.path.isfile(pickle_metadata_file):
@@ -800,7 +806,33 @@ class Interactive_Menu():
             pickle.dump(self._xml_file.get_meta_data(), open(pickle_metadata_file, 'wb'))
             pickle.dump(self._xml_file.get_scan_times(), open(pickle_scantimes_file, 'wb'))
 
+        self._plate_labels = {}
+        self._guess_plate_names()
+        if len(self._plate_labels) == 0:
+            for i in xrange(self._original_phenotypes.shape[0]):
+                self._plate_labels[i] = str(i)
+            logging.info("Temporary plate labels set")
+
         self.set_enable_menu_plots()
+
+    def _guess_plate_names(self):
+
+        msg = self._meta_data['desc'][0]
+        i = 0
+        p_i1 = []
+        p_i2 = []
+        while True:
+            m = re.search(r'[0-4][:,\- ]?', msg[i:])
+            if m is None or m.end() == 0:
+                break
+            i += m.end()
+            if len(p_i1) > 0:
+                p_i2.append(p_i1[-1] + m.start())
+            p_i1.append(i)
+        p_i2.append(len(msg) - 1)
+
+        for i in range(len(p_i1)):
+            self._plate_labels[i] = msg[p_i1[i]: p_i2[i]].strip()
 
     def review_positions_for_deletion(self, suspect_list=None):
 
@@ -912,11 +944,7 @@ class Interactive_Menu():
                     mins, maxs))
 
             self.set_new_file_menu_state()
-            self._plate_labels = {}
-            for i in xrange(self._original_phenotypes.shape[0]):
-                self._plate_labels[i] = str(i)
             self._is_normed = [False] * self._original_phenotypes.shape[0]
-            logging.info("Temporary plate labels set")
             self.set_enable_menu_plots()
             self.set_xml_file()
 
@@ -985,7 +1013,14 @@ class Interactive_Menu():
 
         elif task == "1B":
 
-            phenotype = str(raw_input("What phenotype (1-3)? "))
+            print("\n")
+            if self._phenotype_names != []:
+                phenotype = str(raw_input(
+                    "\n".join(["  {0}: {1}".format(i, p) for i, p in
+                               enumerate(self._phenotype_names)]) +
+                    "\n\nWhat phenotype?\t"))
+            else:
+                phenotype = str(raw_input("What phenotype (1-3)? "))
             try:
                 phenotype = int(phenotype)
                 if self._original_phenotypes[0].shape[-1] >= phenotype:
