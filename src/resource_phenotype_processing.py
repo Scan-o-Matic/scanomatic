@@ -96,7 +96,7 @@ def make_griddata_interpolation(plate, method='cubic'):
 def get_empty_data_structure(plate, max_row, max_column, depth=None, default_value=48):
 
     def _allowed_size(val):
-        ok = (8, 12, 16, 24, 32, 48, 64)
+        ok = (8, 12, 16, 24, 32, 48, 64, 96)
         if val in ok:
             return val
         else:

@@ -74,7 +74,6 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
 
     logger.info("Marker analysis run".format(file_name))
 
-
     im_data['mark_X'], im_data['mark_Y'] = fixture['markers']
 
     if im_data['mark_X'] is None:
