@@ -18,6 +18,7 @@ from scipy.ndimage import zoom
 from scipy.signal import fftconvolve
 from scipy.optimize import fsolve
 import numpy as np
+import os
 import logging
 import matplotlib.pyplot as plt
 
@@ -202,7 +203,7 @@ class Image_Transpose(object):
 class Image_Analysis():
 
     def __init__(self, path=None, image=None, pattern_image_path=None,
-                 scale=1.0):
+                 scale=1.0, resource_paths=None):
 
         self._path = path
         self._img = None
@@ -210,6 +211,11 @@ class Image_Analysis():
         self._load_error = None
         self._transformed = False
         self._conversion_factor = 1.0 / scale
+
+        if os.path.isfile(pattern_image_path) is False and resource_paths is not None:
+
+            pattern_image_path = os.path.join(resource_paths.images, os.path.basename(
+                pattern_image_path))
 
         if pattern_image_path:
 
@@ -420,6 +426,10 @@ class Analyse_Grayscale(object):
     SPIKE_BEST_TOLLERANCE = 0.05
     SAFETY_PADDING = 0.2
     SAFETY_COEFF = 0.5
+    NEW_GS_ALG_L_DIFF_T = 0.03
+    NEW_GS_ALG_L_DIFF_SPIKE_T = 0.3
+    NEW_GS_ALG_SPIKES_FRACTION = 0.8
+    NEW_SAFETY_PADDING = 0.2
 
     def __init__(self, target_type="Kodak", image=None, scale_factor=1.0):
 
@@ -433,7 +443,7 @@ class Analyse_Grayscale(object):
                 'sections': 23,
                 'lower_than_half_width': 350 * scale_factor,
                 'higher_than_half_width': 150 * scale_factor,
-                'length': 28.57 * scale_factor,
+                'length': 28.3 * scale_factor,  # 28.57 was previous
             }
         }
 
@@ -650,104 +660,222 @@ class Analyse_Grayscale(object):
                       self._img.shape))
 
         im_slice, rect = self._get_clean_im_and_rect()
-        strip_values = im_slice.mean(axis=0)
 
+        #THE 1D SIGNAL ALONG THE GS
+        strip_values = im_slice.mean(axis=1)
+        #FOUND GS-SEGMENT DIFFERENCE TO EXPECTED SIZE
+        expected_strip_size = float(self._grayscale_length *
+                                    self._grayscale_sections)
+        gs_l_diff = abs(1 - strip_values.size / expected_strip_size)
+
+        #FINDING SPIKES
         kernel = [-1, 1]  # old [-1,2,-1]
-
         up_spikes = np.abs(np.convolve(strip_values, kernel,
                            "same")) > self.SPIKE_UP_T
-
         up_spikes = r_signal.get_center_of_spikes(up_spikes)
 
-        best_spikes = r_signal.get_best_spikes(
-            up_spikes,
-            self._grayscale_length,
-            tollerance=self.SPIKE_BEST_TOLLERANCE,
-            require_both_sides=False)
+        gray_scale_pos = None
 
-        frequency = r_signal.get_perfect_frequency2(
-            best_spikes, self._grayscale_length)
+        if gs_l_diff < self.NEW_GS_ALG_L_DIFF_T:
 
-        #Sections + 1 because actually looking at edges to sections
-        offset = r_signal.get_best_offset(
-            self._grayscale_sections + 1,
-            best_spikes, frequency=frequency)
+            expected_spikes = (np.arange(1, self._grayscale_sections) *
+                               self._grayscale_length)
 
-        signal = r_signal.get_true_signal(
-            self._img.shape[0],
-            self._grayscale_sections + 1,
-            up_spikes, frequency=frequency,
-            offset=offset)
+            expected_offset = (expected_strip_size - strip_values.size) / 2.0
 
-        if signal is None:
+            expected_spikes += expected_offset
 
-            logging.warning((
-                "GRAYSCALE, no signal detected for f={0} and"
-                " offset={1} in best_spikes={2} from spikes={3}").format(
-                    frequency, offset, best_spikes, up_spikes))
+            observed_spikes = np.where(up_spikes)[0]
 
-            return None, None
+            pos_diffs = np.abs(np.subtract.outer(
+                observed_spikes,
+                expected_spikes)).argmin(axis=0)
 
-        ###DEBUG CUT SECTION
-        """
-        from matplotlib import pyplot as plt
-        plt.clf()
-        plt.imshow(self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]],
-            cmap=plt.cm.Greys_r)
-        plt.plot(signal, "*")
-        plt.show()
-        """
-        ###DEBUG END
+            deltas = []
+            for ei, oi in enumerate(pos_diffs):
+                deltas.append(abs(expected_spikes[ei] - observed_spikes[oi]))
+                if deltas[-1] > self._grayscale_length * self.NEW_GS_ALG_L_DIFF_SPIKE_T:
+                    deltas[-1] = np.nan
+            deltas = np.array(deltas)
 
-        if signal[0] + frequency * self.SAFETY_PADDING < 0:
+            #IF GS-SECTION SEEMS TO BE RIGHT SIZE FOR THE WHOLE GS
+            #THEN THE SECTIONING PROBABLY IS A GOOD ESTIMATE FOR THE GS
+            #IF SPIKES MATCHES MOST OF THE EXPECTED EDGES
+            if ((np.isfinite(deltas).sum() - np.isnan(deltas[0]) -
+                    np.isnan(deltas[-1])) / float(self._grayscale_sections) >
+                    self.NEW_GS_ALG_SPIKES_FRACTION):
 
-            logging.warning(
-                "GRAYSCALE, the signal got adjusted one interval"
-                " due to lower bound overshoot")
+                edges = []
+                for di, oi in enumerate(pos_diffs):
+                    if np.isfinite(deltas[di]):
+                        edges.append(observed_spikes[oi])
+                    else:
+                        edges.append(np.nan)
+                edges = np.array(edges)
+                nan_edges = np.isnan(edges)
+                fin_edges = np.isfinite(edges)
+                X = np.arange(edges.size) + 1
+                edges[nan_edges] = np.interp(X[nan_edges], X[fin_edges],
+                                             edges[fin_edges],
+                                             left=np.nan,
+                                             right=np.nan)
+                fin_edges = np.isfinite(edges)
+                where_fin_edges = np.where(fin_edges)[0]
 
-            signal += frequency
+                #GET THE FREQ
+                frequency = np.diff(edges[where_fin_edges[0]: where_fin_edges[-1]], 1)
+                frequency = frequency[np.isfinite(frequency)].mean()
 
-        if signal[-1] - frequency * self.SAFETY_PADDING > strip_values.size:
+                #EXTENDED TO GET OUTSIDE EDGES
+                edges = np.r_[[np.nan], edges, [np.nan]]
+                fin_edges = np.isfinite(edges)
+                where_fin_edges = np.where(fin_edges)[0]
+                for i in range(where_fin_edges[0] - 1, -1, -1):
+                    edges[i] = edges[i + 1] - frequency
+                for i in range(where_fin_edges[-1] + 1, edges.size):
+                    edges[i] = edges[i - 1] + frequency
 
-            logging.warning(
-                "GRAYSCALE, the signal got adjusted one interval"
-                " due to upper bound overshoot")
+                #EXTRACTING SECTION MIDPOINTS
+                gray_scale_pos = np.interp(
+                    np.arange(self._grayscale_sections) + 0.5,
+                    np.arange(self._grayscale_sections + 1),
+                    edges)
 
-            signal -= frequency
+                logging.info("GRAYSCALE: Got signal with new method")
 
-        gray_scale = []
-        gray_scale_pos = []
+                #CHECKING OVERFLOWS
+                if gray_scale_pos[0] - frequency * self.NEW_SAFETY_PADDING < 0:
+                    gray_scale_pos += frequency
+                if (gray_scale_pos[-1] + frequency * self.NEW_SAFETY_PADDING >
+                        strip_values.size):
+                    gray_scale_pos -= frequency
 
-        self.ortho_half_height = self._grayscale_width / \
-            2.0 * self.SAFETY_COEFF
+                #SETTING ABS POS REL TO WHOLE IM-SECTION
+                gray_scale_pos += rect[0][0]
 
-        #SETTING TOP
-        top = self._mid_orth_strip - self.ortho_half_height
-        if top < 0:
-            top = 0
+                val_orth = self._grayscale_width * self.NEW_SAFETY_PADDING
+                val_para = frequency * self.NEW_SAFETY_PADDING
 
-        #SETTING BOTTOM
-        bottom = self._mid_orth_strip + self.ortho_half_height
-        if bottom >= self._img.shape[1]:
-            bottom = self._img.shape[1] - 1
+                #SETTING VALUE TOP
+                top = self._mid_orth_strip - val_orth
+                if top < 0:
+                    top = 0
 
-        for pos in xrange(signal.size - 1):
+                #SETTING VALUE BOTTOM
+                bottom = self._mid_orth_strip + val_orth + 1
+                if bottom >= self._img.shape[1]:
+                    bottom = self._img.shape[1] - 1
 
-            mid = signal[pos:pos + 2].mean() + rect[0][0]
+                gray_scale = []
+                for pos in gray_scale_pos:
 
-            gray_scale_pos.append(mid)
+                    left = pos - val_para
 
-            left = gray_scale_pos[-1] - 0.5 * frequency * self.SAFETY_COEFF
+                    if left < 0:
+                        left = 0
 
-            if left < 0:
-                left = 0
+                    right = pos + val_para
 
-            right = gray_scale_pos[-1] + 0.5 * frequency * self.SAFETY_COEFF
+                    if right >= self._img.shape[0]:
+                        right = self._img.shape[0] - 1
 
-            if right >= self._img.shape[0]:
-                right = self._img.shape[0] - 1
+                    gray_scale.append(self._img[left: right, top: bottom].mean())
 
-            gray_scale.append(self._img[left: right, top: bottom].mean())
+            else:
+
+                logging.warning("GRAYSCALE: Too bad signal for new method, using fallback")
+
+        if gray_scale_pos is None:
+
+            best_spikes = r_signal.get_best_spikes(
+                up_spikes,
+                self._grayscale_length,
+                tollerance=self.SPIKE_BEST_TOLLERANCE,
+                require_both_sides=False)
+
+            frequency = r_signal.get_perfect_frequency2(
+                best_spikes, self._grayscale_length)
+
+            #Sections + 1 because actually looking at edges to sections
+            offset = r_signal.get_best_offset(
+                self._grayscale_sections + 1,
+                best_spikes, frequency=frequency)
+
+            signal = r_signal.get_true_signal(
+                self._img.shape[0],
+                self._grayscale_sections + 1,
+                up_spikes, frequency=frequency,
+                offset=offset)
+
+            if signal is None:
+
+                logging.warning((
+                    "GRAYSCALE, no signal detected for f={0} and"
+                    " offset={1} in best_spikes={2} from spikes={3}").format(
+                        frequency, offset, best_spikes, up_spikes))
+
+                return None, None
+
+            ###DEBUG CUT SECTION
+            """
+            from matplotlib import pyplot as plt
+            plt.clf()
+            plt.imshow(self._img[rect[0][0]:rect[1][0],rect[0][1]:rect[1][1]],
+                cmap=plt.cm.Greys_r)
+            plt.plot(signal, "*")
+            plt.show()
+            """
+            ###DEBUG END
+
+            if signal[0] - frequency * self.SAFETY_PADDING < 0:
+
+                logging.warning(
+                    "GRAYSCALE, the signal got adjusted one interval"
+                    " due to lower bound overshoot")
+
+                signal += frequency
+
+            if signal[-1] + frequency * self.SAFETY_PADDING > strip_values.size:
+
+                logging.warning(
+                    "GRAYSCALE, the signal got adjusted one interval"
+                    " due to upper bound overshoot")
+
+                signal -= frequency
+
+            gray_scale = []
+            gray_scale_pos = []
+
+            self.ortho_half_height = self._grayscale_width / \
+                2.0 * self.SAFETY_COEFF
+
+            #SETTING TOP
+            top = self._mid_orth_strip - self.ortho_half_height
+            if top < 0:
+                top = 0
+
+            #SETTING BOTTOM
+            bottom = self._mid_orth_strip + self.ortho_half_height
+            if bottom >= self._img.shape[1]:
+                bottom = self._img.shape[1] - 1
+
+            for pos in xrange(signal.size - 1):
+
+                mid = signal[pos:pos + 2].mean() + rect[0][0]
+
+                gray_scale_pos.append(mid)
+
+                left = gray_scale_pos[-1] - 0.5 * frequency * self.SAFETY_COEFF
+
+                if left < 0:
+                    left = 0
+
+                right = gray_scale_pos[-1] + 0.5 * frequency * self.SAFETY_COEFF
+
+                if right >= self._img.shape[0]:
+                    right = self._img.shape[0] - 1
+
+                gray_scale.append(self._img[left: right, top: bottom].mean())
 
         self._gray_scale_pos = gray_scale_pos
         self._gray_scale = gray_scale

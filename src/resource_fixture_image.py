@@ -619,7 +619,8 @@ class Fixture_Image(object):
         im_analysis = resource_image.Image_Analysis(
             image=analysis_img,
             pattern_image_path=self.marking_path,
-            scale=self.im_scale)
+            scale=self.im_scale,
+            resource_paths=self._paths)
 
         msg = "Finding pattern (acc {0} s)".format(time.time() - t)
 
@@ -772,12 +773,14 @@ class Fixture_Image(object):
         im = self.get_subsection(self['current']['grayscale_area'],
                                  scale=1.0)
 
+        """
         print id(im), type(im), "For save", self['current']['grayscale_area'], self.im_original_scale
+        """
 
         if im is None or 0 in im.shape:
             return False
 
-        np.save(".tmp.npy", im)
+        #np.save(".tmp.npy", im)
         ag = resource_image.Analyse_Grayscale(
             target_type="Kodak", image=im,
             scale_factor=self.im_original_scale)

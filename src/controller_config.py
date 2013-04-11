@@ -102,11 +102,19 @@ class Config_Controller(controller_generic.Controller):
         if target_list is not None and len(target_list) == 1:
 
             paths = self._paths
+            target_file = target_list[0]
 
+            #VERIFY THAT ENDS IN RIGHT SUFFIXES
+            file_suffix = self._model['config-log-file-filter']['mime_and_patterns'][0][1]
+            file_suffix = file_suffix.lstrip("*")
+            if not(target_file.endswith(file_suffix)):
+                target_file = target_file.rstrip(".") + file_suffix
+
+            #CREATE FILE
             try:
-                fh = tarfile.open(target_list[0], 'w:gz')
+                fh = tarfile.open(target_file, 'w:gz')
             except:
-                raise Could_Not_Save_Log_And_State(target_list[0])
+                raise Could_Not_Save_Log_And_State(target_file)
                 return False
 
             save_paths = list()
@@ -114,6 +122,8 @@ class Config_Controller(controller_generic.Controller):
             save_paths.append(paths.lock_root + "*")
             save_paths.append(paths.log_scanner_out.format("*"))
             save_paths.append(paths.log_scanner_err.format("*"))
+            save_paths.append(paths.log_analysis_out.format("*"))
+            save_paths.append(paths.log_analysis_err.format("*"))
             save_paths.append(paths.log_main_out)
             save_paths.append(paths.log_main_err)
             save_paths.append(paths.log_relaunch)
@@ -218,6 +228,7 @@ class Config_Controller(controller_generic.Controller):
 
     def run_update(self, widget=None):
 
+        """
         try:
             import sh
         except:
@@ -225,13 +236,14 @@ class Config_Controller(controller_generic.Controller):
                 self._model['config-update-no-sh'],
                 d_type='error', yn_buttons=False)
             return
-
+        """
         git = sh.git.bake(_cwd=self._paths.root)
 
         try:
             git_result = git.pull()
         except:
-            view_config.dialog(self.get_window(),
+            view_config.dialog(
+                self.get_window(),
                 self._model['configt-update-warning'],
                 d_type='warning', yn_buttons=False)
 
@@ -239,14 +251,16 @@ class Config_Controller(controller_generic.Controller):
 
         if 'Already up-to-date' in git_result:
 
-            view_config.dialog(self.get_window(),
+            view_config.dialog(
+                self.get_window(),
                 self._model['config-update-up_to_date'],
                 d_type='info', yn_buttons=False)
 
         else:
             stage = self.get_view().get_stage()
             stage.set_activate_restart()
-            view_config.dialog(self.get_window(),
+            view_config.dialog(
+                self.get_window(),
                 self._model['config-update-success'],
                 d_type='info', yn_buttons=False)
 
@@ -264,7 +278,6 @@ class Config_Controller(controller_generic.Controller):
             tc = self.get_top_controller()
             tc.ask_quit()
 
-
     def update_view(self):
 
         stage = self.get_view().get_stage()
@@ -276,8 +289,8 @@ class Config_Controller(controller_generic.Controller):
 
         paths = self.get_top_controller().paths
         fixtures = [f for f in os.listdir(paths.fixtures)
-                if f.endswith(paths.fixture_conf_file_suffix)]
-        return fixtures 
+                    if f.endswith(paths.fixture_conf_file_suffix)]
+        return fixtures
 
     def remove_fixture(self, fixture):
 
