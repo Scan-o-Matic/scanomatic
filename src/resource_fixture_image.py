@@ -434,9 +434,9 @@ class Fixture_Image(object):
                 self.im.shape[i] / float(self.EXPECTED_IM_SIZE[i])
                 for i in range(2)]
 
-            if scale_d1 == scale_d2:
+            if abs(scale_d1 - scale_d2) < 0.01:
 
-                self.im_original_scale = scale_d1
+                self.im_original_scale = (scale_d1 + scale_d2) / 2.0
 
     def set_image(self, image=None, image_path=None):
 

@@ -23,7 +23,7 @@ from scipy import ndimage
 #import functools
 #from scipy.optimize import fsolve
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 #
 # SCANNOMATIC LIBRARIES
@@ -35,24 +35,24 @@ import matplotlib.pyplot as plt
 
 
 def get_adaptive_threshold(im, threshold_filter=None, segments=60,
-        sigma=None, *args, **kwargs):
+                           sigma=None, *args, **kwargs):
     """Gives a 2D surface of threshold based on smoothed local measures"""
 
     if threshold_filter is None:
         threshold_filter = ski_filter.threshold_otsu
     if sigma is None:
-        sigma = np.sqrt(im.size)/5
+        sigma = np.sqrt(im.size) / 5
 
     if segments is None or segments == 5:
         #HACK
         T = np.zeros(im.shape)
-        T[im.shape[0]/4, im.shape[1]/4] = 1
-        T[im.shape[0]/4, im.shape[1]*3/4] = 1
-        T[im.shape[0]*3/4, im.shape[1]/4] = 1
-        T[im.shape[0]*3/4, im.shape[1]*3/4] = 1
-        T[im.shape[0]/2, im.shape[1]/2] = 1
+        T[im.shape[0] / 4, im.shape[1] / 4] = 1
+        T[im.shape[0] / 4, im.shape[1] * 3 / 4] = 1
+        T[im.shape[0] * 3 / 4, im.shape[1] / 4] = 1
+        T[im.shape[0] * 3 / 4, im.shape[1] * 3 / 4] = 1
+        T[im.shape[0] / 2, im.shape[1] / 2] = 1
     else:
-        p = 1 - np.float(segments)/im.size
+        p = 1 - np.float(segments) / im.size
         T = (np.random.random(im.shape) > p).astype(np.uint8)
 
     labled, labels = _get_sectioned_image(T)
@@ -63,7 +63,7 @@ def get_adaptive_threshold(im, threshold_filter=None, segments=60,
         if (l_filter).sum() > 1:
 
             i_slice = im[l_filter]
-            if i_slice.std() !=0:
+            if i_slice.std() != 0:
 
                 T[ndimage.binary_dilation(l_filter, iterations=4)] = \
                     threshold_filter(i_slice, *args, **kwargs)
@@ -81,7 +81,7 @@ def _get_sectioned_image(im):
     """Sections image in proximity regions for points of interests"""
 
     #print "*** Ready to section"
-    d = ndimage.distance_transform_edt(im==0)
+    d = ndimage.distance_transform_edt(im == 0)
     #print "*** Distances made"
     k = np.array([[-1, 2, -1]])
     d2 = ndimage.convolve(d, k) + ndimage.convolve(d, k.T)
@@ -129,7 +129,7 @@ def get_segments_by_size(im, min_size, max_size=-1, inplace=True):
 
 
 def get_segments_by_shape(im, max_shape, check_roundness=True,
-        inplace=True):
+                          inplace=True):
 
     if inplace:
         out = im
@@ -148,7 +148,7 @@ def get_segments_by_shape(im, max_shape, check_roundness=True,
 
         s_d1, s_d2 = segment
         if (abs(s_d1.stop - s_d1.start) > bound_d1 or
-            abs(s_d2.stop - s_d2.start) > bound_d2):
+                abs(s_d2.stop - s_d2.start) > bound_d2):
 
             out[segment][labled_im[segment] == i + 1] = False
 
@@ -161,7 +161,7 @@ def get_segments_by_shape(im, max_shape, check_roundness=True,
             # b) The blob area is close to expected value given
             # outer size
             if (abs(1 - float(s.shape[0]) / s.shape[1]) > roundness_t1 or
-                abs(1 - s.size * roundness_k / blob.sum()) > roundness_t2):
+                    abs(1 - s.size * roundness_k / blob.sum()) > roundness_t2):
 
                 out[segment][labled_im[segment] == i + 1] = False
 
@@ -207,8 +207,8 @@ def get_weights(votes, data, width=1):
 
     if width > 0:
         weights = (np.exp(-((VX - X.mean()) ** 2 / (width * X.std()) ** 2 +
-                  (VY - Y.mean()) ** 2 / (width * Y.std()) ** 2)) /
-                  (2 * np.pi * X.std() * Y.std() * width ** 2))
+                   (VY - Y.mean()) ** 2 / (width * Y.std()) ** 2)) /
+                   (2 * np.pi * X.std() * Y.std() * width ** 2))
     else:
         weights = np.ones(VX.shape)
 
@@ -240,7 +240,7 @@ def get_heatmap(data, votes, weights, sigma):
     VX, VY = votes
 
     vote_slice = np.logical_and(np.logical_and(VX >= 0, VY >= 0),
-                np.logical_and(VX <= X.max(), VY <= Y.max()))
+                                np.logical_and(VX <= X.max(), VY <= Y.max()))
 
     votes_x = VX[vote_slice]
     votes_y = VY[vote_slice]
@@ -262,7 +262,7 @@ def get_heatmap(data, votes, weights, sigma):
     #sorted unique_votes, +0.5 is OK since we know indices will be
     #ints and the lowest be 0 (thus -1 is also safe)
     unique_vote_weights = np.histogram(flat_votes_xy, bins=np.hstack(((-1,),
-        unique_votes)) + 0.5, weights=W)[0]
+                                       unique_votes)) + 0.5, weights=W)[0]
 
     #print np.c_[unique_votes, unique_vote_weights].T
 
@@ -294,11 +294,11 @@ def get_grid_spacings(X, Y, expected_dx, expected_dy, leeway=0.1):
 
     dXs = np.abs(np.subtract.outer(X, X))
     dx = dXs[np.logical_and(dXs > expected_dx * (1 - leeway),
-            dXs < expected_dx * (1 + leeway))].mean()
+             dXs < expected_dx * (1 + leeway))].mean()
 
     dYs = np.abs(np.subtract.outer(Y, Y))
     dy = dYs[np.logical_and(dYs > expected_dy * (1 - leeway),
-            dYs < expected_dy * (1 + leeway))].mean()
+             dYs < expected_dy * (1 + leeway))].mean()
 
     return dx, dy
 
@@ -333,7 +333,7 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
             dUD1 = iGrid[0, rings[0] + r, :].mean() - array_view[0, -1, :].mean()
             lD1slice = np.s_[0, : rings[0] - r, :]
             iGrid[lD1slice][gUpdated[lD1slice[1:]]] -= dLD1
-            uD1slice = np.s_[0, rings[0] + r: , :]
+            uD1slice = np.s_[0, rings[0] + r:, :]
             iGrid[uD1slice][gUpdated[uD1slice[1:]]] -= dUD1
             #print dLD1, dUD1, gUpdated[lD1slice[1:]].sum(), gUpdated[uD1slice[1:]].sum()
 
@@ -373,11 +373,12 @@ def replace_ideal_with_observed(iGrid, X, Y, max_sq_dist):
 
     return iGrid
 
+
 def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=105):
 
     grid0 = (((np.mgrid[0: grid_shape[0], 0: grid_shape[1]]).astype(np.float)
-        - np.array(grid_shape).reshape(2, 1, 1) / 2.0) + 0.5
-        ) * np.array((dx, dy)).reshape(2, 1, 1)
+             - np.array(grid_shape).reshape(2, 1, 1) / 2.0) + 0.5
+             ) * np.array((dx, dy)).reshape(2, 1, 1)
 
     """
 
@@ -431,22 +432,22 @@ def get_validated_grid(im, grid, dD1, dD2, adjusted_values):
 
     #Work with both types of grids
     if grid.shape[0] == 2:
-        D1 = np.s_[0,:,:]
-        D2 = np.s_[1,:,:]
+        D1 = np.s_[0, :, :]
+        D2 = np.s_[1, :, :]
     else:
-        D1 = np.s_[:,:,0]
-        D2 = np.s_[:,:,1]
+        D1 = np.s_[:, :, 0]
+        D2 = np.s_[:, :, 1]
 
     #If any place has negative numbers, it's an overshoot
     if (grid[D1].min() < np.ceil(dD1 * 0.5) or
-        grid[D2].min() < np.ceil(dD2 * 0.5)):
+            grid[D2].min() < np.ceil(dD2 * 0.5)):
 
         print "*** Invalid grid (less than 0)"
         return None, True
 
     #If max plus half grid cell is larger than im it's an overshoot too
     if (grid[D1].max() >= im.shape[0] + np.ceil(dD1 * 0.5) or
-        grid[D2].max() >= im.shape[1] + np.ceil(dD2 * 0.5)):
+            grid[D2].max() >= im.shape[1] + np.ceil(dD2 * 0.5)):
 
         print "*** Invalid grid (more than max)"
         return None, True
@@ -456,7 +457,7 @@ def get_validated_grid(im, grid, dD1, dD2, adjusted_values):
 
 
 def get_valid_parameters(center, spacing, expected_center, expected_spacing,
-        sigma_spacing=0.55, t=0.95):
+                         sigma_spacing=0.55, t=0.95):
 
     """This function validates observed spacing and center and uses
     expected values when deemed unrealistic.
@@ -476,19 +477,21 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
 
     print "*** Got center {0} and spacing {1}".format(center, spacing)
 
-    spacing = np.array(spacing)
-    expected_spacing = np.array(expected_spacing)
+    spacing = np.array(spacing, dtype=np.float)
+    expected_spacing = np.array(expected_spacing, dtype=np.float)
 
     p_spacing = _get_p(1.0, expected_spacing, sigma_spacing, spacing)
-    spacing[p_spacing < t] = expected_spacing[p_spacing < t]
+    bool_p_spacing = p_spacing < t
+    spacing[bool_p_spacing] = expected_spacing[bool_p_spacing]
 
-    center = np.array(center)
-    expected_center = np.array(expected_center)
+    center = np.array(center, dtype=np.float)
+    expected_center = np.array(expected_center, dtype=np.float)
     sigma_center = 0.5 * spacing.mean()
     p_center = _get_p(1.0, expected_center, sigma_center, center)
-    center[p_center < t] = expected_center[p_center < t]
+    bool_p_center = p_center < t
+    center[bool_p_center] = expected_center[bool_p_center]
 
-    adjusted_values = (p_center < t).any() or (p_spacing < t).any()
+    adjusted_values = (bool_p_center).any() or (bool_p_spacing).any()
 
     print "*** Returning center {0} and spacing {1}".format(center, spacing)
 
@@ -496,26 +499,27 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
 
 
 def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
-    visual=False, X=None, Y=None,
-    expected_center=(100, 100), run_dev=False, dev_filter_XY=None,
-    validate_parameters=False):
+             visual=False, X=None, Y=None,
+             expected_center=(100, 100), run_dev=False, dev_filter_XY=None,
+             validate_parameters=False):
     """Detects grid candidates and constructs a grid"""
 
     #print "** Will threshold"
     adjusted_values = False
 
     T = get_adaptive_threshold(im, threshold_filter=None, segments=100,
-        sigma=30)
+                               sigma=30)
 
     #print "** Got T"
 
-    im_filtered = get_denoise_segments(im<T, iterations=3)
+    im_filtered = get_denoise_segments(im < T, iterations=3)
     del T
 
     #print "** Filtered 1st pass the im<T, removed T"
 
-    get_segments_by_size(im_filtered, min_size=40,
-        max_size=expected_spacing[0]*expected_spacing[1], inplace=True)
+    get_segments_by_size(
+        im_filtered, min_size=40,
+        max_size=expected_spacing[0] * expected_spacing[1], inplace=True)
 
     #print "** Filtered on size"
 
@@ -526,7 +530,8 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
     labled, labels = ndimage.label(im_filtered)
     if X is None or Y is None:
         if labels > 0:
-            centra = ndimage.center_of_mass(im_filtered, labled, range(1, labels+1))
+            centra = ndimage.center_of_mass(im_filtered,
+                                            labled, range(1, labels + 1))
             X, Y = np.array(centra).T
         else:
 
@@ -543,7 +548,7 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
         X = X[f_XY]
         Y = Y[f_XY]
 
-    if adjusted_values == False:
+    if adjusted_values is False:
 
         if run_dev:
             """
@@ -556,23 +561,23 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
                 grid_shape=grid_shape, leeway=0.1)
 
             """
-            center, spacings = get_grid_parameters_4(X, Y, grid_shape,
-                spacings=expected_spacing, center=None)
+            center, spacings = get_grid_parameters_4(
+                X, Y, grid_shape, spacings=expected_spacing, center=None)
 
             if validate_parameters:
-                center, spacings, adjusted_values = get_valid_parameters(center,
-                    spacings, expected_center, expected_spacing)
+                center, spacings, adjusted_values = get_valid_parameters(
+                    center, spacings, expected_center, expected_spacing)
             else:
                 adjusted_values = False
 
         else:
 
-            center, spacings = get_grid_parameters_4(X, Y, grid_shape,
-                spacings=expected_spacing, center=None)
+            center, spacings = get_grid_parameters_4(
+                X, Y, grid_shape, spacings=expected_spacing, center=None)
 
             if validate_parameters:
-                center, spacings, adjusted_values = get_valid_parameters(center,
-                    spacings, expected_center, expected_spacing)
+                center, spacings, adjusted_values = get_valid_parameters(
+                    center, spacings, expected_center, expected_spacing)
             else:
                 adjusted_values = False
 
@@ -603,8 +608,8 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
         from matplotlib import pyplot as plt
         plt.imshow(im_filtered)
         plt.plot(Y, X, 'g+', ms=10, mew=2)
-        plt.plot(grid[:,:,1].ravel(), grid[:,:,0].ravel(),
-            'o', ms=15, mec='w', mew=2, mfc='none')
+        plt.plot(grid[:, :, 1].ravel(), grid[:, :, 0].ravel(),
+                 'o', ms=15, mec='w', mew=2, mfc='none')
         plt.ylim(0, im_filtered.shape[0])
         plt.xlim(0, im_filtered.shape[1])
         plt.show()
