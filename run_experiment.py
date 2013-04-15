@@ -23,7 +23,6 @@ import sys
 import time
 import uuid
 import shutil
-import time
 from argparse import ArgumentParser
 
 #
@@ -42,11 +41,14 @@ import src.resource_project_log as resource_project_log
 # EXCEPTIONS
 #
 
-class Not_Initialized(Exception): pass
+
+class Not_Initialized(Exception):
+    pass
 
 #
 # FUNCTIONS
 #
+
 
 def get_pinnings_list(pinning_string):
 
@@ -57,7 +59,6 @@ def get_pinnings_list(pinning_string):
     except:
 
         return None
-
 
     pinning_list = list()
     for p in pinning_str_list:
@@ -90,13 +91,16 @@ def free_scanner(scanner, uuid):
 
 
 class Unbuffered:
-   def __init__(self, stream):
-       self.stream = stream
-   def write(self, data):
-       self.stream.write(data)
-       self.stream.flush()
-   def __getattr__(self, attr):
-       return getattr(self.stream, attr)
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
 
 
 class Experiment(object):
@@ -142,8 +146,9 @@ class Experiment(object):
 
     def __excepthook(self, excType, excValue, traceback):
 
-        self._logger.critical("Uncaught exception:",
-                 exc_info=(excType, excValue, traceback))
+        self._logger.critical(
+            "Uncaught exception:",
+            exc_info=(excType, excValue, traceback))
 
         self._logger.info("Killing deamon")
         os.kill(self._stdin_pipe_deamon.pid, signal.SIGTERM)
@@ -154,7 +159,6 @@ class Experiment(object):
         self._running = False
 
     def _stdin_deamon(self):
-
 
         scanner_name = self.paths.get_scanner_path_name(self._scanner_name)
         stdin_path = self.paths.experiment_stdin.format(scanner_name)
@@ -198,7 +202,8 @@ class Experiment(object):
                     output = line
 
                 elif line == '__INFO__':
-                    output =  ('__ALIVE__ {0}\n'.format(self._running) +
+                    output = (
+                        '__ALIVE__ {0}\n'.format(self._running) +
                         '__PREFIX__ {0}\n'.format(self._prefix) +
                         '__FIXTURE__ {0}\n'.format(self._fixture_name) +
                         '__SCANNER__ {0}\n'.format(self._scanner_name) +
@@ -209,7 +214,7 @@ class Experiment(object):
                         '__SCANS__ {0}\n'.format(self._max_scans) +
                         '__INIT-TIME__ {0}\n'.format(self._init_time) +
                         '__CUR-IM__ {0}\n'.format(self._scanned)
-                        )
+                    )
 
                 else:
                     output = "DEAMON got unkown request '{0}'".format(line)
@@ -242,7 +247,7 @@ class Experiment(object):
 
     def _gated_print(self, *args):
 
-        while self._printing == True:
+        while self._printing is True:
             time.sleep(0.02)
 
         self._printing = True
@@ -279,12 +284,14 @@ class Experiment(object):
 
         self._set_fixture(self.paths.fixtures, self._fixture_name)
 
-        self._first_pass_analysis_file = os.sep.join((self._out_data_path,
+        self._first_pass_analysis_file = os.path.join(
+            self._out_data_path,
             self.paths.experiment_first_pass_analysis_relative.format(
-            self._prefix)))
+                self._prefix))
 
-        self._im_filename_pattern = os.sep.join((self._root, self._prefix,
-            self.paths.experiment_scan_image_relative_pattern))
+        self._im_filename_pattern = os.path.join(
+            self._root, self._prefix,
+            self.paths.experiment_scan_image_relative_pattern)
 
         self._description = run_args.description
         self._code = run_args.code
@@ -311,13 +318,14 @@ class Experiment(object):
 
         shutil.copyfile(
             self.paths.get_fixture_path(fixture_name, own_path=dir_path),
-            os.sep.join((self._out_data_path,
-            self.paths.experiment_local_fixturename)))
+            os.path.join(
+                self._out_data_path,
+                self.paths.experiment_local_fixturename))
 
         self._fixture = resource_fixture.Fixture_Settings(
-                self._out_data_path,
-                self.paths.experiment_local_fixturename,
-                self.paths)
+            self._out_data_path,
+            self.paths.experiment_local_fixturename,
+            self.paths)
 
     def run(self):
 
@@ -381,13 +389,14 @@ class Experiment(object):
     def _scan_and_analyse(self, im_index):
 
         self._logger.info("Image {0} started!".format(im_index))
-        im_path = self._im_filename_pattern.format(self._prefix,
+        im_path = self._im_filename_pattern.format(
+            self._prefix,
             str(im_index).zfill(4))
 
         #SCAN
         self._logger.info("Requesting scan to file '{0}'".format(im_path))
         scan_success = self._scanner.scan(
-                        mode=self.SCAN_MODE, filename=im_path)
+            mode=self.SCAN_MODE, filename=im_path)
 
         scan_time = time.time()
 
@@ -415,6 +424,7 @@ class Experiment(object):
                 im_dict['mark_Y'],
                 im_dict['grayscale_indices'],
                 im_dict['grayscale_values'],
+                im_dict['scale'],
                 img_dict=im_dict,
                 image_shape=im_dict['im_shape'])
 
@@ -432,22 +442,24 @@ class Experiment(object):
         self._logger.info("Writing header row")
 
         meta_data = resource_project_log.get_meta_data_dict(
-                **{'Start Time': time.time(),
-                    'Prefix': self._prefix,
-                    'Description': self._description,
-                    'Measures': self._max_scans,
-                    'Interval': self._interval,
-                    'UUID': self._uuid,
-                    'Fixture': self._fixture_name,
-                    'Scanner': self._scanner_name,
-                    'Pinning Matrices': self._pinning,
-                    'Manual Gridding': None,
-                    'Project ID': self._code,
-                    'Scanner Layout ID': self._layout_id
-                }
-                )
+            **{
+                'Start Time': time.time(),
+                'Prefix': self._prefix,
+                'Description': self._description,
+                'Measures': self._max_scans,
+                'Interval': self._interval,
+                'UUID': self._uuid,
+                'Fixture': self._fixture_name,
+                'Scanner': self._scanner_name,
+                'Pinning Matrices': self._pinning,
+                'Manual Gridding': None,
+                'Project ID': self._code,
+                'Scanner Layout ID': self._layout_id
+            }
+        )
 
-        resource_project_log.write_log_file(self._first_pass_analysis_file,
+        resource_project_log.write_log_file(
+            self._first_pass_analysis_file,
             meta_data=meta_data)
 
     def _join_threads(self):
@@ -471,45 +483,58 @@ if __name__ == "__main__":
 given certain parameters and creates a first pass analysis file which is the
 input file for the analysis script.""")
 
-    parser.add_argument('-f', '--fixture', type=str, dest="fixture",
+    parser.add_argument(
+        '-f', '--fixture', type=str, dest="fixture",
         help='Path to fixture config file')
 
-    parser.add_argument('-s', '--scanner', type=str, dest='scanner',
+    parser.add_argument(
+        '-s', '--scanner', type=str, dest='scanner',
         help='Scanner to be used')
 
-    parser.add_argument('-i', '--interval', type=float, default=20.0,
+    parser.add_argument(
+        '-i', '--interval', type=float, default=20.0,
         dest='interval',
         help='Minutes between scans')
 
-    parser.add_argument('-n', '--number-of-scans', type=int, default=217,
+    parser.add_argument(
+        '-n', '--number-of-scans', type=int, default=217,
         dest='number_of_scans',
         help='Number of scans requested')
 
-    parser.add_argument('-m', '--matrices', type=str, dest='pinning',
+    parser.add_argument(
+        '-m', '--matrices', type=str, dest='pinning',
         help='List of pinning matrices')
 
-    parser.add_argument('-r', '--root', type=str, dest='root',
+    parser.add_argument(
+        '-r', '--root', type=str, dest='root',
         help='Projects root')
 
-    parser.add_argument('-p', '--prefix', type=str, dest='prefix',
+    parser.add_argument(
+        '-p', '--prefix', type=str, dest='prefix',
         help='Project prefix')
 
-    parser.add_argument('-d', '--description', type=str, dest='description',
+    parser.add_argument(
+        '-d', '--description', type=str, dest='description',
         help='Project description')
 
-    parser.add_argument('-c', '--code', type=str, dest='code',
+    parser.add_argument(
+        '-c', '--code', type=str, dest='code',
         help='Identification code for the project from the planner')
 
-    parser.add_argument('-l', '--scan-layout-tag', dest='layout_id',
-            help="Identification code for the scanner layout being run")
+    parser.add_argument(
+        '-l', '--scan-layout-tag', dest='layout_id',
+        help="Identification code for the scanner layout being run")
 
-    parser.add_argument('-u', '--uuid', type=str, dest='uuid',
+    parser.add_argument(
+        '-u', '--uuid', type=str, dest='uuid',
         help='UUID to indentify self with scanner reservation')
 
-    parser.add_argument('-e', '--experiment-file', type=str, dest='file',
+    parser.add_argument(
+        '-e', '--experiment-file', type=str, dest='file',
         help='Path to experiment file to continue on')
 
-    parser.add_argument("--debug", dest="debug", default="warning",
+    parser.add_argument(
+        "--debug", dest="debug", default="warning",
         type=str, help="Sets debugging level")
 
     args = parser.parse_args()
@@ -520,7 +545,6 @@ input file for the analysis script.""")
                       'warning': logging.WARNING,
                       'info': logging.INFO,
                       'debug': logging.DEBUG}
-
 
     #PATHS
     paths = resource_path.Paths()
@@ -547,7 +571,8 @@ input file for the analysis script.""")
         args.uuid = file_settings['UUID']
         args.init_time = file_settings['Start Time']
 
-        args.root = os.path.abspath(os.path.join(args.file, os.path.pardir,
+        args.root = os.path.abspath(os.path.join(
+            args.file, os.path.pardir,
             os.path.pardir))
 
         args.scanned = 0
@@ -558,7 +583,6 @@ input file for the analysis script.""")
             except:
                 pass
         fh.close()
-
 
     #SCANNER
     if args.scanner is None:
@@ -580,7 +604,7 @@ input file for the analysis script.""")
         parser.error("Can't find any file at '{0}'".format(fixture))
 
     #INTERVAl
-    if 7 > args.interval > 4*60:
+    if 7 > args.interval > 4 * 60:
         free_scanner(args.scanner, args.uuid)
         parser.error("Interval is out of allowed bounds!")
 
@@ -590,7 +614,7 @@ input file for the analysis script.""")
         parser.error("Number of scans is out of bounds")
 
     #EXPERIMENTS ROOT
-    if args.root is None or os.path.isdir(args.root) == False:
+    if args.root is None or os.path.isdir(args.root) is False:
         free_scanner(args.scanner, args.uuid)
         parser.error("Experiments root is not a directory")
 
@@ -604,7 +628,7 @@ input file for the analysis script.""")
 
     #PREFIX
     if (args.prefix is None or args.file is None and
-        os.path.isdir(os.path.join(args.root, args.prefix))):
+            os.path.isdir(os.path.join(args.root, args.prefix))):
 
         free_scanner(args.scanner, args.uuid)
         parser.error("Prefix is a duplicate or invalid")
@@ -630,9 +654,10 @@ input file for the analysis script.""")
 
     logger = logging.getLogger('Scan-o-Matic First Pass Analysis')
 
-    log_formatter = logging.Formatter('\n\n%(asctime)s %(levelname)s:' + \
-                    ' %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S\n')
+    log_formatter = logging.Formatter(
+        '\n\n%(asctime)s %(levelname)s:' +
+        ' %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S\n')
 
     #CREATE DIRECTORY
     if args.file is None:
@@ -647,5 +672,5 @@ input file for the analysis script.""")
 
     logger.debug("Logger is ready! Arguments are ready! Lets roll!")
 
-    e = Experiment(run_args = args, logger=logger)
+    e = Experiment(run_args=args, logger=logger)
     e.run()

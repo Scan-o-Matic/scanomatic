@@ -776,6 +776,7 @@ class Analysis_First_Pass(controller_generic.Controller):
                     im_data['mark_Y'],
                     im_data['grayscale_indices'],
                     im_data['grayscale_values'],
+                    im_data['scale'],
                     img_dict=im_data,
                     image_shape=im_data['im_shape'])
 
