@@ -623,6 +623,7 @@ class Interactive_Menu():
         self._LSC_phenotypes = None
         self._normalisation_vals = None
         self._original_meta_data = None
+        self._per_strain_metadata = None
         self._data_shapes = None
         self._is_logged = False
         self._is_normed = None
@@ -753,6 +754,7 @@ class Interactive_Menu():
         pickle_data_file = ".".join(file_path[:-1]) + ".data.pickle"
         pickle_scantimes_file = ".".join(file_path[:-1]) + "scantimes.pickle"
         pickle_metadata_file = ".".join(file_path[:-1]) + ".metadata.pickle"
+        pickle_per_experiment_meta_file = ".".join(file_path[: -1]) + ".exp.metadata.pickle"
         pickle_matrix_file = ".".join(file_path[:-1]) + ".matrix.pickle"
         pickle_current_phenotype_file = ".".join(file_path[:-1]) + ".cur_pheno.pickle"
         #pickle_is_normed_file = ".".join(file_path[:-1]) + ".isnormed.pickle"
@@ -773,6 +775,10 @@ class Interactive_Menu():
             if os.path.isfile(pickle_current_phenotype_file):
                 self._cur_phenotype = pickle.load(open(
                     pickle_current_phenotype_file, 'rb'))
+
+            if os.path.isfile(pickle_per_experiment_meta_file):
+                self._per_strain_metadata = pickle.load(open(
+                    pickle_per_experiment_meta_file, 'rb'))
 
             """
             if os.path.isfile(pickle_is_normed_file):
@@ -815,6 +821,15 @@ class Interactive_Menu():
             for i in xrange(self._original_phenotypes.shape[0]):
                 self._plate_labels[i] = str(i)
             logging.info("Temporary plate labels set")
+
+        """
+        if self._per_strain_metadata is None:
+            _psm = self._get_downsample_metadata()
+            if _psm is False:
+                self._per_strain_metadata = None
+            else:
+                self._per_strain_metadata = _psm
+        """
 
         self.set_enable_menu_plots()
 
@@ -1014,6 +1029,39 @@ class Interactive_Menu():
             plate = None
 
         return plate
+
+    def _get_downsample_metadata(self):
+
+        logging.info("Starting to map strain info for replicates")
+        _gsm = self._grid_surface_matrices
+        _md = self._original_meta_data
+
+        _dmd = {}
+        _data = self._original_phenotypes
+
+        for p in range(_data.shape[0]):
+            dr = len(_gsm[0])
+            dc = len(_gsm[0][0])
+            for r in range(_data[p].shape[0] / dr):
+                for c in range(_data[p].shape[1] / dc):
+                    tmp = []
+                    for i in range(dr):
+                        for j in range(dc):
+                            if _gsm[p][i][j] == 0:
+                                try:
+                                    tmp.append(_md[(p, r + i, c + j)][0])
+                                except:
+                                    pass
+
+                    if len(set(tmp)) != 1:
+                        logging.error("Strain name conflict, aborting")
+                        return False
+
+                    else:
+
+                        _dmd[(p, r, c)] = tmp[0]
+
+        return _dmd
 
     def do_task(self, task):
 
@@ -1217,11 +1265,20 @@ class Interactive_Menu():
             self._grid_surface_matrices = get_interactive_norm_surface_matrix(
                 self._original_phenotypes,
                 self._grid_surface_matrices)
-            logging.info("New normalisation grid set!")
+
+            _new_downsized_meta = self._get_downsample_metadata()
+            if _new_downsized_meta is not False:
+                self._per_strain_metadata = _new_downsized_meta
+                logging.info("New normalisation grid set!")
+            else:
+                logging.warning("Normalisation won't be allowed")
 
         elif task == "2B":
 
-            if self._LSC_phenotypes is None:
+            if self._per_strain_metadata is None:
+                logging.error("Normalisation not allowed, no valid grid position")
+
+            elif self._LSC_phenotypes is None:
 
                 self._LSC_phenotypes = [np.zeros(p.shape) for p in
                     self._original_phenotypes]
@@ -1439,6 +1496,12 @@ class Interactive_Menu():
             except:
                 logging.warning("Could not save normalisation status")
             """
+
+            file_path = self._get_save_file_guess(file_guess=".exp.metadata.pickle")
+            try:
+                pickle.dump(self._per_strain_metadata, open(file_path, 'wb'))
+            except:
+                logging.warning("Could not save normalisation status")
 
             file_path = self._get_save_file_guess(file_guess=".pheno_names.pickle")
             try:
