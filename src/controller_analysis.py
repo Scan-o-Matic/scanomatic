@@ -140,7 +140,7 @@ class Analysis_Controller(controller_generic.Controller):
             print "LOST!"
             return False
 
-        gobject.timeout_add(250, self._callback, user_data)
+        gobject.timeout_add(587, self._callback, user_data)
         return None
 
     def _get_safe_slice(self, coords, im_shape):
@@ -718,7 +718,7 @@ class Analysis_First_Pass(controller_generic.Controller):
 
         self._run_thread = threading.Thread(target=self._run_first_pass_analysis)
         self._run_thread.start()
-        gobject.timeout_add(420, self._running_callback)
+        gobject.timeout_add(491, self._running_callback)
 
     def _run_first_pass_analysis(self):
 
@@ -1037,7 +1037,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         thread.start()
 
-        gobject.timeout_add(250, self._parent._callback, {
+        gobject.timeout_add(281, self._parent._callback, {
             'view': view,
             'view-function': view.set_progress,
             'view-data': None,
@@ -1743,7 +1743,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
                 sm[k] = kwargs[k]
 
         if sm['analysis-project-log_file'] != '':
-            gobject.timeout_add(200, self.set_log_file, None,
+            gobject.timeout_add(199, self.set_log_file, None,
                                 [sm['analysis-project-log_file']])
 
     def set_abort(self, *args):

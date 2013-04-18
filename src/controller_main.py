@@ -90,7 +90,7 @@ class Controller(controller_generic.Controller):
         self._view.show_notebook_or_logo()
 
         view.show_all()
-        gobject.timeout_add(100, self._second_init_step)
+        gobject.timeout_add(71, self._second_init_step)
 
     def _second_init_step(self):
 

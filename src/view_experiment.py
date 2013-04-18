@@ -536,7 +536,7 @@ class Stage_Project_Setup(gtk.VBox):
         self.set_fixtures()
         self.set_scanners()
 
-        gobject.timeout_add(400,
+        gobject.timeout_add(667,
             controller.check_free_disk_space)
 
     def _get_human_duration(self, w_type):

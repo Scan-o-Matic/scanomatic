@@ -324,7 +324,7 @@ class Subprocs_Controller(controller_generic.Controller):
         self._check_scanners()
         self._find_analysis_procs()
 
-        gobject.timeout_add(1000, self._subprocess_callback)
+        gobject.timeout_add(2777, self._subprocess_callback)
 
     def _check_scanners(self):
 

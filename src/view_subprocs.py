@@ -173,7 +173,7 @@ class Running_Analysis(gtk.VBox):
             self._stuff.append((p, progress, info, grid_button))
 
         self.show_all()
-        gobject.timeout_add(200, self.update)
+        gobject.timeout_add(773, self.update)
 
     def update(self):
 
@@ -259,7 +259,7 @@ class Running_Experiments(gtk.VBox):
             self._stuff.append((p, progress, info, button))
 
         self.show_all()
-        gobject.timeout_add(20, self.update)
+        gobject.timeout_add(499, self.update)
 
     def _verify_stop(self, widget, proc):
 
@@ -366,7 +366,7 @@ class Free_Scanners(gtk.VBox):
         frame.add(self._scanners)
 
         self.show_all()
-        gobject.timeout_add(23, self.update,
+        gobject.timeout_add(991, self.update,
                             controller.get_top_controller().scanners)
 
     def update(self, scanners):
