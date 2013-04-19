@@ -1662,10 +1662,13 @@ class Interactive_Menu():
                 for i, elem in enumerate(data):
 
                     curPos = tuple(posList + [i])
-                    if metaDataPos is None:
-                        strain = meta_data[curPos]
-                    else:
-                        strain = meta_data[curPos][metaDataPos]
+                    try:
+                        if metaDataPos is None:
+                            strain = meta_data[curPos]
+                        else:
+                            strain = meta_data[curPos][metaDataPos]
+                    except KeyError:
+                        strain = ""
 
                     strain = text_comment + strain + text_comment
                     if isinstance(elem, int):
