@@ -46,12 +46,13 @@ PADDING_SMALL = 2
 # CLASSES
 #
 
+
 class Experiment_View(Page):
 
     def __init__(self, controller, model, top=None, stage=None):
 
         super(Experiment_View, self).__init__(controller, model,
-            top=top, stage=stage)
+                                              top=top, stage=stage)
 
     def _default_stage(self):
 
@@ -82,6 +83,7 @@ class Top_Root(Top):
         button.set_label(model['mode-selection-top-color'])
         button.connect("clicked", controller.set_mode, 'color')
         self.pack_start(button, False, False, PADDING_MEDIUM)
+
 
 class Stage_About(gtk.Label):
 
@@ -167,7 +169,7 @@ class Stage_One(gtk.VBox):
         hbox.pack_start(self.scanner, False, False, PADDING_MEDIUM)
         label = gtk.Label(model['one-stage-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
-        self.fixture = gtk.combo_box_new_text()
+        self.fixture = get_fixtures_combo()
         self.gtk_handlers['fixture-changed'] = self.fixture.connect(
             "changed", controller.set_new_fixture)
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
@@ -181,12 +183,12 @@ class Stage_One(gtk.VBox):
         self._button_1 = gtk.Button(label=model['one-stage-power-up'])
         self._button_1_command = ['power-up']
         self._button_1.connect('clicked', controller.set_run,
-            self._button_1_command)
+                               self._button_1_command)
         hbox.pack_start(self._button_1, False, False, PADDING_MEDIUM)
         self._button_2 = gtk.Button(label=model['one-stage-run-all'])
         self._button_2_command = ['run-all']
         self._button_2.connect('clicked', controller.set_run,
-            self._button_2_command)
+                               self._button_2_command)
         hbox.pack_start(self._button_2, False, False, PADDING_MEDIUM)
         frame.add(vbox)
 
@@ -224,11 +226,10 @@ class Stage_One(gtk.VBox):
         self.set_scanners()
         self.set_run_stage('not-ready')
 
-
         self.show_all()
 
     def set_progress(self, stage, completed=False, surpass=None,
-        failed=None):
+                     failed=None):
 
         m = self._model
 
@@ -239,7 +240,7 @@ class Stage_One(gtk.VBox):
 
         if surpass:
             progress = m['one-stage-progress-pass']
-        elif surpass == False:
+        elif surpass is False:
             progress = m['one-stage-progress-not-run']
         if failed:
             progress = m['one-stage-progress-error']
@@ -290,21 +291,9 @@ class Stage_One(gtk.VBox):
 
     def set_fixtures(self):
 
-        fixtures = self._controller.get_top_controller().fixtures.get_names()
-        m = self._model
-
-        widget_model = self.fixture.get_model()
-
-        if len(widget_model) == 0:
-            self.fixture.append_text(m['one-stage-no-fixture'])
-
-        for row in widget_model:
-            if row[0] not in fixtures and row[0] != m['one-stage-no-fixture']:
-                widget_model.remove(row.iter)
-            fixtures = [fix for fix in fixtures if fix != row[0]]
-
-        for f in fixtures:
-            self.fixture.append_text(f)
+        set_fixtures_combo(self.fixture,
+                           self._controller.get_top_controller().fixtures,
+                           default_text=m['one-stage-no-fixture'])
 
     def set_scanners(self):
 
@@ -341,6 +330,7 @@ class Stage_One(gtk.VBox):
         self.fixture.set_active(0)
         self.fixture.set_sensitive(False)
 
+
 class Stage_Project_Running(gtk.VBox):
 
     def __init__(self, controller, model, specific_model):
@@ -358,6 +348,7 @@ class Stage_Project_Running(gtk.VBox):
 
         self.show_all()
 
+
 class Stage_Project_Setup(gtk.VBox):
 
     def __init__(self, controller, model, specific_model=None):
@@ -371,7 +362,6 @@ class Stage_Project_Setup(gtk.VBox):
         self._specific_model = specific_model
         self._window = controller.get_window()
 
-        sm = self._specific_model
         self.gtk_handlers = dict()
 
         super(Stage_Project_Setup, self).__init__(0, False)
@@ -412,8 +402,8 @@ class Stage_Project_Setup(gtk.VBox):
         label = gtk.Label(model['project-stage-prefix'])
         label.set_alignment(0, 0.5)
         self.prefix = gtk.Entry()
-        self.gtk_handlers['prefix'] = self.prefix.connect('changed',
-            controller.check_prefix_dupe)
+        self.gtk_handlers['prefix'] = self.prefix.connect(
+            'changed', controller.check_prefix_dupe)
         table.attach(label, 0, 1, 0, 1)
         self.warn_image = gtk.Image()
         self.set_prefix_status(False)
@@ -440,7 +430,8 @@ class Stage_Project_Setup(gtk.VBox):
         label.set_alignment(0, 0.5)
         self.project_desc = gtk.Entry()
         self.project_desc.set_text(model['project-stage-desc-suggestion'])
-        self.project_desc.connect("focus-out-event",
+        self.project_desc.connect(
+            "focus-out-event",
             controller.set_project_description)
         self.project_desc.set_width_chars(55)
         table.attach(label, 0, 1, 2, 3)
@@ -459,7 +450,7 @@ class Stage_Project_Setup(gtk.VBox):
         hbox.pack_start(self.scanner, False, False, PADDING_MEDIUM)
         label = gtk.Label(model['project-stage-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
-        self.fixture = gtk.combo_box_new_text()
+        self.fixture = get_fixtures_combo()
         self.gtk_handlers['fixture-changed'] = self.fixture.connect(
             "changed", controller.set_new_fixture)
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
@@ -478,7 +469,8 @@ class Stage_Project_Setup(gtk.VBox):
         table.attach(label, 0, 1, 0, 1)
         self.project_duration = gtk.Entry()
         self.project_duration.set_text(self._get_human_duration('duration'))
-        self.gtk_handlers['duration-changed'] = self.project_duration.connect("changed",
+        self.gtk_handlers['duration-changed'] = self.project_duration.connect(
+            "changed",
             controller.check_experiment_duration,
             "duration")
         self.gtk_handlers['duration-exit'] = self.project_duration.connect(
@@ -495,7 +487,8 @@ class Stage_Project_Setup(gtk.VBox):
         table.attach(label, 0, 1, 1, 2)
         self.project_interval = gtk.Entry()
         self.project_interval.set_text(self._get_human_duration('interval'))
-        self.gtk_handlers['interval-changed'] = self.project_interval.connect("changed",
+        self.gtk_handlers['interval-changed'] = self.project_interval.connect(
+            "changed",
             controller.check_experiment_duration,
             "interval")
         self.gtk_handlers['interval-exit'] = self.project_interval.connect(
@@ -512,7 +505,8 @@ class Stage_Project_Setup(gtk.VBox):
         table.attach(label, 0, 1, 2, 3)
         self.project_scans = gtk.Entry()
         self.project_scans.set_text(self._get_human_duration('scans'))
-        self.gtk_handlers['scans-changed'] = self.project_scans.connect("changed",
+        self.gtk_handlers['scans-changed'] = self.project_scans.connect(
+            "changed",
             controller.check_experiment_duration,
             "scans")
         self.gtk_handlers['scans-exit'] = self.project_scans.connect(
@@ -536,8 +530,7 @@ class Stage_Project_Setup(gtk.VBox):
         self.set_fixtures()
         self.set_scanners()
 
-        gobject.timeout_add(667,
-            controller.check_free_disk_space)
+        gobject.timeout_add(667, controller.check_free_disk_space)
 
     def _get_human_duration(self, w_type):
 
@@ -549,7 +542,7 @@ class Stage_Project_Setup(gtk.VBox):
             td = int(t / 24)
             t = t % 24
             th = int(t)
-            tm = int((t-th)*60)
+            tm = int((t - th) * 60)
 
             return m['project-stage-duration-format'].format(td, th, tm)
 
@@ -580,9 +573,8 @@ class Stage_Project_Setup(gtk.VBox):
     def set_free_space_warning(self, known_space):
 
         m = self._model
-        dialog(self._window,
-                m['space-warning-text'],
-                d_type='warning', yn_buttons=False)
+        dialog(self._window, m['space-warning-text'],
+               d_type='warning', yn_buttons=False)
 
     def warn_scanner_claim_fail(self):
 
@@ -591,8 +583,8 @@ class Stage_Project_Setup(gtk.VBox):
         self.scanner.set_active(-1)
 
         dialog(self._window,
-            self._model['project-stage-scanner-claim-fail'],
-            d_type="warning", yn_buttons=False)
+               self._model['project-stage-scanner-claim-fail'],
+               d_type="warning", yn_buttons=False)
 
         self.scanner.handler_unblock(self.gtk_handlers['scanner-changed'])
 
@@ -604,14 +596,16 @@ class Stage_Project_Setup(gtk.VBox):
     def set_duration_warning(self, w_type):
 
         cur_img = self._get_warn_image(w_type)
-        cur_img.set_from_stock(gtk.STOCK_DIALOG_WARNING,
+        cur_img.set_from_stock(
+            gtk.STOCK_DIALOG_WARNING,
             gtk.ICON_SIZE_SMALL_TOOLBAR)
         cur_img.set_tooltip_text(self._model['project-stage-duration-warn'])
 
     def remove_duration_warning(self, w_type):
 
         cur_img = self._get_warn_image(w_type)
-        cur_img.set_from_stock(gtk.STOCK_APPLY,
+        cur_img.set_from_stock(
+            gtk.STOCK_APPLY,
             gtk.ICON_SIZE_SMALL_TOOLBAR)
         cur_img.set_tooltip_text(self._model['project-stage-duration-ok'])
 
@@ -634,11 +628,11 @@ class Stage_Project_Setup(gtk.VBox):
         if widget is None:
             return
 
-        widget.handler_block(self.gtk_handlers[duration_name+"-changed"])
+        widget.handler_block(self.gtk_handlers[duration_name + "-changed"])
 
         widget.set_text(self._get_human_duration(duration_name))
         self.remove_duration_warning(duration_name)
-        widget.handler_unblock(self.gtk_handlers[duration_name+"-changed"])
+        widget.handler_unblock(self.gtk_handlers[duration_name + "-changed"])
 
     def set_prefix_status(self, is_ok):
 
@@ -646,30 +640,22 @@ class Stage_Project_Setup(gtk.VBox):
 
         if is_ok:
 
-            self.warn_image.set_from_stock(gtk.STOCK_APPLY,
-                    gtk.ICON_SIZE_SMALL_TOOLBAR)
+            self.warn_image.set_from_stock(
+                gtk.STOCK_APPLY,
+                gtk.ICON_SIZE_SMALL_TOOLBAR)
             self.warn_image.set_tooltip_text(m['project-stage-prefix-ok'])
 
         else:
 
-            self.warn_image.set_from_stock(gtk.STOCK_DIALOG_WARNING,
-                    gtk.ICON_SIZE_SMALL_TOOLBAR)
+            self.warn_image.set_from_stock(
+                gtk.STOCK_DIALOG_WARNING,
+                gtk.ICON_SIZE_SMALL_TOOLBAR)
             self.warn_image.set_tooltip_text(m['project-stage-prefix-warn'])
 
     def set_fixtures(self):
 
-        fixtures = self._controller.get_top_controller().fixtures.get_names()
-        m = self._model
-
-        widget_model = self.fixture.get_model()
-
-        for row in widget_model:
-            if row[0] not in fixtures:
-                widget_model.remove(row.iter)
-            fixtures = [fix for fix in fixtures if fix != row[0]]
-
-        for f in sorted(fixtures):
-            self.fixture.append_text(f)
+        set_fixtures_combo(self.fixture,
+                           self._controller.get_top_controller().fixtures)
 
     def set_fixture_image(self, fixture):
 
@@ -678,14 +664,14 @@ class Stage_Project_Setup(gtk.VBox):
 
         tc = self._controller.get_top_controller()
 
-        f = resource_fixture_image.Fixture_Image(fixture,
+        f = resource_fixture_image.Fixture_Image(
+            fixture,
             fixture_directory=tc.paths.fixtures)
 
-        self._fixture_drawing = Fixture_Drawing(f,
-            scanner_view=True, width=250, height=400)
+        self._fixture_drawing = Fixture_Drawing(
+            f, scanner_view=True, width=250, height=400)
 
         self._fixture_image.add(self._fixture_drawing)
-
 
         self._fixture_image.show_all()
 
@@ -717,14 +703,14 @@ class Stage_Project_Setup(gtk.VBox):
 
             if len(children) < len(pinnings_list):
 
-               for p in xrange(len(pinnings_list) - len(children)):
+                for p in xrange(len(pinnings_list) - len(children)):
 
                     box.pack_start(Pinning(
                         self._controller, self._model, self,
                         len(children) + p + 1,
                         pinning=pinnings_list[p]))
 
-               children = box.children()
+                children = box.children()
 
             if len(children) > len(pinnings_list):
 
@@ -739,4 +725,3 @@ class Stage_Project_Setup(gtk.VBox):
                 child.set_pinning(pinnings_list[i])
 
         box.show_all()
-

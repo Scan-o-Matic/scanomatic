@@ -17,6 +17,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 import numpy as np
+import types
 
 #
 # INTERNAL DEPENDENCIES
@@ -217,6 +218,64 @@ def claim_a_scanner_dialog(window, text, image_path, scanners):
     else:
         return None
 
+
+def get_fixtures_combo():
+
+    def _get_text(self):
+        row = self.get_active()
+        if row >= 0:
+            m = self.get_model()
+            return m[row][0]
+        else:
+            return None
+
+    fixture = gtk.combo_box_new_text()
+    fixture.get_text = types.MethodType(_get_text, fixture)
+
+    return fixture
+
+
+def set_fixtures_combo(widget, fixtures, default_text=None):
+
+    fixture_names = fixtures.get_names()
+    widget_model = widget.get_model()
+    active_row = widget.get_active()
+
+    if active_row >= 0:
+        active_option = widget_model[active_row][0]
+    else:
+        active_option = None
+
+    if len(widget_model) == 0 and default_text is not None:
+        widget.append_text(default_text)
+
+    for row in widget_model:
+        if row[0] not in fixture_names:
+            widget_model.remove(row.iter)
+        fixture_names = [fix for fix in fixture_names if fix != row[0]]
+
+    for f in sorted(fixture_names):
+        print f
+        widget.append_text(f)
+
+    if active_option is not None:
+        for i, row in enumerate(widget_model):
+            if row[0] == active_option:
+                widget.set_active(i)
+                break
+
+
+def set_fixtures_active(widget, name=None):
+
+    for i, row in enumerate(widget.get_model()):
+
+        if row[0] == name:
+
+            widget.set_active(i)
+            return True
+
+    widget.set_active(-1)
+    return False
 #
 # CLASSES
 #

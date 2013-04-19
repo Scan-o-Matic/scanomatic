@@ -47,19 +47,17 @@ class Analysis(Page):
     def __init__(self, controller, model, top=None, stage=None):
 
         super(Analysis, self).__init__(controller, model, top=top,
-            stage=stage)
+                                       stage=stage)
 
     def _default_top(self):
 
-        widget = Analysis_Top_Root(self._controller,
-                    self._model)
+        widget = Analysis_Top_Root(self._controller, self._model)
 
         return widget
 
     def _default_stage(self):
 
-        widget = Analysis_Stage_About(self._controller,
-                    self._model)
+        widget = Analysis_Stage_About(self._controller, self._model)
 
         return widget
 
@@ -97,6 +95,7 @@ class Analysis_Top_Root(Top):
 
         self.show_all()
 
+
 class Analysis_Inspect_Top(Top):
 
     def __init__(self, controller, model):
@@ -107,6 +106,7 @@ class Analysis_Inspect_Top(Top):
         self.pack_start(label, True, True, PADDING_SMALL)
 
         self.show_all()
+
 
 class Analysis_First_Pass_Top(Top):
 
@@ -137,7 +137,7 @@ class Analysis_Top_Project(Top):
         super(Analysis_Top_Project, self).__init__(controller, model)
 
         self.pack_back_button(model['analysis-top-root_button-text'],
-            controller.set_abort, None)
+                              controller.set_abort, None)
 
         self._start_button = Start_Button(controller, model)
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
@@ -158,8 +158,8 @@ class Analysis_Top_Project(Top):
 class Analysis_Top_Image_Generic(Top):
 
     def __init__(self, controller, model, specific_model,
-            specific_controller, next_text=None,
-            next_stage_signal=None, back_to_root=True):
+                 specific_controller, next_text=None,
+                 next_stage_signal=None, back_to_root=True):
 
         super(Analysis_Top_Image_Generic, self).__init__(controller, model)
 
@@ -167,15 +167,15 @@ class Analysis_Top_Image_Generic(Top):
         self._specific_controller = specific_controller
 
         if back_to_root:
-            self.pack_back_button(model['analysis-top-root_button-text'],
+            self.pack_back_button(
+                model['analysis-top-root_button-text'],
                 controller.set_analysis_stage, "about")
 
         if next_text is not None:
 
-            self._next_button = Top_Next_Button(controller,
-                model, specific_model, next_text,
+            self._next_button = Top_Next_Button(
+                controller, model, specific_model, next_text,
                 controller.set_analysis_stage, next_stage_signal)
-
 
             self.pack_end(self._next_button, False, False, PADDING_LARGE)
             self.set_allow_next(False)
@@ -191,11 +191,13 @@ class Analysis_Top_Done(Analysis_Top_Image_Generic):
 
     def __init__(self, controller, model):
 
+        """
         next_text = model['analysis-top-image-sectioning-next']
         next_stage_signal = 'plate'
+        """
 
-        super(Analysis_Top_Done, self).__init__(controller,
-            model, None, None, back_to_root=False)
+        super(Analysis_Top_Done, self).__init__(
+            controller, model, None, None, back_to_root=False)
 
 
 class Analysis_Top_Image_Sectioning(Analysis_Top_Image_Generic):
@@ -205,9 +207,9 @@ class Analysis_Top_Image_Sectioning(Analysis_Top_Image_Generic):
         next_text = model['analysis-top-image-sectioning-next']
         next_stage_signal = 'plate'
 
-        super(Analysis_Top_Image_Sectioning, self).__init__(controller,
-            model, specific_model, specific_controller, next_text,
-            next_stage_signal, back_to_root=False)
+        super(Analysis_Top_Image_Sectioning, self).__init__(
+            controller, model, specific_model, specific_controller,
+            next_text, next_stage_signal, back_to_root=False)
 
 
 class Analysis_Top_Auto_Norm_and_Section(Analysis_Top_Image_Generic):
@@ -217,8 +219,8 @@ class Analysis_Top_Auto_Norm_and_Section(Analysis_Top_Image_Generic):
         next_text = model['analysis-top-auto-norm-and-section-next']
         next_stage_signal = 'plate'
 
-        super(Analysis_Top_Auto_Norm_and_Section, self).__init__(controller,
-            model, specific_model, specific_controller, next_text,
+        super(Analysis_Top_Auto_Norm_and_Section, self).__init__(
+            controller, model, specific_model, specific_controller, next_text,
             next_stage_signal, back_to_root=False)
 
 
@@ -229,8 +231,8 @@ class Analysis_Top_Image_Normalisation(Analysis_Top_Image_Generic):
         next_text = model['analysis-top-image-normalisation-next']
         next_stage_signal = 'sectioning'
 
-        super(Analysis_Top_Image_Normalisation, self).__init__(controller,
-            model, specific_model, specific_controller, next_text,
+        super(Analysis_Top_Image_Normalisation, self).__init__(
+            controller, model, specific_model, specific_controller, next_text,
             next_stage_signal, back_to_root=False)
 
 
@@ -241,9 +243,10 @@ class Analysis_Top_Image_Selection(Analysis_Top_Image_Generic):
         next_text = model['analysis-top-image-selection-next']
         next_stage_signal = 'normalisation'
 
-        super(Analysis_Top_Image_Selection, self).__init__(controller,
-            model, specific_model, specific_controller, next_text,
+        super(Analysis_Top_Image_Selection, self).__init__(
+            controller, model, specific_model, specific_controller, next_text,
             next_stage_signal)
+
 
 class Analysis_Top_Image_Plate(Analysis_Top_Image_Generic):
 
@@ -264,9 +267,8 @@ class Analysis_Top_Image_Plate(Analysis_Top_Image_Generic):
             next_text = model['analysis-top-image-plate-next_done']
             next_stage_signal = 'log_book'
 
-
-        super(Analysis_Top_Image_Plate, self).__init__(controller,
-            model, specific_model, specific_controller, next_text,
+        super(Analysis_Top_Image_Plate, self).__init__(
+            controller, model, specific_model, specific_controller, next_text,
             next_stage_signal, back_to_root=False)
 
 
@@ -309,10 +311,10 @@ class Analysis_Inspect_Stage(gtk.VBox):
         m = self._model
         base_dir = self._paths.experiment_root
         file_names = select_file(
-                m['analysis-stage-inspect-analysis-popup'],
-                multiple_files=False,
-                file_filter=m['analysis-stage-inspect-file-filter'],
-                start_in=base_dir)
+            m['analysis-stage-inspect-analysis-popup'],
+            multiple_files=False,
+            file_filter=m['analysis-stage-inspect-file-filter'],
+            start_in=base_dir)
 
         if len(file_names) > 0:
             run_file = file_names[0]
@@ -329,7 +331,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
         m = self._model
         self._warning.set_text(m['analysis-stage-inspect-warning'])
         dialog(w, m['analysis-stage-inspect-warning'],
-            d_type='error', yn_buttons=False)
+               d_type='error', yn_buttons=False)
 
     def _toggle_drawing(self, widget, *args):
 
@@ -361,7 +363,8 @@ class Analysis_Inspect_Stage(gtk.VBox):
         self._fixture_drawing = Fixture_Drawing(fixture, width=300, height=400)
         self._fd_op1 = gtk.RadioButton(
             label=self._fixture_drawing.get_view_state())
-        self._fd_op2 = gtk.RadioButton(group=self._fd_op1,
+        self._fd_op2 = gtk.RadioButton(
+            group=self._fd_op1,
             label=self._fixture_drawing.get_other_state())
 
         vbox.pack_start(label, False, False, PADDING_SMALL)
@@ -379,7 +382,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
             if plate:
 
                 vbox = gtk.VBox()
-                label = gtk.Label(p_title.format(i+1, sm['plate-names'][i]))
+                label = gtk.Label(p_title.format(i + 1, sm['plate-names'][i]))
                 vbox.pack_start(label, False, False, PADDING_SMALL)
                 image = gtk.Image()
                 image.set_from_file(sm['grid-images'][i])
@@ -387,7 +390,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
                 button = gtk.Button()
 
                 if (sm['gridding-in-history'] is None or
-                    sm['gridding-in-history'][i] is None):
+                        sm['gridding-in-history'][i] is None):
 
                     button.set_label(p_no_button)
                     button.set_sensitive(False)
@@ -399,7 +402,6 @@ class Analysis_Inspect_Stage(gtk.VBox):
 
                 vbox.pack_start(button, False, False, PADDING_SMALL)
                 hd.pack_start(vbox, True, True, PADDING_MEDIUM)
-
 
         hbox = gtk.HBox(False, 0)
         button = gtk.Button(m['analysis-stage-inspect-upload-button'])
@@ -414,14 +416,14 @@ class Analysis_Inspect_Stage(gtk.VBox):
         w = self._controller.get_window()
         m = self._model
         dialog(w, m['analysis-stage-inspect-plate-remove-warn'],
-            d_type='error', yn_buttons=False)
+               d_type='error', yn_buttons=False)
 
     def _verify_bad(self, widget, plate):
 
         w = self._controller.get_window()
         m = self._model
         if dialog(w, m['analysis-stage-inspect-plate-yn'].format(plate),
-            d_type="info", yn_buttons=True):
+                  d_type="info", yn_buttons=True):
 
             widget.set_sensitive(False)
             if self._controller.remove_grid(plate):
@@ -492,6 +494,7 @@ class Analysis_Stage_First_Pass_Running(gtk.VBox):
 
             self._errors.hide()
 
+
 class Analysis_Stage_First_Pass(gtk.VBox):
 
     def __init__(self, controller, model):
@@ -535,7 +538,8 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         hbox.pack_start(label, False, False, PADDING_MEDIUM)
         self._file_entry = gtk.Entry()
         self._file_entry.set_width_chars(55)
-        self._file_entry.connect("focus-out-event",
+        self._file_entry.connect(
+            "focus-out-event",
             controller.update_model, 'output-file')
         hbox.pack_start(self._file_entry, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
@@ -547,7 +551,8 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         hbox.pack_start(self._local_fixture, False, False, PADDING_SMALL)
         self._local_fixture.set_sensitive(False)
         self._local_fixture.set_active(False)
-        self._local_fixture.connect("toggled",
+        self._local_fixture.connect(
+            "toggled",
             controller.set_local_fixture, 'local-fixture')
         self.pack_start(hbox, False, False, PADDING_SMALL)
 
@@ -570,7 +575,8 @@ class Analysis_Stage_First_Pass(gtk.VBox):
             tv_cell, text=0)
         self._treeview.append_column(tv_column)
         self._treeview.set_reorderable(True)
-        self._treeview.connect('key_press_event',
+        self._treeview.connect(
+            'key_press_event',
             controller.handle_keypress)
         self._treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self._treeview.set_rubber_banding(True)
@@ -592,7 +598,8 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         label = gtk.Label(model['analysis-stage-first-meta-prefix'])
         label.set_alignment(0, 0.5)
         self._prefix = gtk.Entry()
-        self._prefix.connect('focus-out-event',
+        self._prefix.connect(
+            'focus-out-event',
             controller.update_model, 'prefix')
         table.attach(label, 0, 1, 0, 1)
         hbox = gtk.HBox(False, 0)
@@ -603,11 +610,13 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         label.set_alignment(0, 0.5)
         self._project_id = gtk.Entry()
         self._project_id.set_sensitive(False)
-        self._project_id.connect("focus-out-event",
+        self._project_id.connect(
+            "focus-out-event",
             controller.update_model, 'id')
         self._scan_layout_id = gtk.Entry()
         self._scan_layout_id.set_sensitive(False)
-        self._scan_layout_id.connect("focus-out-event",
+        self._scan_layout_id.connect(
+            "focus-out-event",
             controller.update_model, 'scan layout id')
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self._project_id, False, False, PADDING_NONE)
@@ -618,7 +627,8 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         label = gtk.Label(model['analysis-stage-first-meta-desc'])
         label.set_alignment(0, 0.5)
         self._project_desc = gtk.Entry()
-        self._project_desc.connect("focus-out-event",
+        self._project_desc.connect(
+            "focus-out-event",
             controller.update_model, 'desc')
         self._project_desc.set_width_chars(55)
         table.attach(label, 0, 1, 2, 3)
@@ -637,9 +647,12 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         hbox.pack_start(self._scanner, False, False, PADDING_MEDIUM)
         label = gtk.Label(model['analysis-stage-first-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
-        self._fixture = gtk.Entry()
+        self._fixture = get_fixtures_combo()
+        set_fixtures_combo(self._fixture,
+                           controller.get_top_controller().fixtures)
+
         self._fixture.connect(
-            "focus-out-event", controller.update_model, 'fixture')
+            "changed", controller.update_model, None, 'fixture')
         hbox.pack_start(self._fixture, False, False, PADDING_SMALL)
 
         #PINNING
@@ -685,14 +698,14 @@ class Analysis_Stage_First_Pass(gtk.VBox):
 
             if len(children) < len(pinnings_list):
 
-               for p in xrange(len(pinnings_list) - len(children)):
+                for p in xrange(len(pinnings_list) - len(children)):
 
                     box.pack_start(Pinning(
                         self._controller, self._model, self,
                         len(children) + p + 1,
                         pinning=pinnings_list[p]))
 
-               children = box.children()
+                children = box.children()
 
             elif len(children) > len(pinnings_list):
 
@@ -743,7 +756,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
                 md['Scanner'] = 'Unknown'
                 self._scanner.set_text(md['Scanner'])
 
-            self._fixture.set_text(md['Fixture'])
+            set_fixtures_active(self._fixture, name=md['Fixture'])
             try:
                 self._plates.set_text(str(len(md['Pinning Matrices'])))
             except:
@@ -765,11 +778,12 @@ class Analysis_Stage_Project_Running(gtk.VBox):
         label = gtk.Label()
         label.set_markup(
             model['analysis-stage-project-running-info'].format(
-            sm['analysis-project-log_file']))
+                sm['analysis-project-log_file']))
 
         self.pack_start(label, False, False, PADDING_LARGE)
 
         self.show_all()
+
 
 class Analysis_Stage_Project(gtk.VBox):
 
@@ -841,9 +855,11 @@ class Analysis_Stage_Project(gtk.VBox):
         frame.add(hbox)
         self.output = gtk.Entry()
         hbox.pack_start(self.output, True, True, PADDING_MEDIUM)
-        self.output.connect("changed",
+        self.output.connect(
+            "changed",
             controller.set_output, self, "change")
-        self.output.connect("focus-out-event",
+        self.output.connect(
+            "focus-out-event",
             self._output_focus_out)
         self.output_warning = gtk.Image()
         controller.set_output(self.output, self, "exit")
@@ -856,7 +872,8 @@ class Analysis_Stage_Project(gtk.VBox):
         frame.add(vbox)
         self.keep_gridding = gtk.CheckButton(
             label=model['analysis-stage-project-keep_gridding'])
-        self.keep_gridding.connect("clicked",
+        self.keep_gridding.connect(
+            "clicked",
             controller.toggle_set_pinning, self)
         hbox = gtk.HBox()
         hbox.pack_start(self.keep_gridding, False, False, PADDING_SMALL)
@@ -883,17 +900,19 @@ class Analysis_Stage_Project(gtk.VBox):
 
     def set_output_warning(self, val=False):
 
-        if val == False:
+        if val is False:
 
-            self.output_warning.set_from_stock(gtk.STOCK_APPLY,
-                    gtk.ICON_SIZE_SMALL_TOOLBAR)
+            self.output_warning.set_from_stock(
+                gtk.STOCK_APPLY,
+                gtk.ICON_SIZE_SMALL_TOOLBAR)
             self.output_warning.set_tooltip_text(
                 self._model['analysis-stage-project-output_folder-ok'])
 
         else:
 
-            self.output_warning.set_from_stock(gtk.STOCK_DIALOG_WARNING,
-                    gtk.ICON_SIZE_SMALL_TOOLBAR)
+            self.output_warning.set_from_stock(
+                gtk.STOCK_DIALOG_WARNING,
+                gtk.ICON_SIZE_SMALL_TOOLBAR)
             self.output_warning.set_tooltip_text(
                 self._model['analysis-stage-project-output_folder-warning'])
 
@@ -911,14 +930,14 @@ class Analysis_Stage_Project(gtk.VBox):
 
             if len(children) < len(pinnings_list):
 
-               for p in xrange(len(pinnings_list) - len(children)):
+                for p in xrange(len(pinnings_list) - len(children)):
 
                     box.pack_start(Pinning(
                         self._controller, self._model, self,
                         len(children) + p + 1,
                         pinning=pinnings_list[p]))
 
-               children = box.children()
+                children = box.children()
 
             if len(children) > len(pinnings_list):
 
@@ -974,7 +993,8 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
             tv_cell, text=0)
         self.treeview.append_column(tv_column)
         self.treeview.set_reorderable(True)
-        self.treeview.connect('key_press_event',
+        self.treeview.connect(
+            'key_press_event',
             specific_controller.handle_keypress)
         scrolled_window = gtk.ScrolledWindow()
         scrolled_window.add_with_viewport(self.treeview)
@@ -990,7 +1010,8 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         check_button = gtk.CheckButton(
             label=model['analysis-stage-image-selection-fixture'])
         check_button.set_active(specific_model['fixture'])
-        check_button.connect("clicked",
+        check_button.connect(
+            "clicked",
             specific_controller.set_images_has_fixture)
         self.pack_start(check_button, False, False, PADDING_LARGE)
 
@@ -1004,7 +1025,8 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         self.log_file_button = gtk.Button(
             label=model['analysis-stage-image-selection-continue-button'])
         hbox.pack_end(self.log_file_button, False, False, PADDING_SMALL)
-        self.log_file_button.connect('clicked',
+        self.log_file_button.connect(
+            'clicked',
             specific_controller.load_previous_log_file, self)
         self.pack_start(frame, False, False, PADDING_MEDIUM)
 
@@ -1013,14 +1035,16 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
             label=model['analysis-stage-image-selection-logging-title'])
         vbox = gtk.VBox(0, False)
 
-        selections = (('analysis-stage-image-selection-compartments',
+        selections = ((
+            'analysis-stage-image-selection-compartments',
             'log-compartments-default',
             specific_controller.log_compartments),
             ('analysis-stage-image-selection-measures',
-            'log-measures-default',
-            specific_controller.log_measures))
+             'log-measures-default',
+             specific_controller.log_measures))
 
-        self._interests = {'model': list(), 'selection': list(),
+        self._interests = {
+            'model': list(), 'selection': list(),
             'handler': list(), 'widget': list()}
 
         for item_list_title, item_list, callback in selections:
@@ -1049,7 +1073,8 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
         self.only_calibration = gtk.CheckButton(
             label=model['analysis-stage-image-selection-calibration'])
         self.only_calibration.set_active(False)
-        self.only_calibration.connect("clicked",
+        self.only_calibration.connect(
+            "clicked",
             specific_controller.toggle_calibration)
         vbox.pack_end(self.only_calibration, False, False, PADDING_LARGE)
 
@@ -1061,9 +1086,9 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
     def set_is_calibration(self, val):
 
         for w in self._interests['widget']:
-            w.set_sensitive(val==False)
+            w.set_sensitive(val is False)
 
-        self.log_file_button.set_sensitive(val==False)
+        self.log_file_button.set_sensitive(val is False)
 
         if True:
 
@@ -1139,6 +1164,7 @@ class Analysis_Stage_Image_Selection(gtk.VBox):
 
                 model.remove(iter)
 
+
 class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
     def __init__(self, controller, model, specific_model, specific_controller):
@@ -1152,8 +1178,8 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         self._specific_model = specific_model
 
         self._specific_model['image-array'] = plt.imread(
-            self._specific_model['images-list-model']\
-            [self._specific_model['image']][0])
+            self._specific_model['images-list-model'][
+                self._specific_model['image']][0])
 
         hbox = gtk.HBox(0, False)
         self.pack_start(hbox, False, False, PADDING_LARGE)
@@ -1177,7 +1203,8 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
         self.cb = gtk.CheckButton(
             label=model['analysis-stage-auto-norm-and-section-file'])
-        self._cb_signal = self.cb.connect("clicked",
+        self._cb_signal = self.cb.connect(
+            "clicked",
             self._pre_process_pre_detected)
         hbox.pack_start(self.cb, False, False, PADDING_SMALL)
 
@@ -1192,15 +1219,16 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
         self.fixture = gtk.combo_box_new_text()
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
-        self._fixture_signal = self.fixture.connect("changed",
-                self._pre_process_fixture_signal)
+        self._fixture_signal = self.fixture.connect(
+            "changed",
+            self._pre_process_fixture_signal)
         self.run_button = gtk.Button()
         self.run_button.set_label(model['analysis-stage-auto-norm-and-section-run'])
-        self.run_button.connect("clicked", specific_controller.execute_fixture,
+        self.run_button.connect(
+            "clicked", specific_controller.execute_fixture,
             (self, specific_model))
         self.run_button.set_sensitive(False)
         hbox.pack_start(self.run_button, False, False, PADDING_SMALL)
-
 
         #Progress bar
         hbox = gtk.HBox(0, False)
@@ -1253,16 +1281,16 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
             self.figure_ax.plot(X, Y)
 
         plt.setp(self.figure_ax.get_yticklabels(),
-            fontsize='xx-small')
+                 fontsize='xx-small')
         plt.setp(self.figure_ax.get_xticklabels(),
-            fontsize='xx-small')
+                 fontsize='xx-small')
         self.image_canvas.draw()
 
     def set_detect_lock(self, val=True):
 
         self.cb.handler_block(self._cb_signal)
         self.cb.set_active(val)
-        self.fixture.set_sensitive(val==False)
+        self.fixture.set_sensitive(val is False)
         self.cb.handler_unblock(self._cb_signal)
 
     def run_lock(self):
@@ -1277,7 +1305,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
         f = self.progress.get_fraction()
 
-        if 1.0 > self.progress.get_fraction() > 0.97:
+        if 1.0 > f > 0.97:
 
             self.progress.pulse()
 
@@ -1330,6 +1358,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
         else:
 
             self._specific_controller.set_no_auto_norm()
+
 
 class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
 
@@ -1390,16 +1419,16 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
     def set_image(self):
 
         self._specific_model['image-array'] = plt.imread(
-            self._specific_model['images-list-model']\
-            [self._specific_model['image']][0])
+            self._specific_model['images-list-model'][
+                self._specific_model['image']][0])
 
         im = self._specific_model['image-array']
         if im.max() > 1:
             vmax = 255
         else:
             vmax = 1
-        self.figure_ax.imshow(im,
-            cmap=plt.cm.gray_r, vmin=0, vmax=vmax)
+        self.figure_ax.imshow(
+            im, cmap=plt.cm.gray_r, vmin=0, vmax=vmax)
 
     def delete_selection(self):
 
@@ -1470,7 +1499,7 @@ class Analysis_Stage_Image_Sectioning(gtk.VBox):
         self.figure.add_axes()
         self.figure_ax = self.figure.gca()
         self.figure_ax.imshow(self._specific_model['image-array'],
-            cmap=plt.cm.gray_r)
+                              cmap=plt.cm.gray_r)
 
         self.image_canvas = FigureCanvas(self.figure)
         self.image_canvas.mpl_connect('key_press_event', specific_controller.handle_mpl_keypress)
@@ -1530,7 +1559,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self.pack_start(right_vbox, False, True, PADDING_LARGE)
 
         self.pack_end(self._specific_controller._log.get_view(),
-            True, True, PADDING_LARGE)
+                      True, True, PADDING_LARGE)
 
         #TITLE
         label = gtk.Label()
@@ -1551,8 +1580,8 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         if plate is not None:
             self.plate_description.set_text(plate)
 
-        self.plate_description.connect("changed",
-            specific_controller.set_in_log, "plate")
+        self.plate_description.connect(
+            "changed", specific_controller.set_in_log, "plate")
         hbox.pack_start(self.plate_description, True, True, PADDING_SMALL)
 
         left_vbox.pack_start(hbox, False, True, PADDING_SMALL)
@@ -1561,18 +1590,21 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         self.figure.add_axes()
         self.figure_ax = self.figure.gca()
         self.figure_ax.imshow(self._specific_model['plate-im-array'],
-            cmap=plt.cm.gray_r)
+                              cmap=plt.cm.gray_r)
 
         self.image_canvas = FigureCanvas(self.figure)
         self.image_signals = list()
         self.image_signals.append(
-                self.image_canvas.mpl_connect('button_press_event',
+            self.image_canvas.mpl_connect(
+                'button_press_event',
                 specific_controller.mouse_button_press))
         self.image_signals.append(
-                self.image_canvas.mpl_connect('button_release_event',
+            self.image_canvas.mpl_connect(
+                'button_release_event',
                 specific_controller.mouse_button_release))
         self.image_signals.append(
-                self.image_canvas.mpl_connect('motion_notify_event',
+            self.image_canvas.mpl_connect(
+                'motion_notify_event',
                 specific_controller.mouse_move))
 
         self.figure_ax.get_xaxis().set_visible(False)
@@ -1601,7 +1633,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         else:
             self.selection_width.set_text("0")
         self.selection_width.connect("changed", specific_controller.set_cell,
-            'width')
+                                     'width')
         hbox.pack_start(self.selection_width, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
@@ -1615,7 +1647,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         else:
             self.selection_height.set_text("0")
         self.selection_height.connect("changed", specific_controller.set_cell,
-            'height')
+                                      'height')
         hbox.pack_start(self.selection_height, False, False, PADDING_SMALL)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
 
@@ -1634,8 +1666,8 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         right_vbox.pack_start(label, False, False, PADDING_SMALL)
 
         self.strain_name = gtk.Entry()
-        self.strain_name.connect("changed",
-            specific_controller.set_in_log, 'strain')
+        self.strain_name.connect(
+            "changed", specific_controller.set_in_log, 'strain')
         right_vbox.pack_start(self.strain_name, False, False, PADDING_SMALL)
 
         #INDIE CALIBRATION MEASURE
@@ -1643,12 +1675,12 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
             label = gtk.Label(model['analysis-stage-image-plate-calibration'])
             right_vbox.pack_start(label, False, False, PADDING_SMALL)
             self.colony_indie_count = gtk.Entry()
-            self.colony_indie_count.connect("changed",
-                specific_controller.set_in_log, 'indie-count')
-            self.colony_indie_count.connect("focus",
-                self.select_everything)
-            right_vbox.pack_start(self.colony_indie_count,
-                False, False, PADDING_SMALL)
+            self.colony_indie_count.connect(
+                "changed", specific_controller.set_in_log, 'indie-count')
+            self.colony_indie_count.connect(
+                "focus", self.select_everything)
+            right_vbox.pack_start(
+                self.colony_indie_count, False, False, PADDING_SMALL)
 
         #STRAIN SECTION IM
         self.section_figure = plt.Figure(figsize=(40, 40), dpi=150)
@@ -1699,7 +1731,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         self.log_button = gtk.Button(
             label=model['analysis-stage-image-plate-log-button'])
-        self.log_button.connect("clicked",specific_controller.set_in_log,
+        self.log_button.connect("clicked", specific_controller.set_in_log,
                                 'measures')
         right_vbox.pack_start(self.log_button, False, False, PADDING_LARGE)
         self.set_allow_logging(False)
@@ -1738,7 +1770,6 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         widget.select_region(0, -1)
 
     def set_image_sensitivity(self, value):
-
 
         if value:
             self.image_canvas.flush_events()
@@ -1785,7 +1816,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
         if self._specific_model['plate-section-grid-cell'] is not None:
             blob = self._specific_model[
-                    'plate-section-grid-cell'].get_item("blob").filter_array
+                'plate-section-grid-cell'].get_item("blob").filter_array
 
             if blob is not None and blob.size > 0:
                 self.analysis_figure_ax.imshow(blob, cmap=plt.cm.gray_r)
@@ -1833,7 +1864,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         try:
 
             wh = (float(self.selection_width.get_text()),
-                float(self.selection_height.get_text()))
+                  float(self.selection_height.get_text()))
 
         except:
 
