@@ -391,14 +391,16 @@ def get_dubious_phenotypes(meta_data_store, plate, max_row, max_column):
     return dubious, dubious2
 
 
-def show_heatmap(data, cur_phenotype, plate_texts, plate_text_pattern, vlim=(0, 48)):
+def show_heatmap(data, cur_phenotype, plate_texts, plate_text_pattern,
+                 vlim=(0, 48), plateFilter=None):
+
     #PLOT A SIMPLE HEAT MAP
     fig = plt.figure()
     nplates = len(data)
     rows = np.ceil(nplates / 2.0)
     columns = np.ceil(nplates / 2.0)
     for p in xrange(nplates):
-        if len(data[p].shape) >= 2:
+        if len(data[p].shape) >= 2 and plateFilter is None or plateFilter[p]:
             ax = fig.add_subplot(
                 rows, columns, p + 1, title=plate_text_pattern.format(
                     plate_texts[p]))
@@ -620,6 +622,7 @@ class Interactive_Menu():
         self._grid_surface_matrices = None
         self._plate_labels = None
         self._original_phenotypes = None
+        self._nPlates = None
         self._LSC_phenotypes = None
         self._normalisation_vals = None
         self._original_meta_data = None
@@ -732,7 +735,7 @@ class Interactive_Menu():
     def set_plate_labels(self):
 
         self._plate_labels = get_interactive_labels(
-            "Setting plate names", self._original_phenotypes.shape[0], self._meta_data)
+            "Setting plate names", self._nPlates, self._meta_data)
         logging.info("New labels set")
         self.set_enable_menu_plots()
 
@@ -752,7 +755,7 @@ class Interactive_Menu():
 
         file_path = self._file_path.split(".")
         pickle_data_file = ".".join(file_path[:-1]) + ".data.pickle"
-        pickle_scantimes_file = ".".join(file_path[:-1]) + "scantimes.pickle"
+        pickle_scantimes_file = ".".join(file_path[:-1]) + ".scantimes.pickle"
         pickle_metadata_file = ".".join(file_path[:-1]) + ".metadata.pickle"
         pickle_per_experiment_meta_file = ".".join(file_path[: -1]) + ".exp.metadata.pickle"
         pickle_matrix_file = ".".join(file_path[:-1]) + ".matrix.pickle"
@@ -816,9 +819,10 @@ class Interactive_Menu():
             pickle.dump(self._xml_file.get_scan_times(), open(pickle_scantimes_file, 'wb'))
 
         self._plate_labels = {}
+        self._nPlates = self._original_phenotypes.shape[0]
         self._guess_plate_names()
         if len(self._plate_labels) == 0:
-            for i in xrange(self._original_phenotypes.shape[0]):
+            for i in xrange(self._nPlates):
                 self._plate_labels[i] = str(i)
             logging.info("Temporary plate labels set")
 
@@ -953,11 +957,11 @@ class Interactive_Menu():
 
             self._original_phenotypes = file_contents['data']
             self._original_meta_data = file_contents['meta-data']
-
+            self._nPlates = self._original_phenotypes.shape[0]
             mins = []
             maxs = []
 
-            for p in xrange(self._original_phenotypes.shape[0]):
+            for p in xrange(self._nPlates):
                 if len(self._original_phenotypes[p].shape) == 3:
                     mins.append(self._original_phenotypes[p].min(axis=0).min(axis=0))
                     maxs.append(self._original_phenotypes[p].max(axis=0).max(axis=0))
@@ -967,12 +971,12 @@ class Interactive_Menu():
 
             logging.info(
                 "File had {0} plates,".format(
-                    self._original_phenotypes.shape[0]) +
+                    self._nPlates) +
                 "and phenotypes ranged from\n{0}\nto\n{1}\nper plate.".format(
                     mins, maxs))
 
             self.set_new_file_menu_state()
-            self._is_normed = [False] * self._original_phenotypes.shape[0]
+            self._is_normed = [False] * self._nPlates
             self.set_enable_menu_plots()
             self.set_xml_file()
 
@@ -992,10 +996,14 @@ class Interactive_Menu():
             self._LSC_max = min([p[np.isnan(p) == False].max() for
                                  p in plates])
 
-            self._experiments, self._experiments_sd, self._experiments_data =\
-                get_experiment_results(self._LSC_phenotypes,
-                                       self._grid_surface_matrices,
-                                       self._cur_phenotype)
+            if (self._per_strain_metadata is not None and
+                True in [self._per_strain_metadata[i] for i in
+                         range(self._nPlates)]):
+
+                self._experiments, self._experiments_sd, self._experiments_data =\
+                    get_experiment_results(self._LSC_phenotypes,
+                                        self._grid_surface_matrices,
+                                        self._cur_phenotype)
 
             #self.set_enable_menu_items(["2C"])
 
@@ -1014,7 +1022,7 @@ class Interactive_Menu():
             for i, p in self._plate_labels.items():
                 print " " * 2 + str(i) + " " * 5 + p
         else:
-            print "(0 - {0})".format(self._original_phenotypes.shape[0] - 1)
+            print "(0 - {0})".format(self._nPlates - 1)
 
         #INPUT AND DISCARD NON INTs
         try:
@@ -1024,7 +1032,7 @@ class Interactive_Menu():
             logging.warning("Not a valid plate number")
 
         #OUT OF RANGE CHECK
-        if self._original_phenotypes.shape[0] <= plate or plate < 0:
+        if self._nPlates <= plate or plate < 0:
             logging.warning("Out of bounds {0}".format(plate))
             plate = None
 
@@ -1042,6 +1050,7 @@ class Interactive_Menu():
         for p in range(_data.shape[0]):
             dr = len(_gsm[0])
             dc = len(_gsm[0][0])
+            goodPlate = True
             for r in range(_data[p].shape[0] / dr):
                 for c in range(_data[p].shape[1] / dc):
                     tmp = []
@@ -1055,11 +1064,15 @@ class Interactive_Menu():
 
                     if len(set(tmp)) != 1:
                         logging.error("Strain name conflict, aborting")
-                        return False
+                        goodPlate = False
+                        break
 
                     else:
 
                         _dmd[(p, r, c)] = tmp[0]
+                if goodPlate is False:
+                    break
+            _dmd[p] = goodPlate
 
         return _dmd
 
@@ -1110,7 +1123,7 @@ class Interactive_Menu():
             if self._xml_file.get_loaded():
 
                 #t = 0.6
-                for p in xrange(self._original_phenotypes.shape[0]):
+                for p in xrange(self._nPlates):
                     for c in xrange(self._original_phenotypes[p].shape[0]):
                         for r in xrange(self._original_phenotypes[p].shape[1]):
 
@@ -1140,7 +1153,7 @@ class Interactive_Menu():
 
             suspect_list = []
 
-            for p in xrange(self._original_phenotypes.shape[0]):
+            for p in xrange(self._nPlates):
                 for c in xrange(0, self._original_phenotypes[p].shape[0], 2):
                     for r in xrange(0, self._original_phenotypes[p].shape[1], 2):
 
@@ -1266,21 +1279,23 @@ class Interactive_Menu():
                 self._original_phenotypes,
                 self._grid_surface_matrices)
 
-            _new_downsized_meta = self._get_downsample_metadata()
-            if _new_downsized_meta is not False:
-                self._per_strain_metadata = _new_downsized_meta
-                logging.info("New normalisation grid set!")
-            else:
-                logging.warning("Normalisation won't be allowed")
+            self._per_strain_metadata = self._get_downsample_metadata()
+            for i in range(self._nPlates):
+                if self._per_strain_metadata[i] is True:
+                    logging.info(
+                        "New normalisation grid set for plate {0}!".format(
+                            i + 1))
+                else:
+                    logging.warning(
+                        "Looking per colonies won't be allowed for plate {0}".format(
+                            i + 1))
 
         elif task == "2B":
 
-            if self._per_strain_metadata is None:
-                logging.error("Normalisation not allowed, no valid grid position")
+            if self._LSC_phenotypes is None:
 
-            elif self._LSC_phenotypes is None:
-
-                self._LSC_phenotypes = [np.zeros(p.shape) for p in
+                self._LSC_phenotypes = [
+                    np.zeros(p.shape) for p in
                     self._original_phenotypes]
 
                 self._normalisation_vals = [None] * 3
@@ -1292,7 +1307,7 @@ class Interactive_Menu():
                     self._grid_surface_matrices,
                     do_log=(self._is_logged is False))
 
-            for i in range(len(self._LSC_phenotypes)):
+            for i in range(self._nPlates):
 
                 self._LSC_phenotypes[i][..., self._cur_phenotype] = LSC_phenotypes[i]
 
@@ -1435,19 +1450,23 @@ class Interactive_Menu():
 
         elif task == "P4":
 
+            plateFilter = [self._per_strain_metadata[i] for i in range(self._nPlates)]
+
             show_heatmap(
                 self._experiments,
                 self._cur_phenotype,
                 self._plate_labels,
                 "Mean LSC (Plate {0})",
-                vlim=(self._LSC_min, self._LSC_max))
+                vlim=(self._LSC_min, self._LSC_max),
+                plateFilter=plateFilter)
 
             show_heatmap(
                 self._experiments_sd,
                 self._cur_phenotype,
                 self._plate_labels,
                 "LSC std (Plate {0})",
-                vlim=(self._LSC_min, self._LSC_max))
+                vlim=(self._LSC_min, self._LSC_max),
+                plateFilter=plateFilter)
 
         elif task == "U":
 
@@ -1466,9 +1485,8 @@ class Interactive_Menu():
 
             if self._original_phenotypes is not None:
                 header = "Saving non-normed data"
-                if self._save(
+                if self._save_np(
                         self._original_phenotypes, header,
-                        save_as_np_array=True,
                         file_guess="_original.npy"):
 
                     logging.info("Data saved!")
@@ -1477,33 +1495,38 @@ class Interactive_Menu():
 
                     logging.warning("Could not save data, probably path is not valid")
 
-            file_path = self._get_save_file_guess(file_guess=".cur_pheno.pickle")
+            file_path = self._get_save_file_guess(file_guess=".cur_pheno.pickle",
+                                                  doAsk=False)
             try:
                 pickle.dump(self._cur_phenotype, open(file_path, 'wb'))
             except:
                 logging.warning("Could not save current phenotype state")
 
-            file_path = self._get_save_file_guess(file_guess=".matrix.pickle")
+            file_path = self._get_save_file_guess(file_guess=".matrix.pickle",
+                                                  doAsk=False)
             try:
                 pickle.dump(self._grid_surface_matrices, open(file_path, 'wb'))
             except:
                 logging.warning("Could not save Grid Lawn position")
 
             """
-            file_path = self._get_save_file_guess(file_guess=".isnormed.pickle")
+            file_path = self._get_save_file_guess(file_guess=".isnormed.pickle",
+                                                  doAsk=False)
             try:
                 pickle.dump(self._is_normed, open(file_path, 'wb'))
             except:
                 logging.warning("Could not save normalisation status")
             """
 
-            file_path = self._get_save_file_guess(file_guess=".exp.metadata.pickle")
+            file_path = self._get_save_file_guess(file_guess=".exp.metadata.pickle",
+                                                  doAsk=False)
             try:
                 pickle.dump(self._per_strain_metadata, open(file_path, 'wb'))
             except:
                 logging.warning("Could not save normalisation status")
 
-            file_path = self._get_save_file_guess(file_guess=".pheno_names.pickle")
+            file_path = self._get_save_file_guess(file_guess=".pheno_names.pickle",
+                                                  doAsk=False)
             try:
                 pickle.dump(self._phenotype_names, open(file_path, 'wb'))
             except:
@@ -1524,19 +1547,16 @@ class Interactive_Menu():
 
             if self._normalisation_vals is not None:
 
-                for t in range(1):
-                    dtype = ('npy',)[t]
-                    header = "Saving values from normalisation grid ({0})".format(dtype)
-                    if self._save(
-                            np.array(self._normalisation_vals), header,
-                            save_as_np_array=True,
-                            file_guess="_norm_array.{0}".format(dtype)):
+                header = "Saving values from normalisation grid"
+                if self._save_np(
+                        np.array(self._normalisation_vals), header,
+                        file_guess="_norm_array.npy"):
 
-                        logging.info("Data saved!")
+                    logging.info("Data saved!")
 
-                    else:
+                else:
 
-                        logging.warning("Could not save data, probably path is not valid")
+                    logging.warning("Could not save data, probably path is not valid")
 
             if self._LSC_phenotypes is not None:
                 for task in ["S1", "S3"]:
@@ -1544,11 +1564,20 @@ class Interactive_Menu():
                     header = "Saving LSC phenotypes as {0}".format(
                         ["csv", "numpy-array"][task == "S3"])
 
-                    if self._save(
+                    if task == "S1":
+                        _save = self._save_csv
+                        kwargs = {'meta_data': self._original_meta_data,
+                                  'maxDepth': 3,
+                                  'metaDataPos': 0}
+                    else:
+                        _save = self._save_np
+                        kwargs = {}
+
+                    if _save(
                             self._LSC_phenotypes, header,
-                            save_as_np_array=(task == "S3"),
                             file_guess='_LSC.{0}'.format(
-                                ['csv', 'npy'][task == 'S3'])):
+                                ['csv', 'npy'][task == 'S3']),
+                            **kwargs):
 
                         logging.info("Data saved!")
 
@@ -1562,12 +1591,21 @@ class Interactive_Menu():
                     header = "Saving LSC per experiment as {0}".format(
                         ["csv", "numpy-array"][task == "S4"])
 
-                    if self._save(
+                    if task == "S2":
+                        _save = self._save_csv
+                        kwargs = {'meta_data': self._per_strain_metadata,
+                                  'maxDepth': 3}
+                    else:
+                        _save = self._save_np
+                        kwargs = {}
+
+                    if _save(
                             self._experiments_data, header,
                             save_as_np_array=(task == "S4"),
                             file_guess='_LSC_experment.phenotype_{0}.{1}'.format(
                                 self._cur_phenotype + 1,
-                                ['csv', 'npy'][task == 'S4'])):
+                                ['csv', 'npy'][task == 'S4']),
+                            **kwargs):
 
                         logging.info("Data saved!")
 
@@ -1575,11 +1613,11 @@ class Interactive_Menu():
 
                         logging.warning("Could not save data, probably path is not valid")
 
-    def _get_save_file_guess(self, file_guess=None):
+    def _get_save_file_guess(self, file_guess=None, doAsk=True):
 
         if file_guess is not None:
             file_path = self._file_dir_path + os.sep + self._file_name + file_guess
-            if str(raw_input("Maybe this is a good place:\n'{0}'\n(Y/n)?".format(file_path))).upper() == "N":
+            if doAsk and str(raw_input("Maybe this is a good place:\n'{0}'\n(Y/n)?".format(file_path))).upper() == "N":
                 file_path = None
 
         if file_path is None:
@@ -1594,6 +1632,76 @@ class Interactive_Menu():
             ['Note that the directory must exist.',
              'Also note that this will overwrite existing files (if they exist)'])
 
+    def _save_np(self, data, header, file_guess=None, **kwargs):
+
+        self._set_save_intro(header)
+        file_path = self._get_save_file_guess(file_guess=file_guess)
+        try:
+            np.save(file_path, data)
+        except:
+            return False
+
+        return True
+
+    def _save_csv(self, data, header, file_guess=None, meta_data=None,
+                  np_slice=None, sep="\t", text_comment="\"",
+                  maxDepth=3, metaDataPos=None):
+
+        def _csv_write_data(data, fh, posList, maxDepth=None):
+
+            if data.size == 0:
+                return
+
+            if data.ndim > 1 and len(posList) + 1 < maxDepth:
+
+                for i in range(data.shape[0]):
+                    _csv_write_data(data[i], fh, posList + [i], maxDepth)
+
+            else:
+
+                for i, elem in enumerate(data):
+
+                    curPos = tuple(posList + [i])
+                    if metaDataPos is None:
+                        strain = meta_data[curPos]
+                    else:
+                        strain = meta_data[curPos][metaDataPos]
+
+                    strain = text_comment + strain + text_comment
+                    if isinstance(elem, int):
+                        elem = [elem]
+                    else:
+                        elem = elem.tolist()
+
+                    curData = [strain] + list(curPos) + elem
+
+                    fh.write(sep.join(map(str, curData)) + "\n")
+
+        self._set_save_intro(header)
+        file_path = self._get_save_file_guess(file_guess=file_guess)
+
+        if isinstance(data, np.ndarray) is False:
+            data = np.array(data)
+
+        if np_slice is not None:
+            dView = data[np_slice]
+        else:
+            dView = data
+
+        if meta_data is None:
+            meta_data = self._original_meta_data
+
+        try:
+            fh = open(file_path, 'w')
+        except:
+            return False
+
+        _csv_write_data(dView, fh, [], maxDepth)
+        fh.close()
+
+        return True
+
+    """
     def _save(self, data, header, save_as_np_array=False, data2=None,
               file_guess=None, metadata=None):
 
@@ -1670,6 +1778,7 @@ class Interactive_Menu():
             fs.close()
 
         return True
+    """
 
     def run(self):
 
