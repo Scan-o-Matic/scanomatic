@@ -898,7 +898,12 @@ class Analysis_First_Pass(controller_generic.Controller):
 
         sm = self._specific_model
         if f_path is None:
-            f_path = os.sep.join((sm['output-directory'], sm['output-file']))
+            f_path = os.path.join(sm['output-directory'], sm['output-file'])
+        if os.path.isfile(f_path) is False:
+            f_path = os.path.join(
+                sm['output-directory'],
+                self._paths.experiment_first_pass_analysis_relative.format(
+                    sm['output-directory'].split(os.sep)[-1]))
 
         meta_data = resource_project_log.get_meta_data(f_path)
         pm = meta_data['Pinning Matrices']
@@ -906,6 +911,9 @@ class Analysis_First_Pass(controller_generic.Controller):
             meta_data['Pinning Matrices'] = map(tuple, pm)
 
         sm['meta-data'] = meta_data
+        print f_path
+        print meta_data
+        self._view.get_stage().update()
 
     def set_new_plates(self, n_plates):
 
@@ -957,6 +965,7 @@ class Analysis_First_Pass(controller_generic.Controller):
 
         sm = self._specific_model
         md = self._specific_model['meta-data']
+
         t = widget.get_text()
 
         if target == "scanner":
