@@ -37,11 +37,13 @@ PADDING_SMALL = 2
 # CLASSES
 #
 
+
 class Config_View(Page):
 
     def __init__(self, controller, model, top=None, stage=None):
 
-        super(Config_View, self).__init__(controller, model,
+        super(Config_View, self).__init__(
+            controller, model,
             top=top, stage=stage)
 
     def _default_stage(self):
@@ -76,7 +78,6 @@ class Settings_Cont(gtk.VBox):
         self._model = model
         self._specific_model = controller.get_specific_model()
         tc = controller.get_top_controller()
-        config = tc.config
         paths = tc.paths
 
         #INSTALL
@@ -108,7 +109,7 @@ class Settings_Cont(gtk.VBox):
         self._restart.connect("clicked", controller.run_restart)
         self._restart.set_sensitive(False)
         hbox.pack_start(self._restart, False, False, PADDING_SMALL)
-        
+
         #BACKUP
         frame = gtk.Frame(model['config-backup'])
         self.pack_start(frame, False, False, PADDING_LARGE)
@@ -126,7 +127,7 @@ class Settings_Cont(gtk.VBox):
         hbox = gtk.HBox(False, 0)
         frame.add(hbox)
         self.pack_start(frame, False, False, PADDING_LARGE)
-        self._fixtures = gtk.combo_box_new_text()                   
+        self._fixtures = gtk.combo_box_new_text()
         self._fill_fixtures(self._fixtures)
         self._fixtures.connect('changed', self._set_cur_fixture)
         hbox.pack_start(self._fixtures, False, False, PADDING_MEDIUM)
@@ -138,30 +139,38 @@ class Settings_Cont(gtk.VBox):
         #SETTINGS
         frame = gtk.Frame(model['config-settings'])
         self.pack_start(frame, False, False, PADDING_LARGE)
-        table = gtk.Table(rows=4, columns=3)
+        table = gtk.Table(rows=4, columns=4)
         frame.add(table)
 
         ##POWER MANAGER
         label = gtk.Label(model['config-pm'])
         table.attach(label, 0, 1, 0, 1)
-        
-        self._pm_usb = gtk.RadioButton(label=model['config-pm-usb'])
-        self._pm_usb_signal = self._pm_usb.connect('toggled',
-            controller.set_pm_type, 'usb')
-        table.attach(self._pm_usb, 1, 2, 0, 1)
-        self._pm_lan = gtk.RadioButton(group=self._pm_usb,
+
+        self._pm_no = gtk.RadioButton(label=model['config-pm-no'])
+        self._pm_no_signal = self._pm_no.connect(
+            'toggled', controller.set_pm_type, 'no')
+        table.attach(self._pm_no, 1, 2, 0, 1)
+        self._pm_usb = gtk.RadioButton(
+            group=self._pm_no,
+            label=model['config-pm-usb'])
+        self._pm_usb_signal = self._pm_usb.connect(
+            'toggled', controller.set_pm_type, 'usb')
+        table.attach(self._pm_usb, 2, 3, 0, 1)
+        self._pm_lan = gtk.RadioButton(
+            group=self._pm_no,
             label=model['config-pm-lan'])
-        self._pm_lan_signal = self._pm_lan.connect('toggled',
-            controller.set_pm_type, 'lan')
-        table.attach(self._pm_lan, 2, 3, 0, 1)
+        self._pm_lan_signal = self._pm_lan.connect(
+            'toggled', controller.set_pm_type, 'lan')
+        table.attach(self._pm_lan, 3, 4, 0, 1)
 
         ##SCANNERS
         label = gtk.Label(model['config-scanners'])
         table.attach(label, 0, 1, 1, 2)
         self._scanners = gtk.Entry(1)
-        self._scanners_signal = self._scanners.connect("changed",
+        self._scanners_signal = self._scanners.connect(
+            "changed",
             controller.set_scanners)
-        table.attach(self._scanners, 1, 2, 1, 2)
+        table.attach(self._scanners, 1, 4, 1, 2)
 
         ##EXPERIMENT ROOT
         button = gtk.Button(
@@ -170,8 +179,8 @@ class Settings_Cont(gtk.VBox):
         self._experiment_root = gtk.Label(
             "{0}".format(paths.experiment_root))
         button.connect('clicked', self.set_new_experiments_root,
-            self._experiment_root)
-        table.attach(self._experiment_root, 1, 2, 2, 3)
+                       self._experiment_root)
+        table.attach(self._experiment_root, 1, 4, 2, 3)
 
         ##SAVE
         button = gtk.Button(label=model['config-settings-save'])
@@ -201,7 +210,7 @@ class Settings_Cont(gtk.VBox):
 
         if fixture is not None and fixture != "":
             if dialog(w, self._model['config-fixture-dialog'].format(fixture),
-                    'warning', yn_buttons=True):
+                      'warning', yn_buttons=True):
 
                 c.remove_fixture(fixture)
                 self._fill_fixtures(self._fixtures)
@@ -230,6 +239,9 @@ class Settings_Cont(gtk.VBox):
         if s_type in ('pm', 'lan', 'all'):
             self._pm_lan.handler_block(self._pm_lan_signal)
 
+        if s_type in ('pm', 'no', 'all'):
+            self._pm_no.handler_block(self._pm_no_signal)
+
         if s_type in ('scanners', 'all'):
             self._scanners.handler_block(self._scanners_signal)
 
@@ -240,6 +252,9 @@ class Settings_Cont(gtk.VBox):
 
         if s_type in ('pm', 'lan', 'all'):
             self._pm_lan.handler_unblock(self._pm_lan_signal)
+
+        if s_type in ('pm', 'no', 'all'):
+            self._pm_no.handler_unblock(self._pm_no_signal)
 
         if s_type in ('scanners', 'all'):
             self._scanners.handler_unblock(self._scanners_signal)

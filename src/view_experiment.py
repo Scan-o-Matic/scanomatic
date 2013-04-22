@@ -222,11 +222,15 @@ class Stage_One(gtk.VBox):
             model['one-stage-progress-done']))
         hbox.pack_start(self._progress_done, False, False, PADDING_SMALL)
 
+        gobject.timeout_add(11, self._post_init)
+
+        self.show_all()
+
+    def _post_init(self):
+
         self.set_fixtures()
         self.set_scanners()
         self.set_run_stage('not-ready')
-
-        self.show_all()
 
     def set_progress(self, stage, completed=False, surpass=None,
                      failed=None):
@@ -291,9 +295,13 @@ class Stage_One(gtk.VBox):
 
     def set_fixtures(self):
 
+        m = self._model
+
         set_fixtures_combo(self.fixture,
                            self._controller.get_top_controller().fixtures,
                            default_text=m['one-stage-no-fixture'])
+
+        self.fixture.set_active(0)
 
     def set_scanners(self):
 
@@ -674,6 +682,8 @@ class Stage_Project_Setup(gtk.VBox):
         self._fixture_image.add(self._fixture_drawing)
 
         self._fixture_image.show_all()
+
+        return self._fixture_drawing.get_fixture_status()
 
     def set_scanners(self):
 

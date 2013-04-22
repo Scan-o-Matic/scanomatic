@@ -247,16 +247,19 @@ def set_fixtures_combo(widget, fixtures, default_text=None):
         active_option = None
 
     if len(widget_model) == 0 and default_text is not None:
-        widget.append_text(default_text)
+        #widget.append_text(default_text)
+        widget_model.append([default_text])
+        fixture_names.append(default_text)
 
     for row in widget_model:
         if row[0] not in fixture_names:
             widget_model.remove(row.iter)
-        fixture_names = [fix for fix in fixture_names if fix != row[0]]
+        else:
+            fixture_names = [fix for fix in fixture_names if fix != row[0]]
 
     for f in sorted(fixture_names):
-        print f
-        widget.append_text(f)
+        #widget.append_text(f)
+        widget_model.append([f])
 
     if active_option is not None:
         for i, row in enumerate(widget_model):
@@ -303,6 +306,7 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._plate_stroke_rgba = (1, 1, 1, 0.5)
         self._gs_stroke_rgba = (1, 1, 1, 0.5)
         self._text_rgba = (1, 1, 1, 0.9)
+        self._good_fixture = None
 
         if logger is not None:
             self._logger = logger
@@ -314,22 +318,32 @@ class Fixture_Drawing(gtk.DrawingArea):
         if width is not None and height is not None:
             self.set_size_request(width, height)
 
+    def get_fixture_status(self):
+
+        return self._good_fixture
+
     def _set_data(self):
 
         self._plates = np.array(self._fixture.get_plates('fixture'))
         self._grayscale = np.array(self._fixture['fixture']['grayscale_area'])
 
-        self._data_height = max(self._plates[:, :, self.HEIGHT].max(),
-                                self._grayscale[:, self.HEIGHT].max())
+        try:
+            self._data_height = max(self._plates[:, :, self.HEIGHT].max(),
+                                    self._grayscale[:, self.HEIGHT].max())
 
-        self._data_width = max(self._plates[:, :, self.WIDTH].max(),
-                               self._grayscale[:, self.WIDTH].max())
+            self._data_width = max(self._plates[:, :, self.WIDTH].max(),
+                                   self._grayscale[:, self.WIDTH].max())
+        except IndexError:
+            self._good_fixture = False
+            return
 
         print "SCANNER VIEW", self._scanner_view
         if self._scanner_view:
             self._flipflip(xflip=True, yflip=True)
         else:
             self._flipflip(xflip=False, yflip=True)
+
+        self._good_fixture = True
 
     def _flipflip(self, xflip=True, yflip=False):
         """This doesn't flip the Y-axis when toggling since the 'normal' way to

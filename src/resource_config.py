@@ -67,7 +67,7 @@ class Config_File(object):
         if location is None:
 
             location = self.get_location()
- 
+
         self._logger.info("Loading file {0}".format(location))
         #self._logger.exception("Call for {0} came from...".format(location))
 
@@ -75,7 +75,7 @@ class Config_File(object):
 
         try:
 
-            fs = open(location, 'r')          
+            fs = open(location, 'r')
 
         except:
 
@@ -110,7 +110,7 @@ class Config_File(object):
         self._data = {}
         self._file_data_order = []
         self._comment_index = -1
-        
+
         if fs == None:
 
             fs = self.load(location)
@@ -149,7 +149,7 @@ class Config_File(object):
                     try:
 
                         self._data[self._file_data_order[-1]] = eval(line_list[0])
-                        
+
                     except:
 
                         bad_conf_line = True
@@ -157,7 +157,7 @@ class Config_File(object):
                         del self._file_data_order[-1]
 
                 else:
-                
+
                     bad_conf_line = True
 
                 if bad_conf_line:
@@ -166,7 +166,7 @@ class Config_File(object):
                     print "** The following is not a correct data row:"
                     print line
                     print "** Now commented out (once data is saved)"
-                    
+
             if len(line) == 0 or line[0] == "#" or bad_conf_line:
 
                 self._comment_index += 1
@@ -223,7 +223,7 @@ class Config_File(object):
 
         if str(key) in self._file_data_order:
 
-            if overwrite or self._data[key] == None:
+            if overwrite or self._data[key] is None:
 
                 self._data[key] = value
 
@@ -240,7 +240,7 @@ class Config_File(object):
         if pattern != None:
 
             i = start_pos
-            no_none = True        
+            no_none = True
 
             while no_none:
 

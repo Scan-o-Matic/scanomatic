@@ -129,7 +129,7 @@ class Config(object):
     def set(self, key, value):
 
         if key == 'pm-type':
-            if value in ('usb', 'lan'):
+            if value in ('usb', 'lan', 'no'):
                 self.pm_type = value
                 self._set_pm_extras()
 

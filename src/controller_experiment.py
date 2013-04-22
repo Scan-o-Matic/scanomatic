@@ -18,7 +18,7 @@ import os
 import time
 import collections
 from itertools import chain
-from subprocess import Popen, PIPE
+from subprocess import Popen
 import threading
 import sh
 
@@ -34,14 +34,26 @@ import src.controller_generic as controller_generic
 # EXCEPTIONS
 #
 
-class Bad_Stage_Call(Exception): pass
-class No_View_Loaded(Exception): pass
-class Not_Yet_Implemented(Exception): pass
-class UnDocumented_Error(Exception): pass
+
+class Bad_Stage_Call(Exception):
+    pass
+
+
+class No_View_Loaded(Exception):
+    pass
+
+
+class Not_Yet_Implemented(Exception):
+    pass
+
+
+class UnDocumented_Error(Exception):
+    pass
 
 #
 # FUNCTIONS
 #
+
 
 def zero_generator():
     return 0
@@ -75,11 +87,11 @@ class Experiment_Controller(controller_generic.Controller):
 
     def __init__(self, main_controller, logger=None):
 
-        super(Experiment_Controller, self).__init__(main_controller,
-            logger=logger)
+        super(Experiment_Controller, self).__init__(
+            main_controller, logger=logger)
         self._specific_controller = None
 
-    def ask_destroy(self,*args, **kwargs):
+    def ask_destroy(self, *args, **kwargs):
 
         if self._specific_controller is not None:
             return self._specific_controller.ask_destroy(*args, **kwargs)
@@ -129,13 +141,14 @@ class Experiment_Controller(controller_generic.Controller):
             self._experiment_mode = 'about'
             raise Bad_Stage_Call(experiment_mode)
 
+
 class One_Controller(controller_generic.Controller):
 
     def __init__(self, parent, view=None, model=None,
-        specific_model=None, logger=None):
+                 specific_model=None, logger=None):
 
-        super(One_Controller, self).__init__(parent,
-            view=view, model=model, logger=logger)
+        super(One_Controller, self).__init__(
+            parent, view=view, model=model, logger=logger)
 
         if specific_model is not None:
             self._specific_model = specific_model
@@ -146,17 +159,17 @@ class One_Controller(controller_generic.Controller):
             self.get_top_controller().paths.experiment_root
 
         view.set_controller(self)
-        top = view_experiment.Top_One(self, model, 
-            self._specific_model)
-        stage = view_experiment.Stage_One(self, model,
-            self._specific_model)
+        top = view_experiment.Top_One(
+            self, model, self._specific_model)
+        stage = view_experiment.Stage_One(
+            self, model, self._specific_model)
         view.set_top(top)
         view.set_stage(stage)
         stage.force_no_fixture()
 
     def build_new_specific_model(self):
 
-        if self._parent.get_mode() == 'color': 
+        if self._parent.get_mode() == 'color':
             sm_template = model_experiment.specific_one_color_model
         else:
             sm_template = model_experiment.specific_one_transparency_model
@@ -182,7 +195,7 @@ class One_Controller(controller_generic.Controller):
 
         sm['experiment-root'] = os.sep.join((
             sm['experiments-root'], sm['experiment-id']))
- 
+
         os.makedirs(sm['experiment-root'])
 
     def get_model_intro_key(self):
@@ -223,8 +236,16 @@ class One_Controller(controller_generic.Controller):
         stage = self.get_view().get_stage()
         widget_model = widget.get_model()
 
-        val = widget_model[widget.get_active()][0]
-        if val == self._model['one-stage-no-fixture']:
+        val = None
+        activeRow = widget.get_active()
+        if activeRow < 0 and len(widget_model) > 0:
+            activeRow = 0
+        activeRow = -1
+
+        if activeRow >= 0:
+            val = widget_model[activeRow][0]
+
+        if val is None or val == self._model['one-stage-no-fixture']:
             stage.set_progress('analysis', surpass=True)
             sm['fixture'] = False
         else:
@@ -240,7 +261,7 @@ class One_Controller(controller_generic.Controller):
 
         if sm['fixture'] is not None and sm['scanner'] is not None:
             stage.set_run_stage('ready')
-            
+
     def set_run(self, widget, run_command):
 
         run_command = run_command[0]
@@ -272,10 +293,10 @@ class One_Controller(controller_generic.Controller):
             thread.start()
 
         else:
-            stage.set_progress('off')    
+            stage.set_progress('off')
             thread = threading.Thread(target=self._power_down, args=(scanner, stage))
             thread.start()
-            
+
     def _power_up(self, scanner, stage):
 
         sm = self._specific_model
@@ -299,8 +320,9 @@ class One_Controller(controller_generic.Controller):
         sm = self._specific_model
         stage.set_run_stage('running')
 
-        file_path = os.sep.join((sm['experiment-root'],
-            'scan__{0}.tiff'.format(str(sm['image']).zfill(4))))
+        file_path = os.path.join(
+            sm['experiment-root'],
+            'scan__{0}.tiff'.format(str(sm['image']).zfill(4)))
 
         scanner.scan(sm['scan-mode'], file_path, auto_off=False)
 
@@ -322,8 +344,8 @@ class One_Controller(controller_generic.Controller):
             stage.set_progress('off', completed=True)
         else:
             stage.set_progress('off', failed=True)
-        
-        if sm['fixture'] != False:
+
+        if sm['fixture'] is not False:
             stage.set_progress('analysis')
             self._analysis(scanner, stage)
         else:
@@ -332,27 +354,29 @@ class One_Controller(controller_generic.Controller):
             stage.set_progress('done', completed=True)
             self.saved()
 
-    def _analysis(self, scaner, stage):
+    def _analysis(self, scanner, stage):
 
+        sm = self._specific_model
         scanner.free()
         stage.set_progress('done', completed=True)
         self.set_saved()
         sm['stage'] = 'done'
         return False
 
+
 class Project_Controller(controller_generic.Controller):
 
     #Input Bounds Validity
     bounds = {
-        'duration': (14/60.0, 24*7),  # Hours
-        'interval': (7, 3*60),  # Minutes
+        'duration': (14 / 60.0, 24 * 7),  # Hours
+        'interval': (7, 3 * 60),  # Minutes
         'scans': (2, 1000)}
 
     def __init__(self, parent, view=None, model=None,
-        specific_model=None, logger=None):
+                 specific_model=None, logger=None):
 
-        super(Project_Controller, self).__init__(parent,
-            view=view, model=model, logger=logger)
+        super(Project_Controller, self).__init__(
+            parent, view=view, model=model, logger=logger)
 
         #MODEL
         if specific_model is not None:
@@ -408,13 +432,13 @@ class Project_Controller(controller_generic.Controller):
 
         if stage_call == "setup":
 
-            top = view_experiment.Top_Project_Setup(self, m , sm)
-            stage = view_experiment.Stage_Project_Setup(self, m , sm)
+            top = view_experiment.Top_Project_Setup(self, m, sm)
+            stage = view_experiment.Stage_Project_Setup(self, m, sm)
 
         elif stage_call == "running":
 
             top = view_experiment.Top_Project_Running(self, m, sm)
-            stage = view_experiment.Stage_Project_Running(self, m , sm)
+            stage = view_experiment.Stage_Project_Running(self, m, sm)
 
         else:
 
@@ -475,7 +499,7 @@ class Project_Controller(controller_generic.Controller):
         elif widget_name == 'scans':
 
             try:
-                val = int(re.findall(r'^ ?([0-9]*)', str_val)[0])                
+                val = int(re.findall(r'^ ?([0-9]*)', str_val)[0])
             except:
                 pass
 
@@ -500,7 +524,7 @@ class Project_Controller(controller_generic.Controller):
             #Checking bounds
             val_is_adjusted = self._set_duration_in_model(widget_name, val)
             if val_is_adjusted:
-                stage.set_duration_warning(widget_name)    
+                stage.set_duration_warning(widget_name)
             else:
                 stage.remove_duration_warning(widget_name)
 
@@ -514,7 +538,7 @@ class Project_Controller(controller_generic.Controller):
 
         else:
 
-            stage.set_duration_warning(widget_name)    
+            stage.set_duration_warning(widget_name)
 
         self.check_free_disk_space()
 
@@ -536,15 +560,15 @@ class Project_Controller(controller_generic.Controller):
 
             stage.set_free_space_warning(known_space=True)
 
-        elif (m['space-warning-im-size'] * 
-               (sm['scans'] + tc.subprocs.get_remaining_scans()) 
-               * m['space-warning-coeff']) > df_val:
+        elif (m['space-warning-im-size'] *
+              (sm['scans'] + tc.subprocs.get_remaining_scans())
+              * m['space-warning-coeff']) > df_val:
 
             stage.set_free_space_warning(known_space=False)
 
         print (df_val, tc.subprocs.get_remaining_scans(),
-                (m['space-warning-im-size'] * 
-               (sm['scans'] + tc.subprocs.get_remaining_scans()) 
+               (m['space-warning-im-size'] *
+               (sm['scans'] + tc.subprocs.get_remaining_scans())
                * m['space-warning-coeff']))
 
     def _check_duration_consistencies(self):
@@ -564,13 +588,13 @@ class Project_Controller(controller_generic.Controller):
 
                 t = sm['interval'] * (sm['scans'] - 1) / 60.0
                 inconsistent = self._set_duration_in_model('duration', t)
-            
+
             else:
 
                 t = int(sm['duration'] * 60 / sm['interval']) + 1
                 inconsistent = self._set_duration_in_model('scans', t)
 
-            if inconsistent == False:
+            if inconsistent is False:
 
                 break
 
@@ -581,8 +605,8 @@ class Project_Controller(controller_generic.Controller):
 
         if val != sm[duration_name]:
 
-            if val <= self.bounds[duration_name][1] and \
-                val >= self.bounds[duration_name][0]:
+            if (val <= self.bounds[duration_name][1] and
+                    val >= self.bounds[duration_name][0]):
 
                 got_adjusted = False
                 sm[duration_name] = val
@@ -624,11 +648,14 @@ class Project_Controller(controller_generic.Controller):
 
         fixtures = self.get_top_controller().fixtures
 
-        fixtures[model[row][0]].set_experiment_model(self._specific_model, 
-            default_pinning = self._model['pinning-default'])
+        fixtures[model[row][0]].set_experiment_model(
+            self._specific_model,
+            default_pinning=self._model['pinning-default'])
         stage = self._view.get_stage()
         stage.set_pinning()
-        stage.set_fixture_image(model[row][0])
+        good_load = stage.set_fixture_image(model[row][0])
+        if good_load is not True:
+            self._specific_model['fixture'] = None
         self.set_allow_run()
 
     def set_pinning(self, widget, plate):
@@ -681,15 +708,16 @@ class Project_Controller(controller_generic.Controller):
         proc_type = 'scanner'
 
         self._logger.info(
-            "Started experiment {0} ".format(sm['experiment-prefix']) + \
-            "in directory {0} ".format(sm['experiments-root']) + \
+            "Started experiment {0} ".format(sm['experiment-prefix']) +
+            "in directory {0} ".format(sm['experiments-root']) +
             "on scanner {0}, fixture {1}".format(sm['scanner'], sm['fixture']))
 
         self._logger.debug("Command:\n" + " ".join(e_query_list))
 
         scanner.set_uuid()
 
-        tc.add_subprocess(proc, proc_type, 
+        tc.add_subprocess(
+            proc, proc_type,
             stdin=stdin_path, stdout=stdout_path, stderr=stderr_path,
             pid=proc.pid, psm=sm, proc_name=sm['scanner'])
 
@@ -712,15 +740,15 @@ class Project_Controller(controller_generic.Controller):
 
             is_ok = False
 
-        if sm['pinnings-list'] is None or \
-            sum([p is None for p in sm['pinnings-list']]) == \
-            len(sm['pinnings-list']):
+        if (sm['pinnings-list'] is None or
+                sum([p is None for p in sm['pinnings-list']]) ==
+                len(sm['pinnings-list'])):
 
             is_ok = False
 
-        if sm['marker-path'] is None or sm['grayscale'] == False or \
-            sm['grayscale-area'] is None or ['plate-areas'] == 0 or \
-            sm['plate-areas'] is None:
+        if (sm['marker-path'] is None or sm['grayscale'] is False or
+                sm['grayscale-area'] is None or ['plate-areas'] == 0 or
+                sm['plate-areas'] is None):
 
             is_ok = False
 

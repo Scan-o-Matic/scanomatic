@@ -58,7 +58,7 @@ model = {
 'config-backup': 'Backup and Errors',
 
 ###BACKUP LOGS AND STATE
-'config-log-save': 
+'config-log-save':
 """If you run into problems, this allows for backup of logs and program state for later debugging""",
 'config-log-save-button': 'Make back-up...',
 'config-log-save-dialog': 'Select place and friendly name for logs',
@@ -76,6 +76,7 @@ model = {
 
 ###POWER MANAGER
 'config-pm': 'Power Manager Type',
+'config-pm-no': 'NO PM',
 'config-pm-usb': 'USB',
 'config-pm-lan': 'LAN/NETWORK',
 
