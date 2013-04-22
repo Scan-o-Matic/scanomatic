@@ -69,7 +69,8 @@ class Analysis_Controller(controller_generic.Controller):
     def __init__(self, main_controller, logger=None, **kwargs):
 
         super(Analysis_Controller, self).__init__(
-            main_controller, logger=logger)
+            main_controller, logger=logger,
+            controller_name='A')
 
         self.transparency = Analysis_Transparency_Controller(
             self, view=self._view, model=self._model,

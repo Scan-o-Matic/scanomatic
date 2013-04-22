@@ -24,11 +24,17 @@ import src.resource_logger as resource_logger
 # CLASSES
 #
 
+
 class Controller(object):
 
+    ALLOW_SEVERAL_ACTIVE = 0
+    DISALLOW_SEVERAL_ACTIVE_REPLACE = 1
+    DISALLOW_SEVERAL_ACTIVE_IGNORE = 2
+
     def __init__(self, parent_controller,
-            model=None, view=None,
-            specific_model=None, logger=None):
+                 model=None, view=None,
+                 specific_model=None, logger=None,
+                 controller_name="U"):
 
         if logger is not None:
             self._logger = logger
@@ -43,7 +49,33 @@ class Controller(object):
         self.set_view(view)
 
         self._allow_friendly_remove = True
+        self._controller_name = controller_name
         self._controllers = list()
+
+        self._allow_several_active = self.ALLOW_SEVERAL_ACTIVE
+
+    def get_name(self):
+
+        return self._controller_name
+
+    def get_is_same_type(self, other_name):
+
+        if (other_name is None or len(other_name) == 0 or
+                self._controller_name is None or
+                len(self._controller_name) == 0 or
+                other_name[0].lower() != self._controller_name[0].lower()):
+
+            return False
+
+        return True
+
+    def get_allow_several_active(self):
+
+        return self._allow_several_active == self.ALLOW_SEVERAL_ACTIVE
+
+    def get_do_several_active_replace(self):
+
+        return self._allow_several_active == self.DISALLOW_SEVERAL_ACTIVE_REPLACE
 
     def set_unsaved(self):
 
@@ -69,13 +101,13 @@ class Controller(object):
 
     def get_saved(self):
 
-        if self._allow_friendly_remove == False:
+        if self._allow_friendly_remove is False:
 
             return False
 
         for c in self._controllers:
 
-            if c.get_saved() == False:
+            if c.get_saved() is False:
 
                 return False
 
@@ -87,13 +119,13 @@ class Controller(object):
         view = top_controller.get_view()
         m = top_controller.get_model()
 
-        if view is not None and self.get_saved() == False:
+        if view is not None and self.get_saved() is False:
 
             d_text = m['content-page-close']
 
-            return view_generic.dialog(view,
-                        d_text,
-                        d_type='question', yn_buttons=True)
+            return view_generic.dialog(
+                view, d_text,
+                d_type='question', yn_buttons=True)
 
         return self._allow_friendly_remove
 
@@ -149,4 +181,3 @@ class Controller(object):
             self.set_specific_model(dict())
 
         return self._specific_model
-
