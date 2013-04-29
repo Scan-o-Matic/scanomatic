@@ -925,13 +925,15 @@ class Interactive_Menu():
                                 s[0]][s[1], s[2], self._cur_phenotype]),)
 
                     print phenotypes, s
+                    phenoName = self._cur_phenotype
+                    if self._phenotype_names is not None:
+                        phenoName = self._phenotype_names[self._cur_phenotype]
+
                     fig = r_xml.plot_from_list(
                         self._xml_file, [s], fig=fig, measurement=measurement,
                         phenotypes=phenotypes,
                         ax_title="Plate {0} Pos {1}: Phenotype {2}".format(
-                            s[0], s[1:],
-                            (self._phenotype_names is None and self._cur_phenotype or
-                             self._phenotype_names[self._cur_phenotype])))
+                            s[0], s[1:], phenoName))
 
                     fig.show()
                     if str(raw_input("Is this a bad curve (y/N)?")).upper() == "Y":
