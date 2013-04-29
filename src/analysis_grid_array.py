@@ -547,8 +547,8 @@ class Grid_Array():
 
         return im_axis_order
 
-    def _get_transformation_matrix_for_analysis(self, gs_values=None,
-                gs_indices=None, gs_fit=None):
+    def _get_transformation_matrix_for_analysis(
+            self, gs_values=None, gs_indices=None, gs_fit=None):
 
         #KODAK neutral scale
         if self._parent is not None:
@@ -559,14 +559,14 @@ class Grid_Array():
 
             gs_indices = None
 
-        if gs_values == None:
+        if gs_values is None:
 
-            transformation_matrix = self.get_transformation_matrix(\
+            transformation_matrix = self.get_transformation_matrix(
                 gs_fit=gs_fit, gs_indices=gs_indices)
 
         else:
 
-            transformation_matrix = self.get_transformation_matrix(\
+            transformation_matrix = self.get_transformation_matrix(
                 gs_values=gs_values, gs_indices=gs_indices)
 
         return transformation_matrix
@@ -584,11 +584,11 @@ class Grid_Array():
                 "Source view {0}, Target {1}, Source {2} ul {3}, wh {4}".format(
                 source_view.shape, target.shape, source.shape, ul, wh))
 
-        target[:,:] = tm[source_view]
+        target[:, :] = tm[source_view]
 
     def get_analysis(self, im, gs_values=None, gs_fit=None, gs_indices=None,
-            identifier_time=None, watch_colony=None, save_grid_name=None,
-            grid_correction=None):
+                     identifier_time=None, watch_colony=None,
+                     save_grid_name=None, grid_correction=None):
 
         #Resetting the values of the indepth watch colony
         self.watch_source = None
@@ -601,20 +601,20 @@ class Grid_Array():
             self._identifier[0] = identifier_time
 
         #Get an image-specific inter-scan-neutral transformation dictionary
-        tm = self._get_transformation_matrix_for_analysis(gs_values=gs_values,
-                    gs_fit=gs_fit, gs_indices=gs_indices)
+        tm = self._get_transformation_matrix_for_analysis(
+            gs_values=gs_values, gs_fit=gs_fit, gs_indices=gs_indices)
 
         #Fast access to the pinning matrix
         pm = self._pinning_matrix
-
 
         #Only place grid if not yet placed
         if self._grid is None:
 
             if not self.set_grid(im):
 
-                self.logger.critical('Failed to set grid on ' + \
-                        '{0} and none to use'.format(self._identifier))
+                self.logger.critical(
+                    'Failed to set grid on ' +
+                    '{0} and none to use'.format(self._identifier))
 
                 return None
 

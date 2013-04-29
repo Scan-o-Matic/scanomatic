@@ -1065,8 +1065,10 @@ class Interactive_Menu():
                                     pass
 
                     if len(set(tmp)) > 1:
-                        logging.error("Strain name conflict, aborting ({0})".format(set(tmp)))
-                        """
+                        logging.error("Strain name conflict, aborting.\n" +
+                                      "\t\tNames: {0}\n".format(set(tmp)) +
+                                      "\t\tTop-Left pos: {0}".format(
+                                          (p, r, c)))
                         for i in range(dr):
                             for j in range(dc):
                                 try:
@@ -1074,7 +1076,7 @@ class Interactive_Menu():
                                 except:
                                     print "-- | ",
                             print
-                        """
+
                         goodPlate = False
                         break
                     elif len(set(tmp)) == 0:
