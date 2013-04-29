@@ -1150,7 +1150,7 @@ class Interactive_Menu():
                                     np.isnan(
                                         self._original_phenotypes[p][
                                             c, r, self._cur_phenotype
-                                        ]).any() is False):
+                                        ]).any() is True):
 
                                 removal_list.append((p, c, r))
 
