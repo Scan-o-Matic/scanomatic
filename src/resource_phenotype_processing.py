@@ -1060,7 +1060,7 @@ class Interactive_Menu():
                         for j in range(dc):
                             if _gsm[p][i][j] == 0:
                                 try:
-                                    tmp.append(_md[(p, r + i, c + j)][0])
+                                    tmp.append(_md[(p, r * dr + i, c * dc + j)][0])
                                 except:
                                     pass
 
@@ -1068,11 +1068,11 @@ class Interactive_Menu():
                         logging.error("Strain name conflict, aborting.\n" +
                                       "\t\tNames: {0}\n".format(set(tmp)) +
                                       "\t\tTop-Left pos: {0}".format(
-                                          (p, r, c)))
+                                          (p, r * dr, c * dc)))
                         for i in range(dr):
                             for j in range(dc):
                                 try:
-                                    print _md[(p, r + i, c + j)][0], " | ",
+                                    print _md[(p, r * dr + i, c * dc + j)][0], " | ",
                                 except:
                                     print "-- | ",
                             print
