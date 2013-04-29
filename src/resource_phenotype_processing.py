@@ -1062,11 +1062,23 @@ class Interactive_Menu():
                                 except:
                                     pass
 
-                    if len(set(tmp)) != 1:
-                        logging.error("Strain name conflict, aborting")
+                    if len(set(tmp)) > 1:
+                        logging.error("Strain name conflict, aborting ({0})".format(set(tmp)))
+                        """
+                        for i in range(dr):
+                            for j in range(dc):
+                                try:
+                                    print _md[(p, r + i, c + j)][0], " | ",
+                                except:
+                                    print "-- | ",
+                            print
+                        """
                         goodPlate = False
                         break
-
+                    elif len(set(tmp)) == 0:
+                        logging.error("Plate has no experiments, aborting")
+                        goodPlate = False
+                        break
                     else:
 
                         _dmd[(p, r, c)] = tmp[0]
@@ -1127,11 +1139,10 @@ class Interactive_Menu():
                     for c in xrange(self._original_phenotypes[p].shape[0]):
                         for r in xrange(self._original_phenotypes[p].shape[1]):
 
-                            d = np.isnan(
-                                self._xml_file.get_colony(p, c, r)).astype(
-                                    np.int8)
+                            d = np.isfinite(
+                                self._xml_file.get_colony(p, c, r))
 
-                            if (1 - d.sum() / float(d.shape[0]) < 0.6 and
+                            if (d.sum() / float(d.size) < 0.6 and
                                     np.isnan(
                                         self._original_phenotypes[p][
                                             c, r, self._cur_phenotype
@@ -1318,6 +1329,9 @@ class Interactive_Menu():
 
         elif task == "R1":
 
+            logging.warning("Rotations are not allowed since strain name don't follow")
+            return
+
             plate = self.get_interactive_plate()
 
             if plate is not None:
@@ -1353,6 +1367,9 @@ class Interactive_Menu():
                     self._xml_connection[0] + (3 - int(rotation))) % 4
 
         elif task == "R2":
+
+            logging.warning("Rotations are not allowed since strain name don't follow")
+            return
 
             plate = self.get_interactive_plate()
 
@@ -1394,6 +1411,9 @@ class Interactive_Menu():
                     self._xml_connection[1][1] += new_pos[1]
 
         elif task == "R3":
+
+            logging.warning("Rotations are not allowed since strain name don't follow")
+            return
 
             plate = self.get_interactive_plate()
 
@@ -1821,6 +1841,7 @@ if __name__ == "__main__":
 # NOT IN USE
 #
 
+'''
 
 def vector_orth_dist(x, y, p1):
     """
@@ -1846,7 +1867,6 @@ def vector_orth_dist(x, y, p1):
     #
     return dists
 
-"""
 #PLOT THE POSITIONAL EFFECT
 plt.clf()
 fig = plt.figure()
@@ -1958,4 +1978,4 @@ for p in xrange(4):
 
 fs.close()
 plt.show()
-"""
+'''

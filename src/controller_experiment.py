@@ -352,7 +352,7 @@ class One_Controller(controller_generic.Controller):
             scanner.free()
             sm['stage'] = 'done'
             stage.set_progress('done', completed=True)
-            self.saved()
+            self.set_saved()
 
     def _analysis(self, scanner, stage):
 
