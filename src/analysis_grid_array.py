@@ -229,10 +229,14 @@ class Grid_Array():
         grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])],
                       self._pinning_matrix[int(self._im_dim_order[1])])
 
-        gh = np.array(self.get_history())
+        self.logger.info("Setting a grid with format {0}".format(
+            grid_shape))
 
+        gh = np.array(self.get_history())
+        self.logger.debug("Grid History {0}".format(gh))
+
+        #If too little data, use very rough guesses
         if gh.size < 12:
-            #If too little reference data, use very rough guesses
             validate_parameters = False
             expected_spacings = self._guess_grid_cell_size
             expected_center = tuple([s / 2.0 for s in im.shape])
@@ -274,7 +278,7 @@ class Grid_Array():
             return False
 
         if (self._grid.shape[0] != self._pinning_matrix[self._im_dim_order[0]]
-                and self._grid.shape[1] !=
+                or self._grid.shape[1] !=
                 self._pinning_matrix[self._im_dim_order[1]]):
 
             raise Invalid_Grid(
@@ -633,8 +637,8 @@ class Grid_Array():
             s_g += grid_correction  # Compensate if part of plate is outside im
         """
         s_gcs = self._grid_cell_size
-        s_g[:,:,0] -= s_gcs[0] / 2.0  # To get min-corner
-        s_g[:,:,1] -= s_gcs[1] / 2.0  # To get min-corner
+        s_g[:, :, 0] -= s_gcs[0] / 2.0  # To get min-corner
+        s_g[:, :, 1] -= s_gcs[1] / 2.0  # To get min-corner
         l_d1 = pm[0]  # im_dim_order[0]]
         l_d2 = pm[1]  # im_dim_order[1]]
 
@@ -647,8 +651,9 @@ class Grid_Array():
             for col in xrange(l_d2):
 
                 #Only work on watched colonies if other's are suppressed
-                if self.suppress_analysis == False or (watch_colony != None and \
-                        watch_colony[1] == row and watch_colony[2] == col):
+                if (self.suppress_analysis is False or
+                        (watch_colony is not None and
+                         watch_colony[1] == row and watch_colony[2] == col)):
 
                     #Set up shortcuts
                     _cur_gc = self._grid_cells[row][col]
@@ -687,8 +692,8 @@ class Grid_Array():
                     else:
 
                         #Shold make sure that tm_im is okay
-                        self.logger.critical("ANALYSIS GRID ARRAY Lacks" + \
-                                " transformation possibilities")
+                        self.logger.critical("ANALYSIS GRID ARRAY Lacks" +
+                                             " transformation possibilities")
 
                     #
                     #Setting up the grid cell
@@ -704,24 +709,23 @@ class Grid_Array():
                     if self._first_analysis:
 
                         _cur_gc.attach_analysis(
-                                blob=True, background=True, cell=True,
-                                run_detect=False)
+                            blob=True, background=True, cell=True,
+                            run_detect=False)
 
                     #
                     #Getting the analysis for all layers of the Grid Cell
                     #----------------------------------------------------
                     #
 
-
                     self._features[row][col] = \
-                            _cur_gc.get_analysis(remember_filter=True)
+                        _cur_gc.get_analysis(remember_filter=True)
 
                     #Info on the watched colony hooked up if that's the one
                     #analysed
-                    if watch_colony != None:
+                    if watch_colony is not None:
 
-                        if row == watch_colony[1] and \
-                                    col == watch_colony[2]:
+                        if (row == watch_colony[1] and
+                                col == watch_colony[2]):
 
                             self.watch_blob = \
                                 _cur_gc.get_item('blob').filter_array.copy()

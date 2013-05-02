@@ -385,7 +385,14 @@ class Fixture_Image(object):
 
     def get_name_in_ref(self):
 
-        return self.fixture_reference.get('name')
+        name_in_file = self.fixture_reference.get('name')
+        name_from_file = self._paths.get_fixture_name(
+            self._fixture_reference_path)
+
+        if name_in_file != name_from_file:
+            self._logger.warning("Missmatch in fixture name in file compared to file name!")
+
+        return name_from_file
 
     def set_number_of_markings(self, markings):
 
