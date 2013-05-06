@@ -528,6 +528,7 @@ class Analyse_Grayscale(object):
             #Orthagonal trim second try
             firstPass = True
             in_strip = False
+            old_orth = None
 
             for i, orth in enumerate(A.mean(axis=0)):
 
@@ -711,10 +712,10 @@ class Analyse_Grayscale(object):
                         edges.append(observed_spikes[oi])
                     else:
                         edges.append(np.nan)
-                edges = np.array(edges)
+                edges = np.array(edges, dtype=np.float)
                 nan_edges = np.isnan(edges)
                 fin_edges = np.isfinite(edges)
-                X = np.arange(edges.size) + 1
+                X = np.arange(edges.size, dtype=np.float) + 1
                 edges[nan_edges] = np.interp(X[nan_edges], X[fin_edges],
                                              edges[fin_edges],
                                              left=np.nan,
