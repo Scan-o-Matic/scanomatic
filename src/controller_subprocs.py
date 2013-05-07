@@ -17,8 +17,10 @@ import gobject
 import re
 import os
 import time
+import psutil
 import ConfigParser
 from subprocess import Popen
+from collections import deque
 
 #
 # INTERNAL DEPENDENCIES
@@ -307,6 +309,48 @@ class Fake_Proc(object):
     def communicate(self, c):
 
         return self._get_feedback(c)
+
+
+class Analysis_Queue(object):
+
+    MAX_MEM_USAGE = 60
+    MIN_FREE_CPU_PERCENT = 50
+    MIN_FREE_CPU_CORES = 2
+
+    def __init__(self):
+
+        self._queue = deque()
+
+    def _check_cpu(self):
+
+        cur_cpu = psutil.cpu_percent(percpu=True)
+        free_cpu = [cpu < self.MIN_FREE_CPU_PERCENT for cpu in cur_cpu]
+        return len(free_cpu) >= self.MIN_FREE_CPU_CORES
+
+    def _check_resources(self):
+
+        if (psutil.phymem_usage().percent < self.MAX_MEM_USAGE and
+                self._check_cpu()):
+
+            return True
+
+        return False
+
+    def poll(self):
+
+        if len(self._queue) > 0 and self._check_resources():
+
+            #Return settings for next analysis since
+            #there are resources
+            return self._queue.popleft()
+
+        else:
+
+            return None
+
+    def push(self, experiment_args):
+
+        self._queue.append(experiment_args)
 
 
 class Subprocs_Controller(controller_generic.Controller):
