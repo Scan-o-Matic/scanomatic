@@ -741,6 +741,13 @@ class Analysis_First_Pass(controller_generic.Controller):
             return
 
         #Variable preparation (rfpa = resource_first_pass_analysis)
+        self._logger.info(
+            ('Local {0}, LocalName {1} ' +
+             'ModelName {2} Gobal Path {3}').format(
+                 sm['use-local-fixture'],
+                 tc.paths.experiment_local_fixturename,
+                 md['Fixture'],
+                 tc.paths.fixtures))
         if sm['use-local-fixture']:
             rfpa_fixture = tc.paths.experiment_local_fixturename
             rfpa_f_dir = sm['output-directory']
@@ -832,6 +839,8 @@ class Analysis_First_Pass(controller_generic.Controller):
 
             f_path = self._paths.get_fixture_path('fixture',
                                                   own_path=dir_list)
+
+            self._logger.info("Claimed Local Fixture Path {0}".format(f_path))
             lc = os.path.isfile(f_path)
             stage.update_local_fixture(lc)
 
@@ -951,8 +960,20 @@ class Analysis_First_Pass(controller_generic.Controller):
 
     def set_local_fixture(self, widget, *args):
 
-        self._specific_model['use-local-fixture'] = widget.get_active()
-        self._set_allow_run()
+        tc = self.get_top_controller()
+        sm = self._specific_model
+        local_name = tc.paths.experiment_local_fixturename
+
+        if os.path.isfile(os.path.join(sm['output-directory'],
+                                       local_name)):
+
+            self._specific_model['use-local-fixture'] = widget.get_active()
+            self._set_allow_run()
+
+        else:
+
+            stage = self.get_view().get_stage()
+            stage.update_local_fixture(has_fixture=False)
 
     def handle_keypress(self, widget, event):
 
