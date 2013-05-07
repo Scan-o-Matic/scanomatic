@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import os
 import re
+import shutil
 import gobject
 import threading
 import numpy as np
@@ -741,7 +742,7 @@ class Analysis_First_Pass(controller_generic.Controller):
             return
 
         #Variable preparation (rfpa = resource_first_pass_analysis)
-        self._logger.info(
+        self._logger.debug(
             ('Local {0}, LocalName {1} ' +
              'ModelName {2} Gobal Path {3}').format(
                  sm['use-local-fixture'],
@@ -754,6 +755,22 @@ class Analysis_First_Pass(controller_generic.Controller):
         else:
             rfpa_fixture = md['Fixture']
             rfpa_f_dir = tc.paths.fixtures
+            local_fixture_path = os.path.join(
+                sm['output-directory'],
+                tc.paths.experiment_local_fixturename)
+
+            #Take backup of previous local fixture config if exists
+            if os.path.isfile(local_fixture_path):
+                shutil.copyfile(
+                    local_fixture_path,
+                    local_fixture_path + ".old")
+
+            #Copy global fixutre config into directory
+            shutil.copyfile(
+                tc.paths.get_fixture_path(
+                    md['Fixture'],
+                    own_path=tc.paths.experiment_local_fixturename),
+                local_fixture_path)
 
         #Analyse all images in order
         for i, row in enumerate(sm['image-list-model']):
