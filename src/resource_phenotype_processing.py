@@ -1625,7 +1625,7 @@ class Interactive_Menu():
 
                     if _save(
                             self._experiments_data, header,
-                            save_as_np_array=(task == "S4"),
+                            #save_as_np_array=(task == "S4"),
                             file_guess='_LSC_experment.phenotype_{0}.{1}'.format(
                                 self._cur_phenotype + 1,
                                 ['csv', 'npy'][task == 'S4']),
