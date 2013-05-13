@@ -55,6 +55,16 @@ composite_model = {
 'running-experiments': 'Running Experiments',
 'running-analysis': 'Running Analysis',
 'collected-messages': 'Warnings & Errors',
+'queue': 'Analysis Queue',
+
+#RUNNING COMMONS
+    'running-stop': 'Terminate...',
+    'running-stopping': 'Stopping...',
+    'running-eta': 'Expected to finnish in {0} hours',
+    'running-elapsed': 'Running for {0} minutes',
+    'running-progress': 'Processing {0} of {1}',
+    'running-done': 'Done!',
+    'running-done-error': 'Error occured',
 
 #RUNNING EXPERIMENTS
 'running-experiments-intro':

@@ -36,6 +36,7 @@ import src.resource_path as resource_path
 import src.resource_logger as resource_logger
 import src.resource_app_config as resource_app_config
 import src.resource_project_log as resource_project_log
+import src.subprocs.communicator as communicator
 
 #
 # EXCEPTIONS
@@ -141,7 +142,15 @@ class Experiment(object):
         elif kwargs is not None:
             self._set_settings_from_kwargs(kwargs)
 
-        self._stdin_pipe_deamon = threading.Thread(target=self._stdin_deamon)
+        comm = communicator.Communicator(
+            logger, self,
+            self.paths.experiment_stdin.format(
+                self.paths.get_scanner_path_name(self._scanner_name)),
+            self.paths.log_scanner_out.format(self._scanner_name[-1]),
+            self.paths.log_scanner_err.format(self._scanner_name[-1])
+        )
+
+        self._stdin_pipe_deamon = threading.Thread(target=comm.run)
         self._stdin_pipe_deamon.start()
 
     def __excepthook(self, excType, excValue, traceback):
@@ -160,13 +169,13 @@ class Experiment(object):
 
     def _stdin_deamon(self):
 
+        """
         scanner_name = self.paths.get_scanner_path_name(self._scanner_name)
         stdin_path = self.paths.experiment_stdin.format(scanner_name)
         stdout_path = self.paths.log_scanner_out.format(self._scanner_name[-1])
         stderr_path = self.paths.log_scanner_err.format(self._scanner_name[-1])
         orphan = False
-
-        self._gated_print("DEAMON listens to", stdin_path)
+        """
 
         pos = None
         try:
@@ -202,19 +211,7 @@ class Experiment(object):
                     output = line
 
                 elif line == '__INFO__':
-                    output = (
-                        '__ALIVE__ {0}\n'.format(self._running) +
-                        '__PREFIX__ {0}\n'.format(self._prefix) +
-                        '__FIXTURE__ {0}\n'.format(self._fixture_name) +
-                        '__SCANNER__ {0}\n'.format(self._scanner_name) +
-                        '__ROOT__ {0}\n'.format(self._root) +
-                        #'__ID__ {0}\n'.format(self._id)
-                        '__PINNING__ {0}\n'.format(self._pinning) +
-                        '__INTERVAL__ {0}\n'.format(self._interval) +
-                        '__SCANS__ {0}\n'.format(self._max_scans) +
-                        '__INIT-TIME__ {0}\n'.format(self._init_time) +
-                        '__CUR-IM__ {0}\n'.format(self._scanned)
-                    )
+                    pass
 
                 else:
                     output = "DEAMON got unkown request '{0}'".format(line)
@@ -245,16 +242,23 @@ class Experiment(object):
 
         self._gated_print("DEAMON ended", self._orphan, self._running)
 
-    def _gated_print(self, *args):
 
-        while self._printing is True:
-            time.sleep(0.02)
+    def get_info(self):
 
-        self._printing = True
-        for arg in args:
-            print arg,
-        print
-        self._printing = False
+        output = (
+            '__ALIVE__ {0}\n'.format(self._running) +
+            '__PREFIX__ {0}\n'.format(self._prefix) +
+            '__FIXTURE__ {0}\n'.format(self._fixture_name) +
+            '__SCANNER__ {0}\n'.format(self._scanner_name) +
+            '__ROOT__ {0}\n'.format(self._root) +
+            #'__ID__ {0}\n'.format(self._id)
+            '__PINNING__ {0}\n'.format(self._pinning) +
+            '__INTERVAL__ {0}\n'.format(self._interval) +
+            '__SCANS__ {0}\n'.format(self._max_scans) +
+            '__INIT-TIME__ {0}\n'.format(self._init_time) +
+            '__CUR-IM__ {0}\n'.format(self._scanned)
+        )
+        return output
 
     def _generate_uuid(self):
 

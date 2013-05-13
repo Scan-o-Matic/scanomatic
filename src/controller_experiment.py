@@ -17,8 +17,6 @@ import re
 import os
 import time
 import collections
-from itertools import chain
-from subprocess import Popen
 import threading
 import sh
 
@@ -670,6 +668,7 @@ class Project_Controller(controller_generic.Controller):
 
     def start(self, *args):
 
+        """
         sm = self._specific_model
         tc = self.get_top_controller()
         scanner = tc.scanners[sm['scanner']]
@@ -706,7 +705,6 @@ class Project_Controller(controller_generic.Controller):
 
         proc = Popen(e_query_list, stdout=stdout, stderr=stderr, shell=False)
         proc_type = 'scanner'
-
         self._logger.info(
             "Started experiment {0} ".format(sm['experiment-prefix']) +
             "in directory {0} ".format(sm['experiments-root']) +
@@ -715,11 +713,15 @@ class Project_Controller(controller_generic.Controller):
         self._logger.debug("Command:\n" + " ".join(e_query_list))
 
         scanner.set_uuid()
-
         tc.add_subprocess(
             proc, proc_type,
             stdin=stdin_path, stdout=stdout_path, stderr=stderr_path,
             pid=proc.pid, psm=sm, proc_name=sm['scanner'])
+        """
+
+        tc = self.get_top_controller()
+        sm = self._specific_model
+        tc.subprocs.add_subprocess(tc.subprocs.EXPERIMENT_SCANNING, sm=sm)
 
         self.set_view_stage(None, 'running')
 

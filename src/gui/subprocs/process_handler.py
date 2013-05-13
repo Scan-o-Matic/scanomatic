@@ -47,7 +47,7 @@ class _SubProc_Handler(SubProc_Collection_Interface):
         :param proc_types: A list of SubProc types using the
         constants of the supproc_interface - module.
         """
-        self._proc_type = proc_types
+        self._proc_types = proc_types
         self._store = set()
         self._count = 0
 
@@ -90,11 +90,16 @@ class _SubProc_Handler(SubProc_Collection_Interface):
         :returns: Boolean if successful
         """
 
-        if (self._verify_elem(elem) and not(self._store.issubset((elem,)))):
+        if (self._verify_elem(elem) and not(self._store.issuperset((elem,)))):
             self._store.add(elem)
             return True
         else:
             return False
+
+    def remove(self, elem):
+        """Removes an element from handler."""
+
+        self._store.remove(elem)
 
     def _verify_elem(self, elem):
         """Throws exceptions if elem doesn't meet standard

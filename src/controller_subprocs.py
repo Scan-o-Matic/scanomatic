@@ -14,11 +14,8 @@ __status__ = "Development"
 #
 
 import gobject
-import re
 import os
-import time
 import ConfigParser
-from subprocess import Popen
 
 #
 # INTERNAL DEPENDENCIES
@@ -27,10 +24,11 @@ from subprocess import Popen
 import src.controller_generic as controller_generic
 import src.view_subprocs as view_subprocs
 import src.model_subprocs as model_subprocs
-import src.model_experiment as model_experiment
+#import src.model_experiment as model_experiment
 from src.gui.subprocs.analysis_queue import Analysis_Queue
 import src.gui.subprocs.gui_subprocesses as gui_subprocesses
 import src.gui.subprocs.process_handler as process_handler
+import src.gui.subprocs.subproc_interface as subproc_interface
 
 #
 # EXCEPTIONS
@@ -169,6 +167,16 @@ class _Revive_Processes(object):
     def find_analysis_procs():
 
         pass
+
+    def _clean_after(self, scanner_i, scanner, scanner_id):
+
+        tc = self.get_top_controller()
+        scanner_id = scanner_id.strip()
+
+        #FREE SCANNER
+        scanner = tc.scanners["Scanner {0}".format(scanner_i)]
+        scanner.set_uuid(scanner_id)
+        scanner.free()
 
 
 class Handle_Progress(object):
@@ -342,6 +350,10 @@ class Handle_Progress(object):
 
 class Subprocs_Controller(controller_generic.Controller):
 
+    ANALYSIS = "A"
+    EXPERIMENT_SCANNING = "ES"
+    EXPERIMENT_REBUILD = "ER"
+
     def __init__(self, main_controller, logger=None):
 
         super(Subprocs_Controller, self).__init__(
@@ -353,9 +365,11 @@ class Subprocs_Controller(controller_generic.Controller):
         self._project_progress = Handle_Progress(main_controller.paths,
                                                  self._model)
 
+        """
         revive_processes = _Revive_Processes(self)
         revive_processes.check_scanners()
         revive_processes.find_analysis_procs()
+        """
 
         #The Analysis_Queue makes program (more) well behaved
         #in terms of resource usage
@@ -365,18 +379,12 @@ class Subprocs_Controller(controller_generic.Controller):
         self._experiments = process_handler.Experiment_Handler()
         self._analysises = process_handler.Analysis_Handler()
 
+        #Updating model
+        self._specific_model['queue'] = self._queue
+        self._specific_model['experiments'] = self._experiments
+        self._specific_model['analysises'] = self._analysises
+
         gobject.timeout_add(2777, self._subprocess_callback)
-
-
-    def _clean_after(self, scanner_i, scanner, scanner_id):
-
-        tc = self.get_top_controller()
-        scanner_id = scanner_id.strip()
-
-        #FREE SCANNER
-        scanner = tc.scanners["Scanner {0}".format(scanner_i)]
-        scanner.set_uuid(scanner_id)
-        scanner.free()
 
     def _get_default_view(self):
 
@@ -404,248 +412,118 @@ class Subprocs_Controller(controller_generic.Controller):
 
     def get_remaining_scans(self):
 
-        sm = self._specific_model
-        return sm['images-in-queue']
+        img_tot = 0
+        img_done = 0
 
-    def _add_scanner_proc(self):
+        for proc in self._experiments:
 
-        #FIXIT rewrite all
-        sm = self._specific_model
-        _pp = self._project_progress
+            img_tot += proc.get_total()
+            img_done += proc.get_current()
 
-        plist = sm['scanner-procs']
+        return img_tot - img_done
 
-        _pp.add_project(
-            psm['experiment-prefix'],
-            os.path.join(
-                psm['experiments-root'],
-                psm['experiment-prefix']),
-            analysis_path=analysis_path)
+    def add_subprocess(self, ptype, **params):
+        """Adds a new subprocess.
 
-        _pp.set_status(psm['experiment-prefix'],
-                        'EXPERIMENT', 'RUNNING')
+        If it can be started, it will be immidiately, else
+        if will be queued.
 
-        if start_time is None:
-            start_time = time.time()
+        **params should include sufficient information for the
+        relevant gui_subprocess-class to launch
+        """
 
-        plist.append({'proc': proc, 'type': proc_type, 'pid': pid,
-                      'stdin': stdin, 'stdout': stdout, 'stderr': stderr,
-                      'sm': psm, 'name': proc_name, 'progress': progress,
-                      'start-time': start_time})
+        if ptype == self.EXPERIMENT_SCANNING:
 
-    def _add_analysis_proc(self):
-        #FIXIT rewrite all
+            success = self._experiments.push(
+                gui_subprocesses.Experiment_Scanning(self._tc, **params))
 
-        sm = self._specific_model
-        _pp = self._project_progress
+        elif ptype == self.ANALYSIS:
 
-        plist = sm['analysis-procs']
-        log_file_path = None
+            success = self._queue.push(params)
 
-        if 'experiment-prefix' not in psm:
+        elif ptype == self.EXPERIMENT_REBUILD:
 
-            proj_file = psm['analysis-project-log_file_dir']
-            psm['experiments-root'] = os.path.abspath(
-                os.path.join(proj_file, os.pardir))
+            success = self._experiments.push(
+                gui_subprocesses.Experiment_Rebuild(self._tc, **params))
 
-            psm['experiment-prefix'] = proj_file.split(os.path.sep)[-1]
-
-            log_file_path = os.path.basename(psm['analysis-project-log_file'])
-
-        if 'analysis-project-output-path' in psm:
-            analysis_path = os.path.join(
-                psm['analysis-project-output-path'],
-                paths.analysis_run_log)
-
-        _pp.add_project(
-            psm['experiment-prefix'],
-            os.path.join(
-                psm['experiments-root'],
-                psm['experiment-prefix']),
-            first_pass_file=log_file_path,
-            analysis_path=analysis_path)
-
-        if _pp.get_status(psm['experiment-prefix'],
-                            'EXPERIMENT', as_text=False) == 0:
-
-            _pp.set_status(psm['experiment-prefix'],
-                            'EXPERIMENT', 'COMPLETED')
-
-        _pp.set_status(psm['experiment-prefix'],
-                        'ANALYSIS', 'AUTOMATIC')
-
-    def add_subprocess(self, proc, proc_type, stdin=None, stdout=None,
-                       stderr=None, pid=None, psm=None, proc_name=None,
-                       start_time=None, progress=0):
-
-        paths = self.get_top_controller().paths
-        analysis_path = os.path.join(
-            paths.experiment_analysis_relative_path,
-            paths.analysis_run_log)
-
-        if proc_type == 'scanner':
-
-            self._add_scanner_proc()
-
-        elif proc_type == 'analysis':
-
-            self._add_analysis_proc()
-
-        else:
-
-            raise Unknown_Subprocess_Type(proc_type)
-
-        self.set_unsaved()
-
-    def get_subprocesses(self, by_name=None, by_type=None):
-
-        sm = self._specific_model
-
-        if by_type is None:
-            plist = sm['scanner-procs'] + sm['analysis-procs']
-        elif by_type in ['scanner', 'experiment']:
-            plist = sm['scanner-procs']
-        elif by_type == 'analysis':
-            plist = sm['analysis-procs']
-        else:
-            raise Unknown_Subprocess_Type("")
-
-        ret = [p for p in plist if (by_name is not None and p['name'] == by_name or True)]
-
-        return ret
+        self._logger.info("{0} {1} with parameters {2}".format(
+            ["Failed to add", "Added"][success],
+            ptype, params))
 
     def _subprocess_callback(self):
+        """Callback that checks on finished stuff etc"""
 
         sm = self._specific_model
-        tc = self.get_top_controller()
-        sm['images-in-queue'] = 0
+        tc = self._tc
 
-        _pp = self._project_progress
+        #
+        #   1 CHECKING EXPERIMENTS IF ANY IS DONE
+        #
 
-        #CHECK FOR SCANNERS THAT ARE DONE
-        for p in self.get_subprocesses(by_type='scanner'):
-            p_exit = p['proc'].poll()
-            psm = p['sm']
-            if p_exit is not None:
+        finished_experiment = self._experiments.pop()
 
-                #PROCESS WAS TERMINATED
-                if p_exit == 0:  # Nice quit implies analysis should be started
+        if finished_experiment is not None:
+            #Place analysis in queue
+            pass
 
-                    psm = p['sm']
+            #Update live project status
+            self.set_project_progress(
+                finished_experiment.get_prefix(), 'EXPERIMENT', 'COMPLETED')
 
-                    _pp.set_status(psm['experiment-prefix'],
-                                   'EXPERIMENT', 'COMPLETED')
+            self.set_project_progress(
+                finished_experiment.get_prefix(), 'ANALYSIS', 'AUTOMATIC')
 
-                    _pp.set_status(psm['experiment-prefix'],
-                                   'ANALYSIS', 'AUTOMATIC')
+            finished_experiment.close_communications()
 
-                    a_dict = tc.config.get_default_analysis_query()
+        #
+        #   2. CHECKING IF ANY NEW ANALYSIS MAY BE STARTED
+        #
 
-                    proc_name = os.path.join(
-                        psm['experiments-root'],
-                        psm['experiment-prefix'],
-                        tc.paths.experiment_first_pass_analysis_relative.format(
-                            psm['experiment-prefix']))
+        new_analsysis = self._queue.pop()
 
-                    a_dict['-i'] = proc_name
+        if new_analsysis is not None:
 
-                    a_list = list()
-                    a_list.append(tc.paths.analysis)
+            proc = gui_subprocesses.Analysis(self._tc, **new_analsysis)
+            self._analysises.push(proc)
+            #Update live project status
+            self.set_project_progress(
+                proc.get_prefix(), 'ANALYSIS', 'RUNNING')
 
-                    for aflag, aval in a_dict.items():
-                        a_list += [aflag, aval]
+        #
+        #   3. CHECKING IF ANY ANALYSIS IS DONE
+        #
 
-                    #START NEW PROC
-                    stdout_path, stderr_path = tc.paths.get_new_log_analysis()
-                    stdout = open(stdout_path, 'w')
-                    stderr = open(stderr_path, 'w')
+        finished_analysis = self._analysises.pop()
 
-                    proc = Popen(map(str, a_list), stdout=stdout, stderr=stderr, shell=False)
-                    print "Starting Analysis {0}".format(a_list)
+        if finished_analysis is not None:
 
-                    pid = proc.pid
-
-                    self.add_subprocess(
-                        proc, 'analysis', pid=pid, stdout=stdout_path,
-                        stderr=stderr_path, psm=psm, proc_name=proc_name)
-
-                else:  # Report problem to user!
-                    pass
-
-                self._drop_process(p)
-                #tc.scanners.free(scanner)
-
+            if finished_analysis.get_exit_code() == 0:
+                self.set_project_progress(
+                    finished_analysis.get_prefix(),
+                    'ANALYSIS', 'COMPLETED')
+                self.set_project_progress(
+                    finished_analysis.get_prefix(),
+                    'UPLOAD', 'LAUNCH')
             else:
+                self.set_project_progress(
+                    finished_analysis.get_prefix(),
+                    'ANALYSIS', 'FAILED')
 
-                lines = self._get_output_since_last_time(p, 'stdout')
-                #i_started = re.findall(r'__Is__ (.*)$', lines)
-                i_done = re.findall(r'__Id__ (.*)', lines)
+            finished_analysis.close_communications()
 
-                if len(i_done) > 0:
+        #
+        #   4. TOGGLE SAVE STATUS OF SUBPROCESSES (if any is running)
+        #
 
-                    p['progress'] = int(i_done[-1])
+        if (self._analysises.count() == 0 and
+                self._experiments.count() == 0 and
+                self._queue.count() == 0):
 
-                #COUNTING TOTAL SUM OF IMAGES TO TAKE
-                sm['images-in-queue'] += psm['scans'] - p['progress']
-
-                """
-                if len(i_started) > 0 and \
-                    int(p['progress']) < int(i_started[-1]):
-
-                    p['progress'] += 0.5
-                """
-
-        #CHECK FOR TERMINATED ANALYSIS
-        for p in self.get_subprocesses(by_type='analysis'):
-            p_exit = p['proc'].poll()
-            psm = p['sm']
-            if p_exit is not None:
-
-                self._drop_process(p)
-
-                if p_exit == 0:
-                    _pp.set_status(psm['experiment-prefix'],
-                                   'ANALYSIS', 'COMPLETED')
-                    _pp.set_status(psm['experiment-prefix'],
-                                   'UPLOAD', 'LAUNCH')
-                else:
-                    _pp.set_status(psm['experiment-prefix'],
-                                   'ANALYSIS', 'FAILED')
-
-                #DO A WARNING HERE SINCE NOT NICE QUIT!
-                if p_exit != 0:
-                    pass
-
-            else:
-
-                lines = self._get_output_since_last_time(p, 'stderr')
-                progress = re.findall(r'__Is__ ([0-9]*)', lines)
-                total = re.findall(r'A total of ([0-9]*)', lines)
-
-                if len(total) > 0:
-
-                    p['progress-total-number'] = int(total[0])
-
-                if len(progress) > 0 and 'progress-total-number' in p:
-                    p['progress'] = (float(progress[-1]) - 1) / \
-                        p['progress-total-number']
-                    if 'progress-init-time' not in p:
-                        p['progress-init-time'] = time.time() - p['start-time']
-                    if progress != ['1']:
-                        p['progress-elapsed-time'] = \
-                            (time.time() - p['start-time']) - \
-                            p['progress-init-time']
-
-                    p['progress-current-image'] = int(progress[-1])
-
-                if 'progress-current-image' in p:
-
-                    _pp.set_status(psm['experiment-prefix'],
-                                   'INSPECT', 'LAUNCH')
-
-        #SET SAVED IF NO PROCS RUNNING
-        if len(self.get_subprocesses()) == 0:
             self.set_saved()
+
+        else:
+
+            self.set_unsaved()
 
         #UPDATE FREE SCANNERS
         sm['free-scanners'] = tc.scanners.count()
@@ -658,77 +536,33 @@ class Subprocs_Controller(controller_generic.Controller):
 
         return True
 
-    def _get_output_since_last_time(self, p, feed):
+    def stop_process(self, proc):
+        """Stops a process"""
 
-        lines = ""
-        try:
-            fh = open(p[feed], 'r')
-            if 'output-pos' in p:
-                fh.seek(p['output-pos'])
-            lines = fh.read()
-            p['output-pos'] = fh.tell()
-            fh.close()
-        except:
-            pass
+        if (proc.get_type() == subproc_interface.EXPERIMENT_SCANNING or
+                proc.get_type() == subproc_interface.EXPERIMENT_REBUILD):
 
-        return lines
+            handler = self._experiments
+            cur_stage = 'EXPERIMENT'
+            next_stage = 'ANALYSIS'
 
-    def _close_proc_files(self, *args):
+        elif (proc.get_type() == subproc_interface.ANALYSIS):
 
-        for f in args:
-            if hasattr(f, 'close'):
-                f.close()
+            handler = self._analysises
+            cur_stage = 'ANALYSIS'
+            next_stage = None
 
-    def stop_process(self, p):
+        handler.remove(proc)
+        proc.terminate()
 
-        _pp = self._project_progress
-        psm = p['sm']
+        self.set_project_progress(
+            proc.get_prefix(), cur_stage, 'TERMINATED')
 
-        _pp.set_status(psm['experiment-prefix'],
-                       'EXPERIMENT', 'TERMINATED')
+        if next_stage is not None:
+            self.set_project_progress(
+                proc.get_prefix(), next_stage, 'LAUNCH')
 
-        _pp.set_status(psm['experiment-prefix'],
-                       'ANALYSIS', 'LAUNCH')
-
-        self._drop_process(p)
-
-    def _drop_process(self, p):
-
-        sm = self._specific_model
-
-        if p['type'] == 'scanner':
-            plist = sm['scanner-procs']
-            for i, proc in enumerate(plist):
-
-                if id(p) == id(proc):
-
-                    if p['proc'].poll() is None:
-                        try:
-                            fs = open(p['stdin'], 'a')
-                            fs.write("__QUIT__\n")
-                            fs.close()
-                        except:
-                            self._logger.error("Scanner won't be freed!")
-
-                    del plist[i]
-                    return True
-
-        elif p['type'] == 'analysis':
-
-            plist = sm['analysis-procs']
-
-            if p['proc'].poll() is None:
-                self._logger.info("Analysis will continue in the background...")
-            else:
-                self._logger.info("Analysis was complete")
-                for i, proc in enumerate(plist):
-                    if id(p) == id(proc):
-                        del plist[i]
-                        return True
-
-            return True
-
-        raise Unknown_Subprocess("{0}".format(p))
+        proc.close_communications()
 
     def produce_running_experiments(self, widget):
 
@@ -791,6 +625,7 @@ class Subprocs_Controller(controller_generic.Controller):
         """produce_launch_analysis, short-cuts to displaying a
         view for analysing a specific project as defined in prefix
         """
+
         proj_dir = self._project_progress.get_path(prefix)
         data = {
             'stage': 'project',

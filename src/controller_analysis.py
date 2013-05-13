@@ -1824,11 +1824,13 @@ class Analysis_Project_Controller(controller_generic.Controller):
         a_dict['-i'] = sm['analysis-project-log_file']
         a_dict['-o'] = sm['analysis-project-output-path']
 
+        """
         analysis_query = [tc.paths.analysis]
 
         for a_flag, a_val in a_dict.items():
 
             analysis_query += [a_flag, a_val]
+        """
 
         if sm['analysis-project-pinnings-active'] != 'file':
 
@@ -1839,14 +1841,13 @@ class Analysis_Project_Controller(controller_generic.Controller):
                 pm += str(plate).replace(" ", "") + ":"
 
             pm = pm[:-1]
-            analysis_query += ["-m", pm]
+            a_dict["-m"] = pm
 
         """Functionality not implemented:
         if self._watch_colony is not None:
             analysis_query += ["-w", self._watch_colony]
         if self._supress_other is True:
             analysis_query += ["-s", "True"]
-        """
         stdout_path, stderr_path = tc.paths.get_new_log_analysis()
         stdout = open(stdout_path, 'w')
         stderr = open(stderr_path, 'w')
@@ -1854,6 +1855,8 @@ class Analysis_Project_Controller(controller_generic.Controller):
         proc = Popen(map(str, analysis_query), stdout=stdout, stderr=stderr, shell=False)
 
         pid = proc.pid
+
+        """
 
         self.get_top_controller().add_subprocess(
             proc, 'analysis', pid=pid,
