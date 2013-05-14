@@ -292,13 +292,16 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
     def spawn_proc(self, param_list):
 
-        stdin, stdout, stderr = self.set_log_paths()
+        self.set_logs()
 
-        if stdin is None:
-            stdin = PIPE
+        if self._stdin is None:
+            self._stdin = PIPE
 
-        proc = Popen(map(str, param_list), stdin=stdin, stdout=stdout,
-                     stderr=stderr, shell=False)
+        proc = Popen(map(str, param_list), stdin=self._stdin,
+                     stdout=self._stdout,
+                     stderr=self._stderr, shell=False)
+
+        proc = _Proc_File_IO(self._stdin_path, self._stdout_path, self._stderr_path)
         return proc
 
     def set_process(self, proc):
@@ -357,6 +360,22 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         raise BadCommunicateReturn(ret_string, expected_start)
         return None
+
+    def _set_log(self, iotype, f_path, iostate1, iostate2):
+
+        if iotype == 'in':
+            self._stdin_path = f_path
+        elif iotype == 'out':
+            self._stdout_path = f_path
+        elif iotype == 'err':
+            self._stderr_path = f_path
+
+        fh = open(f_path, iostate1)
+        if iostate2 is not None:
+            fh.close()
+            fh = open(f_path, iostate2)
+
+        return fh
 
     def _parse_parameters(self, psm_in_text):
 
@@ -480,31 +499,28 @@ class Experiment_Scanning(_Subprocess):
 
         return proc
 
-    def set_log_paths(self):
+    def set_logs(self):
 
         tc = self._tc
         scanner = self._scanner
 
-        stdin_path = tc.paths.experiment_stdin.format(
-            tc.paths.get_scanner_path_name(scanner.get_name()))
+        self._stdin = self._set_log('in', tc.paths.experiment_stdin.format(
+            tc.paths.get_scanner_path_name(scanner.get_name())),
+            'w')
 
-        stdin = open(stdin_path, 'w')
+        """
         if self._new_proc:
             stdin.close()
             stdin = None
+        """
 
-        stdout_path = tc.paths.log_scanner_out.format(scanner.get_socket())
-        stdout = open(stdout_path, 'w')
+        self._stdout = self._set_log(
+            'out', tc.paths.log_scanner_out.format(scanner.get_socket()),
+            'w', 'r')
 
-        stderr_path = tc.paths.log_scanner_err.format(scanner.get_socket())
-        stderr = open(stderr_path, 'w')
-
-        self._stdin = stdin
-        self._stdout = stdout
-        self._stderr = stderr
-
-        return stdin, stdout, stderr
-
+        self._stderr = self._set_log(
+            'err', tc.paths.log_scanner_err.format(scanner.get_socket()),
+            'w', 'r')
 
 class Experiment_Rebuild(_Subprocess):
 
@@ -611,16 +627,11 @@ class Analysis(_Subprocess):
 
         return proc
 
-    def set_log_paths(self):
+    def set_logs(self):
         """Sets a new out/err log file pair"""
 
-        stdin = None
+        self._stdin = None
+        self._stdin_path = None
         stdout_path, stderr_path = self._tc.paths.get_new_log_analysis()
-        stdout = open(stdout_path, 'w')
-        stderr = open(stderr_path, 'w')
-
-        self._stdin = stdin
-        self._stdout = stdout
-        self._stderr = stderr
-
-        return stdin, stdout, stderr
+        self._set_log('out', stdout_path, 'w', 'r')
+        self._set_log('err', stderr_path, 'w', 'r')
