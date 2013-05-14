@@ -41,6 +41,9 @@ class SUBPROC_COMMUNICATIONS(object):
     #END OF COMMUNICATION
     COMMUNICATION_END = "__DONE__"
 
+    #ERROR/BAD CALL
+    UNKNOWN = "__UNKNOWN__"
+
     #HELPS
     NEWLINE = "\n"
     VALUE_EXTEND = " {0}"

@@ -46,23 +46,96 @@ class _Unbuffered_IO:
 class Communicator(object):
 
     def __init__(self, logger, parent_process, stdin, stdout, stderr):
+        """
+        A daemon for communications with main process.
 
+        :param logger: A logging object
+        :param parent_process: An object run in the main thread
+        :param stdin: Path to stdin file
+        :param stdout: Path to stdout file
+        :param stderr: Path to stderr file
+
+        Intended usage
+        ==============
+
+            import threading
+
+            d = Communicator(...)
+            t = threading.Thread(target=d.run)
+            t.start()
+
+        Where "..." signifies valid initiation parameters for the communicator.
+
+        Parent Process
+        ==============
+
+        The parent process needs to have the following interface
+
+        set_terminate()
+        ---------------
+
+        Method that will nicely break the main threads iteration
+
+        set_pause()
+        -----------
+
+        Method that will pause main process' iteration
+        Should return boolean success-value
+
+        set_unpause()
+        -------------
+
+        Method that will resume main process' iteration
+        Should return boolean success-value
+
+        get_paused()
+        ------------
+
+        Should return boolean on if main thread is paused
+
+        get_info()
+        ----------
+
+        Should return a string or collection of strings
+        on general information about the process such as how
+        it was initiated.
+
+        get_current_step()
+        ------------------
+
+        Return integer for what iteration step main thread is on
+
+        get_total_iterations()
+        ----------------------
+
+        Return the total number of iterations for the main thread
+
+        get_progress()
+        --------------
+
+        Return float for progress, can be more detailed than simply
+        taking the current step devided by total if such info is
+        available.
+
+        """
         self._parent = parent_process
         self._logger = logger
         self._stdin = stdin
         self._stdout = stdout
         self._stderr = stderr
 
-        self._oraphan = False
+        self._orphan = False
         self._running = False
         self._printing = False
         self._in_pos = None
 
         self._protocol = SUBPROC_COMMUNICATIONS()
 
-        self._gated_print("DEAMON listens to", stdin)
+        self.gated_print("DEAMON listens to", stdin)
 
-    def _gated_print(self, *args):
+    def gated_print(self, *args):
+        """Safe printing that will not make both threads print at the
+        same time"""
 
         while self._printing is True:
             time.sleep(0.02)
@@ -73,10 +146,15 @@ class Communicator(object):
         print
         self._printing = False
 
+    def set_terminate(self):
+
+        self._running = False
+
     def run(self):
+        """The main process for the communications daemon"""
 
         self._running = True
-        self._gated_print("DEAMON is running")
+        self.gated_print("DEAMON is running")
 
         while self._running:
 
@@ -94,13 +172,16 @@ class Communicator(object):
                     output += (self._protocol.NEWLINE +
                                self._protocol.COMMUNICATION_END)
 
-                    self._gated_print(output)
+                    self.gated_print(output)
 
                     if not self._orphan:
 
-                        fs = open(self._stdout, 'r')
-                        lines = fs.read().split()
-                        fs.close()
+                        try:
+                            fs = open(self._stdout, 'r')
+                            lines = fs.read().split()
+                            fs.close()
+                        except:
+                            lines = ""
 
                         if output not in lines:
 
@@ -113,11 +194,15 @@ class Communicator(object):
                             except:
                                 pass
 
-                            self._gated_print(output)
+                            self.gated_print(output)
 
             time.sleep(0.42)
 
     def _parse(self, line):
+        """Looks up what was communicated to the subprocesses.
+
+        Either responds directly or requests information from
+        the main thread"""
 
         #
         # CONTROLS
@@ -126,7 +211,7 @@ class Communicator(object):
         #TERMINATING
         if line == self._protocol.TERMINATE:
             output = self._protocol.TERMINATING
-            self.__running = False
+            self._running = False
             self._parent.set_terminate()
 
         #PAUSE

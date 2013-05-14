@@ -91,7 +91,9 @@ class _SubProc_Handler(SubProc_Collection_Interface):
         """
 
         if (self._verify_elem(elem) and not(self._store.issuperset((elem,)))):
+
             self._store.add(elem)
+            self._set_size()
             return True
         else:
             return False
@@ -100,6 +102,7 @@ class _SubProc_Handler(SubProc_Collection_Interface):
         """Removes an element from handler."""
 
         self._store.remove(elem)
+        self._set_size()
 
     def _verify_elem(self, elem):
         """Throws exceptions if elem doesn't meet standard
@@ -107,7 +110,8 @@ class _SubProc_Handler(SubProc_Collection_Interface):
         :returns: Boolean
         """
         ver = True
-        if elem.get_type() not in self._proc_types:
+        if (hasattr(elem, 'get_type') is False or
+                elem.get_type() not in self._proc_types):
 
             ver = False
             raise WrongProcType(elem)

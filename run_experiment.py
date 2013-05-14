@@ -115,9 +115,8 @@ class Experiment(object):
         self.config = resource_app_config.Config(self.paths)
         self.scanners = resource_scanner.Scanners(self.paths, self.config, logger=logger)
 
-        self._orphan = False
         self._running = True
-        self._printing = False
+        self._paused = False
 
         if run_args is None or run_args.init_time is None:
             self._init_time = time.time()
@@ -142,7 +141,7 @@ class Experiment(object):
         elif kwargs is not None:
             self._set_settings_from_kwargs(kwargs)
 
-        comm = communicator.Communicator(
+        self._comm = communicator.Communicator(
             logger, self,
             self.paths.experiment_stdin.format(
                 self.paths.get_scanner_path_name(self._scanner_name)),
@@ -150,7 +149,7 @@ class Experiment(object):
             self.paths.log_scanner_err.format(self._scanner_name[-1])
         )
 
-        self._stdin_pipe_deamon = threading.Thread(target=comm.run)
+        self._stdin_pipe_deamon = threading.Thread(target=self._comm.run)
         self._stdin_pipe_deamon.start()
 
     def __excepthook(self, excType, excValue, traceback):
@@ -160,88 +159,13 @@ class Experiment(object):
             exc_info=(excType, excValue, traceback))
 
         self._logger.info("Killing deamon")
-        os.kill(self._stdin_pipe_deamon.pid, signal.SIGTERM)
+        #os.kill(self._stdin_pipe_deamon.pid, signal.SIGTERM)
+        self._comm.set_terminate()
 
         self._logger.info("Making sure scanner is freed")
         self._scanner.free()
 
         self._running = False
-
-    def _stdin_deamon(self):
-
-        """
-        scanner_name = self.paths.get_scanner_path_name(self._scanner_name)
-        stdin_path = self.paths.experiment_stdin.format(scanner_name)
-        stdout_path = self.paths.log_scanner_out.format(self._scanner_name[-1])
-        stderr_path = self.paths.log_scanner_err.format(self._scanner_name[-1])
-        orphan = False
-        """
-
-        pos = None
-        try:
-            fs = open(stdin_path, 'r')
-            pos = fs.tell()
-            fs.close()
-        except:
-            pass
-            #self._orphan = True
-
-        while self._running and not self._orphan:
-
-            lines = []
-            try:
-                fs = open(stdin_path)
-                if pos is not None:
-                    fs.seek(pos)
-                lines = fs.readlines()
-                pos = fs.tell()
-                fs.close()
-            except:
-                #self._orphan = True
-                self._logger.warning("Lost contact with outside world!")
-
-            for line in lines:
-                line = line.strip()
-                output = None
-                if line == "__QUIT__":
-                    output = "DEAMON got quit request"
-                    self._running = False
-
-                elif '__ECHO__' in line:
-                    output = line
-
-                elif line == '__INFO__':
-                    pass
-
-                else:
-                    output = "DEAMON got unkown request '{0}'".format(line)
-
-                if output is not None:
-
-                    output += "\n__DONE__"
-                    self._gated_print(output)
-
-                    if not orphan:
-                        fs = open(stdout_path, 'r')
-                        lines = fs.read().split()
-                        fs.close()
-                        if output not in lines:
-
-                            try:
-                                stdout = open(stdout_path, 'a', 0)
-                                sys.stdout = Unbuffered(stdout)
-                                stderr = open(stderr_path, 'a', 0)
-                                sys.stderr = Unbuffered(stderr)
-                                orphan = True
-                            except:
-                                pass
-
-                            self._gated_print(output)
-
-            time.sleep(0.42)
-
-        self._gated_print("DEAMON ended", self._orphan, self._running)
-
 
     def get_info(self):
 
@@ -259,6 +183,31 @@ class Experiment(object):
             '__CUR-IM__ {0}\n'.format(self._scanned)
         )
         return output
+
+    def set_terminate(self):
+
+        self._running = False
+        return True
+
+    def set_pause(self):
+        self._paused = True
+        return True
+
+    def set_unpause(self):
+        self._paused = False
+        return True
+
+    def get_paused(self):
+        return self._paused
+
+    def get_current_step(self):
+        return self._scanned
+
+    def get_total_iterations(self):
+        return self._max_scans
+
+    def get_progress(self):
+        return float(self.get_current_step()) / self.get_total_iterations()
 
     def _generate_uuid(self):
 
@@ -349,7 +298,9 @@ class Experiment(object):
         while self._running:
 
             #If time for next of first image: Get IT!
-            if (time.time() - timer) > self._interval * 60 or self._scanned == 0:
+            if ((((time.time() - timer) > self._interval * 60) or
+                    (self._scanned == 0)) and
+                    (self._paused is False)):
 
                 timer = time.time()
                 self._get_image()
@@ -362,7 +313,7 @@ class Experiment(object):
 
         if self._running:
 
-            self._gated_print("__Is__ {0}".format(self._scanned))
+            #self._gated_print("__Is__ {0}".format(self._scanned))
             self._logger.info("Acquiring image {0}".format(self._scanned))
 
             #THREAD IMAGE AQ AND ANALYSIS

@@ -97,6 +97,8 @@ class _Proc_File_IO(object):
 
         t_string = self._PROC_COMM.PING
         t_string += self._PROC_COMM.VALUE_EXTEND.format(time.time())
+        t_string += self._PROC_COMM.NEWLINE
+
         lines = self._get_feedback(t_string)
 
         if t_string in lines:
@@ -124,9 +126,6 @@ class _Proc_File_IO(object):
         return lines
 
     def _get_feedback(self, c):
-
-        if c[-1] != "\n":
-            c += "\n"
 
         try:
             fh = open(self.stdout, 'r')
@@ -233,7 +232,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
     def is_paused(self):
         """Returns is process is paused"""
 
-        return (self.communicate(self._PROC_COMM.IS_PAUSED) ==
+        return (self.communicate(self._pre_comm(self._PROC_COMM.IS_PAUSED)) ==
                 self._PROC_COMM.PAUSED_RESPONSE)
 
     def get_parameters(self):
@@ -241,8 +240,8 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         if self._launch_param is None:
             self._launch_param = self._parse_parameters(
-                self._proc.communicate(
-                self._PROC_COMM.INFO))
+                self._proc.communicate(self._pre_comm(
+                self._PROC_COMM.INFO)))
 
         return self._launch_param
 
@@ -273,19 +272,20 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         progress than just what iteration step it is on.
         """
 
-        val = self._proc.communicate(self._PROC_COMM.PROGRESS)
+        val = self._proc.communicate(self._pre_comm(
+            self._PROC_COMM.PROGRESS))
         return self._get_val(val, self._PROC_COMM.PROGRESS, float)
 
     def get_current(self):
         """Returns the current iteration step number"""
-        val = self._proc.communicate(self._PROC_COMM.CURRENT)
+        val = self._proc.communicate(self._pre_comm(self._PROC_COMM.CURRENT))
         return self._get_val(val, self._PROC_COMM.CURRENT, int)
 
     def get_total(self):
         """Returns the total iteration steps"""
 
         if self._total is None:
-            val = self._proc.communicate(self._PROC_COMM.TOTAL)
+            val = self._proc.communicate(self._pre_comm(self._PROC_COMM.TOTAL))
             self._total = self._get_val(val, self._PROC_COMM.TOTAL, int)
 
         return self._total
@@ -312,20 +312,23 @@ class _Subprocess(subproc_interface.SubProc_Interface):
     def set_pause(self):
         """Requests that the subprocess pauses its operations"""
 
-        return (self._proc.communicate(self._PROC_COMM.PAUSE) ==
-                self._PROC_COMM.PAUSING)
+        return (self._proc.communicate(self._pre_comm(self._PROC_COMM.PAUSE))
+                == self._PROC_COMM.PAUSING)
 
     def set_terminate(self):
         """Requests that the subprocess terminates"""
 
-        return (self._proc.communicate(self._PROC_COMM.TERMINATE) ==
-                self._PROC_COMM.TERMINATING)
+        return (self._proc.communicate(self._pre_comm(
+            self._PROC_COMM.TERMINATE)) == self._PROC_COMM.TERMINATING)
 
     def set_unpause(self):
         """Requests that the subprocess resumes its operations"""
 
-        return (self._proc.communicate(self._PROC_COMM.UNPAUSE) ==
-                self._PROC_COMM.RUNNING)
+        return (self._proc.communicate(self._pre_comm(
+            self._PROC_COMM.UNPAUSE)) == self._PROC_COMM.RUNNING)
+
+    def _pre_comm(self, msg):
+        return msg + self._PROC_COMM.NEWLINE
 
     def close_communications(self):
 
@@ -486,8 +489,8 @@ class Experiment_Scanning(_Subprocess):
             tc.paths.get_scanner_path_name(scanner.get_name()))
 
         stdin = open(stdin_path, 'w')
-        stdin.close()
         if self._new_proc:
+            stdin.close()
             stdin = None
 
         stdout_path = tc.paths.log_scanner_out.format(scanner.get_socket())
