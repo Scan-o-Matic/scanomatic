@@ -131,7 +131,10 @@ class Communicator(object):
 
         self._protocol = SUBPROC_COMMUNICATIONS()
 
+        self._set_as_orphan()
         self.gated_print("DEAMON listens to", stdin)
+        self.gated_print("DEAMON prints to", stdout)
+        self.gated_print("DEAMON errors to", stderr)
 
     def gated_print(self, *args):
         """Safe printing that will not make both threads print at the
@@ -150,6 +153,18 @@ class Communicator(object):
 
         self._running = False
 
+    def _set_as_orphan(self):
+
+        self.gated_print("Will re-open output file {0}".format(self._stdout))
+        stdout = open(self._stdout, 'a', 0)
+        sys.stdout = _Unbuffered_IO(stdout)
+
+        self.gated_print("Will re-open error file {0}".format(self._stderr))
+        stderr = open(self._stderr, 'a', 0)
+        sys.stderr = _Unbuffered_IO(stderr)
+
+        self._orphan = True
+
     def run(self):
         """The main process for the communications daemon"""
 
@@ -167,13 +182,14 @@ class Communicator(object):
                 if output is not None:
 
                     if not(isinstance(output, types.StringTypes)):
-                        output = self._protocol.join(output)
+                        output = self._protocol.NEWLINE.join(output)
 
                     output += (self._protocol.NEWLINE +
                                self._protocol.COMMUNICATION_END)
 
                     self.gated_print(output)
 
+                    """
                     if not self._orphan:
 
                         try:
@@ -186,8 +202,12 @@ class Communicator(object):
                         if output not in lines:
 
                             try:
+                                self.gated_print(
+                                    "Will re-open output file {0}".format(self._stdout))
                                 stdout = open(self._stdout, 'a', 0)
                                 sys.stdout = _Unbuffered_IO(stdout)
+                                self.gated_print(
+                                    "Will re-open error file {0}".format(self._stderr))
                                 stderr = open(self._stderr, 'a', 0)
                                 sys.stderr = _Unbuffered_IO(stderr)
                                 self._orphan = True
@@ -195,6 +215,7 @@ class Communicator(object):
                                 pass
 
                             self.gated_print(output)
+                    """
 
             time.sleep(0.42)
 

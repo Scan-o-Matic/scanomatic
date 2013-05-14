@@ -384,7 +384,7 @@ class Subprocs_Controller(controller_generic.Controller):
         self._specific_model['experiments'] = self._experiments
         self._specific_model['analysises'] = self._analysises
 
-        gobject.timeout_add(2777, self._subprocess_callback)
+        gobject.timeout_add(6421, self._subprocess_callback)
 
     def _get_default_view(self):
 

@@ -108,11 +108,11 @@ class _Running_Frame(gtk.Frame):
                 self._info.set_text(m['running-progress'].format(
                     cur, tot))
 
-                if cur > 0:
+                if cur > 1:
                     self._first_is_done = True
 
                     dt = time.time() - proc.get_start_time()
-                    eta = dt / (1.0 - frac)
+                    eta = (1 - frac) * dt / frac
 
                     if eta < 0:
                         eta = 0
@@ -125,7 +125,7 @@ class _Running_Frame(gtk.Frame):
 
                     self._progress.set_text(
                         m['running-elapsed'].format(
-                            (time.time() - p['start-time']) / 60.0))
+                            (time.time() - proc.get_start_time()) / 60.0))
 
 
 class _Running_Analysis(_Running_Frame):
@@ -260,7 +260,7 @@ class Running_Analysis(gtk.VBox):
             self._stuff.pack_start(_Running_Analysis(proc, model))
 
         self.show_all()
-        gobject.timeout_add(773, self.update)
+        gobject.timeout_add(6037, self.update)
 
     def update(self):
 
@@ -293,7 +293,7 @@ class Running_Experiments(gtk.VBox):
                                                   None))
 
         self.show_all()
-        gobject.timeout_add(499, self.update)
+        gobject.timeout_add(6029, self.update)
 
     def _verify_stop(self, widget, proc):
 
@@ -373,7 +373,7 @@ class Free_Scanners(gtk.VBox):
         frame.add(self._scanners)
 
         self.show_all()
-        gobject.timeout_add(991, self.update,
+        gobject.timeout_add(4349, self.update,
                             controller.get_top_controller().scanners)
 
     def update(self, scanners):
@@ -433,7 +433,7 @@ class Live_Projects(gtk.ScrolledWindow):
 
         self.update(controller._project_progress)
 
-        gobject.timeout_add(1439, self.update,
+        gobject.timeout_add(6217, self.update,
                             controller._project_progress)
 
     def update(self, project_progress):

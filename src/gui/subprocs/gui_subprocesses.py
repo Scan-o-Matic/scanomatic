@@ -101,7 +101,7 @@ class _Proc_File_IO(object):
 
         lines = self._get_feedback(t_string)
 
-        if t_string in lines:
+        if t_string.strip() in lines:
             retval = None
 
         return retval
@@ -217,6 +217,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         self._stdin = None
         self._stdout = None
         self._stderr = None
+        self._start_time = None
 
     def get_type(self):
         """Returns the process type"""
@@ -239,9 +240,9 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         """Returns the parameters used to invoke the process"""
 
         if self._launch_param is None:
-            self._launch_param = self._parse_parameters(
-                self._proc.communicate(self._pre_comm(
-                self._PROC_COMM.INFO)))
+            self._parse_parameters(
+                self._proc.communicate(
+                    self._pre_comm(self._PROC_COMM.INFO)))
 
         return self._launch_param
 
@@ -254,7 +255,24 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         if 'prefix' in self._launch_param:
             return self._launch_param['prefix']
         else:
+            print self._launch_param
             return ""
+
+    def get_start_time(self):
+
+        if self._start_time is not None:
+            return self._start_time
+
+        if self._launch_param is None:
+            self.get_parameters()
+
+        if 'init-time' in self._launch_param:
+            self._start_time = self._launch_param['init-time']
+
+        if self._start_time is None:
+            self._start_time = time.time()
+
+        return self._start_time
 
     def get_exit_code(self):
 
@@ -304,6 +322,10 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         proc = _Proc_File_IO(self._stdin_path, self._stdout_path, self._stderr_path)
         return proc
 
+    def set_start_time(self):
+
+        self._start_time = time.time()
+
     def set_process(self, proc):
         """Sets the process, only allowed if not yet set"""
 
@@ -347,11 +369,20 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             self._stderr.close()
             self._stderr = None
 
+    def _clean_end(self, s):
+
+        s = s.strip()
+        if s.endswith(self._PROC_COMM.COMMUNICATION_END):
+            s = s[:-len(self._PROC_COMM.COMMUNICATION_END)].strip()
+
+        return s
+
     def _get_val(self, ret_string, expected_start, dtype):
         """Help method for evaluating and validating the response
         from the subprocess"""
 
         len_exp_start = len(expected_start)
+        ret_string = self._clean_end(ret_string)
 
         if ((len_exp_start < len(ret_string)) and
                 (ret_string[:len_exp_start] == expected_start)):
@@ -361,7 +392,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         raise BadCommunicateReturn(ret_string, expected_start)
         return None
 
-    def _set_log(self, iotype, f_path, iostate1, iostate2):
+    def _set_log(self, iotype, f_path, iostate1, iostate2=None):
 
         if iotype == 'in':
             self._stdin_path = f_path
@@ -380,12 +411,12 @@ class _Subprocess(subproc_interface.SubProc_Interface):
     def _parse_parameters(self, psm_in_text):
 
         #FIXIT  rewrite to fit new paradigm
-        psm = model_experiment.copy_model(
-            model_experiment.specific_project_model)
+        self._launch_param = {}
+        psm = self._launch_param
 
         psm_prefix = re.findall(r'__PREFIX__ (.*)', psm_in_text)
         if len(psm_prefix) > 0:
-            psm['experiment-prefix'] = psm_prefix[0]
+            psm['prefix'] = psm_prefix[0]
 
         psm_fixture = re.findall(r'__FIXTURE__ (.*)', psm_in_text)
         if len(psm_fixture) > 0:
@@ -413,23 +444,24 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         psm_init_time = re.findall(r'__INIT-TIME__ (.*)', psm_in_text)
         if len(psm_init_time) > 0:
-            start_time = float(psm_init_time[0])
+            psm['init-time'] = float(psm_init_time[0])
         else:
-            start_time = None
+            psm['init-time'] = None
 
         psm_cur_image = re.findall(r'__CUR-IM__ ([0-9])', psm_in_text)
         if len(psm_cur_image) > 0:
-            current_progress = int(psm_cur_image[0])
+            psm['current'] = int(psm_cur_image[0])
         else:
-            current_progress = None
+            psm['current'] = None
 
         if psm['interval'] is not None and psm['scans'] is not None:
             psm['duration'] = psm['interval'] * psm['scans'] / 60.0
 
-        if 'experiment-prefix' in psm:
-            self._logger.info('Revived experiment {0}'.format(
-                psm['experiment-prefix']))
-
+        """
+        if 'prefix' in psm:
+            self._logger.info('Got info for {0}'.format(
+                psm['prefix']))
+        """
 
 class Experiment_Scanning(_Subprocess):
 
@@ -472,7 +504,7 @@ class Experiment_Scanning(_Subprocess):
 
         experiment_query['-m'] = _get_pinnings_str(sm['pinnings-list'])
 
-        self._launch_param = experiment_query
+        #self._launch_param = experiment_query
 
         #Make list of key & value pairs
         e_list += list(chain.from_iterable(experiment_query.items()))
@@ -521,6 +553,7 @@ class Experiment_Scanning(_Subprocess):
         self._stderr = self._set_log(
             'err', tc.paths.log_scanner_err.format(scanner.get_socket()),
             'w', 'r')
+
 
 class Experiment_Rebuild(_Subprocess):
 

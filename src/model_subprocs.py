@@ -60,8 +60,8 @@ composite_model = {
 #RUNNING COMMONS
     'running-stop': 'Terminate...',
     'running-stopping': 'Stopping...',
-    'running-eta': 'Expected to finnish in {0} hours',
-    'running-elapsed': 'Running for {0} minutes',
+    'running-eta': 'Expected to finnish in {0:.1f} hours',
+    'running-elapsed': 'Running for {0:.1f} minutes',
     'running-progress': 'Processing {0} of {1}',
     'running-done': 'Done!',
     'running-done-error': 'Error occured',
