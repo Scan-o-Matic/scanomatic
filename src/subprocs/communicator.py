@@ -16,7 +16,13 @@ __status__ = "Development"
 
 import time
 import sys
+import types
 
+#
+# INTERNAL DEPENDENCIES
+#
+
+from src.subprocs.protocol import SUBPROC_COMMUNICATIONS
 
 #
 # CLASSES
@@ -52,6 +58,8 @@ class Communicator(object):
         self._printing = False
         self._in_pos = None
 
+        self._protocol = SUBPROC_COMMUNICATIONS()
+
         self._gated_print("DEAMON listens to", stdin)
 
     def _gated_print(self, *args):
@@ -80,13 +88,20 @@ class Communicator(object):
 
                 if output is not None:
 
-                    output += "\n__DONE__"
+                    if not(isinstance(output, types.StringTypes)):
+                        output = self._protocol.join(output)
+
+                    output += (self._protocol.NEWLINE +
+                               self._protocol.COMMUNICATION_END)
+
                     self._gated_print(output)
 
                     if not self._orphan:
+
                         fs = open(self._stdout, 'r')
                         lines = fs.read().split()
                         fs.close()
+
                         if output not in lines:
 
                             try:
@@ -104,21 +119,73 @@ class Communicator(object):
 
     def _parse(self, line):
 
-        if line == "__QUIT__":
-            output = "DEAMON got quit request"
+        #
+        # CONTROLS
+        #
 
+        #TERMINATING
+        if line == self._protocol.TERMINATE:
+            output = self._protocol.TERMINATING
             self.__running = False
             self._parent.set_terminate()
 
-        elif '__ECHO__' in line:
+        #PAUSE
+        elif line == self._protocol.PAUSE:
+            if self._parent.set_pause():
+                output = self._protocol.PAUSING
+            else:
+                output = self._protocol.REFUSED
+
+        #UNPAUSE
+        elif line == self._protocol.UNPAUSE:
+            if self._parent.set_unpause():
+                output = self._protocol.RUNNING
+            else:
+                output = self._protocol.REFUSED
+
+        #
+        # PING
+        #
+
+        elif self._protocol.PING in line:
 
             output = line
 
-        elif line == '__INFO__':
+        #
+        # INFO REQUESTS
+        #
+
+        #ABOUT PROCESS
+        elif line == self._protocol.INFO:
             output = self._parent.get_info()
 
+        #CURRENT
+        elif line == self._protocol.CURRENT:
+            output = self._protocol.CURRENT
+            output += self._protocol.VALUE_EXTEND.format(
+                self._parent.get_current_step())
+
+        #TOTAL
+        elif line == self._protocol.TOTAL:
+            output = self._protocol.TOTAL
+            output += self._protocol.VALUE_EXTEND.format(
+                self._parent.get_total_iterations())
+
+        #PROGRESS
+        elif line == self._protocol.PROGRESS:
+            output = self._protocol.PROGRESS
+            output += self._protocol.VALUE_EXTEND.format(
+                self._parent.get_progress())
+
+        #STATUS
+        elif line == self._protocol.STATUS:
+            if self._parent.get_paused():
+                output = self._protocol.IS_PAUSED
+            else:
+                output = self._protocol.IS_RUNNING
         else:
-            output = "DEAMON got unkown request '{0}'".format(line)
+            output = self._protocol.UNKNOWN
+            output += self._protocol.VALUE_EXTEND.format(line)
 
         return output
 

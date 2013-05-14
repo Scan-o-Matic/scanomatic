@@ -25,6 +25,7 @@ from itertools import chain
 #
 
 import subproc_interface
+from src.subprocs.protocol import SUBPROC_COMMUNICATIONS
 
 #
 # EXCEPTIONS
@@ -68,25 +69,8 @@ def _get_pinnings_str(pinning_list):
     return pinning_string[:-1]
 
 #
-# CLASS
+# CLASSES
 #
-
-
-class _SUBPROC_COMMUNICATIONS(object):
-
-    IS_PAUSED = "__IS_PAUSED__"
-    PAUSE = "__PAUSE__"
-    PAUSING = "__PAUSING__"
-    INFO = "__PARAM__"
-    CURRENT = "__CURRENT__"
-    TOTAL = "__TOTAL__"
-    PROGRESS = "__PROGRESS__"
-    TERMINATE = "__TERMINATE__"
-    TERMINATING = "__TERMINATING__"
-    UNPAUSE = "__UNPAUSE__"
-    RUNNING = "__RUNNING__"
-    PING = "__ECHO__ {0}"
-    COMMUNICATION_END = "__DONE__"
 
 
 class _Proc_File_IO(object):
@@ -98,7 +82,7 @@ class _Proc_File_IO(object):
         subprocesses. However it communicates with said subprocess
         not through PIPEs but via reading and writing to files.
         """
-        self._PROC_COMM = _SUBPROC_COMMUNICATIONS()
+        self._PROC_COMM = SUBPROC_COMMUNICATIONS()
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
@@ -111,7 +95,8 @@ class _Proc_File_IO(object):
         """
         retval = 0
 
-        t_string = self._PROC_COMM.PING.format(time.time())
+        t_string = self._PROC_COMM.PING
+        t_string += self._PROC_COMM.VALUE_EXTEND.format(time.time())
         lines = self._get_feedback(t_string)
 
         if t_string in lines:
@@ -223,7 +208,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         Communicate should accept a string as a parameter
         and should return a string response.
         """
-        self._PROC_COMM = _SUBPROC_COMMUNICATIONS()
+        self._PROC_COMM = SUBPROC_COMMUNICATIONS()
         self._proc_type = proc_type
         self._tc = top_controler
         self._proc = proc
