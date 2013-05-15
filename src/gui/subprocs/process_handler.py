@@ -96,7 +96,7 @@ class _SubProc_Handler(SubProc_Collection_Interface):
             self._set_size()
             return True
         else:
-            print "Wrong element", elem, "in", self._store
+            print "*** Wrong element", elem, "in", self._store
             return False
 
     def remove(self, elem):
@@ -130,7 +130,6 @@ class _SubProc_Handler(SubProc_Collection_Interface):
         """Updates fast access size of handler"""
 
         self._count = len(self._store)
-        print "QUEUE: ", self._count
 
 
 class Experiment_Handler(_SubProc_Handler):

@@ -508,6 +508,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
             proc = gui_subprocesses.Analysis(self._tc, **new_analsysis)
             self._analysises.push(proc)
+
             #Update live project status
             self.set_project_progress(
                 proc.get_prefix(), 'ANALYSIS', 'RUNNING')
