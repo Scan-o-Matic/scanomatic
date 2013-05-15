@@ -450,6 +450,29 @@ class Subprocs_Controller(controller_generic.Controller):
             ["Failed to add", "Added"][success],
             ptype, params))
 
+    def _make_analysis_from_experiment(self, proc):
+        """Queries and experiment process to run defualt analysis
+
+        The analysis is placed in the queue and run with default
+        parameters, only adjusting for the path to the specific
+        project.
+
+        :param proc: A finished experiment process.
+        :return boolean: Success statement
+        """
+
+        exp_prefix = proc.get_prefix()
+        param = proc.get_parameters()
+        if param is not None and 'experiments-root' in param:
+
+            self.add_subprocess(self.ANALYSIS,
+                                experiments_root=param['experiments_root'],
+                                experiment_prefix=exp_prefix)
+
+            return True
+
+        return False
+
     def _subprocess_callback(self):
         """Callback that checks on finished stuff etc"""
 
@@ -464,7 +487,7 @@ class Subprocs_Controller(controller_generic.Controller):
 
         if finished_experiment is not None:
             #Place analysis in queue
-            pass
+            self._make_analysis_from_experiment(finished_experiment)
 
             #Update live project status
             self.set_project_progress(

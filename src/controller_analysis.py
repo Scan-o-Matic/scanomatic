@@ -1813,24 +1813,9 @@ class Analysis_Project_Controller(controller_generic.Controller):
         view.set_stage(
             view_analysis.Analysis_Stage_Project_Running(self, self._model))
 
-        """
-        tc.paths.experiment_analysis_relative_path
-        analysis_log = os.sep.join(
-            (sm['analysis-project-log_file_dir'],
-             sm['analysis-project-output-path'],
-             tc.paths.experiment_analysis_file_name))
-        """
         a_dict = tc.config.get_default_analysis_query()
         a_dict['-i'] = sm['analysis-project-log_file']
         a_dict['-o'] = sm['analysis-project-output-path']
-
-        """
-        analysis_query = [tc.paths.analysis]
-
-        for a_flag, a_val in a_dict.items():
-
-            analysis_query += [a_flag, a_val]
-        """
 
         if sm['analysis-project-pinnings-active'] != 'file':
 
@@ -1843,25 +1828,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
             pm = pm[:-1]
             a_dict["-m"] = pm
 
-        """Functionality not implemented:
-        if self._watch_colony is not None:
-            analysis_query += ["-w", self._watch_colony]
-        if self._supress_other is True:
-            analysis_query += ["-s", "True"]
-        stdout_path, stderr_path = tc.paths.get_new_log_analysis()
-        stdout = open(stdout_path, 'w')
-        stderr = open(stderr_path, 'w')
-
-        proc = Popen(map(str, analysis_query), stdout=stdout, stderr=stderr, shell=False)
-
-        pid = proc.pid
-
-        """
-
-        self.get_top_controller().add_subprocess(
-            proc, 'analysis', pid=pid,
-            stdout=stdout_path, stderr=stderr_path, psm=sm,
-            proc_name=sm['analysis-project-log_file'])
+        tc.subprocs.add_subprocess(tc.subprocs.ANALYSIS, a_dict=a_dict)
 
     def set_log_file(self, widget, log_files=None):
 

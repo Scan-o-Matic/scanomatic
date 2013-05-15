@@ -233,6 +233,7 @@ class Subprocs_View(gtk.Frame):
 
         self.projects.set_label(str(specific_model['live-projects']))
         self.scanners.set_label(str(specific_model['free-scanners']))
+
         self.experiments.set_label(str(specific_model['experiments'].count()))
         self.analysis.set_label(str(specific_model['analysises'].count()))
         self.queue.set_label(str(specific_model['queue'].count()))

@@ -32,6 +32,7 @@ class Analysis_Queue(SubProc_Collection_Interface):
     MAX_MEM_USAGE = 60
     MIN_FREE_CPU_PERCENT = 50
     MIN_FREE_CPU_CORES = 2
+    MIN_SUCCESS_PASSES = 3
 
     def __init__(self):
         """Analysis Queue extends the collections.deque.
@@ -82,6 +83,7 @@ class Analysis_Queue(SubProc_Collection_Interface):
         the queue.
         """
 
+        self._check_passes = 0
         self._queue = deque()
 
     def __iter__(self):
@@ -100,7 +102,10 @@ class Analysis_Queue(SubProc_Collection_Interface):
 
         cur_cpu = psutil.cpu_percent(percpu=True)
         free_cpu = [cpu < self.MIN_FREE_CPU_PERCENT for cpu in cur_cpu]
-        return len(free_cpu) >= self.MIN_FREE_CPU_CORES
+        print "CPU%", cur_cpu, "t=", self.MIN_FREE_CPU_PERCENT
+        print "CPUs", free_cpu, "t=", self.MIN_FREE_CPU_CORES
+
+        return sum(free_cpu) >= self.MIN_FREE_CPU_CORES
 
     def _check_mem(self):
         """Checks if Phyical Memory status
@@ -110,16 +115,34 @@ class Analysis_Queue(SubProc_Collection_Interface):
 
         :returns: boolean
         """
-
+        print "MEM", psutil.phymem_usage().percent, "t=", self.MAX_MEM_USAGE
         return psutil.phymem_usage().percent < self.MAX_MEM_USAGE
 
     def _check_resources(self):
         """Checks if both memory and cpu are OK for poping.
 
+        At least MIN_SUCCESS_PASSES is needed for both checks
+        in a row before True is passed
+
         :returns: boolean
         """
 
-        return self._check_mem() and self._check_cpu()
+        print "CHECKING RESOURCES"
+        print "------------------"
+
+        val = self._check_mem() and self._check_cpu()
+        if val:
+            self._check_passes += 1
+        else:
+            self._check_passes = 0
+
+        ret = self._check_passes >= self.MIN_SUCCESS_PASSES
+
+        print "->", val, ret, "(", self._check_passes, self.count(), ")"
+        if ret:
+            self._check_passes = 0
+
+        return ret
 
     def count(self):
         """Checks the length of the queue.

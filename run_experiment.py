@@ -314,7 +314,8 @@ class Experiment(object):
         if self._running:
 
             #self._gated_print("__Is__ {0}".format(self._scanned))
-            self._logger.info("Acquiring image {0}".format(self._scanned))
+            self._logger.info("Acquiring image {0}".format(
+                self._scanned))
 
             #THREAD IMAGE AQ AND ANALYSIS
             thread = Process(target=self._scan_and_analyse, args=(self._scanned,))

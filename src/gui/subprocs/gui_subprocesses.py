@@ -26,6 +26,7 @@ from itertools import chain
 
 import subproc_interface
 from src.subprocs.protocol import SUBPROC_COMMUNICATIONS
+import src.resource_logger as resource_logger
 
 #
 # EXCEPTIONS
@@ -82,10 +83,14 @@ class _Proc_File_IO(object):
         subprocesses. However it communicates with said subprocess
         not through PIPEs but via reading and writing to files.
         """
+
         self._PROC_COMM = SUBPROC_COMMUNICATIONS()
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
+
+        if logger is None:
+            logger = resource_logger.Fallback_Logger()
         self._logger = logger
 
     def poll(self):
@@ -134,13 +139,14 @@ class _Proc_File_IO(object):
             fh.close()
         except:
             fh_pos = None
+            self._logger.info("No stdout ('{0}') existing before".format(self.stdout))
 
         try:
             fh = open(self.stdin, 'a')
             fh.write(c)
             fh.close()
         except:
-            self._logger.error('Could not write to stdin')
+            self._logger.error('Could not write to stdin {0}'.format(self.stdin))
 
         lines = ""
         i = 0
@@ -357,15 +363,15 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
     def close_communications(self):
 
-        if self._stdin is not None:
+        if hasattr(self._stdin, 'close'):
             self._stdin.close()
             self._stdin = None
 
-        if self._stdout is not None:
+        if hasattr(self._stdout, 'close'):
             self._stdout.close()
             self._stdout = None
 
-        if self._stderr is not None:
+        if hasattr(self._stderr, 'close'):
             self._stderr.close()
             self._stderr = None
 
@@ -454,14 +460,11 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         else:
             psm['current'] = None
 
-        if psm['interval'] is not None and psm['scans'] is not None:
+        if (('interval' in psm and 'scan' in psm) and
+                (psm['interval'] is not None and psm['scans'] is not None)):
+
             psm['duration'] = psm['interval'] * psm['scans'] / 60.0
 
-        """
-        if 'prefix' in psm:
-            self._logger.info('Got info for {0}'.format(
-                psm['prefix']))
-        """
 
 class Experiment_Scanning(_Subprocess):
 
