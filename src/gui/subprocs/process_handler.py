@@ -147,3 +147,23 @@ class Analysis_Handler(_SubProc_Handler):
 
         super(Analysis_Handler, self).__init__(
             (subproc_interface.ANALYSIS,))
+
+        self._proc_ids = set()
+
+    def get_free_proc_comm_id(self):
+        """Returns a free proc communications number"""
+        pid = 1
+        while pid in self._proc_ids:
+            pid += 1
+        self._proc_ids.add(pid)
+        return pid
+
+    def pop(self):
+        """Extends the pop to free communications ids if popping"""
+        elem = super(Analysis_Handler, self).pop()
+
+        if elem is not None:
+
+            self._proc_ids.remove(elem.get_comm_id())
+
+        return elem

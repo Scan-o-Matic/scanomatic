@@ -518,7 +518,15 @@ class Experiment_Scanning(_Subprocess):
 
         if is_running:
 
-            raise InvalidProcesCreationCall("Not able to reconnect yet")
+            if ('stdin_path' in params and
+                    'stdout_path' in params and
+                    'stderr_path' in params):
+
+                proc = self._new_from_paths(**params)
+
+            else:
+
+                raise InvalidProcesCreationCall("Can't reconnect without paths")
 
         else:
 
@@ -532,6 +540,16 @@ class Experiment_Scanning(_Subprocess):
                 raise InvalidProcesCreationCall(
                     "Cannot create experiment with specific model 'sm'")
 
+        return proc
+
+    def _new_from_paths(self, stdin_path=None, stdout_path=None,
+                        stderr_path=None, **params):
+
+        self._stdin = self._set_log('in', stdin_path, 'a')
+        self._stdout = self._set_log('out', stdout_path, 'r')
+        self._stderr = self._set_log('err', stderr_path, 'r')
+
+        proc = _Proc_File_IO(self._stdin_path, self._stdout_path, self._stderr_path)
         return proc
 
     def set_logs(self):
@@ -615,15 +633,19 @@ class Analysis(_Subprocess):
             subproc_interface.ANALYSIS,
             top_controller)
 
+        self._comm_id = None
         self.set_process(self.get_proc(**params))
 
-    def get_param_list(self, experiments_root, experiment_prefix, a_dict=None):
+    def get_param_list(self, comm_id, experiments_root, experiment_prefix,
+                       a_dict=None):
 
         if a_dict is None:
             a_dict = self._tc.config.get_default_analysis_query()
 
         a_list = [self._tc.paths.analysis]
 
+        #Making the reference to the input file if not supplied in the
+        #a_dict.
         if '-i' not in a_dict or a_dict['-i'] is None:
 
             proc_name = os.path.join(
@@ -634,12 +656,22 @@ class Analysis(_Subprocess):
 
             a_dict['-i'] = proc_name
 
+        #Inserting communications id information
+        a_dict['-c'] = comm_id
+
         a_list += list(chain.from_iterable(a_dict.items()))
 
         return a_list
 
     def get_proc(self, is_running=False, a_dict=None,
-                 experiments_root=None, experiment_prefix=None):
+                 experiments_root=None, experiment_prefix=None, comm_id=None):
+
+        if comm_id is None:
+            raise InvalidProcesCreationCall(
+                "No communications=No way to talk to the process!")
+        else:
+
+            self._comm_id = comm_id
 
         if is_running:
             #Reconnect to running analyssi
@@ -650,7 +682,8 @@ class Analysis(_Subprocess):
             if ((experiments_root is not None and
                  experiment_prefix is not None) or (a_dict is not None)):
 
-                param_list = self.get_param_list(experiments_root,
+                param_list = self.get_param_list(comm_id,
+                                                 experiments_root,
                                                  experiment_prefix,
                                                  a_dict=a_dict)
 
@@ -663,11 +696,17 @@ class Analysis(_Subprocess):
 
         return proc
 
+    def get_comm_id(self):
+
+        return self._comm_id
+
     def set_logs(self):
         """Sets a new out/err log file pair"""
 
-        self._stdin = None
-        self._stdin_path = None
-        stdout_path, stderr_path = self._tc.paths.get_new_log_analysis()
-        self._set_log('out', stdout_path, 'w', 'r')
-        self._set_log('err', stderr_path, 'w', 'r')
+        paths = self._tc.paths
+        self._stdin_path = paths.log_analysis_in.format(self._comm_id)
+        self._stdout_path = paths.log_analysis_out.format(self._comm_id)
+        self._stderr_path = paths.log_analysis_err.format(self._comm_id)
+        self._set_log('in', self._stdin_path, 'w', None)
+        self._set_log('out', self._stdout_path, 'w', 'r')
+        self._set_log('err', self._stderr_path, 'w', 'r')

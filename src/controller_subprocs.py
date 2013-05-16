@@ -16,6 +16,7 @@ __status__ = "Development"
 import gobject
 import os
 import ConfigParser
+import threading
 
 #
 # INTERNAL DEPENDENCIES
@@ -29,6 +30,8 @@ from src.gui.subprocs.analysis_queue import Analysis_Queue
 import src.gui.subprocs.gui_subprocesses as gui_subprocesses
 import src.gui.subprocs.process_handler as process_handler
 import src.gui.subprocs.subproc_interface as subproc_interface
+import src.gui.subprocs.progress_responses as progress_responses
+import src.gui.subprocs.reconnect as reconnect
 
 #
 # EXCEPTIONS
@@ -69,114 +72,6 @@ class InvalidProjectOrStage(Exception):
 #
 # CLASSES
 #
-
-
-class _Revive_Processes(object):
-
-    def __init__(self, controller):
-
-        self._controller = controller
-        self._tc = controller.get_top_controller()
-
-    def check_scanners(self):
-
-        tc = self._tc
-        paths = tc.paths
-        config = tc.config
-        ids = list()
-        logger = self._logger
-
-        for scanner_i in range(1, config.number_of_scanners + 1):
-
-            logger.info("Checking scanner {0}".format(scanner_i))
-            scanner = paths.get_scanner_path_name(
-                config.scanner_name_pattern.format(scanner_i))
-
-            lock_path = paths.lock_scanner_pattern.format(scanner_i)
-            locked = False
-
-            #CHECK LOCK-STATUS
-            lines = ''
-            try:
-                fh = open(lock_path, 'r')
-                lines = fh.read()
-                if lines != '':
-                    locked = True
-                    ids.append(lines.split()[0].strip())
-                fh.close()
-            except:
-                locked = False
-
-            logger.info("{0}: {1}".format(lock_path, lines))
-
-            if locked:
-                #TRY TALKING TO IT
-                logger.info("Scanner {0} is locked".format(scanner_i))
-                stdin_path = paths.experiment_stdin.format(scanner)
-                stdout_path = paths.log_scanner_out.format(scanner_i)
-                stderr_path = paths.log_scanner_err.format(scanner_i)
-                proc = gui_subprocesses.Experiment_Scanning(**{
-                    'stdin_path': stdin_path,
-                    'stdout_path': stdout_path,
-                    'stderr_path': stderr_path,
-                    'logger': logger})
-                #proc = Fake_Proc(stdin_path, stdout_path, stderr_path, logger=self._logger)
-
-                if proc.is_done() is None:
-
-                    logger.info("Scanner {0} is alive".format(scanner_i))
-                    self._revive_scanner(scanner, scanner_i, proc=proc)
-
-                    self.add_subprocess(proc, 'scanner', stdin=stdin_path,
-                                        stdout=stdout_path, stderr=stderr_path,
-                                        pid=None, psm=psm,
-                                        proc_name="Scanner {0}".format(scanner_i),
-                                        start_time=start_time,
-                                        progress=current_progress)
-
-                else:
-
-                    logger.info("Scanner {0} was dead".format(scanner_i))
-                    self._clean_after(scanner_i, scanner, lines)
-
-        #CLEAING OUT PAD UUIDS NOT IN USE ACCORDING TO LOCKFILES
-        try:
-            fh = open(paths.lock_power_up_new_scanner, 'r')
-            lines = fh.readlines()
-            fh.close()
-        except:
-            lines = []
-
-        for i in range(len(lines) - 1, -1, -1):
-            if lines[i].strip() not in ids:
-                logger.info(
-                    "Removing scanner uuid {0} from start-up queue".format(
-                    lines[i].strip()))
-
-                del lines[i]
-
-        logger.info('Start-up queue is {0}'.format(lines))
-
-        try:
-            fh = open(paths.lock_power_up_new_scanner, 'w')
-            fh.writelines(lines)
-            fh.close()
-        except:
-            pass
-
-    def find_analysis_procs():
-
-        pass
-
-    def _clean_after(self, scanner_i, scanner, scanner_id):
-
-        tc = self.get_top_controller()
-        scanner_id = scanner_id.strip()
-
-        #FREE SCANNER
-        scanner = tc.scanners["Scanner {0}".format(scanner_i)]
-        scanner.set_uuid(scanner_id)
-        scanner.free()
 
 
 class Handle_Progress(object):
@@ -348,7 +243,8 @@ class Handle_Progress(object):
         return first_pass_file
 
 
-class Subprocs_Controller(controller_generic.Controller):
+class Subprocs_Controller(controller_generic.Controller,
+                          progress_responses.Progress_Responses):
 
     ANALYSIS = "A"
     EXPERIMENT_SCANNING = "ES"
@@ -365,11 +261,10 @@ class Subprocs_Controller(controller_generic.Controller):
         self._project_progress = Handle_Progress(main_controller.paths,
                                                  self._model)
 
-        """
-        revive_processes = _Revive_Processes(self)
-        revive_processes.check_scanners()
-        revive_processes.find_analysis_procs()
-        """
+        revive_processes = reconnect.Reconnect_Subprocs(self, logger)
+        thread = threading.Thread(target=revive_processes.run)
+        thread.start()
+        gobject.timeout_add(131, self._revive_progress_callback, thread)
 
         #The Analysis_Queue makes program (more) well behaved
         #in terms of resource usage
@@ -384,7 +279,14 @@ class Subprocs_Controller(controller_generic.Controller):
         self._specific_model['experiments'] = self._experiments
         self._specific_model['analysises'] = self._analysises
 
-        gobject.timeout_add(6421, self._subprocess_callback)
+    def _revive_progress_callback(self, thread):
+
+        if thread.is_alive() is False:
+            self._subprocess_callback()
+            gobject.timeout_add(6421, self._subprocess_callback)
+            return False
+        else:
+            return True
 
     def _get_default_view(self):
 
@@ -421,6 +323,20 @@ class Subprocs_Controller(controller_generic.Controller):
             img_done += proc.get_current()
 
         return img_tot - img_done
+
+    def add_subprocess_directly(self, ptype, proc):
+        """Adds a proc, should be used only by reconnecter"""
+
+        if (ptype == self.EXPERIMENT_SCANNING or
+                ptype == self.EXPERIMENT_REBUILD):
+
+            success = self._experiments.push(proc)
+
+        elif ptype == self.ANALYSIS:
+
+            success == self._analysises.push(proc)
+
+        return success
 
     def add_subprocess(self, ptype, **params):
         """Adds a new subprocess.
@@ -506,6 +422,10 @@ class Subprocs_Controller(controller_generic.Controller):
 
         if new_analsysis is not None:
 
+            if 'comm_id' not in new_analsysis:
+                new_analsysis['comm_id'] = \
+                    self._analysises.get_free_proc_comm_id()
+
             proc = gui_subprocesses.Analysis(self._tc, **new_analsysis)
             self._analysises.push(proc)
 
@@ -587,75 +507,3 @@ class Subprocs_Controller(controller_generic.Controller):
                 proc.get_prefix(), next_stage, 'LAUNCH')
 
         proc.close_communications()
-
-    def produce_running_experiments(self, widget):
-
-        self.get_top_controller().add_contents_from_controller(
-            view_subprocs.Running_Experiments(
-                self, self._model,
-                self._specific_model),
-            self._model['running-experiments'],
-            self)
-
-    def produce_live_projects(self, widget):
-
-        self.get_top_controller().add_contents_from_controller(
-            view_subprocs.Live_Projects(self, self._model,
-                                        self._specific_model),
-            self._model['live-projects'],
-            self)
-
-    def produce_free_scanners(self, widget):
-
-        self.get_top_controller().add_contents_from_controller(
-            view_subprocs.Free_Scanners(self, self._model,
-                                        self._specific_model),
-            self._model['free-scanners'],
-            self)
-
-    def produce_running_analysis(self, widget):
-
-        self.get_top_controller().add_contents_from_controller(
-            view_subprocs.Running_Analysis(self, self._model,
-                                           self._specific_model),
-            self._model['running-analysis'],
-            self)
-
-    def produce_errors_and_warnings(self, widget):
-
-        self.get_top_controller().add_contents_from_controller(
-            view_subprocs.Errors_And_Warnings(self, self._model,
-                                              self._specific_model),
-            self._model['collected-messages'],
-            self)
-
-    def produce_inspect_gridding(self, widget, prefix, data={}):
-
-        a_file = self._project_progress.get_analysis_path(prefix)
-
-        data['stage'] = 'inspect'
-        data['analysis-run-file'] = a_file
-        data['project-name'] = prefix
-
-        tc = self.get_top_controller()
-        tc.add_contents(widget, 'analysis', **data)
-
-    def produce_upload(self, widget, prefix):
-
-        data = {'launch-filezilla': True}
-        self.produce_inspect_gridding(widget, prefix, data=data)
-
-    def produce_launch_analysis(self, widget, prefix):
-        """produce_launch_analysis, short-cuts to displaying a
-        view for analysing a specific project as defined in prefix
-        """
-
-        proj_dir = self._project_progress.get_path(prefix)
-        data = {
-            'stage': 'project',
-            'analysis-project-log_file_dir': proj_dir,
-            'analysis-project-log_file':
-            self._project_progress.get_first_pass_file(prefix)}
-
-        tc = self.get_top_controller()
-        tc.add_contents(widget, 'analysis', **data)
