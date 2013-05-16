@@ -130,7 +130,7 @@ class _Running_Frame(gtk.Frame):
 
 class _Running_Analysis(_Running_Frame):
 
-    def __init__(self, proc, model):
+    def __init__(self, proc, model, controller):
 
         super(_Running_Analysis, self).__init__(proc, model, 'running-analysis-running')
 
@@ -258,7 +258,7 @@ class Running_Analysis(gtk.VBox):
 
         for proc in specific_model['analysises']:
 
-            self._stuff.pack_start(_Running_Analysis(proc, model))
+            self._stuff.pack_start(_Running_Analysis(proc, model, controller))
 
         self.show_all()
         gobject.timeout_add(6037, self.update)

@@ -377,9 +377,11 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
     def _clean_end(self, s):
 
+        if self._PROC_COMM.COMMUNICATION_END in s:
+
+            s = s[:s.index(self._PROC_COMM.COMMUNICATION_END)]
+
         s = s.strip()
-        if s.endswith(self._PROC_COMM.COMMUNICATION_END):
-            s = s[:-len(self._PROC_COMM.COMMUNICATION_END)].strip()
 
         return s
 

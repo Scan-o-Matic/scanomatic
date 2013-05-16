@@ -189,34 +189,6 @@ class Communicator(object):
 
                     self.gated_print(output)
 
-                    """
-                    if not self._orphan:
-
-                        try:
-                            fs = open(self._stdout, 'r')
-                            lines = fs.read().split()
-                            fs.close()
-                        except:
-                            lines = ""
-
-                        if output not in lines:
-
-                            try:
-                                self.gated_print(
-                                    "Will re-open output file {0}".format(self._stdout))
-                                stdout = open(self._stdout, 'a', 0)
-                                sys.stdout = _Unbuffered_IO(stdout)
-                                self.gated_print(
-                                    "Will re-open error file {0}".format(self._stderr))
-                                stderr = open(self._stderr, 'a', 0)
-                                sys.stderr = _Unbuffered_IO(stderr)
-                                self._orphan = True
-                            except:
-                                pass
-
-                            self.gated_print(output)
-                    """
-
             time.sleep(0.42)
 
     def _parse(self, line):

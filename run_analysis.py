@@ -56,6 +56,9 @@ if __name__ == "__main__":
                               " where the input file is)"),
                         metavar="PATH")
 
+    parser.add_argument("-c", "--communications-id", type=int, dest="comm_id",
+                        help="Id for obtaining communications files paths")
+
     parser.add_argument("-m", "--matrices", dest="matrices", default=None,
                         help=("The pinning matrices for each plate position in"
                         " the order set by the fixture config"),
@@ -276,17 +279,16 @@ if __name__ == "__main__":
     logger.debug("Logger is ready!")
 
     #START ANALYSIS
-    run_done = analysis.analyse_project(args.inputfile, output_path, pm,
-                                        args.graph_watch,
-                                        verbose=True, visual=False,
-                                        manual_grid=args.manual_grid,
-                                        grid_times=grid_times,
-                                        xml_format=xml_format,
-                                        suppress_analysis=args.suppress,
-                                        grid_array_settings=grid_array_settings,
-                                        gridding_settings=gridding_settings,
-                                        grid_cell_settings=grid_cell_settings,
-                                        logger=logger)
+    a = analysis.Analysis(
+        args.inputfile, output_path, pm, args.graph_watch, verbose=True,
+        visual=False, manual_grid=args.manual_grid, grid_times=grid_times,
+        xml_format=xml_format, suppress_analysis=args.suppress,
+        grid_array_settings=grid_array_settings,
+        gridding_settings=gridding_settings,
+        grid_cell_settings=grid_cell_settings, logger=logger,
+        comm_id=args.comm_id)
+
+    run_done = a.run()
 
     if run_done is False:
         sys.exit(10)
