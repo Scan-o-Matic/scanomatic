@@ -19,6 +19,7 @@ import os
 import re
 from subprocess import Popen, PIPE
 from itertools import chain
+from collections import deque
 
 #
 # INTERNAL DEPENDENCIES
@@ -76,6 +77,8 @@ def _get_pinnings_str(pinning_list):
 
 class _Proc_File_IO(object):
 
+    DONE_TRYING = 3
+
     def __init__(self, stdin, stdout, stderr, logger=None):
         """Proc File IO is a fake process.
 
@@ -93,6 +96,12 @@ class _Proc_File_IO(object):
             logger = resource_logger.Fallback_Logger()
         self._logger = logger
 
+        self._no_responses = 0
+        self._queue = deque()
+        self._cur_stout_pos = None
+        self._reciever_pos = 0
+        self._recieved_messages = []
+
     def poll(self):
         """poll emulates a subprocess.poll()
         Returns None while still running,
@@ -104,15 +113,25 @@ class _Proc_File_IO(object):
         t_string += self._PROC_COMM.VALUE_EXTEND.format(time.time())
         t_string += self._PROC_COMM.NEWLINE
 
-        lines = self._get_feedback(t_string)
+        lines = self.communicate(t_string)
 
-        if t_string.strip() in lines:
+        if lines is not None and t_string.strip() in lines:
+            retval = None
+            self._no_responses = 0
+
+        else:
+
+            self._no_responses += 1
+
+        if self._no_responses < self.DONE_TRYING:
             retval = None
 
         return retval
 
     def communicate(self, c):
         """communicate emulates subprocess.communicate()"""
+
+        self._queue.append(c)
         return self._get_feedback(c)
 
     def _get_output_since_last_time(self, p, feed):
@@ -132,15 +151,23 @@ class _Proc_File_IO(object):
 
     def _get_feedback(self, c):
 
-        try:
-            fh = open(self.stdout, 'r')
-            fh.read()
-            fh_pos = fh.tell()
-            fh.close()
-        except:
-            fh_pos = None
-            self._logger.info("No stdout ('{0}') existing before".format(self.stdout))
+        #GATING
+        while self._queue[0] != c:
+            time.sleep(0.1)
 
+        #SETTING START POINT IN SUBPROCS OUTPUT FILE
+        #IF GUI HAS RESTARTED OR SUCH
+        if self._cur_stout_pos is None:
+            try:
+                fh = open(self.stdout, 'r')
+                fh.read()
+                self._cur_stout_pos = fh.tell()
+                fh.close()
+            except:
+                self._cur_stout_pos = None
+                self._logger.info("No stdout ('{0}') existing before".format(self.stdout))
+
+        #SENDING INFO TO SUBPROCESS
         try:
             fh = open(self.stdin, 'a')
             fh.write(c)
@@ -148,13 +175,12 @@ class _Proc_File_IO(object):
         except:
             self._logger.error('Could not write to stdin {0}'.format(self.stdin))
 
+        #RECIEVING
         lines = ""
         i = 0
+        fh_pos = self._cur_stout_pos
 
-        #self._logger.info('stdout pos: {0}, sent to stdin: {1}'.format(
-        #    fh_pos, c))
-
-        while i < 10 and self._PROC_COMM.COMMUNICATION_END not in lines:
+        while i < 20 and self._PROC_COMM.COMMUNICATION_END not in lines:
 
             try:
                 fh = open(self.stdout, 'r')
@@ -170,10 +196,26 @@ class _Proc_File_IO(object):
                 time.sleep(0.1)
                 i += 1
 
-        #self._logger.info('stdout pos: {0}, got response: "{1}"'.format(
-        #    fh_pos, lines))
+        #EVALUATING THE RECIEVED
+        messages = lines.split(self._PROC_COMM.COMMUNICATION_END)
+        if len(messages) > 0:
+            messages = messages[:-1]
+        self._recieved_messages += messages
 
-        return lines
+        #SETTING MESSAGE TO BE RETURNED ETC
+        if self._reciever_pos < len(self._recieved_messages):
+            msg = self._recieved_messages[self._reciever_pos]
+            self._recieved_messages = self._recieved_messages[
+                self._reciever_pos + 1:]
+        else:
+            self._reciever_pos += 1
+            msg = None
+
+        e = None
+        while len(self._queue) > 0 and e != c:
+            e = self._queue.popleft()
+
+        return msg
 
 
 class _Subprocess(subproc_interface.SubProc_Interface):
@@ -246,9 +288,11 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         """Returns the parameters used to invoke the process"""
 
         if self._launch_param is None:
-            self._parse_parameters(
-                self._proc.communicate(
-                    self._pre_comm(self._PROC_COMM.INFO)))
+            param = self._proc.communicate(
+                self._pre_comm(self._PROC_COMM.INFO))
+
+            if param is not None:
+                self._parse_parameters(param)
 
         return self._launch_param
 
@@ -425,6 +469,14 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         psm_prefix = re.findall(r'__PREFIX__ (.*)', psm_in_text)
         if len(psm_prefix) > 0:
             psm['prefix'] = psm_prefix[0]
+
+        psm_1pass = re.findall(r'__1-PASS FILE__ (.*)', psm_in_text)
+        if len(psm_1pass) > 0:
+            psm['1-pass file'] = psm_1pass[0]
+
+        psm_anal = re.findall(r'__ANALYSIS DIR__ (.*)', psm_in_text)
+        if len(psm_anal) > 0:
+            psm['analysis-dir'] = psm_anal[0]
 
         psm_fixture = re.findall(r'__FIXTURE__ (.*)', psm_in_text)
         if len(psm_fixture) > 0:

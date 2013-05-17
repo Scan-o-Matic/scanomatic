@@ -16,31 +16,22 @@ __status__ = "Development"
 
 import time
 import sys
+import os
 import types
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-from src.subprocs.protocol import SUBPROC_COMMUNICATIONS
+from src.subprocs.io import Proc_IO
+
+#
+# EXCEPTIONS
+#
 
 #
 # CLASSES
 #
-
-
-class _Unbuffered_IO:
-
-    def __init__(self, stream):
-        """This class provides and unbuffered IO-writer"""
-        self.stream = stream
-
-    def write(self, data):
-        self.stream.write(data)
-        self.stream.flush()
-
-    def __getattr__(self, attr):
-        return getattr(self.stream, attr)
 
 
 class Communicator(object):
@@ -123,43 +114,34 @@ class Communicator(object):
         self._stdin = stdin
         self._stdout = stdout
         self._stderr = stderr
+        self._stdout_file = None
 
         self._orphan = False
         self._running = False
         self._printing = False
         self._in_pos = None
 
-        self._protocol = SUBPROC_COMMUNICATIONS()
+        self._set_channels()
+        self._io = Proc_IO(self._stdout_file, stdin)
 
-        self._set_as_orphan()
         self.gated_print("DEAMON listens to", stdin)
         self.gated_print("DEAMON prints to", stdout)
         self.gated_print("DEAMON errors to", stderr)
-
-    def gated_print(self, *args):
-        """Safe printing that will not make both threads print at the
-        same time"""
-
-        while self._printing is True:
-            time.sleep(0.02)
-
-        self._printing = True
-        for arg in args:
-            print arg,
-        print
-        self._printing = False
 
     def set_terminate(self):
 
         self._running = False
 
-    def _set_as_orphan(self):
+    def _set_channels(self):
 
-        self.gated_print("Will re-open output file {0}".format(self._stdout))
+        self.gated_print("Redirecting stdout to dev/null")
+        sys.stderr = open(os.devnull, 'w')
+
         stdout = open(self._stdout, 'a', 0)
-        sys.stdout = _Unbuffered_IO(stdout)
+        self._stdout_file = _Unbuffered_IO(stdout)
+        self.gated_print("Open output file {0}".format(self._stdout))
 
-        self.gated_print("Will re-open error file {0}".format(self._stderr))
+        self.gated_print("Errors print to error file {0}".format(self._stderr))
         stderr = open(self._stderr, 'a', 0)
         sys.stderr = _Unbuffered_IO(stderr)
 

@@ -91,19 +91,6 @@ def free_scanner(scanner, uuid):
 #
 
 
-class Unbuffered:
-
-    def __init__(self, stream):
-        self.stream = stream
-
-    def write(self, data):
-        self.stream.write(data)
-        self.stream.flush()
-
-    def __getattr__(self, attr):
-        return getattr(self.stream, attr)
-
-
 class Experiment(object):
 
     SCAN_MODE = 'TPU'
@@ -170,17 +157,18 @@ class Experiment(object):
     def get_info(self):
 
         output = (
-            '__ALIVE__ {0}\n'.format(self._running) +
-            '__PREFIX__ {0}\n'.format(self._prefix) +
-            '__FIXTURE__ {0}\n'.format(self._fixture_name) +
-            '__SCANNER__ {0}\n'.format(self._scanner_name) +
-            '__ROOT__ {0}\n'.format(self._root) +
+            '__ALIVE__ {0}\n'.format(self._running),
+            '__PREFIX__ {0}\n'.format(self._prefix),
+            '__FIXTURE__ {0}\n'.format(self._fixture_name),
+            '__SCANNER__ {0}\n'.format(self._scanner_name),
+            '__ROOT__ {0}\n'.format(self._root),
             #'__ID__ {0}\n'.format(self._id)
-            '__PINNING__ {0}\n'.format(self._pinning) +
-            '__INTERVAL__ {0}\n'.format(self._interval) +
-            '__SCANS__ {0}\n'.format(self._max_scans) +
-            '__INIT-TIME__ {0}\n'.format(self._init_time) +
-            '__CUR-IM__ {0}\n'.format(self._scanned)
+            '__PINNING__ {0}\n'.format(self._pinning),
+            '__INTERVAL__ {0}\n'.format(self._interval),
+            '__SCANS__ {0}\n'.format(self._max_scans),
+            '__INIT-TIME__ {0}\n'.format(self._init_tie),
+            '__CUR-IM__ {0}\n'.format(self._scanned),
+            '__1-PASS FILE__ {0}\n'.format(self._first_pass_analysis_file)
         )
         return output
 

@@ -103,6 +103,11 @@ class _Running_Frame(gtk.Frame):
                 frac = proc.get_progress()
                 tot = proc.get_total()
 
+                if frac < 0:
+                    frac = 0
+                elif frac > 1:
+                    frac = 1
+
                 self._progress.set_fraction(frac)
 
                 self._info.set_text(m['running-progress'].format(

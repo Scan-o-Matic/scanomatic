@@ -137,6 +137,9 @@ class Analysis(object):
 
         #PATHS AND CONFIG
         self._file_path_base = os.path.join(*log_file_path.split(os.sep)[:-1])
+        self._root = os.path.abspath(
+            os.path.join(self._file_path_base, os.path.pardir))
+
         self._paths = resource_path.Paths(src_path=__file__)
         if app_config is None:
             app_config = resource_app_config.Config(paths=self._paths)
@@ -568,7 +571,7 @@ class Analysis(object):
 
     def get_total_iterations(self):
 
-        return self._meta_data['Images']
+        return len(self._image_dictionaries)
 
     def get_progress(self):
 
@@ -596,4 +599,7 @@ class Analysis(object):
     def get_info(self):
 
         return ("__PREFIX__ {0}".format(self._meta_data['Prefix']),
+                "__ROOT__ {0}\n".format(self._root),
+                "__ANALYSIS DIR {0}".format(self._outdata_directory),
+                "__1-PASS FILE__ {0}".format(self._log_file_path),
                 "__PINNINGS__ {0}".format(self._meta_data['Pinning Matrices']))
