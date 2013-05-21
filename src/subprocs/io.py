@@ -102,7 +102,7 @@ class Proc_IO(object):
 
     #HELPS
     NEWLINE = "\n"
-    VALUE_EXTEND = " {0:10.10f}"
+    VALUE_EXTEND = " {0}"
 
     def __init__(self, send_file_path, recieve_file_path, recieve_pos=None,
                  send_file_state='w', logger=None):

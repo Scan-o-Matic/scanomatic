@@ -142,12 +142,12 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         if timeout is not None:
             timeout += timestamp
 
+        timestamp = "{0:10.10f}".format(timestamp)
         decorated_msg = self._proc.decorate(msg, timestamp)
-        str_timestamp, msg = self._proc.undecorate(decorated_msg)
         self._proc.send(decorated_msg)
-        self._proc_communications[str_timestamp] = (callback, comm_type,
-                                                    timeout, timeout_args,
-                                                    send_self)
+        self._proc_communications[timestamp] = (callback, comm_type,
+                                                timeout, timeout_args,
+                                                send_self)
 
     def _handle_callbacks(self, lines):
 
@@ -168,8 +168,10 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
             del self._proc_communications[timestamp]
 
+            """
             self._logger.info("Invoking callback {0}(msg is {1})".format(
                 callback, msg))
+            """
 
             if send_self:
                 callback(self._parse(msg), self)
@@ -208,7 +210,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             self._pinging = False
             return True
 
-        elif self._proc.PAUSED_RESPONSE in msg:
+        elif self._proc.PAUSING in msg:
 
             return True
 
@@ -219,18 +221,18 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         elif self._proc.PROGRESS in msg:
 
-            return self._get_val(msg, self._PROC_COMM.PROGRESS, float)
+            return self._get_val(msg, self._proc.PROGRESS, float)
 
         elif self._proc.CURRENT in msg:
 
-            return self._get_val(msg, self._PROC_COMM.CURRENT, int)
+            return self._get_val(msg, self._proc.CURRENT, int)
 
         elif self._proc.TOTAL in msg:
 
-            self._total = self._get_val(msg, self._PROC_COMM.TOTAL, int)
+            self._total = self._get_val(msg, self._proc.TOTAL, int)
             return self._total
 
-        elif self._proc.PAUSING in msg:
+        elif self._proc.REFUSED in msg:
 
             return True
 
@@ -241,6 +243,12 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         elif self._proc.RUNNING in msg:
 
             return True
+
+        else:
+
+            self._logger.warning(
+                "GUI subprocess got unknown response {0}".format(
+                    msg))
 
     def update(self):
 

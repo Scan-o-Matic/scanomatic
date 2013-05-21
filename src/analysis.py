@@ -608,6 +608,6 @@ class Analysis(object):
 
         return ("__PREFIX__ {0}".format(self._meta_data['Prefix']),
                 "__ROOT__ {0}\n".format(self._root),
-                "__ANALYSIS DIR {0}".format(self._outdata_directory),
+                "__ANALYSIS DIR__ {0}".format(self._outdata_directory),
                 "__1-PASS FILE__ {0}".format(self._log_file_path),
                 "__PINNINGS__ {0}".format(self._meta_data['Pinning Matrices']))

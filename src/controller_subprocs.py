@@ -119,8 +119,14 @@ class Subprocs_Controller(controller_generic.Controller,
         """Subproc is never destroyed, but its views always allow destruction"""
         pass
 
-    def set_project_progress(self, prefix, stage, value):
-        return self._project_progress.set_status(prefix, stage, value)
+    def set_project_progress(self, prefix, stage, value, experiment_dir=None,
+                             first_pass_file=None, analysis_path=None):
+
+        return self._project_progress.set_status(
+            prefix, stage, value,
+            experiment_dir=experiment_dir,
+            first_pass_file=first_pass_file,
+            analysis_path=analysis_path)
 
     def remove_live_project(self, prefix):
 

@@ -119,7 +119,7 @@ class _Running_Frame(gtk.Frame):
 
             self._progress.set_text(
                 m['running-elapsed'].format(
-                    (time.time() - proc.get_start_time()) / 60.0))
+                    (time.time() - self._proc.get_start_time()) / 60.0))
 
     def _set_total_iterations(self, total):
 
