@@ -45,12 +45,18 @@ class _Running_Frame(gtk.Frame):
 
     def __init__(self, proc, model, init_info_msg=None):
 
-        super(_Running_Frame, self).__init__(proc.get_prefix())
+        super(_Running_Frame, self).__init__(model['process-unknown'])
+
+        proc.set_callback_prefix(self._set_title)
+        proc.set_callback_total(self._set_total_iterations)
 
         self._model = model
         self._proc = proc
         self._no_more_action = False
         self._first_is_done = False
+
+        self._current_iteration = -1
+        self._total_iterations = None
 
         vbox = gtk.VBox(False, 0)
 
@@ -71,6 +77,10 @@ class _Running_Frame(gtk.Frame):
         self.add(vbox)
         self.show_all()
 
+    def _set_title(self, title):
+
+        self.set_label(title)
+
     def add_button(self, b, pack_start=True):
 
         if pack_start:
@@ -80,70 +90,104 @@ class _Running_Frame(gtk.Frame):
 
         pack(b, False, False, PADDING_MEDIUM)
 
-    def update(self):
+    def _set_progress_bar(self, frac):
 
         m = self._model
+        cur = self._current_iteration
+
+        if frac < 0:
+            frac = 0
+        elif frac > 1:
+            frac = 1
+
+        self._progress.set_fraction(frac)
+
+        if cur > 1:
+            self._first_is_done = True
+
+            dt = time.time() - proc.get_start_time()
+            eta = (1 - frac) * dt / frac
+
+            if eta < 0:
+                eta = 0
+
+            self._progress.set_text(
+                m['running-eta'].format(
+                    eta / 3600.0))
+
+        else:
+
+            self._progress.set_text(
+                m['running-elapsed'].format(
+                    (time.time() - proc.get_start_time()) / 60.0))
+
+    def _set_total_iterations(self, total):
+
+        self._total_iterations = total
+
+    def _set_info_iteration_text(self, cur):
+
+        m = self._model
+        self._current_iteration = cur
+
+        if self._total_iterations is not None:
+            self._info.set_text(m['running-progress'].format(
+                cur, self._total_iterations))
+
+    def _set_done_state(self, is_alive, proc):
+
+        m = self._model
+        if is_alive is False:
+
+            if proc.get_exit_code() != 0:
+                self._info.set_text(m['running-done'])
+            else:
+                self._info.set_text(m['running-done-error'])
+            self._progress.set_fraction(1.0)
+            self._progress.set_text("")
+            self._no_more_action = True
+
+        else:
+
+            proc.set_callback_progress(self._set_progress_bar)
+
+            proc.set_callback_current(self._set_info_iteration_text)
+
+    def update(self):
+
         proc = self._proc
 
         if self._no_more_action is False:
 
-            if proc.is_done():
-
-                if proc.get_exit_code() != 0:
-                    self._info.set_text(m['running-done'])
-                else:
-                    self._info.set_text(m['running-done-error'])
-                self._progress.set_fraction(1.0)
-                self._progress.set_text("")
-                self._no_more_action = True
-
-            else:
-
-                cur = proc.get_current()
-                frac = proc.get_progress()
-                tot = proc.get_total()
-
-                if frac < 0:
-                    frac = 0
-                elif frac > 1:
-                    frac = 1
-
-                self._progress.set_fraction(frac)
-
-                self._info.set_text(m['running-progress'].format(
-                    cur, tot))
-
-                if cur > 1:
-                    self._first_is_done = True
-
-                    dt = time.time() - proc.get_start_time()
-                    eta = (1 - frac) * dt / frac
-
-                    if eta < 0:
-                        eta = 0
-
-                    self._progress.set_text(
-                        m['running-eta'].format(
-                            eta / 3600.0))
-
-                else:
-
-                    self._progress.set_text(
-                        m['running-elapsed'].format(
-                            (time.time() - proc.get_start_time()) / 60.0))
+            proc.set_callback_is_alive(self._set_done_state)
 
 
 class _Running_Analysis(_Running_Frame):
 
     def __init__(self, proc, model, controller):
 
-        super(_Running_Analysis, self).__init__(proc, model, 'running-analysis-running')
+        super(_Running_Analysis, self).__init__(proc, model,
+                                                'running-analysis-running')
 
-        self._grid_button = gtk.Button(label=model['running-analysis-view-gridding'])
-        self._grid_button.connect("clicked", controller.produce_inspect_gridding,
-                                  proc.get_prefix())
+        self._grid_button = gtk.Button(
+            label=model['running-analysis-view-gridding'])
+
+        self._buttons.append((self._grid_button,
+                              controller.produce_inspect_gridding,
+                              False))
+
         self._grid_button.set_sensitive(False)
+
+        proc.set_callback_prefix(self.connect_buttons)
+
         self.add_button(self._grid_button)
+
+    def connect_buttons(self, prefix):
+
+        for button, callback, sensitivity in self._buttons:
+
+            button.connect("clicked", callback, prefix)
+            button.set_sensitive(sensitivity)
 
     def update(self):
 
@@ -163,21 +207,9 @@ class Subprocs_View(gtk.Frame):
 
         table = gtk.Table(rows=5, columns=2)
         table.set_col_spacings(PADDING_MEDIUM)
-        table.set_row_spacing(0, PADDING_MEDIUM)
-        table.set_row_spacing(3, PADDING_MEDIUM)
+        #table.set_row_spacing(0, PADDING_MEDIUM)
+        #table.set_row_spacing(3, PADDING_MEDIUM)
         self.add(table)
-
-        """ HEADER ROW REMOVED
-        label = gtk.Label()
-        label.set_markup(model['composite-stat-type-header'])
-        label.set_alignment(0, 0.5)
-        table.attach(label, 0, 1 , 0, 1)
-
-        label = gtk.Label()
-        label.set_markup(model['composite-stat-count-header'])
-        label.set_alignment(0, 0.5)
-        table.attach(label, 1, 2, 0, 1)
-        """
 
         #FREE SCANNERS
         label = gtk.Label(model['free-scanners'])

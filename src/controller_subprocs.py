@@ -277,6 +277,8 @@ class Subprocs_Controller(controller_generic.Controller,
             experiment.set_callback_is_alive(
                 self._experiment_is_alive)
 
+            experiment.update()
+
         #
         #   2. CHECKING IF ANY NEW ANALYSIS MAY BE STARTED
         #
@@ -303,6 +305,9 @@ class Subprocs_Controller(controller_generic.Controller,
 
             analysis.set_callback_is_alive(
                 self._analysis_is_alive)
+
+            analysis.update()
+
         #
         #   4. TOGGLE SAVE STATUS OF SUBPROCESSES (if any is running)
         #

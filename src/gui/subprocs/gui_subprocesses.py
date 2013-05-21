@@ -241,7 +241,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             self._pinging = True
             self._send(self._proc.PING, callback,
                        comm_type=self._proc.PING,
-                       timeout=2,
+                       timeout=7,
                        timeout_args=False,
                        send_self=True)
 

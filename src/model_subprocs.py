@@ -57,6 +57,8 @@ composite_model = {
 'collected-messages': 'Warnings & Errors',
 'queue': 'Analysis Queue',
 
+'process-unknown': '--- Unknown (wait while setting up...) ---',
+
 #RUNNING COMMONS
     'running-stop': 'Terminate...',
     'running-stopping': 'Stopping...',
