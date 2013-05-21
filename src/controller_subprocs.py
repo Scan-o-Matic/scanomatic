@@ -145,11 +145,7 @@ class Subprocs_Controller(controller_generic.Controller,
                 ptype == self.EXPERIMENT_REBUILD):
 
             success = self._experiments.push(proc)
-            param = proc.get_parameters()
-            self.set_project_progress(
-                proc.get_prefix(), 'EXPERIMENT', 'RUNNING',
-                experiment_dir=param['experiments-root'],
-                first_pass_file=param['1-pass file'])
+            proc.set_callback_parameters(self._set_experiment_started)
 
         elif ptype == self.ANALYSIS:
 
@@ -187,7 +183,7 @@ class Subprocs_Controller(controller_generic.Controller,
             ["Failed to add", "Added"][success],
             ptype, params))
 
-    def _make_analysis_from_experiment(self, proc):
+    def _make_analysis_from_experiment(self, param):
         """Queries and experiment process to run defualt analysis
 
         The analysis is placed in the queue and run with default
@@ -198,17 +194,73 @@ class Subprocs_Controller(controller_generic.Controller,
         :return boolean: Success statement
         """
 
-        exp_prefix = proc.get_prefix()
-        param = proc.get_parameters()
         if param is not None and 'experiments-root' in param:
 
             self.add_subprocess(self.ANALYSIS,
                                 experiments_root=param['experiments_root'],
-                                experiment_prefix=exp_prefix)
+                                experiment_prefix=param['prefix'])
 
             return True
 
         return False
+
+    def _set_experiment_started(self, param):
+
+            self.set_project_progress(
+                param['prefix'], 'EXPERIMENT', 'RUNNING',
+                experiment_dir=param['experiments-root'],
+                first_pass_file=param['1-pass file'])
+
+    def _set_experiment_completed(self, prefix):
+
+            self.set_project_progress(prefix, 'EXPERIMENT', 'COMPLETED')
+            self.set_project_progress(prefix, 'ANALYSIS', 'AUTOMATIC')
+
+    def _set_analysis_started(self, param):
+
+            self.set_project_progress(
+                param['prefix'], 'ANALYSIS', 'RUNNING',
+                experiment_dir=param['experiments-root'],
+                first_pass_file=param['1-pass file'],
+                analysis_path=param['analysis-dir'])
+
+    def _experiment_is_alive(self, is_alive, experiment):
+
+        if is_alive is False:
+
+            #Place analysis in queue
+            experiment.set_callback_parameters(
+                self._make_analysis_from_experiment)
+
+            #Update live project status
+            experiment.set_callback_prefix(self._set_experiment_completed)
+
+            experiment.close_communications()
+
+    def _set_analysis_completed(self, prefix):
+
+        self.set_project_progress(
+            prefix, 'ANALYSIS', 'COMPLETED')
+        self.set_project_progress(
+            prefix, 'UPLOAD', 'LAUNCH')
+
+    def _set_analysis_failed(self, prefix):
+
+        self.set_project_progress(
+            prefix, 'ANALYSIS', 'FAILED')
+
+    def _analysis_is_alive(self, is_alive, analysis):
+
+        if is_alive is False:
+
+            if analysis.get_exit_code() == 0:
+
+                analysis.set_callback_prefix(self._set_analysis_completed)
+            else:
+
+                analysis.set_callback_prefix(self._set_analysis_failed)
+
+            analysis.close_communications()
 
     def _subprocess_callback(self):
         """Callback that checks on finished stuff etc"""
@@ -220,20 +272,10 @@ class Subprocs_Controller(controller_generic.Controller,
         #   1 CHECKING EXPERIMENTS IF ANY IS DONE
         #
 
-        finished_experiment = self._experiments.pop()
+        for experiment in self._experiments:
 
-        if finished_experiment is not None:
-            #Place analysis in queue
-            self._make_analysis_from_experiment(finished_experiment)
-
-            #Update live project status
-            self.set_project_progress(
-                finished_experiment.get_prefix(), 'EXPERIMENT', 'COMPLETED')
-
-            self.set_project_progress(
-                finished_experiment.get_prefix(), 'ANALYSIS', 'AUTOMATIC')
-
-            finished_experiment.close_communications()
+            experiment.set_callback_is_alive(
+                self._experiment_is_alive)
 
         #
         #   2. CHECKING IF ANY NEW ANALYSIS MAY BE STARTED
@@ -251,35 +293,16 @@ class Subprocs_Controller(controller_generic.Controller,
             self._analysises.push(proc)
 
             #Update live project status
-            param = proc.get_prefix()
-            self.set_project_progress(
-                proc.get_prefix(), 'ANALYSIS', 'RUNNING',
-                experiment_dir=param['experiments-root'],
-                first_pass_file=param['1-pass file'],
-                analysis_path=param['analysis-dir'])
+            proc.set_callback_parameters(self._set_analysis_started)
 
         #
         #   3. CHECKING IF ANY ANALYSIS IS DONE
         #
 
-        finished_analysis = self._analysises.pop()
+        for analysis in self._analysises:
 
-        if finished_analysis is not None:
-
-            if finished_analysis.get_exit_code() == 0:
-                self.set_project_progress(
-                    finished_analysis.get_prefix(),
-                    'ANALYSIS', 'COMPLETED')
-                self.set_project_progress(
-                    finished_analysis.get_prefix(),
-                    'UPLOAD', 'LAUNCH')
-            else:
-                self.set_project_progress(
-                    finished_analysis.get_prefix(),
-                    'ANALYSIS', 'FAILED')
-
-            finished_analysis.close_communications()
-
+            analysis.set_callback_is_alive(
+                self._analysis_is_alive)
         #
         #   4. TOGGLE SAVE STATUS OF SUBPROCESSES (if any is running)
         #
@@ -305,6 +328,19 @@ class Subprocs_Controller(controller_generic.Controller,
 
         return True
 
+    def _set_stopped_experiment(self, prefix):
+
+        self.set_project_progress(
+            prefix, 'EXPERIMENT', 'TERMINATED')
+
+    def _set_stopped_analysis(self, prefix):
+
+        self.set_project_progress(
+            prefix, 'ANALYSIS', 'TERMINATED')
+
+        self.set_project_progress(
+            prefix, 'INSPECT', 'LAUNCH')
+
     def stop_process(self, proc):
         """Stops a process"""
 
@@ -312,23 +348,13 @@ class Subprocs_Controller(controller_generic.Controller,
                 proc.get_type() == subproc_interface.EXPERIMENT_REBUILD):
 
             handler = self._experiments
-            cur_stage = 'EXPERIMENT'
-            next_stage = 'ANALYSIS'
+            proc.set_callback_prefix(self._set_stopped_experiment)
 
         elif (proc.get_type() == subproc_interface.ANALYSIS):
 
             handler = self._analysises
-            cur_stage = 'ANALYSIS'
-            next_stage = None
+            proc.set_callback_prefix(self._set_stopped_analysis)
 
         handler.remove(proc)
         proc.terminate()
-
-        self.set_project_progress(
-            proc.get_prefix(), cur_stage, 'TERMINATED')
-
-        if next_stage is not None:
-            self.set_project_progress(
-                proc.get_prefix(), next_stage, 'LAUNCH')
-
         proc.close_communications()

@@ -124,7 +124,8 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         self._pinging = False
 
     def _send(self, msg, callback, comm_type=None,
-              timeout=None, timeout_args=None):
+              timeout=None, timeout_args=None,
+              send_self=False):
 
         #Block further communications if it has exited
         if self._exit_code is not None:
@@ -137,7 +138,8 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         decorated_msg = self._proc.decorate(msg, timestamp)
         self._proc.send(decorated_msg)
         self._proc_communications[timestamp] = (callback, comm_type,
-                                                timeout, timeout_args)
+                                                timeout, timeout_args,
+                                                send_self)
 
     def _handle_callbacks(self, lines):
 
@@ -150,12 +152,15 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         if self._proc_communications[timestamp] is not None:
 
-            callback, comm_type, timeout, timeout_args = (
+            callback, comm_type, timeout, timeout_args, send_self = (
                 self._proc_communications[timestamp])
 
             del self._proc_communications[timestamp]
 
-            callback(self._parse(msg))
+            if send_self:
+                callback(self._parse(msg), self)
+            else:
+                callback(self._parse(msg))
 
     def _check_timeouts(self):
 
@@ -163,7 +168,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
             if self._proc_communications[timestamp] is not None:
 
-                callback, comm_type, timeout, timeout_args = (
+                callback, comm_type, timeout, timeout_args, send_self = (
                     self._proc_communications[timestamp])
 
                 if timeout is not None and time.time() > timeout:
@@ -171,7 +176,10 @@ class _Subprocess(subproc_interface.SubProc_Interface):
                     if comm_type == self._io.PING:
                         self._exit_code = 0
 
-                    callback(timeout_args)
+                    if send_self:
+                        callback(timeout_args, self)
+                    else:
+                        callback(timeout_args)
 
                 self._proc_communications[timestamp] = None
 
@@ -234,7 +242,8 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             self._send(self._proc.PING, callback,
                        comm_type=self._proc.PING,
                        timeout=2,
-                       timeout_args=False)
+                       timeout_args=False,
+                       send_self=True)
 
     def set_callback_is_paused(self, callback, timeout_args=None):
         """Returns is process is paused"""
