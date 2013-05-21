@@ -17,13 +17,12 @@ __status__ = "Development"
 import time
 import sys
 import os
-import types
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-from src.subprocs.io import Proc_IO
+from src.subprocs.io import Proc_IO, Unbuffered_IO
 
 #
 # EXCEPTIONS
@@ -124,9 +123,9 @@ class Communicator(object):
         self._set_channels()
         self._io = Proc_IO(self._stdout_file, stdin)
 
-        self.gated_print("DEAMON listens to", stdin)
-        self.gated_print("DEAMON prints to", stdout)
-        self.gated_print("DEAMON errors to", stderr)
+        self._io.send("DEAMON listens to", stdin)
+        self._io.send("DEAMON prints to", stdout)
+        self._io.send("DEAMON errors to", stderr)
 
     def set_terminate(self):
 
@@ -134,16 +133,16 @@ class Communicator(object):
 
     def _set_channels(self):
 
-        self.gated_print("Redirecting stdout to dev/null")
-        sys.stderr = open(os.devnull, 'w')
+        self._io.send("Redirecting stdout to dev/null")
+        sys.stdout = open(os.devnull, 'w')
 
-        stdout = open(self._stdout, 'a', 0)
-        self._stdout_file = _Unbuffered_IO(stdout)
-        self.gated_print("Open output file {0}".format(self._stdout))
+        controlled_out = open(self._stdout, 'a', 0)
+        self._stdout_file = Unbuffered_IO(controlled_out)
+        self._io.send("Open output file {0}".format(self._stdout))
 
-        self.gated_print("Errors print to error file {0}".format(self._stderr))
+        self._io.send("Errors print to error file {0}".format(self._stderr))
         stderr = open(self._stderr, 'a', 0)
-        sys.stderr = _Unbuffered_IO(stderr)
+        sys.stderr = Unbuffered_IO(stderr)
 
         self._orphan = True
 
@@ -151,34 +150,38 @@ class Communicator(object):
         """The main process for the communications daemon"""
 
         self._running = True
-        self.gated_print("DEAMON is running")
+        self._io.send("DEAMON is running")
 
         while self._running:
 
-            lines = self._get_lines()
-
-            for line in lines:
-
-                output = self._parse(line.strip())
-
-                if output is not None:
-
-                    if not(isinstance(output, types.StringTypes)):
-                        output = self._protocol.NEWLINE.join(output)
-
-                    output += (self._protocol.NEWLINE +
-                               self._protocol.COMMUNICATION_END)
-
-                    self.gated_print(output)
+            self._io.recieve(self._parse)
 
             time.sleep(0.42)
 
-    def _parse(self, line):
+    def _respond(self, output, timestamp):
+
+        self._io.send(self._io.decorate(output))
+
+        """
+        output = self._parse(line.strip())
+
+        if output is not None:
+
+            if not(isinstance(output, types.StringTypes)):
+                output = self._protocol.NEWLINE.join(output)
+
+            output += (self._protocol.NEWLINE +
+                        self._protocol.COMMUNICATION_END)
+
+        """
+
+    def _parse(self, decorated_msg):
         """Looks up what was communicated to the subprocesses.
 
         Either responds directly or requests information from
         the main thread"""
 
+        timestamp, line = self._io.undecorate(decorated_msg)
         #
         # CONTROLS
         #
@@ -247,20 +250,5 @@ class Communicator(object):
             output = self._protocol.UNKNOWN
             output += self._protocol.VALUE_EXTEND.format(line)
 
-        return output
-
-    def _get_lines(self):
-
-        lines = []
-        try:
-            fs = open(self._stdin, 'r')
-            if self._in_pos is not None:
-                fs.seek(self._in_pos)
-            lines = fs.readlines()
-            self._in_pos = fs.tell()
-            fs.close()
-        except:
-            #self._orphan = True
-            self._logger.warning("Lost contact with outside world!")
-
-        return lines
+        if output is not None:
+            self._respond(output, timestamp)
