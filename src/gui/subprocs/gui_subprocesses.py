@@ -26,6 +26,7 @@ from itertools import chain
 
 import subproc_interface
 from src.subprocs.io import Proc_IO
+import src.resource_logger as resource_logger
 
 #
 # EXCEPTIONS
@@ -75,7 +76,7 @@ def _get_pinnings_str(pinning_list):
 
 class _Subprocess(subproc_interface.SubProc_Interface):
 
-    def __init__(self, proc_type, top_controler, proc=None):
+    def __init__(self, proc_type, top_controler, proc=None, logger=None):
         """_Subprocess is a common implementation for the different
         subprocess objects that the gui uses to check status and
         communicate with said processes.
@@ -110,6 +111,12 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         Communicate should accept a string as a parameter
         and should return a string response.
         """
+
+        if logger is None:
+            logger = resource_logger.Fallback_Logger()
+
+        self._logger = logger
+
         self._proc_type = proc_type
         self._tc = top_controler
         self._proc = proc
@@ -136,10 +143,11 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             timeout += timestamp
 
         decorated_msg = self._proc.decorate(msg, timestamp)
+        str_timestamp, msg = self._proc.undecorate(decorated_msg)
         self._proc.send(decorated_msg)
-        self._proc_communications[timestamp] = (callback, comm_type,
-                                                timeout, timeout_args,
-                                                send_self)
+        self._proc_communications[str_timestamp] = (callback, comm_type,
+                                                    timeout, timeout_args,
+                                                    send_self)
 
     def _handle_callbacks(self, lines):
 
@@ -148,7 +156,10 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         if timestamp not in self._proc_communications:
 
             raise BadCommunicateReturn(
-                "Unknown communication:\n{0}".format(lines))
+                "Unknown communication ({0} {1} not in {2}):\n{3}".format(
+                    timestamp, type(timestamp),
+                    self._proc_communications.keys(),
+                    lines))
 
         if self._proc_communications[timestamp] is not None:
 
@@ -157,6 +168,9 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
             del self._proc_communications[timestamp]
 
+            self._logger.info("Invoking callback {0}(msg is {1})".format(
+                callback, msg))
+
             if send_self:
                 callback(self._parse(msg), self)
             else:
@@ -164,7 +178,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
     def _check_timeouts(self):
 
-        for timestamp in self._proc_communications:
+        for timestamp in self._proc_communications.keys():
 
             if self._proc_communications[timestamp] is not None:
 
@@ -173,7 +187,11 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
                 if timeout is not None and time.time() > timeout:
 
-                    if comm_type == self._io.PING:
+                    self._logger.info(
+                        "Time out callback {0} (msg is {1})".format(
+                            callback, timeout_args))
+
+                    if comm_type == self._proc.PING:
                         self._exit_code = 0
 
                     if send_self:
@@ -181,7 +199,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
                     else:
                         callback(timeout_args)
 
-                self._proc_communications[timestamp] = None
+                    self._proc_communications[timestamp] = None
 
     def _parse(self, msg):
 
@@ -253,7 +271,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
     def set_callback_parameters(self, callback, timeout_args=None):
         """Returns the parameters used to invoke the process"""
 
-        if self._launch_param is None:
+        if self._launch_param is None and self._proc is not None:
 
             self._send(self._proc.INFO, callback, timeout_args=None)
 
@@ -266,9 +284,10 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             callback = self._param_to_prefix_callback
 
         if callback is None:
-            return
 
-        elif 'prefix' in param:
+            return None
+
+        elif param is not None and 'prefix' in param:
             callback(param['prefix'])
         else:
             callback("")
@@ -278,7 +297,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         if self._launch_param is None:
             self._param_to_prefix_callback = callback
-            self.get_parameters(self._param_to_prefix)
+            self.set_callback_parameters(self._param_to_prefix)
 
         else:
             self._param_to_prefix(self._launch_param,
@@ -295,7 +314,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             return self._start_time
 
         if self._launch_param is None:
-            self.get_parameters(self._param_to_init_time)
+            self.set_callback_parameters(self._param_to_init_time)
 
         if self._start_time is None:
             self._start_time = time.time()
@@ -378,7 +397,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
     def close_communications(self):
 
         self._proc.close_send_file()
-        self._proc = None
+        #self._proc = None
 
         if hasattr(self._stdin, 'close'):
             self._stdin.close()

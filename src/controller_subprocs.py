@@ -236,6 +236,7 @@ class Subprocs_Controller(controller_generic.Controller,
             experiment.set_callback_prefix(self._set_experiment_completed)
 
             experiment.close_communications()
+            self._experiments.remove(experiment)
 
     def _set_analysis_completed(self, prefix):
 
@@ -261,6 +262,7 @@ class Subprocs_Controller(controller_generic.Controller,
                 analysis.set_callback_prefix(self._set_analysis_failed)
 
             analysis.close_communications()
+            self._analysises.remove(analysis)
 
     def _subprocess_callback(self):
         """Callback that checks on finished stuff etc"""

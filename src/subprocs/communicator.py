@@ -122,9 +122,9 @@ class Communicator(object):
         self._io = None
         self._set_io()
 
-        self._io.send("DEAMON listens to", stdin)
-        self._io.send("DEAMON prints to", stdout)
-        self._io.send("DEAMON errors to", stderr)
+        self._io.send("DEAMON listens to {0}".format(stdin))
+        self._io.send("DEAMON prints to {0}".format(stdout))
+        self._io.send("DEAMON errors to {0}".format(stderr))
 
     def set_terminate(self):
 
@@ -132,7 +132,9 @@ class Communicator(object):
 
     def _set_io(self):
 
-        self._io = Proc_IO(self._stdout, self._stdin, send_file_state='a')
+        self._io = Proc_IO(self._stdout, self._stdin,
+                           recieve_pos=0,
+                           send_file_state='a')
 
         self._io.send("Redirecting stdout to dev/null")
         sys.stdout = open(os.devnull, 'w')
@@ -153,11 +155,12 @@ class Communicator(object):
 
             self._io.recieve(self._parse)
 
+            #self._io.send("Communicator is alive @ {0}".format(time.time()))
             time.sleep(0.42)
 
     def _respond(self, output, timestamp):
 
-        self._io.send(self._io.decorate(output))
+        self._io.send(self._io.decorate(output, timestamp))
 
         """
         output = self._parse(line.strip())
@@ -165,10 +168,10 @@ class Communicator(object):
         if output is not None:
 
             if not(isinstance(output, types.StringTypes)):
-                output = self._protocol.NEWLINE.join(output)
+                output = self._io.NEWLINE.join(output)
 
-            output += (self._protocol.NEWLINE +
-                        self._protocol.COMMUNICATION_END)
+            output += (self._io.NEWLINE +
+                        self._io.COMMUNICATION_END)
 
         """
 
@@ -179,35 +182,41 @@ class Communicator(object):
         the main thread"""
 
         timestamp, line = self._io.undecorate(decorated_msg)
+
+        line = line.strip()
+
+        self._io.send("Communicator got '{0}' w/ stamp {1}".format(
+            line, timestamp))
+
         #
         # CONTROLS
         #
 
         #TERMINATING
-        if line == self._protocol.TERMINATE:
-            output = self._protocol.TERMINATING
+        if line == self._io.TERMINATE:
+            output = self._io.TERMINATING
             self._running = False
             self._parent.set_terminate()
 
         #PAUSE
-        elif line == self._protocol.PAUSE:
+        elif line == self._io.PAUSE:
             if self._parent.set_pause():
-                output = self._protocol.PAUSING
+                output = self._io.PAUSING
             else:
-                output = self._protocol.REFUSED
+                output = self._io.REFUSED
 
         #UNPAUSE
-        elif line == self._protocol.UNPAUSE:
+        elif line == self._io.UNPAUSE:
             if self._parent.set_unpause():
-                output = self._protocol.RUNNING
+                output = self._io.RUNNING
             else:
-                output = self._protocol.REFUSED
+                output = self._io.REFUSED
 
         #
         # PING
         #
 
-        elif self._protocol.PING in line:
+        elif self._io.PING in line:
 
             output = line
 
@@ -216,38 +225,38 @@ class Communicator(object):
         #
 
         #ABOUT PROCESS
-        elif line == self._protocol.INFO:
+        elif line == self._io.INFO:
             output = self._parent.get_info()
-            if output is not None and output[0] != self._protocol.INFO:
-                output = (self._protocol.INFO, ) + output
+            if output is not None and output[0] != self._io.INFO:
+                output = (self._io.INFO, ) + output
 
         #CURRENT
-        elif line == self._protocol.CURRENT:
-            output = self._protocol.CURRENT
-            output += self._protocol.VALUE_EXTEND.format(
+        elif line == self._io.CURRENT:
+            output = self._io.CURRENT
+            output += self._io.VALUE_EXTEND.format(
                 self._parent.get_current_step())
 
         #TOTAL
-        elif line == self._protocol.TOTAL:
-            output = self._protocol.TOTAL
-            output += self._protocol.VALUE_EXTEND.format(
+        elif line == self._io.TOTAL:
+            output = self._io.TOTAL
+            output += self._io.VALUE_EXTEND.format(
                 self._parent.get_total_iterations())
 
         #PROGRESS
-        elif line == self._protocol.PROGRESS:
-            output = self._protocol.PROGRESS
-            output += self._protocol.VALUE_EXTEND.format(
+        elif line == self._io.PROGRESS:
+            output = self._io.PROGRESS
+            output += self._io.VALUE_EXTEND.format(
                 self._parent.get_progress())
 
         #STATUS
-        elif line == self._protocol.STATUS:
+        elif line == self._io.STATUS:
             if self._parent.get_paused():
-                output = self._protocol.IS_PAUSED
+                output = self._io.IS_PAUSED
             else:
-                output = self._protocol.IS_RUNNING
+                output = self._io.IS_RUNNING
         else:
-            output = self._protocol.UNKNOWN
-            output += self._protocol.VALUE_EXTEND.format(line)
+            output = self._io.UNKNOWN
+            output += self._io.VALUE_EXTEND.format(line)
 
         if output is not None:
             self._respond(output, timestamp)

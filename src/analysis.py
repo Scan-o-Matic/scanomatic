@@ -315,7 +315,7 @@ class Analysis(object):
         meta_data = self._meta_data
         grid_times = self._grid_times
         image_dictionaries = self._image_dictionaries
-        start_time = time.time()
+        #start_time = time.time()
 
         #
         # If init produced anything bad, don't run
@@ -323,6 +323,8 @@ class Analysis(object):
 
         if self._init_fail:
 
+            self._comm.set_terminate()
+            self._comm_thread.join()
             return False
 
         #
@@ -344,6 +346,8 @@ class Analysis(object):
         if xml_writer.get_initialized() is False:
 
             logger.critical('ANALYSIS: XML writer failed to initialize')
+            self._comm.set_terminate()
+            self._comm_thread.join()
             return False
 
         #
@@ -563,6 +567,10 @@ class Analysis(object):
 
         logger.info('Analysis completed at ' + str(time.time()))
 
+        self._comm.set_terminate()
+        self._comm_thread.join()
+
+        logger.info("Exiting")
         return True
 
     def get_current_step(self):

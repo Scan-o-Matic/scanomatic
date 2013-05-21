@@ -16,6 +16,12 @@ __status__ = "Development"
 import time
 
 #
+# INTERNAL DEPENDENCIES
+#
+
+import src.resource_logger as resource_logger
+
+#
 # EXCEPTIONS
 #
 
@@ -39,6 +45,9 @@ class Unbuffered_IO:
         self.stream.flush()
 
     def writelines(self, data):
+
+        if isinstance(data, str):
+            data = (data, )
 
         for row in data:
 
@@ -93,10 +102,15 @@ class Proc_IO(object):
 
     #HELPS
     NEWLINE = "\n"
-    VALUE_EXTEND = " {0}"
+    VALUE_EXTEND = " {0:10.10f}"
 
     def __init__(self, send_file_path, recieve_file_path, recieve_pos=None,
-                 send_file_state='w'):
+                 send_file_state='w', logger=None):
+
+        if logger is None:
+            logger = resource_logger.Fallback_Logger()
+
+        self._logger = logger
 
         unbuffered_send = open(send_file_path, send_file_state, 0)
         self._send_path = send_file_path
@@ -113,7 +127,8 @@ class Proc_IO(object):
             fh.close()
         except:
             self._logger.info(
-                "No recieve file ('{0}') existing before".format(self.stdout))
+                "No recieve file ('{0}') existing before".format(
+                    self._recieve_path))
 
     def _parse_recieved_and_callback(self, lines, recieve_callback):
 
@@ -145,14 +160,15 @@ class Proc_IO(object):
         fh_pos = self._recieve_pos
 
         try:
-            fh = open(self.stdout, 'r')
+            fh = open(self._recieve_path, 'r')
             if fh_pos is not None:
                 fh.seek(fh_pos)
             lines = fh.read()
             fh.close()
         except:
             lines = ""
-            self._logger.error('Could not read stdout')
+            self._logger.error('{0} could not read {1}'.format(
+                self, self._recieve_path))
 
         #Parsing for messages
         self._parse_recieved_and_callback(lines, recieve_callback)
@@ -165,12 +181,12 @@ class Proc_IO(object):
 
         self._sending = True
 
-        if self._stdout_fh is None:
+        if self._send_fh is None:
             for row in msg:
                 print row,
             print
         else:
-            self._stdout_fh.writelines(msg)
+            self._send_fh.writelines(msg)
 
         self._sending = False
 
@@ -188,11 +204,11 @@ class Proc_IO(object):
             msg = tuple(msg)
 
         #ADDING START ROW WITH STAMP
-        decorated_msg = (self.MESSAGE_START +
+        decorated_msg = (self._MESSAGE_START +
                          self.VALUE_EXTEND.format(timestamp), ) + msg
 
         #ADDING END ROW
-        decorated_msg += (self.MESSAGE_END, )
+        decorated_msg += (self._MESSAGE_END, )
 
         return decorated_msg
 
@@ -219,7 +235,8 @@ class Proc_IO(object):
             raise BadFormedMessage("No Message Start:\n{0}".format(msg))
 
         try:
-            undecorated_msg, overflow = undecorated_msg.split(self._MESSAGE_END, 1)
+            undecorated_msg, overflow = undecorated_msg.split(
+                self._MESSAGE_END, 1)
         except:
             raise BadFormedMessage("No Message End:\n{0}".format(msg))
 

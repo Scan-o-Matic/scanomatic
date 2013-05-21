@@ -54,7 +54,7 @@ class _SubProc_Handler(SubProc_Collection_Interface):
     def __iter__(self):
         """Returns an iter for all handled processes"""
 
-        return self._store.__iter__()
+        return tuple(self._store).__iter__()
 
     def count(self):
         """Returns precalculated size of handler's store"""

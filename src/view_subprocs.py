@@ -169,6 +169,8 @@ class _Running_Analysis(_Running_Frame):
         super(_Running_Analysis, self).__init__(proc, model,
                                                 'running-analysis-running')
 
+        self._buttons = []
+
         self._grid_button = gtk.Button(
             label=model['running-analysis-view-gridding'])
 
@@ -184,10 +186,14 @@ class _Running_Analysis(_Running_Frame):
 
     def connect_buttons(self, prefix):
 
-        for button, callback, sensitivity in self._buttons:
+        for i in range(len(self._buttons))[::-1]:
+
+            button, callback, sensitivity = self._buttons[i]
 
             button.connect("clicked", callback, prefix)
             button.set_sensitive(sensitivity)
+
+            del self._buttons[i]
 
     def update(self):
 
