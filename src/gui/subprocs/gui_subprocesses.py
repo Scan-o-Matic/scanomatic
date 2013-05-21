@@ -123,7 +123,12 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         self._start_time = None
         self._pinging = False
 
-    def _send(self, msg, callback, timeout=None, timeout_args=None):
+    def _send(self, msg, callback, comm_type=None,
+              timeout=None, timeout_args=None):
+
+        #Block further communications if it has exited
+        if self._exit_code is not None:
+            callback(timeout_args)
 
         timestamp = time.time()
         if timeout is not None:
@@ -131,7 +136,8 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         decorated_msg = self._proc.decorate(msg, timestamp)
         self._proc.send(decorated_msg)
-        self._proc_communications[timestamp] = (callback, timeout, timeout_args)
+        self._proc_communications[timestamp] = (callback, comm_type,
+                                                timeout, timeout_args)
 
     def _handle_callbacks(self, lines):
 
@@ -144,10 +150,11 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         if self._proc_communications[timestamp] is not None:
 
-            callback, timeout, timeout_args = self._proc_communications[
-                timestamp]
+            callback, comm_type, timeout, timeout_args = (
+                self._proc_communications[timestamp])
 
             del self._proc_communications[timestamp]
+
             callback(self._parse(msg))
 
     def _check_timeouts(self):
@@ -156,10 +163,13 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
             if self._proc_communications[timestamp] is not None:
 
-                callback, timeout, timeout_args = self._proc_communications[
-                    timestamp]
+                callback, comm_type, timeout, timeout_args = (
+                    self._proc_communications[timestamp])
 
                 if timeout is not None and time.time() > timeout:
+
+                    if comm_type == self._io.PING:
+                        self._exit_code = 0
 
                     callback(timeout_args)
 
@@ -221,19 +231,22 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         if self._pinging is False:
             self._pinging = True
-            self._send(self._proc.PING, callback, 2, False)
+            self._send(self._proc.PING, callback,
+                       comm_type=self._proc.PING,
+                       timeout=2,
+                       timeout_args=False)
 
-    def set_callback_is_paused(self, callback):
+    def set_callback_is_paused(self, callback, timeout_args=None):
         """Returns is process is paused"""
 
-        self._send(self._proc.IS_PAUSED, callback)
+        self._send(self._proc.IS_PAUSED, callback, timeout_args=timeout_args)
 
-    def set_callback_parameters(self, callback):
+    def set_callback_parameters(self, callback, timeout_args=None):
         """Returns the parameters used to invoke the process"""
 
         if self._launch_param is None:
 
-            self._send(self._proc.INFO, callback)
+            self._send(self._proc.INFO, callback, timeout_args=None)
 
         else:
             callback(self._launch_param)
@@ -287,7 +300,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         else:
             return 0
 
-    def set_callback_progress(self, callback):
+    def set_callback_progress(self, callback, timeout_args=None):
         """Returns the progress (as precent).
 
         Note that this can be different than doing
@@ -296,18 +309,18 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         progress than just what iteration step it is on.
         """
 
-        self._send(self._proc.PROGRESS, callback)
+        self._send(self._proc.PROGRESS, callback, timeout_args=timeout_args)
 
-    def set_callback_current(self, callback):
+    def set_callback_current(self, callback, timeout_args=None):
         """Returns the current iteration step number"""
 
-        self._send(self._proc.CURRENT, callback)
+        self._send(self._proc.CURRENT, callback, timeout_args=timeout_args)
 
-    def set_callback_total(self, callback):
+    def set_callback_total(self, callback, timeout_args=None):
         """Returns the total iteration steps"""
 
         if self._total is None:
-            self._send(self._proc.TOTAL, callback)
+            self._send(self._proc.TOTAL, callback, timeout_args=timeout_args)
 
         else:
             callback(self._total)
@@ -338,20 +351,20 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         else:
             raise AttemptedProcessOverride(self)
 
-    def set_callback_pause(self, callback):
+    def set_callback_pause(self, callback, timeout_args=None):
         """Requests that the subprocess pauses its operations"""
 
-        self._send(self._proc.PAUSE, callback)
+        self._send(self._proc.PAUSE, callback, timeout_args=timeout_args)
 
-    def set_callback_terminate(self, callback):
+    def set_callback_terminate(self, callback, timeout_args=None):
         """Requests that the subprocess terminates"""
 
-        self._send(self._proc.TERMINATE, callback)
+        self._send(self._proc.TERMINATE, callback, timeout_args=timeout_args)
 
-    def set_callback_unpause(self, callback):
+    def set_callback_unpause(self, callback, timeout_args=None):
         """Requests that the subprocess resumes its operations"""
 
-        self._send(self._proc.UNPAUSE, callback)
+        self._send(self._proc.UNPAUSE, callback, timeout_args=timeout_args)
 
     def close_communications(self):
 

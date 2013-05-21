@@ -61,7 +61,8 @@ class _SubProc_Handler(SubProc_Collection_Interface):
 
         return self._count
 
-    def pop(self):
+    '''
+    def pop(self, callback):
         """Returns element if element reports to be done.
 
         If nothing is completed, returns None.
@@ -73,12 +74,13 @@ class _SubProc_Handler(SubProc_Collection_Interface):
 
         for elem in self:
 
-            if elem.is_done():
+            if elem.set_callback_is_alive(self.
                 self._store.remove(elem)
                 self._set_size()
                 return elem
 
         return None
+    '''
 
     def push(self, elem):
         """Adds subproc elem to handler.
