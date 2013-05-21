@@ -19,15 +19,13 @@ import os
 import re
 from subprocess import Popen, PIPE
 from itertools import chain
-from collections import deque
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 import subproc_interface
-from src.subprocs.protocol import SUBPROC_COMMUNICATIONS
-import src.resource_logger as resource_logger
+from src.subprocs.io import Proc_IO
 
 #
 # EXCEPTIONS
@@ -75,149 +73,6 @@ def _get_pinnings_str(pinning_list):
 #
 
 
-class _Proc_File_IO(object):
-
-    DONE_TRYING = 3
-
-    def __init__(self, stdin, stdout, stderr, logger=None):
-        """Proc File IO is a fake process.
-
-        It exposes the neccesary interface common with true
-        subprocesses. However it communicates with said subprocess
-        not through PIPEs but via reading and writing to files.
-        """
-
-        self._PROC_COMM = SUBPROC_COMMUNICATIONS()
-        self.stdin = stdin
-        self.stdout = stdout
-        self.stderr = stderr
-
-        if logger is None:
-            logger = resource_logger.Fallback_Logger()
-        self._logger = logger
-
-        self._no_responses = 0
-        self._queue = deque()
-        self._cur_stout_pos = None
-        self._reciever_pos = 0
-        self._recieved_messages = []
-
-    def poll(self):
-        """poll emulates a subprocess.poll()
-        Returns None while still running,
-        If stopped it returns Non-None
-        """
-        retval = 0
-
-        t_string = self._PROC_COMM.PING
-        t_string += self._PROC_COMM.VALUE_EXTEND.format(time.time())
-        t_string += self._PROC_COMM.NEWLINE
-
-        lines = self.communicate(t_string)
-
-        if lines is not None and t_string.strip() in lines:
-            retval = None
-            self._no_responses = 0
-
-        else:
-
-            self._no_responses += 1
-
-        if self._no_responses < self.DONE_TRYING:
-            retval = None
-
-        return retval
-
-    def communicate(self, c):
-        """communicate emulates subprocess.communicate()"""
-
-        self._queue.append(c)
-        return self._get_feedback(c)
-
-    def _get_output_since_last_time(self, p, feed):
-        #FIXIT is any in here needed?
-        lines = ""
-        try:
-            fh = open(p[feed], 'r')
-            if 'output-pos' in p:
-                fh.seek(p['output-pos'])
-            lines = fh.read()
-            p['output-pos'] = fh.tell()
-            fh.close()
-        except:
-            pass
-
-        return lines
-
-    def _get_feedback(self, c):
-
-        #GATING
-        while self._queue[0] != c:
-            time.sleep(0.1)
-
-        #SETTING START POINT IN SUBPROCS OUTPUT FILE
-        #IF GUI HAS RESTARTED OR SUCH
-        if self._cur_stout_pos is None:
-            try:
-                fh = open(self.stdout, 'r')
-                fh.read()
-                self._cur_stout_pos = fh.tell()
-                fh.close()
-            except:
-                self._cur_stout_pos = None
-                self._logger.info("No stdout ('{0}') existing before".format(self.stdout))
-
-        #SENDING INFO TO SUBPROCESS
-        try:
-            fh = open(self.stdin, 'a')
-            fh.write(c)
-            fh.close()
-        except:
-            self._logger.error('Could not write to stdin {0}'.format(self.stdin))
-
-        #RECIEVING
-        lines = ""
-        i = 0
-        fh_pos = self._cur_stout_pos
-
-        while i < 20 and self._PROC_COMM.COMMUNICATION_END not in lines:
-
-            try:
-                fh = open(self.stdout, 'r')
-                if fh_pos is not None:
-                    fh.seek(fh_pos)
-                lines += fh.read()
-                fh_pos = fh.tell()
-                fh.close()
-            except:
-                self._logger.error('Could not read stdout')
-
-            if self._PROC_COMM.COMMUNICATION_END not in lines:
-                time.sleep(0.1)
-                i += 1
-
-        #EVALUATING THE RECIEVED
-        messages = lines.split(self._PROC_COMM.COMMUNICATION_END)
-        if len(messages) > 0:
-            messages = messages[:-1]
-        self._recieved_messages += messages
-
-        #SETTING MESSAGE TO BE RETURNED ETC
-        if self._reciever_pos < len(self._recieved_messages):
-            msg = self._recieved_messages[self._reciever_pos]
-            self._recieved_messages = self._recieved_messages[
-                self._reciever_pos + 1:]
-        else:
-            self._reciever_pos += 1
-            msg = None
-
-        e = None
-        while len(self._queue) > 0 and e != c:
-            e = self._queue.popleft()
-
-        return msg
-
-
 class _Subprocess(subproc_interface.SubProc_Interface):
 
     def __init__(self, proc_type, top_controler, proc=None):
@@ -255,10 +110,10 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         Communicate should accept a string as a parameter
         and should return a string response.
         """
-        self._PROC_COMM = SUBPROC_COMMUNICATIONS()
         self._proc_type = proc_type
         self._tc = top_controler
         self._proc = proc
+        self._proc_communications = {}
         self._launch_param = None
         self._total = None
         self._exit_code = None
@@ -266,47 +121,151 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         self._stdout = None
         self._stderr = None
         self._start_time = None
+        self._pinging = False
+
+    def _send(self, msg, callback, timeout=None, timeout_args=None):
+
+        timestamp = time.time()
+        if timeout is not None:
+            timeout += timestamp
+
+        decorated_msg = self._proc.decorate(msg, timestamp)
+        self._proc.send(decorated_msg)
+        self._proc_communications[timestamp] = (callback, timeout, timeout_args)
+
+    def _handle_callbacks(self, lines):
+
+        timestamp, msg = self._proc.undecorate(lines)
+
+        if timestamp not in self._proc_communications:
+
+            raise BadCommunicateReturn(
+                "Unknown communication:\n{0}".format(lines))
+
+        if self._proc_communications[timestamp] is not None:
+
+            callback, timeout, timeout_args = self._proc_communications[
+                timestamp]
+
+            del self._proc_communications[timestamp]
+            callback(self._parse(msg))
+
+    def _check_timeouts(self):
+
+        for timestamp in self._proc_communications:
+
+            if self._proc_communications[timestamp] is not None:
+
+                callback, timeout, timeout_args = self._proc_communications[
+                    timestamp]
+
+                if timeout is not None and time.time() > timeout:
+
+                    callback(timeout_args)
+
+                self._proc_communications[timestamp] = None
+
+    def _parse(self, msg):
+
+        if self._proc.PING in msg:
+
+            self._pinging = False
+            return True
+
+        elif self._proc.PAUSED_RESPONSE in msg:
+
+            return True
+
+        elif self._proc.INFO in msg:
+
+            self._parse_parameters(msg)
+            return self._launch_param
+
+        elif self._proc.PROGRESS in msg:
+
+            return self._get_val(msg, self._PROC_COMM.PROGRESS, float)
+
+        elif self._proc.CURRENT in msg:
+
+            return self._get_val(msg, self._PROC_COMM.CURRENT, int)
+
+        elif self._proc.TOTAL in msg:
+
+            self._total = self._get_val(msg, self._PROC_COMM.TOTAL, int)
+            return self._total
+
+        elif self._proc.PAUSING in msg:
+
+            return True
+
+        elif self._proc.TERMINATING in msg:
+
+            return True
+
+        elif self._proc.RUNNING in msg:
+
+            return True
+
+    def update(self):
+
+        self._proc.recieve(self._handle_callbacks)
+        self._check_timeouts()
 
     def get_type(self):
         """Returns the process type"""
 
         return self._proc_type
 
-    def is_done(self):
-        """Returns if process is done"""
+    def set_callback_is_alive(self, callback):
+        """Callback gets allive status"""
 
-        self._exit_code = self._proc.poll()
-        return self._exit_code is not None
+        if self._pinging is False:
+            self._pinging = True
+            self._send(self._proc.PING, callback, 2, False)
 
-    def is_paused(self):
+    def set_callback_is_paused(self, callback):
         """Returns is process is paused"""
 
-        return (self.communicate(self._pre_comm(self._PROC_COMM.IS_PAUSED)) ==
-                self._PROC_COMM.PAUSED_RESPONSE)
+        self._send(self._proc.IS_PAUSED, callback)
 
-    def get_parameters(self):
+    def set_callback_parameters(self, callback):
         """Returns the parameters used to invoke the process"""
 
         if self._launch_param is None:
-            param = self._proc.communicate(
-                self._pre_comm(self._PROC_COMM.INFO))
 
-            if param is not None:
-                self._parse_parameters(param)
+            self._send(self._proc.INFO, callback)
 
-        return self._launch_param
+        else:
+            callback(self._launch_param)
 
-    def get_prefix(self):
+    def _param_to_prefix(self, param, callback=None):
+
+        if callback is None:
+            callback = self._param_to_prefix_callback
+
+        if callback is None:
+            return
+
+        elif 'prefix' in param:
+            callback(param['prefix'])
+        else:
+            callback("")
+
+    def set_callback_prefix(self, callback):
         """Returns the prefix that the project was created with"""
 
         if self._launch_param is None:
-            self.get_parameters()
+            self._param_to_prefix_callback = callback
+            self.get_parameters(self._param_to_prefix)
 
-        if 'prefix' in self._launch_param:
-            return self._launch_param['prefix']
         else:
-            print self._launch_param
-            return ""
+            self._param_to_prefix(self._launch_param,
+                                  callback=callback)
+
+    def _param_to_init_time(self, param):
+
+        if 'init-time' in self._launch_param:
+            self._start_time = self._launch_param['init-time']
 
     def get_start_time(self):
 
@@ -314,10 +273,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             return self._start_time
 
         if self._launch_param is None:
-            self.get_parameters()
-
-        if 'init-time' in self._launch_param:
-            self._start_time = self._launch_param['init-time']
+            self.get_parameters(self._param_to_init_time)
 
         if self._start_time is None:
             self._start_time = time.time()
@@ -331,7 +287,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         else:
             return 0
 
-    def get_progress(self):
+    def set_callback_progress(self, callback):
         """Returns the progress (as precent).
 
         Note that this can be different than doing
@@ -340,22 +296,21 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         progress than just what iteration step it is on.
         """
 
-        val = self._proc.communicate(self._pre_comm(
-            self._PROC_COMM.PROGRESS))
-        return self._get_val(val, self._PROC_COMM.PROGRESS, float)
+        self._send(self._proc.PROGRESS, callback)
 
-    def get_current(self):
+    def set_callback_current(self, callback):
         """Returns the current iteration step number"""
-        val = self._proc.communicate(self._pre_comm(self._PROC_COMM.CURRENT))
-        return self._get_val(val, self._PROC_COMM.CURRENT, int)
 
-    def get_total(self):
+        self._send(self._proc.CURRENT, callback)
+
+    def set_callback_total(self, callback):
         """Returns the total iteration steps"""
 
         if self._total is None:
-            val = self._proc.communicate(self._pre_comm(self._PROC_COMM.TOTAL))
-            self._total = self._get_val(val, self._PROC_COMM.TOTAL, int)
+            self._send(self._proc.TOTAL, callback)
 
+        else:
+            callback(self._total)
         return self._total
 
     def spawn_proc(self, param_list):
@@ -365,11 +320,10 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         if self._stdin is None:
             self._stdin = PIPE
 
-        proc = Popen(map(str, param_list), stdin=self._stdin,
-                     stdout=self._stdout,
-                     stderr=self._stderr, shell=False)
+        Popen(map(str, param_list), stdin=self._stdin,
+              stdout=self._stdout, stderr=self._stderr, shell=False)
 
-        proc = _Proc_File_IO(self._stdin_path, self._stdout_path, self._stderr_path)
+        proc = Proc_IO(self._stdin_path, self._stdout_path, send_file_state='w')
         return proc
 
     def set_start_time(self):
@@ -384,28 +338,25 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         else:
             raise AttemptedProcessOverride(self)
 
-    def set_pause(self):
+    def set_callback_pause(self, callback):
         """Requests that the subprocess pauses its operations"""
 
-        return (self._proc.communicate(self._pre_comm(self._PROC_COMM.PAUSE))
-                == self._PROC_COMM.PAUSING)
+        self._send(self._proc.PAUSE, callback)
 
-    def set_terminate(self):
+    def set_callback_terminate(self, callback):
         """Requests that the subprocess terminates"""
 
-        return (self._proc.communicate(self._pre_comm(
-            self._PROC_COMM.TERMINATE)) == self._PROC_COMM.TERMINATING)
+        self._send(self._proc.TERMINATE, callback)
 
-    def set_unpause(self):
+    def set_callback_unpause(self, callback):
         """Requests that the subprocess resumes its operations"""
 
-        return (self._proc.communicate(self._pre_comm(
-            self._PROC_COMM.UNPAUSE)) == self._PROC_COMM.RUNNING)
-
-    def _pre_comm(self, msg):
-        return msg + self._PROC_COMM.NEWLINE
+        self._send(self._proc.UNPAUSE, callback)
 
     def close_communications(self):
+
+        self._proc.close_send_file()
+        self._proc = None
 
         if hasattr(self._stdin, 'close'):
             self._stdin.close()
@@ -419,22 +370,11 @@ class _Subprocess(subproc_interface.SubProc_Interface):
             self._stderr.close()
             self._stderr = None
 
-    def _clean_end(self, s):
-
-        if self._PROC_COMM.COMMUNICATION_END in s:
-
-            s = s[:s.index(self._PROC_COMM.COMMUNICATION_END)]
-
-        s = s.strip()
-
-        return s
-
     def _get_val(self, ret_string, expected_start, dtype):
         """Help method for evaluating and validating the response
         from the subprocess"""
 
         len_exp_start = len(expected_start)
-        ret_string = self._clean_end(ret_string)
 
         if ((len_exp_start < len(ret_string)) and
                 (ret_string[:len_exp_start] == expected_start)):
@@ -444,7 +384,8 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         raise BadCommunicateReturn(ret_string, expected_start)
         return None
 
-    def _set_log(self, iotype, f_path, iostate1, iostate2=None):
+    def _set_log(self, iotype, f_path, iostate1=None, iostate2=None,
+                 close_files=False):
 
         if iotype == 'in':
             self._stdin_path = f_path
@@ -453,10 +394,17 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         elif iotype == 'err':
             self._stderr_path = f_path
 
-        fh = open(f_path, iostate1)
+        fh = None
+        if iostate1 is not None:
+            fh = open(f_path, iostate1)
+
         if iostate2 is not None:
             fh.close()
             fh = open(f_path, iostate2)
+
+        if fh is not None and close_files:
+            fh.close()
+            fh = None
 
         return fh
 
@@ -599,11 +547,11 @@ class Experiment_Scanning(_Subprocess):
     def _new_from_paths(self, stdin_path=None, stdout_path=None,
                         stderr_path=None, **params):
 
-        self._stdin = self._set_log('in', stdin_path, 'a')
+        self._set_log('in', stdin_path)
         self._stdout = self._set_log('out', stdout_path, 'r')
         self._stderr = self._set_log('err', stderr_path, 'r')
 
-        proc = _Proc_File_IO(self._stdin_path, self._stdout_path, self._stderr_path)
+        proc = Proc_IO(self._stdin_path, self._stdout_path)
         return proc
 
     def set_logs(self):
@@ -611,9 +559,9 @@ class Experiment_Scanning(_Subprocess):
         tc = self._tc
         scanner = self._scanner
 
-        self._stdin = self._set_log('in', tc.paths.experiment_stdin.format(
+        self._set_log('in', tc.paths.experiment_stdin.format(
             tc.paths.get_scanner_path_name(scanner.get_name())),
-            'w')
+            'w', None, close_files=True)
 
         """
         if self._new_proc:
@@ -761,6 +709,6 @@ class Analysis(_Subprocess):
         self._stdin_path = paths.log_analysis_in.format(self._comm_id)
         self._stdout_path = paths.log_analysis_out.format(self._comm_id)
         self._stderr_path = paths.log_analysis_err.format(self._comm_id)
-        self._set_log('in', self._stdin_path, 'w', None)
+        self._set_log('in', self._stdin_path, 'w', None, close_files=True)
         self._set_log('out', self._stdout_path, 'w', 'r')
         self._set_log('err', self._stderr_path, 'w', 'r')

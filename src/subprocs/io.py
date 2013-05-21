@@ -55,6 +55,10 @@ class Unbuffered_IO:
     def __getattr__(self, attr):
         return getattr(self.stream, attr)
 
+    def close(self):
+
+        self.stream.close()
+
 
 class Proc_IO(object):
 
@@ -91,9 +95,12 @@ class Proc_IO(object):
     NEWLINE = "\n"
     VALUE_EXTEND = " {0}"
 
-    def __init__(self, send_file_handle, recieve_file_path, recieve_pos=None):
+    def __init__(self, send_file_path, recieve_file_path, recieve_pos=None,
+                 send_file_state='w'):
 
-        self._send_fh = send_file_handle
+        unbuffered_send = open(send_file_path, send_file_state, 0)
+        self._send_path = send_file_path
+        self._send_fh = Unbuffered_IO(unbuffered_send)
         self._recieve_path = recieve_file_path
         self._sending = False
         self._recieve_pos = recieve_pos
@@ -217,3 +224,8 @@ class Proc_IO(object):
             raise BadFormedMessage("No Message End:\n{0}".format(msg))
 
         return timestamp, undecorated_msg
+
+    def close_send_file(self):
+
+        self._send_fh.close()
+        self._send_fh = None

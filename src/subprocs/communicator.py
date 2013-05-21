@@ -113,15 +113,14 @@ class Communicator(object):
         self._stdin = stdin
         self._stdout = stdout
         self._stderr = stderr
-        self._stdout_file = None
 
         self._orphan = False
         self._running = False
         self._printing = False
         self._in_pos = None
 
-        self._set_channels()
-        self._io = Proc_IO(self._stdout_file, stdin)
+        self._io = None
+        self._set_io()
 
         self._io.send("DEAMON listens to", stdin)
         self._io.send("DEAMON prints to", stdout)
@@ -131,14 +130,12 @@ class Communicator(object):
 
         self._running = False
 
-    def _set_channels(self):
+    def _set_io(self):
+
+        self._io = Proc_IO(self._stdout, self._stdin, send_file_state='a')
 
         self._io.send("Redirecting stdout to dev/null")
         sys.stdout = open(os.devnull, 'w')
-
-        controlled_out = open(self._stdout, 'a', 0)
-        self._stdout_file = Unbuffered_IO(controlled_out)
-        self._io.send("Open output file {0}".format(self._stdout))
 
         self._io.send("Errors print to error file {0}".format(self._stderr))
         stderr = open(self._stderr, 'a', 0)
@@ -221,6 +218,8 @@ class Communicator(object):
         #ABOUT PROCESS
         elif line == self._protocol.INFO:
             output = self._parent.get_info()
+            if output is not None and output[0] != self._protocol.INFO:
+                output = (self._protocol.INFO, ) + output
 
         #CURRENT
         elif line == self._protocol.CURRENT:
