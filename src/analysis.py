@@ -575,7 +575,7 @@ class Analysis(object):
 
     def get_current_step(self):
 
-        return self.get_total_iterations() - self._image_pos
+        return self.get_total_iterations() - (self._image_pos + 1)
 
     def get_total_iterations(self):
 

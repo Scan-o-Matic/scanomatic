@@ -79,6 +79,8 @@ class _Running_Frame(gtk.Frame):
 
     def _set_title(self, title):
 
+        print "***SETTING LABEL", title
+
         self.set_label(title)
 
     def add_button(self, b, pack_start=True):
@@ -103,9 +105,10 @@ class _Running_Frame(gtk.Frame):
         self._progress.set_fraction(frac)
 
         if cur > 1:
+
             self._first_is_done = True
 
-            dt = time.time() - proc.get_start_time()
+            dt = time.time() - self._proc.get_start_time()
             eta = (1 - frac) * dt / frac
 
             if eta < 0:
@@ -130,7 +133,7 @@ class _Running_Frame(gtk.Frame):
         m = self._model
         self._current_iteration = cur
 
-        if self._total_iterations is not None:
+        if self._total_iterations is not None and cur > 0:
             self._info.set_text(m['running-progress'].format(
                 cur, self._total_iterations))
 

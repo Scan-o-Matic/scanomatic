@@ -17,6 +17,7 @@ __status__ = "Development"
 import time
 import os
 import re
+import inspect
 from subprocess import Popen, PIPE
 from itertools import chain
 
@@ -253,12 +254,24 @@ class _Subprocess(subproc_interface.SubProc_Interface):
     def update(self):
 
         self._proc.recieve(self._handle_callbacks)
-        self._check_timeouts()
+        #self._check_timeouts()
 
     def get_type(self):
         """Returns the process type"""
 
         return self._proc_type
+
+    def isMember(self, methodObject):
+        """Checks if methodObject is a member of the class instance
+
+        :param methodObject: The checked object
+        :return: If methodObject is a memember of self
+        """
+
+        #inspect.getmembers returns (name, value) tuples.
+        #the zip makes it ((name1, name2 ...), (value1, value2 ..))
+        #and the 1 refers to checking the values, since an object is a value
+        return methodObject in zip(*inspect.getmembers(self))[1]
 
     def set_callback_is_alive(self, callback):
         """Callback gets allive status"""
