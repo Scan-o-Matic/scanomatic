@@ -17,9 +17,9 @@ __status__ = "Development"
 import time
 import os
 import re
-import inspect
 from subprocess import Popen, PIPE
 from itertools import chain
+import inspect
 
 #
 # INTERNAL DEPENDENCIES
@@ -49,6 +49,24 @@ class AttemptedProcessOverride(Exception):
 #
 # METHODS
 #
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
 
 
 def _get_pinnings_str(pinning_list):
@@ -131,9 +149,9 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         self._start_time = None
         self._pinging = False
 
+    @whoCalled
     def _send(self, msg, callback, comm_type=None,
-              timeout=None, timeout_args=None,
-              send_self=False):
+              timeout=None, timeout_args=None):
 
         #Block further communications if it has exited
         if self._exit_code is not None:
@@ -146,9 +164,10 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         timestamp = "{0:10.10f}".format(timestamp)
         decorated_msg = self._proc.decorate(msg, timestamp)
         self._proc.send(decorated_msg)
+        print ("### Sent {0}: {1}".format(self._proc.get_sending_path(),
+                                          decorated_msg))
         self._proc_communications[timestamp] = (callback, comm_type,
-                                                timeout, timeout_args,
-                                                send_self)
+                                                timeout, timeout_args)
 
     def _handle_callbacks(self, lines):
 
@@ -164,20 +183,12 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         if self._proc_communications[timestamp] is not None:
 
-            callback, comm_type, timeout, timeout_args, send_self = (
+            callback, comm_type, timeout, timeout_args = (
                 self._proc_communications[timestamp])
 
             del self._proc_communications[timestamp]
 
-            """
-            self._logger.info("Invoking callback {0}(msg is {1})".format(
-                callback, msg))
-            """
-
-            if send_self:
-                callback(self._parse(msg), self)
-            else:
-                callback(self._parse(msg))
+            callback(self._parse(msg))
 
     def _check_timeouts(self):
 
@@ -185,7 +196,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
             if self._proc_communications[timestamp] is not None:
 
-                callback, comm_type, timeout, timeout_args, send_self = (
+                callback, comm_type, timeout, timeout_args = (
                     self._proc_communications[timestamp])
 
                 if timeout is not None and time.time() > timeout:
@@ -194,13 +205,12 @@ class _Subprocess(subproc_interface.SubProc_Interface):
                         "Time out callback {0} (msg is {1})".format(
                             callback, timeout_args))
 
-                    if comm_type == self._proc.PING:
+                    if (comm_type == self._proc.PING and
+                            self._exit_code is None):
+
                         self._exit_code = 0
 
-                    if send_self:
-                        callback(timeout_args, self)
-                    else:
-                        callback(timeout_args)
+                    callback(timeout_args)
 
                     self._proc_communications[timestamp] = None
 
@@ -261,6 +271,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         return self._proc_type
 
+    '''
     def isMember(self, methodObject):
         """Checks if methodObject is a member of the class instance
 
@@ -272,6 +283,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         #the zip makes it ((name1, name2 ...), (value1, value2 ..))
         #and the 1 refers to checking the values, since an object is a value
         return methodObject in zip(*inspect.getmembers(self))[1]
+    '''
 
     def set_callback_is_alive(self, callback):
         """Callback gets allive status"""
@@ -279,10 +291,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         if self._pinging is False:
             self._pinging = True
             self._send(self._proc.PING, callback,
-                       comm_type=self._proc.PING,
-                       timeout=7,
-                       timeout_args=False,
-                       send_self=True)
+                       comm_type=self._proc.PING, timeout_args=False)
 
     def set_callback_is_paused(self, callback, timeout_args=None):
         """Returns is process is paused"""
@@ -385,8 +394,13 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         Popen(map(str, param_list), stdin=self._stdin,
               stdout=self._stdout, stderr=self._stderr, shell=False)
 
-        proc = Proc_IO(self._stdin_path, self._stdout_path, send_file_state='w')
+        proc = Proc_IO(self._stdin_path, self._stdout_path,
+                       send_file_state='w')
         return proc
+
+    def get_sending_path(self):
+
+        return self._stdin_path
 
     def set_start_time(self):
 
@@ -613,7 +627,8 @@ class Experiment_Scanning(_Subprocess):
         self._stdout = self._set_log('out', stdout_path, 'r')
         self._stderr = self._set_log('err', stderr_path, 'r')
 
-        proc = Proc_IO(self._stdin_path, self._stdout_path)
+        proc = Proc_IO(self._stdin_path, self._stdout_path,
+                       send_file_state='a')
         return proc
 
     def set_logs(self):

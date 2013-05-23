@@ -13,6 +13,8 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import inspect
+
 #
 # INTERNAL DEPENDENCIES
 #
@@ -31,6 +33,29 @@ class WrongProcType(Exception):
 
 class InvalidElementInterface(Exception):
     pass
+
+#
+# METHOD
+#
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
+
 
 #
 # CLASSES
@@ -104,7 +129,12 @@ class _SubProc_Handler(SubProc_Collection_Interface):
     def remove(self, elem):
         """Removes an element from handler."""
 
-        self._store.remove(elem)
+        if elem not in self._store:
+            print "*** {0} could not remove {1}".format(self, elem)
+        else:
+            self._store.remove(elem)
+            print "*** {0} removed {1}".format(self, elem)
+
         self._set_size()
 
     def _verify_elem(self, elem):

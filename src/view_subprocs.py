@@ -25,6 +25,7 @@ import time
 #
 
 from src.view_generic import *
+from src.gui.subprocs.event.event import Event
 
 #
 # STATIC GLOBALS
@@ -43,12 +44,16 @@ PADDING_SMALL = 2
 
 class _Running_Frame(gtk.Frame):
 
-    def __init__(self, proc, model, init_info_msg=None):
+    def __init__(self, subproc_controller, proc, model, init_info_msg=None):
 
         super(_Running_Frame, self).__init__(model['process-unknown'])
 
-        proc.set_callback_prefix(self._set_title)
-        proc.set_callback_total(self._set_total_iterations)
+        self._subprocs = subproc_controller
+
+        self._subprocs.add_event(Event(
+            proc.set_callback_prefix, self._set_title, None))
+        self._subprocs.add_event(Event(
+            proc.set_callback_total, self._set_total_iterations, None))
 
         self._model = model
         self._proc = proc
@@ -77,7 +82,7 @@ class _Running_Frame(gtk.Frame):
         self.add(vbox)
         self.show_all()
 
-    def _set_title(self, title):
+    def _set_title(self, proc, title):
 
         print "***SETTING LABEL", title
 
@@ -92,12 +97,12 @@ class _Running_Frame(gtk.Frame):
 
         pack(b, False, False, PADDING_MEDIUM)
 
-    def _set_progress_bar(self, frac):
+    def _set_progress_bar(self, proc, frac):
 
         m = self._model
         cur = self._current_iteration
 
-        if frac < 0:
+        if frac < 0 or frac is None:
             frac = 0
         elif frac > 1:
             frac = 1
@@ -124,11 +129,11 @@ class _Running_Frame(gtk.Frame):
                 m['running-elapsed'].format(
                     (time.time() - self._proc.get_start_time()) / 60.0))
 
-    def _set_total_iterations(self, total):
+    def _set_total_iterations(self, proc, total):
 
         self._total_iterations = total
 
-    def _set_info_iteration_text(self, cur):
+    def _set_info_iteration_text(self, proc, cur):
 
         m = self._model
         self._current_iteration = cur
@@ -137,7 +142,7 @@ class _Running_Frame(gtk.Frame):
             self._info.set_text(m['running-progress'].format(
                 cur, self._total_iterations))
 
-    def _set_done_state(self, is_alive, proc):
+    def _set_done_state(self, proc, is_alive):
 
         m = self._model
         if is_alive is False:
@@ -152,9 +157,11 @@ class _Running_Frame(gtk.Frame):
 
         else:
 
-            proc.set_callback_progress(self._set_progress_bar)
-
-            proc.set_callback_current(self._set_info_iteration_text)
+            self._subprocs.add_event(Event(
+                proc.set_callback_progress, self._set_progress_bar, None))
+            self._subprocs.add_event(Event(
+                proc.set_callback_current,
+                self._set_info_iteration_text, None))
 
     def update(self):
 
@@ -162,14 +169,19 @@ class _Running_Frame(gtk.Frame):
 
         if self._no_more_action is False:
 
-            proc.set_callback_is_alive(self._set_done_state)
+            self._subprocs.add_event(Event(
+                proc.set_callback_is_alive, self._set_done_state, False,
+                responseTimeOut=10))
+
+        return self._no_more_action
 
 
 class _Running_Analysis(_Running_Frame):
 
-    def __init__(self, proc, model, controller):
+    def __init__(self, subproc_controller, proc, model, controller):
 
-        super(_Running_Analysis, self).__init__(proc, model,
+        super(_Running_Analysis, self).__init__(subproc_controller,
+                                                proc, model,
                                                 'running-analysis-running')
 
         self._buttons = []
@@ -183,11 +195,12 @@ class _Running_Analysis(_Running_Frame):
 
         self._grid_button.set_sensitive(False)
 
-        proc.set_callback_prefix(self.connect_buttons)
+        self._subprocs.add_event(Event(
+            proc.set_callback_prefix, self.connect_buttons, None))
 
         self.add_button(self._grid_button)
 
-    def connect_buttons(self, prefix):
+    def connect_buttons(self, proc, prefix):
 
         for i in range(len(self._buttons))[::-1]:
 
@@ -292,6 +305,7 @@ class Running_Analysis(gtk.VBox):
         super(Running_Analysis, self).__init__(False, 0)
 
         self._controller = controller
+        self._subprocs = controller.get_top_controller().subprocs
         self._model = model
         self._specific_model = specific_model
 
@@ -304,7 +318,8 @@ class Running_Analysis(gtk.VBox):
 
         for proc in specific_model['analysises']:
 
-            self._stuff.pack_start(_Running_Analysis(proc, model, controller))
+            self._stuff.pack_start(_Running_Analysis(self._subprocs,
+                                                     proc, model, controller))
 
         self.show_all()
         gobject.timeout_add(6037, self.update)
@@ -325,6 +340,7 @@ class Running_Experiments(gtk.VBox):
         super(Running_Experiments, self).__init__(False, 0)
 
         self._controller = controller
+        self._subprocs = controller.get_top_controller().subprocs
         self._model = model
         self._specific_model = specific_model
 
@@ -336,7 +352,7 @@ class Running_Experiments(gtk.VBox):
         self.pack_start(self._stuff, False, False, PADDING_MEDIUM)
         for proc in specific_model['experiments']:
 
-            self._stuff.pack_start(_Running_Frame(proc, model,
+            self._stuff.pack_start(_Running_Frame(self._subprocs, proc, model,
                                                   None))
 
         self.show_all()

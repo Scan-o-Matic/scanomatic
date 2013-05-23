@@ -13,11 +13,35 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import inspect
+
 #
 # INTERNAL DEPENDENCIES
 #
 
 from src.gui.subprocs.event.event import Event
+
+#
+# METHOD
+#
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
 
 #
 # CLASS
@@ -51,8 +75,9 @@ class EventHandler(object):
 
         if not self._mergeEvent(event):
 
-            if self._events.add(event):
+            if event not in self._events:
 
+                self._events.add(event)
                 event.sendRequest()
 
             else:
@@ -61,13 +86,20 @@ class EventHandler(object):
                                  "event handler ({0})".format(event))
 
     def update(self):
-        """Runs an update loop through the events"""
+        """Runs an update loop through the events.
 
-        for e in self._events:
+        Method is good target for timout-calls or such.
+
+        :return: True
+        """
+
+        for e in tuple(self._events):
 
             e.check()
             if e.isDone():
                 self._removeEvent(e)
+
+        return True
 
     def _mergeEvent(self, event):
         """Checks if the event can be merged with other event
@@ -97,5 +129,10 @@ class EventHandler(object):
         :param event: The event to be removed.
         """
 
-        self._events.remove(event)
+        if event in self._events:
+            self._events.remove(event)
+            print "*** {0} removed!".format(event)
+        else:
+            print "*** {0} has already been removed!".format(event)
+
         del event

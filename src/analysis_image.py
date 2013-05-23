@@ -22,18 +22,22 @@ import numpy as np
 #
 
 import analysis_grid_array
-import resource_fixture_image 
+import resource_fixture_image
 import resource_analysis_support
 import resource_path
 import resource_app_config
-import resource_path
 
 #
 # EXCEPTIONS
 #
 
-class Slice_Outside_Image(Exception): pass
-class Slice_Error(Exception): pass
+
+class Slice_Outside_Image(Exception):
+    pass
+
+
+class Slice_Error(Exception):
+    pass
 
 #
 # CLASS Project_Image
@@ -41,13 +45,14 @@ class Slice_Error(Exception): pass
 
 
 class Project_Image():
-    def __init__(self, pinning_matrices, im_path=None, plate_positions=None,
-        animate=False, file_path_base="", fixture_name=None,
-        p_uuid=None, logger=None, verbose=False, visual=False,
-        suppress_analysis=False,
-        grid_array_settings=None, gridding_settings=None,
-        grid_cell_settings=None, log_version=0, paths=None,
-        app_config=None):
+    def __init__(
+            self, pinning_matrices, im_path=None, plate_positions=None,
+            animate=False, file_path_base="", fixture_name=None,
+            p_uuid=None, logger=None, verbose=False, visual=False,
+            suppress_analysis=False,
+            grid_array_settings=None, gridding_settings=None,
+            grid_cell_settings=None, log_version=0, paths=None,
+            app_config=None):
 
         if logger is not None:
             self.logger = logger
@@ -90,25 +95,25 @@ class Project_Image():
         #Fixture setting is used for pinning history in the arrays
         if fixture_name is None:
             fixture_name = self._paths.experiment_local_fixturename
-            fixture_directory = self._file_path_base  
+            fixture_directory = self._file_path_base
         else:
-            fixture_name = self._paths.get_fixture_path(fixture_name, only_name=True) 
+            fixture_name = self._paths.get_fixture_path(fixture_name, only_name=True)
             fixture_directory = None
 
         self.fixture = resource_fixture_image.Fixture_Image(
-                fixture_name,
-                fixture_directory=fixture_directory,
-                logger=self.logger, paths=self._paths,
-                app_config=self._config
-                )
+            fixture_name,
+            fixture_directory=fixture_directory,
+            logger=self.logger, paths=self._paths,
+            app_config=self._config)
 
         self.logger.info("Fixture is {0}, version {1}".format(
             self.fixture['name'], self.fixture['version']))
 
         self.im = None
 
-        self.gs_indices = np.asarray([82, 78, 74, 70, 66, 62, 58, 54, 50, 46,
-                            42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0])
+        self.gs_indices = np.asarray(
+            [82, 78, 74, 70, 66, 62, 58, 54, 50, 46,
+             42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0])
 
         self._timestamp = None
         self.set_pinning_matrices(pinning_matrices)
@@ -125,22 +130,22 @@ class Project_Image():
             if pinning_matrices[a] is not None:
 
                 self._grid_arrays.append(analysis_grid_array.Grid_Array(
-                        self, (a,),
-                        pinning_matrices[a], verbose=self.verbose,
-                        visual=self.visual,
-                        suppress_analysis=self.suppress_analysis,
-                        grid_array_settings=self.grid_array_settings,
-                        gridding_settings=self.gridding_settings,
-                        grid_cell_settings=self.grid_cell_settings))
+                    self, (a,),
+                    pinning_matrices[a], verbose=self.verbose,
+                    visual=self.visual,
+                    suppress_analysis=self.suppress_analysis,
+                    grid_array_settings=self.grid_array_settings,
+                    gridding_settings=self.gridding_settings,
+                    grid_cell_settings=self.grid_cell_settings))
 
                 self.features.append(None)
                 self.R.append(None)
 
         if len(pinning_matrices) > len(self._grid_arrays):
 
-            self.logger.info('Analysis will run on " + \
-                    "{0} plates out of {1}'.format(
-                    len(self._grid_arrays), len(pinning_matrices)))
+            self.logger.info(
+                "Analysis will run on {0} plates out of {1}".format(
+                len(self._grid_arrays), len(pinning_matrices)))
 
     def set_manual_ideal_grids(self, grid_adjustments):
         """Overrides grid detection with a specified grid supplied in grid
@@ -183,7 +188,8 @@ class Project_Image():
 
                 im = self.get_im_section(plate_positions[grid_array], scale_factor)
 
-                self._grid_arrays[grid_array].set_grid(im, save_name=save_name,
+                self._grid_arrays[grid_array].set_grid(
+                    im, save_name=save_name,
                     grid_correction=self._grid_corrections)
 
     def load_image(self, image_dict=None):
@@ -195,11 +201,13 @@ class Project_Image():
 
         except:
 
-            alt_path = os.sep.join((self._file_path_base,
-                    self._im_path.split(os.sep)[-1]))
+            alt_path = os.sep.join((
+                self._file_path_base,
+                self._im_path.split(os.sep)[-1]))
 
-            self.logger.warning("ANALYSIS IMAGE, Could not open image at " + \
-                    "'{0}' trying in log-file directory ('{1}').".format(
+            self.logger.warning(
+                "ANALYSIS IMAGE, Could not open image at " +
+                "'{0}' trying in log-file directory ('{1}').".format(
                     self._im_path, alt_path))
 
             try:
@@ -213,8 +221,8 @@ class Project_Image():
                 self._im_loaded = False
 
         #This makes sure that the image is 'standing' and not a 'landscape'
-        if (image_dict is not None and 'Image Shape' in image_dict and 
-            image_dict['Image Shape'] is not None):
+        if (image_dict is not None and 'Image Shape' in image_dict and
+                image_dict['Image Shape'] is not None):
 
             ref_shape = image_dict['Image Shape']
 
@@ -222,7 +230,9 @@ class Project_Image():
 
             ref_shape = (1, 0)
 
-        self.im = resource_analysis_support.get_first_rotated(self.im, ref_shape)
+        if self.im is not None:
+            self.im = resource_analysis_support.get_first_rotated(
+                self.im, ref_shape)
 
     def get_plate(self, plate_index):
 
@@ -232,26 +242,27 @@ class Project_Image():
 
         else:
 
-            self.logger.warning("ANALYSIS IMAGE: Plate " + \
-                        "{0} outside expected range (0 - {1}).".format(
-                        plate_index, len(self._grid_arrays)))
+            self.logger.warning(
+                "ANALYSIS IMAGE: Plate " +
+                "{0} outside expected range (0 - {1}).".format(
+                plate_index, len(self._grid_arrays)))
 
             return None
 
     def get_im_section(self, features, scale_factor=4.0, im=None,
-            run_insane=False):
+                       run_insane=False):
 
         if self._im_loaded or im is not None:
 
-            #SCALE AND ORDER BOUNDS 
+            #SCALE AND ORDER BOUNDS
             F = np.round(np.array(features, dtype=np.float) *
-                scale_factor).astype(np.int)
+                         scale_factor).astype(np.int)
 
             F.sort(axis=0)
 
             #SET AXIS ORDER DEPENDING ON VERSION
-            if (self.fixture['version'] >= 
-                self._config.version_first_pass_change_1):
+            if (self.fixture['version'] >=
+                    self._config.version_first_pass_change_1):
 
                 dim1 = 1
                 dim2 = 0
@@ -287,11 +298,11 @@ class Project_Image():
             #NEEDS TO BE OFFSET
             self._set_current_grid_move(d1=d1_correction, d2=d2_correction)
 
-
             #CHECK SO THAT PLATE SHAPE IS AGREEING WITH IM SHAPE
             #(MUST HAVE THE SAME ORIENTATION)
-            if self._get_slice_sanity_check(im,
-                    d1=F[high, dim1]-F[low, dim1],
+            if self._get_slice_sanity_check(
+                    im,
+                    d1=F[high, dim1] - F[low, dim1],
                     d2=F[high, dim2] - F[low, dim2]) or run_insane:
 
                 return im[F[low, dim1]: F[high, dim1], F[low, dim2]: F[high, dim2]]
@@ -300,12 +311,12 @@ class Project_Image():
 
                 raise Slice_Outside_Image(
                     "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
-                    im.shape,
-                    np.s_[F[low, dim1]:F[high, dim1], F[low, dim2],
-                    F[high, dim2]],
-                    scale_factor,
-                    self.fixture['name'],
-                    self.fixture['version']))
+                        im.shape,
+                        np.s_[F[low, dim1]:F[high, dim1], F[low, dim2],
+                              F[high, dim2]],
+                        scale_factor,
+                        self.fixture['name'],
+                        self.fixture['version']))
 
             """
             x0 = round(features[0][0] * scale_factor)
@@ -383,7 +394,7 @@ class Project_Image():
                         scale_factor,
                         self.fixture['name'],
                         self.fixture['version']))
-            
+
         else:
             return None
 
@@ -396,7 +407,7 @@ class Project_Image():
     def _get_slice_sanity_check(self, im, d1=None, d2=None):
 
         if ((float(im.shape[0]) / im.shape[1] > 0) !=
-            (float(d1/d2) > 0)):
+                (float(d1/d2) > 0)):
 
             s = "Current shape is {0} x {1}.".format(d1, d2)
             s += " Image is {0} x {1}.".format(self._ref_plate_d1, self._ref_plate_d2)
@@ -406,7 +417,8 @@ class Project_Image():
 
         return True
 
-    def get_analysis(self, im_path, features, grayscale_values,
+    def get_analysis(
+            self, im_path, features, grayscale_values,
             watch_colony=None, save_grid_name=None,
             grid_lock=False, identifier_time=None, timestamp=None,
             grayscale_indices=None, image_dict=None):
@@ -439,12 +451,12 @@ class Project_Image():
             positions of the spikes and a quality index
         """
 
-        if im_path != None:
+        if im_path is not None:
 
             self._im_path = im_path
             self.load_image(image_dict=image_dict)
 
-        if self._im_loaded == True:
+        if self._im_loaded is True:
 
             if len(self.im.shape) > 2:
 
@@ -475,8 +487,8 @@ class Project_Image():
 
             gs_fit = None
 
-        self.logger.debug("ANALYSIS produced gs-coefficients" + \
-                    " {0} ".format(gs_fit))
+        self.logger.debug("ANALYSIS produced gs-coefficients {0} ".format(
+            gs_fit))
 
         if self._log_version < self._config.version_first_pass_change_1:
             scale_factor = 4.0
@@ -485,16 +497,19 @@ class Project_Image():
 
         if gs_fit is not None:
 
-            z3_deriv_coeffs = np.array(gs_fit[: -1]) * \
-                        np.arange(gs_fit.shape[0] - 1, 0, -1)
+            z3_deriv_coeffs = (np.array(gs_fit[: -1]) *
+                               np.arange(gs_fit.shape[0] - 1, 0, -1))
 
-            z3_deriv = np.array(map(lambda x: (z3_deriv_coeffs * np.power(x,
-                np.arange(z3_deriv_coeffs.shape[0], 0, -1))).sum(), range(87)))
+            z3_deriv = np.array(
+                map(lambda x: (z3_deriv_coeffs * np.power(
+                    x, np.arange(z3_deriv_coeffs.shape[0], 0, -1))).sum(),
+                    range(87)))
 
             if (z3_deriv > 0).any() and (z3_deriv < 0).any():
 
-                self.logger.warning("ANALYSIS of grayscale seems dubious" + \
-                                " as coefficients don't have the same sign")
+                self.logger.warning(
+                    "ANALYSIS of grayscale seems dubious" +
+                    " as coefficients don't have the same sign")
 
                 gs_fit = None
 
@@ -507,28 +522,26 @@ class Project_Image():
             im = self.get_im_section(features[grid_array], scale_factor)
 
             self._grid_arrays[grid_array].get_analysis(
-                    im,
-                    gs_values=gs_values,
-                    watch_colony=watch_colony,
-                    save_grid_name=save_grid_name,
-                    identifier_time=identifier_time,
-                    grid_correction=self._grid_corrections)
+                im,
+                gs_values=gs_values,
+                watch_colony=watch_colony,
+                save_grid_name=save_grid_name,
+                identifier_time=identifier_time,
+                grid_correction=self._grid_corrections)
 
             self.features[grid_array] = self._grid_arrays[grid_array]._features
             self.R[grid_array] = self._grid_arrays[grid_array].R
 
-        if watch_colony != None:
+        if watch_colony is not None:
 
             self.watch_grid_size = \
-                    self._grid_arrays[watch_colony[0]]._grid_cell_size
+                self._grid_arrays[watch_colony[0]]._grid_cell_size
 
             self.watch_source = self._grid_arrays[watch_colony[0]].watch_source
             self.watch_scaled = self._grid_arrays[watch_colony[0]].watch_scaled
             self.watch_blob = self._grid_arrays[watch_colony[0]].watch_blob
 
             self.watch_results = \
-                    self._grid_arrays[watch_colony[0]].watch_results
+                self._grid_arrays[watch_colony[0]].watch_results
 
         return self.features
-
-

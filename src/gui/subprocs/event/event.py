@@ -14,6 +14,30 @@ __status__ = "Development"
 #
 
 import time
+import inspect
+
+#
+# METHOD
+#
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
+
 
 #
 # CLASS
@@ -22,15 +46,11 @@ import time
 
 class Event(object):
 
-    def __init__(self, requestObject, requestFunction, responseTargetFunction,
+    def __init__(self, requestFunction, responseTargetFunction,
                  responseDefualt, responseTimeOut=None, **requestParameters):
 
-        if not requestObject.isMember(requestFunction):
-            raise NameError("{0} not a member of {1}".format(
-                requestObject, requestFunction))
-
         #Request
-        self._requestObject = requestObject
+        self._requestObject = requestFunction.im_self
         self._requestFunction = requestFunction
         self._requestParameters = requestParameters
 
@@ -154,7 +174,7 @@ class Event(object):
         if self._hasResponeded:
             for responseTargetFunction in self._responseDefualts.keys():
 
-                responseTargetFunction(*self._response)
+                responseTargetFunction(self._requestObject, *self._response)
 
                 self._removeTarget(responseTargetFunction)
 
@@ -169,7 +189,8 @@ class Event(object):
                 if ((timeOut is not None) and
                         (checkTime > timeOut + self._requestTime)):
 
-                    responseTargetFunction(self._responseDefualts[
-                        responseTargetFunction])
+                    responseTargetFunction(
+                        self._requestObject,
+                        self._responseDefualts[responseTargetFunction])
 
                     self._removeTarget(responseTargetFunction)

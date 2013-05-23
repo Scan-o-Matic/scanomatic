@@ -17,6 +17,7 @@ __status__ = "Development"
 import time
 import sys
 import os
+import threading
 
 #
 # INTERNAL DEPENDENCIES
@@ -148,10 +149,19 @@ class Communicator(object):
     def run(self):
         """The main process for the communications daemon"""
 
+        curThread = threading.currentThread()
+        nonMeThreads = [t for t in threading.enumerate() if
+                        t is not curThread]
+
+        if len(nonMeThreads) != 1:
+            raise Exception("Uncertain threading situation")
+
+        mainThread = nonMeThreads[0]
+
         self._running = True
         self._io.send("DEAMON is running")
 
-        while self._running:
+        while self._running and mainThread.isAlive():
 
             self._io.recieve(self._parse)
 

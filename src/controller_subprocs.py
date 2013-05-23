@@ -31,6 +31,8 @@ import src.gui.subprocs.subproc_interface as subproc_interface
 import src.gui.subprocs.progress_responses as progress_responses
 import src.gui.subprocs.reconnect as reconnect
 import src.gui.subprocs.live_projects as live_projects
+import src.gui.subprocs.event.event_handler as event_handler
+from src.gui.subprocs.event.event import Event
 
 #
 # EXCEPTIONS
@@ -60,10 +62,6 @@ class UnDocumented_Error(Exception):
 class Subprocs_Controller(controller_generic.Controller,
                           progress_responses.Progress_Responses):
 
-    ANALYSIS = "A"
-    EXPERIMENT_SCANNING = "ES"
-    EXPERIMENT_REBUILD = "ER"
-
     def __init__(self, main_controller, logger=None):
 
         super(Subprocs_Controller, self).__init__(
@@ -75,6 +73,11 @@ class Subprocs_Controller(controller_generic.Controller,
         self._project_progress = live_projects.Live_Projects(
             main_controller.paths, self._model)
 
+        #Initiate events handler and the timeout for its update
+        self._subprocess_events = event_handler.EventHandler(logger)
+        gobject.timeout_add(1307, self._subprocess_events.update)
+
+        #Reconnect subprocesses from previous instances
         revive_processes = reconnect.Reconnect_Subprocs(self, logger)
         thread = threading.Thread(target=revive_processes.run)
         thread.start()
@@ -134,6 +137,7 @@ class Subprocs_Controller(controller_generic.Controller,
 
     def get_remaining_scans(self):
 
+        """ MULTI-EVENT
         img_tot = 0
         img_done = 0
 
@@ -143,19 +147,35 @@ class Subprocs_Controller(controller_generic.Controller,
             img_done += proc.get_current()
 
         return img_tot - img_done
+        """
+        pass
 
     def add_subprocess_directly(self, ptype, proc):
         """Adds a proc, should be used only by reconnecter"""
 
-        if (ptype == self.EXPERIMENT_SCANNING or
-                ptype == self.EXPERIMENT_REBUILD):
+        if (ptype == subproc_interface.EXPERIMENT_SCANNING or
+                ptype == subproc_interface.EXPERIMENT_REBUILD):
 
             success = self._experiments.push(proc)
-            proc.set_callback_parameters(self._set_experiment_started)
 
-        elif ptype == self.ANALYSIS:
+            self.add_event(Event(
+                proc.set_callback_parameters,
+                self._set_experiment_started, None))
+
+        elif ptype == subproc_interface.ANALYSIS:
 
             success == self._analysises.push(proc)
+
+            self.add_event(Event(
+                proc.set_callback_parameters,
+                self._set_analysis_started, None))
+
+        else:
+
+            raise Exception("Proc {0} of type {1} is not known".format(
+                proc, ptype))
+
+            success = False
 
         return success
 
@@ -169,17 +189,17 @@ class Subprocs_Controller(controller_generic.Controller,
         relevant gui_subprocess-class to launch
         """
 
-        if ptype == self.EXPERIMENT_SCANNING:
+        if ptype == subproc_interface.EXPERIMENT_SCANNING:
 
             success = self.add_subprocess_directly(
                 ptype,
                 gui_subprocesses.Experiment_Scanning(self._tc, **params))
 
-        elif ptype == self.ANALYSIS:
+        elif ptype == subproc_interface.ANALYSIS:
 
             success = self._queue.push(params)
 
-        elif ptype == self.EXPERIMENT_REBUILD:
+        elif ptype == subproc_interface.EXPERIMENT_REBUILD:
 
             success = self.add_subprocess_directly(
                 ptype,
@@ -189,7 +209,38 @@ class Subprocs_Controller(controller_generic.Controller,
             ["Failed to add", "Added"][success],
             ptype, params))
 
-    def _make_analysis_from_experiment(self, param):
+    def add_event(self, event):
+        """Adds a new event.
+
+        :param event: The event
+        """
+
+        self._subprocess_events.addEvent(event)
+
+    def stop_process(self, proc):
+        """Stops a process
+
+        :param proc: The process to be stopped
+        """
+
+        if (proc.get_type() == subproc_interface.EXPERIMENT_SCANNING or
+                proc.get_type() == subproc_interface.EXPERIMENT_REBUILD):
+
+            handler = self._experiments
+            self.add_event(Event(
+                proc.set_callback_prefix, self._set_stopped_experiment, None))
+
+        elif (proc.get_type() == subproc_interface.ANALYSIS):
+
+            handler = self._analysises
+            self.add_event(Event(
+                proc.set_callback_prefix, self._set_stopped_analysis, None))
+
+        handler.remove(proc)
+        proc.terminate()
+        proc.close_communications()
+
+    def _make_analysis_from_experiment(self, proc, param):
         """Queries and experiment process to run defualt analysis
 
         The analysis is placed in the queue and run with default
@@ -202,27 +253,31 @@ class Subprocs_Controller(controller_generic.Controller,
 
         if param is not None and 'experiments-root' in param:
 
-            self.add_subprocess(self.ANALYSIS,
-                                experiments_root=param['experiments_root'],
+            self.add_subprocess(subproc_interface.ANALYSIS,
+                                experiments_root=param['experiments-root'],
                                 experiment_prefix=param['prefix'])
 
             return True
 
         return False
 
-    def _set_experiment_started(self, param):
+    def _set_experiment_started(self, proc, param):
 
             self.set_project_progress(
                 param['prefix'], 'EXPERIMENT', 'RUNNING',
                 experiment_dir=param['experiments-root'],
                 first_pass_file=param['1-pass file'])
 
-    def _set_experiment_completed(self, prefix):
+    def _set_experiment_completed(self, proc, prefix):
 
+        if prefix is not None:
             self.set_project_progress(prefix, 'EXPERIMENT', 'COMPLETED')
             self.set_project_progress(prefix, 'ANALYSIS', 'AUTOMATIC')
+        else:
+            self._logger.error("Failed to get the prefix for {0}".format(
+                self._set_experiment_completed))
 
-    def _set_analysis_started(self, param):
+    def _set_analysis_started(self, proc, param):
 
             self.set_project_progress(
                 param['prefix'], 'ANALYSIS', 'RUNNING',
@@ -230,45 +285,57 @@ class Subprocs_Controller(controller_generic.Controller,
                 first_pass_file=param['1-pass file'],
                 analysis_path=param['analysis-dir'])
 
-    def _experiment_is_alive(self, is_alive, experiment):
+    def _experiment_is_alive(self, experiment, is_alive):
+
+        print ("!!! Experiment {0}, is_alive={1}".format(
+            experiment, is_alive))
 
         if is_alive is False:
 
-            #Place analysis in queue
-            experiment.set_callback_parameters(
-                self._make_analysis_from_experiment)
-
-            #Update live project status
-            experiment.set_callback_prefix(self._set_experiment_completed)
-
-            experiment.close_communications()
             self._experiments.remove(experiment)
 
-    def _set_analysis_completed(self, prefix):
+            #Place analysis in queue
+            self.add_event(
+                Event(experiment.set_callback_parameters,
+                      self._make_analysis_from_experiment, None))
+
+            #Update live project status
+            self.add_event(
+                Event(experiment.set_callback_prefix,
+                      self._set_experiment_completed, None))
+
+            experiment.close_communications()
+
+    def _set_analysis_completed(self, proc, prefix):
 
         self.set_project_progress(
             prefix, 'ANALYSIS', 'COMPLETED')
         self.set_project_progress(
             prefix, 'UPLOAD', 'LAUNCH')
 
-    def _set_analysis_failed(self, prefix):
+    def _set_analysis_failed(self, proc, prefix):
 
         self.set_project_progress(
             prefix, 'ANALYSIS', 'FAILED')
 
-    def _analysis_is_alive(self, is_alive, analysis):
+    def _analysis_is_alive(self, analysis, is_alive):
 
         if is_alive is False:
 
-            if analysis.get_exit_code() == 0:
+            self._analysises.remove(analysis)
 
-                analysis.set_callback_prefix(self._set_analysis_completed)
+            if analysis.get_exit_code() in (0, None):
+
+                self.add_event(
+                    Event(analysis.set_callback_prefix,
+                          self._set_analysis_completed, None))
             else:
 
-                analysis.set_callback_prefix(self._set_analysis_failed)
+                self.add_event(
+                    Event(analysis.set_callback_prefix,
+                          self._set_analysis_failed, None))
 
             analysis.close_communications()
-            self._analysises.remove(analysis)
 
     def _subprocess_callback(self):
         """Callback that checks on finished stuff etc"""
@@ -282,10 +349,10 @@ class Subprocs_Controller(controller_generic.Controller,
 
         for experiment in self._experiments:
 
-            experiment.set_callback_is_alive(
-                self._experiment_is_alive)
-
-            experiment.update()
+            self.add_event(Event(
+                experiment.set_callback_is_alive,
+                self._experiment_is_alive, False,
+                responseTimeOut=10))
 
         #
         #   2. CHECKING IF ANY NEW ANALYSIS MAY BE STARTED
@@ -303,7 +370,9 @@ class Subprocs_Controller(controller_generic.Controller,
             self._analysises.push(proc)
 
             #Update live project status
-            proc.set_callback_parameters(self._set_analysis_started)
+            self.add_event(Event(
+                proc.set_callback_parameters,
+                self._set_analysis_started, None))
 
         #
         #   3. CHECKING IF ANY ANALYSIS IS DONE
@@ -311,10 +380,10 @@ class Subprocs_Controller(controller_generic.Controller,
 
         for analysis in self._analysises:
 
-            analysis.set_callback_is_alive(
-                self._analysis_is_alive)
-
-            analysis.update()
+            self.add_event(Event(
+                analysis.set_callback_is_alive,
+                self._analysis_is_alive, False,
+                responseTimeOut=10))
 
         #
         #   4. TOGGLE SAVE STATUS OF SUBPROCESSES (if any is running)
@@ -341,33 +410,15 @@ class Subprocs_Controller(controller_generic.Controller,
 
         return True
 
-    def _set_stopped_experiment(self, prefix):
+    def _set_stopped_experiment(self, proc, prefix):
 
         self.set_project_progress(
             prefix, 'EXPERIMENT', 'TERMINATED')
 
-    def _set_stopped_analysis(self, prefix):
+    def _set_stopped_analysis(self, proc, prefix):
 
         self.set_project_progress(
             prefix, 'ANALYSIS', 'TERMINATED')
 
         self.set_project_progress(
             prefix, 'INSPECT', 'LAUNCH')
-
-    def stop_process(self, proc):
-        """Stops a process"""
-
-        if (proc.get_type() == subproc_interface.EXPERIMENT_SCANNING or
-                proc.get_type() == subproc_interface.EXPERIMENT_REBUILD):
-
-            handler = self._experiments
-            proc.set_callback_prefix(self._set_stopped_experiment)
-
-        elif (proc.get_type() == subproc_interface.ANALYSIS):
-
-            handler = self._analysises
-            proc.set_callback_prefix(self._set_stopped_analysis)
-
-        handler.remove(proc)
-        proc.terminate()
-        proc.close_communications()

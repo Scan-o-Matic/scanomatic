@@ -543,8 +543,8 @@ class Project_Controller(controller_generic.Controller):
     def check_free_disk_space(self):
 
         sm = self._specific_model
-        m = self._model
-        tc = self.get_top_controller()
+        #m = self._model
+        #tc = self.get_top_controller()
         stage = self._view.get_stage()
 
         df_val = -1
@@ -558,6 +558,8 @@ class Project_Controller(controller_generic.Controller):
 
             stage.set_free_space_warning(known_space=True)
 
+        """TODO: reimplement
+
         elif (m['space-warning-im-size'] *
               (sm['scans'] + tc.subprocs.get_remaining_scans())
               * m['space-warning-coeff']) > df_val:
@@ -568,6 +570,8 @@ class Project_Controller(controller_generic.Controller):
                (m['space-warning-im-size'] *
                (sm['scans'] + tc.subprocs.get_remaining_scans())
                * m['space-warning-coeff']))
+
+        """
 
     def _check_duration_consistencies(self):
 

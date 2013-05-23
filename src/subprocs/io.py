@@ -146,6 +146,10 @@ class Proc_IO(object):
             self._recieve_pos += m_end
             lines = lines[m_end:]
 
+    def get_sending_path(self):
+
+        return self._send_path
+
     def recieve(self, recieve_callback):
         """Recieves messages and passes them to callback.
 
@@ -183,8 +187,7 @@ class Proc_IO(object):
 
         if self._send_fh is None:
             for row in msg:
-                print row,
-            print
+                print row
         else:
             self._send_fh.writelines(msg)
 
@@ -244,5 +247,6 @@ class Proc_IO(object):
 
     def close_send_file(self):
 
-        self._send_fh.close()
-        self._send_fh = None
+        if self._send_fh is not None:
+            self._send_fh.close()
+            self._send_fh = None

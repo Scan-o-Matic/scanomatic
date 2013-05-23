@@ -21,6 +21,7 @@ __status__ = "Development"
 
 import gui_subprocesses
 import src.resource_logger as resource_logger
+from src.gui.subprocs.event.event import Event
 
 #
 # CLASSES
@@ -31,11 +32,14 @@ class Reconnect_Subprocs(object):
 
     def __init__(self, controller, logger):
 
+        self._paths = controller.get_top_controller().paths
+
         self._controller = controller
         if logger is None:
             logger = resource_logger.Fallback_Logger()
         self._logger = logger
         self._tc = controller.get_top_controller()
+        self._ids = {}
 
     def run(self):
 
@@ -66,7 +70,9 @@ class Reconnect_Subprocs(object):
                 lines = fh.read()
                 if lines != '':
                     locked = True
-                    ids.append(lines.split()[0].strip())
+                    s_id = lines.split()[0].strip()
+                else:
+                    s_id = ""
                 fh.close()
             except:
                 locked = False
@@ -75,6 +81,7 @@ class Reconnect_Subprocs(object):
 
             if locked:
                 #TRY TALKING TO IT
+                self._ids[scanner_i] = s_id
                 logger.info("Scanner {0} is locked".format(scanner_i))
 
                 stdin_path = paths.experiment_stdin.format(scanner)
@@ -88,19 +95,33 @@ class Reconnect_Subprocs(object):
                         'stderr_path': stderr_path,
                         'is_running': True})
 
-                if proc.is_done() is False:
-
-                    logger.info("Scanner {0} is alive".format(scanner_i))
-
-                    self._controller.add_subprocess_directly(
-                        self._controller.EXPERIMENT_SCANNING, proc)
-
-                else:
-
-                    logger.info("Scanner {0} was dead".format(scanner_i))
-                    self._release_scanner(scanner_i, scanner, lines)
+                self._controller.add_event(Event(
+                    proc.set_callback_is_alive,
+                    self._is_alive, False,
+                    responseTimeOut=10))
+            else:
+                ids.append(ids)
 
         self._remove_uuids(ids)
+
+    def _is_alive(self, proc, is_done):
+
+        logger = self._logger
+        if not is_done:
+
+            logger.info("Proc {0} {1} is alive".format(
+                proc.get_type(), proc.get_sending_path()))
+
+            self._controller.add_subprocess_directly(proc.get_type(), proc)
+
+        else:
+
+            logger.info("Proc {0} {1} was dead".format(
+                proc.get_type(), proc.get_sending_path()))
+
+            if proc.get_type() == self._controller.EXPERIMENT_SCANNING:
+
+                self._release_scanner(proc)
 
     def check_analysises(self):
 
@@ -136,9 +157,10 @@ class Reconnect_Subprocs(object):
         except:
             pass
 
-    def _release_scanner(self, scanner_i, scanner, scanner_id):
+    def _release_scanner(self, proc):
 
-        scanner_id = scanner_id.strip()
+        scanner_i = self._paths.get_scanner_index(proc.get_sending_path())
+        scanner_id = self._ids[scanner_i].strip()
 
         #FREE SCANNER
         scanner = self._tc.scanners["Scanner {0}".format(scanner_i)]

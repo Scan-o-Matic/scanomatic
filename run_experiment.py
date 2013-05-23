@@ -18,7 +18,6 @@ import logging
 import threading
 from multiprocessing import Process
 import os
-import signal
 import sys
 import time
 import uuid
@@ -166,7 +165,7 @@ class Experiment(object):
             '__PINNING__ {0}\n'.format(self._pinning),
             '__INTERVAL__ {0}\n'.format(self._interval),
             '__SCANS__ {0}\n'.format(self._max_scans),
-            '__INIT-TIME__ {0}\n'.format(self._init_tie),
+            '__INIT-TIME__ {0}\n'.format(self._init_time),
             '__CUR-IM__ {0}\n'.format(self._scanned),
             '__1-PASS FILE__ {0}\n'.format(self._first_pass_analysis_file)
         )
@@ -378,7 +377,7 @@ class Experiment(object):
                 self._first_pass_analysis_file,
                 images=[im_dict])
 
-        self._gated_print("__Id__ {0}".format(self._scanned))
+        #self._gated_print("__Id__ {0}".format(self._scanned))
         self._logger.info("Image {0} done!".format(im_index))
 
     def _write_header_row(self):

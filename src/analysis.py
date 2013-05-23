@@ -114,7 +114,7 @@ class Analysis(object):
         # VARIABLES - SOME ARE HACK
         #
 
-        self._running = False
+        self._running = None
         self._paused = False
         self._init_time = time.time()
         self._init_fail = False
@@ -603,6 +603,10 @@ class Analysis(object):
 
         self._paused = False
         return True
+
+    def get_running(self):
+
+        return self._running is not False
 
     def get_info(self):
 

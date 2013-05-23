@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import os
+import re
 
 #
 # EXCEPTIONS
@@ -159,6 +160,14 @@ class Paths(object):
     def get_scanner_path_name(self, scanner):
 
         return scanner.lower().replace(" ", "_")
+
+    def get_scanner_index(self, scanner_path):
+
+        candidates = map(int, re.findall(r"\d+", scanner_path))
+        if len(candidates) > 0:
+            return candidates[-1]
+        else:
+            return None
 
     def get_fixture_path(self, fixture_name, conf_file=True, own_path=None,
                          only_name=False):
