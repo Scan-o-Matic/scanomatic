@@ -4,6 +4,11 @@
 
 --- HOT ---
 
+*** SUBPROCS
+
+	There's a problem with reconnecter makes it look like locked scanners
+	are alive for a short while even without subprocs.
+
 *** FIRST PASS needs to store DPI setting because analysis needs to know how
     to scale history and default expectencies accordingly.
 
