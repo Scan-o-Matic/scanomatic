@@ -27,6 +27,7 @@ import sh
 import src.model_experiment as model_experiment
 import src.view_experiment as view_experiment
 import src.controller_generic as controller_generic
+import src.gui.subprocs.subproc_interface as subproc_interface
 
 #
 # EXCEPTIONS
@@ -672,60 +673,9 @@ class Project_Controller(controller_generic.Controller):
 
     def start(self, *args):
 
-        """
-        sm = self._specific_model
-        tc = self.get_top_controller()
-        scanner = tc.scanners[sm['scanner']]
-
-        experiment_query = tc.config.get_default_experiment_query()
-        experiment_query['-f'] = sm['fixture']
-        experiment_query['-s'] = sm['scanner']
-        experiment_query['-i'] = sm['interval']
-        experiment_query['-n'] = sm['scans']
-
-        if sm['experiments-root'] != '':
-            experiment_query['-r'] = sm['experiments-root']
-
-        experiment_query['-p'] = sm['experiment-prefix']
-        experiment_query['-d'] = sm['experiment-desc']
-        experiment_query['-c'] = sm['experiment-id']
-        experiment_query['-l'] = sm['experiment-scan-layout-id']
-        experiment_query['-u'] = scanner.get_uuid()
-
-        experiment_query['-m'] = get_pinnings_str(sm['pinnings-list'])
-
-        e_query_list = [tc.paths.experiment]
-        e_query_list += list(chain.from_iterable(experiment_query.items()))
-        e_query_list = map(str, e_query_list)
-
-        stdin_path = tc.paths.experiment_stdin.format(
-            tc.paths.get_scanner_path_name(scanner.get_name()))
-        stdin = open(stdin_path, 'w')
-        stdin.close()
-        stdout_path = tc.paths.log_scanner_out.format(scanner.get_socket())
-        stdout = open(stdout_path, 'w')
-        stderr_path = tc.paths.log_scanner_err.format(scanner.get_socket())
-        stderr = open(stderr_path, 'w')
-
-        proc = Popen(e_query_list, stdout=stdout, stderr=stderr, shell=False)
-        proc_type = 'scanner'
-        self._logger.info(
-            "Started experiment {0} ".format(sm['experiment-prefix']) +
-            "in directory {0} ".format(sm['experiments-root']) +
-            "on scanner {0}, fixture {1}".format(sm['scanner'], sm['fixture']))
-
-        self._logger.debug("Command:\n" + " ".join(e_query_list))
-
-        scanner.set_uuid()
-        tc.add_subprocess(
-            proc, proc_type,
-            stdin=stdin_path, stdout=stdout_path, stderr=stderr_path,
-            pid=proc.pid, psm=sm, proc_name=sm['scanner'])
-        """
-
         tc = self.get_top_controller()
         sm = self._specific_model
-        tc.subprocs.add_subprocess(tc.subprocs.EXPERIMENT_SCANNING, sm=sm)
+        tc.add_subprocess(subproc_interface.EXPERIMENT_SCANNING, sm=sm)
 
         self.set_view_stage(None, 'running')
 

@@ -35,6 +35,7 @@ import src.analysis_wrapper as a_wrapper
 import src.resource_fixture_image as resource_fixture_image
 import src.resource_image as resource_image
 import src.resource_first_pass_analysis as resource_first_pass_analysis
+import src.gui.subprocs.subproc_interface as subproc_interface
 
 #
 # EXCEPTIONS
@@ -1828,7 +1829,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
             pm = pm[:-1]
             a_dict["-m"] = pm
 
-        tc.subprocs.add_subprocess(tc.subprocs.ANALYSIS, a_dict=a_dict)
+        tc.add_subprocess(subproc_interface.ANALYSIS, a_dict=a_dict)
 
     def set_log_file(self, widget, log_files=None):
 
