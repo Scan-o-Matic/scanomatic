@@ -482,6 +482,8 @@ input file for the analysis script.""")
 
     args = parser.parse_args()
 
+    print "\n\n<<>> {0}\n\n".format(args)
+
     #DEBUGGING
     LOGGING_LEVELS = {'critical': logging.CRITICAL,
                       'error': logging.ERROR,

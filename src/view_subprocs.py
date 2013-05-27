@@ -19,6 +19,7 @@ import gtk
 import gobject
 import os
 import time
+import inspect
 
 #
 # INTERNAL DEPENDENCIES
@@ -36,6 +37,28 @@ PADDING_LARGE = 10
 PADDING_MEDIUM = 4
 PADDING_SMALL = 2
 """
+
+#
+# METHODS
+#
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
 
 #
 # CLASSES
@@ -142,6 +165,7 @@ class _Running_Frame(gtk.Frame):
             self._info.set_text(m['running-progress'].format(
                 cur, self._total_iterations))
 
+    @whoCalled
     def _set_done_state(self, proc, is_alive):
 
         m = self._model

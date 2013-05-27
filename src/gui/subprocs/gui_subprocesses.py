@@ -716,7 +716,7 @@ class Analysis(_Subprocess):
         self.set_process(self.get_proc(**params))
 
     def get_param_list(self, comm_id, experiments_root, experiment_prefix,
-                       a_dict=None):
+                       experiment_first_pass, a_dict=None):
 
         if a_dict is None:
             a_dict = self._tc.config.get_default_analysis_query()
@@ -725,13 +725,19 @@ class Analysis(_Subprocess):
 
         #Making the reference to the input file if not supplied in the
         #a_dict.
-        if '-i' not in a_dict or a_dict['-i'] is None:
+        if '-i' not in a_dict or a_dict['-i'] in (None, ''):
 
-            proc_name = os.path.join(
-                experiments_root,
-                experiment_prefix,
-                self._tc.paths.experiment_first_pass_analysis_relative.format(
-                    experiment_prefix))
+            if experiment_first_pass is None:
+
+                proc_name = os.path.join(
+                    experiments_root,
+                    experiment_prefix,
+                    self._tc.paths.experiment_first_pass_analysis_relative.format(
+                        experiment_prefix))
+
+            else:
+
+                proc_name = experiment_first_pass
 
             a_dict['-i'] = proc_name
 
@@ -743,7 +749,8 @@ class Analysis(_Subprocess):
         return a_list
 
     def get_proc(self, is_running=False, a_dict=None,
-                 experiments_root=None, experiment_prefix=None, comm_id=None):
+                 experiments_root=None, experiment_prefix=None,
+                 experiment_first_pass=None, comm_id=None):
 
         if comm_id is None:
             raise InvalidProcesCreationCall(
@@ -764,6 +771,7 @@ class Analysis(_Subprocess):
                 param_list = self.get_param_list(comm_id,
                                                  experiments_root,
                                                  experiment_prefix,
+                                                 experiment_first_pass,
                                                  a_dict=a_dict)
 
                 proc = self.spawn_proc(param_list)

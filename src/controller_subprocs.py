@@ -251,13 +251,26 @@ class Subprocs_Controller(controller_generic.Controller,
         :return boolean: Success statement
         """
 
-        if param is not None and 'experiments-root' in param:
+        if (param is not None and 'experiments-root' in param and
+                'prefix' in param and param['prefix'] != '' and
+                param['experiments-root'] != ''):
 
             self.add_subprocess(subproc_interface.ANALYSIS,
                                 experiments_root=param['experiments-root'],
-                                experiment_prefix=param['prefix'])
+                                experiment_prefix=param['prefix'],
+                                experiment_first_pass=param['1-pass file'])
+
+            self._logger.info(
+                ">>> Complete parameters converting experiment {0}".format(
+                    param))
 
             return True
+
+        else:
+
+            self._logger.info(
+                "<<< Incomplete parameters converting experiment {0}".format(
+                    param))
 
         return False
 
