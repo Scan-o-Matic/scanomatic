@@ -62,7 +62,7 @@ class Event(object):
         self._responseTimeOuts = {responseTargetFunction: responseTimeOut}
 
         self._response = None
-        self._hasResponeded = False
+        self._hasResponded = False
 
     def isSameRequest(self, otherEvent):
         """Test if to events have identical requests.
@@ -131,6 +131,7 @@ class Event(object):
 
             raise Exception("Request can only be sent once!")
 
+    @whoCalled
     def recieveResponse(self, *response):
         """Callback for the communicator's responses
 
@@ -142,7 +143,7 @@ class Event(object):
             raise Exception("Recieved response without anyone to send it to")
 
         self._response = response
-        self._hasResponeded = True
+        self._hasResponded = True
 
     def isDone(self):
         """If all is said and done and event can be trashed (by event handler)
@@ -150,7 +151,7 @@ class Event(object):
         :return: Done-state
         """
 
-        return (self._hasResponeded and
+        return (self._hasResponded and
                 (len(self._responseTargetFunctions) == 0))
 
     def _removeTarget(self, responseTargetFunction):
@@ -171,14 +172,20 @@ class Event(object):
         #Make the communicator check its communications
         self._requestObject.update()
 
-        if self._hasResponeded:
+        print "!!! {0} {1}".format(self._hasResponded, self._response)
+
+        if self._hasResponded and self._response is not None:
             for responseTargetFunction in self._responseDefualts.keys():
+
+                print "!!! Sending {0} {1} {2}".format(responseTargetFunction,
+                                                       self._requestObject,
+                                                       self._response)
 
                 responseTargetFunction(self._requestObject, *self._response)
 
                 self._removeTarget(responseTargetFunction)
 
-        else:
+        elif self._hasResponded is False:
 
             checkTime = time.time()
 
@@ -189,8 +196,15 @@ class Event(object):
                 if ((timeOut is not None) and
                         (checkTime > timeOut + self._requestTime)):
 
+                    print "!!! Sending Timout (now {0}, timeout {1}, {2}) {3} {4} {5}".format(
+                        checkTime, timeOut, self._requestTime,
+                        responseTargetFunction, self._requestObject,
+                        self._responseDefualts[responseTargetFunction])
+
                     responseTargetFunction(
                         self._requestObject,
                         self._responseDefualts[responseTargetFunction])
 
                     self._removeTarget(responseTargetFunction)
+
+                    self._hasResponded = True

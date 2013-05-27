@@ -13,6 +13,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import inspect
 import time
 
 #
@@ -28,6 +29,28 @@ import src.resource_logger as resource_logger
 
 class BadFormedMessage(Exception):
     pass
+
+#
+# METHODS
+#
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
 
 #
 # CLASSES
@@ -117,7 +140,12 @@ class Proc_IO(object):
         self._send_fh = Unbuffered_IO(unbuffered_send)
         self._recieve_path = recieve_file_path
         self._sending = False
-        self._recieve_pos = recieve_pos
+
+        #Seek to last_pos
+        if recieve_pos is None:
+            self._set_recieve_pos()
+        else:
+            self._recieve_pos = recieve_pos
 
     def _set_recieve_pos(self):
         try:
@@ -139,6 +167,7 @@ class Proc_IO(object):
 
             if m_start < m_end:
                 msg = lines[m_start: m_end]
+                print "!_! SENDING {0} {1}".format(recieve_callback, msg)
                 recieve_callback(msg)
             else:
                 raise BadFormedMessage(msg)
@@ -156,10 +185,6 @@ class Proc_IO(object):
         :param recieve_callback: Method that takes a string as parameter
             (the string being the decorated message).
         """
-        #Seek to last_pos
-        if self._recieve_pos is None:
-            self._set_recieve_pos()
-
         #Recieving
         fh_pos = self._recieve_pos
 
