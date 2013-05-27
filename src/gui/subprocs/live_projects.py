@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import os
 import ConfigParser
+import inspect
 
 #
 # EXCEPTIONS
@@ -27,6 +28,29 @@ class InvalidStageOrStatus(Exception):
 
 class InvalidProjectOrStage(Exception):
     pass
+
+
+#
+# METHODS
+#
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
 
 #
 # CLASS
@@ -98,6 +122,21 @@ class Live_Projects(object):
 
         self._count += 1
 
+    def get_is_project(self, project_prefix):
+
+        if self._config.has_section(project_prefix) is False:
+            return False
+
+        for item in ('basedir', '1st_pass_file', 'analysis_path',
+                     str(self.EXPERIMENT), str(self.ANALYSIS),
+                     str(self.INSPECT), str(self.UPLOAD)):
+
+            if self._config.has_option(project_prefix, item) is False:
+
+                return False
+
+        return True
+
     def _resolve_name(self, ref_options, val):
 
         if isinstance(val, str):
@@ -141,7 +180,8 @@ class Live_Projects(object):
 
                 raise InvalidStageOrStatus(
                     "The value {0} is not allowed".format(val))
-        pass
+
+        return val
 
     def _resolve_stage(self, stage):
 
@@ -154,11 +194,10 @@ class Live_Projects(object):
     def set_status(self, project_prefix, stage, status, experiment_dir=None,
                    first_pass_file=None, analysis_path=None):
 
-        if project_prefix not in self._config.sections():
-            return False
-
         stage_num = self._resolve_stage(stage)
         status_num = self._resolve_status(status)
+
+        print "STATUS", stage_num, stage, status_num, status
 
         if stage_num is not None and status_num is not None:
 
@@ -169,9 +208,11 @@ class Live_Projects(object):
             self._config.set(project_prefix, str(stage_num), str(status_num))
             self._save()
 
-        if stage_num == self.UPLOAD and status_num == self.COMPLETED:
+            print "NEW STATUS", project_prefix, stage_num, status_num
 
-            self.clear_done_projects()
+            if stage_num == self.UPLOAD and status_num == self.COMPLETED:
+
+                self.clear_done_projects()
 
         return True
 
