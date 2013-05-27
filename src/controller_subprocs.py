@@ -350,7 +350,7 @@ class Subprocs_Controller(controller_generic.Controller,
 
     def _analysis_is_alive(self, analysis, is_alive):
 
-        if is_alive is False:
+        if is_alive is False and self._analysises.has(analysis):
 
             self._analysises.remove(analysis)
 
