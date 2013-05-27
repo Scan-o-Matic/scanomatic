@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import gobject
 import threading
+import inspect
 
 #
 # INTERNAL DEPENDENCIES
@@ -51,8 +52,26 @@ class UnDocumented_Error(Exception):
     pass
 
 #
-# FUNCTIONS
+# METHODS
 #
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
 
 #
 # CLASSES
@@ -276,6 +295,7 @@ class Subprocs_Controller(controller_generic.Controller,
 
     def _set_experiment_started(self, proc, param):
 
+        if param is not None:
             self.set_project_progress(
                 param['prefix'], 'EXPERIMENT', 'RUNNING',
                 experiment_dir=param['experiments-root'],
@@ -299,9 +319,6 @@ class Subprocs_Controller(controller_generic.Controller,
                 analysis_path=param['analysis-dir'])
 
     def _experiment_is_alive(self, experiment, is_alive):
-
-        print ("!!! Experiment {0}, is_alive={1}".format(
-            experiment, is_alive))
 
         if is_alive is False:
 

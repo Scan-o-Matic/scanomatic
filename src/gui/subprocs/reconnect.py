@@ -14,6 +14,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import inspect
 
 #
 # INTERNAL DEPENDENCIES
@@ -22,7 +23,29 @@ __status__ = "Development"
 import gui_subprocesses
 import src.resource_logger as resource_logger
 from src.gui.subprocs.event.event import Event
+import src.gui.subprocs.subproc_interface as subproc_interface
 
+#
+# METHODS
+#
+
+
+def whoCalled(fn):
+
+    def wrapped(*args, **kwargs):
+        frames = []
+        frame = inspect.currentframe().f_back
+        while frame.f_back:
+            frames.append(inspect.getframeinfo(frame)[2])
+            frame = frame.f_back
+        frames.append(inspect.getframeinfo(frame)[2])
+
+        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
+            fn, args, kwargs, ">".join(frames[::-1]))
+
+        fn(*args, **kwargs)
+
+    return wrapped
 #
 # CLASSES
 #
@@ -77,7 +100,7 @@ class Reconnect_Subprocs(object):
             except:
                 locked = False
 
-            logger.info("{0}: {1}".format(lock_path, lines))
+            logger.info("{0}: '{1}'".format(lock_path, lines))
 
             if locked:
                 #TRY TALKING TO IT
@@ -104,10 +127,11 @@ class Reconnect_Subprocs(object):
 
         self._remove_uuids(ids)
 
-    def _is_alive(self, proc, is_done):
+    @whoCalled
+    def _is_alive(self, proc, is_alive):
 
         logger = self._logger
-        if not is_done:
+        if is_alive:
 
             logger.info("Proc {0} {1} is alive".format(
                 proc.get_type(), proc.get_sending_path()))
@@ -119,7 +143,7 @@ class Reconnect_Subprocs(object):
             logger.info("Proc {0} {1} was dead".format(
                 proc.get_type(), proc.get_sending_path()))
 
-            if proc.get_type() == self._controller.EXPERIMENT_SCANNING:
+            if proc.get_type() == subproc_interface.EXPERIMENT_SCANNING:
 
                 self._release_scanner(proc)
 

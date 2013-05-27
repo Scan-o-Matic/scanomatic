@@ -107,8 +107,6 @@ class _Running_Frame(gtk.Frame):
 
     def _set_title(self, proc, title):
 
-        print "***SETTING LABEL", title
-
         self.set_label(title)
 
     def add_button(self, b, pack_start=True):
@@ -165,7 +163,6 @@ class _Running_Frame(gtk.Frame):
             self._info.set_text(m['running-progress'].format(
                 cur, self._total_iterations))
 
-    @whoCalled
     def _set_done_state(self, proc, is_alive):
 
         m = self._model

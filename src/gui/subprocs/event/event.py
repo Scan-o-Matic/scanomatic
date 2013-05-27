@@ -31,8 +31,8 @@ def whoCalled(fn):
             frame = frame.f_back
         frames.append(inspect.getframeinfo(frame)[2])
 
-        print "===\n{0}\n{1}\n{2}\nCalled by {3}\n____".format(
-            fn, args, kwargs, ">".join(frames[::-1]))
+        print "==={0}\n{1}\n{2}\n{3}\nCalled by {4}\n____".format(
+            time.time(), fn, args, kwargs, ">".join(frames[::-1]))
 
         fn(*args, **kwargs)
 

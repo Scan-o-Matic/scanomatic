@@ -147,9 +147,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         self._stdout = None
         self._stderr = None
         self._start_time = None
-        self._pinging = False
 
-    @whoCalled
     def _send(self, msg, callback, comm_type=None,
               timeout=None, timeout_args=None):
 
@@ -164,8 +162,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         timestamp = "{0:10.10f}".format(timestamp)
         decorated_msg = self._proc.decorate(msg, timestamp)
         self._proc.send(decorated_msg)
-        print ("### Sent {0}: {1}".format(self._proc.get_sending_path(),
-                                          decorated_msg))
+
         self._proc_communications[timestamp] = (callback, comm_type,
                                                 timeout, timeout_args)
 
@@ -188,7 +185,14 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
             del self._proc_communications[timestamp]
 
-            callback(self._parse(msg))
+            param = self._parse(msg)
+
+            callback(param)
+
+        else:
+
+            self._logger.warning(
+                "Communication {0} has allready timed out".format(timestamp))
 
     def _check_timeouts(self):
 
@@ -218,17 +222,16 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         if self._proc.PING in msg:
 
-            self._pinging = False
-            return True
-
-        elif self._proc.PAUSING in msg:
-
             return True
 
         elif self._proc.INFO in msg:
 
             self._parse_parameters(msg)
             return self._launch_param
+
+        elif self._proc.PAUSING in msg:
+
+            return True
 
         elif self._proc.PROGRESS in msg:
 
@@ -288,10 +291,8 @@ class _Subprocess(subproc_interface.SubProc_Interface):
     def set_callback_is_alive(self, callback):
         """Callback gets allive status"""
 
-        if self._pinging is False:
-            self._pinging = True
-            self._send(self._proc.PING, callback,
-                       comm_type=self._proc.PING, timeout_args=False)
+        self._send(self._proc.PING, callback,
+                   comm_type=self._proc.PING, timeout_args=False)
 
     def set_callback_is_paused(self, callback, timeout_args=None):
         """Returns is process is paused"""

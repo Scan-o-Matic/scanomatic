@@ -407,14 +407,17 @@ class Experiment(object):
 
     def _join_threads(self):
 
-        self._logger.info("Waiting for all scans and analysis to finnish")
+        #End communications thread
+        self._comm.set_terminate()
+
+        self._logger.info("Waiting for all scans and analysis...")
 
         while threading.active_count() > 1:
             time.sleep(0.5)
 
         self._scanner.free()
 
-        self._logger.info("All threads are finnished, experiment run is done")
+        self._logger.info("All threads are done, experiment run is done")
 
 #
 # COMMAND LINE BEHAVIOUR
