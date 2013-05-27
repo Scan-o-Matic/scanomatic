@@ -81,6 +81,10 @@ class _SubProc_Handler(SubProc_Collection_Interface):
 
         return tuple(self._store).__iter__()
 
+    def has(self, proc):
+
+        return proc in self._store
+
     def count(self):
         """Returns precalculated size of handler's store"""
 

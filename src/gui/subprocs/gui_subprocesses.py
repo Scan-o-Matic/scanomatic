@@ -254,7 +254,7 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
             return True
 
-        elif self._proc.RUNNING in msg:
+        elif self._proc.UNPAUSING in msg:
 
             return True
 
@@ -344,11 +344,11 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         if self._start_time is not None:
             return self._start_time
 
-        if self._launch_param is None:
-            self.set_callback_parameters(self._param_to_init_time)
+        if self._launch_param is not None:
+            self._param_to_init_time(self._launch_param)
 
         if self._start_time is None:
-            self._start_time = time.time()
+            return time.time()
 
         return self._start_time
 

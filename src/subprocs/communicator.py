@@ -218,7 +218,7 @@ class Communicator(object):
         #UNPAUSE
         elif line == self._io.UNPAUSE:
             if self._parent.set_unpause():
-                output = self._io.RUNNING
+                output = self._io.UNPAUSING
             else:
                 output = self._io.REFUSED
 

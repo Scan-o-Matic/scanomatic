@@ -102,6 +102,10 @@ class _Running_Frame(gtk.Frame):
 
         vbox.pack_start(self._info_area, False, False, PADDING_MEDIUM)
 
+        btn = gtk.Button(label=model['running-stop'])
+        btn.connect("clicked", self._verify_stop, proc)
+        self.add_button(btn)
+
         self.add(vbox)
         self.show_all()
 
@@ -117,6 +121,58 @@ class _Running_Frame(gtk.Frame):
             pack = self._info_area.pack_end
 
         pack(b, False, False, PADDING_MEDIUM)
+
+    def _verify_stop(self, widget, proc):
+
+        def _verify_sure(widget, b_yes):
+
+            if widget.get_text().lower() == 'stop':
+                b_yes.set_sensitive(True)
+            else:
+                b_yes.set_sensitive(False)
+
+        m = self._model
+        dialog = gtk.MessageDialog(
+            self._subprocs.get_window(),
+            gtk.DIALOG_DESTROY_WITH_PARENT,
+            gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
+            "")
+
+        dialog.add_button(gtk.STOCK_NO, False)
+        b_yes = dialog.add_button(gtk.STOCK_YES, True)
+        b_yes.set_sensitive(False)
+
+        vbox = dialog.get_children()[0]
+        hbox, bbox = vbox.get_children()
+        im, vbox2 = hbox.get_children()
+        vbox2.remove(vbox2.get_children()[1])
+        label = vbox2.get_children()[0]
+        label.set_markup(
+            m['running-stop-warning'].format(
+                self.get_label()))
+
+        entry = gtk.Entry()
+        entry.connect("changed", _verify_sure, b_yes)
+        vbox2.pack_start(entry, False, False, PADDING_SMALL)
+
+        dialog.show_all()
+
+        resp = dialog.run()
+
+        dialog.destroy()
+
+        if resp == 1:
+
+            self._subprocs.add_event(Event(
+                proc.set_callback_terminate, self._set_state_consumer, False,
+                responseTimeOut=5))
+
+            for child in widget.get_parent().get_children():
+
+                if isinstance(child, gtk.Button):
+                    child.set_sensitive(False)
+
+            widget.set_label(m['running-stopping'])
 
     def _set_progress_bar(self, proc, frac):
 
@@ -163,12 +219,18 @@ class _Running_Frame(gtk.Frame):
             self._info.set_text(m['running-progress'].format(
                 cur, self._total_iterations))
 
+    def _set_state_consumer(self, proc, val):
+
+        if val is False:
+
+            print "WARNING failed doing something with", proc
+
     def _set_done_state(self, proc, is_alive):
 
         m = self._model
         if is_alive is False:
 
-            if proc.get_exit_code() != 0:
+            if proc.get_exit_code() in (0, None):
                 self._info.set_text(m['running-done'])
             else:
                 self._info.set_text(m['running-done-error'])
@@ -206,6 +268,7 @@ class _Running_Analysis(_Running_Frame):
                                                 'running-analysis-running')
 
         self._buttons = []
+        self._is_paused = False
 
         self._grid_button = gtk.Button(
             label=model['running-analysis-view-gridding'])
@@ -215,6 +278,12 @@ class _Running_Analysis(_Running_Frame):
                               False))
 
         self._grid_button.set_sensitive(False)
+
+        self._pause_button = gtk.Button(
+            label=model['running-pause'])
+
+        self._pause_button.connect("clicked", self._make_pause)
+        self.add_button(self._pause_button)
 
         self._subprocs.add_event(Event(
             proc.set_callback_prefix, self.connect_buttons, None))
@@ -234,9 +303,34 @@ class _Running_Analysis(_Running_Frame):
 
     def update(self):
 
-        super(_Running_Analysis, self).update()
-        self._grid_button.set_sensitive(self._first_is_done)
+        if self._is_paused is False:
+            super(_Running_Analysis, self).update()
+            self._grid_button.set_sensitive(self._first_is_done)
 
+        return self._no_more_action
+
+    def _make_pause(self, button):
+
+        m = self._model
+        proc = self._proc
+
+        self._is_paused = not self._is_paused
+
+        if self._is_paused:
+
+            self._subprocs.add_event(Event(
+                proc.set_callback_pause, self._set_state_consumer, False))
+
+            button.set_label(m['running-resume'])
+            self._progress.set_text(m['running-paused'])
+
+        else:
+
+            self._subprocs.add_event(Event(
+                proc.set_callback_unpause, self._set_state_consumer, False))
+
+            button.set_label(m['running-pause'])
+            self._progress.set_text(m['running-resuming'])
 
 class Subprocs_View(gtk.Frame):
 
@@ -378,53 +472,6 @@ class Running_Experiments(gtk.VBox):
 
         self.show_all()
         gobject.timeout_add(6029, self.update)
-
-    def _verify_stop(self, widget, proc):
-
-        def _verify_sure(widget, b_yes):
-
-            if widget.get_text().lower() == 'stop':
-                b_yes.set_sensitive(True)
-            else:
-                b_yes.set_sensitive(False)
-
-        m = self._model
-        dialog = gtk.MessageDialog(
-            self._controller.get_window(),
-            gtk.DIALOG_DESTROY_WITH_PARENT,
-            gtk.MESSAGE_WARNING, gtk.BUTTONS_NONE,
-            "")
-
-        dialog.add_button(gtk.STOCK_NO, False)
-        b_yes = dialog.add_button(gtk.STOCK_YES, True)
-        b_yes.set_sensitive(False)
-
-        vbox = dialog.get_children()[0]
-        hbox, bbox = vbox.get_children()
-        im, vbox2 = hbox.get_children()
-        vbox2.remove(vbox2.get_children()[1])
-        label = vbox2.get_children()[0]
-        label.set_markup(
-            m['running-experiments-stop-warning'].format(
-                proc['sm']['experiment-prefix']))
-
-        entry = gtk.Entry()
-        entry.connect("changed", _verify_sure, b_yes)
-        vbox2.pack_start(entry, False, False, PADDING_SMALL)
-
-        dialog.show_all()
-
-        resp = dialog.run()
-
-        dialog.destroy()
-
-        if resp == 1:
-
-            self._controller.stop_process(proc)
-            proc['progress'] = proc['sm']['scans']
-            widget.set_sensitive(False)
-            widget.set_label(m['running-experiments-stopping'])
-            self.update()
 
     def update(self):
 

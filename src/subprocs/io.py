@@ -104,6 +104,7 @@ class Proc_IO(object):
     TERMINATE = "__TERMINATE__"
     TERMINATING = "__TERMINATING__"
     UNPAUSE = "__UNPAUSE__"
+    UNPAUSING = "__UNPAUSING__"
 
     #PING
     PING = "__PING__"
@@ -160,14 +161,13 @@ class Proc_IO(object):
 
     def _parse_recieved_and_callback(self, lines, recieve_callback):
 
-        while self._MESSAGE_START in lines and self._MESSAGE_END:
+        while self._MESSAGE_START in lines and self._MESSAGE_END in lines:
 
             m_start = lines.index(self._MESSAGE_START)
             m_end = lines.index(self._MESSAGE_END) + len(self._MESSAGE_END)
 
             if m_start < m_end:
                 msg = lines[m_start: m_end]
-                print "!_! SENDING {0} {1}".format(recieve_callback, msg)
                 recieve_callback(msg)
             else:
                 raise BadFormedMessage(msg)

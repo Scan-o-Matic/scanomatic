@@ -67,6 +67,16 @@ composite_model = {
     'running-progress': 'Processing {0} of {1}',
     'running-done': 'Done!',
     'running-done-error': 'Error occured',
+'running-stop-warning':
+"""<span size="x-large">Are you sure you want to stop '{0}'?</span>
+
+<span><i>Stopping is irreversible and will happen as soon as safely possible.
+To stop, write 'stop' below and then presss the yes-button.</i></span>
+""",
+    'running-paused': 'Paused!',
+    'running-pause': 'Pause',
+    'running-resume': 'Resume',
+    'running-resuming': 'Resuming...',
 
 #RUNNING EXPERIMENTS
 'running-experiments-intro':
@@ -74,13 +84,6 @@ composite_model = {
 
 <span><i>Here you can see how the experiments progress and manually
 terminate experiments before their planned end.</i></span>
-""",
-'running-experiments-stop': 'Terminate...',
-'running-experiments-stop-warning':
-"""<span size="x-large">Are you sure you want to stop experiment '{0}'?</span>
-
-<span><i>Stopping is irreversible and will act as soon as current scan is aquired.
-To stop, write 'stop' below and then presss the yes-button.</i></span>
 """,
 'running-experiments-stopping': 'Stopping...',
 

@@ -567,6 +567,7 @@ class Analysis(object):
 
         logger.info('Analysis completed at ' + str(time.time()))
 
+        self._running = False
         self._comm.set_terminate()
         self._comm_thread.join()
 

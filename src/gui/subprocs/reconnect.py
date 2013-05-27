@@ -127,7 +127,6 @@ class Reconnect_Subprocs(object):
 
         self._remove_uuids(ids)
 
-    @whoCalled
     def _is_alive(self, proc, is_alive):
 
         logger = self._logger

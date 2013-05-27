@@ -131,7 +131,6 @@ class Event(object):
 
             raise Exception("Request can only be sent once!")
 
-    @whoCalled
     def recieveResponse(self, *response):
         """Callback for the communicator's responses
 
@@ -172,14 +171,8 @@ class Event(object):
         #Make the communicator check its communications
         self._requestObject.update()
 
-        print "!!! {0} {1}".format(self._hasResponded, self._response)
-
         if self._hasResponded and self._response is not None:
             for responseTargetFunction in self._responseDefualts.keys():
-
-                print "!!! Sending {0} {1} {2}".format(responseTargetFunction,
-                                                       self._requestObject,
-                                                       self._response)
 
                 responseTargetFunction(self._requestObject, *self._response)
 
@@ -195,11 +188,6 @@ class Event(object):
 
                 if ((timeOut is not None) and
                         (checkTime > timeOut + self._requestTime)):
-
-                    print "!!! Sending Timout (now {0}, timeout {1}, {2}) {3} {4} {5}".format(
-                        checkTime, timeOut, self._requestTime,
-                        responseTargetFunction, self._requestObject,
-                        self._responseDefualts[responseTargetFunction])
 
                     responseTargetFunction(
                         self._requestObject,

@@ -320,7 +320,7 @@ class Subprocs_Controller(controller_generic.Controller,
 
     def _experiment_is_alive(self, experiment, is_alive):
 
-        if is_alive is False:
+        if is_alive is False and self._experiments.has(experiment):
 
             self._experiments.remove(experiment)
 

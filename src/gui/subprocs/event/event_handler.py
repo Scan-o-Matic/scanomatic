@@ -131,8 +131,5 @@ class EventHandler(object):
 
         if event in self._events:
             self._events.remove(event)
-            print "*** {0} removed!".format(event)
-        else:
-            print "*** {0} has already been removed!".format(event)
 
         del event
