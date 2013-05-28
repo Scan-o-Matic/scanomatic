@@ -569,9 +569,17 @@ class Stage_Project_Setup(gtk.VBox):
             curValUpper = curVal.upper()
 
             if (curVal != curValUpper and (eType == self.ID_PROJECT or
-                                        eType == self.ID_LAYOUT)):
+                                           eType == self.ID_LAYOUT)):
 
                 entry.set_text(curValUpper)
+
+            if eType == self.ID_PROJECT and len(curVal) == self.ID_LENGTHS:
+
+                self.scan_layout_id.grab_focus()
+
+            elif eType == self.ID_LAYOUT and len(curVal) == self.ID_LENGTHS:
+
+                self.id_control.grab_focus()
 
         try:
             ctrl_num = int(self.id_control.get_text())
