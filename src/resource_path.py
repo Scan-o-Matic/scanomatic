@@ -68,6 +68,7 @@ class Paths(object):
         self.scanomatic = os.path.join(self.root, "run_scan_o_matic.py")
         self.analysis = os.path.join(self.root, "run_analysis.py")
         self.experiment = os.path.join(self.root, "run_experiment.py")
+        self.make_project = os.path.join(self.root, "run_make_project.py")
         self.revive = os.path.join(self.root, 'relauncher.py')
         self.install_autostart = os.path.join(
             self.root, 'install_autostart.py')

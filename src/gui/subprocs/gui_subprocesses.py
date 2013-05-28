@@ -392,6 +392,8 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         if self._stdin is None:
             self._stdin = PIPE
 
+        print "!!!\t{0}".format(param_list)
+
         Popen(map(str, param_list), stdin=self._stdin,
               stdout=self._stdout, stderr=self._stderr, shell=False)
 
@@ -580,7 +582,7 @@ class Experiment_Scanning(_Subprocess):
 
         experiment_query['-p'] = sm['experiment-prefix']
         experiment_query['-d'] = sm['experiment-desc']
-        experiment_query['-c'] = sm['experiment-id']
+        experiment_query['-c'] = sm['experiment-project-id']
         experiment_query['-l'] = sm['experiment-scan-layout-id']
         experiment_query['-u'] = scanner.get_uuid()
 

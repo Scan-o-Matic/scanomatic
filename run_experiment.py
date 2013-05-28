@@ -234,7 +234,7 @@ class Experiment(object):
             self.paths.experiment_scan_image_relative_pattern)
 
         self._description = run_args.description
-        self._code = run_args.code
+        self._project_id = run_args.project_id
         self._layout_id = run_args.layout_id
 
         self._uuid = run_args.uuid
@@ -396,7 +396,7 @@ class Experiment(object):
                 'Scanner': self._scanner_name,
                 'Pinning Matrices': self._pinning,
                 'Manual Gridding': None,
-                'Project ID': self._code,
+                'Project ID': self._project_id,
                 'Scanner Layout ID': self._layout_id
             }
         )
@@ -464,7 +464,7 @@ input file for the analysis script.""")
         help='Project description')
 
     parser.add_argument(
-        '-c', '--code', type=str, dest='code',
+        '-c', '--code', type=str, dest='project_id',
         help='Identification code for the project from the planner')
 
     parser.add_argument(
@@ -518,6 +518,8 @@ input file for the analysis script.""")
         args.prefix = file_settings['Prefix']
         args.uuid = file_settings['UUID']
         args.init_time = file_settings['Start Time']
+        args.project_id = file_settings['Project ID']
+        args.layout_id = file_settings['Scanner Layout ID']
 
         args.root = os.path.abspath(os.path.join(
             args.file, os.path.pardir,
@@ -584,8 +586,8 @@ input file for the analysis script.""")
     args.outdata_path = os.sep.join((args.root, args.prefix))
 
     #CODE
-    if args.code is None:
-        args.code == ""
+    if args.project_id is None:
+        args.project_id = ""
 
     #LAYOUT TAG
     if args.layout_id is None:

@@ -359,6 +359,13 @@ class Stage_Project_Running(gtk.VBox):
 
 class Stage_Project_Setup(gtk.VBox):
 
+    ID_LENGTHS = 4
+    ID_CTRL_LENGTH = 3
+
+    ID_PROJECT = 0
+    ID_LAYOUT = 1
+    ID_CONTROL = 2
+
     def __init__(self, controller, model, specific_model=None):
 
         self._controller = controller
@@ -417,20 +424,34 @@ class Stage_Project_Setup(gtk.VBox):
         self.set_prefix_status(False)
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self.prefix, False, False, PADDING_NONE)
-        hbox.pack_start(self.warn_image, False, False, PADDING_NONE)
+        hbox.pack_start(self.warn_image, False, False, PADDING_MEDIUM)
         table.attach(hbox, 1, 2, 0, 1)
         ##IDENTIFIERS
         label = gtk.Label(model['project-stage-planning-id'])
         label.set_alignment(0, 0.5)
+        """
         self.project_id = gtk.combo_box_new_text()
         self.project_id.set_sensitive(False)
         self.project_id.connect("changed", controller.set_project_id)
         self.scan_layout_id = gtk.combo_box_new_text()
         self.scan_layout_id.set_sensitive(False)
         self.scan_layout_id.connect("changed", controller.set_scan_layout_id)
+        """
+        self.project_id = gtk.Entry(self.ID_LENGTHS)
+        self.project_id.connect("changed", self.set_id_val, self.ID_PROJECT)
+        self.scan_layout_id = gtk.Entry(self.ID_LENGTHS)
+        self.scan_layout_id.connect("changed", self.set_id_val, self.ID_LAYOUT)
+        self.id_control = gtk.Entry(self.ID_CTRL_LENGTH)
+        self.id_control.connect("changed", self.set_id_val, self.ID_CONTROL)
+        self.id_control_warning = gtk.Image()
+
+        self.set_id_val(None, None)
+
         hbox = gtk.HBox(False, 0)
         hbox.pack_start(self.project_id, False, False, PADDING_NONE)
         hbox.pack_start(self.scan_layout_id, False, False, PADDING_SMALL)
+        hbox.pack_start(self.id_control, False, False, PADDING_SMALL)
+        hbox.pack_start(self.id_control_warning, False, False, PADDING_SMALL)
         table.attach(label, 0, 1, 1, 2)
         table.attach(hbox, 1, 2, 1, 2)
         ##DESCRIPTION
@@ -539,6 +560,42 @@ class Stage_Project_Setup(gtk.VBox):
         self.set_scanners()
 
         gobject.timeout_add(667, controller.check_free_disk_space)
+
+    def set_id_val(self, entry, eType):
+        """Callback for id-entry stuff."""
+
+        if entry is not None:
+            curVal = entry.get_text()
+            curValUpper = curVal.upper()
+
+            if (curVal != curValUpper and (eType == self.ID_PROJECT or
+                                        eType == self.ID_LAYOUT)):
+
+                entry.set_text(curValUpper)
+
+        try:
+            ctrl_num = int(self.id_control.get_text())
+        except:
+            ctrl_num = 0
+
+        if self._controller.set_project_ids(self.project_id.get_text(),
+                                            self.scan_layout_id.get_text(),
+                                            ctrl_num):
+
+            self.id_control_warning.set_from_stock(
+                gtk.STOCK_APPLY,
+                gtk.ICON_SIZE_SMALL_TOOLBAR)
+
+            self.id_control_warning.set_tooltip_text("")
+
+        else:
+
+            self.id_control_warning.set_from_stock(
+                gtk.STOCK_STOP,
+                gtk.ICON_SIZE_SMALL_TOOLBAR)
+
+            self.id_control_warning.set_tooltip_text(
+                self._model['project-stage-id-warn'])
 
     def _get_human_duration(self, w_type):
 
@@ -656,7 +713,7 @@ class Stage_Project_Setup(gtk.VBox):
         else:
 
             self.warn_image.set_from_stock(
-                gtk.STOCK_DIALOG_WARNING,
+                gtk.STOCK_STOP,
                 gtk.ICON_SIZE_SMALL_TOOLBAR)
             self.warn_image.set_tooltip_text(m['project-stage-prefix-warn'])
 

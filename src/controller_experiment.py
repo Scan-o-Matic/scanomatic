@@ -28,6 +28,7 @@ import src.model_experiment as model_experiment
 import src.view_experiment as view_experiment
 import src.controller_generic as controller_generic
 import src.gui.subprocs.subproc_interface as subproc_interface
+import src.resource_tags_verification as resource_tags_verification
 
 #
 # EXCEPTIONS
@@ -185,15 +186,15 @@ class One_Controller(controller_generic.Controller):
         if sm['scanner'] is not None:
             tc.scanners.free(sm['scanner'], soft=True)
 
-    def _set_project_id(self):
+    def _set_project_prefix(self):
 
         sm = self._specific_model
 
-        sm['experiment-id'] = \
+        sm['experiment-prefix'] = \
             time.strftime("%d_%b_%Y__%H_%M_%S", time.gmtime())
 
         sm['experiment-root'] = os.sep.join((
-            sm['experiments-root'], sm['experiment-id']))
+            sm['experiments-root'], sm['experiment-prefix']))
 
         os.makedirs(sm['experiment-root'])
 
@@ -279,7 +280,7 @@ class One_Controller(controller_generic.Controller):
         scanner = scanners[sm['scanner']]
 
         if sm['stage'] is None:
-            self._set_project_id()
+            self._set_project_prefix()
             stage.set_progress('on')
             #POWER UP
             thread = threading.Thread(target=self._power_up, args=(scanner, stage))
@@ -409,15 +410,13 @@ class Project_Controller(controller_generic.Controller):
             self.check_prefix_dupe(widget=None)
             self._view.get_stage().update_experiment_root()
 
-    def set_project_id(self, widget, event=None):
+    def set_project_ids(self, projectId, layoutId, controlNum):
 
-        pass
-        #self._specific_model['experiment-id'] = widget.get_text()
+        self._specific_model['experiment-project-id'] = projectId
+        self._specific_model['experiment-scan-layout-id'] = layoutId
 
-    def set_scan_layout_id(self, widget, event=None):
-
-        pass
-        #self._specific_model['experiment-scan-laout-id']
+        return (resource_tags_verification.ctrlNum(projectId, layoutId) ==
+                controlNum)
 
     def set_project_description(self, widget, event):
 

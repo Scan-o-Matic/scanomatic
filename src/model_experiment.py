@@ -55,7 +55,7 @@ The standard, intended use of Scan-o-Matic.</i></span>
 <span weight="heavy">One Image: Gray</span>
 <span><i>This is for those that need to take only one image,
 everything else being like the normal experiment runs.
-E.g. for calibration experiment needed to be able to do the 
+E.g. for calibration experiment needed to be able to do the
 cell count transpose.</i></span>
 
 <span weight="heavy">One Image: Color</span>
@@ -69,11 +69,12 @@ pigmentation analysis.</i></span>
 ##STAGE
 ###METADATA
 'project-stage-meta': 'Meta-Data',
-'project-stage-select_root':'Set Root Directory',
+'project-stage-select_root': 'Set Root Directory',
 'project-stage-prefix': 'Project Prefix',
 'project-stage-prefix-ok': 'Prefix is good',
 'project-stage-prefix-warn': 'Duplcate prefix name or illegal name',
-'project-stage-planning-id': 'Project & Scan Layout Tags',
+'project-stage-planning-id': 'Project, Layout & Control Tag',
+'project-stage-id-warn': 'Tags and Control Number do not match!',
 'project-stage-desc': 'Project Description',
 'project-stage-desc-suggestion': 'Plate 1 ""; Plate 2 ""; Plate 3 ""; Plate 4 ""',
 'project-stage-view_of_fixture': 'View in Scanner',
@@ -89,7 +90,7 @@ pigmentation analysis.</i></span>
 'project-stage-scans': 'Scans',
 'project-stage-duration-ok': 'Great choice!',
 
-'project-stage-duration-warn': 
+'project-stage-duration-warn':
 'Invalid request, previous/default value will be used',
 
 'project-stage-duration-format': "{0} days {1} hours {2} mins",
@@ -144,11 +145,11 @@ allow you to scan one or more images before you free it again.</i></span>
 
 ##PROGRESS
 'one-stage-progress': 'Progress',
-'one-stage-progress-colors': 
+'one-stage-progress-colors':
 'White (Not run yet), Blue (Running), Green (Completed), Red (Failed), Grey (Omitted)',
 
 ###PATTERNS
-'one-stage-progress-not-run': 
+'one-stage-progress-not-run':
 "<span size='large' background='white' foreground='black'>{0}</span>",
 'one-stage-progress-completed':
 "<span size='large' background='green' foreground='black'>{0}</span>",
@@ -182,8 +183,8 @@ specific_project_model = {
 'experiments-root': '',
 'experiment-prefix': None,
 'experiment-desc': '',
-'experiment-id': '',
 'experiment-scan-layout-id': '',
+'experiment-project-id': '',
 
 ##PLATES
 'plate-areas': 0,
