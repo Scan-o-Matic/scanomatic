@@ -118,8 +118,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print "\n\n<<>> {0}\n\n".format(args)
-
     #THE THREE SETTINGS DICTS
     grid_array_settings = {'animate': False}
 
