@@ -220,6 +220,10 @@ class Subprocs_Controller(controller_generic.Controller,
 
         elif ptype == subproc_interface.EXPERIMENT_REBUILD:
 
+            if 'comm_id' not in params:
+                params['comm_id'] = \
+                    self._experiments.get_free_rebuild_comm_id()
+
             success = self.add_subprocess_directly(
                 ptype,
                 gui_subprocesses.Experiment_Rebuild(self._tc, **params))

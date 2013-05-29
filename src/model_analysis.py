@@ -125,10 +125,8 @@ if you have a couple of images that you want to analyse as if they had been acqu
 'mime_and_patterns': (('TEXT', '*.analysis'),)},
 'analysis-stage-project-running-info':
 """<span weight="heavy">Running Analysis on '{0}'</span>
-<span><i>This process runs as its own separate process and will continue
-independently of this program. For further information on how it's progressing,
-click on running analysis to the left</i></span>""",
-
+<span><i>This process runs in the background and will appear as any
+experiment under running experiments.</i></span>""",
 #ANALYSIS STAGE FIRST PASS
 'analysis-stage-first-title':
 """<span weight='heavy' size='large'>First Pass Analysis</span>
@@ -159,6 +157,7 @@ analysis of the project.</i></span>""",
 'analysis-stage-first-running-error-access': "Could not append image data to file," +
     " someone stole write permit to '{0}'",
 'analysis-stage-first-running-error-img': "Image '{0}' failed to analyse .. skipping!\n",
+'analysis-stage-first-id-warn': "Id-tags don't match with control number, this will cause import problems in PALM",
 
 #ANALYSIS TOP IMAGE SELECTION
 'analysis-top-image-selection-next': 'Normalisation',
@@ -269,7 +268,7 @@ specific_project = {
 specific_first = {
 'output-directory': PATHS.experiment_root,
 'experiments-root': '',
-'experiments-prefix': '',
+'experiment-prefix': '',
 'output-file':'',
 'use-local-fixture': False,
 'image-list-model': None,

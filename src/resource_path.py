@@ -101,6 +101,9 @@ class Paths(object):
         self.log_main_out = os.path.join(self.log, "main.stdout")
         self.log_main_err = os.path.join(self.log, "main.stderr")
         #self._last_analysis_log_index = 0
+        self.log_rebuild_in = os.path.join(self.log, "rebuild_{0}.stdin")
+        self.log_rebuild_out = os.path.join(self.log, "rebuild_{0}.stdout")
+        self.log_rebuild_err = os.path.join(self.log, "rebuild_{0}.stderr")
         self.log_analysis_in = os.path.join(self.log, "analysis_{0}.stdin")
         self.log_analysis_out = os.path.join(self.log, "analysis_{0}.stdout")
         self.log_analysis_err = os.path.join(self.log, "analysis_{0}.stderr")
@@ -112,6 +115,7 @@ class Paths(object):
         self.experiment_scan_image_relative_pattern = "{0}_{1}.tiff"
         self.experiment_analysis_relative_path = "analysis"
         self.experiment_analysis_file_name = "analysis.log"
+        self.experiment_rebuild_instructions = "rebuild.instructions"
 
         #ANALSYS FILES
         self.analysis_polynomial = os.path.join(

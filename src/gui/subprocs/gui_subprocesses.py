@@ -463,6 +463,17 @@ class _Subprocess(subproc_interface.SubProc_Interface):
         raise BadCommunicateReturn(ret_string, expected_start)
         return None
 
+    def _new_from_paths(self, stdin_path=None, stdout_path=None,
+                        stderr_path=None, **params):
+
+        self._set_log('in', stdin_path)
+        self._stdout = self._set_log('out', stdout_path, 'r')
+        self._stderr = self._set_log('err', stderr_path, 'r')
+
+        proc = Proc_IO(self._stdin_path, self._stdout_path,
+                       send_file_state='a')
+        return proc
+
     def _set_log(self, iotype, f_path, iostate1=None, iostate2=None,
                  close_files=False):
 
@@ -487,64 +498,65 @@ class _Subprocess(subproc_interface.SubProc_Interface):
 
         return fh
 
-    def _parse_parameters(self, psm_in_text):
+    def _parse_parameters(self, params_in_text):
 
         #FIXIT  rewrite to fit new paradigm
         self._launch_param = {}
-        psm = self._launch_param
+        params = self._launch_param
 
-        psm_prefix = re.findall(r'__PREFIX__ (.*)', psm_in_text)
-        if len(psm_prefix) > 0:
-            psm['prefix'] = psm_prefix[0]
+        params_prefix = re.findall(r'__PREFIX__ (.*)', params_in_text)
+        if len(params_prefix) > 0:
+            params['prefix'] = params_prefix[0]
 
-        psm_1pass = re.findall(r'__1-PASS FILE__ (.*)', psm_in_text)
-        if len(psm_1pass) > 0:
-            psm['1-pass file'] = psm_1pass[0]
+        params_1pass = re.findall(r'__1-PASS FILE__ (.*)', params_in_text)
+        if len(params_1pass) > 0:
+            params['1-pass file'] = params_1pass[0]
 
-        psm_anal = re.findall(r'__ANALYSIS DIR__ (.*)', psm_in_text)
-        if len(psm_anal) > 0:
-            psm['analysis-dir'] = psm_anal[0]
+        params_anal = re.findall(r'__ANALYSIS DIR__ (.*)', params_in_text)
+        if len(params_anal) > 0:
+            params['analysis-dir'] = params_anal[0]
 
-        psm_fixture = re.findall(r'__FIXTURE__ (.*)', psm_in_text)
-        if len(psm_fixture) > 0:
-            psm['fixture'] = psm_fixture[0]
+        params_fixture = re.findall(r'__FIXTURE__ (.*)', params_in_text)
+        if len(params_fixture) > 0:
+            params['fixture'] = params_fixture[0]
 
-        psm_scanner = re.findall(r'__SCANNER__ (.*)', psm_in_text)
-        if len(psm_scanner) > 0:
-            psm['scanner'] = psm_scanner[0]
+        params_scanner = re.findall(r'__SCANNER__ (.*)', params_in_text)
+        if len(params_scanner) > 0:
+            params['scanner'] = params_scanner[0]
 
-        psm_root = re.findall(r'__ROOT__ (.*)', psm_in_text)
-        if len(psm_root) > 0:
-            psm['experiments-root'] = psm_root[0]
+        params_root = re.findall(r'__ROOT__ (.*)', params_in_text)
+        if len(params_root) > 0:
+            params['experiments-root'] = params_root[0]
 
-        psm_pinning = re.findall(r'__PINNING__ (.*)', psm_in_text)
-        if len(psm_pinning) > 0:
-            psm['pinnings-list'] = map(tuple, eval(psm_pinning[0]))
+        params_pinning = re.findall(r'__PINNING__ (.*)', params_in_text)
+        if len(params_pinning) > 0:
+            params['pinnings-list'] = map(tuple, eval(params_pinning[0]))
 
-        psm_interval = re.findall(r'__INTERVAL__ (.*)', psm_in_text)
-        if len(psm_interval) > 0:
-            psm['interval'] = float(psm_interval[0])
+        params_interval = re.findall(r'__INTERVAL__ (.*)', params_in_text)
+        if len(params_interval) > 0:
+            params['interval'] = float(params_interval[0])
 
-        psm_scans = re.findall(r'__SCANS__ ([0-9]*)', psm_in_text)
-        if len(psm_scans) > 0:
-            psm['scans'] = int(psm_scans[0])
+        params_scans = re.findall(r'__SCANS__ ([0-9]*)', params_in_text)
+        if len(params_scans) > 0:
+            params['scans'] = int(params_scans[0])
 
-        psm_init_time = re.findall(r'__INIT-TIME__ (.*)', psm_in_text)
-        if len(psm_init_time) > 0:
-            psm['init-time'] = float(psm_init_time[0])
+        params_init_time = re.findall(r'__INIT-TIME__ (.*)', params_in_text)
+        if len(params_init_time) > 0:
+            params['init-time'] = float(params_init_time[0])
         else:
-            psm['init-time'] = None
+            params['init-time'] = None
 
-        psm_cur_image = re.findall(r'__CUR-IM__ ([0-9])', psm_in_text)
-        if len(psm_cur_image) > 0:
-            psm['current'] = int(psm_cur_image[0])
+        params_cur_image = re.findall(r'__CUR-IM__ ([0-9])', params_in_text)
+        if len(params_cur_image) > 0:
+            params['current'] = int(params_cur_image[0])
         else:
-            psm['current'] = None
+            params['current'] = None
 
-        if (('interval' in psm and 'scan' in psm) and
-                (psm['interval'] is not None and psm['scans'] is not None)):
+        if (('interval' in params and 'scan' in params) and
+                (params['interval'] is not None and
+                 params['scans'] is not None)):
 
-            psm['duration'] = psm['interval'] * psm['scans'] / 60.0
+            params['duration'] = params['interval'] * params['scans'] / 60.0
 
 
 class Experiment_Scanning(_Subprocess):
@@ -623,17 +635,6 @@ class Experiment_Scanning(_Subprocess):
 
         return proc
 
-    def _new_from_paths(self, stdin_path=None, stdout_path=None,
-                        stderr_path=None, **params):
-
-        self._set_log('in', stdin_path)
-        self._stdout = self._set_log('out', stdout_path, 'r')
-        self._stderr = self._set_log('err', stderr_path, 'r')
-
-        proc = Proc_IO(self._stdin_path, self._stdout_path,
-                       send_file_state='a')
-        return proc
-
     def set_logs(self):
 
         tc = self._tc
@@ -665,8 +666,79 @@ class Experiment_Rebuild(_Subprocess):
         super(Experiment_Rebuild, self).__init__(
             subproc_interface.EXPERIMENT_REBUILD,
             top_controller)
-        #FIXIT params should determine if subprocess.Popen be run
-        #or fake process be created
+
+        self._new_proc = False
+        self._comm_id = None
+
+        self.set_process(self.get_proc(**params))
+
+    def get_proc(self, is_running=False, rebuild_instructions_path=None,
+                 comm_id=None, **params):
+
+        if comm_id is None:
+            raise InvalidProcesCreationCall(
+                "No communications=No way to talk to the process!")
+        else:
+
+            self._comm_id = comm_id
+
+        if is_running:
+
+            if ('stdin_path' in params and
+                    'stdout_path' in params and
+                    'stderr_path' in params):
+
+                proc = self._new_from_paths(**params)
+
+            else:
+
+                raise InvalidProcesCreationCall("Can't reconnect without paths")
+
+        else:
+
+            if rebuild_instructions_path is not None:
+
+                self._new_proc = True
+                proc = self.spawn_proc(self.get_param_list(
+                    rebuild_instructions_path))
+
+            else:
+
+                raise InvalidProcesCreationCall(
+                    "Cannot rebuild experiment without instructiosn path")
+
+        return proc
+
+    def get_comm_id(self):
+
+        return self._comm_id
+
+    def get_param_list(self, rebuild_instructions_path):
+
+        tc = self._tc
+        e_list = [tc.paths.make_project]
+
+        #This is a little over the top, but makes it follow same design as
+        #the run experiment
+        experiment_query = {}
+        experiment_query['-i'] = rebuild_instructions_path
+        experiment_query['-c'] = self._comm_id
+
+        #Make list of key & value pairs
+        e_list += list(chain.from_iterable(experiment_query.items()))
+
+        return e_list
+
+    def set_logs(self):
+        """Sets a new out/err log file pair"""
+
+        paths = self._tc.paths
+        self._stdin_path = paths.log_rebuild_in.format(self._comm_id)
+        self._stdout_path = paths.log_rebuild_out.format(self._comm_id)
+        self._stderr_path = paths.log_rebuild_err.format(self._comm_id)
+        self._set_log('in', self._stdin_path, 'w', None, close_files=True)
+        self._set_log('out', self._stdout_path, 'w', 'r')
+        self._set_log('err', self._stderr_path, 'w', 'r')
 
 
 class Analysis(_Subprocess):

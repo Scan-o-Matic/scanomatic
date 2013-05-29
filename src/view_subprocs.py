@@ -25,6 +25,7 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
+import src.gui.subprocs.subproc_interface as subproc_interface
 from src.view_generic import *
 from src.gui.subprocs.event.event import Event
 
@@ -72,9 +73,10 @@ class _Running_Frame(gtk.Frame):
         super(_Running_Frame, self).__init__(model['process-unknown'])
 
         self._subprocs = subproc_controller
+        self._is_paused = False
 
         self._subprocs.add_event(Event(
-            proc.set_callback_prefix, self._set_title, None))
+            proc.set_callback_parameters, self._set_title, None))
         self._subprocs.add_event(Event(
             proc.set_callback_total, self._set_total_iterations, None))
 
@@ -109,9 +111,9 @@ class _Running_Frame(gtk.Frame):
         self.add(vbox)
         self.show_all()
 
-    def _set_title(self, proc, title):
+    def _set_title(self, proc, param):
 
-        self.set_label(title)
+        self.set_label(param['prefix'])
 
     def add_button(self, b, pack_start=True):
 
@@ -196,15 +198,17 @@ class _Running_Frame(gtk.Frame):
             if eta < 0:
                 eta = 0
 
-            self._progress.set_text(
-                m['running-eta'].format(
-                    eta / 3600.0))
+            if self._is_paused is False:
+                self._progress.set_text(
+                    m['running-eta'].format(
+                        eta / 3600.0))
 
         else:
 
-            self._progress.set_text(
-                m['running-elapsed'].format(
-                    (time.time() - self._proc.get_start_time()) / 60.0))
+            if self._is_paused is False:
+                self._progress.set_text(
+                    m['running-elapsed'].format(
+                        (time.time() - self._proc.get_start_time()) / 60.0))
 
     def _set_total_iterations(self, proc, total):
 
@@ -246,6 +250,29 @@ class _Running_Frame(gtk.Frame):
                 proc.set_callback_current,
                 self._set_info_iteration_text, None))
 
+    def _make_pause(self, button):
+
+        m = self._model
+        proc = self._proc
+
+        self._is_paused = not self._is_paused
+
+        if self._is_paused:
+
+            self._subprocs.add_event(Event(
+                proc.set_callback_pause, self._set_state_consumer, False))
+
+            button.set_label(m['running-resume'])
+            self._progress.set_text(m['running-paused'])
+
+        else:
+
+            self._subprocs.add_event(Event(
+                proc.set_callback_unpause, self._set_state_consumer, False))
+
+            button.set_label(m['running-pause'])
+            self._progress.set_text(m['running-resuming'])
+
     def update(self):
 
         proc = self._proc
@@ -259,6 +286,28 @@ class _Running_Frame(gtk.Frame):
         return self._no_more_action
 
 
+class _Running_Experiment(_Running_Frame):
+
+    def __init__(self, subproc_controller, proc, model, init_info_msg=None):
+
+        super(_Running_Experiment, self).__init__(subproc_controller,
+                                                  proc, model,
+                                                  init_info_msg)
+
+        if proc.get_type() == subproc_interface.EXPERIMENT_REBUILD:
+
+            self._pause_button = gtk.Button(
+                label=model['running-pause'])
+
+            self._pause_button.connect("clicked", self._make_pause)
+            self.add_button(self._pause_button)
+
+    def _set_title(self, widget, param):
+
+        self.set_label("{0},    {1}".format(param['prefix'],
+                                                    param['scanner']))
+
+
 class _Running_Analysis(_Running_Frame):
 
     def __init__(self, subproc_controller, proc, model, controller):
@@ -268,7 +317,6 @@ class _Running_Analysis(_Running_Frame):
                                                 'running-analysis-running')
 
         self._buttons = []
-        self._is_paused = False
 
         self._grid_button = gtk.Button(
             label=model['running-analysis-view-gridding'])
@@ -309,28 +357,6 @@ class _Running_Analysis(_Running_Frame):
 
         return self._no_more_action
 
-    def _make_pause(self, button):
-
-        m = self._model
-        proc = self._proc
-
-        self._is_paused = not self._is_paused
-
-        if self._is_paused:
-
-            self._subprocs.add_event(Event(
-                proc.set_callback_pause, self._set_state_consumer, False))
-
-            button.set_label(m['running-resume'])
-            self._progress.set_text(m['running-paused'])
-
-        else:
-
-            self._subprocs.add_event(Event(
-                proc.set_callback_unpause, self._set_state_consumer, False))
-
-            button.set_label(m['running-pause'])
-            self._progress.set_text(m['running-resuming'])
 
 class Subprocs_View(gtk.Frame):
 
@@ -467,8 +493,8 @@ class Running_Experiments(gtk.VBox):
         self.pack_start(self._stuff, False, False, PADDING_MEDIUM)
         for proc in specific_model['experiments']:
 
-            self._stuff.pack_start(_Running_Frame(self._subprocs, proc, model,
-                                                  None))
+            self._stuff.pack_start(_Running_Experiment(
+                self._subprocs, proc, model, None))
 
         self.show_all()
         gobject.timeout_add(6029, self.update)

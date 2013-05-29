@@ -465,16 +465,21 @@ class Analysis_Stage_First_Pass_Running(gtk.VBox):
 
         self.pack_start(label, False, False, PADDING_LARGE)
 
+        """
         self._progress = gtk.ProgressBar()
         self.pack_start(self._progress, False, False, PADDING_LARGE)
 
         self._errors = gtk.Label()
         self.pack_start(self._errors, False, False, PADDING_LARGE)
+        """
 
         self.show_all()
 
     def update(self):
 
+        pass
+
+        """
         sm = self._specific_model
         m = self._model
 
@@ -493,9 +498,13 @@ class Analysis_Stage_First_Pass_Running(gtk.VBox):
         else:
 
             self._errors.hide()
+        """
 
 
 class Analysis_Stage_First_Pass(gtk.VBox):
+
+    ID_LENGTHS = 4
+    ID_CTRL_LENGTH = 3
 
     def __init__(self, controller, model):
 
@@ -608,19 +617,30 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         ##IDENTIFIER
         label = gtk.Label(model['analysis-stage-first-meta-id'])
         label.set_alignment(0, 0.5)
-        self._project_id = gtk.Entry()
-        self._project_id.set_sensitive(False)
-        self._project_id.connect(
-            "focus-out-event",
-            controller.update_model, 'id')
-        self._scan_layout_id = gtk.Entry()
-        self._scan_layout_id.set_sensitive(False)
-        self._scan_layout_id.connect(
-            "focus-out-event",
-            controller.update_model, 'scan layout id')
+
+        self.project_id = gtk.Entry(self.ID_LENGTHS)
+        self.project_id.connect("changed", self.set_id_val,
+                                controller.ID_PROJECT)
+        self.scan_layout_id = gtk.Entry(self.ID_LENGTHS)
+        self.scan_layout_id.connect("changed", self.set_id_val,
+                                    controller.ID_LAYOUT)
+        self.id_control = gtk.Entry(self.ID_CTRL_LENGTH)
+        self.id_control.connect("changed", self.set_id_val,
+                                controller.ID_CONTROL)
+        self.id_control_warning = gtk.Image()
+
+        self.project_id.set_sensitive(False)
+        self.scan_layout_id.set_sensitive(False)
+        self.id_control.set_sensitive(False)
+
+        self.set_id_val(None, None)
+
         hbox = gtk.HBox(False, 0)
-        hbox.pack_start(self._project_id, False, False, PADDING_NONE)
-        hbox.pack_start(self._scan_layout_id, False, False, PADDING_SMALL)
+        hbox.pack_start(self.project_id, False, False, PADDING_NONE)
+        hbox.pack_start(self.scan_layout_id, False, False, PADDING_SMALL)
+        hbox.pack_start(self.id_control, False, False, PADDING_SMALL)
+        hbox.pack_start(self.id_control_warning, False, False, PADDING_SMALL)
+
         table.attach(label, 0, 1, 1, 2)
         table.attach(hbox, 1, 2, 1, 2)
         ##DESCRIPTION
@@ -671,6 +691,66 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
         self._pm_box = gtk.HBox()
         vbox.pack_start(self._pm_box, False, True, PADDING_SMALL)
+
+    def set_id_val(self, entry, eType):
+        """Callback for id-entry stuff."""
+
+        if entry is not None:
+            curVal = entry.get_text()
+            curValUpper = curVal.upper()
+
+            if (curVal != curValUpper and
+                (eType == self._controller.ID_PROJECT or
+                 eType == self._controller.ID_LAYOUT)):
+
+                entry.set_text(curValUpper)
+
+            if (eType == self._controller.ID_PROJECT and
+                    len(curVal) == self.ID_LENGTHS):
+
+                self.scan_layout_id.grab_focus()
+
+            elif (eType == self._controller.ID_LAYOUT and
+                  len(curVal) == self.ID_LENGTHS):
+
+                self.id_control.grab_focus()
+
+        ref_num = self._controller.get_ctrl_id_num(
+            self.project_id.get_text(),
+            self.scan_layout_id.get_text())
+
+        if (eType == self._controller.ID_PROJECT or
+                eType == self._controller.ID_LAYOUT):
+
+            self._controller.update_model(entry, None, eType)
+
+        if (entry is None and self.project_id.get_text() != "" and
+                self.scan_layout_id.get_text() != "" and
+                self.id_control.get_text() == ""):
+
+            self.id_control.set_text(str(ref_num))
+
+        try:
+            ctrl_num = int(self.id_control.get_text())
+        except:
+            ctrl_num = 0
+
+        if ref_num == ctrl_num:
+
+            self.id_control_warning.set_from_stock(
+                gtk.STOCK_APPLY,
+                gtk.ICON_SIZE_SMALL_TOOLBAR)
+
+            self.id_control_warning.set_tooltip_text("")
+
+        else:
+
+            self.id_control_warning.set_from_stock(
+                gtk.STOCK_STOP,
+                gtk.ICON_SIZE_SMALL_TOOLBAR)
+
+            self.id_control_warning.set_tooltip_text(
+                self._model['analysis-stage-first-id-warn'])
 
     def _update_number_of_plates(self, widget):
 
@@ -739,6 +819,11 @@ class Analysis_Stage_First_Pass(gtk.VBox):
 
         self._local_fixture.set_sensitive(has_fixture)
         self._local_fixture.set_active(has_fixture)
+        self.project_id.set_sensitive(True)
+        self.scan_layout_id.set_sensitive(True)
+        self.id_control.set_sensitive(True)
+        self.id_control.set_text("")
+        self.set_id_val(None, None)
 
     def update(self):
 
@@ -748,7 +833,11 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         if sm['meta-data'] is not None:
             md = sm['meta-data']
             self._project_desc.set_text(md['Description'])
-            self._project_id.set_text(md['Project ID'])
+            self.project_id.set_text(md['Project ID'])
+            try:
+                self.scan_layout_id.set_text(md['Scanner Layout ID'])
+            except:
+                pass
             self._prefix.set_text(md['Prefix'])
             try:
                 self._scanner.set_text(md['Scanner'])

@@ -90,27 +90,6 @@ class _SubProc_Handler(SubProc_Collection_Interface):
 
         return self._count
 
-    '''
-    def pop(self, callback):
-        """Returns element if element reports to be done.
-
-        If nothing is completed, returns None.
-
-        Note that it will only return one element at a time
-        even if several are done. And note that the order is
-        arbitrairy.
-        """
-
-        for elem in self:
-
-            if elem.set_callback_is_alive(self.
-                self._store.remove(elem)
-                self._set_size()
-                return elem
-
-        return None
-    '''
-
     def push(self, elem):
         """Adds subproc elem to handler.
 
@@ -176,6 +155,24 @@ class Experiment_Handler(_SubProc_Handler):
             (subproc_interface.EXPERIMENT_SCANNING,
              subproc_interface.EXPERIMENT_REBUILD))
 
+        self._proc_ids = set()
+
+    def get_free_rebuild_comm_id(self):
+
+        pid = 1
+        while pid in self._proc_ids:
+            pid += 1
+        self._proc_ids.add(pid)
+        return pid
+
+    def remove(self, elem):
+
+        val = super(Experiment_Handler, self).remove(elem)
+        if val and elem.get_type() == subproc_interface.EXPERIMENT_REBUILD:
+            self._proc_ids.remove(elem.get_comm_id())
+
+        return val
+
 
 class Analysis_Handler(_SubProc_Handler):
 
@@ -194,12 +191,10 @@ class Analysis_Handler(_SubProc_Handler):
         self._proc_ids.add(pid)
         return pid
 
-    def pop(self):
-        """Extends the pop to free communications ids if popping"""
-        elem = super(Analysis_Handler, self).pop()
+    def remove(self, elem):
 
-        if elem is not None:
-
+        val = super(Analysis_Handler, self).remove(elem)
+        if val:
             self._proc_ids.remove(elem.get_comm_id())
 
-        return elem
+        return val

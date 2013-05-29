@@ -15,12 +15,12 @@ __status__ = "Development"
 
 import os
 import re
-import shutil
 import gobject
 import threading
 import numpy as np
 import copy
 from subprocess import Popen, PIPE
+from ConfigParser import ConfigParser
 
 #
 # INTERNAL DEPENDENCIES
@@ -34,8 +34,9 @@ import src.resource_project_log as resource_project_log
 import src.analysis_wrapper as a_wrapper
 import src.resource_fixture_image as resource_fixture_image
 import src.resource_image as resource_image
-import src.resource_first_pass_analysis as resource_first_pass_analysis
+import src.resource_tags_verification as resource_tags_verification
 import src.gui.subprocs.subproc_interface as subproc_interface
+from run_make_project import Make_Project
 
 #
 # EXCEPTIONS
@@ -696,6 +697,10 @@ class Analysis_Inspect(controller_generic.Controller):
 
 class Analysis_First_Pass(controller_generic.Controller):
 
+    ID_PROJECT = "Project ID"
+    ID_LAYOUT = "Layout ID"
+    ID_CONTROL = "Control ID"
+
     def __init__(self, parent, view=None, model=None, logger=None):
 
         super(Analysis_First_Pass, self).__init__(
@@ -708,130 +713,48 @@ class Analysis_First_Pass(controller_generic.Controller):
 
     def start(self, *args, **kwargs):
 
-        m = self._model
         sm = self._specific_model
+
+        #Fix the GUI to show it has been started
         view = self.get_view()
-
         view.get_top().hide_button()
-
         view.set_stage(view_analysis.Analysis_Stage_First_Pass_Running(
-            self, m))
+            self, self._model))
 
-        sm['run-tot-images'] = float(len(sm['image-list-model']))
+        #Calculate path for make project instructions
+        p = os.path.join(sm['output-directory'],
+                         self._paths.experiment_rebuild_instructions)
 
-        self._run_thread = threading.Thread(target=self._run_first_pass_analysis)
-        self._run_thread.start()
-        gobject.timeout_add(491, self._running_callback)
+        #Prepare instructions for make project processs
+        config = ConfigParser()
+        config.add_section(Make_Project.CONFIG_META)
+        config.add_section(Make_Project.CONFIG_OTHER)
+        for key, val in sm.items():
+            if key == 'meta-data':
+                config.set(Make_Project.CONFIG_META, key, val)
+            elif key == 'image-list-model':
 
-    def _run_first_pass_analysis(self):
+                config.set(Make_Project.CONFIG_OTHER,
+                           'image-list',
+                           [row[0] for row in val])
 
-        m = self._model
-        sm = self._specific_model
-        md = sm['meta-data']
-        tc = self.get_top_controller()
-
-        #Outdata path
-        p = os.sep.join((sm['output-directory'], sm['output-file']))
-
-        md = resource_project_log.get_meta_data_dict(**md)
-        #Make header row for file:
-        if resource_project_log.write_log_file(p, meta_data=md) is False:
-
-            sm['run-error'] = \
-                m['analysis-stage-first-running-error-path'].format(p)
-
-            return
-
-        #Variable preparation (rfpa = resource_first_pass_analysis)
-        self._logger.debug(
-            ('Local {0}, LocalName {1} ' +
-             'ModelName {2} Gobal Path {3}').format(
-                 sm['use-local-fixture'],
-                 tc.paths.experiment_local_fixturename,
-                 md['Fixture'],
-                 tc.paths.fixtures))
-        if sm['use-local-fixture']:
-            rfpa_fixture = tc.paths.experiment_local_fixturename
-            rfpa_f_dir = sm['output-directory']
-        else:
-            rfpa_fixture = md['Fixture']
-            rfpa_f_dir = tc.paths.fixtures
-            local_fixture_path = os.path.join(
-                sm['output-directory'],
-                tc.paths.experiment_local_fixturename)
-
-            #Take backup of previous local fixture config if exists
-            if os.path.isfile(local_fixture_path):
-                shutil.copyfile(
-                    local_fixture_path,
-                    local_fixture_path + ".old")
-
-            #Copy global fixutre config into directory
-            shutil.copyfile(
-                tc.paths.get_fixture_path(
-                    md['Fixture'],
-                    own_path=tc.paths.experiment_local_fixturename),
-                local_fixture_path)
-
-        #Analyse all images in order
-        for i, row in enumerate(sm['image-list-model']):
-
-            sm['run-cur-image'] = i
-            im_path = row[0]
-
-            #Analyse image
-            im_data = resource_first_pass_analysis.analyse(
-                im_path,
-                im_acq_time=None,
-                logger=self._logger,
-                fixture_name=rfpa_fixture,
-                fixture_directory=rfpa_f_dir)
-
-            if im_data['grayscale_indices'] is None:
-                e = m['analysis-stage-first-running-error-img'].format(im_path)
-                if sm['run-error'] is None:
-                    sm['run-error'] = e
-                else:
-                    sm['run-error'] += e
             else:
-                #Get proper dict for writing to file
-                im_dict = resource_project_log.get_image_dict(
-                    im_path,
-                    im_data['Time'],
-                    im_data['mark_X'],
-                    im_data['mark_Y'],
-                    im_data['grayscale_indices'],
-                    im_data['grayscale_values'],
-                    im_data['scale'],
-                    img_dict=im_data,
-                    image_shape=im_data['im_shape'])
+                config.set(Make_Project.CONFIG_OTHER, key, val)
 
-                #Write results
-                if resource_project_log.append_image_dicts(p, images=[im_dict]) is False:
+        with open(p, 'wb') as configfile:
+            config.write(configfile)
 
-                    sm['run-error'] = \
-                        m['analysis-stage-first-running-error-access'].format(p)
+        #Register subprocess request
+        tc = self.get_top_controller()
+        tc.add_subprocess(
+            subproc_interface.EXPERIMENT_REBUILD,
+            rebuild_instructions_path=p)
 
-                    return
+        self.set_saved()
 
-    def _running_callback(self):
+    def get_ctrl_id_num(self, projectId, layoutId):
 
-        sm = self._specific_model
-        sm['run-position'] = sm['run-cur-image'] / sm['run-tot-images']
-        stage = self.get_view().get_stage()
-
-        if self._run_thread.is_alive():
-
-            stage.update()
-            return True
-
-        else:
-
-            sm['run-position'] = 1.0
-            sm['run-complete'] = True
-            stage.update()
-            self.set_saved()
-            return False
+        return resource_tags_verification.ctrlNum(projectId, layoutId)
 
     def set_output_dir(self, widget):
         m = self._model
@@ -1014,9 +937,9 @@ class Analysis_First_Pass(controller_generic.Controller):
             md['Fixture'] = t
         elif target == "desc":
             md['Description'] = t
-        elif target == "id":
+        elif target == self.ID_PROJECT:
             md['Project ID'] = t
-        elif target == 'scan layout id':
+        elif target == self.ID_LAYOUT:
             md['Scanner Layout ID'] = t
         elif target == "output-file":
             sm['output-file'] = t

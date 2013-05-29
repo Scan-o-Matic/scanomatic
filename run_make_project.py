@@ -18,6 +18,7 @@ import os
 import logging
 import threading
 import time
+import shutil
 from argparse import ArgumentParser
 from ConfigParser import ConfigParser
 
@@ -25,7 +26,10 @@ from ConfigParser import ConfigParser
 # INTERNAL-DEPENDENCIES
 #
 
-import src.subproc.communicator as communicator
+import src.subprocs.communicator as communicator
+import src.resource_project_log as resource_project_log
+import src.resource_path as resource_path
+import src.resource_first_pass_analysis as resource_first_pass_analysis
 
 #
 # CONSTANTS
@@ -44,36 +48,135 @@ LOGGING_LEVELS = {'critical': logging.CRITICAL,
 
 class Make_Project(object):
 
-    META_PREFIX = "Prefix"
-    META_ROOT = "Root"
-    META_PINNING = "Pinning Matrices"
+    CONFIG_OTHER = "Run Info"
+    CONFIG_META = "Meta Data"
 
-    CONFIG_IMAGES = "Image Paths"
-
-    def __init__(self, inputFile, logger):
+    def __init__(self, inputFile, comm_id, logger):
 
         self._time_init = time.time()
         self._running = None
         self._paused = False
         self._logger = logger
+        self._paths = resource_path.Paths()
         self._set_from_file(inputFile)
+
+        self._stdin = self._paths.log_rebuild_in.format(comm_id)
+        self._stdout = self._paths.log_rebuild_out.format(comm_id)
+        self._stderr = self._paths.log_rebuild_err.format(comm_id)
+
         self._comm = communicator.Communicator(
             logger, self,  self._stdin, self._stdout, self._stderr)
 
         self._comm_thread = threading.Thread(target=self._comm.run)
-        self._comm_thread.start()
 
     def _set_from_file(self, fpath):
 
         config = ConfigParser()
         config.readfp(open(fpath))
 
-        tmpImgs = config.items(self.CONFIG_IMAGES)
-        imgGen = ((int(k), v) for k, v in tmpImgs)
-        self._image_paths = dict(imgGen)
-        self._images_total = max(imgGen.keys()) + 1
-        self._meta_data = {}
-        self._outfile_path = ""
+        #Gathering the metadata
+        self._meta_data = eval(config.get(self.CONFIG_META, 'meta-data'))
+
+        #Gathering the run info
+        tmpOther = config.items(self.CONFIG_OTHER)
+        self._model = {k: v for k, v in tmpOther}
+        self._model['image-list'] = eval(self._model['image-list'])
+        self._images_total = len(self._model['image-list'])
+
+    def _init_output_file(self):
+
+        #Outdata path
+        p = os.path.join(self._model['output-directory'],
+                         self._model['output-file'])
+
+        md = resource_project_log.get_meta_data_dict(
+            **self._meta_data)
+        #Make header row for file:
+        if resource_project_log.write_log_file(p, meta_data=md) is False:
+
+            self._running = False
+
+            self._logger.error("Could not write {0} to {1}".format(md, p))
+
+        self._output_path = p
+
+    def _init_fixture(self):
+
+        local_fixture_path = None
+
+        #Variable preparation (rfpa = resource_first_pass_analysis)
+        self._logger.debug(
+            ('Local {0}, LocalName {1} ' +
+             'ModelName {2} Gobal Path {3}').format(
+                 self._model['use-local-fixture'],
+                 self._paths.experiment_local_fixturename,
+                 self._meta_data['Fixture'],
+                 self._paths.fixtures))
+
+        if self._model['use-local-fixture']:
+            rfpa_fixture = self._paths.experiment_local_fixturename
+            rfpa_f_dir = self._model['output-directory']
+        else:
+            rfpa_fixture = self._meta_data['Fixture']
+            rfpa_f_dir = self._paths.fixtures
+            local_fixture_path = os.path.join(
+                self._model['output-directory'],
+                self._paths.experiment_local_fixturename)
+
+            #Take backup of previous local fixture config if exists
+            if (local_fixture_path is not None and
+                    os.path.isfile(local_fixture_path)):
+
+                shutil.copyfile(
+                    local_fixture_path,
+                    local_fixture_path + ".old")
+
+            #Copy global fixutre config into directory
+            shutil.copyfile(
+                self._paths.get_fixture_path(
+                    self._meta_data['Fixture'],
+                    own_path=self._paths.experiment_local_fixturename),
+                local_fixture_path)
+
+        self._fixture_name = rfpa_fixture
+        self._fixture_dir = rfpa_f_dir
+
+    def _analyse_image(self, im_path):
+
+        #Analyse image
+        im_data = resource_first_pass_analysis.analyse(
+            im_path,
+            im_acq_time=None,
+            logger=self._logger,
+            fixture_name=self._fixture_name,
+            fixture_directory=self._fixture_dir)
+
+        if im_data['grayscale_indices'] is None:
+
+            self._logger.error("Could not analyze grayscale for {0}".format(
+                im_path))
+
+        else:
+
+            #Get proper dict for writing to file
+            im_dict = resource_project_log.get_image_dict(
+                im_path,
+                im_data['Time'],
+                im_data['mark_X'],
+                im_data['mark_Y'],
+                im_data['grayscale_indices'],
+                im_data['grayscale_values'],
+                im_data['scale'],
+                img_dict=im_data,
+                image_shape=im_data['im_shape'])
+
+            #Write results
+            if resource_project_log.append_image_dicts(
+                    self._output_path, images=[im_dict]) is False:
+
+                self._logger.error(
+                    "Could not write data for {0} to {1}".format(
+                        self._output_path, im_dict))
 
     def run(self):
 
@@ -82,15 +185,19 @@ class Make_Project(object):
         self._image_i = 0
 
         #WRITE METADATA HEADER
-        pass
+        self._init_output_file()
+
+        #Communicator starts now, since now it is safe
+        self._comm_thread.start()
+
+        #SET UP FIXTURE
+        self._init_fixture()
 
         #DO THE IMAGES
-        while self._running:
+        while self._running and self._image_i < self._images_total:
 
-            if self._image_i in self._image_paths:
-
-                #DO THE FIRST PASS
-                pass
+            #DO THE FIRST PASS
+            self._analyse_image(self._model['image-list'][self._image_i])
 
             self._image_i += 1
 
@@ -140,11 +247,10 @@ class Make_Project(object):
 
     def get_info(self):
 
-        return ("__PREFIX__ {0}".format(self._meta_data[self.META_PREFIX]),
-                "__SCANNER__ <NONE>",
-                "__ROOT__ {0}\n".format(self._meta_data[self.META_ROOT]),
-                "__1-PASS FILE__ {0}".format(self._outfile_path),
-                "__PINNINGS__ {0}".format(self._meta_data[self.META_PINNING]))
+        return ("__PREFIX__ {0}".format(self._model['experiment-prefix']),
+                "__SCANNER__ No Scanner/Rebuilding",
+                "__ROOT__ {0}\n".format(self._model['experiments-root']),
+                "__1-PASS FILE__ {0}".format(self._output_path))
 
 #
 # RUN BEHAVIOR
@@ -165,6 +271,9 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--input-file", type=str, dest="inputfile",
                         help="Settings File for the compilation",
                         metavar="PATH")
+
+    parser.add_argument("-c", "--communications", type=str, dest="comm",
+                        help="Communications file index", metavar="INDEX")
 
     parser.add_argument("-l", "--logging", type=str, dest="logging",
                         help="Logging level {0}".format(
@@ -191,5 +300,5 @@ if __name__ == "__main__":
     logger.debug("Logger is ready!")
 
     #Making the project
-    mp = Make_Project(args.inputfile, logger)
+    mp = Make_Project(args.inputfile, args.comm, logger)
     mp.run()
