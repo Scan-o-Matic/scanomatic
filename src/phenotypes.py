@@ -1659,7 +1659,8 @@ class Interactive_Menu():
     def _save_np(self, data, header, file_guess=None, **kwargs):
 
         self._set_save_intro(header)
-        file_path = self._get_save_file_guess(file_guess=file_guess)
+        file_path = self._get_save_file_guess(file_guess=file_guess,
+                                              doAsk=False)
         try:
             np.save(file_path, data)
         except:
@@ -1668,7 +1669,7 @@ class Interactive_Menu():
         return True
 
     def _save_csv(self, data, header, file_guess=None, meta_data=None,
-                  np_slice=None, sep="\t", text_comment="\"",
+                  np_slice=None, sep="\t", text_comment="\"", new_line="\n\r",
                   maxDepth=3, metaDataPos=None):
 
         def _csv_write_data(data, fh, posList, maxDepth=None):
@@ -1676,7 +1677,7 @@ class Interactive_Menu():
             if data.size == 0:
                 return
 
-            if data.ndim > 1 and len(posList) + 1 < maxDepth:
+            if data.ndim >= 1 and len(posList) + 1 < maxDepth:
 
                 for i in range(data.shape[0]):
                     _csv_write_data(data[i], fh, posList + [i], maxDepth)
@@ -1695,17 +1696,18 @@ class Interactive_Menu():
                         strain = ""
 
                     strain = text_comment + strain + text_comment
-                    if isinstance(elem, int):
+                    if (isinstance(elem, int) or isinstance(elem, float)):
                         elem = [elem]
                     else:
                         elem = elem.tolist()
 
                     curData = [strain] + list(curPos) + elem
 
-                    fh.write(sep.join(map(str, curData)) + "\n")
+                    fh.write(sep.join(map(str, curData)) + new_line)
 
         self._set_save_intro(header)
-        file_path = self._get_save_file_guess(file_guess=file_guess)
+        file_path = self._get_save_file_guess(file_guess=file_guess,
+                                              doAsk=False)
 
         if isinstance(data, np.ndarray) is False:
             data = np.array(data)
@@ -1727,85 +1729,6 @@ class Interactive_Menu():
         fh.close()
 
         return True
-
-    """
-    def _save(self, data, header, save_as_np_array=False, data2=None,
-              file_guess=None, metadata=None):
-
-        file_path = None
-        self._set_save_intro(header)
-
-        if self._plate_labels is None:
-            self.set_plate_labels()
-
-        file_path = self._get_save_file_guess(file_guess=file_guess)
-
-        if save_as_np_array:
-            try:
-                np.save(file_path, data)
-            except:
-                return False
-
-            if data2 is not None:
-
-                file_path = file_path.split(".")
-                file_path = ".".join(file_path[:-1]) + "2" + file_path[-1]
-
-                try:
-                    np.save(file_path, data2)
-                except:
-                    return False
-
-                logging.info("Also saved secondary data as '{0}'".format(file_path))
-        else:
-            try:
-                fs = open(file_path, 'w')
-            except:
-                return False
-
-            for p in range(len(data)):
-                fs.write("START PLATE {0}\n".format(self._plate_labels[p]))
-
-                if data[p].ndim >= 2:
-                    for x in xrange(data[p].shape[0]):
-                        for y in xrange(data[p].shape[1]):
-                            if data2 is None:
-                                try:
-                                    fs.write(
-                                        "{0}\t{1}\t{2}\t\"{3}\"\t{4}\n".format(
-                                            p, x, y,
-                                            self._original_meta_data[(p, x, y)][0],
-                                                "\t".join(
-                                                    list(map(
-                                                        str,
-                                                        data[p][x, y, :])))))
-                                except KeyError:
-
-                                    logging.warning(
-                                        "Position {0} does not exist".format((
-                                            p, x, y)))
-                                except:
-
-                                    fs.write(
-                                        "{0}\t{1}\t{2}\t\"{3}\"\t{4}\n".format(
-                                            p, x, y,
-                                            self._original_meta_data[(p, x, y)][0],
-                                            data[p][x, y]))
-
-                            else:
-                                fs.write(
-                                    "{0}\t{1}\t{2}\t\"{3}\"\t{4}\t{5}\n".format(
-                                        p, x, y,
-                                        self._original_meta_data[(p, x, y)][0],
-                                        "\t".join(list(map(str, data[p][x, y]))),
-                                        "\t".join(list(map(str, data2[p][x, y])))))
-
-                fs.write("STOP PLATE {0}\n".format(self._plate_labels[p]))
-
-            fs.close()
-
-        return True
-    """
 
     def run(self):
 
