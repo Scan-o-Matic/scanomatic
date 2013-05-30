@@ -4,11 +4,6 @@
 
 --- HOT ---
 
-*** SUBPROCS
-
-	There's a problem with reconnecter makes it look like locked scanners
-	are alive for a short while even without subprocs.
-
 *** FIRST PASS needs to store DPI setting because analysis needs to know how
     to scale history and default expectencies accordingly.
 
@@ -64,8 +59,6 @@
     http://old.nabble.com/import-16-bit-tiff---byte-order-problem--td20374391.html
     http://blog.philippklaus.de/2011/08/handle-16bit-tiff-images-in-python/
 
-*** Scanner selection is still awkward... (only one scanner per program I think
-
 *** Checking of space left on HD
 
 
@@ -99,6 +92,13 @@
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Scanner selection is still awkward... (only one scanner per program I think
+
+*** SUBPROCS
+
+	There's a problem with reconnecter makes it look like locked scanners
+	are alive for a short while even without subprocs.
 
 *** Proc Phenotypes:	Keep with names
 
