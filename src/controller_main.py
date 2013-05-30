@@ -28,7 +28,7 @@ import src.view_main as view_main
 import src.controller_generic as controller_generic
 import src.gui.subprocs.controller_subprocs as controller_subprocs
 import src.controller_analysis as controller_analysis
-import src.controller_experiment as controller_experiment
+import src.gui.experiment.controller_experiment as controller_experiment
 import src.controller_config as controller_config
 #Resources
 import src.controller_calibration as controller_calibration

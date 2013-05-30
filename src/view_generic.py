@@ -291,6 +291,8 @@ class Fixture_Drawing(gtk.DrawingArea):
     PADDING = 0.01
     VIEW_STATE = ('Image', 'Scanner')
     BACKGROUND = (0.75, 0.75, 0.95, 0.9)
+    ERROR_BACKGROUND = (0.9, 0.1, 0.1, 1.0)
+    ERROR_STROKE = (1, 1, 1, 1)
 
     def __init__(self, fixture, width=None, height=None, logger=None,
                  scanner_view=False):
@@ -374,6 +376,21 @@ class Fixture_Drawing(gtk.DrawingArea):
         cr.set_source_rgba(*self.BACKGROUND)
         cr.rectangle(0, 0, w, h)
         cr.fill()
+
+    def _draw_error(self, cr, w, h):
+
+        cr.set_source_rgba(*self.ERROR_BACKGROUND)
+        cr.rectangle(0, 0, w, h)
+        cr.fill()
+
+        cr.set_source_rgba(*self.ERROR_STROKE)
+        cr.move_to(0, 0)
+        cr.line_to(w, h)
+        cr.stroke()
+
+        cr.move_to(w, 0)
+        cr.line_to(0, h)
+        cr.stroke()
 
     def _draw_rect(self, cr, positions, stroke_rgba=None, stroke_width=0.5, fill_rgba=None):
 
@@ -468,6 +485,10 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._cr_padding_h = h * self.PADDING
         self._cr_active_w = w - 2 * self._cr_padding_w
         self._cr_active_h = h - 2 * self._cr_padding_h
+
+        if self._grayscale is None or len(self._plates) == 0:
+            self._draw_error(cr, w, h)
+            return
 
         #DRAWING
         self._draw_bg(cr, w, h)
