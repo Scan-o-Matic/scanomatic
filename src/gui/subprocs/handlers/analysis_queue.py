@@ -20,14 +20,12 @@ import psutil
 # INTERNAL DEPENDENCIES
 #
 
-from subproc_collection_interface import SubProc_Collection_Interface
-
 #
 # CLASSES
 #
 
 
-class Analysis_Queue(SubProc_Collection_Interface):
+class Analysis_Queue(object):
 
     MAX_MEM_USAGE = 60
     MIN_FREE_CPU_PERCENT = 50

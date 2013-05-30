@@ -19,8 +19,7 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-from subproc_collection_interface import SubProc_Collection_Interface
-import subproc_interface
+import src.gui.subprocs.communications.gui_communicator as gui_communicator
 
 #
 # EXCEPTIONS
@@ -62,12 +61,10 @@ def whoCalled(fn):
 #
 
 
-class _SubProc_Handler(SubProc_Collection_Interface):
+class _SubProc_Handler(object):
 
     def __init__(self, proc_types):
         """Prototype SubProc Handler
-
-        Implements all methods of the SubProc_Collection_Interface.
 
         :param proc_types: A list of SubProc types using the
         constants of the supproc_interface - module.
@@ -133,7 +130,7 @@ class _SubProc_Handler(SubProc_Collection_Interface):
             raise WrongProcType(elem)
 
         #FIXIT: TYPE NOT DONE YET
-        if not(set(dir(subproc_interface.SubProc_Interface)).issubset(
+        if not(set(dir(gui_communicator.gui_communicator)).issubset(
                 set(dir(elem)))):
 
             ver = False
@@ -152,8 +149,8 @@ class Experiment_Handler(_SubProc_Handler):
     def __init__(self):
 
         super(Experiment_Handler, self).__init__(
-            (subproc_interface.EXPERIMENT_SCANNING,
-             subproc_interface.EXPERIMENT_REBUILD))
+            (gui_communicator.EXPERIMENT_SCANNING,
+             gui_communicator.EXPERIMENT_REBUILD))
 
         self._proc_ids = set()
 
@@ -168,7 +165,7 @@ class Experiment_Handler(_SubProc_Handler):
     def remove(self, elem):
 
         val = super(Experiment_Handler, self).remove(elem)
-        if val and elem.get_type() == subproc_interface.EXPERIMENT_REBUILD:
+        if val and elem.get_type() == gui_communicator.EXPERIMENT_REBUILD:
             self._proc_ids.remove(elem.get_comm_id())
 
         return val
@@ -179,7 +176,7 @@ class Analysis_Handler(_SubProc_Handler):
     def __init__(self):
 
         super(Analysis_Handler, self).__init__(
-            (subproc_interface.ANALYSIS,))
+            (gui_communicator.ANALYSIS,))
 
         self._proc_ids = set()
 

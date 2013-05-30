@@ -25,7 +25,7 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.subprocs.subproc_interface as subproc_interface
+import src.gui.subprocs.communications.gui_communicator as gui_communicator
 from src.view_generic import *
 from src.gui.subprocs.event.event import Event
 
@@ -294,7 +294,7 @@ class _Running_Experiment(_Running_Frame):
                                                   proc, model,
                                                   init_info_msg)
 
-        if proc.get_type() == subproc_interface.EXPERIMENT_REBUILD:
+        if proc.get_type() == gui_communicator.EXPERIMENT_REBUILD:
 
             self._pause_button = gtk.Button(
                 label=model['running-pause'])
@@ -304,8 +304,7 @@ class _Running_Experiment(_Running_Frame):
 
     def _set_title(self, widget, param):
 
-        self.set_label("{0},    {1}".format(param['prefix'],
-                                                    param['scanner']))
+        self.set_label("{0},    {1}".format(param['prefix'], param['scanner']))
 
 
 class _Running_Analysis(_Running_Frame):

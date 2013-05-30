@@ -27,7 +27,7 @@ import sh
 import src.model_experiment as model_experiment
 import src.view_experiment as view_experiment
 import src.controller_generic as controller_generic
-import src.gui.subprocs.subproc_interface as subproc_interface
+import src.gui.subprocs.communications.gui_communicator as gui_communicator
 import src.resource_tags_verification as resource_tags_verification
 
 #
@@ -674,7 +674,7 @@ class Project_Controller(controller_generic.Controller):
 
         tc = self.get_top_controller()
         sm = self._specific_model
-        tc.add_subprocess(subproc_interface.EXPERIMENT_SCANNING, sm=sm)
+        tc.add_subprocess(gui_communicator.EXPERIMENT_SCANNING, sm=sm)
 
         self.set_view_stage(None, 'running')
 

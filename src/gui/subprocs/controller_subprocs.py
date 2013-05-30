@@ -22,16 +22,17 @@ import inspect
 #
 
 import src.controller_generic as controller_generic
-import src.view_subprocs as view_subprocs
-import src.model_subprocs as model_subprocs
-#import src.model_experiment as model_experiment
-from src.gui.subprocs.analysis_queue import Analysis_Queue
-import src.gui.subprocs.gui_subprocesses as gui_subprocesses
-import src.gui.subprocs.process_handler as process_handler
-import src.gui.subprocs.subproc_interface as subproc_interface
+import view_subprocs
+import model_subprocs
+
+from src.gui.subprocs.handlers.analysis_queue import Analysis_Queue
+import src.gui.subprocs.handlers.process_handler as process_handler
+
+import src.gui.subprocs.communications.gui_communicator as gui_communicator
 import src.gui.subprocs.progress_responses as progress_responses
 import src.gui.subprocs.reconnect as reconnect
 import src.gui.subprocs.live_projects as live_projects
+
 import src.gui.subprocs.event.event_handler as event_handler
 from src.gui.subprocs.event.event import Event
 
@@ -172,8 +173,8 @@ class Subprocs_Controller(controller_generic.Controller,
     def add_subprocess_directly(self, ptype, proc):
         """Adds a proc, should be used only by reconnecter"""
 
-        if (ptype == subproc_interface.EXPERIMENT_SCANNING or
-                ptype == subproc_interface.EXPERIMENT_REBUILD):
+        if (ptype == gui_communicator.EXPERIMENT_SCANNING or
+                ptype == gui_communicator.EXPERIMENT_REBUILD):
 
             success = self._experiments.push(proc)
 
@@ -181,7 +182,7 @@ class Subprocs_Controller(controller_generic.Controller,
                 proc.set_callback_parameters,
                 self._set_experiment_started, None))
 
-        elif ptype == subproc_interface.ANALYSIS:
+        elif ptype == gui_communicator.ANALYSIS:
 
             success == self._analysises.push(proc)
 
@@ -208,17 +209,17 @@ class Subprocs_Controller(controller_generic.Controller,
         relevant gui_subprocess-class to launch
         """
 
-        if ptype == subproc_interface.EXPERIMENT_SCANNING:
+        if ptype == gui_communicator.EXPERIMENT_SCANNING:
 
             success = self.add_subprocess_directly(
                 ptype,
-                gui_subprocesses.Experiment_Scanning(self._tc, **params))
+                gui_communicator.Experiment_Scanning(self._tc, **params))
 
-        elif ptype == subproc_interface.ANALYSIS:
+        elif ptype == gui_communicator.ANALYSIS:
 
             success = self._queue.push(params)
 
-        elif ptype == subproc_interface.EXPERIMENT_REBUILD:
+        elif ptype == gui_communicator.EXPERIMENT_REBUILD:
 
             if 'comm_id' not in params:
                 params['comm_id'] = \
@@ -226,7 +227,7 @@ class Subprocs_Controller(controller_generic.Controller,
 
             success = self.add_subprocess_directly(
                 ptype,
-                gui_subprocesses.Experiment_Rebuild(self._tc, **params))
+                gui_communicator.Experiment_Rebuild(self._tc, **params))
 
         self._logger.info("{0} {1} with parameters {2}".format(
             ["Failed to add", "Added"][success],
@@ -246,14 +247,14 @@ class Subprocs_Controller(controller_generic.Controller,
         :param proc: The process to be stopped
         """
 
-        if (proc.get_type() == subproc_interface.EXPERIMENT_SCANNING or
-                proc.get_type() == subproc_interface.EXPERIMENT_REBUILD):
+        if (proc.get_type() == gui_communicator.EXPERIMENT_SCANNING or
+                proc.get_type() == gui_communicator.EXPERIMENT_REBUILD):
 
             handler = self._experiments
             self.add_event(Event(
                 proc.set_callback_prefix, self._set_stopped_experiment, None))
 
-        elif (proc.get_type() == subproc_interface.ANALYSIS):
+        elif (proc.get_type() == gui_communicator.ANALYSIS):
 
             handler = self._analysises
             self.add_event(Event(
@@ -278,7 +279,7 @@ class Subprocs_Controller(controller_generic.Controller,
                 'prefix' in param and param['prefix'] != '' and
                 param['experiments-root'] != ''):
 
-            self.add_subprocess(subproc_interface.ANALYSIS,
+            self.add_subprocess(gui_communicator.ANALYSIS,
                                 experiments_root=param['experiments-root'],
                                 experiment_prefix=param['prefix'],
                                 experiment_first_pass=param['1-pass file'])
@@ -400,7 +401,7 @@ class Subprocs_Controller(controller_generic.Controller,
                 new_analsysis['comm_id'] = \
                     self._analysises.get_free_proc_comm_id()
 
-            proc = gui_subprocesses.Analysis(self._tc, **new_analsysis)
+            proc = gui_communicator.Analysis(self._tc, **new_analsysis)
             self._analysises.push(proc)
 
             #Update live project status

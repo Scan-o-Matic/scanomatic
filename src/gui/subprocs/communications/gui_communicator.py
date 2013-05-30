@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""The Subprocess-objects used by the mail program to communicate
-with the true subprocesses"""
+"""The GUIs Communication Classes for GUI to Subprocess talking."""
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
@@ -25,7 +24,6 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-import subproc_interface
 from src.subprocs.io import Proc_IO
 import src.resource_logger as resource_logger
 
@@ -45,6 +43,14 @@ class InvalidProcesCreationCall(Exception):
 class AttemptedProcessOverride(Exception):
     pass
 
+
+#
+# CONSTANTS
+#
+
+EXPERIMENT_SCANNING = 11
+EXPERIMENT_REBUILD = 12
+ANALYSIS = 20
 
 #
 # METHODS
@@ -93,7 +99,7 @@ def _get_pinnings_str(pinning_list):
 #
 
 
-class _Subprocess(subproc_interface.SubProc_Interface):
+class _Subprocess(object):
 
     def __init__(self, proc_type, top_controler, proc=None, logger=None):
         """_Subprocess is a common implementation for the different
@@ -564,7 +570,7 @@ class Experiment_Scanning(_Subprocess):
     def __init__(self, top_controller, **params):
 
         super(Experiment_Scanning, self).__init__(
-            subproc_interface.EXPERIMENT_SCANNING,
+            EXPERIMENT_SCANNING,
             top_controller)
 
         self._scanner = None
@@ -664,7 +670,7 @@ class Experiment_Rebuild(_Subprocess):
     def __init__(self, top_controller, **params):
 
         super(Experiment_Rebuild, self).__init__(
-            subproc_interface.EXPERIMENT_REBUILD,
+            EXPERIMENT_REBUILD,
             top_controller)
 
         self._new_proc = False
@@ -784,8 +790,7 @@ class Analysis(_Subprocess):
         """
 
         super(Analysis, self).__init__(
-            subproc_interface.ANALYSIS,
-            top_controller)
+            ANALYSIS, top_controller)
 
         self._comm_id = None
         self.set_process(self.get_proc(**params))

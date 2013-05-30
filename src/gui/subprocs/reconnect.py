@@ -20,10 +20,9 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-import gui_subprocesses
+import src.gui.subprocs.communications.gui_communicator as gui_communicator
 import src.resource_logger as resource_logger
 from src.gui.subprocs.event.event import Event
-import src.gui.subprocs.subproc_interface as subproc_interface
 
 #
 # METHODS
@@ -111,7 +110,7 @@ class Reconnect_Subprocs(object):
                 stdout_path = paths.log_scanner_out.format(scanner_i)
                 stderr_path = paths.log_scanner_err.format(scanner_i)
 
-                proc = gui_subprocesses.Experiment_Scanning(
+                proc = gui_communicator.Experiment_Scanning(
                     tc, **{
                         'stdin_path': stdin_path,
                         'stdout_path': stdout_path,
@@ -142,7 +141,7 @@ class Reconnect_Subprocs(object):
             logger.info("Proc {0} {1} was dead".format(
                 proc.get_type(), proc.get_sending_path()))
 
-            if proc.get_type() == subproc_interface.EXPERIMENT_SCANNING:
+            if proc.get_type() == gui_communicator.EXPERIMENT_SCANNING:
 
                 self._release_scanner(proc)
 

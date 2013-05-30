@@ -13,7 +13,7 @@ __status__ = "Development"
 # INTERNAL DEPENDENCIES
 #
 
-import src.view_subprocs as view_subprocs
+import view_subprocs as view_subprocs
 
 #
 # CLASSES

@@ -35,7 +35,7 @@ import src.analysis_wrapper as a_wrapper
 import src.resource_fixture_image as resource_fixture_image
 import src.resource_image as resource_image
 import src.resource_tags_verification as resource_tags_verification
-import src.gui.subprocs.subproc_interface as subproc_interface
+import src.gui.subprocs.communications.gui_communicator as gui_communicator
 from run_make_project import Make_Project
 
 #
@@ -747,7 +747,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         #Register subprocess request
         tc = self.get_top_controller()
         tc.add_subprocess(
-            subproc_interface.EXPERIMENT_REBUILD,
+            gui_communicator.EXPERIMENT_REBUILD,
             rebuild_instructions_path=p)
 
         self.set_saved()
@@ -1752,7 +1752,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
             pm = pm[:-1]
             a_dict["-m"] = pm
 
-        tc.add_subprocess(subproc_interface.ANALYSIS, a_dict=a_dict)
+        tc.add_subprocess(gui_communicator.ANALYSIS, a_dict=a_dict)
 
     def set_log_file(self, widget, log_files=None):
 
