@@ -26,9 +26,11 @@ from ConfigParser import ConfigParser
 # INTERNAL DEPENDENCIES
 #
 
-import src.model_analysis as model_analysis
-import src.view_analysis as view_analysis
-import src.controller_generic as controller_generic
+import model_analysis
+import view_analysis
+
+import src.gui.generic.controller_generic as controller_generic
+
 import src.resource_os as resource_os
 import src.resource_project_log as resource_project_log
 import src.analysis_wrapper as a_wrapper

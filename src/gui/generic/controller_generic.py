@@ -17,7 +17,7 @@ __status__ = "Development"
 # INTERNAL DEPENDENCIES
 #
 
-import src.view_generic as view_generic
+import view_generic
 import src.resource_logger as resource_logger
 
 #

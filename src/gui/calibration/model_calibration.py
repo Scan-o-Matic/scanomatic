@@ -8,7 +8,7 @@ import numpy as np
 # INTERNAL DEPENDENCIES
 #
 
-import src.model_generic as model_generic
+import src.gui.generic.model_generic as model_generic
 
 #
 # FUNCTIONS
@@ -69,7 +69,7 @@ to invoke a new calibration polynomial.</i></span>
 'fixture-select-next': 'Marker Calibration',
 
 #FIXTURE MARKER CALIBRATION
-'fixture-calibration-title': 
+'fixture-calibration-title':
 """<span size="large">Image Selection and Marker Detection</span>""",
 'fixture-calibration-next': 'Segmenting Fixture',
 'fixture-calibration-select-im': 'Select Image',
@@ -96,7 +96,7 @@ to invoke a new calibration polynomial.</i></span>
 'fixture-segmentation-ok': 'Yes',
 
 #FIXTURE SEGMENTATION
-'fixture-save-title': 
+'fixture-save-title':
 """<span size="large">Fixture is saved and ready to use!</span>""",
 }
 

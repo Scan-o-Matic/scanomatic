@@ -24,9 +24,11 @@ import sh
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.experiment.model_experiment as model_experiment
-import src.gui.experiment.view_experiment as view_experiment
-import src.controller_generic as controller_generic
+import model_experiment
+import view_experiment
+
+import src.gui.generic.controller_generic as controller_generic
+
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
 import src.resource_tags_verification as resource_tags_verification
 

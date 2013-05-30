@@ -25,7 +25,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 # INTERNAL DEPENDENCIES
 #
 
-from src.view_generic import *
+from src.gui.generic.view_generic import *
 import src.resource_fixture_image as resource_fixture_image
 
 #

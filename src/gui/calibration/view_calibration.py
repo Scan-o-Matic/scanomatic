@@ -28,7 +28,7 @@ import numpy as np
 # INTERNAL DEPENDENCIES
 #
 
-from src.view_generic import *
+from src.gui.generic.view_generic import *
 
 #
 # STATIC GLOBALS

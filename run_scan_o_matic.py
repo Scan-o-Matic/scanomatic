@@ -25,7 +25,7 @@ from argparse import ArgumentParser
 # INTERNAL DEPENDENCIES
 #
 
-import src.controller_main as controller
+import src.gui.controller_main as controller
 
 #
 # EXECUTION BEHAVIOUR

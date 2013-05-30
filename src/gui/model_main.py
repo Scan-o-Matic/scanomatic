@@ -2,7 +2,7 @@
 # INTERNAL DEPENDENCIES
 #
 
-import src.model_generic as model_generic
+import generic.model_generic as model_generic
 
 #
 # FUNCTIONS

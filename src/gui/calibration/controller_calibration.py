@@ -19,9 +19,11 @@ import numpy as np
 # INTERNAL DEPENDENCIES
 #
 
-import src.model_calibration as model_calibration
-import src.view_calibration as view_calibration
-import src.controller_generic as controller_generic
+import model_calibration
+import view_calibration
+
+import src.gui.generic.controller_generic as controller_generic
+
 import src.resource_fixture_image as resource_fixture_image
 import src.resource_scanner as resource_scanner
 import src.resource_path as resource_path
@@ -82,7 +84,7 @@ class Calibration_Controller(controller_generic.Controller):
             raise Bad_Stage_Call(calibration_mode)
             return
 
-        self.add_subcontroller(self._specific_controller)        
+        self.add_subcontroller(self._specific_controller)
 
 class Fixture_Controller(controller_generic.Controller):
 
@@ -142,7 +144,7 @@ class Fixture_Controller(controller_generic.Controller):
 
         elif stage_call == 'segmentation':
 
-            top = view_calibration.Fixture_Segmentation_Top(self, 
+            top = view_calibration.Fixture_Segmentation_Top(self,
                 m, sm)
 
             stage = view_calibration.Fixture_Segmentation_Stage(self,
@@ -151,7 +153,7 @@ class Fixture_Controller(controller_generic.Controller):
         elif stage_call == 'save':
 
             top = view_calibration.Fixture_Save_Top(self, m, sm)
- 
+
             stage = view_calibration.Fixture_Save_Stage(self, m , sm)
 
             self.save_fixture()
@@ -247,7 +249,7 @@ class Fixture_Controller(controller_generic.Controller):
             if scanner.scan("TPU", self._paths.fixture_tmp_scan_image):
                 scanner.free()
                 self._set_new_image(self._paths.fixture_tmp_scan_image)
-                
+
             else:
                 scanner.free()
                 raise Scan_Failed()
@@ -324,7 +326,7 @@ class Fixture_Controller(controller_generic.Controller):
 
             self.f_settings = resource_fixture_image.Fixture_Image(
                 sm['fixture-file'],
-                fixture_directory=self.get_top_controller().paths.fixtures, 
+                fixture_directory=self.get_top_controller().paths.fixtures,
                 image_path=sm['im-path'],
                 im_scale=(sm['im-scale']<1 and sm['im-scale'] or None),
                 define_reference=True, markings_path=sm['marker-path'],
@@ -338,7 +340,7 @@ class Fixture_Controller(controller_generic.Controller):
                 sm['marker-positions'] = zip(X, Y)
 
             else:
-   
+
                 sm['marker-positions'] = None
 
             self._view.get_stage().set_markers()
@@ -368,9 +370,9 @@ class Fixture_Controller(controller_generic.Controller):
             sm['grayscale-sources'] = None
             stage.update_segment('G',
                 scale=sm['im-original-scale'])
-        
+
         stage.set_segments_in_list()
-        
+
 
     def set_number_of_plates(self, widget):
 
@@ -433,7 +435,7 @@ class Fixture_Controller(controller_generic.Controller):
         else:
 
             self.f_settings['grayscale-coords'] = sm['grayscale-coords']
- 
+
             self.f_settings.analyse_grayscale()
             gs_target, gs_source =  self.f_settings['grayscale']
             print gs_source
@@ -480,7 +482,7 @@ class Fixture_Controller(controller_generic.Controller):
 
                 sm['active-target'] = (event.xdata / scale,
                     event.ydata / scale)
-            
+
             coords = self.get_segment_ok(sm['active-source'],
                 sm['active-target'])
 
@@ -521,7 +523,7 @@ class Fixture_Controller(controller_generic.Controller):
 
                 sm['active-target'] = (event.xdata / scale,
                     event.ydata / scale)
- 
+
             self._view.get_stage().draw_active_segment(scale=scale)
 
     def set_plates(self, replace_index, new_coords):
@@ -548,7 +550,7 @@ class Fixture_Controller(controller_generic.Controller):
 
                 tmp_eval = np.array([p[0][0] + p[0][1] \
                     for i, p in enumerate(plates) if i in p_indices])
-            
+
             elif pn == 2:
 
                 tmp_eval = np.array([p[0][1] for i, p in enumerate(plates) if i in p_indices])

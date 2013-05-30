@@ -26,7 +26,7 @@ import inspect
 #
 
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
-from src.view_generic import *
+from src.gui.generic.view_generic import *
 from src.gui.subprocs.event.event import Event
 
 #

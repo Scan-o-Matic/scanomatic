@@ -22,8 +22,8 @@ import gtk
 # INTERNAL DEPENDENCIES
 #
 
-from src.view_generic import *
-import resource_path
+from generic.view_generic import *
+import src.resource_path as resource_path
 
 #
 # STATIC GLOBALS

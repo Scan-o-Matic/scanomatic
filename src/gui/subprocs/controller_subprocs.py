@@ -21,7 +21,7 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-import src.controller_generic as controller_generic
+import src.gui.generic.controller_generic as controller_generic
 import view_subprocs
 import model_subprocs
 

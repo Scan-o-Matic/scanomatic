@@ -17,19 +17,12 @@ import pygtk
 pygtk.require('2.0')
 import gobject
 import gtk
-"""
-from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
-import matplotlib.image as plt_img
-import matplotlib.pyplot as plt
-import matplotlib.text as plt_text
-import matplotlib.patches as plt_patches
-"""
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-from src.view_generic import *
+from src.gui.generic.view_generic import *
 import src.resource_fixture_image as resource_fixture_image
 
 #

@@ -22,16 +22,19 @@ import gobject
 #
 
 #Own Model and View
-import src.model_main as model_main
-import src.view_main as view_main
+import model_main
+import view_main
+
 #Controllers
-import src.controller_generic as controller_generic
+import generic.controller_generic as controller_generic
+
 import src.gui.subprocs.controller_subprocs as controller_subprocs
-import src.controller_analysis as controller_analysis
+import src.gui.analysis.controller_analysis as controller_analysis
 import src.gui.experiment.controller_experiment as controller_experiment
-import src.controller_config as controller_config
+import src.gui.config.controller_config as controller_config
+import src.gui.calibration.controller_calibration as controller_calibration
+
 #Resources
-import src.controller_calibration as controller_calibration
 import src.resource_scanner as resource_scanner
 import src.resource_fixture as resource_fixture
 import src.resource_path as resource_path

@@ -24,9 +24,10 @@ import sh
 # INTERNAL DEPENDENCIES
 #
 
-import src.model_config as model_config
-import src.view_config as view_config
-import src.controller_generic as controller_generic
+import model_config
+import view_config
+
+import src.gui.generic.controller_generic as controller_generic
 
 #
 # EXCEPTIONS

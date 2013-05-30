@@ -4,9 +4,9 @@
 ../*
 _*.lock
 .git/*
-data
+./data
 dev/*
-config
+/config/
 log
 versions/*
 gs_test*.png
