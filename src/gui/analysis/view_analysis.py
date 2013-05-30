@@ -352,62 +352,71 @@ class Analysis_Inspect_Stage(gtk.VBox):
         hd = gtk.HBox(False, 0)
         d.pack_start(hd, False, False, PADDING_MEDIUM)
 
-        #ADD DRAWING
-        fixture = resource_fixture_image.Fixture_Image(
-            self._paths.experiment_local_fixturename,
-            fixture_directory=sm['experiment-dir'])
+        if sm is None:
 
-        vbox = gtk.VBox()
-        label = gtk.Label(m['analysis-stage-inspect-plate-drawing'])
-        hbox = gtk.HBox()
-        self._fixture_drawing = Fixture_Drawing(fixture, width=300, height=400)
-        self._fd_op1 = gtk.RadioButton(
-            label=self._fixture_drawing.get_view_state())
-        self._fd_op2 = gtk.RadioButton(
-            group=self._fd_op1,
-            label=self._fixture_drawing.get_other_state())
+            label = gtk.Label()
+            label.set_markup(m['analysis-stage-inspect-error'])
+            hd.pack_start(label, True, True, PADDING_MEDIUM)
 
-        vbox.pack_start(label, False, False, PADDING_SMALL)
-        hbox.pack_start(self._fd_op1, False, False, PADDING_MEDIUM)
-        hbox.pack_start(self._fd_op2, False, False, PADDING_MEDIUM)
-        vbox.pack_start(hbox, False, False, PADDING_SMALL)
-        vbox.pack_start(self._fixture_drawing, False, False, PADDING_SMALL)
-        self._fd_op1.connect('clicked', self._toggle_drawing)
-        self._fd_op2.connect('clicked', self._toggle_drawing)
-        hd.pack_start(vbox, False, False, PADDING_MEDIUM)
+        else:
 
-        #ADD THE PLATES
-        for i, plate in enumerate(sm['pinnings']):
+            #ADD DRAWING
+            fixture = resource_fixture_image.Fixture_Image(
+                self._paths.experiment_local_fixturename,
+                fixture_directory=sm['experiment-dir'])
 
-            if plate:
+            vbox = gtk.VBox()
+            label = gtk.Label(m['analysis-stage-inspect-plate-drawing'])
+            hbox = gtk.HBox()
+            self._fixture_drawing = Fixture_Drawing(fixture, width=300,
+                                                    height=400)
+            self._fd_op1 = gtk.RadioButton(
+                label=self._fixture_drawing.get_view_state())
+            self._fd_op2 = gtk.RadioButton(
+                group=self._fd_op1,
+                label=self._fixture_drawing.get_other_state())
 
-                vbox = gtk.VBox()
-                label = gtk.Label(p_title.format(i + 1, sm['plate-names'][i]))
-                vbox.pack_start(label, False, False, PADDING_SMALL)
-                image = gtk.Image()
-                image.set_from_file(sm['grid-images'][i])
-                vbox.pack_start(image, True, True, PADDING_SMALL)
-                button = gtk.Button()
+            vbox.pack_start(label, False, False, PADDING_SMALL)
+            hbox.pack_start(self._fd_op1, False, False, PADDING_MEDIUM)
+            hbox.pack_start(self._fd_op2, False, False, PADDING_MEDIUM)
+            vbox.pack_start(hbox, False, False, PADDING_SMALL)
+            vbox.pack_start(self._fixture_drawing, False, False, PADDING_SMALL)
+            self._fd_op1.connect('clicked', self._toggle_drawing)
+            self._fd_op2.connect('clicked', self._toggle_drawing)
+            hd.pack_start(vbox, False, False, PADDING_MEDIUM)
 
-                if (sm['gridding-in-history'] is None or
-                        sm['gridding-in-history'][i] is None):
+            #ADD THE PLATES
+            for i, plate in enumerate(sm['pinnings']):
 
-                    button.set_label(p_no_button)
-                    button.set_sensitive(False)
+                if plate:
 
-                else:
+                    vbox = gtk.VBox()
+                    label = gtk.Label(p_title.format(i + 1, sm['plate-names'][i]))
+                    vbox.pack_start(label, False, False, PADDING_SMALL)
+                    image = gtk.Image()
+                    image.set_from_file(sm['grid-images'][i])
+                    vbox.pack_start(image, True, True, PADDING_SMALL)
+                    button = gtk.Button()
 
-                    button.set_label(p_button)
-                    button.connect("clicked", self._verify_bad, i)
+                    if (sm['gridding-in-history'] is None or
+                            sm['gridding-in-history'][i] is None):
 
-                vbox.pack_start(button, False, False, PADDING_SMALL)
-                hd.pack_start(vbox, True, True, PADDING_MEDIUM)
+                        button.set_label(p_no_button)
+                        button.set_sensitive(False)
 
-        hbox = gtk.HBox(False, 0)
-        button = gtk.Button(m['analysis-stage-inspect-upload-button'])
-        button.connect('clicked', self._controller.launch_filezilla)
-        hbox.pack_end(button, False, False, PADDING_NONE)
-        d.pack_start(hbox, False, False, PADDING_SMALL)
+                    else:
+
+                        button.set_label(p_button)
+                        button.connect("clicked", self._verify_bad, i)
+
+                    vbox.pack_start(button, False, False, PADDING_SMALL)
+                    hd.pack_start(vbox, True, True, PADDING_MEDIUM)
+
+            hbox = gtk.HBox(False, 0)
+            button = gtk.Button(m['analysis-stage-inspect-upload-button'])
+            button.connect('clicked', self._controller.launch_filezilla)
+            hbox.pack_end(button, False, False, PADDING_NONE)
+            d.pack_start(hbox, False, False, PADDING_SMALL)
 
         d.show_all()
 

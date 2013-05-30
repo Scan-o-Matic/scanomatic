@@ -30,16 +30,49 @@ import src.resource_logger as resource_logger
 # EXCEPTION
 #
 
-class Incompatible_Tuples(Exception): pass
-class Failed_To_Claim_Scanner(Exception): pass
-class Failed_To_Free_Scanner(Exception): pass
-class Forbidden_Scanner_Owned_By_Other_Process(Exception): pass
-class Unable_To_Open(Exception): pass
-class Corrupted_Lock_File(Exception): pass
-class More_Than_One_Unknown_Scanner(Exception): pass
-class Unknown_Scanner(Exception): pass
-class No_Scanner(Exception): pass
-class Risk_For_Orphaned_Scanner(Exception): pass
+
+class Incompatible_Tuples(Exception):
+    pass
+
+
+class Failed_To_Claim_Scanner(Exception):
+    pass
+
+
+class Failed_To_Free_Scanner(Exception):
+    pass
+
+
+class Forbidden_Scanner_Owned_By_Other_Process(Exception):
+    pass
+
+
+class Unable_To_Write_To_Power_Up_Queue(Exception):
+    pass
+
+
+class Unable_To_Open(Exception):
+    pass
+
+
+class Corrupted_Lock_File(Exception):
+    pass
+
+
+class More_Than_One_Unknown_Scanner(Exception):
+    pass
+
+
+class Unknown_Scanner(Exception):
+    pass
+
+
+class No_Scanner(Exception):
+    pass
+
+
+class Risk_For_Orphaned_Scanner(Exception):
+    pass
 
 
 #
@@ -137,7 +170,7 @@ class Scanner(object):
             raise Failed_To_Free_Scanner(self._name)
 
         self._remove_from_power_up_queue()
-        if self._is_on != False:
+        if self._is_on is not False:
             self.off()
 
         return True
@@ -162,7 +195,7 @@ class Scanner(object):
 
         else:
             self._logger.warning(
-                "Scanner {0} failed to lock in file since owned by other".\
+                "Scanner {0} failed to lock in file since owned by other".
                 format(self._name))
 
             return False
@@ -225,7 +258,6 @@ class Scanner(object):
         self._logger.info(
             "Scanner {0} will be removed from power up queue".format(self._name))
 
-
         while True:
 
             try:
@@ -257,7 +289,8 @@ class Scanner(object):
 
     def _get_awake_scanners(self):
 
-        p = Popen("scanimage -L | " +
+        p = Popen(
+            "scanimage -L | " +
             r"""sed -n -E "s/^.*device[^\`]*.(.*libusb[^\`']*).*$/\1/p" """,
             #r"""sed -n -E "s/^.*found USB[^']*'(.*libusb[^']*).*$/\1/p" """,
             #" sed -n -E 's/^found USB.*(libusb.*$)/\\1/p'",
@@ -290,7 +323,8 @@ class Scanner(object):
         while True:
             scanners = self._get_awake_scanners()
             lock_states = self._get_scanner_address_lock()
-            free_scanners = [s for s in scanners if s not in lock_states.keys()]
+            free_scanners = [s for s in scanners
+                             if s not in lock_states.keys()]
 
             if len(free_scanners) == 1:
 
@@ -317,7 +351,7 @@ class Scanner(object):
 
             n_checks += 1
             if n_checks > 10:
-                 raise No_Scanner()
+                raise No_Scanner()
             time.sleep(2)
 
     def _remove_scanner_address_lock(self):
@@ -331,7 +365,7 @@ class Scanner(object):
             for addr, s in scanners.items():
                 if s is not None and len(s) > 0:
                     if s[0] != self._uuid:
-                        s_list.append([addr]+s)
+                        s_list.append([addr] + s)
                     else:
                         my_addr.append(addr)
 
@@ -356,16 +390,16 @@ class Scanner(object):
                 except:
 
                     self._logger.critical(
-                        "{0} is still on when address lock removal is requested".\
-                        format(self._name))
+                        "{0} is still on".format(self._name) +
+                        " when address lock removal is requested")
 
                     raise Risk_For_Orphaned_Scanner(self._name)
 
             else:
 
                 self._logger.critical(
-                    "{0} is still on when address lock removal is requested".\
-                    format(self._name))
+                    "{0} is still on when".format(self._name) +
+                    " address lock removal is requested")
 
                 raise Risk_For_Orphaned_Scanner(self._name)
 
@@ -416,7 +450,7 @@ class Scanner(object):
             self._uuid = s_uuid
 
         self._logger.info("{0} has new uuid {1}".format(self._name,
-            self._uuid))
+                                                        self._uuid))
 
     """
             ACTIONS
@@ -430,7 +464,7 @@ class Scanner(object):
 
         is_on = None
 
-        if self.get_claimed_by_other() == False:
+        if self.get_claimed_by_other() is False:
 
             #Place self in queue to start scanner
             self._logger.debug("SCANNER, Queuing self for power up")
@@ -456,7 +490,7 @@ class Scanner(object):
 
     def off(self, byforce=False):
 
-        if self.get_claimed_by_other() == False or byforce:
+        if self.get_claimed_by_other() is False or byforce:
 
             #Power down and remove scanner address lock
             is_on = not self._pm.off()
@@ -467,10 +501,10 @@ class Scanner(object):
 
     def scan(self, mode, filename, auto_off=True):
 
-        if self.get_claimed_by_other() == False:
+        if self.get_claimed_by_other() is False:
 
             #Turn on
-            if self._is_on != True:
+            if self._is_on is not True:
                 self.on()
 
             #Scan
@@ -479,7 +513,8 @@ class Scanner(object):
                 self._logger.info("Configurating for scan {0}".format(
                     self._parent._current_sane_settings))
 
-                scanner = resource_sane.Sane_Base(owner=self,
+                scanner = resource_sane.Sane_Base(
+                    owner=self,
                     model=self._model,
                     scan_mode=mode,
                     output_function=self._logger,
@@ -521,20 +556,23 @@ class Scanners(object):
         self._generic_naming = True
         self._sane_version = None
         self._sane_generic = \
-            {"EPSON V700" :
+            {"EPSON V700":
                 {'TPU':
-                    ["--source", "Transparency" ,"--format", "tiff",
-                    "--resolution", "600", "--mode", "Gray", "-l", "0",
-                    "-t", "0", "-x", "203.2", "-y", "254", "--depth", "8"],
-                'COLOR':
+                    ["--source", "Transparency", "--format", "tiff",
+                     "--resolution", "600", "--mode", "Gray", "-l", "0",
+                     "-t", "0", "-x", "203.2", "-y", "254", "--depth", "8"],
+                 'COLOR':
                     ["--source", "Flatbed", "--format", "tiff",
-                    "--resolution", "300", "--mode", "Color", "-l", "0",
-                    "-t", "0", "-x", "215.9", "-y", "297.18", "--depth", "8"]} }
+                     "--resolution", "300", "--mode", "Color", "-l", "0",
+                     "-t", "0", "-x", "215.9", "-y", "297.18", "--depth", "8"]
+                 }
+             }
 
         #Highest version that takes a setting
         self._sane_flags_replace = {
-            (1,0,22): [],
-            (1,0,24): [(('EPSON V700', 'TPU', '--source'), 'TPU8x10')] }
+            (1, 0, 22): [],
+            (1, 0, 24): [(('EPSON V700', 'TPU', '--source'), 'TPU8x10')]
+        }
 
         self._current_sane_settings = None
 
@@ -547,21 +585,22 @@ class Scanners(object):
 
     def _get_sane_version(self):
 
-        p = Popen([self._config.scan_program,
+        p = Popen([
+            self._config.scan_program,
             self._config.scan_program_version_flag],
             shell=False, stdout=PIPE)
 
         stdout, stderr = p.communicate()
 
         self._backend_version = re.findall(r' ([0-9]+\.[0-9]+\.[0-9]+)',
-            stdout.strip('\n'))
+                                           stdout.strip('\n'))
 
         return self._backend_version
 
     def _set_sane_version(self):
 
         #POS 0 is front-ends, 1 backends. Version is dot-serparated
-        backend_version = map(int , self._get_sane_version()[1].split("."))
+        backend_version = map(int, self._get_sane_version()[1].split("."))
 
         for v in sorted(self._sane_flags_replace.keys()):
 
@@ -634,7 +673,7 @@ class Scanners(object):
 
         self.update()
         c = len([s for s in self._scanners.values()
-                    if s.get_claimed() == False])
+                 if s.get_claimed() is False])
 
         return c
 
@@ -642,8 +681,9 @@ class Scanners(object):
 
         self.update()
 
-        scanners = [s_name for s_name, s in self._scanners.items() if available and \
-            s.get_claimed() == False or available == False]
+        scanners = [s_name for s_name, s in self._scanners.items()
+                    if available and
+                    (s.get_claimed() is False or available is False)]
 
         return sorted(scanners)
 
@@ -661,5 +701,3 @@ class Scanners(object):
         else:
             raise Unknown_Scanner(scanner_name)
             return False
-
-

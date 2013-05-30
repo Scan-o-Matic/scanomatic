@@ -16,30 +16,32 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import logging
 import uuid
 import os
 import copy
-import types
 
 #
 # EXCEPTIONS
 #
 
-class Unknown_Meta_Data_Key(Exception): pass
+
+class Unknown_Meta_Data_Key(Exception):
+    pass
 
 #
 # GLOBALS
 #
 
-META_DATA = {'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0,
+META_DATA = {
+    'Start Time': 0, 'Prefix': 'unknown', 'Interval': 20.0,
     'Description': 'Automatic placeholder description',
     'Version': __version__,
     'UUID': None, 'Measures': 0, 'Fixture': '', 'Scanner': '',
     'Pinning Matrices': None, 'Manual Gridding': None, 'Project ID': '',
     'Scanner Layout ID': ''}
 
-IMAGE_ENTRY_KEYS = ['plate_1_area', 'grayscale_indices', 'grayscale_values',
+IMAGE_ENTRY_KEYS = [
+    'plate_1_area', 'grayscale_indices', 'grayscale_values',
     'plate_0_area', 'mark_X', 'mark_Y', 'plate_3_area', 'Time',
     'plate_2_area', 'File', 'Image Shape']
 
@@ -59,8 +61,10 @@ def get_meta_data_dict(**kwargs):
 
     return md
 
+
 def get_image_dict(path, time, mark_X, mark_Y, grayscale_indices,
-    grayscale_values, scale, plate_areas=None, img_dict=None, image_shape=None):
+                   grayscale_values, scale, plate_areas=None, img_dict=None,
+                   image_shape=None):
 
     plate_str = "plate_{0}_area"
 
@@ -73,19 +77,20 @@ def get_image_dict(path, time, mark_X, mark_Y, grayscale_indices,
     if plate_areas is not None:
         for i, plate in enumerate(plate_areas):
 
-            image_entry[plate_str.format(i+1)] = plate
+            image_entry[plate_str.format(i + 1)] = plate
 
     elif img_dict is not None:
 
         i = 0
         while True:
 
-           try:
-               image_entry[plate_str.format(i+1)] = img_dict[plate_str.format(i)]
-           except:
-               break
+            try:
+                image_entry[plate_str.format(i + 1)] = img_dict[
+                    plate_str.format(i)]
+            except:
+                break
 
-           i += 1
+            i += 1
 
     return image_entry
 
@@ -101,11 +106,13 @@ def get_is_valid_meta_data(data):
 
     return sum(d_check) > 3
 
+
 def get_is_valid_image_entry(data):
 
     d_check = [k in data.keys() for k in IMAGE_ENTRY_KEYS]
 
     return sum(d_check) > 6
+
 
 def get_meta_data_from_file(path):
 
@@ -140,7 +147,7 @@ def get_meta_data_from_file(path):
     return None
 
 
-def get_meta_data(path = None):
+def get_meta_data(path=None):
     """This function will return a meta-data dict.
     If log-file doesn't exist, the meta-data will be generic.
     """
@@ -156,10 +163,10 @@ def get_meta_data(path = None):
         set_uuid(meta_data)
 
     if ('Pinning Matrices' in meta_data and
-        meta_data['Pinning Matrices'] is not None):
+            meta_data['Pinning Matrices'] is not None):
 
         for i, m in enumerate(meta_data['Pinning Matrices']):
-            if type(m) == types.ListType:
+            if isinstance(m, list):
                 meta_data['Pinning Matrices'][i] = tuple(m)
 
     if 'Version' in meta_data:
@@ -188,7 +195,6 @@ def get_image_entries(path, logger=None):
         return None
 
     images = list()
-    nan = None
 
     for line in fs:
 
@@ -273,7 +279,7 @@ def write_meta_data(path, meta_data=None, over_write=False):
 
         prev_meta_data, prev_images = get_log_file(path)
 
-    if data is None:
+    if meta_data is None:
 
         meta_data = prev_meta_data
 
@@ -313,6 +319,7 @@ def write_to_log_meta(path, partial_meta_data):
 
     write_log_file(path, meta_data=meta_data, images=images)
 
+
 def _approve_image_dicts(images):
 
     for i_dict in images:
@@ -325,7 +332,8 @@ def _approve_image_dicts(images):
 
             i_dict['mark_Y'] = list(i_dict['mark_Y'])
 
-        if 'grayscale_indices' in i_dict:
+        if ('grayscale_indices' in i_dict and
+                i_dict['grayscale_indices'] is not None):
 
             i_dict['grayscale_indices'] = list(i_dict['grayscale_indices'])
 
@@ -333,13 +341,13 @@ def _approve_image_dicts(images):
 
             i_dict['grayscale_indices'] = None
 
-        if 'grayscale_values' in i_dict:
+        if ('grayscale_values' in i_dict and
+                i_dict['grayscale_values'] is not None):
 
             i_dict['grayscale_values'] = list(i_dict['grayscale_values'])
 
         else:
             i_dict['grayscale_values'] = None
-
 
         if 'Time' not in i_dict and 'File' in i_dict:
 

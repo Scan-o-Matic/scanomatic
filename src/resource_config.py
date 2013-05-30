@@ -13,10 +13,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import os
-import sys
-import types
-
 #
 # INTERNAT DEPENDENCIES
 #
@@ -42,9 +38,9 @@ class Config_File(object):
 
         fs = self.load(location)
 
-        if fs != None:
+        if fs is not None:
 
-            self.read(fs = fs)
+            self.read(fs=fs)
 
     def __getitem__(self, key):
 
@@ -79,8 +75,6 @@ class Config_File(object):
 
         except:
 
-            self._logger.exception("NOT loading file {0}".format(location))
-
             no_file = True
 
         if no_file:
@@ -91,6 +85,7 @@ class Config_File(object):
 
             except:
 
+                self._logger.exception("NOT loading file {0}".format(location))
                 self._location = None
                 return None
 
@@ -111,11 +106,11 @@ class Config_File(object):
         self._file_data_order = []
         self._comment_index = -1
 
-        if fs == None:
+        if fs is None:
 
             fs = self.load(location)
 
-            if fs == None:
+            if fs is None:
 
                 return False
 
@@ -237,7 +232,7 @@ class Config_File(object):
 
         return_list = []
 
-        if pattern != None:
+        if pattern is not None:
 
             i = start_pos
             no_none = True
@@ -246,7 +241,7 @@ class Config_File(object):
 
                 tmp = pattern.replace("%n", str(i))
 
-                if self._file_data_order == None:
+                if self._file_data_order is None:
 
                     no_none = False
                     return_list = None
@@ -264,7 +259,7 @@ class Config_File(object):
                 i += 1
         else:
 
-            if self._file_data_order == None:
+            if self._file_data_order is None:
 
                 return None
 
@@ -313,7 +308,7 @@ class Config_File(object):
 
             return False
 
-        elif pos != None:
+        elif pos is not None:
 
             self._file_data_order.insert(pos, str(key))
             self._data[str(key)] = value
@@ -329,7 +324,7 @@ class Config_File(object):
                     del self._file_data_order[i]
                     break
 
-        if only_save_index == False and str(key) in self._data.keys():
+        if only_save_index is False and str(key) in self._data.keys():
 
             del self._data[key]
 
