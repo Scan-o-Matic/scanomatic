@@ -1173,7 +1173,8 @@ class Interactive_Menu():
                     for r in xrange(0, self._original_phenotypes[p].shape[1], 2):
 
                         nans = np.isnan(self._original_phenotypes[p][
-                            2 * c:2 * c + 2, 2 * r:2 * r + 2, self._cur_phenotype])
+                            2 * c:2 * c + 2, 2 * r:2 * r + 2,
+                            self._cur_phenotype])
 
                         if nans.any():
                             pos = np.where(nans==False)
@@ -1631,7 +1632,7 @@ class Interactive_Menu():
                             self._experiments_data, header,
                             #save_as_np_array=(task == "S4"),
                             file_guess='_LSC_experment.phenotype_{0}.{1}'.format(
-                                self._cur_phenotype + 1,
+                                self._phenotype_names[self._cur_phenotype],
                                 ['csv', 'npy'][task == 'S4']),
                             **kwargs):
 
