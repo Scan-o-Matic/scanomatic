@@ -1592,7 +1592,9 @@ class Interactive_Menu():
                         _save = self._save_csv
                         kwargs = {'meta_data': self._original_meta_data,
                                   'maxDepth': 3,
-                                  'metaDataPos': 0}
+                                  'metaDataPos': 0,
+                                  'labels': ['Strain', 'P', 'C', 'R'] +
+                                  self._phenotype_names}
                     else:
                         _save = self._save_np
                         kwargs = {}
@@ -1618,7 +1620,9 @@ class Interactive_Menu():
                     if task == "S2":
                         _save = self._save_csv
                         kwargs = {'meta_data': self._per_strain_metadata,
-                                  'maxDepth': 3}
+                                  'maxDepth': 3,
+                                  'labels': ['Strain', 'P', 'C', 'R',
+                                             'Replicates ->']}
                     else:
                         _save = self._save_np
                         kwargs = {}
@@ -1670,7 +1674,7 @@ class Interactive_Menu():
 
     def _save_csv(self, data, header, file_guess=None, meta_data=None,
                   np_slice=None, sep="\t", text_comment="\"", new_line="\n\r",
-                  maxDepth=3, metaDataPos=None):
+                  maxDepth=3, metaDataPos=None, labels=None):
 
         def _csv_write_data(data, fh, posList, maxDepth=None):
 
@@ -1725,6 +1729,10 @@ class Interactive_Menu():
         except:
             return False
 
+        if labels is not None:
+            fh.write(sep.join(["{0}{1}{0}".format(text_comment, l) for
+                               l in labels]) + new_line)
+
         _csv_write_data(dView, fh, [], maxDepth)
         fh.close()
 
@@ -1763,146 +1771,3 @@ if __name__ == "__main__":
         interactive_menu.load_file(sys.argv[1])
 
     interactive_menu.run()
-
-#
-# NOT IN USE
-#
-
-'''
-
-def vector_orth_dist(x, y, p1):
-    """
-    @param x: is a vector of X-measures
-    @param y: is a vector of corresponding Y-measures
-    @param p1: is a polynomial returned from numpy.poly1d
-    """
-    #
-    #get the point where ax + b = 0
-    x_off = -p1[0] / p1[1]
-    #
-    #p's unit vector creation
-    p_unit = np.asarray((1 - x_off, p1(1)))
-    p_unit = p_unit / np.sqrt(np.sum(p_unit ** 2))
-    #
-    #its orthogonal vector
-    p_u_orth = np.asarray((-p_unit[1], p_unit[0]))
-    #
-    #distances:
-    dists = np.zeros(x.shape)
-    for d in xrange(dists.size):
-        dists[d] = np.sum(np.asarray((x[d] - x_off, y[d])) * p_u_orth)
-    #
-    return dists
-
-#PLOT THE POSITIONAL EFFECT
-plt.clf()
-fig = plt.figure()
-Ps = []
-Ns = []
-
-for p in xrange(Y2.shape[2]):
-    C = c2(Y2[:,:,p], kernel, mode='nearest').ravel() / np.sum(kernel)
-    z1  = np.polyfit(C, Y2[:,:,p].ravel(),1)
-    Ps.append(z1)
-    p1 = np.poly1d(z1)
-    l = np.linspace(C.min(), C.max(), num=100)
-    Ns.append( vector_orth_dist(C, Y2[:,:,p].ravel(),p1) + np.mean(Y2[:,:,p]))
-    fig.add_subplot(2,2,p+1, title="Plate %d" % p)
-    plt.plot(C, Y2[:,:,p].ravel(), 'b.')
-    plt.plot(l, p1(l), 'r-')
-    plt.gca().annotate(s=str("%.3f" % z1[0]) + "x + " + str("%.3f" % z1[1]),
-        xy=(l[5]+0.6,p1(l[5])+0.3))
-    plt.xlim(1.4, 4)
-    plt.ylim(1, 4.5)
-    plt.ylabel('Colony Generation Time')
-    plt.xlabel('How cool your neighbours are (Very <-> Not)')
-
-fig.show()
-
-#PLOT SECONDARY POSITIONAL EFFECTS
-fig = plt.figure()
-Ns2 = []
-
-for p in xrange(Y2.shape[2]):
-    C = c2(np.reshape(Ns[p], (16,24)), kernel, mode='nearest').ravel() / np.sum(kernel)
-    z1  = np.polyfit(C, Ns[p],1)
-    p1 = np.poly1d(z1)
-    l = np.linspace(C.min(), C.max(), num=100)
-    Ns2.append( vector_orth_dist(C, Ns[p], p1) + np.mean(Ns[p]))
-    fig.add_subplot(2,2,p+1, title="Plate %d" % p)
-    plt.plot(C, Ns[p], 'b.')
-    plt.plot(l, p1(l), 'r-')
-    plt.gca().annotate(s=str("%.3f" % z1[0]) + "x + " + str("%.3f" % z1[1]),
-        xy=(l[5],p1(l[5])+0.6))
-    plt.xlim(2.0, 3.5)
-    plt.ylim(1.5, 4.0)
-    plt.ylabel('Colony Generation Time')
-    plt.xlabel('How cool your neighbours are (Very <-> Not)')
-
-plt.show()
-
-#PLOT THE PROCESSED VS RAW HEAT MAPS
-plt.clf()
-fig = plt.figure()
-
-for i in xrange(N.shape[2]):
-    fig.add_subplot(2,2,i+1, title="Plate %d" % i)
-    plt.boxplot([Y2[:,:,i].ravel(),
-        Ns[i]])
-    plt.annotate(s="std: %.3f" % np.std(Y2[:,:,i].ravel()), xy=(1,4) )
-    plt.annotate(s="std: %.3f" % np.std(Ns[i]), xy=(2,4) )
-    plt.ylabel('Generation Time')
-    plt.xlabel('Untreated vs Normalized')
-    plt.ylim(1.0,4.5)
-
-fig.show()
-
-#UNUSED
-fig = plt.figure()
-
-for p in xrange(Y2.shape[2]):
-    fig.add_subplot(2,2,p+1, title="Plate %d" % p)
-    plt.plot(c2(Y3[:,:,p], kernel, mode='constant', cval=np.mean(Y3[:,:,p]))\
-        .ravel(), Y2[:,:,p].ravel(), 'b.')
-    plt.ylabel('Colony rate')
-    plt.xlabel('How cool your neighbours are (Not <-> Very)')
-
-fig.show()
-
-#PLOT START EFFECT
-fig = plt.figure()
-
-for p in xrange(Y2.shape[2]):
-    fig.add_subplot(2,2,p+1, title="Plate %d" % p)
-    plt.plot(Z2[:,:,p].ravel(), Ns[p], 'b.')
-    plt.ylabel('Colony rate')
-    plt.xlabel('Start-value')
-    plt.xlim(0,200000)
-    plt.ylim(0,4)
-
-plt.show()
-
-#
-#
-#
-fs = open('slow_fast_test.csv', 'w')
-y_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-yeasts = ['wt','Hog1']
-fig = plt.figure()
-for p in xrange(4):
-    fs.write("\nPlate " + str(p+1) + "\n")
-    fs.write("Row\tCol\tType\n")
-    p_layout = np.random.random((8,12))>0.8
-    for x in xrange(p_layout.shape[0]):
-        for y in xrange(p_layout.shape[1]):
-            fs.write(y_labels[x] + "\t" + str(y+1) + "\t" + yeasts[p_layout[x,y]] + "\n")
-    fig.add_subplot(2,2,p+1)
-    plt.imshow(p_layout, aspect='equal', interpolation='nearest')
-    plt.xticks(np.arange(12), np.arange(12)+1)
-    plt.yticks(np.arange(8), y_labels)
-    plt.ylabel('Columns')
-    plt.xlabel('Rows')
-
-fs.close()
-plt.show()
-'''
