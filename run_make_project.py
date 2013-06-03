@@ -80,8 +80,14 @@ class Make_Project(object):
         #Gathering the run info
         tmpOther = config.items(self.CONFIG_OTHER)
         self._model = {k: v for k, v in tmpOther}
-        self._model['image-list'] = eval(self._model['image-list'])
+        for k in ('image-list', 'run-error', 'use-local-fixture',
+                  'run-complete'):
+
+            self._model[k] = eval(self._model[k])
+
         self._images_total = len(self._model['image-list'])
+
+        print self._model
 
     def _init_output_file(self):
 
