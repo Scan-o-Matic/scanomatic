@@ -418,15 +418,21 @@ class Fixture_Image(object):
 
     def set_marking_path(self, marking_path):
 
-        if marking_path is not None:
+        if marking_path is not None and os.path.isfile(marking_path):
 
             self.marking_path = marking_path
 
         else:
 
+            self.marking_path = self._paths.marker
+
+        """
+        else:
+
             self.marking_path = self.fixture_reference.get("marker_path")
 
         self._logger.info("Marker set to: {0} {1}".format(self.marking_path, type(self.marking_path)))
+        """
 
         if self._define_reference:
 
