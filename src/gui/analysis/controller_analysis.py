@@ -863,7 +863,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         if pm is not None:
             for i, p in enumerate(pm):
 
-                if p is not None or p == "None":
+                if p is None or p == "None":
 
                     meta_data['Pinning Matrices'][i] = None
 

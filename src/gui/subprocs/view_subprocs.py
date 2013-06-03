@@ -373,6 +373,7 @@ class Subprocs_View(gtk.Frame):
         #table.set_row_spacing(3, PADDING_MEDIUM)
         self.add(table)
 
+        """
         #FREE SCANNERS
         label = gtk.Label(model['free-scanners'])
         label.set_alignment(0, 0.5)
@@ -383,6 +384,7 @@ class Subprocs_View(gtk.Frame):
         self.scanners.connect("clicked", controller.produce_free_scanners)
         self.scanners.set_alignment(0, 0.5)
         table.attach(self.scanners, 1, 2, 0, 1)
+        """
 
         #PROJECTS
         label = gtk.Label(model['live-projects'])
@@ -431,7 +433,7 @@ class Subprocs_View(gtk.Frame):
         specific_model = self._specific_model
 
         self.projects.set_label(str(specific_model['live-projects']))
-        self.scanners.set_label(str(specific_model['free-scanners']))
+        #self.scanners.set_label(str(specific_model['free-scanners']))
 
         self.experiments.set_label(str(specific_model['experiments'].count()))
         self.analysis.set_label(str(specific_model['analysises'].count()))
