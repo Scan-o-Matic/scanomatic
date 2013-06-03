@@ -117,7 +117,7 @@ class Gridding_History(object):
             return None
 
         self._logger.info(
-            "Returning history for {0} plate {1} forat {2}".format(
+            "Returning history for {0} plate {1} format {2}".format(
             self._name, plate, pinning_format))
         return np.array(h.values())
 
@@ -133,7 +133,7 @@ class Gridding_History(object):
             return None
 
         self._logger.info(
-            "Returning history for {0} plate {1} forat {2} uuid {3}".format(
+            "Returning history for {0} plate {1} format {2} uuid {3}".format(
             self._name, plate, pinning_format, p_uuid))
 
         return h[p_uuid]

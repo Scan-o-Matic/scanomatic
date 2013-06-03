@@ -270,7 +270,7 @@ class Grid_Array():
                 os.sep,
                 self._parent.get_file_base_dir(),
                 self._paths.experiment_grid_error_image.format(
-                    self._identifier[0][1]))
+                    self._identifier[1]))
 
             if not os.path.isfile(error_file):
 
