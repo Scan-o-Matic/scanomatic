@@ -380,7 +380,7 @@ def build_grid_from_center(X, Y, center, dx, dy, grid_shape, max_sq_dist=105):
              - np.array(grid_shape).reshape(2, 1, 1) / 2.0) + 0.5
              ) * np.array((dx, dy)).reshape(2, 1, 1)
 
-    print center, grid_shape, dx, dy
+    #print center, grid_shape, dx, dy
     """
 
     grid0 = np.mgrid[(-grid_shape[0]/2.0 + 0.5) * dx:
