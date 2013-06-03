@@ -263,7 +263,21 @@ class Grid_Array():
             expected_center, expected_spacings))
 
         if self._grid is None:
-            self.logger.error("Could not produce a grid for im-shape {0}".format(im.shape))
+            self.logger.error(
+                "Could not produce a grid for im-shape {0}".format(im.shape))
+
+            error_file = os.path.join(
+                self._parent.get_file_base_dir(),
+                self._path.experiment_grid_error_image.format(
+                    self._identifier[0][1]))
+
+            if not os.path.isfile(error_file):
+
+                np.save(error_file, im)
+
+                self.logger.critical('Saved image slice to {0}'.format(
+                    error_file))
+
             return False
 
         if grid_correction is not None and grid_correction.any():
@@ -463,7 +477,8 @@ class Grid_Array():
         return p
 
     def get_transformation_matrix(self, gs_values=None, gs_fit=None,
-                gs_indices=None, y_range=(0, 255), fix_axis=False):
+                                  gs_indices=None, y_range=(0, 255),
+                                  fix_axis=False):
         """get_transformation_matrix takes an coefficient array of a
         polynomial fit of the 3rd degree and calculates a matrix
         of all solutions for all the integer steps of the y-range
@@ -491,9 +506,9 @@ class Grid_Array():
         The function returns a list of transformation values
         """
 
-        if gs_values != None:
+        if gs_values is not None:
 
-            if gs_indices == None:
+            if gs_indices is None:
 
                 gs_indices = range(len(gs_values))
 

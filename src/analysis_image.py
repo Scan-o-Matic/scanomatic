@@ -118,6 +118,10 @@ class Project_Image():
         self._timestamp = None
         self.set_pinning_matrices(pinning_matrices)
 
+    def get_file_base_dir(self):
+
+        return self._file_path_base
+
     def set_pinning_matrices(self, pinning_matrices):
 
         self.R = []
@@ -283,10 +287,10 @@ class Project_Image():
             d2_correction = 0
 
             if F[low, dim1] < 0:
-                upper_correction = F[0, dim1]
+                #upper_correction = F[0, dim1]
                 F[low, dim1] = 0
             if F[low, dim2] < 0:
-                upper_correction = F[0, dim2]
+                #upper_correction = F[0, dim2]
                 F[low, dim2] = 0
 
             if F[high, dim1] > im.shape[0]:
@@ -407,7 +411,7 @@ class Project_Image():
     def _get_slice_sanity_check(self, im, d1=None, d2=None):
 
         if ((float(im.shape[0]) / im.shape[1] > 0) !=
-                (float(d1/d2) > 0)):
+                (float(d1 / d2) > 0)):
 
             s = "Current shape is {0} x {1}.".format(d1, d2)
             s += " Image is {0} x {1}.".format(self._ref_plate_d1, self._ref_plate_d2)

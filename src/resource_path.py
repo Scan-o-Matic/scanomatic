@@ -128,6 +128,7 @@ class Paths(object):
         self.experiment_local_fixturename = \
             self.fixture_conf_file_rel_pattern.format("fixture")
         self.experiment_grid_image_pattern = "grid___origin_plate_{0}.svg"
+        self.experiment_grid_error_image = "_no_grid_{0}.npy"
 
         #LOCK FILES
         self.lock_root = os.path.join(os.path.expanduser("~"), ".scan_o_matic")
