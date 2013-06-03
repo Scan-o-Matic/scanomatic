@@ -99,10 +99,10 @@ def _get_pinnings_str(pinning_list):
 #
 
 
-class _Subprocess(object):
+class Subprocess(object):
 
     def __init__(self, proc_type, top_controler, proc=None, logger=None):
-        """_Subprocess is a common implementation for the different
+        """Subprocess is a common implementation for the different
         subprocess objects that the gui uses to check status and
         communicate with said processes.
 
@@ -565,7 +565,7 @@ class _Subprocess(object):
             params['duration'] = params['interval'] * params['scans'] / 60.0
 
 
-class Experiment_Scanning(_Subprocess):
+class Experiment_Scanning(Subprocess):
 
     def __init__(self, top_controller, **params):
 
@@ -665,7 +665,7 @@ class Experiment_Scanning(_Subprocess):
             'w', 'r')
 
 
-class Experiment_Rebuild(_Subprocess):
+class Experiment_Rebuild(Subprocess):
 
     def __init__(self, top_controller, **params):
 
@@ -747,7 +747,7 @@ class Experiment_Rebuild(_Subprocess):
         self._set_log('err', self._stderr_path, 'w', 'r')
 
 
-class Analysis(_Subprocess):
+class Analysis(Subprocess):
 
     def __init__(self, top_controller, **params):
         """Analysis Subprocess wrapper.

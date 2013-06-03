@@ -130,7 +130,7 @@ class _SubProc_Handler(object):
             raise WrongProcType(elem)
 
         #FIXIT: TYPE NOT DONE YET
-        if not(set(dir(gui_communicator.gui_communicator)).issubset(
+        if not(set(dir(gui_communicator.Subprocess)).issubset(
                 set(dir(elem)))):
 
             ver = False

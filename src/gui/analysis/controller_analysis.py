@@ -861,7 +861,15 @@ class Analysis_First_Pass(controller_generic.Controller):
         meta_data = resource_project_log.get_meta_data(f_path)
         pm = meta_data['Pinning Matrices']
         if pm is not None:
-            meta_data['Pinning Matrices'] = map(tuple, pm)
+            for i, p in enumerate(pm):
+
+                if p is not None or p == "None":
+
+                    meta_data['Pinning Matrices'][i] = None
+
+                else:
+
+                    meta_data['Pinning Matrices'][i] = tuple(p)
 
         sm['meta-data'] = meta_data
         print f_path
