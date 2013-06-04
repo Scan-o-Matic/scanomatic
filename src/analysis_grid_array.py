@@ -235,6 +235,7 @@ class Grid_Array():
         gh = np.array(self.get_history())
         self.logger.debug("Grid History {0}".format(gh))
 
+        """
         #If too little data, use very rough guesses
         if gh.size < 12:
             validate_parameters = False
@@ -245,7 +246,8 @@ class Grid_Array():
             validate_parameters = True
             expected_spacings = tuple(gh_median[2:])
             expected_center = tuple(gh_median[:2])
-        else:  # If some measures (3-9), use them
+        """
+        if True:  # If some measures (3-9), use them
             validate_parameters = False  # But don't enforce
             gh_mean = np.mean(gh, axis=0)
             expected_spacings = tuple(gh_mean[2:])
