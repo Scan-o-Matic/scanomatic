@@ -338,15 +338,15 @@ def get_outlier_phenotypes(data, alpha=3, cur_phenotype=0):
 
     for i, p in enumerate(data):
         if len(p.shape) == 3:
-            p = p[:, :, cur_phenotype]
-            d = p[np.isnan(p) != True]
+            p = p[..., cur_phenotype]
+            d = p[np.isfinite(p) == True]
             #print d.size, alpha * d.mean(), d.std(), p.shape
             #print np.abs(p - d.mean())
             #print np.logical_and(np.abs(p - d.mean()) > alpha * d.std(), np.isnan(p) == False).sum()
             coords = np.where(np.logical_and(abs(p - d.mean()) > alpha * d.std(),
                                              np.isnan(p) == False))
 
-            suspects += zip([i] * len(coords[0]), coords[0], coords[1])
+            suspects += zip([i] * coords[0].size, coords[0], coords[1])
 
     return suspects
 
@@ -1003,9 +1003,10 @@ class Interactive_Menu():
                          range(self._nPlates)]):
 
                 self._experiments, self._experiments_sd, self._experiments_data =\
-                    get_experiment_results(self._LSC_phenotypes,
-                                        self._grid_surface_matrices,
-                                        self._cur_phenotype)
+                    get_experiment_results(
+                        self._LSC_phenotypes,
+                        self._grid_surface_matrices,
+                        self._cur_phenotype)
 
             #self.set_enable_menu_items(["2C"])
 
@@ -1146,12 +1147,15 @@ class Interactive_Menu():
                             d = np.isfinite(
                                 self._xml_file.get_colony(p, c, r))
 
-                            if (d.sum() / float(d.size) < 0.6 and
+                            if (d.sum() / float(d.size) < 0.6):
+
+                                """
+                                or
                                     np.isnan(
                                         self._original_phenotypes[p][
                                             c, r, self._cur_phenotype
                                         ]).any() is True):
-
+                                """
                                 removal_list.append((p, c, r))
 
                 logging.info(
@@ -1173,16 +1177,22 @@ class Interactive_Menu():
                     for r in xrange(0, self._original_phenotypes[p].shape[1], 2):
 
                         nans = np.isnan(self._original_phenotypes[p][
-                            2 * c:2 * c + 2, 2 * r:2 * r + 2,
-                            self._cur_phenotype])
+                            c: c + 2, r: r + 2, self._cur_phenotype])
 
-                        if nans.any():
-                            pos = np.where(nans==False)
+                        non_gp = np.array(
+                            self._grid_surface_matrices[p]) == False
+
+
+                        print c, r, self._original_phenotypes[p].shape, nans, non_gp
+                        non_ref_nans = np.logical_and(nans, non_gp)
+
+                        if non_ref_nans.any():
+                            pos = np.where(np.logical_and(nans==False, non_gp))
+
                             for pp in xrange(len(pos[0])):
 
                                 suspect_list.append(
-                                    (p, 2 * c + pos[0][pp],
-                                     2 * r + pos[1][pp]))
+                                    (p, c + pos[0][pp], r + pos[1][pp]))
 
                                 #print self._original_phenotypes[p][2*c+pos[0][pp],2*r+pos[1][pp]]
 
