@@ -231,7 +231,7 @@ class Experiment(object):
 
         self._im_filename_pattern = os.path.join(
             self._root, self._prefix,
-            self.paths.experiment_scan_image_relative_pattern)
+            self.paths.experiment_scan_image_pattern)
 
         self._description = run_args.description
         self._project_id = run_args.project_id
@@ -334,7 +334,8 @@ class Experiment(object):
         self._logger.info("Image {0} started!".format(im_index))
         im_path = self._im_filename_pattern.format(
             self._prefix,
-            str(im_index).zfill(4))
+            str(im_index).zfill(4),
+            time.time() - self._init_time)
 
         #SCAN
         self._logger.info("Requesting scan to file '{0}'".format(im_path))

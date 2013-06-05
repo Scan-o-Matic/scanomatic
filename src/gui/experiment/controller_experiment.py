@@ -160,6 +160,8 @@ class One_Controller(controller_generic.Controller):
         self._specific_model['experiments-root'] = \
             self.get_top_controller().paths.experiment_root
 
+        self._paths = self.get_top_controller().paths
+
         view.set_controller(self)
         top = view_experiment.Top_One(
             self, model, self._specific_model)
@@ -324,7 +326,8 @@ class One_Controller(controller_generic.Controller):
 
         file_path = os.path.join(
             sm['experiment-root'],
-            'scan__{0}.tiff'.format(str(sm['image']).zfill(4)))
+            self._paths.experiment_scan_image_pattern.format(
+                'scan', str(sm['image']).zfill(4), time.time()))
 
         scanner.scan(sm['scan-mode'], file_path, auto_off=False)
 

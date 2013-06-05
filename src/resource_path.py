@@ -112,7 +112,7 @@ class Paths(object):
 
         #EXPERIMENT
         self.experiment_root = os.path.join(os.path.expanduser("~"), "Documents")
-        self.experiment_scan_image_relative_pattern = "{0}_{1}.tiff"
+        self.experiment_scan_image_pattern = "{0}_{1}_{2:.4f}.tiff"
         self.experiment_analysis_relative_path = "analysis"
         self.experiment_analysis_file_name = "analysis.log"
         self.experiment_rebuild_instructions = "rebuild.instructions"

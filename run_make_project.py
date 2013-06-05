@@ -18,6 +18,7 @@ import os
 import logging
 import threading
 import time
+import re
 import shutil
 from argparse import ArgumentParser
 from ConfigParser import ConfigParser
@@ -149,10 +150,15 @@ class Make_Project(object):
 
     def _analyse_image(self, im_path):
 
+        try:
+            im_acq_time = float(re.findall(r'([0-9.]*)\.tiff$', im_path)[-1])
+        except:
+            im_acq_time = None
+
         #Analyse image
         im_data = resource_first_pass_analysis.analyse(
             im_path,
-            im_acq_time=None,
+            im_acq_time=im_acq_time,
             logger=self._logger,
             fixture_name=self._fixture_name,
             fixture_directory=self._fixture_dir)
