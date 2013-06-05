@@ -509,11 +509,14 @@ class Project_Image():
                     x, np.arange(z3_deriv_coeffs.shape[0], 0, -1))).sum(),
                     range(87)))
 
+            z3_deriv = z3_deriv[z3_deriv != 0]
+
             if (z3_deriv > 0).any() and (z3_deriv < 0).any():
 
                 self.logger.warning(
                     "ANALYSIS of grayscale seems dubious" +
-                    " as coefficients don't have the same sign")
+                    " check the coefficients: {0}".format(
+                        gs_fit))
 
                 gs_fit = None
 
