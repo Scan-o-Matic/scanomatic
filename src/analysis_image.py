@@ -84,6 +84,7 @@ class Project_Image():
             self._paths = resource_path.Paths(src_path=__file__)
         else:
             self._paths = paths
+
         self._file_path_base = file_path_base
 
         #APP CONFIG
@@ -205,9 +206,8 @@ class Project_Image():
 
         except:
 
-            alt_path = os.sep.join((
-                self._file_path_base,
-                self._im_path.split(os.sep)[-1]))
+            alt_path = os.path.join(self._file_path_base,
+                                    os.path.basename(self._im_path))
 
             self.logger.warning(
                 "ANALYSIS IMAGE, Could not open image at " +
