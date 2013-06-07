@@ -136,9 +136,8 @@ class Analysis(object):
         self._comm_id = comm_id
 
         #PATHS AND CONFIG
-        self._file_path_base = os.path.join(*log_file_path.split(os.sep)[:-1])
-        self._root = os.path.abspath(
-            os.path.join(self._file_path_base, os.path.pardir))
+        self._file_path_base = os.path.abspath(os.path.dirname(log_file_path))
+        self._root = os.path.join(self._file_path_base, os.path.pardir)
 
         self._paths = resource_path.Paths(src_path=__file__)
         if app_config is None:
