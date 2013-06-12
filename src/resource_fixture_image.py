@@ -274,7 +274,7 @@ class Fixture_Image(object):
         self.set_marking_path(markings_path)
         self.set_number_of_markings(markings)
 
-        print fixture, self['fixture-path']
+        #print fixture, self['fixture-path']
 
     def _output_f(self, *args, **kwargs):
 
@@ -694,7 +694,7 @@ class Fixture_Image(object):
         X = np.array(X)
         Y = np.array(Y)
         Mcom = self['current']['marking_center_of_mass']
-        print "Rotation in", X, Y, Mcom
+        #print "Rotation in", X, Y, Mcom
         if Mcom is None:
             Mcom = np.array((X.mean(), Y.mean()))
         else:
@@ -832,12 +832,12 @@ class Fixture_Image(object):
         alpha, Mcom = self._get_markings_rotations()
         X, Y = self._get_markings(source='current')
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        print ref_Mcom, self.im_original_scale
+        #print ref_Mcom, self.im_original_scale
         #ref_Mcom *= self.im_original_scale
 
         dMcom = Mcom - ref_Mcom
 
-        print "dMcom", dMcom, alpha
+        #print "dMcom", dMcom, alpha
 
         self['current'].flush()
         self._set_markings_in_conf(self['current'], X, Y)
@@ -857,7 +857,6 @@ class Fixture_Image(object):
 
             scale_factor = 1.0
 
-
         if ref_gs is not None and bool(self['fixture']["grayscale"]) is True:
 
             Gs1 = scale_factor * ref_gs[0]
@@ -867,7 +866,7 @@ class Fixture_Image(object):
                 [self._get_rotated_point(Gs1, alpha, offset=dMcom),
                  self._get_rotated_point(Gs2, alpha, offset=dMcom)])
 
-            print Gs1, self._get_rotated_point(Gs1, alpha, offset=dMcom)
+            #print Gs1, self._get_rotated_point(Gs1, alpha, offset=dMcom)
 
         i = 0
         #ref_m = True
@@ -884,7 +883,7 @@ class Fixture_Image(object):
                 [self._get_rotated_point(M1, alpha, offset=dMcom),
                  self._get_rotated_point(M2, alpha, offset=dMcom)])
 
-            print M1, self._get_rotated_point(M1, alpha, offset=dMcom)
+            #print M1, self._get_rotated_point(M1, alpha, offset=dMcom)
 
     def _set_current_areas(self):
 
