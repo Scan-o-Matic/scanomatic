@@ -21,22 +21,24 @@ import os
 
 import src.resource_logger as resource_logger
 import src.resource_fixture_image as resource_fixture_image
-import src.resource_path as resource_path
 
 #
 # EXCEPTIONS
 #
 
-class Marker_Detection_Failed(Exception): pass
+
+class Marker_Detection_Failed(Exception):
+    pass
 
 #
 # FUNCTION
 #
 
-def analyse(file_name, im_acq_time=None, experiment_directory=None,
-        paths=None, logger=None, fixture_name=None, fixture_directory=None):
 
-    analysis = dict()
+def analyse(file_name, im_acq_time=None, experiment_directory=None,
+            paths=None, logger=None, fixture_name=None,
+            fixture_directory=None):
+
     if logger is None:
         logger = resource_logger.Log_Garbage_Collector()
     else:
@@ -45,7 +47,7 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
     if im_acq_time is None:
         im_acq_time = os.stat(file_name).st_mtime
 
-    im_data = {'Time':im_acq_time, 'File': file_name}
+    im_data = {'Time': im_acq_time, 'File': file_name}
 
     logger.info("Fixture init for {0}".format(file_name))
 
@@ -56,9 +58,9 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
         fixture_directory = experiment_directory
 
     fixture = resource_fixture_image.Fixture_Image(
-            fixture_name,
-            fixture_directory=fixture_directory,
-            logger=logger, image_path=file_name)
+        fixture_name,
+        fixture_directory=fixture_directory,
+        logger=logger, image_path=file_name)
 
     #logger.info("Fixture set for {0}".format(file_name))
 
@@ -105,4 +107,3 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
     logger.info("First pass analysis done for {0}".format(file_name))
 
     return im_data
-

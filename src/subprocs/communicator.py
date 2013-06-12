@@ -138,11 +138,11 @@ class Communicator(object):
                            send_file_state='a')
 
         self._io.send("Redirecting stdout to dev/null")
-        sys.stdout = open(os.devnull, 'w')
 
         self._io.send("Errors print to error file {0}".format(self._stderr))
         stderr = open(self._stderr, 'a', 0)
         sys.stderr = Unbuffered_IO(stderr)
+        sys.stdout = sys.stderr  # open(os.devnull, 'w')
 
         self._orphan = True
 

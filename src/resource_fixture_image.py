@@ -831,6 +831,10 @@ class Fixture_Image(object):
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
         ref_Mcom *= self.im_original_scale
 
+        dMcom = Mcom - ref_Mcom
+
+        print "dMcom", dMcom, alpha
+
         self['current'].flush()
         self._set_markings_in_conf(self['current'], X, Y)
 
@@ -843,11 +847,65 @@ class Fixture_Image(object):
         if (version is None or
                 version < self._config.version_first_pass_change_1):
 
-            scale_factor = 4
+            scale_factor = 4.0
 
         else:
 
-            scale_factor = 1
+            scale_factor = 1.0
+
+
+        if ref_gs is not None and bool(self['fixture']["grayscale"]) is True:
+
+            Gs1 = scale_factor * ref_gs[0]
+            Gs2 = scale_factor * ref_gs[1]
+
+            self['current'].set("grayscale_area",
+                [self._get_rotated_point(Gs1, alpha, offset=dMcom),
+                 self._get_rotated_point(Gs2, alpha, offset=dMcom)])
+
+            print Gs1, self._get_rotated_point(Gs1, alpha, offset=dMcom)
+
+        i = 0
+        #ref_m = True
+        p_str = "plate_{0}_area"
+        f_plates = self['fixture'].get_all("plate_%n_area")
+
+        for i, p in enumerate(f_plates):
+            p = np.array(p)
+            p *= self.im_original_scale
+            M1 = scale_factor * p[0]
+            M2 = scale_factor * p[1]
+
+            self['current'].set(p_str.format(i),
+                [self._get_rotated_point(M1, alpha, offset=dMcom),
+                 self._get_rotated_point(M2, alpha, offset=dMcom)])
+
+            print M1, self._get_rotated_point(M1, alpha, offset=dMcom)
+
+    def _set_current_areas(self):
+
+        alpha, Mcom = self._get_markings_rotations()
+        X, Y = self._get_markings(source='current')
+        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
+        ref_Mcom *= self.im_original_scale
+
+        self['current'].flush()
+        self._set_markings_in_conf(self['current'], X, Y)
+
+        version = self['fixture']['version']
+        ref_gs = np.array(self['fixture']["grayscale_area"])
+        ref_gs *= self.im_original_scale
+
+        self._version_check_positions_arr(ref_Mcom)
+
+        if (version is None or
+                version < self._config.version_first_pass_change_1):
+
+            scale_factor = 4.0
+
+        else:
+
+            scale_factor = 1.0
 
         if ref_gs is not None and bool(self['fixture']["grayscale"]) is True:
 
