@@ -830,7 +830,8 @@ class Fixture_Image(object):
         alpha, Mcom = self._get_markings_rotations()
         X, Y = self._get_markings(source='current')
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        ref_Mcom *= self.im_original_scale
+        print ref_Mcom, self.im_original_scale
+        #ref_Mcom *= self.im_original_scale
 
         dMcom = Mcom - ref_Mcom
 
