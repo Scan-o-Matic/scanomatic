@@ -692,6 +692,7 @@ class Fixture_Image(object):
         X = np.array(X)
         Y = np.array(Y)
         Mcom = self['current']['marking_center_of_mass']
+        print "Rotation in", X, Y, Mcom
         if Mcom is None:
             Mcom = np.array((X.mean(), Y.mean()))
         else:
