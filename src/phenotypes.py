@@ -587,12 +587,12 @@ class Interactive_Menu():
             '1A': 'Load data',
             '1B': 'Select Phenotype To Work With',
             '1C': 'Name Phenotypes',
+            '1D': 'Set normalisation grid position',
             'Q1': 'Weed out superbad curves automatically (requires xml-file)',
             'Q2': 'Inspect/remove outliers (requires xml-file)',
             'Q3': 'Inspect/remove based on bad friends (requires xml-file)',
             'Q4': 'Manual remove stuff',
-            '2A': 'Set normalisation grid position',
-            '2B': 'Normalise data',
+            '2': 'Normalise data',
             '2C': 'Calculate experiments',
             'R1': 'Re-map positions -- rotate',
             'R2': 'Re-map positions -- move',
@@ -604,8 +604,9 @@ class Interactive_Menu():
             'U': 'Undo back to last save',
             'S': 'Save all available data (will overwrite files if they exist)',
             'T': 'Terminate! (Quit)'}
-        self._menu_order = ('1A', '1B', '1C', 'Q1', 'Q2', 'Q3', 'Q4', '2A', '2B', '2C', 'R1',
-                            'R2', 'R3', 'P1', 'P2', 'P3', 'P4', 'U', 'S', 'T')
+        self._menu_order = ('1A', '1B', '1C', '1D', 'Q1', 'Q2', 'Q3', 'Q4',
+                            '2', '2C', 'R1', 'R2', 'R3', 'P1', 'P2', 'P3',
+                            'P4', 'U', 'S', 'T')
 
         self._enabled_menus = {}
         self.set_start_menu_state()
@@ -642,8 +643,8 @@ class Interactive_Menu():
 
     def set_new_file_menu_state(self):
         self.set_start_menu_state()
-        self.set_enable_menu_items(['1B', '1C', 'Q1', 'Q2', 'Q3', 'Q4',
-                                    '2A', '2B', 'P1',
+        self.set_enable_menu_items(['1B', '1C', '1D', 'Q1', 'Q2', 'Q4',
+                                    '2', '2B', 'P1',
                                     'R1', 'R2', 'R3', 'U', 'S'])
 
     def set_enable_menu_items(self, itemlist):
@@ -1131,6 +1132,25 @@ class Interactive_Menu():
                     "Name of phenotype {0}: ".format(i + 1)))
                 self._phenotype_names.append(phenotype_name)
 
+        elif task == "1D":
+
+            self._grid_surface_matrices = get_interactive_norm_surface_matrix(
+                self._original_phenotypes,
+                self._grid_surface_matrices)
+
+            self._per_strain_metadata = self._get_downsample_metadata()
+            for i in range(self._nPlates):
+                if self._per_strain_metadata[i] is True:
+                    logging.info(
+                        "New normalisation grid set for plate {0}!".format(
+                            i + 1))
+                else:
+                    logging.warning(
+                        "Looking per colonies won't be allowed for plate {0}".format(
+                            i + 1))
+
+            self.set_enable_menu_items(['Q3'])
+
         elif task == "Q1":
 
             removal_list = []
@@ -1299,24 +1319,7 @@ class Interactive_Menu():
                         self.set_nan_from_list(removal_list)
                         removal_list = []
 
-        elif task == "2A":
-
-            self._grid_surface_matrices = get_interactive_norm_surface_matrix(
-                self._original_phenotypes,
-                self._grid_surface_matrices)
-
-            self._per_strain_metadata = self._get_downsample_metadata()
-            for i in range(self._nPlates):
-                if self._per_strain_metadata[i] is True:
-                    logging.info(
-                        "New normalisation grid set for plate {0}!".format(
-                            i + 1))
-                else:
-                    logging.warning(
-                        "Looking per colonies won't be allowed for plate {0}".format(
-                            i + 1))
-
-        elif task == "2B":
+        elif task == "2":
 
             if self._LSC_phenotypes is None:
 
