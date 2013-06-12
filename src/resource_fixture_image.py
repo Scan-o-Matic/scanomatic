@@ -274,6 +274,8 @@ class Fixture_Image(object):
         self.set_marking_path(markings_path)
         self.set_number_of_markings(markings)
 
+        print fixture, self['fixture-path']
+
     def _output_f(self, *args, **kwargs):
 
         print "Debug output function: ", args, kwargs
