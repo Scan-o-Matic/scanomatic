@@ -35,6 +35,7 @@ def get_time_generator(interval, order="inc"):
     else:
 
         t = 1366013470  # Spring 2013 in unix time
+        interval *= -1  # Will make interval negative
 
     while True:
 
@@ -128,12 +129,11 @@ def write_times_to_xml_file(fpath, timeGenerator):
 
             d = (d[:lBound + lTrunc + l2Bound] +
                  REPLACEMENT.format(timeGenerator.next()) +
-                 d[rBound + lTrunc + r2Bound:])
+                 d[lBound + lTrunc + r2Bound:])
 
         else:
 
             timeGenerator.next()
-
 
         lTrunc += rBound
         m = re.search(SCAN_PATTERN, d[lTrunc:])
