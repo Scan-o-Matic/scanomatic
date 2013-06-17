@@ -171,9 +171,6 @@ def get_norm_surface(data, cur_phenotype, sigma=3, only_linear=False,
     if surface_matrix is None:
         surface_matrix = get_default_surface_matrix(data)
 
-    for p in data:
-        print p.shape
-
     norm_surfaces = np.array([plate[..., cur_phenotype].copy() * 0
                               for plate in data])
     norm_vals = []
