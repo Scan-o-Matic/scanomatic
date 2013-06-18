@@ -519,7 +519,7 @@ def get_normalised_values(data, cur_phenotype, surface_matrices=None, do_log=Non
         "Zero positions in normsurface: {0}".format([(p == 0).sum() for p in norm_surface]))
 
     for p in xrange(len(data)):
-        if norm_surfance[p] is not None:
+        if norm_surface[p] is not None:
             if do_log:
                 normed_data[p] = (np.log2(data[p][..., cur_phenotype]) - np.log2(norm_surface[p]))  # + norm_means[p]
             else:
