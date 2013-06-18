@@ -1002,9 +1002,9 @@ class Interactive_Menu():
             plates = [p[..., self._cur_phenotype] for p in self._LSC_phenotypes]
 
             self._LSC_min = min([p[np.isnan(p) == False].min() for
-                                 p in plates if p.size > 0])
+                                 p in plates if p.size > 0 and np.isfinite(p).any()])
             self._LSC_max = min([p[np.isnan(p) == False].max() for
-                                 p in plates if p.size > 0])
+                                 p in plates if p.size > 0 and np.isfinite(p).any()])
 
             if (self._per_strain_metadata is not None and
                 True in [self._per_strain_metadata[i] for i in
