@@ -40,7 +40,7 @@ def make_linear_interpolation2(data):
         b_pos[np.where(b_pos > np.array(data.shape))] -= 1
         cell = data[a_pos[0]:b_pos[0], a_pos[1]:b_pos[1]]
         f[tuple(pos)] = cell[np.where(np.logical_and(cell != 0,
-                             np.isnan(cell) == False))].mean()
+                             np.isfinite(cell)))].mean()
         #logging.warning("Corrected position {0} to {1}".format(\
         #    pos, f[tuple(pos)]))
     return f
@@ -62,15 +62,17 @@ def make_cubic_interpolation(data):
 
 def make_griddata_interpolation(plate, method='cubic'):
 
-    points = np.where(np.logical_and(np.isnan(plate) == False,
+    points = np.where(np.logical_and(np.isfinite(plate),
                       plate > 0))
 
     if points[0].size == 0:
+        print "EEEE: No points"
         return None
 
     values = plate[points]
 
     if values.size == 0 or np.isfinite(values).any():
+        print "EEEE: No values", values.shape
         return None
 
     x_grid, y_grid = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
@@ -196,7 +198,7 @@ def get_norm_surface(data, cur_phenotype, sigma=3, only_linear=False,
 
             original_norms = norm_surface[
                 np.logical_and(norm_surface != 0,
-                               np.isnan(norm_surface) == False)]
+                               np.isfinite(norm_surface))]
 
             norm_vals.append(original_norms)
             m = original_norms.mean()
@@ -345,12 +347,12 @@ def get_outlier_phenotypes(data, alpha=3, cur_phenotype=0):
     for i, p in enumerate(data):
         if len(p.shape) == 3:
             p = p[..., cur_phenotype]
-            d = p[np.isfinite(p) == True]
+            d = p[np.isfinite(p)]
             #print d.size, alpha * d.mean(), d.std(), p.shape
             #print np.abs(p - d.mean())
             #print np.logical_and(np.abs(p - d.mean()) > alpha * d.std(), np.isnan(p) == False).sum()
             coords = np.where(np.logical_and(abs(p - d.mean()) > alpha * d.std(),
-                                             np.isnan(p) == False))
+                                             np.isfinite(p)))
 
             suspects += zip([i] * coords[0].size, coords[0], coords[1])
 
@@ -513,7 +515,7 @@ def get_normalised_values(data, cur_phenotype, surface_matrices=None, do_log=Non
     logging.info(
         "The norm-grid means where {0} (surface mean was {1})".format(
             [p.mean() for p in norm_vals],
-            [np.mean(p[np.where(np.isnan(p) == False)]) for p in norm_surface]))
+            [np.mean(p[np.where(np.isfinite(p))]) for p in norm_surface]))
 
     logging.info(
         "Zero positions in normsurface: {0}".format([(p == 0).sum() for p in norm_surface]))
@@ -560,9 +562,9 @@ def get_experiment_results(data, surface_matrices=None, cur_phenotype=0):
                     cell_data = cell[np.where(exp_filter)]
                     exp_data[x, y, :] = cell_data
                     exp_mean[x, y] = cell_data[
-                        np.where(np.isnan(cell_data) == False)].mean()
+                        np.where(np.isfinite(cell_data))].mean()
                     exp_sd[x, y] = cell_data[
-                        np.where(np.isnan(cell_data) == False)].std()
+                        np.where(np.isfinite(cell_data))].std()
 
                 #logging.warning("Plate {0}, row {1}".format(p, x))
             """
@@ -1002,14 +1004,14 @@ class Interactive_Menu():
             plates = [p[..., self._cur_phenotype] for p in self._LSC_phenotypes]
 
             try:
-                self._LSC_min = min([p[np.isnan(p) == False].min() for
+                self._LSC_min = min([p[np.isfinite(p)].min() for
                                      p in plates if p.size > 0 and
                                      np.isfinite(p).any()])
             except:
                 self._LSC_min = -1
 
             try:
-                self._LSC_max = min([p[np.isnan(p) == False].max() for
+                self._LSC_max = min([p[np.isfinite(p)].max() for
                                      p in plates if p.size > 0 and
                                      np.isfinite(p).any()])
             except:
@@ -1219,12 +1221,15 @@ class Interactive_Menu():
                         non_gp = np.array(
                             self._grid_surface_matrices[p]) == False
 
+                        print (c, r, self._original_phenotypes[p].shape, nans,
+                               non_gp)
 
-                        print c, r, self._original_phenotypes[p].shape, nans, non_gp
                         non_ref_nans = np.logical_and(nans, non_gp)
 
                         if non_ref_nans.any():
-                            pos = np.where(np.logical_and(nans==False, non_gp))
+
+                            pos = np.where(np.logical_and(nans == False,
+                                                          non_gp))
 
                             for pp in xrange(len(pos[0])):
 
@@ -1341,8 +1346,8 @@ class Interactive_Menu():
             if self._LSC_phenotypes is None:
 
                 self._LSC_phenotypes = [
-                    (p is None or p.ndim == 0) and None or np.zeros(p.shape) for p in
-                    self._original_phenotypes]
+                    (p is None or p.ndim == 0) and None or np.zeros(p.shape)
+                    for p in self._original_phenotypes]
 
                 self._normalisation_vals = [None] * 3
 
