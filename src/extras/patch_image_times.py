@@ -77,6 +77,8 @@ def write_times_to_first_pass_file(fpath, timeGenerator):
     """
     REPLACEMENT = "'Time': {0}"
     PATTERN = r"'Time': [\d.]*"
+    START_PATTERN = r"'Start Time': [\d.]*"
+    START_REPLACEMENT = "'Start Time': {0}"
 
     fh = open(fpath, 'r')
     d = fh.read()
@@ -84,15 +86,26 @@ def write_times_to_first_pass_file(fpath, timeGenerator):
 
     m = re.search(PATTERN, d)
     lTrunc = 0
+    tMin = None
 
     while m is not None:
 
+        t = timeGenerator.next()
+        if tMin is None or t < tMin:
+            tMin = t
+
         lBound, rBound = m.span()
-        d = (d[:lBound + lTrunc] + REPLACEMENT.format(timeGenerator.next()) +
+        d = (d[:lBound + lTrunc] + REPLACEMENT.format(t) +
              d[rBound + lTrunc:])
 
         lTrunc += rBound
         m = re.search(PATTERN, d[lTrunc:])
+
+    m = re.search(START_PATTERN, d)
+    if m is not None:
+        lBound, rBound = m.span()
+        d = (d[:lBound] + START_REPLACEMENT.format(tMin) +
+             d[rBound:])
 
     fh = open(fpath, 'w')
     fh.write(d)
@@ -110,6 +123,8 @@ def write_times_to_xml_file(fpath, timeGenerator):
     REPLACEMENT = "<t>{0}</t>"
     TIME_PATTERN = r'<t>([\d.]*)</t>'
     SCAN_PATTERN = r'<s i="\d*">.*?</s>'
+    START_PATTERN = r'<start-t>([\d.]*)</start-t>'
+    START_REPLACEMENT = '<start-t>{0}</start-t>'
 
     fh = open(fpath, 'r')
     d = fh.read()
@@ -117,26 +132,33 @@ def write_times_to_xml_file(fpath, timeGenerator):
 
     m = re.search(SCAN_PATTERN, d)
     lTrunc = 0
+    tMin = None
 
     while m is not None:
 
         m2 = re.search(TIME_PATTERN, m.group())
         lBound, rBound = m.span()
 
+        t = timeGenerator.next()
+        if tMin is None or t < tMin:
+            tMin = t
+
         if m2 is not None:
 
             l2Bound, r2Bound = m2.span()
 
             d = (d[:lBound + lTrunc + l2Bound] +
-                 REPLACEMENT.format(timeGenerator.next()) +
+                 REPLACEMENT.format(t) +
                  d[lBound + lTrunc + r2Bound:])
-
-        else:
-
-            timeGenerator.next()
 
         lTrunc += rBound
         m = re.search(SCAN_PATTERN, d[lTrunc:])
+
+    m = re.search(START_PATTERN, d)
+    if m is not None:
+        lBound, rBound = m.span()
+        d = (d[:lBound] + START_REPLACEMENT.format(tMin) +
+             d[rBound:])
 
     fh = open(fpath, 'w')
     fh.write(d)
