@@ -65,7 +65,7 @@ def make_griddata_interpolation(plate, method='cubic'):
     points = np.where(np.logical_and(np.isnan(plate) == False,
                       plate > 0))
 
-    if points is None or points.size == 0:
+    if points[0].size == 0:
         return None
 
     values = plate[points]
