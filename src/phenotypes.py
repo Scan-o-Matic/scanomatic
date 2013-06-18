@@ -62,21 +62,15 @@ def make_cubic_interpolation(data):
 
 def make_griddata_interpolation(plate, method='cubic'):
 
-    print plate
-
     points = np.where(np.logical_and(np.isfinite(plate),
                       plate > 0))
 
-    print points
-
     if points[0].size == 0:
-        print "EEEE: No points"
         return None
 
     values = plate[points]
 
-    if values.size == 0 or np.isfinite(values).any():
-        print "EEEE: No values", values.shape
+    if values.size == 0 or np.isfinite(values).any() is False:
         return None
 
     x_grid, y_grid = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
