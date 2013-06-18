@@ -1001,10 +1001,20 @@ class Interactive_Menu():
 
             plates = [p[..., self._cur_phenotype] for p in self._LSC_phenotypes]
 
-            self._LSC_min = min([p[np.isnan(p) == False].min() for
-                                 p in plates if p.size > 0 and np.isfinite(p).any()])
-            self._LSC_max = min([p[np.isnan(p) == False].max() for
-                                 p in plates if p.size > 0 and np.isfinite(p).any()])
+            try:
+                self._LSC_min = min([p[np.isnan(p) == False].min() for
+                                     p in plates if p.size > 0 and
+                                     np.isfinite(p).any()])
+            except:
+                self._LSC_min = -1
+
+            try:
+                self._LSC_max = min([p[np.isnan(p) == False].max() for
+                                     p in plates if p.size > 0 and
+                                     np.isfinite(p).any()])
+            except:
+
+                self._LSC_max = 1
 
             if (self._per_strain_metadata is not None and
                 True in [self._per_strain_metadata[i] for i in
@@ -1490,7 +1500,7 @@ class Interactive_Menu():
                 self._LSC_phenotypes,
                 self._cur_phenotype,
                 self._plate_labels,
-                "LSC (Plate {0})",
+                "Relative Phenotype (Plate {0})",
                 vlim=(self._LSC_min, self._LSC_max))
 
         elif task == "P4":
@@ -1501,7 +1511,7 @@ class Interactive_Menu():
                 self._experiments,
                 self._cur_phenotype,
                 self._plate_labels,
-                "Mean LSC (Plate {0})",
+                "Mean Relative Phenotype (Plate {0})",
                 vlim=(self._LSC_min, self._LSC_max),
                 plateFilter=plateFilter)
 
@@ -1509,7 +1519,7 @@ class Interactive_Menu():
                 self._experiments_sd,
                 self._cur_phenotype,
                 self._plate_labels,
-                "LSC std (Plate {0})",
+                "Relative Phenotype Std (Plate {0})",
                 vlim=(self._LSC_min, self._LSC_max),
                 plateFilter=plateFilter)
 
@@ -1606,7 +1616,7 @@ class Interactive_Menu():
             if self._LSC_phenotypes is not None:
                 for task in ["S1", "S3"]:
 
-                    header = "Saving LSC phenotypes as {0}".format(
+                    header = "Saving Relative Phenotypes as {0}".format(
                         ["csv", "numpy-array"][task == "S3"])
 
                     if task == "S1":
@@ -1622,7 +1632,7 @@ class Interactive_Menu():
 
                     if _save(
                             self._LSC_phenotypes, header,
-                            file_guess='_LSC.{0}'.format(
+                            file_guess='_relPheno.{0}'.format(
                                 ['csv', 'npy'][task == 'S3']),
                             **kwargs):
 
@@ -1635,7 +1645,7 @@ class Interactive_Menu():
             if self._experiments_data is not None:
                 for task in ["S2", "S4"]:
 
-                    header = "Saving LSC per experiment as {0}".format(
+                    header = "Saving Relative Phenotypes per experiment as {0}".format(
                         ["csv", "numpy-array"][task == "S4"])
 
                     if task == "S2":
@@ -1651,7 +1661,7 @@ class Interactive_Menu():
                     if _save(
                             self._experiments_data, header,
                             #save_as_np_array=(task == "S4"),
-                            file_guess='_LSC_experment.phenotype_{0}.{1}'.format(
+                            file_guess='_relPheno_experment.phenotype_{0}.{1}'.format(
                                 self._phenotype_names[self._cur_phenotype],
                                 ['csv', 'npy'][task == 'S4']),
                             **kwargs):
