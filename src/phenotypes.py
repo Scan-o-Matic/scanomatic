@@ -65,7 +65,7 @@ def make_griddata_interpolation(plate, method='cubic'):
     points = np.where(np.logical_and(np.isnan(plate) == False,
                       plate > 0))
 
-    if points.size == 0:
+    if points is None:
         return None
 
     values = plate[points]
@@ -516,10 +516,11 @@ def get_normalised_values(data, cur_phenotype, surface_matrices=None, do_log=Non
         "Zero positions in normsurface: {0}".format([(p == 0).sum() for p in norm_surface]))
 
     for p in xrange(len(data)):
-        if do_log:
-            normed_data[p] = (np.log2(data[p][..., cur_phenotype]) - np.log2(norm_surface[p]))  # + norm_means[p]
-        else:
-            normed_data[p] = (data[p][..., cur_phenotype] - norm_surface[p])  # + norm_means[p]
+        if norm_surfance[p] is not None:
+            if do_log:
+                normed_data[p] = (np.log2(data[p][..., cur_phenotype]) - np.log2(norm_surface[p]))  # + norm_means[p]
+            else:
+                normed_data[p] = (data[p][..., cur_phenotype] - norm_surface[p])  # + norm_means[p]
 
     return normed_data, norm_vals
 
