@@ -65,6 +65,9 @@ def make_griddata_interpolation(plate, method='cubic'):
     points = np.where(np.logical_and(np.isnan(plate) == False,
                       plate > 0))
 
+    if points.size == 0:
+        return None
+
     values = plate[points]
 
     x_grid, y_grid = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
