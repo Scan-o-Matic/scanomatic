@@ -1324,7 +1324,7 @@ class Interactive_Menu():
             if self._LSC_phenotypes is None:
 
                 self._LSC_phenotypes = [
-                    p is None and None or np.zeros(p.shape) for p in
+                    (p is None or p.ndim == 0) and None or np.zeros(p.shape) for p in
                     self._original_phenotypes]
 
                 self._normalisation_vals = [None] * 3
