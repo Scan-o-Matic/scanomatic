@@ -99,6 +99,7 @@ pigmentation analysis.</i></span>
 
 ###PINNING
 'project-stage-plates': 'Pinnings / Plate Formats',
+'project-stage-plate-order-warning': 'You should always place plates in order!',
 
 #PROJECT - RUNNING
 'project-running': """

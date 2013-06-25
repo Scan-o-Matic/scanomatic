@@ -19,6 +19,7 @@ import time
 import collections
 import threading
 import sh
+import copy
 
 #
 # INTERNAL DEPENDENCIES
@@ -663,6 +664,8 @@ class Project_Controller(controller_generic.Controller):
         good_load = stage.set_fixture_image(model[row][0])
         if good_load is not True:
             self._specific_model['fixture'] = None
+
+        self.check_good_plate_order()
         self.set_allow_run()
 
     def set_pinning(self, widget, plate):
@@ -673,6 +676,20 @@ class Project_Controller(controller_generic.Controller):
         key = model[row][0]
         pm = self._model['pinning-matrices'][key]
         self._specific_model['pinnings-list'][plate_i] = pm
+        self.check_good_plate_order()
+
+    def check_good_plate_order(self):
+        tmpPMlist = copy.copy(self._specific_model['pinnings-list'])
+        tmpPMlist.sort(reverse=True)
+        if len([True for i in range(len(tmpPMlist)) if tmpPMlist[i] !=
+                self._specific_model['pinnings-list'][i] and
+                tmpPMlist[i] is None]) > 0:
+
+            self._view.get_stage().set_plate_warning()
+
+        else:
+
+            self._view.get_stage().remove_plate_warning()
         self.set_allow_run()
 
     def start(self, *args):

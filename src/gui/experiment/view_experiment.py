@@ -474,7 +474,7 @@ class Stage_Project_Setup(gtk.VBox):
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self.fixture = get_fixtures_combo()
         self.gtk_handlers['fixture-changed'] = self.fixture.connect(
-            "changed", controller.set_new_fixture)
+            "changed", self._set_new_fixture)
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
 
         #TIME, INTERVAL, SCANS
@@ -547,6 +547,9 @@ class Stage_Project_Setup(gtk.VBox):
         frame.add(vbox)
         self.pm_box = gtk.HBox()
         vbox.pack_start(self.pm_box, False, True, PADDING_SMALL)
+        self.pm_warning = gtk.Label(model['project-stage-plate-order-warning'])
+        vbox.pack_start(self.pm_warning, False, False, PADDING_SMALL)
+
         #self.keep_gridding.clicked()
 
         self.set_fixtures()
@@ -718,6 +721,10 @@ class Stage_Project_Setup(gtk.VBox):
                 gtk.ICON_SIZE_SMALL_TOOLBAR)
             self.warn_image.set_tooltip_text(m['project-stage-prefix-warn'])
 
+    def _set_new_fixture(self, *args, **kwargs):
+
+        self._controller.set_new_fixture(*args, **kwargs)
+
     def set_fixtures(self):
 
         set_fixtures_combo(self.fixture,
@@ -757,6 +764,14 @@ class Stage_Project_Setup(gtk.VBox):
 
         for s in sorted(scanners):
             self.scanner.append_text(s)
+
+    def set_plate_warning(self):
+
+        self.pm_warning.show()
+
+    def remove_plate_warning(self):
+
+        self.pm_warning.hide()
 
     def set_pinning(self, pinnings_list=None, sensitive=True):
 
