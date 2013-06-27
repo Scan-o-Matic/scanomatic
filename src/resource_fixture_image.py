@@ -330,6 +330,12 @@ class Fixture_Image(object):
 
             return self.im_original_scale
 
+        elif key in ['grayscale_type']:
+
+            gs_type = self.fixture_reference.get('grayscale_type')
+            if gs_type is None:
+                gs_type = "Kodak"
+            return gs_type
         else:
 
             print "***ERROR: Unknown key {0}".format(key)
@@ -798,7 +804,7 @@ class Fixture_Image(object):
 
         #np.save(".tmp.npy", im)
         ag = resource_image.Analyse_Grayscale(
-            target_type="Kodak", image=im,
+            target_type=self['grayscale_type'], image=im,
             scale_factor=self.im_original_scale)
 
         gs_indices = ag.get_target_values()
