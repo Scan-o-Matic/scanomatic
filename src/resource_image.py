@@ -444,6 +444,16 @@ class Analyse_Grayscale(object):
                 'lower_than_half_width': 350 * scale_factor,
                 'higher_than_half_width': 150 * scale_factor,
                 'length': 28.3 * scale_factor,  # 28.57 was previous
+            },
+            'SilverFast': {
+                'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
+                            38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
+                'width': 58 * scale_factor,
+                'min_width': 30 * scale_factor,
+                'sections': 23,
+                'lower_than_half_width': 350 * scale_factor,
+                'higher_than_half_width': 150 * scale_factor,
+                'length': 29.565217391,
             }
         }
 
@@ -631,11 +641,19 @@ class Analyse_Grayscale(object):
 
     def _get_clean_im_and_rect(self):
 
+        #np.save("gs_example.npy", self._img)
+
         rect = self._get_start_rect()
+
+        #print "START:", rect
 
         rect = self._get_ortho_trimmed(rect)
 
+        #print "ORTHO:", rect
+
         rect = self._get_para_trimmed(rect)
+
+        #print "PARA:", rect
 
         im = self._img[rect[0][0]: rect[1][0],
                        rect[0][1]: rect[1][1]]
@@ -881,4 +899,6 @@ class Analyse_Grayscale(object):
         self._gray_scale_pos = gray_scale_pos
         self._gray_scale = gray_scale
 
+        #print "GS", gray_scale
+        #print "GS POS", gray_scale_pos
         return gray_scale_pos, gray_scale
