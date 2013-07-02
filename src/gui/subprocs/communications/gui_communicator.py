@@ -536,7 +536,10 @@ class Subprocess(object):
 
         params_pinning = re.findall(r'__PINNING__ (.*)', params_in_text)
         if len(params_pinning) > 0:
-            params['pinnings-list'] = map(tuple, eval(params_pinning[0]))
+            try:
+                params['pinnings-list'] = map(tuple, eval(params_pinning[0]))
+            except:
+                pass
 
         params_interval = re.findall(r'__INTERVAL__ (.*)', params_in_text)
         if len(params_interval) > 0:
