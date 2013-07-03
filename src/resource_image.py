@@ -321,7 +321,7 @@ class Image_Analysis():
 
         return hit
 
-    def get_convolution(self, threshold=130):
+    def get_convolution(self, threshold=127):
 
         t_img = (self._img > threshold).astype(np.int8) * 2 - 1
         marker = self._pattern_img
@@ -391,7 +391,7 @@ class Image_Analysis():
 
         return m_locations
 
-    def find_pattern(self, markings=3, img_threshold=130):
+    def find_pattern(self, markings=3, img_threshold=127):
         """This function returns the image positions as numpy arrays that
         are scaled to match the ORIGINAL IMAGE size"""
 
