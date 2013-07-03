@@ -494,6 +494,11 @@ class Subprocess(object):
         if iostate1 is not None:
             fh = open(f_path, iostate1)
 
+            #This will only have an affect if there's no second state
+            #and will put marker at EOF to ignore all previous messages
+            if iostate1 == 'r':
+                fh.read()
+
         if iostate2 is not None:
             fh.close()
             fh = open(f_path, iostate2)
