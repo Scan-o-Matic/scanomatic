@@ -163,9 +163,9 @@ class Grid_Array():
 
         X = np.array(best_fit_rows * c).reshape(c, r).T
         Y = np.array(best_fit_columns * r).reshape(r, c)
-        self._grid = np.zeros((r, c, 2), dtype=np.float)
-        self._grid[:, :, 0] = X
-        self._grid[:, :, 1] = Y
+        self._grid = np.zeros((2, r, c), dtype=np.float)
+        self._grid[0, ...] = X
+        self._grid[1, ...] = Y
         self._set_grid_cell_size()
         self.unset_history()
 
@@ -177,8 +177,8 @@ class Grid_Array():
 
     def _set_grid_cell_size(self):
 
-        dx = (self._grid[1:, :, 0] - self._grid[:-1, :, 0]).mean()
-        dy = (self._grid[:, 1:, 1] - self._grid[:, :-1, 1]).mean()
+        dx = (self._grid[0, 1:, :] - self._grid[0, :-1, :]).mean()
+        dy = (self._grid[1, :, 1:] - self._grid[1, :, :-1]).mean()
 
         self._grid_cell_size = map(lambda x: int(round(x)), (dx, dy))
 
@@ -254,13 +254,18 @@ class Grid_Array():
             expected_center = tuple(gh_mean[:2])
         """
 
-        self._grid, X, Y, center, spacings, adjusted_values = \
+        grid, X, Y, center, spacings, adjusted_values = \
             resource_grid.get_grid(
                 im,
                 expected_spacing=expected_spacings,
                 expected_center=expected_center,
                 validate_parameters=validate_parameters,
-                grid_shape=grid_shape)
+                grid_shape=grid_shape,
+                grid_correction=grid_correction)
+
+        dx, dy = spacings
+        self._grid, adjusted_values = resource_grid.get_validated_grid(
+            im, grid, dy, dx, adjusted_values)
 
         self.logger.info("Expecting center {0} and Spacings {1}".format(
             expected_center, expected_spacings))
@@ -287,21 +292,19 @@ class Grid_Array():
                 self.logger.critical("Won't save failed gridding {0}".format(
                     error_file) + ", file allready exists")
 
+            if save_name is not None:
+                self.make_grid_im(im, save_grid_name=save_name, grid=grid)
+
             return False
 
-        if grid_correction is not None and grid_correction.any():
-            self.logger.warning(
-                "Invoking manual grid correction {0},".format(
-                grid_correction) + " this is dubious practice!")
-            self._grid -= grid_correction
-            adjusted_values = True
-
+        """ Impossible since part of grid validation algorithm
         if self._grid.min() < 0:
             raise Invalid_Grid("Negative positons in grid")
             return False
 
-        if (self._grid.shape[0] != self._pinning_matrix[self._im_dim_order[0]]
-                or self._grid.shape[1] !=
+        """
+        if (self._grid.shape[1] != self._pinning_matrix[self._im_dim_order[0]]
+                or self._grid.shape[2] !=
                 self._pinning_matrix[self._im_dim_order[1]]):
 
             raise Invalid_Grid(
@@ -333,28 +336,31 @@ class Grid_Array():
 
         return True
 
-    def make_grid_im(self, im, save_grid_name=None, X=None, Y=None):
+    def make_grid_im(self, im, save_grid_name=None, grid=None, X=None, Y=None):
 
         grid_image = plt.figure()
         grid_plot = grid_image.add_subplot(111)
         grid_plot.imshow(im, cmap=plt.cm.gray)
 
-        for row in xrange(self._grid.shape[0]):
+        if grid is None:
+            grid = self._grid
+
+        for row in xrange(grid.shape[1]):
 
             grid_plot.plot(
-                self._grid[row, :, 1],
-                self._grid[row, :, 0],
+                grid[1, row, :],
+                grid[0, row, :],
                 'r-')
 
-        for col in xrange(self._grid.shape[1]):
+        for col in xrange(grid.shape[2]):
 
             grid_plot.plot(
-                self._grid[:, col, 1],
-                self._grid[:, col, 0],
+                grid[1, :, col],
+                grid[0, :, col],
                 'r-')
 
-        grid_plot.plot(self._grid[0, 0, 1],
-                       self._grid[0, 0, 0],
+        grid_plot.plot(grid[1, 0, 0],
+                       grid[0, 0, 0],
                        'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
         if X is not None and Y is not None:
@@ -660,8 +666,8 @@ class Grid_Array():
             s_g += grid_correction  # Compensate if part of plate is outside im
         """
         s_gcs = self._grid_cell_size
-        s_g[:, :, 0] -= s_gcs[0] / 2.0  # To get min-corner
-        s_g[:, :, 1] -= s_gcs[1] / 2.0  # To get min-corner
+        s_g[0, ...] -= s_gcs[0] / 2.0  # To get min-corner
+        s_g[1, ...] -= s_gcs[1] / 2.0  # To get min-corner
         l_d1 = pm[0]  # im_dim_order[0]]
         l_d2 = pm[1]  # im_dim_order[1]]
 
@@ -681,11 +687,11 @@ class Grid_Array():
                     #Set up shortcuts
                     _cur_gc = self._grid_cells[row][col]
                     if dim_reversed:
-                        row_min = s_g[col, row, 0]
-                        col_min = s_g[col, row, 1]
+                        row_min = s_g[0, col, row]
+                        col_min = s_g[1, col, row]
                     else:
-                        row_min = s_g[row, col, 0]
-                        col_min = s_g[row, col, 1]
+                        row_min = s_g[0, row, col]
+                        col_min = s_g[1, row, col]
 
                     rc_min_tuple = (row_min, col_min)
 

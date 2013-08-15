@@ -59,6 +59,7 @@ class Analysis(object):
             gridding_settings={'use_otsu': True, 'median_coeff': 0.99,
                                'manual_threshold': 0.05},
             grid_cell_settings={'blob_detect': 'default'},
+            grid_correction=None,
             use_local_fixture=True, logger=None, app_config=None,
             comm_id=None):
 
@@ -105,6 +106,11 @@ class Analysis(object):
         @animate            Boolean def (False) to cause saving animation
                             images.
 
+        @grid_correction    None to use default gridding behaviour, if
+                            a tuple of correction shifts for the grid is passed
+                            the grid will be moved so many spacings for each
+                            dimension.
+
         The function returns None if nothing was done of if it crashed.
         If it runs through it returns the number of images processed.
 
@@ -131,6 +137,7 @@ class Analysis(object):
         self._grid_array_settings = grid_array_settings
         self._gridding_settings = gridding_settings
         self._grid_cell_settings = grid_cell_settings
+        self._grid_correction = grid_correction
         self._use_local_fixture = use_local_fixture
         self._app_config = app_config
         self._comm_id = comm_id
@@ -407,7 +414,8 @@ class Analysis(object):
             grid_cell_settings=self._grid_cell_settings,
             log_version=meta_data['Version'],
             paths=self._paths,
-            app_config=self._app_config
+            app_config=self._app_config,
+            grid_correction=self._grid_correction
         )
 
         # MANUAL GRIDS

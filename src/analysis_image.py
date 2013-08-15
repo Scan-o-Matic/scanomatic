@@ -52,7 +52,7 @@ class Project_Image():
             suppress_analysis=False,
             grid_array_settings=None, gridding_settings=None,
             grid_cell_settings=None, log_version=0, paths=None,
-            app_config=None):
+            app_config=None, grid_correction=None):
 
         if logger is not None:
             self.logger = logger
@@ -69,7 +69,7 @@ class Project_Image():
         self._pinning_matrices = pinning_matrices
         self._ref_plate_d1 = None
         self._ref_plate_d2 = None
-        self._grid_corrections = None
+        self._grid_correction = grid_correction
 
         self.verbose = verbose
         self.visual = visual
@@ -193,9 +193,14 @@ class Project_Image():
 
                 im = self.get_im_section(plate_positions[grid_array], scale_factor)
 
-                self._grid_arrays[grid_array].set_grid(
-                    im, save_name=save_name,
-                    grid_correction=self._grid_corrections)
+                if self._grid_correction is None:
+                    self._grid_arrays[grid_array].set_grid(
+                        im, save_name=save_name,
+                        grid_correction=None)
+                else:
+                    self._grid_arrays[grid_array].set_grid(
+                        im, save_name=save_name,
+                        grid_correction=self._grid_correction[grid_array])
 
     def load_image(self, image_dict=None):
 

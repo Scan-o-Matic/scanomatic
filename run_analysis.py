@@ -78,6 +78,14 @@ if __name__ == "__main__":
                         help=("Boolean used to invoke manually set gridding,"
                               " default is false"), default=False, type=bool)
 
+    parser.add_argument("-gc", "--grid-correction", dest="grid_correction",
+                        default=None,
+                        help=("Tuple of the number of grid spacings for" +
+                              " each dimension that the grid center should" +
+                              " be moved, e.g. "
+                              "'[-1,0::0,1:]' to shift first plat's rows one up"
+                              "and the third plat's columns one step"))
+
     parser.add_argument('-a', '--animate', dest="animate", default=False,
                         type=bool, help=("If True, it will produce stop "
                                          " motion images of the watched "
@@ -213,6 +221,18 @@ if __name__ == "__main__":
 
                 grid_times = []
 
+    grid_correction = None
+    if args.grid_correction is not None:
+        grid_correction = []
+        for val in args.grid_correction[1: -1].split(":"):
+            if len(val) == 0:
+                grid_correction.append(None)
+            else:
+                try:
+                    grid_correction.append(map(float, val.split(",", 1)))
+                except:
+                    parser.error("Gridding correction format unknown")
+
     #INPUT FILE LOCATION
     if args.inputfile is None:
 
@@ -285,7 +305,9 @@ if __name__ == "__main__":
         xml_format=xml_format, suppress_analysis=args.suppress,
         grid_array_settings=grid_array_settings,
         gridding_settings=gridding_settings,
-        grid_cell_settings=grid_cell_settings, logger=logger,
+        grid_cell_settings=grid_cell_settings,
+        grid_correction=grid_correction,
+        logger=logger,
         comm_id=args.comm_id)
 
     run_done = a.run()

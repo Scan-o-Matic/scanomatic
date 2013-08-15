@@ -503,7 +503,7 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
 def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
              visual=False, X=None, Y=None,
              expected_center=(100, 100), run_dev=False, dev_filter_XY=None,
-             validate_parameters=False):
+             validate_parameters=False, grid_correction=None):
     """Detects grid candidates and constructs a grid"""
 
     #print "** Will threshold"
@@ -577,20 +577,23 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
             center, spacings = get_grid_parameters_4(
                 X, Y, grid_shape, spacings=expected_spacing, center=None)
 
+            if grid_correction is not None:
+                center = tuple(a + b for a, b in
+                               zip(center, [i * j for i, j in
+                                            zip(grid_correction, spacings)]))
+
+                adjusted_values = True
+
             if validate_parameters:
                 center, spacings, adjusted_values = get_valid_parameters(
                     center, spacings, expected_center, expected_spacing)
-            else:
-                adjusted_values = False
 
     dx, dy = spacings
-
-    #print "** Got grid parameters"
 
     grid = build_grid_from_center(X, Y, center, dx, dy, grid_shape)
     #Reshape to fit old scheme
     gX, gY = grid
-    grid = np.c_[gX, gY].reshape(grid_shape[0], grid_shape[1], 2, order='A')
+    #grid = np.c_[gX, gY].reshape(grid_shape[0], grid_shape[1], 2, order='A')
 
     """
     x_offset, y_offset, dx, dy = get_grid_parameters(X, Y,
@@ -616,6 +619,8 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
         plt.xlim(0, im_filtered.shape[1])
         plt.show()
 
+    """
     grid, adjusted_values = get_validated_grid(im, grid, dy, dx, adjusted_values)
+    """
 
     return grid, X, Y, center, spacings, adjusted_values
