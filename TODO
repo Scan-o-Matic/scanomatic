@@ -4,6 +4,10 @@
 
 --- HOT ---
 
+*** Test blob position over time of analysis.
+
+	* If static, test static blob.
+
 *** FIRST PASS needs to store DPI setting because analysis needs to know how
     to scale history and default expectencies accordingly.
 

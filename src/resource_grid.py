@@ -272,7 +272,8 @@ def get_heatmap(data, votes, weights, sigma):
     if sigma > 0:
         heatmap = ndimage.gaussian_filter(heatmap, sigma)
 
-    heatmap /= heatmap.sum()
+    if heatmap.sum() > 0:
+        heatmap /= heatmap.sum()
 
     return heatmap
 

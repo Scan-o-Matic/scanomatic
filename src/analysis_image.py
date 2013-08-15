@@ -545,7 +545,6 @@ class Project_Image():
                 self._grid_arrays[watch_colony[0]]._grid_cell_size
 
             self.watch_source = self._grid_arrays[watch_colony[0]].watch_source
-            self.watch_scaled = self._grid_arrays[watch_colony[0]].watch_scaled
             self.watch_blob = self._grid_arrays[watch_colony[0]].watch_blob
 
             self.watch_results = \

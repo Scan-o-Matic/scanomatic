@@ -59,14 +59,16 @@ class Grid_Array():
 
         if parent is None:
 
-            self.logger = logger.Log_Garbage_Collector()
+            self.logger = logger.Fallback_Logger()
+            #self.logger = logging.getLogger("Grid Array {0}".format(identifier))
             self._paths = resource_path.Paths(
                 src_path=os.path.abspath(__file__))
             self.fixture = None
 
         else:
 
-            self.logger = self._parent.logger
+            self.logger = logger.Fallback_Logger()
+            #self.logger = logging.getLogger("Grid Array {0}".format(identifier))
             self._paths = parent._paths
             self.fixture = parent.fixture
 
@@ -91,7 +93,6 @@ class Grid_Array():
         """
 
         self.watch_source = None
-        self.watch_scaled = None
         self.watch_blob = None
         self.watch_results = None
 
@@ -264,7 +265,7 @@ class Grid_Array():
         self.logger.info("Expecting center {0} and Spacings {1}".format(
             expected_center, expected_spacings))
 
-        if self._grid is None:
+        if self._grid is None or np.isnan(spacings).any():
             self.logger.error(
                 "Could not produce a grid for im-shape {0}".format(im.shape))
 
@@ -280,6 +281,11 @@ class Grid_Array():
 
                 self.logger.critical('Saved image slice to {0}'.format(
                     error_file))
+
+            else:
+
+                self.logger.critical("Won't save failed gridding {0}".format(
+                    error_file) + ", file allready exists")
 
             return False
 
@@ -614,7 +620,6 @@ class Grid_Array():
 
         #Resetting the values of the indepth watch colony
         self.watch_source = None
-        self.watch_scaled = None
         self.watch_blob = None
         self.watch_results = None
 
@@ -748,7 +753,7 @@ class Grid_Array():
                             self.watch_blob = \
                                 _cur_gc.get_item('blob').filter_array.copy()
 
-                            self.watch_scaled = \
+                            self.watch_source = \
                                 _cur_gc.get_item('blob').grid_array.copy()
 
                             self.watch_results = self._features[row][col]

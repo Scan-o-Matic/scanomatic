@@ -512,9 +512,13 @@ class Analysis(object):
             # IF WATCHING A COLONY UPDATE WATCH IMAGE
             #
 
-            if self._graph_watch is not None:
+            if (self._graph_watch is not None and
+                    project_image.watch_source is not None and
+                    project_image.watch_blob is not None):
 
-                watch_graph.add_image()
+                watch_graph.add_image(
+                    project_image.watch_source,
+                    project_image.watch_blob)
 
             #
             # USER INFO
