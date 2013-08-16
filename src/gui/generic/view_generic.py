@@ -25,6 +25,7 @@ import types
 
 #import src.resource_scanner as resource_scanner
 import src.resource_logger as resource_logger
+import src.resource_image as resource_image
 
 #
 # STATIC GLOBALS
@@ -217,6 +218,30 @@ def claim_a_scanner_dialog(window, text, image_path, scanners):
         return scanner_names[resp]
     else:
         return None
+
+
+def get_grayscale_combo():
+
+    def _get_text(self):
+        row = self.get_active()
+        if row >= 0:
+            m = self.get_model()
+            return m[row][0]
+        else:
+            return None
+
+    gs = gtk.combo_box_new_text()
+    gs.get_text = types.MethodType(_get_text, gs)
+
+    model = gs.get_model()
+
+    for key in resource_image.GRAYSCALES:
+        model.append(key)
+
+    if len(resource_image.GRAYSCALES) > 0:
+        gs.set_active(0)
+
+    return gs
 
 
 def get_fixtures_combo():

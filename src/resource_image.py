@@ -29,6 +29,38 @@ import matplotlib.pyplot as plt
 import resource_signal as r_signal
 
 #
+# GLOBALS
+#
+
+DEFAULT_GRAYSCALE = 'Kodak'
+
+GRAYSCALES = {
+    'Kodak': {
+        'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
+                    38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
+        'width': 55,
+        'min_width': 30,
+        'sections': 23,
+        'lower_than_half_width': 350,
+        'higher_than_half_width': 150,
+        'length': 28.3,  # 28.57 was previous
+    },
+    'SilverFast': {
+        'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
+                    38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
+        'width': 58,
+        'min_width': 30,
+        'sections': 23,
+        'lower_than_half_width': 350,
+        'higher_than_half_width': 150,
+        'length': 29.565217391,
+    }
+}
+
+GRAYSCALE_SCALABLE = ('width', 'min_width', 'lower_than_half_width',
+                      'higher_than_half_width', 'length')
+
+#
 # FUNCTIONS
 #
 
@@ -433,34 +465,15 @@ class Analyse_Grayscale(object):
 
     def __init__(self, target_type="Kodak", image=None, scale_factor=1.0):
 
+        global GRAYSCALES, GRAYSCALE_SCALABLE
         self.grayscale_type = target_type
-        self._grayscale_dict = {
-            'Kodak': {
-                'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
-                            38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
-                'width': 55 * scale_factor,
-                'min_width': 30 * scale_factor,
-                'sections': 23,
-                'lower_than_half_width': 350 * scale_factor,
-                'higher_than_half_width': 150 * scale_factor,
-                'length': 28.3 * scale_factor,  # 28.57 was previous
-            },
-            'SilverFast': {
-                'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
-                            38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
-                'width': 58 * scale_factor,
-                'min_width': 30 * scale_factor,
-                'sections': 23,
-                'lower_than_half_width': 350 * scale_factor,
-                'higher_than_half_width': 150 * scale_factor,
-                'length': 29.565217391,
-            }
-        }
 
-        for k in self._grayscale_dict[target_type]:
+        for k in GRAYSCALES[target_type]:
 
             setattr(self, "_grayscale_{0}".format(k),
-                    self._grayscale_dict[target_type][k])
+                    target_type in GRAYSCALE_SCALABLE and
+                    GRAYSCALES[target_type][k] * scale_factor or
+                    GRAYSCALES[target_type][k])
 
         self._img = image
         np.save("tmp_img.npy", image)

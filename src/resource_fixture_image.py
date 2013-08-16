@@ -334,7 +334,7 @@ class Fixture_Image(object):
 
             gs_type = self.fixture_reference.get('grayscale_type')
             if gs_type is None:
-                gs_type = "Kodak"
+                gs_type = resource_image.DEFAULT_GRAYSCALE
             return gs_type
         else:
 
@@ -346,6 +346,11 @@ class Fixture_Image(object):
                    'gs-coords', 'greyscale-area', 'greyscale-coords']:
 
             self.fixture_current['grayscale_area'] = val
+
+        elif key in ['grayscale_type']:
+
+            if val in resource_image.GRAYSCALES:
+                self.fixture_current['grayscale_type'] = val
 
         elif key in ['grayscale', 'greyscale', 'gs']:
 
@@ -533,6 +538,12 @@ class Fixture_Image(object):
             "LA", debug_level='info')
 
         self.analyse_grayscale()
+
+        output_function(
+            'Fixture calibration',
+            "Grayscale ({0}) analysed (acc-time: {1} s)".format(
+                self['grayscale_type'],
+                time.time() - t), 'LA', debug_level='info')
 
         output_function(
             'Fixture calibration',

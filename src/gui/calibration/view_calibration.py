@@ -378,6 +378,10 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         self.has_grayscale.connect("clicked", controller.toggle_grayscale)
         right_side.pack_start(self.has_grayscale, False, False, PADDING_SMALL)
 
+        self.grayscaleType = get_grayscale_combo()
+        self.grayscaleType.connect("changed", controller.setGrayscaleType)
+        right_side.pack_start(self.grayscaleType, False, False, PADDING_SMALL)
+
         ##Number of plates
         hbox = gtk.HBox(False, 0)
         label = gtk.Label()

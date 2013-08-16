@@ -26,30 +26,48 @@ import src.gui.generic.controller_generic as controller_generic
 
 import src.resource_fixture_image as resource_fixture_image
 import src.resource_scanner as resource_scanner
-import src.resource_path as resource_path
-import src.resource_app_config as resource_app_config
+#import src.resource_path as resource_path
+#import src.resource_app_config as resource_app_config
 
 #
 # EXCEPTIONS
 #
 
-class Bad_Stage_Call(Exception): pass
-class No_View_Loaded(Exception): pass
-class Not_Yet_Implemented(Exception): pass
-class Impossible_Fixture(Exception): pass
-class UnDocumented_Error(Exception): pass
-class Scan_Failed(Exception): pass
+
+class Bad_Stage_Call(Exception):
+    pass
+
+
+class No_View_Loaded(Exception):
+    pass
+
+
+class Not_Yet_Implemented(Exception):
+    pass
+
+
+class Impossible_Fixture(Exception):
+    pass
+
+
+class UnDocumented_Error(Exception):
+    pass
+
+
+class Scan_Failed(Exception):
+    pass
 
 #
 # CLASSES
 #
 
+
 class Calibration_Controller(controller_generic.Controller):
 
     def __init__(self, main_controller, logger=None):
 
-        super(Calibration_Controller, self).__init__(main_controller,
-                logger=logger)
+        super(Calibration_Controller, self).__init__(
+            main_controller, logger=logger)
 
         self._specific_controller = None
 
@@ -86,13 +104,14 @@ class Calibration_Controller(controller_generic.Controller):
 
         self.add_subcontroller(self._specific_controller)
 
+
 class Fixture_Controller(controller_generic.Controller):
 
     def __init__(self, parent, view=None, model=None,
-        specific_model=None, logger=None):
+                 specific_model=None, logger=None):
 
-        super(Fixture_Controller, self).__init__(parent,
-            view=view, model=model, logger=logger)
+        super(Fixture_Controller, self).__init__(
+            parent, view=view, model=model, logger=logger)
 
         tc = self.get_top_controller()
         self._paths = tc.paths
@@ -123,38 +142,33 @@ class Fixture_Controller(controller_generic.Controller):
 
         if stage_call == 'fixture-select':
 
-            top = view_calibration.Fixture_Select_Top(self,
-                m, sm)
-            stage = view_calibration.Fixture_Select_Stage(self,
-                m, sm)
+            top = view_calibration.Fixture_Select_Top(self, m, sm)
+            stage = view_calibration.Fixture_Select_Stage(self, m, sm)
 
         elif stage_call == 'marker-calibration':
 
             self.set_unsaved()
             self.get_top_controller().fixtures.fill_model(sm)
 
-            top = view_calibration.Fixture_Marker_Calibration_Top(self,
-                m, sm)
+            top = view_calibration.Fixture_Marker_Calibration_Top(self, m, sm)
 
             if len(sm['marker-positions']) >= 3:
                 top.set_allow_next(True)
 
-            stage = view_calibration.Fixture_Marker_Calibration_Stage(self,
-                m, sm)
+            stage = view_calibration.Fixture_Marker_Calibration_Stage(
+                self, m, sm)
 
         elif stage_call == 'segmentation':
 
-            top = view_calibration.Fixture_Segmentation_Top(self,
-                m, sm)
+            top = view_calibration.Fixture_Segmentation_Top(self, m, sm)
 
-            stage = view_calibration.Fixture_Segmentation_Stage(self,
-                m, sm)
+            stage = view_calibration.Fixture_Segmentation_Stage(self, m, sm)
 
         elif stage_call == 'save':
 
             top = view_calibration.Fixture_Save_Top(self, m, sm)
 
-            stage = view_calibration.Fixture_Save_Stage(self, m , sm)
+            stage = view_calibration.Fixture_Save_Stage(self, m, sm)
 
             self.save_fixture()
 
@@ -206,7 +220,6 @@ class Fixture_Controller(controller_generic.Controller):
             if allow_next:
                 sm['fixture'] = treemodel[rows[0]][0]
             sm['new_fixture'] = False
-
 
         stage.set_bad_name_warning(warn)
         top.set_allow_next(allow_next)
@@ -277,7 +290,8 @@ class Fixture_Controller(controller_generic.Controller):
                     if plate is not None:
                         sm['plate-coords'][plate] = None
 
-            self._view.get_stage().update_segment(sm['active-segment'],
+            self._view.get_stage().update_segment(
+                sm['active-segment'],
                 scale=sm['im-original-scale'])
 
     def save_fixture(self):
@@ -328,7 +342,7 @@ class Fixture_Controller(controller_generic.Controller):
                 sm['fixture-file'],
                 fixture_directory=self.get_top_controller().paths.fixtures,
                 image_path=sm['im-path'],
-                im_scale=(sm['im-scale']<1 and sm['im-scale'] or None),
+                im_scale=(sm['im-scale'] < 1 and sm['im-scale'] or None),
                 define_reference=True, markings_path=sm['marker-path'],
                 markings=sm['markers'])
 
@@ -357,7 +371,7 @@ class Fixture_Controller(controller_generic.Controller):
             raise err
 
         if len(sm['marker-positions']) > 3:
-            top.set_allow_next(True)
+            self._view.get_top().set_allow_next(True)
 
     def toggle_grayscale(self, widget):
 
@@ -365,14 +379,22 @@ class Fixture_Controller(controller_generic.Controller):
         stage = self._view.get_stage()
         sm = self._specific_model
         sm['grayscale-exists'] = has_gs
-        if has_gs == False:
+        if has_gs is False:
             sm['grayscale-coords'] = list()
             sm['grayscale-sources'] = None
-            stage.update_segment('G',
-                scale=sm['im-original-scale'])
+            stage.update_segment(
+                'G', scale=sm['im-original-scale'])
 
         stage.set_segments_in_list()
 
+    def setGrayscaleType(self, widget, data=None):
+
+        gsName = widget.get_text()
+        sm = self._specific_model
+        sm['grayscale-name'] = gsName
+        self.f_settings['grayscale_type'] = gsName
+        self.get_grayscale()
+        self._view.get_stage().set_segments_in_list()
 
     def set_number_of_plates(self, widget):
 
@@ -428,7 +450,7 @@ class Fixture_Controller(controller_generic.Controller):
 
         sm = self._specific_model
 
-        if len(sm['grayscale-coords']) != 2:
+        if sm['grayscale-coords'] is None or len(sm['grayscale-coords']) != 2:
 
             gs_ok = False
 
@@ -437,15 +459,15 @@ class Fixture_Controller(controller_generic.Controller):
             self.f_settings['grayscale-coords'] = sm['grayscale-coords']
 
             self.f_settings.analyse_grayscale()
-            gs_target, gs_source =  self.f_settings['grayscale']
+            gs_target, gs_source = self.f_settings['grayscale']
             print gs_source
             if gs_source is not None:
                 gs_source = np.array(gs_source)
 
-            if gs_source is not None and gs_target is not None and \
-                ((sm['grayscale-targets'] - gs_target) == 0).all() and \
-                ((gs_source[:-1] - gs_source[1:]) > 0).sum() \
-                in (0, len(gs_source) - 1):
+            if (gs_source is not None and gs_target is not None and
+                    ((sm['grayscale-targets'] - gs_target) == 0).all() and
+                    ((gs_source[:-1] - gs_source[1:]) > 0).sum()
+                    in (0, len(gs_source) - 1)):
 
                 sm['grayscale-sources'] = gs_source
                 gs_ok = True
@@ -454,7 +476,7 @@ class Fixture_Controller(controller_generic.Controller):
 
                 gs_ok = False
 
-        if gs_ok == False:
+        if gs_ok is False:
 
             sm['grayscale-sources'] = None
 
@@ -468,7 +490,7 @@ class Fixture_Controller(controller_generic.Controller):
         if sm['active-segment'] is not None:
             if event.xdata is not None and event.ydata is not None:
                 sm['active-source'] = (event.xdata / scale,
-                    event.ydata / scale)
+                                       event.ydata / scale)
             else:
                 sm['active-source'] = None
 
@@ -481,9 +503,10 @@ class Fixture_Controller(controller_generic.Controller):
             if event.xdata is not None and event.ydata is not None:
 
                 sm['active-target'] = (event.xdata / scale,
-                    event.ydata / scale)
+                                       event.ydata / scale)
 
-            coords = self.get_segment_ok(sm['active-source'],
+            coords = self.get_segment_ok(
+                sm['active-source'],
                 sm['active-target'])
 
             if coords is not None:
@@ -522,7 +545,7 @@ class Fixture_Controller(controller_generic.Controller):
             if event.xdata is not None and event.ydata is not None:
 
                 sm['active-target'] = (event.xdata / scale,
-                    event.ydata / scale)
+                                       event.ydata / scale)
 
             self._view.get_stage().draw_active_segment(scale=scale)
 
@@ -538,7 +561,6 @@ class Fixture_Controller(controller_generic.Controller):
 
         sm = self._specific_model
         plates = sm['plate-coords']
-        im = sm['im']
 
         p_indices = [i for i, p in enumerate(plates) if p is not None]
         p_names = [pn + 1 for pn in range(len(p_indices))]
@@ -548,8 +570,9 @@ class Fixture_Controller(controller_generic.Controller):
 
             if pn == 1:
 
-                tmp_eval = np.array([p[0][0] + p[0][1] \
-                    for i, p in enumerate(plates) if i in p_indices])
+                tmp_eval = np.array(
+                    [p[0][0] + p[0][1] for i, p in enumerate(plates)
+                     if i in p_indices])
 
             elif pn == 2:
 
@@ -566,11 +589,8 @@ class Fixture_Controller(controller_generic.Controller):
             p_new_indices.append(p_indices[tmp_eval.argmax()])
             p_indices.remove(p_new_indices[-1])
 
-
         new_plates = [None] * 4
         for new_index, old_index in enumerate(p_new_indices):
             new_plates[new_index] = plates[old_index]
 
         sm['plate-coords'] = new_plates
-
-
