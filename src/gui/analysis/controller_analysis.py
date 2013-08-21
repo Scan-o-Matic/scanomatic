@@ -29,8 +29,8 @@ from ConfigParser import ConfigParser
 import model_analysis
 import view_analysis
 
+import src.gui.generic.view_generic as view_generic
 import src.gui.generic.controller_generic as controller_generic
-
 import src.resource_os as resource_os
 import src.resource_project_log as resource_project_log
 import src.analysis_wrapper as a_wrapper
@@ -386,8 +386,7 @@ class Analysis_Controller(controller_generic.Controller):
                     if image in specific_model['auto-transpose']:
 
                         specific_model['plate-im-array'] = \
-                            specific_model['auto-transpose'][image]\
-                            .get_transposed_im(
+                            specific_model['auto-transpose'][image](
                                 specific_model['image-array'][
                                     coords[0][1]: coords[1][1],
                                     coords[0][0]: coords[1][0]])
@@ -529,7 +528,7 @@ class Analysis_Inspect(controller_generic.Controller):
             sm['filezilla'] = True
         else:
 
-            if view_analysis.dialog(
+            if view_generic.dialog(
                     self.get_window(),
                     self._model['analysis-stage-inspect-upload-install'],
                     'info',
@@ -548,7 +547,7 @@ class Analysis_Inspect(controller_generic.Controller):
 
                 else:
 
-                    view_analysis.dialog(
+                    view_generic.dialog(
                         self.get_window(),
                         self._model['analysis-stage-inspect-upload-error'],
                         'error',
@@ -584,9 +583,17 @@ class Analysis_Inspect(controller_generic.Controller):
     def _look_for_grid_images(self):
 
         sm = self._specific_model
-        im_pattern = os.sep.join((
-            sm['analysis-dir'],
-            self._paths.experiment_grid_image_pattern))
+        if os.path.isdir(sm['analysis-dir']):
+            analysisBase = sm['analysis-dir']
+        elif os.path.isdir(os.path.dirname(sm['analysis-run-file'])):
+            analysisBase = os.path.dirname(sm['analysis-run-file'])
+        else:
+            #Are there other ways of finding the stuff?
+            analysisBase = sm['analysis-dir']
+
+        im_pattern = os.path.join(
+            analysisBase,
+            self._paths.experiment_grid_image_pattern)
 
         sm['grid-images'] = []
         if sm['pinnings'] is not None:
@@ -762,7 +769,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         m = self._model
         sm = self._specific_model
 
-        dir_list = view_analysis.select_dir(
+        dir_list = view_generic.select_dir(
             title=m['analysis-stage-first-dir'],
             start_in=sm['output-directory'])
 
@@ -1035,6 +1042,70 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         return ret
 
+    def setManualNormNewGrayscale(self, grayscaleName):
+
+        if grayscaleName is None:
+
+            self._specific_model['manual-calibration-target'] = list()
+            self._specific_model['manual-calibration-grayscaleName'] = None
+
+        else:
+
+            self._specific_model['manual-calibration-target'] = \
+                resource_image.GRAYSCALES[grayscaleName]['targets']
+            self._specific_model['manual-calibration-grayscaleName'] = \
+                grayscaleName
+            self._manualGrayscale()
+
+    def _manualGrayscale(self):
+
+        sm = self._specific_model
+        mc = sm['manual-calibration-positions']
+
+        if (mc is None or len(mc) != 1 or
+                sm['manual-calibration-grayscaleName'] is None or
+                sm['manual-calibration-target'] is None):
+
+            return False
+
+        gs = resource_image.Analyse_Grayscale(
+            target_type=sm['manual-calibration-grayscaleName'])
+        coords = mc[-1]
+        gsIm = sm['image-array'][
+            coords[0][1]: coords[1][1],
+            coords[0][0]: coords[1][0]]
+        gs.get_grayscale(gsIm)
+        sm['manual-calibration-values'] = gs.get_source_values()
+        if sm['manual-calibration-values'] is not None:
+            self.set_auto_grayscale(
+                sm['manual-calibration-values'],
+                sm['manual-calibration-target'])
+            self._view.get_stage().set_measures_from_lists(
+                sm['manual-calibration-values'],
+                sm['manual-calibration-target'])
+
+    def setManualNormWithGrayScale(self, useGrayscale):
+
+        sm = self._specific_model
+        sm['manual-calibration-values'] = list()
+        sm['manual-calibration-grayscale'] = useGrayscale
+        sm['manual-calibration-positions'] = list()
+        stage = self._view.get_stage()
+        stage.clear_measures()
+        stage.remove_all_patches()
+
+    def updateManualCalibrationValue(self, dtype, row, newValue):
+
+        if row >= 0:
+            sm = self._specific_model
+            if dtype == 'source':
+                sm['manual-calibration-values'][row] = float(newValue)
+            else:
+                sm['manual-calibration-target'][row] = float(newValue)
+
+            if sm['manual-calibration-grayscale']:
+                self._manualGrayscale()
+
     def get_previously_detected(self, view, specific_model):
 
         image = specific_model['images-list-model'][
@@ -1082,8 +1153,14 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             specific_model['plate-coords'] = plate_coords
 
-            self.set_auto_grayscale(data['grayscale_values'],
-                                    data[gs_i_key])
+            if data[gs_i_key] is not None:
+                grayscaleTarget = data[gs_i_key]
+            else:
+                grayscaleTarget = self.fixture['grayscaleTarget']
+
+            self.set_auto_grayscale(
+                data['grayscale_values'],
+                grayscaleTarget)
 
     def set_no_auto_norm(self):
 
@@ -1095,14 +1172,18 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         specific_model['fixture-name'] = fixture_name
 
-    def set_auto_grayscale(self, vals, indices):
+    def set_auto_grayscale(self, grayscaleSource, grayscaleTarget):
 
         sm = self._specific_model
 
-        sm['auto-transpose'][sm['image']] = \
-            resource_image.Image_Transpose(
-                gs_values=vals,
-                gs_indices=indices)
+        """
+        if hasattr(self, "fixture"):
+            print self.fixture['grayscale_type'], grayscaleSource, grayscaleTarget
+            print self.fixture['grayscaleSource'], self.fixture['grayscaleTarget']
+        """
+        sm['auto-transpose'][sm['image']] = resource_image.Image_Transpose(
+            sourceValues=grayscaleSource,
+            targetValues=grayscaleTarget)
 
         self.get_view().get_top().set_allow_next(True)
 
@@ -1110,8 +1191,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         if self.fixture is not None:
 
-            gs_targets, gs = self.fixture['grayscale']
-            self.set_auto_grayscale(gs, gs_targets)
+            #gs_targets, gs = self.fixture['grayscale']
+            gs_target = self.fixture['grayscaleTarget']
+            gs_source = self.fixture['grayscaleSource']
+            self.set_auto_grayscale(gs_source, gs_target)
             self.get_view().get_stage().set_image()
 
             pl = self.fixture.get_plates()
@@ -1158,7 +1241,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
     def load_previous_log_file(self, widget, view):
 
-        log_file = view_analysis.select_file(
+        log_file = view_generic.select_file(
             self._model['analysis-stage-log-title'],
             multiple_files=False,
             file_filter=
@@ -1199,7 +1282,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
     def set_new_images(self, widget, view, *args, **kwargs):
 
-        image_list = view_analysis.select_file(
+        image_list = view_generic.select_file(
             self._model['analysis-stage-image-selection-file-dialogue-title'],
             multiple_files=True,
             file_filter=
@@ -1262,20 +1345,21 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         sm = self._specific_model
 
-        if sm['stage'] == 'manual-calibration':
+        if (sm['stage'] == 'manual-calibration' and
+                sm['manual-calibration-grayscale'] is False):
 
             mcv = sm['manual-calibration-values']
 
             val = stuff[0]
 
-            for i in xrange(len(mcv[-1])):
+            for i, calVal in enumerate(mcv):
 
-                if val == str(mcv[-1][i]):
+                if val == str(calVal):
 
-                    del sm['manual-calibration-positions'][-1][i]
-                    del mcv[-1][i]
+                    del sm['manual-calibration-positions'][i]
+                    del mcv[i]
 
-                    if len(mcv[-1]) == len(mcv[0]) and len(mcv[-1]) >= 1:
+                    if len(mcv) >= 1:
 
                         self._view.get_top().set_allow_next(True)
 
@@ -1305,19 +1389,18 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
                 mc = sm['manual-calibration-positions']
 
-                if len(mc) == sm['image']:
+                if len(mc) > 0 and len(mc[-1]) == 1:
 
-                    mc.append(list())
-
-                if len(mc[-1]) > 0 and len(mc[-1][-1]) == 1:
-
-                    mc[-1][-1][0] = pos
+                    mc[-1][0] = pos
 
                 else:
 
-                    mc[-1].append([pos])
+                    mc.append([pos])
 
-                self._view.get_stage().place_patch_origin(pos)
+                stage = self._view.get_stage()
+                if sm['manual-calibration-grayscale']:
+                    stage.remove_all_patches()
+                stage.place_patch_origin(pos)
 
             elif self._specific_model['stage'] == 'sectioning':
 
@@ -1385,7 +1468,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
     def man_detect_mouse_release(self, event, run_analysis=True):
 
-        pos = (event.xdata, event.ydata)
+        pos = (event.ydata, event.xdata)
 
         if None not in pos and event.button == 1:
 
@@ -1414,7 +1497,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
     def man_detect_mouse_press(self, event):
 
-        pos = (event.xdata, event.ydata)
+        pos = (event.ydata, event.xdata)
         if None not in pos and event.button == 1:
 
             stage = self._view.get_stage()
@@ -1447,7 +1530,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             if self._specific_model['stage'] == 'manual-calibration':
 
-                mc = self._specific_model['manual-calibration-positions'][-1]
+                mc = self._specific_model['manual-calibration-positions']
 
                 if event.xdata is None or event.ydata is None:
 
@@ -1467,7 +1550,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
                     self._view.get_stage().move_patch_target(w, h)
 
-                    self.set_manual_calibration_value(mc[-1])
+                    if self._specific_model['manual-calibration-grayscale']:
+                        self._manualGrayscale()
+                    else:
+                        self.set_manual_calibration_value(mc[-1])
 
             elif self._specific_model['stage'] == 'sectioning':
 
@@ -1583,18 +1669,14 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         mcv = self._specific_model['manual-calibration-values']
 
-        if len(mcv) == self._specific_model['image']:
-
-            mcv.append(list())
-
-        mcv[-1]. append(
+        mcv. append(
             self._specific_model['image-array'][
                 coords[0][1]: coords[1][1],
                 coords[0][0]: coords[1][0]].mean())
 
-        self._view.get_stage().add_measure(mcv[-1][-1])
+        self._view.get_stage().add_measure(mcv[-1], len(mcv))
 
-        if len(mcv[-1]) == len(mcv[0]) and len(mcv[-1]) >= 1:
+        if len(mcv) >= 1:
 
             self._view.get_top().set_allow_next(True)
 
@@ -1615,10 +1697,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             mc = sm['manual-calibration-positions']
 
-            if (mc is not None and mc[-1] is not None and len(mc[-1]) > 0
-                    and len(mc[-1][-1]) == 1):
+            if (mc is not None and len(mc) > 0
+                    and len(mc[-1]) == 1):
 
-                origin_pos = mc[-1][-1][0]
+                origin_pos = mc[-1][0]
                 w = pos[0] - origin_pos[0]
                 h = pos[1] - origin_pos[1]
                 self._view.get_stage().move_patch_target(w, h)
@@ -1767,7 +1849,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
     def set_log_file(self, widget, log_files=None):
 
         if log_files is None:
-            log_files = view_analysis.select_file(
+            log_files = view_generic.select_file(
                 self._model['analysis-stage-project-select-log-file-dialog'],
                 multiple_files=False, file_filter=
                 self._model['analysis-stage-project-select-log-file-filter'],
@@ -2109,7 +2191,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
                 #SHOULD BE IN RESOURCE
                 blob = pm['plate-section-grid-cell'].get_item(
-                    "blob").filter_array
+                    "blob").filter_array.astype(np.bool)
                 bg = pm['plate-section-grid-cell'].get_item(
                     "background").filter_array
                 bg_mean = pm['plate-section-im-array'][bg].mean()
@@ -2125,6 +2207,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
             else:
 
                 features = pm['plate-section-features']
+                self._logger.debug("Saving info {0}".format(features))
 
                 for compartment in pm['log-interests'][0]:
 
@@ -2157,7 +2240,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
     def save_data(self, widget):
 
-        file_name = view_analysis.save_file(
+        file_name = view_generic.save_file(
             self._general_model['analysis-stage-log-save-dialog'],
             multiple_files=False,
             file_filter=self._general_model['analysis-stage-log-save-file-filter'],
@@ -2186,7 +2269,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
             if file_exists:
 
-                file_exists = not(view_analysis.overwrite(
+                file_exists = not(view_generic.overwrite(
                     self._general_model['analysis-stage-log-overwrite'],
                     file_name, self.get_window()))
 
@@ -2245,14 +2328,14 @@ class Analysis_Log_Controller(controller_generic.Controller):
                 file_saved = True
                 self._parent.set_saved()
 
-                view_analysis.dialog(
+                view_generic.dialog(
                     self.get_window(),
                     self._general_model['analysis-stage-log-saved'],
                     d_type='info')
 
         if file_saved is False:
 
-            view_analysis.dialog(
+            view_generic.dialog(
                 self.get_window(),
                 self._general_model['analysis-stage-log-not-saved'],
                 d_type='warning')

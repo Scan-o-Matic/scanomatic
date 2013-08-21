@@ -302,9 +302,17 @@ class Fixture_Image(object):
 
             return self.fixture_name
 
-        elif key in ["grayscale", "greyscale"]:
+        elif key in ["grayscaleTarget"]:
 
-            return self._gs_indices, self._gs_values
+            if self._gs_indices is not None:
+                return self._gs_indices
+            else:
+                return resource_image.GRAYSCALES[self['grayscale_type']][
+                    'targets']
+
+        elif key in ["grayscaleSource"]:
+
+            return self._gs_values
 
         elif key in ["markers", "marks"]:
 
@@ -334,6 +342,7 @@ class Fixture_Image(object):
 
             gs_type = self.fixture_reference.get('grayscale_type')
             if gs_type is None:
+                self._logger.warning("Using default Grayscale")
                 gs_type = resource_image.DEFAULT_GRAYSCALE
             return gs_type
         else:
@@ -819,9 +828,9 @@ class Fixture_Image(object):
             scale_factor=self.im_original_scale)
 
         gs_indices = ag.get_target_values()
+        self._gs_indices = gs_indices
         gs_values = ag.get_source_values()
         self._gs_values = gs_values
-        self._gs_indices = gs_indices
 
         if self._define_reference:
 

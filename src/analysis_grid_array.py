@@ -15,7 +15,7 @@ __status__ = "Development"
 #
 
 import numpy as np
-from scipy.optimize import fsolve
+#from scipy.optimize import fsolve
 import os
 from matplotlib import pyplot as plt
 
@@ -27,6 +27,7 @@ import resource_grid
 import analysis_grid_cell as grid_cell
 import resource_logger as logger
 import resource_path
+import resource_image
 
 #
 # EXCEPTIONS
@@ -122,7 +123,7 @@ class Grid_Array():
             grid_cell_settings = dict()
 
         grid_cell_settings['polynomial_coeffs'] = \
-            self.get_polynomial_coeffs()
+            self.get_calibration_polynomial_coeffs()
 
         self.grid_cell_settings = grid_cell_settings
 
@@ -133,7 +134,7 @@ class Grid_Array():
 
         self._features = []
 
-        self.R = None
+        self._R = None
         self._first_analysis = True
 
         self._old_blob_img = None
@@ -149,6 +150,18 @@ class Grid_Array():
 
         if pinning_matrix is not None:
             self._init_pinning_matrix()
+
+    #
+    # PROPERTIES
+    #
+
+    @property
+    def features(self):
+        return self._features
+
+    @property
+    def R(self):
+        return self._R
 
     #
     # SET functions
@@ -444,7 +457,7 @@ class Grid_Array():
 
         return gh
 
-    def get_polynomial_coeffs(self):
+    def get_calibration_polynomial_coeffs(self):
 
         polynomial_coeffs = None
 
@@ -478,6 +491,7 @@ class Grid_Array():
 
         return polynomial_coeffs
 
+    '''
     def get_p3(self, x):
         """
             returns the solution to:
@@ -567,7 +581,7 @@ class Grid_Array():
                 tf_matrix.append(x)
 
         return tf_matrix
-
+    '''
     def _get_grid_to_im_axis_mapping(self, pm, im):
 
         pm_max_pos = int(max(pm) == pm[1])
@@ -581,6 +595,7 @@ class Grid_Array():
 
         return im_axis_order
 
+    '''
     def _get_transformation_matrix_for_analysis(
             self, gs_values=None, gs_indices=None, gs_fit=None):
 
@@ -604,7 +619,6 @@ class Grid_Array():
                 gs_values=gs_values, gs_indices=gs_indices)
 
         return transformation_matrix
-
     def _set_tm_im(self, source, target, ul, tm, c_row, c_column):
 
         #wh          Width and Height
@@ -619,10 +633,26 @@ class Grid_Array():
                 source_view.shape, target.shape, source.shape, ul, wh))
 
         target[:, :] = tm[source_view]
+    '''
 
-    def get_analysis(self, im, gs_values=None, gs_fit=None, gs_indices=None,
-                     identifier_time=None, watch_colony=None,
-                     save_grid_name=None, grid_correction=None):
+    def _set_image_transposition(self, source, target, ul, wh,
+                                 imTransposePoly):
+
+        sourceView = source[ul[0]: ul[0] + wh[0], ul[1]: ul[1] + wh[1]]
+
+        if sourceView.shape != target.shape:
+
+            raise Invalid_Grid(
+                "Grid Cell @ {0} has wrong size ({1} != {2})".format(
+                    ul, sourceView.shape, target.shape))
+
+        target[...] = imTransposePoly(sourceView)
+
+    def doAnalysis(
+            self, im, grayscaleSource=None, grayscaleTarget=None,
+            grayscalePolyCoeffs=None,
+            identifier_time=None, watch_colony=None,
+            save_grid_name=None, grid_correction=None):
 
         #Resetting the values of the indepth watch colony
         self.watch_source = None
@@ -634,8 +664,17 @@ class Grid_Array():
             self._identifier[0] = identifier_time
 
         #Get an image-specific inter-scan-neutral transformation dictionary
+        '''
         tm = self._get_transformation_matrix_for_analysis(
             gs_values=gs_values, gs_fit=gs_fit, gs_indices=gs_indices)
+        '''
+        try:
+            transposePoly = resource_image.Image_Transpose(
+                sourceValues=grayscaleSource,
+                targetValues=grayscaleTarget,
+                polyCoeffs=grayscalePolyCoeffs)
+        except:
+            transposePoly = None
 
         #Fast access to the pinning matrix
         pm = self._pinning_matrix
@@ -714,9 +753,11 @@ class Grid_Array():
                     #
 
                     #Set the tm_im for the region
-                    if tm is not None:
+                    if transposePoly is not None:
 
-                        self._set_tm_im(im, tm_im, rc_min_tuple, tm, row, col)
+                        #self._set_tm_im(im, tm_im, rc_min_tuple, tm, row, col)
+                        self._set_image_transposition(
+                            im, tm_im, rc_min_tuple, s_gcs, transposePoly)
 
                     else:
 

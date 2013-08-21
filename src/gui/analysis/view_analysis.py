@@ -25,24 +25,24 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 # INTERNAL DEPENDENCIES
 #
 
-from src.gui.generic.view_generic import *
+import src.gui.generic.view_generic as view_generic
 import src.resource_fixture_image as resource_fixture_image
 
 #
 # STATIC GLOBALS
 #
 
-"""Gotten from view_generic instead
-PADDING_LARGE = 10
-PADDING_MEDIUM = 4
-PADDING_SMALL = 2
-"""
+PADDING_LARGE = view_generic.PADDING_LARGE
+PADDING_MEDIUM = view_generic.PADDING_MEDIUM
+PADDING_SMALL = view_generic.PADDING_SMALL
+PADDING_NONE = view_generic.PADDING_NONE
+
 #
 # CLASSES
 #
 
 
-class Analysis(Page):
+class Analysis(view_generic.Page):
 
     def __init__(self, controller, model, top=None, stage=None):
 
@@ -62,7 +62,7 @@ class Analysis(Page):
         return widget
 
 
-class Analysis_Top_Root(Top):
+class Analysis_Top_Root(view_generic.Top):
 
     def __init__(self, controller, model):
 
@@ -96,7 +96,7 @@ class Analysis_Top_Root(Top):
         self.show_all()
 
 
-class Analysis_Inspect_Top(Top):
+class Analysis_Inspect_Top(view_generic.Top):
 
     def __init__(self, controller, model):
 
@@ -108,13 +108,13 @@ class Analysis_Inspect_Top(Top):
         self.show_all()
 
 
-class Analysis_First_Pass_Top(Top):
+class Analysis_First_Pass_Top(view_generic.Top):
 
     def __init__(self, controller, model):
 
         super(Analysis_First_Pass_Top, self).__init__(controller, model)
 
-        self._start_button = Start_Button(controller, model)
+        self._start_button = view_generic.Start_Button(controller, model)
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
         self.set_allow_next(False)
 
@@ -130,7 +130,7 @@ class Analysis_First_Pass_Top(Top):
         self._start_button.set_sensitive(val)
 
 
-class Analysis_Top_Project(Top):
+class Analysis_Top_Project(view_generic.Top):
 
     def __init__(self, controller, model):
 
@@ -139,7 +139,7 @@ class Analysis_Top_Project(Top):
         self.pack_back_button(model['analysis-top-root_button-text'],
                               controller.set_abort, None)
 
-        self._start_button = Start_Button(controller, model)
+        self._start_button = view_generic.Start_Button(controller, model)
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
         self.set_allow_next(False)
 
@@ -155,7 +155,7 @@ class Analysis_Top_Project(Top):
         self._start_button.set_sensitive(val)
 
 
-class Analysis_Top_Image_Generic(Top):
+class Analysis_Top_Image_Generic(view_generic.Top):
 
     def __init__(self, controller, model, specific_model,
                  specific_controller, next_text=None,
@@ -173,7 +173,7 @@ class Analysis_Top_Image_Generic(Top):
 
         if next_text is not None:
 
-            self._next_button = Top_Next_Button(
+            self._next_button = view_generic.Top_Next_Button(
                 controller, model, specific_model, next_text,
                 controller.set_analysis_stage, next_stage_signal)
 
@@ -310,7 +310,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
 
         m = self._model
         base_dir = self._paths.experiment_root
-        file_names = select_file(
+        file_names = view_generic.select_file(
             m['analysis-stage-inspect-analysis-popup'],
             multiple_files=False,
             file_filter=m['analysis-stage-inspect-file-filter'],
@@ -330,8 +330,9 @@ class Analysis_Inspect_Stage(gtk.VBox):
         w = self._controller.get_window()
         m = self._model
         self._warning.set_text(m['analysis-stage-inspect-warning'])
-        dialog(w, m['analysis-stage-inspect-warning'],
-               d_type='error', yn_buttons=False)
+        view_generic.dialog(
+            w, m['analysis-stage-inspect-warning'],
+            d_type='error', yn_buttons=False)
 
     def _toggle_drawing(self, widget, *args):
 
@@ -368,8 +369,8 @@ class Analysis_Inspect_Stage(gtk.VBox):
             vbox = gtk.VBox()
             label = gtk.Label(m['analysis-stage-inspect-plate-drawing'])
             hbox = gtk.HBox()
-            self._fixture_drawing = Fixture_Drawing(fixture, width=300,
-                                                    height=400)
+            self._fixture_drawing = view_generic.Fixture_Drawing(
+                fixture, width=300, height=400)
             self._fd_op1 = gtk.RadioButton(
                 label=self._fixture_drawing.get_view_state())
             self._fd_op2 = gtk.RadioButton(
@@ -424,15 +425,17 @@ class Analysis_Inspect_Stage(gtk.VBox):
 
         w = self._controller.get_window()
         m = self._model
-        dialog(w, m['analysis-stage-inspect-plate-remove-warn'],
-               d_type='error', yn_buttons=False)
+        view_generic.dialog(
+            w, m['analysis-stage-inspect-plate-remove-warn'],
+            d_type='error', yn_buttons=False)
 
     def _verify_bad(self, widget, plate):
 
         w = self._controller.get_window()
         m = self._model
-        if dialog(w, m['analysis-stage-inspect-plate-yn'].format(plate),
-                  d_type="info", yn_buttons=True):
+        if view_generic.dialog(
+                w, m['analysis-stage-inspect-plate-yn'].format(plate),
+                d_type="info", yn_buttons=True):
 
             widget.set_sensitive(False)
             if self._controller.remove_grid(plate):
@@ -676,9 +679,10 @@ class Analysis_Stage_First_Pass(gtk.VBox):
         hbox.pack_start(self._scanner, False, False, PADDING_MEDIUM)
         label = gtk.Label(model['analysis-stage-first-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
-        self._fixture = get_fixtures_combo()
-        set_fixtures_combo(self._fixture,
-                           controller.get_top_controller().fixtures)
+        self._fixture = view_generic.get_fixtures_combo()
+        view_generic.set_fixtures_combo(
+            self._fixture,
+            controller.get_top_controller().fixtures)
 
         self._fixture.connect(
             "changed", controller.update_model, None, 'fixture')
@@ -789,7 +793,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
 
                 for p in xrange(len(pinnings_list) - len(children)):
 
-                    box.pack_start(Pinning(
+                    box.pack_start(view_generic.Pinning(
                         self._controller, self._model, self,
                         len(children) + p + 1,
                         pinning=pinnings_list[p]))
@@ -854,7 +858,7 @@ class Analysis_Stage_First_Pass(gtk.VBox):
                 md['Scanner'] = 'Unknown'
                 self._scanner.set_text(md['Scanner'])
 
-            set_fixtures_active(self._fixture, name=md['Fixture'])
+            view_generic.set_fixtures_active(self._fixture, name=md['Fixture'])
             try:
                 self._plates.set_text(str(len(md['Pinning Matrices'])))
             except:
@@ -1030,7 +1034,7 @@ class Analysis_Stage_Project(gtk.VBox):
 
                 for p in xrange(len(pinnings_list) - len(children)):
 
-                    box.pack_start(Pinning(
+                    box.pack_start(view_generic.Pinning(
                         self._controller, self._model, self,
                         len(children) + p + 1,
                         pinning=pinnings_list[p]))
@@ -1369,14 +1373,24 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
         sm = self._specific_model
         self.figure_ax.cla()
+        self.progress.set_sensitive(False)
 
         if X is None or Y is None:
             if len(sm['auto-transpose']) > sm['image']:
-                X, Y = sm['auto-transpose'][sm['image']].get_source_and_target()
+                X = sm['auto-transpose'][sm['image']].source
+                Y = sm['auto-transpose'][sm['image']].target
 
         if X is not None and Y is not None:
 
+            self.figure_ax.set_xlim(0, 256)
+            self.figure_ax.set_ylim(min(Y), max(Y))
             self.figure_ax.plot(X, Y)
+
+        else:
+
+            self.figure_ax.set_xlim(0, 1)
+            self.figure_ax.set_ylim(0, 1)
+            self.figure_ax.text(0.1, 0.4, "Error, could not analyse")
 
         plt.setp(self.figure_ax.get_yticklabels(),
                  fontsize='xx-small')
@@ -1393,6 +1407,11 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
     def run_lock(self):
 
+        self.figure_ax.cla()
+        self.figure_ax.set_xlim(0, 1)
+        self.figure_ax.set_ylim(0, 1)
+        self.figure_ax.text(0.1, 0.4, "Wait while analysing...")
+        self.image_canvas.draw()
         self.run_button.set_sensitive(False)
 
     def run_release(self):
@@ -1401,6 +1420,7 @@ class Analysis_Stage_Auto_Norm_and_Section(gtk.VBox):
 
     def set_progress(self, value):
 
+        self.progress.set_sensitive(True)
         f = self.progress.get_fraction()
 
         if 1.0 > f > 0.97:
@@ -1482,7 +1502,9 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
         hbox = gtk.HBox(0, False)
         self.pack_start(hbox, True, True, PADDING_SMALL)
 
-        self.figure = plt.Figure(figsize=(300, 400), dpi=150)
+        #TODO: Better Size
+        imSize = (400, 500)
+        self.figure = plt.Figure(figsize=imSize, dpi=150)
         self.figure.add_axes()
         self.figure_ax = self.figure.gca()
         self.set_image()
@@ -1495,24 +1517,66 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
         self.figure_ax.get_xaxis().set_visible(False)
         self.figure_ax.get_yaxis().set_visible(False)
 
-        self.image_canvas.set_size_request(300, 400)
+        self.image_canvas.set_size_request(*imSize)
+
+        self._useGrayscale = gtk.CheckButton(label=model[
+            'analysis-stage-image-norm-manual-useGrayscale'])
+        self._useGrayscale.set_active(
+            specific_model['manual-calibration-grayscale'])
+        self._useGrayscale.connect('clicked', self._setUseGs)
+
+        self._grayscales = view_generic.get_grayscale_combo()
+        self._grayscales.set_activeGrayscale(
+            specific_model['manual-calibration-grayscaleName'])
+        self._grayscales.connect("changed", self._setUsingGs)
+
         vbox = gtk.VBox(0, False)
-        vbox.pack_start(self.image_canvas, False, False, PADDING_SMALL)
+        vbox.pack_start(self.image_canvas, True, True, PADDING_SMALL)
+        vbox.pack_start(self._useGrayscale, False, False, PADDING_SMALL)
+        vbox.pack_start(self._grayscales, False, False, PADDING_SMALL)
         hbox.pack_start(vbox, False, False, PADDING_SMALL)
 
-        self.treemodel = gtk.ListStore(str)
+        self.treemodel = gtk.ListStore(float, float)
         self.treeview = gtk.TreeView(self.treemodel)
         self.treeview.connect('key_press_event', specific_controller.handle_keypress)
         tv_cell = gtk.CellRendererText()
+        tv_cell.connect('edited', self._cell_edited, 'source')
+        tv_cell.set_property('editable', True)
         tv_column = gtk.TreeViewColumn(
             model['analysis-stage-image-norm-manual-measures'],
             tv_cell, text=0)
+        self.treeview.append_column(tv_column)
+        tv_cell = gtk.CellRendererText()
+        tv_cell.connect('edited', self._cell_edited, 'target')
+        tv_cell.set_property('editable', True)
+        tv_column = gtk.TreeViewColumn(
+            model['analysis-stage-image-norm-manual-targets'],
+            tv_cell,
+            text=1)
         self.treeview.append_column(tv_column)
         self.treeview.set_reorderable(False)
 
         hbox.pack_start(self.treeview, True, True, PADDING_SMALL)
 
         self.show_all()
+
+    def _cell_edited(self, widget, row, newValue, dtype):
+
+        self._specific_controller.updateManualCalibrationValue(
+            dtype, row, newValue)
+
+    def _setUsingGs(self, widget, data=None):
+
+        self._specific_controller.setManualNormNewGrayscale(widget.get_text())
+
+    def _setUseGs(self, widget):
+
+        useGs = widget.get_active()
+        self._grayscales.set_active(useGs)
+        self._grayscales.set_sensitive(useGs)
+        self._specific_controller.setManualNormWithGrayScale(useGs)
+        if useGs is False:
+            self._grayscales.set_activeGrayscale(useGs)
 
     def set_image(self):
 
@@ -1546,9 +1610,20 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
                     model.remove(iter)
                     self.remove_patch(pos)
 
-    def add_measure(self, val):
+    def add_measure(self, source, target):
 
-        self.treemodel.append((val,))
+        self.treemodel.append((source, target))
+
+    def clear_measures(self):
+
+        self.treemodel.clear()
+
+    def set_measures_from_lists(self, source, target):
+
+        mixList = zip(source, target)
+
+        for row in mixList:
+            self.add_measure(*row)
 
     def place_patch_origin(self, pos):
 
@@ -1569,6 +1644,14 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
         self.patches[i].remove()
         self.image_canvas.draw()
         del self.patches[i]
+
+    def remove_all_patches(self):
+
+        for p in self.patches:
+            p.remove()
+
+        self.patches = []
+        self.image_canvas.draw()
 
 
 class Analysis_Stage_Image_Sectioning(gtk.VBox):
@@ -1859,7 +1942,8 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
 
     def set_man_detect_circle(self, origo=(-10, -10), radius=0):
 
-        self._man_selection.center = origo
+        #HACK: due to inverted axis, this simply works
+        self._man_selection.center = origo[::-1]
         self._man_selection.set_radius(radius)
         self.section_image_canvas.draw()
 
@@ -1917,7 +2001,7 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
                 'plate-section-grid-cell'].get_item("blob").filter_array
 
             if blob is not None and blob.size > 0:
-                self.analysis_figure_ax.imshow(blob, cmap=plt.cm.gray_r)
+                self.analysis_figure_ax.imshow(blob, cmap=plt.cm.Greens)
                 self.analysis_image_canvas.set_size_request(150, 150)
                 self.analysis_image_canvas.draw()
 
@@ -2034,13 +2118,14 @@ class Analysis_Stage_Log(gtk.VBox):
                 self.treeview.append_column(tv_column)
         else:
 
+            totInterest = len(parent_model['log-interests'][1])
             for c_i, compartment in enumerate(parent_model['log-interests'][0]):
 
                 for m_i, measure in enumerate(parent_model['log-interests'][1]):
 
                     tv_column = gtk.TreeViewColumn(
                         "{0}: {1}".format(compartment, measure),
-                        tv_cell, text=start_col + (c_i + 1) * m_i)
+                        tv_cell, text=start_col + c_i * totInterest + m_i)
 
                     tv_column.set_resizable(True)
                     tv_column.set_reorderable(True)

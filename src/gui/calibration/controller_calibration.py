@@ -463,6 +463,10 @@ class Fixture_Controller(controller_generic.Controller):
             print gs_source
             if gs_source is not None:
                 gs_source = np.array(gs_source)
+                np.save("tmp_gs_{0}_source.npy".format(self.f_settings['name']),
+                        gs_source)
+                np.save("tmp_gs_{0}_target.npy".format(self.f_settings['name']),
+                        gs_target)
 
             if (gs_source is not None and gs_target is not None and
                     ((sm['grayscale-targets'] - gs_target) == 0).all() and

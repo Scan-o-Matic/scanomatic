@@ -107,14 +107,9 @@ class Project_Image():
             logger=self.logger, paths=self._paths,
             app_config=self._config)
 
-        self.logger.info("Fixture is {0}, version {1}".format(
-            self.fixture['name'], self.fixture['version']))
+        self._grayscaleTarget = self.fixture['grayscaleTarget']
 
         self.im = None
-
-        self.gs_indices = np.asarray(
-            [82, 78, 74, 70, 66, 62, 58, 54, 50, 46,
-             42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0])
 
         self._timestamp = None
         self.set_pinning_matrices(pinning_matrices)
@@ -243,6 +238,7 @@ class Project_Image():
             self.im = resource_analysis_support.get_first_rotated(
                 self.im, ref_shape)
 
+    """
     def get_plate(self, plate_index):
 
         if -1 < plate_index < len(self._grid_arrays):
@@ -257,6 +253,7 @@ class Project_Image():
                 plate_index, len(self._grid_arrays)))
 
             return None
+    """
 
     def get_im_section(self, features, scale_factor=4.0, im=None,
                        run_insane=False):
@@ -427,17 +424,17 @@ class Project_Image():
         return True
 
     def get_analysis(
-            self, im_path, features, grayscale_values,
+            self, im_path, features, grayscaleSource,
             watch_colony=None, save_grid_name=None,
             grid_lock=False, identifier_time=None, timestamp=None,
-            grayscale_indices=None, image_dict=None):
+            grayscaleTarget=None, image_dict=None):
 
         """
             @param im_path: An path to an image
 
             @param features: A list of pinning grids to look for
 
-            @param grayscale_values : An array of the grayscale pixelvalues,
+            @param grayscaleSource : An array of the grayscale pixelvalues,
             if submittet gs_fit is disregarded
 
             @param use_fallback : Causes fallback detection to be used.
@@ -460,16 +457,23 @@ class Project_Image():
             positions of the spikes and a quality index
         """
 
+        #
+        #   LOAD IMAGE
+        #
         if im_path is not None:
 
             self._im_path = im_path
             self.load_image(image_dict=image_dict)
 
+        #
+        #   VERIFY IMAGE FORMAT
+        #
         if self._im_loaded is True:
 
-            if len(self.im.shape) > 2:
+            if self.im.ndim > 2:
 
-                self.im = self.im[:, :, 0]
+                #TODO: This renders it a greyscale, but really stupid way
+                self.im = self.im[..., 0]
 
         else:
 
@@ -477,20 +481,21 @@ class Project_Image():
 
         self._timestamp = timestamp
 
-        if len(grayscale_values) > 3:
+        """
+        if len(grayscaleSource) > 3:
 
-            gs_values = np.array(grayscale_values)
+            grayscaleSource = np.array(grayscaleSource)
 
-            if grayscale_indices is None:
+            if grayscaleTarget is None:
 
-                gs_indices = self.gs_indices
+                grayscaleTarget = self.grayscaleTarget
 
             else:
 
-                gs_indices = np.array(grayscale_indices)
-                self.gs_indices = gs_indices
+                grayscaleTarget = np.array(grayscaleTarget)
+                self.grayscaleTarget = grayscaleTarget
 
-            gs_fit = np.polyfit(gs_indices, gs_values, 3)
+            gs_fit = np.polyfit(grayscaleTarget, grayscaleSource, 3)
 
         else:
 
@@ -498,12 +503,18 @@ class Project_Image():
 
         self.logger.debug("ANALYSIS produced gs-coefficients {0} ".format(
             gs_fit))
+        """
+
+        #
+        #   CONFIG FILE COMPATIBILITY, COORDINATE VALUE SCALINGS
+        #
 
         if self._log_version < self._config.version_first_pass_change_1:
             scale_factor = 4.0
         else:
             scale_factor = 1.0
 
+        """
         if gs_fit is not None:
 
             z3_deriv_coeffs = (np.array(gs_fit[: -1]) *
@@ -529,30 +540,38 @@ class Project_Image():
 
             return None
 
-        for grid_array in xrange(len(self._grid_arrays)):
+        """
 
-            im = self.get_im_section(features[grid_array], scale_factor)
+        if grayscaleSource is None:
+            return None
 
-            self._grid_arrays[grid_array].get_analysis(
+        if grayscaleTarget is None:
+            grayscaleTarget = self._grayscaleTarget
+
+        for plateIndex, gridArray in enumerate(self._grid_arrays):
+
+            im = self.get_im_section(features[plateIndex], scale_factor)
+
+            gridArray.doAnalysis(
                 im,
-                gs_values=gs_values,
+                grayscaleSource=grayscaleSource,
+                grayscaleTarget=grayscaleTarget,
                 watch_colony=watch_colony,
                 save_grid_name=save_grid_name,
                 identifier_time=identifier_time,
                 grid_correction=self._grid_corrections)
 
-            self.features[grid_array] = self._grid_arrays[grid_array]._features
-            self.R[grid_array] = self._grid_arrays[grid_array].R
+            self.features[plateIndex] = gridArray.features
+            self.R[plateIndex] = gridArray.R
 
         if watch_colony is not None:
 
-            self.watch_grid_size = \
-                self._grid_arrays[watch_colony[0]]._grid_cell_size
+            watchPlate = self._grid_arrays[watch_colony[0]]
+            self.watch_grid_size = watchPlate._grid_cell_size
 
-            self.watch_source = self._grid_arrays[watch_colony[0]].watch_source
-            self.watch_blob = self._grid_arrays[watch_colony[0]].watch_blob
+            self.watch_source = watchPlate.watch_source
+            self.watch_blob = watchPlate.watch_blob
 
-            self.watch_results = \
-                self._grid_arrays[watch_colony[0]].watch_results
+            self.watch_results = watchPlate.watch_results
 
         return self.features

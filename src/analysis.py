@@ -501,12 +501,12 @@ class Analysis(object):
             features = project_image.get_analysis(
                 img_dict_pointer['File'],
                 plate_positions,
-                img_dict_pointer['grayscale_values'],
+                grayscaleSource=img_dict_pointer['grayscale_values'],
                 watch_colony=self._graph_watch,
                 save_grid_name=save_grid_name,
                 identifier_time=self._image_pos,
                 timestamp=img_dict_pointer['Time'],
-                grayscale_indices=img_dict_pointer['grayscale_indices'],
+                grayscaleTarget=img_dict_pointer['grayscale_indices'],
                 image_dict=img_dict_pointer)
 
             #

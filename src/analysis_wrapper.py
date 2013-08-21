@@ -15,7 +15,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import numpy as np
+#import numpy as np
 import logging
 
 #
@@ -32,15 +32,16 @@ import analysis_image
 #
 
 _pi = analysis_image.Project_Image([])
-_ga = grid_array.Grid_Array(_pi, (0,) ,None)
-POLY = _ga.get_polynomial_coeffs()
+_ga = grid_array.Grid_Array(_pi, (0,), None)
+POLY = _ga.get_calibration_polynomial_coeffs()
 
 
 #
 # Functions
 #
 
-def get_grid_cell_from_array(arr, fallback_detection=False, center=None,
+def get_grid_cell_from_array(
+        arr, fallback_detection=False, center=None,
         radius=None, invoke_transform=False):
     """
         get_grid_cell_from_array is a convinience function to pass a section
@@ -83,7 +84,8 @@ def get_grid_cell_from_array(arr, fallback_detection=False, center=None,
                 'blob_detect': 'default', 'remember_filter': False,
                 'polynomial_coeffs': poly}
 
-    cell = grid_cell.Grid_Cell(Log_Parent(), (0,0,0), grid_cell_settings=settings)
+    cell = grid_cell.Grid_Cell(Log_Parent(), (0, 0, 0),
+                               grid_cell_settings=settings)
 
     cell.attach_analysis(center=center, radius=radius)
 
@@ -111,6 +113,7 @@ def get_grid_cell_analysis_from_array(arr):
     return cell.get_analysis()
 
 
+'''
 def get_gray_scale_transformation_matrix(gs_values):
     """
         get_gray_scale_transformation_matrix takes a list of gs-values and
@@ -123,23 +126,27 @@ def get_gray_scale_transformation_matrix(gs_values):
     return arr.get_transformation_matrix(gs_values=gs_values,
         gs_indices = np.asarray([82,78,74,70,66,62,58,54,50,46,42,38,34,30,26,
             22,18,14,10,6,4,2,0]))
-
+'''
 
 #
 # WRAPPER CLASSES
 #
 
+
 class Grid_Array(grid_array.Grid_Array):
     def __init__(self, root):
         grid_array.Grid_Array.__init__(self, root, (0,))
 
+
 class Grid_Cell(grid_cell.Grid_Cell):
     def __init__(self):
-        grid_cell.Grid_Cell.__init__(self, (0,0,0))
+        grid_cell.Grid_Cell.__init__(self, (0, 0, 0))
+
 
 class Project_Image(analysis_image.Project_Image):
     def __init__(self, im_path):
         project.Project_Image.__init__(self, im_path)
+
 
 class Log_Parent(object):
 

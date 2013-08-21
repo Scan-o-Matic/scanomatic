@@ -16,7 +16,7 @@ __status__ = "Development"
 
 from scipy.ndimage import zoom
 from scipy.signal import fftconvolve
-from scipy.optimize import fsolve
+#from scipy.optimize import fsolve
 import numpy as np
 import os
 import logging
@@ -36,8 +36,8 @@ DEFAULT_GRAYSCALE = 'Kodak'
 
 GRAYSCALES = {
     'Kodak': {
-        'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
-                    38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
+        'targets': [0, 2, 4, 6, 10, 14, 18, 22, 26, 30, 34, 38,
+                    42, 46, 50, 54, 58, 62, 66, 70, 74, 78, 82],
         'width': 55,
         'min_width': 30,
         'sections': 23,
@@ -46,8 +46,8 @@ GRAYSCALES = {
         'length': 28.3,  # 28.57 was previous
     },
     'SilverFast': {
-        'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
-                    38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
+        'targets': [0, 2, 4, 6, 10, 14, 18, 22, 26, 30, 34, 38,
+                    42, 46, 50, 54, 58, 62, 66, 70, 74, 78, 82],
         'width': 58,
         'min_width': 30,
         'sections': 23,
@@ -56,6 +56,11 @@ GRAYSCALES = {
         'length': 29.565217391,
     }
 }
+
+"""
+        'targets': [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42,
+                    38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0],
+"""
 
 GRAYSCALE_SCALABLE = ('width', 'min_width', 'lower_than_half_width',
                       'higher_than_half_width', 'length')
@@ -104,6 +109,55 @@ def Quick_Scale_To_im(path=None, im=None, source_dpi=600, target_dpi=150,
     return small_im
 
 
+class Image_Transpose(object):
+
+    def __init__(self, sourceValues=None, targetValues=None, polyCoeffs=None):
+
+        self._source = sourceValues
+        self._target = targetValues
+        self._polyCoeffs = polyCoeffs
+
+        if (self._polyCoeffs is None and self._target is not None and
+                self._source is not None):
+
+            self._polyCoeffs = np.polyfit(self._source, self._target, 3)
+
+        if self._polyCoeffs is not None:
+            self._poly = np.poly1d(self._polyCoeffs)
+        else:
+            errorCause = ""
+            if self._source is None:
+                errorCause += "No source "
+            if self._target is None:
+                errorCause += "No target "
+            if self._polyCoeffs is None:
+                errorCause += "No Coefficients"
+            raise Exception(
+                "Polynomial not initiated; can't transpose image: {0}".format(
+                    errorCause))
+
+    @property
+    def source(self):
+        return self._source
+
+    @property
+    def target(self):
+        return self._target
+
+    @property
+    def coefficients(self):
+        return self._polyCoeffs
+
+    @property
+    def polynomial(self):
+        return self._poly
+
+    def __call__(self, im):
+
+        return self._poly(im)
+
+
+'''
 class Image_Transpose(object):
 
     def __init__(self, *args, **kwargs):
@@ -230,6 +284,7 @@ class Image_Transpose(object):
             np.place(im2, im == i, tf[i])
 
         return im2
+'''
 
 
 class Image_Analysis():
@@ -475,8 +530,10 @@ class Analyse_Grayscale(object):
                     GRAYSCALES[target_type][k] * scale_factor or
                     GRAYSCALES[target_type][k])
 
+            #print "Set self._grayscale_{0}".format(k)
+
         self._img = image
-        np.save("tmp_img.npy", image)
+        #np.save("tmp_img.npy", image)
 
         #Variables from analysis
         self._grayscale_pos = None
@@ -846,6 +903,7 @@ class Analyse_Grayscale(object):
                     " offset={1} in best_spikes={2} from spikes={3}").format(
                         frequency, offset, best_spikes, up_spikes))
 
+                self._grayscale = None
                 return None, None
 
             ###DEBUG CUT SECTION
@@ -910,7 +968,7 @@ class Analyse_Grayscale(object):
                 gray_scale.append(self._img[left: right, top: bottom].mean())
 
         self._gray_scale_pos = gray_scale_pos
-        self._gray_scale = gray_scale
+        self._grayscale = gray_scale
 
         #print "GS", gray_scale
         #print "GS POS", gray_scale_pos

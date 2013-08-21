@@ -102,7 +102,7 @@ class Main_Window(gtk.Window):
 
     def _win_close_event(self, widget, *args, **kwargs):
 
-        self._controller.ask_quit()
+        return self._controller.ask_quit()
 
     def set_current_page(self, val=-1):
 

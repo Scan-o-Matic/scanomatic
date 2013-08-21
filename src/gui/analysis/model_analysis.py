@@ -2,8 +2,6 @@
 # DEPENDENCIES
 #
 
-import os
-
 #
 # INTERNAL DEPENDENCIES
 #
@@ -192,7 +190,10 @@ analysis of the project.</i></span>""",
 'analysis-stage-image-norm-manual-title':
 "<span weight='heavy' size='large'>Manual Image Normalisation</span>",
 
-'analysis-stage-image-norm-manual-measures': 'Measures',
+'analysis-stage-image-norm-manual-measures': 'Measure Source',
+'analysis-stage-image-norm-manual-targets': 'Measure Target',
+
+'analysis-stage-image-norm-manual-useGrayscale': 'Use Grayscale',
 
 #ANALYSIS TOP IMAGE SECTIONING
 'analysis-top-image-sectioning-next': 'Plate Analysis',
@@ -289,6 +290,9 @@ specific_transparency = {
 'stage': None,
 'manual-calibration-positions': None,
 'manual-calibration-values': None,
+'manual-calibration-target': None,
+'manual-calibration-grayscaleName': None,
+'manual-calibration-grayscale': False,
 'auto-transpose': dict(),
 'images-list-model': None,
 'image': -1,

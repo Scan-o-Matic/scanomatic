@@ -108,18 +108,24 @@ if __name__ == "__main__":
                               "specified by the -w flag will be analysed and "
                               "reported."))
 
-    parser.add_argument("--xml-short", dest="xml_short", default=False,
+    parser.add_argument("--xml-short", dest="xml_short", default=True,
                         type=bool,
-                        help="If the XML output should use short tag-names")
+                        help="If the XML output should use short tag-names. " +
+                        "Default: True")
 
     parser.add_argument("--xml-omit-compartments",
                         dest="xml_omit_compartments", type=str,
-                        help=("Comma separated list of compartments to not"
-                              "report"))
+                        default="backgrund,cell",
+                        help="Comma separated list of compartments to not" +
+                        "report.Default omitted: background,cell")
 
     parser.add_argument("--xml-omit-measures", dest="xml_omit_measures",
                         type=str,
-                        help="Comma seperated list of measures to not report")
+                        default="mean,median,IQR,IQR_mean,centroid," +
+                        "perimeter,area",
+                        help="Comma seperated list of measures to not report." +
+                        "Default omitted: mean,median,IQR,IQR_mean,centroid," +
+                        "perimeter,area")
 
     parser.add_argument("--debug", dest="debug_level", default="warning",
                         type=str, help="Set debugging level")

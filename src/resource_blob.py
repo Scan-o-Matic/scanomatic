@@ -4,7 +4,7 @@ Resource for blob detection recepies
 """
 __author__ = "Martin Zackrisson, jetxee"
 __copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"] 
+__credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
 __version__ = "0.998"
 __maintainer__ = "Martin Zackrisson"
@@ -184,7 +184,7 @@ class Analysis_Recipe_Erode_Small(Analysis_Recipe_Abstraction):
     def _do(self, im):
 
         self.grid_cell.filter_array = binary_erosion(
-                            self.grid_cell.filter_array, 
+                            self.grid_cell.filter_array,
                             origin=(1,1),
                             structure=self.kernel)
 
@@ -211,7 +211,7 @@ class Analysis_Recipe_Erode_Conditional(Analysis_Recipe_Abstraction):
                 float(np.median(im[np.where(fa == 0)])) < self.threshold:
 
             self.grid_cell.filter_array = binary_erosion(
-                                fa, 
+                                fa,
                                 origin=(1,1),
                                 structure=self.kernel)
 
