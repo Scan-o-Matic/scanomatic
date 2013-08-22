@@ -52,7 +52,7 @@ class Grid_Array():
     }
 
     def __init__(self, parent, identifier, pinning_matrix,
-                 verbose=False, visual=False, suppress_analysis=False,
+                 visual=False, suppress_analysis=False,
                  grid_array_settings=None, gridding_settings=None,
                  grid_cell_settings=None):
 
@@ -86,12 +86,6 @@ class Grid_Array():
             identifier = [identifier[0], identifier[1]]
 
         self._identifier = identifier
-
-        """
-        self._analysis = array_dissection.Grid_Analysis(self,
-            pinning_matrix, verbose=verbose, visual=visual,
-            gridding_settings=gridding_settings)
-        """
 
         self.watch_source = None
         self.watch_blob = None
@@ -134,17 +128,9 @@ class Grid_Array():
 
         self._features = []
 
-        self._R = None
         self._first_analysis = True
 
-        self._old_blob_img = None
-        self._old_blob_filter = None
-        self.track_times = []
-        self.track_values = []
-        self._old_timestamp = None
-
         self._pinning_matrix = pinning_matrix
-        #if pinning_matrix != None:
 
         self._im_dim_order = None
 
@@ -161,12 +147,13 @@ class Grid_Array():
 
     @property
     def R(self):
-        return self._R
+        return None
 
     #
     # SET functions
     #
 
+    """ Legacy methods, could possibly be useful 2013-08-22
     def set_manual_ideal_grid(self, grid):
 
         best_fit_rows = grid[0]
@@ -187,6 +174,7 @@ class Grid_Array():
         self._grid = grid
         self._set_grid_cell_size()
         self.unset_history()
+    """
 
     def _set_grid_cell_size(self):
 
@@ -310,12 +298,6 @@ class Grid_Array():
 
             return False
 
-        """ Impossible since part of grid validation algorithm
-        if self._grid.min() < 0:
-            raise Invalid_Grid("Negative positons in grid")
-            return False
-
-        """
         if (self._grid.shape[1] != self._pinning_matrix[self._im_dim_order[0]]
                 or self._grid.shape[2] !=
                 self._pinning_matrix[self._im_dim_order[1]]):
@@ -491,97 +473,6 @@ class Grid_Array():
 
         return polynomial_coeffs
 
-    '''
-    def get_p3(self, x):
-        """
-            returns the solution to:
-
-                self.gs_a * x^3 + self.gs_b * x^2 + self.gs_c * x + self.gs_d
-
-        """
-
-        p = self.gs_a * (x ** 3) + self.gs_b * (x ** 2) + \
-            self.gs_c * x + self.gs_d
-
-        return p
-
-    def get_transformation_matrix(self, gs_values=None, gs_fit=None,
-                                  gs_indices=None, y_range=(0, 255),
-                                  fix_axis=False):
-        """get_transformation_matrix takes an coefficient array of a
-        polynomial fit of the 3rd degree and calculates a matrix
-        of all solutions for all the integer steps of the y-range
-        specified.
-
-        The function takes two arguments:
-
-        @gs_values  A numpy array or a list of gray-scale values
-
-        @gs_fit     A numpy array of the coefficients as returned
-                    by numpy.polyfit, assuming 3rd degree
-                    solution
-
-        @gs_indices An optional list of gs indices if not a simple
-                    enumerated range
-
-        @y_range    A tuple having the including range limits
-                    for the solution.
-
-        @fix_axis   An optional possibility to fix the gs-axis,
-                    else it will be made increasing (transformed with
-                    -1 if not). Lowest value will also be set to 0,
-                    assuming a continious series.
-
-        The function returns a list of transformation values
-        """
-
-        if gs_values is not None:
-
-            if gs_indices is None:
-
-                gs_indices = range(len(gs_values))
-
-            if gs_indices[0] > gs_indices[-1]:
-
-                gs_indices = map(lambda x: x * -1, gs_indices)
-
-            if gs_indices[0] != 0:
-
-                gs_indices = map(lambda x: x - gs_indices[0], gs_indices)
-
-            tf_matrix = np.zeros((y_range[1] + 1))
-
-            p = np.poly1d(np.polyfit(gs_indices, gs_values, 3))
-
-            self.gs_a = p.c[0]
-            self.gs_b = p.c[1]
-            self.gs_c = p.c[2]
-            self.gs_d = p.c[3]
-
-            for i in xrange(256):
-
-                #moving the line along y-axis
-                self.gs_d = p.c[3] - i
-                x = fsolve(self.get_p3, gs_values[0])
-
-                #setting it back to get the values
-                self.gs_d = p.c[3]
-                tf_matrix[int(round(self.get_p3(x)))] = x
-
-        else:
-
-            tf_matrix = []
-
-            for y in range(y_range[0], y_range[1] + 1):
-
-                #Do something real here
-                #The caluclated value shoud be a float
-
-                x = float(y)
-                tf_matrix.append(x)
-
-        return tf_matrix
-    '''
     def _get_grid_to_im_axis_mapping(self, pm, im):
 
         pm_max_pos = int(max(pm) == pm[1])
@@ -594,46 +485,6 @@ class Grid_Array():
             im_axis_order, pm, im.shape))
 
         return im_axis_order
-
-    '''
-    def _get_transformation_matrix_for_analysis(
-            self, gs_values=None, gs_indices=None, gs_fit=None):
-
-        #KODAK neutral scale
-        if self._parent is not None:
-
-            gs_indices = self._parent.gs_indices
-
-        else:
-
-            gs_indices = None
-
-        if gs_values is None:
-
-            transformation_matrix = self.get_transformation_matrix(
-                gs_fit=gs_fit, gs_indices=gs_indices)
-
-        else:
-
-            transformation_matrix = self.get_transformation_matrix(
-                gs_values=gs_values, gs_indices=gs_indices)
-
-        return transformation_matrix
-    def _set_tm_im(self, source, target, ul, tm, c_row, c_column):
-
-        #wh          Width and Height
-        wh = self._grid_cell_size
-
-        source_view = source[ul[0]: ul[0] + wh[0], ul[1]: ul[1] + wh[1]]
-
-        if source_view.shape != target.shape:
-
-            raise Invalid_Grid(
-                "Source view {0}, Target {1}, Source {2} ul {3}, wh {4}".format(
-                source_view.shape, target.shape, source.shape, ul, wh))
-
-        target[:, :] = tm[source_view]
-    '''
 
     def _set_image_transposition(self, source, target, ul, wh,
                                  imTransposePoly):
@@ -664,10 +515,6 @@ class Grid_Array():
             self._identifier[0] = identifier_time
 
         #Get an image-specific inter-scan-neutral transformation dictionary
-        '''
-        tm = self._get_transformation_matrix_for_analysis(
-            gs_values=gs_values, gs_fit=gs_fit, gs_indices=gs_indices)
-        '''
         try:
             transposePoly = resource_image.Image_Transpose(
                 sourceValues=grayscaleSource,
@@ -700,10 +547,6 @@ class Grid_Array():
 
         #Setting shortcuts for repeatedly used variable
         s_g = self._grid.copy()
-        """THIS IS DONE IN SET GRID NOW
-        if grid_correction is not None and grid_correction.any():
-            s_g += grid_correction  # Compensate if part of plate is outside im
-        """
         s_gcs = self._grid_cell_size
         s_g[0, ...] -= s_gcs[0] / 2.0  # To get min-corner
         s_g[1, ...] -= s_gcs[1] / 2.0  # To get min-corner
@@ -733,19 +576,6 @@ class Grid_Array():
                         col_min = s_g[1, row, col]
 
                     rc_min_tuple = (row_min, col_min)
-
-                    #
-                    #Finding the right part of the image
-                    #-----------------------------------
-                    #
-
-                    """
-                    #Set current gc center according to which pin we look at
-                    _cur_gc.set_center(
-                                    (rc_min_tuple[im_dim_order[0]],
-                                    rc_min_tuple[im_dim_order[1]]),
-                                    s_gcs)  # Does this do anything?
-                    """
 
                     #
                     #Transforming to inter-scan neutal values

@@ -51,7 +51,8 @@ class Analysis(object):
     def __init__(
             self, log_file_path, outdata_directory, pinning_matrices,
             graph_watch, verbose=False, visual=False,
-            manual_grid=False, grid_times=[],
+            #manual_grid=False,
+            grid_times=[],
             suppress_analysis=False,
             xml_format={'short': True, 'omit_compartments': [],
                         'omit_measures': []},
@@ -130,7 +131,7 @@ class Analysis(object):
         self._graph_watch = graph_watch
         self._verbose = verbose
         self._visual = visual
-        self._manual_grid = manual_grid
+        #self._manual_grid = manual_grid
         self._grid_times = grid_times
         self._suppress_analysis = suppress_analysis
         self._xml_format = xml_format
@@ -418,6 +419,7 @@ class Analysis(object):
             grid_correction=self._grid_correction
         )
 
+        '''
         # MANUAL GRIDS
         if self._manual_grid and meta_data['Manual Gridding'] is not None:
 
@@ -425,6 +427,7 @@ class Analysis(object):
                         "grid on plates {0}".format(meta_data['Maunual Gridding'].keys()))
 
             project_image.set_manual_ideal_grids(meta_data['Manual Grid'])
+        '''
 
         #
         # WRITING XML HEADERS AND OPENS SCAN TAG

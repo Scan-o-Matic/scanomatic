@@ -120,6 +120,8 @@ class Paths(object):
         #ANALSYS FILES
         self.analysis_polynomial = os.path.join(
             self.config, "calibration.polynomials")
+        self.analysis_graycsales = os.path.join(
+            self.config, "grayscales.cfg")
 
         self.analysis_run_log = 'analysis.run'
 

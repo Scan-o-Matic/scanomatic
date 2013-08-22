@@ -111,7 +111,6 @@ class Project_Image():
 
         self.im = None
 
-        self._timestamp = None
         self.set_pinning_matrices(pinning_matrices)
 
     def get_file_base_dir(self):
@@ -131,8 +130,7 @@ class Project_Image():
 
                 self._grid_arrays.append(analysis_grid_array.Grid_Array(
                     self, (a,),
-                    pinning_matrices[a], verbose=self.verbose,
-                    visual=self.visual,
+                    pinning_matrices[a], visual=self.visual,
                     suppress_analysis=self.suppress_analysis,
                     grid_array_settings=self.grid_array_settings,
                     gridding_settings=self.gridding_settings,
@@ -147,6 +145,7 @@ class Project_Image():
                 "Analysis will run on {0} plates out of {1}".format(
                 len(self._grid_arrays), len(pinning_matrices)))
 
+    '''
     def set_manual_ideal_grids(self, grid_adjustments):
         """Overrides grid detection with a specified grid supplied in grid
         adjustments
@@ -168,6 +167,7 @@ class Project_Image():
 
                     self.logger.error('Failed to set manual grid "+ \
                         "adjustments to {0}, plate non-existent'.format(k))
+    '''
 
     def set_grid(self, im_path, plate_positions, save_name=None):
 
@@ -238,23 +238,6 @@ class Project_Image():
             self.im = resource_analysis_support.get_first_rotated(
                 self.im, ref_shape)
 
-    """
-    def get_plate(self, plate_index):
-
-        if -1 < plate_index < len(self._grid_arrays):
-
-            return self._grid_arrays[plate_index]
-
-        else:
-
-            self.logger.warning(
-                "ANALYSIS IMAGE: Plate " +
-                "{0} outside expected range (0 - {1}).".format(
-                plate_index, len(self._grid_arrays)))
-
-            return None
-    """
-
     def get_im_section(self, features, scale_factor=4.0, im=None,
                        run_insane=False):
 
@@ -324,88 +307,6 @@ class Project_Image():
                         self.fixture['name'],
                         self.fixture['version']))
 
-            """
-            x0 = round(features[0][0] * scale_factor)
-            x1 = round(features[1][0] * scale_factor)
-
-            if x0 < x1:
-
-                upper = x0
-                lower = x1
-
-            else:
-
-                upper = x1
-                lower = x0
-
-            y0 = round(features[0][1] * scale_factor)
-            y1 = round(features[1][1] * scale_factor)
-
-            if y0 < y1:
-
-                left = y0
-                right = y1
-
-            else:
-
-                left = y1
-                right = y0
-
-            upper_correction = 0
-            left_correction = 0
-
-            if upper < 0:
-                upper_correction = upper
-                upper = 0
-            if left < 0:
-                left_correction = left
-                left = 0
-
-            if self.fixture['version'] >= self._config.version_first_pass_change_1:
-
-                if lower > im.shape[1]:
-                    right = im.shape[1]
-                if right > im.shape[0]:
-                    right = im.shape[0]
-
-                self._set_current_grid_move(d1=left_correction, d2=upper_correction)
-
-                if self._get_slice_sanity_check(d1=right-left, d2=lower-upper) or run_insane:
-                    return im[left: right, upper:lower]
-                else:
-                    raise Slice_Outside_Image(
-                        "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
-                        im.shape,
-                        np.s_[left:right, upper:lower],
-                        scale_factor,
-                        self.fixture['name'],
-                        self.fixture['version']))
-
-            else:
-
-                if lower > im.shape[0]:
-                    right = im.shape[0]
-                if right > im.shape[1]:
-                    right = im.shape[1]
-
-                self._set_current_grid_move(d1=left_correction, d2=upper_correction)
-
-                if self._get_slice_sanity_check(d1=lower-upper, d2=right-left) or run_insane:
-                    return im[upper: lower, left: right]
-                else:
-                    raise Slice_Outside_Image(
-                        "im {0} , slice {1}, scaled by {2}, fixture {3} {4}".format(
-                        im.shape,
-                        np.s_[upper:lower, left:right],
-                        scale_factor,
-                        self.fixture['name'],
-                        self.fixture['version']))
-
-        else:
-            return None
-
-        """
-
     def _set_current_grid_move(self, d1, d2):
 
         self._grid_corrections = np.array((d1, d2))
@@ -426,7 +327,7 @@ class Project_Image():
     def get_analysis(
             self, im_path, features, grayscaleSource,
             watch_colony=None, save_grid_name=None,
-            grid_lock=False, identifier_time=None, timestamp=None,
+            identifier_time=None,
             grayscaleTarget=None, image_dict=None):
 
         """
@@ -434,10 +335,7 @@ class Project_Image():
 
             @param features: A list of pinning grids to look for
 
-            @param grayscaleSource : An array of the grayscale pixelvalues,
-            if submittet gs_fit is disregarded
-
-            @param use_fallback : Causes fallback detection to be used.
+            @param grayscaleSource : An array of the grayscale pixelvalues
 
             @param watch_colony : A particular colony to gather information
             about.
@@ -446,12 +344,15 @@ class Project_Image():
             analysed
 
             @param save_grid_name : A custom name for the saved image, if none
-            is submitted, it will be grid.png in current directory.
-
-            @param grid_lock : Default False, if true, the grid will only be
-            gotten once and then reused all way through.
+            no grid image is saved
 
             @param identifier_time : A time index to update the identifier with
+
+            @param grayscaleTarget : An array of the targets of the fixtures
+            grayscale.
+
+            @param image_dict : A dictionary of setting for how image is
+            loaded, (see Analysis_Image.load_image)
 
             The function returns two arrays, one per dimension, of the
             positions of the spikes and a quality index
@@ -479,32 +380,6 @@ class Project_Image():
 
             return None
 
-        self._timestamp = timestamp
-
-        """
-        if len(grayscaleSource) > 3:
-
-            grayscaleSource = np.array(grayscaleSource)
-
-            if grayscaleTarget is None:
-
-                grayscaleTarget = self.grayscaleTarget
-
-            else:
-
-                grayscaleTarget = np.array(grayscaleTarget)
-                self.grayscaleTarget = grayscaleTarget
-
-            gs_fit = np.polyfit(grayscaleTarget, grayscaleSource, 3)
-
-        else:
-
-            gs_fit = None
-
-        self.logger.debug("ANALYSIS produced gs-coefficients {0} ".format(
-            gs_fit))
-        """
-
         #
         #   CONFIG FILE COMPATIBILITY, COORDINATE VALUE SCALINGS
         #
@@ -513,34 +388,6 @@ class Project_Image():
             scale_factor = 4.0
         else:
             scale_factor = 1.0
-
-        """
-        if gs_fit is not None:
-
-            z3_deriv_coeffs = (np.array(gs_fit[: -1]) *
-                               np.arange(gs_fit.shape[0] - 1, 0, -1))
-
-            z3_deriv = np.array(
-                map(lambda x: (z3_deriv_coeffs * np.power(
-                    x, np.arange(z3_deriv_coeffs.shape[0], 0, -1))).sum(),
-                    range(87)))
-
-            z3_deriv = z3_deriv[z3_deriv != 0]
-
-            if (z3_deriv > 0).any() and (z3_deriv < 0).any():
-
-                self.logger.warning(
-                    "ANALYSIS of grayscale seems dubious" +
-                    " check the coefficients: {0}".format(
-                        gs_fit))
-
-                gs_fit = None
-
-        if gs_fit is None:
-
-            return None
-
-        """
 
         if grayscaleSource is None:
             return None

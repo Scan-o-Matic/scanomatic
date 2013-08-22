@@ -27,11 +27,20 @@ import matplotlib.pyplot as plt
 #
 
 import resource_signal as r_signal
+import resource_grayscale
 
 #
 # GLOBALS
 #
 
+DEFAULT_GRAYSCALE = resource_grayscale.getDefualtGrayscale()
+
+GRAYSCALE_NAMES = resource_grayscale.getGrayscales()
+
+GRAYSCALES = {gsName: resource_grayscale.getGrayscale(gsName) for
+              gsName in GRAYSCALE_NAMES}
+
+'''
 DEFAULT_GRAYSCALE = 'Kodak'
 
 GRAYSCALES = {
@@ -64,6 +73,7 @@ GRAYSCALES = {
 
 GRAYSCALE_SCALABLE = ('width', 'min_width', 'lower_than_half_width',
                       'higher_than_half_width', 'length')
+'''
 
 #
 # FUNCTIONS
@@ -520,13 +530,13 @@ class Analyse_Grayscale(object):
 
     def __init__(self, target_type="Kodak", image=None, scale_factor=1.0):
 
-        global GRAYSCALES, GRAYSCALE_SCALABLE
+        global GRAYSCALES
         self.grayscale_type = target_type
 
         for k in GRAYSCALES[target_type]:
 
             setattr(self, "_grayscale_{0}".format(k),
-                    target_type in GRAYSCALE_SCALABLE and
+                    target_type in resource_grayscale.GRAYSCALE_SCALABLE and
                     GRAYSCALES[target_type][k] * scale_factor or
                     GRAYSCALES[target_type][k])
 

@@ -74,9 +74,11 @@ if __name__ == "__main__":
                               "output-directory, comma-separeted indices."),
                         metavar="0,1,100", default="", type=str)
 
+    '''
     parser.add_argument("-g", "--manual-grid", dest="manual_grid",
                         help=("Boolean used to invoke manually set gridding,"
                               " default is false"), default=False, type=bool)
+    '''
 
     parser.add_argument("-gc", "--grid-correction", dest="grid_correction",
                         default=None,
@@ -307,7 +309,9 @@ if __name__ == "__main__":
     #START ANALYSIS
     a = analysis.Analysis(
         args.inputfile, output_path, pm, args.graph_watch, verbose=True,
-        visual=False, manual_grid=args.manual_grid, grid_times=grid_times,
+        visual=False,
+        #manual_grid=args.manual_grid,
+        grid_times=grid_times,
         xml_format=xml_format, suppress_analysis=args.suppress,
         grid_array_settings=grid_array_settings,
         gridding_settings=gridding_settings,
