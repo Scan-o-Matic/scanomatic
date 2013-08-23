@@ -2,8 +2,6 @@
 # DEPENDENCIES
 #
 
-import numpy as np
-
 #
 # INTERNAL DEPENDENCIES
 #
@@ -38,9 +36,13 @@ class Calibration_GUI_Model(model_generic.Model): pass
 
 model = {
 
+    'from': 'From:',
+    'to': 'To:',
+
 #ABOUT
 ##TOP
 'mode-selection-top-fixture': 'Fixture',
+'mode-selection-top-grayscale': 'Grayscale',
 'mode-selection-top-poly': 'Cell Count Polynomial',
 
 ##STAGE
@@ -52,11 +54,22 @@ model = {
 constructed or to adjust an old fixture calibration. You will need
 an image taken of the fixture in question.</i></span>
 
+<span weight="heavy">Grayscale</span>
+<span><i>Grayscale calibration allows for setting up new models
+of grayscales by comparing them to previously known grayscales.
+To use this function, an image with both scales in it is required.</i></span>
+
 <span weight="heavy">Cell Count Polynomial</span>
 <span><i>If a calibration experiment has been performed and the
 results have been analysed, then here the csv-file can be used
 to invoke a new calibration polynomial.</i></span>
 """,
+
+#GRAYSCALE
+    'grayscale-title': """<span size="large">Grayscale Calibration</span>""",
+    'grayscale-load-image': """Select an Image with both grayscales""",
+    'grayscale-new-model': """Add New Model""",
+    'grayscale-mark-instructions': """Select the area of the source and target""",
 
 #FIXTURE SELECT
 'fixture-select-title': """<span size="large">Fixture To Work With</span>""",
@@ -101,6 +114,10 @@ to invoke a new calibration polynomial.</i></span>
 }
 
 
+specific_grayscale_model = {
+
+}
+
 specific_fixture_model = {
 
 'fixture': None,
@@ -117,8 +134,7 @@ specific_fixture_model = {
 'grayscale-exists': True,
 'grayscale-image-text': 'G',
 'grayscale-coords': list(),
-'grayscale-targets': np.asarray([82, 78, 74, 70, 66, 62, 58, 54, 50, 46,
-                            42, 38, 34, 30, 26, 22, 18, 14, 10, 6, 4, 2, 0]),
+'grayscale-targets': None,
 'grayscale-sources': None,
 
 'plate-coords': [None, None, None, None],

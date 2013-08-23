@@ -240,9 +240,21 @@ def get_grayscale_combo():
 
         self.set_active(-1)
 
+    def _addGrayscale(self, gsName):
+
+        m = self.get_model()
+        for rowIndex, row in enumerate(m):
+            if row[0] == gsName:
+                self.set_active(rowIndex)
+                return
+
+        m.append((gsName,))
+        self.set_active(len(m) - 1)
+
     gs = gtk.combo_box_new_text()
     gs.get_text = types.MethodType(_get_text, gs)
     gs.set_activeGrayscale = types.MethodType(_set_activeGrayscale, gs)
+    gs.addGrayscale = types.MethodType(_addGrayscale, gs)
 
     model = gs.get_model()
 

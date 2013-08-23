@@ -22,6 +22,7 @@ import numpy as np
 import model_calibration
 import view_calibration
 
+import src.gui.generic.view_generic as view_generic
 import src.gui.generic.controller_generic as controller_generic
 
 import src.resource_fixture_image as resource_fixture_image
@@ -90,6 +91,11 @@ class Calibration_Controller(controller_generic.Controller):
             self._specific_controller = Fixture_Controller(
                 self, model=model, view=view, logger=self._logger)
 
+        elif calibration_mode == "grayscale":
+
+            self._specific_controller = Grayscale_Controller(
+                self, model=model, view=view, logger=self._logger)
+
         elif calibration_mode == "poly":
 
             err = Not_Yet_Implemented("Mode 'Cell Count Calibration'")
@@ -104,6 +110,57 @@ class Calibration_Controller(controller_generic.Controller):
 
         self.add_subcontroller(self._specific_controller)
 
+
+class Grayscale_Controller(controller_generic.Controller):
+
+    def __init__(self, parent, view=None, model=None,
+                 specific_model=None, logger=None):
+
+        super(Grayscale_Controller, self).__init__(
+            parent, view=view, model=model, logger=logger)
+
+        tc = self.get_top_controller()
+        self._paths = tc.paths
+
+        #MODEL
+        if specific_model is not None:
+            self._specific_model = specific_model
+        else:
+            self.build_new_specific_model()
+
+        #VIEW
+        view.set_controller(self)
+        top = view_calibration.Grayscale_Top(self, model, self._specific_model)
+        self._stage = view_calibration.Grayscale_Stage(self, model,
+                                                       self._specific_model)
+        view.set_top(top)
+        view.set_stage(self._stage)
+
+    def build_new_specific_model(self):
+
+        sm = model_calibration.copy_model(
+            model_calibration.specific_grayscale_model)
+        self._specific_model = sm
+        return sm
+
+    def loadImage(self, *args):
+
+        file_path = view_generic.select_file(
+            self._model['fixture-calibration-select-im'],
+            multiple_files=False, file_filter=
+            self._model['fixture-image-file-filter'],
+            start_in=self._paths.experiment_root)
+        if file_path is not None and len(file_path) > 0:
+            self._specific_model['im-path'] = file_path[0]
+            self._stage.updateImage()
+
+    def setSourceGrayscale(self, widget):
+
+        gsName = widget.get_text()
+
+    def setTargetGrayscale(self, widget):
+
+        gsName = widget.get_text()
 
 class Fixture_Controller(controller_generic.Controller):
 

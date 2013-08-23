@@ -28,24 +28,24 @@ import numpy as np
 # INTERNAL DEPENDENCIES
 #
 
-from src.gui.generic.view_generic import *
+import src.gui.generic.view_generic as view_generic
+import src.resource_grayscale as resource_grayscale
+import src.resource_image as resource_image
 
 #
 # STATIC GLOBALS
 #
 
-"""Gotten from view_generic instead
-PADDING_LARGE = 10
-PADDING_MEDIUM = 4
-PADDING_SMALL = 2
-"""
+PADDING_LARGE = view_generic.PADDING_LARGE
+PADDING_MEDIUM = view_generic.PADDING_MEDIUM
+PADDING_SMALL = view_generic.PADDING_SMALL
 
 #
 # CLASSES
 #
 
 
-class Calibration_View(Page):
+class Calibration_View(view_generic.Page):
 
     def __init__(self, controller, model, top=None, stage=None):
 
@@ -61,7 +61,7 @@ class Calibration_View(Page):
         return Top_Root(self._controller, self._model)
 
 
-class Top_Root(Top):
+class Top_Root(view_generic.Top):
 
     def __init__(self, controller, model):
 
@@ -70,6 +70,11 @@ class Top_Root(Top):
         button = gtk.Button()
         button.set_label(model['mode-selection-top-fixture'])
         button.connect("clicked", controller.set_mode, 'fixture')
+        self.pack_start(button, False, False, PADDING_MEDIUM)
+
+        button = gtk.Button()
+        button.set_label(model['mode-selection-top-grayscale'])
+        button.connect("clicked", controller.set_mode, 'grayscale')
         self.pack_start(button, False, False, PADDING_MEDIUM)
 
         button = gtk.Button()
@@ -93,14 +98,114 @@ class Stage_About(gtk.Label):
         self.show()
 
 
-class Fixture_Select_Top(Top):
+class Grayscale_Top(view_generic.Top):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Grayscale_Top, self).__init__(controller, model)
+        self._specific_model = specific_model
+
+
+class Grayscale_Stage(gtk.VBox):
+
+    def __init__(self, controller, model, specific_model):
+
+        super(Grayscale_Stage, self).__init__(0, False)
+        self._controller = controller
+        self._model = model
+        self._specific_model = specific_model
+
+        #TITLE
+        label = gtk.Label()
+        label.set_markup(model['grayscale-title'])
+        self.pack_start(label, False, False, PADDING_LARGE)
+
+        #SETTING UP MAIN BOXES
+        leftVBox = gtk.VBox(False, 0)
+        midVBox = gtk.VBox(False, 0)
+        rightVBox = gtk.VBox(False, 0)
+        mainHBox = gtk.HBox(False, 0)
+        mainHBox.pack_start(leftVBox, False, False, PADDING_MEDIUM)
+        mainHBox.pack_start(midVBox, False, False, PADDING_MEDIUM)
+        mainHBox.pack_start(rightVBox, True, True, PADDING_MEDIUM)
+        self.pack_start(mainHBox, True, True, PADDING_MEDIUM)
+
+        #IMAGE DISPLAY - LEFT
+        button = gtk.Button(label=model['grayscale-load-image'])
+        button.connect("clicked", controller.loadImage)
+        leftVBox.pack_start(button, False, False, PADDING_SMALL)
+
+        ##CURRENT MODELS
+        hbox = gtk.HBox(False, 0)
+        label = gtk.Label(model['from'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self._grayscaleSource = view_generic.get_grayscale_combo()
+        self._grayscaleSource.set_activeGrayscale(
+            resource_grayscale.getDefualtGrayscale())
+        self._grayscaleSource.connect("changed", controller.setSourceGrayscale)
+        hbox.pack_start(self._grayscaleSource, False, False, PADDING_SMALL)
+        label = gtk.Label(model['to'])
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        self._grayscaleTarget = view_generic.get_grayscale_combo()
+        self._grayscaleTarget.set_activeGrayscale(None)
+        self._grayscaleTarget.connect("changed", controller.setTargetGrayscale)
+        hbox.pack_start(self._grayscaleTarget, False, False, PADDING_SMALL)
+        leftVBox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        ##ADD NEW MODEL
+        hbox = gtk.HBox(False, 0)
+        self._newGSName = gtk.Entry()
+        hbox.pack_start(self._newGSName, True, True, PADDING_SMALL)
+        button = gtk.Button(label=model['grayscale-new-model'])
+        button.connect("clicked", self._newModelProxy)
+        hbox.pack_start(button, False, False, PADDING_SMALL)
+        leftVBox.pack_start(hbox, False, False, PADDING_SMALL)
+
+        fixture_callbacks = {'button_press_event': self._mouse_press,
+                             'button_release_event': self._mouse_release,
+                             'motion_notify_event': self._mouse_move}
+        self._fixture_image = Fixture_Image(
+            self._specific_model, event_callbacks=fixture_callbacks)
+
+        leftVBox.pack_start(self._fixture_image.get_canvas(), True, True,
+                            PADDING_SMALL)
+
+        label = gtk.Label(model['grayscale-mark-instructions'])
+        leftVBox.pack_start(label, False, False, PADDING_SMALL)
+
+        self.show_all()
+
+    def _newModelProxy(self, widget, *args):
+
+        newName = self._newGSName.get_text()
+        self._newGSName.set_text("")
+        self._grayscaleTarget.addGrayscale(newName)
+
+    def _mouse_press(self, event):
+
+        pass
+
+    def _mouse_move(self, event):
+
+        pass
+
+    def _mouse_release(self, event):
+
+        pass
+
+    def updateImage(self):
+
+        self._fixture_image.load_from_path()
+
+
+class Fixture_Select_Top(view_generic.Top):
 
     def __init__(self, controller, model, specific_model):
 
         super(Fixture_Select_Top, self).__init__(controller, model)
         self._specific_model = specific_model
 
-        self._next_button = Top_Next_Button(
+        self._next_button = view_generic.Top_Next_Button(
             controller, model, specific_model,
             model['fixture-select-next'], controller.set_view_stage,
             'marker-calibration')
@@ -216,14 +321,14 @@ class Fixture_Select_Stage(gtk.VBox):
             self.name_warning.hide()
 
 
-class Fixture_Marker_Calibration_Top(Top):
+class Fixture_Marker_Calibration_Top(view_generic.Top):
 
     def __init__(self, controller, model, specific_model):
 
         super(Fixture_Marker_Calibration_Top, self).__init__(controller, model)
         self._specific_model = specific_model
 
-        self._next_button = Top_Next_Button(
+        self._next_button = view_generic.Top_Next_Button(
             controller, model, specific_model,
             model['fixture-calibration-next'], controller.set_view_stage,
             'segmentation')
@@ -315,14 +420,14 @@ class Fixture_Marker_Calibration_Stage(gtk.VBox):
                                       sm['markers'] >= 3)
 
 
-class Fixture_Segmentation_Top(Top):
+class Fixture_Segmentation_Top(view_generic.Top):
 
     def __init__(self, controller, model, specific_model):
 
         super(Fixture_Segmentation_Top, self).__init__(controller, model)
         self._specific_model = specific_model
 
-        self._next_button = Top_Next_Button(
+        self._next_button = view_generic.Top_Next_Button(
             controller, model, specific_model,
             model['fixture-segmentation-next'], controller.set_view_stage,
             'save')
@@ -378,7 +483,7 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         self.has_grayscale.connect("clicked", controller.toggle_grayscale)
         right_side.pack_start(self.has_grayscale, False, False, PADDING_SMALL)
 
-        self.grayscaleType = get_grayscale_combo()
+        self.grayscaleType = view_generic.get_grayscale_combo()
         self.grayscaleType.connect("changed", controller.setGrayscaleType)
         right_side.pack_start(self.grayscaleType, False, False, PADDING_SMALL)
 
@@ -542,7 +647,7 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         self.set_ok_nok()
 
 
-class Fixture_Save_Top(Top):
+class Fixture_Save_Top(view_generic.Top):
 
     def __init__(self, controller, model, specific_model):
 
@@ -587,6 +692,7 @@ class Fixture_Image(object):
         self._model = model
         self._im_overlays = dict()
         image_size = (200, 300)
+        self._loaded = False
 
         self.image_fig = plt.Figure(figsize=image_size, dpi=150)
         self.image_ax = self.image_fig.add_subplot(111)
@@ -619,6 +725,8 @@ class Fixture_Image(object):
 
     def __click_proxy(self, event):
 
+        if self._loaded is False:
+            return
         event.xdata, event.ydata = self.get_data_coordinate(
             event.xdata, event.ydata)
 
@@ -629,6 +737,8 @@ class Fixture_Image(object):
 
     def __move_proxy(self, event):
 
+        if self._loaded is False:
+            return
         event.xdata, event.ydata = self.get_data_coordinate(
             event.xdata, event.ydata)
 
@@ -641,6 +751,7 @@ class Fixture_Image(object):
                              origin='lower', interpolation='nearest')
         self.clear_overlays()
         self.image_fig.canvas.draw()
+        self._loaded = True
 
     def load_from_path(self):
 
