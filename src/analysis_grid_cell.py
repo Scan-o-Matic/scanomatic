@@ -34,7 +34,7 @@ import analysis_grid_cell_dissection as cell_dissection
 class Grid_Cell():
 
     #Limits for number of cells in cell-space
-    MAX_THRESHOLD = 2500
+    MAX_THRESHOLD = 4200
     MIN_THRESHOLD = 0
 
     def __init__(self, parent, identifier, grid_cell_settings=None):
