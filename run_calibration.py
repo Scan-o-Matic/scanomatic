@@ -27,20 +27,6 @@ import time
 import src.resource_path as resource_path
 import src.gui.analysis.model_analysis as model_analysis
 
-"""
-def expand_compressed_vector(compressed_vector):
-
-    vector = []
-
-    for pos in xrange(len(compressed_vector[0])):
-
-        for ith in xrange(compressed_vector[1][pos]):
-
-            vector.append(compressed_vector[0][pos])
-
-    return vector
-"""
-
 
 def expand_compressed_vector(values, counts):
 
@@ -190,65 +176,7 @@ for pos in range(measures):
     if x_max is None or x_max < X[pos].max():
 
         x_max = X[pos].max()
-"""
-data_list_1 = []
-data_list_2 = []
-data_labels_1 = []
-data_labels_2 = []
 
-for data in data_store:
-
-    try:
-
-        if filter_1 in data[1] and len(data[-1]) > 0:
-
-            data_list_1.append(data[2:])
-            data_labels_1.append(data[1].replace(filter_1, '').strip())
-
-        elif filter_2 in data[1]:
-
-            data_list_2.append(data[2:])
-            data_labels_2.append(data[1].replace(filter_2, '').strip())
-
-    except:
-
-        print "** WARNING: Data entry has unknown format ", data
-
-data_1_joint_positions = []
-data_2_joint_positions = []
-
-for label in data_labels_1:
-
-    if label in data_labels_2:
-
-        data_1_joint_positions.append(data_labels_1.index(label))
-        data_2_joint_positions.append(data_labels_2.index(label))
-#
-# Initialize the arrays of right shape and right dtype
-X = np.empty((len(data_list_1),), dtype=object)
-Y = np.zeros((len(data_list_1),), dtype=np.float64)
-x_min = None
-x_max = None
-
-#
-# Populating from the first label, expanding the compressed vectors
-
-for pos in xrange(len(data_list_1)):
-
-    X[pos] = np.asarray(expand_compressed_vector(data_list_1[pos][-1]),
-                                                    dtype=np.float64)
-
-    Y[pos] = data_list_1[pos][0]
-
-    if x_min is None or x_min > X[pos].min():
-
-        x_min = X[pos].min()
-
-    if x_max is None or x_max < X[pos].max():
-
-        x_max = X[pos].max()
-
-"""
 #coeff_guess is the initial guess for solution
 #This is important as it sets the degree of the polynomial
 #An array of length 5 equals a 4th deg pol
