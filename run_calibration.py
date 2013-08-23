@@ -20,9 +20,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 import random
+import shutil
+import os
+import time
 
-import resource_path
-import gui.analysis.model_analysis as model_analysis
+import src.resource_path as resource_path
+import src.gui.analysis.model_analysis as model_analysis
 
 """
 def expand_compressed_vector(compressed_vector):
@@ -126,7 +129,7 @@ data_store = {
 for lineIndex, line in enumerate(fs):
 
     usefulLine = False
-    line = line.strip('\n').strip('"').split(sep)
+    line = line.strip('\n').replace('"', '').split(sep)
 
     if labelTargetValue in line:
         labelTargetPos = line.index(labelTargetValue)
@@ -141,15 +144,17 @@ for lineIndex, line in enumerate(fs):
     if not usefulLine and None in (labelTargetPos, labelSourceCountPos,
                                    labelSourceValuePos):
 
-        print "Skipping line {0}".format(sep.join(line))
+        raise Exception("Skipping line {0}".format(sep.join(line)))
 
-    else:
+    elif not usefulLine:
 
         try:
 
-            data_store[labelTargetValue] = eval(line[labelTargetPos])
-            data_store[labelSourceValues] = eval(line[labelSourceValuePos])
-            data_store[labelSourceCounts] = eval(line[labelSourceCountPos])
+            data_store[labelTargetValue].append(eval(line[labelTargetPos]))
+            data_store[labelSourceValues].append(
+                eval(line[labelSourceValuePos]))
+            data_store[labelSourceCounts].append(
+                eval(line[labelSourceCountPos]))
 
         except:
 
@@ -261,9 +266,13 @@ popt, pcov = curve_fit(
 popt = [popt[0], 0, 0, 0, popt[1], 0]
 do_save = True
 
+if os.path.isfile(file_out_path):
+    shutil.copy(file_out_path, "{0}.{1}.old".format(file_out_path,
+                                                    int(time.time())))
+
 try:
 
-    fs = open(file_out_path, 'a')
+    fs = open(file_out_path, 'w')
 
 except:
 
@@ -324,38 +333,41 @@ Y1 = np.zeros((measures - omitted,), dtype=np.float64)
 X2 = np.empty((omitted,), dtype=object)
 Y2 = np.zeros((omitted,), dtype=np.float64)
 
-r_positions = []
-
 pos_list = range(measures)
 omissionList = random.sample(pos_list, omitted)
 omissionList.sort()
 pos_list = list(set(pos_list).difference(omissionList))
 
 print "Simulation set", pos_list
-print "Test set", r_positions
+print "Test set", omissionList
 
-#
 # Populating from the first label, expanding the compressed vectors
 
+in_pos = 0
+out_pos = 0
 for pos in range(measures):
 
     if pos in pos_list:
 
-        X1[pos] = np.asarray(expand_compressed_vector(
+        X1[in_pos] = np.asarray(expand_compressed_vector(
             data_store[labelSourceValues][pos],
             data_store[labelSourceCounts][pos]),
             dtype=np.float64)
 
-        Y1[pos] = data_store[labelTargetValue][pos]
+        Y1[in_pos] = data_store[labelTargetValue][pos]
+
+        in_pos += 1
 
     else:
 
-        X2[pos] = np.asarray(expand_compressed_vector(
+        X2[out_pos] = np.asarray(expand_compressed_vector(
             data_store[labelSourceValues][pos],
             data_store[labelSourceCounts][pos]),
             dtype=np.float64)
 
-        Y2[pos] = data_store[labelTargetValue][pos]
+        Y2[out_pos] = data_store[labelTargetValue][pos]
+
+        out_pos += 1
 
 coeff_guess = np.asarray((1, 1))
 popt, pcov = curve_fit(vector_polynomial_sum_dropped_coeffs2, X1, Y1,
