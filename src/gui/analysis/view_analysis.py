@@ -1585,12 +1585,14 @@ class Analysis_Stage_Image_Norm_Manual(gtk.VBox):
                 self._specific_model['image']][0])
 
         im = self._specific_model['image-array']
+        """
         if im.max() > 1:
             vmax = 255
         else:
             vmax = 1
+        """
         self.figure_ax.imshow(
-            im, cmap=plt.cm.gray_r, vmin=0, vmax=vmax)
+            im, cmap=plt.cm.gray_r)  # , vmin=0, vmax=vmax)
 
     def delete_selection(self):
 
@@ -1989,8 +1991,10 @@ class Analysis_Stage_Image_Plate(gtk.HBox):
         if (self._specific_model['plate-section-im-array'] is not None and
                 self._specific_model['plate-section-im-array'].size > 0):
 
-            self.section_figure_ax.imshow(self._specific_model['plate-section-im-array'],
-                                          cmap=plt.cm.gray_r)
+            section = self._specific_model['plate-section-im-array']
+            self.section_figure_ax.imshow(
+                section, cmap=plt.cm.gray_r,
+                vmin=section.min(), vmax=section.max())
             self.section_image_canvas.set_size_request(150, 150)
             self.section_image_canvas.draw()
 

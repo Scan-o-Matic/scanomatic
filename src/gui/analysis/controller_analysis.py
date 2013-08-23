@@ -2286,20 +2286,27 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
                     fs.write("{0}{1}{0}{2}".format(quoute, header, sep))
 
-                for i, compartment in enumerate(pm['log-interests'][0]):
+                if m['calibration-measures']:
 
-                    for j, measure in enumerate(pm['log-interests'][1]):
+                    line = sep.join(m['calibration-measure-labels'])
+                    fs.write(line)
 
-                        fs.write("{0}{1}: {2}{0}".format(
-                            quoute, compartment, measure))
+                else:
 
-                        if j + 1 != len(pm['log-interests'][1]):
+                    for i, compartment in enumerate(pm['log-interests'][0]):
+
+                        for j, measure in enumerate(pm['log-interests'][1]):
+
+                            fs.write("{0}{1}: {2}{0}".format(
+                                quoute, compartment, measure))
+
+                            if j + 1 != len(pm['log-interests'][1]):
+
+                                fs.write(sep)
+
+                        if i + 1 != len(pm['log-interests'][0]):
 
                             fs.write(sep)
-
-                    if i + 1 != len(pm['log-interests'][0]):
-
-                        fs.write(sep)
 
                 fs.write("\n\r")
 
@@ -2319,9 +2326,9 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
                             fs.write(sep)
 
-                    if i + 1 != len(m['measures']):
+                    #if i + 1 != len(m['measures']):
 
-                        fs.write("\n\r")
+                    fs.write("\n\r")
 
                 fs.close()
 

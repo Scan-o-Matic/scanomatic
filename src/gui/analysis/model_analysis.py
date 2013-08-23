@@ -331,6 +331,10 @@ specific_log_book = {
 'current-strain': None,
 'measures': list(),
 'calibration-measures': False,
+'calibration-measure-labels': [
+    'independent-measure',
+    'pixel-values',
+    'pixel-counts'],
 'indie-count': None
 }
 

@@ -123,6 +123,7 @@ class Image_Transpose(object):
 
     def __init__(self, sourceValues=None, targetValues=None, polyCoeffs=None):
 
+        self._logger = logging.getLogger("Image Transpose")
         self._source = sourceValues
         self._target = targetValues
         self._polyCoeffs = polyCoeffs
@@ -130,7 +131,14 @@ class Image_Transpose(object):
         if (self._polyCoeffs is None and self._target is not None and
                 self._source is not None):
 
-            self._polyCoeffs = np.polyfit(self._source, self._target, 3)
+            try:
+                self._polyCoeffs = np.polyfit(self._source, self._target, 3)
+            except Exception, e:
+                self._logger.critical(
+                    "Could not produce polynomial from source " +
+                    "{0} and target {1}".format(self._source, self._target))
+
+                raise e
 
         if self._polyCoeffs is not None:
             self._poly = np.poly1d(self._polyCoeffs)

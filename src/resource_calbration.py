@@ -10,42 +10,21 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+import sys
+
+if __name__ != "__main__":
+
+    raise Exception("Scipt only allowed to be un by itself")
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import sys
 from scipy.optimize import curve_fit
+import random
 
-file_path = 'config/calibration.data'
-file_out_path = 'config/calibration.polynomials'
-filter_1 = 'OD'
-filter_2 = ''
+import resource_path
+import gui.analysis.model_analysis as model_analysis
 
-try:
-
-    fs = open(file_path)
-
-except:
-
-    print "Path is bad!"
-    sys.exit(0)
-
-data_store = []
-
-for line in fs:
-    line = line.strip('\n')
-
-    try:
-
-        data_store.append(eval(line))
-
-    except:
-
-        print "** WARNING: Could not parse ", line
-
-fs.close()
-
-
+"""
 def expand_compressed_vector(compressed_vector):
 
     vector = []
@@ -57,12 +36,20 @@ def expand_compressed_vector(compressed_vector):
             vector.append(compressed_vector[0][pos])
 
     return vector
+"""
+
+
+def expand_compressed_vector(values, counts):
+
+    return [item for sublist in
+            [[v] * n for v, n in zip(values, counts)] for item in sublist]
 
 
 def vector_polynomial_sum_dropped_coeffs(X, *coefficient_array):
 
-    coefficient_array = np.array((coefficient_array[0], 0, 0,
-                coefficient_array[1], 0), dtype=np.float64)
+    coefficient_array = np.array((
+        coefficient_array[0], 0, 0,
+        coefficient_array[1], 0), dtype=np.float64)
 
     Y = np.zeros(len(X))
 
@@ -75,8 +62,9 @@ def vector_polynomial_sum_dropped_coeffs(X, *coefficient_array):
 
 def vector_polynomial_sum_dropped_coeffs2(X, *coefficient_array):
 
-    coefficient_array = np.array((coefficient_array[0], 0, 0, 0,
-                coefficient_array[1], 0), dtype=np.float64)
+    coefficient_array = np.array((
+        coefficient_array[0], 0, 0, 0,
+        coefficient_array[1], 0), dtype=np.float64)
 
     Y = np.zeros(len(X))
 
@@ -95,6 +83,109 @@ def vector_polynomial_sum(X, *coefficient_array):
 
     return Y
 
+
+paths = resource_path.Paths()
+
+#
+#   SETTING UP PATHS
+#
+
+if len(sys.argv) == 1:
+    file_path = paths.analysis_calibration_data
+else:
+    file_path = sys.argv[-1]
+
+file_out_path = paths.analysis_polynomial
+
+try:
+
+    fs = open(file_path)
+
+except:
+
+    raise Exception("There's no file at {0}".format(file_path))
+
+#
+#   READING IN FILE
+#
+
+sep = "\t"
+labelTargetValue, labelSourceValues, labelSourceCounts = \
+    model_analysis.specific_log_book['calibration-measure-labels']
+labelTargetPos = None
+labelSourceValuePos = None
+labelSourceCountPos = None
+
+
+data_store = {
+    labelTargetValue: [],
+    labelSourceValues: [],
+    labelSourceCounts: []}
+
+
+for lineIndex, line in enumerate(fs):
+
+    usefulLine = False
+    line = line.strip('\n').strip('"').split(sep)
+
+    if labelTargetValue in line:
+        labelTargetPos = line.index(labelTargetValue)
+        usefulLine = True
+    if labelSourceValues in line:
+        labelSourceValuePos = line.index(labelSourceValues)
+        usefulLine = True
+    if labelSourceCounts in line:
+        labelSourceCountPos = line.index(labelSourceCounts)
+        usefulLine = True
+
+    if not usefulLine and None in (labelTargetPos, labelSourceCountPos,
+                                   labelSourceValuePos):
+
+        print "Skipping line {0}".format(sep.join(line))
+
+    else:
+
+        try:
+
+            data_store[labelTargetValue] = eval(line[labelTargetPos])
+            data_store[labelSourceValues] = eval(line[labelSourceValuePos])
+            data_store[labelSourceCounts] = eval(line[labelSourceCountPos])
+
+        except:
+
+            raise Exception("Bad line #{0}: {1}".format(
+                lineIndex, sep.join(line)))
+
+fs.close()
+
+measures = len(data_store[labelTargetValue])
+
+#
+#   EXPANDING VECTORS
+#
+
+X = np.empty((measures,), dtype=object)
+Y = np.zeros((measures,), dtype=np.float64)
+x_min = None
+x_max = None
+
+for pos in range(measures):
+
+    X[pos] = np.asarray(expand_compressed_vector(
+        data_store[labelSourceValues][pos],
+        data_store[labelSourceCounts][pos]),
+        dtype=np.float64)
+
+    Y[pos] = data_store[labelTargetValue][pos]
+
+    if x_min is None or x_min > X[pos].min():
+
+        x_min = X[pos].min()
+
+    if x_max is None or x_max < X[pos].max():
+
+        x_max = X[pos].max()
+"""
 data_list_1 = []
 data_list_2 = []
 data_labels_1 = []
@@ -127,7 +218,6 @@ for label in data_labels_1:
 
         data_1_joint_positions.append(data_labels_1.index(label))
         data_2_joint_positions.append(data_labels_2.index(label))
-
 #
 # Initialize the arrays of right shape and right dtype
 X = np.empty((len(data_list_1),), dtype=object)
@@ -153,6 +243,7 @@ for pos in xrange(len(data_list_1)):
 
         x_max = X[pos].max()
 
+"""
 #coeff_guess is the initial guess for solution
 #This is important as it sets the degree of the polynomial
 #An array of length 5 equals a 4th deg pol
@@ -164,8 +255,8 @@ coeff_guess = np.asarray((1, 1))
 #The length of Y should equal the length of the first dimension of X
 #The curve fit will return the best solution for the polynomial
 
-popt, pcov = curve_fit(vector_polynomial_sum_dropped_coeffs2, X, Y,
-                                                p0=coeff_guess)
+popt, pcov = curve_fit(
+    vector_polynomial_sum_dropped_coeffs2, X, Y, p0=coeff_guess)
 
 popt = [popt[0], 0, 0, 0, popt[1], 0]
 do_save = True
@@ -181,7 +272,7 @@ except:
 if do_save:
 
     fs.write(str(['smart_poly_cal_' + str(len(coeff_guess) + 2) + "_deg",
-                                            list(popt)]) + "\n")
+                  list(popt)]) + "\n")
 
     fs.close()
 
@@ -193,7 +284,7 @@ plt.plot(x_points, pa(x_points), label="y=ax**5 + bx")
 
 coeff_guess = np.asarray((1, 1))
 popt, pcov = curve_fit(vector_polynomial_sum_dropped_coeffs, X, Y,
-                                                    p0=coeff_guess)
+                       p0=coeff_guess)
 popt = [popt[0], 0, 0, popt[1], 0]
 p1 = np.poly1d(popt)
 plt.plot(x_points, p1(x_points), label="y=ax**4 + bx")
@@ -202,19 +293,19 @@ coeff_guess = np.asarray((1, 1, 1, 1))
 popt, pcov = curve_fit(vector_polynomial_sum, X, Y, p0=coeff_guess)
 p1 = np.poly1d(popt)
 plt.plot(x_points, p1(x_points),
-    label=str(len(coeff_guess) - 1) + "th deg pol fit")
+         label=str(len(coeff_guess) - 1) + "th deg pol fit")
 
 coeff_guess = np.asarray((1, 1, 1, 1, 1, 1))
 popt, pcov = curve_fit(vector_polynomial_sum, X, Y, p0=coeff_guess)
 p1 = np.poly1d(popt)
 plt.plot(x_points, p1(x_points),
-    label=str(len(coeff_guess) - 1) + "th deg pol fit")
+         label=str(len(coeff_guess) - 1) + "th deg pol fit")
 
 coeff_guess = np.asarray((1, 1, 1))
 popt, pcov = curve_fit(vector_polynomial_sum, X, Y, p0=coeff_guess)
 p1 = np.poly1d(popt)
 plt.plot(x_points, p1(x_points),
-    label=str(len(coeff_guess) - 1) + "th deg pol fit")
+         label=str(len(coeff_guess) - 1) + "th deg pol fit")
 
 plt.legend(loc=0)
 plt.xlabel("Per pixel value offset from Colony Growth in 'Kodak Space'")
@@ -227,20 +318,18 @@ print len(Y), "total"
 
 #
 # Initialize the arrays of right shape and right dtype
-X1 = np.empty((len(data_list_1) - 10,), dtype=object)
-Y1 = np.zeros((len(data_list_1) - 10,), dtype=np.float64)
-X2 = np.empty((10,), dtype=object)
-Y2 = np.zeros((10,), dtype=np.float64)
+omitted = 10
+X1 = np.empty((measures - omitted,), dtype=object)
+Y1 = np.zeros((measures - omitted,), dtype=np.float64)
+X2 = np.empty((omitted,), dtype=object)
+Y2 = np.zeros((omitted,), dtype=np.float64)
 
-from random import randint
 r_positions = []
 
-pos_list = range(len(data_list_1))
-
-while len(r_positions) < 10:
-    r_pos = randint(0, len(pos_list) - 1)
-    r_positions.append(pos_list[r_pos])
-    del pos_list[r_pos]
+pos_list = range(measures)
+omissionList = random.sample(pos_list, omitted)
+omissionList.sort()
+pos_list = list(set(pos_list).difference(omissionList))
 
 print "Simulation set", pos_list
 print "Test set", r_positions
@@ -248,36 +337,36 @@ print "Test set", r_positions
 #
 # Populating from the first label, expanding the compressed vectors
 
-in_pos = 0
-r_pos = 0
-
-for pos in xrange(len(data_list_1)):
+for pos in range(measures):
 
     if pos in pos_list:
 
-        X1[in_pos] = np.asarray(
-                expand_compressed_vector(data_list_1[pos][-1]),
-                dtype=np.float64)
-        Y1[in_pos] = data_list_1[pos][0]
-        in_pos += 1
+        X1[pos] = np.asarray(expand_compressed_vector(
+            data_store[labelSourceValues][pos],
+            data_store[labelSourceCounts][pos]),
+            dtype=np.float64)
+
+        Y1[pos] = data_store[labelTargetValue][pos]
 
     else:
 
-        X2[r_pos] = np.asarray(expand_compressed_vector(data_list_1[pos][-1]),
-                                                dtype=np.float64)
+        X2[pos] = np.asarray(expand_compressed_vector(
+            data_store[labelSourceValues][pos],
+            data_store[labelSourceCounts][pos]),
+            dtype=np.float64)
 
-        Y2[r_pos] = data_list_1[pos][0]
-        r_pos += 1
+        Y2[pos] = data_store[labelTargetValue][pos]
 
 coeff_guess = np.asarray((1, 1))
 popt, pcov = curve_fit(vector_polynomial_sum_dropped_coeffs2, X1, Y1,
-                                                    p0=coeff_guess)
+                       p0=coeff_guess)
 
 popt = [popt[0], 0, 0, 0, popt[1], 0]
 ps = np.poly1d(popt)
 plt.clf()
 plt.plot(x_points, pa(x_points), label="Full set")
-plt.plot(x_points, ps(x_points), label="Set minus 10 random")
+plt.plot(x_points, ps(x_points), label="Set minus {0} random".format(
+    omitted))
 
 plt.legend(loc=0)
 plt.xlabel("Per pixel value offset from Colony Growth in 'Kodak Space'")
