@@ -508,7 +508,7 @@ class Analysis(object):
                 watch_colony=self._graph_watch,
                 save_grid_name=save_grid_name,
                 identifier_time=self._image_pos,
-                timestamp=img_dict_pointer['Time'],
+                #timestamp=img_dict_pointer['Time'],
                 grayscaleTarget=img_dict_pointer['grayscale_indices'],
                 image_dict=img_dict_pointer)
 
