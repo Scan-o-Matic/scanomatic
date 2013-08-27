@@ -338,7 +338,7 @@ class Fixture_Image(object):
 
             return self.im_original_scale
 
-        elif key in ['grayscale_type']:
+        elif key in ['grayscale_type', 'grayscaleType', 'grayscaleName']:
 
             gs_type = self.fixture_reference.get('grayscale_type')
             if gs_type is None:
@@ -347,7 +347,7 @@ class Fixture_Image(object):
             return gs_type
         else:
 
-            print "***ERROR: Unknown key {0}".format(key)
+            raise Exception("***ERROR: Unknown key {0}".format(key))
 
     def __setitem__(self, key, val):
 

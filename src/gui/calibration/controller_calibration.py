@@ -27,6 +27,7 @@ import src.gui.generic.controller_generic as controller_generic
 
 import src.resource_fixture_image as resource_fixture_image
 import src.resource_scanner as resource_scanner
+import src.resource_grayscale as resource_grayscale
 #import src.resource_path as resource_path
 #import src.resource_app_config as resource_app_config
 
@@ -162,6 +163,7 @@ class Grayscale_Controller(controller_generic.Controller):
 
         gsName = widget.get_text()
 
+
 class Fixture_Controller(controller_generic.Controller):
 
     def __init__(self, parent, view=None, model=None,
@@ -283,7 +285,7 @@ class Fixture_Controller(controller_generic.Controller):
 
     def set_image_path(self, widget):
 
-        image_list = view_calibration.select_file(
+        image_list = view_generic.select_file(
             self._model['fixture-image-dialog'],
             multiple_files=False,
             file_filter=self._model['fixture-image-file-filter'],
@@ -309,7 +311,7 @@ class Fixture_Controller(controller_generic.Controller):
 
         m = self._model
 
-        scanner_name = view_calibration.claim_a_scanner_dialog(
+        scanner_name = view_generic.claim_a_scanner_dialog(
             self._window, m['scan-fixture-text'], self._paths.martin,
             self._scanners)
 
@@ -516,19 +518,17 @@ class Fixture_Controller(controller_generic.Controller):
             self.f_settings['grayscale-coords'] = sm['grayscale-coords']
 
             self.f_settings.analyse_grayscale()
-            gs_target, gs_source = self.f_settings['grayscale']
-            print gs_source
-            if gs_source is not None:
-                gs_source = np.array(gs_source)
-                np.save("tmp_gs_{0}_source.npy".format(self.f_settings['name']),
-                        gs_source)
-                np.save("tmp_gs_{0}_target.npy".format(self.f_settings['name']),
-                        gs_target)
+            gs_target = self.f_settings['grayscaleTarget']
+            gs_source = self.f_settings['grayscaleSource']
+            gs_source = np.array(gs_source)
+            gs_target = np.array(gs_target)
 
-            if (gs_source is not None and gs_target is not None and
-                    ((sm['grayscale-targets'] - gs_target) == 0).all() and
-                    ((gs_source[:-1] - gs_source[1:]) > 0).sum()
-                    in (0, len(gs_source) - 1)):
+            np.save("tmp_gs_{0}_source.npy".format(self.f_settings['name']),
+                    gs_source)
+            np.save("tmp_gs_{0}_target.npy".format(self.f_settings['name']),
+                    gs_target)
+            if resource_grayscale.validate(self.f_settings):
+
 
                 sm['grayscale-sources'] = gs_source
                 gs_ok = True

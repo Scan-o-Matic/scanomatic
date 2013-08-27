@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import ConfigParser
+import numpy as np
 
 #
 # INTERNAL DEPENDENCIES
@@ -143,3 +144,54 @@ def addGrayscale(grayScaleName, **kwargs):
             _GRAYSCALE_CONFIGS.set(grayScaleName, k, str(v))
 
     _saveConfig()
+
+
+def validateFromData(name, source, target):
+
+    if None in (source, target):
+        return False
+
+    if name not in getGrayscales():
+        return False
+
+    if list(target) != getGrayscaleTargets(name):
+        return False
+
+    if len(target) != len(source):
+        return False
+
+    #A true grayscale is monotoniously increasing or decreasing
+    #Given that the fitted curve is,
+    #
+    # y = a * x**3 + b * x**2 + c * x + d
+    #
+    #and thus its derivative,
+    #
+    # dy/dx = 3 * a * x ** 2 + 2 * b * x + c
+    #
+    #may not change sign for the range of interest. That is it must all
+    #be positive or all negative.
+    #
+
+    #The polynomial coefficients are extracted
+    polyCoefficients = np.polyfit(target, source, 3)
+    #The derivative's coefficients calculated
+    derivativeCoefficients = np.arange(4)[::-1] * polyCoefficients
+    #A numpy polynomial created from the derivative coefficients
+    derivativePolynomial = np.poly1d(derivativeCoefficients)
+    #The sign of the derivative evaluated for the range of a 8bit image
+    #4 evaluations per step. It would probably do with less
+    derivativeValues = derivativePolynomial(np.linspace(0, 255, 1024))
+    #For all non-zero values, the check the sign
+    derivativeSigns = (derivativeValues[
+        derivativeValues.nonzero()] > 0).astype(np.bool)
+    #If either all are True OR if None are, the method returns True
+    return derivativeSigns.all() or derivativeSigns.sum() == 0
+
+
+def validate(fixture_settings):
+
+    return validateFromData(
+        fixture_settings['grayscaleName'],
+        fixture_settings['grayscaleSource'],
+        fixture_settings['grayscaleTarget'])

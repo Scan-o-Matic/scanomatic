@@ -91,7 +91,8 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
 
     logger.info("Grayscale analysed for {0}".format(file_name))
 
-    gs_indices, gs_values = fixture['grayscale']
+    gs_indices = fixture['grayscaleTarget']
+    gs_values = fixture['grayscaleSource']
 
     im_data['grayscale_values'] = gs_values
     im_data['grayscale_indices'] = gs_indices

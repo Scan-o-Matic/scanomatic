@@ -22,25 +22,24 @@ import gtk
 # INTERNAL DEPENDENCIES
 #
 
-from src.gui.generic.view_generic import *
+import src.gui.generic.view_generic as view_generic
 import src.resource_fixture_image as resource_fixture_image
 
 #
 # STATIC GLOBALS
 #
 
-"""Gotten from view_generic instead
-PADDING_LARGE = 10
-PADDING_MEDIUM = 4
-PADDING_SMALL = 2
-"""
+PADDING_LARGE = view_generic.PADDING_LARGE
+PADDING_MEDIUM = view_generic.PADDING_MEDIUM
+PADDING_SMALL = view_generic.PADDING_SMALL
+PADDING_NONE = view_generic.PADDING_NONE
 
 #
 # CLASSES
 #
 
 
-class Experiment_View(Page):
+class Experiment_View(view_generic.Page):
 
     def __init__(self, controller, model, top=None, stage=None):
 
@@ -56,7 +55,7 @@ class Experiment_View(Page):
         return Top_Root(self._controller, self._model)
 
 
-class Top_Root(Top):
+class Top_Root(view_generic.Top):
 
     def __init__(self, controller, model):
 
@@ -91,7 +90,7 @@ class Stage_About(gtk.Label):
         self.set_markup(model['project-stage-about-text'])
 
 
-class Top_Project_Setup(Top):
+class Top_Project_Setup(view_generic.Top):
 
     def __init__(self, controller, model, specific_model):
 
@@ -99,7 +98,7 @@ class Top_Project_Setup(Top):
 
         self._specific_model = specific_model
 
-        self._start_button = Start_Button(controller, model)
+        self._start_button = view_generic.Start_Button(controller, model)
         self.pack_end(self._start_button, False, False, PADDING_LARGE)
         self.set_allow_next(False)
 
@@ -110,7 +109,7 @@ class Top_Project_Setup(Top):
         self._start_button.set_sensitive(val)
 
 
-class Top_Project_Running(Top):
+class Top_Project_Running(view_generic.Top):
 
     def __init__(self, controller, model, specific_model):
 
@@ -121,7 +120,7 @@ class Top_Project_Running(Top):
         self.show_all()
 
 
-class Top_One(Top):
+class Top_One(view_generic.Top):
 
     def __init__(self, controller, model, specific_model):
 
@@ -162,7 +161,7 @@ class Stage_One(gtk.VBox):
         hbox.pack_start(self.scanner, False, False, PADDING_MEDIUM)
         label = gtk.Label(model['one-stage-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
-        self.fixture = get_fixtures_combo()
+        self.fixture = view_generic.get_fixtures_combo()
         self.gtk_handlers['fixture-changed'] = self.fixture.connect(
             "changed", controller.set_new_fixture)
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
@@ -290,9 +289,10 @@ class Stage_One(gtk.VBox):
 
         m = self._model
 
-        set_fixtures_combo(self.fixture,
-                           self._controller.get_top_controller().fixtures,
-                           default_text=m['one-stage-no-fixture'])
+        view_generic.set_fixtures_combo(
+            self.fixture,
+            self._controller.get_top_controller().fixtures,
+            default_text=m['one-stage-no-fixture'])
 
         self.fixture.set_active(0)
 
@@ -472,7 +472,7 @@ class Stage_Project_Setup(gtk.VBox):
         hbox.pack_start(self.scanner, False, False, PADDING_MEDIUM)
         label = gtk.Label(model['project-stage-fixture'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
-        self.fixture = get_fixtures_combo()
+        self.fixture = view_generic.get_fixtures_combo()
         self.gtk_handlers['fixture-changed'] = self.fixture.connect(
             "changed", self._set_new_fixture)
         hbox.pack_start(self.fixture, False, False, PADDING_SMALL)
@@ -642,8 +642,9 @@ class Stage_Project_Setup(gtk.VBox):
     def set_free_space_warning(self, known_space):
 
         m = self._model
-        dialog(self._window, m['space-warning-text'],
-               d_type='warning', yn_buttons=False)
+        view_generic.dialog(
+            self._window, m['space-warning-text'],
+            d_type='warning', yn_buttons=False)
 
     def warn_scanner_claim_fail(self):
 
@@ -651,9 +652,10 @@ class Stage_Project_Setup(gtk.VBox):
 
         self.scanner.set_active(-1)
 
-        dialog(self._window,
-               self._model['project-stage-scanner-claim-fail'],
-               d_type="warning", yn_buttons=False)
+        view_generic.dialog(
+            self._window,
+            self._model['project-stage-scanner-claim-fail'],
+            d_type="warning", yn_buttons=False)
 
         self.scanner.handler_unblock(self.gtk_handlers['scanner-changed'])
 
@@ -727,8 +729,8 @@ class Stage_Project_Setup(gtk.VBox):
 
     def set_fixtures(self):
 
-        set_fixtures_combo(self.fixture,
-                           self._controller.get_top_controller().fixtures)
+        view_generic.set_fixtures_combo(
+            self.fixture, self._controller.get_top_controller().fixtures)
 
     def set_fixture_image(self, fixture):
 
@@ -741,7 +743,7 @@ class Stage_Project_Setup(gtk.VBox):
             fixture,
             fixture_directory=tc.paths.fixtures)
 
-        self._fixture_drawing = Fixture_Drawing(
+        self._fixture_drawing = view_generic.Fixture_Drawing(
             f, scanner_view=True, width=250, height=400)
 
         self._fixture_image.add(self._fixture_drawing)
@@ -788,7 +790,7 @@ class Stage_Project_Setup(gtk.VBox):
 
                 for p in xrange(len(pinnings_list) - len(children)):
 
-                    box.pack_start(Pinning(
+                    box.pack_start(view_generic.Pinning(
                         self._controller, self._model, self,
                         len(children) + p + 1,
                         pinning=pinnings_list[p]))
