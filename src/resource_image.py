@@ -564,6 +564,11 @@ class Analyse_Grayscale(object):
 
             self._grayscale_X = self.get_grayscale_X(self._grayscale_pos)
 
+    @property
+    def image(self):
+
+        return self._img
+
     def get_target_values(self):
 
         return self._grayscale_targets
@@ -571,6 +576,10 @@ class Analyse_Grayscale(object):
     def get_source_values(self):
 
         return self._grayscale
+
+    def get_sampling_positions(self):
+
+        return self._orthMid, self._grayscale_pos
 
     def get_grayscale_X(self, grayscale_pos=None):
 
@@ -745,6 +754,8 @@ class Analyse_Grayscale(object):
 
         im = self._img[rect[0][0]: rect[1][0],
                        rect[0][1]: rect[1][1]]
+
+        self._orthMid = (rect[1][1] + rect[0][1]) / 2.0
 
         return im, rect
 
@@ -985,7 +996,7 @@ class Analyse_Grayscale(object):
 
                 gray_scale.append(self._img[left: right, top: bottom].mean())
 
-        self._gray_scale_pos = gray_scale_pos
+        self._grayscale_pos = gray_scale_pos
         self._grayscale = gray_scale
 
         #print "GS", gray_scale

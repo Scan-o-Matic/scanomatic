@@ -38,6 +38,7 @@ model = {
 
     'from': 'From:',
     'to': 'To:',
+    'save': 'Save',
 
 #ABOUT
 ##TOP
@@ -69,7 +70,21 @@ to invoke a new calibration polynomial.</i></span>
     'grayscale-title': """<span size="large">Grayscale Calibration</span>""",
     'grayscale-load-image': """Select an Image with both grayscales""",
     'grayscale-new-model': """Add New Model""",
-    'grayscale-mark-instructions': """Select the area of the source and target""",
+    'grayscale-mark-instructions': """Select the area of the""",
+    'grayscale-source': 'Known reference',
+    'grayscale-target': 'New scale',
+    'grayscale-types': ['target', 'source'],
+    'grayscale-colors': ['#A45656', '#56A456'],
+    'grayscale-info-default':
+    """First select an image, then mark the range of the reference grayscale.
+After that, mark the grayscale you intend to calibrate. Both are properly
+detected (pixel values are monotonious increasing or decreasing), you get
+the option of commiting the new target values of the grayscale being
+calibrated (click 'Save').""",
+    'grayscale-info-done': """Calibration completed and new settings can now be
+saved.""",
+    'grayscale-info-saved': """New calibration target values have been saved
+and are ready to be used.""",
 
 #FIXTURE SELECT
 'fixture-select-title': """<span size="large">Fixture To Work With</span>""",
@@ -115,6 +130,21 @@ to invoke a new calibration polynomial.</i></span>
 
 
 specific_grayscale_model = {
+    'active-type': 'source',
+    'active-lineWidth': 1,
+    'active-color': None,
+    'active-alpha': 0.5,
+    'active-source': None,
+    'active-target': None,
+    'active-changing': False,
+
+    'source-sourceValues': None,
+    'source-targetValues': None,
+    'source-name': None,
+
+    'target-sourceValues': None,
+    'target-targetValues': None,
+    'target-name': None,
 
 }
 

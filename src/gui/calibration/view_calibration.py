@@ -29,8 +29,6 @@ import numpy as np
 #
 
 import src.gui.generic.view_generic as view_generic
-import src.resource_grayscale as resource_grayscale
-import src.resource_image as resource_image
 
 #
 # STATIC GLOBALS
@@ -115,6 +113,8 @@ class Grayscale_Stage(gtk.VBox):
         self._model = model
         self._specific_model = specific_model
 
+        self._selectingSource = True
+
         #TITLE
         label = gtk.Label()
         label.set_markup(model['grayscale-title'])
@@ -126,8 +126,8 @@ class Grayscale_Stage(gtk.VBox):
         rightVBox = gtk.VBox(False, 0)
         mainHBox = gtk.HBox(False, 0)
         mainHBox.pack_start(leftVBox, False, False, PADDING_MEDIUM)
-        mainHBox.pack_start(midVBox, False, False, PADDING_MEDIUM)
-        mainHBox.pack_start(rightVBox, True, True, PADDING_MEDIUM)
+        mainHBox.pack_start(midVBox, True, True, PADDING_MEDIUM)
+        mainHBox.pack_start(rightVBox, False, False, PADDING_MEDIUM)
         self.pack_start(mainHBox, True, True, PADDING_MEDIUM)
 
         #IMAGE DISPLAY - LEFT
@@ -140,8 +140,8 @@ class Grayscale_Stage(gtk.VBox):
         label = gtk.Label(model['from'])
         hbox.pack_start(label, False, False, PADDING_SMALL)
         self._grayscaleSource = view_generic.get_grayscale_combo()
-        self._grayscaleSource.set_activeGrayscale(
-            resource_grayscale.getDefualtGrayscale())
+        self._grayscaleSource.set_activeGrayscale(None)
+        #resource_grayscale.getDefualtGrayscale())
         self._grayscaleSource.connect("changed", controller.setSourceGrayscale)
         hbox.pack_start(self._grayscaleSource, False, False, PADDING_SMALL)
         label = gtk.Label(model['to'])
@@ -170,10 +170,53 @@ class Grayscale_Stage(gtk.VBox):
         leftVBox.pack_start(self._fixture_image.get_canvas(), True, True,
                             PADDING_SMALL)
 
+        hbox = gtk.HBox(False, 0)
         label = gtk.Label(model['grayscale-mark-instructions'])
-        leftVBox.pack_start(label, False, False, PADDING_SMALL)
+        toggle = gtk.ToggleButton(label=model['grayscale-source'])
+        toggle.set_active(self._selectingSource)
+        toggle.connect("toggled", self._selectingGSselection)
+        hbox.pack_start(label, False, False, PADDING_SMALL)
+        hbox.pack_start(toggle, False, False, PADDING_SMALL)
+        leftVBox.pack_start(hbox, False, False, PADDING_SMALL)
 
+        self._refernceGrayscale = view_generic.Grayscale_Display(gtk.HBox)
+        self._calibrtionGrayscale = view_generic.Grayscale_Display(gtk.HBox)
+        label = gtk.Label(model['grayscale-source'])
+        midVBox.pack_start(label, False, False, PADDING_SMALL)
+        midVBox.pack_start(self._refernceGrayscale.widget, True, True,
+                           PADDING_LARGE)
+
+        label = gtk.Label(model['grayscale-target'])
+        midVBox.pack_start(label, False, False, PADDING_SMALL)
+        midVBox.pack_start(self._calibrtionGrayscale.widget, True, True,
+                           PADDING_LARGE)
+
+        self._infoText = gtk.TextView()
+        self._infoText.set_editable(False)
+        self._infoText.set_wrap_mode(gtk.WRAP_WORD)
+        self._infoText.set_size_request(200, -1)
+        self._infoBuffer = self._infoText.get_buffer()
+        self._infoBuffer.set_text(model['grayscale-info-default'])
+
+        self._saveButton = gtk.Button(label=model['save'])
+        self._saveButton.set_sensitive(False)
+        self._saveButton.connect("clicked", controller.saveNewGrayscale)
+
+        rightVBox.pack_start(self._infoText, True, True, PADDING_SMALL)
+        rightVBox.pack_start(self._saveButton, False, False, PADDING_SMALL)
+
+        self.clearOverlay = self._fixture_image.clear_overlay
         self.show_all()
+
+    def _selectingGSselection(self, widget, *args):
+
+        selectingSource = widget.get_active()
+        if selectingSource:
+            widget.set_label(self._model['grayscale-source'])
+        else:
+            widget.set_label(self._model['grayscale-target'])
+
+        self._controller.setActiveGrayscale(isSource=selectingSource)
 
     def _newModelProxy(self, widget, *args):
 
@@ -183,15 +226,55 @@ class Grayscale_Stage(gtk.VBox):
 
     def _mouse_press(self, event):
 
-        pass
+        self._controller.setGrayScaleAreaSource(event.xdata, event.ydata)
 
     def _mouse_move(self, event):
 
-        pass
+        if (event.xdata is not None and event.ydata is not None and
+                self._specific_model['active-changing'] is True):
+
+            self.updateActiveSeletion(target=(event.xdata, event.ydata))
 
     def _mouse_release(self, event):
 
-        pass
+        self._controller.setGrayScaleAreaTarget(event.xdata, event.ydata)
+
+    def setAllowSave(self, allowSave, message=None):
+
+        if message is not None:
+            self._infoBuffer.set_text(message)
+        else:
+            self._infoBuffer.set_text(
+                self._specific_model['grayscale-info-default'])
+
+        self._saveButton.set_sensitive(allowSave)
+
+    def updateActiveSeletion(self, target=None, **kwargs):
+
+        sm = self._specific_model
+
+        if target is None:
+            target = sm['active-target']
+
+        if 'gsAnalysis' in kwargs:
+            if sm['active-type'] == 'source':
+                self._refernceGrayscale.set(**kwargs)
+            else:
+                self._calibrtionGrayscale.set(**kwargs)
+
+        if sm['active-source'] is None or target is None:
+
+            self._fixture_image.clear_overlay(sm['active-type'])
+
+        else:
+
+            self._fixture_image.set_any_overlay(
+                self._fixture_image.RECT,
+                overlay_key=sm['active-type'],
+                coords=(sm['active-source'], target),
+                color=sm['active-color'],
+                lw=sm['active-lineWidth'],
+                alpha=sm['active-alpha'])
 
     def updateImage(self):
 
@@ -675,6 +758,10 @@ class Fixture_Save_Stage(gtk.VBox):
 
 class Fixture_Image(object):
 
+    RECT = 0
+    CIRCLE = 1
+    TEXT = 2
+
     def __init__(self, model, event_callbacks=None, full_size=False):
 
         """
@@ -851,6 +938,23 @@ class Fixture_Image(object):
             self.image_ax.add_patch(circ)
             self._im_overlays[overlay_key] = circ
 
+    def set_any_overlay(self, overlayType, *args, **kwargs):
+
+        print args, kwargs
+        if overlayType == self.CIRCLE:
+
+            self._set_circle(*args)
+
+        elif overlayType == self.RECT:
+
+            self._set_rect(*args, **kwargs)
+
+        elif overlayType == self.TEXT:
+
+            self._set_text(*args, **kwargs)
+
+        self.image_fig.canvas.draw()
+
     def clear_overlays(self):
 
         for overlay in self._im_overlays:
@@ -860,11 +964,14 @@ class Fixture_Image(object):
         self._im_overlays = dict()
         self.image_fig.canvas.draw()
 
-    def clear_overlay(self, overlay):
+    def clear_overlay(self, overlay, doRedraw=False):
 
         if overlay in self._im_overlays:
             self._im_overlays[overlay].remove()
             del self._im_overlays[overlay]
+
+        if doRedraw:
+            self.image_fig.canvas.draw()
 
     def get_display_coordinate(self, x, y):
 

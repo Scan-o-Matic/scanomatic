@@ -18,6 +18,8 @@ pygtk.require('2.0')
 import gtk
 import numpy as np
 import types
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
 #
 # INTERNAL DEPENDENCIES
@@ -550,6 +552,82 @@ class Fixture_Drawing(gtk.DrawingArea):
                             fill_rgba=self._plate_fill_rgba)
 
             self._draw_text(cr, plate, i + 1, fsize=h / 10)
+
+
+class Grayscale_Display(object):
+
+    GS_MARKER = np.array([[-1, -0.5], [1, -0.5], [1, 0.5], [-1, 0.5],
+                          [-1, -0.5]])
+
+    def __init__(self, gtkBox=gtk.VBox, imFigSize=(150, 250),
+                 graphFigSize=(150, 250), dpi=150):
+
+        self._gtkBox = gtkBox(False, 0)
+
+        self._imFig = plt.Figure(figsize=imFigSize, dpi=dpi)
+        self._imAx = self._imFig.add_subplot(111)
+        FigureCanvas(self._imFig)
+        self._imAx.get_xaxis().set_visible(False)
+        self._imAx.get_yaxis().set_visible(False)
+
+        self._graphFig = plt.Figure(figsize=graphFigSize, dpi=dpi)
+        self._graphAx = self._graphFig.add_subplot(111)
+        FigureCanvas(self._graphFig)
+        self._graphAx.get_xaxis().set_visible(False)
+        self._graphAx.get_yaxis().set_visible(False)
+
+        self._gtkBox.pack_start(self._imFig.canvas, True, True, PADDING_SMALL)
+        self._gtkBox.pack_start(self._graphFig.canvas, True, True,
+                                PADDING_SMALL)
+
+    @property
+    def widget(self):
+
+        return self._gtkBox
+
+    def update(self):
+
+        self._imFig.canvas.draw()
+        self._graphFig.canvas.draw()
+
+    def set(self, gsAnalysis=None, sourceValues=None, targetValues=None,
+            im=None):
+
+        self._imAx.cla()
+        self._graphAx.cla()
+
+        if gsAnalysis is None:
+            self.update()
+            return
+
+        if im is None:
+            im = gsAnalysis.image
+
+        self._imAx.imshow(im,
+                          interpolation='nearest', cmap=plt.cm.gray)
+
+        Xposition, Ypositions = gsAnalysis.get_sampling_positions()
+        if sourceValues is None:
+            sourceValues = gsAnalysis.get_source_values()
+        if targetValues is None:
+            targetValues = gsAnalysis.get_target_values()
+
+        if Ypositions is not None:
+            X = np.ones(len(Ypositions)) * Xposition
+            self._imAx.plot(X, Ypositions, marker=self.GS_MARKER, ls='None',
+                            mew=1, mec='b', mfc='None', ms=2)
+
+            self._graphAx.plot(
+                sourceValues,
+                targetValues,
+                marker='o', ls='-', color='b', mec='b', mfc='None', mew=1,
+                ms=3)
+
+            self._graphAx.set_xlabel("Pixel value", size='xx-small')
+            self._graphAx.set_ylabel("Target value", size='xx-small')
+            self._graphAx.set_xlim(0, 255)
+
+        self.update()
 
 
 class Start_Button(gtk.Button):

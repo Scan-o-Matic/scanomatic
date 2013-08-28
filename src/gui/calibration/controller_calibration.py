@@ -28,8 +28,7 @@ import src.gui.generic.controller_generic as controller_generic
 import src.resource_fixture_image as resource_fixture_image
 import src.resource_scanner as resource_scanner
 import src.resource_grayscale as resource_grayscale
-#import src.resource_path as resource_path
-#import src.resource_app_config as resource_app_config
+import src.resource_image as resource_image
 
 #
 # EXCEPTIONS
@@ -152,16 +151,121 @@ class Grayscale_Controller(controller_generic.Controller):
             self._model['fixture-image-file-filter'],
             start_in=self._paths.experiment_root)
         if file_path is not None and len(file_path) > 0:
-            self._specific_model['im-path'] = file_path[0]
+            sm = self._specific_model
+            sm['im-path'] = file_path[0]
+            sm['source-sourceValues'] = None
+            sm['source-targetValues'] = None
+            sm['target-sourceValues'] = None
+            sm['target-targetValues'] = None
+            self.setActiveGrayscale(isSource=sm['active-type'] == 'source')
             self._stage.updateImage()
 
     def setSourceGrayscale(self, widget):
 
-        gsName = widget.get_text()
+        sm = self._specific_model
+        sm['source-name'] = widget.get_text()
+        sm['source-targetValues'] = None
+        sm['source-sourceValues'] = None
+        self._stage.clearOverlay('source', doRedraw=True)
 
     def setTargetGrayscale(self, widget):
 
-        gsName = widget.get_text()
+        sm = self._specific_model
+        sm['target-name'] = widget.get_text()
+        sm['target-targetValues'] = None
+        sm['target-sourceValues'] = None
+        self._stage.clearOverlay('target', doRedraw=True)
+
+    def setActiveGrayscale(self, isSource):
+
+        sm = self._specific_model
+        m = self._model
+        sm['active-type'] = m['grayscale-types'][isSource]
+        sm['active-color'] = m['grayscale-colors'][isSource]
+        sm['active-target'] = None
+        sm['active-source'] = None
+        self._stage.updateActiveSeletion()
+
+    def setGrayScaleAreaSource(self, x, y):
+
+        sm = self._specific_model
+
+        if sm['active-type'] is not None:
+            if x is not None and y is not None:
+                sm['active-source'] = (x, y)
+                sm['active-changing'] = True
+            else:
+                sm['active-source'] = None
+                sm['active-changing'] = False
+
+        self._stage.updateActiveSeletion()
+
+    def getSlicer(self, pos1, pos2):
+
+        return [slice(*dimension) for dimension in
+                map(sorted, zip(pos1, pos2))][::-1]
+
+    def setGrayScaleAreaTarget(self, x, y):
+
+        sm = self._specific_model
+
+        if sm['active-type'] is not None:
+            if x is not None and y is not None:
+
+                sm['active-target'] = (x, y)
+                sm['active-changing'] = False
+                if sm['active-type'] == 'source':
+                    gsType = sm['source-name']
+                else:
+                    gsType = sm['target-name']
+
+                gsAnalysis = resource_image.Analyse_Grayscale(
+                    gsType, sm['im'][self.getSlicer(sm['active-target'],
+                                                    sm['active-source'])])
+
+                if sm['active-type'] == 'source':
+
+                    sm['source-sourceValues'] = gsAnalysis.get_source_values()
+                    sm['source-targetValues'] = gsAnalysis.get_target_values()
+                    if sm['source-sourceValues'] is not None:
+                        sm['source-polynomial'] = np.poly1d(np.polyfit(
+                            sm['source-sourceValues'],
+                            sm['source-targetValues'], 3))
+                    else:
+                        sm['source-polynomial'] = None
+
+                    self._stage.updateActiveSeletion(gsAnalysis=gsAnalysis)
+
+                else:
+
+                    sm['target-sourceValues'] = gsAnalysis.get_source_values()
+                    if (sm['source-polynomial'] is not None and
+                            sm['target-sourceValues'] is not None):
+
+                        sm['target-targetValues'] = sm['source-polynomial'](
+                            sm['target-sourceValues'])
+
+                        self._stage.setAllowSave(
+                            True, message=self._model['grayscale-info-done'])
+
+                    else:
+
+                        sm['target-sourceValues'] = None
+                        sm['target-targetValues'] = None
+                        self._stage.setAllowSave(False)
+
+                    self._stage.updateActiveSeletion(
+                        gsAnalysis=gsAnalysis,
+                        targetValues=sm['target-targetValues'])
+
+    def saveNewGrayscale(self, *args):
+
+        resource_grayscale.updateGrayscaleValues(
+            self._specific_model['target-name'],
+            targets=list(self._specific_model['target-targetValues']))
+
+        self._stage.setAllowSave(
+            False, message=self._model['grayscale-info-saved'])
 
 
 class Fixture_Controller(controller_generic.Controller):
@@ -528,7 +632,6 @@ class Fixture_Controller(controller_generic.Controller):
             np.save("tmp_gs_{0}_target.npy".format(self.f_settings['name']),
                     gs_target)
             if resource_grayscale.validate(self.f_settings):
-
 
                 sm['grayscale-sources'] = gs_source
                 gs_ok = True
