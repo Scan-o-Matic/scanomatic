@@ -14,8 +14,13 @@ import src.resource_path as resource_path
 # EXCEPTIONS
 #
 
-class Invalid_Key_Assignment(Exception): pass
-class Unknown_Key_Request(Exception): pass
+
+class Invalid_Key_Assignment(Exception):
+    pass
+
+
+class Unknown_Key_Request(Exception):
+    pass
 
 #
 # FUNCTIONS
@@ -72,7 +77,7 @@ class Model(object):
 
         else:
             self._pm[key] = val
-            
+
     def add_counter(self, key, counted_key):
 
         self._counters[key] = counted_key
@@ -131,13 +136,13 @@ generic_gui_model = {
 #FIXTURES
 'plate-label': 'Plate {0}',
 
-'pinning-matrices': {'A: 8 x 12 (96)': (8, 12), 
+'pinning-matrices': {'A: 8 x 12 (96)': (8, 12),
                     'B: 16 x 24 (384)': (16, 24),
                     'C: 32 x 48 (1536)': (32, 48),
                     'D: 64 x 96 (6144)': (64, 96),
                     '--Empty--': None},
 
-'pinning-matrices-reversed': {(8, 12): 'A: 8 x 12 (96)', 
+'pinning-matrices-reversed': {(8, 12): 'A: 8 x 12 (96)',
                     (16, 24): 'B: 16 x 24 (384)',
                     (32, 48): 'C: 32 x 48 (1536)',
                     (64, 96): 'D: 64 x 96 (6144)',

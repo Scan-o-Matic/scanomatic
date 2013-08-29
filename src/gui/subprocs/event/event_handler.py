@@ -50,15 +50,13 @@ def whoCalled(fn):
 
 class EventHandler(object):
 
-    def __init__(self, logger):
+    def __init__(self):
         """The Event Handler gathers all subprocess events.
 
         It invokes all the communications and checks their status.
 
         :param logger: A logging-object
         """
-
-        self._logger = logger
 
         self._events = set()
 

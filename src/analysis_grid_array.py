@@ -25,9 +25,9 @@ from matplotlib import pyplot as plt
 
 import resource_grid
 import analysis_grid_cell as grid_cell
-import resource_logger as logger
 import resource_path
 import resource_image
+import logging
 
 #
 # EXCEPTIONS
@@ -58,18 +58,16 @@ class Grid_Array():
 
         self._parent = parent
 
+        self.logger = logging.getLogger("Grid Array {0}".format(identifier))
+
         if parent is None:
 
-            self.logger = logger.Fallback_Logger()
-            #self.logger = logging.getLogger("Grid Array {0}".format(identifier))
             self._paths = resource_path.Paths(
                 src_path=os.path.abspath(__file__))
             self.fixture = None
 
         else:
 
-            self.logger = logger.Fallback_Logger()
-            #self.logger = logging.getLogger("Grid Array {0}".format(identifier))
             self._paths = parent._paths
             self.fixture = parent.fixture
 

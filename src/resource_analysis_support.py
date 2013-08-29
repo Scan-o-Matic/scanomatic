@@ -43,12 +43,6 @@ _logger = logging.getLogger("Resource Analysis Support")
 #
 
 
-def set_logger(logger):
-
-    global _logger
-    _logger = logger
-
-
 def get_first_rotated(A, B):
     """Evaluates if both have the same orientation (lanscape or standing)
     returns the first so it matches the orientation of the second
@@ -186,8 +180,6 @@ def print_progress_bar(fraction=0.0, size=40, start_time=None):
 def custom_traceback(excType, excValue, traceback):
     """Custom traceback function"""
 
-    global _logger
-
     run_file_path = (
         "(sorry couldn't find the name," +
         " but it is the analysis.run of your project)")
@@ -224,14 +216,14 @@ def get_finds_fixture(name, directory=None):
 
 def get_run_will_do_something(
         suppress_analysis, graph_watch,
-        meta_data, image_dictionaries, logger):
+        meta_data, image_dictionaries):
 
     #Verifying sanity of request: Suppression requires watching?
     if suppress_analysis:
 
         if graph_watch is None or len(graph_watch) == 0:
 
-            logger.critical(
+            _logger.critical(
                 "ANALYSIS: You are effectively requesting to" +
                 " do nothing,\nso I guess I'm done...\n(If you suppress" +
                 " analysis of non-watched colonies, then you need to watch" +
@@ -243,7 +235,7 @@ def get_run_will_do_something(
                 graph_watch[0] < 0 or \
                 meta_data['Pinning Matrices'][graph_watch[0]] is None:
 
-            logger.critical(
+            _logger.critical(
                 "ANALYSIS: That plate ({0}) does not exist".format(
                     graph_watch[0]) + " or doesn't have a pinning!")
 
@@ -256,7 +248,7 @@ def get_run_will_do_something(
             if graph_watch[1] >= pm[0] or graph_watch[1] < 0 or \
                     graph_watch[2] >= pm[1] or graph_watch[2] < 0:
 
-                logger.critical(
+                _logger.critical(
                     "ANALYSIS: The watch colony cordinate" +
                     " ({0}) is out of bounds on plate {1}.".format(
                     graph_watch[1:], graph_watch[0]))

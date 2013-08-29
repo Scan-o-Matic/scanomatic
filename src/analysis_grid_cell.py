@@ -18,7 +18,7 @@ __status__ = "Development"
 
 import numpy as np
 #import math
-#import logging
+import logging
 
 #
 # SCANNOMATIC LIBRARIES
@@ -40,7 +40,7 @@ class Grid_Cell():
     def __init__(self, parent, identifier, grid_cell_settings=None):
 
         self._parent = parent
-        self.logger = self._parent.logger
+        self.logger = logging.getLogger("Grid Cell {0}".format(identifier))
 
         self._identifier = identifier
         self._adjustment_warning = False

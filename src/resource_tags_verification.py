@@ -1,3 +1,14 @@
+"""
+Returns proper control number for a set of two tags
+"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL v3.0"
+__version__ = "0.998"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
 
 
 def ctrlNum(s1, s2):

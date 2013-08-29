@@ -20,6 +20,7 @@ import collections
 import threading
 import sh
 import copy
+import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -88,10 +89,10 @@ def get_pinnings_str(pinning_list):
 
 class Experiment_Controller(controller_generic.Controller):
 
-    def __init__(self, main_controller, logger=None):
+    def __init__(self, main_controller):
 
-        super(Experiment_Controller, self).__init__(
-            main_controller, logger=logger)
+        super(Experiment_Controller, self).__init__(main_controller)
+        self._logger = logging.getLogger("Experiment Controller")
         self._specific_controller = None
 
     def ask_destroy(self, *args, **kwargs):
@@ -148,10 +149,12 @@ class Experiment_Controller(controller_generic.Controller):
 class One_Controller(controller_generic.Controller):
 
     def __init__(self, parent, view=None, model=None,
-                 specific_model=None, logger=None):
+                 specific_model=None):
 
         super(One_Controller, self).__init__(
-            parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model)
+
+        self._logger = logging.getLogger("One Image Controller")
 
         if specific_model is not None:
             self._specific_model = specific_model
@@ -379,10 +382,12 @@ class Project_Controller(controller_generic.Controller):
         'scans': (2, 1000)}
 
     def __init__(self, parent, view=None, model=None,
-                 specific_model=None, logger=None):
+                 specific_model=None):
 
         super(Project_Controller, self).__init__(
-            parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model)
+
+        self._logger = logging.getLogger("Experiment Project Controller")
 
         #MODEL
         if specific_model is not None:

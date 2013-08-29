@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import numpy as np
+import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -65,11 +66,11 @@ class Scan_Failed(Exception):
 
 class Calibration_Controller(controller_generic.Controller):
 
-    def __init__(self, main_controller, logger=None):
+    def __init__(self, main_controller):
 
-        super(Calibration_Controller, self).__init__(
-            main_controller, logger=logger)
+        super(Calibration_Controller, self).__init__(main_controller)
 
+        self._logger = logging.getLogger("Calibration Controller")
         self._specific_controller = None
 
     def _get_default_view(self):
@@ -89,12 +90,12 @@ class Calibration_Controller(controller_generic.Controller):
         if calibration_mode == 'fixture':
 
             self._specific_controller = Fixture_Controller(
-                self, model=model, view=view, logger=self._logger)
+                self, model=model, view=view)
 
         elif calibration_mode == "grayscale":
 
             self._specific_controller = Grayscale_Controller(
-                self, model=model, view=view, logger=self._logger)
+                self, model=model, view=view)
 
         elif calibration_mode == "poly":
 
@@ -114,11 +115,12 @@ class Calibration_Controller(controller_generic.Controller):
 class Grayscale_Controller(controller_generic.Controller):
 
     def __init__(self, parent, view=None, model=None,
-                 specific_model=None, logger=None):
+                 specific_model=None):
 
         super(Grayscale_Controller, self).__init__(
-            parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model)
 
+        self._logger = logging.getLogger("Grayscale Controller")
         tc = self.get_top_controller()
         self._paths = tc.paths
 
@@ -270,11 +272,12 @@ class Grayscale_Controller(controller_generic.Controller):
 
 class Fixture_Controller(controller_generic.Controller):
 
-    def __init__(self, parent, view=None, model=None,
-                 specific_model=None, logger=None):
+    def __init__(self, parent, view=None, model=None, specific_model=None):
 
         super(Fixture_Controller, self).__init__(
-            parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model)
+
+        self._logger = logging.getLogger("Fixture Controller")
 
         tc = self.get_top_controller()
         self._paths = tc.paths

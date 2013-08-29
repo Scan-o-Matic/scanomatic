@@ -15,19 +15,13 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from PIL import Image, ImageWin
-
-import os
-import sys
 from subprocess import call, Popen
-import time
-import types
+import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_logger as resource_logger
 
 #
 # CLASSES
@@ -36,14 +30,11 @@ import src.resource_logger as resource_logger
 class Sane_Base():
 
     def __init__(self, owner=None, model=None, scan_mode=None,
-            output_function=None, scan_settings=None):
+                 scan_settings=None):
 
         self.owner = owner
 
-        if output_function is not None:
-            self._logger = output_function
-        else:
-            self._logger = resource_logger.Fallback_Logger()
+        self._logger = logging.getLogger("SANE")
 
         self.next_file_name = None
         self._scanner_name = None
@@ -53,16 +44,17 @@ class Sane_Base():
         if scan_settings is not None:
             self._scan_settings_repo = scan_settings
         else:
-            self._scan_settings_repo = \
-            {"EPSON V700" : \
-                {'TPU': \
-                    ["--source", "Transparency" ,"--format", "tiff", 
-                    "--resolution", "600", "--mode", "Gray", "-l", "0",  
-                    "-t", "0", "-x", "203.2", "-y", "254", "--depth", "8"],
-                'COLOR': \
-                    ["--source", "Flatbed", "--format", "tiff",
-                    "--resolution", "300", "--mode", "Color", "-l", "0",
-                    "-t", "0", "-x", "215.9", "-y", "297.18", "--depth", "8"]} }
+            self._scan_settings_repo = {
+                "EPSON V700": {
+                    'TPU': [
+                        "--source", "Transparency", "--format", "tiff",
+                        "--resolution", "600", "--mode", "Gray", "-l", "0",
+                        "-t", "0", "-x", "203.2", "-y", "254", "--depth", "8"],
+                    'COLOR': [
+                        "--source", "Flatbed", "--format", "tiff",
+                        "--resolution", "300", "--mode", "Color", "-l", "0",
+                        "-t", "0", "-x", "215.9", "-y", "297.18",
+                        "--depth", "8"]}}
 
         if model is not None:
             model = model.upper()
@@ -99,19 +91,19 @@ class Sane_Base():
 
         if self.next_file_name:
             self._logger.info("Scanning {0}".format(self.next_file_name))
-            #os.system(self._scan_settings + self.next_file_name) 
-            
+            #os.system(self._scan_settings + self.next_file_name)
+
             try:
-                im = open(self.next_file_name,'w')
+                im = open(self.next_file_name, 'w')
             except:
                 self._logger.error("Could not write to file: {0}".format(
                     self.next_file_name))
                 return False
 
             scan_query = list(self._scan_settings)
-            if scanner != None:
+            if scanner is not None:
                 scan_query = ['-d', scanner] + scan_query
-  
+
             scan_query.insert(0, self._program_name)
             self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
 
@@ -120,7 +112,7 @@ class Sane_Base():
                         self.next_file_name)
                 return args
             else:
-                call(scan_query,  stdout=im, shell=False) 
+                call(scan_query,  stdout=im, shell=False)
 
                 im.close()
 

@@ -15,13 +15,17 @@ __status__ = "Development"
 
 import sys
 import os
-import logging
 import threading
 import time
 import re
 import shutil
 from argparse import ArgumentParser
 from ConfigParser import ConfigParser
+import logging
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+    level=logging.INFO)
 
 #
 # INTERNAL-DEPENDENCIES

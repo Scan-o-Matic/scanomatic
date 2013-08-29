@@ -14,26 +14,26 @@ __status__ = "Development"
 #
 
 import os
-import sys
-import time
+import re
 from subprocess import Popen, PIPE
 
 #LAN-specific dependencies
 import urllib2
 from urllib import urlencode
+import logging
 #FURTHER LAN-specific dependenies further down
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_logger as resource_logger
-
 #
 # EXCEPTIONS
 #
 
-class Invalid_Init(Exception): pass
+
+class Invalid_Init(Exception):
+    pass
 
 #
 # GLOBALS
@@ -69,29 +69,26 @@ class NO_PM(object):
 
 class USB_PM(NO_PM):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
-    def __init__(self, path, on_args=[], off_args=[], logger=None):
+    def __init__(self, path, on_args=[], off_args=[]):
 
-        self.name ="USB connected PM"
+        self.name = "USB connected PM"
         self._on_cmd = [path] + on_args
         self._off_cmd = [path] + off_args
         self._fail_error = "No GEMBIRD SiS-PM found"
         self._socket = "None"
 
-        if logger is None:
-            self._logger = logger
-        else:
-            self._logger = resource_logger.Log_Garbage_Collector()
+        self._logger = logging.getLogger("Power Manager USB")
 
     def on(self):
         on_success = self._exec(self._on_cmd)
-        self._logger.info('USB PM, Turning on socket {0} ({1})'.format(self._socket,
-            on_success))
+        self._logger.info('USB PM, Turning on socket {0} ({1})'.format(
+            self._socket, on_success))
         return on_success
 
     def off(self):
         off_success = self._exec(self._off_cmd)
-        self._logger.info('USB PM, Turning off socket {0} ({1})'.format(self._socket,
-            off_success))
+        self._logger.info('USB PM, Turning off socket {0} ({1})'.format(
+            self._socket, off_success))
         return off_success
 
     def _exec(self, cmd):
@@ -115,21 +112,23 @@ class USB_PM_LINUX(USB_PM):
     ON_TEXT = "on"
     OFF_TEXT = "off"
 
-    def __init__(self, socket, path = "sispmctl", logger=None):
+    def __init__(self, socket, path="sispmctl"):
 
-        super(USB_PM_LINUX, self).__init__(path,
+        super(USB_PM_LINUX, self).__init__(
+            path,
             on_args=["-o", "{0}".format(socket)],
-            off_args=["-f", "{0}".format(socket)],
-            logger=logger)
+            off_args=["-f", "{0}".format(socket)])
 
-        self.name ="USB connected PM (Linux)"
+        self._logger = logging.getLogger("Power Manager USB(Linux)")
+
+        self.name = "USB connected PM (Linux)"
         self._socket = socket
 
     def status(self):
 
         self._logger.info('USB PM, trying to connect')
-        proc = Popen('sispmctl -g {0}'.format(self._socket), 
-            stdout=PIPE, stderr=PIPE, shell=True)
+        proc = Popen('sispmctl -g {0}'.format(self._socket),
+                     stdout=PIPE, stderr=PIPE, shell=True)
 
         stdout, stderr = proc.communicate()
         stdout = stdout.strip()
@@ -146,28 +145,30 @@ class USB_PM_LINUX(USB_PM):
 
 class USB_PM_WIN(USB_PM):
     """Class for handling USB connected PM:s on windows."""
-    def __init__(self, socket, path = r"C:\Program Files\Gembird\Power Manager\pm.exe",
-            logger=None):
+    def __init__(self, socket,
+                 path=r"C:\Program Files\Gembird\Power Manager\pm.exe"):
 
-        super(USB_PM_LINUX, self).__init__(path,
+        super(USB_PM_LINUX, self).__init__(
+            path,
             on_args=["-on", "-PW1", "-Scanner{0}".format(socket)],
-            off_args=["-off", "-PW1", "-Scanner{0}".format(socket)],
-            logger=logger)
+            off_args=["-off", "-PW1", "-Scanner{0}".format(socket)])
 
-        self.name ="USB connected PM (Windows)"
+        self._logger = logging.getLogger("Power Manager USB(Windows)")
+
+        self.name = "USB connected PM (Windows)"
         self._socket = socket
 
 
 class LAN_PM(NO_PM):
     """Class for handling LAN-connected PM:s.
 
-    host may be None if MAC is supplied. 
+    host may be None if MAC is supplied.
     If no password is supplied, default password is used."""
 
     def __init__(self, socket, host=None, password="1", verify_name=False,
-            pm_name="Server 1", MAC=None, logger=None):
+                 pm_name="Server 1", MAC=None):
 
-        self.name ="LAN connected PM"
+        self.name = "LAN connected PM"
         self._host = host
         self._MAC = MAC
         self._socket = socket
@@ -175,18 +176,15 @@ class LAN_PM(NO_PM):
             password = "1"
         self._password = password
 
-        if logger is None:
-            self._logger = resource_logger.Log_Garbage_Collector()
-        else:
-            self._logger = logger
+        self._logger = logging.getLogger("Power Manager LAN")
 
         self._pm_server_name = pm_name
         self._pm_server_str = "<h2>{0}".format(pm_name)
         self._verify_name = verify_name
 
         self._pwd_params = urlencode((("pw", password),))
-        self._on_params = urlencode((("cte{0}".format(socket),1),))
-        self._off_params = urlencode((("cte{0}".format(socket),0),))
+        self._on_params = urlencode((("cte{0}".format(socket), 1),))
+        self._off_params = urlencode((("cte{0}".format(socket), 0),))
 
         self._set_urls()
         self.test_ip()
@@ -203,7 +201,7 @@ class LAN_PM(NO_PM):
 
                 self._logger.error("LAN PM, No known host and no MAC...no way to find PM")
                 raise Invalid_Init()
-    
+
     def _set_urls(self):
 
         host = self._host
@@ -222,7 +220,6 @@ class LAN_PM(NO_PM):
         nm = nmap.PortScanner()
         nm_res = nm.scan(hosts="192.168.0.1-255", arguments="-sP")
 
-
         #FILTER OUT THOSE RESPONDING
         self._logger.debug("LAN PM, Evaluating all alive hosts")
         up_ips = [k for k in nm_res['scan'] if nm_res['scan'][k]['status']['state'] == u'up']
@@ -235,19 +232,18 @@ class LAN_PM(NO_PM):
 
         #RUN ARP
         self._logger.debug("LAN PM, Searching arp")
-        p = Popen(['arp','-n'], stdout=PIPE)
+        p = Popen(['arp', '-n'], stdout=PIPE)
 
         #FILTER LIST ON ROWS WITH SOUGHT MAC-ADDRESS
         self._logger.debug("LAN PM, Keeping those with correct MAC-addr")
 
         res = [l for l in p.communicate()[0].split("\n") if self._MAC in l]
 
-        
         if len(res) > 0:
             #RETURN THE IP
 
             for r in res:
-                self._host = r.split(" ",1)[0]
+                self._host = r.split(" ", 1)[0]
                 self._set_urls()
                 if self.test_ip() is not None:
                     break
@@ -284,7 +280,7 @@ class LAN_PM(NO_PM):
 
             self._logger.error("LAN PM, Loging in failed, no host")
             return None
- 
+
         else:
 
             self._logger.info("LAN PM, Logging in")
@@ -296,7 +292,7 @@ class LAN_PM(NO_PM):
 
             self._logger.error("LAN PM, Log out failed, no host")
             return None
- 
+
         else:
 
             self._logger.info("LAN PM, Logging out")
@@ -315,7 +311,7 @@ class LAN_PM(NO_PM):
                 self._host = None
 
             else:
-            
+
                 s = u.read()
                 u.close()
 
@@ -328,7 +324,7 @@ class LAN_PM(NO_PM):
                     self._host = None
 
         return self._host is not None
-            
+
     def on(self):
 
         u = self._login()
@@ -364,7 +360,7 @@ class LAN_PM(NO_PM):
             self._logger.info('USB PM, Turning off socket {0}'.format(self._socket))
 
             if self._run_url(self._ctrl_panel_url, self._off_params,
-                        timeout=URL_TIMEOUT) is None:
+                             timeout=URL_TIMEOUT) is None:
 
                 return False
 
@@ -403,53 +399,44 @@ class Power_Manager():
     """Interface that takes a PM-class and emits messages as well as introduces
     a power toggle switch"""
 
-    def __init__(self, pm=None, DMS=None):
+    def __init__(self, pm=None):
 
         if pm is None:
             pm = NO_PM()
-        self._pm = pm 
+        self._pm = pm
         self._installed = pm is not None
         self._on = None
-        if DMS is not None:
-            self._DMS = DMS
-        else:
-            self._DMS = resource_logger.Log_Garbage_Collector()
+        self._logger = logging.getLogger("Power Manager")
 
         if pm is not None:
-            self._DMS("Power", "Hooked up {0}, Socket {1}".format(pm.name, 
+            self._logger.debug("Power Hooked up {0}, Socket {1}".format(
+                pm.name,
                 pm._socket))
 
-            self._pm.set_DMS(DMS)
-
         else:
-            self._DMS("Power", "Power Manager has no device to talk to")
+            self._logger.debug("No device to talk to")
 
     def on(self):
-        
-        if self._installed and self._on != True:
+
+        if self._installed and self._on is not True:
             self._pm.on()
             self._on = True
-            if self._DMS:
-                self._DMS("Power","Switching on {0}, Socket {1}".format(
-                    self._pm.name, self._pm._socket),
-                    level="LA", debug_level='debug')     
+            self._logger.debug("Switching on {0}, Socket {1}".format(
+                self._pm.name, self._pm._socket))
 
     def off(self):
-        if self._installed and self._on != False:
+        if self._installed and self._on is not False:
             self._pm.off()
             self._on = False
-            if self._DMS:
-                self._DMS("Power","Switching off {0}, Socket {1}".format(
-                    self._pm.name, self._pm._socket),
-                    level="LA", debug_level='debug')     
+            self._logger.debug("Switching off {0}, Socket {1}".format(
+                self._pm.name, self._pm._socket))
 
     def status(self):
         print "Power Manager, checking status"
         return self._pm.status()
 
     def toggle(self):
-        if self.on is None or self.on == False:
+        if self.on is None or self.on is False:
             self.on()
         else:
             self.off()
-

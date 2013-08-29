@@ -23,6 +23,13 @@ import numpy as np
 import re
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
+
+#
+# GLOBALS
+#
+
+_logger = logging.getLogger("Resource XML Reader")
+
 #
 # SCANNOMATIC LIBRARIES
 #
@@ -48,13 +55,14 @@ class XML_Reader():
         self._scan_times = scan_times
 
         if file_path:
-            self._logger = logging.getLogger('XML_Reader.{0}'.format(file_path.split(os.sep)[-1]))
+            self._logger = logging.getLogger(
+                "XML-reader '{0}'".format(os.path.basename(file_path)))
             if not self.read():
                 self._logger.error("XML Reader not fully initialized!")
             else:
                 self._loaded = True
         else:
-            self._logger = logging.getLogger('XML_READER')
+            self._logger = logging.getLogger('XML-reader')
 
     def read(self, file_path=None):
         """Reads the file_path file using short-format xml"""
@@ -282,7 +290,7 @@ def get_graph_styles(categories = 1, n_per_cat = None, per_cat_list = None, alph
         if i % len(color_patterns) == 0 and i > 0:
             line_pattern += 1
             if line_pattern > len(line_styles):
-                logging.warning("Reusing styles - too many categories")
+                _logger.warning("Reusing styles - too many categories")
                 line_pattern = 0
             c_index = 0
         else:

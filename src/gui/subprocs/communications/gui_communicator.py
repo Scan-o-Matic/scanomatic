@@ -19,13 +19,13 @@ import re
 from subprocess import Popen, PIPE
 from itertools import chain
 import inspect
+import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 from src.subprocs.io import Proc_IO
-import src.resource_logger as resource_logger
 
 #
 # EXCEPTIONS
@@ -101,7 +101,7 @@ def _get_pinnings_str(pinning_list):
 
 class Subprocess(object):
 
-    def __init__(self, proc_type, top_controler, proc=None, logger=None):
+    def __init__(self, proc_type, top_controler, proc=None):
         """Subprocess is a common implementation for the different
         subprocess objects that the gui uses to check status and
         communicate with said processes.
@@ -137,10 +137,8 @@ class Subprocess(object):
         and should return a string response.
         """
 
-        if logger is None:
-            logger = resource_logger.Fallback_Logger()
-
-        self._logger = logger
+        self._logger = logging("Subprocess Type {0}".format(
+            proc_type))
 
         self._proc_type = proc_type
         self._tc = top_controler

@@ -14,7 +14,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import logging
 import threading
 from multiprocessing import Process
 import os
@@ -23,6 +22,11 @@ import time
 import uuid
 import shutil
 from argparse import ArgumentParser
+import logging
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+    level=logging.INFO)
 
 #
 # SCANNOMATIC LIBRARIES
@@ -606,9 +610,9 @@ input file for the analysis script.""")
     logger = logging.getLogger('Scan-o-Matic First Pass Analysis')
 
     log_formatter = logging.Formatter(
-        '\n\n%(asctime)s %(levelname)s:' +
-        ' %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S\n')
+        '%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S\n',
+        level=logging.INFO)
 
     #CREATE DIRECTORY
     if args.file is None:

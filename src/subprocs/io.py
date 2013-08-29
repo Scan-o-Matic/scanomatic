@@ -15,12 +15,11 @@ __status__ = "Development"
 
 import inspect
 import time
+import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
-
-import src.resource_logger as resource_logger
 
 #
 # EXCEPTIONS
@@ -129,12 +128,9 @@ class Proc_IO(object):
     VALUE_EXTEND = " {0}"
 
     def __init__(self, send_file_path, recieve_file_path, recieve_pos=None,
-                 send_file_state='w', logger=None):
+                 send_file_state='w'):
 
-        if logger is None:
-            logger = resource_logger.Fallback_Logger()
-
-        self._logger = logger
+        self._logger = logging.getLogger("Process I/O")
 
         unbuffered_send = open(send_file_path, send_file_state, 0)
         self._send_path = send_file_path

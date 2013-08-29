@@ -153,7 +153,7 @@ class Log_Parent(object):
     def __init__(self):
 
         logging.basicConfig()
-        self.logger = logging.getLogger("Wrapped Item")
+        self.logger = logging.getLogger("Wrapped Parent")
 
 #
 # COMMAND LINE BEHAVIOUR

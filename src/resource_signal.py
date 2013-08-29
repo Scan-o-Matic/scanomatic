@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-The resource signal-module deals with detecting repeating patterns such as 
+The resource signal-module deals with detecting repeating patterns such as
 gray-scales and grids.
 """
 
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson","Mats Kvarnstroem", "Andreas Skyman"]
+__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL v3.0"
 __version__ = "0.998"
 __maintainer__ = "Martin Zackrisson"
@@ -19,7 +19,6 @@ __status__ = "Development"
 #
 
 import numpy as np
-from math import ceil
 import logging
 from scipy import signal, ndimage
 
@@ -27,42 +26,50 @@ from scipy import signal, ndimage
 # SCANNOMATIC LIBRARIES
 #
 
+#
+# GLOBALS
+#
+
+_logger = logging.getLogger("Resource Signal")
 
 #
 # FUNCTIONS
 #
+
 
 def get_perfect_frequency(best_measures, guess_frequency, tollerance=0.15):
 
     dists = get_spike_distances(best_measures)
 
     good_measures = []
-    tollerance = (1-tollerance, 1+tollerance)
+    tollerance = (1 - tollerance, 1 + tollerance)
     guess_frequency = float(guess_frequency)
 
     for d in dists:
-        if tollerance[0] < d/guess_frequency < tollerance[1]:
+        if tollerance[0] < d / guess_frequency < tollerance[1]:
             good_measures.append(d)
-        elif tollerance[0] < d/(2*guess_frequency) < tollerance[1]:
-            good_measures.append(d/2.0)
+        elif tollerance[0] < d / (2 * guess_frequency) < tollerance[1]:
+            good_measures.append(d / 2.0)
     return np.mean(good_measures)
+
 
 def get_perfect_frequency2(best_measures, guess_frequency, tollerance=0.15):
 
-    where_measure = np.where(best_measures==True)[0]
+    where_measure = np.where(best_measures == True)[0]
     if where_measure.size < 1:
         return guess_frequency
 
-    toll = (1-tollerance, 1+tollerance)
+    toll = (1 - tollerance, 1 + tollerance)
     guess_frequency = float(guess_frequency)
     f = where_measure[-1] - where_measure[0]
 
-    f /= (np.round(f/guess_frequency))
+    f /= (np.round(f / guess_frequency))
 
-    if toll[1] > f/guess_frequency > toll[0]:
+    if toll[1] > f / guess_frequency > toll[0]:
         return f
 
     return get_perfect_frequency(best_measures, guess_frequency, tollerance)
+
 
 def get_signal_frequency(measures):
     """
@@ -77,14 +84,14 @@ def get_signal_frequency(measures):
 
     tmp_array = np.asarray(measures)
     #print "F", tmp_array
-    return np.median( tmp_array[1:] - tmp_array[:-1] ) 
+    return np.median(tmp_array[1:] - tmp_array[:-1])
 
 
 def get_best_offset(n, measures, frequency=None):
     """
         get_best_offset returns a optimal starting-offset for a hypthetical
         signal with frequency as specified by frequency-variable
-        and returns a distance-value for each measure in measures to this 
+        and returns a distance-value for each measure in measures to this
         signal at the optimal over-all offset.
 
         The function takes the following arguments:
@@ -99,30 +106,30 @@ def get_best_offset(n, measures, frequency=None):
 
     """
 
-
     dist_results = []
 
     if sum(measures.shape) == 0:
-        logging.warning("RESOURCE SIGNAL: No spikes where passed, so best offset can't be found.")    
+        _logger.warning(
+            "No spikes where passed, so best offset can't be found.")
         return None
 
     if n > measures.size:
         n = measures.size
 
     if measures.max() == 1:
-        m_where = np.where(measures==True)[0]
+        m_where = np.where(measures == True)[0]
     else:
         m_where = measures
 
     if frequency is None:
         frequency = get_signal_frequency(measures)
-   
+
     if np.isnan(frequency):
         return None
 
     for offset in xrange(int(np.ceil(frequency))):
 
-        quality = [] 
+        quality = []
 
         for m in m_where:
 
@@ -132,7 +139,7 @@ def get_best_offset(n, measures, frequency=None):
 
             signal_diff = offset + frequency * n_signal_dist - m
             if abs(signal_diff) > 0:
-                quality.append(signal_diff**2)
+                quality.append(signal_diff ** 2)
             else:
                 quality.append(0)
         dist_results.append(np.sum(np.sort(np.asarray(quality))[:n]))
@@ -183,16 +190,16 @@ def get_spike_quality(measures, n=None, offset=None, frequency=None):
         #n_signal_dist is peak number of the closest signal peak
         n_signal_dist = np.round((m - offset) / frequency)
 
-        quality_results.append( ( m - offset + frequency * n_signal_dist)**2 )
+        quality_results.append((m - offset + frequency * n_signal_dist) ** 2)
+
+    return quality_results
 
 
-    return quality_results 
-
-def get_true_signal(max_value, n, measures, measures_qualities= None,
-    offset=None, frequency=None, offset_buffer_fraction=0):
+def get_true_signal(max_value, n, measures, measures_qualities=None,
+                    offset=None, frequency=None, offset_buffer_fraction=0):
 
     """
-        get_true_signal returns the best spike pattern n peaks that 
+        get_true_signal returns the best spike pattern n peaks that
         describes the signal (described by offset and frequency).
 
         The function takes the following arguments:
@@ -212,12 +219,11 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
 
         @frequency      The frequency of the signal, if not submitted
                         it is derived as the median inter-measure
-                        distance in measures.    
+                        distance in measures.
         @offset_buffer_fraction     Default 0, buffer to edge on
                         both sides in which signal is not allowed
 
-    """ 
-
+    """
 
     if frequency is None:
         frequency = get_signal_frequency(measures)
@@ -228,9 +234,8 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
     if offset is None:
         offset = get_best_offset(n, measures, frequency)
 
-
     if measures.max() == 1:
-        m_array = np.where(np.asarray(measures)==True)[0]
+        m_array = np.where(np.asarray(measures) == True)[0]
     else:
         m_array = np.asarray(measures)
 
@@ -245,27 +250,29 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
     start_peak = 0
     start_position_qualities = []
     frequency = float(frequency)
-    while offset_buffer_fraction*frequency >= offset + frequency * \
-        ((n-1) + start_peak):
+    while (offset_buffer_fraction * frequency >= offset + frequency *
+            ((n - 1) + start_peak)):
+
         start_peak += 1
         start_position_qualities.append(0)
-    #print "---Best signal---"
-    #print offset, frequency, n, start_peak, max_value
-    #print "peaks", m_array
-    while offset_buffer_fraction*frequency <offset + frequency * \
-        ((n-1) + start_peak) < max_value - offset_buffer_fraction*frequency:
+
+    while (offset_buffer_fraction * frequency < offset + frequency *
+            ((n - 1) + start_peak) < max_value -
+            offset_buffer_fraction * frequency):
 
         covered_peaks = 0
         quality = 0
         ideal_peaks = (np.arange(n) + start_peak) * frequency + offset
 
         for pos in xrange(n):
-           
-            distances = (m_array - float(ideal_peaks[pos]))**2
+
+            distances = (m_array - float(ideal_peaks[pos])) ** 2
             closest = distances.argmin()
-            #print closest, ((ideal_peaks - float(m_array[closest]))**2).argmin(), pos, np.round((m_array[closest]-offset) / frequency), pos + start_peak
-            if np.round((m_array[closest]-offset) / frequency) == pos + start_peak:
-                #Most difference with small errors... should work ok. 
+
+            if (np.round((m_array[closest] - offset) / frequency) ==
+                    pos + start_peak):
+
+                #Most difference with small errors... should work ok.
                 quality += distances[closest]
                 #if distances[closest] >= 1:
                 #    quality += np.log2(distances[closest])
@@ -274,7 +281,8 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
                 covered_peaks += 1
 
         if covered_peaks > 0:
-            start_position_qualities.append(covered_peaks + 1 / ((quality+1) / covered_peaks))
+            start_position_qualities.append(
+                covered_peaks + 1 / ((quality + 1) / covered_peaks))
         else:
             start_position_qualities.append(0)
         start_peak += 1
@@ -285,28 +293,30 @@ def get_true_signal(max_value, n, measures, measures_qualities= None,
 
     best_start_pos = int(np.asarray(start_position_qualities).argmax())
 
-    logging.info("SIGNAL: Quality at start indices {0}".format(\
+    _logger.info("Quality at start indices {0}".format(
         start_position_qualities))
- 
+
     quality_threshold = np.mean(mq_array) + np.std(mq_array) * 3
 
-    ideal_signal = np.arange(n)*frequency + offset + best_start_pos * frequency
+    ideal_signal = (np.arange(n) * frequency + offset +
+                    best_start_pos * frequency)
 
     best_fit = []
 
     for pos in xrange(len(ideal_signal)):
 
-        best_measure = float( m_array[((m_array - float(ideal_signal[pos]))**2).argmin()] )
+        best_measure = float(m_array[
+            ((m_array - float(ideal_signal[pos])) ** 2).argmin()])
         if (ideal_signal - best_measure).argmin() == pos:
-            if (ideal_signal[pos] - best_measure)**2 < quality_threshold:
+            if (ideal_signal[pos] - best_measure) ** 2 < quality_threshold:
                 best_fit.append(best_measure)
             else:
                 best_fit.append(ideal_signal[pos])
         else:
             best_fit.append(ideal_signal[pos])
 
-
     return ideal_signal
+
 
 def get_center_of_spikes(spikes):
     """
@@ -316,7 +326,7 @@ def get_center_of_spikes(spikes):
 
         @args : signal (numpy, 1D boolean array)
 
-    """    
+    """
 
     up_spikes = spikes.copy()
     t_zone = False
@@ -324,19 +334,20 @@ def get_center_of_spikes(spikes):
 
     for pos in xrange(up_spikes.size):
         if t_zone:
-            if up_spikes[pos] == False or pos == up_spikes.size-1:
-                if pos == up_spikes.size-1:
-                    pos+=1
-                up_spikes[t_low:pos] = False
-                up_spikes[t_low + (t_low - pos)/2] = True
+            if up_spikes[pos] is False or pos == up_spikes.size - 1:
+                if pos == up_spikes.size - 1:
+                    pos += 1
+                up_spikes[t_low: pos] = False
+                up_spikes[t_low + (t_low - pos) / 2] = True
                 t_zone = False
 
         else:
-            if up_spikes[pos] == True:
+            if up_spikes[pos] is True:
                 t_zone = True
                 t_low = pos
 
     return up_spikes
+
 
 def get_spike_distances(spikes):
 
@@ -346,8 +357,9 @@ def get_spike_distances(spikes):
 
     return np.append(spikes_where[0], spikes_where[1:] - spikes_where[:-1])
 
-def get_best_spikes(spikes, frequency, tollerance=0.05, 
-    require_both_sides=False):
+
+def get_best_spikes(spikes, frequency, tollerance=0.05,
+                    require_both_sides=False):
     """
         Looks through a spikes-array for spikes with expected distance to
         their neighbours (with a tollerance) and returns these
@@ -364,20 +376,24 @@ def get_best_spikes(spikes, frequency, tollerance=0.05,
     best_spikes = spikes.copy()
     spikes_dist = get_spike_distances(spikes)
 
-    frequency = float(frequency)    
-    accumulated_pos = 0  
-    tollerance = (1-tollerance, 1+tollerance)
+    frequency = float(frequency)
+    accumulated_pos = 0
+    tollerance = (1 - tollerance, 1 + tollerance)
 
     for pos in xrange(spikes_dist.size):
-        
+
         accumulated_pos += spikes_dist[pos]
-        good_sides = tollerance[0] < spikes_dist[pos]/frequency < tollerance[1]
-        good_sides += tollerance[0] < spikes_dist[pos]/(2*frequency) < tollerance[1]
+        good_sides = (tollerance[0] <
+                      spikes_dist[pos] / frequency < tollerance[1])
+        good_sides += (tollerance[0] <
+                       spikes_dist[pos] / (2 * frequency) < tollerance[1])
 
         if pos + 1 < spikes_dist.size:
-            good_sides += tollerance[0] < spikes_dist[pos+1]/frequency < tollerance[1]
-        if good_sides >= require_both_sides + 1 - \
-            (require_both_sides == True and pos + 1 == spikes_dist.size):
+            good_sides += (tollerance[0] <
+                           spikes_dist[pos + 1] / frequency < tollerance[1])
+
+        if (good_sides >= require_both_sides + 1 -
+                (require_both_sides is True and pos + 1 == spikes_dist.size)):
             pass
         else:
             best_spikes[accumulated_pos] = False
@@ -401,10 +417,11 @@ def get_position_of_spike(spike, signal_start, frequency):
 
     return (spike - signal_start) / float(frequency)
 
+
 def move_signal(signals, shifts, frequencies=None, freq_offset=1):
 
     if len(shifts) != len(signals):
-        logging.error("1st Dimension missmatch between signal and shift-list")
+        _logger.error("1st Dimension missmatch between signal and shift-list")
         return None
 
     else:
@@ -413,10 +430,9 @@ def move_signal(signals, shifts, frequencies=None, freq_offset=1):
             for i in xrange(len(shifts)):
                 frequencies[i] = (np.array(signals[i][1:]) - np.array(signals[i][:-1])).mean()
 
-        
-        for i,s in enumerate(map(int, shifts)):
+        for i, s in enumerate(map(int, shifts)):
             if s != 0:
-                
+
                 f = frequencies[(i + freq_offset) % len(signals)]
                 if s > 0:
                     signal = list(signals[i][s:])
@@ -429,13 +445,15 @@ def move_signal(signals, shifts, frequencies=None, freq_offset=1):
 
                 signals[i][:] = np.array(signal)
 
-        for i,s in enumerate([s - int(s) for s in shifts]):
+        for i, s in enumerate([s - int(s) for s in shifts]):
 
             if s != 0:
 
-                signals[i][:] = np.array([sign + s*frequencies[i] for sign in signals[i]])
+                signals[i][:] = np.array(
+                    [sign + s * frequencies[i] for sign in signals[i]])
 
         return signals
+
 
 def get_continious_slopes(s, min_slope_length=20, noise_reduction=4):
     """Function takes a 1D noisy signal, e.g. from taking mean of image slice
@@ -449,13 +467,17 @@ def get_continious_slopes(s, min_slope_length=20, noise_reduction=4):
 
     #Look for positive slopes
     s_up = ds > 0
-    continious_s_up = signal.fftconvolve(s_up, 
-        np.ones((min_slope_length,)), mode='same') == min_slope_length
+    continious_s_up = signal.fftconvolve(
+        s_up,
+        np.ones((min_slope_length,)),
+        mode='same') == min_slope_length
 
     #Look for negative slopes
     s_down = ds < 0
-    continious_s_down = signal.fftconvolve(s_down,
-        np.ones((min_slope_length,)), mode='same') == min_slope_length
+    continious_s_down = signal.fftconvolve(
+        s_down,
+        np.ones((min_slope_length,)),
+        mode='same') == min_slope_length
 
     #Reduce noise 2
     for i in range(noise_reduction):
@@ -465,7 +487,6 @@ def get_continious_slopes(s, min_slope_length=20, noise_reduction=4):
         continious_s_up = ndimage.binary_erosion(continious_s_up)
         continious_s_down = ndimage.binary_erosion(continious_s_down)
 
-
     return continious_s_up, continious_s_down
 
 
@@ -474,10 +495,10 @@ def get_closest_signal_pair(s1, s2, s1_value=-1, s2_value=1):
     patterns s1-value -> s2-value are found (s1-value is assumed to preceed
     s2-value)."""
 
-    s1_positions = np.where(s1==s1_value)[0]
-    s2_positions = np.where(s2==s2_value)[0]
+    s1_positions = np.where(s1 == s1_value)[0]
+    s2_positions = np.where(s2 == s2_value)[0]
 
-    #Match all 
+    #Match all
     signals = list()
     for p in s1_positions:
         tmp_diff = s2_positions - p
@@ -485,12 +506,12 @@ def get_closest_signal_pair(s1, s2, s1_value=-1, s2_value=1):
         if tmp_diff.size > 0:
             p2 = tmp_diff.min() + p
             if len(signals) > 0 and p2 == signals[-1][1]:
-                if p2 - p < signals[-1][1] - signals[-1][0]: 
+                if p2 - p < signals[-1][1] - signals[-1][0]:
                     del signals[-1]
                     signals.append((p, p2))
             else:
                 signals.append((p, p2))
-                
+
     S = np.array(signals)
     if S.size == 0:
         return None, None
@@ -500,7 +521,6 @@ def get_closest_signal_pair(s1, s2, s1_value=-1, s2_value=1):
 
 def get_signal_spikes(down_slopes, up_slopes):
     """Returns where valleys are in a signal based on down and up slopes"""
-
 
     #combined_signal = down_slopes.astype(np.int) * -1 + up_slopes.astype(np.int)
 
@@ -512,7 +532,7 @@ def get_signal_spikes(down_slopes, up_slopes):
     s1, s2 = get_closest_signal_pair(d_up, d_down, s1_value=-1, s2_value=1)
     return (s1 + s2) / 2.0  # (s1 + s2) / 2.0
 
-
+"""
 def _get_closest(X, Y):
 
     new_list = list()
@@ -524,15 +544,16 @@ def _get_closest(X, Y):
                 Y[delta_reciprocal.argmin()]])
 
     return np.array(new_list)
+"""
 
 
 def _get_alt_closest(X, Y):
 
     dist = np.abs(np.subtract.outer(X, Y))
-    idx1 = np.argmin(dist, axis = 0)
-    idx2 = np.argmin(dist, axis = 1)
-    Z = np.c_[X[idx1[idx2] == np.arange(len(X))], 
-        Y[idx2[idx1] == np.arange(len(Y))]].ravel()
+    idx1 = np.argmin(dist, axis=0)
+    idx2 = np.argmin(dist, axis=1)
+    Z = np.c_[X[idx1[idx2] == np.arange(len(X))],
+              Y[idx2[idx1] == np.arange(len(Y))]].ravel()
 
     return Z
 
@@ -545,7 +566,7 @@ def _get_orphans(X, shortX):
 def get_offset_quality(s, offset, expected_spikes, wl, raw_signal):
 
     #Get the ideal signal from parameters
-    ideal_signal = np.arange(expected_spikes) * wl + offset    
+    ideal_signal = np.arange(expected_spikes) * wl + offset
 
     Z = _get_alt_closest(s, ideal_signal)
 
@@ -559,11 +580,11 @@ def get_offset_quality(s, offset, expected_spikes, wl, raw_signal):
     new_signal_val = raw_signal[new_signal.astype(int)]
 
     dXY = np.abs(np.r_[(Y - X),
-        np.ones(ideal_signal.size - X.size) * (0.5 * wl)])
+                 np.ones(ideal_signal.size - X.size) * (0.5 * wl)])
 
     X_val = raw_signal[X.astype(np.int)]
     dV = 3 * np.abs(new_signal_val - np.median(X_val))
-    dV[new_signal_val > np.median(X_val)*0.8] *= 0.25
+    dV[new_signal_val > np.median(X_val) * 0.8] *= 0.25
     q = -0.1 * dXY * dV
 
     return q.sum()
@@ -577,7 +598,7 @@ def _get_wave_length_and_errors(s, expected_spikes):
 
     #Getting wl from IQR-mean of proximate signal step lengths
     ps_order = proxy_step.argsort()
-    wl = proxy_step[ps_order[ps_order.size/4: ps_order.size*3/4]].mean()
+    wl = proxy_step[ps_order[ps_order.size / 4: ps_order.size * 3 / 4]].mean()
 
     #Get the errors in step sizes
     ps_error = np.abs(proxy_step - wl)
@@ -607,19 +628,21 @@ def _insert_spikes_where_missed(s, s_error, expected_spikes, wl):
             # What is leftside of the missed spike(s)
             s[:pos + 1 + inserted_spikes],
             # Assumed positions for missed spikes
-            s[pos + inserted_spikes] + k_wave_d[1: insert_spikes[pos]+1],
+            s[pos + inserted_spikes] + k_wave_d[1: insert_spikes[pos] + 1],
             # Right-side of the missed spike(s)
             s[pos + inserted_spikes:]
-            ]
+        ]
         inserted_spikes += insert_spikes[pos]
 
     return s
+
 
 def _remove_false_inter_spikes(s, expected_spikes, wl):
 
     #Get distances in terms of k waves:
     k_wave_d = np.arange(expected_spikes) * wl
-    steps = np.abs(np.subtract.outer(np.abs(np.subtract.outer(s,s)), k_wave_d)).argmin(2)
+    steps = np.abs(np.subtract.outer(
+        np.abs(np.subtract.outer(s, s)), k_wave_d)).argmin(2)
     inter_spikes = (steps == 0).sum(1) > 1
 
     subtracted = 0
@@ -630,13 +653,14 @@ def _remove_false_inter_spikes(s, expected_spikes, wl):
 
     return s
 
+
 def _get_candidate_validation(s, s_error, expected_spikes, raw_signal):
 
     #Get goodness of distances
-    goodness1 = signal.convolve(s_error, np.ones(expected_spikes/4), 'same')
+    goodness1 = signal.convolve(s_error, np.ones(expected_spikes / 4), 'same')
     g = [goodness1[0]]
     for g_pos in range(s_error.size - 1):
-        g.append(goodness1[g_pos: g_pos+2].min())
+        g.append(goodness1[g_pos: g_pos + 2].min())
     g.append(goodness1[-1])
     goodness1 = np.array(g)
 
@@ -651,14 +675,14 @@ def _get_candidate_validation(s, s_error, expected_spikes, raw_signal):
     goodness2 = np.abs(goodness2)
 
     #General goodness
-    goodness = goodness1 * ( goodness2 ** 2)
+    goodness = goodness1 * (goodness2 ** 2)
     g_order = goodness.argsort()
 
     #Validated positions
     s_val = np.zeros(s.size, dtype=np.bool)
 
     #Validate positions
-    tmp_2_slice = np.array((0,-1))
+    tmp_2_slice = np.array((0, -1))
     pos = 0
     while s_val.sum() < expected_spikes and pos < g_order.size:  # Steps is one less
 
@@ -667,18 +691,19 @@ def _get_candidate_validation(s, s_error, expected_spikes, raw_signal):
             eval_s_val = s_val.copy()
             eval_s_val[g_order[pos]] = True
             es_true_range = np.where(eval_s_val == True)[0][tmp_2_slice]
-            eval_s_val[es_true_range[0]:es_true_range[1]+1] = True
+            eval_s_val[es_true_range[0]: es_true_range[1] + 1] = True
             if eval_s_val.sum() < expected_spikes:
                 s_val = eval_s_val
         pos += 1
-    
+
     sb = np.where(s_val == True)[0][tmp_2_slice]
     if sb[1] == s_val.size - 1:
-        s_val[sb[0]-1] = True
+        s_val[sb[0] - 1] = True
     else:
-        s_val[sb[1]+1] = True
+        s_val[sb[1] + 1] = True
 
     return s_val
+
 
 def get_best_signal_candidates_and_wave_length(s, expected_spikes, raw_signal):
 
@@ -711,7 +736,7 @@ def get_grid_signal(raw_signal, expected_spikes):
 
     #Get slopes
     up_slopes, down_slopes = get_continious_slopes(
-            raw_signal, min_slope_length=10, noise_reduction=4)
+        raw_signal, min_slope_length=10, noise_reduction=4)
 
     #Get signal from slopes
     s = get_signal_spikes(down_slopes, up_slopes)
@@ -729,7 +754,7 @@ def get_grid_signal(raw_signal, expected_spikes):
     grid_scores = list()
     for offset in range(int(raw_signal.size - l)):
         grid_scores.append(
-            get_offset_quality(s, offset, expected_spikes, 
+            get_offset_quality(s, offset, expected_spikes,
             wl, raw_signal))
 
     GS = np.array(grid_scores)

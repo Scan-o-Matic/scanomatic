@@ -61,7 +61,7 @@ class Analysis(object):
                                'manual_threshold': 0.05},
             grid_cell_settings={'blob_detect': 'default'},
             grid_correction=None,
-            use_local_fixture=True, logger=None, app_config=None,
+            use_local_fixture=True, app_config=None,
             comm_id=None):
 
         """
@@ -168,11 +168,11 @@ class Analysis(object):
             os.path.join(self._outdata_directory, "analysis.run"), mode='w')
 
         log_formatter = logging.Formatter(
-            '\n\n%(asctime)s %(levelname)s:'
-            ' %(message)s', datefmt='%Y-%m-%d %H:%M:%S\n')
+            format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S\n')
         hdlr.setFormatter(log_formatter)
+        logger = logging.getLogger("Analysis")
         logger.addHandler(hdlr)
-        resource_analysis_support.set_logger(logger)
 
         logger.info('Analysis started at ' + str(self._init_time))
         logger.info('ANALYSIS using file {0}'.format(log_file_path))
@@ -202,7 +202,7 @@ class Analysis(object):
         stdout = self._paths.log_analysis_out.format(comm_id)
         stderr = self._paths.log_analysis_err.format(comm_id)
         self._comm = communicator.Communicator(
-            logger, self,  stdin, stdout, stderr)
+            self, stdin, stdout, stderr)
 
         self._comm_thread = threading.Thread(target=self._comm.run)
         self._comm_thread.start()
@@ -244,14 +244,13 @@ class Analysis(object):
     def _check_fixture(self):
 
         meta_data = self._meta_data
-        logger = self._logger
 
         #### Test to find Fixture
         if ('Fixture' not in meta_data or
                 resource_analysis_support.get_finds_fixture(
                 meta_data['Fixture']) is False):
 
-            logger.critical('ANALYSIS: Could not localize fixture settings')
+            self._logger.critical('ANALYSIS: Could not localize fixture settings')
             return False
 
         return True
@@ -259,11 +258,10 @@ class Analysis(object):
     def _check_pinning(self):
 
         meta_data = self._meta_data
-        logger = self._logger
 
         #### Test if any pinning matrices
         if meta_data['Pinning Matrices'] is None:
-            logger.critical(
+            self._logger.critical(
                 "ANALYSIS: need some pinning matrices to analyse anything")
             return False
 
@@ -276,7 +274,7 @@ class Analysis(object):
 
         ## IMAGES
         self._image_dictionaries = resource_project_log.get_image_entries(
-            self._log_file_path, logger=logger)
+            self._log_file_path)
 
         if len(self._image_dictionaries) == 0:
             logger.critical("ANALYSIS: There are no images to analyse, aborting")
@@ -302,8 +300,7 @@ class Analysis(object):
                 self._suppress_analysis,
                 self._graph_watch,
                 self._meta_data,
-                self._image_dictionaries,
-                self._logger) is False:
+                self._image_dictionaries) is False:
 
             """
             In principle, if user requests to supress analysis of other
@@ -348,7 +345,7 @@ class Analysis(object):
         #
 
         xml_writer = resource_xml_writer.XML_Writer(
-            self._outdata_directory, self._xml_format, logger, self._paths)
+            self._outdata_directory, self._xml_format, self._paths)
 
         if xml_writer.get_initialized() is False:
 
@@ -406,7 +403,6 @@ class Analysis(object):
             file_path_base=self._file_path_base,
             fixture_name=meta_data['Fixture'],
             p_uuid=meta_data['UUID'],
-            logger=None,  # logger,
             verbose=self._verbose,
             visual=self._visual,
             suppress_analysis=self._suppress_analysis,

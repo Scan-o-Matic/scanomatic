@@ -16,6 +16,7 @@ __status__ = "Development"
 import gtk
 import sys
 import gobject
+import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -68,7 +69,7 @@ class Unbuffered:
 
 class Controller(controller_generic.Controller):
 
-    def __init__(self, program_path, logger=None, debug_mode=False):
+    def __init__(self, program_path, debug_mode=False):
 
         #PATHS NEED TO INIT BEFORE GUI
         self.paths = resource_path.Paths(root=program_path)
@@ -76,12 +77,8 @@ class Controller(controller_generic.Controller):
         model = model_main.load_app_model()
         view = view_main.Main_Window(controller=self, model=model)
 
-        super(Controller, self).__init__(None, view=view, model=model,
-                                         logger=logger)
-        """
-        self._model = model
-        self._view = view
-        """
+        super(Controller, self).__init__(None, view=view, model=model)
+        self._logger = logging.getLogger("Main Controller")
 
         if debug_mode is False:
             self.set_simple_logger()
@@ -143,19 +140,19 @@ class Controller(controller_generic.Controller):
 
         if content_name == 'analysis':
             c = controller_analysis.Analysis_Controller(
-                self, logger=self._logger, **kwargs)
+                self, **kwargs)
 
         elif content_name == 'experiment':
             c = controller_experiment.Experiment_Controller(
-                self, logger=self._logger, **kwargs)
+                self, **kwargs)
 
         elif content_name == 'calibration':
             c = controller_calibration.Calibration_Controller(
-                self, logger=self._logger, **kwargs)
+                self, **kwargs)
 
         elif content_name == 'config':
             c = controller_config.Config_Controller(
-                self, logger=self._logger, **kwargs)
+                self, **kwargs)
 
         else:
             err = UnknownContent("{0}".format(content_name))

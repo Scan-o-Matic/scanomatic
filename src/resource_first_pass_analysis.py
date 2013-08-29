@@ -14,12 +14,14 @@ __status__ = "Development"
 #
 
 import os
+import logging
+
+_logger = logging.getLogger("1st Pass Analysis")
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_logger as resource_logger
 import src.resource_fixture_image as resource_fixture_image
 
 #
@@ -36,20 +38,15 @@ class Marker_Detection_Failed(Exception):
 
 
 def analyse(file_name, im_acq_time=None, experiment_directory=None,
-            paths=None, logger=None, fixture_name=None,
+            paths=None, fixture_name=None,
             fixture_directory=None):
-
-    if logger is None:
-        logger = resource_logger.Log_Garbage_Collector()
-    else:
-        logger = resource_logger.Logging_Log(logger)
 
     if im_acq_time is None:
         im_acq_time = os.stat(file_name).st_mtime
 
     im_data = {'Time': im_acq_time, 'File': file_name}
 
-    logger.info("Fixture init for {0}".format(file_name))
+    _logger.info("Fixture init for {0}".format(file_name))
 
     if fixture_name is None:
         fixture_name = paths.experiment_local_fixturename
@@ -60,21 +57,21 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
     fixture = resource_fixture_image.Fixture_Image(
         fixture_name,
         fixture_directory=fixture_directory,
-        logger=logger, image_path=file_name)
+        image_path=file_name)
 
     #logger.info("Fixture set for {0}".format(file_name))
 
     #fixture.set_image(image_path=file_name)
 
-    logger.info("Image loaded for fixture {0}".format(file_name))
+    _logger.info("Image loaded for fixture {0}".format(file_name))
 
     im_data['im_shape'] = fixture['image'].shape
 
-    logger.info("Image has shape {0}".format(im_data['im_shape']))
+    _logger.info("Image has shape {0}".format(im_data['im_shape']))
 
-    fixture.run_marker_analysis(output_function=logger)
+    fixture.run_marker_analysis()
 
-    logger.info("Marker analysis run".format(file_name))
+    _logger.info("Marker analysis run".format(file_name))
 
     im_data['mark_X'], im_data['mark_Y'] = fixture['markers']
 
@@ -84,12 +81,12 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
 
     fixture.set_current_areas()
 
-    logger.info("Setting current image areas for {0}".format(file_name))
+    _logger.info("Setting current image areas for {0}".format(file_name))
 
     im_data['scale'] = fixture['scale']
     fixture.analyse_grayscale()
 
-    logger.info("Grayscale analysed for {0}".format(file_name))
+    _logger.info("Grayscale analysed for {0}".format(file_name))
 
     gs_indices = fixture['grayscaleTarget']
     gs_values = fixture['grayscaleSource']
@@ -105,6 +102,6 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
     for i, a in enumerate(sections_areas):
         im_data[plate_str.format(i)] = list(a)
 
-    logger.info("First pass analysis done for {0}".format(file_name))
+    _logger.info("First pass analysis done for {0}".format(file_name))
 
     return im_data

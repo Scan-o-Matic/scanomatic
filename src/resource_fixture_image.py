@@ -20,6 +20,7 @@ import time
 import itertools
 import numpy as np
 from matplotlib.pyplot import imread
+import logging
 
 #
 # SCANNOMATIC LIBRARIES
@@ -29,8 +30,6 @@ import resource_image as resource_image
 import resource_path as resource_path
 import resource_config as conf
 import resource_app_config as resource_app_config
-import resource_logger as resource_logger
-
 
 #
 # DECORATORS
@@ -64,13 +63,10 @@ class Gridding_History(object):
     pinning_formats = ((8, 12), (16, 24), (32, 48), (64, 96))
     plate_area_pattern = "plate_{0}_area"
 
-    def __init__(self, parent, fixture_name, paths, logger=None, app_config=None):
-
-        if logger is None:
-            logger = resource_logger.Log_Garbage_Collector()
+    def __init__(self, parent, fixture_name, paths, app_config=None):
 
         self._parent = parent
-        self._logger = logger
+        self._logger = logging.getLogger("Gridding History")
         self._name = fixture_name
         self._paths = paths
         self._app_config = app_config
@@ -231,12 +227,9 @@ class Fixture_Image(object):
     def __init__(self, fixture, image_path=None,
                  image=None, markings=None, define_reference=False,
                  fixture_directory=None, markings_path=None,
-                 im_scale=None, logger=None, paths=None, app_config=None):
+                 im_scale=None, paths=None, app_config=None):
 
-        if logger is None:
-            logger = resource_logger.Log_Garbage_Collector()
-
-        self._logger = logger
+        self._logger = logging.getLogger("Fixture Image")
 
         if paths is None:
             self._paths = resource_path.Paths()
@@ -262,7 +255,7 @@ class Fixture_Image(object):
             f_name = fixture
         self._history = Gridding_History(
             self, f_name, self._paths,
-            logger=logger, app_config=self._config)
+            app_config=self._config)
 
         self._markers_X = None
         self._markers_Y = None
@@ -275,10 +268,6 @@ class Fixture_Image(object):
         self.set_number_of_markings(markings)
 
         #print fixture, self['fixture-path']
-
-    def _output_f(self, *args, **kwargs):
-
-        print "Debug output function: ", args, kwargs
 
     def __getitem__(self, key):
 
@@ -520,20 +509,18 @@ class Fixture_Image(object):
 
         self._load_reference()
 
-    def threaded(self, output_function=None):
+    def threaded(self):
 
-        if output_function is None:
-            output_function = self._output_f
-
+        logger = self._logging
         t = time.time()
-        output_function(
+        logger.debug(
             'Fixture calibration',
             "Threading invokes marker analysis", "LA",
             debug_level='info')
 
         self.run_marker_analysis()
 
-        output_function(
+        logger.debug(
             'Fixture calibration',
             "Threading marker detection complete, invokes setting area positions" +
             " (acc-time {0} s)".format(time.time() - t), "LA",
@@ -541,20 +528,20 @@ class Fixture_Image(object):
 
         self.set_current_areas()
 
-        output_function(
+        logger.debug(
             'Fixture calibration',
             "Threading areas set(acc-time: {0} s)".format(time.time() - t),
             "LA", debug_level='info')
 
         self.analyse_grayscale()
 
-        output_function(
+        logger.debug(
             'Fixture calibration',
             "Grayscale ({0}) analysed (acc-time: {1} s)".format(
                 self['grayscale_type'],
                 time.time() - t), 'LA', debug_level='info')
 
-        output_function(
+        logger.debug(
             'Fixture calibration',
             "Threading done (took: {0} s)".format(time.time() - t),
             "LA", debug_level='info')
@@ -583,11 +570,9 @@ class Fixture_Image(object):
 
         return np.array(X), np.array(Y)
 
-    def run_marker_analysis(self, output_function=None):
+    def run_marker_analysis(self):
 
-        if output_function is None:
-
-            output_function = self._output_f
+        logger = self._logging
 
         t = time.time()
 
@@ -596,7 +581,7 @@ class Fixture_Image(object):
             msg = "Error, no marker set ('%s') or no markings (%s)." % (
                 self.marking_path, self.markings)
 
-            output_function(
+            logger.debug(
                 'Fixture calibration: Marker Detection', msg, "LA",
                 debug_level='error')
 
@@ -620,7 +605,7 @@ class Fixture_Image(object):
 
         target_conf_file.set("version", __version__)
 
-        output_function('Fixture calibration: Marker Detection', "Scaling image", "LA",
+        logger.debug('Fixture calibration: Marker Detection', "Scaling image", "LA",
                         debug_level='info')
 
         if self.im_scale is not None:
@@ -638,10 +623,10 @@ class Fixture_Image(object):
 
             self.im_scale = self.MARKER_DETECTION_SCALE / self.im_original_scale
 
-        output_function('Fixture calibration: Marker Detection', scale_str, "LA",
+        logger.debug('Fixture calibration: Marker Detection', scale_str, "LA",
                         debug_level='info')
 
-        output_function(
+        logger.debug(
             'Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
                 time.time() - t), "LA", debug_level='info')
 
@@ -653,7 +638,7 @@ class Fixture_Image(object):
 
         msg = "Setting up Image Analysis (acc {0} s)".format(time.time() - t)
 
-        output_function(
+        logger.debug(
             'Fixture calibration: Marker Detection', msg, 'A',
             debug_level='debug')
 
@@ -665,7 +650,7 @@ class Fixture_Image(object):
 
         msg = "Finding pattern (acc {0} s)".format(time.time() - t)
 
-        output_function('Fixture calibration, Marker Detection', msg, 'A',
+        logger.debug('Fixture calibration, Marker Detection', msg, 'A',
                         debug_level='debug')
 
         Xs, Ys = im_analysis.find_pattern(markings=self.markings)
@@ -675,16 +660,16 @@ class Fixture_Image(object):
 
         if Xs is None or Ys is None:
 
-            output_function('Fixture error', "No markers found")
+            logger.warning('Fixture error', "No markers found")
 
         elif len(Xs) == self.markings:
 
             self._set_markings_in_conf(target_conf_file, Xs, Ys)
-            output_function("Fixture calibration", "Setting makers {0}, {1}".format(
+            logger.debug("Fixture calibration", "Setting makers {0}, {1}".format(
                 Xs, Ys))
 
         msg = "Marker Detection complete (acc {0} s)".format(time.time() - t)
-        output_function('Fixture calibration: Marker Detection', msg, 'A',
+        logger.debug('Fixture calibration: Marker Detection', msg, 'A',
                         debug_level='debug')
 
         return analysis_im_path

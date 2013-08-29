@@ -40,6 +40,7 @@ GRAYSCALE_NAMES = resource_grayscale.getGrayscales()
 GRAYSCALES = {gsName: resource_grayscale.getGrayscale(gsName) for
               gsName in GRAYSCALE_NAMES}
 
+_logger = logging.getLogger("Resource Image")
 '''
 DEFAULT_GRAYSCALE = 'Kodak'
 
@@ -91,7 +92,7 @@ def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
 
     except:
 
-        logging.error("Could not save scaled down image")
+        _logger.error("Could not save scaled down image")
 
         return -1
 
@@ -107,7 +108,7 @@ def Quick_Scale_To_im(path=None, im=None, source_dpi=600, target_dpi=150,
 
         except:
 
-            logging.error("Could not open source")
+            _logger.error("Could not open source")
 
             return -1
 
@@ -316,6 +317,7 @@ class Image_Analysis():
         self._load_error = None
         self._transformed = False
         self._conversion_factor = 1.0 / scale
+        self._logger = logging.getLogger("Resource Image Analysis")
 
         if os.path.isfile(pattern_image_path) is False and resource_paths is not None:
 
@@ -330,8 +332,9 @@ class Image_Analysis():
 
             except:
 
-                logging.error("Could not open orientation guide image at " +
-                              str(pattern_image_path))
+                self._logger.error(
+                    "Could not open orientation guide image at " +
+                    str(pattern_image_path))
 
                 self._load_error = True
 
@@ -351,7 +354,8 @@ class Image_Analysis():
 
             if not(self._img is None):
 
-                logging.warning("Won't load from path since actually submitted")
+                self._logger.warning(
+                    "Won't load from path since actually submitted")
 
             else:
 
@@ -361,7 +365,7 @@ class Image_Analysis():
 
                 except:
 
-                    logging.error("Could not open image at " + str(path))
+                    self._logger.error("Could not open image at " + str(path))
                     self._load_error = True
 
         if self._load_error is not True:
@@ -378,7 +382,7 @@ class Image_Analysis():
 
             path = self._path
 
-        logging.info("Loading image from {0}".format(path))
+        self._logger.info("Loading image from {0}".format(path))
 
         try:
 
@@ -386,7 +390,7 @@ class Image_Analysis():
 
         except:
 
-            logging.error("Could not reload image at " + str(path))
+            self._logger.error("Could not reload image at " + str(path))
             self._load_error = True
 
         if self._load_error is not True:
@@ -397,9 +401,9 @@ class Image_Analysis():
 
         if conversion_factor != 1.0:
 
-            logging.info("Scaling to {0}".format(conversion_factor))
+            self._logger.info("Scaling to {0}".format(conversion_factor))
             self._img = Quick_Scale_To_im(conversion_factor)
-            logging.info("Scaled")
+            self._logger.info("Scaled")
 
     def get_hit_refined(self, hit, conv_img):
 
@@ -550,6 +554,7 @@ class Analyse_Grayscale(object):
 
             #print "Set self._grayscale_{0}".format(k)
 
+        self._logger = logging.getLogger("Analyse Grayscale")
         self._img = image
         #np.save("tmp_img.npy", image)
 
@@ -774,8 +779,8 @@ class Analyse_Grayscale(object):
         #plt.show()
         #DEBUG PLOT END
 
-        logging.debug("GRAYSCALE ANALYSIS: Of shape {0}".format(
-                      self._img.shape))
+        self._logger.debug("GRAYSCALE ANALYSIS: Of shape {0}".format(
+                           self._img.shape))
 
         im_slice, rect = self._get_clean_im_and_rect()
 
@@ -859,7 +864,7 @@ class Analyse_Grayscale(object):
                     np.arange(self._grayscale_sections + 1),
                     edges)
 
-                logging.info("GRAYSCALE: Got signal with new method")
+                self._logger.info("GRAYSCALE: Got signal with new method")
 
                 #CHECKING OVERFLOWS
                 if gray_scale_pos[0] - frequency * self.NEW_SAFETY_PADDING < 0:
@@ -901,7 +906,8 @@ class Analyse_Grayscale(object):
 
             else:
 
-                logging.warning("GRAYSCALE: Too bad signal for new method, using fallback")
+                self._logger.warning(
+                    "GRAYSCALE: Too bad signal for new method, using fallback")
 
         if gray_scale_pos is None:
 
@@ -927,7 +933,7 @@ class Analyse_Grayscale(object):
 
             if signal is None:
 
-                logging.warning((
+                self._logger.warning((
                     "GRAYSCALE, no signal detected for f={0} and"
                     " offset={1} in best_spikes={2} from spikes={3}").format(
                         frequency, offset, best_spikes, up_spikes))
@@ -948,7 +954,7 @@ class Analyse_Grayscale(object):
 
             if signal[0] - frequency * self.SAFETY_PADDING < 0:
 
-                logging.warning(
+                self._logger.warning(
                     "GRAYSCALE, the signal got adjusted one interval"
                     " due to lower bound overshoot")
 
@@ -956,7 +962,7 @@ class Analyse_Grayscale(object):
 
             if signal[-1] + frequency * self.SAFETY_PADDING > strip_values.size:
 
-                logging.warning(
+                self._logger.warning(
                     "GRAYSCALE, the signal got adjusted one interval"
                     " due to upper bound overshoot")
 

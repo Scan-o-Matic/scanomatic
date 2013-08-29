@@ -21,8 +21,12 @@ __status__ = "Development"
 
 import sys
 import os
-import logging
 from argparse import ArgumentParser
+import logging
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+    level=logging.INFO)
 
 #
 # INTERNAL DEPENDENCIES

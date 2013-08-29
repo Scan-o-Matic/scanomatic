@@ -19,6 +19,7 @@ import gobject
 import threading
 import numpy as np
 import copy
+import logging
 from subprocess import Popen, PIPE
 from ConfigParser import ConfigParser
 
@@ -71,15 +72,14 @@ class UnDocumented_Error(Exception):
 
 class Analysis_Controller(controller_generic.Controller):
 
-    def __init__(self, main_controller, logger=None, **kwargs):
+    def __init__(self, main_controller, **kwargs):
 
         super(Analysis_Controller, self).__init__(
-            main_controller, logger=logger,
-            controller_name='A')
+            main_controller, controller_name='A')
 
+        self._logger = logging.getLogger("Analysis Controller")
         self.transparency = Analysis_Transparency_Controller(
-            self, view=self._view, model=self._model,
-            logger=logger)
+            self, view=self._view, model=self._model)
 
         self._specific_controller = None
         self.fixture = None
@@ -153,7 +153,8 @@ class Analysis_Controller(controller_generic.Controller):
 
         coords = list(map(list, coords))
 
-        self._logger.info("Slice coords before boundry check {0}".format(coords))
+        self._logger.info(
+            "Slice coords before boundry check {0}".format(coords))
         if coords[0][0] < 0:
             coords[0][0] = 0
         if coords[0][1] < 0:
@@ -164,7 +165,8 @@ class Analysis_Controller(controller_generic.Controller):
         if coords[1][1] >= im_shape[0]:
             coords[1][1] = im_shape[0] - 1
 
-        self._logger.info("Slice coords after boundry check {0}".format(coords))
+        self._logger.info(
+            "Slice coords after boundry check {0}".format(coords))
 
         return coords
 
@@ -200,7 +202,7 @@ class Analysis_Controller(controller_generic.Controller):
                     Analysis_Project_Controller(
                         self,
                         view=self._view, model=self._model,
-                        logger=self._logger, **kwargs)
+                        **kwargs)
 
                 self.add_subcontroller(self._specific_controller)
 
@@ -213,8 +215,7 @@ class Analysis_Controller(controller_generic.Controller):
             elif stage_call == "1st_pass":
 
                 self._specific_controller = Analysis_First_Pass(
-                    self, view=view, model=self._model,
-                    logger=self._logger)
+                    self, view=view, model=self._model)
 
                 self.add_subcontroller(self._specific_controller)
 
@@ -230,7 +231,7 @@ class Analysis_Controller(controller_generic.Controller):
 
                 self._specific_controller = Analysis_Inspect(
                     self, view=view, model=self._model,
-                    logger=self._logger, **kwargs)
+                    **kwargs)
 
                 self.add_subcontroller(self._specific_controller)
 
@@ -452,11 +453,12 @@ class Analysis_Controller(controller_generic.Controller):
 
 class Analysis_Inspect(controller_generic.Controller):
 
-    def __init__(self, parent, view=None, model=None, logger=None, **kwargs):
+    def __init__(self, parent, view=None, model=None, **kwargs):
 
         super(Analysis_Inspect, self).__init__(
-            parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model)
 
+        self._logger = logging.getLogger("Analysis Inspect Controller")
         tc = self.get_top_controller()
         self._paths = tc.paths
         self._app_config = tc.config
@@ -655,7 +657,7 @@ class Analysis_Inspect(controller_generic.Controller):
                 sm['gridding-history'] = resource_fixture_image.Gridding_History(
                     self,
                     sm['fixture'], self._paths,
-                    logger=self._logger, app_config=self._app_config)
+                    app_config=self._app_config)
 
             #PREFIX
             prefix = re.findall(r"\'Prefix\': ([^,]*)", fh_data)
@@ -687,7 +689,8 @@ class Analysis_Inspect(controller_generic.Controller):
                         i = int(i)
                         sm['plate-names'][i - 1] = name
                     except:
-                        self._logger.error("Could not parse plate {0} ({1})".format(i, name))
+                        self._logger.error(
+                            "Could not parse plate {0} ({1})".format(i, name))
 
             #CHECK WHICH PLATES HAVE PLACE IN HISTORY
             if (sm['gridding-history'] is not None and sm['pinnings'] is not None
@@ -710,13 +713,15 @@ class Analysis_First_Pass(controller_generic.Controller):
     ID_LAYOUT = "Layout ID"
     ID_CONTROL = "Control ID"
 
-    def __init__(self, parent, view=None, model=None, logger=None):
+    def __init__(self, parent, view=None, model=None):
 
         super(Analysis_First_Pass, self).__init__(
-            parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model)
 
         self.set_specific_model(model_analysis.copy_model(
             model_analysis.specific_first))
+
+        self._logger = logging.getLogger("1st Pass Analysis Controller")
 
         self._paths = self.get_top_controller().paths
 
@@ -970,11 +975,11 @@ class Analysis_First_Pass(controller_generic.Controller):
 
 class Analysis_Image_Controller(controller_generic.Controller):
 
-    def __init__(self, parent, view=None, model=None, logger=None):
+    def __init__(self, parent, view=None, model=None):
 
         super(Analysis_Image_Controller, self).__init__(
             parent,
-            view=view, model=model, logger=logger)
+            view=view, model=model)
 
         self._config = parent.get_top_controller().config
         self._specific_model = None
@@ -1780,10 +1785,10 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
 class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
-    def __init__(self, parent, view=None, model=None, logger=None):
+    def __init__(self, parent, view=None, model=None):
 
         super(Analysis_Transparency_Controller, self).__init__(
-            parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model)
 
     def build_blank_specific_model(self):
 
@@ -1793,10 +1798,10 @@ class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
 class Analysis_Project_Controller(controller_generic.Controller):
 
-    def __init__(self, parent, view=None, model=None, logger=None, **kwargs):
+    def __init__(self, parent, view=None, model=None, **kwargs):
 
         super(Analysis_Project_Controller, self).__init__(
-            parent, view=view, model=model, logger=logger)
+            parent, view=view, model=model)
 
         self.build_blank_specific_model()
 
@@ -1994,8 +1999,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
 class Analysis_Log_Controller(controller_generic.Controller):
 
-    def __init__(self, parent, general_model, parent_model,
-                 logger=None):
+    def __init__(self, parent, general_model, parent_model):
 
         model = model_analysis.copy_model(model_analysis.specific_log_book)
         self._parent_model = parent_model
@@ -2006,7 +2010,9 @@ class Analysis_Log_Controller(controller_generic.Controller):
         super(Analysis_Log_Controller, self).__init__(
             parent, model=model,
             view=view_analysis.Analysis_Stage_Log(
-                self, general_model, model, parent_model), logger=logger)
+                self, general_model, model, parent_model))
+
+        self._logger = logging.getLogger("Log Book Controller")
 
         if self._parent_model['log-only-calibration']:
             self._model['calibration-measures'] = True

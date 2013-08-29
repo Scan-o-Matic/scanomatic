@@ -18,6 +18,7 @@ from subprocess import Popen, PIPE
 import uuid
 import socket
 import re
+import logging
 
 #
 # CLASSES
@@ -54,11 +55,11 @@ class XML_Writer(object):
 
     COMPARTMENTS = ('cell', 'blob', 'background')
 
-    def __init__(self, output_directory, xml_format, logger, paths):
+    def __init__(self, output_directory, xml_format, paths):
 
         self._directory = output_directory
         self._formatting = xml_format
-        self._logger = logger
+        self._logger = logging.getLogger("XML writer")
         self._paths = paths
 
         self._outdata_full = os.sep.join((output_directory, "analysis.xml"))

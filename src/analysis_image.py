@@ -48,16 +48,13 @@ class Project_Image():
     def __init__(
             self, pinning_matrices, im_path=None, plate_positions=None,
             animate=False, file_path_base="", fixture_name=None,
-            p_uuid=None, logger=None, verbose=False, visual=False,
+            p_uuid=None, verbose=False, visual=False,
             suppress_analysis=False,
             grid_array_settings=None, gridding_settings=None,
             grid_cell_settings=None, log_version=0, paths=None,
             app_config=None, grid_correction=None):
 
-        if logger is not None:
-            self.logger = logger
-        else:
-            self.logger = logging.getLogger('Scan-o-Matic Analysis')
+        self.logger = logging.getLogger('Analysis Image')
 
         self.p_uuid = p_uuid
         self._log_version = log_version
@@ -104,7 +101,7 @@ class Project_Image():
         self.fixture = resource_fixture_image.Fixture_Image(
             fixture_name,
             fixture_directory=fixture_directory,
-            logger=self.logger, paths=self._paths,
+            paths=self._paths,
             app_config=self._config)
 
         self._grayscaleTarget = self.fixture['grayscaleTarget']

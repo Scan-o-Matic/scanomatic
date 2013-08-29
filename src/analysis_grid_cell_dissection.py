@@ -5,7 +5,7 @@ Part of the analysis work-flow that analyses the image section of a grid-cell.
 __author__ = "Martin Zackrisson, jetxee"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman",
-    "jetxee"]
+               "jetxee"]
 __license__ = "GPL v3.0"
 __version__ = "0.998"
 __maintainer__ = "Martin Zackrisson"
@@ -19,19 +19,16 @@ __status__ = "Development"
 
 #import cv
 import numpy as np
-import math
-#import logging
-from scipy.stats.mstats import mquantiles, tmean, trim
-from scipy.ndimage.filters import sobel
-from scipy.ndimage import binary_erosion, binary_dilation,\
-    binary_fill_holes, binary_closing, center_of_mass, label, laplace,\
-    gaussian_filter, median_filter
+import logging
+from scipy.stats.mstats import mquantiles, tmean
+from scipy.ndimage import binary_erosion, \
+    center_of_mass, label, \
+    gaussian_filter
 #
 # SCANNOMATIC LIBRARIES
 #
 
 import resource_histogram as hist
-import resource_logger as logger
 import resource_blob as rblob
 
 #
@@ -81,8 +78,7 @@ def points_in_circle(circle):
 
 def get_round_kernel(radius=6, outline=False):
 
-    round_kernel = np.zeros(((radius + 1) * 2 + 1,
-                    (radius + 1) * 2 + 1))
+    round_kernel = np.zeros(((radius + 1) * 2 + 1, (radius + 1) * 2 + 1))
 
     center_1D = radius + 1
 
@@ -97,15 +93,14 @@ def get_round_kernel(radius=6, outline=False):
         index = x ** 2 + y ** 2 <= radius ** 2
 
     round_kernel[center_1D - radius: center_1D + radius,
-            center_1D - radius: center_1D + radius][index] = True
+                 center_1D - radius: center_1D + radius][index] = True
 
     return round_kernel
 
 
 def get_round_kernel2(radius=3):
 
-    round_kernel = np.zeros(((radius + 1) * 2 + 1,
-                    (radius + 1) * 2 + 1))
+    round_kernel = np.zeros(((radius + 1) * 2 + 1, (radius + 1) * 2 + 1))
 
     center_1D = radius + 1
 
@@ -172,15 +167,15 @@ def get_array_subtraction(A1, A2, offset, output=None):
         diff_array = A1.copy()
 
         diff_array[o1_low: o1_high, o2_low: o2_high] -= \
-                    A2[b1_low: b1_high, b2_low: b2_high]
+            A2[b1_low: b1_high, b2_low: b2_high]
 
         return diff_array
 
     else:
 
         output[o1_low: o1_high, o2_low: o2_high] = \
-                    A1[o1_low: o1_high, o2_low: o2_high] - \
-                    A2[b1_low: b1_high, b2_low: b2_high]
+            A1[o1_low: o1_high, o2_low: o2_high] - \
+            A2[b1_low: b1_high, b2_low: b2_high]
 
 #
 # CLASSES Cell_Item
@@ -217,10 +212,8 @@ class Cell_Item():
 
         self._parent = parent
 
-        if parent is not None:
-            self.logger = self._parent.logger
-        else:
-            self.logger = logger.Log_Garbage_Collector()
+        self.logger = logging.getLogger("Grid Cell {0} Feature".format(
+            identifier))
 
         self.grid_array = grid_array.copy()
         self.filter_array = np.zeros(grid_array.shape, dtype=grid_array.dtype)
@@ -229,7 +222,7 @@ class Cell_Item():
 
         self.features = {}
         self._features_key_list = ['area', 'mean', 'median', 'IQR',
-                    'IQR_mean', 'pixelsum']
+                                   'IQR_mean', 'pixelsum']
 
         self.CELLITEM_TYPE = 0
         self.old_filter = None
@@ -245,12 +238,12 @@ class Cell_Item():
 
         if self.grid_array.shape != self.filter_array.shape:
 
-            self.logger.warning("GRID CELL " + \
-                    "{0}: I just changed shape! Why?".format(
+            self.logger.warning(
+                "GRID CELL {0}: I just changed shape! Why?".format(
                     self._identifier))
 
             self.filter_array = np.zeros(self.grid_array.shape,
-                                    dtype=self.grid_array.dtype)
+                                         dtype=self.grid_array.dtype)
 
     def set_type(self):
 
@@ -299,12 +292,13 @@ class Cell_Item():
         Cell            3
         """
 
-        if self.CELLITEM_TYPE == 0 or self.filter_array == None:
+        if self.CELLITEM_TYPE == 0 or self.filter_array is None:
 
             self.features = dict()
 
-            self.logger.warning("GRID CELL " + \
-                    "{0}: Not properly initialized cell compartment".format(
+            self.logger.warning(
+                "GRID CELL " +
+                "{0}: Not properly initialized cell compartment".format(
                     self._identifier))
 
             return None
@@ -314,28 +308,28 @@ class Cell_Item():
         self.features['area'] = self.filter_array.sum()
 
         self.features['pixelsum'] = \
-                self.grid_array[np.where(self.filter_array)].sum()
+            self.grid_array[np.where(self.filter_array)].sum()
 
-        if self.features['area'] == self.features['pixelsum'] or \
-                                        self.features['area'] == 0:
+        if (self.features['area'] == self.features['pixelsum'] or
+                self.features['area'] == 0):
 
             if self.features['area'] != 0:
 
-                self.logger.warning("GRID CELL " + \
-                        "{0}, seems to have all pixels value 1".format(
+                self.logger.warning(
+                    "GRID CELL {0}, seems to have all pixels value 1".format(
                         self._identifier))
 
             else:
 
                 self.logger.warning("GRID CELL {0}, area is 0".format(
-                        self._identifier))
+                                    self._identifier))
 
             return None
 
         if self.features['area'] != 0:
 
             self.features['mean'] = self.features['pixelsum'] / \
-                                            self.features['area']
+                self.features['area']
 
             feature_array = self.grid_array[np.where(self.filter_array)]
             self.features['median'] = np.median(feature_array)
@@ -344,16 +338,17 @@ class Cell_Item():
             try:
 
                 self.features['IQR_mean'] = tmean(feature_array,
-                                            self.features['IQR'])
+                                                  self.features['IQR'])
 
             except:
 
                 self.features['IQR_mean'] = None
                 self.features['IQR'] = None
 
-                debug.warning("GRID CELL %s, Failed to calculate IQR_mean," +\
-                    " probably because IQR '%s' is empty." % \
-                    ("unknown", str(self.features['IQR'])))
+                self.logger.warning(
+                    ("GRID CELL {0}, Failed to calculate IQR_mean," +
+                     " probably because IQR '{0}' is empty.").format(
+                         "unknown", str(self.features['IQR'])))
 
         else:
 
@@ -386,14 +381,18 @@ class Blob(Cell_Item):
     THRESHOLD = 2
 
     def __init__(self, parent, identifier, grid_array, run_detect=True,
-                    threshold=None, blob_detect='default',
-                    image_color_logic="norm", center=None, radius=None):
+                 threshold=None, blob_detect='default',
+                 image_color_logic="norm", center=None, radius=None):
 
         Cell_Item.__init__(self, parent, identifier, grid_array)
 
+        self.logger = logging.getLogger("Grid Cell {0} Blob".format(
+            identifier))
+
         self.threshold = threshold
 
-        detect_types = {'default': self.DEFAULT,
+        detect_types = {
+            'default': self.DEFAULT,
             'iterative': self.ITERATIVE,
             'threshold': self.THRESHOLD}
 
@@ -462,12 +461,15 @@ class Blob(Cell_Item):
         if rect:
 
             self.filter_array[rect[0][0]: rect[1][0],
-                                rect[0][1]: rect[1][1]] = 1
+                              rect[0][1]: rect[1][1]] = 1
 
         elif circle:
 
-            raster = np.fromfunction(lambda i, j: 100 + 10 * i + j,
-                            self.grid_array.shape, dtype=int)
+            """
+            raster = np.fromfunction(
+                lambda i, j: 100 + 10 * i + j,
+                self.grid_array.shape, dtype=int)
+            """
 
             pts_iterator = points_in_circle(circle)  # , raster)
 
@@ -619,11 +621,11 @@ class Blob(Cell_Item):
 
         perfect_blob = get_round_kernel(radius=radius)
 
-        offset = [np.round(i[0] - i[1] / 2.0) for i in \
-                zip(center_of_mass_position,  perfect_blob.shape)]
+        offset = [np.round(i[0] - i[1] / 2.0) for i in
+                  zip(center_of_mass_position,  perfect_blob.shape)]
 
-        diff_array = np.abs(get_array_subtraction(c_array,
-                                    perfect_blob, offset))
+        diff_array = np.abs(get_array_subtraction(
+            c_array, perfect_blob, offset))
 
         ###DEBUG CIRCULARITY
         #if self.grid_array.max() < 1000:
@@ -639,7 +641,7 @@ class Blob(Cell_Item):
     #
 
     def detect(self, blob_detect=None, max_change_threshold=8,
-                                remember_filter=False):
+               remember_filter=False):
         """
         Generic wrapper function for blob-detection that calls the
         proper detection function and evaluates the results in comparison
@@ -765,8 +767,7 @@ class Blob(Cell_Item):
 
                     blob_diff = (np.abs(diff_filter)).sum()
 
-                    if blob_diff / float(sqrt_of_oldsum) > \
-                                        max_change_threshold:
+                    if blob_diff / float(sqrt_of_oldsum) > max_change_threshold:
 
                         bad_diff = True
 
@@ -778,10 +779,12 @@ class Blob(Cell_Item):
 
                         self.trash_array = self.old_trash.copy()
 
-                    self.logger.warning("GRID CELL " + \
-                            ("{0}, Blob detection gone bad, using old " + \
-                            "(Error: {1:.2f})").format(self._identifier,
-                            blob_diff / float(sqrt_of_oldsum)))
+                    self.logger.warning(
+                        "GRID CELL " +
+                        ("{0}, Blob detection gone bad, using old " +
+                         "(Error: {1:.2f})").format(
+                             self._identifier,
+                             blob_diff / float(sqrt_of_oldsum)))
 
         #IF FILTER SHOULD BE REMEMBERED THEN DO SO
         if remember_filter:
@@ -818,7 +821,7 @@ class Blob(Cell_Item):
         @im             Optional alternative image source
         """
 
-        if self.threshold == None or threshold is not None:
+        if self.threshold is None or threshold is not None:
 
             self.set_threshold(im=im, threshold=threshold)
 
@@ -848,11 +851,13 @@ class Blob(Cell_Item):
         x_size = (stencil.shape[0] - 1) / 2
         y_size = (stencil.shape[1] - 1) / 2
 
-        if stencil.shape == \
-                self.filter_array[center[0] - x_size: center[0] + x_size + 1,
-                center[1] - y_size: center[1] + y_size + 1].shape:
+        if (stencil.shape ==
+                self.filter_array[
+                    center[0] - x_size: center[0] + x_size + 1,
+                    center[1] - y_size: center[1] + y_size + 1].shape):
 
-            self.filter_array[center[0] - x_size: center[0] + x_size + 1,
+            self.filter_array[
+                center[0] - x_size: center[0] + x_size + 1,
                 center[1] - y_size: center[1] + y_size + 1] += stencil
 
         else:
@@ -900,7 +905,7 @@ class Blob(Cell_Item):
         """Evaluates all blobs detected and keeps the best one"""
 
         number_of_labels, qualities, c_o_m, label_array = \
-                                self.get_candidate_blob_ranks()
+            self.get_candidate_blob_ranks()
 
         if number_of_labels > 0:
 
@@ -922,14 +927,14 @@ class Blob(Cell_Item):
                     composite_trash.append(item + 1)
 
             #if len(composite_blob) > 1
-            self.filter_array = np.in1d(label_array,
-                    np.array(composite_blob)).reshape(self.filter_array.shape,
-                    order='C')
+            self.filter_array = np.in1d(
+                label_array, np.array(composite_blob)).reshape(
+                    self.filter_array.shape, order='C')
 
             #self.trash_array = (label_array > 0) * (label_array != q_best +1)
-            self.trash_array = np.in1d(label_array,
-                    np.array(composite_trash)).reshape(self.filter_array.shape,
-                    order='C')
+            self.trash_array = np.in1d(
+                label_array, np.array(composite_trash)).reshape(
+                    self.filter_array.shape, order='C')
 
 #
 # CLASSES Background (inverse blob area)
@@ -941,6 +946,9 @@ class Background(Cell_Item):
     def __init__(self, parent, identifier, grid_array, blob, run_detect=True):
 
         Cell_Item.__init__(self, parent, identifier, grid_array)
+
+        self.logger = logging.getLogger("Grid Cell {0} Background".format(
+            identifier))
 
         if isinstance(blob, Blob):
 
@@ -965,7 +973,7 @@ class Background(Cell_Item):
         Function takes no arguments (**kwargs just there to keep interface)
         """
 
-        if self.blob and self.blob.filter_array != None:
+        if self.blob and self.blob.filter_array is not None:
 
             self.filter_array[:, :] = 1
 
@@ -973,13 +981,14 @@ class Background(Cell_Item):
 
             self.filter_array[np.where(self.blob.trash_array)] = 0
 
-            self.filter_array = binary_erosion(self.filter_array,
-                                iterations=6, border_value=1)
+            self.filter_array = binary_erosion(
+                self.filter_array, iterations=6, border_value=1)
 
         else:
 
-            self.logger.warning(("GRID CELL {0}, blob was not set, " + \
-                    "thus background is wrong").format(self._identifier))
+            self.logger.warning(
+                ("GRID CELL {0}, blob was not set, " +
+                 "thus background is wrong").format(self._identifier))
 
 #
 # CLASSES Cell (entire area)
@@ -989,9 +998,12 @@ class Background(Cell_Item):
 class Cell(Cell_Item):
 
     def __init__(self, parent, identifier, grid_array,
-                        run_detect=True, threshold=-1):
+                 run_detect=True, threshold=-1):
 
         Cell_Item.__init__(self, parent, identifier, grid_array)
+
+        self.logger = logging.getLogger("Grid Cell {0} Cell".format(
+            identifier))
 
         self.threshold = threshold
 

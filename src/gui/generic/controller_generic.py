@@ -13,12 +13,13 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import logging
+
 #
 # INTERNAL DEPENDENCIES
 #
 
 import view_generic
-import src.resource_logger as resource_logger
 
 #
 # CLASSES
@@ -33,14 +34,10 @@ class Controller(object):
 
     def __init__(self, parent_controller,
                  model=None, view=None,
-                 specific_model=None, logger=None,
+                 specific_model=None,
                  controller_name="U"):
 
-        if logger is not None:
-            self._logger = logger
-        else:
-            self._logger = resource_logger.Fallback_Logger()
-
+        self._logger = logging.getLogger("Unknown Controller")
         self._parent = parent_controller
 
         #MODEL SHOULD BE SET BEFORE VIEW!

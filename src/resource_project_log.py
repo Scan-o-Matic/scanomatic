@@ -19,6 +19,7 @@ __status__ = "Development"
 import uuid
 import os
 import copy
+import logging
 
 #
 # EXCEPTIONS
@@ -45,6 +46,7 @@ IMAGE_ENTRY_KEYS = [
     'plate_0_area', 'mark_X', 'mark_Y', 'plate_3_area', 'Time',
     'plate_2_area', 'File', 'Image Shape']
 
+_logger = logging.getLogger("Project Log")
 #
 # FUNCTIONS
 #
@@ -179,18 +181,16 @@ def get_meta_data(path=None):
     return meta_data
 
 
-def get_image_entries(path, logger=None):
+def get_image_entries(path):
 
-    if logger:
-        logger.info("Reading Image Entries {0}".format(path))
+    _logger.info("Reading Image Entries {0}".format(path))
 
     try:
 
         fs = open(path, 'r')
 
     except:
-        if logger is not None:
-            logger.critical("Could not load 1-pass file '{0}'".format(path))
+        _logger.critical("Could not load 1-pass file '{0}'".format(path))
 
         return None
 

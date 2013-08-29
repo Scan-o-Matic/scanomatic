@@ -18,13 +18,13 @@ import re
 import time
 import copy
 import uuid
+import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 import src.resource_sane as resource_sane
-import src.resource_logger as resource_logger
 
 #
 # EXCEPTION
@@ -106,9 +106,9 @@ class Scanner(object):
 
     USE_CALLBACK = False
 
-    def __init__(self, parent, paths, config, name, logger):
+    def __init__(self, parent, paths, config, name):
 
-        self._logger = logger
+        self._logger = logging.getLogger("Scanner {0}".format(name))
         self._parent = parent
         self._paths = paths
         self._config = config
@@ -116,7 +116,7 @@ class Scanner(object):
 
         self._usb_address = None
 
-        self._pm = self._config.get_pm(name, logger=logger)
+        self._pm = self._config.get_pm(name)
         self._is_on = None
 
         self._lock_path = self._paths.lock_scanner_pattern.format(
@@ -157,15 +157,14 @@ class Scanner(object):
 
             else:
 
-                self._logger.info(
-                    "Won't free scanner {0} since owned by other".format(self._name))
+                self._logger.info("Won't free scanner since owned by other")
 
             return False
 
         try:
             fs = open(self._lock_path, 'w')
             fs.close()
-            self._logger.info("Scanner {0} was freed in lock-file".format(self._name))
+            self._logger.info("Scanner was freed in lock-file")
         except:
             raise Failed_To_Free_Scanner(self._name)
 
@@ -190,13 +189,12 @@ class Scanner(object):
                 except:
                     raise Failed_To_Claim_Scanner(self._name)
 
-            self._logger.info("Scanner {0} locked in file".format(self._name))
+            self._logger.info("Scanner locked in file")
             return True
 
         else:
             self._logger.warning(
-                "Scanner {0} failed to lock in file since owned by other".
-                format(self._name))
+                "Scanner failed to lock in file since owned by other")
 
             return False
 
@@ -211,8 +209,7 @@ class Scanner(object):
                 fs = open(self._paths.lock_power_up_new_scanner, 'a')
                 fs.write("{0}\n".format(self._uuid))
                 fs.close()
-                self._logger.info("Queued scanner {0} for power up".format(
-                    self._name))
+                self._logger.info("Queued for power up")
                 break
 
             except:
@@ -232,7 +229,7 @@ class Scanner(object):
 
         cur_uuid = None
 
-        self._logger.info("Scanner {0} waiting for power up turn".format(self._name))
+        self._logger.info("Waiting for power up turn")
 
         while cur_uuid != self._uuid:
 
@@ -250,13 +247,13 @@ class Scanner(object):
 
             time.sleep(1)
 
-        self._logger.info("Scanner {0} has power up rights".format(self._name))
+        self._logger.info("Scanner has power up rights")
         return True
 
     def _remove_from_power_up_queue(self):
 
         self._logger.info(
-            "Scanner {0} will be removed from power up queue".format(self._name))
+            "Scanner will be removed from power up queue")
 
         while True:
 
@@ -277,8 +274,7 @@ class Scanner(object):
                 fs = open(self._paths.lock_power_up_new_scanner, 'w')
                 fs.writelines(queue)
                 fs.close()
-                self._logger.info(
-                    "Scanner {0} removed from queue".format(self._name))
+                self._logger.info("Scanner removed from queue")
                 return True
 
             except:
@@ -329,8 +325,8 @@ class Scanner(object):
             if len(free_scanners) == 1:
 
                 self._logger.info(
-                    "Scanner {0} located at address {1}".format(self._name,
-                    free_scanners[0]))
+                    "Scanner located at address {1}".format(
+                        free_scanners[0]))
 
                 self._usb_address = free_scanners[0]
 
@@ -382,24 +378,20 @@ class Scanner(object):
                     fs = open(self._lock_address_path, 'w')
                     fs.writelines(["{0}\t{1}\n".format(*l) for l in s_list])
                     fs.close()
-                    self._logger.info("{0} no longer has address lock".format(
-                        self._name))
-
+                    self._logger.info("No longer address locked")
                     break
 
                 except:
 
                     self._logger.critical(
-                        "{0} is still on".format(self._name) +
-                        " when address lock removal is requested")
+                        "I'm still on after when address lock removal")
 
                     raise Risk_For_Orphaned_Scanner(self._name)
 
             else:
 
                 self._logger.critical(
-                    "{0} is still on when".format(self._name) +
-                    " address lock removal is requested")
+                    "I'm still on after when address lock removal")
 
                 raise Risk_For_Orphaned_Scanner(self._name)
 
@@ -449,8 +441,7 @@ class Scanner(object):
         else:
             self._uuid = s_uuid
 
-        self._logger.info("{0} has new uuid {1}".format(self._name,
-                                                        self._uuid))
+        self._logger.info("New uuid {1}".format(self._uuid))
 
     """
             ACTIONS
@@ -517,7 +508,6 @@ class Scanner(object):
                     owner=self,
                     model=self._model,
                     scan_mode=mode,
-                    output_function=self._logger,
                     scan_settings=self._parent._current_sane_settings)
 
                 scanner.AcquireByFile(filename=filename, scanner=self._usb_address)
@@ -543,13 +533,9 @@ class Scanner(object):
 
 class Scanners(object):
 
-    def __init__(self, paths, config, logger=None):
+    def __init__(self, paths, config):
 
-        if logger is not None:
-            self._logger = logger
-        else:
-            self._logger = resource_logger.Fallback_Logger()
-
+        self._logger = logging.getLogger("Scanners")
         self._paths = paths
         self._config = config
         self._scanners = dict()
@@ -646,7 +632,8 @@ class Scanners(object):
                             self._current_sane_settings[model][scan_mode][i + 1] = value
 
                             self._logger.info(
-                                "Updated scanning settings {2} for {0} in mode {1} to {3}".format(
+                                "Updated scanning settings " +
+                                "{2} for {0} in mode {1} to {3}".format(
                                     model, scan_mode, key, value))
 
     def update(self):
@@ -661,7 +648,7 @@ class Scanners(object):
         for s in scanners:
 
             if s not in self._scanners.keys():
-                self._scanners[s] = Scanner(self, self._paths, self._config, s, self._logger)
+                self._scanners[s] = Scanner(self, self._paths, self._config, s)
 
         for s in self._scanners.keys():
 

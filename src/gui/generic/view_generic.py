@@ -18,6 +18,7 @@ pygtk.require('2.0')
 import gtk
 import numpy as np
 import types
+import logging
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
@@ -26,7 +27,6 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 #
 
 #import src.resource_scanner as resource_scanner
-import src.resource_logger as resource_logger
 import src.resource_image as resource_image
 
 #
@@ -344,7 +344,7 @@ class Fixture_Drawing(gtk.DrawingArea):
     ERROR_BACKGROUND = (0.9, 0.1, 0.1, 1.0)
     ERROR_STROKE = (1, 1, 1, 1)
 
-    def __init__(self, fixture, width=None, height=None, logger=None,
+    def __init__(self, fixture, width=None, height=None,
                  scanner_view=False):
 
         super(Fixture_Drawing, self).__init__()
@@ -360,10 +360,7 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._text_rgba = (1, 1, 1, 0.9)
         self._good_fixture = None
 
-        if logger is not None:
-            self._logger = logger
-        else:
-            self._logger = resource_logger.Log_Garbage_Collector()
+        self._logger = logging.getLogger("Fixture Drawing")
 
         self._set_data()
 

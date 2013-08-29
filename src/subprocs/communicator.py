@@ -16,8 +16,8 @@ __status__ = "Development"
 
 import time
 import sys
-import os
 import threading
+import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -36,11 +36,10 @@ from src.subprocs.io import Proc_IO, Unbuffered_IO
 
 class Communicator(object):
 
-    def __init__(self, logger, parent_process, stdin, stdout, stderr):
+    def __init__(self, parent_process, stdin, stdout, stderr):
         """
         A daemon for communications with main process.
 
-        :param logger: A logging object
         :param parent_process: An object run in the main thread
         :param stdin: Path to stdin file
         :param stdout: Path to stdout file
@@ -110,7 +109,7 @@ class Communicator(object):
 
         """
         self._parent = parent_process
-        self._logger = logger
+        self._logger = logging.getLogger("Communicator")
         self._stdin = stdin
         self._stdout = stdout
         self._stderr = stderr

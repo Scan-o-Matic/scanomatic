@@ -15,13 +15,13 @@ __status__ = "Development"
 #
 
 import inspect
+import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
-import src.resource_logger as resource_logger
 from src.gui.subprocs.event.event import Event
 
 #
@@ -52,14 +52,12 @@ def whoCalled(fn):
 
 class Reconnect_Subprocs(object):
 
-    def __init__(self, controller, logger):
+    def __init__(self, controller):
 
         self._paths = controller.get_top_controller().paths
 
         self._controller = controller
-        if logger is None:
-            logger = resource_logger.Fallback_Logger()
-        self._logger = logger
+        self._logger = logging.getLogger("Reconnect Subprocs")
         self._tc = controller.get_top_controller()
         self._ids = {}
 

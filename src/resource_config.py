@@ -13,11 +13,12 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import logging
+import os
+
 #
 # INTERNAT DEPENDENCIES
 #
-
-import src.resource_logger as resource_logger
 
 
 #
@@ -26,13 +27,13 @@ import src.resource_logger as resource_logger
 
 class Config_File(object):
 
-    def __init__(self, location, logger=None):
+    def __init__(self, location):
 
         self._location = None
         self._data = None
         self._file_data_order = None
-        if logger is None:
-            self._logger = resource_logger.Fallback_Logger()
+        self._logger = logging.getLogger("Config File '{0}'".format(
+            os.path.basename(location)))
 
         self._no_name_enumerator = 0
 

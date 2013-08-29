@@ -19,6 +19,7 @@ import subprocess
 import tarfile
 import glob
 import sh
+import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -48,11 +49,11 @@ class Could_Not_Save_Log_And_State(Exception):
 
 class Config_Controller(controller_generic.Controller):
 
-    def __init__(self, main_controller, logger=None):
+    def __init__(self, main_controller):
 
-        super(Config_Controller, self).__init__(main_controller,
-                                                logger=logger)
+        super(Config_Controller, self).__init__(main_controller)
 
+        self._logger = logging.getLogger("Application Config Controller")
         tc = self.get_top_controller()
         self._paths = tc.paths
         self._scanners = 3
@@ -175,14 +176,16 @@ class Config_Controller(controller_generic.Controller):
                 fh.write(cont)
                 fh.close()
             except:
-                self._logger.error('Could not create desktop short-cut properly')
+                self._logger.error(
+                    'Could not create desktop short-cut properly')
                 return
 
             os.chmod(target_path, 0777)
 
         else:
 
-            self._logger.error('Could not find desktop short-cut template')
+            self._logger.error(
+                'Could not find desktop short-cut template')
             return
 
         view_config.dialog(

@@ -16,6 +16,7 @@ __status__ = "Development"
 import gobject
 import threading
 import inspect
+import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -82,23 +83,24 @@ def whoCalled(fn):
 class Subprocs_Controller(controller_generic.Controller,
                           progress_responses.Progress_Responses):
 
-    def __init__(self, main_controller, logger=None):
+    def __init__(self, main_controller):
 
         super(Subprocs_Controller, self).__init__(
             main_controller,
-            specific_model=model_subprocs.get_composite_specific_model(),
-            logger=logger)
+            specific_model=model_subprocs.get_composite_specific_model())
+
+        self._logger = logging.getLogger("Subprocs Controller")
 
         self._tc = self.get_top_controller()
         self._project_progress = live_projects.Live_Projects(
             main_controller.paths, self._model)
 
         #Initiate events handler and the timeout for its update
-        self._subprocess_events = event_handler.EventHandler(logger)
+        self._subprocess_events = event_handler.EventHandler()
         gobject.timeout_add(1307, self._subprocess_events.update)
 
         #Reconnect subprocesses from previous instances
-        revive_processes = reconnect.Reconnect_Subprocs(self, logger)
+        revive_processes = reconnect.Reconnect_Subprocs(self)
         thread = threading.Thread(target=revive_processes.run)
         thread.start()
         gobject.timeout_add(131, self._revive_progress_callback, thread)
