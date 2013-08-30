@@ -36,7 +36,6 @@ import src.resource_scanner as resource_scanner
 import src.resource_first_pass_analysis as resource_first_pass_analysis
 import src.resource_fixture as resource_fixture
 import src.resource_path as resource_path
-import src.resource_logger as resource_logger
 import src.resource_app_config as resource_app_config
 import src.resource_project_log as resource_project_log
 import src.subprocs.communicator as communicator
@@ -98,12 +97,13 @@ class Experiment(object):
 
     SCAN_MODE = 'TPU'
 
-    def __init__(self, run_args=None, logger=None, **kwargs):
+    def __init__(self, run_args=None, **kwargs):
 
         self.paths = resource_path.Paths()
+        self._logger = logging.getLogger("Expermient")
         self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
-        self.scanners = resource_scanner.Scanners(self.paths, self.config, logger=logger)
+        self.scanners = resource_scanner.Scanners(self.paths, self.config)
 
         self._running = True
         self._paused = False
@@ -116,8 +116,6 @@ class Experiment(object):
         sys.excepthook = self.__excepthook
 
         self._scan_threads = list()
-
-        self.set_logger(logger)
 
         if run_args is None or run_args.scanned is None:
             self._scanned = 0
@@ -132,7 +130,7 @@ class Experiment(object):
             self._set_settings_from_kwargs(kwargs)
 
         self._comm = communicator.Communicator(
-            logger, self,
+            self,
             self.paths.experiment_stdin.format(
                 self.paths.get_scanner_path_name(self._scanner_name)),
             self.paths.log_scanner_out.format(self._scanner_name[-1]),
@@ -249,13 +247,6 @@ class Experiment(object):
 
         self._initialized = True
 
-    def set_logger(self, logger):
-
-        if logger is None:
-            self._logger = resource_logger.Fallback_Logger()
-        else:
-            self._logger = logger
-
     def _set_fixture(self, dir_path, fixture_name):
 
         self._logger.info("Making local copy of fixture settings.")
@@ -360,8 +351,7 @@ class Experiment(object):
                 file_name=im_path,
                 im_acq_time=scan_time,
                 experiment_directory=self._out_data_path,
-                paths=self.paths,
-                logger=self._logger)
+                paths=self.paths)
 
             self._logger.info("{0}".format(im_dict))
 
@@ -626,5 +616,5 @@ input file for the analysis script.""")
 
     logger.debug("Logger is ready! Arguments are ready! Lets roll!")
 
-    e = Experiment(run_args=args, logger=logger)
+    e = Experiment(run_args=args)
     e.run()
