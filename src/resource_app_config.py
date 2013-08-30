@@ -13,6 +13,8 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import logging
+
 #
 # INTERNAL DEPENDENCIES
 #
@@ -34,6 +36,7 @@ class Config(object):
             paths = resource_path.Paths()
 
         self._paths = paths
+        self._logger = logging.getLogger("Application Config")
 
         #TMP SOLUTION TO BIGGER PROBLEMS
 
@@ -153,17 +156,17 @@ class Config(object):
 
         return self._scanner_sockets[scanner]
 
-    def get_pm(self, scanner_name, logger=None, **pm_kwargs):
+    def get_pm(self, scanner_name, **pm_kwargs):
 
         scanner_pm_socket = self._scanner_sockets[scanner_name]
         if pm_kwargs == {}:
             pm_kwargs = self._pm_arguments
 
-        if logger is not None:
-            logger.info("Creating scanner PM for socket {0} and settings {1}".format(
-                        scanner_pm_socket, pm_kwargs))
+        self._logger.info(
+            "Creating scanner PM for socket {0} and settings {1}".format(
+                scanner_pm_socket, pm_kwargs))
 
-        return self._PM(scanner_pm_socket, logger=logger, **pm_kwargs)
+        return self._PM(scanner_pm_socket, **pm_kwargs)
 
     def get_default_experiment_query(self):
 
