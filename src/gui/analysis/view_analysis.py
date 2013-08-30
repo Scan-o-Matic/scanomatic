@@ -386,32 +386,34 @@ class Analysis_Inspect_Stage(gtk.VBox):
             self._fd_op2.connect('clicked', self._toggle_drawing)
             hd.pack_start(vbox, False, False, PADDING_MEDIUM)
 
-            #ADD THE PLATES
-            for i, plate in enumerate(sm['pinnings']):
+            if sm['pinnings'] is not None:
+                #ADD THE PLATES
+                for i, plate in enumerate(sm['pinnings']):
 
-                if plate:
+                    if plate:
 
-                    vbox = gtk.VBox()
-                    label = gtk.Label(p_title.format(i + 1, sm['plate-names'][i]))
-                    vbox.pack_start(label, False, False, PADDING_SMALL)
-                    image = gtk.Image()
-                    image.set_from_file(sm['grid-images'][i])
-                    vbox.pack_start(image, True, True, PADDING_SMALL)
-                    button = gtk.Button()
+                        vbox = gtk.VBox()
+                        label = gtk.Label(p_title.format(
+                            i + 1, sm['plate-names'][i]))
+                        vbox.pack_start(label, False, False, PADDING_SMALL)
+                        image = gtk.Image()
+                        image.set_from_file(sm['grid-images'][i])
+                        vbox.pack_start(image, True, True, PADDING_SMALL)
+                        button = gtk.Button()
 
-                    if (sm['gridding-in-history'] is None or
-                            sm['gridding-in-history'][i] is None):
+                        if (sm['gridding-in-history'] is None or
+                                sm['gridding-in-history'][i] is None):
 
-                        button.set_label(p_no_button)
-                        button.set_sensitive(False)
+                            button.set_label(p_no_button)
+                            button.set_sensitive(False)
 
-                    else:
+                        else:
 
-                        button.set_label(p_button)
-                        button.connect("clicked", self._verify_bad, i)
+                            button.set_label(p_button)
+                            button.connect("clicked", self._verify_bad, i)
 
-                    vbox.pack_start(button, False, False, PADDING_SMALL)
-                    hd.pack_start(vbox, True, True, PADDING_MEDIUM)
+                        vbox.pack_start(button, False, False, PADDING_SMALL)
+                        hd.pack_start(vbox, True, True, PADDING_MEDIUM)
 
             hbox = gtk.HBox(False, 0)
             button = gtk.Button(m['analysis-stage-inspect-upload-button'])

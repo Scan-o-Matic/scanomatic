@@ -158,6 +158,8 @@ class Subprocs_Controller(controller_generic.Controller,
         self._project_progress.remove_project(prefix)
 
     def get_remaining_scans(self):
+        """Idea was to report current claim on HDD space that running
+        processes have"""
 
         """ MULTI-EVENT
         img_tot = 0

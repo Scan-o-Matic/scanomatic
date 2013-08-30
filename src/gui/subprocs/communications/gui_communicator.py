@@ -137,7 +137,7 @@ class Subprocess(object):
         and should return a string response.
         """
 
-        self._logger = logging("Subprocess Type {0}".format(
+        self._logger = logging.getLogger("Subprocess Type {0}".format(
             proc_type))
 
         self._proc_type = proc_type
@@ -798,6 +798,7 @@ class Analysis(Subprocess):
         super(Analysis, self).__init__(
             ANALYSIS, top_controller)
 
+        self.set_start_time()
         self._comm_id = None
         self.set_process(self.get_proc(**params))
 

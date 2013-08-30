@@ -321,7 +321,6 @@ if __name__ == "__main__":
         gridding_settings=gridding_settings,
         grid_cell_settings=grid_cell_settings,
         grid_correction=grid_correction,
-        logger=logger,
         comm_id=args.comm_id)
 
     run_done = a.run()

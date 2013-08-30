@@ -168,7 +168,7 @@ class Analysis(object):
             os.path.join(self._outdata_directory, "analysis.run"), mode='w')
 
         log_formatter = logging.Formatter(
-            format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+            '%(asctime)s - %(name)s - %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S\n')
         hdlr.setFormatter(log_formatter)
         logger = logging.getLogger("Analysis")

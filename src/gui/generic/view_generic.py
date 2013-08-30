@@ -360,6 +360,9 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._text_rgba = (1, 1, 1, 0.9)
         self._good_fixture = None
 
+        self._data_width = 0
+        self._data_height = 0
+
         self._logger = logging.getLogger("Fixture Drawing")
 
         self._set_data()
