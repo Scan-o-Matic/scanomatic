@@ -511,7 +511,7 @@ class Fixture_Image(object):
 
     def threaded(self):
 
-        logger = self._logging
+        logger = self._logger
         t = time.time()
         logger.debug(
             'Fixture calibration',
@@ -572,7 +572,7 @@ class Fixture_Image(object):
 
     def run_marker_analysis(self):
 
-        logger = self._logging
+        logger = self._logger
 
         t = time.time()
 
