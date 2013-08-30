@@ -611,8 +611,7 @@ input file for the analysis script.""")
 
     log_formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S\n',
-        level=logging.INFO)
+        datefmt='%Y-%m-%d %H:%M:%S\n')
 
     #CREATE DIRECTORY
     if args.file is None:
