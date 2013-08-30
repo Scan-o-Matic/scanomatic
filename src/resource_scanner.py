@@ -441,7 +441,7 @@ class Scanner(object):
         else:
             self._uuid = s_uuid
 
-        self._logger.info("New uuid {1}".format(self._uuid))
+        self._logger.info("New uuid {0}".format(self._uuid))
 
     """
             ACTIONS
