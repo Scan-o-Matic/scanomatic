@@ -325,7 +325,7 @@ class Scanner(object):
             if len(free_scanners) == 1:
 
                 self._logger.info(
-                    "Scanner located at address {1}".format(
+                    "Scanner located at address {0}".format(
                         free_scanners[0]))
 
                 self._usb_address = free_scanners[0]
