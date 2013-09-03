@@ -24,16 +24,11 @@ import os
 from argparse import ArgumentParser
 import logging
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-    level=logging.INFO)
-
 #
 # INTERNAL DEPENDENCIES
 #
 
-import src.analysis as analysis
-import src.resource_analysis_support as resource_analysis_support
+#IMPORTED LATER TO NOT INTERFER WITH LOGGING
 
 #
 # RUN BEHAVIOUR
@@ -159,9 +154,7 @@ if __name__ == "__main__":
 
     else:
 
-        logging_level = LOGGING_LEVELS['warning']
-
-    logger = logging.getLogger('Scan-o-Matic Analysis')
+        logging_level = LOGGING_LEVELS['info']
 
     #XML
     xml_format = {'short': args.xml_short, 'omit_compartments': [],
@@ -178,12 +171,6 @@ if __name__ == "__main__":
         xml_format['omit_measures'] = \
             map(lambda x: x.strip(), args.xml_omit_measures.split(","))
 
-    logging.debug("XML-formatting is " +
-                  "{0}, omitting compartments {1} and measures {2}.".format(
-                  ['long', 'short'][xml_format['short']],
-                  xml_format['omit_compartments'],
-                  xml_format['omit_measures']))
-
     #BLOB DETECTION
     args.b_detect = args.b_detect.lower()
 
@@ -198,21 +185,6 @@ if __name__ == "__main__":
 
     #ANIMATE THE WATCHED COLONY
     grid_array_settings['animate'] = args.animate
-
-    #MATRICES
-    if args.matrices is not None:
-
-        pm = resource_analysis_support.get_pinning_matrices(args.matrices)
-        logging.debug("Matrices: {0}".format(pm))
-
-        if pm == [None] * len(pm):
-
-            logging.error("No valid pinning matrices, aborting")
-            parser.error("Check that you supplied a valid string...")
-
-    else:
-
-        pm = None
 
     #TIMES TO SAVE GRIDDING IMAGE
     if args.grid_times is not None:
@@ -229,7 +201,7 @@ if __name__ == "__main__":
 
             except:
 
-                logging.warning("ARGUMENTS, could not parse grid_times...")
+                print ("ARGUMENTS, could not parse grid_times...")
 
                 grid_times = []
 
@@ -250,8 +222,6 @@ if __name__ == "__main__":
 
         parser.error("You need to specify input file!")
 
-    in_path_list = args.inputfile.split(os.sep)
-
     try:
 
         fh = open(args.inputfile, 'r')
@@ -263,23 +233,48 @@ if __name__ == "__main__":
     fh.close()
 
     #OUTPUT LOCATION
-    output_path = ""
+    output_path = os.path.join(os.path.dirname(args.inputfile),
+                               args.outputpath)
 
-    if len(in_path_list) == 1:
+    print "Logging is done to {0}".format(
+        os.path.join(output_path, "analysis.run"))
 
-        output_path = "."
+    if os.path.isdir(output_path) is False:
+        os.mkdir(output_path)
+
+    #CONFIGURATING LOGGING
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S\n',
+        filename=os.path.join(output_path, "analysis.run"),
+        filemode='w',
+        level=logging_level)
+
+    #logging.info("TEST")
+    logger = logging.getLogger('Scan-o-Matic Analysis')
+
+    logger.debug(
+        "XML-formatting is " +
+        "{0}, omitting compartments {1} and measures {2}.".format(
+        ['long', 'short'][xml_format['short']],
+        xml_format['omit_compartments'],
+        xml_format['omit_measures']))
+
+    #MATRICES
+    if args.matrices is not None:
+
+        import src.resource_analysis_support as resource_analysis_support
+        pm = resource_analysis_support.get_pinning_matrices(args.matrices)
+        logging.debug("Matrices: {0}".format(pm))
+
+        if pm == [None] * len(pm):
+
+            logging.error("No valid pinning matrices, aborting")
+            parser.error("Check that you supplied a valid string...")
 
     else:
 
-        output_path = os.sep.join(in_path_list[:-1])
-
-    if args.outputpath is None:
-
-        output_path += os.sep + "analysis"
-
-    else:
-
-        output_path += os.sep + str(args.outputpath)
+        pm = None
 
     #SPECIAL WATCH GRAPH
     if args.graph_watch is not None:
@@ -311,6 +306,7 @@ if __name__ == "__main__":
     logger.debug("Logger is ready!")
 
     #START ANALYSIS
+    import src.analysis as analysis
     a = analysis.Analysis(
         args.inputfile, output_path, pm, args.graph_watch, verbose=True,
         visual=False,

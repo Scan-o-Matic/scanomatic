@@ -396,7 +396,8 @@ class Subprocess(object):
         if self._stdin is None:
             self._stdin = PIPE
 
-        print "!!!\t{0}".format(param_list)
+        self._logger.info("Launching:\t{0}".format(" ".join(map(str,
+                                                                param_list))))
 
         Popen(map(str, param_list), stdin=self._stdin,
               stdout=self._stdout, stderr=self._stderr, shell=False)

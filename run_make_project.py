@@ -56,12 +56,14 @@ class Make_Project(object):
     CONFIG_OTHER = "Run Info"
     CONFIG_META = "Meta Data"
 
-    def __init__(self, inputFile, comm_id, logger):
+    def __init__(self, inputFile, comm_id, logLevel):
 
         self._time_init = time.time()
         self._running = None
         self._paused = False
-        self._logger = logger
+        self._logger = logging.getLogger('Scan-o-Matic Make Project')
+        self._logger.setLevel(logLevel)
+
         self._paths = resource_path.Paths()
         self._set_from_file(inputFile)
 
@@ -70,7 +72,7 @@ class Make_Project(object):
         self._stderr = self._paths.log_rebuild_err.format(comm_id)
 
         self._comm = communicator.Communicator(
-            logger, self,  self._stdin, self._stdout, self._stderr)
+            self,  self._stdin, self._stdout, self._stderr)
 
         self._comm_thread = threading.Thread(target=self._comm.run)
 
@@ -91,8 +93,6 @@ class Make_Project(object):
             self._model[k] = eval(self._model[k])
 
         self._images_total = len(self._model['image-list'])
-
-        print self._model
 
     def _init_output_file(self):
 
@@ -159,11 +159,13 @@ class Make_Project(object):
         except:
             im_acq_time = None
 
+        self._logger.info("Processing '{0}' as time {1}".format(
+            im_path, im_acq_time))
+
         #Analyse image
         im_data = resource_first_pass_analysis.analyse(
             im_path,
             im_acq_time=im_acq_time,
-            logger=self._logger,
             fixture_name=self._fixture_name,
             fixture_directory=self._fixture_dir)
 
@@ -209,17 +211,24 @@ class Make_Project(object):
         #SET UP FIXTURE
         self._init_fixture()
 
+        self._logger.debug("Ready to go through {0} images {1}".format(
+            self._images_total, self._running))
+
         #DO THE IMAGES
         while self._running and self._image_i < self._images_total:
 
             #DO THE FIRST PASS
             self._analyse_image(self._model['image-list'][self._image_i])
+            self._logger.info("Done processing {0} of {1}".format(
+                self._image_i + 1, self._images_total))
 
             self._image_i += 1
 
             while self._paused and self._running:
 
                 time.sleep(0.42)
+
+        self._logger.info("Shutting down")
 
         #Clean-up
         self._running = False
@@ -305,16 +314,12 @@ if __name__ == "__main__":
     #LOGGING
     if args.logging in LOGGING_LEVELS.keys():
 
-        args.logging = LOGGING_LEVELS[args.debug_level]
+        args.logging = LOGGING_LEVELS[args.logging]
 
     else:
 
         args.logging = LOGGING_LEVELS['warning']
 
-    logger = logging.getLogger('Scan-o-Matic Make Project')
-    logger.setLevel(args.logging)
-    logger.debug("Logger is ready!")
-
     #Making the project
-    mp = Make_Project(args.inputfile, args.comm, logger)
+    mp = Make_Project(args.inputfile, args.comm, args.logging)
     mp.run()

@@ -24,9 +24,11 @@ import shutil
 from argparse import ArgumentParser
 import logging
 
+"""
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
     level=logging.INFO)
+"""
 
 #
 # SCANNOMATIC LIBRARIES
@@ -420,6 +422,8 @@ class Experiment(object):
 
 if __name__ == "__main__":
 
+    print "Experiment called with:\n{0}\n".format(" ".join(sys.argv))
+
     parser = ArgumentParser(description="""Runs a session of image gathering
 given certain parameters and creates a first pass analysis file which is the
 input file for the analysis script.""")
@@ -479,8 +483,6 @@ input file for the analysis script.""")
         type=str, help="Sets debugging level")
 
     args = parser.parse_args()
-
-    print "\n\n<<>> {0}\n\n".format(args)
 
     #DEBUGGING
     LOGGING_LEVELS = {'critical': logging.CRITICAL,
@@ -597,24 +599,17 @@ input file for the analysis script.""")
 
         logging_level = LOGGING_LEVELS['warning']
 
-    logger = logging.getLogger('Scan-o-Matic First Pass Analysis')
-
-    log_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S\n')
-
     #CREATE DIRECTORY
     if args.file is None:
         os.mkdir(args.outdata_path)
 
-    #NEED NICER PATH THING
-    hdlr = logging.FileHandler(args.outdata_path + os.sep + "experiment.run", mode='w')
-    hdlr.setFormatter(log_formatter)
-    logger.addHandler(hdlr)
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S\n',
+        filename=os.path.join(args.outdata_path, "experiment.run"),
+        filemode='w',
+        level=logging_level)
 
-    logger.setLevel(logging_level)
-
-    logger.debug("Logger is ready! Arguments are ready! Lets roll!")
-
+    logging.info("TEST")
     e = Experiment(run_args=args)
     e.run()

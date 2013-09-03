@@ -164,15 +164,7 @@ class Analysis(object):
         # SET UP LOGGER
         #
 
-        hdlr = logging.FileHandler(
-            os.path.join(self._outdata_directory, "analysis.run"), mode='w')
-
-        log_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S\n')
-        hdlr.setFormatter(log_formatter)
         logger = logging.getLogger("Analysis")
-        logger.addHandler(hdlr)
 
         logger.info('Analysis started at ' + str(self._init_time))
         logger.info('ANALYSIS using file {0}'.format(log_file_path))

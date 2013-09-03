@@ -268,55 +268,78 @@ class Watch_Graph(object):
     PLATE = 0
     X = 1
     Y = 1
+    IM_WIDTH = -1
+    IM_HEIGHT = -2
+    IMAGES = 0
 
     def __init__(self, watch_id, outdata_directory, nBins=128):
 
         self._watch = watch_id
         self._path = os.path.join(
             outdata_directory,
-            "watch_image__plate_{0}_pos_{1}_{2}.png".format(
+            "watch_image__plate_{0}_pos_{1}_{2}".format(
                 self._watch[self.PLATE],
                 self._watch[self.X],
                 self._watch[self.Y]))
 
+        self._data = None
         self._bigIM = None
         self._nBins = nBins
         self._histogramCounts = None
         self._histogramBins = None
 
-    def _save_image(self, npdata, outfilename):
+    def _save_npy(self):
 
-        img = Image.fromarray(np.asarray(np.clip(npdata, 0, 255),
+        np.save("{0}.npy".format(self._path), self._data)
+
+    def _save_image(self):
+
+        img = Image.fromarray(np.asarray(np.clip(self._bigIM, 0, 255),
                                          dtype="uint8"), "L")
-        img.save(outfilename)
+
+        img.save("{0}.tiff".format(self._path))
 
     def _save_histograms(self, path):
 
-        np.save(path + "HistCounts.npy", self._histogramCounts)
-        np.save(path + "HistBins.npy", self._histogramBins)
+        np.save(self._path + "HistCounts.npy", self._histogramCounts)
+        np.save(self._path + "HistBins.npy", self._histogramBins)
 
-    def add_image(self, A, B):
+    def _build_image(self):
 
-        padding = 5
-        hpadding = np.zeros((A.shape[0], padding)) + 255
-        if A.max() > 0:
-            A = A / float(A.max()) * 255
+        padding = 2
+        vPadding = np.zeros((self._data.shape[self.IM_HEIGHT], padding))
+        hPadding = np.zeros((padding,
+                             2 * self._data.shape[self.IM_WIDTH] + padding))
 
-        curComposite = np.c_[A, hpadding, (B * 255).astype(np.int)]
-        vpadding = np.zeros((padding, curComposite.shape[1])) + 255
-        if self._bigIM is not None:
-            self._bigIM = np.r_[curComposite, vpadding, self._bigIM]
+        for imageIndex in range(self._data.shape[self.IMAGES]):
+
+            A = self._data[imageIndex][0]
+            B = self._data[imageIndex][1]
+
+            if A.max() > 0:
+                A = A / float(A.max()) * 255
+
+            curImage = np.c_[A, vPadding, (B * 255).astype(np.int)]
+
+            if self._bigIM is None:
+
+                self._bigIM = curImage
+
+            else:
+
+                self._bigIM = np.r_[curImage, hPadding, self._bigIM]
+
+    def add_image(self, im, detection):
+
+        composite = np.array(((im, detection),))
+        if self._data is None:
+            self._data = composite
         else:
-            self._bigIM = curComposite
-
-        if self._histogramBins is None:
-            self._histogramCounts, self._histogramBins = np.histogram(
-                A, bins=self._nBins)
-        else:
-            counts, bins = np.histogram(A, bins=self._histogramBins)
-            self._histogramCounts = self.c_[counts, self._histogramCounts]
+            self._data = np.r_[self._data, composite]
 
     def finalize(self):
 
-        self._save_image(self._bigIM, self._path)
-        self._save_histograms(self._path)
+        self._save_npy()
+        self._build_image()
+        self._save_image()
+        self._save_histograms()
