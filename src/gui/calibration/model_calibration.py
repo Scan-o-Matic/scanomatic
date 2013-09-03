@@ -162,6 +162,7 @@ specific_fixture_model = {
 'im-not-loaded': 'No image selected',
 
 'grayscale-exists': True,
+'grayscale-type': None,
 'grayscale-image-text': 'G',
 'grayscale-coords': list(),
 'grayscale-targets': None,

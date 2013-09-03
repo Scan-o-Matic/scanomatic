@@ -468,7 +468,11 @@ class Fixture_Controller(controller_generic.Controller):
         for plate in enumerate(sm['plate-coords']):
             self.f_settings['plate-coords'] = plate
 
-        self.f_settings['grayscale'] = sm['grayscale-targets']
+        self._logger.info(
+            "The fixture has {0} grayscale with source values {1}".format(
+                sm['grayscale-type'], sm['grayscale-sources']))
+
+        self.f_settings['grayscale'] = sm['grayscale-sources']
         self.f_settings['current'].save()
         self.set_saved()
         self.get_top_controller().fixtures.update()
@@ -557,7 +561,7 @@ class Fixture_Controller(controller_generic.Controller):
 
         gsName = widget.get_text()
         sm = self._specific_model
-        sm['grayscale-name'] = gsName
+        sm['grayscale-type'] = gsName
         self.f_settings['grayscale_type'] = gsName
         self.get_grayscale()
         self._view.get_stage().set_segments_in_list()

@@ -6,6 +6,18 @@ def load(path, numberOfImages, padding=2):
 
     im = plt.imread(path)
 
+    if im.ndim == 3:
+
+        if im.shape[-1] == 4:
+
+            #Set from alpha if possible
+            im = im[..., -1]
+
+        else:
+
+            #Else take average of all channels (RGB)
+            im = im.mean(axis=-1)
+
     smallImShape = np.array((
         (im.shape[0] - padding * (numberOfImages - 1)) / numberOfImages,
         (im.shape[1] - padding) / 2))
@@ -18,8 +30,8 @@ def load(path, numberOfImages, padding=2):
         d1Higher = d1Lower + smallImShape[0]
 
         current = np.array(((
-            im[d1Lower: d1Higher: -1, : smallImShape[1]],
-            im[d1Lower: d1Higher: -1, smallImShape[1] + padding:]), ))
+            im[d1Lower: d1Higher:, : smallImShape[1]][::-1, ...],
+            im[d1Lower: d1Higher:, smallImShape[1] + padding:][::-1, ...]), ))
 
         if D is None:
             D = current
@@ -32,8 +44,10 @@ def load(path, numberOfImages, padding=2):
 def compareColonyMasks(im, mask, refMask):
 
     ret = {}
+    mask = mask.astype(np.bool)
+    refMask = refMask.astype(np.bool)
     falsePosMask = np.logical_and(mask, mask != refMask)
-    falseNegMask = np.logical_and(not(mask), mask != refMask)
+    falseNegMask = np.logical_and(mask == 0, mask != refMask)
     ret['falsePositiveArea'] = falsePosMask.sum()
     ret['falseNegativeArea'] = falseNegMask.sum()
     ret['refArea'] = refMask.sum()
@@ -66,7 +80,7 @@ def buildArrays(comparisonsIterable):
 
         ret['refArea'][i] = comparisonsIterable[i]['refArea']
 
-        ret['refPixelSum'][i] = comparisonsIterable['refPixelSum']
+        ret['refPixelSum'][i] = comparisonsIterable[i]['refPixelSum']
 
         ret['falsePositivePixelSum'][i] = comparisonsIterable[i][
             'falsePositivePixelSum']
@@ -83,7 +97,7 @@ def compareAnalysisArrayToReferenceImage(data, path):
 
     allComparisons = [compareColonyMasks(data[i][0],
                                          data[i][1],
-                                         refData[i][1]) for i in range(
+                                         refData[i][0]) for i in range(
                                              data.shape[0])]
 
     return buildArrays(allComparisons)

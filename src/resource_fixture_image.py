@@ -374,7 +374,7 @@ class Fixture_Image(object):
 
         else:
 
-            print "***ERROR: Failed to set {0} to {1}".format(key, val)
+            raise("Failed to set {0} to {1}, key unkown".format(key, str(val)))
 
     def _load_reference(self):
 
@@ -606,7 +606,7 @@ class Fixture_Image(object):
         target_conf_file.set("version", __version__)
 
         logger.debug('Fixture calibration: Marker Detection', "Scaling image", "LA",
-                        debug_level='info')
+                     debug_level='info')
 
         if self.im_scale is not None:
 
@@ -624,7 +624,7 @@ class Fixture_Image(object):
             self.im_scale = self.MARKER_DETECTION_SCALE / self.im_original_scale
 
         logger.debug('Fixture calibration: Marker Detection', scale_str, "LA",
-                        debug_level='info')
+                     debug_level='info')
 
         logger.debug(
             'Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
@@ -651,7 +651,7 @@ class Fixture_Image(object):
         msg = "Finding pattern (acc {0} s)".format(time.time() - t)
 
         logger.debug('Fixture calibration, Marker Detection', msg, 'A',
-                        debug_level='debug')
+                     debug_level='debug')
 
         Xs, Ys = im_analysis.find_pattern(markings=self.markings)
 
@@ -670,7 +670,7 @@ class Fixture_Image(object):
 
         msg = "Marker Detection complete (acc {0} s)".format(time.time() - t)
         logger.debug('Fixture calibration: Marker Detection', msg, 'A',
-                        debug_level='debug')
+                     debug_level='debug')
 
         return analysis_im_path
 

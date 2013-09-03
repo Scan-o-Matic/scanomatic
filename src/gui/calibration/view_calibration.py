@@ -567,6 +567,7 @@ class Fixture_Segmentation_Stage(gtk.VBox):
         right_side.pack_start(self.has_grayscale, False, False, PADDING_SMALL)
 
         self.grayscaleType = view_generic.get_grayscale_combo()
+        self.grayscaleType.set_activeGrayscale(specific_model['grayscale-type'])
         self.grayscaleType.connect("changed", controller.setGrayscaleType)
         right_side.pack_start(self.grayscaleType, False, False, PADDING_SMALL)
 
