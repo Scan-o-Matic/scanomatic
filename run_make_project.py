@@ -167,13 +167,16 @@ class Make_Project(object):
             im_path,
             im_acq_time=im_acq_time,
             fixture_name=self._fixture_name,
-            fixture_directory=self._fixture_dir)
+            fixture_directory=self._fixture_dir,
+            experiment_directory=None)
 
         if im_data['grayscale_indices'] is None:
 
-            self._logger.error("Could not analyze grayscale for {0}".format(
-                im_path))
+            self._logger.error("Could not find target values for Grayscale")
 
+        elif im_data['grayscale_values'] is None:
+            self._logger.error("Could not analyse grayscale on '{0}'".format(
+                im_path))
         else:
 
             #Get proper dict for writing to file

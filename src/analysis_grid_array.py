@@ -27,7 +27,8 @@ import resource_grid
 import analysis_grid_cell as grid_cell
 import resource_path
 import resource_image
-import logging
+#import logging
+import weakref
 
 #
 # EXCEPTIONS
@@ -56,9 +57,9 @@ class Grid_Array():
                  grid_array_settings=None, gridding_settings=None,
                  grid_cell_settings=None):
 
-        self._parent = parent
+        self._parent = weakref.ref(parent) if parent else None
 
-        self.logger = logging.getLogger("Grid Array {0}".format(identifier))
+        #self.logger = logging.getLogger("Grid Array {0}".format(identifier))
 
         if parent is None:
 
@@ -135,6 +136,9 @@ class Grid_Array():
         if pinning_matrix is not None:
             self._init_pinning_matrix()
 
+    def __getitem__(self, key):
+        return self._grid_cells[key[0]][key[1]]
+
     #
     # PROPERTIES
     #
@@ -194,7 +198,7 @@ class Grid_Array():
 
         grid_history = self.fixture['history']
 
-        p_uuid = self._parent.p_uuid
+        p_uuid = self._parent().p_uuid
         plate = self._identifier[1]
 
         if p_uuid is not None:
@@ -206,7 +210,7 @@ class Grid_Array():
 
         grid_history = self.fixture['history']
 
-        p_uuid = self._parent.p_uuid
+        p_uuid = self._parent().p_uuid
         plate = self._identifier[1]
 
         if p_uuid is not None:
@@ -216,7 +220,8 @@ class Grid_Array():
                 plate, center, spacings)
 
         else:
-            self.logger.error("Gridding could not be saved because of no uuid")
+            #self.logger.error("Gridding could not be saved because of no uuid")
+            pass
 
     def set_grid(self, im, save_name=None, grid_correction=None):
 
@@ -229,8 +234,8 @@ class Grid_Array():
         grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])],
                       self._pinning_matrix[int(self._im_dim_order[1])])
 
-        self.logger.info("Setting a grid with format {0}".format(
-            grid_shape))
+        #self.logger.info("Setting a grid with format {0}".format(
+        #    grid_shape))
 
         #gh = np.array(self.get_history())
         #self.logger.debug("Grid History {0}".format(gh))
@@ -266,16 +271,16 @@ class Grid_Array():
         self._grid, adjusted_values = resource_grid.get_validated_grid(
             im, grid, dy, dx, adjusted_values)
 
-        self.logger.info("Expecting center {0} and Spacings {1}".format(
-            expected_center, expected_spacings))
+        #self.logger.info("Expecting center {0} and Spacings {1}".format(
+        #    expected_center, expected_spacings))
 
         if self._grid is None or np.isnan(spacings).any():
-            self.logger.error(
-                "Could not produce a grid for im-shape {0}".format(im.shape))
+            #self.logger.error(
+            #    "Could not produce a grid for im-shape {0}".format(im.shape))
 
             error_file = os.path.join(
                 os.sep,
-                self._parent.get_file_base_dir(),
+                self._parent().get_file_base_dir(),
                 self._paths.experiment_grid_error_image.format(
                     self._identifier[1]))
 
@@ -283,13 +288,14 @@ class Grid_Array():
 
                 np.save(error_file, im)
 
-                self.logger.critical('Saved image slice to {0}'.format(
-                    error_file))
+                #self.logger.critical('Saved image slice to {0}'.format(
+                #    error_file))
 
             else:
 
-                self.logger.critical("Won't save failed gridding {0}".format(
-                    error_file) + ", file allready exists")
+                #self.logger.critical("Won't save failed gridding {0}".format(
+                #    error_file) + ", file allready exists")
+                pass
 
             if save_name is not None:
                 self.make_grid_im(im, save_grid_name=save_name, grid=grid)
@@ -308,16 +314,16 @@ class Grid_Array():
 
             return False
 
-        self.logger.info("Got center {0} and Spacings {1}".format(
-            center, spacings))
+        #self.logger.info("Got center {0} and Spacings {1}".format(
+        #    center, spacings))
 
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
 
         if adjusted_values:
-            self.logger.info("Gridding got adjusted by history")
+            #self.logger.info("Gridding got adjusted by history")
             self.unset_history()
         else:
-            self.logger.info("Setting gridding history")
+            #self.logger.info("Setting gridding history")
             self.set_history(center, spacings)
 
         if save_name is not None:
@@ -375,18 +381,19 @@ class Grid_Array():
         else:
 
             save_grid_name += "{0}.svg".format(self._identifier[1] + 1)
-            self.logger.info(
-                "ANALYSIS GRID: Saving grid-image as file" +
-                " '{0}' for plate {1}".format(
-                save_grid_name, self._identifier[1]))
+            #self.logger.info(
+            #    "ANALYSIS GRID: Saving grid-image as file" +
+            #    " '{0}' for plate {1}".format(
+            #    save_grid_name, self._identifier[1]))
 
             grid_image.savefig(save_grid_name, pad_inches=0.01,
                                format='svg', bbox_inches='tight')
 
+            grid_image.clf()
             plt.close(grid_image)
             del grid_image
 
-            self.logger.info("ANALYSIS GRID: Image saved!")
+            #self.logger.info("ANALYSIS GRID: Image saved!")
 
     def _init_pinning_matrix(self):
         """
@@ -418,7 +425,7 @@ class Grid_Array():
             for column in xrange(pinning_matrix[1]):
 
                 self._grid_cells[row].append(grid_cell.Grid_Cell(
-                    self, [self._identifier,  [row, column]],
+                    [self._identifier,  [row, column]],
                     grid_cell_settings=self.grid_cell_settings))
 
                 self._features[row].append(None)
@@ -447,8 +454,8 @@ class Grid_Array():
 
         except:
 
-            self.logger.critical(
-                "GRID ARRAY, Cannot open polynomial info file")
+            #self.logger.critical(
+            #    "GRID ARRAY, Cannot open polynomial info file")
 
             return None
 
@@ -479,8 +486,8 @@ class Grid_Array():
         im_axis_order = [int(pm_max_pos != im_max_pos)]
         im_axis_order.append(int(im_axis_order[0] == 0))
 
-        self.logger.info("Axis order set to {0} based on pm {1} and im {2}".format(
-            im_axis_order, pm, im.shape))
+        #self.logger.info("Axis order set to {0} based on pm {1} and im {2}".format(
+        #    im_axis_order, pm, im.shape))
 
         return im_axis_order
 
@@ -529,9 +536,9 @@ class Grid_Array():
 
             if not self.set_grid(im):
 
-                self.logger.critical(
-                    'Failed to set grid on ' +
-                    '{0} and none to use'.format(self._identifier))
+                #self.logger.critical(
+                #    'Failed to set grid on ' +
+                #    '{0} and none to use'.format(self._identifier))
 
                 return None
 
@@ -590,8 +597,9 @@ class Grid_Array():
                     else:
 
                         #Shold make sure that tm_im is okay
-                        self.logger.critical("ANALYSIS GRID ARRAY Lacks" +
-                                             " transformation possibilities")
+                        #self.logger.critical("ANALYSIS GRID ARRAY Lacks" +
+                        #                     " transformation possibilities")
+                        pass
 
                     #
                     #Setting up the grid cell

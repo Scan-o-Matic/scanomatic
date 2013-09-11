@@ -18,6 +18,7 @@ import time
 import sys
 import threading
 import logging
+import weakref
 
 #
 # INTERNAL DEPENDENCIES
@@ -108,7 +109,7 @@ class Communicator(object):
         available.
 
         """
-        self._parent = parent_process
+        self._parent = weakref.ref(parent_process) if parent_process else None
         self._logger = logging.getLogger("Communicator")
         self._stdin = stdin
         self._stdout = stdout
@@ -205,18 +206,18 @@ class Communicator(object):
         if line == self._io.TERMINATE:
             output = self._io.TERMINATING
             self._running = False
-            self._parent.set_terminate()
+            self._parent().set_terminate()
 
         #PAUSE
         elif line == self._io.PAUSE:
-            if self._parent.set_pause():
+            if self._parent().set_pause():
                 output = self._io.PAUSING
             else:
                 output = self._io.REFUSED
 
         #UNPAUSE
         elif line == self._io.UNPAUSE:
-            if self._parent.set_unpause():
+            if self._parent().set_unpause():
                 output = self._io.UNPAUSING
             else:
                 output = self._io.REFUSED
@@ -235,7 +236,7 @@ class Communicator(object):
 
         #ABOUT PROCESS
         elif line == self._io.INFO:
-            output = self._parent.get_info()
+            output = self._parent().get_info()
             if output is not None and output[0] != self._io.INFO:
                 output = (self._io.INFO, ) + output
 
@@ -243,23 +244,23 @@ class Communicator(object):
         elif line == self._io.CURRENT:
             output = self._io.CURRENT
             output += self._io.VALUE_EXTEND.format(
-                self._parent.get_current_step())
+                self._parent().get_current_step())
 
         #TOTAL
         elif line == self._io.TOTAL:
             output = self._io.TOTAL
             output += self._io.VALUE_EXTEND.format(
-                self._parent.get_total_iterations())
+                self._parent().get_total_iterations())
 
         #PROGRESS
         elif line == self._io.PROGRESS:
             output = self._io.PROGRESS
             output += self._io.VALUE_EXTEND.format(
-                self._parent.get_progress())
+                self._parent().get_progress())
 
         #STATUS
         elif line == self._io.STATUS:
-            if self._parent.get_paused():
+            if self._parent().get_paused():
                 output = self._io.IS_PAUSED
             else:
                 output = self._io.IS_RUNNING

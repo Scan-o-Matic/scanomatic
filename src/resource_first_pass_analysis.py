@@ -54,6 +54,14 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
     if fixture_directory is None:
         fixture_directory = experiment_directory
 
+    if experiment_directory is not None:
+        file_name = os.path.join(experiment_directory,
+                                 os.path.basename(file_name))
+
+        _logger.info(
+            "File path changed to match experiment directory: {0}".format(
+                file_name))
+
     fixture = resource_fixture_image.Fixture_Image(
         fixture_name,
         fixture_directory=fixture_directory,
@@ -88,11 +96,18 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
 
     _logger.info("Grayscale analysed for {0}".format(file_name))
 
-    gs_indices = fixture['grayscaleTarget']
-    gs_values = fixture['grayscaleSource']
+    gsTarget = fixture['grayscaleTarget']
+    gsSource = fixture['grayscaleSource']
 
-    im_data['grayscale_values'] = gs_values
-    im_data['grayscale_indices'] = gs_indices
+    if gsTarget is None:
+        _logger.error("Grayscale not properly set up (used {0})".format(
+            fixture['grayscale_type']))
+    if gsSource is None:
+        _logger.error("Grayscale analysis failed (used {0})".format(
+            fixture['grayscale_type']))
+
+    im_data['grayscale_values'] = gsSource
+    im_data['grayscale_indices'] = gsTarget
 
     sections_areas = fixture['plates']
 

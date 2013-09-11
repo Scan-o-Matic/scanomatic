@@ -19,7 +19,8 @@ __status__ = "Development"
 
 #import cv
 import numpy as np
-import logging
+#import logging
+#import weakref
 from scipy.stats.mstats import mquantiles, tmean
 from scipy.ndimage import binary_erosion, \
     center_of_mass, label, \
@@ -29,7 +30,7 @@ from scipy.ndimage import binary_erosion, \
 #
 
 import resource_histogram as hist
-import resource_blob as rblob
+import resource_blob as resource_blob
 
 #
 # FUNCTIONS
@@ -184,13 +185,11 @@ def get_array_subtraction(A1, A2, offset, output=None):
 
 class Cell_Item():
 
-    def __init__(self, parent, identifier, grid_array):
+    def __init__(self, identifier, grid_array):
         """Cell_Item is a super-class for Blob, Backgroun and Cell and should
         not be accessed directly.
 
         It takes these argument:
-
-        @parent         The parent of the class
 
         @identifier     A id list (plate, row, column) so that it knows its
                         position.
@@ -210,10 +209,8 @@ class Cell_Item():
         get_round_kernel    A function to get a binary array with a circle
                             in the center."""
 
-        self._parent = parent
-
-        self.logger = logging.getLogger("Grid Cell {0} Feature".format(
-            identifier))
+        #self.logger = logging.getLogger("Grid Cell {0} Feature".format(
+        #    identifier))
 
         self.grid_array = grid_array.copy()
         self.filter_array = np.zeros(grid_array.shape, dtype=grid_array.dtype)
@@ -238,9 +235,7 @@ class Cell_Item():
 
         if self.grid_array.shape != self.filter_array.shape:
 
-            self.logger.warning(
-                "GRID CELL {0}: I just changed shape! Why?".format(
-                    self._identifier))
+            #self.logger.warning("I just changed shape! Why?")
 
             self.filter_array = np.zeros(self.grid_array.shape,
                                          dtype=self.grid_array.dtype)
@@ -296,10 +291,8 @@ class Cell_Item():
 
             self.features = dict()
 
-            self.logger.warning(
-                "GRID CELL " +
-                "{0}: Not properly initialized cell compartment".format(
-                    self._identifier))
+            #self.logger.warning(
+            #    "Not properly initialized cell compartment")
 
             return None
 
@@ -313,16 +306,20 @@ class Cell_Item():
         if (self.features['area'] == self.features['pixelsum'] or
                 self.features['area'] == 0):
 
+            """
             if self.features['area'] != 0:
 
-                self.logger.warning(
-                    "GRID CELL {0}, seems to have all pixels value 1".format(
-                        self._identifier))
+                self.logger.warning("All pixels value 1")
 
             else:
 
-                self.logger.warning("GRID CELL {0}, area is 0".format(
-                                    self._identifier))
+                self.logger.warning("Area is 0")
+            """
+
+            """
+            for handler in self.logger.handlers:
+                handler.flush()
+            """
 
             return None
 
@@ -345,10 +342,12 @@ class Cell_Item():
                 self.features['IQR_mean'] = None
                 self.features['IQR'] = None
 
+                """
                 self.logger.warning(
-                    ("GRID CELL {0}, Failed to calculate IQR_mean," +
-                     " probably because IQR '{0}' is empty.").format(
-                         "unknown", str(self.features['IQR'])))
+                    "Failed to calculate IQR_mean," +
+                    " probably because IQR '{0}' is empty.".format(
+                    str(self.features['IQR'])))
+                """
 
         else:
 
@@ -380,14 +379,22 @@ class Blob(Cell_Item):
     ITERATIVE = 1
     THRESHOLD = 2
 
-    def __init__(self, parent, identifier, grid_array, run_detect=True,
+    BLOB_RECIPE = resource_blob.Analysis_Recipe_Empty()
+    resource_blob.Analysis_Recipe_Median_Filter(BLOB_RECIPE)
+    resource_blob.Analysis_Threshold_Otsu(BLOB_RECIPE)
+    resource_blob.Analysis_Recipe_Erode(BLOB_RECIPE)
+    resource_blob.Analysis_Recipe_Dilate(BLOB_RECIPE)
+    #resource_blob.Analysis_Recipe_Erode_Small(self, self.BLOB_RECIPE)
+    #resource_blob.Analysis_Recipe_Erode_Conditional(self, self.BLOB_RECIPE)
+
+    def __init__(self, identifier, grid_array, run_detect=True,
                  threshold=None, blob_detect='default',
                  image_color_logic="norm", center=None, radius=None):
 
-        Cell_Item.__init__(self, parent, identifier, grid_array)
+        Cell_Item.__init__(self, identifier, grid_array)
 
-        self.logger = logging.getLogger("Grid Cell {0} Blob".format(
-            identifier))
+        #self.logger = logging.getLogger("Grid Cell {0} Blob".format(
+        #    identifier))
 
         self.threshold = threshold
 
@@ -410,14 +417,6 @@ class Blob(Cell_Item):
         self._features_key_list += ['centroid', 'perimeter']
 
         self.histogram = hist.Histogram(self.grid_array, run_at_init=False)
-
-        self.blob_recipe = rblob.Analysis_Recipe_Empty(self)
-        rblob.Analysis_Recipe_Median_Filter(self, self.blob_recipe)
-        rblob.Analysis_Threshold_Otsu(self, self.blob_recipe)
-        rblob.Analysis_Recipe_Erode(self, self.blob_recipe)
-        rblob.Analysis_Recipe_Dilate(self, self.blob_recipe)
-        #rblob.Analysis_Recipe_Erode_Small(self, self.blob_recipe)
-        #rblob.Analysis_Recipe_Erode_Conditional(self, self.blob_recipe)
 
         if run_detect:
 
@@ -779,12 +778,12 @@ class Blob(Cell_Item):
 
                         self.trash_array = self.old_trash.copy()
 
+                    """
                     self.logger.warning(
-                        "GRID CELL " +
-                        ("{0}, Blob detection gone bad, using old " +
-                         "(Error: {1:.2f})").format(
-                             self._identifier,
-                             blob_diff / float(sqrt_of_oldsum)))
+                        "Blob detection gone bad, using old " +
+                        "(Error: {0:.2f})".format(
+                            blob_diff / float(sqrt_of_oldsum)))
+                    """
 
         #IF FILTER SHOULD BE REMEMBERED THEN DO SO
         if remember_filter:
@@ -866,8 +865,7 @@ class Blob(Cell_Item):
 
     def default_detect(self):
 
-        self.blob_recipe.set_reference_image(self.grid_array)
-        self.blob_recipe.analyse()
+        self.BLOB_RECIPE.analyse(self.grid_array, self.filter_array)
         self.keep_best_blob()
 
     def get_candidate_blob_ranks(self):
@@ -943,12 +941,12 @@ class Blob(Cell_Item):
 
 class Background(Cell_Item):
 
-    def __init__(self, parent, identifier, grid_array, blob, run_detect=True):
+    def __init__(self, identifier, grid_array, blob, run_detect=True):
 
-        Cell_Item.__init__(self, parent, identifier, grid_array)
+        Cell_Item.__init__(self, identifier, grid_array)
 
-        self.logger = logging.getLogger("Grid Cell {0} Background".format(
-            identifier))
+        #self.logger = logging.getLogger("Grid Cell {0} Background".format(
+        #    identifier))
 
         if isinstance(blob, Blob):
 
@@ -986,9 +984,9 @@ class Background(Cell_Item):
 
         else:
 
-            self.logger.warning(
-                ("GRID CELL {0}, blob was not set, " +
-                 "thus background is wrong").format(self._identifier))
+            #self.logger.warning(
+            #    "Blob was not set, thus background is wrong")
+            pass
 
 #
 # CLASSES Cell (entire area)
@@ -997,13 +995,13 @@ class Background(Cell_Item):
 
 class Cell(Cell_Item):
 
-    def __init__(self, parent, identifier, grid_array,
+    def __init__(self, identifier, grid_array,
                  run_detect=True, threshold=-1):
 
-        Cell_Item.__init__(self, parent, identifier, grid_array)
+        Cell_Item.__init__(self, identifier, grid_array)
 
-        self.logger = logging.getLogger("Grid Cell {0} Cell".format(
-            identifier))
+        #self.logger = logging.getLogger("Grid Cell {0} Cell".format(
+        #    identifier))
 
         self.threshold = threshold
 

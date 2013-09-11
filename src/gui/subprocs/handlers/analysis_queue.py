@@ -15,6 +15,7 @@ __status__ = "Development"
 
 from collections import deque
 import psutil
+import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -81,6 +82,7 @@ class Analysis_Queue(object):
         the queue.
         """
 
+        self._logger = logging.getLogger("Analysis Queue")
         self._check_passes = 0
         self._queue = deque()
 
@@ -100,8 +102,7 @@ class Analysis_Queue(object):
 
         cur_cpu = psutil.cpu_percent(percpu=True)
         free_cpu = [cpu < self.MIN_FREE_CPU_PERCENT for cpu in cur_cpu]
-        print "CPU%", cur_cpu, "t=", self.MIN_FREE_CPU_PERCENT
-        print "CPUs", free_cpu, "t=", self.MIN_FREE_CPU_CORES
+        self._logger.info("CPU (%, OK): {0}".format(zip(cur_cpu, free_cpu)))
 
         return sum(free_cpu) >= self.MIN_FREE_CPU_CORES
 
@@ -113,8 +114,11 @@ class Analysis_Queue(object):
 
         :returns: boolean
         """
-        print "MEM", psutil.phymem_usage().percent, "t=", self.MAX_MEM_USAGE
-        return psutil.phymem_usage().percent < self.MAX_MEM_USAGE
+        memUsage = psutil.phymem_usage().percent
+        self._logger.info("MEM (%, OK): {0}".format(
+            (memUsage, memUsage < self.MAX_MEM_USAGE)))
+
+        return memUsage < self.MAX_MEM_USAGE
 
     def _check_resources(self):
         """Checks if both memory and cpu are OK for poping.
@@ -125,18 +129,18 @@ class Analysis_Queue(object):
         :returns: boolean
         """
 
-        print "CHECKING RESOURCES"
-        print "------------------"
-
         val = self._check_mem() and self._check_cpu()
         if val:
             self._check_passes += 1
         else:
             self._check_passes = 0
 
+        self._logger.info(
+            "Resources ready for analysis '{0}', pass {1}".format(
+                val, self._check_passes))
+
         ret = self._check_passes >= self.MIN_SUCCESS_PASSES
 
-        print "->", val, ret, "(", self._check_passes, self.count(), ")"
         if ret:
             self._check_passes = 0
 

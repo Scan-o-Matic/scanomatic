@@ -18,12 +18,13 @@ __status__ = "Development"
 import numpy as np
 from scipy.ndimage import binary_erosion, binary_dilation,\
     gaussian_filter, median_filter
+from skimage import filter as ski_filter
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import resource_histogram as hist
+#import resource_histogram as resource_histogram
 
 #
 # CLASSES Cell_Item
@@ -33,13 +34,10 @@ import resource_histogram as hist
 class Analysis_Recipe_Abstraction(object):
     """Holds an instruction and/or a list of subinstructions."""
 
-    def __init__(self, grid_cell, parent=None, description=""):
+    def __init__(self, parent=None, description=""):
 
-        self.grid_cell = grid_cell
-        self.parent = parent
         self.analysis_order = [self]
         self.description = description
-        self._analysis_image = None
 
         if parent is not None:
 
@@ -53,6 +51,7 @@ class Analysis_Recipe_Abstraction(object):
 
         return "<{0} {1}>".format(id(self), self.description)
 
+    """
     def set_reference_image(self, im, inplace=False, enforce_self=False,
                                                         do_copy=True):
 
@@ -84,22 +83,22 @@ class Analysis_Recipe_Abstraction(object):
 
             self.set_reference_image(im, inplace=inplace, enforce_self=True,
                                         do_copy=False)
+    """
 
-    def analyse(self, im_at_parent=False):
+    def analyse(self, im, filter_array, baseLvl=True):
+
+        if baseLvl:
+            filter_array[...] = im.copy()
 
         for a in self.analysis_order:
 
             if a is self:
 
-                if im_at_parent:
-
-                    self._analysis_image = self.parent._analysis_image
-
-                self._do(self._analysis_image)
+                self._do(filter_array)
 
             else:
 
-                a.analyse(im_at_parent=True)
+                a.analyse(im, filter_array, baseLvl=False)
 
     def add_anlysis(self, a, pos=-1):
 
@@ -111,35 +110,38 @@ class Analysis_Recipe_Abstraction(object):
 
             self.analysis_order.insert(pos, a)
 
-    def _do(self, im):
+    def _do(self, filter_array):
 
         pass
 
 
 class Analysis_Recipe_Empty(Analysis_Recipe_Abstraction):
 
-    def __init__(self, grid_cell, parent=None):
+    def __init__(self, parent=None):
 
-        super(Analysis_Recipe_Empty, self).__init__(grid_cell,
-                                            parent=parent,
-                                            description="Recipe")
+        super(Analysis_Recipe_Empty, self).__init__(
+            parent, description="Recipe")
 
         self.analysis_order = []
 
 
 class Analysis_Threshold_Otsu(Analysis_Recipe_Abstraction):
 
-    def __init__(self, grid_cell, parent):
+    def __init__(self, parent):
 
-        super(Analysis_Threshold_Otsu, self).__init__(grid_cell, parent,
-                                            description="Otsu Threshold")
+        super(Analysis_Threshold_Otsu, self).__init__(
+            parent, description="Otsu Threshold")
 
-    def _do(self, im):
+    def _do(self, filter_array):
 
-        self.grid_cell.histogram.re_hist(im)
-        threshold = hist.otsu(histogram=self.grid_cell.histogram)
+        """
+        threshold = resource_histogram.otsu(
+            histogram=resource_histogram.Histogram(
+                filter_array, run_at_init=True))
+        """
 
-        self.grid_cell.filter_array[:, :] = im > threshold
+        filter_array[...] = filter_array > ski_filter.threshold_otsu(
+            filter_array)
 
 
 class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
@@ -150,23 +152,19 @@ class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
                        [0, 1, 1, 1, 0],
                        [0, 0, 1, 0, 0]])
 
-    def __init__(self, grid_cell, parent):
+    def __init__(self, parent):
 
-        super(Analysis_Recipe_Erode, self).__init__(grid_cell, parent,
-                                            description="Binary Erode")
+        super(Analysis_Recipe_Erode, self).__init__(
+            parent, description="Binary Erode")
 
-    def _do(self, im):
+    def _do(self, filter_array):
 
         #Erosion kernel
         #kernel = get_round_kernel(radius=2)
         #print kernel.astype(int)
         #print "***Erosion kernel ready"
 
-        self.grid_cell.filter_array = binary_erosion(
-                                    self.grid_cell.filter_array,
-                                    #origin=(2,2),
-                                    iterations=3)
-                                    #structure=self.kernel)
+        binary_erosion(filter_array, iterations=3, output=filter_array)
 
 
 class Analysis_Recipe_Erode_Small(Analysis_Recipe_Abstraction):
@@ -175,20 +173,18 @@ class Analysis_Recipe_Erode_Small(Analysis_Recipe_Abstraction):
                        [1, 1, 1],
                        [0, 1, 0]])
 
-    def __init__(self, grid_cell, parent):
+    def __init__(self, parent):
 
-        super(Analysis_Recipe_Erode_Small, self).__init__(grid_cell,
-                                            parent,
-                                            description="Binary Erode (small)")
+        super(Analysis_Recipe_Erode_Small, self).__init__(
+            parent, description="Binary Erode (small)")
 
-    def _do(self, im):
+    def _do(self, filter_array):
 
-        self.grid_cell.filter_array = binary_erosion(
-                            self.grid_cell.filter_array,
-                            origin=(1,1),
-                            structure=self.kernel)
+        binary_erosion(filter_array, origin=(1, 1),
+                       structure=self.kernel, output=filter_array)
 
 
+"""
 class Analysis_Recipe_Erode_Conditional(Analysis_Recipe_Abstraction):
 
     kernel = np.array([[0, 1, 0],
@@ -197,13 +193,12 @@ class Analysis_Recipe_Erode_Conditional(Analysis_Recipe_Abstraction):
 
     threshold = 4
 
-    def __init__(self, grid_cell, parent):
+    def __init__(self, parent):
 
-        super(Analysis_Recipe_Erode_Conditional, self).__init__(grid_cell,
-                                            parent,
-                                            description="Binary Erode")
+        super(Analysis_Recipe_Erode_Conditional, self).__init__(
+            parent, description="Binary Erode")
 
-    def _do(self, im):
+    def _do(self, filter_array):
 
         fa = self.grid_cell.filter_array
 
@@ -214,6 +209,7 @@ class Analysis_Recipe_Erode_Conditional(Analysis_Recipe_Abstraction):
                                 fa,
                                 origin=(1,1),
                                 structure=self.kernel)
+"""
 
 
 class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
@@ -226,48 +222,43 @@ class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
                        [0, 1, 1, 1, 1, 1, 0],
                        [0, 0, 1, 1, 1, 0, 0]])
 
-    def __init__(self, grid_cell, parent):
+    def __init__(self, parent):
 
-        super(Analysis_Recipe_Dilate, self).__init__(grid_cell, parent,
-                                            description="Binary Dilate")
+        super(Analysis_Recipe_Dilate, self).__init__(
+            parent, description="Binary Dilate")
 
-    def _do(self, im):
+    def _do(self, filter_array):
 
         #Erosion kernel
         #kernel = get_round_kernel(radius=2)
         #print kernel.astype(int)
         #print "***Erosion kernel ready"
 
-        self.grid_cell.filter_array = binary_dilation(
-                                    self.grid_cell.filter_array,
-                                    iterations=4)
-                                    #origin=(3,3),
-                                    #structure=self.kernel)
+        binary_dilation(filter_array, iterations=4, output=filter_array)
+        #origin=(3,3),
+        #structure=self.kernel)
 
 
 class Analysis_Recipe_Gauss_2(Analysis_Recipe_Abstraction):
 
-    def __init__(self, grid_cell, parent):
+    def __init__(self, parent):
 
-        super(Analysis_Recipe_Gauss_2, self).__init__(grid_cell, parent,
-                                            description="Gaussian size 2")
+        super(Analysis_Recipe_Gauss_2, self).__init__(
+            parent, description="Gaussian size 2")
 
-    def _do(self, im):
+    def _do(self, filter_array):
 
-        detect_im = gaussian_filter(im, 2)
-
-        self.set_reference_image(detect_im, inplace=True)
+        gaussian_filter(filter_array, 2, output=filter_array)
 
 
 class Analysis_Recipe_Median_Filter(Analysis_Recipe_Abstraction):
 
-    def __init__(self, grid_cell, parent):
+    def __init__(self, parent):
 
-        super(Analysis_Recipe_Median_Filter, self).__init__(grid_cell, parent,
-                                            description="Median Filter")
+        super(Analysis_Recipe_Median_Filter, self).__init__(
+            parent, description="Median Filter")
 
-    def _do(self, im):
+    def _do(self, filter_array):
 
-        detect_im = median_filter(im, size=(3, 3), mode="nearest")
-
-        self.set_reference_image(detect_im, inplace=True)
+        median_filter(filter_array, size=(3, 3), mode="nearest",
+                      output=filter_array)

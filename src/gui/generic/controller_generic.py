@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import logging
+import weakref
 
 #
 # INTERNAL DEPENDENCIES
@@ -38,7 +39,8 @@ class Controller(object):
                  controller_name="U"):
 
         self._logger = logging.getLogger("Unknown Controller")
-        self._parent = parent_controller
+        self._parent = (
+            weakref.ref(parent_controller) if parent_controller else None)
 
         #MODEL SHOULD BE SET BEFORE VIEW!
         self.set_model(model)
@@ -84,13 +86,13 @@ class Controller(object):
 
     def get_top_controller(self):
 
-        if self._parent is None:
+        if self._parent is None or self._parent() is None:
 
             return self
 
         else:
 
-            return self._parent.get_top_controller()
+            return self._parent().get_top_controller()
 
     def add_subcontroller(self, controller):
 

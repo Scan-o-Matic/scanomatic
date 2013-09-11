@@ -21,6 +21,7 @@ import itertools
 import numpy as np
 from matplotlib.pyplot import imread
 import logging
+#import weakref
 
 #
 # SCANNOMATIC LIBRARIES
@@ -65,7 +66,8 @@ class Gridding_History(object):
 
     def __init__(self, parent, fixture_name, paths, app_config=None):
 
-        self._parent = parent
+        #self._parent = weakref.ref(parent) if parent else None
+
         self._logger = logging.getLogger("Gridding History")
         self._name = fixture_name
         self._paths = paths
@@ -293,7 +295,11 @@ class Fixture_Image(object):
 
         elif key in ["grayscaleTarget"]:
 
-            if self._gs_indices is not None:
+            refTarget = self.fixture_reference.get("grayscale_indices")
+
+            if refTarget is not None:
+                return refTarget
+            elif self._gs_indices is not None:
                 return self._gs_indices
             else:
                 return resource_image.GRAYSCALES[self['grayscale_type']][
@@ -349,16 +355,15 @@ class Fixture_Image(object):
 
             if val in resource_image.GRAYSCALES:
                 self.fixture_current['grayscale_type'] = val
+            else:
+                self.fixture_current['grayscale_type'] = None
+
+            self._setCurrentFixtureHasGrayscale()
 
         elif key in ['grayscale', 'greyscale', 'gs']:
 
-            if val is None or len(val) == 0:
-                has_gs = False
-            else:
-                has_gs = True
-
-            self.fixture_current['grayscale'] = has_gs
             self.fixture_current['grayscale_indices'] = val
+            self._setCurrentFixtureHasGrayscale()
 
         elif key in ['plate-coords']:
 
@@ -366,7 +371,9 @@ class Fixture_Image(object):
                 plate, coords = val
                 plate = int(plate)
             except:
-                print "***ERROR: Must be a tuple/list of plate index and coords"
+                self._logger.error(
+                    "Plate coordinates must be a tuple/list of " +
+                    "plate index and coords")
                 return
 
             plate_str = "plate_{0}_area".format(plate)
@@ -376,11 +383,25 @@ class Fixture_Image(object):
 
             raise("Failed to set {0} to {1}, key unkown".format(key, str(val)))
 
+    def _setCurrentFixtureHasGrayscale(self):
+
+        indices = self.fixture_current['grayscale']
+        if ((indices is None or isinstance(indices, bool) or
+                len(indices) == 0) and
+                self.fixture_current['grayscale_type'] in (None, '')):
+            has_gs = False
+        else:
+            has_gs = True
+
+        self._logger.info("The grayscale status is set to {0}".format(has_gs))
+
+        self.fixture_current['grayscale'] = has_gs
+
     def _load_reference(self):
 
         fixture_path = self._fixture_reference_path
 
-        self._logger.info("FIXTURE: Reference loaded from {0}".format(
+        self._logger.info("Reference fixture loaded from {0}".format(
             fixture_path))
 
         self.fixture_reference = conf.Config_File(fixture_path)
@@ -401,7 +422,10 @@ class Fixture_Image(object):
             self._fixture_reference_path)
 
         if name_in_file != name_from_file:
-            self._logger.warning("Missmatch in fixture name in file compared to file name!")
+            self._logger.warning(
+                "Missmatch in fixture name in file compared to file name! " +
+                "In used file: '{0}', In system reference: '{1}'".format(
+                    name_in_file, name_from_file))
 
         return name_from_file
 
@@ -471,9 +495,17 @@ class Fixture_Image(object):
         elif image_path is not None:
 
             self.im = imread(image_path)
+            if self.im is None:
+                self._logger.error("Could not load image")
 
+            else:
+                self._logger.info("Loaded image {0} with shape {1}".format(
+                    image_path, self.im.shape))
         else:
 
+            self._logger.warning(
+                "No information supplied about how to load image," +
+                "thuse none loaded")
             self.im = None
 
         self.set_im_scale()
@@ -488,24 +520,40 @@ class Fixture_Image(object):
                     fixture_name,
                     own_path=fixture_directory)
 
+            self._logger.info(
+                "Refernce set to " +
+                "{0} by using fixture directory: {1} and {2}".format(
+                    self._fixture_reference_path,
+                    fixture_directory,
+                    fixture_name))
+
             self._fixture_config_root = fixture_directory
 
         elif image_path is not None:
 
-            self._fixture_config_root = \
-                os.sep.join(image_path.split(os.sep)[:-1])
+            self._fixture_config_root = os.path.dirname(image_path)
 
-            self._fixture_reference_path = \
-                self._paths.get_fixture_path(
-                    fixture_name,
-                    own_path=self._fixture_config_root)
+            self._fixture_reference_path = self._paths.get_fixture_path(
+                fixture_name,
+                own_path=self._fixture_config_root)
+
+            self._logger.info(
+                "Refernce set to {0} by using image path: {1} and {2}".format(
+                    self._fixture_reference_path,
+                    image_path,
+                    fixture_name))
 
         else:
 
             self._fixture_config_root = "."
             self._fixture_reference_path = self._paths.get_fixture_path(
                 fixture_name, own_path="")
-            self._logger.info(self._fixture_reference_path)
+
+            self._logger.info(
+                "Reference set to " +
+                "{0} by using current directory and name {1}".format(
+                    self._fixture_reference_path,
+                    fixture_name))
 
         self._load_reference()
 
@@ -513,38 +561,29 @@ class Fixture_Image(object):
 
         logger = self._logger
         t = time.time()
-        logger.debug(
-            'Fixture calibration',
-            "Threading invokes marker analysis", "LA",
-            debug_level='info')
+        logger.debug("Threading invokes marker analysis")
 
         self.run_marker_analysis()
 
         logger.debug(
-            'Fixture calibration',
-            "Threading marker detection complete, invokes setting area positions" +
-            " (acc-time {0} s)".format(time.time() - t), "LA",
-            debug_level='info')
+            "Threading marker detection complete," +
+            "invokes setting area positions (acc-time {0} s)".format(
+                time.time() - t))
 
         self.set_current_areas()
 
         logger.debug(
-            'Fixture calibration',
-            "Threading areas set(acc-time: {0} s)".format(time.time() - t),
-            "LA", debug_level='info')
+            "Threading areas set(acc-time: {0} s)".format(time.time() - t))
 
         self.analyse_grayscale()
 
         logger.debug(
-            'Fixture calibration',
             "Grayscale ({0}) analysed (acc-time: {1} s)".format(
                 self['grayscale_type'],
-                time.time() - t), 'LA', debug_level='info')
+                time.time() - t))
 
         logger.debug(
-            'Fixture calibration',
-            "Threading done (took: {0} s)".format(time.time() - t),
-            "LA", debug_level='info')
+            "Threading done (took: {0} s)".format(time.time() - t))
 
     def _get_markings(self, source='fixture'):
 
@@ -578,12 +617,9 @@ class Fixture_Image(object):
 
         if self.marking_path is None or self.markings < 1:
 
-            msg = "Error, no marker set ('%s') or no markings (%s)." % (
-                self.marking_path, self.markings)
-
-            logger.debug(
-                'Fixture calibration: Marker Detection', msg, "LA",
-                debug_level='error')
+            logger.error(
+                "No marker set ('{0}') or no markings ({1}).".format(
+                    self.marking_path, self.markings))
 
             return None
 
@@ -605,30 +641,23 @@ class Fixture_Image(object):
 
         target_conf_file.set("version", __version__)
 
-        logger.debug('Fixture calibration: Marker Detection', "Scaling image", "LA",
-                     debug_level='info')
+        logger.debug("Scaling image")
 
         if self.im_scale is not None:
 
             analysis_img = self.im
-            scale_str = "Kept scale {0}".format(self.im_scale)
         else:
 
             analysis_img = resource_image.Quick_Scale_To_im(
                 im=self.im,
                 scale=self.MARKER_DETECTION_SCALE / self.im_original_scale)
 
-            scale_str = "New scale {0}".format(
-                self.MARKER_DETECTION_SCALE / self.im_original_scale)
-
             self.im_scale = self.MARKER_DETECTION_SCALE / self.im_original_scale
 
-        logger.debug('Fixture calibration: Marker Detection', scale_str, "LA",
-                     debug_level='info')
-
         logger.debug(
-            'Fixture calibration: Marker Detection', "Scaled (acc {0} s)".format(
-                time.time() - t), "LA", debug_level='info')
+            "New scale {0} (acc {1} s)".format(
+                self.MARKER_DETECTION_SCALE / self.im_original_scale,
+                time.time() - t))
 
         if analysis_im_path is not None:
 
@@ -636,11 +665,8 @@ class Fixture_Image(object):
             #imsave(analysis_im_path, analysis_img, format='tiff')
             np.save(analysis_im_path, analysis_img)
 
-        msg = "Setting up Image Analysis (acc {0} s)".format(time.time() - t)
-
         logger.debug(
-            'Fixture calibration: Marker Detection', msg, 'A',
-            debug_level='debug')
+            "Setting up Image Analysis (acc {0} s)".format(time.time() - t))
 
         im_analysis = resource_image.Image_Analysis(
             image=analysis_img,
@@ -648,10 +674,8 @@ class Fixture_Image(object):
             scale=self.im_scale,
             resource_paths=self._paths)
 
-        msg = "Finding pattern (acc {0} s)".format(time.time() - t)
-
-        logger.debug('Fixture calibration, Marker Detection', msg, 'A',
-                     debug_level='debug')
+        logger.debug(
+            "Finding pattern (acc {0} s)".format(time.time() - t))
 
         Xs, Ys = im_analysis.find_pattern(markings=self.markings)
 
@@ -660,17 +684,16 @@ class Fixture_Image(object):
 
         if Xs is None or Ys is None:
 
-            logger.warning('Fixture error', "No markers found")
+            logger.error("No markers found")
 
         elif len(Xs) == self.markings:
 
             self._set_markings_in_conf(target_conf_file, Xs, Ys)
-            logger.debug("Fixture calibration", "Setting makers {0}, {1}".format(
+            logger.debug("Setting makers {0}, {1}".format(
                 Xs, Ys))
 
-        msg = "Marker Detection complete (acc {0} s)".format(time.time() - t)
-        logger.debug('Fixture calibration: Marker Detection', msg, 'A',
-                     debug_level='debug')
+        logger.debug(
+            "Marker Detection complete (acc {0} s)".format(time.time() - t))
 
         return analysis_im_path
 
@@ -744,8 +767,9 @@ class Fixture_Image(object):
             dLs = np.array(tmp_dL).sum(1)
             s = list(tmp_s[dLs.argmin()])
 
-            print "** Found sort order that matches the reference", s,
-            print ". Error:", np.sqrt(dLs.min())
+            self._logger.debug(
+                "Found sort order that matches the reference" +
+                "{0} (error {1})".format(s, np.sqrt(dLs.min())))
             #Quality control of all the markers so that none is bad
             #Later
 
@@ -759,8 +783,8 @@ class Fixture_Image(object):
             dA = A[s] - ref_A
 
             d_alpha = dA.mean()
-            print "** Found average rotation", d_alpha,
-            print "from set of delta_rotations:", dA
+            self._logger.debug("Found average rotation {0} from {1}".format(
+                d_alpha, dA))
 
             #Setting the current marker order so it matches the
             #Reference one according to the returns variables!
@@ -770,7 +794,7 @@ class Fixture_Image(object):
 
         else:
 
-            print "*** ERROR: Missmatch in number of markings"
+            self._logger.critical("Missmatch in number of markings!")
             return None
 
     def get_subsection(self, section, scale=1.0):
@@ -805,6 +829,9 @@ class Fixture_Image(object):
         """
 
         if im is None or 0 in im.shape:
+            self._logger.error(
+                "No valid grayscale area (Current area: {0})".format(
+                    self['current']['grayscale_area']))
             return False
 
         #np.save(".tmp.npy", im)
@@ -817,9 +844,11 @@ class Fixture_Image(object):
         gs_values = ag.get_source_values()
         self._gs_values = gs_values
 
+        """Outdated since default is to just use fixture name
         if self._define_reference:
 
             self['fixture'].set('grayscale_indices', gs_indices)
+        """
 
     def _get_rotated_point(self, point, alpha, offset=(0, 0)):
 
@@ -877,6 +906,15 @@ class Fixture_Image(object):
                 [self._get_rotated_point(Gs1, alpha, offset=dMcom),
                  self._get_rotated_point(Gs2, alpha, offset=dMcom)])
 
+        else:
+
+            if bool(self['fixture']['grayscale']) is not True:
+
+                self._logger.warning("No grayscale enabled in reference")
+
+            if ref_gs is None:
+
+                self._logger.warning("No grayscale area in reference")
             #print Gs1, self._get_rotated_point(Gs1, alpha, offset=dMcom)
 
         i = 0

@@ -472,7 +472,7 @@ class Fixture_Controller(controller_generic.Controller):
             "The fixture has {0} grayscale with source values {1}".format(
                 sm['grayscale-type'], sm['grayscale-sources']))
 
-        self.f_settings['grayscale'] = sm['grayscale-sources']
+        #self.f_settings['grayscale'] = sm['grayscale-sources']
         self.f_settings['current'].save()
         self.set_saved()
         self.get_top_controller().fixtures.update()

@@ -16,6 +16,7 @@ __status__ = "Development"
 import os
 import ConfigParser
 import inspect
+import logging
 
 #
 # EXCEPTIONS
@@ -79,6 +80,7 @@ class Live_Projects(object):
 
     def __init__(self, paths, model):
 
+        self._logger = logging.getLogger("Live Projects")
         self._config = ConfigParser.ConfigParser(allow_no_value=True)
         self._paths = paths
         self._model = model
@@ -197,23 +199,29 @@ class Live_Projects(object):
         stage_num = self._resolve_stage(stage)
         status_num = self._resolve_status(status)
 
-        print "STATUS", stage_num, stage, status_num, status
-
         if stage_num is not None and status_num is not None:
 
             if self.get_is_project(project_prefix) is False:
                 self.add_project(project_prefix, experiment_dir,
                                  first_pass_file, analysis_path)
 
+            self._logger.info("Updating status for {0}, stage {1} to {2}".format(
+                project_prefix, stage, status))
+
             self._config.set(project_prefix, str(stage_num), str(status_num))
             self._save()
 
-            print "NEW STATUS", project_prefix, stage_num, status_num
-
             if stage_num == self.UPLOAD and status_num == self.COMPLETED:
 
+                self._logger.info("Project {0} is completed".format(
+                    project_prefix))
                 self.clear_done_projects()
 
+        else:
+
+            self._logger.warning("Bad status update request for {0}".format(
+                project_prefix) +
+                "Stage {0}, status {1}".format(stage, status))
         return True
 
     def get_status(self, project_prefix, stage, as_text=True,

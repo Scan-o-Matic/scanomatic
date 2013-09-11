@@ -14,7 +14,7 @@ __status__ = "Development"
 
 import os
 import matplotlib.image as plt_img
-import logging
+#import logging
 import numpy as np
 
 #
@@ -54,7 +54,7 @@ class Project_Image():
             grid_cell_settings=None, log_version=0, paths=None,
             app_config=None, grid_correction=None):
 
-        self.logger = logging.getLogger('Analysis Image')
+        #self._logger = logging.getLogger('Analysis Image')
 
         self.p_uuid = p_uuid
         self._log_version = log_version
@@ -110,6 +110,10 @@ class Project_Image():
 
         self.set_pinning_matrices(pinning_matrices)
 
+    def __getitem__(self, key):
+
+        return self._grid_arrays[key]
+
     def get_file_base_dir(self):
 
         return self._file_path_base
@@ -138,9 +142,11 @@ class Project_Image():
 
         if len(pinning_matrices) > len(self._grid_arrays):
 
-            self.logger.info(
+            """
+            self._logger.info(
                 "Analysis will run on {0} plates out of {1}".format(
                 len(self._grid_arrays), len(pinning_matrices)))
+            """
 
     '''
     def set_manual_ideal_grids(self, grid_adjustments):
@@ -162,13 +168,13 @@ class Project_Image():
 
                 except IndexError:
 
-                    self.logger.error('Failed to set manual grid "+ \
+                    self._logger.error('Failed to set manual grid "+ \
                         "adjustments to {0}, plate non-existent'.format(k))
     '''
 
     def set_grid(self, im_path, plate_positions, save_name=None):
 
-        self.logger.info("Setting grids from image {0}".format(im_path))
+        #self._logger.info("Setting grids from image {0}".format(im_path))
         self._im_path = im_path
         self.load_image()
         if self._im_loaded:
@@ -180,9 +186,10 @@ class Project_Image():
 
             for grid_array in xrange(len(self._grid_arrays)):
 
-                self.logger.info("Setting grid on plate {0}".format(
+                """
+                self._logger.info("Setting grid on plate {0}".format(
                     grid_array))
-
+                """
                 im = self.get_im_section(plate_positions[grid_array], scale_factor)
 
                 if self._grid_correction is None:
@@ -206,11 +213,12 @@ class Project_Image():
             alt_path = os.path.join(self._file_path_base,
                                     os.path.basename(self._im_path))
 
-            self.logger.warning(
+            """
+            self._logger.warning(
                 "ANALYSIS IMAGE, Could not open image at " +
                 "'{0}' trying in log-file directory ('{1}').".format(
                     self._im_path, alt_path))
-
+            """
             try:
 
                 self.im = plt_img.imread(alt_path)
@@ -218,7 +226,7 @@ class Project_Image():
 
             except:
 
-                self.logger.warning("ANALYSIS IMAGE, No image found... sorry")
+                #self._logger.warning("ANALYSIS IMAGE, No image found... sorry")
                 self._im_loaded = False
 
         #This makes sure that the image is 'standing' and not a 'landscape'
@@ -368,13 +376,14 @@ class Project_Image():
         #
         if self._im_loaded is True:
 
-            if self.im.ndim > 2:
-
-                #TODO: This renders it a greyscale, but really stupid way
-                self.im = self.im[..., 0]
+            if self.im.ndim == 3:
+                #Makes image grayscale balancing colors' effect and
+                #trashing the alpha-channel (if any)
+                self.im = np.dot(self.im[..., :3], [0.299, 0.587, 0.144])
+                #self._logger.warning("Color image got converted to grayscale")
 
         else:
-
+            #self._logger.error("Failed to load image, all methods exhausted")
             return None
 
         #
@@ -387,10 +396,14 @@ class Project_Image():
             scale_factor = 1.0
 
         if grayscaleSource is None:
+            #self._logger.error("Grayscale sources can't be None")
             return None
 
         if grayscaleTarget is None:
             grayscaleTarget = self._grayscaleTarget
+            if grayscaleTarget is None:
+                #self._logger.error("Grayscale targets not inited correctly")
+                pass
 
         for plateIndex, gridArray in enumerate(self._grid_arrays):
 
@@ -417,5 +430,10 @@ class Project_Image():
             self.watch_blob = watchPlate.watch_blob
 
             self.watch_results = watchPlate.watch_results
+
+        """
+        for handler in self._logger.handlers:
+            handler.flush()
+        """
 
         return self.features

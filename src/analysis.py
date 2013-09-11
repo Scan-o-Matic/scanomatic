@@ -25,6 +25,11 @@ import logging
 import time
 import threading
 
+#DEBUGGING memory
+import objgraph
+import random
+import inspect
+
 #
 # SCANNOMATIC LIBRARIES
 #
@@ -453,6 +458,10 @@ class Analysis(object):
         resource_analysis_support.print_progress_bar(size=60)
         """
 
+        #DEBUGGING memory
+        print "###"
+        objgraph.show_growth(limit=30)
+
         while self._image_pos >= 0 and self._running:
 
             #
@@ -500,6 +509,9 @@ class Analysis(object):
                 grayscaleTarget=img_dict_pointer['grayscale_indices'],
                 image_dict=img_dict_pointer)
 
+            if features is None:
+                logger.warning("No analysis produced for image")
+
             #
             # XML WRITE IT TO FILES
             #
@@ -524,8 +536,13 @@ class Analysis(object):
             #
 
             logger.info(
-                "ANALYSIS, Image took {0} seconds".format(
+                "Image took {0} seconds".format(
                     (time.time() - scan_start_time)))
+
+            """
+            for handler in logger.handlers:
+                handler.flush()
+            """
 
             """
             resource_analysis_support.print_progress_bar(
@@ -539,6 +556,26 @@ class Analysis(object):
 
             self._image_pos -= 1
 
+            #DEBUGGING memory
+            print "--"
+            objgraph.show_growth(limit=20)
+
+            """
+            for dbgI in range(40):
+                objgraph.show_chain(
+                    objgraph.find_backref_chain(
+                        random.choice(objgraph.by_type(
+                            'list')), inspect.ismodule),
+                    filename='memDebug{0}.{1}.png'.format(
+                        str(self._image_pos).zfill(4), dbgI))
+
+                    #project_image[0][(0, 0)].blob.filter_array, inspect.ismodule),
+
+                print ">im", dbgI
+            random.choice(objgraph.by_type(
+                'instance')),
+            """
+
             #
             # PAUSE IF REQUESTED
             #
@@ -546,6 +583,7 @@ class Analysis(object):
             while self._paused and self._running:
 
                 time.sleep(0.5)
+
         #
         # CLOSING XML TAGS AND FILES
         #

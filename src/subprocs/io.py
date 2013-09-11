@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import inspect
 import time
+import psutil
 import logging
 
 #
@@ -128,9 +129,17 @@ class Proc_IO(object):
     VALUE_EXTEND = " {0}"
 
     def __init__(self, send_file_path, recieve_file_path, recieve_pos=None,
-                 send_file_state='w'):
+                 send_file_state='w', trueProcess=None):
 
-        self._logger = logging.getLogger("Process I/O")
+        self._trueProcess = trueProcess
+        if self._trueProcess is not None:
+            self._procId = trueProcess.pid
+            self._procUtil = psutil.Process(self._procId)
+        else:
+            self._procId = None
+            self._procUtil = None
+
+        self._logger = logging.getLogger("Process I/O {0}".format(self._procId))
 
         unbuffered_send = open(send_file_path, send_file_state, 0)
         self._send_path = send_file_path
@@ -170,6 +179,13 @@ class Proc_IO(object):
 
             self._recieve_pos += m_end
             lines = lines[m_end:]
+
+    def get_memory_usage(self):
+
+        if self._procUtil is not None:
+            return self._procUtil.get_memory_percent()
+        else:
+            return -1
 
     def get_sending_path(self):
 

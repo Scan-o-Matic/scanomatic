@@ -560,14 +560,17 @@ class Analyse_Grayscale(object):
 
         #Variables from analysis
         self._grayscale_pos = None
-        self._grayscale = None
+        self._grayscaleSource = None
         self._grayscale_X = None
 
         if image is not None:
 
-            self._grayscale_pos, self._grayscale = self.get_grayscale()
+            self._grayscale_pos, self._grayscaleSource = self.get_grayscale()
 
             self._grayscale_X = self.get_grayscale_X(self._grayscale_pos)
+
+        else:
+            self._logger.warning("No analysis run yet")
 
     @property
     def image(self):
@@ -580,7 +583,7 @@ class Analyse_Grayscale(object):
 
     def get_source_values(self):
 
-        return self._grayscale
+        return self._grayscaleSource
 
     def get_sampling_positions(self):
 
@@ -772,6 +775,7 @@ class Analyse_Grayscale(object):
 
         if self._img is None or sum(self._img.shape) == 0:
 
+            self._logger.error("No image loaded or null image")
             return None
 
         #DEBUG PLOT
@@ -779,8 +783,7 @@ class Analyse_Grayscale(object):
         #plt.show()
         #DEBUG PLOT END
 
-        self._logger.debug("GRAYSCALE ANALYSIS: Of shape {0}".format(
-                           self._img.shape))
+        self._logger.debug("Image shape {0}".format(self._img.shape))
 
         im_slice, rect = self._get_clean_im_and_rect()
 
@@ -906,10 +909,15 @@ class Analyse_Grayscale(object):
 
             else:
 
-                self._logger.warning(
-                    "GRAYSCALE: Too bad signal for new method, using fallback")
+                self._logger.warning("New method failed, using fallback")
+
+        else:
+
+            self._logger.warning("Skipped new method, threshold not met")
 
         if gray_scale_pos is None:
+
+            self._logger.warning("Using fallback method")
 
             best_spikes = r_signal.get_best_spikes(
                 up_spikes,
@@ -938,7 +946,7 @@ class Analyse_Grayscale(object):
                     " offset={1} in best_spikes={2} from spikes={3}").format(
                         frequency, offset, best_spikes, up_spikes))
 
-                self._grayscale = None
+                self._grayscaleSource = None
                 return None, None
 
             ###DEBUG CUT SECTION
@@ -1003,7 +1011,7 @@ class Analyse_Grayscale(object):
                 gray_scale.append(self._img[left: right, top: bottom].mean())
 
         self._grayscale_pos = gray_scale_pos
-        self._grayscale = gray_scale
+        self._grayscaleSource = gray_scale
 
         #print "GS", gray_scale
         #print "GS POS", gray_scale_pos

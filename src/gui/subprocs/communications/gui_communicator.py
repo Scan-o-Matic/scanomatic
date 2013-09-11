@@ -17,7 +17,7 @@ import time
 import os
 import re
 from subprocess import Popen, PIPE
-from itertools import chain
+import itertools
 import inspect
 import logging
 
@@ -151,6 +151,7 @@ class Subprocess(object):
         self._stdout = None
         self._stderr = None
         self._start_time = None
+        self._memTestCycle = itertools.cycle(range(10))
 
     def _send(self, msg, callback, comm_type=None,
               timeout=None, timeout_args=None):
@@ -298,6 +299,10 @@ class Subprocess(object):
         self._send(self._proc.PING, callback,
                    comm_type=self._proc.PING, timeout_args=False)
 
+        if self._memTestCycle.next() == 0:
+            self._logger.debug("Current Process Memory Usage: {0:0.1f}%".format(
+                self._proc.get_memory_usage()))
+
     def set_callback_is_paused(self, callback, timeout_args=None):
         """Returns is process is paused"""
 
@@ -399,11 +404,11 @@ class Subprocess(object):
         self._logger.info("Launching:\t{0}".format(" ".join(map(str,
                                                                 param_list))))
 
-        Popen(map(str, param_list), stdin=self._stdin,
-              stdout=self._stdout, stderr=self._stderr, shell=False)
+        p = Popen(map(str, param_list), stdin=self._stdin,
+                  stdout=self._stdout, stderr=self._stderr, shell=False)
 
         proc = Proc_IO(self._stdin_path, self._stdout_path,
-                       send_file_state='w')
+                       send_file_state='w', trueProcess=p)
         return proc
 
     def get_sending_path(self):
@@ -616,7 +621,7 @@ class Experiment_Scanning(Subprocess):
         #self._launch_param = experiment_query
 
         #Make list of key & value pairs
-        e_list += list(chain.from_iterable(experiment_query.items()))
+        e_list += list(itertools.chain.from_iterable(experiment_query.items()))
 
         return e_list
 
@@ -738,7 +743,7 @@ class Experiment_Rebuild(Subprocess):
         experiment_query['-c'] = self._comm_id
 
         #Make list of key & value pairs
-        e_list += list(chain.from_iterable(experiment_query.items()))
+        e_list += list(itertools.chain.from_iterable(experiment_query.items()))
 
         return e_list
 
@@ -832,7 +837,7 @@ class Analysis(Subprocess):
         #Inserting communications id information
         a_dict['-c'] = comm_id
 
-        a_list += list(chain.from_iterable(a_dict.items()))
+        a_list += list(itertools.chain.from_iterable(a_dict.items()))
 
         return a_list
 

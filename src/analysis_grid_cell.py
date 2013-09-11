@@ -18,7 +18,7 @@ __status__ = "Development"
 
 import numpy as np
 #import math
-import logging
+#import logging
 
 #
 # SCANNOMATIC LIBRARIES
@@ -37,10 +37,9 @@ class Grid_Cell():
     MAX_THRESHOLD = 4200
     MIN_THRESHOLD = 0
 
-    def __init__(self, parent, identifier, grid_cell_settings=None):
+    def __init__(self, identifier, grid_cell_settings=None):
 
-        self._parent = parent
-        self.logger = logging.getLogger("Grid Cell {0}".format(identifier))
+        #self.logger = logging.getLogger("Grid Cell {0}".format(identifier))
 
         self._identifier = identifier
         self._adjustment_warning = False
@@ -98,6 +97,30 @@ class Grid_Cell():
     # SET functions
     #
 
+    @property
+    def background(self):
+
+        if 'background' in self._analysis_items:
+            return self._analysis_items['background']
+        else:
+            return None
+
+    @property
+    def blob(self):
+
+        if 'blob' in self._analysis_items:
+            return self._analysis_items['blob']
+        else:
+            return None
+
+    @property
+    def cell(self):
+
+        if 'cell' in self._analysis_items:
+            return self._analysis_items['cell']
+        else:
+            return None
+
     def set_data_source(self, data_source):
 
         self.data_source = data_source
@@ -112,32 +135,36 @@ class Grid_Cell():
 
         if space == 'cell estimate':
 
+            """
             self.logger.debug(
-                "ANALYSIS GRID CELL: Kodak values ran" +
+                "Kodak values ran" +
                 " ({0} - {1})".format(self.data_source.min(),
                                       self.data_source.max()))
+            """
 
             if bg_sub_source is not None:
 
                 bg_sub = np.mean(self.data_source[np.where(bg_sub_source)])
+                """
                 self.logger.debug(
-                    "ANALYSIS GRID CELL: Using " +
-                    "{0} as background estimation {1} - {2})".format(
+                    "Using {0} as background estimation {1} - {2})".format(
                         bg_sub,
                         (self.data_source[np.where(bg_sub_source)]).min(),
                         (self.data_source[np.where(bg_sub_source)]).max()))
 
                 self.logger.debug(
-                    "ANALYSIS GRID CELL: Good bg_sub_source = {0}".format(
+                    "Good bg_sub_source = {0}".format(
                         bg_sub_source.max() == 1))
-
+                """
                 self.data_source = self.data_source - bg_sub
 
             #MIN DETECTION THRESHOLD
+            """
             self.logger.debug(
-                "ANALYSIS GRID CELL: Transforming -> " +
+                "Transforming -> " +
                 "Cell Estimate, fixing negative cells counts ({0})".format(
                     np.where(self.data_source < 0)[0].size))
+            """
             self.data_source[self.data_source < self.MIN_THRESHOLD] = self.MIN_THRESHOLD
 
             if polynomial_coeffs is not None:
@@ -147,22 +174,27 @@ class Grid_Cell():
 
             else:
 
-                self.logger.warning(
-                    "ANALYSIS GRID CELL: Was not fed any polynomial")
+                #self.logger.warning(
+                #    "Was not fed any polynomial")
+                pass
 
             #MAX DETECTION THRESHOLD
+            """
             self.logger.debug(
-                "ANALYSIS GRID CELL: Transforming -> " +
+                "Transforming -> " +
                 "Cell Estimate, fixing max overflow cells counts ({0})".format(
                     (self.data_source > self.MAX_THRESHOLD).sum()))
+            """
             max_detect_filter = self.data_source > self.MAX_THRESHOLD
             self._adjustment_warning = max_detect_filter.any()
             self.data_source[max_detect_filter] = self.MAX_THRESHOLD
 
+            """
             self.logger.debug(
-                "ANALYSIS GRID CELL: Cell Estimate values run" +
+                "Cell Estimate values run" +
                 " ({0} - {1})".format(self.data_source.min(),
                                       self.data_source.max()))
+            """
 
         self.set_grid_array_pointers()
 
@@ -231,10 +263,9 @@ class Grid_Cell():
 
         if bg_filter.sum() == 0:
 
-            self.logger.warning('Grid Cell {0}'.format(self._identifier) +
-                                ' has no background (skipping)')
+            #self.logger.warning('No background (skipping)')
 
-            return None
+            features_dict = None
 
         else:
 
@@ -257,6 +288,11 @@ class Grid_Cell():
                 else:
 
                     features_dict[item_name] = None
+
+        """
+        for handler in self.logger.handlers:
+            handler.flush()
+        """
 
         return features_dict
 
@@ -305,7 +341,7 @@ class Grid_Cell():
         if blob:
 
             self._analysis_items['blob'] = cell_dissection.Blob(
-                self, [self._identifier, ['blob']], self.data_source,
+                [self._identifier, ['blob']], self.data_source,
                 blob_detect=blob_detect, run_detect=run_detect,
                 center=center, radius=radius)
 
@@ -313,10 +349,10 @@ class Grid_Cell():
 
             self._analysis_items['background'] = \
                 cell_dissection.Background(
-                    self, [self._identifier, ['background']], self.data_source,
+                    [self._identifier, ['background']], self.data_source,
                     self._analysis_items['blob'], run_detect=run_detect)
 
         if cell:
             self._analysis_items['cell'] = cell_dissection.Cell(
-                self, [self._identifier, ['cell']], self.data_source,
+                [self._identifier, ['cell']], self.data_source,
                 run_detect=run_detect)

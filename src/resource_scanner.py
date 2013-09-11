@@ -19,6 +19,7 @@ import time
 import copy
 import uuid
 import logging
+import weakref
 
 #
 # INTERNAL DEPENDENCIES
@@ -109,7 +110,7 @@ class Scanner(object):
     def __init__(self, parent, paths, config, name):
 
         self._logger = logging.getLogger("Scanner {0}".format(name))
-        self._parent = parent
+        self._parent = weakref.ref(parent) if parent else None
         self._paths = paths
         self._config = config
         self._name = name
@@ -502,13 +503,13 @@ class Scanner(object):
             if self._is_on:
 
                 self._logger.info("Configurating for scan {0}".format(
-                    self._parent._current_sane_settings))
+                    self._parent().current_sane_settings))
 
                 scanner = resource_sane.Sane_Base(
                     owner=self,
                     model=self._model,
                     scan_mode=mode,
-                    scan_settings=self._parent._current_sane_settings)
+                    scan_settings=self._parent().current_sane_settings)
 
                 scanner.AcquireByFile(filename=filename, scanner=self._usb_address)
 
@@ -568,6 +569,10 @@ class Scanners(object):
     def __getitem__(self, key):
 
         return self._scanners[key]
+
+    @property
+    def current_sane_settings(self):
+        return self._current_sane_settings
 
     def _get_sane_version(self):
 

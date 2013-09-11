@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import time
 import inspect
+import logging
 
 #
 # METHOD
@@ -49,6 +50,8 @@ class Event(object):
     def __init__(self, requestFunction, responseTargetFunction,
                  responseDefualt, responseTimeOut=None, **requestParameters):
 
+        self._logger = logging.getLogger("Event {0}".format(requestFunction))
+
         #Request
         self._requestObject = requestFunction.im_self
         self._requestFunction = requestFunction
@@ -75,7 +78,8 @@ class Event(object):
         """
 
         if not isinstance(otherEvent, Event):
-            raise TypeError("{0} not an {1}".format(otherEvent, Event))
+            self._logger.warning("{0} not an {1}".format(otherEvent, Event))
+            return False
 
         return ((self._requestFunction is otherEvent._requestFunction) and
                 (self._requestParameters == otherEvent._requestParameters))
@@ -88,7 +92,8 @@ class Event(object):
         """
 
         if not isinstance(otherEvent, Event):
-            raise TypeError("{0} not an {1}".format(otherEvent, Event))
+            self._logger.error("{0} not an {1}".format(otherEvent, Event))
+            return False
 
         return set(self._responseTargetFunctions).issuperset(
             otherEvent._responseTargetFunctions)
@@ -100,10 +105,13 @@ class Event(object):
         """
 
         if not isinstance(otherEvent, Event):
-            raise TypeError("{0} not an {1}".format(otherEvent, Event))
+            self._logger.error("{0} not an {1}".format(otherEvent, Event))
+            return False
 
         if otherEvent is self:
-            raise Exception("Illegal Operation, cannot add self to self")
+
+            self._logger.error("Illegal Operation, cannot add self to self")
+            return False
 
         for responseTargetFunction in otherEvent._responseTargetFunctions:
 
@@ -129,7 +137,7 @@ class Event(object):
 
         else:
 
-            raise Exception("Request can only be sent once!")
+            self.logger.error("Request can only be sent once!")
 
     def recieveResponse(self, *response):
         """Callback for the communicator's responses
@@ -139,7 +147,8 @@ class Event(object):
 
         if len(self._responseTargetFunctions) == 0:
 
-            raise Exception("Recieved response without anyone to send it to")
+            self._logger.error(
+                "Recieved response without anyone to send it to")
 
         self._response = response
         self._hasResponded = True
