@@ -164,7 +164,7 @@ class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
         #print kernel.astype(int)
         #print "***Erosion kernel ready"
 
-        binary_erosion(filter_array, iterations=3, output=filter_array)
+        filter_array[...] = binary_erosion(filter_array, iterations=3)
 
 
 class Analysis_Recipe_Erode_Small(Analysis_Recipe_Abstraction):
@@ -180,8 +180,8 @@ class Analysis_Recipe_Erode_Small(Analysis_Recipe_Abstraction):
 
     def _do(self, filter_array):
 
-        binary_erosion(filter_array, origin=(1, 1),
-                       structure=self.kernel, output=filter_array)
+        binary_erosion[...] = binary_erosion(
+            filter_array, origin=(1, 1), structure=self.kernel)
 
 
 """
@@ -234,7 +234,7 @@ class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
         #print kernel.astype(int)
         #print "***Erosion kernel ready"
 
-        binary_dilation(filter_array, iterations=4, output=filter_array)
+        filter_array[...] = binary_dilation(filter_array, iterations=4)
         #origin=(3,3),
         #structure=self.kernel)
 

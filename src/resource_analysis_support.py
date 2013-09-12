@@ -81,7 +81,7 @@ def get_active_plates(meta_data, suppress_analysis, graph_watch, config=None):
 
     for i in xrange(len(meta_data['Pinning Matrices'])):
 
-        if ((suppress_analysis is not True or graph_watch[0] == i) and
+        if ((suppress_analysis is False or graph_watch[0] == i) and
                 meta_data['Pinning Matrices'][i] is not None):
 
             plate_position_keys.append("plate_{0}_area".format(i + v_offset))

@@ -17,6 +17,8 @@ __status__ = "Development"
 
 #import numpy as np
 import logging
+import random
+import os
 
 #
 # SCANNOMATIC LIBRARIES
@@ -26,6 +28,9 @@ import analysis_grid_array as grid_array
 import analysis_grid_cell as grid_cell
 import analysis as project
 import analysis_image
+import resource_project_log
+import resource_analysis_support
+import resource_path
 
 #
 # Globals
@@ -34,11 +39,84 @@ import analysis_image
 _pi = analysis_image.Project_Image([])
 _ga = grid_array.Grid_Array(_pi, (0,), None)
 POLY = _ga.get_calibration_polynomial_coeffs()
+_paths = resource_path.Paths()
 
 
 #
 # Functions
 #
+
+def get_grid_cell_from_first_pass_file(
+        fpath, image=None, plate=None, cell=None):
+    """Returns a dictionary with information sufficient to be used as
+    keyword argument for calling the method again and the requested grid cell
+    """
+    meta_data = resource_project_log.get_meta_data(
+        path=fpath)
+
+    if image is not None:
+        if not(0 <= image <= meta_data['Measures']):
+            raise Exception('Image {0} out of range (0 - {1})'.format(
+                image, meta_data['Measures']))
+
+    else:
+
+        image = random.randint(0, meta_data['Measures'])
+
+    if plate is not None:
+        if (0 <= plate < len(meta_data['Pinning Matrices']) or
+                meta_data['Pinning Matrices'][plate] is None):
+
+            raise Exception('Plate {0} does not exist'.format(plate))
+
+    else:
+
+        plate = random.choice([
+            i for i, p in enumerate(meta_data['Pinning Matrices'])
+            if p is not None])
+
+    if cell is not None:
+        if (False in [0 <= v < meta_data['Pinning Matrices'][plate][i] for
+                      i, v in enumerate(cell)]):
+
+            raise Exception('Cell {0} out of plate range ({1})'.format(
+                cell, meta_data['Pinning Matrices'][plate]))
+
+    else:
+
+        cell = [random.randint(0, v - 1) for v in
+                meta_data['Pinning Matrices'][plate]]
+
+    file_path_base = os.path.dirname(fpath)
+
+    project_image = analysis_image.Project_Image(
+        meta_data['Pinning Matrices'],
+        file_path_base=file_path_base,
+        fixture_name=meta_data['Fixture'],
+        p_uuid=meta_data['UUID'],
+        suppress_analysis=True,
+        log_version=meta_data['Version'],
+        paths=_paths)
+
+    image_dicts = resource_project_log.get_image_entries(path=fpath)
+    image_dict = image_dicts[image]
+    graph_watch = [plate] + cell
+    nPlates, active_position_keys = resource_analysis_support.get_active_plates(
+        meta_data, True, graph_watch)
+    graph_watch[0] = 0
+
+    project_image.get_analysis(
+        image_dict['File'],
+        (image_dict[active_position_keys[0]],),
+        grayscaleSource=image_dict['grayscale_values'],
+        grayscaleTarget=image_dict['grayscale_indices'],
+        watch_colony=graph_watch,
+        identifier_time=image,
+        image_dict=image_dict)
+
+    return ({'fpath': fpath, 'image': image, 'plate': plate, 'cell': cell},
+            project_image[0][cell])
+
 
 def get_grid_cell_from_array(
         arr, fallback_detection=False, center=None,

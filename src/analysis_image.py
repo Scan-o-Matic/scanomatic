@@ -405,10 +405,10 @@ class Project_Image():
                 #self._logger.error("Grayscale targets not inited correctly")
                 pass
 
-        for plateIndex, gridArray in enumerate(self._grid_arrays):
+        for plateIndex in range(len(features)):
 
             im = self.get_im_section(features[plateIndex], scale_factor)
-
+            gridArray = self._grid_arrays[plateIndex]
             gridArray.doAnalysis(
                 im,
                 grayscaleSource=grayscaleSource,

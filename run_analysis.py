@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--xml-omit-compartments",
                         dest="xml_omit_compartments", type=str,
-                        default="backgrund,cell",
+                        default="background,cell",
                         help="Comma separated list of compartments to not" +
                         "report.Default omitted: background,cell")
 
