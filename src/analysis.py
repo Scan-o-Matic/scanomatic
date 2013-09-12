@@ -25,10 +25,12 @@ import logging
 import time
 import threading
 
+"""
 #DEBUGGING memory
 import objgraph
 import random
 import inspect
+"""
 
 #
 # SCANNOMATIC LIBRARIES
@@ -458,9 +460,11 @@ class Analysis(object):
         resource_analysis_support.print_progress_bar(size=60)
         """
 
+        """
         #DEBUGGING memory
         print "###"
         objgraph.show_growth(limit=30)
+        """
 
         while self._image_pos >= 0 and self._running:
 
@@ -556,11 +560,11 @@ class Analysis(object):
 
             self._image_pos -= 1
 
+            """
             #DEBUGGING memory
             print "--"
             objgraph.show_growth(limit=20)
 
-            """
             for dbgI in range(40):
                 objgraph.show_chain(
                     objgraph.find_backref_chain(
