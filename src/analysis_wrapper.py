@@ -16,7 +16,6 @@ __status__ = "Development"
 #
 
 #import numpy as np
-import logging
 import random
 import os
 
@@ -162,7 +161,7 @@ def get_grid_cell_from_array(
                 'blob_detect': 'default', 'remember_filter': False,
                 'polynomial_coeffs': poly}
 
-    cell = grid_cell.Grid_Cell(Log_Parent(), (0, 0, 0),
+    cell = grid_cell.Grid_Cell((0, 0, 0),
                                grid_cell_settings=settings)
 
     cell.attach_analysis(center=center, radius=radius)
@@ -225,13 +224,6 @@ class Project_Image(analysis_image.Project_Image):
     def __init__(self, im_path):
         project.Project_Image.__init__(self, im_path)
 
-
-class Log_Parent(object):
-
-    def __init__(self):
-
-        logging.basicConfig()
-        self.logger = logging.getLogger("Wrapped Parent")
 
 #
 # COMMAND LINE BEHAVIOUR

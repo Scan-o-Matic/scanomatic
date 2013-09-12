@@ -1013,7 +1013,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
             sm['plate'] = -1
             stage_call = 'normalisation'
 
-        self._parent.set_analysis_stage(None, stage_call, sm)
+        self._parent().set_analysis_stage(None, stage_call, sm)
 
     def execute_fixture(self, widget, data):
 
@@ -1031,7 +1031,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         thread.start()
 
-        gobject.timeout_add(281, self._parent._callback, {
+        gobject.timeout_add(281, self._parent()._callback, {
             'view': view,
             'view-function': view.set_progress,
             'view-data': None,
@@ -1817,7 +1817,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
     def set_abort(self, *args):
 
-        self._parent.set_analysis_stage(None, "about")
+        self._parent().set_analysis_stage(None, "about")
 
     def build_blank_specific_model(self):
 
@@ -2339,7 +2339,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
                 fs.close()
 
                 file_saved = True
-                self._parent.set_saved()
+                self._parent().set_saved()
 
                 view_generic.dialog(
                     self.get_window(),

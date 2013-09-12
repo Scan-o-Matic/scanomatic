@@ -177,7 +177,7 @@ class One_Controller(controller_generic.Controller):
 
     def build_new_specific_model(self):
 
-        if self._parent.get_mode() == 'color':
+        if self._parent().get_mode() == 'color':
             sm_template = model_experiment.specific_one_color_model
         else:
             sm_template = model_experiment.specific_one_transparency_model
