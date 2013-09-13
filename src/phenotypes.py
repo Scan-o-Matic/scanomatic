@@ -520,6 +520,20 @@ def get_normalised_values(data, cur_phenotype, surface_matrices=None, do_log=Non
 
     for p in xrange(len(data)):
         if norm_surface[p] is not None:
+            logging.info("Reference surface {0} range ({1} - {2}), {3}".format(
+                p,
+                [norm_surface[p].min(), np.log2(norm_surface[p]).min()][do_log],
+                [norm_surface[p].max(), np.log2(norm_surface[p]).max()][do_log],
+                ['non-logged', 'logged'][do_log]))
+
+            logging.info(
+                "Absolute non normed measures {0} range {1} - {2}".format(
+                    p,
+                    [data[p][..., cur_phenotype].min(),
+                     np.log2(data[p][..., cur_phenotype]).min()][do_log],
+                    [data[p][..., cur_phenotype].max(),
+                     np.log2(data[p][..., cur_phenotype]).max()][do_log]))
+
             if do_log:
                 normed_data[p] = (np.log2(data[p][..., cur_phenotype]) - np.log2(norm_surface[p]))  # + norm_means[p]
             else:
@@ -1359,6 +1373,10 @@ class Interactive_Menu():
             for i in range(self._nPlates):
 
                 self._LSC_phenotypes[i][..., self._cur_phenotype] = LSC_phenotypes[i]
+
+                logging.info(
+                    'Plate {0} had relative phenotype range {1} - {2}'.format(
+                        i, LSC_phenotypes[i].min(), LSC_phenotypes[i].max()))
 
             self._normalisation_vals[self._cur_phenotype] = normalisation_vals
 
