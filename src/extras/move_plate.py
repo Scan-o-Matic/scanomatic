@@ -29,7 +29,8 @@ def getMovePlate(data, source, target):
     """
 
     SEARCH_PATTERN = r'<p i="{0}">'
-    SEARCH_PM = r'<p-m i="{0}">.*?</p-m>'
+    SEARCH_PM = r'<p-m i="{0}">(.*?)</p-m>'
+    SEARCH_REPLACE = '<p-m i="{0}">\1</p-m>'
 
     m = re.search(SEARCH_PATTERN.format(target), data)
 
@@ -38,7 +39,7 @@ def getMovePlate(data, source, target):
         print "Error:\tTarget plate already exists, skipping"
         return data
 
-    data = re.sub(SEARCH_PM.format(source), SEARCH_PM.format(target), data)
+    data = re.sub(SEARCH_PM.format(source), SEARCH_REPLACE.format(target), data)
 
     return re.sub(SEARCH_PATTERN.format(source),
                   SEARCH_PATTERN.format(target), data)

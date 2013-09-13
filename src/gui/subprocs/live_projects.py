@@ -296,9 +296,12 @@ class Live_Projects(object):
     def get_analysis_path(self, project):
 
         self._load()
+        aPath = self._config.get(project, 'analysis_path')
+        if aPath is None:
+            aPath = ""
+
         analysis_path = os.path.join(
-            self.get_path(project, supress_load=True),
-            self._config.get(project, 'analysis_path'))
+            self.get_path(project, supress_load=True), aPath)
 
         return analysis_path
 
