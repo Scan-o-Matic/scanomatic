@@ -3,7 +3,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.998"
+__version__ = "0.999"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -299,7 +299,19 @@ class Project_Image():
                     d1=F[high, dim1] - F[low, dim1],
                     d2=F[high, dim2] - F[low, dim2]) or run_insane:
 
-                return im[F[low, dim1]: F[high, dim1], F[low, dim2]: F[high, dim2]]
+                #Sections the area of the image referring to the plate
+                plate_im = im[F[low, dim1]: F[high, dim1],
+                              F[low, dim2]: F[high, dim2]]
+
+                #Determines the shorter dimension
+                short_dim = [p == min(plate_im.shape) for
+                             p in plate_im.shape].index(True)
+
+                #Causes the flipping along the short dimension
+                slicer = [i != short_dim and slice(None, None, None) or
+                          slice(None, None, -1) for i in range(plate_im.ndim)]
+
+                return plate_im[slicer]
 
             else:
 
