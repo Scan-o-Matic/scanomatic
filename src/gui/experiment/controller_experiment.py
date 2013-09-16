@@ -30,6 +30,7 @@ import model_experiment
 import view_experiment
 
 import src.gui.generic.controller_generic as controller_generic
+import src.gui.generic.view_generic as view_generic
 
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
 import src.resource_tags_verification as resource_tags_verification
@@ -411,7 +412,7 @@ class Project_Controller(controller_generic.Controller):
 
     def set_project_root(self, widget):
 
-        dir_list = view_experiment.select_dir(
+        dir_list = view_generic.select_dir(
             self._model['project-stage-select_root'],
             start_in=self._specific_model['experiments-root'])
 

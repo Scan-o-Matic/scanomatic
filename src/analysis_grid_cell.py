@@ -156,6 +156,7 @@ class Grid_Cell():
                     "Good bg_sub_source = {0}".format(
                         bg_sub_source.max() == 1))
                 """
+                self.original_data_source = self.data_source
                 self.data_source = self.data_source - bg_sub
 
             #MIN DETECTION THRESHOLD
