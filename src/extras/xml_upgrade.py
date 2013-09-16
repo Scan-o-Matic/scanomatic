@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Script that upgrades earlier version of xml files to later version as long
 as it is possible.
 """
@@ -15,13 +16,16 @@ import re
 import numpy as np
 from argparse import ArgumentParser
 import os
+import time
 
 #GLOBALS
 
 _CURRENT_VERSION = float(__version__)
-_POS_PATTERN = r'<gc x="(\d*)" y="(\d*)">'
-_POS_REPLACE = '<gc x="{0}" y="{1}">'
-_VERSION = '<ver>(\d*)</ver>'
+_POS_PATTERN = re.compile(r'<gc x="(\d*)" y="(\d*)">')
+_POS_REPLACE1 = '<gc x="'
+_POS_REPLACE2 = '" y="'
+_POS_REPLACE3 = '">'
+_VERSION = '<ver>([\d.]*)</ver>'
 _VERSION_REPLACE = '<ver>{0}</ver>'
 
 #METHODS
@@ -29,22 +33,33 @@ _VERSION_REPLACE = '<ver>{0}</ver>'
 
 def _changePositions(data, axesOperations):
 
-    tmpList = []
     sHit = False
-    hits = np.array(re.findall(_POS_PATTERN, data), dtype=np.int)[
+    hits = np.array(re.findall(_POS_PATTERN, data), dtype=str)[
         axesOperations]
 
-    for hit in hits:
+    print "\t1/3: Got {0} entries".format(len(hits))
+
+    tmpList = [None] * len(hits)
+
+    for i, hit in enumerate(hits):
 
         sHit = re.search(_POS_PATTERN, data)
 
-        tmpList.append(data[:sHit.start()])
-        tmpList.append(_POS_REPLACE.format(*hit))
+        tmpList[i] = (data[:sHit.start()] + _POS_REPLACE1 + hit[0] +
+                      _POS_REPLACE2 + hit[1] + _POS_REPLACE3)
 
         data = data[sHit.end():]
 
+        if i % 25000 == 0:
+            print "\t2/3: {0:.1f}% processed".format(100.0 * i / len(hits))
+
     tmpList.append(data)
-    return "".join(tmpList)
+
+    print "\t2/3: Built array of xml-fragments"
+
+    data = "".join(tmpList)
+    print "\t3/3: Rejoined entries"
+    return data
 
 
 def _getVersion(data):
@@ -67,44 +82,59 @@ if __name__ == "__main__":
     parser = ArgumentParser(
         description=__doc__)
 
-    parser.add_argument("-p", "--path", dest="path", type=str, default=None,
-                        metavar="PATH", help="Path to xml-file to upgrade")
+    parser.add_argument("-p", "--path", dest="paths", type=str, default=None,
+                        metavar="PATH", help="Path to xml-file(s) to upgrade",
+                        nargs="*")
 
     args = parser.parse_args()
 
-    if os.path.isfile(args.path) is False:
-        parser.error("Could not find file")
+    print "\n"
 
-    fh = open(args.path, 'r')
-    data = fh.read()
-    fh.close()
-    currentVersion = -1
+    if len(args.paths) == 1:
+        print "Did you know you can supply several xml-files at the same time?"
+        print "\n"
 
-    while currentVersion != float(__version__):
+    for filePath in args.paths:
 
-        currentVersion = _getVersion(data)
-        if currentVersion is None:
-            parser.error("Version could not be detected")
+        startTime = time.time()
+        print "\n### Working on {0}".format(filePath)
 
-        elif currentVersion < 0.998:
-            parser.error(
-                "Version of XML predates upgrade script, no upgrade possible")
+        if os.path.isfile(filePath) is False:
+            parser.error("Could not find file")
 
-        elif currentVersion < 0.999:
-            #First axis is the short axis, which should be flipped
-            data = _changePositions(data, (slice(None, None, -1),
-                                           slice(None, None, 1)))
+        fh = open(filePath, 'r')
+        data = fh.read()
+        fh.close()
+        currentVersion = -1
 
-            data = _setVersion(data, 0.999)
+        while currentVersion != float(__version__):
 
-        else:
+            currentVersion = _getVersion(data)
+            if currentVersion is None:
+                parser.error("Version could not be detected")
 
-            parser.error(
-                "Version upgrade not yet possible for v{0}".format(
-                    __version__))
+            elif currentVersion < 0.998:
+                parser.error(
+                    "Version of XML predates upgrade script, no upgrade possible")
 
-    fh = open(args.path, 'w')
-    fh.write(data)
-    fh.close()
+            elif currentVersion < 0.999:
+                #First axis is the short axis, which should be flipped
+                print "\n--- Upgrading to 0.999"
+                data = _changePositions(data, (slice(None, None, -1),
+                                               slice(None, None, 1)))
 
-    print "DONE, new version {0}!".format(currentVersion)
+                data = _setVersion(data, 0.999)
+
+            else:
+
+                currentVersion = float(__version__)
+
+        deltaTime = time.time() - startTime
+        print ("\n--- File upgraded to version {0} (took {1} min {2:.3f} s), " +
+               "no more upgrades known").format(currentVersion,
+                                                int(deltaTime / 60),
+                                                deltaTime % 60)
+
+        fh = open(filePath, 'w')
+        fh.write(data)
+        fh.close()
