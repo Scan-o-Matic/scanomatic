@@ -30,7 +30,7 @@ def getMovePlate(data, source, target):
 
     SEARCH_PATTERN = r'<p i="{0}">'
     SEARCH_PM = r'<p-m i="{0}">(.*?)</p-m>'
-    SEARCH_REPLACE = '<p-m i="{0}">\1</p-m>'
+    SEARCH_REPLACE = r'<p-m i="{0}">\1</p-m>'
 
     m = re.search(SEARCH_PATTERN.format(target), data)
 
