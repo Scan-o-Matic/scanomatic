@@ -25,6 +25,12 @@ _POS_PATTERN = re.compile(r'<gc x="(\d*)" y="(\d*)">')
 _POS_REPLACE1 = '<gc x="'
 _POS_REPLACE2 = '" y="'
 _POS_REPLACE3 = '">'
+_PROJECT_TAG_START = r'<ptag>'
+_PROJECT_TAG_INSERT_POS = r'</pref>'
+_PROJECT_TAG_REPLACE = r'</pref><ptag></ptag>'
+_SCAN_TAG_START = r'<sltag>'
+_SCAN_TAG_INSERT_POS = r'</ptag>'
+_SCAN_TAG_REPLACE = r'</ptag><sltag></sltag>'
 _VERSION = '<ver>([\d.]*)</ver>'
 _VERSION_REPLACE = '<ver>{0}</ver>'
 
@@ -59,6 +65,15 @@ def _changePositions(data, axesOperations):
 
     data = "".join(tmpList)
     print "\t3/3: Rejoined entries"
+    return data
+
+
+def _replaceIfNot(data, ifMissingPattern, replaceCurrent, replaceWith):
+
+    if re.search(ifMissingPattern, data) is None:
+
+        data = re.sub(replaceCurrent, replaceWith, data)
+
     return data
 
 
@@ -122,6 +137,14 @@ if __name__ == "__main__":
                 print "\n--- Upgrading to 0.999"
                 data = _changePositions(data, (slice(None, None, -1),
                                                slice(None, None, 1)))
+
+                data = _replaceIfNot(data, _PROJECT_TAG_START,
+                                     _PROJECT_TAG_INSERT_POS,
+                                     _PROJECT_TAG_REPLACE)
+
+                data = _replaceIfNot(data, _SCAN_TAG_START,
+                                     _SCAN_TAG_INSERT_POS,
+                                     _SCAN_TAG_REPLACE)
 
                 data = _setVersion(data, 0.999)
 

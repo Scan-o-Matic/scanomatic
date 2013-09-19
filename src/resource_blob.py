@@ -222,10 +222,12 @@ class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
                        [0, 1, 1, 1, 1, 1, 0],
                        [0, 0, 1, 1, 1, 0, 0]])
 
-    def __init__(self, parent):
+    def __init__(self, parent, iterations=4):
 
         super(Analysis_Recipe_Dilate, self).__init__(
             parent, description="Binary Dilate")
+
+        self._iterations = iterations
 
     def _do(self, filter_array):
 
@@ -234,7 +236,8 @@ class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
         #print kernel.astype(int)
         #print "***Erosion kernel ready"
 
-        filter_array[...] = binary_dilation(filter_array, iterations=4)
+        filter_array[...] = binary_dilation(filter_array,
+                                            iterations=self._iterations)
         #origin=(3,3),
         #structure=self.kernel)
 

@@ -223,6 +223,7 @@ class Project_Image():
 
                 self.im = plt_img.imread(alt_path)
                 self._im_loaded = True
+                self._im_path = alt_path
 
             except:
 
@@ -330,11 +331,11 @@ class Project_Image():
 
     def _get_slice_sanity_check(self, im, d1=None, d2=None):
 
-        if ((float(im.shape[0]) / im.shape[1] > 0) !=
-                (float(d1 / d2) > 0)):
+        if ((float(im.shape[0]) / im.shape[1] > 1) !=
+                (float(d1) / d2 > 1)):
 
             s = "Current shape is {0} x {1}.".format(d1, d2)
-            s += " Image is {0} x {1}.".format(self._ref_plate_d1, self._ref_plate_d2)
+            s += " Image is {0} x {1}.".format(im.shape[0], im.shape[1])
             raise Slice_Error(s)
 
             return False
