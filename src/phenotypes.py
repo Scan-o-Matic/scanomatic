@@ -1137,7 +1137,7 @@ class Interactive_Menu():
         elif task == "1B":
 
             print("\n")
-            if self._phenotype_names != []:
+            if self._phenotype_names not in (None, []):
                 phenotype = str(raw_input(
                     "\n".join(["  {0}: {1}".format(i + 1, p) for i, p in
                                enumerate(self._phenotype_names)]) +
