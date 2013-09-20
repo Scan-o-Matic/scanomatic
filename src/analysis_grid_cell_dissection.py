@@ -849,19 +849,48 @@ class Blob(Cell_Item):
         stencil = get_round_kernel(int(np.round(radius)))
         x_size = (stencil.shape[0] - 1) / 2
         y_size = (stencil.shape[1] - 1) / 2
+        center = map(int, map(round, center))
 
-        if (stencil.shape ==
-                self.filter_array[
-                    center[0] - x_size: center[0] + x_size + 1,
-                    center[1] - y_size: center[1] + y_size + 1].shape):
+        if (self.filter_array.shape[0] > center[0] + x_size + 1
+                and center[0] - x_size >= 0):
 
-            self.filter_array[
-                center[0] - x_size: center[0] + x_size + 1,
-                center[1] - y_size: center[1] + y_size + 1] += stencil
+            xSlice = slice(center[0] - x_size, center[0] + x_size + 1, None)
+            xStencilSlice = slice(None, None, None)
+
+        elif center[0] - x_size < 0:
+
+            xSlice = slice(None, center[0] + x_size + 1, None)
+            xStencilSlice = slice(stencil.shape[0] -
+                                  (center[0] + x_size + 1), None, None)
 
         else:
 
-            self.default_detect()
+            xSlice = slice(center[0] - x_size, None, None)
+            xStencilSlice = slice(None,
+                                  self.filter_array.shape[0] -
+                                  center[0] + x_size, None)
+
+        if (self.filter_array.shape[1] > center[1] + y_size + 1
+                and center[1] - y_size >= 0):
+
+            ySlice = slice(center[1] - y_size, center[1] + y_size + 1, None)
+            yStencilSlice = slice(None, None, None)
+
+        elif center[1] - y_size < 0:
+
+            ySlice = slice(None, center[1] + y_size + 1, None)
+            yStencilSlice = slice(stencil.shape[1] -
+                                  (center[1] + y_size + 1), None, None)
+
+        else:
+
+            ySlice = slice(center[1] - y_size, None, None)
+            yStencilSlice = slice(None,
+                                  self.filter_array.shape[1] -
+                                  center[1] + y_size, None)
+
+        self.filter_array[(xSlice, ySlice)] += stencil[(xStencilSlice,
+                                                        yStencilSlice)]
 
     def default_detect(self):
 

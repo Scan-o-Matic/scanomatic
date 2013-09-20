@@ -132,7 +132,7 @@ def get_meta_data_from_file(path):
 
         if len(l) > 0:
 
-            if l[0] == '{':
+            if l[0] == '{' and l.strip()[-1] == '} ':
 
                 l = eval(l)
 

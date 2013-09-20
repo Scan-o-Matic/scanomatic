@@ -1660,9 +1660,12 @@ class Analysis_Image_Controller(controller_generic.Controller):
     def _get_new_selection_origin(self, pos):
 
         sm = self._specific_model
-        sel_move = [n - o for n, o in zip(pos, sm['selection-move-source'])]
+        if None not in sm['selection-move-source']:
+            sel_move = [n - o for n, o in zip(pos, sm['selection-move-source'])]
 
-        new_origin = [o + m for o, m in zip(sm['selection-origin'], sel_move)]
+            new_origin = [o + m for o, m in zip(sm['selection-origin'], sel_move)]
+        else:
+            new_origin = sm['selection-origin']
 
         return new_origin
 
@@ -2042,21 +2045,25 @@ class Analysis_Log_Controller(controller_generic.Controller):
         measures = self._model['measures']
         #headers = fs.readline().strip().split("\t")
 
+        firstRow = True
         for data_row in fs:
 
-            data_row = data_row.strip().replace("\t", ',')
-            data = eval("[{0}]".format(data_row))
-            for i, d in enumerate(data):
-                if (isinstance(d, str) and len(d) > 0 and
-                        d[0] in ('[', '(') and d[-1] in (']', ')')):
+            if firstRow:
+                firstRow = False
+            else:
+                data_row = data_row.strip().replace("\t", ',')
+                data = eval("[{0}]".format(data_row))
+                for i, d in enumerate(data):
+                    if (isinstance(d, str) and len(d) > 0 and
+                            d[0] in ('[', '(') and d[-1] in (']', ')')):
 
-                    try:
-                        data[i] = eval(d)
-                    except:
-                        pass
+                        try:
+                            data[i] = eval(d)
+                        except:
+                            pass
 
-            measures.append(data)
-            self._view.add_data_row(data)
+                measures.append(data)
+                self._view.add_data_row(data)
 
         fs.close()
 
