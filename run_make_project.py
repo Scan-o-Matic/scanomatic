@@ -164,6 +164,8 @@ class Make_Project(object):
 
         try:
             im_acq_time = float(re.findall(r'([0-9.]*)\.tiff$', im_path)[-1])
+            if self._image_i == 0:
+                im_acq_time = 0.0
         except:
             im_acq_time = self._image_i * self._interval
 

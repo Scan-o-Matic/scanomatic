@@ -240,7 +240,23 @@ class Grayscale_Controller(controller_generic.Controller):
 
                 else:
 
-                    sm['target-sourceValues'] = gsAnalysis.get_source_values()
+                    if (sm['source-polynomial'] is not None and
+                            sm['target-sourceValues'] is not None):
+                        sm['target-sourceValues'] = gsAnalysis.get_source_values()
+
+                        sm['target-targetValues'] = sm['source-polynomial'](
+                            [np.mean(s) for s in gsAnalysis.slices])
+
+                        self._stage.setAllowSave(
+                            True, message=self._model['grayscale-info-done'])
+
+                    else:
+
+                        sm['target-sourceValues'] = None
+                        sm['target-targetValues'] = None
+                        self._stage.setAllowSave(False)
+
+                    """This is probably wrong
                     if (sm['source-polynomial'] is not None and
                             sm['target-sourceValues'] is not None):
 
@@ -255,7 +271,7 @@ class Grayscale_Controller(controller_generic.Controller):
                         sm['target-sourceValues'] = None
                         sm['target-targetValues'] = None
                         self._stage.setAllowSave(False)
-
+                    """
                     self._stage.updateActiveSeletion(
                         gsAnalysis=gsAnalysis,
                         targetValues=sm['target-targetValues'])

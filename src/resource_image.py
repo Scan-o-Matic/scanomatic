@@ -562,6 +562,7 @@ class Analyse_Grayscale(object):
         self._grayscale_pos = None
         self._grayscaleSource = None
         self._grayscale_X = None
+        self._sectionAreaSlices = []
 
         if image is not None:
 
@@ -576,6 +577,10 @@ class Analyse_Grayscale(object):
     def image(self):
 
         return self._img
+
+    @property
+    def slices(self):
+        return [self._img[s] for s in self._sectionAreaSlices]
 
     def get_target_values(self):
 
@@ -769,6 +774,8 @@ class Analyse_Grayscale(object):
 
     def get_grayscale(self, image=None):
 
+        self._sectionAreaSlices = []
+
         if image is not None:
 
             self._img = image
@@ -904,6 +911,9 @@ class Analyse_Grayscale(object):
 
                     if right >= self._img.shape[0]:
                         right = self._img.shape[0] - 1
+
+                    self._sectionAreaSlices.append((slice(left, right),
+                                                    slice(top, bottom)))
 
                     gray_scale.append(self._img[left: right, top: bottom].mean())
 

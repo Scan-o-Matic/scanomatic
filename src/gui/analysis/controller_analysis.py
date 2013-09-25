@@ -745,6 +745,8 @@ class Analysis_First_Pass(controller_generic.Controller):
         config.add_section(Make_Project.CONFIG_OTHER)
         for key, val in sm.items():
             if key == 'meta-data':
+                if 'Version' in val:
+                    val['Version'] = __version__
                 config.set(Make_Project.CONFIG_META, key, val)
             elif key == 'image-list-model':
 
