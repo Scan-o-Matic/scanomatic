@@ -7,7 +7,7 @@ __author__ = "Martin Zackrisson, Mats Kvarnstroem"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
 __license__ = "GPL v3.0"
-__version__ = "0.999"
+__version__ = "0.9991"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -17,6 +17,7 @@ __status__ = "Development"
 #
 
 import numpy as np
+from scipy.stats.mstats import tmean, mquantiles
 #import math
 #import logging
 
@@ -144,7 +145,12 @@ class Grid_Cell():
 
             if bg_sub_source is not None:
 
-                bg_sub = np.mean(self.data_source[np.where(bg_sub_source)])
+                feature_array = self.data_source[np.where(bg_sub_source)]
+                bg_sub = tmean(feature_array,
+                               mquantiles(feature_array, prob=[0.25, 0.75]))
+                if not np.isfinite(bg_sub):
+                    bg_sub = np.mean(feature_array)
+
                 """
                 self.logger.debug(
                     "Using {0} as background estimation {1} - {2})".format(

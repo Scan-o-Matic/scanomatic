@@ -7,7 +7,7 @@ __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman",
                "jetxee"]
 __license__ = "GPL v3.0"
-__version__ = "0.999"
+__version__ = "0.9991"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -382,8 +382,8 @@ class Blob(Cell_Item):
     BLOB_RECIPE = resource_blob.Analysis_Recipe_Empty()
     resource_blob.Analysis_Recipe_Median_Filter(BLOB_RECIPE)
     resource_blob.Analysis_Threshold_Otsu(BLOB_RECIPE)
-    resource_blob.Analysis_Recipe_Erode(BLOB_RECIPE)
-    resource_blob.Analysis_Recipe_Dilate(BLOB_RECIPE)
+    #resource_blob.Analysis_Recipe_Erode(BLOB_RECIPE)
+    resource_blob.Analysis_Recipe_Dilate(BLOB_RECIPE, iterations=1)
     #resource_blob.Analysis_Recipe_Erode_Small(self, self.BLOB_RECIPE)
     #resource_blob.Analysis_Recipe_Erode_Conditional(self, self.BLOB_RECIPE)
 

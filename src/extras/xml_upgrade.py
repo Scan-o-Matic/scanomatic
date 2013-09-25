@@ -6,7 +6,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.999"
+__version__ = "0.9991"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -35,6 +35,42 @@ _VERSION = '<ver>([\d.]*)</ver>'
 _VERSION_REPLACE = '<ver>{0}</ver>'
 
 #METHODS
+
+
+def _relativeTime(d):
+
+    REPLACEMENT = "<t>{0}</t>"
+    TIME_PATTERN = r'<t>([\d.]*)</t>'
+    SCAN_PATTERN = r'<s i="\d*">.*?</s>'
+
+    times = map(float, re.findall(r"'Time': ([\d.]*)", d))
+    timeGenerator = (t - min(times) for t in times)
+
+    m = re.search(SCAN_PATTERN, d)
+    lTrunc = 0
+    tMin = None
+
+    while m is not None:
+
+        m2 = re.search(TIME_PATTERN, m.group())
+        lBound, rBound = m.span()
+
+        t = timeGenerator.next()
+        if tMin is None or t < tMin:
+            tMin = t
+
+        if m2 is not None:
+
+            l2Bound, r2Bound = m2.span()
+
+            d = (d[:lBound + lTrunc + l2Bound] +
+                 REPLACEMENT.format(t) +
+                 d[lBound + lTrunc + r2Bound:])
+
+        lTrunc += rBound
+        m = re.search(SCAN_PATTERN, d[lTrunc:])
+
+    return d
 
 
 def _changePositions(data, axesOperations):
@@ -147,6 +183,11 @@ if __name__ == "__main__":
                                      _SCAN_TAG_REPLACE)
 
                 data = _setVersion(data, 0.999)
+
+            elif currentVersion < 0.9991:
+
+                data = _relativeTime(data)
+                data = _setVersion(data, 0.9991)
 
             else:
 

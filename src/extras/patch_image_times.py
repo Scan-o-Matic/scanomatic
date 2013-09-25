@@ -16,11 +16,13 @@ import functools
 from argparse import ArgumentParser
 
 
-def get_time_generator(interval, order="inc"):
+def get_time_generator(interval, totalImages, order="inc"):
     """A simple generator for time intervals.
 
     :param interval:
         The time in seconds between
+    :param totalImages:
+        The number of images in total
     :param order:
         Default value is 'inc' (incremental).
         Other accepted value is 'dec' (decremental)
@@ -30,17 +32,15 @@ def get_time_generator(interval, order="inc"):
 
     if order.lower() == 'inc':
 
-        t = 0
+        order = 1
 
     else:
 
-        t = 1366013470  # Spring 2013 in unix time
-        interval *= -1  # Will make interval negative
+        order = -1
 
-    while True:
+    for t in range(totalImages)[::order]:
 
-        yield t
-        t += interval
+        yield t * interval
 
 
 def get_time_generator_from_file(fpath, order='inc'):
@@ -60,6 +60,7 @@ def get_time_generator_from_file(fpath, order='inc'):
     fh.close()
 
     times = map(float, re.findall(r"'Time': ([\d.]*)", d))
+    times = [t - min(times) for t in times]
     times.sort(reverse=order.lower() == 'dec')
 
     for t in times:
@@ -201,6 +202,33 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    TIME_PATTERN_XML = r'<t>([\d.]*)</t>'
+    TIME_PATTERN_FIRST = r"\'Time\': ([\d.]*)"
+
+    try:
+        fh = open(args.target_xml)
+        data = fh.read()
+        fh.close()
+        xmlImages = len(re.findall(TIME_PATTERN_XML, data))
+    except:
+        xmlImages = None
+
+    try:
+        fh = open(args.target_first)
+        data = fh.read()
+        fh.close()
+        firstImages = len(re.findall(TIME_PATTERN_FIRST, data))
+    except:
+        firstImages = None
+
+    if xmlImages == firstImages or None in (xmlImages, firstImages):
+
+        nImages = xmlImages
+
+    else:
+
+        parser.error("The number of images in the two outfiles do not agree")
+
     if (args.source_file not in (None, "") and
             os.path.isfile(args.source_file)):
 
@@ -209,7 +237,8 @@ if __name__ == "__main__":
 
     elif args.interval is not None:
 
-        timesF = functools.partial(get_time_generator, args.interval * 60)
+        timesF = functools.partial(get_time_generator, args.interval * 60,
+                                   nImages)
 
     else:
 

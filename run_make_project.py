@@ -4,7 +4,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.999"
+__version__ = "0.9991"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -83,6 +83,14 @@ class Make_Project(object):
 
         #Gathering the metadata
         self._meta_data = eval(config.get(self.CONFIG_META, 'meta-data'))
+        try:
+            self._startTime = float(self._meta_data['Start Time'])
+        except:
+            self._startTime = 0
+        try:
+            self._interval = float(self._meta_data['Interval'])
+        except:
+            self._interval = 20.0
 
         #Gathering the run info
         tmpOther = config.items(self.CONFIG_OTHER)
@@ -157,7 +165,7 @@ class Make_Project(object):
         try:
             im_acq_time = float(re.findall(r'([0-9.]*)\.tiff$', im_path)[-1])
         except:
-            im_acq_time = None
+            im_acq_time = self._image_i * self._interval
 
         self._logger.info("Processing '{0}' as time {1}".format(
             im_path, im_acq_time))

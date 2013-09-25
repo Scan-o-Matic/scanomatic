@@ -6,7 +6,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.999"
+__version__ = "0.9991"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -130,11 +130,11 @@ def get_meta_data_from_file(path):
 
         l = l.strip()
 
-        if len(l) > 0:
+        try:
 
-            if l[0] == '{' and l.strip()[-1] == '} ':
+            l = eval(l)
 
-                l = eval(l)
+            if isinstance(l, dict):
 
                 fs.close()
                 if get_is_valid_meta_data(l):
@@ -144,6 +144,10 @@ def get_meta_data_from_file(path):
                 else:
 
                     return None
+
+        except:
+
+            pass
 
     fs.close()
     return None

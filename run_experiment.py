@@ -5,7 +5,7 @@ __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
 __license__ = "GPL v3.0"
-__version__ = "0.999"
+__version__ = "0.9991"
 __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
@@ -114,6 +114,8 @@ class Experiment(object):
             self._init_time = time.time()
         else:
             self._init_time = run_args.init_time
+
+        self._first_image_time
 
         sys.excepthook = self.__excepthook
 
@@ -328,18 +330,22 @@ class Experiment(object):
 
     def _scan_and_analyse(self, im_index):
 
+        if self._first_image_time is None:
+            self._first_image_time = time.time()
+            curTime = 0.0
+        else:
+            curTime = time.time() - self._first_image_time
+
         self._logger.info("Image {0} started!".format(im_index))
         im_path = self._im_filename_pattern.format(
             self._prefix,
             str(im_index).zfill(4),
-            time.time() - self._init_time)
+            curTime)
 
         #SCAN
         self._logger.info("Requesting scan to file '{0}'".format(im_path))
         scan_success = self._scanner.scan(
             mode=self.SCAN_MODE, filename=im_path)
-
-        scan_time = time.time()
 
         #FREE SCANNER IF LAST
         if not self._running or im_index >= self._max_scans:
@@ -351,7 +357,7 @@ class Experiment(object):
             self._logger.info("Requesting first pass analysis of file '{0}'".format(im_path))
             im_dict = resource_first_pass_analysis.analyse(
                 file_name=im_path,
-                im_acq_time=scan_time,
+                im_acq_time=curTime,
                 experiment_directory=self._out_data_path,
                 paths=self.paths)
 
@@ -359,7 +365,7 @@ class Experiment(object):
 
             im_dict = resource_project_log.get_image_dict(
                 im_path,
-                scan_time,
+                curTime,
                 im_dict['mark_X'],
                 im_dict['mark_Y'],
                 im_dict['grayscale_indices'],
