@@ -306,15 +306,15 @@ class Cell_Item():
         if (self.features['area'] == self.features['pixelsum'] or
                 self.features['area'] == 0):
 
-            """
             if self.features['area'] != 0:
 
-                self.logger.warning("All pixels value 1")
+                print "GCdissect", self._identifier, "No background"
+                #self.logger.warning("All pixels value 1")
 
             else:
 
-                self.logger.warning("Area is 0")
-            """
+                print "GCdissect", self._identifier, "No blob"
+                #self.logger.warning("Area is 0")
 
             """
             for handler in self.logger.handlers:
@@ -381,9 +381,10 @@ class Blob(Cell_Item):
 
     BLOB_RECIPE = resource_blob.Analysis_Recipe_Empty()
     resource_blob.Analysis_Recipe_Median_Filter(BLOB_RECIPE)
-    resource_blob.Analysis_Threshold_Otsu(BLOB_RECIPE)
+    resource_blob.Analysis_Threshold_Otsu(BLOB_RECIPE,
+                                          thresholdUnitAdjust=0.5)
     #resource_blob.Analysis_Recipe_Erode(BLOB_RECIPE)
-    resource_blob.Analysis_Recipe_Dilate(BLOB_RECIPE, iterations=1)
+    resource_blob.Analysis_Recipe_Dilate(BLOB_RECIPE, iterations=2)
     #resource_blob.Analysis_Recipe_Erode_Small(self, self.BLOB_RECIPE)
     #resource_blob.Analysis_Recipe_Erode_Conditional(self, self.BLOB_RECIPE)
 
@@ -1004,18 +1005,30 @@ class Background(Cell_Item):
 
             self.filter_array[:, :] = 1
 
+            #print "BG", self._identifier, "total area", self.filter_array.sum()
             self.filter_array[np.where(self.blob.filter_array)] = 0
+
+            #print "BG", self._identifier, "blob compliment area ",
+            #print self.filter_array.sum()
+            #print "BG", self._identifier, "blob area is",
+            #print self.blob.filter_array.sum()
 
             self.filter_array[np.where(self.blob.trash_array)] = 0
 
+            #print "BG", self._identifier, "blob + trash compiment area ",
+            #print self.filter_array.sum()
+
             self.filter_array = binary_erosion(
-                self.filter_array, iterations=6, border_value=1)
+                self.filter_array, iterations=3, border_value=1)
+
+            #print "BG", self._identifier, "area ",
+            #print self.filter_array.sum()
 
         else:
 
+            print "BG", self._identifier, "no blob"
             #self.logger.warning(
             #    "Blob was not set, thus background is wrong")
-            pass
 
 #
 # CLASSES Cell (entire area)

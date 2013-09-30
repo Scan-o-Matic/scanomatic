@@ -83,8 +83,8 @@ class Controller(controller_generic.Controller):
         if debug_mode is False:
             self.set_simple_logger()
 
-        self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
+        self.fixtures = resource_fixture.Fixtures(self.paths, self.config)
         self.scanners = resource_scanner.Scanners(self.paths, self.config)
 
         self._view.show_notebook_or_logo()

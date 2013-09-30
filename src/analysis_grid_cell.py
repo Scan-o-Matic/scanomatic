@@ -163,7 +163,13 @@ class Grid_Cell():
                         bg_sub_source.max() == 1))
                 """
                 self.original_data_source = self.data_source
-                self.data_source = self.data_source - bg_sub
+                self.data_source -= bg_sub  # - self.data_source
+
+                #print "GC", self._identifier, "BG is", bg_sub
+
+            else:
+
+                print "GC", "no bg_sub_source"
 
             #MIN DETECTION THRESHOLD
             """
@@ -172,7 +178,8 @@ class Grid_Cell():
                 "Cell Estimate, fixing negative cells counts ({0})".format(
                     np.where(self.data_source < 0)[0].size))
             """
-            self.data_source[self.data_source < self.MIN_THRESHOLD] = self.MIN_THRESHOLD
+            self.data_source[
+                self.data_source < self.MIN_THRESHOLD] = self.MIN_THRESHOLD
 
             if polynomial_coeffs is not None:
 
@@ -181,6 +188,7 @@ class Grid_Cell():
 
             else:
 
+                print "GC", "No polynomial"
                 #self.logger.warning(
                 #    "Was not fed any polynomial")
                 pass
@@ -272,6 +280,7 @@ class Grid_Cell():
 
             #self.logger.warning('No background (skipping)')
 
+            print "GC", self._identifier,  "No background no feature"
             features_dict = None
 
         else:

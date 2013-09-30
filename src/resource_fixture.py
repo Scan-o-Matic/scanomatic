@@ -62,6 +62,8 @@ class Fixture_Settings(object):
 
         #Version
         self.version = f['version']
+        if self.version is None:
+            self.version = 0
 
         #Marker path and name
         self.marker_path = f['marker_path']
@@ -154,9 +156,10 @@ class Fixture_Settings(object):
 
 class Fixtures(object):
 
-    def __init__(self, paths):
+    def __init__(self, paths, app_config):
 
         self._paths = paths
+        self._app_config = app_config
         self._fixtures = None
         self.update()
 
@@ -183,7 +186,11 @@ class Fixtures(object):
         for f in list_fixtures:
             if f.lower() != "fixture":
                 fixture = Fixture_Settings(directory, f, paths)
-                self._fixtures[fixture.name] = fixture
+
+                if (float(fixture.version) >=
+                        self._app_config.version_oldest_allow_fixture):
+
+                    self._fixtures[fixture.name] = fixture
 
     def get_names(self):
 

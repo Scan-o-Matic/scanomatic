@@ -294,12 +294,14 @@ class Watch_Graph(object):
 
     def _save_image(self):
 
-        img = Image.fromarray(np.asarray(np.clip(self._bigIM, 0, 255),
-                                         dtype="uint8"), "L")
+        img = Image.fromarray(np.clip(self._bigIM / self._bigIM.max() * 255,
+                                      0, 255).astype("uint8"), "L")
+        #img = Image.fromarray(np.asarray(np.clip(self._bigIM, 0, 255),
+        #                                 dtype="uint8"), "L")
 
         img.save("{0}.tiff".format(self._path))
 
-    def _save_histograms(self, path):
+    def _save_histograms(self):
 
         np.save(self._path + "HistCounts.npy", self._histogramCounts)
         np.save(self._path + "HistBins.npy", self._histogramBins)

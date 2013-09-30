@@ -43,6 +43,7 @@ class Config(object):
         #VERSION HANDLING
         self.version_first_pass_change_1 = 0.997
         self.version_fixture_grid_history_change_1 = 0.998
+        self.version_oldest_allow_fixture = 0.9991
 
         #SCANNER
         self.number_of_scanners = 3

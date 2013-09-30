@@ -127,21 +127,17 @@ class Analysis_Recipe_Empty(Analysis_Recipe_Abstraction):
 
 class Analysis_Threshold_Otsu(Analysis_Recipe_Abstraction):
 
-    def __init__(self, parent):
+    def __init__(self, parent, thresholdUnitAdjust=0.0):
 
         super(Analysis_Threshold_Otsu, self).__init__(
             parent, description="Otsu Threshold")
 
+        self._thresholdUnitAdjust = thresholdUnitAdjust
+
     def _do(self, filter_array):
 
-        """
-        threshold = resource_histogram.otsu(
-            histogram=resource_histogram.Histogram(
-                filter_array, run_at_init=True))
-        """
-
         filter_array[...] = filter_array > ski_filter.threshold_otsu(
-            filter_array)
+            filter_array) + self._thresholdUnitAdjust
 
 
 class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
