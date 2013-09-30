@@ -929,6 +929,10 @@ class Analysis_Stage_Project(gtk.VBox):
         vbox_data = gtk.VBox(0, False)
         hbox.pack_start(vbox_labels, False, False, PADDING_SMALL)
         hbox.pack_start(vbox_data, True, True, PADDING_SMALL)
+        #File - version valid
+        self.version_valid = gtk.Label(
+            model['analysis-stage-project-file-invalid'])
+        vbox_data.pack_start(self.version_valid, True, True, PADDING_SMALL)
         #File - prefix
         label = gtk.Label(model['analysis-stage-project-file-prefix'])
         label.set_justify(gtk.JUSTIFY_LEFT)
@@ -1019,6 +1023,13 @@ class Analysis_Stage_Project(gtk.VBox):
                 gtk.ICON_SIZE_SMALL_TOOLBAR)
             self.output_warning.set_tooltip_text(
                 self._model['analysis-stage-project-output_folder-warning'])
+
+    def set_valid_log_file(self, isValid):
+
+        if isValid:
+            self.version_valid.hide()
+        else:
+            self.version_valid.show()
 
     def set_log_file(self):
 

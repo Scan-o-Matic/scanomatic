@@ -105,6 +105,7 @@ if you have a couple of images that you want to analyse as if they had been acqu
 
 'analysis-stage-project-file': 'Select Log File to Process',
 'analysis-stage-project-log_file_button-text': 'Browse...',
+'analysis-stage-project-file-invalid': 'No(t) valid log file loaded!',
 'analysis-stage-project-file-prefix': 'Prefix',
 'analysis-stage-project-file-desc': 'Description',
 'analysis-stage-project-file-images': 'Images',

@@ -36,6 +36,7 @@ import src.resource_os as resource_os
 import src.resource_project_log as resource_project_log
 import src.analysis_wrapper as a_wrapper
 import src.resource_fixture_image as resource_fixture_image
+import src.resource_config as resource_config
 import src.resource_image as resource_image
 import src.resource_tags_verification as resource_tags_verification
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
@@ -929,9 +930,22 @@ class Analysis_First_Pass(controller_generic.Controller):
         sm = self._specific_model
         local_name = tc.paths.experiment_local_fixturename
 
+        hasFixture = False
         if os.path.isfile(os.path.join(sm['output-directory'],
                                        local_name)):
 
+            f = resource_config.Config_File(
+                os.path.join(sm['output-directory'], local_name))
+
+            try:
+                hasFixture = (float(f.version) >=
+                              tc.config.version_oldest_allow_fixture)
+
+            except:
+
+                pass
+
+        if hasFixture:
             self._specific_model['use-local-fixture'] = widget.get_active()
             self._set_allow_run()
 
@@ -1867,45 +1881,62 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         if len(log_files) > 0:
 
-            sm = self._specific_model
-            view = self._view.get_stage()
-
-            sm['analysis-project-log_file'] = log_files[0]
-            sm['analysis-project-log_file_dir'] = \
-                os.sep.join(log_files[0].split(os.sep)[: -1])
-
-            sm['analysis-project-pinnings-active'] = 'file'
-
             meta_data, images = resource_project_log.get_log_file(
                 log_files[0])
 
-            if 'Pinning Matrices' in meta_data:
+            try:
+                validProject = (
+                    float(meta_data['Version']) >=
+                    self.get_top_controller().config.version_oldest_allow_fixture)
+            except:
+                validProject = False
 
-                pinning_matrices = meta_data['Pinning Matrices']
+            sm = self._specific_model
+            stage = self._view.get_stage()
 
-            else:
+            if validProject:
 
-                plates = resource_project_log.get_number_of_plates(
-                    meta_data=meta_data, images=images)
+                sm['analysis-project-log_file'] = log_files[0]
+                sm['analysis-project-log_file_dir'] = \
+                    os.sep.join(log_files[0].split(os.sep)[: -1])
 
-                if plates > 0:
+                sm['analysis-project-pinnings-active'] = 'file'
 
-                    pinning_matrices = [None] * plates
+                if 'Pinning Matrices' in meta_data:
+
+                    pinning_matrices = meta_data['Pinning Matrices']
 
                 else:
 
-                    pinning_matrices = None
+                    plates = resource_project_log.get_number_of_plates(
+                        meta_data=meta_data, images=images)
 
-            sm['analysis-project-pinnings-from-file'] = pinning_matrices
-            sm['analysis-project-pinnings'] = copy.copy(pinning_matrices)
+                    if plates > 0:
 
-            view.set_log_file()
+                        pinning_matrices = [None] * plates
 
-            view.set_log_file_data(
+                    else:
+
+                        pinning_matrices = None
+
+                sm['analysis-project-pinnings-from-file'] = pinning_matrices
+                sm['analysis-project-pinnings'] = copy.copy(pinning_matrices)
+
+            else:
+
+                sm['analysis-project-log_file'] = ""
+                sm['analysis-project-log_file_dir'] = ""
+                sm['analysis-project-pinnings'] = []
+
+            stage.set_valid_log_file(validProject)
+
+            stage.set_log_file()
+
+            stage.set_log_file_data(
                 meta_data['Prefix'], meta_data['Description'],
                 str(len(images)))
 
-            view.set_pinning(pinning_matrices)
+            stage.set_pinning(pinning_matrices)
 
             self.set_output_dupe()
 
