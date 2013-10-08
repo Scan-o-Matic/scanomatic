@@ -103,8 +103,8 @@ class Experiment(object):
 
         self.paths = resource_path.Paths()
         self._logger = logging.getLogger("Expermient")
-        self.fixtures = resource_fixture.Fixtures(self.paths)
         self.config = resource_app_config.Config(self.paths)
+        self.fixtures = resource_fixture.Fixtures(self.paths, self.config)
         self.scanners = resource_scanner.Scanners(self.paths, self.config)
 
         self._running = True
@@ -115,7 +115,7 @@ class Experiment(object):
         else:
             self._init_time = run_args.init_time
 
-        self._first_image_time
+        self._first_image_time = None
 
         sys.excepthook = self.__excepthook
 
