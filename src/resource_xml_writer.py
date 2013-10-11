@@ -18,7 +18,8 @@ from subprocess import Popen, PIPE
 import uuid
 import socket
 import re
-import logging
+
+import resource_logger as loging
 
 #
 # CLASSES

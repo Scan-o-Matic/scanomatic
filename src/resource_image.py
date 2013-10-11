@@ -19,7 +19,6 @@ from scipy.signal import fftconvolve
 #from scipy.optimize import fsolve
 import numpy as np
 import os
-import logging
 import matplotlib.pyplot as plt
 
 #
@@ -28,6 +27,7 @@ import matplotlib.pyplot as plt
 
 import resource_signal as r_signal
 import resource_grayscale
+import resource_logger as logging
 
 #
 # GLOBALS

@@ -21,12 +21,13 @@ import re
 import shutil
 from argparse import ArgumentParser
 from ConfigParser import ConfigParser
+"""
 import logging
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
     level=logging.INFO)
-
+"""
 #
 # INTERNAL-DEPENDENCIES
 #
@@ -35,16 +36,11 @@ import src.subprocs.communicator as communicator
 import src.resource_project_log as resource_project_log
 import src.resource_path as resource_path
 import src.resource_first_pass_analysis as resource_first_pass_analysis
+import src.resource_logger as logging
 
 #
 # CONSTANTS
 #
-
-LOGGING_LEVELS = {'critical': logging.CRITICAL,
-                  'error': logging.ERROR,
-                  'warning': logging.WARNING,
-                  'info': logging.INFO,
-                  'debug': logging.DEBUG}
 
 #
 # CLASS
@@ -56,23 +52,24 @@ class Make_Project(object):
     CONFIG_OTHER = "Run Info"
     CONFIG_META = "Meta Data"
 
-    def __init__(self, inputFile, comm_id, logLevel):
+    def __init__(self, inputFile, comm_id):
 
         self._time_init = time.time()
         self._running = None
         self._paused = False
-        self._logger = logging.getLogger('Scan-o-Matic Make Project')
-        self._logger.setLevel(logLevel)
 
         self._paths = resource_path.Paths()
-        self._set_from_file(inputFile)
 
         self._stdin = self._paths.log_rebuild_in.format(comm_id)
         self._stdout = self._paths.log_rebuild_out.format(comm_id)
         self._stderr = self._paths.log_rebuild_err.format(comm_id)
 
+        logging.setLoggingTarget(self._stderr)
+        self._logger = logging.getLogger('Scan-o-Matic Make Project')
+        self._set_from_file(inputFile)
+
         self._comm = communicator.Communicator(
-            self,  self._stdin, self._stdout, self._stderr)
+            self,  self._stdin, self._stdout, None)
 
         self._comm_thread = threading.Thread(target=self._comm.run)
 
@@ -314,8 +311,7 @@ if __name__ == "__main__":
                         help="Communications file index", metavar="INDEX")
 
     parser.add_argument("-l", "--logging", type=str, dest="logging",
-                        help="Logging level {0}".format(
-                            LOGGING_LEVELS.keys()),
+                        help="Logging level {0}".format(logging.getLevels()),
                         metavar="LOGGING LEVEL")
 
     args = parser.parse_args()
@@ -325,14 +321,11 @@ if __name__ == "__main__":
         parser.error("Could not find file {0}".format(args.inputfile))
 
     #LOGGING
-    if args.logging in LOGGING_LEVELS.keys():
+    if (args.logging is not None and
+            args.logging.lower() in logging.getLevels()):
 
-        args.logging = LOGGING_LEVELS[args.logging]
-
-    else:
-
-        args.logging = LOGGING_LEVELS['warning']
+        logging.setLogLevels(args.logging.lower())
 
     #Making the project
-    mp = Make_Project(args.inputfile, args.comm, args.logging)
+    mp = Make_Project(args.inputfile, args.comm)
     mp.run()

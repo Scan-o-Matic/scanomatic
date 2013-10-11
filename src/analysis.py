@@ -21,7 +21,6 @@ __status__ = "Development"
 
 import os
 import sys
-import logging
 import time
 import threading
 
@@ -36,12 +35,13 @@ import inspect
 # SCANNOMATIC LIBRARIES
 #
 
+import analysis_image
 import resource_project_log
 import resource_analysis_support
-import analysis_image
 import resource_xml_writer
 import resource_path
 import resource_app_config
+import resource_logger as logging
 import subprocs.communicator as communicator
 
 #

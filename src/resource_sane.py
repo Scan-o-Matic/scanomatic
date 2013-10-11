@@ -16,11 +16,12 @@ __status__ = "Development"
 #
 
 from subprocess import call, Popen
-import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
+
+import resource_logger as logging
 
 
 #

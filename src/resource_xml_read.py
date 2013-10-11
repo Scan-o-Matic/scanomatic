@@ -18,11 +18,12 @@ __status__ = "Development"
 
 import os, sys
 import types
-import logging
 import numpy as np
 import re
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
+
+import resource_logger as logging
 
 #
 # GLOBALS

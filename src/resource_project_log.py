@@ -19,8 +19,8 @@ __status__ = "Development"
 import uuid
 import os
 import copy
-import logging
 
+import resource_logger as logging
 #
 # EXCEPTIONS
 #

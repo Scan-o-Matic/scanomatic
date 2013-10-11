@@ -13,13 +13,13 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import logging
 import os
 
 #
 # INTERNAT DEPENDENCIES
 #
 
+import resource_logger as logging
 
 #
 # CLASSES

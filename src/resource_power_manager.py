@@ -20,12 +20,13 @@ from subprocess import Popen, PIPE
 #LAN-specific dependencies
 import urllib2
 from urllib import urlencode
-import logging
 #FURTHER LAN-specific dependenies further down
 
 #
 # INTERNAL DEPENDENCIES
 #
+
+import resource_logger as logging
 
 #
 # EXCEPTIONS

@@ -14,15 +14,15 @@ __status__ = "Development"
 #
 
 import os
-import logging
-
-_logger = logging.getLogger("1st Pass Analysis")
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 import src.resource_fixture_image as resource_fixture_image
+
+import resource_logger as logging
+_logger = logging.getLogger("1st Pass Analysis")
 
 #
 # EXCEPTIONS

@@ -18,7 +18,6 @@ import re
 import time
 import copy
 import uuid
-import logging
 import weakref
 
 #
@@ -26,6 +25,7 @@ import weakref
 #
 
 import src.resource_sane as resource_sane
+import src.resource_logger as logging
 
 #
 # EXCEPTION

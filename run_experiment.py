@@ -22,13 +22,6 @@ import time
 import uuid
 import shutil
 from argparse import ArgumentParser
-import logging
-
-"""
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-    level=logging.INFO)
-"""
 
 #
 # SCANNOMATIC LIBRARIES
@@ -41,6 +34,7 @@ import src.resource_path as resource_path
 import src.resource_app_config as resource_app_config
 import src.resource_project_log as resource_project_log
 import src.subprocs.communicator as communicator
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS
@@ -485,17 +479,10 @@ input file for the analysis script.""")
         help='Path to experiment file to continue on')
 
     parser.add_argument(
-        "--debug", dest="debug", default="warning",
+        "--debug", dest="logging", default="warning",
         type=str, help="Sets debugging level")
 
     args = parser.parse_args()
-
-    #DEBUGGING
-    LOGGING_LEVELS = {'critical': logging.CRITICAL,
-                      'error': logging.ERROR,
-                      'warning': logging.WARNING,
-                      'info': logging.INFO,
-                      'debug': logging.DEBUG}
 
     #PATHS
     paths = resource_path.Paths()
@@ -597,25 +584,27 @@ input file for the analysis script.""")
         args.layout_id = ""
 
     #LOGGING
-    if args.debug in LOGGING_LEVELS.keys():
+    if (args.logging is not None and
+            args.logging.lower() in logging.getLevels()):
 
-        logging_level = LOGGING_LEVELS[args.debug]
-
-    else:
-
-        logging_level = LOGGING_LEVELS['warning']
+        logging.setLogLevels(args.logging.lower())
 
     #CREATE DIRECTORY
     if args.file is None:
         os.mkdir(args.outdata_path)
 
+    logging.setLoggingTarget(
+        os.path.join(args.outdata_path, "experiment.run"),
+        redirectStdErr=True)
+
+    """
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S\n',
         filename=os.path.join(args.outdata_path, "experiment.run"),
         filemode='w',
         level=logging_level)
+    """
 
-    logging.info("TEST")
     e = Experiment(run_args=args)
     e.run()

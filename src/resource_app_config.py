@@ -13,8 +13,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import logging
-
 #
 # INTERNAL DEPENDENCIES
 #
@@ -22,6 +20,7 @@ import logging
 import src.resource_power_manager as resource_power_manager
 import src.resource_path as resource_path
 import src.resource_config as resource_config
+import resource_logger as logging
 
 #
 # CLASSES

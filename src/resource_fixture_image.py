@@ -20,7 +20,6 @@ import time
 import itertools
 import numpy as np
 from matplotlib.pyplot import imread
-import logging
 #import weakref
 
 #
@@ -31,6 +30,7 @@ import resource_image as resource_image
 import resource_path as resource_path
 import resource_config as conf
 import resource_app_config as resource_app_config
+import resource_logger as logging
 
 #
 # DECORATORS

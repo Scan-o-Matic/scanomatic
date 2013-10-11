@@ -20,7 +20,6 @@ __status__ = "Development"
 import sys
 import os
 import time
-import logging
 from PIL import Image
 import numpy as np
 
@@ -29,6 +28,7 @@ import numpy as np
 # SCANNOMATIC LIBRARIES
 #
 
+import resource_logger as logging
 import resource_app_config
 
 #
@@ -344,4 +344,4 @@ class Watch_Graph(object):
         self._save_npy()
         self._build_image()
         self._save_image()
-        self._save_histograms()
+        #self._save_histograms()

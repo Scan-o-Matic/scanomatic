@@ -19,12 +19,13 @@ __status__ = "Development"
 #
 
 import numpy as np
-import logging
 from scipy import signal, ndimage
 
 #
 # SCANNOMATIC LIBRARIES
 #
+
+import resource_logger as logging
 
 #
 # GLOBALS
