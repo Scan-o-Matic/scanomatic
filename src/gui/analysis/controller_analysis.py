@@ -19,7 +19,6 @@ import gobject
 import threading
 import numpy as np
 import copy
-import logging
 from subprocess import Popen, PIPE
 from ConfigParser import ConfigParser
 
@@ -39,6 +38,7 @@ import src.resource_fixture_image as resource_fixture_image
 import src.resource_config as resource_config
 import src.resource_image as resource_image
 import src.resource_tags_verification as resource_tags_verification
+import src.resource_logger as logging
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
 from run_make_project import Make_Project
 

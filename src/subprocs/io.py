@@ -16,12 +16,12 @@ __status__ = "Development"
 import inspect
 import time
 import psutil
-import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
 
+import src.resource_logger as logging
 #
 # EXCEPTIONS
 #

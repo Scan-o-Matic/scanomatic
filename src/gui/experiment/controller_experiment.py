@@ -20,7 +20,6 @@ import collections
 import threading
 import sh
 import copy
-import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -34,6 +33,7 @@ import src.gui.generic.view_generic as view_generic
 
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
 import src.resource_tags_verification as resource_tags_verification
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS

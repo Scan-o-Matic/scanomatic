@@ -15,7 +15,8 @@ __status__ = "Development"
 
 import time
 import inspect
-import logging
+
+import src.resource_logger as logging
 
 #
 # METHOD

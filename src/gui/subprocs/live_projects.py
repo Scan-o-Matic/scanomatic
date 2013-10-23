@@ -16,7 +16,8 @@ __status__ = "Development"
 import os
 import ConfigParser
 import inspect
-import logging
+
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS

@@ -15,11 +15,12 @@ __status__ = "Development"
 
 from collections import deque
 import psutil
-import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
+
+import src.resource_logger as logging
 
 #
 # CLASSES

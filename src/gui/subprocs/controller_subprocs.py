@@ -16,7 +16,6 @@ __status__ = "Development"
 import gobject
 import threading
 import inspect
-import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -36,6 +35,8 @@ import src.gui.subprocs.live_projects as live_projects
 
 import src.gui.subprocs.event.event_handler as event_handler
 from src.gui.subprocs.event.event import Event
+
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS

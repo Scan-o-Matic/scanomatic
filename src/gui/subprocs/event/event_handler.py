@@ -55,7 +55,6 @@ class EventHandler(object):
 
         It invokes all the communications and checks their status.
 
-        :param logger: A logging-object
         """
 
         self._events = set()

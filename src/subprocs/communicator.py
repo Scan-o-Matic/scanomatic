@@ -17,7 +17,6 @@ __status__ = "Development"
 import time
 import sys
 import threading
-import logging
 import weakref
 
 #
@@ -25,6 +24,7 @@ import weakref
 #
 
 from src.subprocs.io import Proc_IO, Unbuffered_IO
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS
@@ -140,9 +140,10 @@ class Communicator(object):
         self._io.send("Redirecting stdout to dev/null")
 
         self._io.send("Errors print to error file {0}".format(self._stderr))
-        stderr = open(self._stderr, 'a', 0)
-        sys.stderr = Unbuffered_IO(stderr)
-        sys.stdout = sys.stderr  # open(os.devnull, 'w')
+        if self._stderr is not None:
+            stderr = open(self._stderr, 'a', 0)
+            sys.stderr = Unbuffered_IO(stderr)
+            sys.stdout = sys.stderr  # open(os.devnull, 'w')
 
         self._orphan = True
 

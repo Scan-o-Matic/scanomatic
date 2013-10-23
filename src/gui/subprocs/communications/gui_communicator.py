@@ -19,13 +19,13 @@ import re
 from subprocess import Popen, PIPE
 import itertools
 import inspect
-import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 from src.subprocs.io import Proc_IO
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS

@@ -104,7 +104,8 @@ class Experiment(object):
         self._running = True
         self._paused = False
 
-        if run_args is None or run_args.init_time is None:
+        if (run_args is None or run_args.init_time is None or
+                run_args.init_time > time.time()):
             self._init_time = time.time()
         else:
             self._init_time = run_args.init_time
@@ -330,7 +331,7 @@ class Experiment(object):
         else:
             curTime = time.time() - self._first_image_time
 
-        self._logger.info("Image {0} started!".format(im_index))
+        self._logger.info("Image {0} started @{1}s!".format(im_index, curTime))
         im_path = self._im_filename_pattern.format(
             self._prefix,
             str(im_index).zfill(4),

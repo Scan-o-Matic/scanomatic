@@ -13,7 +13,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import logging
 import weakref
 
 #
@@ -21,6 +20,7 @@ import weakref
 #
 
 import view_generic
+import src.resource_logger as logging
 
 #
 # CLASSES

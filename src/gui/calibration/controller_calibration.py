@@ -14,7 +14,6 @@ __status__ = "Development"
 #
 
 import numpy as np
-import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -30,6 +29,7 @@ import src.resource_fixture_image as resource_fixture_image
 import src.resource_scanner as resource_scanner
 import src.resource_grayscale as resource_grayscale
 import src.resource_image as resource_image
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS

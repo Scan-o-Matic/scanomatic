@@ -19,7 +19,6 @@ import subprocess
 import tarfile
 import glob
 import sh
-import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -29,6 +28,7 @@ import model_config
 import view_config
 
 import src.gui.generic.controller_generic as controller_generic
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS

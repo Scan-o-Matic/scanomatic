@@ -16,7 +16,6 @@ __status__ = "Development"
 import gtk
 import sys
 import gobject
-import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -40,6 +39,7 @@ import src.resource_scanner as resource_scanner
 import src.resource_fixture as resource_fixture
 import src.resource_path as resource_path
 import src.resource_app_config as resource_app_config
+import src.resource_logger as logging
 
 #
 # EXCEPTIONS
@@ -78,6 +78,9 @@ class Controller(controller_generic.Controller):
         view = view_main.Main_Window(controller=self, model=model)
 
         super(Controller, self).__init__(None, view=view, model=model)
+        logging.setLoggingTarget(self.paths.log_main_out,
+                                 redirectStdOut=True,
+                                 redirectStdErr=True)
         self._logger = logging.getLogger("Main Controller")
 
         if debug_mode is False:

@@ -18,7 +18,6 @@ pygtk.require('2.0')
 import gtk
 import numpy as np
 import types
-import logging
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
@@ -28,6 +27,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
 #import src.resource_scanner as resource_scanner
 import src.resource_image as resource_image
+import src.resource_logger as logging
 
 #
 # STATIC GLOBALS

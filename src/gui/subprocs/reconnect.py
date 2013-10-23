@@ -15,7 +15,6 @@ __status__ = "Development"
 #
 
 import inspect
-import logging
 
 #
 # INTERNAL DEPENDENCIES
@@ -23,6 +22,7 @@ import logging
 
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
 from src.gui.subprocs.event.event import Event
+import src.resource_logger as logging
 
 #
 # METHODS
