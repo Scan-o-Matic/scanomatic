@@ -19,7 +19,7 @@ import uuid
 import socket
 import re
 
-import resource_logger as loging
+import resource_logger as logging
 
 #
 # CLASSES

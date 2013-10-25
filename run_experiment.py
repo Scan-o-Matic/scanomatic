@@ -266,6 +266,7 @@ class Experiment(object):
         if not self._initialized:
             raise Not_Initialized()
 
+        self._first_image_time = time.time()
         self._logger.info("Experiment is initialized...starting!")
 
         if self._scanned == 0:
@@ -325,22 +326,28 @@ class Experiment(object):
 
     def _scan_and_analyse(self, im_index):
 
-        if self._first_image_time is None:
-            self._first_image_time = time.time()
-            curTime = 0.0
-        else:
-            curTime = time.time() - self._first_image_time
+        self._logger.info("Image {0} started @{1}s!".format(
+            im_index, time.time() - self._first_image_time))
 
-        self._logger.info("Image {0} started @{1}s!".format(im_index, curTime))
+        im_path_tmp = self._im_filename_pattern.format(
+            self._prefix,
+            str(im_index).zfill(4),
+            "XXX")
+
+        #SCAN
+        self._logger.info("Requesting scan to file '{0}'".format(im_path_tmp))
+        scan_success = self._scanner.scan(
+            mode=self.SCAN_MODE, filename=im_path_tmp)
+
+        curTime = time.time() - self._first_image_time
+        self._logger.info("Image {0} gotten @{1}s!".format(im_index, curTime))
+
         im_path = self._im_filename_pattern.format(
             self._prefix,
             str(im_index).zfill(4),
             curTime)
 
-        #SCAN
-        self._logger.info("Requesting scan to file '{0}'".format(im_path))
-        scan_success = self._scanner.scan(
-            mode=self.SCAN_MODE, filename=im_path)
+        shutil.move(im_path_tmp, im_path)
 
         #FREE SCANNER IF LAST
         if not self._running or im_index >= self._max_scans:
