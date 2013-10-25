@@ -332,7 +332,7 @@ class Experiment(object):
         im_path_tmp = self._im_filename_pattern.format(
             self._prefix,
             str(im_index).zfill(4),
-            "XXX")
+            0.0)
 
         #SCAN
         self._logger.info("Requesting scan to file '{0}'".format(im_path_tmp))
