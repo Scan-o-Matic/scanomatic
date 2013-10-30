@@ -1,5 +1,207 @@
 import numpy as np
 import resource_xml_reader
+from scipy.interpolate import griddata
+
+DEFAULT_CONTROL_POSITION_KERNEL = np.array([[0, 0], [0, 1]], dtype=np.bool)
+
+
+def getControlPositionsArray(dataBridge,
+                             controlPositionKernel=None,
+                             experimentPositionsValue=np.nan):
+
+    """Support method that returns array in the shape corresponding
+    to the data in the DataBridge such that only the values reported
+    in the control positions are maintained (without affecting the contents
+    of the Databridge)."""
+
+    data = dataBridge.getAsArray()
+    nPlates = data.shape[0]
+    tmpCtrlPosPlateHolder = []
+
+    if controlPositionKernel is None:
+        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    for plateIndex in xrange(nPlates):
+
+        tmpPlateArray = data[plateIndex].copy()
+        tmpCtrlPosPlateHolder.append(tmpPlateArray)
+
+        controlKernel = controlPositionKernel[plateIndex]
+        kernelD1, kernelD2 = controlKernel.shape
+        experimentPos = np.array([experimentPositionsValue] *
+                                 data[plateIndex].shape[2])
+
+        for idx1 in xrange(tmpPlateArray.shape[0]):
+
+            for idx2 in xrange(tmpPlateArray.shape[1]):
+
+                if controlKernel[idx1 % kernelD1, idx2 % kernelD2]:
+
+                    tmpPlateArray[idx1, idx2] = data[plateIndex][idx1, idx2]
+
+                else:
+
+                    tmpPlateArray[idx1, idx2] = experimentPos
+
+    return np.array(tmpCtrlPosPlateHolder)
+
+
+def getControlPositionsCoordinates(dataObject, controlPositionKernel=None):
+    """Returns list of tuples that emulates the results of running np.where"""
+
+    platesCoordinates = []
+
+    if isinstance(dataObject, DataBridge):
+        dataObject = dataObject.getAsArray()
+
+    nPlates = dataObject.shape[0]
+
+    if controlPositionKernel is None:
+        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    for plateIndex in xrange(nPlates):
+
+        plateCoordinates = [[], []]
+        controlKernel = controlPositionKernel[plateIndex]
+        kernelD1, kernelD2 = controlKernel.shape
+
+        for idx1 in xrange(dataObject[plateIndex].shape[0]):
+
+            for idx2 in xrange(dataObject[plateIndex].shape[1]):
+
+                if controlKernel[idx1 % kernelD1, idx2 % kernelD2]:
+
+                    plateCoordinates[0].append(idx1)
+                    plateCoordinates[1].append(idx2)
+
+        platesCoordinates.append(map(np.array, plateCoordinates))
+
+    return platesCoordinates
+
+
+def getCenterTransformedControlPositions(controlPositionCoordinates,
+                                         dataObject):
+
+    """Remaps coordinates so they are relative to the plates' center"""
+
+    centerTransformed = []
+
+    if isinstance(dataObject, DataBridge):
+        dataObject = dataObject.getAsArray()
+
+    for plateIndex, plate in enumerate(controlPositionCoordinates):
+
+        center = dataObject[plateIndex].shape[:2] / 2.0
+        centerTransformed.append(
+            (plate[0] - center[0],  plate[1] - center[1]))
+
+    return centerTransformed
+
+
+def getControlPositionsAverage(controlPositionsDataArray,
+                               experimentPositionsValue=np.nan,
+                               averageMethod=IQRmean):
+    """Returns the average per measure of each measurementtype for
+    the control positions. Default is to return the mean of the
+    inter quartile range"""
+
+    plateControlAverages = []
+
+    for plate in controlPositionsDataArray:
+
+        measureVector = []
+        plateControlAverages.append(measureVector)
+
+        for measureIndex in xrange(plate.shape(2)):
+
+            measureVector.append(
+                averageMethod(plate[..., measureIndex][
+                    plate[..., measureIndex] != experimentPositionsValue]))
+
+    return np.array(plateControlAverages)
+
+
+def getNormalisationWithGridData(
+        controlPositionsDataArray,
+        controlPositionsCoordinates=None,
+        normalisationSequence=('cubic', 'linear', 'nearest'),
+        useAccumulated=False,
+        missingDataValue=np.nan,
+        controlPositionKernel=None):
+    """Constructs normalisation surface using iterative runs of
+    scipy.interpolate's gridddata based on sequence of supplied
+    method preferences.
+
+        controlPositionDataArray
+            An array with only control position values intact.
+            All other values should be missingDataValue or they won't be
+            calculated.
+
+        controlPositionsCoordinates (None)
+            Optional argument to supply already constructed
+            per plate control positions vector. If not supplied
+            it is constructed using controlPositionKernel
+
+        normalisationSequence ('cubic', 'linear', 'nearest')
+            The griddata method order to be invoked.
+
+        useAccumulated (False)
+            If later stage methods should use information obtained in
+            earlier stages or only work on original control positions.
+
+        missingDataValue (np.nan)
+            The value to be used to indicate that normalisation value
+            for a position is not known
+
+        controlPositionKernel (None)
+            Argument passed on when constructing the
+            controlPositionsCoordinates if it is not supplied.
+
+    """
+    normInterpolations = []
+    nPlates = controlPositionsDataArray.shape[0]
+
+    if controlPositionsCoordinates is None:
+        controlPositionsCoordinates = getControlPositionsCoordinates(
+            controlPositionsDataArray, controlPositionKernel)
+
+    for plateIndex in xrange(nPlates):
+
+        points = controlPositionsCoordinates[plateIndex]
+        plate = controlPositionsDataArray[plateIndex].copy()
+        normInterpolations
+        mgrid = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
+
+        for measureIndex in xrange(plate.shape[2]):
+
+            for method in normalisationSequence:
+
+                if useAccumulated:
+                    points = np.where(plate[..., measureIndex] !=
+                                      missingDataValue)
+
+                values = plate[..., measureIndex][points]
+
+                res = griddata(points, values, mgrid, method=method,
+                               fill_value=missingDataValue)
+
+                accPoints = np.where(
+                    plate[..., measureIndex] == missingDataValue)
+                plate[..., measureIndex][accPoints] = res[accPoints]
+
+                if not (plate[..., measureIndex] == missingDataValue).any():
+                    break
+
+    return np.array(normInterpolations)
+
+
+def IQRmean(dataVector):
+    """Returns the mean of the inter quartile range of an array of
+    any shape (treated as a 1D vector"""
+
+    dSorted = np.sort(dataVector.ravel())
+    cutOff = dSorted.size / 4
+    return dSorted[cutOff: -cutOff].mean()
 
 
 class DataBridge(object):
