@@ -1,8 +1,40 @@
+
+#
+#   DEPENDENCIES
+#
+
 import numpy as np
-import resource_xml_reader
 from scipy.interpolate import griddata
+import matplotlib.pyplot as plt
+
+#
+#   INTERNAL DEPENDENCIES
+#
+
+import resource_xml_read
+
+#
+#   STATIC GLOBALS
+#
 
 DEFAULT_CONTROL_POSITION_KERNEL = np.array([[0, 0], [0, 1]], dtype=np.bool)
+
+#
+#   METHODS: Math support functions
+#
+
+
+def IQRmean(dataVector):
+    """Returns the mean of the inter quartile range of an array of
+    any shape (treated as a 1D vector"""
+
+    dSorted = np.sort(dataVector.ravel())
+    cutOff = dSorted.size / 4
+    return dSorted[cutOff: -cutOff].mean()
+
+#
+#   METHODS: Normalisation methods
+#
 
 
 def getControlPositionsArray(dataBridge,
@@ -112,11 +144,27 @@ def getControlPositionsAverage(controlPositionsDataArray,
         measureVector = []
         plateControlAverages.append(measureVector)
 
-        for measureIndex in xrange(plate.shape(2)):
+        for measureIndex in xrange(plate.shape[2]):
 
-            measureVector.append(
-                averageMethod(plate[..., measureIndex][
-                    plate[..., measureIndex] != experimentPositionsValue]))
+            if experimentPositionsValue in (np.nan, np.inf):
+
+                if np.isnan(experimentPositionsValue):
+
+                    expPosTest = np.isnan
+
+                else:
+
+                    expPosTest = np.isinf
+
+                measureVector.append(
+                    averageMethod(plate[..., measureIndex][
+                        expPosTest(plate[..., measureIndex]) == False]))
+
+            else:
+
+                measureVector.append(
+                    averageMethod(plate[..., measureIndex][
+                        plate[..., measureIndex] != experimentPositionsValue]))
 
     return np.array(plateControlAverages)
 
@@ -194,14 +242,90 @@ def getNormalisationWithGridData(
 
     return np.array(normInterpolations)
 
+#
+#   METHODS: TimeSeries Helpers
+#
 
-def IQRmean(dataVector):
-    """Returns the mean of the inter quartile range of an array of
-    any shape (treated as a 1D vector"""
 
-    dSorted = np.sort(dataVector.ravel())
-    cutOff = dSorted.size / 4
-    return dSorted[cutOff: -cutOff].mean()
+def iterativeDataBridge(xmlReaderObject):
+
+    for timeIndex in range(len(xmlReaderObject.get_scan_times())):
+        yield DataBridge(xmlReaderObject, time=timeIndex)
+
+#
+#   METHODS: Plotting methods
+#
+
+
+def _plotLayout(plots):
+
+    pC = plots / int(np.sqrt(plots))
+    if plots % pC:
+        pC += 1
+    pR = plots / pC
+    if pC * pR < plots:
+        pR += 1
+
+    return pC, pR
+
+
+def plotControlCurves(xmlReaderObject, averageMethod=IQRmean, phenotype=0,
+                      title="Plate {0}"):
+
+    Avgs = []
+    Ctrls = []
+    times = xmlReaderObject.get_scan_times()
+
+    for dB in iterativeDataBridge(xmlReaderObject):
+
+        ctrlArray = getControlPositionsArray(dB)
+        ctrlCoord = getControlPositionsCoordinates(dB)
+
+        Avgs.append(getControlPositionsAverage(ctrlArray))
+        Ctrls.append([cAp[ctrlCoord[i]] for i, cAp in enumerate(ctrlArray)])
+
+    A = [np.array(p).T for p in zip(*Avgs)]
+    C = [np.array(p).T for p in zip(*Ctrls)]
+    fig = plt.figure()
+
+    pC, pR = _plotLayout(len(C))
+
+    for plateIndex in range(len(C)):
+
+        ax = fig.add_subplot(pR, pC, plateIndex + 1)
+        ax.set_title(title.format(plateIndex + 1))
+
+        for c in C[plateIndex][phenotype]:
+            ax.semilogy(times, c, '-g', basey=2)
+
+        ax.semilogy(times, A[plateIndex][phenotype], '-r', basey=2)
+    return fig
+
+
+def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
+                 measure=1, title="Plate {0}"):
+
+    if isinstance(dataObject, DataBridge):
+
+        dataObject = dataObject.getAsArray()
+
+    pC, pR = _plotLayout(len(dataObject))
+    fig = plt.figure()
+
+    for plateIndex in range(len(dataObject)):
+
+        ax = fig.add_subplot(pR, pC, plateIndex + 1)
+        ax.set_title(title.format(plateIndex + 1))
+        ax.imshow(dataObject[plateIndex][..., measure],
+                  interpolation="nearest", *showArgs, **showKwargs)
+        ax.axis("off")
+
+    fig.tight_layout()
+    return fig
+
+#
+#   CLASSES
+#
 
 
 class DataBridge(object):
@@ -263,7 +387,7 @@ class DataBridge(object):
             self._arrayRepresentation = np.array(plates)
             self.updateSource = self._updateToFeatureDict
 
-        elif isinstance(self._source, resource_xml_reader.XML_Reader):
+        elif isinstance(self._source, resource_xml_read.XML_Reader):
 
             if "time" not in kwargs:
                 raise Exception(
@@ -274,7 +398,7 @@ class DataBridge(object):
 
                 self._timeIndex = kwargs["time"]
                 tmpD = []
-                for p in self._source.get_data():
+                for p in self._source.get_data().values():
                     tmpD.append(p[..., self._timeIndex, :].copy())
                 self._arrayRepresentation = np.array(tmpD)
 
@@ -313,6 +437,7 @@ class DataBridge(object):
             p[...] = self._arrayRepresentation[i]
 
     def _updateToXMLreader(self):
+        """Updates the source inplace"""
 
         for plateIndex in self._arrayRepresentation.shape[0]:
 

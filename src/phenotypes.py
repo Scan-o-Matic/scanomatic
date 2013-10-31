@@ -139,7 +139,7 @@ def get_default_surface_matrix(data):
 
     surface_matrix = {}
     for p in xrange(len(data)):
-        surface_matrix[p] = [[0, 1], [0, 0]]
+        surface_matrix[p] = [[0, 0], [0, 1]]
 
     return surface_matrix
 
