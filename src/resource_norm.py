@@ -5,6 +5,7 @@
 
 import numpy as np
 from scipy.interpolate import griddata
+from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 
 #
@@ -169,13 +170,21 @@ def getControlPositionsAverage(controlPositionsDataArray,
     return np.array(plateControlAverages)
 
 
+def setNormalisationGaussSmoothing(dataArray, measure=1, sigma=3.5):
+
+    for plateIndex in range(dataArray.shape[0]):
+
+        dataArray[plateIndex][..., measure] = gaussian_filter(
+            dataArray[plateIndex][..., measure], sigma=sigma, mode='nearest')
+
+
 def getNormalisationWithGridData(
         controlPositionsDataArray,
         controlPositionsCoordinates=None,
         normalisationSequence=('cubic', 'linear', 'nearest'),
         useAccumulated=False,
         missingDataValue=np.nan,
-        controlPositionKernel=None):
+        controlPositionKernel=None, smoothing=None):
     """Constructs normalisation surface using iterative runs of
     scipy.interpolate's gridddata based on sequence of supplied
     method preferences.
@@ -213,40 +222,82 @@ def getNormalisationWithGridData(
         controlPositionsCoordinates = getControlPositionsCoordinates(
             controlPositionsDataArray, controlPositionKernel)
 
+    if np.isnan(missingDataValue):
+
+        missingTest = np.isnan
+
+    else:
+
+        missingTest = np.isinf
+
     for plateIndex in xrange(nPlates):
 
         points = controlPositionsCoordinates[plateIndex]
         plate = controlPositionsDataArray[plateIndex].copy()
-        normInterpolations
-        mgrid = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
+        normInterpolations.append(plate)
+        grid_x, grid_y = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
 
         for measureIndex in xrange(plate.shape[2]):
 
             for method in normalisationSequence:
 
                 if useAccumulated:
-                    points = np.where(plate[..., measureIndex] !=
-                                      missingDataValue)
+                    points = np.where(missingTest(plate[..., measureIndex]) ==
+                                      False)
 
                 values = plate[..., measureIndex][points]
 
-                res = griddata(points, values, mgrid, method=method,
-                               fill_value=missingDataValue)
+                finitePoints = np.isfinite(values)
+                if (finitePoints == False).any():
+
+                    points = tuple(p[finitePoints] for p in points)
+                    values = values[finitePoints]
+
+                res = griddata(
+                    tuple(points),
+                    #np.array(tuple(p.ravel() for p in points)).T.shape,
+                    values,
+                    (grid_x, grid_y),
+                    method=method,
+                    fill_value=missingDataValue)
 
                 accPoints = np.where(
-                    plate[..., measureIndex] == missingDataValue)
+                    missingTest(plate[..., measureIndex]))
+
+                """
+                print method
+                print "Before:", missingTest(plate[..., measureIndex]).sum()
+                print "Change size:", (missingTest(res[accPoints]) == False).sum()
+                print "After:", missingTest(res).sum()
+                """
+
                 plate[..., measureIndex][accPoints] = res[accPoints]
 
-                if not (plate[..., measureIndex] == missingDataValue).any():
+                """
+                print "True After:", missingTest(plate[..., measureIndex]).sum()
+                print "--"
+                """
+
+                if not missingTest(plate[..., measureIndex]).any():
                     break
 
-    return np.array(normInterpolations)
+            #print "***"
+
+    normInterpolations = np.array(normInterpolations)
+
+    if smoothing is not None:
+        for measureIndex in xrange(plate.shape[2]):
+            setNormalisationGaussSmoothing(normInterpolations,
+                                           sigma=smoothing,
+                                           measure=measureIndex)
+
+    return normInterpolations
 
 
-def applyNormalisation(normalisationSurface, dataObject, inplace=True)
+def applyNormalisation(normalisationSurface, dataObject, inplace=True):
 
     #TODO: Fix structure!
-    if inplace is False and isinstance(dataObject, DataBridge) = False:
+    if inplace is False and isinstance(dataObject, DataBridge) is False:
 
         reciever = dataObject
 
@@ -287,6 +338,32 @@ def _plotLayout(plots):
     return pC, pR
 
 
+def getPlotValueSpans(measure, *dataObjects, **kwargs):
+
+    #TODO: Broken
+    if 'vmin' not in kwargs:
+        kwargs['vmin'] = None
+
+    if 'vmax' not in kwargs:
+        kwargs['vmax'] = None
+
+    for dataObject in dataObjects:
+        if isinstance(dataObjects, DataBridge):
+            dataObject = dataObject.getAsArray()
+        for plate in dataObject:
+            if plate is not None:
+                if (kwargs['vmin'] is None or
+                        plate[..., measure].min() < kwargs['vmin']):
+
+                    kwargs['vmin'] = plate[..., measure].min()
+
+                if (kwargs['vmax'] is None or
+                        plate[..., measure].max() > kwargs['vmax']):
+
+                    kwargs['vmax'] = plate[..., measure].max()
+    return kwargs
+
+
 def plotControlCurves(xmlReaderObject, averageMethod=IQRmean, phenotype=0,
                       title="Plate {0}"):
 
@@ -320,6 +397,14 @@ def plotControlCurves(xmlReaderObject, averageMethod=IQRmean, phenotype=0,
     return fig
 
 
+def plotControlPhenotypesStats(dataObject):
+
+    #TODO: Link with various positionmethods
+    #TODO: Make plots
+
+    pass
+
+
 def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
                  measure=1, title="Plate {0}", equalVscale=True):
 
@@ -333,11 +418,17 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
     vMin = None
     vMax = None
 
-    if equalVscale:
+    if 'vmax' in showKwargs or 'vmin' in showKwargs:
+
+        pass
+
+    elif equalVscale:
+
         for plate in dataObject:
-            if vMin is None or plate[..., measure].min() < vMin:
+            finPlate = plate[..., measure][np.isfinite(plate[..., measure])]
+            if vMin is None or finPlate.min() < vMin:
                 vMin = plate[..., measure].min()
-            if vMax is None or plate[..., measure].max() > vMax:
+            if vMax is None or finPlate.max() > vMax:
                 vMax = plate[..., measure].max()
 
     for plateIndex in range(len(dataObject)):
@@ -351,6 +442,9 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
         else:
             ax.imshow(dataObject[plateIndex][..., measure],
                       interpolation="nearest", *showArgs, **showKwargs)
+
+        #TODO: Include value scale
+
         ax.axis("off")
 
     fig.tight_layout()
