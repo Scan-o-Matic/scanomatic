@@ -242,6 +242,24 @@ def getNormalisationWithGridData(
 
     return np.array(normInterpolations)
 
+
+def applyNormalisation(normalisationSurface, dataObject, inplace=True)
+
+    #TODO: Fix structure!
+    if inplace is False and isinstance(dataObject, DataBridge) = False:
+
+        reciever = dataObject
+
+    elif isinstance(dataObject, DataBridge):
+
+        A = DataBridge.getAsArray()
+        reciever = np.nan(A.shape, dtype=A.dtype)
+
+    else:
+
+        reciever = np.nan(dataObject.shape, dtype=dataObject.dtype)
+
+
 #
 #   METHODS: TimeSeries Helpers
 #
@@ -303,7 +321,7 @@ def plotControlCurves(xmlReaderObject, averageMethod=IQRmean, phenotype=0,
 
 
 def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
-                 measure=1, title="Plate {0}"):
+                 measure=1, title="Plate {0}", equalVscale=True):
 
     if isinstance(dataObject, DataBridge):
 
@@ -312,12 +330,27 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
     pC, pR = _plotLayout(len(dataObject))
     fig = plt.figure()
 
+    vMin = None
+    vMax = None
+
+    if equalVscale:
+        for plate in dataObject:
+            if vMin is None or plate[..., measure].min() < vMin:
+                vMin = plate[..., measure].min()
+            if vMax is None or plate[..., measure].max() > vMax:
+                vMax = plate[..., measure].max()
+
     for plateIndex in range(len(dataObject)):
 
         ax = fig.add_subplot(pR, pC, plateIndex + 1)
         ax.set_title(title.format(plateIndex + 1))
-        ax.imshow(dataObject[plateIndex][..., measure],
-                  interpolation="nearest", *showArgs, **showKwargs)
+        if None not in (vMax, vMin):
+            ax.imshow(dataObject[plateIndex][..., measure],
+                      interpolation="nearest", vmin=vMin, vmax=vMax,
+                      *showArgs, **showKwargs)
+        else:
+            ax.imshow(dataObject[plateIndex][..., measure],
+                      interpolation="nearest", *showArgs, **showKwargs)
         ax.axis("off")
 
     fig.tight_layout()
