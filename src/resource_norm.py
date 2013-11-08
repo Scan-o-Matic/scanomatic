@@ -6,6 +6,7 @@
 import numpy as np
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
+from scipy.stats import probplot, linregress, pearsonr
 import matplotlib.pyplot as plt
 
 #
@@ -112,6 +113,69 @@ def getControlPositionsCoordinates(dataObject, controlPositionKernel=None):
     return platesCoordinates
 
 
+def getExperimentPosistionsCoordinates(dataObject, controlPositionKernel=None):
+
+    platesCoordinates = []
+
+    if isinstance(dataObject, DataBridge):
+        dataObject = dataObject.getAsArray()
+
+    nPlates = dataObject.shape[0]
+
+    if controlPositionKernel is None:
+        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    experimentPositionKernel = []
+    for k in controlPositionKernel:
+        experimentPositionKernel.append(k == False)
+
+    for plateIndex in xrange(nPlates):
+
+        plateCoordinates = [[], []]
+        kernel = experimentPositionKernel[plateIndex]
+        kernelD1, kernelD2 = kernel.shape
+
+        for idx1 in xrange(dataObject[plateIndex].shape[0]):
+
+            for idx2 in xrange(dataObject[plateIndex].shape[1]):
+
+                if kernel[idx1 % kernelD1, idx2 % kernelD2]:
+
+                    plateCoordinates[0].append(idx1)
+                    plateCoordinates[1].append(idx2)
+
+        platesCoordinates.append(map(np.array, plateCoordinates))
+
+    return platesCoordinates
+
+
+def getCoordinateFiltered(dataObject, coordinates, measure=1,
+                          requireFinite=True,
+                          requireCorrelated=False):
+
+    if isinstance(dataObject, DataBridge):
+        dataObject.getAsArray()
+
+    filtered = []
+    for i in range(len(dataObject)):
+
+        p = dataObject[i][..., measure]
+        filteredP = p[coordinates[i]]
+
+        if requireFinite and not requireCorrelated:
+            filteredP = filteredP[np.isfinite(filteredP)]
+
+        filtered.append(filteredP)
+
+    filtered = np.array(filtered)
+
+    if requireCorrelated:
+
+        filtered = filtered[:, np.isfinite(filtered).all(axis=0)]
+
+    return filtered
+
+
 def getCenterTransformedControlPositions(controlPositionCoordinates,
                                          dataObject):
 
@@ -168,14 +232,6 @@ def getControlPositionsAverage(controlPositionsDataArray,
                         plate[..., measureIndex] != experimentPositionsValue]))
 
     return np.array(plateControlAverages)
-
-
-def setNormalisationGaussSmoothing(dataArray, measure=1, sigma=3.5):
-
-    for plateIndex in range(dataArray.shape[0]):
-
-        dataArray[plateIndex][..., measure] = gaussian_filter(
-            dataArray[plateIndex][..., measure], sigma=sigma, mode='nearest')
 
 
 def getNormalisationWithGridData(
@@ -287,30 +343,62 @@ def getNormalisationWithGridData(
 
     if smoothing is not None:
         for measureIndex in xrange(plate.shape[2]):
-            setNormalisationGaussSmoothing(normInterpolations,
-                                           sigma=smoothing,
-                                           measure=measureIndex)
+            applyNormalisationGaussSmoothing(
+                normInterpolations,
+                sigma=smoothing,
+                measure=measureIndex)
 
     return normInterpolations
 
 
-def applyNormalisation(normalisationSurface, dataObject, inplace=True):
+def applyNormalisationGaussSmoothing(dataArray, measure=1, sigma=3.5):
 
-    #TODO: Fix structure!
-    if inplace is False and isinstance(dataObject, DataBridge) is False:
+    for plateIndex in range(dataArray.shape[0]):
 
-        reciever = dataObject
-
-    elif isinstance(dataObject, DataBridge):
-
-        A = DataBridge.getAsArray()
-        reciever = np.nan(A.shape, dtype=A.dtype)
-
-    else:
-
-        reciever = np.nan(dataObject.shape, dtype=dataObject.dtype)
+        dataArray[plateIndex][..., measure] = gaussian_filter(
+            dataArray[plateIndex][..., measure], sigma=sigma, mode='nearest')
 
 
+def applySigmaFilter(dataArray, nSigma=3):
+
+    for plateIndex in range(dataArray.shape[0]):
+
+        for measure in range(dataArray[plateIndex].shape[-1]):
+
+            values = dataArray[plateIndex][..., measure]
+            cleanValues = values[np.isfinite(values)]
+            vBar = cleanValues.mean()
+            vStd = cleanValues.std()
+            values[np.logical_or(values < vBar - nSigma * vStd,
+                                 values > vBar + nSigma * vStd)] = np.nan
+
+
+def applyNormalisation(dataBridge, normalisationSurface, updateBridge=True,
+                       log=True):
+
+    normalData = []
+    bridgeArray = dataBridge.getAsArray()
+    for plateIndex in range(normalisationSurface.shape[0]):
+
+        if (bridgeArray[plateIndex] is None or
+                normalisationSurface[plateIndex] is None):
+            normalData.append(None)
+        elif  log:
+            normalData.append(
+                np.log2(bridgeArray[plateIndex]) -
+                np.log2(normalisationSurface[plateIndex]))
+        else:
+            normalData.append(
+                bridgeArray[plateIndex] -
+                normalisationSurface[plateIndex])
+
+    normalData = np.array(normalData)
+
+    if updateBridge:
+        dataBridge.setArrayRepresentation(normalData)
+        dataBridge.updateBridge()
+
+    return normalData
 #
 #   METHODS: TimeSeries Helpers
 #
@@ -397,12 +485,48 @@ def plotControlCurves(xmlReaderObject, averageMethod=IQRmean, phenotype=0,
     return fig
 
 
-def plotControlPhenotypesStats(dataObject):
+def plotControlPhenotypesStats(dataObject, measure=1,
+                               controlPositionsCoordinates=None,
+                               controlPositionKernel=None, log=False):
 
-    #TODO: Link with various positionmethods
-    #TODO: Make plots
+    if isinstance(dataObject, DataBridge):
+        dataObject = dataObject.getAsArray()
 
-    pass
+    if controlPositionsCoordinates is None:
+        controlPositionsCoordinates = getControlPositionsCoordinates(
+            dataObject, controlPositionKernel)
+
+    data = []
+    for plateIndex in range(len(dataObject)):
+        plate = dataObject[plateIndex][..., measure][
+            controlPositionsCoordinates[plateIndex]]
+        if log:
+            data.append(np.log2(plate[np.isfinite(plate)]))
+        else:
+            data.append(plate[np.isfinite(plate)])
+
+    pC, pR = _plotLayout(len(dataObject) + 1)
+
+    f = plt.figure()
+    ax = f.add_subplot(pC, pR, 1)
+    ax.boxplot(data)
+    ax.set_title("Control Position Phenotype {0}".format(measure))
+    ax.set_xticklabels(
+        ["Plate {0}".format(i + 1) for i in range(len(dataObject))])
+
+    for plateIndex in range(len(dataObject)):
+
+        ax = f.add_subplot(pC, pR, 2 + plateIndex)
+        probplot(data[plateIndex], plot=plt)
+        ax.set_title("Plate {0} {1}".format(plateIndex + 1,
+                                            ax.title.get_text()))
+
+        ax.text(0.05, 0.9, "N = {0}".format(data[plateIndex].size),
+                transform=ax.transAxes)
+
+    f.tight_layout()
+
+    return f
 
 
 def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
@@ -450,6 +574,79 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
     fig.tight_layout()
     return fig
 
+
+def plotPairWiseCorrelation(dataPairs, alpha=0.3, dataPadding=0.1):
+
+    plates = dataPairs.shape[0]
+    f = plt.figure()
+    pColor = (0, 0, 1, alpha)
+
+    for plateA in range(plates):
+
+        for plateB in range(plates):
+
+            if plateA < plateB:
+
+                ax = f.add_subplot(plates, plates,
+                                   plateA * plates + plateB + 1)
+
+                X = dataPairs[plateA]
+                Y = dataPairs[plateB]
+                ax.plot(X, Y, ',', color=pColor)
+                slope, intercept, r_value, p_value, std_err = linregress(X, Y)
+                Xmin = X.min() - dataPadding * X.std()
+                Xmax = X.max() + dataPadding * X.std()
+                ax.plot([Xmin, Xmax], [Xmin * slope + intercept,
+                                       Xmax * slope + intercept], '-r')
+
+                ax.text(
+                    0.05, 0.9,
+                    "r^2 {0:.2f}, p {1:.2f}, std_err {2:.2f}".format(
+                        r_value ** 2, p_value, std_err),
+                    transform=ax.transAxes,
+                    fontsize=8)
+
+                ax.plot([Xmin, Xmax], [Xmin, Xmax], '-g')
+
+                ax.text(0.9, 0.05,
+                        "Pearson coeff {0:.2f}, p {1:.2f}".format(
+                            *pearsonr(X, Y)),
+                        fontsize=8,
+                        horizontalalignment='right',
+                        transform=ax.transAxes)
+
+    f.tight_layout()
+
+    step = 1.0 / plates
+    #step -= step / 2.0
+
+    for i in range(1, plates + 1):
+
+        f.text(step * i - step / 2, 0.05,
+               "Plate {0}".format(i),
+               horizontalalignment='center',
+               verticalalignment='center',
+               rotation='horizontal',
+               fontsize=16,
+               transform=f.transFigure)
+
+        f.text(0.05, step * i - step / 2,
+               "Plate {0}".format(plates + 1 - i),
+               horizontalalignment='center',
+               verticalalignment='center',
+               rotation='vertical',
+               fontsize=16,
+               transform=f.transFigure)
+
+    props = dict(boxstyle='round', facecolor='white', alpha=0.5)
+
+    f.text(0.5, 0.5 * step,
+           "Green line is 1:1. Red regression. Upper text regression info."
+           " Lower text correlation info.", bbox=props, fontsize=12,
+           horizontalalignment='center',
+           transform=f.transFigure)
+
+    return f
 #
 #   CLASSES
 #
@@ -595,3 +792,42 @@ class DataBridge(object):
             raise Exception(
                 "New representation must match current shape: {0}".format(
                     self._arrayRepresentation.shape))
+
+
+class SubSample(object):
+
+    def __init__(self, dataObject,
+                 controlPositionKernel=None):
+
+        self._sourceObject = dataObject
+
+        if isinstance(dataObject, DataBridge):
+            self._sourceIsBridge = True
+            self._sourceArray = dataObject.getAsArray()
+        else:
+            self._sourceIsBridge = False
+            self._sourceArray = dataObject
+
+        self._kernel = controlPositionKernel
+        self._length = self._sourceArray.shape[0]
+
+    def __getitem__(self, key):
+
+        if isinstance(key, int) or isinstance(key[0], int):
+
+            pass
+
+        #TODO: Use kernel to get mappings of positions, maybe lookup table
+
+    def __iter__(self):
+
+        for i in range(self._length):
+            yield self.__getitem__(i)
+
+    def __len__(self):
+
+        return self._length
+
+    @property
+    def shape(self):
+        return self._sourceArray.shape
