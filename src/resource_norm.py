@@ -399,6 +399,30 @@ def applyNormalisation(dataBridge, normalisationSurface, updateBridge=True,
         dataBridge.updateBridge()
 
     return normalData
+
+#
+#   METHODS: Benchmarking
+#
+
+
+def getWithinBetweenCorrelation(dataObject, controlPositionKernel=None):
+
+    if controlPositionKernel is None:
+        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * len(
+            dataObject)
+
+    kernelKernel = np.array([[1, 2, 1], [2, 0, 2], [1, 2, 1]], dtype=np.bool)
+
+    for plateIndex, plate in enumerate(dataObject):
+
+        kernel = controlPositionKernel[plateIndex]
+        kernelExtended = np.c_[(kernel == False).astype(np.int) * 1,
+                               (kernel == False).astype(np.int) * 2,
+                               (kernel == False).astype(np.int) * 3]
+        kernelExtended = np.r_[kernelExtended,
+                               kernelExtended * 4,
+                               kernelExtended * 13]
+
 #
 #   METHODS: TimeSeries Helpers
 #
@@ -682,6 +706,15 @@ class DataBridge(object):
         self.updateSource = None
 
         self._createArrayRepresentation(**kwargs)
+
+    def __len__(self):
+
+        return len(self._arrayRepresentation)
+
+    def __iter__(self):
+
+        for plate in self._arrayRepresentation:
+            yield plate
 
     def _createArrayRepresentation(self, **kwargs):
 
