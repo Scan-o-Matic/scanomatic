@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 #
 
 import resource_xml_read
+import resource_color_palette
 
 #
 #   STATIC GLOBALS
@@ -405,15 +406,19 @@ def applyNormalisation(dataBridge, normalisationSurface, updateBridge=True,
 #
 
 
-def getWithinBetweenCorrelation(dataObject, controlPositionKernel=None):
+def getWithinBetweenCorrelation(dataObject, controlPositionKernel=None,
+                                measuere=1):
 
     if controlPositionKernel is None:
         controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * len(
             dataObject)
 
     kernelKernel = np.array([[1, 2, 1], [2, 0, 2], [1, 2, 1]], dtype=np.bool)
+    benchmarkValues = []
 
     for plateIndex, plate in enumerate(dataObject):
+
+        benchmarkPlateValues = [[], [], []]
 
         kernel = controlPositionKernel[plateIndex]
         kernelExtended = np.c_[(kernel == False).astype(np.int) * 1,
@@ -423,6 +428,100 @@ def getWithinBetweenCorrelation(dataObject, controlPositionKernel=None):
                                kernelExtended * 4,
                                kernelExtended * 13]
 
+        wLookup = {}
+        hD1, hD2 = (int(v / 2.0 - 0.5) for v in kernelKernel.shape)
+
+        for kD1 in range(kernel.shape[0], 2 * kernel.shape[0]):
+
+            for kD2 in range(kernel.shape[1], 2 * kernel.shape[1]):
+
+                localS = kernelExtended[kD1 - hD1: kD1 + hD1 + 1,
+                                        kD2 - hD2: kD2 + hD2 + 1]
+
+                whereSame = np.where(np.logical_and(
+                    localS == localS[kernelKernel == 0],
+                    kernelKernel != 0,
+                    localS != 0))
+                weightSame = kernelKernel[whereSame]
+                whereOther = np.where(np.logical_and(
+                    localS != localS[kernelKernel == 0],
+                    localS != 0))
+                weightOther = kernelKernel[whereOther]
+                wLookup[(kD1 - kernel.shape[0], kD2 - kernel.shape[1])] = (
+                    whereSame, weightSame, whereOther, weightOther)
+
+        kD1, kD2 = kernel.shape[:2]
+
+        for pD1 in range(plate.shape[0]):
+
+            for pD2 in range(plate.shape[1]):
+
+                whereSame, weightSame, whereOther, weightOther = wLookup[
+                    (pD1 % kD1, pD2 % kD2)]
+
+                lSlice = np.ones(kernelKernel.shape) * np.nan
+
+                lSD1 = pD1 - hD1
+                uSD1 = pD1 + hD1 + 1
+                if lSD1 < 0:
+                    lTD1 = -lSD1
+                    lSD1 = 0
+                else:
+                    lTD1 = 0
+                if uSD1 > plate.shape[0]:
+                    uTD1 = kernelKernel.shape[0] + (plate.shape[0] - uSD1)
+                    uSD1 = plate.shape[0]
+                else:
+                    uTD1 = kernelKernel.shape[0]
+
+                lSD2 = pD2 - hD2
+                uSD2 = pD2 + hD2 + 1
+                if lSD2 < 0:
+                    lTD2 = -lSD2
+                    lSD2 = 0
+                else:
+                    lTD2 = 0
+                if uSD2 > plate.shape[1]:
+                    uTD2 = kernelKernel.shape[1] + (plate.shape[1] - uSD2)
+                    uSD2 = plate.shape[1]
+                else:
+                    uTD2 = kernelKernel.shape[1]
+
+                """
+                print pD1, pD2
+                print lTD1, uTD1, lTD2, uTD2
+                print lSD1, uSD1, lSD2, uSD2
+                """
+
+                lSlice[lTD1:uTD1, lTD2:uTD2] = plate[lSD1:uSD1, lSD2:uSD2,
+                                                     measuere]
+
+                sameGroup = lSlice[whereSame]
+                sameGroupFitite = np.isfinite(sameGroup)
+                if sameGroupFitite.size > 0:
+                    sameVal = ((sameGroup[sameGroupFitite] *
+                                weightSame[sameGroupFitite]).sum() /
+                               weightSame[sameGroupFitite].sum())
+                else:
+                    sameVal = np.nan
+
+                otherGroup = lSlice[whereOther]
+                otherGroupFitite = np.isfinite(otherGroup)
+                if otherGroupFitite.size > 0:
+                    otherVal = ((otherGroup[otherGroupFitite] *
+                                 weightOther[otherGroupFitite]).sum() /
+                                weightOther[otherGroupFitite].sum())
+                else:
+                    otherVal = np.nan
+
+                benchmarkPlateValues[0].append(plate[pD1, pD2, measuere])
+                benchmarkPlateValues[1].append(sameVal)
+                benchmarkPlateValues[2].append(otherVal)
+
+        #benchmarkValues.append(benchmarkPlateValues)
+        benchmarkValues.append(np.array(benchmarkPlateValues, dtype=np.float))
+
+    return benchmarkValues
 #
 #   METHODS: TimeSeries Helpers
 #
@@ -556,10 +655,11 @@ def plotControlPhenotypesStats(dataObject, measure=1,
 def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
                  measure=1, title="Plate {0}", equalVscale=True):
 
+    """
     if isinstance(dataObject, DataBridge):
 
         dataObject = dataObject.getAsArray()
-
+    """
     pC, pR = _plotLayout(len(dataObject))
     fig = plt.figure()
 
@@ -575,9 +675,9 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
         for plate in dataObject:
             finPlate = plate[..., measure][np.isfinite(plate[..., measure])]
             if vMin is None or finPlate.min() < vMin:
-                vMin = plate[..., measure].min()
+                vMin = finPlate.min()
             if vMax is None or finPlate.max() > vMax:
-                vMax = plate[..., measure].max()
+                vMax = finPlate.max()
 
     for plateIndex in range(len(dataObject)):
 
@@ -599,6 +699,197 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
     return fig
 
 
+def _correlationAxPlot(ax, X, Y, plotMethod, equalAxis=True,
+                       pearsonText=True, linearRegText=True,
+                       linearReg=True, oneToOneLine=True,
+                       linearRegCorrValue=False,
+                       scatterColor=(0, 0, 1, 0.2),
+                       **plotKW):
+
+    def nullMethod(X, base=0):
+        return X
+
+    def invTransform(X, base=10):
+        return base ** X
+
+    getattr(ax, plotMethod)(X, Y, ',', color=scatterColor, **plotKW)
+
+    if plotMethod in ("loglog", "semilogx"):
+        iTX = invTransform
+        if 'basex' in plotKW:
+            baseX = plotKW['basex']
+        else:
+            baseX = 10
+    else:
+        iTX = nullMethod
+        baseX = 0
+    if plotMethod in ("loglog", "semilogy"):
+        iTY = invTransform
+        if 'basey' in plotKW:
+            baseY = plotKW['basey']
+        else:
+            baseY = 10
+    else:
+        iTY = nullMethod
+        baseY = 0
+
+    if plotMethod in ("plot", "semilogy"):
+        tX = X
+    else:
+        tX = np.log(X) / np.log(baseX)
+    if plotMethod in ("plot", "semilogx"):
+        tY = Y
+    else:
+        tY = np.log(Y) / np.log(baseY)
+
+    sliceXY = np.logical_and(np.isfinite(tX), np.isfinite(tY))
+
+    if linearReg or linearRegText:
+        slope, intercept, r_value, p_value, std_err = linregress(
+            tX[sliceXY], tY[sliceXY])
+
+    if pearsonText or linearRegCorrValue:
+        pearsonCorr, pearsonP = pearsonr(tX[sliceXY], tY[sliceXY])
+
+    xMin = tX[np.logical_and(tX != 0, np.isfinite(tX))].min()
+    xMax = tX[np.logical_and(tX != 0, np.isfinite(tX))].max()
+
+    if linearReg:
+        getattr(ax, plotMethod)([iTX(xMin, base=baseX),
+                                 iTX(xMax, base=baseX)],
+                                [iTY(xMin * slope + intercept, base=baseY),
+                                 iTY(xMax * slope + intercept, base=baseY)],
+                                '-r', **plotKW)
+    if linearRegCorrValue:
+        cX = tX[sliceXY].mean()
+        cY = tY[sliceXY].mean()
+        dX = (tX[sliceXY].min() - cX, tX[sliceXY].max() - cX)
+        dY = (tY[sliceXY].min() - cY, tY[sliceXY].max() - cY)
+        oX = dX[np.abs(dX).argmax()] * 0.5
+        oY = dY[np.abs(dY).argmax()] * 0.5
+
+        ax.text(
+            iTX(cX + oX, base=baseX),
+            iTY(cY + oY, base=baseY),
+            "{0:.2f}".format(pearsonCorr),
+            horizontalalignment='center',
+            verticalalignment='center',
+            fontsize=10)
+
+    if linearRegText:
+        ax.text(
+            0.05, 0.9,
+            "r2 {0:.2f}, p {1:.2f}, stdErr {2:.2f}".format(
+                r_value ** 2, p_value, std_err),
+            transform=ax.transAxes,
+            fontsize=8)
+
+    if equalAxis:
+        lB, uB = zip(ax.get_ylim(), ax.get_xlim())
+        ax.set_xlim(min(lB), max(uB))
+        ax.set_ylim(min(lB), max(uB))
+
+    if oneToOneLine:
+        getattr(ax, plotMethod)([iTX(xMin, base=baseX),
+                                 iTX(xMax, base=baseX)],
+                                [iTY(xMin, base=baseY),
+                                 iTY(xMax, base=baseY)], '-g', **plotKW)
+
+    if pearsonText:
+        ax.text(0.9, 0.05,
+                "Pearson {0:.2f}, p {1:.2f}".format(pearsonCorr, pearsonP),
+                fontsize=8,
+                horizontalalignment='right',
+                transform=ax.transAxes)
+
+    ax.tick_params(axis='both', which='major', labelsize=8)
+    ax.tick_params(axis='both', which='minor', labelsize=6)
+
+
+def plotClassifiedCorrelation(dataObject1, dataObject2, classifierObject,
+                              measure1=1, measure2=1,
+                              plateHeader="Plate {0}",
+                              xLabel="Measure 1",
+                              yLabel="Measure 2",
+                              plotMethod="plot",
+                              colorPaletteBase=None,
+                              **plotKW):
+
+    if (dataObject1.shape[0] != dataObject2.shape[0]):
+        raise Exception(
+            "DataObjects don't share first dimension ({0}, {1})".format(
+                dataObject1.shape, dataObject2.shape))
+
+    pC, pR = _plotLayout(len(dataObject1))
+    f = plt.figure()
+    for plateIndex in range(len(dataObject1)):
+
+        if (dataObject1[plateIndex].shape[:-1] ==
+                dataObject2[plateIndex].shape[:-1]):
+
+            X = dataObject1[plateIndex][..., measure1].ravel()
+            Y = dataObject2[plateIndex][..., measure2].ravel()
+            C = classifierObject[plateIndex].ravel()
+            cValues = np.unique(C)
+
+            ax = f.add_subplot(pR, pC, plateIndex + 1)
+            ax.set_title(plateHeader.format(plateIndex + 1))
+            for i, color in enumerate(
+                    resource_color_palette.get(cValues.size,
+                                               base=colorPaletteBase)):
+
+                cVal = cValues[i]
+
+                _correlationAxPlot(
+                    ax, X[C == cVal], Y[C == cVal], plotMethod,
+                    pearsonText=False, linearRegText=False,
+                    linearReg=True, oneToOneLine=False,
+                    linearRegCorrValue=True,
+                    equalAxis=False,
+                    scatterColor=color,
+                    **plotKW)
+
+            ax.set_xlabel(xLabel)
+            ax.set_ylabel(yLabel)
+
+    f.tight_layout()
+    return f
+
+
+def plotCorrelation(dataObject1, dataObject2, measure1=1, measure2=1,
+                    plateHeader="Plate {0}",
+                    xLabel="Measure 1",
+                    yLabel="Measure 2",
+                    plotMethod="plot",
+                    **plotKW):
+
+    if (dataObject1.shape[0] != dataObject2.shape[0]):
+        raise Exception(
+            "DataObjects don't share first dimension ({0}, {1})".format(
+                dataObject1.shape, dataObject2.shape))
+
+    pC, pR = _plotLayout(len(dataObject1))
+    f = plt.figure()
+
+    for plateIndex in range(len(dataObject1)):
+
+        if (dataObject1[plateIndex].shape[:-1] ==
+                dataObject2[plateIndex].shape[:-1]):
+
+            X = dataObject1[plateIndex][..., measure1].ravel()
+            Y = dataObject2[plateIndex][..., measure2].ravel()
+
+            ax = f.add_subplot(pR, pC, plateIndex + 1)
+            ax.set_title(plateHeader.format(plateIndex + 1))
+            _correlationAxPlot(
+                ax, X, Y, plotMethod,
+                oneToOneLine=plotMethod == "plot",
+                **plotKW)
+            ax.set_xlabel(xLabel)
+            ax.set_ylabel(yLabel)
+    return f
+
+
 def plotPairWiseCorrelation(dataPairs, alpha=0.3, dataPadding=0.1):
 
     plates = dataPairs.shape[0]
@@ -616,28 +907,7 @@ def plotPairWiseCorrelation(dataPairs, alpha=0.3, dataPadding=0.1):
 
                 X = dataPairs[plateA]
                 Y = dataPairs[plateB]
-                ax.plot(X, Y, ',', color=pColor)
-                slope, intercept, r_value, p_value, std_err = linregress(X, Y)
-                Xmin = X.min() - dataPadding * X.std()
-                Xmax = X.max() + dataPadding * X.std()
-                ax.plot([Xmin, Xmax], [Xmin * slope + intercept,
-                                       Xmax * slope + intercept], '-r')
-
-                ax.text(
-                    0.05, 0.9,
-                    "r^2 {0:.2f}, p {1:.2f}, std_err {2:.2f}".format(
-                        r_value ** 2, p_value, std_err),
-                    transform=ax.transAxes,
-                    fontsize=8)
-
-                ax.plot([Xmin, Xmax], [Xmin, Xmax], '-g')
-
-                ax.text(0.9, 0.05,
-                        "Pearson coeff {0:.2f}, p {1:.2f}".format(
-                            *pearsonr(X, Y)),
-                        fontsize=8,
-                        horizontalalignment='right',
-                        transform=ax.transAxes)
+                _correlationAxPlot(ax, X, Y, "plot", scatterColor=pColor)
 
     f.tight_layout()
 
@@ -666,10 +936,59 @@ def plotPairWiseCorrelation(dataPairs, alpha=0.3, dataPadding=0.1):
 
     f.text(0.5, 0.5 * step,
            "Green line is 1:1. Red regression. Upper text regression info."
-           " Lower text correlation info.", bbox=props, fontsize=12,
+           " Lower text correlation info.", bbox=props, fontsize=10,
            horizontalalignment='center',
            transform=f.transFigure)
 
+    return f
+
+
+def plotBenchmark(B, dataBridge):
+
+    pC, pR = _plotLayout(len(B))
+    f = plt.figure()
+
+    for plateIndex, plate in enumerate(B):
+
+        ax = f.add_subplot(pR, pC, plateIndex + 1)
+        ax.plot(plate[0], plate[1], 'g,')
+        ax.plot(plate[0], plate[2], 'r,')
+        ax.set_ylabel("Local group mean phenotype")
+        ax.set_xlabel("Position phenotype")
+        lB, uB = zip(ax.get_ylim(), ax.get_xlim())
+        ax.set_xlim(min(lB), max(uB))
+        ax.set_ylim(min(lB), max(uB))
+        p0 = np.array(plate[0])
+        p1 = np.array(plate[1])
+        p2 = np.array(plate[2])
+        #r1 = np.abs(np.log(np.array(plate[1]) / np.array(plate[0])))
+        r1 = (p1 ** 2 + p0 ** 2) * np.abs(p1 - p0)
+        r2 = (p2 ** 2 + p0 ** 2) * np.abs(p2 - p0)
+        #r2 = np.abs(np.log(np.array(plate[2]) / np.array(plate[0])))
+        for r in (r1, r2):
+            for v in np.sort(r[np.isfinite(r)])[-5:]:  # random.sample(r[np.isfinite(r)], 5):
+                pos = [d[0] for d in np.where(r == v)][0]
+                d1 = pos % dataBridge[plateIndex].shape[0]
+                d2 = pos / dataBridge[plateIndex].shape[0]
+                ax.annotate(
+                    "({0}, {1})".format(d1, d2),
+                    xy=(plate[0][pos], plate[1][pos]), xytext=(-5, 5),
+                    textcoords='offset points', ha='right', va='bottom',
+                    fontsize=8,
+                    #bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+                    arrowprops=dict(arrowstyle='-'))
+
+        finR1 = np.logical_and(np.isfinite(plate[0]), np.isfinite(plate[1]))
+        finR2 = np.logical_and(np.isfinite(plate[0]), np.isfinite(plate[2]))
+        print "Pearson Within {0}".format(
+            pearsonr(plate[0][finR1],
+                     plate[1][finR1]))
+
+        print "Pearson Between {0}".format(
+            pearsonr(plate[0][finR2],
+                     plate[2][finR2]))
+
+    f.tight_layout()
     return f
 #
 #   CLASSES
@@ -715,6 +1034,10 @@ class DataBridge(object):
 
         for plate in self._arrayRepresentation:
             yield plate
+
+    def __getitem__(self, key):
+
+        return self._arrayRepresentation[key]
 
     def _createArrayRepresentation(self, **kwargs):
 
@@ -805,6 +1128,11 @@ class DataBridge(object):
                     self._source.set_data_value(
                         plateIndex, d1, d2, self._timeIndex,
                         self._arrayRepresentation[plateIndex][d1, d2])
+
+    @property
+    def shape(self):
+
+        return self._arrayRepresentation.shape
 
     def getSource(self):
         """Returns a reference to the source"""
