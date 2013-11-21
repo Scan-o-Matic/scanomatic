@@ -684,16 +684,25 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
         ax = fig.add_subplot(pR, pC, plateIndex + 1)
         ax.set_title(title.format(plateIndex + 1))
         if None not in (vMax, vMin):
-            ax.imshow(dataObject[plateIndex][..., measure],
-                      interpolation="nearest", vmin=vMin, vmax=vMax,
-                      *showArgs, **showKwargs)
+            I = ax.imshow(
+                dataObject[plateIndex][..., measure],
+                interpolation="nearest", vmin=vMin, vmax=vMax,
+                *showArgs, **showKwargs)
         else:
-            ax.imshow(dataObject[plateIndex][..., measure],
-                      interpolation="nearest", *showArgs, **showKwargs)
+            I = ax.imshow(
+                dataObject[plateIndex][..., measure],
+                interpolation="nearest", *showArgs, **showKwargs)
 
-        #TODO: Include value scale
+        if not equalVscale:
+
+            plt.colorbar(I, orientation='vertical')
 
         ax.axis("off")
+
+    if equalVscale:
+        fig.subplots_adjust(bottom=0.85)
+        cbar_ax = fig.add_axes([0.175, 0.01, 0.65, 0.02])
+        plt.colorbar(I, cax=cbar_ax, orientation='horizontal')
 
     fig.tight_layout()
     return fig
