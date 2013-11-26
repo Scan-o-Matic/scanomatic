@@ -951,7 +951,7 @@ class Interactive_Menu():
                     if self._phenotype_names is not None:
                         phenoName = self._phenotype_names[self._cur_phenotype]
 
-                    fig = r_xml.plot_from_list(
+                    fig = r_xml.plot(
                         self._xml_file, [s], fig=fig, measurement=measurement,
                         phenotypes=phenotypes,
                         ax_title="Plate {0} Pos {1}: Phenotype {2}".format(

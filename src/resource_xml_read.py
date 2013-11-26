@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
 import resource_logger as logging
+import resource_color_palette as palette
 
 #
 # GLOBALS
@@ -63,6 +64,10 @@ class XML_Reader():
                 self._loaded = True
         else:
             self._logger = logging.getLogger('XML-reader')
+
+    def __getitem__(self, position):
+
+        return self._data[position[0]][position[1:]]
 
     def read(self, file_path=None):
         """Reads the file_path file using short-format xml"""
@@ -377,6 +382,63 @@ def random_plot_on_same_panel(xml_parser, different_line_styles=False,
 
     ax.legend(loc=4, ncol=4, title='Plate Colony_ X:Colony_Y')
 
+    return fig
+
+
+def plot(xml_parser, positionList, fig=None, measurement=0,
+         phenotypes=None, ax_title=None, colorBase=plt.cm.RdBu):
+
+    if fig is None:
+        fig = plt.figure()
+
+    fontP = FontProperties()
+    fontP.set_size('xx-small')
+
+    X = xml_parser.get_scan_times()
+
+    ax = fig.add_subplot(1, 1, 1, title=(ax_title is None and
+                                         "{0} graphs".format(len(positionList))
+                                         or ax_title))
+
+    #fullPosition = (list(p) + [measurement] for p in positionList)
+
+    colors = palette.get(N=len(positionList), base=colorBase)
+
+    for pos in positionList:
+
+        Y = xml_parser[pos][..., measurement].ravel()
+
+        c = colors.next()
+
+        if Y is not None and np.isnan(Y).all() == False:
+
+            try:
+                ax.semilogy(X, Y, basey=2,
+                            label="{0}".format(pos[:-1]), color=c)
+            except:
+                try:
+
+                    ax.plot(X, Y,
+                            label="Not logged! {0}".format(pos[:-1]),
+                            color=c)
+
+                except:
+
+                    print "Failed to plot!"
+
+        else:
+
+            print "No data to plot!", Y
+
+        if phenotypes is not None:
+
+            ax.text(0.5, 0.05, str(phenotypes[0]), transform=ax.transAxes)
+
+    if len(ax.lines) > 0:
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.040),
+                  prop=fontP)
+
+    fig.tight_layout()
     return fig
 
 
