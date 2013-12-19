@@ -5,7 +5,7 @@
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter, sobel
 from scipy.stats import probplot, linregress, pearsonr
 import matplotlib.pyplot as plt
 
@@ -38,6 +38,64 @@ def IQRmean(dataVector):
 #
 #   METHODS: Normalisation methods
 #
+
+
+def getDownSampledPlates(dataObject, subSampling="BR"):
+    """
+
+        The subsampling is either supplied as a generic position for all plates
+        or as a list of individual positions for each plate of the dataBridge
+        or object following the same interface (e.g. numpy array of plates).
+
+        The subsampling will attempt to extract one of the four smaller sized
+        plates that made up the current plate. E.g. one of the four 384 plates
+        that makes up a 1536 as the 384 looked before being pinned over.
+
+        The returned array will work on the same memory as the original so
+        any changes will affect the original data.
+
+        The subSampling should be one of the following four expressions:
+
+            TL:     Top left
+            TR:     Top right
+            BL:     Bottom left
+            BR:     Bottom right
+    """
+
+    #How much smaller the cut should be than the original
+    #(e.g. take every second)
+    subSamplingSize = 2
+
+    #Number of dimensions to subsample
+    subSampleFirstNDim = 2
+
+    #Lookup to translate subsamplingexpressions to coordinates
+    subSamplingLookUp = {'TL': (0, 0), 'TR': (0, 1), 'BL': (1, 0), 'BR': (1, 1)}
+
+    #Generic -> Per plate
+    if isinstance(subSampling, str):
+        subSampling = [subSampling for i in range(dataObject.shape[0])]
+
+    #Name to offset
+    subSampling = [subSamplingLookUp[s] for s in subSampling]
+
+    #Create a new container for the plates. It is important that this remains
+    #a list and is not converted into an array if both returned memebers of A
+    #and original plate values should operate on the same memory
+    A = []
+    for i, plate in enumerate(dataObject):
+        offset = subSampling[i]
+        newShape = (tuple(plate.shape[d] / subSamplingSize for d in
+                          xrange(subSampleFirstNDim)) +
+                    plate.shape[subSampleFirstNDim:])
+        newStrides = (tuple(plate.strides[d] * subSamplingSize for d in
+                            xrange(subSampleFirstNDim)) +
+                      plate.strides[subSampleFirstNDim:])
+        A.append(np.lib.stride_tricks.as_strided(plate[offset[0]:, offset[1]:],
+                                                 shape=newShape,
+                                                 strides=newStrides))
+
+    return A
 
 
 def getControlPositionsArray(dataBridge,
@@ -352,9 +410,21 @@ def getNormalisationWithGridData(
     return normInterpolations
 
 
+def applySobelFilter(dataArray, measure=1, threshold=1, **kwargs):
+
+    for plateIndex in range(len(dataArray)):
+
+        filt = (np.sqrt(sobel(
+            dataArray[plateIndex][..., measure], axis=0, **kwargs) ** 2 +
+            sobel(dataArray[plateIndex][..., measure], axis=1, **kwargs) ** 2)
+            > threshold)
+
+        dataArray[plateIndex][..., measure][filt] = np.nan
+
+
 def applyNormalisationGaussSmoothing(dataArray, measure=1, sigma=3.5):
 
-    for plateIndex in range(dataArray.shape[0]):
+    for plateIndex in range(len(dataArray)):
 
         dataArray[plateIndex][..., measure] = gaussian_filter(
             dataArray[plateIndex][..., measure], sigma=sigma, mode='nearest')
@@ -362,7 +432,7 @@ def applyNormalisationGaussSmoothing(dataArray, measure=1, sigma=3.5):
 
 def applySigmaFilter(dataArray, nSigma=3):
 
-    for plateIndex in range(dataArray.shape[0]):
+    for plateIndex in range(len(dataArray)):
 
         for measure in range(dataArray[plateIndex].shape[-1]):
 

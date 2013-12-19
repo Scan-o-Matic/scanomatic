@@ -99,7 +99,7 @@ def setLoggingTarget(filePath, redirectStdOut=False, redirectStdErr=False,
 
             self._semaphor = True
             curLength = len(self._buffer)
-            super(ExtendedFileObject, self).writelines(*self._buffer[:curLength])
+            super(ExtendedFileObject, self).writelines(self._buffer[:curLength])
             for i in range(curLength):
                 self._buffer.pop(0)
             self._semaphor = False
