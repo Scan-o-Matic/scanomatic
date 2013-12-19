@@ -827,14 +827,16 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
 
         if not equalVscale:
 
-            plt.colorbar(I, orientation='vertical')
+            cbar = plt.colorbar(I, orientation='vertical')
+            cbar.ax.tick_params(labelsize='xx-small')
 
         ax.axis("off")
 
     if equalVscale:
         fig.subplots_adjust(bottom=0.85)
-        cbar_ax = fig.add_axes([0.175, 0.022, 0.65, 0.02])
-        plt.colorbar(I, cax=cbar_ax, orientation='horizontal')
+        cbar_ax = fig.add_axes([0.175, 0.035, 0.65, 0.02])
+        cbar = plt.colorbar(I, cax=cbar_ax, orientation='horizontal')
+        cbar.ax.tick_params(labelsize='xx-small')
         fig.subplots_adjust(left=0.004, right=0.005)
     fig.tight_layout()
     return fig
