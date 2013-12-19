@@ -5,7 +5,7 @@
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.ndimage import gaussian_filter, sobel
+from scipy.ndimage import gaussian_filter, sobel, laplace
 from scipy.stats import probplot, linregress, pearsonr
 import matplotlib.pyplot as plt
 
@@ -402,7 +402,7 @@ def getNormalisationWithGridData(
 
     if smoothing is not None:
         for measureIndex in xrange(plate.shape[2]):
-            applyNormalisationGaussSmoothing(
+            applyGaussSmoothing(
                 normInterpolations,
                 sigma=smoothing,
                 measure=measureIndex)
@@ -422,7 +422,16 @@ def applySobelFilter(dataArray, measure=1, threshold=1, **kwargs):
         dataArray[plateIndex][..., measure][filt] = np.nan
 
 
-def applyNormalisationGaussSmoothing(dataArray, measure=1, sigma=3.5):
+def applyLaplaceFilter(dataArray, measure=1, threshold=1, **kwargs):
+
+    for plateIndex in range(len(dataArray)):
+
+        filt = (np.abs(laplace(dataArray[plateIndex][..., measure], **kwargs))
+                > threshold)
+        dataArray[plateIndex][..., measure][filt] = np.nan
+
+
+def applyGaussSmoothing(dataArray, measure=1, sigma=3.5):
 
     for plateIndex in range(len(dataArray)):
 
