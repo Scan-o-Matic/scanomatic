@@ -293,7 +293,7 @@ def getControlPositionsAverage(controlPositionsDataArray,
     return np.array(plateControlAverages)
 
 
-def getNormalisationWithGridData(
+def getNormalisationSurfaceWithGridData(
         controlPositionsDataArray,
         controlPositionsCoordinates=None,
         normalisationSequence=('cubic', 'linear', 'nearest'),
@@ -409,8 +409,38 @@ def getNormalisationWithGridData(
 
     return normInterpolations
 
+#
+#   METHODS: Apply functions
+#
+#   Apply functions update the dataArray/Bridge values!
+#
+
+
+def applyLog2Transform(dataArray, measures=None):
+    """Log2 Transformation of dataArray values.
+
+    If required, a filter for which measures to be log2-transformed as
+    either an array or tuple of measure indices. If left None, all measures
+    will be logged
+    """
+
+    if measures is None:
+        measures = np.arange(dataArray[0].shape[-1])
+
+    for plateIndex in range(len(dataArray)):
+        dataArray[plateIndex][..., measures] = np.log2(
+            dataArray[plateIndex][..., measures])
+
 
 def applySobelFilter(dataArray, measure=1, threshold=1, **kwargs):
+    """Applies a Sobel filter to the arrays and then compares this to a
+    threshold setting all positions greater than said absolute threshold to NaN.
+
+    measure     The measurement to evaluate
+    threshold   The maximum absolute value allowed
+
+    Further arguments of scipy.ndimage.sobel can be supplied
+    """
 
     for plateIndex in range(len(dataArray)):
 
@@ -423,7 +453,14 @@ def applySobelFilter(dataArray, measure=1, threshold=1, **kwargs):
 
 
 def applyLaplaceFilter(dataArray, measure=1, threshold=1, **kwargs):
+    """Applies a Laplace filter to the arrays and then compares the absolute
+    values of those to a threshold, discarding those exceeding it.
 
+    measure     The measurement to evaluate
+    threshold   The maximum absolute value allowed
+
+    Further arguments of scipy.ndimage.laplace can be supplied
+    """
     for plateIndex in range(len(dataArray)):
 
         filt = (np.abs(laplace(dataArray[plateIndex][..., measure], **kwargs))
@@ -432,7 +469,14 @@ def applyLaplaceFilter(dataArray, measure=1, threshold=1, **kwargs):
 
 
 def applyGaussSmoothing(dataArray, measure=1, sigma=3.5):
+    """Applies a Gaussian Smoothing filter to the values of a plate (or norm
+    surface).
 
+    Note that this will behave badly if there are NaNs on the plate.
+
+    measure     The measurement ot evaluate
+    sigma       The size of the gaussian kernel
+    """
     for plateIndex in range(len(dataArray)):
 
         dataArray[plateIndex][..., measure] = gaussian_filter(
@@ -440,7 +484,11 @@ def applyGaussSmoothing(dataArray, measure=1, sigma=3.5):
 
 
 def applySigmaFilter(dataArray, nSigma=3):
+    """Applies a per plate global sigma filter such that those values
+    exceeding the absolute sigma distance to the mean are discarded.
 
+    nSigma      Threshold distance from mean
+    """
     for plateIndex in range(len(dataArray)):
 
         for measure in range(dataArray[plateIndex].shape[-1]):
@@ -453,8 +501,13 @@ def applySigmaFilter(dataArray, nSigma=3):
                                  values > vBar + nSigma * vStd)] = np.nan
 
 
-def applyNormalisation(dataBridge, normalisationSurface, updateBridge=True,
-                       log=True):
+#
+#   METHODS: Normalisation method
+#
+
+
+def normalisation(dataBridge, normalisationSurface, updateBridge=True,
+                       log=False):
 
     normalData = []
     bridgeArray = dataBridge.getAsArray()
@@ -463,7 +516,7 @@ def applyNormalisation(dataBridge, normalisationSurface, updateBridge=True,
         if (bridgeArray[plateIndex] is None or
                 normalisationSurface[plateIndex] is None):
             normalData.append(None)
-        elif  log:
+        elif log:
             normalData.append(
                 np.log2(bridgeArray[plateIndex]) -
                 np.log2(normalisationSurface[plateIndex]))
