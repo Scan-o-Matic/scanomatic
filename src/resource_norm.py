@@ -8,6 +8,7 @@ from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter, sobel, laplace
 from scipy.stats import probplot, linregress, pearsonr
 import matplotlib.pyplot as plt
+import itertools
 
 #
 #   INTERNAL DEPENDENCIES
@@ -507,7 +508,7 @@ def applySigmaFilter(dataArray, nSigma=3):
 
 
 def normalisation(dataBridge, normalisationSurface, updateBridge=True,
-                       log=False):
+                  log=False):
 
     normalData = []
     bridgeArray = dataBridge.getAsArray()
@@ -1138,7 +1139,36 @@ def plotBenchmark(B, dataBridge):
 #
 
 
-class DataBridge(object):
+class _NumpyArrayInterface(object):
+
+    def __init__(self, dataObject):
+
+        self._dataObject = dataObject
+
+    def __getitem__(self, key):
+
+        return self._dataObject[key]
+
+    def __iter__(self):
+
+        for i in xrange(len(self._dataObject)):
+
+            yield self.__getitem__(i)
+
+    def __len__(self):
+
+        return self._dataObject.shape[0]
+
+    @property
+    def shape(self):
+        return self._dataObject.shape
+
+    @property
+    def ndim(self):
+        return self._dataObject.ndim
+
+
+class DataBridge(_NumpyArrayInterface):
 
     def __init__(self, source, **kwargs):
         """The data structure is expected to be convertable into
@@ -1161,7 +1191,7 @@ class DataBridge(object):
         """
 
         self._source = source
-        self._arrayRepresentation = None
+        super(DataBridge, self).__init__(None)
 
         #This method is assigned dynamically based on
         #type of data imported
@@ -1169,23 +1199,10 @@ class DataBridge(object):
 
         self._createArrayRepresentation(**kwargs)
 
-    def __len__(self):
-
-        return len(self._arrayRepresentation)
-
-    def __iter__(self):
-
-        for plate in self._arrayRepresentation:
-            yield plate
-
-    def __getitem__(self, key):
-
-        return self._arrayRepresentation[key]
-
     def _createArrayRepresentation(self, **kwargs):
 
         if isinstance(self._source, np.ndarray):
-            self._arrayRepresentation = self._source.copy()
+            self._dataObject = self._source.copy()
             self.updateSource = self._updateToArray
 
         elif isinstance(self._source, dict):
@@ -1207,7 +1224,7 @@ class DataBridge(object):
 
                                 plates[-1][-1][-1].append(value)
 
-            self._arrayRepresentation = np.array(plates)
+            self._dataObject = np.array(plates)
             self.updateSource = self._updateToFeatureDict
 
         elif isinstance(self._source, resource_xml_read.XML_Reader):
@@ -1223,7 +1240,7 @@ class DataBridge(object):
                 tmpD = []
                 for p in self._source.get_data().values():
                     tmpD.append(p[..., self._timeIndex, :].copy())
-                self._arrayRepresentation = np.array(tmpD)
+                self._dataObject = np.array(tmpD)
 
         else:
 
@@ -1246,7 +1263,7 @@ class DataBridge(object):
 
                         for valueKey in compartment:
 
-                            compartment[valueKey] = self._arrayRepresentation[
+                            compartment[valueKey] = self._dataObject[
                                 plateIndex, d1Index, d2Index, measureIndex]
 
                             measureIndex += 1
@@ -1257,25 +1274,20 @@ class DataBridge(object):
 
         for i, p in enumerate(self._source):
 
-            p[...] = self._arrayRepresentation[i]
+            p[...] = self._dataObject[i]
 
     def _updateToXMLreader(self):
         """Updates the source inplace"""
 
-        for plateIndex in self._arrayRepresentation.shape[0]:
+        for plateIndex in self._dataObject.shape[0]:
 
-            for d1 in self._arrayRepresentation[plateIndex].shape[0]:
+            for d1 in self._dataObject[plateIndex].shape[0]:
 
-                for d2 in self._arrayRepresentation[plateIndex].shape[1]:
+                for d2 in self._dataObject[plateIndex].shape[1]:
 
                     self._source.set_data_value(
                         plateIndex, d1, d2, self._timeIndex,
-                        self._arrayRepresentation[plateIndex][d1, d2])
-
-    @property
-    def shape(self):
-
-        return self._arrayRepresentation.shape
+                        self._dataObject[plateIndex][d1, d2])
 
     def getSource(self):
         """Returns a reference to the source"""
@@ -1285,18 +1297,117 @@ class DataBridge(object):
     def getAsArray(self):
         """Returns the data as a normalisations compatible array"""
 
-        return self._arrayRepresentation
+        return self._dataObject
 
     def setArrayRepresentation(self, array):
         """Method for overwriting the array representation of the data"""
 
-        if (array.shape == self._arrayRepresentation.shape):
-            self._arrayRepresentation = array
+        if (array.shape == self._dataObject.shape):
+            self._dataObject = array
         else:
             raise Exception(
                 "New representation must match current shape: {0}".format(
-                    self._arrayRepresentation.shape))
+                    self._dataObject.shape))
 
+
+class SubSample(_NumpyArrayInterface):
+
+    def __init__(self, dataObject, kernels=None):
+        """This class puts an interchangeable subsampling level
+        onto any applicable dataObject.
+
+        If no kernel is set the layer is transparent and the original
+        data in its original conformation can be directly accessed.
+
+        If a kernel is in place, that plate will become strided such
+        that it will expose an array as it would have looked before
+        it got interleaved into the current plate.
+
+        The
+
+        Parameters:
+            dataObject      An object holding several plates
+
+            kernels         An array of kernels or None(s)
+
+        """
+        self._dataObject = dataObject
+        self._kernels = None
+        self.kernels = kernels
+
+    @property
+    def kernels(self):
+        return self._kernels
+
+    @kernels.setter
+    def kernels(self, kernels):
+
+        if (kernels is not None):
+
+            assert len(kernels) == len(self._dataObject), (
+                "Must have exactly as many kernels {0} as plates {1}".format(
+                    len(kernels), len(self._dataObject)))
+
+            for i, kernel in enumerate(kernels):
+
+                if (kernel is not None):
+
+                    assert kernel.sum() == 1, (
+                        "All kernels must have exactly one true value "
+                        "(kernel {0} has {1})".format(i, kernel.sum()))
+
+                    assert np.array(
+                        [p % k == 0 for p, k in itertools.izip(
+                            self._dataObject[0].shape[:2],
+                            kernel.shape)]).all(), (
+                                "Dimension missmatch between kernel and plate"
+                                " ({0} not evenly divisable with {1})".format(
+                                    self._dataObject.shape[:2], kernel.shape))
+
+        self._kernels = kernels
+
+    def __getitem__(self, value):
+
+        plate = self._dataObject[0]
+
+        if (self._kernels is None or self._kernels[value] is None):
+            return plate
+
+        else:
+
+            kernel = self._kernels[0]
+            kernelD1, kernelD2 = (v[0] for v in np.where(kernel))
+
+            assert plate.ndim in (2, 3), (
+                "Plate {0} has wrong number of dimensions {1}".format(
+                    value, plate.ndim))
+
+            if (plate.ndim == 2):
+
+                ravelOffset = plate.shape[1] * kernelD1 + kernelD2
+                plateShape = (plate.shape[0] / kernel.shape[0],
+                              plate.shape[1] / kernel.shape[1])
+                plateStrides = (plate.strides[0] * kernel.shape[0],
+                                plate.strides[1] * kernel.shape[1])
+
+            elif (plate.ndim == 3):
+
+                ravelOffset = (plate.shape[2] * plate.shape[1] * kernelD1 +
+                               plate.shape[2] * kernelD2)
+                plateShape = (plate.shape[0] / kernel.shape[0],
+                              plate.shape[1] / kernel.shape[1],
+                              plate.shape[2])
+                plateStrides = (plate.strides[0] * kernel.shape[0],
+                                plate.strides[1] * kernel.shape[1],
+                                plate.strides[2])
+
+            return np.lib.stride_tricks.as_strided(
+                plate.ravel()[ravelOffset:],
+                shape=plateShape,
+                strides=plateStrides)
+
+''' Outdated since it doesn't keep memory pointers to numpy arrays.
+Also overly complex
 
 class SubSample(object):
 
@@ -1310,18 +1421,137 @@ class SubSample(object):
             self._sourceArray = dataObject.getAsArray()
         else:
             self._sourceIsBridge = False
-            self._sourceArray = dataObject
+            self._sourceArrays = dataObject
 
-        self._kernel = controlPositionKernel
-        self._length = self._sourceArray.shape[0]
+        self._kernels = controlPositionKernel
+        self._length = len(self._sourceArrays)
+
+        self._sourceReformatted = None
+        if (self._kernels is not None):
+            self._setupSubslicing()
+
+    def _decomposePrepare(self, interleavedArray):
+        """Method assumes 2D interleaved array composed of 4 subarrays.
+
+        Details:
+
+            First array is separated into odd and even rows
+
+            Second first odd row and first even row are zipped into an
+            array. Same for second row etc. So that the output looks like:
+
+                [(odd[0], even[0]), (odd[1], even[1]), ...]
+
+            Thirdly the element of each odd even tuple are zipped,
+            using first row odd and even as example:
+
+                [(odd[0][0], even[0][0]), (odd[0][1], even[0][1]) ... ]
+
+            Fourthly, as the array currently has 3D the sequence of
+            tuples per row in previous step are chained. For first row:
+
+                (odd[0][0], even[0][0], odd[0][1], even[0][1] ... )
+
+            Since numpy would make an object of generators and the state
+            of the entire object currently is:
+
+                [generatorRow0, generatorRow1, ... ]
+
+            list is mapped to each row to instantiate a list from the
+            generator.
+
+            The resulting list of lists is finally converted into a 2D
+            array.
+
+        Parameters:
+
+            interleavedArray    Any 2D iterable of rectangular shape
+
+        Returns:
+
+            2D numpy array in which every fourth object in a row
+            would come from a specific subarray.
+
+            Assuming subarrays having been interleaved using the
+            following pattern:
+
+                [[0, 1]
+                 [2, 3]]
+
+            Their position will be [0, 2, 1, 3]
+
+        """
+
+        return np.array(
+            map(list, (itertools.chain(*itertools.izip(*zipV))
+                       for zipV in itertools.izip(
+                           interleavedArray[::2],
+                           interleavedArray[1::2]))))
+
+    def _recompose(self, decomposedPlates, decomposedKernels):
+        """
+
+        """
+
+        #Make sure all kernels are correctly shaped
+        assert np.array([k is None and True or k.size == 4
+                         for k in decomposedKernels]).all()
+
+        #Make sure the kernel fits evenly in both directions of
+        #the plates
+        assert np.array([(plate is None or kernel is None) and
+                         True or (plate.shape[1] % kernel.shape[1] == 0)
+                         for plate, kernel in
+                         itertools.izip(
+                             decomposedPlates,
+                             decomposedKernels)]).all()
+
+        #Make sure each kernel only has one array as it is only supported
+        assert np.array(
+            [k is None and True or k.sum() == 1
+             for k in decomposedKernels]).all()
+
+        plates = []
+        for plate, kernel in itertools.izip(decomposedPlates,
+                                            decomposedKernels):
+
+            if (plate is None or kernel is None):
+                plates.append(None)
+            else:
+                plates.append(plate[:, np.where(kernel.ravel())[0][0]::4])
+
+        return np.array(plates)
+
+    def _setupSubslicing(self):
+        """ Method called to decompose source array and recompose
+        sub arrays from source using kernels.
+
+        Returns:
+
+            An array of the sub-plates sliced from the original arrays
+
+        """
+        sourceReformatted = []
+        kernelReformatted = []
+        for plate, kernel in itertools.izip(self._sourceArrays, self._kernels):
+            if (plate is None or kernel is None):
+                sourceReformatted.append(None)
+                kernelReformatted.append(None)
+            else:
+                sourceReformatted.append(self._decomposePrepare(plate))
+                kernelReformatted.append(self._decomposePrepare(kernel))
+
+        self._sourceReformatted = self._recompose(sourceReformatted,
+                                                  kernelReformatted)
 
     def __getitem__(self, key):
 
         if isinstance(key, int) or isinstance(key[0], int):
 
-            pass
-
-        #TODO: Use kernel to get mappings of positions, maybe lookup table
+            if (self._kernels is None):
+                return self._sourceArrays[key]
+            else:
+                return self._sourceReformatted[key]
 
     def __iter__(self):
 
@@ -1333,5 +1563,17 @@ class SubSample(object):
         return self._length
 
     @property
+    def kernel(self):
+        return self._kernels
+
+    @kernel.setter
+    def kernel(self, newKernels):
+
+        self._kernels = newKernels
+        if (self._kernels is not None):
+            self._setupSubslicing()
+
+    @property
     def shape(self):
         return self._sourceArray.shape
+'''
