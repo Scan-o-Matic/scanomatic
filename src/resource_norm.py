@@ -1368,14 +1368,14 @@ class SubSample(_NumpyArrayInterface):
 
     def __getitem__(self, value):
 
-        plate = self._dataObject[0]
+        plate = self._dataObject[value]
 
         if (self._kernels is None or self._kernels[value] is None):
             return plate
 
         else:
 
-            kernel = self._kernels[0]
+            kernel = self._kernels[value]
             kernelD1, kernelD2 = (v[0] for v in np.where(kernel))
 
             assert plate.ndim in (2, 3), (
