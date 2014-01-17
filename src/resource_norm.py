@@ -140,59 +140,14 @@ def getControlPositionsArray(dataBridge,
     return np.array(tmpCtrlPosPlateHolder)
 
 
-def getControlPositionsCoordinates(dataObject, controlPositionKernel=None):
-    """Returns list of tuples that emulates the results of running np.where"""
+def _getPositionsForKernelTrue(dataObject, positionKernels):
 
     platesCoordinates = []
 
-    if isinstance(dataObject, DataBridge):
-        dataObject = dataObject.getAsArray()
-
-    nPlates = dataObject.shape[0]
-
-    if controlPositionKernel is None:
-        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
-
-    for plateIndex in xrange(nPlates):
+    for plateIndex in range(len(dataObject)):
 
         plateCoordinates = [[], []]
-        controlKernel = controlPositionKernel[plateIndex]
-        kernelD1, kernelD2 = controlKernel.shape
-
-        for idx1 in xrange(dataObject[plateIndex].shape[0]):
-
-            for idx2 in xrange(dataObject[plateIndex].shape[1]):
-
-                if controlKernel[idx1 % kernelD1, idx2 % kernelD2]:
-
-                    plateCoordinates[0].append(idx1)
-                    plateCoordinates[1].append(idx2)
-
-        platesCoordinates.append(map(np.array, plateCoordinates))
-
-    return platesCoordinates
-
-
-def getExperimentPosistionsCoordinates(dataObject, controlPositionKernel=None):
-
-    platesCoordinates = []
-
-    if isinstance(dataObject, DataBridge):
-        dataObject = dataObject.getAsArray()
-
-    nPlates = dataObject.shape[0]
-
-    if controlPositionKernel is None:
-        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
-
-    experimentPositionKernel = []
-    for k in controlPositionKernel:
-        experimentPositionKernel.append(k == False)
-
-    for plateIndex in xrange(nPlates):
-
-        plateCoordinates = [[], []]
-        kernel = experimentPositionKernel[plateIndex]
+        kernel = positionKernels[plateIndex]
         kernelD1, kernelD2 = kernel.shape
 
         for idx1 in xrange(dataObject[plateIndex].shape[0]):
@@ -207,6 +162,29 @@ def getExperimentPosistionsCoordinates(dataObject, controlPositionKernel=None):
         platesCoordinates.append(map(np.array, plateCoordinates))
 
     return platesCoordinates
+
+
+def getControlPositionsCoordinates(dataObject, controlPositionKernel=None):
+    """Returns list of tuples that emulates the results of running np.where"""
+
+    nPlates = len(dataObject)
+
+    if controlPositionKernel is None:
+        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    return _getPositionsForKernelTrue(dataObject, controlPositionKernel)
+
+
+def getExperimentPosistionsCoordinates(dataObject, controlPositionKernels=None):
+
+    nPlates = len(dataObject)
+
+    if controlPositionKernels is None:
+        controlPositionKernels = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    experimentPositionKernels = [k == False for k in controlPositionKernels]
+
+    return _getPositionsForKernelTrue(dataObject, experimentPositionKernels)
 
 
 def getCoordinateFiltered(dataObject, coordinates, measure=1,
@@ -418,7 +396,7 @@ def getNormalisationSurfaceWithGridData(
 
 
 def applyOutlierFilter(dataArray, nanFillSize=(3, 3), measure=1,
-                       k=7.0, p=10):
+                       k=2.0, p=10, maxIterations=10):
     """Checks all positions in each array and filters those outside
     set boundries based upon their peak/valey properties using
     laplace and normal distribution assumptions."""
@@ -443,38 +421,49 @@ def applyOutlierFilter(dataArray, nanFillSize=(3, 3), measure=1,
         [1, -6, 1],
         [0.5, 1, 0.5]], dtype=dataArray[0].dtype)
 
-    for plate in dataArray:
+    oldNans = -1
+    newNans = 1
+    iterations = 0
+    while (newNans != oldNans and iterations < maxIterations):
 
-        #We need a copy because we'll modify it
-        aPlate = plate[..., measure].copy()
+        oldNans = newNans
+        newNans = 0
+        iterations += 1
 
-        #Apply median filter to fill nans
-        aPlate = generic_filter(aPlate, _nanFiller, size=nanFillSize,
-                                mode="nearest")
+        for plate in dataArray:
 
-        #Apply laplace
-        aPlate = convolve(aPlate, laplaceKernel, mode="nearest")
+            #We need a copy because we'll modify it
+            aPlate = plate[..., measure].copy()
 
-        # Make normalness analysis to find lower and upper threshold
-        # Rang based to z-score, compare to threshold adjusted by expected
-        # fraction of removed positions
-        rAPlate = aPlate.ravel()
-        rPlate = plate[..., measure].ravel()
-        sigma = np.sqrt(np.var(rAPlate))
-        mu = np.mean(rAPlate)
-        zScores = np.abs(rAPlate - mu)
+            #Apply median filter to fill nans
+            aPlate = generic_filter(aPlate, _nanFiller, size=nanFillSize,
+                                    mode="nearest")
 
-        for idX in np.argsort(zScores)[::-1]:
-            if (np.isnan(rPlate[idX]) or zScores[idX] > k * sigma /
-                    np.exp(-(np.isfinite(rPlate).sum() / float(rPlate.size))
-                           ** p)):
+            #Apply laplace
+            aPlate = convolve(aPlate, laplaceKernel, mode="nearest")
 
-                plate[idX / plate.shape[1], idX % plate.shape[1],
-                      measure] = np.nan
+            # Make normalness analysis to find lower and upper threshold
+            # Rang based to z-score, compare to threshold adjusted by expected
+            # fraction of removed positions
+            rAPlate = aPlate.ravel()
+            rPlate = plate[..., measure].ravel()
+            sigma = np.sqrt(np.var(rAPlate))
+            mu = np.mean(rAPlate)
+            zScores = np.abs(rAPlate - mu)
 
-            else:
+            for idX in np.argsort(zScores)[::-1]:
+                if (np.isnan(rPlate[idX]) or zScores[idX] > k * sigma /
+                        np.exp(-(np.isfinite(rPlate).sum() /
+                                 float(rPlate.size)) ** p)):
 
-                break
+                    plate[idX / plate.shape[1], idX % plate.shape[1],
+                          measure] = np.nan
+
+                else:
+
+                    break
+
+            newNans += np.isnan(plate[..., measure]).sum()
 
 
 def applyLog2Transform(dataArray, measures=None):
@@ -604,6 +593,28 @@ def normalisation(dataBridge, normalisationSurface, updateBridge=True,
         dataBridge.updateBridge()
 
     return normalData
+
+
+def normalisationDefaultProgram(dataBridge, kernels=None):
+
+    nPlates = len(dataBridge)
+
+    if (kernels is None):
+        kernels = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    subSampler = SubSample(dataBridge, kernels=kernels)
+
+    '''
+    eCoords = getExperimentPosistionsCoordinates(dataBridge,
+                                                 kernels)
+    '''
+
+    for plateIndex in range(nPlates):
+
+        for measurmentIndex in range(dataBridge[plateIndex].shape[2]):
+
+            pass
+
 
 #
 #   METHODS: Benchmarking
