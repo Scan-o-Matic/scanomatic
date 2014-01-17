@@ -5,7 +5,7 @@
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.ndimage import gaussian_filter, sobel, laplace
+from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter
 from scipy.stats import probplot, linregress, pearsonr
 import matplotlib.pyplot as plt
 import itertools
@@ -417,6 +417,66 @@ def getNormalisationSurfaceWithGridData(
 #
 
 
+def applyOutlierFilter(dataArray, nanFillSize=(3, 3), measure=1,
+                       k=7.0, p=10):
+    """Checks all positions in each array and filters those outside
+    set boundries based upon their peak/valey properties using
+    laplace and normal distribution assumptions."""
+
+    nanFillerKernelCenter = (np.prod(nanFillSize) - 1) / 2
+
+    def _nanFiller(X):
+        #X = X.reshape(nanFillSize)
+        if (np.isnan(X[nanFillerKernelCenter])):
+
+            return np.median(X[np.isfinite(X)])
+
+        else:
+
+            return X[nanFillerKernelCenter]
+
+    assert np.array([v % 2 == 1 for v in nanFillSize]).all(), (
+        "nanFillSize can only have odd values")
+
+    laplaceKernel = np.array([
+        [0.5, 1, 0.5],
+        [1, -6, 1],
+        [0.5, 1, 0.5]], dtype=dataArray[0].dtype)
+
+    for plate in dataArray:
+
+        #We need a copy because we'll modify it
+        aPlate = plate[..., measure].copy()
+
+        #Apply median filter to fill nans
+        aPlate = generic_filter(aPlate, _nanFiller, size=nanFillSize,
+                                mode="nearest")
+
+        #Apply laplace
+        aPlate = convolve(aPlate, laplaceKernel, mode="nearest")
+
+        # Make normalness analysis to find lower and upper threshold
+        # Rang based to z-score, compare to threshold adjusted by expected
+        # fraction of removed positions
+        rAPlate = aPlate.ravel()
+        rPlate = plate[..., measure].ravel()
+        sigma = np.sqrt(np.var(rAPlate))
+        mu = np.mean(rAPlate)
+        zScores = np.abs(rAPlate - mu)
+
+        for idX in np.argsort(zScores)[::-1]:
+            if (np.isnan(rPlate[idX]) or zScores[idX] > k * sigma /
+                    np.exp(-(np.isfinite(rPlate).sum() / float(rPlate.size))
+                           ** p)):
+
+                plate[idX / plate.shape[1], idX % plate.shape[1],
+                      measure] = np.nan
+
+            else:
+
+                break
+
+
 def applyLog2Transform(dataArray, measures=None):
     """Log2 Transformation of dataArray values.
 
@@ -443,6 +503,9 @@ def applySobelFilter(dataArray, measure=1, threshold=1, **kwargs):
     Further arguments of scipy.ndimage.sobel can be supplied
     """
 
+    if ('mode' not in kwargs):
+        kwargs['mode'] = 'nearest'
+
     for plateIndex in range(len(dataArray)):
 
         filt = (np.sqrt(sobel(
@@ -462,14 +525,18 @@ def applyLaplaceFilter(dataArray, measure=1, threshold=1, **kwargs):
 
     Further arguments of scipy.ndimage.laplace can be supplied
     """
+    if ('mode' not in kwargs):
+        kwargs['mode'] = 'nearest'
+
     for plateIndex in range(len(dataArray)):
 
         filt = (np.abs(laplace(dataArray[plateIndex][..., measure], **kwargs))
                 > threshold)
+
         dataArray[plateIndex][..., measure][filt] = np.nan
 
 
-def applyGaussSmoothing(dataArray, measure=1, sigma=3.5):
+def applyGaussSmoothing(dataArray, measure=1, sigma=3.5, **kwargs):
     """Applies a Gaussian Smoothing filter to the values of a plate (or norm
     surface).
 
@@ -478,10 +545,14 @@ def applyGaussSmoothing(dataArray, measure=1, sigma=3.5):
     measure     The measurement ot evaluate
     sigma       The size of the gaussian kernel
     """
+
+    if ('mode' not in kwargs):
+        kwargs['mode'] = 'nearest'
+
     for plateIndex in range(len(dataArray)):
 
         dataArray[plateIndex][..., measure] = gaussian_filter(
-            dataArray[plateIndex][..., measure], sigma=sigma, mode='nearest')
+            dataArray[plateIndex][..., measure], sigma=sigma, **kwargs)
 
 
 def applySigmaFilter(dataArray, nSigma=3):
