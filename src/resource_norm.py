@@ -7,6 +7,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter, median_filter, gaussian_filter1d
 from scipy.stats import probplot, linregress, pearsonr
+from scipy.optimize import leastsq
 import matplotlib.pyplot as plt
 import itertools
 import time
@@ -1515,11 +1516,14 @@ class PhenotypeStrider(_NumpyArrayInterface):
 
     def __init__(self, dataObject, timeObject=None,
                  medianKernelSize=5, gaussSigma=1.5, linRegSize=5,
-                 measure=None):
+                 measure=None, baseName=None):
 
         self._source = dataObject
         self._generationTimes = None
+        self._curveFits = None
+
         self._timeObject = None
+        self._baseName = baseName
 
         if isinstance(dataObject, resource_xml_read.XML_Reader):
             arrayCopy = self._xmlReader2array(dataObject)
@@ -1559,7 +1563,10 @@ class PhenotypeStrider(_NumpyArrayInterface):
         """
 
         xml = resource_xml_read.XML_Reader(path)
-        return cls(xml, **kwargs)
+        if (path.lower().endswith(".xml")):
+            path = path[:-4]
+
+        return cls(xml, baseName=path, **kwargs)
 
     @classmethod
     def LoadFromNumPy(cls, path, timesPath=None, **kwargs):
@@ -1585,15 +1592,49 @@ class PhenotypeStrider(_NumpyArrayInterface):
         Optional Parameters can be passed as keywords and will be
         used in instanciating the class.
         """
-        if (timesPath is None):
-            if (path.endswith(".npy")):
-                path = path[:-4]
-                if (path.endswith(".data")):
-                    path = path[:-5]
-            timesPath = path + ".times.npy"
-            path += ".data.npy"
+        dataPath = path
+        if (path.lower().endswith(".npy")):
+            path = path[:-4]
+            if (path.endswith(".data")):
+                path = path[:-5]
 
-        return cls(np.load(path), np.load(timesPath), **kwargs)
+        if (timesPath is None):
+            timesPath = path + ".times.npy"
+
+        if (not os.path.isfile(dataPath)):
+            if (os.path.isfile(timesPath + ".data.npy")):
+
+                timesPath += ".data.npy"
+
+            elif (os.path.isfile(timesPath + ".npy")):
+
+                timesPath += ".npy"
+
+        return cls(np.load(dataPath), np.load(timesPath), baseName=path,
+                   **kwargs)
+
+    @staticmethod
+    def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
+
+        return D + b0 * np.power(1.0 - b1 * np.exp(-b2 * X), 1.0 / (1.0 - b3))
+
+    @staticmethod
+    def RCResiduals(crParams, X, Y):
+
+        return Y - PhenotypeStrider.ChapmanRichards4ParameterExtendedCurve(
+            X, *crParams)
+
+    @staticmethod
+    def CalculateFitRSquare(X, Y, p0=np.array([4.5, -50, 0.3, 3, -3],
+                                              dtype=np.float)):
+
+        """X and Y must be 1D, Y must be log2"""
+
+        p = leastsq(PhenotypeStrider.RCResiduals, p0, args=(X, Y))[0]
+        Yhat = PhenotypeStrider.ChapmanRichards4ParameterExtendedCurve(
+            X, *p)
+        return (1.0 - np.square(Yhat - Y).sum() /
+                np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
 
     @property
     def source(self):
@@ -1652,7 +1693,10 @@ class PhenotypeStrider(_NumpyArrayInterface):
             strides=(self._timeObject.strides[0],
                      self._timeObject.strides[0]))
 
+        flatT = self._timeObject.ravel()
+
         allGT = []
+        allFits = []
         linRegSize = self._linRegSize
         #linRegUFunc = np.frompyfunc(_linReg2, linRegSize * 2, 2)
         posOffset = (linRegSize - 1) / 2
@@ -1704,6 +1748,10 @@ class PhenotypeStrider(_NumpyArrayInterface):
 
             allGT.append(generationTimes)
 
+            curveFits = np.zeros((plate.shape[:2]) + (6,), dtype=plate.dtype)
+
+            allFits.append(curveFits)
+
             stridedPlate = np.lib.stride_tricks.as_strided(
                 plate,
                 shape=(plate.shape[0], plate.shape[1],
@@ -1734,15 +1782,28 @@ class PhenotypeStrider(_NumpyArrayInterface):
                         vArgSort[-2] + posOffset,
                     )
 
+                    Yobs = plate[idX, idY].ravel().astype(np.float64)
+
+                    p = PhenotypeStrider.CalculateFitRSquare(
+                        flatT, np.log2(Yobs))
+
+                    curveFits[idX, idY, ...] = (p[0], ) + tuple(p[1])
+
             sys.stderr.write(
                 time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
                 "Plate {0} Done\n".format(plateI))
 
         self._generationTimes = np.array(allGT)
+        self._curveFits = np.array(allFits)
 
         sys.stderr.write(
             time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
             "Phenotype Extraction Done\n")
+
+    @property
+    def curveFits(self):
+
+        return self._curveFits
 
     @property
     def generationTimes(self):
@@ -1800,9 +1861,20 @@ class PhenotypeStrider(_NumpyArrayInterface):
 
         return values
 
+    def plotRandomSampesAndSave(self, pathPattern="fig__{0}.png", n=100,
+                                figure=None, figClear=False, **kwargs):
+
+        zpos = int(np.floor(np.log10(n)) + 1)
+
+        for i in range(n):
+            figure = self.plotACurve(fig=figure, figClear=figClear,
+                                     **kwargs)
+            figure.savefig(pathPattern.format(str(i + 1).zfill(zpos)))
+
     def plotACurve(self, position=None,
                    plotRaw=True, plotSmooth=True, plotRegLine=True,
-                   annotateGTpos=True,
+                   plotFit=True,
+                   annotateGTpos=True, annotateFit=True,
                    xMarkTimes=None, plusMarkTimes=None, altMeasures=None,
                    fig=None, figClear=True):
         """Plots a curve with phenotypes marked based on a position.
@@ -1889,6 +1961,17 @@ class PhenotypeStrider(_NumpyArrayInterface):
 
         gtY = self._dataObject[position[0]][position[1:]][tId]
 
+        if plotFit:
+
+            Yhat = np.power(
+                2.0,
+                PhenotypeStrider.ChapmanRichards4ParameterExtendedCurve(
+                    self._timeObject.ravel(),
+                    *self._curveFits[position[0]][position[1:]][1:]))
+
+            ax.semilogy(self._timeObject,
+                        Yhat, '--', color=(0.1, 0.1, 0.1, 0.5), basey=2)
+
         if plotRegLine:
 
             t = self._timeObject[tId]
@@ -1908,6 +1991,12 @@ class PhenotypeStrider(_NumpyArrayInterface):
                 arrowstyle="->", connectionstyle="arc3"),
                 xytext=(30, 10), textcoords="offset points")
 
+        if annotateFit:
+
+            ax.text(0.1, 0.85, "$R^2 = {0:.5f}$".format(
+                    self._curveFits[position[0]][position[1:]][0]),
+                    transform=ax.transAxes)
+
         measureText = "Generation Time: {0:.2f}".format(
             self._generationTimes[position[0]][position[1:]][self.GT_VALUE])
 
@@ -1924,15 +2013,23 @@ class PhenotypeStrider(_NumpyArrayInterface):
 
         return f
 
-    def savePhenotypes(self, path, delim="\t", newline="\n"):
+    def savePhenotypes(self, path=None, delim="\t", newline="\n"):
         """Outputs the phenotypes as a csv type format."""
+
+        if (path is None and self._baseName is not None):
+            path = self._baseName + ".csv"
+
         if (os.path.isfile(path)):
             if ('y' not in raw_input("Overwrite existing file? (y/N)").lower()):
                 return
 
         fh = open(path, 'w')
 
+        curveFits = self.curveFits
+
         for plateI, plate in enumerate(self.generationTimes):
+
+            curveFitsP = curveFits[plateI]
 
             for idX, X in enumerate(plate):
 
@@ -1942,15 +2039,23 @@ class PhenotypeStrider(_NumpyArrayInterface):
                         delim.join(
                             ["{0}:{1}-{2}".format(plateI, idX, idY)] +
                             map(str, ["", "", "", Y[self.GT_VALUE], ""]
-                                + Y[1:].tolist())),
+                                + Y[1:].tolist() +
+                                curveFitsP[idX, idY].tolist())),
                         newline))
 
         fh.close()
 
-    def saveInputData(self, path):
+    def saveInputData(self, path=None):
+
+        if (path is None):
+
+            assert self._baseName is not None, "Must give path some way"
+
+            path = self._baseName
 
         if (path.endswith(".npy")):
             path = path[:-4]
+
         source = self._source
         if (isinstance(source, resource_xml_read.XML_Reader)):
             source = self._xmlReader2array(source)
