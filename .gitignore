@@ -5,6 +5,7 @@
 _*.lock
 .git/*
 .ropeproject
+/build
 /data
 dev/*
 /config/

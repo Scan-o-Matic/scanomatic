@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-"""Deals with fixture analysis of an image"""
+"""Deals image as used by first pass analysis"""
 
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
@@ -26,11 +25,15 @@ from matplotlib.pyplot import imread
 # SCANNOMATIC LIBRARIES
 #
 
-import resource_image as resource_image
 import resource_path as resource_path
 import resource_config as conf
 import resource_app_config as resource_app_config
+
 import scanomatic.io.logger as logger
+import imageBasics
+import imageFixture
+import imageGrayscale
+import grayscale
 
 #
 # DECORATORS
@@ -221,7 +224,7 @@ class Gridding_History(object):
             f.save()
 
 
-class Fixture_Image(object):
+class Image(object):
 
     MARKER_DETECTION_SCALE = 0.25
     EXPECTED_IM_SIZE = (6000, 4800)
@@ -302,7 +305,7 @@ class Fixture_Image(object):
             elif self._gs_indices is not None:
                 return self._gs_indices
             else:
-                return resource_image.GRAYSCALES[self['grayscale_type']][
+                return grayscale.GRAYSCALES[self['grayscale_type']][
                     'targets']
 
         elif key in ["grayscaleSource"]:
@@ -338,7 +341,7 @@ class Fixture_Image(object):
             gs_type = self.fixture_reference.get('grayscale_type')
             if gs_type is None:
                 self._logger.warning("Using default Grayscale")
-                gs_type = resource_image.DEFAULT_GRAYSCALE
+                gs_type = grayscale.DEFAULT_GRAYSCALE
             return gs_type
         else:
 
@@ -353,7 +356,7 @@ class Fixture_Image(object):
 
         elif key in ['grayscale_type']:
 
-            if val in resource_image.GRAYSCALES:
+            if val in grayscale.GRAYSCALES:
                 self.fixture_current['grayscale_type'] = val
             else:
                 self.fixture_current['grayscale_type'] = None
@@ -648,7 +651,7 @@ class Fixture_Image(object):
             analysis_img = self.im
         else:
 
-            analysis_img = resource_image.Quick_Scale_To_im(
+            analysis_img = imageBasics.Quick_Scale_To_im(
                 im=self.im,
                 scale=self.MARKER_DETECTION_SCALE / self.im_original_scale)
 
@@ -668,7 +671,7 @@ class Fixture_Image(object):
         logger.debug(
             "Setting up Image Analysis (acc {0} s)".format(time.time() - t))
 
-        im_analysis = resource_image.Image_Analysis(
+        im_analysis = imageFixture.FixtureImage(
             image=analysis_img,
             pattern_image_path=self.marking_path,
             scale=self.im_scale,
@@ -835,7 +838,7 @@ class Fixture_Image(object):
             return False
 
         #np.save(".tmp.npy", im)
-        ag = resource_image.Analyse_Grayscale(
+        ag = imageGrayscale.Analyse_Grayscale(
             target_type=self['grayscale_type'], image=im,
             scale_factor=self.im_original_scale)
 

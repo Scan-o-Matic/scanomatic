@@ -64,12 +64,13 @@ _logger.info("Preparing setup parameters")
 
 #Obtain a list of current packages
 #working_set = WorkingSet()
-package_dependencies = (
+#'scikits-image',
+package_dependencies = [
     'argparse', 'matplotlib', 'multiprocessing',
-    'numpy', 'sh', 'nmap', 'configparse',
-    'uuid', 'PIL', 'scipy', 'scikits-image', 'unittest', 'pygtk')
+    'numpy', 'sh', 'nmap', 'configparse', 'scikits-image',
+    'uuid', 'PIL', 'scipy',  'unittest', 'pygtk']
 
-data_files = {"scan-o-matic": ["data/*"]}
+data_files = [] #{"scan-o-matic": ["data/*"]}
 
 scripts = [
     os.path.join("scripts", p) for p in [
@@ -130,7 +131,7 @@ setup(
     author="Martin Zackrisson",
     author_email="martin.zackrisson@gu.se",
     url="www.gitorious.org/scannomatic",
-    requires=package_dependencies,
+    install_requires=package_dependencies,
     packages=[
         "scanomatic",
         "scanomatic.io",

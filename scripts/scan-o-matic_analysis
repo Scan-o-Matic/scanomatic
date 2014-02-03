@@ -256,8 +256,8 @@ if __name__ == "__main__":
     #MATRICES
     if args.matrices is not None:
 
-        import src.resource_analysis_support as resource_analysis_support
-        pm = resource_analysis_support.get_pinning_matrices(args.matrices)
+        import scanomatic.imageAanalysis.support as IAsupport
+        pm = IAsupport.get_pinning_matrices(args.matrices)
         logger.debug("Matrices: {0}".format(pm))
 
         if pm == [None] * len(pm):
@@ -299,7 +299,8 @@ if __name__ == "__main__":
     logger.debug("Logger is ready!")
 
     #START ANALYSIS
-    import src.analysis as analysis
+    import scanomatic.imageAanalysis.analysis as analysis
+
     a = analysis.Analysis(
         args.inputfile, output_path, pm, args.graph_watch, verbose=True,
         visual=False,

@@ -25,7 +25,7 @@ from argparse import ArgumentParser
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.controller_main as controller
+import scanomatic.gui.controller_main as controller
 
 #
 # EXECUTION BEHAVIOUR

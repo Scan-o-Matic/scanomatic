@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 This module is the typical starting-point of the analysis work-flow.
 It has command-line behaviour but can also be run as part of another program.

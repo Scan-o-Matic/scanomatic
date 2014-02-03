@@ -135,7 +135,8 @@ class Color_Image(object):
         self._im_cropped = self.get_im_section(rect=rect, margin=margin).copy()
         self._cur_im = "cropped"
 
-    def set_level_image(ref_im, im_norm_rect, im_ref_norm_rect, gray=True):
+    def set_level_image(
+        self, ref_im, im_norm_rect, im_ref_norm_rect, gray=True):
 
         im = self.get_cur_im()
 
@@ -787,7 +788,7 @@ class Color_Image(object):
                         self._untrusted.append(settings['identifier'])
 
                         self.logger.warning('Colony {0}'.format(
-                            settings['identifier'])
+                            settings['identifier']) +
                             " has no good blob. I put it among the untrusted.")
 
                 if q_inv <= 900 or q_inv < q_2:
@@ -990,7 +991,7 @@ class Color_Image(object):
 
         if q < 0.95:
 
-            self.logger.warning("The colour quality is bad ({0.2f})".format(q)
+            self.logger.warning("The colour quality is bad ({0.2f})".format(q) +
                 " which means measurement quality is low!")
 
         return phenotypes, q
