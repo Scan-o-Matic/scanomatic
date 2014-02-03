@@ -89,7 +89,8 @@ class XML_Writer(object):
 
         except:
 
-            self._logger.critical("XML WRITER: can't open target file:" +
+            self._logger.critical(
+                "XML WRITER: can't open target file:" +
                 "'{0}' and/or '{0}'".format(
                 self._outdata_full, self._outdata_slim))
 
@@ -125,10 +126,10 @@ class XML_Writer(object):
             """Convert mac-long to human readable hex format"""
             mac = ":".join(re.findall(r'([a-f\d]{2,2})', hex(mac)))
 
-
         if mac is None:
 
-            self._logger.warning("Could not locate computer MAC address, "
+            self._logger.warning(
+                "Could not locate computer MAC address, "
                 "will use random/fake for computer ID in XML.")
 
             mac = self._get_saved_mac()
@@ -194,7 +195,7 @@ class XML_Writer(object):
                     meta_data['Start Time']))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['prefix','pref'][tag_format], meta_data['Prefix']))
+                    ['prefix', 'pref'][tag_format], meta_data['Prefix']))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['project_tag', 'ptag'][tag_format], meta_data['Project ID']))
@@ -285,9 +286,9 @@ class XML_Writer(object):
         for f in self._file_handles.values():
 
             f.write(self.XML_OPEN_W_ONE_PARAM.format(
-                        ['scan', 's'][tag_format],
-                        ['index', 'i'][tag_format],
-                        image_pos))
+                ['scan', 's'][tag_format],
+                ['index', 'i'][tag_format],
+                image_pos))
 
             f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['scan-valid', 'ok'][tag_format],
@@ -355,7 +356,7 @@ class XML_Writer(object):
                                 'x', x,
                                 'y', y))
 
-                        if cell != None:
+                        if cell is not None:
 
                             for item in cell.keys():
 
@@ -364,9 +365,9 @@ class XML_Writer(object):
                                 if tag_format:
 
                                     i_string = i_string\
-                                            .replace('background', 'bg')\
-                                            .replace('blob', 'bl')\
-                                            .replace('cell', 'cl')
+                                        .replace('background', 'bg')\
+                                        .replace('blob', 'bl')\
+                                        .replace('cell', 'cl')
 
                                 if item not in omit_compartments:
 
@@ -392,7 +393,7 @@ class XML_Writer(object):
                                             .replace('perimeter', 'per')
 
                                     if item not in omit_compartments and \
-                                        measure not in omit_measures:
+                                            measure not in omit_measures:
 
                                         fhs.write(m_string)
 

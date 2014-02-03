@@ -53,7 +53,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._timeObject = None
         self._baseName = baseName
 
-        if isinstance(dataObject, resource_xml_read.XML_Reader):
+        if isinstance(dataObject, xmlReader.XML_Reader):
             arrayCopy = self._xmlReader2array(dataObject)
 
             if timeObject is None:
@@ -90,7 +90,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         used in instanciating the class.
         """
 
-        xml = resource_xml_read.XML_Reader(path)
+        xml = xmlReader.XML_Reader(path)
         if (path.lower().endswith(".xml")):
             path = path[:-4]
 
@@ -585,7 +585,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             path = path[:-4]
 
         source = self._source
-        if (isinstance(source, resource_xml_read.XML_Reader)):
+        if (isinstance(source, xmlReader.XML_Reader)):
             source = self._xmlReader2array(source)
 
         np.save(path + ".data.npy", source)

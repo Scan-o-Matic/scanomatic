@@ -19,7 +19,6 @@ __status__ = "Development"
 import os
 import numpy as np
 import re
-import time
 
 #
 # INTERNAL DEPENDENCIES
@@ -86,9 +85,7 @@ class XML_Reader():
             self._logger.error("XML-file '{0}' not found".format(self._file_path))
             return False
 
-        print (
-            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
-            "Started Processing\n")
+        self._logger.info("Started Processing")
 
         f = fs.read()
         fs.close()
@@ -114,7 +111,7 @@ class XML_Reader():
         nscans = len(re.findall(XML_TAG_INDEX_VALUE.format('s', 'i'), f))
         pms = re.findall(XML_TAG_INDEX_VALUE_CONT.format('p-m', 'i'), f)
         pms = map(lambda x: map(eval, x), pms)
-        print "Pinning matrices: {0}".format(pms)
+        self._logger.debug("Pinning matrices: {0}".format(pms))
         colonies = sum([p[1][0] * p[1][1] for p in pms if p[1] is not None])
         #measures = colonies * nscans
         max_pm = np.max(np.array([p[1] for p in pms]), 0)
@@ -137,7 +134,7 @@ class XML_Reader():
         self._scan_times -= self._scan_times[0]  # Make it relative
         self._scan_times /= 3600  # Make it in hours
 
-        print (
+        self._logger.debug(
             "Ready for {0} plates ({1} scans, {2} measures per colony)".format(
                 len(self._data), nscans, m_types))
 
@@ -226,12 +223,11 @@ class XML_Reader():
                         slice_start += 1
                         colonies_done += 1
 
-            print "Completed {0}%\r".format(
-                100 * colonies_done / float(colonies))
+            self._logger.info(
+                "Completed {0}%\r".format(
+                    100 * colonies_done / float(colonies)))
 
-        print (
-            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
-            "Started Processing\n")
+        self._logger.info("Done Processing")
 
         return True
 

@@ -22,6 +22,7 @@ import numpy as np
 #
 
 import _mockNumpyInterface
+import xml.reader as xmlReader
 
 
 class DataBridge(_mockNumpyInterface.NumpyArrayInterface):
@@ -83,7 +84,7 @@ class DataBridge(_mockNumpyInterface.NumpyArrayInterface):
             self._dataObject = np.array(plates)
             self.updateSource = self._updateToFeatureDict
 
-        elif isinstance(self._source, resource_xml_read.XML_Reader):
+        elif isinstance(self._source, xmlReader.XML_Reader):
 
             if "time" not in kwargs:
                 raise Exception(
