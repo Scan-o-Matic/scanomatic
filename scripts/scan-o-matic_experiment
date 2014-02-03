@@ -27,14 +27,13 @@ from argparse import ArgumentParser
 # SCANNOMATIC LIBRARIES
 #
 
-import src.resource_scanner as resource_scanner
-import src.resource_first_pass_analysis as resource_first_pass_analysis
-import src.resource_fixture as resource_fixture
-import src.resource_path as resource_path
-import src.resource_app_config as resource_app_config
-import src.resource_project_log as resource_project_log
-import src.subprocs.communicator as communicator
-import src.resource_logger as logging
+import scanomatic.io.scanner as scanner
+import scanomatic.imageAnalysis.first_pass as first_pass
+import scanomatic.io.paths as paths
+import scanomatic.io.app_config as app_config
+import scanomatic.io.project_log as project_log
+import scanomatic.subprocs.communicator as communicator
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -77,9 +76,9 @@ def get_pinnings_list(pinning_string):
 
 def free_scanner(scanner, uuid):
 
-    paths = resource_path.Paths()
-    config = resource_app_config.Config(paths)
-    scanners = resource_scanner.Scanners(paths, config)
+    _paths = paths.Paths()
+    config = app_config.Config(_paths)
+    scanners = scanner.Scanners(_paths, config)
     s = scanners[scanner]
     s.set_uuid(uuid)
     s.free()
@@ -93,13 +92,15 @@ class Experiment(object):
 
     SCAN_MODE = 'TPU'
 
-    def __init__(self, run_args=None, **kwargs):
+    def __init__(self, run_args=None, loggingLvl=None, **kwargs):
 
-        self.paths = resource_path.Paths()
-        self._logger = logging.getLogger("Expermient")
-        self.config = resource_app_config.Config(self.paths)
-        self.fixtures = resource_fixture.Fixtures(self.paths, self.config)
-        self.scanners = resource_scanner.Scanners(self.paths, self.config)
+        self.paths = paths.Paths()
+        self._logger = logger.Logger("Expermient")
+        if loggingLvl is not None:
+            self._logger.level = loggingLvl
+        self.config = app_config.Config(self.paths)
+        self.fixtures = fixture.Fixtures(self.paths, self.config)
+        self.scanners = scanner.Scanners(self.paths, self.config)
 
         self._running = True
         self._paused = False
@@ -256,7 +257,7 @@ class Experiment(object):
                 self._out_data_path,
                 self.paths.experiment_local_fixturename))
 
-        self._fixture = resource_fixture.Fixture_Settings(
+        self._fixture = fixture.Fixture_Settings(
             self._out_data_path,
             self.paths.experiment_local_fixturename,
             self.paths)
@@ -357,7 +358,7 @@ class Experiment(object):
         if scan_success:
 
             self._logger.info("Requesting first pass analysis of file '{0}'".format(im_path))
-            im_dict = resource_first_pass_analysis.analyse(
+            im_dict = first_pass.analyse(
                 file_name=im_path,
                 im_acq_time=curTime,
                 experiment_directory=self._out_data_path,
@@ -365,7 +366,7 @@ class Experiment(object):
 
             self._logger.info("{0}".format(im_dict))
 
-            im_dict = resource_project_log.get_image_dict(
+            im_dict = project_log.get_image_dict(
                 im_path,
                 curTime,
                 im_dict['mark_X'],
@@ -378,7 +379,7 @@ class Experiment(object):
 
             self._logger.info("Writing first pass analysis results to file")
 
-            resource_project_log.append_image_dicts(
+            project_log.append_image_dicts(
                 self._first_pass_analysis_file,
                 images=[im_dict])
 
@@ -389,7 +390,7 @@ class Experiment(object):
 
         self._logger.info("Writing header row")
 
-        meta_data = resource_project_log.get_meta_data_dict(
+        meta_data = project_log.get_meta_data_dict(
             **{
                 'Start Time': time.time(),
                 'Prefix': self._prefix,
@@ -406,7 +407,7 @@ class Experiment(object):
             }
         )
 
-        resource_project_log.write_log_file(
+        project_log.write_log_file(
             self._first_pass_analysis_file,
             meta_data=meta_data)
 
@@ -493,7 +494,7 @@ input file for the analysis script.""")
     args = parser.parse_args()
 
     #PATHS
-    paths = resource_path.Paths()
+    _paths = paths.Paths()
 
     #HIDDEN ARGS DEALING WITH CONTIUNUING PROJECTS
     args.last_scan = None
@@ -542,7 +543,7 @@ input file for the analysis script.""")
         free_scanner(args.scanner, args.uuid)
         parser.error("Must have fixture file")
 
-    fixture = paths.get_fixture_path(args.fixture)
+    fixture = _paths.get_fixture_path(args.fixture)
 
     try:
         fs = open(fixture, 'r')
@@ -592,27 +593,19 @@ input file for the analysis script.""")
         args.layout_id = ""
 
     #LOGGING
+    loggingLvl = logger.Logger.INFO
     if (args.logging is not None and
-            args.logging.lower() in logging.getLevels()):
+            args.logging.lower() in logger.Logger.GetLevels()):
 
-        logging.setLogLevels(args.logging.lower())
+        loggingLvl = getattr(logger.Logger, args.logging.upper())
 
     #CREATE DIRECTORY
     if args.file is None:
         os.mkdir(args.outdata_path)
 
-    logging.setLoggingTarget(
+    logger.Logger.SetDefaultOutputTarget(
         os.path.join(args.outdata_path, "experiment.run"),
-        redirectStdErr=True)
+        catchStdErr=True, catchStdOut=True)
 
-    """
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S\n',
-        filename=os.path.join(args.outdata_path, "experiment.run"),
-        filemode='w',
-        level=logging_level)
-    """
-
-    e = Experiment(run_args=args)
+    e = Experiment(run_args=args, loggingLvl=loggingLvl)
     e.run()

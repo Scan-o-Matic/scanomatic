@@ -19,8 +19,8 @@ import shutil
 import os
 import time
 
-import src.resource_path as resource_path
-import src.gui.analysis.model_analysis as model_analysis
+import scanomatic.io.paths as paths
+import scanomatic.gui.analysis.model_analysis as model_analysis
 
 
 def expand_compressed_vector(values, counts):
@@ -154,7 +154,7 @@ def get_expanded_data(data_store, measures):
 
     return X, Y, x_min, x_max
 
-paths = resource_path.Paths()
+_paths = paths.Paths()
 
 sep = "\t"
 labelTargetValue, labelSourceValues, labelSourceCounts = \
@@ -167,11 +167,11 @@ if __name__ == "__main__":
     #
 
     if len(sys.argv) == 1:
-        file_path = paths.analysis_calibration_data
+        file_path = _paths.analysis_calibration_data
     else:
         file_path = sys.argv[-1]
 
-    file_out_path = paths.analysis_polynomial
+    file_out_path = _paths.analysis_polynomial
 
     #
     #   READING IN FILE

@@ -21,19 +21,22 @@ from subprocess import Popen, PIPE
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_path as resource_path
-import src.resource_app_config as resource_app_config
-import src.resource_logger as resource_logger
-import src.resource_scanner as resource_scanner
+import scanomatic.io.paths as paths
+import scanomatic.io.app_config as app_config
+import scanomatic.io.logger as logger
+import scanomatic.io.scanner as scanner
+
 
 class Locator(object):
 
     def __init__(self, log_path=None):
 
-        self._paths = resource_path.Paths()
-        self._logger = resource_logger.File_Logger(
-            path=self._paths.log_relaunch)
-        self._app_config = resource_app_config.Config(paths=self._paths)
+        self._paths = paths.Paths()
+        self._logger = logger.Logger("Relauncher")
+        self._logger.setOutputTarget(self._paths.log_relaunch,
+                                     catchStdErr=True,
+                                     catchStdOut=True)
+        self._app_config = app_config.Config(paths=self._paths)
 
     def run(self):
 
@@ -42,7 +45,7 @@ class Locator(object):
 
         curdir = self._paths.experiment_root
         e_pattern = self._paths.experiment_first_pass_analysis_relative[3:]
-        a_pattern = self._paths.analysis_run_log
+        #a_pattern = self._paths.analysis_run_log
 
         def _search(curdir):
 
@@ -64,15 +67,15 @@ class Locator(object):
 
     def _kill_orphan_scanners(self):
 
-        scanners = resource_scanner.Scanners(self._paths, self._app_config, logger=self._logger)
+        scanners = scanner.Scanners(self._paths, self._app_config, logger=self._logger)
         names = scanners.get_names(available=False)
         statuses = []
 
         for name in names:
-            scanner = scanners[name]
-            if scanner.get_claimed() == False:
-                scanner.off()
-            statuses.append(scanner.get_power_status() in (None, True))
+            s = scanners[name]
+            if s.get_claimed() is False:
+                s.off()
+            statuses.append(s.get_power_status() in (None, True))
 
         scanners.update()
 
@@ -83,19 +86,19 @@ class Locator(object):
 
                 if not(self._check_if_only_me()):
 
-                    self._logger.warning('Scanners are on but should not be and could not be turned off safly')
+                    self._logger.warning(
+                        'Scanners are on but should not be and could not be turned off safly')
 
                 else:
 
                     for name in names:
-                        scanner = scanners[name]
-                        scanner.off(byforce=True)
-
+                        s = scanners[name]
+                        s.off(byforce=True)
 
     def _check_if_only_me(self):
 
         p = Popen('ps -A | grep python -c', stdout=PIPE, stderr=PIPE,
-            shell=True)
+                  shell=True)
 
         python_procs, stderr = p.communicate()
 
@@ -103,8 +106,8 @@ class Locator(object):
 
     def _get_scanner_locks(self):
         """Returns a list of all UUIDs currently locking scanners"""
-        lock_files = [self._paths.lock_scanner_pattern.format(s + 1) 
-            for s in range(self._app_config.number_of_scanners)]
+        lock_files = [self._paths.lock_scanner_pattern.format(s + 1)
+                      for s in range(self._app_config.number_of_scanners)]
 
         self._logger.info("Investigating current scanner lock-files: {0}".format(lock_files))
         scanner_locks = {}
@@ -122,13 +125,13 @@ class Locator(object):
         return scanner_locks
 
     def _match_uuids(self, scanner_locks, experiment_files):
-        
+
         revive_experiments = []
 
         if len(scanner_locks) > 0:
             for e in experiment_files:
                 try:
-                    fh = open(e,'r')
+                    fh = open(e, 'r')
                     e_settings = eval(fh.readline().strip())
                     images = 0
                     for line in fh:
@@ -137,8 +140,9 @@ class Locator(object):
                     if (e_settings is not None and 'UUID' in e_settings and
                             e_settings['UUID'] in scanner_locks):
 
-                        revive_experiments.append([e_settings,
-                                scanner_locks[e_settings['UUID']], images, e])
+                        revive_experiments.append(
+                            [e_settings,
+                             scanner_locks[e_settings['UUID']], images, e])
 
                     fh.close()
                 except:
@@ -147,7 +151,6 @@ class Locator(object):
         self._logger.info("The following experiments were found matching locks: {0}".format(revive_experiments))
         return revive_experiments
 
-
     def _select_dupes(self, dupelist):
 
         candidates = []
@@ -155,9 +158,9 @@ class Locator(object):
             #Check if all images have been taken as requested or if
             #Time passed since start is less than total time
             if not(dupe[1][0]['Measures'] <= dupe[1][2] or
-                    dupe[1][0]['Start Time'] != 0 and 
-                    dupe[1][0]['Start Time'] + dupe[1][0]['Measures'] * 
-                    dume[1][0]['Interval']*60 < time.time()):
+                    dupe[1][0]['Start Time'] != 0 and
+                    dupe[1][0]['Start Time'] + dupe[1][0]['Measures'] *
+                    dupe[1][0]['Interval'] * 60 < time.time()):
 
                 dupelist[i][1] = True  # is a duplicate
 
@@ -183,12 +186,13 @@ class Locator(object):
         for scanner, n_experiments in enumerate(exp_per_scanner):
             if n_experiments > 1:
                 #We have duplicates, this removes them
-                dupe_selection = self._select_dupe([(i, revive_experiment)
+                dupeselection = self._select_dupe([
+                    (i, revive_experiment)
                     for i, revive_experiment in enumerate(revive_experiments)
                     if revive_experiment[1] == scanner])
 
                 for dupe in dupeselection:
-                    if dupe[1] == True:
+                    if dupe[1] is True:
                         del revive_experiments[dupe[0]]
 
         self._logger.info("After duplicate filter the following were still considered: {0}".format(revive_experiments))
@@ -209,7 +213,7 @@ class Locator(object):
         if len(revive_experiments) < len(scanner_locks):
 
             self._logger.error("Not all experiments that might have been running could be revived")
-            
+
         if not(self._check_if_only_me()):
 
             self._logger.error("Other pyton procs are running, won't revive if I'm not solo!")
@@ -231,8 +235,7 @@ class Locator(object):
 
             self._logger.info("Re-Launching experiment {0} ".format(e[3]))
 
-            proc = Popen(e_query_list, stdout=stdout, stderr=stderr,
-                shell=False)
+            Popen(e_query_list, stdout=stdout, stderr=stderr, shell=False)
 
         return True
 

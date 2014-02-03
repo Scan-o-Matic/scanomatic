@@ -26,10 +26,10 @@ from ConfigParser import ConfigParser
 # INTERNAL-DEPENDENCIES
 #
 
-import src.subprocs.communicator as communicator
-import src.resource_project_log as resource_project_log
-import src.resource_path as resource_path
-import src.resource_first_pass_analysis as resource_first_pass_analysis
+import scanomatic.subprocs.communicator as communicator
+import scanomatic.io.project_log as project_log
+import scanomatic.io.paths as paths
+import scanomatic.imageAnalysis.first_pass as first_pass
 
 import scanomatic.io.logger as logger
 
@@ -53,7 +53,7 @@ class Make_Project(object):
         self._running = None
         self._paused = False
 
-        self._paths = resource_path.Paths()
+        self._paths = paths.Paths()
 
         self._stdin = self._paths.log_rebuild_in.format(comm_id)
         self._stdout = self._paths.log_rebuild_out.format(comm_id)
@@ -103,10 +103,10 @@ class Make_Project(object):
         p = os.path.join(self._model['output-directory'],
                          self._model['output-file'])
 
-        md = resource_project_log.get_meta_data_dict(
+        md = project_log.get_meta_data_dict(
             **self._meta_data)
         #Make header row for file:
-        if resource_project_log.write_log_file(p, meta_data=md) is False:
+        if project_log.write_log_file(p, meta_data=md) is False:
 
             self._running = False
 
@@ -168,7 +168,7 @@ class Make_Project(object):
             im_path, im_acq_time))
 
         #Analyse image
-        im_data = resource_first_pass_analysis.analyse(
+        im_data = first_pass.analyse(
             im_path,
             im_acq_time=im_acq_time,
             fixture_name=self._fixture_name,
@@ -185,7 +185,7 @@ class Make_Project(object):
         else:
 
             #Get proper dict for writing to file
-            im_dict = resource_project_log.get_image_dict(
+            im_dict = project_log.get_image_dict(
                 im_path,
                 im_data['Time'],
                 im_data['mark_X'],
@@ -197,7 +197,7 @@ class Make_Project(object):
                 image_shape=im_data['im_shape'])
 
             #Write results
-            if resource_project_log.append_image_dicts(
+            if project_log.append_image_dicts(
                     self._output_path, images=[im_dict]) is False:
 
                 self._logger.error(
