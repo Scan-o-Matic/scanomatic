@@ -1,3 +1,39 @@
+  ####################
+##### THE TAKE OVER #####
+   ####################
+
+---
+* Planning import
+
+** Read csv type files.
+
+	Could text ods/xl*
+
+** UI for program used.
+
+*** 1:1 / 3:1
+
+*** File Selections
+
+*** Storing information in some file?
+
+---
+* New data format for growth parameter(s), native python
+
+---
+* Live view of growth
+
+** Show curve using some curve viewer
+	
+*** Select curve from heatmap
+
+---
+* Serialize feature extraction
+
+---
+
+
+
   ##########################
 ##### THE WHAT NEXT PLACE #####
    ##########################

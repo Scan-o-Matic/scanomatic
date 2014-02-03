@@ -13,13 +13,16 @@ __status__ = "Development"
 #
 
 import os
-import time
 from subprocess import Popen, PIPE
 import uuid
 import socket
 import re
 
-import resource_logger as logging
+#
+# INTERNAL DEPENDENCIES
+#
+
+import scanomatic.logger as logger
 
 #
 # CLASSES
@@ -49,10 +52,10 @@ class XML_Writer(object):
         ('median', 'md'): ('cells/pixel', 'standard'),
         ('centroid', 'cent'): ('(pixels,pixels)', 'coordnate'),
         ('perimeter', 'per'): ('((pixels, pixels) ...)',
-        'list of coordinates'),
+                               'list of coordinates'),
         ('IQR', 'IQR'): ('cells/pixel to cells/pixel', 'list of standard'),
         ('IQR_mean', 'IQR_m'): ('cells/pixel', 'standard')
-        }
+    }
 
     COMPARTMENTS = ('cell', 'blob', 'background')
 
@@ -60,12 +63,12 @@ class XML_Writer(object):
 
         self._directory = output_directory
         self._formatting = xml_format
-        self._logger = logging.getLogger("XML writer")
+        self._logger = logger.Logger("XML writer")
         self._paths = paths
 
         self._outdata_full = os.sep.join((output_directory, "analysis.xml"))
         self._outdata_slim = os.sep.join((output_directory,
-                                        "analysis_slimmed.xml"))
+                                         "analysis_slimmed.xml"))
 
         self._file_handles = {'full': None, 'slim': None}
         self._open_tags = list()

@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 #
 
 import _mockNumpyInterface
+import xml.reader as xmlReader
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
