@@ -814,24 +814,25 @@ def plotHeatMaps(dataObject, showArgs=tuple(), showKwargs=dict(),
 
     for plateIndex in range(len(dataObject)):
 
-        ax = fig.add_subplot(pR, pC, plateIndex + 1)
-        ax.set_title(title.format(plateIndex + 1))
-        if None not in (vMax, vMin):
-            I = ax.imshow(
-                dataObject[plateIndex][..., measure],
-                interpolation="nearest", vmin=vMin, vmax=vMax,
-                *showArgs, **showKwargs)
-        else:
-            I = ax.imshow(
-                dataObject[plateIndex][..., measure],
-                interpolation="nearest", *showArgs, **showKwargs)
+        if (dataObject is not None):
+            ax = fig.add_subplot(pR, pC, plateIndex + 1)
+            ax.set_title(title.format(plateIndex + 1))
+            if None not in (vMax, vMin):
+                I = ax.imshow(
+                    dataObject[plateIndex][..., measure],
+                    interpolation="nearest", vmin=vMin, vmax=vMax,
+                    *showArgs, **showKwargs)
+            else:
+                I = ax.imshow(
+                    dataObject[plateIndex][..., measure],
+                    interpolation="nearest", *showArgs, **showKwargs)
 
-        if not equalVscale:
+            if not equalVscale:
 
-            cbar = plt.colorbar(I, orientation='vertical')
-            cbar.ax.tick_params(labelsize='xx-small')
+                cbar = plt.colorbar(I, orientation='vertical')
+                cbar.ax.tick_params(labelsize='xx-small')
 
-        ax.axis("off")
+            ax.axis("off")
 
     if equalVscale:
         fig.subplots_adjust(bottom=0.85)
