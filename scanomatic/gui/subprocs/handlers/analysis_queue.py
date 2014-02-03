@@ -20,7 +20,7 @@ import psutil
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # CLASSES
@@ -83,7 +83,7 @@ class Analysis_Queue(object):
         the queue.
         """
 
-        self._logger = logging.getLogger("Analysis Queue")
+        self._logger = logger.Logger("Analysis Queue")
         self._check_passes = 0
         self._queue = deque()
 

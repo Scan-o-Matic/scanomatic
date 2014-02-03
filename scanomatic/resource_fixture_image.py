@@ -30,7 +30,7 @@ import resource_image as resource_image
 import resource_path as resource_path
 import resource_config as conf
 import resource_app_config as resource_app_config
-import resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # DECORATORS
@@ -68,7 +68,7 @@ class Gridding_History(object):
 
         #self._parent = weakref.ref(parent) if parent else None
 
-        self._logger = logging.getLogger("Gridding History")
+        self._logger = logger.Logger("Gridding History")
         self._name = fixture_name
         self._paths = paths
         self._app_config = app_config
@@ -231,7 +231,7 @@ class Fixture_Image(object):
                  fixture_directory=None, markings_path=None,
                  im_scale=None, paths=None, app_config=None):
 
-        self._logger = logging.getLogger("Fixture Image")
+        self._logger = logger.Logger("Fixture Image")
 
         if paths is None:
             self._paths = resource_path.Paths()

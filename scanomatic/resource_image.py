@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 
 import resource_signal as r_signal
 import resource_grayscale
-import resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # GLOBALS
@@ -40,7 +40,7 @@ GRAYSCALE_NAMES = resource_grayscale.getGrayscales()
 GRAYSCALES = {gsName: resource_grayscale.getGrayscale(gsName) for
               gsName in GRAYSCALE_NAMES}
 
-_logger = logging.getLogger("Resource Image")
+_logger = logger.Logger("Resource Image")
 '''
 DEFAULT_GRAYSCALE = 'Kodak'
 
@@ -124,7 +124,7 @@ class Image_Transpose(object):
 
     def __init__(self, sourceValues=None, targetValues=None, polyCoeffs=None):
 
-        self._logger = logging.getLogger("Image Transpose")
+        self._logger = logger.Logger("Image Transpose")
         self._source = sourceValues
         self._target = targetValues
         self._polyCoeffs = polyCoeffs
@@ -317,7 +317,7 @@ class Image_Analysis():
         self._load_error = None
         self._transformed = False
         self._conversion_factor = 1.0 / scale
-        self._logger = logging.getLogger("Resource Image Analysis")
+        self._logger = logger.Logger("Resource Image Analysis")
 
         if os.path.isfile(pattern_image_path) is False and resource_paths is not None:
 
@@ -554,7 +554,7 @@ class Analyse_Grayscale(object):
 
             #print "Set self._grayscale_{0}".format(k)
 
-        self._logger = logging.getLogger("Analyse Grayscale")
+        self._logger = logger.Logger("Analyse Grayscale")
         self._img = image
         #np.save("tmp_img.npy", image)
 

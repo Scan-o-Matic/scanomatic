@@ -33,7 +33,7 @@ import src.gui.generic.view_generic as view_generic
 
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
 import src.resource_tags_verification as resource_tags_verification
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -93,7 +93,7 @@ class Experiment_Controller(controller_generic.Controller):
     def __init__(self, main_controller):
 
         super(Experiment_Controller, self).__init__(main_controller)
-        self._logger = logging.getLogger("Experiment Controller")
+        self._logger = logger.Logger("Experiment Controller")
         self._specific_controller = None
 
     def ask_destroy(self, *args, **kwargs):
@@ -155,7 +155,7 @@ class One_Controller(controller_generic.Controller):
         super(One_Controller, self).__init__(
             parent, view=view, model=model)
 
-        self._logger = logging.getLogger("One Image Controller")
+        self._logger = logger.Logger("One Image Controller")
 
         if specific_model is not None:
             self._specific_model = specific_model
@@ -388,7 +388,7 @@ class Project_Controller(controller_generic.Controller):
         super(Project_Controller, self).__init__(
             parent, view=view, model=model)
 
-        self._logger = logging.getLogger("Experiment Project Controller")
+        self._logger = logger.Logger("Experiment Project Controller")
 
         #MODEL
         if specific_model is not None:

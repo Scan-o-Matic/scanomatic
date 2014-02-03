@@ -22,7 +22,7 @@ import inspect
 
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
 from src.gui.subprocs.event.event import Event
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # METHODS
@@ -57,7 +57,7 @@ class Reconnect_Subprocs(object):
         self._paths = controller.get_top_controller().paths
 
         self._controller = controller
-        self._logger = logging.getLogger("Reconnect Subprocs")
+        self._logger = logger.Logger("Reconnect Subprocs")
         self._tc = controller.get_top_controller()
         self._ids = {}
 

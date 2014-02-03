@@ -20,9 +20,13 @@ import os
 #
 
 import src.resource_fixture_image as resource_fixture_image
+import scanomatic.io.logger as logger
 
-import resource_logger as logging
-_logger = logging.getLogger("1st Pass Analysis")
+#
+# GLOBALS
+#
+
+_logger = logger.Logger("1st Pass Analysis")
 
 #
 # EXCEPTIONS

@@ -28,7 +28,7 @@ import model_config
 import view_config
 
 import src.gui.generic.controller_generic as controller_generic
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -53,7 +53,7 @@ class Config_Controller(controller_generic.Controller):
 
         super(Config_Controller, self).__init__(main_controller)
 
-        self._logger = logging.getLogger("Application Config Controller")
+        self._logger = logger.Logger("Application Config Controller")
         tc = self.get_top_controller()
         self._paths = tc.paths
         self._scanners = 3

@@ -29,7 +29,7 @@ import src.resource_fixture_image as resource_fixture_image
 import src.resource_scanner as resource_scanner
 import src.resource_grayscale as resource_grayscale
 import src.resource_image as resource_image
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -70,7 +70,7 @@ class Calibration_Controller(controller_generic.Controller):
 
         super(Calibration_Controller, self).__init__(main_controller)
 
-        self._logger = logging.getLogger("Calibration Controller")
+        self._logger = logger.Logger("Calibration Controller")
         self._specific_controller = None
 
     def _get_default_view(self):
@@ -120,7 +120,7 @@ class Grayscale_Controller(controller_generic.Controller):
         super(Grayscale_Controller, self).__init__(
             parent, view=view, model=model)
 
-        self._logger = logging.getLogger("Grayscale Controller")
+        self._logger = logger.Logger("Grayscale Controller")
         tc = self.get_top_controller()
         self._paths = tc.paths
 
@@ -293,7 +293,7 @@ class Fixture_Controller(controller_generic.Controller):
         super(Fixture_Controller, self).__init__(
             parent, view=view, model=model)
 
-        self._logger = logging.getLogger("Fixture Controller")
+        self._logger = logger.Logger("Fixture Controller")
 
         tc = self.get_top_controller()
         self._paths = tc.paths

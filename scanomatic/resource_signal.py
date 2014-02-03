@@ -25,13 +25,13 @@ from scipy import signal, ndimage
 # SCANNOMATIC LIBRARIES
 #
 
-import resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # GLOBALS
 #
 
-_logger = logging.getLogger("Resource Signal")
+_logger = logger.Logger("Resource Signal")
 
 #
 # FUNCTIONS

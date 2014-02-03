@@ -28,14 +28,14 @@ import numpy as np
 # SCANNOMATIC LIBRARIES
 #
 
-import resource_logger as logging
+import scanomatic.io.logger as logger
 import resource_app_config
 
 #
 # GLOBALS
 #
 
-_logger = logging.getLogger("Resource Analysis Support")
+_logger = logger.Logger("Resource Analysis Support")
 
 
 #

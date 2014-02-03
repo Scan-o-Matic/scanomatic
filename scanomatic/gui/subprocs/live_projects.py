@@ -17,7 +17,11 @@ import os
 import ConfigParser
 import inspect
 
-import src.resource_logger as logging
+#
+# INTERNAL DEPENDENCIES
+#
+
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -81,7 +85,7 @@ class Live_Projects(object):
 
     def __init__(self, paths, model):
 
-        self._logger = logging.getLogger("Live Projects")
+        self._logger = logger.Logger("Live Projects")
         self._config = ConfigParser.ConfigParser(allow_no_value=True)
         self._paths = paths
         self._model = model

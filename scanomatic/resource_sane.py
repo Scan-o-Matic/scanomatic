@@ -21,7 +21,7 @@ from subprocess import call, Popen
 # INTERNAL DEPENDENCIES
 #
 
-import resource_logger as logging
+import scanomatic.io.logger as logger
 
 
 #
@@ -35,7 +35,7 @@ class Sane_Base():
 
         self.owner = owner
 
-        self._logger = logging.getLogger("SANE")
+        self._logger = logger.Logger("SANE")
 
         self.next_file_name = None
         self._scanner_name = None

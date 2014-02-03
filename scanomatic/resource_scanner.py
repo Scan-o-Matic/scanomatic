@@ -25,7 +25,7 @@ import weakref
 #
 
 import src.resource_sane as resource_sane
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTION
@@ -109,7 +109,7 @@ class Scanner(object):
 
     def __init__(self, parent, paths, config, name):
 
-        self._logger = logging.getLogger("Scanner {0}".format(name))
+        self._logger = logger.Logger("Scanner {0}".format(name))
         self._parent = weakref.ref(parent) if parent else None
         self._paths = paths
         self._config = config
@@ -536,7 +536,7 @@ class Scanners(object):
 
     def __init__(self, paths, config):
 
-        self._logger = logging.getLogger("Scanners")
+        self._logger = logger.Logger("Scanners")
         self._paths = paths
         self._config = config
         self._scanners = dict()

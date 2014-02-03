@@ -36,7 +36,7 @@ import src.gui.subprocs.live_projects as live_projects
 import src.gui.subprocs.event.event_handler as event_handler
 from src.gui.subprocs.event.event import Event
 
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -90,7 +90,7 @@ class Subprocs_Controller(controller_generic.Controller,
             main_controller,
             specific_model=model_subprocs.get_composite_specific_model())
 
-        self._logger = logging.getLogger("Subprocs Controller")
+        self._logger = logger.Logger("Subprocs Controller")
 
         self._tc = self.get_top_controller()
         self._project_progress = live_projects.Live_Projects(

@@ -27,7 +27,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
 #import src.resource_scanner as resource_scanner
 import src.resource_image as resource_image
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # STATIC GLOBALS
@@ -363,7 +363,7 @@ class Fixture_Drawing(gtk.DrawingArea):
         self._data_width = 0
         self._data_height = 0
 
-        self._logger = logging.getLogger("Fixture Drawing")
+        self._logger = logger.Logger("Fixture Drawing")
 
         self._set_data()
 

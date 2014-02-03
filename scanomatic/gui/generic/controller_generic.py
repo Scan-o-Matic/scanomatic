@@ -20,7 +20,7 @@ import weakref
 #
 
 import view_generic
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # CLASSES
@@ -38,7 +38,7 @@ class Controller(object):
                  specific_model=None,
                  controller_name="U"):
 
-        self._logger = logging.getLogger("Unknown Controller")
+        self._logger = logger.Logger("Unknown Controller")
         self._parent = (
             weakref.ref(parent_controller) if parent_controller else None)
 

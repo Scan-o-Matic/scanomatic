@@ -24,7 +24,7 @@ import weakref
 #
 
 from src.subprocs.io import Proc_IO, Unbuffered_IO
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -110,7 +110,7 @@ class Communicator(object):
 
         """
         self._parent = weakref.ref(parent_process) if parent_process else None
-        self._logger = logging.getLogger("Communicator")
+        self._logger = logger.Logger("Communicator")
         self._stdin = stdin
         self._stdout = stdout
         self._stderr = stderr

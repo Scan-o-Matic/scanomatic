@@ -20,7 +20,12 @@ import uuid
 import os
 import copy
 
-import resource_logger as logging
+#
+# INTERNAL DEPENDENCIES
+#
+
+import scanomatic.io.logger as logger
+
 #
 # EXCEPTIONS
 #
@@ -46,7 +51,7 @@ IMAGE_ENTRY_KEYS = [
     'plate_0_area', 'mark_X', 'mark_Y', 'plate_3_area', 'Time',
     'plate_2_area', 'File', 'Image Shape']
 
-_logger = logging.getLogger("Project Log")
+_logger = logger.Logger("Project Log")
 #
 # FUNCTIONS
 #

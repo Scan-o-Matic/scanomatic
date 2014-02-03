@@ -41,7 +41,7 @@ import resource_analysis_support
 import resource_xml_writer
 import resource_path
 import resource_app_config
-import resource_logger as logging
+import scanomatic.io.logger as loggerModule
 import subprocs.communicator as communicator
 
 #
@@ -171,8 +171,7 @@ class Analysis(object):
         # SET UP LOGGER
         #
 
-        logger = logging.getLogger("Analysis")
-
+        logger = loggerModule.getLogger("Analysis")
         logger.info('Analysis started at ' + str(self._init_time))
         logger.info('ANALYSIS using file {0}'.format(log_file_path))
         self._logger = logger

@@ -25,7 +25,7 @@ import inspect
 #
 
 from src.subprocs.io import Proc_IO
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -137,7 +137,7 @@ class Subprocess(object):
         and should return a string response.
         """
 
-        self._logger = logging.getLogger("Subprocess Type {0}".format(
+        self._logger = logger.Logger("Subprocess Type {0}".format(
             proc_type))
 
         self._proc_type = proc_type

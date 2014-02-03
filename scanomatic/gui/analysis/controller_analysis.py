@@ -38,7 +38,7 @@ import src.resource_fixture_image as resource_fixture_image
 import src.resource_config as resource_config
 import src.resource_image as resource_image
 import src.resource_tags_verification as resource_tags_verification
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 import src.gui.subprocs.communications.gui_communicator as gui_communicator
 from run_make_project import Make_Project
 
@@ -78,7 +78,7 @@ class Analysis_Controller(controller_generic.Controller):
         super(Analysis_Controller, self).__init__(
             main_controller, controller_name='A')
 
-        self._logger = logging.getLogger("Analysis Controller")
+        self._logger = logger.Logger("Analysis Controller")
         self.transparency = Analysis_Transparency_Controller(
             self, view=self._view, model=self._model)
 
@@ -459,7 +459,7 @@ class Analysis_Inspect(controller_generic.Controller):
         super(Analysis_Inspect, self).__init__(
             parent, view=view, model=model)
 
-        self._logger = logging.getLogger("Analysis Inspect Controller")
+        self._logger = logger.Logger("Analysis Inspect Controller")
         tc = self.get_top_controller()
         self._paths = tc.paths
         self._app_config = tc.config
@@ -722,7 +722,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         self.set_specific_model(model_analysis.copy_model(
             model_analysis.specific_first))
 
-        self._logger = logging.getLogger("1st Pass Analysis Controller")
+        self._logger = logger.Logger("1st Pass Analysis Controller")
 
         self._paths = self.get_top_controller().paths
 
@@ -2048,7 +2048,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
             view=view_analysis.Analysis_Stage_Log(
                 self, general_model, model, parent_model))
 
-        self._logger = logging.getLogger("Log Book Controller")
+        self._logger = logger.Logger("Log Book Controller")
 
         if self._parent_model['log-only-calibration']:
             self._model['calibration-measures'] = True

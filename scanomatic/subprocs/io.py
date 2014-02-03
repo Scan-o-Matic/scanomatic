@@ -21,7 +21,7 @@ import psutil
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_logger as logging
+import scanomatic.io.logger as logger
 #
 # EXCEPTIONS
 #
@@ -139,7 +139,7 @@ class Proc_IO(object):
             self._procId = None
             self._procUtil = None
 
-        self._logger = logging.getLogger("Process I/O {0}".format(self._procId))
+        self._logger = logger.Logger("Process I/O {0}".format(self._procId))
 
         unbuffered_send = open(send_file_path, send_file_state, 0)
         self._send_path = send_file_path

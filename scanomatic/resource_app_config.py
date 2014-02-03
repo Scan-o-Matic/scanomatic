@@ -20,7 +20,7 @@ __status__ = "Development"
 import src.resource_power_manager as resource_power_manager
 import src.resource_path as resource_path
 import src.resource_config as resource_config
-import resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # CLASSES
@@ -35,7 +35,7 @@ class Config(object):
             paths = resource_path.Paths()
 
         self._paths = paths
-        self._logger = logging.getLogger("Application Config")
+        self._logger = logger.getLogger("Application Config")
 
         #TMP SOLUTION TO BIGGER PROBLEMS
 

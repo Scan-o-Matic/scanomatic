@@ -19,11 +19,12 @@ import os
 # INTERNAT DEPENDENCIES
 #
 
-import resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # CLASSES
 #
+
 
 class Config_File(object):
 
@@ -32,8 +33,8 @@ class Config_File(object):
         self._location = None
         self._data = None
         self._file_data_order = None
-        self._logger = logging.getLogger("Config File '{0}'".format(
-            os.path.basename(location)))
+        self._logger = logger.Logger(
+            "Config File '{0}'".format(os.path.basename(location)))
 
         self._no_name_enumerator = 0
 

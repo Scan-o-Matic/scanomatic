@@ -26,7 +26,7 @@ from urllib import urlencode
 # INTERNAL DEPENDENCIES
 #
 
-import resource_logger as logging
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -78,7 +78,7 @@ class USB_PM(NO_PM):
         self._fail_error = "No GEMBIRD SiS-PM found"
         self._socket = "None"
 
-        self._logger = logging.getLogger("Power Manager USB")
+        self._logger = logger.Logger("Power Manager USB")
 
     def on(self):
         on_success = self._exec(self._on_cmd)
@@ -120,7 +120,7 @@ class USB_PM_LINUX(USB_PM):
             on_args=["-o", "{0}".format(socket)],
             off_args=["-f", "{0}".format(socket)])
 
-        self._logger = logging.getLogger("Power Manager USB(Linux)")
+        self._logger = logger.Logger("Power Manager USB(Linux)")
 
         self.name = "USB connected PM (Linux)"
         self._socket = socket
@@ -154,7 +154,7 @@ class USB_PM_WIN(USB_PM):
             on_args=["-on", "-PW1", "-Scanner{0}".format(socket)],
             off_args=["-off", "-PW1", "-Scanner{0}".format(socket)])
 
-        self._logger = logging.getLogger("Power Manager USB(Windows)")
+        self._logger = logger.Logger("Power Manager USB(Windows)")
 
         self.name = "USB connected PM (Windows)"
         self._socket = socket
@@ -177,7 +177,7 @@ class LAN_PM(NO_PM):
             password = "1"
         self._password = password
 
-        self._logger = logging.getLogger("Power Manager LAN")
+        self._logger = logger.Logger("Power Manager LAN")
 
         self._pm_server_name = pm_name
         self._pm_server_str = "<h2>{0}".format(pm_name)
@@ -407,7 +407,7 @@ class Power_Manager():
         self._pm = pm
         self._installed = pm is not None
         self._on = None
-        self._logger = logging.getLogger("Power Manager")
+        self._logger = logger.Logger("Power Manager")
 
         if pm is not None:
             self._logger.debug("Power Hooked up {0}, Socket {1}".format(

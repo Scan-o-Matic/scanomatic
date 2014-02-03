@@ -16,7 +16,11 @@ __status__ = "Development"
 import time
 import inspect
 
-import src.resource_logger as logging
+#
+# INTERNAL DEPENDENCIES
+#
+
+import scanomatic.io.logger as logger
 
 #
 # METHOD
@@ -51,7 +55,7 @@ class Event(object):
     def __init__(self, requestFunction, responseTargetFunction,
                  responseDefualt, responseTimeOut=None, **requestParameters):
 
-        self._logger = logging.getLogger("Event {0}".format(requestFunction))
+        self._logger = logger.Logger("Event {0}".format(requestFunction))
 
         #Request
         self._requestObject = requestFunction.im_self
