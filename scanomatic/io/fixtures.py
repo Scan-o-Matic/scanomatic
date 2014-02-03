@@ -20,7 +20,7 @@ import copy
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_config as resource_config
+import config_file
 
 #
 # CLASSES
@@ -58,7 +58,7 @@ class Fixture_Settings(object):
 
     def load_from_file(self):
 
-        f = resource_config.Config_File(self.conf_path)
+        f = config_file.Config_File(self.conf_path)
 
         #Version
         self.version = f['version']

@@ -24,8 +24,8 @@ import weakref
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_sane as resource_sane
-import scanomatic.io.logger as logger
+import sane
+import logger
 
 #
 # EXCEPTION
@@ -505,7 +505,7 @@ class Scanner(object):
                 self._logger.info("Configurating for scan {0}".format(
                     self._parent().current_sane_settings))
 
-                scanner = resource_sane.Sane_Base(
+                scanner = sane.Sane_Base(
                     owner=self,
                     model=self._model,
                     scan_mode=mode,

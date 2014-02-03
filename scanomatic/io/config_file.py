@@ -19,7 +19,7 @@ import os
 # INTERNAT DEPENDENCIES
 #
 
-import scanomatic.io.logger as logger
+import logger
 
 #
 # CLASSES

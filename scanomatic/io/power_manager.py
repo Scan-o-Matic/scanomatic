@@ -26,7 +26,7 @@ from urllib import urlencode
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.io.logger as logger
+import logger
 
 #
 # EXCEPTIONS

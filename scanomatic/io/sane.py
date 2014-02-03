@@ -21,7 +21,7 @@ from subprocess import call, Popen
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.io.logger as logger
+import logger
 
 
 #

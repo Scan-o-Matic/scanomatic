@@ -17,10 +17,10 @@ __status__ = "Development"
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_power_manager as resource_power_manager
-import src.resource_path as resource_path
-import src.resource_config as resource_config
-import scanomatic.io.logger as logger
+import power_manager
+import paths
+import config_file
+import logger
 
 #
 # CLASSES
@@ -29,12 +29,13 @@ import scanomatic.io.logger as logger
 
 class Config(object):
 
-    def __init__(self, paths=None):
+    def __init__(self, path=None):
 
-        if paths is None:
-            paths = resource_path.Paths()
+        if path is None:
+            self._paths = paths.Paths()
+        else:
+            self._paths = path
 
-        self._paths = paths
         self._logger = logger.getLogger("Application Config")
 
         #TMP SOLUTION TO BIGGER PROBLEMS
@@ -77,7 +78,7 @@ class Config(object):
 
     def _load_config_from_file(self):
 
-        self._config_file = resource_config.Config_File(
+        self._config_file = config_file.Config_File(
             self._paths.config_main_app)
 
         scanners = self._config_file['number-of-scanners']
@@ -112,11 +113,11 @@ class Config(object):
 
         if self.pm_type == 'usb':
 
-            self._PM = resource_power_manager.USB_PM_LINUX
+            self._PM = power_manager.USB_PM_LINUX
             self._pm_arguments = {}
 
         elif self.pm_type == 'lan':
-            self._PM = resource_power_manager.LAN_PM
+            self._PM = power_manager.LAN_PM
 
             self._pm_arguments = {
                 'host': self._pm_host,
@@ -126,7 +127,7 @@ class Config(object):
                 'MAC': self._pm_MAC,
             }
         else:
-            self._PM = resource_power_manager.NO_PM
+            self._PM = power_manager.NO_PM
             self._pm_arguments = {}
 
     def set(self, key, value):
