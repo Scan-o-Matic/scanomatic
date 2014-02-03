@@ -22,12 +22,12 @@ __status__ = "Development"
 import sys
 import os
 from argparse import ArgumentParser
-import logging
 
 #
 # INTERNAL DEPENDENCIES
 #
 
+import scanomatic.io.logger as loggerModule
 #IMPORTED LATER TO NOT INTERFER WITH LOGGING
 
 #
@@ -142,11 +142,11 @@ if __name__ == "__main__":
     grid_cell_settings = {'blob_detect': 'default'}
 
     #DEBUGGING
-    LOGGING_LEVELS = {'critical': logging.CRITICAL,
-                      'error': logging.ERROR,
-                      'warning': logging.WARNING,
-                      'info': logging.INFO,
-                      'debug': logging.DEBUG}
+    LOGGING_LEVELS = {'critical': loggerModule.Logger.CRITICAL,
+                      'error': loggerModule.Logger.ERROR,
+                      'warning': loggerModule.Logger.WARNING,
+                      'info': loggerModule.Logger.INFO,
+                      'debug': loggerModule.Logger.DEBUG}
 
     if args.debug_level in LOGGING_LEVELS.keys():
 
@@ -242,16 +242,9 @@ if __name__ == "__main__":
     if os.path.isdir(output_path) is False:
         os.mkdir(output_path)
 
-    #CONFIGURATING LOGGING
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S\n',
-        filename=os.path.join(output_path, "analysis.run"),
-        filemode='w',
-        level=logging_level)
-
-    #logging.info("TEST")
-    logger = logging.getLogger('Scan-o-Matic Analysis')
+    logger = loggerModule.Logger('Scan-o-Matic Analysis')
+    logger.SetDefaultOutputTarget(
+        path=os.path.join(output_path, "analysis.run"))
 
     logger.debug(
         "XML-formatting is " +
@@ -265,11 +258,11 @@ if __name__ == "__main__":
 
         import src.resource_analysis_support as resource_analysis_support
         pm = resource_analysis_support.get_pinning_matrices(args.matrices)
-        logging.debug("Matrices: {0}".format(pm))
+        logger.debug("Matrices: {0}".format(pm))
 
         if pm == [None] * len(pm):
 
-            logging.error("No valid pinning matrices, aborting")
+            logger.error("No valid pinning matrices, aborting")
             parser.error("Check that you supplied a valid string...")
 
     else:

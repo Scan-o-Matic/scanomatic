@@ -27,6 +27,13 @@ from functools import partial
 
 class Logger(object):
 
+    EXCEPTION = 0
+    CRITICAL = 1
+    ERROR = 2
+    WARNING = 3
+    INFO = 4
+    DEBUG = 5
+
     _LOGFORMAT = "%Y-%m-%d %H:%M:%S -- {name} -- {lvl}: "
 
     _DEFAULT_LOGFILE = None
@@ -121,11 +128,11 @@ class Logger(object):
         else:
             sys.stdout = sys.__stdout__
 
-    @staticmethod
-    def getLevels():
+    @classmethod
+    def GetLevels(cls):
 
-        return [Logger._LOGLEVELS_TO_TEXT[k] for k in
-                sorted(Logger._LOGLEVELS_TO_TEXT.keys())]
+        return [cls._LOGLEVELS_TO_TEXT[k] for k in
+                sorted(cls._LOGLEVELS_TO_TEXT.keys())]
 
     @property
     def usePrivateOutput(self):

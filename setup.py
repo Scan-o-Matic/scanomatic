@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 __version__ = "0.9991"
 
-
 #
-# INSTALLING NON-PYTHONIC PROGRAMS
+# DEPENDENCIES
 #
 
 import os
 from subprocess import Popen, PIPE
+
+#
+# INTERNAL DEPENDENCIES
+#
 
 import scanomatic.io.logger as logger
 import postSetup
@@ -15,6 +18,10 @@ import postSetup
 _logger = logger.Logger("Scan-o-Matic Setup")
 _logger.level = _logger.INFO
 _logger.info("Checking non-python dependencies")
+
+#
+# INSTALLING NON-PYTHONIC PROGRAMS
+#
 
 program_dependencies = ('nmap', 'sispmctl')
 PROGRAM_NOT_FOUND = 32512
@@ -48,19 +55,19 @@ if len(install_dependencies) > 0:
 
 _logger.info("Non python dependencies done")
 _logger.info("Preparing setup parameters")
+
 #
-# INSTALLING PYTHON DEPENDENCIES
+# PREPARING INSTALLATION
 #
 
 #from pkg_resources import WorkingSet, DistributionNotFound
 
 #Obtain a list of current packages
 #working_set = WorkingSet()
-
 package_dependencies = (
-    'cython', 'argparse', 'matplotlib', 'multiprocessing',
+    'argparse', 'matplotlib', 'multiprocessing',
     'numpy', 'sh', 'nmap', 'configparse',
-    'uuid', 'PIL', 'scipy', 'scikits-image', 'logging', 'unittest', 'pygtk')
+    'uuid', 'PIL', 'scipy', 'scikits-image', 'unittest', 'pygtk')
 
 data_files = {"scan-o-matic": ["data/*"]}
 
@@ -164,6 +171,10 @@ if (os.name == "nt"):
         " want to try to run Scan-o-Matic. Good luck!")
 
 _logger.info("Scan-o-Matic is setup on system")
+
+#
+# POST-INSTALL
+#
 
 _logger.info("Copying data and configuration files")
 postSetup.InstallDataFiles()
