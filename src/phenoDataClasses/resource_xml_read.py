@@ -19,6 +19,7 @@ __status__ = "Development"
 import os
 import numpy as np
 import re
+import time
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
@@ -67,15 +68,26 @@ class XML_Reader():
 
     def __getitem__(self, position):
 
-        return self._data[position[0]][position[1:]]
+        if isinstance(position, int):
+            return self._data[position]
+        else:
+            return self._data[position[0]][position[1:]]
 
     def read(self, file_path=None):
         """Reads the file_path file using short-format xml"""
+
+        if file_path is not None:
+            self._file_path = file_path
+
         try:
             fs = open(self._file_path, 'r')
         except:
             self._logger.error("XML-file '{0}' not found".format(self._file_path))
             return False
+
+        print (
+            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
+            "Started Processing\n")
 
         f = fs.read()
         fs.close()
@@ -215,6 +227,10 @@ class XML_Reader():
 
             print "Completed {0}%\r".format(
                 100 * colonies_done / float(colonies))
+
+        print (
+            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
+            "Started Processing\n")
 
         return True
 

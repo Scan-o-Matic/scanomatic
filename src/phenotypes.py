@@ -814,6 +814,9 @@ class Interactive_Menu():
             if os.path.isfile(pickle_pheno_names_file):
                 self._phenotype_names = pickle.load(open(
                     pickle_pheno_names_file, 'rb'))
+            else:
+
+                self._phenotype_names = ['Lag', 'Generation Time', 'Yield']
 
         else:
 

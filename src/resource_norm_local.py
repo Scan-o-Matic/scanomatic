@@ -5,10 +5,14 @@
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.ndimage import gaussian_filter, sobel, laplace
+from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter, median_filter, gaussian_filter1d
 from scipy.stats import probplot, linregress, pearsonr
+from scipy.optimize import leastsq
 import matplotlib.pyplot as plt
 import itertools
+import time
+import sys
+import os
 
 #
 #   INTERNAL DEPENDENCIES
@@ -140,59 +144,14 @@ def getControlPositionsArray(dataBridge,
     return np.array(tmpCtrlPosPlateHolder)
 
 
-def getControlPositionsCoordinates(dataObject, controlPositionKernel=None):
-    """Returns list of tuples that emulates the results of running np.where"""
+def _getPositionsForKernelTrue(dataObject, positionKernels):
 
     platesCoordinates = []
 
-    if isinstance(dataObject, DataBridge):
-        dataObject = dataObject.getAsArray()
-
-    nPlates = dataObject.shape[0]
-
-    if controlPositionKernel is None:
-        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
-
-    for plateIndex in xrange(nPlates):
+    for plateIndex in range(len(dataObject)):
 
         plateCoordinates = [[], []]
-        controlKernel = controlPositionKernel[plateIndex]
-        kernelD1, kernelD2 = controlKernel.shape
-
-        for idx1 in xrange(dataObject[plateIndex].shape[0]):
-
-            for idx2 in xrange(dataObject[plateIndex].shape[1]):
-
-                if controlKernel[idx1 % kernelD1, idx2 % kernelD2]:
-
-                    plateCoordinates[0].append(idx1)
-                    plateCoordinates[1].append(idx2)
-
-        platesCoordinates.append(map(np.array, plateCoordinates))
-
-    return platesCoordinates
-
-
-def getExperimentPosistionsCoordinates(dataObject, controlPositionKernel=None):
-
-    platesCoordinates = []
-
-    if isinstance(dataObject, DataBridge):
-        dataObject = dataObject.getAsArray()
-
-    nPlates = dataObject.shape[0]
-
-    if controlPositionKernel is None:
-        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
-
-    experimentPositionKernel = []
-    for k in controlPositionKernel:
-        experimentPositionKernel.append(k == False)
-
-    for plateIndex in xrange(nPlates):
-
-        plateCoordinates = [[], []]
-        kernel = experimentPositionKernel[plateIndex]
+        kernel = positionKernels[plateIndex]
         kernelD1, kernelD2 = kernel.shape
 
         for idx1 in xrange(dataObject[plateIndex].shape[0]):
@@ -207,6 +166,29 @@ def getExperimentPosistionsCoordinates(dataObject, controlPositionKernel=None):
         platesCoordinates.append(map(np.array, plateCoordinates))
 
     return platesCoordinates
+
+
+def getControlPositionsCoordinates(dataObject, controlPositionKernel=None):
+    """Returns list of tuples that emulates the results of running np.where"""
+
+    nPlates = len(dataObject)
+
+    if controlPositionKernel is None:
+        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    return _getPositionsForKernelTrue(dataObject, controlPositionKernel)
+
+
+def getExperimentPosistionsCoordinates(dataObject, controlPositionKernels=None):
+
+    nPlates = len(dataObject)
+
+    if controlPositionKernels is None:
+        controlPositionKernels = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    experimentPositionKernels = [k == False for k in controlPositionKernels]
+
+    return _getPositionsForKernelTrue(dataObject, experimentPositionKernels)
 
 
 def getCoordinateFiltered(dataObject, coordinates, measure=1,
@@ -417,6 +399,77 @@ def getNormalisationSurfaceWithGridData(
 #
 
 
+def applyOutlierFilter(dataArray, nanFillSize=(3, 3), measure=1,
+                       k=2.0, p=10, maxIterations=10):
+    """Checks all positions in each array and filters those outside
+    set boundries based upon their peak/valey properties using
+    laplace and normal distribution assumptions."""
+
+    nanFillerKernelCenter = (np.prod(nanFillSize) - 1) / 2
+
+    def _nanFiller(X):
+        #X = X.reshape(nanFillSize)
+        if (np.isnan(X[nanFillerKernelCenter])):
+
+            return np.median(X[np.isfinite(X)])
+
+        else:
+
+            return X[nanFillerKernelCenter]
+
+    assert np.array([v % 2 == 1 for v in nanFillSize]).all(), (
+        "nanFillSize can only have odd values")
+
+    laplaceKernel = np.array([
+        [0.5, 1, 0.5],
+        [1, -6, 1],
+        [0.5, 1, 0.5]], dtype=dataArray[0].dtype)
+
+    oldNans = -1
+    newNans = 1
+    iterations = 0
+    while (newNans != oldNans and iterations < maxIterations):
+
+        oldNans = newNans
+        newNans = 0
+        iterations += 1
+
+        for plate in dataArray:
+
+            #We need a copy because we'll modify it
+            aPlate = plate[..., measure].copy()
+
+            #Apply median filter to fill nans
+            aPlate = generic_filter(aPlate, _nanFiller, size=nanFillSize,
+                                    mode="nearest")
+
+            #Apply laplace
+            aPlate = convolve(aPlate, laplaceKernel, mode="nearest")
+
+            # Make normalness analysis to find lower and upper threshold
+            # Rang based to z-score, compare to threshold adjusted by expected
+            # fraction of removed positions
+            rAPlate = aPlate.ravel()
+            rPlate = plate[..., measure].ravel()
+            sigma = np.sqrt(np.var(rAPlate))
+            mu = np.mean(rAPlate)
+            zScores = np.abs(rAPlate - mu)
+
+            for idX in np.argsort(zScores)[::-1]:
+                if (np.isnan(rPlate[idX]) or zScores[idX] > k * sigma /
+                        np.exp(-(np.isfinite(rPlate).sum() /
+                                 float(rPlate.size)) ** p)):
+
+                    plate[idX / plate.shape[1], idX % plate.shape[1],
+                          measure] = np.nan
+
+                else:
+
+                    break
+
+            newNans += np.isnan(plate[..., measure]).sum()
+
+
 def applyLog2Transform(dataArray, measures=None):
     """Log2 Transformation of dataArray values.
 
@@ -443,6 +496,9 @@ def applySobelFilter(dataArray, measure=1, threshold=1, **kwargs):
     Further arguments of scipy.ndimage.sobel can be supplied
     """
 
+    if ('mode' not in kwargs):
+        kwargs['mode'] = 'nearest'
+
     for plateIndex in range(len(dataArray)):
 
         filt = (np.sqrt(sobel(
@@ -462,14 +518,18 @@ def applyLaplaceFilter(dataArray, measure=1, threshold=1, **kwargs):
 
     Further arguments of scipy.ndimage.laplace can be supplied
     """
+    if ('mode' not in kwargs):
+        kwargs['mode'] = 'nearest'
+
     for plateIndex in range(len(dataArray)):
 
         filt = (np.abs(laplace(dataArray[plateIndex][..., measure], **kwargs))
                 > threshold)
+
         dataArray[plateIndex][..., measure][filt] = np.nan
 
 
-def applyGaussSmoothing(dataArray, measure=1, sigma=3.5):
+def applyGaussSmoothing(dataArray, measure=1, sigma=3.5, **kwargs):
     """Applies a Gaussian Smoothing filter to the values of a plate (or norm
     surface).
 
@@ -478,10 +538,14 @@ def applyGaussSmoothing(dataArray, measure=1, sigma=3.5):
     measure     The measurement ot evaluate
     sigma       The size of the gaussian kernel
     """
+
+    if ('mode' not in kwargs):
+        kwargs['mode'] = 'nearest'
+
     for plateIndex in range(len(dataArray)):
 
         dataArray[plateIndex][..., measure] = gaussian_filter(
-            dataArray[plateIndex][..., measure], sigma=sigma, mode='nearest')
+            dataArray[plateIndex][..., measure], sigma=sigma, **kwargs)
 
 
 def applySigmaFilter(dataArray, nSigma=3):
@@ -533,6 +597,28 @@ def normalisation(dataBridge, normalisationSurface, updateBridge=True,
         dataBridge.updateBridge()
 
     return normalData
+
+
+def normalisationDefaultProgram(dataBridge, kernels=None):
+
+    nPlates = len(dataBridge)
+
+    if (kernels is None):
+        kernels = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+
+    #subSampler = SubSample(dataBridge, kernels=kernels)
+
+    '''
+    eCoords = getExperimentPosistionsCoordinates(dataBridge,
+                                                 kernels)
+    '''
+
+    for plateIndex in range(nPlates):
+
+        for measurmentIndex in range(dataBridge[plateIndex].shape[2]):
+
+            pass
+
 
 #
 #   METHODS: Benchmarking
@@ -1146,9 +1232,21 @@ class _NumpyArrayInterface(object):
 
         self._dataObject = dataObject
 
+    def _posStringToTuple(self, posStr):
+
+        plate, coords = [p.strip() for p in posStr.split(":")]
+        x, y = [int(c) for c in coords.split("-")]
+        return int(plate), x, y
+
     def __getitem__(self, key):
 
-        return self._dataObject[key]
+        if isinstance(key, str):
+            plate, x, y = self._posStringToTuple(key)
+            return self._dataObject[plate][x, y]
+        elif isinstance(key, int):
+            return self._dataObject[key]
+        else:
+            return self._dataObject[key[0]][key[1:]]
 
     def __iter__(self):
 
@@ -1369,14 +1467,14 @@ class SubSample(_NumpyArrayInterface):
 
     def __getitem__(self, value):
 
-        plate = self._dataObject[0]
+        plate = self._dataObject[value]
 
         if (self._kernels is None or self._kernels[value] is None):
             return plate
 
         else:
 
-            kernel = self._kernels[0]
+            kernel = self._kernels[value]
             kernelD1, kernelD2 = (v[0] for v in np.where(kernel))
 
             assert plate.ndim in (2, 3), (
@@ -1407,174 +1505,561 @@ class SubSample(_NumpyArrayInterface):
                 shape=plateShape,
                 strides=plateStrides)
 
-''' Outdated since it doesn't keep memory pointers to numpy arrays.
-Also overly complex
 
-class SubSample(object):
+class PhenotypeStrider(_NumpyArrayInterface):
 
-    def __init__(self, dataObject,
-                 controlPositionKernel=None):
+    GT_VALUE = 0
+    GT_VALUE_ERR = 1
+    GT_VALUE_POS = 2
+    GT_2ND_VALUE = 3
+    GT_2ND_ERR = 4
+    GT_2ND_POS = 5
 
-        self._sourceObject = dataObject
+    def __init__(self, dataObject, timeObject=None,
+                 medianKernelSize=5, gaussSigma=1.5, linRegSize=5,
+                 measure=None, baseName=None):
 
-        if isinstance(dataObject, DataBridge):
-            self._sourceIsBridge = True
-            self._sourceArray = dataObject.getAsArray()
+        self._source = dataObject
+        self._generationTimes = None
+        self._curveFits = None
+
+        self._timeObject = None
+        self._baseName = baseName
+
+        if isinstance(dataObject, resource_xml_read.XML_Reader):
+            arrayCopy = self._xmlReader2array(dataObject)
+
+            if timeObject is None:
+                timeObject = dataObject.get_scan_times()
         else:
-            self._sourceIsBridge = False
-            self._sourceArrays = dataObject
+            arrayCopy = dataObject.copy()
 
-        self._kernels = controlPositionKernel
-        self._length = len(self._sourceArrays)
+        self.times = timeObject
 
-        self._sourceReformatted = None
-        if (self._kernels is not None):
-            self._setupSubslicing()
+        #TODO: Could require selecting measurement if more than one instead
+        assert (arrayCopy.shape[-1] == 1 or
+                len(arrayCopy.shape) == 3), (
+                    "Phenotype Strider only work with one phenotype")
 
-    def _decomposePrepare(self, interleavedArray):
-        """Method assumes 2D interleaved array composed of 4 subarrays.
+        super(PhenotypeStrider, self).__init__(arrayCopy)
 
-        Details:
+        assert medianKernelSize % 2 == 1, "Median kernel size must be odd"
+        self._medianKernelSize = medianKernelSize
+        self._gaussSigma = gaussSigma
+        self._linRegSize = linRegSize
 
-            First array is separated into odd and even rows
+        self._analyse()
 
-            Second first odd row and first even row are zipped into an
-            array. Same for second row etc. So that the output looks like:
-
-                [(odd[0], even[0]), (odd[1], even[1]), ...]
-
-            Thirdly the element of each odd even tuple are zipped,
-            using first row odd and even as example:
-
-                [(odd[0][0], even[0][0]), (odd[0][1], even[0][1]) ... ]
-
-            Fourthly, as the array currently has 3D the sequence of
-            tuples per row in previous step are chained. For first row:
-
-                (odd[0][0], even[0][0], odd[0][1], even[0][1] ... )
-
-            Since numpy would make an object of generators and the state
-            of the entire object currently is:
-
-                [generatorRow0, generatorRow1, ... ]
-
-            list is mapped to each row to instantiate a list from the
-            generator.
-
-            The resulting list of lists is finally converted into a 2D
-            array.
+    @classmethod
+    def LoadFromXML(cls, path, **kwargs):
+        """Class Method used to create a Phenotype Strider directly
+        from a path do an xml
 
         Parameters:
 
-            interleavedArray    Any 2D iterable of rectangular shape
+            path        The path to the xml-file
 
-        Returns:
-
-            2D numpy array in which every fourth object in a row
-            would come from a specific subarray.
-
-            Assuming subarrays having been interleaved using the
-            following pattern:
-
-                [[0, 1]
-                 [2, 3]]
-
-            Their position will be [0, 2, 1, 3]
-
+        Optional Parameters can be passed as keywords and will be
+        used in instanciating the class.
         """
 
-        return np.array(
-            map(list, (itertools.chain(*itertools.izip(*zipV))
-                       for zipV in itertools.izip(
-                           interleavedArray[::2],
-                           interleavedArray[1::2]))))
+        xml = resource_xml_read.XML_Reader(path)
+        if (path.lower().endswith(".xml")):
+            path = path[:-4]
 
-    def _recompose(self, decomposedPlates, decomposedKernels):
+        return cls(xml, baseName=path, **kwargs)
+
+    @classmethod
+    def LoadFromNumPy(cls, path, timesPath=None, **kwargs):
+        """Class Method used to create a Phenotype Strider from
+        a saved numpy data array and a saved numpy times array.
+
+        Parameters:
+
+            path        The path to the data numpy file
+
+        Optional parameter:
+
+            timesPath   The path to the times numpy file
+                        If not supplied both paths are assumed
+                        to be named as:
+
+                            some/path.data.npy
+                            some/path.times.npy
+
+                        And path parameter is expexted to be
+                        'some/path' in this examply.
+
+        Optional Parameters can be passed as keywords and will be
+        used in instanciating the class.
         """
+        dataPath = path
+        if (path.lower().endswith(".npy")):
+            path = path[:-4]
+            if (path.endswith(".data")):
+                path = path[:-5]
 
-        """
+        if (timesPath is None):
+            timesPath = path + ".times.npy"
 
-        #Make sure all kernels are correctly shaped
-        assert np.array([k is None and True or k.size == 4
-                         for k in decomposedKernels]).all()
+        if (not os.path.isfile(dataPath)):
+            if (os.path.isfile(timesPath + ".data.npy")):
 
-        #Make sure the kernel fits evenly in both directions of
-        #the plates
-        assert np.array([(plate is None or kernel is None) and
-                         True or (plate.shape[1] % kernel.shape[1] == 0)
-                         for plate, kernel in
-                         itertools.izip(
-                             decomposedPlates,
-                             decomposedKernels)]).all()
+                timesPath += ".data.npy"
 
-        #Make sure each kernel only has one array as it is only supported
-        assert np.array(
-            [k is None and True or k.sum() == 1
-             for k in decomposedKernels]).all()
+            elif (os.path.isfile(timesPath + ".npy")):
 
-        plates = []
-        for plate, kernel in itertools.izip(decomposedPlates,
-                                            decomposedKernels):
+                timesPath += ".npy"
 
-            if (plate is None or kernel is None):
-                plates.append(None)
-            else:
-                plates.append(plate[:, np.where(kernel.ravel())[0][0]::4])
+        return cls(np.load(dataPath), np.load(timesPath), baseName=path,
+                   **kwargs)
 
-        return np.array(plates)
+    @staticmethod
+    def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
 
-    def _setupSubslicing(self):
-        """ Method called to decompose source array and recompose
-        sub arrays from source using kernels.
+        return D + b0 * np.power(1.0 - b1 * np.exp(-b2 * X), 1.0 / (1.0 - b3))
 
-        Returns:
+    @staticmethod
+    def RCResiduals(crParams, X, Y):
 
-            An array of the sub-plates sliced from the original arrays
+        return Y - PhenotypeStrider.ChapmanRichards4ParameterExtendedCurve(
+            X, *crParams)
 
-        """
-        sourceReformatted = []
-        kernelReformatted = []
-        for plate, kernel in itertools.izip(self._sourceArrays, self._kernels):
-            if (plate is None or kernel is None):
-                sourceReformatted.append(None)
-                kernelReformatted.append(None)
-            else:
-                sourceReformatted.append(self._decomposePrepare(plate))
-                kernelReformatted.append(self._decomposePrepare(kernel))
+    @staticmethod
+    def CalculateFitRSquare(X, Y, p0=np.array([4.5, -50, 0.3, 3, -3],
+                                              dtype=np.float)):
 
-        self._sourceReformatted = self._recompose(sourceReformatted,
-                                                  kernelReformatted)
+        """X and Y must be 1D, Y must be log2"""
 
-    def __getitem__(self, key):
-
-        if isinstance(key, int) or isinstance(key[0], int):
-
-            if (self._kernels is None):
-                return self._sourceArrays[key]
-            else:
-                return self._sourceReformatted[key]
-
-    def __iter__(self):
-
-        for i in range(self._length):
-            yield self.__getitem__(i)
-
-    def __len__(self):
-
-        return self._length
+        p = leastsq(PhenotypeStrider.RCResiduals, p0, args=(X, Y))[0]
+        Yhat = PhenotypeStrider.ChapmanRichards4ParameterExtendedCurve(
+            X, *p)
+        return (1.0 - np.square(Yhat - Y).sum() /
+                np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
 
     @property
-    def kernel(self):
-        return self._kernels
+    def source(self):
 
-    @kernel.setter
-    def kernel(self, newKernels):
+        return self._source
 
-        self._kernels = newKernels
-        if (self._kernels is not None):
-            self._setupSubslicing()
+    def _xmlReader2array(self, dataObject):
+
+        return np.array([dataObject.get_data()[k] for k in sorted(
+            dataObject.get_data().keys())])
+
+    def _analyse(self):
+
+        self._smoothen()
+        self._calculatePhenotypes()
+
+    def _smoothen(self):
+        sys.stderr.write(
+            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
+            "Smoothing Started\n")
+        medianFootprint = np.ones((1, self._medianKernelSize))
+
+        for plate in self._dataObject:
+
+            stridedPlate = np.lib.stride_tricks.as_strided(
+                plate,
+                shape=(plate.shape[0] * plate.shape[1], plate.shape[2]),
+                strides=(plate.strides[1], plate.strides[2]))
+
+            stridedPlate[...] = median_filter(
+                stridedPlate, footprint=medianFootprint, mode='reflect')
+
+            stridedPlate[...] = gaussian_filter1d(
+                stridedPlate, sigma=self._gaussSigma, mode='reflect', axis=-1)
+
+        sys.stderr.write(
+            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
+            "Smoothing Done\n")
+
+    def _calculatePhenotypes(self):
+
+        def _linReg(X, Y):
+            return linregress(X, Y)[0::4]
+
+        def _linReg2(*args):
+            return linregress(args[:linRegSize], args[linRegSize:])[0::4]
+
+        sys.stderr.write(
+            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
+            "Phenotype Extraction Started\n")
+
+        timesStrided = np.lib.stride_tricks.as_strided(
+            self._timeObject,
+            shape=(self._timeObject.shape[0] - (self._linRegSize - 1),
+                   self._linRegSize),
+            strides=(self._timeObject.strides[0],
+                     self._timeObject.strides[0]))
+
+        flatT = self._timeObject.ravel()
+
+        allGT = []
+        allFits = []
+        linRegSize = self._linRegSize
+        #linRegUFunc = np.frompyfunc(_linReg2, linRegSize * 2, 2)
+        posOffset = (linRegSize - 1) / 2
+
+        for plateI, plate in enumerate(self._dataObject):
+
+            stridedPlate = np.lib.stride_tricks.as_strided(
+                plate,
+                shape=(plate.shape[0] * plate.shape[1],
+                       plate.shape[2] - (linRegSize - 1),
+                       linRegSize),
+                strides=(plate.strides[1],
+                         plate.strides[2], plate.strides[2]))
+
+            """ THIS CODE WOULD BE NEATER BUT ISN'T FASTER NOR VERY CLEAR
+
+            timesStrided = np.lib.stride_tricks.as_strided(
+            self._timeObject,
+            shape=(stridedPlate.shape[0],
+            stridedPlate.shape[1],
+            self._linRegSize),
+            strides=(0,
+            self._timeObject.strides[0],
+            self._timeObject.strides[0]))
+            t = ([timesStrided[..., i] for i in range(
+            timesStrided.shape[-1])] +
+            [stridedPlate[..., i] for i in range(
+            stridedPlate.shape[-1])])
+
+            plateData = np.array(linRegUFunc(*t))
+
+            argSort = plateData[..., -1].argsort(axis=-1)
+            vals = np.array((
+            1.0 / plateData[argSort[..., -1]][..., 0],
+            plateData[argSort[..., -1]][..., 1],
+            argSort[..., -1] + posOffset))
+
+            allGT.append(np.lib.stride_tricks.as_strided(
+            vals,
+            shape=(
+            plate.shape[0], plate.shape[1], vals.shape[-1]),
+            strides=(
+            plate.shape[1] * vals.strides[-2], vals.strides[-2],
+            vals.strides[-1])))
+
+            """
+            generationTimes = np.zeros((plate.shape[:2]) + (6,),
+                                       dtype=plate.dtype)
+
+            allGT.append(generationTimes)
+
+            curveFits = np.zeros((plate.shape[:2]) + (6,), dtype=plate.dtype)
+
+            allFits.append(curveFits)
+
+            stridedPlate = np.lib.stride_tricks.as_strided(
+                plate,
+                shape=(plate.shape[0], plate.shape[1],
+                       plate.shape[2] - (linRegSize - 1),
+                       linRegSize),
+                strides=(plate.strides[0], plate.strides[1],
+                         plate.strides[2], plate.strides[2]))
+
+            for idX, X in enumerate(np.log2(stridedPlate)):
+
+                for idY, Y in enumerate(X):
+
+                    vals = []
+
+                    for V, T in itertools.izip(Y, timesStrided):
+
+                        vals.append(_linReg(T, V))
+
+                    vals = np.array(vals)
+                    vArgSort = vals[..., 0].argsort()
+
+                    generationTimes[idX, idY, ...] = (
+                        1.0 / vals[vArgSort[-1], self.GT_VALUE],
+                        vals[vArgSort[-1], self.GT_VALUE_ERR],
+                        vArgSort[-1] + posOffset,
+                        1.0 / vals[vArgSort[-2], self.GT_VALUE],
+                        vals[vArgSort[-2], self.GT_VALUE_ERR],
+                        vArgSort[-2] + posOffset,
+                    )
+
+                    Yobs = plate[idX, idY].ravel().astype(np.float64)
+
+                    p = PhenotypeStrider.CalculateFitRSquare(
+                        flatT, np.log2(Yobs))
+
+                    curveFits[idX, idY, ...] = (p[0], ) + tuple(p[1])
+
+            sys.stderr.write(
+                time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
+                "Plate {0} Done\n".format(plateI))
+
+        self._generationTimes = np.array(allGT)
+        self._curveFits = np.array(allFits)
+
+        sys.stderr.write(
+            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
+            "Phenotype Extraction Done\n")
 
     @property
-    def shape(self):
-        return self._sourceArray.shape
-'''
+    def curveFits(self):
+
+        return self._curveFits
+
+    @property
+    def generationTimes(self):
+
+        return self._generationTimes
+
+    @property
+    def times(self):
+
+        return self._timeObject
+
+    @times.setter
+    def times(self, value):
+
+        assert (isinstance(value, np.ndarray) or isinstance(value, list) or
+                isinstance(value, tuple)), "Invalid time series format"
+
+        if (isinstance(value, np.ndarray) is False):
+            value = np.array(value, dtype=np.float)
+
+        self._timeObject = value
+
+    def getPositionListFiltered(self, posList, valueType=GT_VALUE):
+        """Get phenotypes for the list of positions.
+
+        Parameters:
+
+            posList         List of position tuples or position strings
+            or mix thereof.
+
+                            For tuples, they should be
+
+                                    (plate, x, y)
+
+                            For strings they should be
+
+                                plate:x,y
+
+        Optional Parameters:
+
+            valueType       The type of value to obtain. Default is
+            the generation time value.
+
+        """
+
+        values = []
+        for pos in posList:
+
+            if isinstance(pos, str):
+                plate, x, y = self._posStringToTuple(pos)
+            else:
+                plate, x, y = pos
+
+            values.append(self._generationTimes[plate][x, y][valueType])
+
+        return values
+
+    def plotRandomSampesAndSave(self, pathPattern="fig__{0}.png", n=100,
+                                figure=None, figClear=False, **kwargs):
+
+        zpos = int(np.floor(np.log10(n)) + 1)
+
+        for i in range(n):
+            figure = self.plotACurve(fig=figure, figClear=figClear,
+                                     **kwargs)
+            figure.savefig(pathPattern.format(str(i + 1).zfill(zpos)))
+
+    def plotACurve(self, position=None,
+                   plotRaw=True, plotSmooth=True, plotRegLine=True,
+                   plotFit=True,
+                   annotateGTpos=True, annotateFit=True,
+                   xMarkTimes=None, plusMarkTimes=None, altMeasures=None,
+                   fig=None, figClear=True):
+        """Plots a curve with phenotypes marked based on a position.
+
+        Optional Parameters:
+
+            position        Tuple containing (plate, x, y)
+            If none is submitted a random position is plotted
+
+            plotRaw         If the raw growth data should be plotted
+            Default: True
+
+            plotSmooth      If the smoothed data should be plotted
+            Default: True
+
+            plotRegLine     If the regression line used for the GT
+            extraction should be plotted
+            Default: True
+
+            annotateGTpos   If GT position used should be marked with
+            arrow
+            Default: True
+
+            xMarkTimes      Times on raw data to be marked with x
+            Default: None
+
+            plusMarkTimes   Times on raw data to be marked with +
+            Default: None
+
+            altMeasures     If comparision measures should be written out
+            as an iterable of (textLabel, value) tuples.
+            Default: None
+
+            fig             A figure to continue drawing on rather than
+            creating a new one
+
+
+            figClear        If the supplied figure should be cleared
+            """
+
+        def _markCurve(positions, colorChar):
+
+            markIndices = np.abs(np.subtract.outer(
+                self._timeObject, positions)).argmin(axis=0)
+
+            ax.semilogy(
+                self._timeObject[markIndices],
+                plotRaw and self._source[position[0]][position[0]][markIndices],
+                colorChar)
+
+        if fig is not None:
+            f = fig
+            if figClear:
+                f.clf()
+        else:
+            f = plt.figure()
+
+        ax = f.gca()
+
+        if position is None:
+            position = (np.random.randint(0, self._dataObject.shape[0]),
+                        np.random.randint(0, self._dataObject[0].shape[0]),
+                        np.random.randint(0, self._dataObject[0].shape[1]))
+        if plotRaw:
+            ax.semilogy(self._timeObject,
+                        self._source[position[0]][position[1:]],
+                        '-b', basey=2)
+
+        if plotSmooth:
+            ax.semilogy(self._timeObject,
+                        self._dataObject[position[0]][position[1:]],
+                        '-g', basey=2)
+
+        if xMarkTimes is not None:
+
+            _markCurve(xMarkTimes, 'xr')
+
+        if plusMarkTimes is not None:
+
+            _markCurve(plusMarkTimes, '+k')
+
+        tId = int(self._generationTimes[position[0]][position[1:]][
+            self.GT_VALUE_POS])
+
+        gtY = self._dataObject[position[0]][position[1:]][tId]
+
+        if plotFit:
+
+            Yhat = np.power(
+                2.0,
+                PhenotypeStrider.ChapmanRichards4ParameterExtendedCurve(
+                    self._timeObject.ravel(),
+                    *self._curveFits[position[0]][position[1:]][1:]))
+
+            ax.semilogy(self._timeObject,
+                        Yhat, '--', color=(0.1, 0.1, 0.1, 0.5), basey=2)
+
+        if plotRegLine:
+
+            t = self._timeObject[tId]
+
+            a = 1.0 / self._generationTimes[position[0]][position[1:]][
+                self.GT_VALUE]
+            b = (np.log2(gtY) - a * t)
+
+            dT = 0.1 * self._timeObject.max() - self._timeObject.min()
+            ax.semilogy([t - dT, t + dT], np.power(2, [a * (t - dT) + b,
+                                                       a * (t + dT) + b]),
+                        '-.k', basey=2)
+
+        if annotateGTpos:
+
+            ax.annotate("GT", xy=(self._timeObject[tId], gtY), arrowprops=dict(
+                arrowstyle="->", connectionstyle="arc3"),
+                xytext=(30, 10), textcoords="offset points")
+
+        if annotateFit:
+
+            ax.text(0.1, 0.85, "$R^2 = {0:.5f}$".format(
+                    self._curveFits[position[0]][position[1:]][0]),
+                    transform=ax.transAxes)
+
+        measureText = "Generation Time: {0:.2f}".format(
+            self._generationTimes[position[0]][position[1:]][self.GT_VALUE])
+
+        if altMeasures is not None:
+
+            for label, value in altMeasures:
+
+                measureText += "\n{0}: {1:.2f}".format(label, value)
+
+        ax.text(0.6, 0.3, measureText, transform=ax.transAxes)
+
+        ax.text(0.1, 0.9, "Plate {0}, Row {1} Col {2}".format(*position),
+                transform=ax.transAxes)
+
+        return f
+
+    def savePhenotypes(self, path=None, delim="\t", newline="\n"):
+        """Outputs the phenotypes as a csv type format."""
+
+        if (path is None and self._baseName is not None):
+            path = self._baseName + ".csv"
+
+        if (os.path.isfile(path)):
+            if ('y' not in raw_input("Overwrite existing file? (y/N)").lower()):
+                return
+
+        fh = open(path, 'w')
+
+        curveFits = self.curveFits
+
+        for plateI, plate in enumerate(self.generationTimes):
+
+            curveFitsP = curveFits[plateI]
+
+            for idX, X in enumerate(plate):
+
+                for idY, Y in enumerate(X):
+
+                    fh.write("{0}{1}".format(
+                        delim.join(
+                            ["{0}:{1}-{2}".format(plateI, idX, idY)] +
+                            map(str, ["", "", "", Y[self.GT_VALUE], ""]
+                                + Y[1:].tolist() +
+                                curveFitsP[idX, idY].tolist())),
+                        newline))
+
+        fh.close()
+
+    def saveInputData(self, path=None):
+
+        if (path is None):
+
+            assert self._baseName is not None, "Must give path some way"
+
+            path = self._baseName
+
+        if (path.endswith(".npy")):
+            path = path[:-4]
+
+        source = self._source
+        if (isinstance(source, resource_xml_read.XML_Reader)):
+            source = self._xmlReader2array(source)
+
+        np.save(path + ".data.npy", source)
+        np.save(path + ".times.npy", self._timeObject)
