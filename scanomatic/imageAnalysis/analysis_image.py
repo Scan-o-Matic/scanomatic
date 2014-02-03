@@ -21,11 +21,10 @@ import numpy as np
 # SCANNOMATIC LIBRARIES
 #
 
-import analysis_grid_array
-import resource_fixture_image
-import resource_analysis_support
-import resource_path
-import resource_app_config
+import grid_array
+import first_pass_image
+import support
+import scanomatic.io.paths as paths
 
 #
 # EXCEPTIONS
@@ -51,7 +50,7 @@ class Project_Image():
             p_uuid=None, verbose=False, visual=False,
             suppress_analysis=False,
             grid_array_settings=None, gridding_settings=None,
-            grid_cell_settings=None, log_version=0, paths=None,
+            grid_cell_settings=None, log_version=0, path=None,
             app_config=None, grid_correction=None):
 
         #self._logger = logging.getLogger('Analysis Image')
@@ -77,16 +76,16 @@ class Project_Image():
         self.grid_cell_settings = grid_cell_settings
 
         #PATHS
-        if paths is None:
-            self._paths = resource_path.Paths(src_path=__file__)
+        if path is None:
+            self._paths = paths.Paths(src_path=__file__)
         else:
-            self._paths = paths
+            self._paths = path
 
         self._file_path_base = file_path_base
 
         #APP CONFIG
         if app_config is None:
-            self._config = resource_app_config.Config(paths=self._paths)
+            self._config = app_config.Config(paths=self._paths)
         else:
             self._config = app_config
 
@@ -98,7 +97,7 @@ class Project_Image():
             fixture_name = self._paths.get_fixture_path(fixture_name, only_name=True)
             fixture_directory = None
 
-        self.fixture = resource_fixture_image.Fixture_Image(
+        self.fixture = first_pass_image.Image(
             fixture_name,
             fixture_directory=fixture_directory,
             paths=self._paths,
@@ -129,7 +128,7 @@ class Project_Image():
 
             if pinning_matrices[a] is not None:
 
-                self._grid_arrays.append(analysis_grid_array.Grid_Array(
+                self._grid_arrays.append(grid_array.Grid_Array(
                     self, (a,),
                     pinning_matrices[a], visual=self.visual,
                     suppress_analysis=self.suppress_analysis,
@@ -184,22 +183,22 @@ class Project_Image():
             else:
                 scale_factor = 1.0
 
-            for grid_array in xrange(len(self._grid_arrays)):
+            for idGA in xrange(len(self._grid_arrays)):
 
                 """
                 self._logger.info("Setting grid on plate {0}".format(
                     grid_array))
                 """
-                im = self.get_im_section(plate_positions[grid_array], scale_factor)
+                im = self.get_im_section(plate_positions[idGA], scale_factor)
 
                 if self._grid_correction is None:
-                    self._grid_arrays[grid_array].set_grid(
+                    self._grid_arrays[idGA].set_grid(
                         im, save_name=save_name,
                         grid_correction=None)
                 else:
-                    self._grid_arrays[grid_array].set_grid(
+                    self._grid_arrays[idGA].set_grid(
                         im, save_name=save_name,
-                        grid_correction=self._grid_correction[grid_array])
+                        grid_correction=self._grid_correction[idGA])
 
     def load_image(self, image_dict=None):
 
@@ -241,7 +240,7 @@ class Project_Image():
             ref_shape = (1, 0)
 
         if self.im is not None:
-            self.im = resource_analysis_support.get_first_rotated(
+            self.im = support.get_first_rotated(
                 self.im, ref_shape)
 
     def get_im_section(self, features, scale_factor=4.0, im=None,

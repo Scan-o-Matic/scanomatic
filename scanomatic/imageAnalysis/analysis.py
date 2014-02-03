@@ -35,13 +35,13 @@ import inspect
 #
 
 import analysis_image
-import resource_project_log
-import resource_analysis_support
-import resource_xml_writer
-import resource_path
-import resource_app_config
+import support
+import scanomatic.io.xml.writer as xmlWriter
+import scanomatic.io.paths as paths
+import scanomatic.io.app_config as app_config
 import scanomatic.io.logger as loggerModule
 import subprocs.communicator as communicator
+import scanomatic.io.project_log as project_log
 
 #
 # GLOBALS
@@ -67,7 +67,7 @@ class Analysis(object):
                                'manual_threshold': 0.05},
             grid_cell_settings={'blob_detect': 'default'},
             grid_correction=None,
-            use_local_fixture=True, app_config=None,
+            use_local_fixture=True, appConfig=None,
             comm_id=None):
 
         """
@@ -146,25 +146,23 @@ class Analysis(object):
         self._grid_cell_settings = grid_cell_settings
         self._grid_correction = grid_correction
         self._use_local_fixture = use_local_fixture
-        self._app_config = app_config
+        self._app_config = appConfig
         self._comm_id = comm_id
 
         #PATHS AND CONFIG
         self._file_path_base = os.path.abspath(os.path.dirname(log_file_path))
         self._root = os.path.join(self._file_path_base, os.path.pardir)
 
-        self._paths = resource_path.Paths(src_path=__file__)
+        self._paths = paths.Paths(src_path=__file__)
         if app_config is None:
-            app_config = resource_app_config.Config(paths=self._paths)
-
-        self._app_config = app_config
+            self._app_config = app_config.Config(paths=self._paths)
 
         #
         # VERIFY OUTDATA DIRECTORY
         #
 
         self._outdata_directory = \
-            resource_analysis_support.verify_outdata_directory(outdata_directory)
+            support.verify_outdata_directory(outdata_directory)
 
         #
         # SET UP LOGGER
@@ -179,7 +177,7 @@ class Analysis(object):
         # SET UP EXCEPT HOOK
         #
 
-        sys.excepthook = resource_analysis_support.custom_traceback
+        sys.excepthook = support.custom_traceback
 
         inits = []
 
@@ -213,7 +211,7 @@ class Analysis(object):
         #
 
         ## META-DATA
-        meta_data = resource_project_log.get_meta_data(
+        meta_data = project_log.get_meta_data(
             path=self._log_file_path)
 
         ### METE-DATA BACK COMPATIBILITY
@@ -244,8 +242,7 @@ class Analysis(object):
 
         #### Test to find Fixture
         if ('Fixture' not in meta_data or
-                resource_analysis_support.get_finds_fixture(
-                meta_data['Fixture']) is False):
+                support.get_finds_fixture(meta_data['Fixture']) is False):
 
             self._logger.critical('ANALYSIS: Could not localize fixture settings')
             return False
@@ -270,7 +267,7 @@ class Analysis(object):
         logger = self._logger
 
         ## IMAGES
-        self._image_dictionaries = resource_project_log.get_image_entries(
+        self._image_dictionaries = project_log.get_image_entries(
             self._log_file_path)
 
         if len(self._image_dictionaries) == 0:
@@ -293,7 +290,7 @@ class Analysis(object):
         # SANITY CHECK
         #
 
-        if resource_analysis_support.get_run_will_do_something(
+        if support.get_run_will_do_something(
                 self._suppress_analysis,
                 self._graph_watch,
                 self._meta_data,
@@ -334,14 +331,14 @@ class Analysis(object):
 
         if self._graph_watch is not None:
 
-            watch_graph = resource_analysis_support.Watch_Graph(
+            watch_graph = support.Watch_Graph(
                 self._graph_watch, self._outdata_directory)
 
         #
         # INITIALIZE XML WRITER
         #
 
-        xml_writer = resource_xml_writer.XML_Writer(
+        xml_writer = xmlWriter.XML_Writer(
             self._outdata_directory, self._xml_format, self._paths)
 
         if xml_writer.get_initialized() is False:
@@ -377,7 +374,7 @@ class Analysis(object):
         # GET NUMBER OF PLATES AND THEIR NAMES IN THIS ANALYSIS
         #
 
-        plates, plate_position_keys = resource_analysis_support.get_active_plates(
+        plates, plate_position_keys = support.get_active_plates(
             meta_data, self._suppress_analysis, self._graph_watch,
             config=self._app_config)
 
