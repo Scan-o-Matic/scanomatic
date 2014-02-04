@@ -2,13 +2,11 @@
 # DEPENDENCIES
 #
 
-import numpy as np
-
 #
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.generic.model_generic as model_generic
+import scanomatic.gui.generic.model_generic as model_generic
 
 #
 # FUNCTIONS

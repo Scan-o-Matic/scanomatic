@@ -22,8 +22,8 @@ import gtk
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.generic.view_generic as view_generic
-import src.resource_fixture_image as resource_fixture_image
+import scanomatic.gui.generic.view_generic as view_generic
+import scanomatic.imageAnalysis.first_pass_image as first_pass_image
 
 #
 # STATIC GLOBALS
@@ -739,7 +739,7 @@ class Stage_Project_Setup(gtk.VBox):
 
         tc = self._controller.get_top_controller()
 
-        f = resource_fixture_image.Fixture_Image(
+        f = first_pass_image.Fixture_Image(
             fixture,
             fixture_directory=tc.paths.fixtures)
 

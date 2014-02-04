@@ -28,7 +28,7 @@ import numpy as np
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.generic.view_generic as view_generic
+import scanomatic.gui.generic.view_generic as view_generic
 
 #
 # STATIC GLOBALS

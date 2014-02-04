@@ -21,7 +21,7 @@ import gtk
 # INTERNAL DEPENDENCIES
 #
 
-from src.gui.generic.view_generic import *
+from scanomatic.gui.generic.view_generic import *
 
 #
 # STATIC GLOBALS

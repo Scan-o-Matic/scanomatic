@@ -27,7 +27,7 @@ import sh
 import model_config
 import view_config
 
-import src.gui.generic.controller_generic as controller_generic
+import scanomatic.gui.generic.controller_generic as controller_generic
 import scanomatic.io.logger as logger
 
 #

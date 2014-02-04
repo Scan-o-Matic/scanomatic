@@ -22,13 +22,13 @@ import numpy as np
 import model_calibration
 import view_calibration
 
-import src.gui.generic.view_generic as view_generic
-import src.gui.generic.controller_generic as controller_generic
+import scanomatic.gui.generic.view_generic as view_generic
+import scanomatic.gui.generic.controller_generic as controller_generic
 
-import src.resource_fixture_image as resource_fixture_image
-import src.resource_scanner as resource_scanner
-import src.resource_grayscale as resource_grayscale
-import src.resource_image as resource_image
+import scanomatic.imageAnalysis.imageFixture as imageFixture
+import scanomatic.io.scanner as scanner
+import scanomatic.imageAnalysis.grayscale as grayscale
+import scanomatic.io.imageAnalysis as first_pass_image
 import scanomatic.io.logger as logger
 
 #
@@ -221,7 +221,7 @@ class Grayscale_Controller(controller_generic.Controller):
                 else:
                     gsType = sm['target-name']
 
-                gsAnalysis = resource_image.Analyse_Grayscale(
+                gsAnalysis = first_pass_image.Analyse_Grayscale(
                     gsType, sm['im'][self.getSlicer(sm['active-target'],
                                                     sm['active-source'])])
 
@@ -278,7 +278,7 @@ class Grayscale_Controller(controller_generic.Controller):
 
     def saveNewGrayscale(self, *args):
 
-        resource_grayscale.updateGrayscaleValues(
+        grayscale.updateGrayscaleValues(
             self._specific_model['target-name'],
             targets=list(self._specific_model['target-targetValues']))
 
@@ -298,7 +298,7 @@ class Fixture_Controller(controller_generic.Controller):
         tc = self.get_top_controller()
         self._paths = tc.paths
         self._config = tc.config
-        self._scanners = resource_scanner.Scanners(self._paths, self._config)
+        self._scanners = scanner.Scanners(self._paths, self._config)
 
         self._window = self.get_window()
 
@@ -439,14 +439,14 @@ class Fixture_Controller(controller_generic.Controller):
             self._scanners)
 
         if scanner_name is not None:
-            scanner = self._scanners[scanner_name]
-            scanner.claim()
-            if scanner.scan("TPU", self._paths.fixture_tmp_scan_image):
-                scanner.free()
+            s = self._scanners[scanner_name]
+            s.claim()
+            if s.scan("TPU", self._paths.fixture_tmp_scan_image):
+                s.free()
                 self._set_new_image(self._paths.fixture_tmp_scan_image)
 
             else:
-                scanner.free()
+                s.free()
                 raise Scan_Failed()
 
     def handle_keypress(self, widget, event):
@@ -524,7 +524,7 @@ class Fixture_Controller(controller_generic.Controller):
             if sm['marker-path'] is None:
                 sm['marker-path'] = self.get_top_controller().paths.marker
 
-            self.f_settings = resource_fixture_image.Fixture_Image(
+            self.f_settings = imageFixture.Image(
                 sm['fixture-file'],
                 fixture_directory=self.get_top_controller().paths.fixtures,
                 image_path=sm['im-path'],
@@ -654,7 +654,7 @@ class Fixture_Controller(controller_generic.Controller):
                     gs_source)
             np.save("tmp_gs_{0}_target.npy".format(self.f_settings['name']),
                     gs_target)
-            if resource_grayscale.validate(self.f_settings):
+            if grayscale.validate(self.f_settings):
 
                 sm['grayscale-sources'] = gs_source
                 gs_ok = True

@@ -19,7 +19,7 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.subprocs.communications.gui_communicator as gui_communicator
+import scanomatic.gui.subprocs.communications.gui_communicator as gui_communicator
 
 #
 # EXCEPTIONS

@@ -23,7 +23,7 @@ import gtk
 #
 
 from generic.view_generic import *
-import src.resource_path as resource_path
+import scanomait.io.paths as paths
 
 #
 # STATIC GLOBALS
@@ -46,13 +46,11 @@ class Splash(gtk.Window):
 
         super(Splash, self).__init__()
 
-        paths = resource_path.Paths(root=program_path)
-
         vbox = gtk.VBox(False, 0)
         self.add(vbox)
 
         image = gtk.Image()
-        image.set_from_file(paths.logo)
+        image.set_from_file(paths.Paths(root=program_path).logo)
         vbox.pack_start(image, False, False, PADDING_NONE)
 
         label = gtk.Label("Loading...")

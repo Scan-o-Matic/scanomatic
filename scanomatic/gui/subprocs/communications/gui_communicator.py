@@ -24,7 +24,7 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-from src.subprocs.io import Proc_IO
+from scanomatic.subprocs.io import Proc_IO
 import scanomatic.io.logger as logger
 
 #

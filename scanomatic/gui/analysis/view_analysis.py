@@ -25,8 +25,8 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.generic.view_generic as view_generic
-import src.resource_fixture_image as resource_fixture_image
+import scanomatic.gui.generic.view_generic as view_generic
+import scanomatic.imageAnalysis.imageFixture as imageFixture
 
 #
 # STATIC GLOBALS
@@ -362,7 +362,7 @@ class Analysis_Inspect_Stage(gtk.VBox):
         else:
 
             #ADD DRAWING
-            fixture = resource_fixture_image.Fixture_Image(
+            fixture = imageFixture.Image(
                 self._paths.experiment_local_fixturename,
                 fixture_directory=sm['experiment-dir'])
 

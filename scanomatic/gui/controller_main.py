@@ -28,17 +28,17 @@ import view_main
 #Controllers
 import generic.controller_generic as controller_generic
 
-import src.gui.subprocs.controller_subprocs as controller_subprocs
-import src.gui.analysis.controller_analysis as controller_analysis
-import src.gui.experiment.controller_experiment as controller_experiment
-import src.gui.config.controller_config as controller_config
-import src.gui.calibration.controller_calibration as controller_calibration
+import subprocs.controller_subprocs as controller_subprocs
+import analysis.controller_analysis as controller_analysis
+import experiment.controller_experiment as controller_experiment
+import config.controller_config as controller_config
+import calibration.controller_calibration as controller_calibration
 
 #Resources
-import src.resource_scanner as resource_scanner
-import src.resource_fixture as resource_fixture
-import src.resource_path as resource_path
-import src.resource_app_config as resource_app_config
+import scanomatic.io.scanner as scanner
+import scanomatic.io.fixture as fixture
+import scanomatic.io.paths as paths
+import scanomatic.io.app_config as app_config
 import scanomatic.io.logger as logger
 
 #
@@ -72,7 +72,7 @@ class Controller(controller_generic.Controller):
     def __init__(self, program_path, debug_mode=False):
 
         #PATHS NEED TO INIT BEFORE GUI
-        self.paths = resource_path.Paths(root=program_path)
+        self.paths = paths.Paths(root=program_path)
 
         model = model_main.load_app_model()
         view = view_main.Main_Window(controller=self, model=model)
@@ -85,9 +85,9 @@ class Controller(controller_generic.Controller):
         if debug_mode is False:
             self.set_simple_logger()
 
-        self.config = resource_app_config.Config(self.paths)
-        self.fixtures = resource_fixture.Fixtures(self.paths, self.config)
-        self.scanners = resource_scanner.Scanners(self.paths, self.config)
+        self.config = app_config.Config(self.paths)
+        self.fixtures = fixture.Fixtures(self.paths, self.config)
+        self.scanners = scanner.Scanners(self.paths, self.config)
 
         self._view.show_notebook_or_logo()
 

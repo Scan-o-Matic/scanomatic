@@ -20,8 +20,8 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.subprocs.communications.gui_communicator as gui_communicator
-from src.gui.subprocs.event.event import Event
+import communications.gui_communicator as gui_communicator
+from event.event import Event
 import scanomatic.io.logger as logger
 
 #

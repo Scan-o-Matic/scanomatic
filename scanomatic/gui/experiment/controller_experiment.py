@@ -28,11 +28,10 @@ import copy
 import model_experiment
 import view_experiment
 
-import src.gui.generic.controller_generic as controller_generic
-import src.gui.generic.view_generic as view_generic
-
-import src.gui.subprocs.communications.gui_communicator as gui_communicator
-import src.resource_tags_verification as resource_tags_verification
+import scanomatic.gui.generic.controller_generic as controller_generic
+import scanomatic.gui.generic.view_generic as view_generic
+import scanomatic.gui.subprocs.communications.gui_communicator as gui_communicator
+import scanomatic.io.verificationTags as verificationTags
 import scanomatic.io.logger as logger
 
 #
@@ -427,7 +426,7 @@ class Project_Controller(controller_generic.Controller):
         self._specific_model['experiment-project-id'] = projectId
         self._specific_model['experiment-scan-layout-id'] = layoutId
 
-        return (resource_tags_verification.ctrlNum(projectId, layoutId) ==
+        return (verificationTags.ctrlNum(projectId, layoutId) ==
                 controlNum)
 
     def set_project_description(self, widget, event):

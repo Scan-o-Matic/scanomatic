@@ -21,20 +21,21 @@ import inspect
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.generic.controller_generic as controller_generic
+import scanomatic.gui.generic.controller_generic as controller_generic
+
 import view_subprocs
 import model_subprocs
+import reconnect
+import live_projects
+import progress_responses
 
-from src.gui.subprocs.handlers.analysis_queue import Analysis_Queue
-import src.gui.subprocs.handlers.process_handler as process_handler
+from handlers.analysis_queue import Analysis_Queue
+import handlers.process_handler as process_handler
 
-import src.gui.subprocs.communications.gui_communicator as gui_communicator
-import src.gui.subprocs.progress_responses as progress_responses
-import src.gui.subprocs.reconnect as reconnect
-import src.gui.subprocs.live_projects as live_projects
+import communications.gui_communicator as gui_communicator
 
-import src.gui.subprocs.event.event_handler as event_handler
-from src.gui.subprocs.event.event import Event
+import event.event_handler as event_handler
+from event.event import Event
 
 import scanomatic.io.logger as logger
 

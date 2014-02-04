@@ -8,7 +8,7 @@ import copy
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_path as resource_path
+import scanomatic.io.paths as paths
 
 #
 # EXCEPTIONS
@@ -39,7 +39,7 @@ def get_model():
 class Model(object):
 
     def __init__(self, private_model=None, generic_model=None,
-        paths=None):
+        path=None):
 
         if private_model is None:
             self._pm = dict()
@@ -49,10 +49,10 @@ class Model(object):
 
         self._counters = dict()
 
-        if paths is None:
-            self._paths = resource_path.Paths()
+        if path is None:
+            self._paths = paths.Paths()
         else:
-            self._paths = paths
+            self._paths = path
 
         self._gm = generic_model
 
@@ -120,7 +120,7 @@ class Model(object):
         m = Model(private_model=pm, generic_model=self._gm)
         return m
 
-    def build_private_model():
+    def build_private_model(self):
 
         self._pm = dict()
 

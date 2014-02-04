@@ -20,7 +20,6 @@ import threading
 import numpy as np
 import copy
 from subprocess import Popen, PIPE
-from ConfigParser import ConfigParser
 
 #
 # INTERNAL DEPENDENCIES
@@ -29,18 +28,21 @@ from ConfigParser import ConfigParser
 import model_analysis
 import view_analysis
 
-import src.gui.generic.view_generic as view_generic
-import src.gui.generic.controller_generic as controller_generic
-import src.resource_os as resource_os
-import src.resource_project_log as resource_project_log
-import src.analysis_wrapper as a_wrapper
-import src.resource_fixture_image as resource_fixture_image
-import src.resource_config as resource_config
-import src.resource_image as resource_image
-import src.resource_tags_verification as resource_tags_verification
+import scanomatic.gui.subprocs.communications.gui_communicator as gui_communicator
+import scanomatic.gui.generic.view_generic as view_generic
+import scanomatic.gui.generic.controller_generic as controller_generic
+
+import scanomatic.imageAnalysis.wrappers as a_wrapper
+import scanomatic.imageAnalysis.imageFixture as imageFixture
+import scanomatic.imageAnalysis.imageBasics as imageBasics
+import scanomatic.imageAnalysis.imageGrayscale as imageGrayscale
+import scanomatic.imageAnalysis.grayscale as grayscale
+
+import scanomatic.io.config_file as config_file
+import scanomatic.io.verificationTags as verificationTags
 import scanomatic.io.logger as logger
-import src.gui.subprocs.communications.gui_communicator as gui_communicator
-from run_make_project import Make_Project
+import scanomatic.io.project_log as project_log
+#from run_make_project import Make_Project
 
 #
 # EXCEPTIONS
@@ -646,7 +648,7 @@ class Analysis_Inspect(controller_generic.Controller):
 
             #CHECK FOR FIXTURE NAME IN LOCAL FIXTURE COPY
             if sm['fixture'] is None:
-                fixture = resource_fixture_image.Fixture_Image(
+                fixture = imageFixture.Fixture_Image(
                     self._paths.experiment_local_fixturename,
                     fixture_directory=experiment_dir)
 
@@ -655,7 +657,7 @@ class Analysis_Inspect(controller_generic.Controller):
             #LOAD GRIDDING HISTORY
             if sm['fixture'] is not None:
 
-                sm['gridding-history'] = resource_fixture_image.Gridding_History(
+                sm['gridding-history'] = imageFixture.Gridding_History(
                     self,
                     sm['fixture'], self._paths,
                     app_config=self._app_config)
@@ -728,6 +730,7 @@ class Analysis_First_Pass(controller_generic.Controller):
 
     def start(self, *args, **kwargs):
 
+        """
         sm = self._specific_model
 
         #Fix the GUI to show it has been started
@@ -768,10 +771,10 @@ class Analysis_First_Pass(controller_generic.Controller):
             rebuild_instructions_path=p)
 
         self.set_saved()
-
+        """
     def get_ctrl_id_num(self, projectId, layoutId):
 
-        return resource_tags_verification.ctrlNum(projectId, layoutId)
+        return verificationTags.ctrlNum(projectId, layoutId)
 
     def set_output_dir(self, widget):
         m = self._model
@@ -873,7 +876,7 @@ class Analysis_First_Pass(controller_generic.Controller):
                 self._paths.experiment_first_pass_analysis_relative.format(
                     sm['output-directory'].split(os.sep)[-1]))
 
-        meta_data = resource_project_log.get_meta_data(f_path)
+        meta_data = project_log.get_meta_data(f_path)
         pm = meta_data['Pinning Matrices']
         if pm is not None:
             for i, p in enumerate(pm):
@@ -934,7 +937,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         if os.path.isfile(os.path.join(sm['output-directory'],
                                        local_name)):
 
-            f = resource_config.Config_File(
+            f = config_file.Config_File(
                 os.path.join(sm['output-directory'], local_name))
 
             try:
@@ -1037,7 +1040,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
         view.run_lock()
         fixture_path = self.get_top_controller().paths.fixtures
 
-        self.fixture = resource_fixture_image.Fixture_Image(
+        self.fixture = imageFixture.Image(
             specific_model["fixture-name"],
             image_path=specific_model['images-list-model'][
                 specific_model['image']][0],
@@ -1073,7 +1076,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
         else:
 
             self._specific_model['manual-calibration-target'] = \
-                resource_image.GRAYSCALES[grayscaleName]['targets']
+                grayscale.GRAYSCALES[grayscaleName]['targets']
             self._specific_model['manual-calibration-grayscaleName'] = \
                 grayscaleName
             self._manualGrayscale()
@@ -1089,7 +1092,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
             return False
 
-        gs = resource_image.Analyse_Grayscale(
+        gs = imageGrayscale.Analyse_Grayscale(
             target_type=sm['manual-calibration-grayscaleName'])
         coords = mc[-1]
         gsIm = sm['image-array'][
@@ -1145,7 +1148,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
 
         for f in log_files:
 
-            data = resource_project_log.get_image_from_log_file(f, image)
+            data = project_log.get_image_from_log_file(f, image)
 
             if data is not None:
 
@@ -1202,7 +1205,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
             print self.fixture['grayscale_type'], grayscaleSource, grayscaleTarget
             print self.fixture['grayscaleSource'], self.fixture['grayscaleTarget']
         """
-        sm['auto-transpose'][sm['image']] = resource_image.Image_Transpose(
+        sm['auto-transpose'][sm['image']] = imageBasics.Image_Transpose(
             sourceValues=grayscaleSource,
             targetValues=grayscaleTarget)
 
@@ -1881,7 +1884,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         if len(log_files) > 0:
 
-            meta_data, images = resource_project_log.get_log_file(
+            meta_data, images = project_log.get_log_file(
                 log_files[0])
 
             try:
@@ -1908,7 +1911,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
                 else:
 
-                    plates = resource_project_log.get_number_of_plates(
+                    plates = project_log.get_number_of_plates(
                         meta_data=meta_data, images=images)
 
                     if plates > 0:
@@ -1945,8 +1948,6 @@ class Analysis_Project_Controller(controller_generic.Controller):
     def set_output(self, widget, view, event):
 
         output_path = widget.get_text()
-
-        output_path = resource_os.get_valid_relative_dir(output_path, "")
 
         sm = self._specific_model
 
