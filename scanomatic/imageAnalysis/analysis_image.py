@@ -14,7 +14,6 @@ __status__ = "Development"
 
 import os
 import matplotlib.image as plt_img
-#import logging
 import numpy as np
 
 #

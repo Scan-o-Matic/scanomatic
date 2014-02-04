@@ -19,7 +19,7 @@ import os
 # INTERNAL DEPENDENCIES
 #
 
-import src.resource_fixture_image as resource_fixture_image
+import imageFixture
 import scanomatic.io.logger as logger
 
 #
@@ -66,7 +66,7 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
             "File path changed to match experiment directory: {0}".format(
                 file_name))
 
-    fixture = resource_fixture_image.Fixture_Image(
+    fixture = imageFixture.Fixture_Image(
         fixture_name,
         fixture_directory=fixture_directory,
         image_path=file_name)

@@ -5,9 +5,9 @@ import logging
 from time import time
 from scipy.ndimage import binary_erosion
 
-import analysis_grid_cell_dissection as cell
-import analysis_grid_array_dissection as grid
-import resource_signal as r_signal
+import grid_cell as cell
+import grid_array as grid
+import signal as r_signal
 
 """
 #

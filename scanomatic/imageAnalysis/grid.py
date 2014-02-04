@@ -22,7 +22,6 @@ from skimage import filter as ski_filter
 from scipy import ndimage
 #import functools
 #from scipy.optimize import fsolve
-
 #import matplotlib.pyplot as plt
 
 #

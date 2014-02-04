@@ -29,7 +29,7 @@ import numpy as np
 #
 
 import scanomatic.io.logger as logger
-import resource_app_config
+import scanomatic.io.app_config as app_config
 
 #
 # GLOBALS
@@ -70,7 +70,7 @@ def get_active_plates(meta_data, suppress_analysis, graph_watch, config=None):
     analysis was started"""
 
     if config is None:
-        config = resource_app_config.Config()
+        config = app_config.Config()
 
     plate_position_keys = []
 

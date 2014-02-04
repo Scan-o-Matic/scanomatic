@@ -20,13 +20,13 @@ import numpy as np
 # INTERNAL DEPENDENCIES
 #
 
-import resource_path
+import scanomatic.io.paths as paths
 
 #
 # GLOBALS
 #
 
-_GRAYSCALE_PATH = resource_path.Paths().analysis_graycsales
+_GRAYSCALE_PATH = paths.Paths().analysis_graycsales
 
 _GRAYSCALE_CONFIGS = ConfigParser.ConfigParser()
 _KEY_DEFUALT = 'default'

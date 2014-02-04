@@ -18,17 +18,16 @@ import numpy as np
 #from scipy.optimize import fsolve
 import os
 from matplotlib import pyplot as plt
+import weakref
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import resource_grid
-import analysis_grid_cell as grid_cell
-import resource_path
-import resource_image
-#import logging
-import weakref
+import grid
+import grid_cell
+import scanomatic.io.paths as paths
+import imageBasics
 
 #
 # EXCEPTIONS
@@ -63,7 +62,7 @@ class Grid_Array():
 
         if parent is None:
 
-            self._paths = resource_path.Paths(
+            self._paths = paths.Paths(
                 src_path=os.path.abspath(__file__))
             self.fixture = None
 
@@ -258,18 +257,17 @@ class Grid_Array():
             expected_center = tuple(gh_mean[:2])
         """
 
-        grid, X, Y, center, spacings, adjusted_values = \
-            resource_grid.get_grid(
-                im,
-                expected_spacing=expected_spacings,
-                expected_center=expected_center,
-                validate_parameters=validate_parameters,
-                grid_shape=grid_shape,
-                grid_correction=grid_correction)
+        grd, X, Y, center, spacings, adjusted_values = grid.get_grid(
+            im,
+            expected_spacing=expected_spacings,
+            expected_center=expected_center,
+            validate_parameters=validate_parameters,
+            grid_shape=grid_shape,
+            grid_correction=grid_correction)
 
         dx, dy = spacings
-        self._grid, adjusted_values = resource_grid.get_validated_grid(
-            im, grid, dy, dx, adjusted_values)
+        self._grid, adjusted_values = grid.get_validated_grid(
+            im, grd, dy, dx, adjusted_values)
 
         #self.logger.info("Expecting center {0} and Spacings {1}".format(
         #    expected_center, expected_spacings))
@@ -298,7 +296,7 @@ class Grid_Array():
                 pass
 
             if save_name is not None:
-                self.make_grid_im(im, save_grid_name=save_name, grid=grid)
+                self.make_grid_im(im, save_grid_name=save_name, grid=grd)
 
             return False
 
@@ -521,7 +519,7 @@ class Grid_Array():
 
         #Get an image-specific inter-scan-neutral transformation dictionary
         try:
-            transposePoly = resource_image.Image_Transpose(
+            transposePoly = imageBasics.Image_Transpose(
                 sourceValues=grayscaleSource,
                 targetValues=grayscaleTarget,
                 polyCoeffs=grayscalePolyCoeffs)

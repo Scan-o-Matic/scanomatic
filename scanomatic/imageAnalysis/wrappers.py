@@ -23,13 +23,13 @@ import os
 # SCANNOMATIC LIBRARIES
 #
 
-import analysis_grid_array as grid_array
-import analysis_grid_cell as grid_cell
+import grid_array
+import grid_cell
 import analysis as project
 import analysis_image
-import resource_project_log
-import resource_analysis_support
-import resource_path
+import scanomatic.io.project_log as project_log
+import support
+import scanomatic.io.paths as paths
 
 #
 # Globals
@@ -38,7 +38,7 @@ import resource_path
 _pi = analysis_image.Project_Image([])
 _ga = grid_array.Grid_Array(_pi, (0,), None)
 POLY = _ga.get_calibration_polynomial_coeffs()
-_paths = resource_path.Paths()
+_paths = paths.Paths()
 
 
 #
@@ -50,7 +50,7 @@ def get_grid_cell_from_first_pass_file(
     """Returns a dictionary with information sufficient to be used as
     keyword argument for calling the method again and the requested grid cell
     """
-    meta_data = resource_project_log.get_meta_data(
+    meta_data = project_log.get_meta_data(
         path=fpath)
 
     if image is not None:
@@ -97,10 +97,10 @@ def get_grid_cell_from_first_pass_file(
         log_version=meta_data['Version'],
         paths=_paths)
 
-    image_dicts = resource_project_log.get_image_entries(path=fpath)
+    image_dicts = project_log.get_image_entries(path=fpath)
     image_dict = image_dicts[image]
     graph_watch = [plate] + cell
-    nPlates, active_position_keys = resource_analysis_support.get_active_plates(
+    nPlates, active_position_keys = support.get_active_plates(
         meta_data, True, graph_watch)
     graph_watch[0] = 0
 

@@ -29,8 +29,8 @@ from scipy.ndimage import binary_erosion, \
 # SCANNOMATIC LIBRARIES
 #
 
-import resource_histogram as hist
-import resource_blob as resource_blob
+import histogram
+import blob
 
 #
 # FUNCTIONS
@@ -379,14 +379,14 @@ class Blob(Cell_Item):
     ITERATIVE = 1
     THRESHOLD = 2
 
-    BLOB_RECIPE = resource_blob.Analysis_Recipe_Empty()
-    resource_blob.Analysis_Recipe_Median_Filter(BLOB_RECIPE)
-    resource_blob.Analysis_Threshold_Otsu(BLOB_RECIPE,
-                                          thresholdUnitAdjust=0.5)
-    #resource_blob.Analysis_Recipe_Erode(BLOB_RECIPE)
-    resource_blob.Analysis_Recipe_Dilate(BLOB_RECIPE, iterations=2)
-    #resource_blob.Analysis_Recipe_Erode_Small(self, self.BLOB_RECIPE)
-    #resource_blob.Analysis_Recipe_Erode_Conditional(self, self.BLOB_RECIPE)
+    BLOB_RECIPE = blob.Analysis_Recipe_Empty()
+    blob.Analysis_Recipe_Median_Filter(BLOB_RECIPE)
+    blob.Analysis_Threshold_Otsu(BLOB_RECIPE,
+                                 thresholdUnitAdjust=0.5)
+    #blob.Analysis_Recipe_Erode(BLOB_RECIPE)
+    blob.Analysis_Recipe_Dilate(BLOB_RECIPE, iterations=2)
+    #blob.Analysis_Recipe_Erode_Small(self, self.BLOB_RECIPE)
+    #blob.Analysis_Recipe_Erode_Conditional(self, self.BLOB_RECIPE)
 
     def __init__(self, identifier, grid_array, run_detect=True,
                  threshold=None, blob_detect='default',
@@ -417,7 +417,7 @@ class Blob(Cell_Item):
         self.image_color_logic = image_color_logic
         self._features_key_list += ['centroid', 'perimeter']
 
-        self.histogram = hist.Histogram(self.grid_array, run_at_init=False)
+        self.histogram = histogram.Histogram(self.grid_array, run_at_init=False)
 
         if run_detect:
 
@@ -510,7 +510,7 @@ class Blob(Cell_Item):
                 im = self.grid_array
 
             self.histogram.re_hist(im)
-            self.threshold = hist.otsu(histogram=self.histogram)
+            self.threshold = histogram.otsu(histogram=self.histogram)
     #
     # GET functions
     #

@@ -18,14 +18,12 @@ __status__ = "Development"
 
 import numpy as np
 from scipy.stats.mstats import tmean, mquantiles
-#import math
-#import logging
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import analysis_grid_cell_dissection as cell_dissection
+import grid_cell_extra as grid_cell_extra
 
 #
 # CLASS: Grid_Cell
@@ -356,7 +354,7 @@ class Grid_Cell():
 
         if blob:
 
-            self._analysis_items['blob'] = cell_dissection.Blob(
+            self._analysis_items['blob'] = grid_cell_extra.Blob(
                 [self._identifier, ['blob']], self.data_source,
                 blob_detect=blob_detect, run_detect=run_detect,
                 center=center, radius=radius)
@@ -364,11 +362,11 @@ class Grid_Cell():
         if background and self._analysis_items['blob']:
 
             self._analysis_items['background'] = \
-                cell_dissection.Background(
+                grid_cell_extra.Background(
                     [self._identifier, ['background']], self.data_source,
                     self._analysis_items['blob'], run_detect=run_detect)
 
         if cell:
-            self._analysis_items['cell'] = cell_dissection.Cell(
+            self._analysis_items['cell'] = grid_cell_extra.Cell(
                 [self._identifier, ['cell']], self.data_source,
                 run_detect=run_detect)

@@ -24,8 +24,6 @@ from skimage import filter as ski_filter
 # SCANNOMATIC LIBRARIES
 #
 
-#import resource_histogram as resource_histogram
-
 #
 # CLASSES Cell_Item
 #

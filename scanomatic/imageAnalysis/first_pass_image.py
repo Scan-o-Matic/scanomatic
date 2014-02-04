@@ -25,11 +25,12 @@ from matplotlib.pyplot import imread
 # SCANNOMATIC LIBRARIES
 #
 
-import resource_path as resource_path
-import resource_config as conf
-import resource_app_config as resource_app_config
+import scanomatic.io.paths as paths
+import scanomatic.io.config_file as config_file
+import scanomatic.io.app_config as app_config
 
 import scanomatic.io.logger as logger
+
 import imageBasics
 import imageFixture
 import imageGrayscale
@@ -98,7 +99,7 @@ class Gridding_History(object):
 
     def _load(self):
 
-        conf_file = conf.Config_File(self._paths.get_fixture_path(self._name))
+        conf_file = config_file.Config_File(self._paths.get_fixture_path(self._name))
         if conf_file.get_loaded() is False:
             self._settings = None
             return False
@@ -232,18 +233,18 @@ class Image(object):
     def __init__(self, fixture, image_path=None,
                  image=None, markings=None, define_reference=False,
                  fixture_directory=None, markings_path=None,
-                 im_scale=None, paths=None, app_config=None):
+                 im_scale=None, path=None, appConfig=None):
 
         self._logger = logger.Logger("Fixture Image")
 
-        if paths is None:
-            self._paths = resource_path.Paths()
+        if path is None:
+            self._paths = paths.Paths()
         else:
-            self._paths = paths
-        if app_config is None:
-            self._config = resource_app_config.Config(self._paths)
+            self._paths = path
+        if appConfig is None:
+            self._config = app_config.Config(self._paths)
         else:
-            self._config = app_config
+            self._config = appConfig
 
         self._define_reference = define_reference
         self.fixture_name = fixture
@@ -407,7 +408,7 @@ class Image(object):
         self._logger.info("Reference fixture loaded from {0}".format(
             fixture_path))
 
-        self.fixture_reference = conf.Config_File(fixture_path)
+        self.fixture_reference = config_file.Config_File(fixture_path)
 
         cur_name = self.fixture_reference.get('name')
         if cur_name is None or cur_name == "":
@@ -416,7 +417,7 @@ class Image(object):
         if self._define_reference:
             self.fixture_current = self.fixture_reference
         else:
-            self.fixture_current = conf.Config_File(fixture_path + "_tmp")
+            self.fixture_current = config_file.Config_File(fixture_path + "_tmp")
 
     def get_name_in_ref(self):
 
