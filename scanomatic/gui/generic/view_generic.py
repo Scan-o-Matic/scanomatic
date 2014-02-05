@@ -26,7 +26,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 #
 
 #import src.resource_scanner as resource_scanner
-import src.resource_image as resource_image
+import scanomatic.imageAnalysis.grayscale as grayscale
 import scanomatic.io.logger as logger
 
 #
@@ -260,10 +260,10 @@ def get_grayscale_combo():
 
     model = gs.get_model()
 
-    for key in resource_image.GRAYSCALES:
+    for key in grayscale.GRAYSCALES:
         model.append([key])
 
-    if len(resource_image.GRAYSCALES) > 0:
+    if len(grayscale.GRAYSCALES) > 0:
         gs.set_active(0)
 
     return gs

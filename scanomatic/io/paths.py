@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Resource Paths"""
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
@@ -17,6 +16,13 @@ import os
 import re
 
 #
+# INTERNAL DEPENDENCIES
+#
+
+import logger
+import scanomatic.faulty_reference as faulty_reference
+
+#
 # EXCEPTIONS
 #
 
@@ -31,47 +37,37 @@ class Invalid_Root(Exception):
 
 class Paths(object):
 
-    def __init__(self, program_path=None, root=None, src_path=None,
-                 config_file=None):
+    def __init__(self, *args):
 
-        if root is None:
+        self._logger = logger.Logger("Paths Class")
+        if (len(args) > 0):
+            self._logger.warning(
+                "Some class instantiated a Paths object wit parameters." +
+                " They are ignorded as this is no longer valid")
 
-            if program_path is not None:
-                root = os.path.dirname(os.path.abspath(program_path))
-            elif src_path is not None:
-                root = os.path.abspath(os.path.join(
-                    os.path.dirname(src_path), os.path.pardir))
-            else:
-                root = os.path.abspath(os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)), os.path.pardir))
+        self.root = os.path.join(os.path.expanduser("~"), ".scan-o-matic")
 
-        self.root = root
-        if os.path.isdir(root) is False:
-            raise Invalid_Root(root)
-        self.src = os.path.join(self.root, "src")
-        if os.path.isdir(self.src) is False:
-            raise Invalid_Root(root)
+        if os.path.isdir(self.root) is False:
+            raise Invalid_Root(self.root)
+
         self.config = os.path.join(self.root, "config")
-        if os.path.isdir(self.config) is False:
-            raise Invalid_Root(root)
         self.fixtures = os.path.join(self.config, "fixtures")
-        self.images = os.path.join(self.src, "images")
+        self.images = os.path.join(self.root, "images")
 
         #INSTALL
         self.desktop_file = "scan-o-matic.desktop"
         self.desktop_file_path = os.path.join(
-            self.config, "desktop_icon", self.desktop_file)
+            self.config, self.desktop_file)
         self.install_filezilla = os.path.join(
-            self.src, "install_filezilla.sh")
+            self.config, "install_filezilla.sh")
 
         #RUN-files
-        self.scanomatic = os.path.join(self.root, "run_scan_o_matic.py")
-        self.analysis = os.path.join(self.root, "run_analysis.py")
-        self.experiment = os.path.join(self.root, "run_experiment.py")
-        self.make_project = os.path.join(self.root, "run_make_project.py")
-        self.revive = os.path.join(self.root, 'relauncher.py')
-        self.install_autostart = os.path.join(
-            self.root, 'install_autostart.py')
+        self.scanomatic = "scan_o_matic"
+        self.analysis = "scan-o-matic_analysis"
+        self.experiment = "scan-o-matic_experiment"
+        self.make_project = "scan-o-matic_make_project"
+        self.revive = "scan-o-matic_relauncher"
+        self.install_autostart = "scan-o-matic_autostart"
 
         #CONFIG
         self.config_main_app = os.path.join(self.config, 'main.config')
@@ -95,7 +91,7 @@ class Paths(object):
             self.fixture_image_file_pattern.format(".tmp")
 
         #LOG
-        self.log = os.path.join(self.root, "log")
+        self.log = os.path.join(self.root, "logs")
         self.log_scanner_out = os.path.join(self.log, "scanner_{0}.stdout")
         self.log_scanner_err = os.path.join(self.log, "scanner_{0}.stderr")
         self.log_main_out = os.path.join(self.log, "main.stdout")
@@ -135,13 +131,22 @@ class Paths(object):
         self.experiment_grid_error_image = "_no_grid_{0}.npy"
 
         #LOCK FILES
-        self.lock_root = os.path.join(os.path.expanduser("~"), ".scan_o_matic")
-        self.lock_power_up_new_scanner = self.lock_root + ".new_scanner.lock"
-        self.lock_scanner_pattern = self.lock_root + ".scanner.{0}.lock"
-        self.lock_scanner_addresses = self.lock_root + ".addresses.lock"
+        self.lock_root = os.path.join(self.base, 'locks')
+        self.lock_power_up_new_scanner = os.path.join(
+            self.lock_root, "new_scanner.lock")
+        self.lock_scanner_pattern = os.path.join(
+            self.lock_root, "scanner.{0}.lock")
+        self.lock_scanner_addresses = os.path.join(
+            self.lock_root, "addresses.lock")
 
         #EXPERIMENT FILE PIPE
-        self.experiment_stdin = self.lock_root + ".{0}.stdin"
+        self.experiment_stdin = os.path.join(
+            self.lock_root, "scanner.{0}.stdin")
+
+    @property
+    def src(self):
+
+        return faulty_reference.FaultyReference("src", base=str(self))
 
     def _is_fixture_file_name(self, fixture_name):
 

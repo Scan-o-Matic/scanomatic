@@ -5,8 +5,8 @@
 _*.lock
 .git/*
 .ropeproject
+/experiments
 /build
-/data
 dev/*
 /config/
 log

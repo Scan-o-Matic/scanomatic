@@ -135,9 +135,9 @@ setup(
     packages=[
         "scanomatic",
         "scanomatic.io",
+        "scanomatic.io.xml",
         "scanomatic.subprocs",
         "scanomatic.imageAnalysis", "scanomatic.dataProcessing",
-        "scanomatic.dataProcessing.xml",
         "scanomatic.dataProcessing.visualization",
         "scanomatic.gui",
         "scanomatic.gui.analysis",
