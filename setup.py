@@ -109,7 +109,7 @@ setup(
         "scanomatic",
         "scanomatic.io",
         "scanomatic.io.xml",
-        "scanomatic.subprocs",
+        "scanomatic.rpc_server",
         "scanomatic.imageAnalysis", "scanomatic.dataProcessing",
         "scanomatic.dataProcessing.visualization",
         "scanomatic.gui",

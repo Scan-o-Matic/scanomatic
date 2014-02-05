@@ -16,6 +16,7 @@ data_files = [
     ('config', {'calibration.polynomials': False,
                 'calibration.data': False,
                 'grayscales.cfg': False,
+                'rpc.config': False,
                 'scan-o-matic.desktop': True}),
     (os.path.join('config', 'fixtures'), {}),
     ('logs', {}),

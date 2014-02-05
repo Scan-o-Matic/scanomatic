@@ -156,7 +156,7 @@ class Paths(object):
         path = os.path.join(self.config, 'rpc.admin')
         if (os.path.isfile(path)):
             fh = open(path, 'r')
-            admin = fh.read.strip()
+            admin = fh.read().strip()
             fh.close()
         else:
             admin = md5.new(str(random.random())).hexdigest()

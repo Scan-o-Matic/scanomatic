@@ -34,6 +34,55 @@
 
 * RPC
 
+	SubprocEffector Shows Available methods for pipes
+
+	RPC -> Subproc: [subprocEffectorMethod, kwargs]
+	
+	Common to all SubprocEffectors:
+
+		Start
+		Stop
+		Pause
+		Status (reciprokes by sending status dict)
+
+	RPC Exposes to Client:
+
+		getFreeScanners()
+		getScannerInfo(scanner)
+		getScannerStatus(scanner)
+		startScanner(userId, scanner)
+		stopScanner(userId, scanner)
+		pauseScanner(userId, scanner)
+		resumeScanner(userId, scanner)
+
+		setScannerStatus(userId, scanner, kwargs)
+
+		enqueueScanner(userId, scanner, kwargs)
+
+		---
+
+		enqueueAnalysis(userId, kwargs)
+		getAnalysesInfo()
+	
+		stopAnalysis(userId, analysis)
+		pauseAnalysis(userId, analysis)
+		resumeAnalysis(userId, analysis)
+		
+		---
+
+		enqueueRebuild(userId, kwargs)
+		stopRebuild(userId, rebuild)
+		pauseRebuild(userId, rebuild)
+		resumeRebuild(userId, rebuild
+
+		getRebuildsInfo()
+
+		---
+
+		enqueueFeatures(userId, kwargs)
+		getFeaturesInfo()
+
+		---
 
   ##########################
 ##### THE WHAT NEXT PLACE #####
