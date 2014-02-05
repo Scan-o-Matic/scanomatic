@@ -14,6 +14,8 @@ __status__ = "Development"
 
 import os
 import re
+import md5
+import random
 
 #
 # INTERNAL DEPENDENCIES
@@ -72,6 +74,8 @@ class Paths(object):
         #CONFIG
         self.config_main_app = os.path.join(self.config, 'main.config')
         self.config_mac = os.path.join(self.config, 'mac_address.config')
+        self.config_rpc = os.path.join(self.config, 'rpc.config')
+        self._config_rpc_admin = None
 
         #IMAGES
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
@@ -142,6 +146,25 @@ class Paths(object):
         #EXPERIMENT FILE PIPE
         self.experiment_stdin = os.path.join(
             self.lock_root, "scanner.{0}.stdin")
+
+    @property
+    def config_rpc_admin(self):
+
+        if self._config_rpc_admin is not None:
+            return self._config_rpc_admin
+
+        path = os.path.join(self.config, 'rpc.admin')
+        if (os.path.isfile(path)):
+            fh = open(path, 'r')
+            admin = fh.read.strip()
+            fh.close()
+        else:
+            admin = md5.new(str(random.random())).hexdigest()
+            fh = open(path, 'w')
+            fh.write(admin)
+            fh.close()
+
+        return admin
 
     @property
     def src(self):

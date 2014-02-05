@@ -38,7 +38,7 @@ if len(install_dependencies) > 0:
 
     if os.name == 'posix':
 
-        if os.system("gksu apt-get install {0} -y".format(
+        if os.system("gksu apt-get install {0}".format(
                 " ".join(install_dependencies))) != 0:
 
             _logger.warning("Could not install: {0}".format(
