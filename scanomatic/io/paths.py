@@ -131,7 +131,7 @@ class Paths(object):
         self.experiment_grid_error_image = "_no_grid_{0}.npy"
 
         #LOCK FILES
-        self.lock_root = os.path.join(self.base, 'locks')
+        self.lock_root = os.path.join(self.root, 'locks')
         self.lock_power_up_new_scanner = os.path.join(
             self.lock_root, "new_scanner.lock")
         self.lock_scanner_pattern = os.path.join(

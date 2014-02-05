@@ -23,7 +23,7 @@ import gtk
 #
 
 from generic.view_generic import *
-import scanomait.io.paths as paths
+import scanomatic.io.paths as paths
 
 #
 # STATIC GLOBALS

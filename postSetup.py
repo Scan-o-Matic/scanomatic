@@ -8,7 +8,7 @@ _logger = logger.Logger("Post Install")
 
 homeDir = os.path.expanduser("~")
 
-defaltPermission = 0666
+defaltPermission = 0644
 installPath = ".scan-o-matic"
 defaultSourceBase = "data"
 
@@ -39,7 +39,7 @@ def InstallDataFiles(targetBase=None, sourceBase=None, installList=None):
 
     if not os.path.isdir(targetBase):
         os.mkdir(targetBase)
-        os.chmod(targetBase, 0777)
+        os.chmod(targetBase, 0755)
 
     for installType in installList:
 
@@ -50,7 +50,7 @@ def InstallDataFiles(targetBase=None, sourceBase=None, installList=None):
         if not os.path.isdir(targetDir):
 
             os.mkdir(targetDir)
-            os.chmod(targetDir, 0777)
+            os.chmod(targetDir, 0755)
 
         for fileName in dirFiles:
 
@@ -58,6 +58,7 @@ def InstallDataFiles(targetBase=None, sourceBase=None, installList=None):
             targetPath = os.path.join(targetDir, fileName)
 
             if (not os.path.isfile(targetPath) and dirFiles[fileName] is None):
+                _logger.info("Creating file {0}".format(targetPath))
                 fh = open(targetPath, 'w')
                 fh.cloe()
             elif (not os.path.isfile(targetPath) or dirFiles[fileName]

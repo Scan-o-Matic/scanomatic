@@ -60,17 +60,12 @@ _logger.info("Preparing setup parameters")
 # PREPARING INSTALLATION
 #
 
-#from pkg_resources import WorkingSet, DistributionNotFound
-
-#Obtain a list of current packages
-#working_set = WorkingSet()
-#'scikits-image',
 package_dependencies = [
     'argparse', 'matplotlib', 'multiprocessing',
     'numpy', 'sh', 'nmap', 'configparse', 'scikits-image',
     'uuid', 'PIL', 'scipy',  'unittest', 'pygtk']
 
-data_files = [] #{"scan-o-matic": ["data/*"]}
+data_files = []
 
 scripts = [
     os.path.join("scripts", p) for p in [
@@ -79,7 +74,6 @@ scripts = [
         "scan-o-matic_analysis",
         "scan-o-matic_experiment",
         "scan-o-matic_analysis_move_plate",
-        "scan-o-matic_install_filezilla.sh",
         "scan-o-matic_analysis_patch_times",
         "scan-o-matic_make_project",
         "scan-o-matic_analysis_skip_gs_norm",
@@ -87,27 +81,6 @@ scripts = [
         "scan-o-matic_analysis_xml_upgrade",
     ]
 ]
-
-"""
-install_dependencies = []
-
-for dep in package_dependencies:
-
-    try:
-        working_set.require(dep)
-    except DistributionNotFound:
-        install_dependencies.append(dep)
-
-if len(install_dependencies) > 0:
-
-    _logger.critical(
-        "The following python dependencies were not met {0}".format(
-            install_dependencies))
-
-    from setuptools.command.easy_install import main as install
-
-    install(install_dependencies)
-"""
 
 #
 # INSTALLING SCAN-O-MATIC
