@@ -48,28 +48,8 @@ class RPC_Proc(Process):
 
                 try:
 
-                    self.pipEffector.procEffector.next()
+                    self.pipeEffector.procEffector.next()
 
                 except StopIteration:
 
                     self._keepRunning = False
-
-
-class ProcEffector(object):
-
-    pass
-
-
-class AnalysisEffector(ProcEffector):
-
-    pass
-
-
-class ExperimentEffector(ProcEffector):
-
-    pass
-
-
-class FeaturesEffector(ProcEffector):
-
-    pass

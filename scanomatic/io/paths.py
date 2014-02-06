@@ -39,6 +39,22 @@ class Invalid_Root(Exception):
 
 class Paths(object):
 
+    _INSTANCE = None
+
+    def __new__(cls, *args):
+
+        if cls is Paths:
+
+            if cls._INSTANCE is None:
+
+                cls._INSTANCE = super(Paths, cls).__new__(cls, *args)
+
+            return cls._INSTANCE
+
+        else:
+
+            return super(Paths, cls).__new__(cls)
+
     def __init__(self, *args):
 
         self._logger = logger.Logger("Paths Class")

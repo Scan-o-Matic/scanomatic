@@ -180,21 +180,11 @@ def print_progress_bar(fraction=0.0, size=40, start_time=None):
 def custom_traceback(excType, excValue, traceback):
     """Custom traceback function"""
 
+    #TODO: This is no good!
+
     run_file_path = (
         "(sorry couldn't find the name," +
         " but it is the analysis.run of your project)")
-
-    if _logger is not None:
-
-        for handler in _logger.handlers:
-
-            try:
-
-                run_file_path = handler.baseFilename
-
-            except:
-
-                pass
 
     _logger.critical(
         "Uncaught exception -- An error in the code was" +
