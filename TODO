@@ -40,10 +40,10 @@
 	
 	Common to all SubprocEffectors:
 
-		Start
-		Stop
-		Pause
-		Status (reciprokes by sending status dict)
+		X Start
+		X Stop
+		X Pause
+		X Status (reciprokes by sending status dict)
 
 	RPC Exposes to Client:
 
