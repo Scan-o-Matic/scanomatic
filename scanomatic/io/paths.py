@@ -163,6 +163,10 @@ class Paths(object):
         self.experiment_stdin = os.path.join(
             self.lock_root, "scanner.{0}.stdin")
 
+        #IMAGE ANALSYSIS OUTPUT
+        self.image_analysis_img_data = "image_{0}_data.npy"
+        self.image_analysis_time_series = "time_data.npy"
+
     @property
     def config_rpc_admin(self):
 

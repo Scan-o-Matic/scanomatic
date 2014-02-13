@@ -104,8 +104,3 @@ class ProcEffector(object):
 class ExperimentEffector(ProcEffector):
 
     pass
-
-
-class FeaturesEffector(ProcEffector):
-
-    pass

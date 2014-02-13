@@ -44,7 +44,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def __init__(self, dataObject, timeObject=None,
                  medianKernelSize=5, gaussSigma=1.5, linRegSize=5,
-                 measure=None, baseName=None):
+                 measure=None, baseName=None, itermode=False):
 
         self._source = dataObject
         self._generationTimes = None
@@ -74,8 +74,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._medianKernelSize = medianKernelSize
         self._gaussSigma = gaussSigma
         self._linRegSize = linRegSize
+        self._itermode = itermode
 
-        self._analyse()
+        if not self._itermode:
+            self._analyse()
 
     @classmethod
     def LoadFromXML(cls, path, **kwargs):
@@ -178,6 +180,22 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._smoothen()
         self._calculatePhenotypes()
+
+    def iterAnalyse(self):
+
+        if (self._itermode == False)
+            raise Exception("Can't iterate when not in itermode")
+            return False
+
+        n = sum((p.shape[1] * p.shape[2] for p in self._dataObject)) + 1.0
+        i = 0
+        self._smoothen()
+        yield i / n
+        for x in self._calculatePhenotypes():
+            i += 1
+            yield i / n
+
+        self._itermode = False
 
     def _smoothen(self):
         sys.stderr.write(
@@ -316,6 +334,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                         flatT, np.log2(Yobs))
 
                     curveFits[idX, idY, ...] = (p[0], ) + tuple(p[1])
+
+                    if self._itermode:
+                        yield
 
             sys.stderr.write(
                 time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
