@@ -37,7 +37,7 @@ class Image_Data(object):
     @staticmethod
     def writeImage(path, imageIndex, features, nPlates, measure=None):
 
-        path = os.path.join(Image_Data.path2dataPathTuple(
+        path = os.path.join(*Image_Data.path2dataPathTuple(
             path, imageIndex=imageIndex))
 
         if features is None:
@@ -62,7 +62,11 @@ class Image_Data(object):
                     for id2 in xrange(lD2):
                         cell = d1V[id2]
                         if cell is not None:
-                            plates[pID][id1, id2] = cell[measure[0]][measure[1]]
+                            if isinstance(measure, int):
+                                plates[pID][id1, id2] = cell[measure]
+                            else:
+                                plates[pID][id1, id2] = cell[
+                                    measure[0]][measure[1]]
 
         Image_Data._LOGGER.info("Saved Image Data '{0}'".format(path))
         np.save(path, plates)
@@ -99,13 +103,13 @@ class Image_Data(object):
     @staticmethod
     def writeTimesFromXML(path, xmlObject):
 
-        np.save(os.path.join(Image_Data.path2dataPathTuple(
-            path, images=True)), xmlObject.get_scan_times())
+        np.save(os.path.join(*Image_Data.path2dataPathTuple(
+            path, times=True)), xmlObject.get_scan_times())
 
     @staticmethod
     def readTimes(path):
 
-        path = os.path.join(Image_Data.path2dataPathTuple(path, times=True))
+        path = os.path.join(*Image_Data.path2dataPathTuple(path, times=True))
         if os.path.isfile(path):
             return np.load(path)
         else:
@@ -123,16 +127,21 @@ class Image_Data(object):
     def path2dataPathTuple(path, imageIndex="*", times=False):
         pathDir = os.path.dirname(path)
         pathBasename = os.path.basename(path)
-        if (len(pathBasename) == 0):
+        if (len(pathBasename) == 0 or pathBasename == "."):
             if times:
                 pathBasename = Image_Data._PATHS.image_analysis_time_series
             else:
                 pathBasename = Image_Data._PATHS.image_analysis_img_data
+
+        """
+        Image_Data._LOGGER.info("Path tuple is {0}".format((
+            pathDir, pathBasename.format(imageIndex))))
+        """
 
         return pathDir, pathBasename.format(imageIndex)
 
     @staticmethod
     def iterReadImages(path):
 
-        for p in glob.iglob(os.path.join(Image_Data.path2dataPathTuple(path))):
+        for p in glob.iglob(os.path.join(*Image_Data.path2dataPathTuple(path))):
             yield Image_Data.readImage(p)

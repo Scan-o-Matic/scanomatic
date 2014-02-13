@@ -52,7 +52,7 @@ class Logger(object):
 
     def __init__(self, loggerName):
 
-        self._level = 3
+        self._level = self.INFO
         self._logFile = None
         self._loggerName = loggerName
         self._logLevelToMethod = {}

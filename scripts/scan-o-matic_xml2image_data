@@ -53,8 +53,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    if (args.inputFile is None or not os.path.isfile(args.inputFile)):
+        parser.error("Could not locate file '{0}'".format(args.inputFile))
+
     if (args.outputPath is None):
         args.outputPath = os.path.dirname(args.inputFile)
+
+    if (args.outputPath == ""):
+        args.outputPath = "."
 
     if not os.path.isdir(args.outputPath):
         os.mkdir(args.outputPath)

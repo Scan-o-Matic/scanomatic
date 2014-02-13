@@ -24,13 +24,7 @@ import re
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.io.logger as logging
-
-#
-# GLOBALS
-#
-
-_logger = logging.Logger("Resource XML Reader")
+import scanomatic.io.logger as logger
 
 #
 # SCANNOMATIC LIBRARIES
@@ -57,14 +51,14 @@ class XML_Reader():
         self._scan_times = scan_times
 
         if file_path:
-            self._logger = logging.getLogger(
+            self._logger = logger.Logger(
                 "XML-reader '{0}'".format(os.path.basename(file_path)))
             if not self.read():
                 self._logger.error("XML Reader not fully initialized!")
             else:
                 self._loaded = True
         else:
-            self._logger = logging.getLogger('XML-reader')
+            self._logger = logger.Logger('XML-reader')
 
     def __getitem__(self, position):
 
