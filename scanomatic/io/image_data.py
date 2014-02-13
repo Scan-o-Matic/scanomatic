@@ -64,7 +64,22 @@ class Image_Data(object):
                         if cell is not None:
                             plates[pID][id1, id2] = cell[measure[0]][measure[1]]
 
+        Image_Data._LOGGER.info("Saved Image Data '{0}'".format(path))
         np.save(path, plates)
+
+    @staticmethod
+    def iterWriteImageFromXML(path, xmlObject, measure=0):
+
+        scans = xmlObject.get_scan_times().size
+        nPlates = max(xmlObject.get_data().keys())
+        data = xmlObject.get_data()
+
+        for idS in range(scans):
+            features = [None] * nPlates
+            for idP in range(nPlates):
+                features[idP] = data[idP][:, :, idS]
+
+            Image_Data.writeImage(path, idS, features, nPlates, measure=measure)
 
     @staticmethod
     def writeTimes(path, imageIndex, imageMetaData, overwrite=False):
@@ -80,6 +95,12 @@ class Image_Data(object):
 
         currentData[imageIndex] = imageMetaData['Time']
         np.save(Image_Data.path2dataPathTuple(path, times=True), currentData)
+
+    @staticmethod
+    def writeTimesFromXML(path, xmlObject):
+
+        np.save(os.path.join(Image_Data.path2dataPathTuple(
+            path, images=True)), xmlObject.get_scan_times())
 
     @staticmethod
     def readTimes(path):

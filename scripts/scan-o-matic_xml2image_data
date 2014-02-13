@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+"""This script runs a conversion of an analysis xml into image data files
+"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL v3.0"
+__version__ = "0.9991"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
+
+#
+# DEPENDENCIES
+#
+
+from argparse import ArgumentParser
+import os
+
+#
+# INTERNAL DEPENDENCIES
+#
+
+import scanomatic.io.xml.reader as reader
+import scanomatic.io.image_data as image_data
+import scanomatic.io.logger as logger
+
+#
+# SCRIPT BEHAVIOUR
+#
+
+if __name__ == "__main__":
+
+    log = logger.Logger("Scan-o-Matic XML2ImageData")
+
+    parser = ArgumentParser(
+        description="This script will read an analysis xml file and produce" +
+        " image-data files. Main usage is for old projects who don't have " +
+        " those files or if such files have been lost.")
+
+    parser.add_argument("-i", "--input-file", type=str, dest="inputFile",
+                        help="xml-file to be read", metavar="PATH")
+
+    parser.add_argument("-o", "--ouput-path", type=str, dest="outputPath",
+                        help="Path to directory where image data will be put." +
+                        " Default is same directory as input-file",
+                        metavar="PATH", default=None)
+
+    parser.add_argument("-a", "--ask-remove", type=bool, dest="ask",
+                        help="Ask to remove pre-existing files image data " +
+                        "files in output directory. Default: False",
+                        default=False)
+
+    args = parser.parse_args()
+
+    if (args.outputPath is None):
+        args.outputPath = os.path.dirname(args.inputFile)
+
+    if not os.path.isdir(args.outputPath):
+        os.mkdir(args.outputPath)
+
+    for p in image_data.Image_Data.iterReadImages(args.outputPath):
+        if (not args.ask or
+                "n" not in raw_input("Remove {0}? (Y/n)".format(p)).lower()):
+
+            os.remove(p)
+            log.info("Removed pre-exisiting file '{0}'".format(p))
+
+    xmlData = reader.XML_Reader(file_path=args.inputFile)
+
+    log.info("Data read")
+
+    image_data.Image_Data.writeTimesFromXML(args.outputPath, xmlData)
+
+    log.info("Scan Time data saved")
+
+    image_data.Image_Data.iterWriteImageFromXML(args.outputPath, xmlData)
+
+    log.info("Image Data saved")
+    log.info("Done!")

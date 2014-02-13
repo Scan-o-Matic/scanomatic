@@ -24,7 +24,7 @@ import re
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.logger as logging
+import scanomatic.io.logger as logging
 
 #
 # GLOBALS
