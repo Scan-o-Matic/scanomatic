@@ -25,6 +25,7 @@ import time
 import proc_effector
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
+import scanomatic.io.image_data as image_data
 import scanomatic.PhenotypeExtractionessing.phenotyper as phenotyper
 
 #
@@ -89,16 +90,9 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
                 os.path.abspath(os.path.dirname(path))))
             return False
 
-        dirPath = os.path.dirname(path)
-        baseName = os.path.baseName(path)
+        dirPath, baseName = image_data.Image_Data.path2dataPathTuple(path)
 
-        if len(baseName) > 0 and "*" not in baseName:
-            baseName += baseName
-        elif len(baseName) == 0:
-            baseName = self._paths.image_analysis_img_data.format("*")
-
-        times = np.load(
-            os.path.join(dirPath, self._paths.image_analysis_time_series))
+        times = image_data.Image_Data.readImage(path)
 
         data = []
         timeIndex = []

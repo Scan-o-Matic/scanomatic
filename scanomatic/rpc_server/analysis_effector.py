@@ -26,6 +26,7 @@ import proc_effector
 import scanomatic.io.logger as logger
 import scanomatic.io.project_log as project_log
 import scanomatic.io.xml.writer as xml_writer
+import scanomatic.io.image_data as image_data
 import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.imageAnalysis.support as support
@@ -152,8 +153,8 @@ class AnalysisEffector(proc_effector.ProcEffector):
         # WRITING XML HEADERS AND OPENS SCAN TAG
         #
 
-        xml_writer.write_header(meta_data, plates)
-        xml_writer.write_segment_start_scans()
+        xmlWriter.write_header(meta_data, plates)
+        xmlWriter.write_segment_start_scans()
 
         #
         # SETTING GRID FROM REASONABLE TIME POINT
@@ -179,6 +180,8 @@ class AnalysisEffector(proc_effector.ProcEffector):
             save_name=os.sep.join((
                 self._outdata_directory,
                 "grid___origin_plate_")))
+
+        firstImg = True
 
         while self._running:
 
@@ -231,10 +234,16 @@ class AnalysisEffector(proc_effector.ProcEffector):
                 logger.warning("No analysis produced for image")
 
             #
-            # XML WRITE IT TO FILES
+            # WRITE TO FILES
             #
 
-            xml_writer.write_image_features(
+            image_data.Image_Data.writeTimes(
+                self._outdataDir, self._image_pos, img_dict_pointer,
+                overwrite=firstImg)
+            image_data.Image_Data.writeImage(
+                self._outdataDir, self._image_pos, features, plates)
+
+            xmlWriter.write_image_features(
                 self._image_pos, features, img_dict_pointer, plates, meta_data)
 
             #
@@ -273,6 +282,7 @@ class AnalysisEffector(proc_effector.ProcEffector):
             #
 
             self._image_pos -= 1
+            firstImg = False
 
             """
             #DEBUGGING memory
@@ -309,7 +319,7 @@ class AnalysisEffector(proc_effector.ProcEffector):
         # CLOSING XML TAGS AND FILES
         #
 
-        xml_writer.close()
+        xmlWriter.close()
 
         #
         # FINALIZING WATCH GRAPHS
@@ -333,7 +343,6 @@ class AnalysisEffector(proc_effector.ProcEffector):
         self._comm_thread.join()
 
         logger.info("Exiting")
-
 
     def _safeCfgGet(self, section, item, defaultValue=None):
 
