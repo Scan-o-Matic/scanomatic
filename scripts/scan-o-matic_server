@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+"""Scan-o-Matic Server"""
+__author__ = "Martin Zackrisson"
+__copyright__ = "Swedish copyright laws apply"
+__credits__ = ["Martin Zackrisson"]
+__license__ = "GPL v3.0"
+__version__ = "0.9991"
+__maintainer__ = "Martin Zackrisson"
+__email__ = "martin.zackrisson@gu.se"
+__status__ = "Development"
+
+
+#
+# DEPENDENCIES
+#
+
+import psutil
+import sys
+
+#
+# INTERNAL DEPENDENCIES
+#
+
+import scanomatic.io.logger as logger
+import scanomatic.rpc_server.server as server
+
+if __name__ == "__main__":
+
+    if "scan-o-matic" in [p.name for p in psutil.get_process_list()]:
+        logger.Logger("Scan-o-Matic server launcher").critical(
+            "There is already a Scan-o-Matic server running, request refused!")
+        sys.exit(9)
+
+    rpcServer = server.SOM_RPC()
+    rpcServer.run()

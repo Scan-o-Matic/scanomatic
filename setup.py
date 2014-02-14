@@ -70,6 +70,7 @@ data_files = []
 scripts = [
     os.path.join("scripts", p) for p in [
         "scan-o-matic",
+        "scan-o-matic_server",
         "scan-o-matic_calibration",
         "scan-o-matic_analysis",
         "scan-o-matic_experiment",
