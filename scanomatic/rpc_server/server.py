@@ -25,7 +25,10 @@ from ConfigParser import ConfigParser
 #
 
 import scanomatic.io.logger as logger
+import scanomatic.io.config as config
 import scanomatic.io.paths as paths
+import scanomatic.rpc_server.queue as queue
+from scanomatic.io.resource_status import Resource_Status
 
 #
 # CLASSES
@@ -37,24 +40,40 @@ class SOM_RPC(object):
     def __init__(self):
 
         self._logger = logger.Logger("Scan-o-Matic RPC Server")
+        self._appConfig = config.Config()
 
         self._paths = paths.Paths()
 
         self._serverCfg = ConfigParser(allow_no_value=True)
         self._serverCfg.readfp(open(self._paths.config_rpc))
 
+        self._queue = queue.RPC_Subproc_Queue()
+
         self._admin = self._paths.config_rpc_admin
 
         self._server = None
         self._running = False
+
+    def _safeCfgGet(self, section, item, defaultValue=None):
+
+        try:
+
+            defaultValue = self._serverCfg.get(section, item)
+
+        except:
+
+            pass
+
+        return defaultValue
 
     def _startServer(self):
 
         if (self._server is not None):
             raise Exception("Server is already running")
 
-        host = self._serverCfg.get('Connection', 'host')
-        port = self._serverCfg.get('Connection', 'port')
+        host = self._serverCfg.get('Connection', 'host', '127.0.0.1')
+        port = self._serverCfg.get('Connection', 'port',
+                                   self._appConfig.rpc_port)
 
         self._server = SimpleXMLRPCServer((host, port))
 
@@ -70,6 +89,12 @@ class SOM_RPC(object):
     def _main(self):
 
         while self._running:
+
+            if (Resource_Status.check_resources()):
+                nextJob = self._queue.popHighestPriority()
+                if (nextJob is not None):
+                    #TODO: Do something here
+                    pass
 
             #TODO: Gather information here
 
@@ -116,3 +141,41 @@ class SOM_RPC(object):
 
         self._server.serve_forever()
         self._logger.info("Server serves forever")
+
+    def communicateWith(self, userID, jobId, title, *args, **kwargs):
+
+        if (userID != self._admin):
+            return False
+
+        #TODO: The code here
+
+        return True
+
+    def getStatus(self, jobId):
+
+        pass
+
+    def getActiveJobs(self):
+
+        pass
+
+    def getJobsInQueue(self):
+
+        return self._queue.getJobsInQueue()
+
+    def createFeatureExtractJob(self, userID, runDirectory, priority=None,
+                                **kwargs):
+
+        if userID == self._admin:
+
+            kwargs['runDirectory'] = runDirectory
+
+            return self._queue.add(
+                queue.RPC_Subproc_Queue.TYPE_FEATURE_EXTRACTION,
+                priority=priority,
+                **kwargs)
+        else:
+            self._logger.warning(
+                "Unknown user {0} tried to create feature extract job".format(
+                    userID))
+            return False

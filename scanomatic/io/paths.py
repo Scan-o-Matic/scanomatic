@@ -93,6 +93,9 @@ class Paths(object):
         self.config_rpc = os.path.join(self.config, 'rpc.config')
         self._config_rpc_admin = None
 
+        #RPC
+        self.rpc_queue = os.path.join(self.root, 'job_queue.cfg')
+
         #IMAGES
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
         self.martin = os.path.join(self.images, "martin3.png")

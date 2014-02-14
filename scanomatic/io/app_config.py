@@ -36,7 +36,7 @@ class Config(object):
         else:
             self._paths = path
 
-        self._logger = logger.getLogger("Application Config")
+        self._logger = logger.Logger("Application Config")
 
         #TMP SOLUTION TO BIGGER PROBLEMS
 
@@ -70,6 +70,16 @@ class Config(object):
         self._pm_verify_name = False
         self._pm_MAC = None
         self._pm_name = "Server 1"
+
+        #RPC SERVER
+        self.rpc_port = 1420
+
+        #HARDWARE RESOURCES
+        self.resources_min_checks = 3
+        self.resources_mem_min = 30
+        self.resources_cpu_tot = 80
+        self.resources_cpu_single = 75
+        self.resources_cpu_n = 1
 
         #LOAD CONFIG FROM FILE
         self._load_config_from_file()
