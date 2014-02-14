@@ -95,6 +95,7 @@ class Paths(object):
 
         #RPC
         self.rpc_queue = os.path.join(self.root, 'job_queue.cfg')
+        self.rpc_jobs = os.path.join(self.root, 'jobs.cfg')
 
         #IMAGES
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")

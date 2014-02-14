@@ -28,6 +28,7 @@ import scanomatic.io.logger as logger
 import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.rpc_server.queue as queue
+import scanomatic.rpc_server.jobs as jobs
 from scanomatic.io.resource_status import Resource_Status
 
 #
@@ -48,11 +49,13 @@ class SOM_RPC(object):
         self._serverCfg.readfp(open(self._paths.config_rpc))
 
         self._queue = queue.RPC_Subproc_Queue()
+        self._jobs = jobs.Jobs()
 
         self._admin = self._paths.config_rpc_admin
 
         self._server = None
         self._running = False
+        self._forceJobsToStop = False
 
     def _safeCfgGet(self, section, item, defaultValue=None, vtype=None):
 
@@ -97,15 +100,14 @@ class SOM_RPC(object):
             if (Resource_Status.check_resources()):
                 nextJob = self._queue.popHighestPriority()
                 if (nextJob is not None):
-                    #TODO: Do something here
-                    pass
+                    self._jobs.add(nextJob)
                     sleepDuration *= 2
                 else:
                     sleepDuration *= 60
             elif Resource_Status.currentPasses() == 0:
                 sleepDuration *= 30
 
-            #TODO: Gather information here
+            self._jobs.poll()
 
             time.sleep(sleepDuration)
 
@@ -114,7 +116,9 @@ class SOM_RPC(object):
 
     def _niceQuitProcesses(self):
 
-        #TODO: Ask if everyone is ready to die
+        while self._forceJobsToStop and self._jobs.running:
+            self._jobs.forceStop = True
+            time.sleep(0.1)
 
         self._shutDownComplete = True
 
@@ -124,11 +128,12 @@ class SOM_RPC(object):
             self.serverShutDown()
             self.run()
 
-    def serverShutDown(self, userID):
+    def serverShutDown(self, userID, forceJobsToStop=False):
 
         if userID == self._admin:
             self._running = False
             self._shutDownComplete = False
+            self._forceJobsToStop = forceJobsToStop
             while (self._mainThread is not None and
                    self._mainThread.isalive):
 
@@ -160,17 +165,27 @@ class SOM_RPC(object):
         if (userID != self._admin):
             return False
 
-        #TODO: The code here
+        job = self._jobs[jobId]
+        if job is not None:
+            try:
+                getattr(job, title)(*args, **kwargs)
+            except AttributeError:
+                self._logger.error("The job {0} has no valid call {1}".format(
+                    jobId, title))
+                return False
+        else:
+            self._logger.error("The job {0} is not running".format(jobId))
+            return False
 
         return True
 
     def getStatus(self, jobId):
 
-        pass
+        return self._jobs.getStatus(jobId)
 
     def getActiveJobs(self):
 
-        pass
+        return self._jobs.activeJobs
 
     def getJobsInQueue(self):
 

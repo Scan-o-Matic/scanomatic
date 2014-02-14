@@ -124,6 +124,11 @@ class RPC_Subproc_Queue(object):
             else:
                 procInfo['label'] = ""
 
+            if (self._queue.has_option(prioSection, "type"):
+                procInfo['type'] = self._queue.getint(prioSection, "type")
+            else:
+                procInfo['type'] = None
+
             if (self._queue.has_option(prioSection, "args")):
                 procInfo['args'] = self._queue.get(prioSection, "args")
             else:
