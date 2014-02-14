@@ -17,7 +17,7 @@ __status__ = "Development"
 import xmlrpclib
 import threading
 import time
-from SimpleXMLPRCServer import SimpleXMLRPCServer
+from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import ConfigParser
 
 #
@@ -25,7 +25,7 @@ from ConfigParser import ConfigParser
 #
 
 import scanomatic.io.logger as logger
-import scanomatic.io.config as config
+import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.rpc_server.queue as queue
 from scanomatic.io.resource_status import Resource_Status
@@ -40,7 +40,7 @@ class SOM_RPC(object):
     def __init__(self):
 
         self._logger = logger.Logger("Scan-o-Matic RPC Server")
-        self._appConfig = config.Config()
+        self._appConfig = app_config.Config()
 
         self._paths = paths.Paths()
 
@@ -54,11 +54,13 @@ class SOM_RPC(object):
         self._server = None
         self._running = False
 
-    def _safeCfgGet(self, section, item, defaultValue=None):
+    def _safeCfgGet(self, section, item, defaultValue=None, vtype=None):
 
         try:
 
             defaultValue = self._serverCfg.get(section, item)
+            if vtype is not None:
+                defaultValue = vtype(defaultValue)
 
         except:
 
@@ -71,9 +73,9 @@ class SOM_RPC(object):
         if (self._server is not None):
             raise Exception("Server is already running")
 
-        host = self._serverCfg.get('Connection', 'host', '127.0.0.1')
-        port = self._serverCfg.get('Connection', 'port',
-                                   self._appConfig.rpc_port)
+        host = self._safeCfgGet('Communication', 'host', '127.0.0.1')
+        port = self._safeCfgGet('Communication', 'port',
+                                self._appConfig.rpc_port, int)
 
         self._server = SimpleXMLRPCServer((host, port))
 
@@ -90,17 +92,24 @@ class SOM_RPC(object):
 
         while self._running:
 
+            sleepDuration = 0.51
+
             if (Resource_Status.check_resources()):
                 nextJob = self._queue.popHighestPriority()
                 if (nextJob is not None):
                     #TODO: Do something here
                     pass
+                    sleepDuration *= 2
+                else:
+                    sleepDuration *= 60
+            elif Resource_Status.currentPasses() == 0:
+                sleepDuration *= 30
 
             #TODO: Gather information here
 
-            time.sleep(0.21)
+            time.sleep(sleepDuration)
 
-        self._server.shutDown()
+        self._server.shutdown()
         self._niceQuitProcesses()
 
     def _niceQuitProcesses(self):
@@ -126,6 +135,9 @@ class SOM_RPC(object):
                 time.sleep(0.05)
 
             self._server = None
+            return True
+
+        return False
 
     def run(self):
 
@@ -139,8 +151,9 @@ class SOM_RPC(object):
         self._mainThread = threading.Thread(target=self._main)
         self._mainThread.start()
 
-        self._server.serve_forever()
         self._logger.info("Server serves forever")
+        self._server.serve_forever()
+        self._logger.info("Server Quit")
 
     def communicateWith(self, userID, jobId, title, *args, **kwargs):
 

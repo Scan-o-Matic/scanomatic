@@ -16,7 +16,7 @@ __status__ = "Development"
 
 import psutil
 import sys
-
+import os
 #
 # INTERNAL DEPENDENCIES
 #
@@ -26,7 +26,13 @@ import scanomatic.rpc_server.server as server
 
 if __name__ == "__main__":
 
-    if "scan-o-matic" in [p.name for p in psutil.get_process_list()]:
+    basename = os.path.basename(sys.argv[0])
+    print basename
+    if sum([basename.startswith(p.name) and
+            len(p.name) > (len(basename) / 2.0) and
+            os.getpid() != p.pid
+            for p in psutil.get_process_list()]) > 0:
+
         logger.Logger("Scan-o-Matic server launcher").critical(
             "There is already a Scan-o-Matic server running, request refused!")
         sys.exit(9)

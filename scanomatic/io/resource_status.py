@@ -35,6 +35,10 @@ class Resource_Status(object):
     _passes = 0
 
     @staticmethod
+    def currentPasses():
+        return Resource_Status._passes
+
+    @staticmethod
     def check_cpu():
         """Checks the CPU status.
 
@@ -57,7 +61,7 @@ class Resource_Status(object):
                  p, f in zip(cur_cpus, free_cpus)]))
 
         cpuOK = (sum(free_cpus) >= Resource_Status._APP_CONFIG.resources_cpu_n
-                 and sum(cur_cpus) >
+                 and sum(cur_cpus) <
                  Resource_Status._APP_CONFIG.resources_cpu_tot)
 
         Resource_Status._LOGGER.info(
