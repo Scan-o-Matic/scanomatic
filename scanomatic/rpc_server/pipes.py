@@ -21,9 +21,9 @@ import scanomatic.io.logger as logger
 
 class _PipeEffector(object):
 
-    def __init__(self, pipe):
+    def __init__(self, pipe, loggerName="Pipe effector"):
 
-        self._logger = logger.Logger("Pipe effector")
+        self._logger = logger.Logger(loggerName)
         self._pipe = pipe
         self._allowedCalls = dict()
 
@@ -42,15 +42,26 @@ class _PipeEffector(object):
             try:
                 response = self._allowedCalls[dataRecvd[0]](*dataRecvd[1],
                                                             **dataRecvd[2])
-                if response is not None:
-                    self.send(response)
+            except (IndexError, TypeError):
 
-            except:
+                self._logger.error(
+                    "Recieved a malformed data package '{0}'".format(dataRecvd))
 
-                self._logger.error("Recieved a malformed data package, " +
-                                   "they should have valid string name of " +
-                                   "method to run followed by arguments" +
-                                   "tuple and keyword arguments dict")
+            except KeyError:
+
+                self._logger.error("Call to '{0}' not known/allowed".format(
+                    dataRecvd[0]))
+
+            else:
+
+                try:
+                    if response is not None:
+                        self.send(response[0], *response[1], **response[2])
+
+                except:
+
+                    self._logger.error("Could not send response '{0}'".format(
+                        response))
 
     def send(self, callName, *args, **kwargs):
 
@@ -59,7 +70,23 @@ class _PipeEffector(object):
 
 class ParentPipeEffector(_PipeEffector):
 
-    pass
+    def __init__(self, pipe):
+
+        super(ParentPipeEffector, self).__init__(
+            pipe, loggerName="Parent Pipe Effector")
+        self._status = dict()
+
+        self._allowedCalls['status'] = self._setStatus
+
+    @property
+    def status(self):
+
+        #TODO: Modify status to say it is completed if it is
+        return self._status
+
+    def _setStatus(self, *args, **kwargs):
+
+        self._status = kwargs
 
 
 class ChildPipeEffector(_PipeEffector):
@@ -71,7 +98,8 @@ class ChildPipeEffector(_PipeEffector):
         else:
             self.procEffector = procEffector
 
-        super(ChildPipeEffector, self).__init__(pipe)
+        super(ChildPipeEffector, self).__init__(
+            pipe, loggerName="Child Pipe Effector")
 
     @property
     def keepAlive(self):

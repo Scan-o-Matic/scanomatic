@@ -34,7 +34,7 @@ class RPC_Job(Process):
 
         super(RPC_Job, self).__init__()
         self._label = label
-        self._target = identifier
+        self._identifier = identifier
         self._target = target
         self._parentPipe = pipes.ParentPipeEffector(parentPipe)
         self._childPipe = childPipe
@@ -64,13 +64,13 @@ class RPC_Job(Process):
                 pipeEffector.poll()
                 sleep(0.29)
 
-        pipeEffector = pipes.RemotePipeEffector(
-            self._childPipe, self._target(self._idenifier, self._label))
+        pipeEffector = pipes.ChildPipeEffector(
+            self._childPipe, self._target(self._identifier, self._label))
 
         t = Thread(target=_communicator)
         t.start()
 
-        while t.isalive:
+        while t.is_alive():
 
             if (pipeEffector.keepAlive):
 

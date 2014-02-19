@@ -48,7 +48,7 @@ class SOM_RPC(object):
         self._serverCfg = ConfigParser(allow_no_value=True)
         self._serverCfg.readfp(open(self._paths.config_rpc))
 
-        self._queue = queue.RPC_Subproc_Queue()
+        self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
 
         self._admin = self._paths.config_rpc_admin
@@ -81,7 +81,7 @@ class SOM_RPC(object):
         port = self._safeCfgGet('Communication', 'port',
                                 self._appConfig.rpc_port, int)
 
-        self._server = SimpleXMLRPCServer((host, port))
+        self._server = SimpleXMLRPCServer((host, port), logRequests=False)
 
         self._running = True
         self._mainThread = None
@@ -102,9 +102,11 @@ class SOM_RPC(object):
 
     def _main(self):
 
+        sleeps = 30.0
+
         while self._running:
 
-            sleepDuration = 0.51
+            sleepDuration = 0.51 * 4
 
             if (Resource_Status.check_resources()):
                 nextJob = self._queue.popHighestPriority()
@@ -116,21 +118,27 @@ class SOM_RPC(object):
 
                     sleepDuration *= 2
                 else:
-                    sleepDuration *= 60
+                    sleepDuration *= 20
             elif Resource_Status.currentPasses() == 0:
-                sleepDuration *= 30
+                sleepDuration *= 15
 
             self._setStatuses(self._jobs.poll())
 
-            time.sleep(sleepDuration)
+            sleepI = 0
+            while (self._running and sleepI < sleeps):
+                sleepI += 1
+                time.sleep(sleepDuration / sleeps)
 
-        self._server.shutdown()
+        self._logger.info("Main process shutting down")
         self._niceQuitProcesses()
+        self._logger.info("Shutting down server")
+        self._server.shutdown()
 
     def _niceQuitProcesses(self):
 
         while self._forceJobsToStop and self._jobs.running:
             self._jobs.forceStop = True
+            self._logger.info("Waiting for jobs to terminate")
             time.sleep(0.1)
 
         self._shutDownComplete = True
@@ -141,18 +149,23 @@ class SOM_RPC(object):
             self.serverShutDown()
             self.run()
 
+    def _serverShutDown(self, forceJobsToStop):
+        self._running = False
+        self._shutDownComplete = False
+        self._forceJobsToStop = forceJobsToStop
+        while (self._mainThread is not None and
+                self._mainThread.is_alive()):
+
+            time.sleep(0.05)
+
+        self._server = None
+
     def serverShutDown(self, userID, forceJobsToStop=False):
 
         if userID == self._admin:
-            self._running = False
-            self._shutDownComplete = False
-            self._forceJobsToStop = forceJobsToStop
-            while (self._mainThread is not None and
-                   self._mainThread.isalive):
-
-                time.sleep(0.05)
-
-            self._server = None
+            t = threading.Thread(target=self._serverShutDown,
+                                 args=(forceJobsToStop,))
+            t.start()
             return True
 
         return False
@@ -208,19 +221,23 @@ class SOM_RPC(object):
 
         return self._queue.getJobsInQueue()
 
-    def createFeatureExtractJob(self, userID, runDirectory, priority=None,
-                                **kwargs):
+    def createFeatureExtractJob(self, userID, runDirectory, label,
+                                priority=None, **kwargs):
 
         if userID == self._admin:
 
             kwargs['runDirectory'] = runDirectory
 
+            self._logger.info("Adding Feature Extraction '{0}' to queue".format(
+                label))
+
             return self._queue.add(
-                queue.RPC_Subproc_Queue.TYPE_FEATURE_EXTRACTION,
+                queue.Queue.TYPE_FEATURE_EXTRACTION,
+                jobLabel=label,
                 priority=priority,
                 **kwargs)
         else:
             self._logger.warning(
-                "Unknown user {0} tried to create feature extract job".format(
+                "Unknown user '{0}' tried to create feature extract job".format(
                     userID))
             return False

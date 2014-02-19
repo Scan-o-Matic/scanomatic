@@ -12,7 +12,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import ConfigParser
+from ConfigParser import ConfigParser
 from multiprocessing import Pipe
 
 #
@@ -109,8 +109,7 @@ class Jobs(object):
 
             curJob = self._jobs[job]
             if curJob.is_alive():
-                pass
-                #TODO: Record iteration in _jobsData if possible to resume
+                curJob.pipe.poll()
             elif not self._forcingStop:
                 del self._jobs[job]
                 self._jobsData.remove_section(job)
@@ -125,9 +124,9 @@ class Jobs(object):
         to restart job if need be"""
 
         self._jobsData.add_section(job.identifier)
-        self._jobsData.set(job.identifier, "label", job.label)
-        self._jobsData.set(job.identifier, "setupArgs", setupArgs)
-        self._jobsData.set(job.identifier, "setupKwargs", setupKwargs)
+        self._jobsData.set(job.identifier, "label", str(job.label))
+        self._jobsData.set(job.identifier, "setupArgs", str(setupArgs))
+        self._jobsData.set(job.identifier, "setupKwargs", str(setupKwargs))
         self._saveJobsData()
 
     def add(self, procData):
@@ -135,8 +134,10 @@ class Jobs(object):
         """
 
         #VERIFIES NO DUPLICATE IDENTIFIER
-        if (procData['id'] in self._jobs):
-            self.logger.critical(
+        if (procData['id'] in self._jobs or self._jobsData.has_section(
+                procData['id'])):
+
+            self._logger.critical(
                 "Cannot have jobs with same identifier ({0}), ".format(
                     procData['id']) +
                 "new job '{0}' not launched.".format(procData['label']))
@@ -174,6 +175,9 @@ class Jobs(object):
         #ADDS JOB AND CREATES JOB DATA POST
         self._jobs[job.identifier] = job
         self._add2JobsData(job, procData['args'], procData['kwargs'])
+
+        self._logger.info("Job '{0}' ({1}) started".format(
+            job.label, job.identifier))
 
         return True
 

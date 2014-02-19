@@ -61,8 +61,8 @@ class Resource_Status(object):
                  p, f in zip(cur_cpus, free_cpus)]))
 
         cpuOK = (sum(free_cpus) >= Resource_Status._APP_CONFIG.resources_cpu_n
-                 and sum(cur_cpus) <
-                 Resource_Status._APP_CONFIG.resources_cpu_tot)
+                 and sum(100 - curCpu for curCpu in cur_cpus) >
+                 Resource_Status._APP_CONFIG.resources_cpu_tot_free)
 
         Resource_Status._LOGGER.info(
             "CPUs: {0}".format(['OK', 'NOK'][not cpuOK]))

@@ -15,8 +15,10 @@ __status__ = "Development"
 #
 
 import md5
+import time
 import ConfigParser
 from operator import itemgetter
+import collections
 
 #
 # INTERNAL DEPENDENCIES
@@ -30,7 +32,7 @@ import scanomatic.io.logger as logger
 #
 
 
-class RPC_Subproc_Queue(object):
+class Queue(object):
 
     TYPE_REBUILD_PROJECT = 0
     TYPE_IMAGE_ANALSYS = 1
@@ -54,7 +56,7 @@ class RPC_Subproc_Queue(object):
     def setPriority(self, subProcId, priority, writeOnUpdate=True):
 
         try:
-            self._queue.set(subProcId, "priority", priority)
+            self._queue.set(subProcId, "priority", str(priority))
         except ConfigParser.NoSectionError:
             self._logger.error("The subproc id {0} does not exist".format(
                 subProcId))
@@ -124,20 +126,35 @@ class RPC_Subproc_Queue(object):
             else:
                 procInfo['label'] = ""
 
-            if (self._queue.has_option(prioSection, "type"):
+            if (self._queue.has_option(prioSection, "type")):
                 procInfo['type'] = self._queue.getint(prioSection, "type")
             else:
                 procInfo['type'] = None
 
             if (self._queue.has_option(prioSection, "args")):
-                procInfo['args'] = self._queue.get(prioSection, "args")
+                try:
+                    procInfo['args'] = eval(
+                        self._queue.get(prioSection, "args"))
+                    iter(procInfo['args'])
+                except (TypeError, SyntaxError):
+                    procInfo['args'] = tuple()
             else:
-                procInfo['args'] = ()
+                procInfo['args'] = tuple()
 
             if (self._queue.has_option(prioSection, "kwargs")):
-                procInfo['kwargs'] = self._queue.get(prioSection, "kwargs")
+
+                try:
+                    procInfo['kwargs'] = eval(
+                        self._queue.get(prioSection, "kwargs"))
+                except SyntaxError:
+                    procInfo['kwargs'] = dict()
+
+                if not isinstance(procInfo['kwargs'], collections.Mapping):
+
+                    procInfo['kwargs'] = dict()
+
             else:
-                procInfo['kwargs'] = {}
+                procInfo['kwargs'] = dict()
 
             self.remove(prioSection)
             self.writeUpdates()
@@ -147,7 +164,7 @@ class RPC_Subproc_Queue(object):
 
     def add(self, subprocType, jobLabel, priority=None, *args, **kwargs):
 
-        if (subprocType not in [self.getattr(p) for p in dir(self) if
+        if (subprocType not in [getattr(self, p) for p in dir(self) if
                                 p.startswith("TYPE_")]):
 
             self._logger.error("Unknown subprocess type ({0})".format(
@@ -160,20 +177,20 @@ class RPC_Subproc_Queue(object):
         goodName = False
 
         while not goodName:
-            subprocId = md5.new().hexdigest()
+            subprocId = md5.new(str(time.time())).hexdigest()
             try:
                 self._queue.add_section(subprocId)
                 goodName = True
             except ConfigParser.DuplicateSectionError:
                 pass
 
-        self._queue.set(subprocId, "type", subprocType)
-        self._queue.set(subprocId, "label", jobLabel)
+        self._queue.set(subprocId, "type", str(subprocType))
+        self._queue.set(subprocId, "label", str(jobLabel))
 
         self.setPriority(subprocId, priority, writeOnUpdate=False)
 
-        self._queue.set(subprocId, "args", args)
-        self._queue.set(subprocId, "kwargs", kwargs)
+        self._queue.set(subprocId, "args", str(args))
+        self._queue.set(subprocId, "kwargs", str(kwargs))
 
         self.writeUpdates()
 

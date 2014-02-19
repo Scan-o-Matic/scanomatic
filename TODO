@@ -2,6 +2,9 @@
 ##### THE TAKE OVER #####
    ####################
 
+Child Pipe Effector doesn't know setup and start
+Server shutdown is not terminating ongoing jobs
+
 ---
 * Planning import
 

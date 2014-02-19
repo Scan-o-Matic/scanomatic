@@ -21,7 +21,7 @@ import sys
 import time
 from scipy.ndimage import median_filter, gaussian_filter1d
 from scipy.optimize import leastsq
-from scipy.linealg import linregress
+from scipy.stats import linregress
 import itertools
 import matplotlib.pyplot as plt
 
@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 #
 
 import _mockNumpyInterface
-import xml.reader as xmlReader
+import scanomatic.io.xml.reader as xmlReader
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
@@ -183,17 +183,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def iterAnalyse(self):
 
-        if (self._itermode == False)
+        if (self._itermode is False):
             raise Exception("Can't iterate when not in itermode")
-            return False
-
-        n = sum((p.shape[1] * p.shape[2] for p in self._dataObject)) + 1.0
-        i = 0
-        self._smoothen()
-        yield i / n
-        for x in self._calculatePhenotypes():
-            i += 1
+        else:
+            n = sum((p.shape[1] * p.shape[2] for p in self._dataObject)) + 1.0
+            i = 0
+            self._smoothen()
             yield i / n
+            for x in self._calculatePhenotypes():
+                i += 1
+                yield i / n
 
         self._itermode = False
 

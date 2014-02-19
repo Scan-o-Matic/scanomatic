@@ -77,7 +77,7 @@ class Config(object):
         #HARDWARE RESOURCES
         self.resources_min_checks = 3
         self.resources_mem_min = 30
-        self.resources_cpu_tot = 80
+        self.resources_cpu_tot_free = 30
         self.resources_cpu_single = 75
         self.resources_cpu_n = 1
 

@@ -14,7 +14,7 @@ __status__ = "Development"
 
 import os
 import glob
-import np
+import numpy as np
 import re
 import time
 
