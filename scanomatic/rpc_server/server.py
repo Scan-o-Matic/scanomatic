@@ -53,6 +53,7 @@ class SOM_RPC(object):
 
         self._admin = self._paths.config_rpc_admin
 
+        self._setStatuses([])
         self._server = None
         self._running = False
         self._forceJobsToStop = False
@@ -91,6 +92,14 @@ class SOM_RPC(object):
          in dir(self) if not(m.startswith("_") or m in
                              self._serverCfg.options('Hidden Methods'))]
 
+    def _setStatuses(self, statuses):
+
+        #TODO: Extend with some server general info in first slot instead of
+        #empty dict
+        statuses = [dict()] + statuses
+
+        self._statuses = statuses
+
     def _main(self):
 
         while self._running:
@@ -100,14 +109,18 @@ class SOM_RPC(object):
             if (Resource_Status.check_resources()):
                 nextJob = self._queue.popHighestPriority()
                 if (nextJob is not None):
-                    self._jobs.add(nextJob)
+                    if not self._jobs.add(nextJob):
+                        #TODO: should nextJob be recircled or written some
+                        #place or added to statuses
+                        pass
+
                     sleepDuration *= 2
                 else:
                     sleepDuration *= 60
             elif Resource_Status.currentPasses() == 0:
                 sleepDuration *= 30
 
-            self._jobs.poll()
+            self._setStatuses(self._jobs.poll())
 
             time.sleep(sleepDuration)
 
@@ -160,7 +173,7 @@ class SOM_RPC(object):
         self._server.serve_forever()
         self._logger.info("Server Quit")
 
-    def communicateWith(self, userID, jobId, title, *args, **kwargs):
+    def communicateWith(self, userID, jobId, title, **kwargs):
 
         if (userID != self._admin):
             return False
@@ -168,7 +181,7 @@ class SOM_RPC(object):
         job = self._jobs[jobId]
         if job is not None:
             try:
-                getattr(job, title)(*args, **kwargs)
+                job.pipe.send(title, **kwargs)
             except AttributeError:
                 self._logger.error("The job {0} has no valid call {1}".format(
                     jobId, title))
@@ -178,6 +191,10 @@ class SOM_RPC(object):
             return False
 
         return True
+
+    def getStatuses(self):
+
+        return self._statuses
 
     def getStatus(self, jobId):
 

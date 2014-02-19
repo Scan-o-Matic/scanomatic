@@ -18,9 +18,6 @@
 *** Storing information in some file?
 
 ---
-* New data format for growth parameter(s), native python
-
----
 * Live view of growth
 
 ** Show curve using some curve viewer

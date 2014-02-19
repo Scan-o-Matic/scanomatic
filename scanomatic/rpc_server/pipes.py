@@ -19,14 +19,19 @@ import scanomatic.io.logger as logger
 #
 
 
-class PipeEffector(object):
+class _PipeEffector(object):
 
     def __init__(self, pipe):
 
         self._logger = logger.Logger("Pipe effector")
         self._pipe = pipe
         self._allowedCalls = dict()
-        self._procEffector = None
+
+    def setAllowedCalls(self, allowedCalls):
+        """Allowed Calls must be iterable with a get item function
+        that understands strings"""
+
+        self._allowedCalls = allowedCalls
 
     def poll(self):
 
@@ -35,7 +40,8 @@ class PipeEffector(object):
             dataRecvd = self._pipe.recv()
 
             try:
-                response = self._allowedCalls[dataRecvd[0]](**dataRecvd[1])
+                response = self._allowedCalls[dataRecvd[0]](*dataRecvd[1],
+                                                            **dataRecvd[2])
                 if response is not None:
                     self.send(response)
 
@@ -43,12 +49,35 @@ class PipeEffector(object):
 
                 self._logger.error("Recieved a malformed data package, " +
                                    "they should have valid string name of " +
-                                   "method to run and a dict of keyword " +
-                                   "arguments")
+                                   "method to run followed by arguments" +
+                                   "tuple and keyword arguments dict")
 
-    def send(self, status):
+    def send(self, callName, *args, **kwargs):
 
-        self._pipe.send(status)
+        self._pipe.send((callName, args, kwargs))
+
+
+class ParentPipeEffector(_PipeEffector):
+
+    pass
+
+
+class ChildPipeEffector(_PipeEffector):
+
+    def __init__(self, pipe, procEffector=None):
+
+        if (procEffector is None):
+            self._procEffector = None
+        else:
+            self.procEffector = procEffector
+
+        super(ChildPipeEffector, self).__init__(pipe)
+
+    @property
+    def keepAlive(self):
+
+        return (self._procEffector is None and True or
+                self._procEffector.keepAlive)
 
     @property
     def procEffector(self):
@@ -59,4 +88,8 @@ class PipeEffector(object):
     def procEffector(self, procEffector):
 
         self._procEffector = procEffector
-        self._allowedCalls = procEffector.allowedCalls
+        self.setAllowedCalls(procEffector.allowedCalls)
+
+    def sendStatus(self, status):
+
+        self.send('status', **status)

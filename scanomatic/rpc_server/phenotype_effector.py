@@ -26,7 +26,7 @@ import proc_effector
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
-import scanomatic.PhenotypeExtractionessing.phenotyper as phenotyper
+import scanomatic.dataProcessing.phenotyper as phenotyper
 
 #
 # CLASSES
@@ -35,21 +35,18 @@ import scanomatic.PhenotypeExtractionessing.phenotyper as phenotyper
 
 class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
-    def __init__(self):
+    def __init__(self, identifier, label):
 
-        self._logger = logger.Logger("Data Processor")
+        self._logger = logger.Logger("Data Processor '{0}'".format(label))
         self._paths = paths.Paths()
 
-        super(PhenotypeExtractionEffector, self).__init__()
+        super(PhenotypeExtractionEffector, self).__init__(identifier, label)
 
         self._specificStatuses['progress'] = 'progress'
         self._specificStatuses['runTime'] = 'runTime'
 
         self._progress = 0
 
-        self._allowStart = False
-        self._running = False
-        self._started = False
         self._startTime = None
 
     @property
@@ -65,7 +62,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
         return self._progress is None and 1 or self._progress
 
-    def setup(self, path=None, phenotyperKwargs={}):
+    def setup(self, path=None, *lostArgs, **phenotyperKwargs):
 
         def _perTime2perPlate(data):
             newData = [[]] * max(s.shape[0] for s in data)
@@ -89,6 +86,10 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
             self._logger.error("Path '{0}' does not exist".format(
                 os.path.abspath(os.path.dirname(path))))
             return False
+
+        if (len(lostArgs) > 0):
+            self._logger.warning("Setup got unknown args {0}".format(
+                lostArgs))
 
         dirPath, baseName = image_data.Image_Data.path2dataPathTuple(path)
 

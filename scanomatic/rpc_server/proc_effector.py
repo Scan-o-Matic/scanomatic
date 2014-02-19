@@ -22,38 +22,74 @@ from time import sleep
 
 class ProcEffector(object):
 
-    def __init__(self):
+    def __init__(self, identifier, label):
+
+        self._identifier = identifier
+        self._label = label
 
         self._specificStatuses = {}
         self._allowedCalls = {}
-        self._allowedCalls['start'] = self.start
-        self._allowedCalls['stop'] = self.stop
         self._allowedCalls['pause'] = self.pause
         self._allowedCalls['resume'] = self.resume
+        self._allowedCalls['setup'] = self.setup
+        self._allowedCalls['start'] = self.start
         self._allowedCalls['status'] = self.status
+        self._allowedCalls['stop'] = self.stop
 
         self._allowStart = False
         self._running = False
+        self._started = False
         self._stopping = False
         self._paused = False
 
         self._gateMessages = False
         self._messages = []
 
-    def start(self):
+    @property
+    def keepAlive(self):
+
+        return not self._started and not self._stopping or self._running
+
+    @property
+    def identifier(self):
+        return self._identifier
+
+    @property
+    def label(self):
+        return self._label
+
+    def pause(self, *args, **kwargs):
+
+        self._paused = True
+
+    def resume(self, *args, **kwargs):
+
+        self._paused = False
+
+    def setup(self, *args, **kwargs):
+
+        if (len(args) > 0 or len(kwargs) > 0):
+            self._logger.warning(
+                "Setup is not overwritten, {0} and {1} lost.".format(
+                    args, kwargs))
+
+    def start(self, *args, **kwargs):
 
         if (self._allowStart):
             self._running = True
 
-    def pause(self):
+    def status(self, *args, **kwargs):
 
-        self._paused = True
+        return dict([('id', self._identifier),
+                     ('label', self._label),
+                     ('running', self._running),
+                     ('paused', self._paused),
+                     ('stopping', self._stopping),
+                     ('messages', self.messages)] +
+                    [(k, getattr(self, v)) for k, v in
+                     self._specificStatuses.items()])
 
-    def resume(self):
-
-        self._paused = False
-
-    def stop(self):
+    def stop(self, *args, **kwargs):
 
         self._stopping = True
 
@@ -77,15 +113,6 @@ class ProcEffector(object):
         self._messages.append(msg)
         self._gateMessages = False
 
-    def status(self):
-
-        return dict([('running', self._running),
-                     ('paused', self._paused),
-                     ('stopping', self._stopping),
-                     ('messages', self.messages)] +
-                    [(k, getattr(self, v)) for k, v in
-                     self._specificStatuses.items()])
-
     @property
     def allowedCalls(self):
         return self._allowedCalls
@@ -97,10 +124,5 @@ class ProcEffector(object):
     def next(self):
 
         while self._running is False and not self._stopping:
+            sleep(0.1)
             yield
-
-
-#TO BE MOVED WHEN PROOF OF CONCEPT DONE
-class ExperimentEffector(ProcEffector):
-
-    pass

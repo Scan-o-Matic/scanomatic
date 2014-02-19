@@ -13,6 +13,7 @@ __status__ = "Development"
 #
 
 import ConfigParser
+from multiprocessing import Pipe
 
 #
 # INTERNAL DEPENDENCIES
@@ -20,10 +21,14 @@ import ConfigParser
 
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
+import scanomatic.rpc_server.queue as queue
+import scanomatic.rpc_server.phenotype_effector as phenotype_effector
+import scanomatic.rpc_server.rpc_job as rpc_job
 
 #
 # CLASSES
 #
+
 
 class Jobs(object):
 
@@ -37,6 +42,7 @@ class Jobs(object):
         self._loadFromFile()
 
         self._forcingStop = False
+        self._statuses = []
 
     @property
     def activeJobs(self):
@@ -58,11 +64,11 @@ class Jobs(object):
     def forceStop(self):
         return self._forcingStop
 
-    @forcingStop.setter
+    @forceStop.setter
     def forceStop(self, value):
 
         if value is True and self._forcingStop is False:
-
+            self._forcingStop = True
             #TODO: Stop all job
             pass
 
@@ -76,13 +82,17 @@ class Jobs(object):
             self._logger.warning("Unknown job {0} requested".format(key))
             return None
 
-    def _loadFromFile(self)
+    def _saveJobsData(self):
+
+        self._jobsData.write(open(self._paths.rpc_jobs, 'w'))
+
+    def _loadFromFile(self):
 
         self._jobsData = ConfigParser(allow_no_value=True)
         try:
             self._jobsData.readfp(open(self._paths.rpc_jobs, 'r'))
         except IOError:
-            self._jobsData.write(open(self._paths.rpc_jobs, 'w'))
+            self._saveJobsData()
             self._logger.info("Created runnig jobs log since non existed")
 
         for job in self._jobsData.sections():
@@ -93,23 +103,81 @@ class Jobs(object):
 
     def poll(self):
 
+        statuses = []
+
         for job in self._jobs:
-            #if self._jobs[job].
 
-            #TODO: Get proc status, record in _jobsData
+            curJob = self._jobs[job]
+            if curJob.is_alive():
+                pass
+                #TODO: Record iteration in _jobsData if possible to resume
+            elif not self._forcingStop:
+                del self._jobs[job]
+                self._jobsData.remove_section(job)
 
-            pass
+            statuses.append(curJob.status)
+
+        self._statuses = statuses
+        return statuses
+
+    def _add2JobsData(self, job, setupArgs, setupKwargs):
+        """Creates a minimal job data post with sufficient information
+        to restart job if need be"""
+
+        self._jobsData.add_section(job.identifier)
+        self._jobsData.set(job.identifier, "label", job.label)
+        self._jobsData.set(job.identifier, "setupArgs", setupArgs)
+        self._jobsData.set(job.identifier, "setupKwargs", setupKwargs)
+        self._saveJobsData()
 
     def add(self, procData):
+        """Launches and adds a new jobs.
         """
-            procData['type']        the process type
-            procData['label']       is name
-            procData['id']          is call sign
-            procData['args']        extra arguments
-            procData['kwargs']      extra keyword arguments
-        """
-        pass
+
+        #VERIFIES NO DUPLICATE IDENTIFIER
+        if (procData['id'] in self._jobs):
+            self.logger.critical(
+                "Cannot have jobs with same identifier ({0}), ".format(
+                    procData['id']) +
+                "new job '{0}' not launched.".format(procData['label']))
+            return False
+
+        #SELECTS EFFECTOR BASED ON TYPE
+        if (procData["type"] == queue.Queue.TYPE_FEATURE_EXTRACTION):
+
+            JobEffector = phenotype_effector.PhenotypeExtractionEffector
+
+        else:
+
+            self._logger.critical(
+                ("Job '{0}' ({1}) lost, functionality not yet implemented"
+                 ).format(procData['label'], procData['id']))
+
+            return False
+
+        #CONSTRUCTS PIPE PAIR
+        parentPipe, childPipe = Pipe()
+
+        #INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
+        #identifier, label, target, parentPipe, childPipe
+        job = rpc_job.RPC_Job(
+            procData['id'],
+            procData['label'],
+            JobEffector,
+            parentPipe,
+            childPipe)
+
+        job.start()
+        job.pipe.send('setup', *procData['args'], **procData['kwargs'])
+        job.pipe.send('start')
+
+        #ADDS JOB AND CREATES JOB DATA POST
+        self._jobs[job.identifier] = job
+        self._add2JobsData(job, procData['args'], procData['kwargs'])
+
+        return True
 
     def getStatus(self, jobId):
 
-        pass
+        statuses = [s for s in self._statuses if s['id'] == jobId]
+        return len(statuses) > 0 and statuses[0] or None
