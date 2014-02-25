@@ -51,7 +51,7 @@ class SOM_RPC(object):
         self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
 
-        self._admin = self._paths.config_rpc_admin
+        self._admin = self._appConfig.rpc_admin
 
         self._setStatuses([])
         self._server = None
@@ -82,6 +82,7 @@ class SOM_RPC(object):
                                 self._appConfig.rpc_port, int)
 
         self._server = SimpleXMLRPCServer((host, port), logRequests=False)
+        self._server.register_introspection_functions()
 
         self._running = True
         self._mainThread = None
@@ -186,7 +187,7 @@ class SOM_RPC(object):
         self._server.serve_forever()
         self._logger.info("Server Quit")
 
-    def communicateWith(self, userID, jobId, title, **kwargs):
+    def communicateWith(self, userID, jobId, title, kwargs={}):
 
         if (userID != self._admin):
             return False
@@ -205,24 +206,24 @@ class SOM_RPC(object):
 
         return True
 
-    def getStatuses(self):
+    def getStatuses(self, userID=None):
 
         return self._statuses
 
-    def getStatus(self, jobId):
+    def getStatus(self, jobId, userID=None):
 
         return self._jobs.getStatus(jobId)
 
-    def getActiveJobs(self):
+    def getActiveJobs(self, userID=None):
 
         return self._jobs.activeJobs
 
-    def getJobsInQueue(self):
+    def getJobsInQueue(self, userID=None):
 
         return self._queue.getJobsInQueue()
 
     def createFeatureExtractJob(self, userID, runDirectory, label,
-                                priority=None, **kwargs):
+                                priority=None, kwargs={}):
 
         if userID == self._admin:
 

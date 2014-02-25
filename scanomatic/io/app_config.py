@@ -13,6 +13,10 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import os
+import md5
+import random
+
 #
 # INTERNAL DEPENDENCIES
 #
@@ -73,6 +77,7 @@ class Config(object):
 
         #RPC SERVER
         self.rpc_port = 1420
+        self._config_rpc_admin = None
 
         #HARDWARE RESOURCES
         self.resources_min_checks = 3
@@ -139,6 +144,28 @@ class Config(object):
         else:
             self._PM = power_manager.NO_PM
             self._pm_arguments = {}
+
+    @property
+    def rpc_admin(self):
+
+        if self._config_rpc_admin is not None:
+            return self._config_rpc_admin
+
+        path = self._paths.config_rpc_admin
+
+        if (os.path.isfile(path)):
+            fh = open(path, 'r')
+            admin = fh.read().strip()
+            fh.close()
+        else:
+            admin = md5.new(str(random.random())).hexdigest()
+            fh = open(path, 'w')
+            fh.write(admin)
+            fh.close()
+
+        self._config_rpc_admin = admin
+
+        return admin
 
     def set(self, key, value):
 

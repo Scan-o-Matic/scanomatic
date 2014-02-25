@@ -14,8 +14,6 @@ __status__ = "Development"
 
 import os
 import re
-import md5
-import random
 
 #
 # INTERNAL DEPENDENCIES
@@ -91,7 +89,7 @@ class Paths(object):
         self.config_main_app = os.path.join(self.config, 'main.config')
         self.config_mac = os.path.join(self.config, 'mac_address.config')
         self.config_rpc = os.path.join(self.config, 'rpc.config')
-        self._config_rpc_admin = None
+        self.config_rpc_admin = os.path.join(self.config, 'rpc.admin')
 
         #RPC
         self.rpc_queue = os.path.join(self.root, 'job_queue.cfg')
@@ -170,25 +168,6 @@ class Paths(object):
         #IMAGE ANALSYSIS OUTPUT
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"
-
-    @property
-    def config_rpc_admin(self):
-
-        if self._config_rpc_admin is not None:
-            return self._config_rpc_admin
-
-        path = os.path.join(self.config, 'rpc.admin')
-        if (os.path.isfile(path)):
-            fh = open(path, 'r')
-            admin = fh.read().strip()
-            fh.close()
-        else:
-            admin = md5.new(str(random.random())).hexdigest()
-            fh = open(path, 'w')
-            fh.write(admin)
-            fh.close()
-
-        return admin
 
     @property
     def src(self):
