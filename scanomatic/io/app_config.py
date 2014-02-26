@@ -16,6 +16,7 @@ __status__ = "Development"
 import os
 import md5
 import random
+from ConfigParser import ConfigParser
 
 #
 # INTERNAL DEPENDENCIES
@@ -76,8 +77,10 @@ class Config(object):
         self._pm_name = "Server 1"
 
         #RPC SERVER
-        self.rpc_port = 1420
+        self._rpc_port = None
+        self._rpc_host = None
         self._config_rpc_admin = None
+        self._serverCfg = None
 
         #HARDWARE RESOURCES
         self.resources_min_checks = 3
@@ -144,6 +147,62 @@ class Config(object):
         else:
             self._PM = power_manager.NO_PM
             self._pm_arguments = {}
+
+    @staticmethod
+    def _safeCfgGet(cfg, section, item, defaultValue=None, vtype=None):
+
+        try:
+
+            defaultValue = cfg.get(section, item)
+            if vtype is not None:
+                defaultValue = vtype(defaultValue)
+
+        except:
+
+            pass
+
+        return defaultValue
+
+    @property
+    def serverCfg(self):
+
+        if self._serverCfg is None:
+            self._serverCfg = ConfigParser(allow_no_value=True)
+            self._serverCfg.readfp(open(self._paths.config_rpc))
+            self._logger.info("Loaded RPC config from '{0}'".format(
+                self._paths.config_rpc))
+        return self._serverCfg
+
+    @property
+    def rpc_host(self):
+
+        if self._rpc_host is None:
+            host = self._safeCfgGet(self.serverCfg, 'Communication',
+                                    'host', '127.0.0.1')
+            self._rpc_host = host
+
+        return self._rpc_host
+
+    @property
+    def rpc_port(self):
+
+        if self._rpc_port is None:
+
+            port = self._safeCfgGet(self.serverCfg, 'Communication', 'port',
+                                    14547, int)
+
+            self._rpc_port = port
+
+        return self._rpc_port
+
+    @property
+    def rpcHiddenMethods(self):
+
+        hm = 'Hidden Methods'
+        if (hm in self.serverCfg.sections()):
+            return self.serverCfg.options(hm)
+        else:
+            return tuple()
 
     @property
     def rpc_admin(self):

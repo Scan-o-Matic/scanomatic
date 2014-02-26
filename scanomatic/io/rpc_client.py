@@ -20,24 +20,22 @@ from functools import partial
 #
 
 import scanomatic.io.app_config as app_config
+import scanomatic.io.logger as logger
 
 #
 # METHODS
 #
 
 
-def get_client(host="127.0.0.1", port=None, admin=False):
+def get_client(host=None, port=None, admin=False):
 
     appCfg = app_config.Config()
     if (port is None):
-        #self._serverCfg = ConfigParser(allow_no_value=True)
-        #self._serverCfg.readfp(open(self._paths.config_rpc))
         port = appCfg.rpc_port
+    if (host is None):
+        host = appCfg.rpc_host
 
-    sClient = xmlrpclib.ServerProxy("{0}{1}:{2}/".format(
-        ['', 'http://'][not host.startswith('http://')], host, port))
-
-    cp = _ClientProxy(sClient)
+    cp = _ClientProxy(host, port)
     if admin:
 
         cp.userID = appCfg.rpc_admin
@@ -51,15 +49,21 @@ def get_client(host="127.0.0.1", port=None, admin=False):
 
 class _ClientProxy(object):
 
-    def __init__(self, serverClient, userID=None):
+    def __init__(self, host, port, userID=None):
 
+        self._logger = logger.Logger("Client Proxy")
         self._userID = userID
         self._adminMethods = ('communicateWith',
                               'createFeatureExtractJob',
                               'serverRestart',
                               'serverShutDown')
 
-        self._client = serverClient
+        self._client = None
+        self._host = None
+        self._port = None
+
+        self.host = host
+        self.port = port
 
     def __getattr__(self, key):
 
@@ -72,6 +76,16 @@ class _ClientProxy(object):
     def __dir__(self):
 
         return list(self._allowedMethods())
+
+    def _setupClient(self):
+
+        if (self._host is None or self._port is None):
+            self._client = None
+            self._logger.info("No client active")
+        else:
+            address = "{0}:{1}/".format(self._host, self._port)
+            self._logger.info("Communicates with '{0}'".format(address))
+            self._client = xmlrpclib.ServerProxy(address)
 
     def _userIDdecorator(self, f):
 
@@ -94,3 +108,29 @@ class _ClientProxy(object):
     def userID(self, value):
 
         self._userID = value
+
+    @property
+    def host(self):
+        return self._host
+
+    @host.setter
+    def host(self, value):
+
+        if not isinstance(value, str):
+            value = str(value)
+
+        value = "{0}{1}".format(
+            ['', 'http://'][not value.startswith('http://')], value)
+
+        self._host = value
+        self._setupClient()
+
+    @property
+    def port(self):
+        return self._port
+
+    @port.setter
+    def port(self, value):
+
+        self._port = value
+        self._setupClient()

@@ -18,7 +18,6 @@ import xmlrpclib
 import threading
 import time
 from SimpleXMLRPCServer import SimpleXMLRPCServer
-from ConfigParser import ConfigParser
 
 #
 # INTERNAL DEPENDENCIES
@@ -45,9 +44,6 @@ class SOM_RPC(object):
 
         self._paths = paths.Paths()
 
-        self._serverCfg = ConfigParser(allow_no_value=True)
-        self._serverCfg.readfp(open(self._paths.config_rpc))
-
         self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
 
@@ -58,28 +54,13 @@ class SOM_RPC(object):
         self._running = False
         self._forceJobsToStop = False
 
-    def _safeCfgGet(self, section, item, defaultValue=None, vtype=None):
-
-        try:
-
-            defaultValue = self._serverCfg.get(section, item)
-            if vtype is not None:
-                defaultValue = vtype(defaultValue)
-
-        except:
-
-            pass
-
-        return defaultValue
-
     def _startServer(self):
 
         if (self._server is not None):
             raise Exception("Server is already running")
 
-        host = self._safeCfgGet('Communication', 'host', '127.0.0.1')
-        port = self._safeCfgGet('Communication', 'port',
-                                self._appConfig.rpc_port, int)
+        host = self._appConfig.rpc_host
+        port = self._appConfig.rpc_port
 
         self._server = SimpleXMLRPCServer((host, port), logRequests=False)
         self._server.register_introspection_functions()
@@ -91,7 +72,7 @@ class SOM_RPC(object):
 
         [self._server.register_function(getattr(self, m), m) for m
          in dir(self) if not(m.startswith("_") or m in
-                             self._serverCfg.options('Hidden Methods'))]
+                             self._appConfig.rpcHiddenMethods)]
 
     def _setStatuses(self, statuses):
 
