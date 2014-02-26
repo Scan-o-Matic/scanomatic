@@ -84,10 +84,18 @@ class Queue(object):
 
         try:
             return (jobId, self._queue.get(jobId, "label"),
-                    self._queue.getint(jobId, "prio"))
+                    self._queue.getint(jobId, "priority"))
         except:
-            self._logger.warning("Problem extracting info on job {0}".format(
-                jobId))
+            self._logger.warning(
+                "Problem extracting info on job {0}, '{1}'".format(
+                    jobId,
+                    ["No queue", "Id not in queue", "No label",
+                     "No prio", "Other"][
+                         self._queue is None and 0 or
+                         self._queue.has_section(jobId) is False and 1 or
+                         self._queue.has_option(jobId, "label") is False and 2
+                         or self._queue.has_option(jobId, "priority") is False
+                         and 3 or 4]))
             return None
 
     def getJobsInQueue(self):

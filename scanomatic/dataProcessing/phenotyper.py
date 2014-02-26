@@ -63,10 +63,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self.times = timeObject
 
-        #TODO: Could require selecting measurement if more than one instead
-        assert (arrayCopy.shape[-1] == 1 or
-                len(arrayCopy.shape) == 3), (
-                    "Phenotype Strider only work with one phenotype")
+        for plate in arrayCopy:
+
+            assert (plate is None or
+                    plate.ndim == 3 and plate.shape[-1] == 1 or
+                    plate.ndim == 2), (
+                        "Phenotype Strider only work with one phenotype. "
+                        + "Your shape is {0}".format(plate.shape))
 
         super(Phenotyper, self).__init__(arrayCopy)
 
@@ -187,11 +190,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             raise Exception("Can't iterate when not in itermode")
         else:
             n = sum((p.shape[1] * p.shape[2] for p in self._dataObject)) + 1.0
-            i = 0
+            i = 0.0
             self._smoothen()
             yield i / n
             for x in self._calculatePhenotypes():
-                i += 1
+                i += 1.0
                 yield i / n
 
         self._itermode = False
@@ -367,7 +370,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     def times(self, value):
 
         assert (isinstance(value, np.ndarray) or isinstance(value, list) or
-                isinstance(value, tuple)), "Invalid time series format"
+                isinstance(value, tuple)), "Invalid time series {0}".format(
+                    value)
 
         if (isinstance(value, np.ndarray) is False):
             value = np.array(value, dtype=np.float)

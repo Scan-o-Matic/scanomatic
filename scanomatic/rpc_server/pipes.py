@@ -21,17 +21,26 @@ import scanomatic.io.logger as logger
 
 class _PipeEffector(object):
 
+    REQUEST_ALLOWED = "__ALLOWED_CALLS__"
+
     def __init__(self, pipe, loggerName="Pipe effector"):
 
         self._logger = logger.Logger(loggerName)
         self._pipe = pipe
         self._allowedCalls = dict()
+        self._allowedRemoteCalls = None
 
     def setAllowedCalls(self, allowedCalls):
         """Allowed Calls must be iterable with a get item function
         that understands strings"""
 
         self._allowedCalls = allowedCalls
+        self._sendOwnAllowedKeys()
+
+    def _sendOwnAllowedKeys(self):
+
+        self._logger.info("Informing other side of pipe about my allowed calls")
+        self.send(self.REQUEST_ALLOWED, *self._allowedCalls.keys())
 
     def poll(self):
 
@@ -40,8 +49,21 @@ class _PipeEffector(object):
             dataRecvd = self._pipe.recv()
 
             try:
-                response = self._allowedCalls[dataRecvd[0]](*dataRecvd[1],
-                                                            **dataRecvd[2])
+                if dataRecvd[0] == self.REQUEST_ALLOWED:
+                    self._logger.info(
+                        "Got information about other side's allowed " +
+                        "calls '{0}'".format(
+                            dataRecvd[1]))
+                    if self._allowedRemoteCalls is None:
+                        self._sendOwnAllowedKeys()
+                    self._allowedRemoteCalls = dataRecvd[1]
+                    response = None
+                else:
+                    if self._allowedRemoteCalls is None:
+                        self._sendOwnAllowedKeys()
+
+                    response = self._allowedCalls[dataRecvd[0]](*dataRecvd[1],
+                                                                **dataRecvd[2])
             except (IndexError, TypeError):
 
                 self._logger.error(
@@ -51,12 +73,18 @@ class _PipeEffector(object):
 
                 self._logger.error("Call to '{0}' not known/allowed".format(
                     dataRecvd[0]))
+                self._logger.info("Allowed calls are '{0}'".format(
+                    self._allowedCalls.keys()))
 
             else:
 
                 try:
                     if response is not None:
-                        self.send(response[0], *response[1], **response[2])
+                        if (isinstance(response, dict) and
+                                dataRecvd[0] == "status"):
+                            self.send(dataRecvd[0], **response)
+                        else:
+                            self.send(response[0], *response[1], **response[2])
 
                 except:
 
@@ -65,7 +93,18 @@ class _PipeEffector(object):
 
     def send(self, callName, *args, **kwargs):
 
-        self._pipe.send((callName, args, kwargs))
+        if (self._allowedRemoteCalls is None or
+                callName == self.REQUEST_ALLOWED or
+                callName in self._allowedRemoteCalls):
+
+            self._pipe.send((callName, args, kwargs))
+            return True
+
+        else:
+            self._logger.warning("Other side won't accept '{0}'. ".format(
+                callName) + "Known calls are '{0}'".format(
+                    self._allowedRemoteCalls))
+            return False
 
 
 class ParentPipeEffector(_PipeEffector):
@@ -81,7 +120,6 @@ class ParentPipeEffector(_PipeEffector):
     @property
     def status(self):
 
-        #TODO: Modify status to say it is completed if it is
         return self._status
 
     def _setStatus(self, *args, **kwargs):
@@ -93,13 +131,13 @@ class ChildPipeEffector(_PipeEffector):
 
     def __init__(self, pipe, procEffector=None):
 
+        super(ChildPipeEffector, self).__init__(
+            pipe, loggerName="Child Pipe Effector")
+
         if (procEffector is None):
             self._procEffector = None
         else:
             self.procEffector = procEffector
-
-        super(ChildPipeEffector, self).__init__(
-            pipe, loggerName="Child Pipe Effector")
 
     @property
     def keepAlive(self):

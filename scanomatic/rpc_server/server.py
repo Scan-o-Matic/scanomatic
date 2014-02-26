@@ -18,6 +18,8 @@ import xmlrpclib
 import threading
 import time
 from SimpleXMLRPCServer import SimpleXMLRPCServer
+from math import trunc
+import os
 
 #
 # INTERNAL DEPENDENCIES
@@ -49,6 +51,7 @@ class SOM_RPC(object):
 
         self._admin = self._appConfig.rpc_admin
 
+        self._serverStartTime = None
         self._setStatuses([])
         self._server = None
         self._running = False
@@ -74,11 +77,20 @@ class SOM_RPC(object):
          in dir(self) if not(m.startswith("_") or m in
                              self._appConfig.rpcHiddenMethods)]
 
+        self._serverStartTime = time.time()
+
     def _setStatuses(self, statuses):
 
-        #TODO: Extend with some server general info in first slot instead of
-        #empty dict
-        statuses = [dict()] + statuses
+        if self._serverStartTime is None:
+            runTime = "Not Running"
+        else:
+            m, s = divmod(time.time() - self._serverStartTime, 60)
+            h, m = divmod(m, 60)
+            runTime = "{0:d}h, {1:d}m, {2:.2f}s".format(
+                trunc(h), trunc(m), s)
+        statuses = [
+            {"ServerUpTime": runTime}
+        ] + statuses
 
         self._statuses = statuses
 
@@ -125,13 +137,35 @@ class SOM_RPC(object):
 
         self._shutDownComplete = True
 
-    def serverRestart(self, userID):
+    def serverRestart(self, userID, forceJobsToStop=False):
+        """This method is not in use since the technical issues have
+        not been resolved.
+
+        If implemented, it will restart the server
+        """
+        #TODO: If this should be possible... how to free the
+        #address fron run() ... server_forever()
+
+        return False
 
         if userID == self._admin:
-            self.serverShutDown()
-            self.run()
+
+            t = threading.Thread(target=self._serverRestart,
+                                 args=(forceJobsToStop,))
+            t.start()
+            return True
+        return False
+
+    def _serverRestart(self, forceJobsToStop):
+
+        self._serverShutDown(forceJobsToStop)
+        self.run()
 
     def _serverShutDown(self, forceJobsToStop):
+
+        if (self._mainThread is None and self._server is None):
+            return
+
         self._running = False
         self._shutDownComplete = False
         self._forceJobsToStop = forceJobsToStop
@@ -140,6 +174,7 @@ class SOM_RPC(object):
 
             time.sleep(0.05)
 
+        self._mainThread = None
         self._server = None
 
     def serverShutDown(self, userID, forceJobsToStop=False):
@@ -165,48 +200,211 @@ class SOM_RPC(object):
         self._mainThread.start()
 
         self._logger.info("Server serves forever")
-        self._server.serve_forever()
+        try:
+            self._server.serve_forever()
+        except KeyboardInterrupt:
+            self._logger.info("Server-side forced exit")
+            self._serverShutDown(True)
         self._logger.info("Server Quit")
 
-    def communicateWith(self, userID, jobId, title, kwargs={}):
+    def communicateWith(self, userID, jobID, title, kwargs={}):
+        """Used to communicate with active jobs.
+
+        Args:
+            userID (str):   The ID of the user, this must match the
+                            current ID of the server admin or request
+                            will be refused.
+
+            jobID (str):    The ID for the job to communicate with.
+
+            title (str):    The name, as understood by the job, for what you
+                            want to do. The following are universally
+                            understood::
+
+                setup:  Passing settings before the job has been started.
+                        This ``title`` is preferrably coupled with ``kwargs``
+                        while the other universally used titles have no use
+                        for extra parameters.
+                start:  Starting the job's execution
+                pause:  Temporarily pausing the job
+                resume: Temporarily resuming the job
+                stop:   Stopping the job
+                status: Requesting that the job sends back the current status
+
+            kwargs (dict):  Extra parameters to send with the communication.
+
+        Returns:
+
+            bool.   ``True`` if communication was allowed (user was admin and
+                    title was accepted imperative) else ``False``
+        """
 
         if (userID != self._admin):
             return False
 
-        job = self._jobs[jobId]
+        job = self._jobs[jobID]
         if job is not None:
             try:
-                job.pipe.send(title, **kwargs)
+                return job.pipe.send(title, **kwargs)
             except AttributeError:
                 self._logger.error("The job {0} has no valid call {1}".format(
-                    jobId, title))
+                    jobID, title))
                 return False
         else:
-            self._logger.error("The job {0} is not running".format(jobId))
+            self._logger.error("The job {0} is not running".format(jobID))
             return False
 
-        return True
-
     def getStatuses(self, userID=None):
+        """Gives a list or statuses.
+
+        First entry is always the status of the server followed by
+        an item for each job.
+
+        Kwargs:
+            userID (str):   The ID of the user requesting status
+                            The full purpose of userID is to maintain
+                            method interface for all exposed RPC methods
+
+        Returns:
+            list.   Each item in the list is a dictionary.
+                    For information about the job dictionaries and
+                    their structure, see ``self.getStatus``.
+                    The first item of the list will be a dictionary
+                    containing general information about the server.::
+
+            ServerUpTime:  (str) Either the message 'Server Not Running'
+                           or a string with like "XXh, YYm, ZZ.ZZs"
+                           expressing the time that the server has been
+                           running.
+
+        """
 
         return self._statuses
 
-    def getStatus(self, jobId, userID=None):
+    def getStatus(self, userID, jobId=None):
+        """Gives last recorded status for an active job.
+
+        Args:
+            userID (str):   The ID of the user requesting status
+                            The full purpose of userID is to maintain
+                            method interface for all exposed RPC methods
+                            (see jobID keyword for more info).
+
+        Kwargs:
+            jobID (str):    The job for which to request information.
+                            If jobID is not supplied or is None, the
+                            userID is assumed to hold the requested
+                            job identifier.
+
+        Returns:
+            dict            **Either** an empty dictionary if no job
+                            with the requested identifier was active
+                            **or** a dictionary having as a minimum the
+                            following keys::
+
+                id:       (str) The identifier of the job
+                label:    (str) The label / job description
+                running: (bool) If job is currently running. A job
+                            yet to start or having finished would return
+                            ``False``
+                paused:  (bool) If the job has been paused
+                stopping:    (bool) If the job is in the process of
+                               being stopped.
+                messages:    (list) If the job has messages to
+                               communicate with the user.
+
+        .. note::
+
+            The method may return more status information depending on the
+            type of job.
+
+            ``RPC_Job.TYPE_FEATURE_EXTRACTION`` also gives these::
+
+                'progress' :    (float) Fraction of total job completed.
+                                Not in time, but work-load.
+                'runTime' :     (float) Time in seconds that the process
+                                have been running
+
+        """
+
+        if jobId is None:
+            jobId = userID
 
         return self._jobs.getStatus(jobId)
 
     def getActiveJobs(self, userID=None):
+        """Gives a list of identifiers for the currently active jobs
 
+        Kwargs:
+            userID (str):   The ID of the user requesting status
+                            The full purpose of userID is to maintain
+                            method interface for all exposed RPC methods
+
+        Returns:
+            list.   List of active job identifiers
+        """
         return self._jobs.activeJobs
 
     def getJobsInQueue(self, userID=None):
+        """Gives a list of enqueued jobs.
+
+        Kwargs:
+            userID (str):   The ID of the user requesting status
+                            The full purpose of userID is to maintain
+                            method interface for all exposed RPC methods
+
+        Returns:
+            list.   List of enqueued job each item being a list with the
+                    following information (per index).::
+
+                0 --    (str) The job identifier
+                1 --    (str) The job label / description
+                2 --    (int) The job's priority ranking. Jobs are started
+                        based on their prioriy. When enqueued they are given
+                        a priority based on the job type. Over time, the job
+                        accumulates priority such that no job should get
+                        stuck in the queue for ever.
+        """
 
         return self._queue.getJobsInQueue()
 
     def createFeatureExtractJob(self, userID, runDirectory, label,
                                 priority=None, kwargs={}):
+        """Enques a new feature extraction job.
+
+        Args:
+            userID (str):   The ID of the user, this must match the
+                            current ID of the server admin or request
+                            will be refused.
+            runDirectory (str): The path to the directory containing
+                                the native export numpy files from
+                                an image analysis job.
+                                Note that the path must be absolute.
+            label (str):    A free text field for human readable identification
+                            of the job.
+
+        Kwargs:
+            priority (int): If supplied, the initial priority of the job
+                            will not be set by the type of job but by the
+                            supplied value.
+            kwargs (dict):  Keyword structured arguments to be passed on to
+                            the job effector's setup.
+
+        Returns:
+            bool.   ``True`` if job request was successfully enqueued, else
+                    ``False``
+        """
 
         if userID == self._admin:
+
+            if (not(isinstance(runDirectory, str)) or
+                    os.path.abspath(runDirectory) != runDirectory):
+
+                self._logger.error(
+                    "The path for the feature extraction " +
+                    "job '{0}' was not absolute".format(label))
+
+                return False
 
             kwargs['runDirectory'] = runDirectory
 

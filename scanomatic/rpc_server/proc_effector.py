@@ -125,4 +125,10 @@ class ProcEffector(object):
 
         while self._running is False and not self._stopping:
             sleep(0.1)
-            yield
+            self._logger.info(
+                "Pre-running and waiting run {0} and stop {1}".format(
+                    self._running, self._stopping))
+            return None
+
+        if self._stopping:
+            raise StopIteration

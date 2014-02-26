@@ -125,6 +125,10 @@ class Image_Data(object):
 
     @staticmethod
     def path2dataPathTuple(path, imageIndex="*", times=False):
+
+        if os.path.isdir(path) and not path.endswith(os.path.sep):
+            path += os.path.sep
+
         pathDir = os.path.dirname(path)
         pathBasename = os.path.basename(path)
         if (len(pathBasename) == 0 or pathBasename == "."):

@@ -62,7 +62,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
         return self._progress is None and 1 or self._progress
 
-    def setup(self, path=None, *lostArgs, **phenotyperKwargs):
+    def setup(self, *lostArgs, **phenotyperKwargs):
 
         def _perTime2perPlate(data):
             newData = [[]] * max(s.shape[0] for s in data)
@@ -81,9 +81,15 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
             self._logger.warning("Can't setup when started")
             return False
 
-        if not os.path.isdir(os.path.dirname(path)):
+        path = None
+        if "runDirectory" in phenotyperKwargs:
+            path = phenotyperKwargs["runDirectory"]
+            del phenotyperKwargs["runDirectory"]
+
+        if path is None or not os.path.isdir(os.path.dirname(path)):
 
             self._logger.error("Path '{0}' does not exist".format(
+                path is None and 'NONE' or
                 os.path.abspath(os.path.dirname(path))))
             return False
 
@@ -93,21 +99,29 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
         dirPath, baseName = image_data.Image_Data.path2dataPathTuple(path)
 
-        times = image_data.Image_Data.readImage(path)
+        times = image_data.Image_Data.readTimes(path)
 
         data = []
-        timeIndex = []
+        timeIndices = []
         for p in glob.iglob(os.path.join(dirPath, baseName)):
 
             try:
-                timeIndex = int(re.search(r"\d+", p).group())
+                timeIndices.append(int(re.search(r"\d+", p).group()))
                 data.append(np.load(p))
             except AttributeError:
                 self._logger(
                     "File '{0}' has no index number in it, need that!".format(
                         p))
 
-        self._times = times[timeIndex]
+        try:
+            self._times = times[timeIndices]
+        except IndexError:
+            self._logger.error(
+                "Could not filter image times to match data")
+            self._running = False
+            self._stopping = True
+            return None
+
         self._data = _perTime2perPlate(data)
         self._phenotyperKwargs = phenotyperKwargs
         self._analysisBase = dirPath
@@ -116,7 +130,8 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
     def next(self):
 
-        super(PhenotypeExtractionEffector, self).next()
+        if not self._allowStart:
+            return super(PhenotypeExtractionEffector, self).next()
 
         self._startTime = time.time()
 
@@ -127,22 +142,26 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
         phenoIter = phenotyper.iterAnalyse()
 
-        while self._running:
+        self._logger.info("Starting phenotype extraction")
+
+        while self._running and not self._stopping:
 
             try:
                 self._progress = phenoIter.next()
             except StopIteration:
                 self._running = False
                 self._progress = None
-                break
-
-            yield
+                raise StopIteration
+            self._logger.info(
+                "One phenotype extraction iteration completed. " +
+                "Resume {0}".format(self._running))
+            return None
 
             #
             # PAUSE IF REQUESTED
             #
 
-            while self._paused and self._running:
+            while self._paused and self._running and not self._stopping:
 
                 time.sleep(0.5)
-                yield
+                return None

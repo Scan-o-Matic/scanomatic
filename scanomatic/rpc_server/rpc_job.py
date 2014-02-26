@@ -50,7 +50,15 @@ class RPC_Job(Process):
     @property
     def status(self):
 
-        return self.pipe.status
+        s = self.pipe.status
+        if 'id' not in s:
+            s['id'] = self.identifier
+        if 'label' not in s:
+            s['label'] = self.label
+        if 'running' not in s:
+            s['running'] = True
+
+        return s
 
     @property
     def pipe(self):
@@ -82,5 +90,11 @@ class RPC_Job(Process):
 
                     pass
                     #pipeEffector.keepAlive = False
+
+                pipeEffector.sendStatus(pipeEffector.procEffector.status())
+                sleep(0.05)
+
             else:
                 sleep(0.29)
+
+        pipeEffector.sendStatus(pipeEffector.procEffector.status())

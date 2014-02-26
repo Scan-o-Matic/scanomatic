@@ -68,7 +68,11 @@ class _ClientProxy(object):
     def __getattr__(self, key):
 
         if key in self._allowedMethods():
-            return self._userIDdecorator(getattr(self._client, key))
+            m = self._userIDdecorator(getattr(self._client, key))
+            m.__doc__ = (self._client.system.methodHelp(key) +
+                         ["", "\n\nNOTE: userID is already supplied"][
+                             self._userID is not None])
+            return m
         else:
             raise AttributeError("Client doesn't support attribute {0}".format(
                 key))
@@ -95,9 +99,20 @@ class _ClientProxy(object):
 
     def _allowedMethods(self):
 
-        return (v for v in self._client.system.listMethods() if
-                not v.startswith("system.") and not (
-                self._userID is None and v in self._adminMethods))
+        retTup = tuple()
+
+        if not(self._client is None or
+                hasattr(self._client, "system") is False):
+
+            try:
+                retTup = (v for v in self._client.system.listMethods() if
+                          not v.startswith("system.") and not (
+                          self._userID is None and v in self._adminMethods))
+            except:
+                self._logger.warning("Connection Refused for '{0}:{1}'".format(
+                    self.host, self.port))
+
+        return retTup
 
     @property
     def userID(self):

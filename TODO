@@ -2,7 +2,10 @@
 ##### THE TAKE OVER #####
    ####################
 
-Child Pipe Effector doesn't know setup and start
+
+AssertionError: Phenotype Strider only work with one phenotype. Your shape is (651, 3, 32)
+Somehow reading in plate data is corrupt, that is no valid shape.
+
 Server shutdown is not terminating ongoing jobs
 
 ---

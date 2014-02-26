@@ -34,7 +34,7 @@ class Jobs(object):
 
     def __init__(self):
 
-        self._logger = logger.Logger("Running Processes")
+        self._logger = logger.Logger("Jobs Handler")
         self._paths = paths.Paths()
 
         self._jobs = {}
@@ -55,7 +55,7 @@ class Jobs(object):
         for job in self._jobs:
 
             #TODO: This is spoof code:
-            if self._jobs[job].status.running is True:
+            if self._jobs[job].status["running"] is True:
                 return True
 
         return False
@@ -105,7 +105,8 @@ class Jobs(object):
 
         statuses = []
 
-        for job in self._jobs:
+        jobKeys = list(self._jobs.keys())
+        for job in jobKeys:
 
             curJob = self._jobs[job]
             if curJob.is_alive():
@@ -169,7 +170,9 @@ class Jobs(object):
             childPipe)
 
         job.start()
-        job.pipe.send('setup', *procData['args'], **procData['kwargs'])
+        job.pipe.send('setup',
+                      *procData['args'],
+                      **procData['kwargs'])
         job.pipe.send('start')
 
         #ADDS JOB AND CREATES JOB DATA POST
@@ -184,4 +187,4 @@ class Jobs(object):
     def getStatus(self, jobId):
 
         statuses = [s for s in self._statuses if s['id'] == jobId]
-        return len(statuses) > 0 and statuses[0] or None
+        return len(statuses) > 0 and statuses[0] or dict()
