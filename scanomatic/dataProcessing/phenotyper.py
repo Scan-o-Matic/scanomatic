@@ -167,21 +167,15 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             b0 (float): The first parameter. To ensure that it stays within
                         the allowed bounds b0 > 0, the input b0 is
                         transposed using ``np.power(np.e, b0)``.
-                        To get the true value for b0, simply use ``np.log(b0)``
 
             b1 (float): The second parameter. The bounds are
                         1 - b3 < b1 < 1 and thus it is scaled as follows::
 
-                            ``np.power(np.e, b1) / (np.power(np.e, b3) + 1) *
+                            ``np.power(np.e, b1) / (np.power(np.e, b1) + 1) *
                             b3 + (1 - b3)``
 
                         Where ``b3`` referes to the transformed version.
 
-                        To obtain the true value for b1, use::
-
-                            ``np.log((-b3 - x + 1) / (x - 1))``
-
-                        Where ``b3`` returns to the non-true value of ``b3``.
 
             b2 (float): The third parameter, has same bounds and scaling as
                         the first
@@ -191,11 +185,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                             ``np.power(np.e, b3) / (np.power(np.e, b3) + 1)``
 
-                        To obtain the true value of b3 use::
+            D (float):  Any real number, used as the offset of the curve,
+                        no transformation applied.
 
-                            ``np.log(b3 / (1 - b3))``
+        Returns:
 
-            D (float):  Any real number, used as the offset of the curve
+            np.array.       An array of matching size as X with the
+                            Chapman-Ritchards extended curve for the
+                            parameter set.
 
         """
 
