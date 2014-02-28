@@ -14,7 +14,6 @@ __status__ = "Development"
 
 import os
 import time
-import numpy as np
 
 #
 # INTERNAL DEPENDENCIES
@@ -135,8 +134,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
                                   self._paths.phenotypes_raw_csv),
                 askOverwrite=False)
 
-            np.save(os.path.join(self._analysisBase,
-                                 self._paths.phenotypes_raw_npy),
-                    self._curPhenotyper.phenotypes)
+            self._curPhenotyper.saveState(self._analysisBase,
+                                          askOverwrite=False)
 
             raise StopIteration

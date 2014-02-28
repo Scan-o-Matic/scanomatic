@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 import _mockNumpyInterface
 import scanomatic.io.xml.reader as xmlReader
 import scanomatic.io.logger as logger
+import scanomatic.io.paths as paths
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
@@ -49,12 +50,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def __init__(self, dataObject, timeObject=None,
                  medianKernelSize=5, gaussSigma=1.5, linRegSize=5,
-                 measure=None, baseName=None, itermode=False):
+                 measure=None, baseName=None, itermode=False, runAnalysis=True):
+
+        self._paths = paths.Paths()
 
         self._source = dataObject
 
         self._phenotypes = None
-
         self._timeObject = None
         self._baseName = baseName
 
@@ -67,6 +69,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             arrayCopy = dataObject.copy()
 
         self.times = timeObject
+
+        assert self._timeObject is not None, "A data series needs its times"
 
         for plate in arrayCopy:
 
@@ -85,7 +89,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._linRegSize = linRegSize
         self._itermode = itermode
 
-        if not self._itermode:
+        if not self._itermode and runAnalysis:
             self._analyse()
 
     @classmethod
@@ -106,6 +110,32 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             path = path[:-4]
 
         return cls(xml, baseName=path, **kwargs)
+
+    @classmethod
+    def LoadFromSate(cls, dirPath):
+
+        _p = paths.Paths()
+
+        phenotypes = np.load(os.path.join(dirPath, _p.phenotypes_raw_npy))
+
+        source = np.load(os.path.join(dirPath,  _p.phenotypes_input_data))
+
+        times = np.load(os.path.join(dirPath, _p.phenotype_times))
+
+        dataObject = np.load(os.path.join(dirPath,
+                                          _p.phenotypes_input_smooth))
+
+        medianKernelSize, gaussSigma, linRegSize = np.load(
+            os.path.join(dirPath, _p.phenotypes_extraction_params))
+
+        phenotyper = cls(source, times, medianKernelSize=medianKernelSize,
+                         gaussSigma=gaussSigma, linRegSize=linRegSize,
+                         runAnalysis=False)
+
+        phenotyper._dataObject = dataObject
+        phenotyper._phenotypes = phenotypes
+
+        return phenotyper
 
     @classmethod
     def LoadFromNumPy(cls, path, timesPath=None, **kwargs):
@@ -688,6 +718,34 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         fh.close()
         return True
+
+    def saveState(self, dirPath, askOverwrite=True):
+
+        p = os.path.join(dirPath, self._paths.phenotypes_raw_npy)
+        if (not askOverwrite or not os.path.isfile(p)):
+            np.save(p, self.phenotypes)
+
+        p = os.path.join(dirPath, self._paths.phenotypes_input_data)
+        if (not askOverwrite or not os.path.isfile(p)):
+            np.save(p, self._source)
+
+        p = os.path.join(dirPath, self._paths.phenotypes_input_smooth)
+        if (not askOverwrite or not os.path.isfile(p)):
+            np.save(p, self._dataObject)
+
+        p = os.path.join(dirPath, self._paths.phenotype_times)
+        if (not askOverwrite or not os.path.isfile(p)):
+            np.save(p, self._timeObject)
+
+        p = os.path.join(dirPath, self._paths.phenotypes_extraction_params)
+        if (not askOverwrite or not os.path.isfile(p)):
+            np.save(
+                p,
+                [self._medianKernelSize,
+                 self._gaussSigma,
+                 self._linRegSize])
+
+        self._logger.info("State saved to '{0}'".format(dirPath))
 
     def saveInputData(self, path=None):
 

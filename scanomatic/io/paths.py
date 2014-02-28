@@ -155,6 +155,10 @@ class Paths(object):
         #PHENOTYPES FILES
         self.phenotypes_raw_csv = "phenotypes_raw.csv"
         self.phenotypes_raw_npy = "phenotypes_raw.npy"
+        self.phenotypes_input_data = "curves_raw.npy"
+        self.phenotypes_input_smooth = "curves_smooth.npy"
+        self.phenotypes_extraction_params = "phenotype_params.npy"
+        self.phenotype_times = "phenotype_times.npy"
 
         #LOCK FILES
         self.lock_root = os.path.join(self.root, 'locks')

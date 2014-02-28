@@ -69,10 +69,13 @@ class RPC_Job(Process):
 
         def _communicator():
 
-            while pipeEffector.keepAlive:
+            while pipeEffector.keepAlive and jobRunning:
                 pipeEffector.poll()
                 sleep(0.29)
 
+            _l.info("Will not recieve any more communications")
+
+        jobRunning = True
         _l = logger.Logger("RPC Job")
 
         pipeEffector = pipes.ChildPipeEffector(
@@ -87,7 +90,7 @@ class RPC_Job(Process):
 
         _l.info("Starting main loop using")
 
-        while t.is_alive():
+        while t.is_alive() and jobRunning:
 
             if (pipeEffector.keepAlive):
 
@@ -97,7 +100,7 @@ class RPC_Job(Process):
 
                 except StopIteration:
 
-                    pass
+                    jobRunning = False
                     #pipeEffector.keepAlive = False
 
                 pipeEffector.sendStatus(pipeEffector.procEffector.status())
@@ -107,4 +110,5 @@ class RPC_Job(Process):
                 sleep(0.29)
 
         pipeEffector.sendStatus(pipeEffector.procEffector.status())
+        t.join()
         _l.info("Job completed")
