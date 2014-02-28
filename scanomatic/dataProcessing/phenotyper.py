@@ -17,8 +17,6 @@ __status__ = "Development"
 
 import numpy as np
 import os
-import sys
-import time
 from scipy.ndimage import median_filter, gaussian_filter1d
 from scipy.optimize import leastsq
 from scipy.stats import linregress
@@ -31,13 +29,14 @@ import matplotlib.pyplot as plt
 
 import _mockNumpyInterface
 import scanomatic.io.xml.reader as xmlReader
+import scanomatic.io.logger as logger
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     PHEN_GT_VALUE = 0
-    PHEN_GT_VALUE_ERR = 1
-    PHEN_GT_VALUE_POS = 2
+    PHEN_GT_ERR = 1
+    PHEN_GT_POS = 2
     PHEN_GT_2ND_VALUE = 3
     PHEN_GT_2ND_ERR = 4
     PHEN_GT_2ND_POS = 5
@@ -78,6 +77,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                         + "Your shape is {0}".format(plate.shape))
 
         super(Phenotyper, self).__init__(arrayCopy)
+        self._logger = logger.Logger("Phenotyper")
 
         assert medianKernelSize % 2 == 1, "Median kernel size must be odd"
         self._medianKernelSize = medianKernelSize
@@ -241,23 +241,28 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def iterAnalyse(self):
 
+        self._logger.info(
+            "Iteration started, will extract {0} phenotypes".format(
+                self.nPhenotypeTypes))
+
         if (self._itermode is False):
-            raise Exception("Can't iterate when not in itermode")
+            raise StopIteration("Can't iterate when not in itermode")
+            return
         else:
-            n = sum((p.shape[1] * p.shape[2] for p in self._dataObject)) + 1.0
+            n = sum((p.shape[0] * p.shape[1] for p in self._dataObject)) + 1.0
             i = 0.0
             self._smoothen()
+            self._logger.info("Smoothed")
             yield i / n
             for x in self._calculatePhenotypes():
-                i += 1.0
+                self._logger.info("Phenotype extraction iteration")
+                i += x
                 yield i / n
 
         self._itermode = False
 
     def _smoothen(self):
-        sys.stderr.write(
-            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
-            "Smoothing Started\n")
+        self._logger.info("Smoothing Started")
         medianFootprint = np.ones((1, self._medianKernelSize))
 
         for plate in self._dataObject:
@@ -273,9 +278,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             stridedPlate[...] = gaussian_filter1d(
                 stridedPlate, sigma=self._gaussSigma, mode='reflect', axis=-1)
 
-        sys.stderr.write(
-            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
-            "Smoothing Done\n")
+        self._logger.info("Smoothing Done")
 
     def _calculatePhenotypes(self):
 
@@ -285,9 +288,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         def _linReg2(*args):
             return linregress(args[:linRegSize], args[linRegSize:])[0::4]
 
-        sys.stderr.write(
-            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
-            "Phenotype Extraction Started\n")
+        self._logger.info("Phenotype Extraction Started")
 
         timesStrided = np.lib.stride_tricks.as_strided(
             self._timeObject,
@@ -364,7 +365,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 for idY, Y in enumerate(X):
 
-                    curPhenos = (None,) * nPhenotypes
+                    curPhenos = [None] * nPhenotypes
 
                     #CALCULATING GT
                     vals = []
@@ -380,16 +381,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     curPhenos[self.PHEN_GT_VALUE] = 1.0 / vals[
                         vArgSort[-1], self.PHEN_GT_VALUE]
 
-                    curPhenos[self.PHEN_GT_VALUE_ERR] = vals[
-                        vArgSort[-1], self.PHEN_GT_VALUE_ERR]
+                    curPhenos[self.PHEN_GT_ERR] = vals[
+                        vArgSort[-1], self.PHEN_GT_ERR]
 
-                    curPhenos[self.PHEN_GT_VALUE_POS] = vArgSort[-1] + posOffset
+                    curPhenos[self.PHEN_GT_POS] = vArgSort[-1] + posOffset
 
                     curPhenos[self.PHEN_GT_2ND_VALUE] = 1.0 / vals[
-                        vArgSort[-2], self.PHEN_GT_2ND_VALUE]
+                        vArgSort[-2], self.PHEN_GT_VALUE]
 
                     curPhenos[self.PHEN_GT_2ND_ERR] = vals[
-                        vArgSort[-2], self.PHEN_GT_2ND_ERR]
+                        vArgSort[-2], self.PHEN_GT_ERR]
 
                     curPhenos[self.PHEN_GT_2ND_POS] = vArgSort[-2] + posOffset
 
@@ -410,35 +411,34 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     #STORING PHENOTYPES
                     phenotypes[idX, idY, ...] = curPhenos
 
-                    if self._itermode:
-                        yield
+                if self._itermode:
+                    self._logger.info("Done plate {0} pos {1} {2}".format(
+                        plateI, idX, idY))
+                    yield idY + 1
 
-            sys.stderr.write(
-                time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
-                "Plate {0} Done\n".format(plateI))
+            self._logger.info("Plate {0} Done".format(plateI))
 
         self._phenotypes = np.array(allPhenotypes)
 
-        sys.stderr.write(
-            time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
-            "Phenotype Extraction Done\n")
+        self._logger.info("Phenotype Extraction Done")
 
+    @property
     def nPhenotypeTypes(self):
 
         return max(getattr(self, attr) for attr in dir(self) if
-                   attr.startswith("PHENO_"))
+                   attr.startswith("PHEN_")) + 1
 
     @property
     def curveFits(self):
 
         return np.array(
-            [plate[..., self.FIT_VALUE] for plate in self._phenotypes])
+            [plate[..., self.PHEN_FIT_VALUE] for plate in self._phenotypes])
 
     @property
     def generationTimes(self):
 
         return np.array(
-            [plate[..., self.GT_VALUE] for plate in self._phenotypes])
+            [plate[..., self.PHEN_GT_VALUE] for plate in self._phenotypes])
 
     @property
     def phenotypes(self):
@@ -593,7 +593,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             _markCurve(plusMarkTimes, '+k')
 
         tId = int(self._phenotypes[position[0]][position[1:]][
-            self.PHEN_GT_VALUE_POS])
+            self.PHEN_GT_POS])
 
         gtY = self._dataObject[position[0]][position[1:]][tId]
 
@@ -683,8 +683,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                             ["{0}:{1}-{2}".format(plateI, idX, idY),
                              "Unknown Strain",
                              "Unknown Condition"] +
-                            map(str, ["None", Y[self.GT_VALUE], "None",
-                                      Y[self.FIT_VALUE]])), newline))
+                            map(str, ["None", Y[self.PHEN_GT_VALUE], "None",
+                                      Y[self.PHEN_FIT_VALUE]])), newline))
 
         fh.close()
         return True

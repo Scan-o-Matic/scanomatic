@@ -22,6 +22,7 @@ from time import sleep
 #
 
 import scanomatic.rpc_server.pipes as pipes
+import scanomatic.io.logger as logger
 
 #
 # CLASSES
@@ -72,11 +73,19 @@ class RPC_Job(Process):
                 pipeEffector.poll()
                 sleep(0.29)
 
+        _l = logger.Logger("RPC Job")
+
         pipeEffector = pipes.ChildPipeEffector(
             self._childPipe, self._target(self._identifier, self._label))
 
         t = Thread(target=_communicator)
         t.start()
+
+        _l.info("Communications thread started")
+
+        effectorIterator = pipeEffector.procEffector
+
+        _l.info("Starting main loop using")
 
         while t.is_alive():
 
@@ -84,7 +93,7 @@ class RPC_Job(Process):
 
                 try:
 
-                    pipeEffector.procEffector.next()
+                    effectorIterator.next()
 
                 except StopIteration:
 
@@ -98,3 +107,4 @@ class RPC_Job(Process):
                 sleep(0.29)
 
         pipeEffector.sendStatus(pipeEffector.procEffector.status())
+        _l.info("Job completed")

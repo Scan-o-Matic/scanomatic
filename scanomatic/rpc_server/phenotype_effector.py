@@ -14,7 +14,7 @@ __status__ = "Development"
 
 import os
 import time
-import np
+import numpy as np
 
 #
 # INTERNAL DEPENDENCIES
@@ -105,44 +105,38 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
         if not self._allowStart:
             return super(PhenotypeExtractionEffector, self).next()
 
-        self._startTime = time.time()
+        if self._iteratorI == 0:
+            self._startTime = time.time()
 
-        phenotyper.Phenotyper(dataObject=self._data,
-                              timeObject=self._times,
-                              itermode=True,
-                              **self._phenotyperKwargs)
+            curPhenotyper = phenotyper.Phenotyper(
+                dataObject=self._data,
+                timeObject=self._times,
+                itermode=True,
+                **self._phenotyperKwargs)
 
-        phenoIter = phenotyper.iterAnalyse()
+            self._phenoIter = curPhenotyper.iterAnalyse()
+            self._curPhenotyper = curPhenotyper
+            self._iteratorI = 1
+            self._logger.info("Starting phenotype extraction")
 
-        self._logger.info("Starting phenotype extraction")
-
-        while self._running and not self._stopping:
-
+        if (not self._paused and self._running):
             try:
-                self._progress = phenoIter.next()
+                self._progress = self._phenoIter.next()
             except StopIteration:
                 self._running = False
                 self._progress = None
-                raise StopIteration
             self._logger.info(
                 "One phenotype extraction iteration completed. " +
                 "Resume {0}".format(self._running))
-            return None
 
-            #
-            # PAUSE IF REQUESTED
-            #
+        if (not self._running):
+            self._curPhenotyper.savePhenotypes(
+                path=os.path.join(self._analysisBase,
+                                  self._paths.phenotypes_raw_csv),
+                askOverwrite=False)
 
-            while self._paused and self._running and not self._stopping:
+            np.save(os.path.join(self._analysisBase,
+                                 self._paths.phenotypes_raw_npy),
+                    self._curPhenotyper.phenotypes)
 
-                time.sleep(0.5)
-                return None
-
-        phenoIter.savePhenotypes(
-            path=os.path.join(self._analysisBase,
-                              self._paths.phenotypes_raw_csv),
-            askOverwrite=False)
-
-        np.save(os.path.join(self._analysisBase,
-                             self._paths.phenotypes_raw_npy),
-                phenoIter.phenotypes)
+            raise StopIteration
