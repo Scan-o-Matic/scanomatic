@@ -16,6 +16,7 @@ __status__ = "Development"
 import numpy as np
 import os
 import glob
+import re
 
 #
 # INTERNAL DEPENDENCIES
@@ -52,8 +53,8 @@ class Image_Data(object):
         for pID in xrange(nPlates):
             if features[pID] is not None:
 
-                lD1 = len(features)
-                lD2 = len(features[0])
+                lD1 = len(features[pID])
+                lD2 = len(features[pID][0])
                 plates[pID] = np.zeros((lD1, lD2)) * np.nan
                 fPlate = features[pID]
 
@@ -68,14 +69,16 @@ class Image_Data(object):
                                 plates[pID][id1, id2] = cell[
                                     measure[0]][measure[1]]
 
-        Image_Data._LOGGER.info("Saved Image Data '{0}'".format(path))
+        Image_Data._LOGGER.info("Saved Image Data '{0}' with {1} plates".format(
+            path, len(plates)))
+
         np.save(path, plates)
 
     @staticmethod
     def iterWriteImageFromXML(path, xmlObject, measure=0):
 
         scans = xmlObject.get_scan_times().size
-        nPlates = max(xmlObject.get_data().keys())
+        nPlates = max(xmlObject.get_data().keys()) + 1
         data = xmlObject.get_data()
 
         for idS in range(scans):
@@ -145,7 +148,53 @@ class Image_Data(object):
         return pathDir, pathBasename.format(imageIndex)
 
     @staticmethod
+    def iterImagePaths(pathPattern):
+
+        return (p for p in glob.iglob(os.path.join(
+            *Image_Data.path2dataPathTuple(pathPattern))))
+
+    @staticmethod
     def iterReadImages(path):
 
-        for p in glob.iglob(os.path.join(*Image_Data.path2dataPathTuple(path))):
+        for p in Image_Data.iterImagePaths(path):
             yield Image_Data.readImage(p)
+
+    @staticmethod
+    def readImageDataAndTimes(path):
+
+        def _perTime2perPlate(data):
+            newData = [[] for _ in range(max(s.shape[0] for s in data if
+                                             isinstance(s, np.ndarray)))]
+
+            for scan in data:
+                for pId, plate in enumerate(scan):
+                    newData[pId].append(plate)
+
+            for pId, plate in enumerate(newData):
+                newData[pId] = np.array(plate)
+
+            return np.array(newData)
+
+        times = Image_Data.readTimes(path)
+
+        data = []
+        timeIndices = []
+        for p in Image_Data.iterImagePaths(path):
+
+            try:
+                timeIndices.append(int(re.search(r"\d+", p).group()))
+                data.append(np.load(p))
+            except AttributeError:
+                Image_Data._logger(
+                    "File '{0}' has no index number in it, need that!".format(
+                        p))
+
+        try:
+            times = np.array(times[timeIndices])
+        except IndexError:
+            Image_Data._logger.error(
+                "Could not filter image times to match data")
+            return None, None
+
+        sortList = np.array(timeIndices).argsort()
+        return times[sortList],  _perTime2perPlate(np.array(data)[sortList])

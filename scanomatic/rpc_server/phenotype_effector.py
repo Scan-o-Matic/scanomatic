@@ -13,9 +13,6 @@ __status__ = "Development"
 #
 
 import os
-import glob
-import numpy as np
-import re
 import time
 
 #
@@ -64,24 +61,13 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
     def setup(self, *lostArgs, **phenotyperKwargs):
 
-        def _perTime2perPlate(data):
-            newData = [[]] * max(s.shape[0] for s in data)
-
-            for scan in data:
-                for pId, plate in enumerate(scan):
-                    newData[pId].append(plate)
-
-            for pId, plate in enumerate(newData):
-                newData[pId] = np.array(plate)
-
-            return np.array(newData)
-
         if self._started:
 
             self._logger.warning("Can't setup when started")
             return False
 
         path = None
+
         if "runDirectory" in phenotyperKwargs:
             path = phenotyperKwargs["runDirectory"]
             del phenotyperKwargs["runDirectory"]
@@ -97,34 +83,19 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
             self._logger.warning("Setup got unknown args {0}".format(
                 lostArgs))
 
-        dirPath, baseName = image_data.Image_Data.path2dataPathTuple(path)
+        times, data = image_data.Image_Data.readImageDataAndTimes(path)
 
-        times = image_data.Image_Data.readTimes(path)
-
-        data = []
-        timeIndices = []
-        for p in glob.iglob(os.path.join(dirPath, baseName)):
-
-            try:
-                timeIndices.append(int(re.search(r"\d+", p).group()))
-                data.append(np.load(p))
-            except AttributeError:
-                self._logger(
-                    "File '{0}' has no index number in it, need that!".format(
-                        p))
-
-        try:
-            self._times = times[timeIndices]
-        except IndexError:
+        if None in (times, data):
             self._logger.error(
                 "Could not filter image times to match data")
             self._running = False
             self._stopping = True
             return None
 
-        self._data = _perTime2perPlate(data)
+        self._times = times
+        self._data = data
         self._phenotyperKwargs = phenotyperKwargs
-        self._analysisBase = dirPath
+        self._analysisBase = image_data.Image_Data.path2dataPathTuple(path)[0]
 
         self._allowStart = True
 

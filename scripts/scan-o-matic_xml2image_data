@@ -65,7 +65,7 @@ if __name__ == "__main__":
     if not os.path.isdir(args.outputPath):
         os.mkdir(args.outputPath)
 
-    for p in image_data.Image_Data.iterReadImages(args.outputPath):
+    for p in image_data.Image_Data.iterImagePaths(args.outputPath):
         if (not args.ask or
                 "n" not in raw_input("Remove {0}? (Y/n)".format(p)).lower()):
 
