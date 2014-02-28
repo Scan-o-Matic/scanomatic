@@ -152,6 +152,10 @@ class Paths(object):
         self.experiment_grid_image_pattern = "grid___origin_plate_{0}.svg"
         self.experiment_grid_error_image = "_no_grid_{0}.npy"
 
+        #PHENOTYPES FILES
+        self.phenotypes_raw_csv = "phenotypes_raw.csv"
+        self.phenotypes_raw_npy = "phenotypes_raw.npy"
+
         #LOCK FILES
         self.lock_root = os.path.join(self.root, 'locks')
         self.lock_power_up_new_scanner = os.path.join(

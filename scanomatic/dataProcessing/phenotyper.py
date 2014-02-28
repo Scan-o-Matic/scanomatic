@@ -35,20 +35,26 @@ import scanomatic.io.xml.reader as xmlReader
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
-    GT_VALUE = 0
-    GT_VALUE_ERR = 1
-    GT_VALUE_POS = 2
-    GT_2ND_VALUE = 3
-    GT_2ND_ERR = 4
-    GT_2ND_POS = 5
+    PHEN_GT_VALUE = 0
+    PHEN_GT_VALUE_ERR = 1
+    PHEN_GT_VALUE_POS = 2
+    PHEN_GT_2ND_VALUE = 3
+    PHEN_GT_2ND_ERR = 4
+    PHEN_GT_2ND_POS = 5
+    PHEN_FIT_VALUE = 6
+    PHEN_FIT_PARAM1 = 7
+    PHEN_FIT_PARAM2 = 8
+    PHEN_FIT_PARAM3 = 9
+    PHEN_FIT_PARAM4 = 10
+    PHEN_FIT_PARAM5 = 11
 
     def __init__(self, dataObject, timeObject=None,
                  medianKernelSize=5, gaussSigma=1.5, linRegSize=5,
                  measure=None, baseName=None, itermode=False):
 
         self._source = dataObject
-        self._generationTimes = None
-        self._curveFits = None
+
+        self._phenotypes = None
 
         self._timeObject = None
         self._baseName = baseName
@@ -66,8 +72,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         for plate in arrayCopy:
 
             assert (plate is None or
-                    plate.ndim == 3 and plate.shape[-1] == 1 or
-                    plate.ndim == 2), (
+                    plate.ndim == 4 and plate.shape[-1] == 1 or
+                    plate.ndim == 3), (
                         "Phenotype Strider only work with one phenotype. "
                         + "Your shape is {0}".format(plate.shape))
 
@@ -148,6 +154,58 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     @staticmethod
     def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
+        """Reterns a Chapman-Ritchards 4 parameter curve exteneded with a
+        Y-axis offset D parameter.
+
+        ''Note: The parameters b0, b1, b2 and b3 have been transposed so
+        that they stay within the allowed bounds of the model
+
+        Args:
+
+            X (np.array):   The X-data
+
+            b0 (float): The first parameter. To ensure that it stays within
+                        the allowed bounds b0 > 0, the input b0 is
+                        transposed using ``np.power(np.e, b0)``.
+                        To get the true value for b0, simply use ``np.log(b0)``
+
+            b1 (float): The second parameter. The bounds are
+                        1 - b3 < b1 < 1 and thus it is scaled as follows::
+
+                            ``np.power(np.e, b1) / (np.power(np.e, b3) + 1) *
+                            b3 + (1 - b3)``
+
+                        Where ``b3`` referes to the transformed version.
+
+                        To obtain the true value for b1, use::
+
+                            ``np.log((-b3 - x + 1) / (x - 1))``
+
+                        Where ``b3`` returns to the non-true value of ``b3``.
+
+            b2 (float): The third parameter, has same bounds and scaling as
+                        the first
+
+            b3 (float): The fourth parameter, has bounds 0 < b3 < 1, thus
+                        scaling is done with::
+
+                            ``np.power(np.e, b3) / (np.power(np.e, b3) + 1)``
+
+                        To obtain the true value of b3 use::
+
+                            ``np.log(b3 / (1 - b3))``
+
+            D (float):  Any real number, used as the offset of the curve
+
+        """
+
+        #Enusuring parameters stay within the allowed bounds
+        b0 = np.power(np.e, b0)
+        b2 = np.power(np.e, b2)
+        v = np.power(np.e, b3)
+        b3 = v / (v + 1.0)
+        v = np.power(np.e, b1)
+        b1 = v / (v + 1.0) * b3 + (1 - b3)
 
         return D + b0 * np.power(1.0 - b1 * np.exp(-b2 * X), 1.0 / (1.0 - b3))
 
@@ -243,11 +301,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         flatT = self._timeObject.ravel()
 
-        allGT = []
-        allFits = []
+        allPhenotypes = []
+
         linRegSize = self._linRegSize
         #linRegUFunc = np.frompyfunc(_linReg2, linRegSize * 2, 2)
         posOffset = (linRegSize - 1) / 2
+        nPhenotypes = self.nPhenotypeTypes
 
         for plateI, plate in enumerate(self._dataObject):
 
@@ -291,14 +350,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             vals.strides[-1])))
 
             """
-            generationTimes = np.zeros((plate.shape[:2]) + (6,),
-                                       dtype=plate.dtype)
+            phenotypes = np.zeros((plate.shape[:2]) + (nPhenotypes,),
+                                  dtype=plate.dtype)
 
-            allGT.append(generationTimes)
-
-            curveFits = np.zeros((plate.shape[:2]) + (6,), dtype=plate.dtype)
-
-            allFits.append(curveFits)
+            allPhenotypes.append(phenotypes)
 
             stridedPlate = np.lib.stride_tricks.as_strided(
                 plate,
@@ -312,6 +367,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 for idY, Y in enumerate(X):
 
+                    curPhenos = (None,) * nPhenotypes
+
+                    #CALCULATING GT
                     vals = []
 
                     for V, T in itertools.izip(Y, timesStrided):
@@ -321,21 +379,39 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     vals = np.array(vals)
                     vArgSort = vals[..., 0].argsort()
 
-                    generationTimes[idX, idY, ...] = (
-                        1.0 / vals[vArgSort[-1], self.GT_VALUE],
-                        vals[vArgSort[-1], self.GT_VALUE_ERR],
-                        vArgSort[-1] + posOffset,
-                        1.0 / vals[vArgSort[-2], self.GT_VALUE],
-                        vals[vArgSort[-2], self.GT_VALUE_ERR],
-                        vArgSort[-2] + posOffset,
-                    )
+                    #REGISTRATING GT PHENOTYPES
+                    curPhenos[self.PHEN_GT_VALUE] = 1.0 / vals[
+                        vArgSort[-1], self.PHEN_GT_VALUE]
 
+                    curPhenos[self.PHEN_GT_VALUE_ERR] = vals[
+                        vArgSort[-1], self.PHEN_GT_VALUE_ERR]
+
+                    curPhenos[self.PHEN_GT_VALUE_POS] = vArgSort[-1] + posOffset
+
+                    curPhenos[self.PHEN_GT_2ND_VALUE] = 1.0 / vals[
+                        vArgSort[-2], self.PHEN_GT_2ND_VALUE]
+
+                    curPhenos[self.PHEN_GT_2ND_ERR] = vals[
+                        vArgSort[-2], self.PHEN_GT_2ND_ERR]
+
+                    curPhenos[self.PHEN_GT_2ND_POS] = vArgSort[-2] + posOffset
+
+                    #CALCULATING CURVE FITS
                     Yobs = plate[idX, idY].ravel().astype(np.float64)
 
                     p = Phenotyper.CalculateFitRSquare(
                         flatT, np.log2(Yobs))
 
-                    curveFits[idX, idY, ...] = (p[0], ) + tuple(p[1])
+                    #REGISTRATING CURVE FITS
+                    curPhenos[self.PHEN_FIT_VALUE] = p[0]
+                    curPhenos[self.PHEN_FIT_PARAM1] = p[1][0]
+                    curPhenos[self.PHEN_FIT_PARAM2] = p[1][1]
+                    curPhenos[self.PHEN_FIT_PARAM3] = p[1][2]
+                    curPhenos[self.PHEN_FIT_PARAM4] = p[1][3]
+                    curPhenos[self.PHEN_FIT_PARAM5] = p[1][4]
+
+                    #STORING PHENOTYPES
+                    phenotypes[idX, idY, ...] = curPhenos
 
                     if self._itermode:
                         yield
@@ -344,22 +420,33 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
                 "Plate {0} Done\n".format(plateI))
 
-        self._generationTimes = np.array(allGT)
-        self._curveFits = np.array(allFits)
+        self._phenotypes = np.array(allPhenotypes)
 
         sys.stderr.write(
             time.strftime("%Y-%m-%d %H:%M:%S\t", time.localtime()) +
             "Phenotype Extraction Done\n")
 
+    def nPhenotypeTypes(self):
+
+        return max(getattr(self, attr) for attr in dir(self) if
+                   attr.startswith("PHENO_"))
+
     @property
     def curveFits(self):
 
-        return self._curveFits
+        return np.array(
+            [plate[..., self.FIT_VALUE] for plate in self._phenotypes])
 
     @property
     def generationTimes(self):
 
-        return self._generationTimes
+        return np.array(
+            [plate[..., self.GT_VALUE] for plate in self._phenotypes])
+
+    @property
+    def phenotypes(self):
+
+        return self._phenotypes
 
     @property
     def times(self):
@@ -378,7 +465,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._timeObject = value
 
-    def getPositionListFiltered(self, posList, valueType=GT_VALUE):
+    def getPositionListFiltered(self, posList, valueType=PHEN_GT_VALUE):
         """Get phenotypes for the list of positions.
 
         Parameters:
@@ -409,7 +496,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             else:
                 plate, x, y = pos
 
-            values.append(self._generationTimes[plate][x, y][valueType])
+            values.append(self._phenotypes[plate][x, y][valueType])
 
         return values
 
@@ -508,8 +595,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             _markCurve(plusMarkTimes, '+k')
 
-        tId = int(self._generationTimes[position[0]][position[1:]][
-            self.GT_VALUE_POS])
+        tId = int(self._phenotypes[position[0]][position[1:]][
+            self.PHEN_GT_VALUE_POS])
 
         gtY = self._dataObject[position[0]][position[1:]][tId]
 
@@ -519,7 +606,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 2.0,
                 Phenotyper.ChapmanRichards4ParameterExtendedCurve(
                     self._timeObject.ravel(),
-                    *self._curveFits[position[0]][position[1:]][1:]))
+                    self._phenotypes[position[0]][position[1:]][
+                        self.PHEN_FIT_PARAM1],
+                    self._phenotypes[position[0]][position[1:]][
+                        self.PHEN_FIT_PARAM2],
+                    self._phenotypes[position[0]][position[1:]][
+                        self.PHEN_FIT_PARAM3],
+                    self._phenotypes[position[0]][position[1:]][
+                        self.PHEN_FIT_PARAM4],
+                    self._phenotypes[position[0]][position[1:]][
+                        self.PHEN_FIT_PARAM5]))
 
             ax.semilogy(self._timeObject,
                         Yhat, '--', color=(0.1, 0.1, 0.1, 0.5), basey=2)
@@ -528,8 +624,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             t = self._timeObject[tId]
 
-            a = 1.0 / self._generationTimes[position[0]][position[1:]][
-                self.GT_VALUE]
+            a = 1.0 / self._phenotypes[position[0]][position[1:]][
+                self.PHEN_GT_VALUE]
             b = (np.log2(gtY) - a * t)
 
             dT = 0.1 * self._timeObject.max() - self._timeObject.min()
@@ -546,11 +642,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if annotateFit:
 
             ax.text(0.1, 0.85, "$R^2 = {0:.5f}$".format(
-                    self._curveFits[position[0]][position[1:]][0]),
+                    self._phenotypes[position[0]][position[1:]][
+                        self.PHEN_FIT_VALUE]),
                     transform=ax.transAxes)
 
         measureText = "Generation Time: {0:.2f}".format(
-            self._generationTimes[position[0]][position[1:]][self.GT_VALUE])
+            self._phenotypes[position[0]][position[1:]][self.PHEN_GT_VALUE])
 
         if altMeasures is not None:
 
@@ -565,23 +662,20 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return f
 
-    def savePhenotypes(self, path=None, delim="\t", newline="\n"):
+    def savePhenotypes(self, path=None, delim="\t", newline="\n",
+                       askOverwrite=True):
         """Outputs the phenotypes as a csv type format."""
 
         if (path is None and self._baseName is not None):
             path = self._baseName + ".csv"
 
-        if (os.path.isfile(path)):
+        if (os.path.isfile(path) and askOverwrite):
             if ('y' not in raw_input("Overwrite existing file? (y/N)").lower()):
-                return
+                return False
 
         fh = open(path, 'w')
 
-        curveFits = self.curveFits
-
-        for plateI, plate in enumerate(self.generationTimes):
-
-            curveFitsP = curveFits[plateI]
+        for plateI, plate in enumerate(self.phenotypes):
 
             for idX, X in enumerate(plate):
 
@@ -589,13 +683,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                     fh.write("{0}{1}".format(
                         delim.join(
-                            ["{0}:{1}-{2}".format(plateI, idX, idY)] +
-                            map(str, ["", "", "", Y[self.GT_VALUE], ""]
-                                + Y[1:].tolist() +
-                                curveFitsP[idX, idY].tolist())),
-                        newline))
+                            ["{0}:{1}-{2}".format(plateI, idX, idY),
+                             "Unknown Strain",
+                             "Unknown Condition"] +
+                            map(str, ["None", Y[self.GT_VALUE], "None",
+                                      Y[self.FIT_VALUE]])), newline))
 
         fh.close()
+        return True
 
     def saveInputData(self, path=None):
 

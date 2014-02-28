@@ -171,7 +171,10 @@ class Image_Data(object):
                     newData[pId].append(plate)
 
             for pId, plate in enumerate(newData):
-                newData[pId] = np.array(plate)
+                p = np.array(plate)
+                newData[pId] = np.lib.stride_tricks.as_strided(
+                    p, (p.shape[1], p.shape[2], p.shape[0], 1),
+                    (p.strides[1], p.strides[2], p.strides[0], p.strides[-1]))
 
             return np.array(newData)
 

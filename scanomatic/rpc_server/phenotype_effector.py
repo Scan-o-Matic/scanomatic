@@ -14,6 +14,7 @@ __status__ = "Development"
 
 import os
 import time
+import np
 
 #
 # INTERNAL DEPENDENCIES
@@ -136,3 +137,12 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
                 time.sleep(0.5)
                 return None
+
+        phenoIter.savePhenotypes(
+            path=os.path.join(self._analysisBase,
+                              self._paths.phenotypes_raw_csv),
+            askOverwrite=False)
+
+        np.save(os.path.join(self._analysisBase,
+                             self._paths.phenotypes_raw_npy),
+                phenoIter.phenotypes)
