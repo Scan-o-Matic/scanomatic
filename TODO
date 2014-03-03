@@ -8,8 +8,6 @@
     Latest status except messages, messages should stay util pulled
     status after job stopped
 
-Phenotyper is not striding the data correctly it seems.
-
 Server shutdown is not terminating ongoing jobs
 
 ---
@@ -159,6 +157,8 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Phenotyper is not striding the data correctly it seems.
 
 *** RPC stuff
 

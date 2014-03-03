@@ -83,6 +83,9 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
             self._logger.warning("Setup got unknown args {0}".format(
                 lostArgs))
 
+        self._logger.info("Loading files image data from '{0}'".format(
+            path))
+
         times, data = image_data.Image_Data.readImageDataAndTimes(path)
 
         if None in (times, data):
@@ -100,10 +103,12 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
         self._phenotyperKwargs = phenotyperKwargs
         self._analysisBase = image_data.Image_Data.path2dataPathTuple(path)[0]
 
+        """
         #DEBUG CODE
         import numpy as np
         np.save(os.path.join(self._analysisBase, "debug.npy"), self._data)
         np.save(os.path.join(self._analysisBase, "debugTimes.npy"), self._times)
+        """
 
         self._allowStart = True
 

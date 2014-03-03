@@ -113,9 +113,12 @@ class Image_Data(object):
     def readTimes(path):
 
         path = os.path.join(*Image_Data.path2dataPathTuple(path, times=True))
+        Image_Data._LOGGER.info("Reading times from {0}".format(
+            path))
         if os.path.isfile(path):
             return np.load(path)
         else:
+            Image_Data._LOGGER.warning("Times data file not found")
             return np.array([], dtype=np.float)
 
     @staticmethod
@@ -241,7 +244,7 @@ class Image_Data(object):
         for p in Image_Data.iterImagePaths(path):
 
             try:
-                timeIndices.append(int(re.search(r"\d+", p).group()))
+                timeIndices.append(int(re.findall(r"\d+", p)[-1]))
                 data.append(np.load(p))
             except AttributeError:
                 Image_Data._LOGGER(

@@ -113,7 +113,18 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     @classmethod
     def LoadFromSate(cls, dirPath):
+        """Creates an instance based on previously saved phenotyper state
+        in specified directory.
 
+        Args:
+
+            dirPath (str):  Path to the directory holding the relevant
+                            files
+
+        Returns:
+
+            Phenotyper instance
+        """
         _p = paths.Paths()
 
         phenotypes = np.load(os.path.join(dirPath, _p.phenotypes_raw_npy))
@@ -687,6 +698,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         ax.text(0.1, 0.9, "Plate {0}, Row {1} Col {2}".format(*position),
                 transform=ax.transAxes)
+
+        if (fig is not None):
+            f.show()
 
         return f
 
