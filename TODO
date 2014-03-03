@@ -2,6 +2,12 @@
 ##### THE TAKE OVER #####
    ####################
 
+**  RPC needs to accumulate job information until requested but still
+    not get too much.
+
+    Latest status except messages, messages should stay util pulled
+    status after job stopped
+
 Phenotyper is not striding the data correctly it seems.
 
 Server shutdown is not terminating ongoing jobs
@@ -35,17 +41,6 @@ Server shutdown is not terminating ongoing jobs
 
 * RPC
 
-	SubprocEffector Shows Available methods for pipes
-
-	RPC -> Subproc: [subprocEffectorMethod, kwargs]
-	
-	Common to all SubprocEffectors:
-
-		X Start
-		X Stop
-		X Pause
-		X Status (reciprokes by sending status dict)
-
 	RPC Exposes to Client:
 
 		getFreeScanners()
@@ -58,32 +53,13 @@ Server shutdown is not terminating ongoing jobs
 
 		setScannerStatus(userId, scanner, kwargs)
 
-		enqueueScanner(userId, scanner, kwargs)
-
 		---
 
 		enqueueAnalysis(userId, kwargs)
-		getAnalysesInfo()
-	
-		stopAnalysis(userId, analysis)
-		pauseAnalysis(userId, analysis)
-		resumeAnalysis(userId, analysis)
 		
 		---
 
 		enqueueRebuild(userId, kwargs)
-		stopRebuild(userId, rebuild)
-		pauseRebuild(userId, rebuild)
-		resumeRebuild(userId, rebuild
-
-		getRebuildsInfo()
-
-		---
-
-		enqueueFeatures(userId, kwargs)
-		getFeaturesInfo()
-
-		---
 
   ##########################
 ##### THE WHAT NEXT PLACE #####
@@ -183,6 +159,37 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** RPC stuff
+
+		stopRebuild(userId, rebuild)
+		pauseRebuild(userId, rebuild)
+		resumeRebuild(userId, rebuild
+
+		getRebuildsInfo()
+
+		---
+
+		enqueueFeatures(userId, kwargs)
+		getFeaturesInfo()
+
+		---
+		getAnalysesInfo()
+	
+		stopAnalysis(userId, analysis)
+		pauseAnalysis(userId, analysis)
+		resumeAnalysis(userId, analysis)
+	SubprocEffector Shows Available methods for pipes
+
+	RPC -> Subproc: [subprocEffectorMethod, kwargs]
+	
+	Common to all SubprocEffectors:
+
+		X Start
+		X Stop
+		X Pause
+		X Status (reciprokes by sending status dict)
+
 
 *** Scanner selection is still awkward... (only one scanner per program I think
 

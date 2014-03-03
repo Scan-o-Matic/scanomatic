@@ -87,7 +87,10 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
         if None in (times, data):
             self._logger.error(
-                "Could not filter image times to match data")
+                "Could not filter image times to match data or no data. " +
+                "Do you have the right directory?")
+            self.addMessage("There is no image data in given directory or " +
+                            "the image data is corrupt")
             self._running = False
             self._stopping = True
             return None
@@ -96,6 +99,11 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
         self._data = data
         self._phenotyperKwargs = phenotyperKwargs
         self._analysisBase = image_data.Image_Data.path2dataPathTuple(path)[0]
+
+        #DEBUG CODE
+        import numpy as np
+        np.save(os.path.join(self._analysisBase, "debug.npy"), self._data)
+        np.save(os.path.join(self._analysisBase, "debugTimes.npy"), self._times)
 
         self._allowStart = True
 

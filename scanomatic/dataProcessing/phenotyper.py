@@ -261,8 +261,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def _xmlReader2array(self, dataObject):
 
-        return np.array([dataObject.get_data()[k] for k in sorted(
-            dataObject.get_data().keys())])
+        return np.array([k in dataObject.get_data().keys() and
+                         dataObject.get_data()[k] or None for k in
+                         range(max((dataObject.get_data().keys())) + 1)])
 
     def _analyse(self):
 
@@ -719,26 +720,36 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         fh.close()
         return True
 
+    @staticmethod
+    def _saveOverwriteAsk(path):
+        return raw_input("Overwrite '{0}' (y/N)".format(
+            path)).strip().upper().startswith("Y")
+
     def saveState(self, dirPath, askOverwrite=True):
 
         p = os.path.join(dirPath, self._paths.phenotypes_raw_npy)
-        if (not askOverwrite or not os.path.isfile(p)):
+        if (not askOverwrite or not os.path.isfile(p) or
+                self._saveOverwriteAsk(p)):
             np.save(p, self.phenotypes)
 
         p = os.path.join(dirPath, self._paths.phenotypes_input_data)
-        if (not askOverwrite or not os.path.isfile(p)):
+        if (not askOverwrite or not os.path.isfile(p) or
+                self._saveOverwriteAsk(p)):
             np.save(p, self._source)
 
         p = os.path.join(dirPath, self._paths.phenotypes_input_smooth)
-        if (not askOverwrite or not os.path.isfile(p)):
+        if (not askOverwrite or not os.path.isfile(p) or
+                self._saveOverwriteAsk(p)):
             np.save(p, self._dataObject)
 
         p = os.path.join(dirPath, self._paths.phenotype_times)
-        if (not askOverwrite or not os.path.isfile(p)):
+        if (not askOverwrite or not os.path.isfile(p) or
+                self._saveOverwriteAsk(p)):
             np.save(p, self._timeObject)
 
         p = os.path.join(dirPath, self._paths.phenotypes_extraction_params)
-        if (not askOverwrite or not os.path.isfile(p)):
+        if (not askOverwrite or not os.path.isfile(p) or
+                self._saveOverwriteAsk(p)):
             np.save(
                 p,
                 [self._medianKernelSize,
