@@ -22,6 +22,7 @@ from scipy.optimize import leastsq
 from scipy.stats import linregress
 import itertools
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 #
 #   INTERNAL DEPENDENCIES
@@ -47,6 +48,21 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     PHEN_FIT_PARAM3 = 9
     PHEN_FIT_PARAM4 = 10
     PHEN_FIT_PARAM5 = 11
+
+    NAMES_OF_PHENOTYPES = {
+        0:  "Generation Time",
+        1:  "Error of GT-fit",
+        2:  "Time for fastest growth",
+        3:  "Generation Time (2nd place)",
+        4:  "Error of GT (2nd place) - fit",
+        5:  "Time of second fastest growth",
+        6:  "Chapman Richards model fit",
+        7:  "Chapman Richards b1 (untransformed)",
+        8:  "Chapman Richards b2 (untransformed)",
+        9:  "Chapman Richards b3 (untransformed)",
+        10:  "Chapman Richards b4 (untransformed)",
+        11:  "Chapman Richards extension D (initial cells)",
+    }
 
     def __init__(self, dataObject, timeObject=None,
                  medianKernelSize=5, gaussSigma=1.5, linRegSize=5,
@@ -254,8 +270,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             X, *crParams)
 
     @staticmethod
-    def CalculateFitRSquare(X, Y, p0=np.array([4.5, -50, 0.3, 3, -3],
-                                              dtype=np.float)):
+    def CalculateFitRSquare(
+            X, Y,
+            #i1 p0=np.array([1.7, -50, -2.28, -261, 14.6],
+            #i2 p0=np.array([1.64, -50, -2.46, -261, 15.18],
+            #p0=np.array([1.622, 21.1, -2.38, -1.99, 15.36],
+            p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18],
+                        dtype=np.float)):
 
         """X and Y must be 1D, Y must be log2"""
 
@@ -703,6 +724,70 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             f.show()
 
         return f
+
+    def plotPlateHeatmap(self, plateIndex,
+                         markPositions=[],
+                         measure=None,
+                         useCommonValueAxis=True,
+                         vmin=None,
+                         vmax=None,
+                         showColorBar=True,
+                         horizontalOrientation=True,
+                         cm=plt.cm.RdBu_r,
+                         titleText=None,
+                         hideAxis=False,
+                         fig=None,
+                         showFig=True):
+
+        if measure is None:
+            measure = self.PHEN_GT_VALUE
+
+        if fig is None:
+            fig = plt.figure()
+
+        fig.clf()
+        ax = fig.gca()
+
+        if (titleText is not None):
+            ax.set_title(titleText)
+
+        plateData = self.phenotypes[plateIndex][..., measure]
+        if not horizontalOrientation:
+            plateData = plateData.T
+
+        if (None not in (vmin, vmax)):
+            pass
+        elif (useCommonValueAxis):
+            vmin, vmax = zip(*[
+                (p[..., measure][np.isfinite(p[..., measure])].min(),
+                 p[..., measure][np.isfinite(p[..., measure])].max())
+                for p in self.phenotypes if p is not None])
+            vmin = min(vmin)
+            vmax = max(vmax)
+        else:
+            vmin = plateData[np.isfinite(plateData)].min()
+            vmax = plateData[np.isfinite(plateData)].max()
+
+        im = ax.imshow(
+            plateData,
+            vmin=vmin,
+            vmax=vmax,
+            interpolation="nearest",
+            cmap=cm)
+
+        if (showColorBar):
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", "5%", pad="3%")
+            plt.colorbar(im, cax=cax)
+
+        if (hideAxis):
+            ax.set_axis_off()
+
+        fig.tight_layout()
+        if (showFig):
+            fig.show()
+
+        return fig
 
     def savePhenotypes(self, path=None, delim="\t", newline="\n",
                        askOverwrite=True):

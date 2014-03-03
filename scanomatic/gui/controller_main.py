@@ -78,13 +78,15 @@ class Controller(controller_generic.Controller):
         view = view_main.Main_Window(controller=self, model=model)
 
         super(Controller, self).__init__(None, view=view, model=model)
-        self._logger = logger.tLogger("Main Controller")
+        self._logger = logger.Logger("Main Controller")
+
+        #TODO: FIX new way
+        """
         self._logger.SetDefaultOutputTarget(
             self.paths.log_main_out, catchStdOut=True, catchStdErr=True)
-
         if debug_mode is False:
             self.set_simple_logger()
-
+        """
         self.config = app_config.Config(self.paths)
         self.fixtures = fixture.Fixtures(self.paths, self.config)
         self.scanners = scanner.Scanners(self.paths, self.config)
