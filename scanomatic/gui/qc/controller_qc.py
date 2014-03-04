@@ -80,7 +80,9 @@ class Controller(controller_generic.Controller):
         fig.clf()
         fig.text(0.1, 0.4, msg)
 
-    def plotData(self, fig, plate, position):
+    def plotData(self, fig):
+
+        plate = self._model['plate']
 
         if (self._model['phenotyper'] is None or
                 self._model['phenotyper'][plate] is None):
@@ -89,6 +91,7 @@ class Controller(controller_generic.Controller):
 
         self._model['phenotyper'].plotACurve(
             (plate, ) + position,
+            measure=self._model['phenotype'],
             plotRaw=self._model['showRaw'],
             plotSmooth=self._model['showSmooth'],
             plotRegLine=self._model['showGTregLine'],
@@ -103,9 +106,23 @@ class Controller(controller_generic.Controller):
         return (self._model['phenotyper'] is None and dict() or
                 self._model['phenotyper'].NAMES_OF_PHENOTYPES)
 
-    def plotHeatmap(self, fig, plate):
+    def plotHeatmap(self, fig):
+
+        plate = self._model['plate']
 
         if (self._model['phenotyper'] is None or
                 self._model['phenotyper'][plate] is None):
             self._plotNoData(fig)
             return
+
+    def toggleSelection(self, pos):
+
+        self._model["plate_selections"][pos] != \
+            self._model["plate_selections"][pos]
+
+        return self._model["plate_selections"][pos]
+
+    def removeCurves(self, onlyCurrent=False):
+
+        #TODO: Flag removal filter
+        pass
