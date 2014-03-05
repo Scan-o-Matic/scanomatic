@@ -26,29 +26,53 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.gui.generic.view_generic as view_generic
+#import scanomatic.gui.generic.view_generic as view_generic
 
 #
 # CLASSES
 #
 
 
-class QC_About(gtk.Label):
+class Main_Window(gtk.Window):
 
-    def __init__(self, model, controller):
+    def __init__(self, controller=None, model=None):
+
+        super(Main_Window, self).__init__()
+
+        self.set_default_size(800, 600)
+        self.move(0, 0)
 
         self._controller = controller
         self._model = model
+        self._stage = QC_Stage(model, controller)
 
-        super(QC_About, self).__init__()
+        self.connect("delete_event", self._win_close_event)
 
-        self.set_justify(gtk.JUSTIFY_LEFT)
-        self.set_markup(model['about'])
+    def _win_close_event(self, widget, *args, **kwargs):
 
-        self.show()
+        return (self._model['unsaved'] and False or
+                self._ask_quit())
+
+    def _ask_quit(self):
+
+        dialog = gtk.MessageDialog(
+            flags=gtk.DIALOG_MODAL,
+            type=gtk.MESSAGE_WARNING,
+            buttons=gtk.BUTTONS_YES_NO,
+            message_format=self._model["quit-unsaved"])
+
+        return dialog.run() != gtk.RESPONSE_YES
+
+    def get_stage(self):
+
+        return self._stage
 
 
 class QC_Stage(gtk.VBox):
+
+    COLOR_THiS = 0
+    COLOR_ALL = 1
+    COLOR_FIXED = 2
 
     def __init__(self, model, controller):
 
@@ -57,6 +81,26 @@ class QC_Stage(gtk.VBox):
         self._model = model
         self._controller = controller
 
+        self._widgets_require_data = SensitivityGroup()
+        self._widgets_require_fixed_color = SensitivityGroup()
+        self._widgets_require_selection = SensitivityGroup()
+        self._widgets_require_removed = SensitivityGroup()
+        self._widgets_require_subplates = SensitivityGroup()
+        self._widgets_require_references = SensitivityGroup()
+        self._widgets_require_norm = SensitivityGroup()
+
+        self._widgets_require_data.addDependetGroup(
+            self._widgets_require_fixed_color)
+        self._widgets_require_data.addDependetGroup(
+            self._widgets_require_selection)
+        self._widgets_require_data.addDependetGroup(
+            self._widgets_require_removed)
+        self._widgets_require_data.addDependetGroup(
+            self._widgets_require_references)
+        self._widgets_require_data.addDependetGroup(
+            self._widgets_require_subplates)
+        self._widgets_require_subplates.addDependetGroup(
+            self._widgets_require_norm)
         #
         #PHENOTYPE SELECTOR
         #
@@ -73,6 +117,27 @@ class QC_Stage(gtk.VBox):
             "changed", self._newPhenotype)
 
         dropbox.set_active(0)
+
+        #
+        # LOAD BUTTONS
+        #
+
+        self._buttonLoadData = gtk.Button(self._model['button-load-data'])
+        self._buttonLoadData.connect("clicked", self._loadPlate)
+        self._buttonLoadMetaData = gtk.Button(self._model['button-load-meta'])
+        self._buttonLoadMetaData.connect("clicked", self._loadMetaData)
+
+        #
+        # PLATE SELECTOR
+        #
+
+        self._plateSelectionAdjustment = gtk.Adjustment(0, 0, 0, 1, 1, 0)
+        self._plateSelector = gtk.SpinButton(self._plateSelectionAdjustment,
+                                             0, 0)
+        self._plateSelector.set_wrap(True)
+        self._plateSelector.set_snap_to_ticks(True)
+
+        self._widgets_require_data.append(self._plateSelector)
 
         #
         #HEATMAP
@@ -96,12 +161,67 @@ class QC_Stage(gtk.VBox):
 
         self._HeatMapInfo = gtk.Label("")
 
+        self._plateSaveImage = gtk.Button(self._model['plate-save'])
+        self._plateSaveImage.connect("clicked", self._saveImage)
+        self._widgets_require_data.append(self._plateSaveImage)
+
+        #
+        # HEATMAP COLOR VALUES
+        #
+
+        self._colorsThisPlate = gtk.RadioButton(
+            group=None, label=self._model['color-one-plate'])
+        self._colorsAllPlate = gtk.RadioButton(
+            group=self._colorsThisPlate, label=self._model['color-all-plates'])
+        self._colorsFixed = gtk.RadioButton(
+            group=self._colorsThisPlate, label=self._model['color-fixed'])
+        self._colorMin = gtk.Entry("")
+        self._colorMax = gtk.Entry("")
+        self._colorFixUpdate = gtk.Button(self._model['color-fixed-update'])
+        self._colorsThisPlate.set_active(True)
+        self._colorsThisPlate.connect("toggled", self._setColors,
+                                      self.COLOR_THiS)
+        self._colorsAllPlate.connect("toggled", self._setColors,
+                                     self.COLOR_ALL)
+        self._colorsFixed.connect("toggled", self._setColors, self.COLOR_FIXED)
+
+        self._widgets_require_data.append(self._colorsThisPlate)
+        self._widgets_require_data.append(self._colorsAllPlate)
+        self._widgets_require_data.append(self._colorsFixed)
+
+        self._widgets_require_fixed_color.append(self._colorMin)
+        self._widgets_require_fixed_color.appned(self._colorMax)
+
         #
         # Curve Display
         #
         self._curve_figure = plt.Figure(figsize=(40, 40), dpi=150)
         self._curve_figure.add_axes()
         self._curve_figure_ax = self._curve_figure.gca()
+
+        self._curveSaveImage = gtk.Button(self._model['curve-save'])
+        self._curveSaveImage.connect("clicked", self._saveImage)
+
+        self._widgets_require_selection.append(self._curveSaveImage)
+
+        #
+        # Value Selection Ranges
+        #
+
+        self._lowerBoundAdjustment = gtk.Adjustment(0, 0, 1, 0.01, 0.01, 1)
+        self._higherBoundAdjustment = gtk.Adjustment(0, 0, 1, 0.01, 0.01, 1)
+        self._lowerBoundWidget = gtk.HScale(self._lowerBoundAdjustment)
+        self._higherBoundWidget = gtk.HScale(self._higherBoundAdjustment)
+        self._lowerBoundAdjustment.connect("value_changed",
+                                           self._updateBounds)
+        self._higherBoundAdjustment.connect("value_changed",
+                                            self._updateBounds)
+
+        self._updatingBounds = False
+        self._updateBounds()
+
+        self._widgets_require_data.append(self._lowerBoundWidget)
+        self._widgets_require_data.append(self._higherBoundWidget)
 
         #
         #Buttons Working on selected curves
@@ -118,12 +238,282 @@ class QC_Stage(gtk.VBox):
         self._buttonRemoveCurvesAllPhenotypes.connect(
             "clicked", self._removeCurvesAllPhenotype)
 
-        self._selectionButtons = (self._buttonUnSelect,
-                                  self._buttonRemoveCurvesPhenotype,
-                                  self._buttonRemoveCurvesAllPhenotypes)
+        self._widgets_require_selection.append(self._buttonUnSelect)
+        self._widgets_require_selection.append(
+            self._buttonRemoveCurvesPhenotype)
+        self._widgets_require_selection.append(
+            self._buttonRemoveCurvesAllPhenotypes)
+
+        self._undoButton = gtk.Button(self._model['undo'])
+        self._undoButton.connect("clicked", self._undoRemove)
+
+        self._widgets_require_removed.append(self._undoButton)
+
+        #
+        # Subplate selection
+        #
+
+        self._subplate_0_0 = gtk.CheckButton(self._model['subplate-0-0'])
+        self._subplate_0_1 = gtk.CheckButton(self._model['subplate-0-1'])
+        self._subplate_1_0 = gtk.CheckButton(self._model['subplate-1-0'])
+        self._subplate_1_1 = gtk.CheckButton(self._model['subplate-1-1'])
+
+        self._subplate_0_0.connect("toggled", self._subplateSelect, (0, 0))
+        self._subplate_0_1.connect("toggled", self._subplateSelect, (0, 1))
+        self._subplate_1_0.connect("toggled", self._subplateSelect, (1, 0))
+        self._subplate_1_1.connect("toggled", self._subplateSelect, (1, 1))
+
+        self._widgets_require_data.add(self._subplate_1_1)
+        self._widgets_require_data.add(self._subplate_1_0)
+        self._widgets_require_data.add(self._subplate_0_1)
+        self._widgets_require_data.add(self._subplate_0_0)
+
+        #
+        # Normalize
+        #
+
+        self._setRefButton = gtk.Button(self._model['references'])
+        self._setRefButton.connect("clicked", self._setReferences)
+
+        self._widgets_require_subplates.append(self._setRefButton)
+
+        self._normalize = gtk.Button(self._model['normalize'])
+        self._normalize.connect("clicked", self._normalize)
+
+        self._widgets_require_references.append(self._normalize)
+
+        #
+        # Save
+        #
+
+        self._overwriteAbsolute = gtk.Button(self._model['save-absolute'])
+        self._overwriteAbsolute.connect("clicked", self._saveAbsolute)
+
+        self._widgets_require_data.append(self._overwriteAbsolute)
+
+        self._saveNormed = gtk.Button(self._model['save-relative'])
+        self._saveNormed.connect("clicked", self._saveRelative)
+
+        self._widgets_require_norm.append(self._saveNormed)
 
         self._curSelection = None
         self._multiSelecting = False
+
+    @property
+    def colorMin(self):
+
+        try:
+            val = float(self._colorMin.get_value())
+        except:
+            val = None
+
+        return val
+
+    @property
+    def colorMax(self):
+
+        try:
+            val = float(self._colorMax.get_value())
+        except:
+            val = None
+
+        return val
+
+    def _subplateSelect(self, widget, subPlate):
+
+        self._model['subplateSelected'][subPlate] = widget.get_active()
+        self._controller.setSubPlateSelection(subPlate)
+        self._widgets_require_subplates.sensitive = \
+            self._model['subplateSelected'].any()
+
+    def _saveAbsolute(self, widget):
+
+        dialog = gtk.FileChooserDialog(
+            title=self._model['saveTo'],
+            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
+                     gtk.RESPONSE_OK))
+        dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+
+        savePath = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
+                    or None)
+
+        if (savePath is not None and self._controller.saveAbsolute(savePath)):
+            self._HeatMapInfo.set_text(self._model['saved-absolute'].format(
+                savePath))
+
+    def _saveRelative(self, widget):
+
+        dialog = gtk.FileChooserDialog(
+            title=self._model['saveTo'],
+            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
+                     gtk.RESPONSE_OK))
+        dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+
+        savePath = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
+                    or None)
+
+        if (savePath is not None and self._controller.saveNormed(savePath)):
+            self._HeatMapInfo.set_text(self._model['saved-normed'].format(
+                savePath))
+
+    def _setReferences(self, widget):
+
+        self._model['reference-positions'] = self['subplateSelected'].copy()
+        self._HeatMapInfo.set_text(self._model['set-references'])
+        self._widgets_require_references.sensitive = True
+
+    def _normalize(self, widget):
+
+        self._controller.normalize()
+        self._widgets_require_norm.sensitive = True
+
+    def _undoRemove(self, wiget):
+
+        self._widgets_require_removed.sensitive = self._controller.undoLast()
+
+    def _saveImage(self, widget):
+
+        dialog = gtk.FileChooserDialog(
+            title=self._model['saveTo'],
+            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
+                     gtk.RESPONSE_OK))
+        dialog.set_action(gtk.FILE_CHOOSER_ACTION_SAVE)
+
+        fname = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
+                 or None)
+
+        if fname is not None:
+            fig = (self._widget is self._plateSaveImage and self._plate_figure
+                   or self._curve_figure)
+
+            fig.savefig(fname)
+
+            self._HeatMapInfo.set_text(self._model['image-saved'].format(
+                fname))
+
+    def _setColors(self, widget, colorSetting):
+
+        if widget.get_active():
+            self._widgets_require_fixed_color.sensitive = \
+                colorSetting == self.COLOR_FIXED
+
+            self._controller.plotHeatmap(self._plate_figure, colorSetting)
+
+    def addSelection(self, pos):
+
+        if pos not in self._model['selection_patches']:
+            self._model['selection_patches'][pos] = plt_patches.Rectangle(
+                pos, 1, 1, ec='k', fill=True, lw=1,
+                hatch='o')
+
+    def removeSelection(self, pos):
+
+        if pos in self._model['selection_patches']:
+
+            self._plate_figure_ax.remove_patch(
+                self._model['selection_patches'][pos])
+
+            del self._model['selection_patches'][pos]
+
+    def _loadMetaData(self, widget):
+
+        dialog = gtk.FileChooserDialog(
+            title=self._model['meta-data-files'],
+            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
+                     gtk.RESPONSE_OK))
+
+        dialog.set_action(gtk.FILE_CHOOSER_ACTION_OPEN)
+        dialog.set_select_multiple(True)
+
+        pathMetaData = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
+                        or None)
+
+        if (pathMetaData is not None and
+                self._controller.loadMetaData(pathMetaData)):
+
+            self._HeatMapInfo.set_text(self._model["meta-data-loaded"])
+
+    def _loadPlate(self, widget=None):
+
+        if widget is None:
+
+            self._updateBounds()
+            self._widgets_require_data.sensitive = False
+
+        else:
+
+            if widget is self._buttonLoadData:
+
+                dialog = gtk.FileChooserDialog(
+                    title=self._model['load-data-dir'],
+                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
+                             gtk.RESPONSE_OK))
+
+                dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+
+                dataPath = (dialog.run() == gtk.RESPONSE_OK and
+                            dialog.get_filename() or None)
+
+                if dataPath is not None:
+                    self._controller.loadData(dataPath)
+                    self._widgets_require_data.sensitive = True
+
+            elif widget is self._plateSelectionAdjustment:
+
+                self._model['plate'] = \
+                    self._plateSelectionAdjustment.get_value()
+
+            self._newPhenotype()
+
+    def _setBoundaries(self):
+
+        lower, upper, minVal, maxVal = self._controller.getRecommendedFilter()
+        self._updatingBounds = True
+        self._lowerBoundAdjustment.set_lower(minVal)
+        self._lowerBoundAdjustment.set_upper(maxVal)
+
+        self._higherBoundAdjustment.set_lower(minVal)
+        self._higherBoundAdjustment.set_upper(maxVal)
+
+        step = (maxVal - minVal) / 250.0
+
+        self._lowerBoundAdjustment.set_page_increment(step)
+        self._higherBoundAdjustment.set_page_increment(step)
+
+        self._lowerBoundAdjustment.set_step_increment(step)
+        self._higherBoundAdjustment.set_step_increment(step)
+
+        self._lowerBoundAdjustment.set_value(lower)
+
+        self._updatingBounds = False
+
+        self._higherBoundAdjustment.set_value(upper)
+
+    def _updateBounds(self, widget=None):
+
+        if not self._updatingBounds:
+
+            self._updatingBounds = True
+
+            if widget is self._lowerBoundAdjustment:
+
+                if (widget.get_value() >=
+                        self._higherBoundAdjustment.get_value()):
+
+                    self._higherBoundAdjustment.set_value(widget.get_value())
+
+            elif widget is self._higherBoundAdjustment:
+
+                if (widget.get_value() <=
+                        self._lowerBoundAdjustment.get_value()):
+
+                    self._lowerBoundAdjustment.set_value(widget.get_value())
+
+            self._controller.setSelection(
+                self._lowerBoundAdjustment.get_value(),
+                self._higherBoundAdjustment.get_value())
+
+            self._updatingBounds = False
 
     def _mousePress(self, event, *args, **args):
 
@@ -159,9 +549,8 @@ class QC_Stage(gtk.VBox):
                 if not self._multiSelecting:
                     self._controller.plotData(self._curve_figure)
 
-                for b in self._selectionButtons:
-                    b.set_sensitive(
-                        len(self._model['selection_patches']) > 0)
+                    self._widgets_require_selection.sensitive = \
+                        len(self._model['selection_patches']) > 0
 
     def _unselect(self, *args):
 
@@ -170,18 +559,19 @@ class QC_Stage(gtk.VBox):
 
         self._model['selection_patches'] = dict()
 
-        for b in self._selectionButtons:
-            b.set_sensitive(False)
+        self._widgets_require_selection.sensitive = False
 
         self._curve_figure_ax.cla()
 
     def _removeCurvesPhenotype(self, *args):
 
         self._controller.removeCurves(onlyCurrent=True)
+        self._widgets_require_removed.sensitive = True
 
     def _removeCurvesAllPhenotype(self, *args):
 
         self._controller.removeCurves(onlyCurrent=False)
+        self._widgets_require_removed.sensitive = True
 
     def _newPhenotype(self, widget, *args):
 
@@ -192,12 +582,13 @@ class QC_Stage(gtk.VBox):
         self._model['phenotype'] = self._phenotypeName2Key[key]
         self._unselect()
         self._controller.plotHeatmap(self._plate_figure)
+        self._setBoundaries()
 
     def _pressKey(self, key):
 
         if "control" in key or "ctrl" in key:
             self._multiSelecting = True
-            self._HeatMapInfo.set_text(self._model['multiselecting'])
+            self._HeatMapInfo.set_text(self._model['msg-multiSelecting'])
 
     def _releaseKey(self, key):
 
@@ -205,3 +596,160 @@ class QC_Stage(gtk.VBox):
             self._multiSelecting = False
             self._HeatMapInfo.set_text("")
             self._controller.plotData(self._curve_figure)
+
+
+class SensitivityGroup(object):
+
+    def __init__(self, startingValue=True):
+        """The Sensitivity group bundles a set of widgets that share
+        sensitivity pattern. It also allows for dependent groups False
+        cascading.
+
+        Kwargs:
+
+            startingValue (bool):   The starting state of the group.
+                                    Defalt value is ``True``
+
+        Group members are added with ``append`` or ``add`` methods.
+
+        Dependent groups are added with ``addDependetGroup`` method
+
+        Senistivity is set by e.g. ``SensitivityGroup.sensitive = False``,
+        by using ``SensitivityGroup.toggle()`` or to cascade the setting
+        of ``True`` use ``SensitivityGroup.cascadeTrue()``
+
+        .. note::
+
+            By setting senstivity to ``False`` all dependent groups
+            are also set to ``False``.
+
+        .. Example Usage::
+
+            >>>button1 = gtk.Button()
+            >>>entry1 = gtk.Entry()
+
+            >>>group1 = SensitivityGroup()
+            >>>group1.add(button1)
+            >>>group1.add(entry1)
+
+            >>>entry2 = gtk.Entry()
+
+            >>>group2 = SensitivityGroup()
+            >>>group1.addDependetGroup(group2)
+            >>>group2.add(entry2)
+
+            >>>#Toggling group1 will set all to False
+            >>>group1.toggle()
+
+            >>>#Setting group1 to True does not cascade:
+            >>>group1.sensitive = True
+
+            >>>print group2.sensitive
+            False
+
+        """
+        self._lastValue = startingValue
+        self._members = set()
+        self._dependentGroups = set()
+
+    def __keys__(self):
+
+        return self._members
+
+    def __getitem__(self, member):
+
+        if member in self._members:
+            return member.get_sensitive()
+        else:
+            raise KeyError
+
+    def append(self, member):
+        """See ``SensitivityGroup.add``"""
+
+        self.add(member)
+
+    def add(self, member):
+        """Adds a new group member
+
+        Args:
+
+            member (gtk.Widget):    A new member of the sensitivity group
+
+        .. note::
+
+            Members must expose the methods ``member.get_sensitive()`` and
+            ``member.set_senitive(bool)``
+
+        .. note::
+
+            The added member's sensitivity is set to the groups current
+            sensitivity state.
+
+        """
+        if not(hasattr(member, "get_sensitive") and
+               hasattr(member, "set_sensitive")):
+
+            raise TypeError
+
+        else:
+
+            member.set_sensitive(self._lastValue)
+            self._members.add(member)
+
+    def _circularityCheck(self, group):
+        """Searches dependent group hierarchy for existence of ``group``"""
+
+        if group in self._dependentGroups:
+            return True
+
+        for dependentGroup in self._dependentGroups:
+            if dependentGroup._circularityCheck():
+                return True
+
+        return False
+
+    def addDependetGroup(self, group):
+        """Dependet groups are groups that inherits the False
+        but no the True of current group
+
+        Raises:
+
+            ValueError: If the current group can be found as depending
+                        on the group to be added.
+
+        """
+
+        if group._circularityCheck(self):
+
+            raise ValueError
+
+        else:
+
+            self._dependentGroups.add(group)
+
+    def cascadeTrue(self):
+        """Method enforces setting sensitivity to ``True`` for the group's
+        members and all members of dependent groups"""
+
+        self.sensitive = True
+        for g in self._dependentGroups:
+            g.cascadeTrue()
+
+    def toggle(self):
+        """Helper method for toggling the state of the sensitivity group"""
+        self.sensitive != self._lastValue
+
+    @property
+    def sensitive(self):
+
+        return self._lastValue
+
+    @sensitive.setter
+    def sensitive(self, value):
+
+        for member in self._members:
+            member.set_sensitive(value)
+
+        if value is False:
+            for group in self._dependentGroups:
+                group.sensitive = value

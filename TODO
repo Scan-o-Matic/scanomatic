@@ -4,9 +4,9 @@
 
 **	QC UI:
 
-		Import data
+		v Import data
 
-		Import meta-data
+		v Import meta-data
 
 		v Heatmap
 			v flip between phenotypes
@@ -14,23 +14,23 @@
 			v select one and multiple positions
 				-> multiple do simple curves in display
 
-			Set value min and max as:
+			v Set value min and max as:
 				Per plate, per 4 plates, fixed value
 
-			Save Image
+			v Save Image
 
 		v Curve display
 
-		    Save Image
+		    v Save Image
 
-		Group selection sliders
+		v Group selection sliders
 
 			for each phenotype min max range for selecting outliers.
 				After sliding allow manual toggling of selection
 
-		Sub-plate selectors
+		v Sub-plate selectors
 
-			Four checkboxes
+			v Four checkboxes
 
         v Unselect all
 
@@ -40,19 +40,19 @@
 
 			v for this phenotype.
 
-		Normalize all phenotypes.
+		v Normalize all phenotypes.
 
-			Mark reference positions
+			v Mark reference positions
 
-			New set of phenotypes
+			v New set of phenotypes
 
-		Save
+		v Save
 
-			Overwrite input (permanently remove curves)
+			v Overwrite input (permanently remove curves)
 
-			Save phenotypes
+			v Save phenotypes
 
-        Undo
+        v Undo
 --
 
 **  RPC needs to accumulate job information until requested but still

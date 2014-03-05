@@ -44,11 +44,12 @@ class Controller(controller_generic.Controller):
         #PATHS NEED TO INIT BEFORE GUI
         self.paths = paths.Paths()
 
-        model = model_qc.load_app_model()
         if asApp:
+            model = model_qc.NewModel.LoadAppModel()
             view = view_qc.Main_Window(controller=self, model=model)
         else:
-            view = view_qc.Stage(controller=self, model=model)
+            model = model_qc.NewModel.LoadStageModel()
+            view = view_qc.QC_Stage(controller=self, model=model)
 
         super(Controller, self).__init__(None, view=view, model=model)
         self._logger = logger.Logger("Main Controller")
@@ -82,6 +83,8 @@ class Controller(controller_generic.Controller):
 
     def plotData(self, fig):
 
+        #TODO: Change so it works on selected positoins
+
         plate = self._model['plate']
 
         if (self._model['phenotyper'] is None or
@@ -106,7 +109,7 @@ class Controller(controller_generic.Controller):
         return (self._model['phenotyper'] is None and dict() or
                 self._model['phenotyper'].NAMES_OF_PHENOTYPES)
 
-    def plotHeatmap(self, fig):
+    def plotHeatmap(self, fig, newColorSpace=None):
 
         plate = self._model['plate']
 
@@ -115,6 +118,29 @@ class Controller(controller_generic.Controller):
             self._plotNoData(fig)
             return
 
+        if newColorSpace is not None:
+            stage = self._view.get_stage()
+
+            minVal = None
+            maxVal = None
+
+            if (newColorSpace == stage.COLOR_FIXED):
+
+                minVal = stage.colorMin
+                maxVal = stage.colorMax
+
+            if minVal is None or maxVal is None:
+
+                self._model['fixedColors'] = None
+
+            else:
+
+                self._model['fixedColors'] = (minVal, maxVal)
+
+            self._model['colorsAll'] = newColorSpace == stage.COLOR_ALL
+
+        #TODO: plot!
+
     def toggleSelection(self, pos):
 
         self._model["plate_selections"][pos] != \
@@ -122,7 +148,76 @@ class Controller(controller_generic.Controller):
 
         return self._model["plate_selections"][pos]
 
+    def setSelected(self, pos, value):
+
+        updated = value != self._model["plate_selections"][pos]
+        self._model["plate_selections"][pos] = value
+        return updated
+
     def removeCurves(self, onlyCurrent=False):
 
         #TODO: Flag removal filter
+        pass
+
+    def undoLast(self):
+
+        #TODO: unflag or something
+        return False
+
+    def getRecommendedFilter(self):
+
+        #TODO: Filter plate as first step of norm
+        return 0, 1, 0, 1
+
+    def loadData(self, path):
+
+        #TODO: load a phenotyper
+        pass
+
+    def loadMetaData(self, path):
+
+        #TODO: load metadata
+        pass
+
+    def saveAbsolute(self, path):
+
+        #TODO: Save data to path
+        return False
+
+    def saveNormed(self, path):
+
+        #TODO: Save data to path
+        return False
+
+    def setSubPlateSelection(self, platePos):
+
+        selStatus = self._model['subplateSelected'][platePos]
+        stage = self._view.get_stage()
+        off1, off2 = platePos
+        for id1, d1 in enumerate(self._model['plate_selections']][off2::2]):
+
+            for id2, v in enumerate(d1[off2::2]):
+
+                pos = (id1 * 2 + off1, id2 * 2 + off2)
+
+                if self.setSelected(pos, selStatus):
+                    if selStatus:
+                        stage.addSelection(pos)
+                    else:
+                        stage.removeSelection(pos)
+
+    def setSelection(self, lowerBound, higherBound):
+
+        #TODO: Find all positions where not inside bounds
+        #If need to toggle inform view
+        stage = self._view.get_stage()
+        outliers = []
+        for pos in outliers:
+            if self.setSelected(pos, True):
+                stage.addSelection(pos)
+
+    def Normalize(self):
+
+        #TODO:
+
         pass
