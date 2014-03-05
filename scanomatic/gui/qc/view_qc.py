@@ -76,7 +76,7 @@ class QC_Stage(gtk.VBox):
 
     def __init__(self, model, controller):
 
-        super(QC_Stage, self).__init__(False, 0)
+        super(QC_Stage, self).__init__(False, spacing=2)
 
         self._model = model
         self._controller = controller
@@ -101,35 +101,27 @@ class QC_Stage(gtk.VBox):
             self._widgets_require_subplates)
         self._widgets_require_subplates.addDependetGroup(
             self._widgets_require_norm)
-        #
-        #PHENOTYPE SELECTOR
-        #
-        dropbox = gtk.combo_box_new_text()
-
-        self._phenotypeName2Key = {}
-        for k in sorted(self._model['phenotyper'].NAMES_OF_PHENOTYPES.keys()):
-
-            n = self._model['phenotyper'].NAMES_OF_PHENOTYPES[k]
-            dropbox.append_text(n)
-            self._phenotypeName2Key[n] = k
-
-        dropbox.connect(
-            "changed", self._newPhenotype)
-
-        dropbox.set_active(0)
 
         #
         # LOAD BUTTONS
         #
+
+        hbox = gtk.HBox(False, spacing=2)
 
         self._buttonLoadData = gtk.Button(self._model['button-load-data'])
         self._buttonLoadData.connect("clicked", self._loadPlate)
         self._buttonLoadMetaData = gtk.Button(self._model['button-load-meta'])
         self._buttonLoadMetaData.connect("clicked", self._loadMetaData)
 
+        hbox.pack_start(self._buttonLoadData, expand=False, fill=False)
+        hbox.pack_start(self._buttonLoadMetaData, expand=False, fill=False)
+        self.pack_start(hbox, expand=False, fill=False)
+
         #
         # PLATE SELECTOR
         #
+
+        hbox = gtk.HBox(False, spacing=2)
 
         self._plateSelectionAdjustment = gtk.Adjustment(0, 0, 0, 1, 1, 0)
         self._plateSelector = gtk.SpinButton(self._plateSelectionAdjustment,
@@ -139,9 +131,34 @@ class QC_Stage(gtk.VBox):
 
         self._widgets_require_data.append(self._plateSelector)
 
+        hbox.pack_start(self._plateSelector, expand=False, fill=False)
+
+        #
+        #PHENOTYPE SELECTOR
+        #
+        self._phenotypeSelector = gtk.combo_box_new_text()
+
+        self._phenotypeName2Key = {}
+        for k in sorted(self._model['phenotyper'].NAMES_OF_PHENOTYPES.keys()):
+
+            n = self._model['phenotyper'].NAMES_OF_PHENOTYPES[k]
+            self._phenotypeSelector.append_text(n)
+            self._phenotypeName2Key[n] = k
+
+        self._phenotypeSelector.set_active(0)
+        self._phenotypeSelector.connect(
+            "changed", self._newPhenotype)
+
+        self._widgets_require_data.add(self._phenotypeSelector)
+
+        hbox.pack_start(self._phenotypeSelector, expand=False, fill=False)
+        self.pack_start(hbox, expand=False, fill=False)
+
         #
         #HEATMAP
         #
+        hbox = gtk.HBox(False, spacing=2)
+
         self._plate_figure = plt.Figure(figsize=(40, 40), dpi=150)
         self._plate_figure.add_axes()
         self._plate_figure_ax = self._plate_figure.gca()
@@ -165,9 +182,23 @@ class QC_Stage(gtk.VBox):
         self._plateSaveImage.connect("clicked", self._saveImage)
         self._widgets_require_data.append(self._plateSaveImage)
 
+        vbox = gtk.VBox(False, spacing=2)
+        vbox.pack_start(self._plate_image_canvas, expand=True, fill=True)
+        hbox2 = gtk.HBox(False, spacing=2)
+        hbox2.pack_start(self._HeatMapInfo, expand=True, fill=True)
+        hbox2.pack_start(self._plateSaveImage, expand=False, fill=False)
+        vbox.pack_start(hbox2, expand=False, fill=False)
+        hbox.pack_start(vbox, expand=True, fill=True)
+
         #
         # HEATMAP COLOR VALUES
         #
+
+        plateActionVB = gtk.VBox(False, spacing=2)
+        frame = gtk.Frame(self._model['colors'])
+        vbox2 = gtk.VBox(False, spacing=2)
+        frame.add(hbox2)
+        plateActionVB.pack_start(frame, expand=False, fill=False)
 
         self._colorsThisPlate = gtk.RadioButton(
             group=None, label=self._model['color-one-plate'])
@@ -191,6 +222,16 @@ class QC_Stage(gtk.VBox):
 
         self._widgets_require_fixed_color.append(self._colorMin)
         self._widgets_require_fixed_color.appned(self._colorMax)
+
+        vbox2.pack_start(self._colorsThisPlate, expand=False, fill=False)
+        vbox2.pack_start(self._colorsAllPlate, expand=False, fill=False)
+        vbox2.pack_start(self._colorsFixed, expand=False, fill=False)
+        hbox2 = gtk.HBox(False, spacing=2)
+        vbox2.pack_start(hbox2, expand=False, fill=False)
+        hbox2.pack_start(self._colorMin, expand=False, fill=False)
+        hbox2.pack_start(gtk.Label("-"), expand=False, fill=False)
+        hbox2.pack_start(self._colorMax, expand=False, fill=False)
+        hbox2.pack_start(self._colorFixUpdate, expand=False, fill=False)
 
         #
         # Curve Display

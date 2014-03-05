@@ -126,6 +126,7 @@ _stagePresets = {
 
     'plate-save': "Save Plate Image",
 
+    'colors': 'Set Colors From:',
     'color-one-plate': "This plate",
     'color-all-plates': "All plates",
     'color-fixed': "Values",

@@ -194,7 +194,7 @@ class Controller(controller_generic.Controller):
         selStatus = self._model['subplateSelected'][platePos]
         stage = self._view.get_stage()
         off1, off2 = platePos
-        for id1, d1 in enumerate(self._model['plate_selections']][off2::2]):
+        for id1, d1 in enumerate(self._model['plate_selections'][off2::2]):
 
             for id2, v in enumerate(d1[off2::2]):
 
