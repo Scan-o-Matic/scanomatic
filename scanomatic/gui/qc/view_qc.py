@@ -157,7 +157,6 @@ class QC_Stage(gtk.VBox):
         #
         #HEATMAP
         #
-        hbox = gtk.HBox(False, spacing=2)
 
         self._plate_figure = plt.Figure(figsize=(40, 40), dpi=150)
         self._plate_figure.add_axes()
@@ -182,19 +181,22 @@ class QC_Stage(gtk.VBox):
         self._plateSaveImage.connect("clicked", self._saveImage)
         self._widgets_require_data.append(self._plateSaveImage)
 
+        hbox = gtk.HBox(False, spacing=2)
+        self.pack_start(hbox, expand=True, fill=True)
         vbox = gtk.VBox(False, spacing=2)
+        hbox.pack_start(vbox, expand=True, fill=True)
         vbox.pack_start(self._plate_image_canvas, expand=True, fill=True)
         hbox2 = gtk.HBox(False, spacing=2)
         hbox2.pack_start(self._HeatMapInfo, expand=True, fill=True)
         hbox2.pack_start(self._plateSaveImage, expand=False, fill=False)
         vbox.pack_start(hbox2, expand=False, fill=False)
-        hbox.pack_start(vbox, expand=True, fill=True)
 
         #
         # HEATMAP COLOR VALUES
         #
 
         plateActionVB = gtk.VBox(False, spacing=2)
+        hbox.pack_start(plateActionVB, expand=False, fill=False)
         frame = gtk.Frame(self._model['colors'])
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(hbox2)
@@ -234,20 +236,13 @@ class QC_Stage(gtk.VBox):
         hbox2.pack_start(self._colorFixUpdate, expand=False, fill=False)
 
         #
-        # Curve Display
-        #
-        self._curve_figure = plt.Figure(figsize=(40, 40), dpi=150)
-        self._curve_figure.add_axes()
-        self._curve_figure_ax = self._curve_figure.gca()
-
-        self._curveSaveImage = gtk.Button(self._model['curve-save'])
-        self._curveSaveImage.connect("clicked", self._saveImage)
-
-        self._widgets_require_selection.append(self._curveSaveImage)
-
-        #
         # Value Selection Ranges
         #
+
+        frame = gtk.Frame(self._model['multi-select-phenotype'])
+        plateActionVB.pack_start(frame, expand=False, fill=False)
+        vbox2 = gtk.VBox(False, spacing=2)
+        frame.add(vbox2)
 
         self._lowerBoundAdjustment = gtk.Adjustment(0, 0, 1, 0.01, 0.01, 1)
         self._higherBoundAdjustment = gtk.Adjustment(0, 0, 1, 0.01, 0.01, 1)
@@ -264,9 +259,53 @@ class QC_Stage(gtk.VBox):
         self._widgets_require_data.append(self._lowerBoundWidget)
         self._widgets_require_data.append(self._higherBoundWidget)
 
+        hbox2 = gtk.HBox(False, spacing=2)
+        vbox2.pack_start(hbox2, expand=False, fill=False)
+        hbox2.pack_start(gtk.Label(self._model['multi-sel-lower']),
+                         expand=False, fill=False)
+        hbox2.pack_start(self._lowerBoundWidget, expand=False, fill=False)
+        hbox2 = gtk.HBox(False, spacing=2)
+        vbox2.pack_start(hbox2, expand=False, fill=False)
+        hbox2.pack_start(gtk.Label(self._model['multi-sel-higher']),
+                         expand=False, fill=False)
+        hbox2.pack_start(self._higherBoundWidget, expand=False, fill=False)
+
+        #
+        # Subplate selection
+        #
+
+        self._subplate_0_0 = gtk.CheckButton(self._model['subplate-0-0'])
+        self._subplate_0_1 = gtk.CheckButton(self._model['subplate-0-1'])
+        self._subplate_1_0 = gtk.CheckButton(self._model['subplate-1-0'])
+        self._subplate_1_1 = gtk.CheckButton(self._model['subplate-1-1'])
+
+        self._subplate_0_0.connect("toggled", self._subplateSelect, (0, 0))
+        self._subplate_0_1.connect("toggled", self._subplateSelect, (0, 1))
+        self._subplate_1_0.connect("toggled", self._subplateSelect, (1, 0))
+        self._subplate_1_1.connect("toggled", self._subplateSelect, (1, 1))
+
+        self._widgets_require_data.add(self._subplate_1_1)
+        self._widgets_require_data.add(self._subplate_1_0)
+        self._widgets_require_data.add(self._subplate_0_1)
+        self._widgets_require_data.add(self._subplate_0_0)
+
+        frame = gtk.Frame(self._model['subplate-selection'])
+        vbox2 = gtk.VBox(False, spacing=2)
+        frame.add(vbox2)
+        plateActionVB.pack_start(frame, expand=False, fill=False)
+        hbox2 = gtk.HBox(False, spacing=2)
+        vbox2.pack_start(hbox2, expand=False, fill=False)
+        hbox2.pack_start(self._subplate_0_0, expand=False, fill=False)
+        hbox2.pack_start(self._subplate_0_1, expand=False, fill=False)
+        hbox2 = gtk.HBox(False, spacing=2)
+        vbox2.pack_start(hbox2, expand=False, fill=False)
+        hbox2.pack_start(self._subplate_1_0, expand=False, fill=False)
+        hbox2.pack_start(self._subplate_1_1, expand=False, fill=False)
+
         #
         #Buttons Working on selected curves
         #
+
         self._buttonUnSelect = gtk.Button(self._model['unselect'])
         self._buttonRemoveCurvesPhenotype = gtk.Button(
             self._model['removeCurvesPhenotype'])
@@ -290,24 +329,37 @@ class QC_Stage(gtk.VBox):
 
         self._widgets_require_removed.append(self._undoButton)
 
+        frame = gtk.Frame(self._model['selections-section'])
+        vbox2 = gtk.VBox(False, spacing=2)
+        frame.add(vbox2)
+        plateActionVB.pack_start(frame, expand=False, fill=False)
+        vbox2.pack_start(self._buttonUnSelect, expand=False, fill=False)
+        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False)
+        vbox2.pack_start(self._buttonRemoveCurvesPhenotype, expand=False,
+                         fill=False)
+        vbox2.pack_start(self._buttonRemoveCurvesAllPhenotypes,
+                         expand=False, fill=False)
+        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False)
+        vbox2.pack_start(self._undoButton, expand=False, fill=False)
+
         #
-        # Subplate selection
+        # Curve Display
         #
 
-        self._subplate_0_0 = gtk.CheckButton(self._model['subplate-0-0'])
-        self._subplate_0_1 = gtk.CheckButton(self._model['subplate-0-1'])
-        self._subplate_1_0 = gtk.CheckButton(self._model['subplate-1-0'])
-        self._subplate_1_1 = gtk.CheckButton(self._model['subplate-1-1'])
+        self._curve_figure = plt.Figure(figsize=(40, 40), dpi=150)
+        self._curve_figure.add_axes()
+        self._curve_figure_ax = self._curve_figure.gca()
 
-        self._subplate_0_0.connect("toggled", self._subplateSelect, (0, 0))
-        self._subplate_0_1.connect("toggled", self._subplateSelect, (0, 1))
-        self._subplate_1_0.connect("toggled", self._subplateSelect, (1, 0))
-        self._subplate_1_1.connect("toggled", self._subplateSelect, (1, 1))
+        self._curve_image_canvas = FigureCanvas(self._curve_figure)
 
-        self._widgets_require_data.add(self._subplate_1_1)
-        self._widgets_require_data.add(self._subplate_1_0)
-        self._widgets_require_data.add(self._subplate_0_1)
-        self._widgets_require_data.add(self._subplate_0_0)
+        self._curveSaveImage = gtk.Button(self._model['curve-save'])
+        self._curveSaveImage.connect("clicked", self._saveImage)
+
+        self._widgets_require_selection.append(self._curveSaveImage)
+
+        hbox = gtk.HBox(False, spacing=2)
+        self.pack_start(hbox, expand=True, fill=True)
+        hbox.pack_start(self._curve_image_canvas, expand=True, fill=True)
 
         #
         # Normalize
@@ -322,6 +374,16 @@ class QC_Stage(gtk.VBox):
         self._normalize.connect("clicked", self._normalize)
 
         self._widgets_require_references.append(self._normalize)
+
+        vbox = gtk.VBox(False, spacing=2)
+        hbox.pack_start(vbox, expand=False, fill=False)
+        frame = gtk.Frame(self._model['frame-normalize'])
+        vbox.pack_start(frame, expand=False, fill=False)
+        vbox2 = gtk.VBox(False, spacing=2)
+        frame.add(vbox2)
+        vbox2.pack_start(self._setRefButton, expand=False, fill=False)
+        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False)
+        vbox2.pack_start(self._normalize, expand=False, fill=False)
 
         #
         # Save
@@ -339,6 +401,14 @@ class QC_Stage(gtk.VBox):
 
         self._curSelection = None
         self._multiSelecting = False
+
+        vbox.pack_start(self._overwriteAbsolute, expand=False, fill=False,
+                        padding=4)
+
+        vbox.pack_start(self._saveNormed, expand=False, fill=False,
+                        padding=4)
+
+        self.show_all()
 
     @property
     def colorMin(self):

@@ -134,21 +134,28 @@ _stagePresets = {
 
     'curve-save': "Save Curve Image",
 
+    'selections-section': "Selections & Undo",
     'unselect': "Unselect All",
-    'removeCurvesPhenotype': "Remove marked positions, this phenotype",
-    'removeCurvesAllPhenotypes': "Remove marked positions, all phenotypes",
+    'removeCurvesPhenotype': "Delete marked, this phenotype",
+    'removeCurvesAllPhenotypes': "Delete marked, all phenotypes",
     'undo': "Undo",
 
+    'multi-select-phenotype': "Select based on phenotype",
+    'multi-sel-lower': "Lower:",
+    'multi-sel-higher': "Upper:",
+
+    'subplate-selection': "Subplate Select",
     'subplate-0-0': "Upper Left",
     'subplate-0-1': "Upper Right",
     'subplate-1-0': "Lower Left",
     'subplate-1-1': "Lower Right",
 
-    'references': "Set selected plate(s) as reference",
+    'frame-normalize': "References / Normalize",
+    'references': "Selected plate(s) as Reference",
     'normalize': "Normalize",
 
     'save-absolute': "Save the absolute phenotypes",
-    'save-relative': "Save the normalized relative phenotypes",
+    'save-relative': "Save the normalized phenotypes",
 
     'saved-absolute': "Absolute Phenotypes Saved at '{0}'",
     'saved-normed': "Normalized Relative Phenotypes Saved at '{0}'",
