@@ -10,11 +10,11 @@ class NewModel(object):
     def __getitem__(self, key):
 
         if key in self._values:
-            return self._values
+            return self._values[key]
 
         elif hasattr(self, key):
 
-            return getattr(self, key)
+            return getattr(self, key)()
 
         else:
 
@@ -60,6 +60,9 @@ class NewModel(object):
 
     def plate_selections(self):
 
+        if self['phenotyper'] is None:
+            return None
+
         sf = self['_selectionFilter']
         if sf is None or not all(f.shape[:2] == s.shape for f, s in zip(
                 sf, self['phenotyper'][self['plate']])):
@@ -93,7 +96,6 @@ class NewModel(object):
 
         rf = self['_removeFilter']
         sf = self['_selectionFilter']
-
         return (rf is not None and any([f.any() for f in rf]) or
                 sf is not None and any([f.any() for f in sf]))
 
@@ -102,6 +104,7 @@ class NewModel(object):
 #
 
 _appPresets = {
+    'app-title': "Scan-o-Matic: Quality Control",
     'quit-unsaved': "You have unsaved work, are you sure you want to quit?",
 
 }
@@ -112,7 +115,7 @@ _stagePresets = {
     'phenotype': None,
     'phenotyper': None,
     'plate': None,
-    'fixedColors': None,
+    'fixedColors': (None, None),
     'colorsAll': True,
     '_selectionFilter': None,
     '_removeFilter': None,
@@ -124,6 +127,7 @@ _stagePresets = {
     'button-load-data': "Load experiment data",
     'button-load-meta': "Load meta-data",
 
+    'label-plate': "Plate:",
     'plate-save': "Save Plate Image",
 
     'colors': 'Set Colors From:',
@@ -167,7 +171,7 @@ _stagePresets = {
 
     'saveTo': "Save to...",
 
-    'meta-data-path': "Select Meta-Data Files",
+    'meta-data-files': "Select Meta-Data Files",
     'meta-data-loaded': "Meta-Data Loaded!",
 
     'load-data-dir': "Select Directory With Data Files",

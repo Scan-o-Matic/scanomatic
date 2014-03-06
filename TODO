@@ -2,22 +2,17 @@
 ##### THE TAKE OVER #####
    ####################
 
-**	QC UI:
+Changing in selection in model does nothing.
 
-		v Import data
+Make status label have centric elipsis
+
+**	QC UI:
 
 		v Import meta-data
 
 		v Heatmap
-			v flip between phenotypes
-
 			v select one and multiple positions
 				-> multiple do simple curves in display
-
-			v Set value min and max as:
-				Per plate, per 4 plates, fixed value
-
-			v Save Image
 
 		v Curve display
 

@@ -22,6 +22,7 @@ from scipy.optimize import leastsq
 from scipy.stats import linregress
 import itertools
 import matplotlib.pyplot as plt
+import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 #
@@ -290,6 +291,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     def source(self):
 
         return self._source
+
+    @property
+    def smoothData(self):
+
+        return self._dataObject
 
     def _xmlReader2array(self, dataObject):
 
@@ -575,7 +581,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    plotFit=True,
                    annotateGTpos=True, annotateFit=True,
                    xMarkTimes=None, plusMarkTimes=None, altMeasures=None,
-                   fig=None, figClear=True):
+                   fig=None, figClear=True, showFig=True):
         """Plots a curve with phenotypes marked based on a position.
 
         Optional Parameters:
@@ -612,6 +618,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
 
             figClear        If the supplied figure should be cleared
+
+            showFig         If a figure was submitted, if it should be
+                            shown.
             """
 
         def _markCurve(positions, colorChar):
@@ -630,6 +639,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 f.clf()
         else:
             f = plt.figure()
+
+        font = {'family': 'sans',
+                'weight': 'normal',
+                'size': 6}
+
+        matplotlib.rc('font', **font)
 
         ax = f.gca()
 
@@ -720,7 +735,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         ax.text(0.1, 0.9, "Plate {0}, Row {1} Col {2}".format(*position),
                 transform=ax.transAxes)
 
-        if (fig is not None):
+        if (fig is not None and showFig):
             f.show()
 
         return f
@@ -768,12 +783,19 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             vmin = plateData[np.isfinite(plateData)].min()
             vmax = plateData[np.isfinite(plateData)].max()
 
+        font = {'family': 'sans',
+                'weight': 'normal',
+                'size': 6}
+
+        matplotlib.rc('font', **font)
+
         im = ax.imshow(
             plateData,
             vmin=vmin,
             vmax=vmax,
             interpolation="nearest",
-            cmap=cm)
+            cmap=cm,
+        )
 
         if (showColorBar):
             divider = make_axes_locatable(ax)

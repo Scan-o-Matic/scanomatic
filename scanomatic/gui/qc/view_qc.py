@@ -26,6 +26,8 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 # INTERNAL DEPENDENCIES
 #
 
+import scanomatic.dataProcessing.phenotyper as phenotyper
+
 #import scanomatic.gui.generic.view_generic as view_generic
 
 #
@@ -35,37 +37,43 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
 class Main_Window(gtk.Window):
 
-    def __init__(self, controller=None, model=None):
+    def __init__(self, controller, model):
 
         super(Main_Window, self).__init__()
 
         self.set_default_size(800, 600)
-        self.move(0, 0)
+        self.set_border_width(5)
+        self.set_title(model['app-title'])
+        self.move(10, 10)
 
         self._controller = controller
         self._model = model
-        self._stage = QC_Stage(model, controller)
+        self.add(QC_Stage(model, controller))
 
         self.connect("delete_event", self._win_close_event)
 
     def _win_close_event(self, widget, *args, **kwargs):
 
-        return (self._model['unsaved'] and False or
-                self._ask_quit())
+        v = (self._model['unsaved'] and self._ask_quit() or False)
+        if not v:
+            gtk.main_quit()
+        return v
 
     def _ask_quit(self):
 
         dialog = gtk.MessageDialog(
-            flags=gtk.DIALOG_MODAL,
+            flags=gtk.DIALOG_DESTROY_WITH_PARENT,
             type=gtk.MESSAGE_WARNING,
             buttons=gtk.BUTTONS_YES_NO,
             message_format=self._model["quit-unsaved"])
 
-        return dialog.run() != gtk.RESPONSE_YES
+        ret = dialog.run() != gtk.RESPONSE_YES
+        dialog.destroy()
+        return ret
 
     def get_stage(self):
 
-        return self._stage
+        return self.child
 
 
 class QC_Stage(gtk.VBox):
@@ -126,11 +134,15 @@ class QC_Stage(gtk.VBox):
         self._plateSelectionAdjustment = gtk.Adjustment(0, 0, 0, 1, 1, 0)
         self._plateSelector = gtk.SpinButton(self._plateSelectionAdjustment,
                                              0, 0)
+        self._plateSelectionAdjustment.connect("value_changed",
+                                               self._loadPlate)
         self._plateSelector.set_wrap(True)
         self._plateSelector.set_snap_to_ticks(True)
 
         self._widgets_require_data.append(self._plateSelector)
 
+        hbox.pack_start(gtk.Label(self._model['label-plate']), expand=False,
+                        fill=False)
         hbox.pack_start(self._plateSelector, expand=False, fill=False)
 
         #
@@ -139,13 +151,12 @@ class QC_Stage(gtk.VBox):
         self._phenotypeSelector = gtk.combo_box_new_text()
 
         self._phenotypeName2Key = {}
-        for k in sorted(self._model['phenotyper'].NAMES_OF_PHENOTYPES.keys()):
+        for k in sorted(phenotyper.Phenotyper.NAMES_OF_PHENOTYPES.keys()):
 
-            n = self._model['phenotyper'].NAMES_OF_PHENOTYPES[k]
+            n = phenotyper.Phenotyper.NAMES_OF_PHENOTYPES[k]
             self._phenotypeSelector.append_text(n)
             self._phenotypeName2Key[n] = k
 
-        self._phenotypeSelector.set_active(0)
         self._phenotypeSelector.connect(
             "changed", self._newPhenotype)
 
@@ -161,7 +172,7 @@ class QC_Stage(gtk.VBox):
         self._plate_figure = plt.Figure(figsize=(40, 40), dpi=150)
         self._plate_figure.add_axes()
         self._plate_figure_ax = self._plate_figure.gca()
-
+        self._plate_figure_ax.set_axis_off()
         self._plate_image_canvas = FigureCanvas(self._plate_figure)
 
         self._plate_image_canvas.mpl_connect('button_press_event',
@@ -187,8 +198,8 @@ class QC_Stage(gtk.VBox):
         hbox.pack_start(vbox, expand=True, fill=True)
         vbox.pack_start(self._plate_image_canvas, expand=True, fill=True)
         hbox2 = gtk.HBox(False, spacing=2)
-        hbox2.pack_start(self._HeatMapInfo, expand=True, fill=True)
         hbox2.pack_start(self._plateSaveImage, expand=False, fill=False)
+        hbox2.pack_start(self._HeatMapInfo, expand=True, fill=True)
         vbox.pack_start(hbox2, expand=False, fill=False)
 
         #
@@ -199,7 +210,7 @@ class QC_Stage(gtk.VBox):
         hbox.pack_start(plateActionVB, expand=False, fill=False)
         frame = gtk.Frame(self._model['colors'])
         vbox2 = gtk.VBox(False, spacing=2)
-        frame.add(hbox2)
+        frame.add(vbox2)
         plateActionVB.pack_start(frame, expand=False, fill=False)
 
         self._colorsThisPlate = gtk.RadioButton(
@@ -208,8 +219,10 @@ class QC_Stage(gtk.VBox):
             group=self._colorsThisPlate, label=self._model['color-all-plates'])
         self._colorsFixed = gtk.RadioButton(
             group=self._colorsThisPlate, label=self._model['color-fixed'])
-        self._colorMin = gtk.Entry("")
-        self._colorMax = gtk.Entry("")
+        self._colorMin = gtk.Entry()
+        self._colorMin.set_size_request(0, -1)
+        self._colorMax = gtk.Entry()
+        self._colorMax.set_size_request(0, -1)
         self._colorFixUpdate = gtk.Button(self._model['color-fixed-update'])
         self._colorsThisPlate.set_active(True)
         self._colorsThisPlate.connect("toggled", self._setColors,
@@ -217,22 +230,25 @@ class QC_Stage(gtk.VBox):
         self._colorsAllPlate.connect("toggled", self._setColors,
                                      self.COLOR_ALL)
         self._colorsFixed.connect("toggled", self._setColors, self.COLOR_FIXED)
+        self._colorFixUpdate.connect("clicked", self._setColors,
+                                     self.COLOR_FIXED)
 
         self._widgets_require_data.append(self._colorsThisPlate)
         self._widgets_require_data.append(self._colorsAllPlate)
         self._widgets_require_data.append(self._colorsFixed)
 
         self._widgets_require_fixed_color.append(self._colorMin)
-        self._widgets_require_fixed_color.appned(self._colorMax)
+        self._widgets_require_fixed_color.append(self._colorMax)
+        self._widgets_require_fixed_color.append(self._colorFixUpdate)
 
         vbox2.pack_start(self._colorsThisPlate, expand=False, fill=False)
         vbox2.pack_start(self._colorsAllPlate, expand=False, fill=False)
         vbox2.pack_start(self._colorsFixed, expand=False, fill=False)
         hbox2 = gtk.HBox(False, spacing=2)
         vbox2.pack_start(hbox2, expand=False, fill=False)
-        hbox2.pack_start(self._colorMin, expand=False, fill=False)
+        hbox2.pack_start(self._colorMin, expand=True, fill=True)
         hbox2.pack_start(gtk.Label("-"), expand=False, fill=False)
-        hbox2.pack_start(self._colorMax, expand=False, fill=False)
+        hbox2.pack_start(self._colorMax, expand=True, fill=True)
         hbox2.pack_start(self._colorFixUpdate, expand=False, fill=False)
 
         #
@@ -254,7 +270,7 @@ class QC_Stage(gtk.VBox):
                                             self._updateBounds)
 
         self._updatingBounds = False
-        self._updateBounds()
+        #self._updateBounds()
 
         self._widgets_require_data.append(self._lowerBoundWidget)
         self._widgets_require_data.append(self._higherBoundWidget)
@@ -263,12 +279,12 @@ class QC_Stage(gtk.VBox):
         vbox2.pack_start(hbox2, expand=False, fill=False)
         hbox2.pack_start(gtk.Label(self._model['multi-sel-lower']),
                          expand=False, fill=False)
-        hbox2.pack_start(self._lowerBoundWidget, expand=False, fill=False)
+        hbox2.pack_start(self._lowerBoundWidget, expand=True, fill=True)
         hbox2 = gtk.HBox(False, spacing=2)
         vbox2.pack_start(hbox2, expand=False, fill=False)
         hbox2.pack_start(gtk.Label(self._model['multi-sel-higher']),
                          expand=False, fill=False)
-        hbox2.pack_start(self._higherBoundWidget, expand=False, fill=False)
+        hbox2.pack_start(self._higherBoundWidget, expand=True, fill=True)
 
         #
         # Subplate selection
@@ -334,12 +350,12 @@ class QC_Stage(gtk.VBox):
         frame.add(vbox2)
         plateActionVB.pack_start(frame, expand=False, fill=False)
         vbox2.pack_start(self._buttonUnSelect, expand=False, fill=False)
-        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False)
+        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False, padding=4)
         vbox2.pack_start(self._buttonRemoveCurvesPhenotype, expand=False,
                          fill=False)
         vbox2.pack_start(self._buttonRemoveCurvesAllPhenotypes,
                          expand=False, fill=False)
-        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False)
+        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False, padding=4)
         vbox2.pack_start(self._undoButton, expand=False, fill=False)
 
         #
@@ -349,7 +365,7 @@ class QC_Stage(gtk.VBox):
         self._curve_figure = plt.Figure(figsize=(40, 40), dpi=150)
         self._curve_figure.add_axes()
         self._curve_figure_ax = self._curve_figure.gca()
-
+        self._curve_figure_ax.set_axis_off()
         self._curve_image_canvas = FigureCanvas(self._curve_figure)
 
         self._curveSaveImage = gtk.Button(self._model['curve-save'])
@@ -358,8 +374,13 @@ class QC_Stage(gtk.VBox):
         self._widgets_require_selection.append(self._curveSaveImage)
 
         hbox = gtk.HBox(False, spacing=2)
+        vbox = gtk.VBox(False, spacing=2)
+        hbox.pack_start(vbox, expand=True, fill=True)
         self.pack_start(hbox, expand=True, fill=True)
-        hbox.pack_start(self._curve_image_canvas, expand=True, fill=True)
+        vbox.pack_start(self._curve_image_canvas, expand=True, fill=True)
+        hbox2 = gtk.HBox(False, spacing=2)
+        vbox.pack_start(hbox2, expand=False, fill=False)
+        hbox2.pack_start(self._curveSaveImage, expand=False, fill=False)
 
         #
         # Normalize
@@ -371,7 +392,7 @@ class QC_Stage(gtk.VBox):
         self._widgets_require_subplates.append(self._setRefButton)
 
         self._normalize = gtk.Button(self._model['normalize'])
-        self._normalize.connect("clicked", self._normalize)
+        self._normalize.connect("clicked", self._doNormalize)
 
         self._widgets_require_references.append(self._normalize)
 
@@ -382,7 +403,7 @@ class QC_Stage(gtk.VBox):
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(vbox2)
         vbox2.pack_start(self._setRefButton, expand=False, fill=False)
-        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False)
+        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False, padding=4)
         vbox2.pack_start(self._normalize, expand=False, fill=False)
 
         #
@@ -408,26 +429,26 @@ class QC_Stage(gtk.VBox):
         vbox.pack_start(self._saveNormed, expand=False, fill=False,
                         padding=4)
 
+        self._widgets_require_data.sensitive = False
+
         self.show_all()
 
     @property
     def colorMin(self):
 
         try:
-            val = float(self._colorMin.get_value())
+            val = float(self._colorMin.get_text())
         except:
             val = None
-
         return val
 
     @property
     def colorMax(self):
 
         try:
-            val = float(self._colorMax.get_value())
+            val = float(self._colorMax.get_text())
         except:
             val = None
-
         return val
 
     def _subplateSelect(self, widget, subPlate):
@@ -447,6 +468,7 @@ class QC_Stage(gtk.VBox):
 
         savePath = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
                     or None)
+        dialog.destroy()
 
         if (savePath is not None and self._controller.saveAbsolute(savePath)):
             self._HeatMapInfo.set_text(self._model['saved-absolute'].format(
@@ -473,7 +495,7 @@ class QC_Stage(gtk.VBox):
         self._HeatMapInfo.set_text(self._model['set-references'])
         self._widgets_require_references.sensitive = True
 
-    def _normalize(self, widget):
+    def _doNormalize(self, widget):
 
         self._controller.normalize()
         self._widgets_require_norm.sensitive = True
@@ -493,8 +515,9 @@ class QC_Stage(gtk.VBox):
         fname = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
                  or None)
 
+        dialog.destroy()
         if fname is not None:
-            fig = (self._widget is self._plateSaveImage and self._plate_figure
+            fig = (widget is self._plateSaveImage and self._plate_figure
                    or self._curve_figure)
 
             fig.savefig(fname)
@@ -504,11 +527,21 @@ class QC_Stage(gtk.VBox):
 
     def _setColors(self, widget, colorSetting):
 
-        if widget.get_active():
+        if colorSetting == self.COLOR_FIXED and widget == self._colorFixUpdate:
+
+            self._widgets_require_fixed_color.sensitive = True
+            if self._colorMin.get_text() == "":
+                self._colorMin.set_text("0")
+
+            self._controller.plotHeatmap(self._plate_figure, colorSetting)
+            self._plate_image_canvas.draw()
+
+        elif widget.get_active():
             self._widgets_require_fixed_color.sensitive = \
                 colorSetting == self.COLOR_FIXED
 
             self._controller.plotHeatmap(self._plate_figure, colorSetting)
+            self._plate_image_canvas.draw()
 
     def addSelection(self, pos):
 
@@ -517,11 +550,20 @@ class QC_Stage(gtk.VBox):
                 pos, 1, 1, ec='k', fill=True, lw=1,
                 hatch='o')
 
+    def _remove_patch(self, patch):
+
+        try:
+            i = self._plate_figure_ax.patches.index(patch)
+            if i >= 0:
+                self._plate_figure_ax.patches[i].remove()
+        except ValueError:
+            pass
+
     def removeSelection(self, pos):
 
         if pos in self._model['selection_patches']:
 
-            self._plate_figure_ax.remove_patch(
+            self._remove_patch(
                 self._model['selection_patches'][pos])
 
             del self._model['selection_patches'][pos]
@@ -530,14 +572,16 @@ class QC_Stage(gtk.VBox):
 
         dialog = gtk.FileChooserDialog(
             title=self._model['meta-data-files'],
-            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
-                     gtk.RESPONSE_OK))
+            buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 
         dialog.set_action(gtk.FILE_CHOOSER_ACTION_OPEN)
         dialog.set_select_multiple(True)
 
         pathMetaData = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
                         or None)
+
+        dialog.destroy()
 
         if (pathMetaData is not None and
                 self._controller.loadMetaData(pathMetaData)):
@@ -557,24 +601,42 @@ class QC_Stage(gtk.VBox):
 
                 dialog = gtk.FileChooserDialog(
                     title=self._model['load-data-dir'],
-                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
-                             gtk.RESPONSE_OK))
+                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                             gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 
                 dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
 
                 dataPath = (dialog.run() == gtk.RESPONSE_OK and
                             dialog.get_filename() or None)
 
+                dialog.destroy()
+
                 if dataPath is not None:
-                    self._controller.loadData(dataPath)
-                    self._widgets_require_data.sensitive = True
+                    if (self._controller.loadPhenotypes(dataPath)):
+
+                        if self._model['phenotype'] is None:
+                            self._phenotypeSelector.set_active(0)
+
+                        self._widgets_require_data.sensitive = True
+                        self._plateSelectionAdjustment.set_lower(1)
+                        self._plateSelectionAdjustment.set_upper(
+                            self._model['phenotyper'].shape[0])
+                        self._plateSelectionAdjustment.set_value(1)
+                        if self._model['plate'] == 0:
+                            self._newPhenotype()
+                        else:
+                            self._model['plate'] = 0
 
             elif widget is self._plateSelectionAdjustment:
 
                 self._model['plate'] = \
-                    self._plateSelectionAdjustment.get_value()
+                    int(self._plateSelectionAdjustment.get_value() - 1)
+                self._newPhenotype()
 
-            self._newPhenotype()
+    def plotNoData(self, fig, msg="No Data Loaded"):
+
+        fig.clf()
+        fig.text(0.25, 0.5, msg)
 
     def _setBoundaries(self):
 
@@ -626,10 +688,11 @@ class QC_Stage(gtk.VBox):
 
             self._updatingBounds = False
 
-    def _mousePress(self, event, *args, **args):
+    def _mousePress(self, event, *args, **kwargs):
 
         if not(None in (event.xdata, event.ydata)):
-            self._curSelection = np.floor([event.xdata, event.ydata]).tolist()
+            self._curSelection = tuple(
+                np.floor([event.ydata, event.xdata]).tolist())
 
         else:
 
@@ -638,35 +701,40 @@ class QC_Stage(gtk.VBox):
     def _mouseRelease(self, event, *args):
 
         if not(None in (event.xdata, event.ydata)):
-            curSelection = np.floor([event.xdata, event.ydata]).tolist()
+            curSelection = tuple(np.floor([event.ydata, event.xdata]).tolist())
             if (curSelection == self._curSelection):
 
                 if self._multiSelecting is False:
                     self._unselect()
 
-                if self._controller.toggleSelection(curSelection):
+                isSel = self._controller.toggleSelection(curSelection)
+
+                if (isSel and curSelection not in
+                        self._model['selection_patches']):
+
                     self._model['selection_patches'][curSelection] = \
                         plt_patches.Rectangle(
                             curSelection, 1, 1, ec='k', fill=True, lw=1,
                             hatch='o')
 
-                elif curSelection in self._model['selection_patches']:
+                elif (not(isSel) and curSelection in
+                      self._model['selection_patches']):
 
-                    self._plate_figure_ax.remove_patch(
+                    self._remove_patch(
                         self._model['selection_patches'][curSelection])
 
                     del self._model['selection_patches'][curSelection]
 
-                if not self._multiSelecting:
-                    self._controller.plotData(self._curve_figure)
+                self._controller.plotData(self._curve_figure)
+                self._curve_image_canvas.draw()
 
-                    self._widgets_require_selection.sensitive = \
-                        len(self._model['selection_patches']) > 0
+                self._widgets_require_selection.sensitive = \
+                    len(self._model['selection_patches']) > 0
 
     def _unselect(self, *args):
 
         for sel in self._model['selection_patches'].values():
-            self._plate_figure_ax.remove_patch(sel)
+            self._remove_patch(sel)
 
         self._model['selection_patches'] = dict()
 
@@ -684,16 +752,20 @@ class QC_Stage(gtk.VBox):
         self._controller.removeCurves(onlyCurrent=False)
         self._widgets_require_removed.sensitive = True
 
-    def _newPhenotype(self, widget, *args):
+    def _newPhenotype(self, widget=None, *args):
 
-        row = widget.get_active()
-        model = widget.get_model()
-        key = model[row][0]
+        if widget is not None:
+            row = widget.get_active()
+            model = widget.get_model()
+            key = model[row][0]
 
-        self._model['phenotype'] = self._phenotypeName2Key[key]
-        self._unselect()
-        self._controller.plotHeatmap(self._plate_figure)
-        self._setBoundaries()
+            self._model['phenotype'] = self._phenotypeName2Key[key]
+
+        if self._model['plate'] is not None:
+            self._unselect()
+            self._controller.plotHeatmap(self._plate_figure)
+            self._plate_image_canvas.draw()
+            self._setBoundaries()
 
     def _pressKey(self, key):
 

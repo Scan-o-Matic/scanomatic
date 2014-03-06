@@ -12,8 +12,10 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import gtk
-import gobject
+#import gtk
+#import gobject
+from matplotlib import pyplot as plt
+import numpy as np
 
 #
 # INTERNAL DEPENDENCIES
@@ -24,13 +26,13 @@ import view_qc
 import model_qc
 
 #Generics
-import scanomatic.gui.generc.controller_generic as controller_generic
+import scanomatic.gui.generic.controller_generic as controller_generic
 
 #Resources
 import scanomatic.io.paths as paths
 import scanomatic.io.app_config as app_config
 import scanomatic.io.logger as logger
-import scanomatic.io.dataProcessing.phenotyper as phenotyper
+import scanomatic.dataProcessing.phenotyper as phenotyper
 
 #
 # CLASSES
@@ -64,45 +66,59 @@ class Controller(controller_generic.Controller):
 
         self.config = app_config.Config(self.paths)
 
-        self._view.show_notebook_or_logo()
-
         view.show_all()
 
     def loadPhenotypes(self, pathToDirectory):
 
-        self._model['phenotyper'] = phenotyper.Phenotyper.LoadFromSate(
-            pathToDirectory)
+        try:
+            p = phenotyper.Phenotyper.LoadFromSate(pathToDirectory)
+        except IOError:
+            p = None
+
+        if (p is None or p.source is None or p.phenotypes is None or
+                p.times is None or p.smoothData is None or p.shape[0] == 0):
+
+            return False
+
+        self._model['phenotyper'] = p
 
         self._model['plates'] = [
             i for i, p in enumerate(self._model['phenotyper']) if
             p is not None]
 
-    def _plotNoData(self, fig, msg="No Data Loaded"):
-        fig.clf()
-        fig.text(0.1, 0.4, msg)
+        return True
 
     def plotData(self, fig):
-
-        #TODO: Change so it works on selected positoins
 
         plate = self._model['plate']
 
         if (self._model['phenotyper'] is None or
                 self._model['phenotyper'][plate] is None):
-            self._plotNoData(fig)
+            self._view.get_stage().plotNoData(fig)
             return
 
-        self._model['phenotyper'].plotACurve(
-            (plate, ) + position,
-            measure=self._model['phenotype'],
-            plotRaw=self._model['showRaw'],
-            plotSmooth=self._model['showSmooth'],
-            plotRegLine=self._model['showGTregLine'],
-            plotFit=self._model['showModelLine'],
-            annotateGTpos=self._model['showGT'],
-            annotateFit=self._model['showFitValue'],
-            fig=fig,
-            figClear=True)
+        fig.gca().cla()
+
+        self._model['plate_selections'][(10, 10), self._model['phenotype']] = True
+        print self._model['plate_selections'][..., self._model['phenotype']].any()
+
+        for position in zip(*np.where(
+                self._model['plate_selections'][
+                    ..., self._model['phenotype']])):
+
+            print position
+
+            self._model['phenotyper'].plotACurve(
+                (plate, ) + position,
+                measure=self._model['phenotype'],
+                plotRaw=self._model['showRaw'],
+                plotSmooth=self._model['showSmooth'],
+                plotRegLine=self._model['showGTregLine'],
+                plotFit=self._model['showModelLine'],
+                annotateGTpos=self._model['showGT'],
+                annotateFit=self._model['showFitValue'],
+                fig=fig,
+                figClear=False)
 
     def getPhenotypes(self):
 
@@ -115,7 +131,7 @@ class Controller(controller_generic.Controller):
 
         if (self._model['phenotyper'] is None or
                 self._model['phenotyper'][plate] is None):
-            self._plotNoData(fig)
+            self._view.get_stage().plotNoData(fig)
             return
 
         if newColorSpace is not None:
@@ -131,7 +147,7 @@ class Controller(controller_generic.Controller):
 
             if minVal is None or maxVal is None:
 
-                self._model['fixedColors'] = None
+                self._model['fixedColors'] = (None, None)
 
             else:
 
@@ -139,20 +155,38 @@ class Controller(controller_generic.Controller):
 
             self._model['colorsAll'] = newColorSpace == stage.COLOR_ALL
 
-        #TODO: plot!
+        cm = plt.cm.RdBu_r
+        cm.set_bad(color='#A0A0A0', alpha=1.0)
+
+        self._model['phenotyper'].plotPlateHeatmap(
+            plate,
+            measure=self._model['phenotype'],
+            useCommonValueAxis=self._model['colorsAll'],
+            vmin=self._model['fixedColors'][0],
+            vmax=self._model['fixedColors'][1],
+            showColorBar=True,
+            horizontalOrientation=True,
+            cm=cm,
+            titleText=None,
+            hideAxis=False,
+            fig=fig,
+            showFig=False)
 
     def toggleSelection(self, pos):
 
-        self._model["plate_selections"][pos] != \
-            self._model["plate_selections"][pos]
+        pos = tuple(pos)
+        p = self._model["plate_selections"]
+        p[pos] = p[pos] == False
 
-        return self._model["plate_selections"][pos]
+        return p[pos][self._model['phenotype']]
 
     def setSelected(self, pos, value):
 
-        updated = value != self._model["plate_selections"][pos]
-        self._model["plate_selections"][pos] = value
-        return updated
+        pos = tuple(pos)
+        p = self._model["plate_selections"]
+        updated = value != p[pos]
+        p[pos] = value
+        return updated.any()
 
     def removeCurves(self, onlyCurrent=False):
 
@@ -168,11 +202,6 @@ class Controller(controller_generic.Controller):
 
         #TODO: Filter plate as first step of norm
         return 0, 1, 0, 1
-
-    def loadData(self, path):
-
-        #TODO: load a phenotyper
-        pass
 
     def loadMetaData(self, path):
 
@@ -194,7 +223,12 @@ class Controller(controller_generic.Controller):
         selStatus = self._model['subplateSelected'][platePos]
         stage = self._view.get_stage()
         off1, off2 = platePos
-        for id1, d1 in enumerate(self._model['plate_selections'][off2::2]):
+        plateSels = self._model['plate_selections']
+
+        if plateSels is None:
+            return
+
+        for id1, d1 in enumerate(plateSels[off2::2]):
 
             for id2, v in enumerate(d1[off2::2]):
 
