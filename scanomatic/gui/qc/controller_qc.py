@@ -97,28 +97,23 @@ class Controller(controller_generic.Controller):
             self._view.get_stage().plotNoData(fig)
             return
 
-        fig.gca().cla()
-
-        self._model['plate_selections'][(10, 10), self._model['phenotype']] = True
-        print self._model['plate_selections'][..., self._model['phenotype']].any()
-
         for position in zip(*np.where(
                 self._model['plate_selections'][
                     ..., self._model['phenotype']])):
 
-            print position
-
             self._model['phenotyper'].plotACurve(
                 (plate, ) + position,
-                measure=self._model['phenotype'],
                 plotRaw=self._model['showRaw'],
                 plotSmooth=self._model['showSmooth'],
                 plotRegLine=self._model['showGTregLine'],
                 plotFit=self._model['showModelLine'],
                 annotateGTpos=self._model['showGT'],
                 annotateFit=self._model['showFitValue'],
+                annotatePosition=not(self._model['multiSelecting']),
+                annotatePhenotypeValue=not(self._model['multiSelecting']),
                 fig=fig,
-                figClear=False)
+                figClear=False,
+                showFig=False)
 
     def getPhenotypes(self):
 
@@ -221,7 +216,7 @@ class Controller(controller_generic.Controller):
     def setSubPlateSelection(self, platePos):
 
         selStatus = self._model['subplateSelected'][platePos]
-        stage = self._view.get_stage()
+        #stage = self._view.get_stage()
         off1, off2 = platePos
         plateSels = self._model['plate_selections']
 
@@ -234,21 +229,29 @@ class Controller(controller_generic.Controller):
 
                 pos = (id1 * 2 + off1, id2 * 2 + off2)
 
+                self.setSelected(pos, selStatus)
+
+                """Not valid anymore
                 if self.setSelected(pos, selStatus):
                     if selStatus:
                         stage.addSelection(pos)
                     else:
                         stage.removeSelection(pos)
 
+                """
+
     def setSelection(self, lowerBound, higherBound):
 
         #TODO: Find all positions where not inside bounds
         #If need to toggle inform view
-        stage = self._view.get_stage()
+        #stage = self._view.get_stage()
         outliers = []
         for pos in outliers:
+            self.setSelected(pos, True)
+            """Not valid anymore
             if self.setSelected(pos, True):
                 stage.addSelection(pos)
+            """
 
     def Normalize(self):
 

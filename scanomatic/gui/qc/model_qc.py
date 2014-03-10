@@ -34,9 +34,17 @@ class NewModel(object):
 
         return cls(presets=_stagePresets)
 
+    def numberOfSelections(self):
+
+        return self['plate_selections'][..., self['phenotype']].sum()
+
+    def selectionCoordinates(self):
+
+        return zip(*np.where(self['plate_selections'][..., self['phenotype']]))
+
     def multiSelecting(self):
 
-        return len(self['curSelection']) > 0
+        return self['numberOfSelections'] > 1
 
     def showSmooth(self):
 
@@ -64,8 +72,8 @@ class NewModel(object):
             return None
 
         sf = self['_selectionFilter']
-        if sf is None or not all(f.shape[:2] == s.shape for f, s in zip(
-                sf, self['phenotyper'][self['plate']])):
+        if sf is None or not all(f.shape[:2] == s.shape[:2] for f, s in zip(
+                sf, self['phenotyper'])):
 
             sf = [np.zeros(s.shape[:2] + (self['phenotyper'].nPhenotypeTypes,),
                            dtype=bool) for s in self['phenotyper']]
@@ -121,7 +129,7 @@ _stagePresets = {
     '_removeFilter': None,
     'plates': None,
     'subplateSelected': np.zeros((2, 2), dtype=bool),
-    'selection_patches': dict(),
+    'selection_patches': None,  # dict(),
     'selectOnAllPhenotypes': True,
 
     'button-load-data': "Load experiment data",
@@ -171,8 +179,10 @@ _stagePresets = {
 
     'saveTo': "Save to...",
 
+    'meta-data': None,
     'meta-data-files': "Select Meta-Data Files",
     'meta-data-loaded': "Meta-Data Loaded!",
 
+    'hover-position': 'Position {0}, {1}',
     'load-data-dir': "Select Directory With Data Files",
 }

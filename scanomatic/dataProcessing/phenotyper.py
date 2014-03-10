@@ -580,6 +580,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    plotRaw=True, plotSmooth=True, plotRegLine=True,
                    plotFit=True,
                    annotateGTpos=True, annotateFit=True,
+                   annotatePosition=True, annotatePhenotypeValue=True,
                    xMarkTimes=None, plusMarkTimes=None, altMeasures=None,
                    fig=None, figClear=True, showFig=True):
         """Plots a curve with phenotypes marked based on a position.
@@ -647,17 +648,21 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         matplotlib.rc('font', **font)
 
         ax = f.gca()
+        ax.tick_params(axis='x', which='both', bottom='on', top='off')
+        ax.tick_params(axis='y', which='both', left='on', right='off')
+
+        anyGoodValues = (self._source[position[0]][position[1:]] > 0).any()
 
         if position is None:
             position = (np.random.randint(0, self._dataObject.shape[0]),
                         np.random.randint(0, self._dataObject[0].shape[0]),
                         np.random.randint(0, self._dataObject[0].shape[1]))
-        if plotRaw:
+        if plotRaw and anyGoodValues:
             ax.semilogy(self._timeObject,
                         self._source[position[0]][position[1:]],
                         '-b', basey=2)
 
-        if plotSmooth:
+        if plotSmooth and anyGoodValues:
             ax.semilogy(self._timeObject,
                         self._dataObject[position[0]][position[1:]],
                         '-g', basey=2)
@@ -695,7 +700,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             ax.semilogy(self._timeObject,
                         Yhat, '--', color=(0.1, 0.1, 0.1, 0.5), basey=2)
 
-        if plotRegLine:
+        if plotRegLine and anyGoodValues:
 
             t = self._timeObject[tId]
 
@@ -730,10 +735,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 measureText += "\n{0}: {1:.2f}".format(label, value)
 
-        ax.text(0.6, 0.3, measureText, transform=ax.transAxes)
+        if (annotatePhenotypeValue):
+            ax.text(0.6, 0.3, measureText, transform=ax.transAxes)
 
-        ax.text(0.1, 0.9, "Plate {0}, Row {1} Col {2}".format(*position),
-                transform=ax.transAxes)
+        if (annotatePosition):
+            ax.text(0.1, 0.9, "Plate {0}, Row {1} Col {2}".format(*position),
+                    transform=ax.transAxes)
 
         if (fig is not None and showFig):
             f.show()

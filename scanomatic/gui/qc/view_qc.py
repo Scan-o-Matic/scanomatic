@@ -19,7 +19,7 @@ import gtk
 import numpy as np
 
 from matplotlib import pyplot as plt
-from matplotlib import patches as plt_patches
+#from matplotlib import patches as plt_patches
 from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
 #
@@ -179,13 +179,16 @@ class QC_Stage(gtk.VBox):
                                              self._mousePress)
         self._plate_image_canvas.mpl_connect('button_release_event',
                                              self._mouseRelease)
+        self._plate_image_canvas.mpl_connect('motion_notify_event',
+                                             self._mouseHover)
 
+        """
         self._plate_image_canvas.mpl_connect('key_press_event',
                                              self._pressKey)
 
         self._plate_image_canvas.mpl_connect('key_release_event',
                                              self._releaseKey)
-
+        """
         self._HeatMapInfo = gtk.Label("")
 
         self._plateSaveImage = gtk.Button(self._model['plate-save'])
@@ -455,6 +458,11 @@ class QC_Stage(gtk.VBox):
 
         self._model['subplateSelected'][subPlate] = widget.get_active()
         self._controller.setSubPlateSelection(subPlate)
+
+        self._curve_figure_ax.cla()
+
+        self._controller.plotData(self._curve_figure)
+        self._drawSelectionsDataSeries()
         self._widgets_require_subplates.sensitive = \
             self._model['subplateSelected'].any()
 
@@ -525,7 +533,19 @@ class QC_Stage(gtk.VBox):
             self._HeatMapInfo.set_text(self._model['image-saved'].format(
                 fname))
 
-    def _setColors(self, widget, colorSetting):
+    def _setColors(self, widget=None, colorSetting=None):
+
+        if (colorSetting is None):
+
+            if self._colorsThisPlate.get_active():
+                widget = self._colorsThisPlate
+                colorSetting = self.COLOR_THiS
+            elif self._colorsAllPlate.get_active():
+                widget = self._colorsAllPlate
+                colorSetting = self.COLOR_ALL
+            else:
+                widget = self._colorFixUpdate
+                colorSetting = self.COLOR_FIXED
 
         if colorSetting == self.COLOR_FIXED and widget == self._colorFixUpdate:
 
@@ -534,22 +554,25 @@ class QC_Stage(gtk.VBox):
                 self._colorMin.set_text("0")
 
             self._controller.plotHeatmap(self._plate_figure, colorSetting)
-            self._plate_image_canvas.draw()
+            self._drawSelectionsDataSeries()
 
         elif widget.get_active():
             self._widgets_require_fixed_color.sensitive = \
                 colorSetting == self.COLOR_FIXED
 
             self._controller.plotHeatmap(self._plate_figure, colorSetting)
-            self._plate_image_canvas.draw()
+            self._drawSelectionsDataSeries()
 
+    """Not valid controller doesn't need to inform
     def addSelection(self, pos):
 
         if pos not in self._model['selection_patches']:
             self._model['selection_patches'][pos] = plt_patches.Rectangle(
                 pos, 1, 1, ec='k', fill=True, lw=1,
                 hatch='o')
+    """
 
+    """ Not in use
     def _remove_patch(self, patch):
 
         try:
@@ -558,7 +581,9 @@ class QC_Stage(gtk.VBox):
                 self._plate_figure_ax.patches[i].remove()
         except ValueError:
             pass
+    """
 
+    """Not valid controller doesn't need to inform
     def removeSelection(self, pos):
 
         if pos in self._model['selection_patches']:
@@ -567,6 +592,8 @@ class QC_Stage(gtk.VBox):
                 self._model['selection_patches'][pos])
 
             del self._model['selection_patches'][pos]
+
+    """
 
     def _loadMetaData(self, widget):
 
@@ -622,6 +649,7 @@ class QC_Stage(gtk.VBox):
                         self._plateSelectionAdjustment.set_upper(
                             self._model['phenotyper'].shape[0])
                         self._plateSelectionAdjustment.set_value(1)
+                        self._setColors()
                         if self._model['plate'] == 0:
                             self._newPhenotype()
                         else:
@@ -688,11 +716,21 @@ class QC_Stage(gtk.VBox):
 
             self._updatingBounds = False
 
+    def _mouseHover(self, event, *args):
+
+        if event.xdata is not None and event.ydata is not None:
+
+            if self._model['meta-data'] is None:
+                self._HeatMapInfo.set_text(self._model['hover-position'].format(
+                    int(round(event.xdata)), int(round(event.ydata))))
+            else:
+                print "Meta?"
+
     def _mousePress(self, event, *args, **kwargs):
 
         if not(None in (event.xdata, event.ydata)):
             self._curSelection = tuple(
-                np.floor([event.ydata, event.xdata]).tolist())
+                np.round([event.ydata, event.xdata]).tolist())
 
         else:
 
@@ -701,46 +739,84 @@ class QC_Stage(gtk.VBox):
     def _mouseRelease(self, event, *args):
 
         if not(None in (event.xdata, event.ydata)):
-            curSelection = tuple(np.floor([event.ydata, event.xdata]).tolist())
+            curSelection = tuple(np.round([event.ydata, event.xdata]).tolist())
             if (curSelection == self._curSelection):
 
                 if self._multiSelecting is False:
                     self._unselect()
+                    self._controller.setSelected(curSelection, True)
 
-                isSel = self._controller.toggleSelection(curSelection)
+                """Artist seems not to work in GTK, using data seris hack atm
+
+                    isSel = True
+                else:
+                    isSel = self._controller.toggleSelection(curSelection)
 
                 if (isSel and curSelection not in
                         self._model['selection_patches']):
 
-                    self._model['selection_patches'][curSelection] = \
-                        plt_patches.Rectangle(
-                            curSelection, 1, 1, ec='k', fill=True, lw=1,
-                            hatch='o')
+                    p = plt_patches.Rectangle(
+                        [v - 0.5 for v in curSelection], 1, 1,
+                        transform=self._plate_figure_ax.transData,
+                        axes=self._plate_figure_ax,
+                        color='k', fill=True, lw=1)
+                        #hatch='o')
+
+                    self._plate_figure_ax.add_artist(p)
+                    self._plate_figure_ax.draw_artist(p)
+                    self._model['selection_patches'][curSelection] = True
 
                 elif (not(isSel) and curSelection in
                       self._model['selection_patches']):
 
                     self._remove_patch(
                         self._model['selection_patches'][curSelection])
-
                     del self._model['selection_patches'][curSelection]
+                """
 
+                self._drawSelectionsDataSeries()
+
+                self._curve_figure_ax.cla()
                 self._controller.plotData(self._curve_figure)
                 self._curve_image_canvas.draw()
 
                 self._widgets_require_selection.sensitive = \
-                    len(self._model['selection_patches']) > 0
+                    self._model['numberOfSelections'] > 0
+
+    def _drawSelectionsDataSeries(self):
+
+        data = zip(*self._model['selectionCoordinates'])
+        print data
+
+        if (self._model['selection_patches'] is None or len(data) != 2):
+
+            if (len(data) == 2):
+                self._model['selection_patches'] = self._plate_figure_ax.plot(
+                    data[0], data[1], mec='k', mew=1,
+                    ms=1,
+                    marker='s', fillstyle='none')
+        else:
+            self._model['selection_patches'].set_data(*data)
+
+        self._plate_image_canvas.draw()
 
     def _unselect(self, *args):
 
+        """
         for sel in self._model['selection_patches'].values():
             self._remove_patch(sel)
 
+        self._plate_image_canvas.draw()
         self._model['selection_patches'] = dict()
+        """
+
+        self._model['plate_selections'][...] = False
 
         self._widgets_require_selection.sensitive = False
 
         self._curve_figure_ax.cla()
+        self._model['selection_patches'] = None
+        self._drawSelectionsDataSeries()
 
     def _removeCurvesPhenotype(self, *args):
 
@@ -764,10 +840,12 @@ class QC_Stage(gtk.VBox):
         if self._model['plate'] is not None:
             self._unselect()
             self._controller.plotHeatmap(self._plate_figure)
-            self._plate_image_canvas.draw()
+            self._drawSelectionsDataSeries()
             self._setBoundaries()
 
     def _pressKey(self, key):
+
+        print key
 
         if "control" in key or "ctrl" in key:
             self._multiSelecting = True
