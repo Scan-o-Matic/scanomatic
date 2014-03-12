@@ -182,13 +182,10 @@ class QC_Stage(gtk.VBox):
         self._plate_image_canvas.mpl_connect('motion_notify_event',
                                              self._mouseHover)
 
-        """
-        self._plate_image_canvas.mpl_connect('key_press_event',
-                                             self._pressKey)
+        self.set_events(gtk.gdk.KEY_PRESS_MASK | gtk.gdk.KEY_RELEASE_MASK)
+        self.connect('key_press_event', self._pressKey)
+        self.connect('key_release_event', self._releaseKey)
 
-        self._plate_image_canvas.mpl_connect('key_release_event',
-                                             self._releaseKey)
-        """
         self._HeatMapInfo = gtk.Label("")
 
         self._plateSaveImage = gtk.Button(self._model['plate-save'])
@@ -818,6 +815,7 @@ class QC_Stage(gtk.VBox):
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
 
+        """
         zorder = 0
         for im in ax.images:
             if im.zorder > zorder:
@@ -826,7 +824,7 @@ class QC_Stage(gtk.VBox):
         for line in ax.lines:
             zorder += 1
             line.zorder = zorder
-
+        """
         self._plate_image_canvas.draw()
 
     def _unselect(self, *args):
@@ -878,17 +876,15 @@ class QC_Stage(gtk.VBox):
             self._drawSelectionsDataSeries()
             self._setBoundaries()
 
-    def _pressKey(self, key):
+    def _pressKey(self, widget, event):
 
-        print key
-
-        if "control" in key or "ctrl" in key:
+        if event.state & gtk.gdk.CONTROL_MASK:
             self._multiSelecting = True
             self._HeatMapInfo.set_text(self._model['msg-multiSelecting'])
 
-    def _releaseKey(self, key):
+    def _releaseKey(self, widget, event):
 
-        if "control" in key or "ctrl" in key:
+        if event.state & gtk.gdk.CONTROL_MASK:
             self._multiSelecting = False
             self._HeatMapInfo.set_text("")
             self._controller.plotData(self._curve_figure)
