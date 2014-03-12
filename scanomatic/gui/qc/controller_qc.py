@@ -185,8 +185,10 @@ class Controller(controller_generic.Controller):
 
     def removeCurves(self, onlyCurrent=False):
 
-        #TODO: Flag removal filter
-        pass
+        self._model['phenotyper'].add2RemoveFilter(
+            plate=self._model['plate'],
+            positionList=self._model['selectionCoordinates'],
+            phenotype=onlyCurrent and self._model['phenotype'] or None)
 
     def undoLast(self):
 

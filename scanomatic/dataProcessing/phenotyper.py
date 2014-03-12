@@ -85,6 +85,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         else:
             arrayCopy = dataObject.copy()
 
+        self._removeFilter = [None for _ in self._dataObject]
+
         self.times = timeObject
 
         assert self._timeObject is not None, "A data series needs its times"
@@ -501,18 +503,22 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     def curveFits(self):
 
         return np.array(
-            [plate[..., self.PHEN_FIT_VALUE] for plate in self._phenotypes])
+            [plate[..., self.PHEN_FIT_VALUE] for plate in self.phenotypes])
 
     @property
     def generationTimes(self):
 
         return np.array(
-            [plate[..., self.PHEN_GT_VALUE] for plate in self._phenotypes])
+            [plate[..., self.PHEN_GT_VALUE] for plate in self.phenotypes])
 
     @property
     def phenotypes(self):
 
-        return self._phenotypes
+        ret = [(self._removeFilter[i] is not None and p is not None) and
+               np.ma.masked_array(p, self._removeFilter[i], fill_value=np.nan)
+               or p for i, p in enumerate(self._phenotypes)]
+
+        return ret
 
     @property
     def times(self):
@@ -531,10 +537,26 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._timeObject = value
 
+    def add2RemoveFilter(self, plate, positionList, phenotype=None):
+        """Adds positions as removed from data.
+
+        Args:
+
+            plate (int):    The plate
+
+            positionList (iterable):    A list of X and Y coordinates as
+                                        returned by np.where
+
+        Kwargs:
+
+            phenotype (int/None):   What phenotype to invoke filter on
+                                    or if None to invoke on all
+        """
+
     def getPositionListFiltered(self, posList, valueType=PHEN_GT_VALUE):
         """Get phenotypes for the list of positions.
 
-        Parameters:
+        Args:
 
             posList         List of position tuples or position strings
             or mix thereof.
@@ -562,7 +584,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             else:
                 plate, x, y = pos
 
-            values.append(self._phenotypes[plate][x, y][valueType])
+            values.append(self.phenotypes[plate][x, y][valueType])
 
         return values
 

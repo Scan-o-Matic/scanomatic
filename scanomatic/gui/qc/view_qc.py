@@ -778,11 +778,13 @@ class QC_Stage(gtk.VBox):
     def _removeCurvesPhenotype(self, *args):
 
         self._controller.removeCurves(onlyCurrent=True)
+        self._unselect()
         self._widgets_require_removed.sensitive = True
 
     def _removeCurvesAllPhenotype(self, *args):
 
         self._controller.removeCurves(onlyCurrent=False)
+        self._unselect()
         self._widgets_require_removed.sensitive = True
 
     def _newPhenotype(self, widget=None, *args):
