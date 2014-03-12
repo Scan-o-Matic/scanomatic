@@ -256,19 +256,30 @@ class QC_Stage(gtk.VBox):
         #
 
         frame = gtk.Frame(self._model['multi-select-phenotype'])
-        plateActionVB.pack_start(frame, expand=False, fill=False)
+        #plateActionVB.pack_start(frame, expand=False, fill=False)
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(vbox2)
 
-        self._lowerBoundAdjustment = gtk.Adjustment(0, 0, 1, 0.01, 0.01, 1)
-        self._higherBoundAdjustment = gtk.Adjustment(0, 0, 1, 0.01, 0.01, 1)
+        self._lowerBoundAdjustment = gtk.Adjustment(
+            value=0, lower=0, upper=1)
+        self._higherBoundAdjustment = gtk.Adjustment(
+            value=0, lower=0, upper=1)
         self._lowerBoundWidget = gtk.HScale(self._lowerBoundAdjustment)
         self._higherBoundWidget = gtk.HScale(self._higherBoundAdjustment)
+        """
+        self._lowerBoundWidget.set_upper_stepper_sensitivity(
+            gtk.SENSITIVITY_ON)
+        self._lowerBoundWidget.set_lower_stepper_sensitivity(
+            gtk.SENSITIVITY_ON)
+        self._higherBoundWidget.set_upper_stepper_sensitivity(
+            gtk.SENSITIVITY_ON)
+        self._higherBoundWidget.set_lower_stepper_sensitivity(
+            gtk.SENSITIVITY_ON)
+        """
         self._lowerBoundAdjustment.connect("value_changed",
                                            self._updateBounds)
         self._higherBoundAdjustment.connect("value_changed",
                                             self._updateBounds)
-
         self._updatingBounds = False
         #self._updateBounds()
 
@@ -410,23 +421,31 @@ class QC_Stage(gtk.VBox):
         # Save
         #
 
-        self._overwriteAbsolute = gtk.Button(self._model['save-absolute'])
-        self._overwriteAbsolute.connect("clicked", self._saveAbsolute)
+        self._savePhenoAbs = gtk.Button(self._model['save-absolute'])
+        self._savePhenoAbs.connect("clicked", self._saveAbsolute)
 
-        self._widgets_require_data.append(self._overwriteAbsolute)
+        self._widgets_require_data.append(self._savePhenoAbs)
 
         self._saveNormed = gtk.Button(self._model['save-relative'])
         self._saveNormed.connect("clicked", self._saveRelative)
 
         self._widgets_require_norm.append(self._saveNormed)
 
+        self._saveState = gtk.Button(self._model['save-state'])
+        self._saveState.connect("clicked", self._saveCurState)
+
+        self._widgets_require_removed.add(self._saveState)
+
         self._curSelection = None
         self._multiSelecting = False
 
-        vbox.pack_start(self._overwriteAbsolute, expand=False, fill=False,
+        vbox.pack_start(self._savePhenoAbs, expand=False, fill=False,
                         padding=4)
 
         vbox.pack_start(self._saveNormed, expand=False, fill=False,
+                        padding=4)
+
+        vbox.pack_start(self._saveState, expand=False, fill=False,
                         padding=4)
 
         self._widgets_require_data.sensitive = False
@@ -469,7 +488,7 @@ class QC_Stage(gtk.VBox):
             title=self._model['saveTo'],
             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
                      gtk.RESPONSE_OK))
-        dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+        dialog.set_action(gtk.FILE_CHOOSER_ACTION_SAVE)
 
         savePath = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
                     or None)
@@ -493,6 +512,10 @@ class QC_Stage(gtk.VBox):
         if (savePath is not None and self._controller.saveNormed(savePath)):
             self._HeatMapInfo.set_text(self._model['saved-normed'].format(
                 savePath))
+
+    def _saveCurState(self, widget):
+
+        self._controller.saveState()
 
     def _setReferences(self, widget):
 
@@ -583,7 +606,7 @@ class QC_Stage(gtk.VBox):
     def _loadPlate(self, widget=None):
 
         if widget is None:
-
+            self._setBoundaries()
             self._updateBounds()
             self._widgets_require_data.sensitive = False
 
@@ -641,25 +664,31 @@ class QC_Stage(gtk.VBox):
         self._higherBoundAdjustment.set_lower(minVal)
         self._higherBoundAdjustment.set_upper(maxVal)
 
+        """
         step = (maxVal - minVal) / 250.0
-
+        print step
+        self._lowerBoundAdjustment.set_page_size(step)
+        self._higherBoundAdjustment.set_page_size(step)
+        self._higherBoundAdjustment.set_step_increment(step)
+        self._higherBoundAdjustment.set_page_increment(step)
         self._lowerBoundAdjustment.set_page_increment(step)
         self._higherBoundAdjustment.set_page_increment(step)
 
         self._lowerBoundAdjustment.set_step_increment(step)
         self._higherBoundAdjustment.set_step_increment(step)
-
+        """
         self._lowerBoundAdjustment.set_value(lower)
+        self._higherBoundAdjustment.set_value(upper)
 
         self._updatingBounds = False
-
-        self._higherBoundAdjustment.set_value(upper)
 
     def _updateBounds(self, widget=None):
 
         if not self._updatingBounds:
 
             self._updatingBounds = True
+            if widget is not None:
+                print widget.get_step_increment()
 
             if widget is self._lowerBoundAdjustment:
 
@@ -726,6 +755,7 @@ class QC_Stage(gtk.VBox):
     def _drawSelectionsDataSeries(self):
 
         ax = self._plate_image_canvas.figure.axes[0]
+        ax.set_axis_off()
 
         data = zip(*self._model['selectionCoordinates'])
 
@@ -736,7 +766,7 @@ class QC_Stage(gtk.VBox):
 
             Y, X = data
 
-            if (self._model['selection_patches'] is None):
+            if (self._model['selection_patches'] is None or len(ax.lines) == 0):
 
                 self._model['selection_patches'] = ax.plot(
                     X, Y, mec='k', mew=1,
@@ -754,7 +784,6 @@ class QC_Stage(gtk.VBox):
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
 
-        """
         zorder = 0
         for im in ax.images:
             if im.zorder > zorder:
@@ -763,7 +792,7 @@ class QC_Stage(gtk.VBox):
         for line in ax.lines:
             zorder += 1
             line.zorder = zorder
-        """
+
         self._plate_image_canvas.draw()
 
     def _unselect(self, *args):
@@ -780,12 +809,14 @@ class QC_Stage(gtk.VBox):
         self._controller.removeCurves(onlyCurrent=True)
         self._unselect()
         self._widgets_require_removed.sensitive = True
+        self._newPhenotype()
 
     def _removeCurvesAllPhenotype(self, *args):
 
         self._controller.removeCurves(onlyCurrent=False)
         self._unselect()
         self._widgets_require_removed.sensitive = True
+        self._newPhenotype()
 
     def _newPhenotype(self, widget=None, *args):
 
@@ -801,6 +832,7 @@ class QC_Stage(gtk.VBox):
             self._controller.plotHeatmap(self._plate_image_canvas.figure)
             self._drawSelectionsDataSeries()
             self._setBoundaries()
+            self._updateBounds()
 
     def _pressKey(self, widget, event):
 

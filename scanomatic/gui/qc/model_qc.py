@@ -34,6 +34,22 @@ class NewModel(object):
 
         return cls(presets=_stagePresets)
 
+
+    def visibleValues(self):
+
+        V = self['phenotyper'].phenotypes[self['plate']][
+            ..., self['phenotype']].ravel()
+
+        return V[np.isfinite(V)]
+
+    def visibleMin(self):
+
+        return self['visibleValues'].min()
+
+    def visibleMax(self):
+
+        return self['visibleValues'].max()
+
     def numberOfSelections(self):
 
         return self['plate_selections'][..., self['phenotype']].sum()
@@ -41,6 +57,10 @@ class NewModel(object):
     def selectionCoordinates(self):
 
         return zip(*np.where(self['plate_selections'][..., self['phenotype']]))
+
+    def selectionWhere(self):
+
+        return np.where(self['plate_selections'][..., self['phenotype']])
 
     def multiSelecting(self):
 
@@ -81,7 +101,7 @@ class NewModel(object):
             self['_selectionFilter'] = sf
 
         return sf[self['plate']][..., self['selectOnAllPhenotypes']
-                                 and self['phenotype'] or slice(None)]
+                                 and slice(None) or self['phenotype']]
 
     def removed_filter(self):
 
@@ -122,6 +142,7 @@ _stagePresets = {
     'showRaw': True,
     'phenotype': None,
     'phenotyper': None,
+    'phenotyper-path': None,
     'plate': None,
     'fixedColors': (None, None),
     'colorsAll': True,

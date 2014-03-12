@@ -85,8 +85,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         else:
             arrayCopy = dataObject.copy()
 
-        self._removeFilter = [None for _ in self._dataObject]
-
         self.times = timeObject
 
         assert self._timeObject is not None, "A data series needs its times"
@@ -100,6 +98,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                         + "Your shape is {0}".format(plate.shape))
 
         super(Phenotyper, self).__init__(arrayCopy)
+
+        self._removeFilter = [None for _ in self._dataObject]
+
         self._logger = logger.Logger("Phenotyper")
 
         assert medianKernelSize % 2 == 1, "Median kernel size must be odd"
@@ -164,6 +165,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         phenotyper._dataObject = dataObject
         phenotyper._phenotypes = phenotypes
+
+        p = os.path.join(dirPath, _p.phenotypes_filter)
+        if os.path.isfile(p):
+            phenotyper._removeFilter = np.load(p)
 
         return phenotyper
 
@@ -514,9 +519,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     @property
     def phenotypes(self):
 
-        ret = [(self._removeFilter[i] is not None and p is not None) and
-               np.ma.masked_array(p, self._removeFilter[i], fill_value=np.nan)
-               or p for i, p in enumerate(self._phenotypes)]
+        ret = []
+        for i, p in enumerate(self._phenotypes):
+            if (self._removeFilter[i] is not None and p is not None):
+                ret.append(
+                    np.ma.masked_array(p, self._removeFilter[i],
+                                       fill_value=np.nan))
+            else:
+                ret.append(p)
 
         return ret
 
@@ -552,6 +562,18 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             phenotype (int/None):   What phenotype to invoke filter on
                                     or if None to invoke on all
         """
+
+        if self._phenotypes is None or self._phenotypes[plate] is None:
+            raise IndexError("No phenotypes known for plate {0}".format(plate))
+
+        if self._removeFilter[plate] is None:
+            self._removeFilter[plate] = np.zeros(
+                self._phenotypes[plate].shape,
+                dtype=np.bool)
+
+        print positionList
+
+        self._removeFilter[plate][positionList] = True
 
     def getPositionListFiltered(self, posList, valueType=PHEN_GT_VALUE):
         """Get phenotypes for the list of positions.
@@ -880,7 +902,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         p = os.path.join(dirPath, self._paths.phenotypes_raw_npy)
         if (not askOverwrite or not os.path.isfile(p) or
                 self._saveOverwriteAsk(p)):
-            np.save(p, self.phenotypes)
+            np.save(p, self._phenotypes)
 
         p = os.path.join(dirPath, self._paths.phenotypes_input_data)
         if (not askOverwrite or not os.path.isfile(p) or
@@ -891,6 +913,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (not askOverwrite or not os.path.isfile(p) or
                 self._saveOverwriteAsk(p)):
             np.save(p, self._dataObject)
+
+        p = os.path.join(dirPath, self._paths.phenotypes_filter)
+        if (not askOverwrite or not os.path.isfile(p) or
+                self._saveOverwriteAsk(p)):
+            np.save(p, self._removeFilter)
 
         p = os.path.join(dirPath, self._paths.phenotype_times)
         if (not askOverwrite or not os.path.isfile(p) or

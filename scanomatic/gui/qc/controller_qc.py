@@ -81,10 +81,19 @@ class Controller(controller_generic.Controller):
             return False
 
         self._model['phenotyper'] = p
+        self._model['phenotyper-path'] = p
 
         self._model['plates'] = [
             i for i, p in enumerate(self._model['phenotyper']) if
             p is not None]
+
+        return True
+
+    def saveState(self):
+
+        self._model['phenotyper'].saveState(
+            self._model['phenotyper-path'],
+            askOverwrite=False)
 
         return True
 
@@ -187,7 +196,7 @@ class Controller(controller_generic.Controller):
 
         self._model['phenotyper'].add2RemoveFilter(
             plate=self._model['plate'],
-            positionList=self._model['selectionCoordinates'],
+            positionList=self._model['selectionWhere'],
             phenotype=onlyCurrent and self._model['phenotype'] or None)
 
     def undoLast(self):
@@ -197,8 +206,9 @@ class Controller(controller_generic.Controller):
 
     def getRecommendedFilter(self):
 
-        #TODO: Filter plate as first step of norm
-        return 0, 1, 0, 1
+        lb = self._model['visibleMin']
+        ub = self._model['visibleMax']
+        return lb, ub, lb, ub
 
     def loadMetaData(self, path):
 
@@ -207,8 +217,9 @@ class Controller(controller_generic.Controller):
 
     def saveAbsolute(self, path):
 
-        #TODO: Save data to path
-        return False
+        return self._model['phenotyper'].savePhenotypes(
+            path,
+            askOverwrite=False)
 
     def saveNormed(self, path):
 
