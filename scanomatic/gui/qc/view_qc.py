@@ -746,6 +746,8 @@ class QC_Stage(gtk.VBox):
                 if self._multiSelecting is False:
                     self._unselect()
                     self._controller.setSelected(curSelection, True)
+                else:
+                    self._controller.toggleSelection(curSelection)
 
                 """Artist seems not to work in GTK, using data seris hack atm
 
@@ -777,9 +779,10 @@ class QC_Stage(gtk.VBox):
 
                 self._drawSelectionsDataSeries()
 
-                self._curve_figure_ax.cla()
-                self._controller.plotData(self._curve_figure)
-                self._curve_image_canvas.draw()
+                if not self._multiSelecting:
+                    self._curve_figure_ax.cla()
+                    self._controller.plotData(self._curve_figure)
+                    self._curve_image_canvas.draw()
 
                 self._widgets_require_selection.sensitive = \
                     self._model['numberOfSelections'] > 0
@@ -878,16 +881,22 @@ class QC_Stage(gtk.VBox):
 
     def _pressKey(self, widget, event):
 
-        if event.state & gtk.gdk.CONTROL_MASK:
+        ctrlKey = "CONTROL" in gtk.gdk.keyval_name(event.keyval).upper()
+
+        if ctrlKey or event.state & gtk.gdk.CONTROL_MASK:
             self._multiSelecting = True
             self._HeatMapInfo.set_text(self._model['msg-multiSelecting'])
 
     def _releaseKey(self, widget, event):
 
-        if event.state & gtk.gdk.CONTROL_MASK:
+        ctrlKey = "CONTROL" in gtk.gdk.keyval_name(event.keyval).upper()
+
+        if ctrlKey or event.state & gtk.gdk.CONTROL_MASK:
             self._multiSelecting = False
             self._HeatMapInfo.set_text("")
+            self._curve_figure_ax.cla()
             self._controller.plotData(self._curve_figure)
+            self._curve_image_canvas.draw()
 
 
 class SensitivityGroup(object):
