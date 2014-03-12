@@ -556,45 +556,9 @@ class QC_Stage(gtk.VBox):
             self._widgets_require_fixed_color.sensitive = \
                 colorSetting == self.COLOR_FIXED
 
-        """
-        self._plate_image_canvas.figure.gca().cla()
-        self._model['selection_patches'] = None
-        """
         self._controller.plotHeatmap(self._plate_image_canvas.figure,
                                      colorSetting)
         self._drawSelectionsDataSeries()
-
-    """Not valid controller doesn't need to inform
-    def addSelection(self, pos):
-
-        if pos not in self._model['selection_patches']:
-            self._model['selection_patches'][pos] = plt_patches.Rectangle(
-                pos, 1, 1, ec='k', fill=True, lw=1,
-                hatch='o')
-    """
-
-    """ Not in use
-    def _remove_patch(self, patch):
-
-        try:
-            i = self._plate_figure_ax.patches.index(patch)
-            if i >= 0:
-                self._plate_figure_ax.patches[i].remove()
-        except ValueError:
-            pass
-    """
-
-    """Not valid controller doesn't need to inform
-    def removeSelection(self, pos):
-
-        if pos in self._model['selection_patches']:
-
-            self._remove_patch(
-                self._model['selection_patches'][pos])
-
-            del self._model['selection_patches'][pos]
-
-    """
 
     def _loadMetaData(self, widget):
 
@@ -749,34 +713,6 @@ class QC_Stage(gtk.VBox):
                 else:
                     self._controller.toggleSelection(curSelection)
 
-                """Artist seems not to work in GTK, using data seris hack atm
-
-                    isSel = True
-                else:
-                    isSel = self._controller.toggleSelection(curSelection)
-
-                if (isSel and curSelection not in
-                        self._model['selection_patches']):
-
-                    p = plt_patches.Rectangle(
-                        [v - 0.5 for v in curSelection], 1, 1,
-                        transform=self._plate_figure_ax.transData,
-                        axes=self._plate_figure_ax,
-                        color='k', fill=True, lw=1)
-                        #hatch='o')
-
-                    self._plate_figure_ax.add_artist(p)
-                    self._plate_figure_ax.draw_artist(p)
-                    self._model['selection_patches'][curSelection] = True
-
-                elif (not(isSel) and curSelection in
-                      self._model['selection_patches']):
-
-                    self._remove_patch(
-                        self._model['selection_patches'][curSelection])
-                    del self._model['selection_patches'][curSelection]
-                """
-
                 self._drawSelectionsDataSeries()
 
                 if not self._multiSelecting:
@@ -832,22 +768,11 @@ class QC_Stage(gtk.VBox):
 
     def _unselect(self, *args):
 
-        """
-        for sel in self._model['selection_patches'].values():
-            self._remove_patch(sel)
-
-        self._plate_image_canvas.draw()
-        self._model['selection_patches'] = dict()
-        """
-
         self._model['plate_selections'][...] = False
 
         self._widgets_require_selection.sensitive = False
 
         self._curve_figure_ax.cla()
-        """
-        self._model['selection_patches'] = None
-        """
         self._drawSelectionsDataSeries()
 
     def _removeCurvesPhenotype(self, *args):
@@ -871,10 +796,6 @@ class QC_Stage(gtk.VBox):
 
         if self._model['plate'] is not None:
             self._unselect()
-            """
-            self._plate_image_canvas.figure.gca().cla()
-            self._model['selection_patches'] = None
-            """
             self._controller.plotHeatmap(self._plate_image_canvas.figure)
             self._drawSelectionsDataSeries()
             self._setBoundaries()
