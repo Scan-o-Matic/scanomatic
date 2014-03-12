@@ -169,11 +169,11 @@ class QC_Stage(gtk.VBox):
         #HEATMAP
         #
 
-        self._plate_figure = plt.Figure(figsize=(40, 40), dpi=150)
-        self._plate_figure.add_axes()
-        self._plate_figure_ax = self._plate_figure.gca()
-        self._plate_figure_ax.set_axis_off()
-        self._plate_image_canvas = FigureCanvas(self._plate_figure)
+        plate_figure = plt.Figure(figsize=(40, 40), dpi=150)
+        plate_figure.add_axes()
+        plate_figure_ax = plate_figure.gca()
+        plate_figure_ax.set_axis_off()
+        self._plate_image_canvas = FigureCanvas(plate_figure)
 
         self._plate_image_canvas.mpl_connect('button_press_event',
                                              self._mousePress)
@@ -499,7 +499,8 @@ class QC_Stage(gtk.VBox):
 
     def _setReferences(self, widget):
 
-        self._model['reference-positions'] = self['subplateSelected'].copy()
+        self._model['reference-positions'] = self._model[
+            'subplateSelected'].copy()
         self._HeatMapInfo.set_text(self._model['set-references'])
         self._widgets_require_references.sensitive = True
 
@@ -525,7 +526,8 @@ class QC_Stage(gtk.VBox):
 
         dialog.destroy()
         if fname is not None:
-            fig = (widget is self._plateSaveImage and self._plate_figure
+            fig = (widget is self._plateSaveImage and
+                   self._plate_image_canvas.figure
                    or self._curve_figure)
 
             fig.savefig(fname)
@@ -553,15 +555,17 @@ class QC_Stage(gtk.VBox):
             if self._colorMin.get_text() == "":
                 self._colorMin.set_text("0")
 
-            self._controller.plotHeatmap(self._plate_figure, colorSetting)
-            self._drawSelectionsDataSeries()
-
         elif widget.get_active():
             self._widgets_require_fixed_color.sensitive = \
                 colorSetting == self.COLOR_FIXED
 
-            self._controller.plotHeatmap(self._plate_figure, colorSetting)
-            self._drawSelectionsDataSeries()
+        """
+        self._plate_image_canvas.figure.gca().cla()
+        self._model['selection_patches'] = None
+        """
+        self._controller.plotHeatmap(self._plate_image_canvas.figure,
+                                     colorSetting)
+        self._drawSelectionsDataSeries()
 
     """Not valid controller doesn't need to inform
     def addSelection(self, pos):
@@ -663,7 +667,7 @@ class QC_Stage(gtk.VBox):
 
     def plotNoData(self, fig, msg="No Data Loaded"):
 
-        fig.clf()
+        fig.gca().cla()
         fig.text(0.25, 0.5, msg)
 
     def _setBoundaries(self):
@@ -785,18 +789,43 @@ class QC_Stage(gtk.VBox):
 
     def _drawSelectionsDataSeries(self):
 
+        ax = self._plate_image_canvas.figure.axes[0]
+
         data = zip(*self._model['selectionCoordinates'])
-        print data
 
-        if (self._model['selection_patches'] is None or len(data) != 2):
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
 
-            if (len(data) == 2):
-                self._model['selection_patches'] = self._plate_figure_ax.plot(
-                    data[0], data[1], mec='k', mew=1,
-                    ms=1,
-                    marker='s', fillstyle='none')
-        else:
-            self._model['selection_patches'].set_data(*data)
+        if (len(data) == 2):
+
+            Y, X = data
+
+            if (self._model['selection_patches'] is None):
+
+                self._model['selection_patches'] = ax.plot(
+                    X, Y, mec='k', mew=1,
+                    ms=1, ls="None",
+                    marker='s', fillstyle='none')[0]
+
+            else:
+
+                self._model['selection_patches'].set_data(X, Y)
+
+        elif (self._model['selection_patches'] is not None):
+
+            self._model['selection_patches'].set_data([], [])
+
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+
+        zorder = 0
+        for im in ax.images:
+            if im.zorder > zorder:
+                zorder = im.zorder
+
+        for line in ax.lines:
+            zorder += 1
+            line.zorder = zorder
 
         self._plate_image_canvas.draw()
 
@@ -815,7 +844,9 @@ class QC_Stage(gtk.VBox):
         self._widgets_require_selection.sensitive = False
 
         self._curve_figure_ax.cla()
+        """
         self._model['selection_patches'] = None
+        """
         self._drawSelectionsDataSeries()
 
     def _removeCurvesPhenotype(self, *args):
@@ -839,7 +870,11 @@ class QC_Stage(gtk.VBox):
 
         if self._model['plate'] is not None:
             self._unselect()
-            self._controller.plotHeatmap(self._plate_figure)
+            """
+            self._plate_image_canvas.figure.gca().cla()
+            self._model['selection_patches'] = None
+            """
+            self._controller.plotHeatmap(self._plate_image_canvas.figure)
             self._drawSelectionsDataSeries()
             self._setBoundaries()
 
