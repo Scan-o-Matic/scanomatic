@@ -33,6 +33,9 @@ import scanomatic.io.paths as paths
 import scanomatic.io.app_config as app_config
 import scanomatic.io.logger as logger
 import scanomatic.dataProcessing.phenotyper as phenotyper
+import scanomatic.dataProcessing.subPlates as sub_plates
+import scanomatic.dataProcessing.dataBridge as data_bridge
+import scanomatic.dataProcessing.norm as norm
 
 #
 # CLASSES
@@ -81,7 +84,7 @@ class Controller(controller_generic.Controller):
             return False
 
         self._model['phenotyper'] = p
-        self._model['phenotyper-path'] = p
+        self._model['phenotyper-path'] = pathToDirectory
 
         self._model['plates'] = [
             i for i, p in enumerate(self._model['phenotyper']) if
@@ -244,15 +247,6 @@ class Controller(controller_generic.Controller):
 
                 self.setSelected(pos, selStatus)
 
-                """Not valid anymore
-                if self.setSelected(pos, selStatus):
-                    if selStatus:
-                        stage.addSelection(pos)
-                    else:
-                        stage.removeSelection(pos)
-
-                """
-
     def setSelection(self, lowerBound, higherBound):
 
         #TODO: Find all positions where not inside bounds
@@ -261,13 +255,30 @@ class Controller(controller_generic.Controller):
         outliers = []
         for pos in outliers:
             self.setSelected(pos, True)
-            """Not valid anymore
-            if self.setSelected(pos, True):
-                stage.addSelection(pos)
-            """
 
     def Normalize(self):
 
-        #TODO:
+        phenotypes = data_bridge.Data_Bridge(np.array([
+            p[..., (phenotyper.Phenotyper.PHEN_GT_VALUE,)].copy() for
+            p in self._model['phenotyper'].phenotypes]))
 
-        pass
+        subSampler = sub_plates.SubPlates(
+            phenotypes, kernels=self._model['reference-positions'])
+
+        #If user has missed dubious positions they are filtered out
+        norm.applyOutlierFilter(subSampler)
+
+        #Data array
+        NA = norm.getControlPositionsArray(
+            phenotypes,
+            controlPositionKernel=subSampler.kernels)
+
+        #Get smothened norm surface
+        N = norm.getNormalisationSurfaceWithGridData(
+            NA, useAccumulated=False, smoothing=2)
+
+        #Get normed values
+        ND = norm.applyNormalisation(phenotypes, N, updateBridge=False)
+
+        #TODO: Store values, give user new phenotypes and make possible to
+        # save the data.

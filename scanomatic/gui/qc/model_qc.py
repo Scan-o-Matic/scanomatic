@@ -193,6 +193,7 @@ _stagePresets = {
     'saved-absolute': "Absolute Phenotypes Saved at '{0}'",
     'saved-normed': "Normalized Relative Phenotypes Saved at '{0}'",
 
+    'save-state': "Save State",
     'reference-positions': None,
     'set-references': "Reference Plate Set",
 

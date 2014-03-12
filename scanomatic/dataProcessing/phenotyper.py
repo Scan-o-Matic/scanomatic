@@ -890,6 +890,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                                       Y[self.PHEN_FIT_VALUE]])), newline))
 
         fh.close()
+
+        self._logger.info("Saved csv absolute phenotypes to {0}".format(
+            path))
+
         return True
 
     @staticmethod
