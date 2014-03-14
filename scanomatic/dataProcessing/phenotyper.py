@@ -108,6 +108,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._gaussSigma = gaussSigma
         self._linRegSize = linRegSize
         self._itermode = itermode
+        self._metaData = None
 
         if not self._itermode and runAnalysis:
             self._analyse()
@@ -293,6 +294,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             X, *p)
         return (1.0 - np.square(Yhat - Y).sum() /
                 np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
+
+    @property
+    def metaData(self):
+
+        return self._metaData
+
+    @metaData.setter
+    def metaData(self, val):
+
+        self._metaData = val
 
     @property
     def source(self):
@@ -794,6 +805,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     def plotPlateHeatmap(self, plateIndex,
                          markPositions=[],
                          measure=None,
+                         data=None,
                          useCommonValueAxis=True,
                          vmin=None,
                          vmax=None,
@@ -817,7 +829,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (titleText is not None):
             ax.set_title(titleText)
 
-        plateData = self.phenotypes[plateIndex][..., measure]
+        if data is None:
+            data = self.phenotypes
+
+        plateData = data[plateIndex][..., measure]
+
         if not horizontalOrientation:
             plateData = plateData.T
 
@@ -827,7 +843,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             vmin, vmax = zip(*[
                 (p[..., measure][np.isfinite(p[..., measure])].min(),
                  p[..., measure][np.isfinite(p[..., measure])].max())
-                for p in self.phenotypes if p is not None])
+                for p in data if p is not None])
             vmin = min(vmin)
             vmax = max(vmax)
         else:
@@ -862,8 +878,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return fig
 
-    def savePhenotypes(self, path=None, delim="\t", newline="\n",
-                       askOverwrite=True):
+    def savePhenotypes(self, path=None, data=None, dataHeaders=None,
+                       delim="\t", newline="\n", askOverwrite=True):
         """Outputs the phenotypes as a csv type format."""
 
         if (path is None and self._baseName is not None):
@@ -875,19 +891,38 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         fh = open(path, 'w')
 
-        for plateI, plate in enumerate(self.phenotypes):
+        headers = ('Plate', 'Row', 'Column')
+
+        #HEADER ROW
+        metaData = self._metaData
+        if metaData is not None:
+            headers += metaData.headers
+
+        if data is None:
+            for i in sorted(self.NAMES_OF_PHENOTYPES.keys()):
+                headers.append(self.NAMES_OF_PHENOTYPES[i])
+        elif dataHeaders is not None:
+            headers += dataHeaders
+
+        fh.write("{0}{1}".format(delim.join(map(str, headers)), newline))
+
+        #DATA
+        if data is None:
+            data = self.phenotypes
+
+        for plateI, plate in enumerate(data):
 
             for idX, X in enumerate(plate):
 
                 for idY, Y in enumerate(X):
 
-                    fh.write("{0}{1}".format(
-                        delim.join(
-                            ["{0}:{1}-{2}".format(plateI, idX, idY),
-                             "Unknown Strain",
-                             "Unknown Condition"] +
-                            map(str, ["None", Y[self.PHEN_GT_VALUE], "None",
-                                      Y[self.PHEN_FIT_VALUE]])), newline))
+                    if metaData is None:
+                        fh.write("{0}{1}".format(delim.join(map(
+                            str, [plateI, idX, idY] + Y.tolist())), newline))
+                    else:
+                        fh.write("{0}{1}".format(delim.join(map(
+                            str, [plateI, idX, idY] + metaData(plate, idX, idY)
+                            + Y.tolist())), newline))
 
         fh.close()
 

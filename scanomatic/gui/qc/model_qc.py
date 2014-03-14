@@ -34,11 +34,17 @@ class NewModel(object):
 
         return cls(presets=_stagePresets)
 
-
     def visibleValues(self):
 
-        V = self['phenotyper'].phenotypes[self['plate']][
-            ..., self['phenotype']].ravel()
+        if (self['phenotype'] < self['phenotyper'].nPhenotypeTypes):
+
+            V = self['phenotyper'].phenotypes[self['plate']][
+                ..., self['phenotype']].ravel()
+
+        else:
+
+            V = self['normalized-data'][self['plate']][
+                ..., self['absPhenotype']].ravel()
 
         return V[np.isfinite(V)]
 
@@ -50,17 +56,29 @@ class NewModel(object):
 
         return self['visibleValues'].max()
 
+    def absPhenotype(self):
+
+        if (self['phenotype'] < self['phenotyper'].nPhenotypeTypes or
+                self['normalized-index-offset'] is None):
+
+            return self['phenotype']
+
+        else:
+
+            return self['phenotype'] - self['normalized-index-offset']
+
     def numberOfSelections(self):
 
-        return self['plate_selections'][..., self['phenotype']].sum()
+        return self['plate_selections'][..., self['absPhenotype']].sum()
 
     def selectionCoordinates(self):
 
-        return zip(*np.where(self['plate_selections'][..., self['phenotype']]))
+        return zip(*np.where(self['plate_selections'][...,
+                                                      self['absPhenotype']]))
 
     def selectionWhere(self):
 
-        return np.where(self['plate_selections'][..., self['phenotype']])
+        return np.where(self['plate_selections'][..., self['absPhenotype']])
 
     def multiSelecting(self):
 
@@ -101,7 +119,7 @@ class NewModel(object):
             self['_selectionFilter'] = sf
 
         return sf[self['plate']][..., self['selectOnAllPhenotypes']
-                                 and slice(None) or self['phenotype']]
+                                 and slice(None) or self['absPhenotype']]
 
     def removed_filter(self):
 
@@ -118,7 +136,7 @@ class NewModel(object):
 
     def removed_filter_phenotype(self):
 
-        return self['removed_filter'][..., self['phenotype']]
+        return self['removed_filter'][..., self['absPhenotype']]
 
     def unsaved(self):
 
@@ -207,4 +225,10 @@ _stagePresets = {
 
     'hover-position': 'Position {0}, {1}',
     'load-data-dir': "Select Directory With Data Files",
+
+    'normalized-data': None,
+    'normalized-index-offset': None,
+    'normalized-phenotype-names': dict(),
+    'normalized-phenotype': "2D Normalized {0}",
+    'normalized-text': "2D Normalization Done",
 }

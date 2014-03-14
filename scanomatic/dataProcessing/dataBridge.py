@@ -22,10 +22,10 @@ import numpy as np
 #
 
 import _mockNumpyInterface
-import xml.reader as xmlReader
+import scanomatic.io.xml.reader as xmlReader
 
 
-class DataBridge(_mockNumpyInterface.NumpyArrayInterface):
+class Data_Bridge(_mockNumpyInterface.NumpyArrayInterface):
 
     def __init__(self, source, **kwargs):
         """The data structure is expected to be convertable into
@@ -48,7 +48,7 @@ class DataBridge(_mockNumpyInterface.NumpyArrayInterface):
         """
 
         self._source = source
-        super(DataBridge, self).__init__(None)
+        super(Data_Bridge, self).__init__(None)
 
         #This method is assigned dynamically based on
         #type of data imported

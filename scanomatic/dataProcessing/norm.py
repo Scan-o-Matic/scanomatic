@@ -10,7 +10,7 @@ from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_fil
 #   INTERNAL DEPENDENCIES
 #
 
-from scanomatic.dataProcessing.dataBridge import DataBridge
+from scanomatic.dataProcessing.dataBridge import Data_Bridge
 
 #
 #   STATIC GLOBALS
@@ -186,7 +186,7 @@ def getCoordinateFiltered(dataObject, coordinates, measure=1,
                           requireFinite=True,
                           requireCorrelated=False):
 
-    if isinstance(dataObject, DataBridge):
+    if isinstance(dataObject, Data_Bridge):
         dataObject.getAsArray()
 
     filtered = []
@@ -216,7 +216,7 @@ def getCenterTransformedControlPositions(controlPositionCoordinates,
 
     centerTransformed = []
 
-    if isinstance(dataObject, DataBridge):
+    if isinstance(dataObject, Data_Bridge):
         dataObject = dataObject.getAsArray()
 
     for plateIndex, plate in enumerate(controlPositionCoordinates):

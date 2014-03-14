@@ -109,9 +109,7 @@ class Controller(controller_generic.Controller):
             self._view.get_stage().plotNoData(fig)
             return
 
-        for position in zip(*np.where(
-                self._model['plate_selections'][
-                    ..., self._model['phenotype']])):
+        for position in self._model['selectionCoordinates']:
 
             self._model['phenotyper'].plotACurve(
                 (plate, ) + position,
@@ -165,9 +163,19 @@ class Controller(controller_generic.Controller):
         cm = plt.cm.RdBu_r
         cm.set_bad(color='#A0A0A0', alpha=1.0)
 
+        data = None
+        measure = self._model['absPhenotype']
+
+        if (self._model['normalized-index-offset'] is not None and
+                self._model['phenotype'] >=
+                self._model['normalized-index-offset']):
+
+            data = self._model['normalized-data']
+
         self._model['phenotyper'].plotPlateHeatmap(
             plate,
-            measure=self._model['phenotype'],
+            measure=measure,
+            data=data,
             useCommonValueAxis=self._model['colorsAll'],
             vmin=self._model['fixedColors'][0],
             vmax=self._model['fixedColors'][1],
@@ -185,7 +193,7 @@ class Controller(controller_generic.Controller):
         p = self._model["plate_selections"]
         p[pos] = p[pos] == False
 
-        return p[pos][self._model['phenotype']]
+        return p[pos][self._model['absPhenotype']]
 
     def setSelected(self, pos, value):
 
@@ -200,7 +208,7 @@ class Controller(controller_generic.Controller):
         self._model['phenotyper'].add2RemoveFilter(
             plate=self._model['plate'],
             positionList=self._model['selectionWhere'],
-            phenotype=onlyCurrent and self._model['phenotype'] or None)
+            phenotype=onlyCurrent and self._model['absPhenotype'] or None)
 
     def undoLast(self):
 
@@ -226,8 +234,15 @@ class Controller(controller_generic.Controller):
 
     def saveNormed(self, path):
 
-        #TODO: Save data to path
-        return False
+        headers = tuple(
+            self._model['normalized-phenotype-names'][i] for i
+            in range(len(self._model['normalized-phenotype-names'])))
+
+        return self._model['phenotyper'].savePhenotypes(
+            path,
+            data=self._model['normalized-data'],
+            dataHeaders=headers,
+            askOverwrite=False)
 
     def setSubPlateSelection(self, platePos):
 
@@ -256,17 +271,40 @@ class Controller(controller_generic.Controller):
         for pos in outliers:
             self.setSelected(pos, True)
 
-    def Normalize(self):
+    def setReferencePositions(self):
 
-        phenotypes = data_bridge.Data_Bridge(np.array([
-            p[..., (phenotyper.Phenotyper.PHEN_GT_VALUE,)].copy() for
-            p in self._model['phenotyper'].phenotypes]))
+        if (self._model['reference-positions'] is None):
+
+            self._model['reference-positions'] = np.array([
+                self._model['subplateSelected'].copy() for _ in
+                self._model['phenotyper']])
+
+        else:
+
+            self._model['reference-positions'][self._model['plate']] = \
+                self._model['subplateSelected'].copy()
+
+    def normalize(self):
+
+        normalizedPhenotypes = (phenotyper.Phenotyper.PHEN_GT_VALUE,)
+
+        aCopy = []
+
+        for p in self._model['phenotyper'].phenotypes:
+
+            if isinstance(p, np.ma.masked_array):
+                aCopy.append(p[..., normalizedPhenotypes].filled().copy())
+            else:
+                aCopy.append(p[..., normalizedPhenotypes].copy())
+
+        phenotypes = data_bridge.Data_Bridge(np.array(aCopy))
 
         subSampler = sub_plates.SubPlates(
             phenotypes, kernels=self._model['reference-positions'])
 
         #If user has missed dubious positions they are filtered out
-        norm.applyOutlierFilter(subSampler)
+        for measure in normalizedPhenotypes:
+            norm.applyOutlierFilter(subSampler, measure=measure)
 
         #Data array
         NA = norm.getControlPositionsArray(
@@ -278,7 +316,14 @@ class Controller(controller_generic.Controller):
             NA, useAccumulated=False, smoothing=2)
 
         #Get normed values
-        ND = norm.applyNormalisation(phenotypes, N, updateBridge=False)
+        ND = norm.normalisation(phenotypes, N, updateBridge=False)
 
-        #TODO: Store values, give user new phenotypes and make possible to
-        # save the data.
+        self._model['normalized-data'] = ND
+        self._model['normalized-index-offset'] = len(
+            phenotyper.Phenotyper.NAMES_OF_PHENOTYPES)
+        self._model['normalized-phenotype-names'] = {
+            i: name for i, (val, name) in enumerate(
+                phenotyper.Phenotyper.NAMES_OF_PHENOTYPES.items())
+            if val in normalizedPhenotypes}
+
+        self._view.get_stage().updateAvailablePhenotypes()

@@ -504,10 +504,12 @@ class QC_Stage(gtk.VBox):
             title=self._model['saveTo'],
             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
                      gtk.RESPONSE_OK))
-        dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+        dialog.set_action(gtk.FILE_CHOOSER_ACTION_SAVE)
 
         savePath = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
                     or None)
+
+        dialog.destroy()
 
         if (savePath is not None and self._controller.saveNormed(savePath)):
             self._HeatMapInfo.set_text(self._model['saved-normed'].format(
@@ -519,8 +521,7 @@ class QC_Stage(gtk.VBox):
 
     def _setReferences(self, widget):
 
-        self._model['reference-positions'] = self._model[
-            'subplateSelected'].copy()
+        self._controller.setReferencePositions()
         self._HeatMapInfo.set_text(self._model['set-references'])
         self._widgets_require_references.sensitive = True
 
@@ -528,6 +529,39 @@ class QC_Stage(gtk.VBox):
 
         self._controller.normalize()
         self._widgets_require_norm.sensitive = True
+        self._HeatMapInfo.set_text(self._model['normalized-text'])
+        if (self._model['phenotype'] != self._model['absPhenotype']):
+            self._newPhenotype()
+        else:
+
+            normedName = self._model['normalized-phenotype'].format(
+                phenotyper.Phenotyper.NAMES_OF_PHENOTYPES[
+                    self._model['phenotype']])
+
+            if normedName in self._phenotypeName2Key:
+                #This switches view to the normalized version if exists
+                for i, row in enumerate(self._phenotypeSelector.get_model()):
+
+                    if row[0] == normedName:
+
+                        self._phenotypeSelector.set_active(i)
+                        break
+
+    def updateAvailablePhenotypes(self):
+
+        if (len(self._phenotypeSelector.get_model()) <
+                len(phenotyper.Phenotyper.NAMES_OF_PHENOTYPES) +
+                len(self._model['normalized-phenotype-names'])):
+
+            wrapText = self._model['normalized-phenotype']
+            offset = self._model['normalized-index-offset']
+
+            for k in sorted(self._model['normalized-phenotype-names'].keys()):
+
+                n = wrapText.format(
+                    self._model['normalized-phenotype-names'][k])
+                self._phenotypeSelector.append_text(n)
+                self._phenotypeName2Key[n] = k + offset
 
     def _undoRemove(self, wiget):
 
