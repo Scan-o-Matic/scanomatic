@@ -10,38 +10,11 @@ Make status label have centric elipsis
 
 		v Import meta-data
 
-		v Heatmap
-			v select one and multiple positions
-				-> multiple do simple curves in display
-
-		v Curve display
-
-		    v Save Image
-
 		v Group selection sliders
 
 			for each phenotype min max range for selecting outliers.
 				After sliding allow manual toggling of selection
 
-		v Sub-plate selectors
-
-			v Four checkboxes
-
-        v Unselect all
-
-		v Remove selected
-
-			v for all phenotypes
-
-			v for this phenotype.
-
-		v Normalize all phenotypes.
-
-			v Mark reference positions
-
-			v New set of phenotypes
-
-		v Save
 
 			v Overwrite input (permanently remove curves)
 

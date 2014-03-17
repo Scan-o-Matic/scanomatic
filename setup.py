@@ -61,7 +61,7 @@ _logger.info("Preparing setup parameters")
 #
 
 package_dependencies = [
-    'argparse', 'matplotlib', 'multiprocessing',
+    'argparse', 'matplotlib', 'multiprocessing', 'odf',
     'numpy', 'sh', 'nmap', 'configparse', 'scikits-image',
     'uuid', 'PIL', 'scipy',  'unittest', 'pygtk']
 

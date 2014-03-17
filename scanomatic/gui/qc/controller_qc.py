@@ -32,6 +32,7 @@ import scanomatic.gui.generic.controller_generic as controller_generic
 import scanomatic.io.paths as paths
 import scanomatic.io.app_config as app_config
 import scanomatic.io.logger as logger
+import scanomatic.io.meta_data as meta_data
 import scanomatic.dataProcessing.phenotyper as phenotyper
 import scanomatic.dataProcessing.subPlates as sub_plates
 import scanomatic.dataProcessing.dataBridge as data_bridge
@@ -221,10 +222,42 @@ class Controller(controller_generic.Controller):
         ub = self._model['visibleMax']
         return lb, ub, lb, ub
 
-    def loadMetaData(self, path):
+    def loadMetaData(self, paths):
 
-        #TODO: load metadata
-        pass
+        self._model['meta-data'] = meta_data.Meta_Data(
+            self._model['plate_shapes'], *paths)
+
+        self.guessBestColumn()
+
+    def guessBestColumn(self):
+
+        MD = self._model['meta-data']
+        CR = MD[self._model['plate']]
+
+        hRow = MD.getHeaderRow(self._model['plate'])
+
+        if CR.full == MD.PLATE_PARTIAL:
+
+            rows = [
+                CR(*pos) for pos in [(0, 0), (1, 0), (0, 1), (1, 1)]]
+
+            allowedCols = min(len(r) for r in rows if rows is not None)
+
+        else:
+
+            allowedCols = len(hRow)
+
+        hRow = hRow[:allowedCols]
+
+        for i, h in enumerate(hRow):
+
+            if h.lower().rstrip("s") in ['strain', 'specie', 'organism',
+                                         'construct', 'mutation', 'content']:
+
+                self._model['meta-data-info-column'] = i
+                return
+
+        self._model['meta-data-info-column'] = 0
 
     def saveAbsolute(self, path):
 

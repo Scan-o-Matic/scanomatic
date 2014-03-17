@@ -48,45 +48,134 @@ class Meta_Data(object):
     OFFSET_LOWER_LEFT = 2  # (1, 0)
     OFFSET_LOWER_RIGHT = 3  # (1, 1)
 
-    def __init__(self, plateShapes, askMethod=None, *paths):
+    MATCH_NO = 0
+    MATCH_PLATE = 1
+    MATCH_PLATE_HEADERS = 2
+
+    def __init__(self, plateShapes, *paths):
 
         self._logger = logger.Logger("Meta Data")
 
         self._plateShapes = plateShapes
-        self._askMethod = askMethod
         self._paths = paths
 
         self._data = None
         self._sheetNames = None
         self._sheetReadOrder = None
+        self._plateI2Header = [None] * len(plateShapes)
         self._coordinatResolver = [_Coordinate_Resolver(plateShapes[i],
                                                         Meta_Data.PLATE_FULL)
                                    for i in range(len(plateShapes))]
 
         self._loadPaths()
-        #TODO: Make it try fill up chronologically fully
-        self._guessCoordinates()
+        self._guessLoaded = self._guessCoordinates()
+
+    def __getitem__(self, plate):
+
+        return self._coordinatResolver[plate]
 
     def __call__(self, plate, row, col):
 
         return self._coordinatResolver[plate](row, col)
 
-    def getHeader(self, plate):
+    def getHeaderRow(self, plate):
+        """Gives header column labels for plate
 
-        #TODO: Make
-        return None
+        Returns:
+            Header row (list)   Column labels if such exist.
+                                If not it produces a list with "" strings.
+                                If there's no plate with the index, returns None
+        """
+        if (plate < len(self._plateI2Header)):
+            pID = self._plateI2Header[plate]
+            if pID in self._headers:
+                return self._headers[pID]
 
-    def _hasValidRows(self, rows):
+        if plate >= len(self._plateShapes) or self._plateShapes[plate] is None:
+            return None
 
-        n = len(rows)
-        for plateShape in self._plateShapes:
-            if (plateShape is not None and
-                    n > plateShape[0] * plateShape[1] and
-                    plateShape[0] * plateShape[1] - n <= 1):
+        return ["" for _ in range(len(self(plate, 0, 0)))]
 
+    def _guessCoordinates(self):
+
+        if self._sheetReadOrder is not None:
+
+            n = 0
+            for i, shape in enumerate(self._plateShapes):
+
+                if shape is not None:
+
+                    shape = shape[0] * shape[1]
+                    if not(i < len(self._sheetReadOrder)):
+                        self._logger.warning(
+                            "Not enough valid data-sheets")
+                        return False
+
+                    dID = self._sheetReadOrder[n]
+                    lD = len(self._data[dID])
+                    if (shape == lD):
+                        self.setPositionLookup(i, dID)
+                    elif (lD * 4 == shape):
+                        for j in range(4):
+
+                            if j != 0:
+                                dID = self._sheetReadOrder[n]
+                                lD = len(self._data[dID])
+                                n += 1
+                                if not(lD * 4 == shape):
+                                    self._logger.warning(
+                                        "Meta-Data did not fill up plate")
+                                    return False
+
+                            self.setPositionLookup(
+                                i, dID,
+                                full=Meta_Data.PLATE_PARTIAL,
+                                offset=[
+                                    Meta_Data.OFFSET_UPPER_LEFT,
+                                    Meta_Data.OFFSET_UPPER_RIGHT,
+                                    Meta_Data.OFFSET_LOWER_LEFT,
+                                    Meta_Data.OFFSET_LOWER_RIGHT][j])
+
+                    n += 1
+
+            if n + 1 == len(self._plateShapes):
                 return True
 
+            self._logger.warning("Some of the loaded meta-data wasn't used")
+            return True
+
+        self._logger.info(
+            "No plates known, can't really guess their content then.")
         return False
+
+    def _hasValidRows(self, rows):
+        """Evaluates if the row count could match up with plate
+
+        Args:
+            rows (iterable):    The data as rows
+
+        Returns:
+            Match evaluation (int):
+
+                `Meta_Data.MATCH_NO` if no matching plate
+                `Meta_Data.MATCH_PLATE` if exactly matches plate or 1/4th
+                `Meta_Data.MATCH_PLATE_HEADERS` if matches plate or 1/4th
+                    with headers
+        """
+        n = len(rows)
+        for plateShape in self._plateShapes:
+            if (plateShape is not None):
+
+                plate = plateShape[0] * plateShape[1]
+
+                if plate == n or n * 4 == plate:
+                    return Meta_Data.MATCH_PLATE
+
+                elif plate == n - 1 or (n - 1) * 4 == plate:
+
+                    return Meta_Data.MATCH_PLATE_HEADERS
+
+        return Meta_Data.MATCH_NO
 
     def _makeRectangle(self, data, fill=u''):
 
@@ -99,6 +188,7 @@ class Meta_Data(object):
 
     def _loadPaths(self):
 
+        self._headers = dict()
         self._data = dict()
         self._sheetNames = dict()
         self._sheetReadOrder = list()
@@ -114,8 +204,17 @@ class Meta_Data(object):
             for t in doc.getElementsByType(table.Table):
 
                 rows = t.getElementsByType(table.TableRow)
-                if self._hasValidRows(rows):
-                    #TODO: Store header differently if exists
+
+                matchType = self._hasValidRows(rows)
+
+                if matchType == Meta_Data.MATCH_NO:
+
+                    self._logger.warning(
+                        u"Sheet {0} of {1} had no understandable data".format(
+                            t.getAttribute("name"), os.path.basename(path)))
+
+                else:
+
                     data = []
                     for row in rows:
                         dataRow = []
@@ -128,19 +227,25 @@ class Meta_Data(object):
                         data.append(dataRow)
 
                     self._makeRectangle(data)
+
                     name = t.getAttribute("name")
                     sheetID = md5.new().hexdigest()
+
+                    if matchType == Meta_Data.MATCH_PLATE:
+
+                        self._headers[sheetID] = ["" for _ in
+                                                  range(len(data[0]))]
+
+                    else:
+
+                        self._headers[sheetID] = data[0]
+                        data = data[1:]
+
                     self._data[sheetID] = data
                     self._sheetNames[sheetID] = u"{0}:{1}".format(
                         os.path.basename(path), name)
 
                     self._sheetReadOrder.append(sheetID)
-
-                else:
-
-                    self._logger.warning(
-                        u"Sheet {0} of {1} had no understandable data".format(
-                            t.getAttribute("name"), os.path.basename(path)))
 
     def setPositionLookup(self, plateIndex, dataKey,
                           orientation=None, verticalDirection=None,
@@ -175,6 +280,10 @@ class Meta_Data(object):
                     ["PARTIAL", "FULL"][full is Meta_Data.PLATE_FULL]))
             raise ValueError
             return False
+
+        #1.5 Link header info
+        if offset == Meta_Data.OFFSET_UPPER_LEFT:
+            self._plateI2Header[plateIndex] = dataKey
 
         #2 Invoke sorting
         cr = self._coordinatResolver[plateIndex]

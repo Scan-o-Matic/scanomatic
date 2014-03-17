@@ -125,6 +125,7 @@ class QC_Stage(gtk.VBox):
         hbox.pack_start(self._buttonLoadMetaData, expand=False, fill=False)
         self.pack_start(hbox, expand=False, fill=False)
 
+        self._widgets_require_data.add(self._buttonLoadMetaData)
         #
         # PLATE SELECTOR
         #
@@ -627,7 +628,8 @@ class QC_Stage(gtk.VBox):
         dialog.set_action(gtk.FILE_CHOOSER_ACTION_OPEN)
         dialog.set_select_multiple(True)
 
-        pathMetaData = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
+        pathMetaData = (dialog.run() == gtk.RESPONSE_OK and
+                        dialog.get_filenames()
                         or None)
 
         dialog.destroy()
@@ -681,6 +683,11 @@ class QC_Stage(gtk.VBox):
 
                 self._model['plate'] = \
                     int(self._plateSelectionAdjustment.get_value() - 1)
+
+                if self._model['meta-data'] is not None:
+
+                    self._controller.guessBestColumn()
+
                 self._newPhenotype()
 
     def plotNoData(self, fig, msg="No Data Loaded"):
@@ -748,11 +755,22 @@ class QC_Stage(gtk.VBox):
 
         if event.xdata is not None and event.ydata is not None:
 
+            x = int(round(event.xdata))
+            y = int(round(event.ydata))
+
+            posText = self._model['hover-position'].format(x, y)
+
             if self._model['meta-data'] is None:
-                self._HeatMapInfo.set_text(self._model['hover-position'].format(
-                    int(round(event.xdata)), int(round(event.ydata))))
+                self._HeatMapInfo.set_text(posText)
             else:
-                print "Meta?"
+
+                posMD = self._model['meta-data'](self._model['plate'], x, y)
+
+                if self._model['meta-data-info-column'] < len(posMD):
+                    self._HeatMapInfo.set_text(posText + ": " + posMD[
+                        self._model['meta-data-info-column']])
+                else:
+                    self._HeatMapInfo.set_text(posText)
 
     def _mousePress(self, event, *args, **kwargs):
 

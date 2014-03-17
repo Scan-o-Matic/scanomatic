@@ -104,6 +104,13 @@ class NewModel(object):
 
         return not self['multiSelecting']
 
+    def plate_shapes(self):
+
+        if self['phenotyper'] is None:
+            return None
+
+        return [p is None and None or p.shape[:2] for p in self['phenotyper']]
+
     def plate_selections(self):
 
         if self['phenotyper'] is None:
@@ -222,6 +229,7 @@ _stagePresets = {
     'meta-data': None,
     'meta-data-files': "Select Meta-Data Files",
     'meta-data-loaded': "Meta-Data Loaded!",
+    'meta-data-info-column': 0,
 
     'hover-position': 'Position {0}, {1}',
     'load-data-dir': "Select Directory With Data Files",
