@@ -136,8 +136,7 @@ class QC_Stage(gtk.VBox):
         self._plateSelectionAdjustment = gtk.Adjustment(0, 0, 0, 1, 1, 0)
         self._plateSelector = gtk.SpinButton(self._plateSelectionAdjustment,
                                              0, 0)
-        self._plateSelectionAdjustment.connect("value_changed",
-                                               self._loadPlate)
+        self._plateSelector.connect("value_changed", self._loadPlate)
         self._plateSelector.set_wrap(True)
         self._plateSelector.set_snap_to_ticks(True)
 
@@ -362,7 +361,7 @@ class QC_Stage(gtk.VBox):
         self._badSelector = gtk.SpinButton(self._badSelectorAdjustment,
                                            0, 0)
 
-        self._badSelectorAdjustment.connect("value_changed", self._selectBad)
+        self._badSelector.connect("value_changed", self._selectBad)
 
         self._badSelector.set_wrap(True)
         self._badSelector.set_snap_to_ticks(True)
@@ -705,26 +704,28 @@ class QC_Stage(gtk.VBox):
                             self._badSelectorAdjustment.set_upper(s)
 
                         self._badSelectorAdjustment.set_value(0)
-                        self._selectBad(self._badSelectorAdjustment)
+                        self._selectBad(self._badSelector)
 
-            elif widget is self._plateSelectionAdjustment:
+            elif widget is self._plateSelector:
 
-                self._model['plate'] = \
-                    int(self._plateSelectionAdjustment.get_value() - 1)
+                p = self._plateSelector.get_value_as_int() - 1
 
-                if self._model['meta-data'] is not None:
+                if p != self._model['plate']:
+                    self._model['plate'] = p
 
-                    s = self._model['plate_size']
-                    if s is None or s < 1:
-                        self._badSelectorAdjustment.set_upper(1)
-                    else:
-                        self._badSelectorAdjustment.set_upper(s)
+                    if self._model['meta-data'] is not None:
 
-                    self._controller.guessBestColumn()
+                        s = self._model['plate_size']
+                        if s is None or s < 1:
+                            self._badSelectorAdjustment.set_upper(1)
+                        else:
+                            self._badSelectorAdjustment.set_upper(s)
 
-                self._newPhenotype()
-                if (self._model['auto-selecting']):
-                    self._badSelectorAdjustment.set_value(0)
+                        self._controller.guessBestColumn()
+
+                    self._newPhenotype()
+                    if (self._model['auto-selecting']):
+                        self._badSelectorAdjustment.set_value(0)
 
     def plotNoData(self, fig, msg="No Data Loaded"):
 
@@ -888,7 +889,7 @@ class QC_Stage(gtk.VBox):
     def _selectBad(self, widget):
 
         self._model['auto-selecting'] = True
-        pos = self._controller.getMostProbableBad(widget.get_value())
+        pos = self._controller.getMostProbableBad(widget.get_value_as_int())
 
         self._model['plate_selections'][...] = False
 
