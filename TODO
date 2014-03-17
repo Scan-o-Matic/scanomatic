@@ -15,11 +15,6 @@ Make status label have centric elipsis
 			for each phenotype min max range for selecting outliers.
 				After sliding allow manual toggling of selection
 
-
-			v Overwrite input (permanently remove curves)
-
-			v Save phenotypes
-
         v Undo
 --
 
