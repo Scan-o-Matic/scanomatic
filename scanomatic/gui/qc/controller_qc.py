@@ -222,6 +222,34 @@ class Controller(controller_generic.Controller):
         ub = self._model['visibleMax']
         return lb, ub, lb, ub
 
+    def getMostProbableBad(self, index=0):
+
+        wFit = 0.25
+        p = self._model['phenotyper']
+        pl = self._model['plate']
+
+        gt = p.phenotypes[pl][..., p.PHEN_GT_VALUE]
+        gtErr = p.phenotypes[pl][..., p.PHEN_GT_ERR]
+        curvFit = p.phenotypes[pl][..., p.PHEN_FIT_VALUE]
+
+        gtBar = gt.ravel()[np.isfinite(gt.ravel())].mean()
+
+        badness = (np.abs(gt - gtBar) / gtBar +
+                   (gtErr) * 100 +
+                   wFit * (1 - curvFit.clip(0, 1)) * 100)
+
+        pos = np.where(badness == badness.ravel()[
+            badness.ravel().argsort()[-index]])
+
+        """DEBUG
+        if pos is not None and len(pos) == 2 and len(pos[0]) >= 0:
+
+            print np.abs(gt[pos[0], pos[1]] - gtBar) / gtBar
+            print (gtErr[pos[0], pos[1]]) * 100
+            print wFit * (1 - curvFit.clip(0, 1)[pos[0], pos[1]]) * 100
+        """
+        return pos
+
     def loadMetaData(self, paths):
 
         self._model['meta-data'] = meta_data.Meta_Data(

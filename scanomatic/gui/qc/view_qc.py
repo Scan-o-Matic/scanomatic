@@ -126,6 +126,7 @@ class QC_Stage(gtk.VBox):
         self.pack_start(hbox, expand=False, fill=False)
 
         self._widgets_require_data.add(self._buttonLoadMetaData)
+
         #
         # PLATE SELECTOR
         #
@@ -357,11 +358,28 @@ class QC_Stage(gtk.VBox):
 
         self._widgets_require_removed.append(self._undoButton)
 
+        self._badSelectorAdjustment = gtk.Adjustment(1, 1, 1, 1, 1, 0)
+        self._badSelector = gtk.SpinButton(self._badSelectorAdjustment,
+                                           0, 0)
+
+        self._badSelectorAdjustment.connect("value_changed", self._selectBad)
+
+        self._badSelector.set_wrap(True)
+        self._badSelector.set_snap_to_ticks(True)
+
+        self._widgets_require_data.add(self._badSelector)
+
         frame = gtk.Frame(self._model['selections-section'])
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(vbox2)
         plateActionVB.pack_start(frame, expand=False, fill=False)
         vbox2.pack_start(self._buttonUnSelect, expand=False, fill=False)
+        vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False, padding=4)
+        badHbox = gtk.HBox(False, spacing=2)
+        badHbox.pack_start(gtk.Label(self._model['badness-label']),
+                           expand=False, fill=False)
+        badHbox.pack_start(self._badSelector, expand=False, fill=False)
+        vbox2.pack_start(badHbox, expand=False, fill=False)
         vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False, padding=4)
         vbox2.pack_start(self._buttonRemoveCurvesPhenotype, expand=False,
                          fill=False)
@@ -665,6 +683,7 @@ class QC_Stage(gtk.VBox):
                 if dataPath is not None:
                     if (self._controller.loadPhenotypes(dataPath)):
 
+                        self._model['auto-selecting'] = True
                         if self._model['phenotype'] is None:
                             self._phenotypeSelector.set_active(0)
 
@@ -679,6 +698,15 @@ class QC_Stage(gtk.VBox):
                         else:
                             self._model['plate'] = 0
 
+                        s = self._model['plate_size']
+                        if s is None or s < 1:
+                            self._badSelectorAdjustment.set_upper(1)
+                        else:
+                            self._badSelectorAdjustment.set_upper(s)
+
+                        self._badSelectorAdjustment.set_value(0)
+                        self._selectBad(self._badSelectorAdjustment)
+
             elif widget is self._plateSelectionAdjustment:
 
                 self._model['plate'] = \
@@ -686,9 +714,17 @@ class QC_Stage(gtk.VBox):
 
                 if self._model['meta-data'] is not None:
 
+                    s = self._model['plate_size']
+                    if s is None or s < 1:
+                        self._badSelectorAdjustment.set_upper(1)
+                    else:
+                        self._badSelectorAdjustment.set_upper(s)
+
                     self._controller.guessBestColumn()
 
                 self._newPhenotype()
+                if (self._model['auto-selecting']):
+                    self._badSelectorAdjustment.set_value(0)
 
     def plotNoData(self, fig, msg="No Data Loaded"):
 
@@ -758,7 +794,7 @@ class QC_Stage(gtk.VBox):
             x = int(round(event.xdata))
             y = int(round(event.ydata))
 
-            posText = self._model['hover-position'].format(x, y)
+            posText = self._model['hover-position'].format(y, x)
 
             if self._model['meta-data'] is None:
                 self._HeatMapInfo.set_text(posText)
@@ -787,6 +823,8 @@ class QC_Stage(gtk.VBox):
         if not(None in (event.xdata, event.ydata)):
             curSelection = tuple(np.round([event.ydata, event.xdata]).tolist())
             if (curSelection == self._curSelection):
+
+                self._model['auto-selecting'] = False
 
                 if self._multiSelecting is False:
                     self._unselect()
@@ -847,6 +885,31 @@ class QC_Stage(gtk.VBox):
 
         self._plate_image_canvas.draw()
 
+    def _selectBad(self, widget):
+
+        self._model['auto-selecting'] = True
+        pos = self._controller.getMostProbableBad(widget.get_value())
+
+        self._model['plate_selections'][...] = False
+
+        if pos is None or len(pos) != 2 or len(pos[0]) == 0:
+            n = int(widget.get_value())
+            self._curve_figure_ax.cla()
+            self._curve_figure_ax.text(0.25, 0.5,
+                                       "Already Removed the #{0} worst".format(
+                                       n))
+            self._curve_image_canvas.draw()
+            return None
+
+        X, Y = pos
+
+        self._model['plate_selections'][X, Y] = True
+        self._curve_figure_ax.cla()
+        self._controller.plotData(self._curve_figure)
+        self._curve_image_canvas.draw()
+        self._drawSelectionsDataSeries()
+        self._widgets_require_selection.sensitive = True
+
     def _unselect(self, *args):
 
         self._model['plate_selections'][...] = False
@@ -862,6 +925,9 @@ class QC_Stage(gtk.VBox):
         self._unselect()
         self._widgets_require_removed.sensitive = True
         self._newPhenotype()
+        if (self._model['auto-selecting']):
+            self._badSelectorAdjustment.set_value(
+                self._badSelectorAdjustment.get_value() + 1)
 
     def _removeCurvesAllPhenotype(self, *args):
 
@@ -869,6 +935,9 @@ class QC_Stage(gtk.VBox):
         self._unselect()
         self._widgets_require_removed.sensitive = True
         self._newPhenotype()
+        if (self._model['auto-selecting']):
+            self._badSelectorAdjustment.set_value(
+                self._badSelectorAdjustment.get_value() + 1)
 
     def _newPhenotype(self, widget=None, *args):
 

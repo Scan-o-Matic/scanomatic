@@ -111,6 +111,17 @@ class NewModel(object):
 
         return [p is None and None or p.shape[:2] for p in self['phenotyper']]
 
+    def plate_size(self):
+
+        if (self['phenotyper'] is None or
+                self['phenotyper'][self['plate']] is None):
+
+            return 0
+
+        pShape = self['phenotyper'][self['plate']].shape
+
+        return pShape[0] * pShape[1]
+
     def plate_selections(self):
 
         if self['phenotyper'] is None:
@@ -172,6 +183,7 @@ _stagePresets = {
     'fixedColors': (None, None),
     'colorsAll': True,
     '_selectionFilter': None,
+
     '_removeFilter': None,
     'plates': None,
     'subplateSelected': np.zeros((2, 2), dtype=bool),
@@ -194,9 +206,12 @@ _stagePresets = {
 
     'selections-section': "Selections & Undo",
     'unselect': "Unselect All",
+    'badness-label': 'Badness',
     'removeCurvesPhenotype': "Delete marked, this phenotype",
     'removeCurvesAllPhenotypes': "Delete marked, all phenotypes",
     'undo': "Undo",
+
+    'auto-selecting': True,
 
     'multi-select-phenotype': "Select based on phenotype",
     'multi-sel-lower': "Lower:",
@@ -231,7 +246,7 @@ _stagePresets = {
     'meta-data-loaded': "Meta-Data Loaded!",
     'meta-data-info-column': 0,
 
-    'hover-position': 'Position {0}, {1}',
+    'hover-position': 'Row {0}, Column {1}',
     'load-data-dir': "Select Directory With Data Files",
 
     'normalized-data': None,
