@@ -893,24 +893,40 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         headers = ('Plate', 'Row', 'Column')
 
-        #HEADER ROW
-        metaData = self._metaData
-        if metaData is not None:
-            headers += metaData.headers
-
+        #USING RAW PHENOTYPE DATA
         if data is None:
-            for i in sorted(self.NAMES_OF_PHENOTYPES.keys()):
-                headers.append(self.NAMES_OF_PHENOTYPES[i])
-        elif dataHeaders is not None:
-            headers += dataHeaders
+            dataHeaders = tuple(
+                self.NAMES_OF_PHENOTYPES[i] for i in
+                sorted(self.NAMES_OF_PHENOTYPES.keys()))
 
-        fh.write("{0}{1}".format(delim.join(map(str, headers)), newline))
-
-        #DATA
-        if data is None:
+            self._logger.info("Using raw phenotypes")
             data = self.phenotypes
 
+        #HEADER ROW
+        metaData = self._metaData
+        allHeadersSame = True
+        metaDataHeaders = tuple()
+
+        if metaData is not None:
+            self._logger.info("Using meta-data")
+            metaDataHeaders = metaData.getHeaderRow(0)
+            for plateI in range(1, len(data)):
+                if metaDataHeaders != metaData.getHeaderRow(plateI):
+                    allHeadersSame = False
+                    break
+            metaDataHeaders = tuple(metaDataHeaders)
+
+        if allHeadersSame:
+            fh.write("{0}{1}".format(delim.join(
+                map(str, headers + metaDataHeaders + dataHeaders)), newline))
+
+        #DATA
         for plateI, plate in enumerate(data):
+
+            if not allHeadersSame:
+                fh.write("{0}{1}".format(delim.join(
+                    map(str, headers + tuple(metaData.getHeaderRow(plateI)) +
+                        dataHeaders)), newline))
 
             for idX, X in enumerate(plate):
 
@@ -921,7 +937,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                             str, [plateI, idX, idY] + Y.tolist())), newline))
                     else:
                         fh.write("{0}{1}".format(delim.join(map(
-                            str, [plateI, idX, idY] + metaData(plate, idX, idY)
+                            str, [plateI, idX, idY] + metaData(plateI, idX, idY)
                             + Y.tolist())), newline))
 
         fh.close()

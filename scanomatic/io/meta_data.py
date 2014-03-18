@@ -150,10 +150,15 @@ class Meta_Data(object):
 
                     n += 1
 
-            if n + 1 == len(self._plateShapes):
+            if n == len(self._sheetReadOrder):
                 return True
 
-            self._logger.warning("Some of the loaded meta-data wasn't used")
+            self._logger.warning(
+                "Some of the loaded meta-data wasn't used" +
+                ", needed {0} plates, when done this was left over: {1}".format(
+                    len(self._plateShapes),
+                    [self._sheetNames[sID] for sID in self._sheetReadOrder[n:]]
+                ))
             return True
 
         self._logger.info(
@@ -235,7 +240,8 @@ class Meta_Data(object):
                             if (len(ps)) == 0:
                                 dataRow.append(u'')
                             else:
-                                dataRow.append(ps.firstChild.data)
+                                dataRow.append(u', '.join(
+                                    [pps.firstChild.data for pps in ps]))
                         data.append(dataRow)
 
                     self._makeRectangle(data)
@@ -412,6 +418,10 @@ class _Coordinate_Resolver(object):
             if self._data is None:
                 return list()
             else:
+                """
+                print "Row {0}, Col {1} -> {2} + {3}".format(
+                    row, col, self._rowVal(row), self._colVal(col))
+                """
                 return self._data[self._rowVal(row) + self._colVal(col)]
         else:
             offR = row % 2
@@ -435,9 +445,9 @@ class _Coordinate_Resolver(object):
 
         if self._horizontal:
             if self._rowAsc:
-                return row * self._rowLength
+                return row * self._colLength
             else:
-                return (self._rowMax - row) * self._rowLength
+                return (self._rowMax - row) * self._colLength
         else:
             if self._rowAsc:
                 return row
@@ -447,6 +457,12 @@ class _Coordinate_Resolver(object):
     def _colVal(self, col):
 
         if self._horizontal:
-            return col * self._colLength
+            if self._rowAsc:
+                return col
+            else:
+                return self._colMax - col
         else:
-            return col
+            if self._colAsc:
+                return col * self._rowLength
+            else:
+                return (self._colMax - col) * self._rowLength

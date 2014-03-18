@@ -255,6 +255,8 @@ class Controller(controller_generic.Controller):
         self._model['meta-data'] = meta_data.Meta_Data(
             self._model['plate_shapes'], *paths)
 
+        self._model['phenotyper'].metaData = self._model['meta-data']
+
         self.guessBestColumn()
 
     def guessBestColumn(self):
@@ -283,9 +285,12 @@ class Controller(controller_generic.Controller):
                                          'construct', 'mutation', 'content']:
 
                 self._model['meta-data-info-column'] = i
+                self._model['meta-data-info-columnName'] = h
                 return
 
         self._model['meta-data-info-column'] = 0
+        self._model['meta-data-info-columnName'] = (len(hRow) > 0 and
+                                                    hRow[0] or "")
 
     def saveAbsolute(self, path):
 

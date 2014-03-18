@@ -167,6 +167,17 @@ class QC_Stage(gtk.VBox):
         self.pack_start(hbox, expand=False, fill=False)
 
         #
+        #MAIN BOXES
+        #
+
+        vboxLeft = gtk.VBox(False, spacing=2)
+        vboxRight = gtk.VBox(False, spacing=2)
+        hbox = gtk.HBox(False, spacing=2)
+        self.pack_start(hbox, expand=True, fill=True)
+        hbox.pack_start(vboxLeft, expand=True, fill=True)
+        hbox.pack_start(vboxRight, expand=False, fill=False)
+
+        #
         #HEATMAP
         #
 
@@ -193,26 +204,20 @@ class QC_Stage(gtk.VBox):
         self._plateSaveImage.connect("clicked", self._saveImage)
         self._widgets_require_data.append(self._plateSaveImage)
 
-        hbox = gtk.HBox(False, spacing=2)
-        self.pack_start(hbox, expand=True, fill=True)
-        vbox = gtk.VBox(False, spacing=2)
-        hbox.pack_start(vbox, expand=True, fill=True)
-        vbox.pack_start(self._plate_image_canvas, expand=True, fill=True)
+        vboxLeft.pack_start(self._plate_image_canvas, expand=True, fill=True)
         hbox2 = gtk.HBox(False, spacing=2)
         hbox2.pack_start(self._plateSaveImage, expand=False, fill=False)
         hbox2.pack_start(self._HeatMapInfo, expand=True, fill=True)
-        vbox.pack_start(hbox2, expand=False, fill=False)
+        vboxLeft.pack_start(hbox2, expand=False, fill=False)
 
         #
         # HEATMAP COLOR VALUES
         #
 
-        plateActionVB = gtk.VBox(False, spacing=2)
-        hbox.pack_start(plateActionVB, expand=False, fill=False)
         frame = gtk.Frame(self._model['colors'])
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(vbox2)
-        plateActionVB.pack_start(frame, expand=False, fill=False)
+        vboxRight.pack_start(frame, expand=False, fill=False)
 
         self._colorsThisPlate = gtk.RadioButton(
             group=None, label=self._model['color-one-plate'])
@@ -257,7 +262,7 @@ class QC_Stage(gtk.VBox):
         #
 
         frame = gtk.Frame(self._model['multi-select-phenotype'])
-        #plateActionVB.pack_start(frame, expand=False, fill=False)
+        #vboxRight.pack_start(frame, expand=False, fill=False)
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(vbox2)
 
@@ -297,38 +302,6 @@ class QC_Stage(gtk.VBox):
         hbox2.pack_start(gtk.Label(self._model['multi-sel-higher']),
                          expand=False, fill=False)
         hbox2.pack_start(self._higherBoundWidget, expand=True, fill=True)
-
-        #
-        # Subplate selection
-        #
-
-        self._subplate_0_0 = gtk.CheckButton(self._model['subplate-0-0'])
-        self._subplate_0_1 = gtk.CheckButton(self._model['subplate-0-1'])
-        self._subplate_1_0 = gtk.CheckButton(self._model['subplate-1-0'])
-        self._subplate_1_1 = gtk.CheckButton(self._model['subplate-1-1'])
-
-        self._subplate_0_0.connect("toggled", self._subplateSelect, (0, 0))
-        self._subplate_0_1.connect("toggled", self._subplateSelect, (0, 1))
-        self._subplate_1_0.connect("toggled", self._subplateSelect, (1, 0))
-        self._subplate_1_1.connect("toggled", self._subplateSelect, (1, 1))
-
-        self._widgets_require_data.add(self._subplate_1_1)
-        self._widgets_require_data.add(self._subplate_1_0)
-        self._widgets_require_data.add(self._subplate_0_1)
-        self._widgets_require_data.add(self._subplate_0_0)
-
-        frame = gtk.Frame(self._model['subplate-selection'])
-        vbox2 = gtk.VBox(False, spacing=2)
-        frame.add(vbox2)
-        plateActionVB.pack_start(frame, expand=False, fill=False)
-        hbox2 = gtk.HBox(False, spacing=2)
-        vbox2.pack_start(hbox2, expand=False, fill=False)
-        hbox2.pack_start(self._subplate_0_0, expand=False, fill=False)
-        hbox2.pack_start(self._subplate_0_1, expand=False, fill=False)
-        hbox2 = gtk.HBox(False, spacing=2)
-        vbox2.pack_start(hbox2, expand=False, fill=False)
-        hbox2.pack_start(self._subplate_1_0, expand=False, fill=False)
-        hbox2.pack_start(self._subplate_1_1, expand=False, fill=False)
 
         #
         #Buttons Working on selected curves
@@ -371,7 +344,7 @@ class QC_Stage(gtk.VBox):
         frame = gtk.Frame(self._model['selections-section'])
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(vbox2)
-        plateActionVB.pack_start(frame, expand=False, fill=False)
+        vboxRight.pack_start(frame, expand=False, fill=False)
         vbox2.pack_start(self._buttonUnSelect, expand=False, fill=False)
         vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False, padding=4)
         badHbox = gtk.HBox(False, spacing=2)
@@ -402,14 +375,43 @@ class QC_Stage(gtk.VBox):
 
         self._widgets_require_selection.append(self._curveSaveImage)
 
+        vboxLeft.pack_start(self._curve_image_canvas, expand=True, fill=True)
+
         hbox = gtk.HBox(False, spacing=2)
-        vbox = gtk.VBox(False, spacing=2)
-        hbox.pack_start(vbox, expand=True, fill=True)
-        self.pack_start(hbox, expand=True, fill=True)
-        vbox.pack_start(self._curve_image_canvas, expand=True, fill=True)
+        hbox.pack_start(self._curveSaveImage, expand=False, fill=False)
+        vboxLeft.pack_start(hbox, expand=False, fill=False)
+
+        #
+        # Subplate selection
+        #
+
+        self._subplate_0_0 = gtk.CheckButton(self._model['subplate-0-0'])
+        self._subplate_0_1 = gtk.CheckButton(self._model['subplate-0-1'])
+        self._subplate_1_0 = gtk.CheckButton(self._model['subplate-1-0'])
+        self._subplate_1_1 = gtk.CheckButton(self._model['subplate-1-1'])
+
+        self._subplate_0_0.connect("toggled", self._subplateSelect, (0, 0))
+        self._subplate_0_1.connect("toggled", self._subplateSelect, (0, 1))
+        self._subplate_1_0.connect("toggled", self._subplateSelect, (1, 0))
+        self._subplate_1_1.connect("toggled", self._subplateSelect, (1, 1))
+
+        self._widgets_require_data.add(self._subplate_1_1)
+        self._widgets_require_data.add(self._subplate_1_0)
+        self._widgets_require_data.add(self._subplate_0_1)
+        self._widgets_require_data.add(self._subplate_0_0)
+
+        frame = gtk.Frame(self._model['subplate-selection'])
+        vbox2 = gtk.VBox(False, spacing=2)
+        frame.add(vbox2)
+        vboxRight.pack_start(frame, expand=False, fill=False)
         hbox2 = gtk.HBox(False, spacing=2)
-        vbox.pack_start(hbox2, expand=False, fill=False)
-        hbox2.pack_start(self._curveSaveImage, expand=False, fill=False)
+        vbox2.pack_start(hbox2, expand=False, fill=False)
+        hbox2.pack_start(self._subplate_0_0, expand=False, fill=False)
+        hbox2.pack_start(self._subplate_0_1, expand=False, fill=False)
+        hbox2 = gtk.HBox(False, spacing=2)
+        vbox2.pack_start(hbox2, expand=False, fill=False)
+        hbox2.pack_start(self._subplate_1_0, expand=False, fill=False)
+        hbox2.pack_start(self._subplate_1_1, expand=False, fill=False)
 
         #
         # Normalize
@@ -425,10 +427,9 @@ class QC_Stage(gtk.VBox):
 
         self._widgets_require_references.append(self._normalize)
 
-        vbox = gtk.VBox(False, spacing=2)
-        hbox.pack_start(vbox, expand=False, fill=False)
         frame = gtk.Frame(self._model['frame-normalize'])
-        vbox.pack_start(frame, expand=False, fill=False)
+        vboxRight.pack_start(frame, expand=False, fill=False)
+
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(vbox2)
         vbox2.pack_start(self._setRefButton, expand=False, fill=False)
@@ -457,14 +458,14 @@ class QC_Stage(gtk.VBox):
         self._curSelection = None
         self._multiSelecting = False
 
-        vbox.pack_start(self._savePhenoAbs, expand=False, fill=False,
-                        padding=4)
+        vboxRight.pack_start(self._savePhenoAbs, expand=False, fill=False,
+                             padding=4)
 
-        vbox.pack_start(self._saveNormed, expand=False, fill=False,
-                        padding=4)
+        vboxRight.pack_start(self._saveNormed, expand=False, fill=False,
+                             padding=4)
 
-        vbox.pack_start(self._saveState, expand=False, fill=False,
-                        padding=4)
+        vboxRight.pack_start(self._saveState, expand=False, fill=False,
+                             padding=4)
 
         self._widgets_require_data.sensitive = False
 
@@ -801,11 +802,13 @@ class QC_Stage(gtk.VBox):
                 self._HeatMapInfo.set_text(posText)
             else:
 
-                posMD = self._model['meta-data'](self._model['plate'], x, y)
+                posMD = self._model['meta-data'](self._model['plate'], y, x)
 
                 if self._model['meta-data-info-column'] < len(posMD):
-                    self._HeatMapInfo.set_text(posText + ": " + posMD[
-                        self._model['meta-data-info-column']])
+                    self._HeatMapInfo.set_text(
+                        posText + "; " +
+                        self._model['meta-data-info-columnName'] + ": " +
+                        posMD[self._model['meta-data-info-column']])
                 else:
                     self._HeatMapInfo.set_text(posText)
 
