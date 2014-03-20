@@ -174,6 +174,9 @@ _appPresets = {
 }
 
 _stagePresets = {
+
+    'debug-mode': False,
+
     'msg-multiSelecting': "Currently using multi-seletion",
     'showRaw': True,
     'phenotype': None,
@@ -254,4 +257,11 @@ _stagePresets = {
     'normalized-phenotype-names': dict(),
     'normalized-phenotype': "2D Normalized {0}",
     'normalized-text': "2D Normalization Done",
+
+    'norm-outlier-fillSize': (3, 3),
+    'norm-outlier-k': 2.0,
+    'norm-outlier-p': 10,
+    'norm-outlier-iterations': 10,
+    'norm-smoothing': 2.0,
+    'norm-spline-seq': ('cubic', 'linear', 'nearest'),
 }

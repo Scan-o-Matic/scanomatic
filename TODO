@@ -2,13 +2,6 @@
 ##### THE TAKE OVER #####
    ####################
 
-*	Plotting curve should not have y-axis depend on GT-reg line
-
-*	Saving heatmap image destroys connection with phenotype and plates
-	changes
-
-*	Controls on triplicate is YPS 128 not s288c
-
 *	In badness, use same strain variation and deviation from strain mean as
 	badness indicator.
 
@@ -183,6 +176,13 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+***	Saving heatmap image destroys connection with phenotype and plates
+	changes
+
+***	Plotting curve should not have y-axis depend on GT-reg line
+
+***	Controls on triplicate is YPS 128 not s288c
 
 *** Phenotyper is not striding the data correctly it seems.
 

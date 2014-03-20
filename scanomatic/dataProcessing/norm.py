@@ -394,9 +394,26 @@ def applyOutlierFilter(dataArray, nanFillSize=(3, 3), measure=1,
                        k=2.0, p=10, maxIterations=10):
     """Checks all positions in each array and filters those outside
     set boundries based upon their peak/valey properties using
-    laplace and normal distribution assumptions."""
+    laplace and normal distribution assumptions.
 
-    nanFillerKernelCenter = (np.prod(nanFillSize) - 1) / 2
+    Args:
+        dataArray (numpy.array):    Array of platewise values
+
+    Kwargs:
+
+        nanFillSize (tuple):    Used in median filter that is nan-safe as
+                                first smoothing step before testing outliers.
+                                If set to None, step is skipped
+
+        measure (int):  The measure to be outlier filtered
+
+        k (float) : Distance in sigmas for setting nan-threshold
+
+        p (int) :   Estimate number of positions to be qualified as outliers
+
+        maxIterations (int) :   Maximum number of iterations filter may be
+                                applied
+    """
 
     def _nanFiller(X):
         #X = X.reshape(nanFillSize)
@@ -408,8 +425,12 @@ def applyOutlierFilter(dataArray, nanFillSize=(3, 3), measure=1,
 
             return X[nanFillerKernelCenter]
 
-    assert np.array([v % 2 == 1 for v in nanFillSize]).all(), (
-        "nanFillSize can only have odd values")
+    if nanFillSize is not None:
+
+        nanFillerKernelCenter = (np.prod(nanFillSize) - 1) / 2
+
+        assert np.array([v % 2 == 1 for v in nanFillSize]).all(), (
+            "nanFillSize can only have odd values")
 
     laplaceKernel = np.array([
         [0.5, 1, 0.5],
@@ -430,9 +451,11 @@ def applyOutlierFilter(dataArray, nanFillSize=(3, 3), measure=1,
             #We need a copy because we'll modify it
             aPlate = plate[..., measure].copy()
 
-            #Apply median filter to fill nans
-            aPlate = generic_filter(aPlate, _nanFiller, size=nanFillSize,
-                                    mode="nearest")
+            if nanFillSize is not None:
+
+                #Apply median filter to fill nans
+                aPlate = generic_filter(aPlate, _nanFiller, size=nanFillSize,
+                                        mode="nearest")
 
             #Apply laplace
             aPlate = convolve(aPlate, laplaceKernel, mode="nearest")

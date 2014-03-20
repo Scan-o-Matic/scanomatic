@@ -17,6 +17,7 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
+import sys
 
 #
 # INTERNAL DEPENDENCIES
@@ -26,5 +27,34 @@ import scanomatic.gui.qc.controller_qc as ctrl
 
 if __name__ == "__main__":
 
-    c = ctrl.Controller(asApp=True)
+    args = sys.argv[1:]
+    debugMode = False
+
+    if len(args) > 0:
+
+        if "-h" in args[-1].lower() or '/h' in args[-1].lower():
+
+            print """
+                                           .
+Scan - o - Matic                     .    .o..
+================            .   o   .o.  .oxo.
+                                     .    .o.
+Quality Control Interface
+-------------------------
+
+The program has onboard help for its usage
+
+* Debug Mode
+
+You can launch it in debug mode by using '-d' as a flag
+In debug mode you have direct access to several parameters used in the
+quality control and normalization procedures.
+"""
+            sys.exit()
+
+        for a in args:
+            if '-d' == a.lower():
+                debugMode = True
+
+    c = ctrl.Controller(asApp=True, debugMode=debugMode)
     gtk.main()

@@ -764,9 +764,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             b = (np.log2(gtY) - a * t)
 
             dT = 0.1 * self._timeObject.max() - self._timeObject.min()
+            axYlim = ax.get_ylim()
+
             ax.semilogy([t - dT, t + dT], np.power(2, [a * (t - dT) + b,
                                                        a * (t + dT) + b]),
                         '-.k', basey=2)
+
+            ax.set_ylim(axYlim)
 
         if annotateGTpos:
 
@@ -796,6 +800,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (annotatePosition):
             ax.text(0.1, 0.9, "Plate {0}, Row {1} Col {2}".format(*position),
                     transform=ax.transAxes)
+
+        ax.set_xlim(left=0)
 
         if (fig is not None and showFig):
             f.show()

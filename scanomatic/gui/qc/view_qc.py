@@ -27,6 +27,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 #
 
 import scanomatic.dataProcessing.phenotyper as phenotyper
+import scanomatic.io.logger as logger
 
 #import scanomatic.gui.generic.view_generic as view_generic
 
@@ -85,6 +86,10 @@ class QC_Stage(gtk.VBox):
     def __init__(self, model, controller):
 
         super(QC_Stage, self).__init__(False, spacing=2)
+
+        self._logger = logger.Logger("QC Stage")
+
+        isDebug = model['debug-mode']
 
         self._model = model
         self._controller = controller
@@ -181,11 +186,11 @@ class QC_Stage(gtk.VBox):
         #HEATMAP
         #
 
-        plate_figure = plt.Figure(figsize=(40, 40), dpi=150)
-        plate_figure.add_axes()
-        plate_figure_ax = plate_figure.gca()
-        plate_figure_ax.set_axis_off()
-        self._plate_image_canvas = FigureCanvas(plate_figure)
+        self._plate_figure = plt.Figure(figsize=(40, 40), dpi=150)
+        self._plate_figure.add_axes()
+        self._plate_figure_ax = self._plate_figure.gca()
+        self._plate_figure_ax.set_axis_off()
+        self._plate_image_canvas = FigureCanvas(self._plate_figure)
 
         self._plate_image_canvas.mpl_connect('button_press_event',
                                              self._mousePress)
@@ -436,6 +441,79 @@ class QC_Stage(gtk.VBox):
         vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False, padding=4)
         vbox2.pack_start(self._normalize, expand=False, fill=False)
 
+        if isDebug:
+
+            hbox = gtk.HBox(False, spacing=2)
+            hbox.pack_start(gtk.Label("Median filt"), expand=False, fill=False)
+            e = gtk.Entry()
+            e.set_text(str(self._model['norm-outlier-fillSize']))
+            e.connect("changed", self._setNormNanFillShape)
+
+            e.set_size_request(0, -1)
+            hbox.pack_start(e, expand=True, fill=True)
+            self._widgets_require_references.add(e)
+
+            vbox2.pack_start(hbox, expand=False, fill=False)
+
+            hbox = gtk.HBox(False, spacing=2)
+            hbox.pack_start(gtk.Label("n-sigma"), expand=False, fill=False)
+            e = gtk.Entry()
+            e.set_text(str(self._model['norm-outlier-k']))
+            e.connect("changed", self._setNormK)
+            e.set_size_request(0, -1)
+            hbox.pack_start(e, expand=True, fill=True)
+            self._widgets_require_references.add(e)
+
+            vbox2.pack_start(hbox, expand=False, fill=False)
+
+            hbox = gtk.HBox(False, spacing=2)
+            hbox.pack_start(gtk.Label("Est. n filtered"),
+                            expand=False, fill=False)
+            e = gtk.Entry()
+            e.set_text(str(self._model['norm-outlier-p']))
+            e.connect("changed", self._setNormP)
+            e.set_size_request(0, -1)
+            hbox.pack_start(e, expand=True, fill=True)
+            self._widgets_require_references.add(e)
+
+            vbox2.pack_start(hbox, expand=False, fill=False)
+
+            hbox = gtk.HBox(False, spacing=2)
+            hbox.pack_start(gtk.Label("Max Iterations"),
+                            expand=False, fill=False)
+            e = gtk.Entry()
+            e.set_text(str(self._model['norm-outlier-iterations']))
+            e.connect("changed", self._setNormIterations)
+            e.set_size_request(0, -1)
+            hbox.pack_start(e, expand=True, fill=True)
+            self._widgets_require_references.add(e)
+
+            vbox2.pack_start(hbox, expand=False, fill=False)
+
+            hbox = gtk.HBox(False, spacing=2)
+            hbox.pack_start(gtk.Label("Spline"),
+                            expand=False, fill=False)
+            e = gtk.Entry()
+            e.set_text(str(self._model['norm-spline-seq']))
+            e.connect("changed", self._setNormSplineSeq)
+            e.set_size_request(0, -1)
+            hbox.pack_start(e, expand=True, fill=True)
+            self._widgets_require_references.add(e)
+
+            vbox2.pack_start(hbox, expand=False, fill=False)
+
+            hbox = gtk.HBox(False, spacing=2)
+            hbox.pack_start(gtk.Label("Gauss Smooth"),
+                            expand=False, fill=False)
+            e = gtk.Entry()
+            e.set_text(str(self._model['norm-smoothing']))
+            e.connect("changed", self._setNormSmoothing)
+            e.set_size_request(0, -1)
+            hbox.pack_start(e, expand=True, fill=True)
+            self._widgets_require_references.add(e)
+
+            vbox2.pack_start(hbox, expand=False, fill=False)
+
         #
         # Save
         #
@@ -488,6 +566,122 @@ class QC_Stage(gtk.VBox):
         except:
             val = None
         return val
+
+    def _testEntryIsType(self, widget, dtype=float):
+        """If widget has a value understandable as a float, it is returned
+        else None is returned."""
+
+        v = widget.get_text()
+
+        if dtype is float:
+            if "," in v:
+                if "." not in v:
+                    v = v.replace(",", ".")
+                else:
+                    v = v.replace(",", "")
+
+        v = v.replace(" ", "")
+
+        try:
+
+            v = dtype(v)
+            widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY, None)
+
+        except ValueError:
+            v = None
+            widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
+                                       gtk.STOCK_DIALOG_ERROR)
+
+        return v
+
+    def _setNormSmoothing(self, widget):
+
+        v = self._testEntryIsType(widget, dtype=float)
+        if v is not None and v > 0:
+            if self._model['norm-smoothing'] != v:
+                self._model['norm-smoothing'] = v
+                widget.set_text(str(v))
+        else:
+            widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
+                                       gtk.STOCK_DIALOG_ERROR)
+
+    def _setNormIterations(self, widget):
+
+        v = self._testEntryIsType(widget, dtype=int)
+        if v is not None and v > 0:
+            if self._model['norm-outlier-iterations'] != v:
+                self._model['norm-outlier-iterations'] = v
+                widget.set_text(str(v))
+        else:
+            widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
+                                       gtk.STOCK_DIALOG_ERROR)
+
+    def _setNormP(self, widget):
+
+        v = self._testEntryIsType(widget, dtype=float)
+        if v is not None:
+            if self._model['norm-outlier-p'] != v:
+                self._model['norm-outlier-p'] = v
+                widget.set_text(str(v))
+
+    def _setNormK(self, widget):
+
+        v = self._testEntryIsType(widget, dtype=float)
+        if v is not None:
+            if self._model['norm-outlier-k'] != v:
+                self._model['norm-outlier-k'] = v
+                widget.set_text(str(v))
+
+    def _setNormSplineSeq(self, widget):
+
+        defaults = ('cubic', 'linear', 'nearest')
+        v = widget.get_text().lower()
+        if v == "":
+            self._model['norm-spline-seq'] = defaults
+            widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY, None)
+            widget.set_text(str(defaults))
+
+        else:
+
+            v = tuple(i.strip(" '\"").lower() for
+                      i in v.lstrip("(").rstrip(")").split(",")
+                      if i != "")
+
+            if all(i in defaults for i in v):
+
+                if v != self._model['norm-spline-seq']:
+                    self._model['norm-spline-seq'] = v
+                    widget.set_text(str(v))
+                    widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY, None)
+
+            else:
+
+                widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
+                                           gtk.STOCK_DIALOG_ERROR)
+
+    def _setNormNanFillShape(self, widget):
+
+        v = widget.get_text().lower()
+        if v == "" or v == "none":
+            self._model['norm-outlier-fillSize'] = None
+            widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY, None)
+        else:
+            try:
+                t = eval(v)
+            except (SyntaxError, NameError, TypeError):
+                t = None
+
+            if (isinstance(t, tuple) and len(t) == 2 and
+                    all(isinstance(v, int) for v in t) and t[0] == t[1] and
+                    t[0] % 2 == 1):
+
+                self._model['norm-outlier-fillSize'] = t
+
+                widget.set_text(str(self._model['norm-outlier-fillSize']))
+                widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY, None)
+            else:
+                widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
+                                           gtk.STOCK_DIALOG_ERROR)
 
     def _subplateSelect(self, widget, subPlate):
 
@@ -600,7 +794,7 @@ class QC_Stage(gtk.VBox):
         dialog.destroy()
         if fname is not None:
             fig = (widget is self._plateSaveImage and
-                   self._plate_image_canvas.figure
+                   self._plate_figure
                    or self._curve_figure)
 
             fig.savefig(fname)
@@ -632,7 +826,7 @@ class QC_Stage(gtk.VBox):
             self._widgets_require_fixed_color.sensitive = \
                 colorSetting == self.COLOR_FIXED
 
-        self._controller.plotHeatmap(self._plate_image_canvas.figure,
+        self._controller.plotHeatmap(self._plate_figure,
                                      colorSetting)
         self._drawSelectionsDataSeries()
 
@@ -848,7 +1042,7 @@ class QC_Stage(gtk.VBox):
 
     def _drawSelectionsDataSeries(self):
 
-        ax = self._plate_image_canvas.figure.axes[0]
+        ax = self._plate_figure.axes[0]
         ax.set_axis_off()
 
         data = zip(*self._model['selectionCoordinates'])
@@ -872,6 +1066,8 @@ class QC_Stage(gtk.VBox):
                 self._model['selection_patches'].set_data(X, Y)
 
         elif (self._model['selection_patches'] is not None):
+
+            self._logger.info("Unknown selection {0}".format(data))
 
             self._model['selection_patches'].set_data([], [])
 
@@ -954,7 +1150,7 @@ class QC_Stage(gtk.VBox):
 
         if self._model['plate'] is not None:
             self._unselect()
-            self._controller.plotHeatmap(self._plate_image_canvas.figure)
+            self._controller.plotHeatmap(self._plate_figure)
             self._drawSelectionsDataSeries()
             self._setBoundaries()
             self._updateBounds()

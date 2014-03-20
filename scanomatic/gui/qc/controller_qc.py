@@ -45,16 +45,18 @@ import scanomatic.dataProcessing.norm as norm
 
 class Controller(controller_generic.Controller):
 
-    def __init__(self, asApp=False, debug_mode=False):
+    def __init__(self, asApp=False, debugMode=False):
 
         #PATHS NEED TO INIT BEFORE GUI
         self.paths = paths.Paths()
 
         if asApp:
             model = model_qc.NewModel.LoadAppModel()
+            model['debug-mode'] = debugMode
             view = view_qc.Main_Window(controller=self, model=model)
         else:
             model = model_qc.NewModel.LoadStageModel()
+            model['debug-mode'] = debugMode
             view = view_qc.QC_Stage(controller=self, model=model)
 
         super(Controller, self).__init__(None, view=view, model=model)
@@ -370,7 +372,12 @@ class Controller(controller_generic.Controller):
 
         #If user has missed dubious positions they are filtered out
         for measure in normalizedPhenotypes:
-            norm.applyOutlierFilter(subSampler, measure=measure)
+            norm.applyOutlierFilter(
+                subSampler, measure=measure,
+                nanFillSize=self._model['norm-outlier-fillSize'],
+                k=self._model['norm-outlier-k'],
+                p=self._model['norm-outlier-p'],
+                maxIterations=self._model['norm-outlier-iterations'])
 
         #Data array
         NA = norm.getControlPositionsArray(
@@ -379,17 +386,40 @@ class Controller(controller_generic.Controller):
 
         #Get smothened norm surface
         N = norm.getNormalisationSurfaceWithGridData(
-            NA, useAccumulated=False, smoothing=2)
+            NA, useAccumulated=False, smoothing=self._model['norm-smoothing'],
+            normalisationSequence=self._model['norm-spline-seq'])
 
         #Get normed values
-        ND = norm.normalisation(phenotypes, N, updateBridge=False)
+        ND = norm.normalisation(phenotypes, N, updateBridge=False,
+                                log=True)
+
+        if self._model['debug-mode']:
+
+            newND = []
+            for i, p in enumerate(ND):
+
+                if p is None:
+                    newND.append(p)
+                else:
+                    newND.append(np.insert(p, p.shape[-1], N[i], axis=-1))
+
+            ND = np.array(newND)
 
         self._model['normalized-data'] = ND
         self._model['normalized-index-offset'] = len(
             phenotyper.Phenotyper.NAMES_OF_PHENOTYPES)
         self._model['normalized-phenotype-names'] = {
-            i: name for i, (val, name) in enumerate(
-                phenotyper.Phenotyper.NAMES_OF_PHENOTYPES.items())
-            if val in normalizedPhenotypes}
+            i: phenotyper.Phenotyper.NAMES_OF_PHENOTYPES[k] for i, k in
+            enumerate(normalizedPhenotypes)}
+        """
+        i: name for i, (val, name) in enumerate(
+            phenotyper.Phenotyper.NAMES_OF_PHENOTYPES.items())
+        if val in normalizedPhenotypes}
+        """
+        if self._model['debug-mode']:
+            lNormed = len(normalizedPhenotypes)
+            self._model['normalized-phenotype-names'].update(
+                {k + lNormed: "surface for " + v for k, v in
+                 self._model['normalized-phenotype-names'].items()})
 
         self._view.get_stage().updateAvailablePhenotypes()

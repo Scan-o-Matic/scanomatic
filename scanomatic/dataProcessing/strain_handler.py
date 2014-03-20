@@ -279,15 +279,32 @@ def generalStatsOnStrains(uniqueDict, dataObject, measure=None):
     for strain, vals in getDataPerUnique(uniqueDict, dataObject,
                                          measure=measure).items():
 
-        finVals = np.isfinite(vals)
+        finVals = vals[np.isfinite(vals)]
 
         _stats[strain] = dict(
             n=vals.size,
-            nans=vals.size - finVals.sum(),
-            mean=vals[finVals].mean(),
-            std=vals[finVals].std())
+            nans=vals.size - finVals.size,
+            mean=finVals.mean(),
+            std=finVals.std(),
+            cv=finVals.std() / finVals.mean())
 
     return _stats
+
+
+def getArray(strainStatsDict, key):
+    """Produces an array of the stats-measure over all strains.
+
+    Args:
+        strainStatsDict (dict): A dict as returned from generalStatsOnStrains
+
+        key (string):   A known strain stats key such as e.g. 'mean' or 'cv'
+
+    Returns:
+
+        numpy.array     The corresponding key value for all strains
+    """
+
+    return strainStatsDict.keys(), np.array([s[key] for s in strainStatsDict.values()])
 
 #
 # PLOTTERS
