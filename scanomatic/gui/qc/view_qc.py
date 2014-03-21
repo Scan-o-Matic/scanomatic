@@ -455,6 +455,9 @@ class QC_Stage(gtk.VBox):
 
             vbox2.pack_start(hbox, expand=False, fill=False)
 
+            vbox2.pack_start(gtk.HSeparator(),
+                             expand=False, fill=False, padding=4)
+
             hbox = gtk.HBox(False, spacing=2)
             hbox.pack_start(gtk.Label("n-sigma"), expand=False, fill=False)
             e = gtk.Entry()
@@ -490,6 +493,9 @@ class QC_Stage(gtk.VBox):
 
             vbox2.pack_start(hbox, expand=False, fill=False)
 
+            vbox2.pack_start(gtk.HSeparator(),
+                             expand=False, fill=False, padding=4)
+
             hbox = gtk.HBox(False, spacing=2)
             hbox.pack_start(gtk.Label("Spline"),
                             expand=False, fill=False)
@@ -501,6 +507,9 @@ class QC_Stage(gtk.VBox):
             self._widgets_require_references.add(e)
 
             vbox2.pack_start(hbox, expand=False, fill=False)
+
+            vbox2.pack_start(gtk.HSeparator(),
+                             expand=False, fill=False, padding=4)
 
             hbox = gtk.HBox(False, spacing=2)
             hbox.pack_start(gtk.Label("Gauss Smooth"),
