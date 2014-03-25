@@ -425,6 +425,9 @@ class QC_Stage(gtk.VBox):
         self._setRefButton = gtk.Button(self._model['references'])
         self._setRefButton.connect("clicked", self._setReferences)
 
+        self._refPositionText = gtk.Label("")
+        self._setReferences()
+
         self._widgets_require_subplates.append(self._setRefButton)
 
         self._normalize = gtk.Button(self._model['normalize'])
@@ -438,25 +441,10 @@ class QC_Stage(gtk.VBox):
         vbox2 = gtk.VBox(False, spacing=2)
         frame.add(vbox2)
         vbox2.pack_start(self._setRefButton, expand=False, fill=False)
+        vbox2.pack_start(self._refPositionText, expand=False, fill=False)
         vbox2.pack_start(gtk.HSeparator(), expand=False, fill=False, padding=4)
-        vbox2.pack_start(self._normalize, expand=False, fill=False)
 
         if isDebug:
-
-            hbox = gtk.HBox(False, spacing=2)
-            hbox.pack_start(gtk.Label("Median filt"), expand=False, fill=False)
-            e = gtk.Entry()
-            e.set_text(str(self._model['norm-outlier-fillSize']))
-            e.connect("changed", self._setNormNanFillShape)
-
-            e.set_size_request(0, -1)
-            hbox.pack_start(e, expand=True, fill=True)
-            self._widgets_require_references.add(e)
-
-            vbox2.pack_start(hbox, expand=False, fill=False)
-
-            vbox2.pack_start(gtk.HSeparator(),
-                             expand=False, fill=False, padding=4)
 
             hbox = gtk.HBox(False, spacing=2)
             hbox.pack_start(gtk.Label("n-sigma"), expand=False, fill=False)
@@ -512,6 +500,17 @@ class QC_Stage(gtk.VBox):
                              expand=False, fill=False, padding=4)
 
             hbox = gtk.HBox(False, spacing=2)
+            hbox.pack_start(gtk.Label("Median filt"), expand=False, fill=False)
+            e = gtk.Entry()
+            e.set_text(str(self._model['norm-outlier-fillSize']))
+            e.connect("changed", self._setNormNanFillShape)
+
+            e.set_size_request(0, -1)
+            hbox.pack_start(e, expand=True, fill=True)
+            self._widgets_require_references.add(e)
+
+            vbox2.pack_start(hbox, expand=False, fill=False)
+            hbox = gtk.HBox(False, spacing=2)
             hbox.pack_start(gtk.Label("Gauss Smooth"),
                             expand=False, fill=False)
             e = gtk.Entry()
@@ -522,6 +521,8 @@ class QC_Stage(gtk.VBox):
             self._widgets_require_references.add(e)
 
             vbox2.pack_start(hbox, expand=False, fill=False)
+
+        vbox2.pack_start(self._normalize, expand=False, fill=False)
 
         #
         # Save
@@ -610,6 +611,10 @@ class QC_Stage(gtk.VBox):
             if self._model['norm-smoothing'] != v:
                 self._model['norm-smoothing'] = v
                 widget.set_text(str(v))
+        elif widget.get_text().lower() in ["", "none"]:
+            self._model['norm-smoothing'] = None
+            widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
+                                       None)
         else:
             widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
                                        gtk.STOCK_DIALOG_ERROR)
@@ -617,7 +622,7 @@ class QC_Stage(gtk.VBox):
     def _setNormIterations(self, widget):
 
         v = self._testEntryIsType(widget, dtype=int)
-        if v is not None and v > 0:
+        if v is not None and v >= 0:
             if self._model['norm-outlier-iterations'] != v:
                 self._model['norm-outlier-iterations'] = v
                 widget.set_text(str(v))
@@ -640,6 +645,10 @@ class QC_Stage(gtk.VBox):
             if self._model['norm-outlier-k'] != v:
                 self._model['norm-outlier-k'] = v
                 widget.set_text(str(v))
+        elif widget.get_text().lower() in ["", "none"]:
+            self._model['norm-outlier-k'] = None
+            widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
+                                       None)
 
     def _setNormSplineSeq(self, widget):
 
@@ -741,11 +750,24 @@ class QC_Stage(gtk.VBox):
 
         self._controller.saveState()
 
-    def _setReferences(self, widget):
+    def _setReferences(self, widget=None):
 
-        self._controller.setReferencePositions()
-        self._HeatMapInfo.set_text(self._model['set-references'])
-        self._widgets_require_references.sensitive = True
+        if widget is not None:
+            self._controller.setReferencePositions()
+            self._HeatMapInfo.set_text(self._model['set-references'])
+
+        if (self._model['reference-positions'] is None):
+            self._refPositionText.set_text(self._model['no-reference'])
+        else:
+            self._refPositionText.set_text(
+                self._model['yes-reference'] +
+                ", ".join([self._model['reference-offset-names'][
+                    y * 2 + x] for y, x in
+                    zip(*np.where(self._model['reference-positions'][
+                        self._model['plate']]))]))
+
+            self._widgets_require_references.sensitive = \
+                self._model['reference-positions'][self._model['plate']].any()
 
     def _doNormalize(self, widget):
 
@@ -909,6 +931,7 @@ class QC_Stage(gtk.VBox):
 
                         self._badSelectorAdjustment.set_value(0)
                         self._selectBad(self._badSelector)
+                        self._setReferences()
 
             elif widget is self._plateSelector:
 
@@ -927,6 +950,7 @@ class QC_Stage(gtk.VBox):
 
                         self._controller.guessBestColumn()
 
+                    self._setReferences()
                     self._newPhenotype()
                     if (self._model['auto-selecting']):
                         self._badSelectorAdjustment.set_value(0)

@@ -371,13 +371,16 @@ class Controller(controller_generic.Controller):
             phenotypes, kernels=self._model['reference-positions'])
 
         #If user has missed dubious positions they are filtered out
-        for measure in normalizedPhenotypes:
-            norm.applyOutlierFilter(
-                subSampler, measure=measure,
-                nanFillSize=self._model['norm-outlier-fillSize'],
-                k=self._model['norm-outlier-k'],
-                p=self._model['norm-outlier-p'],
-                maxIterations=self._model['norm-outlier-iterations'])
+        if self._model['norm-outlier-iterations'] > 0:
+            for measure in normalizedPhenotypes:
+                norm.applyOutlierFilter(
+                    subSampler, measure=measure,
+                    k=self._model['norm-outlier-k'],
+                    p=self._model['norm-outlier-p'],
+                    maxIterations=self._model['norm-outlier-iterations'])
+            self._logger.info("Normalization: Outlier filter applied")
+        else:
+            self._logger.info("Normalization: Outlier filter skipped")
 
         #Data array
         NA = norm.getControlPositionsArray(
@@ -386,8 +389,20 @@ class Controller(controller_generic.Controller):
 
         #Get smothened norm surface
         N = norm.getNormalisationSurfaceWithGridData(
-            NA, useAccumulated=False, smoothing=self._model['norm-smoothing'],
+            NA, useAccumulated=False,
+            medianSmoothing=self._model['norm-outlier-fillSize'],
+            gaussSmoothing=self._model['norm-smoothing'],
             normalisationSequence=self._model['norm-spline-seq'])
+
+        if self._model['norm-outlier-fillSize'] is not None:
+            self._logger.info("Normalization: Median filter applied")
+        else:
+            self._logger.info("Normalization: Median filter skipped")
+
+        if self._model['norm-smoothing'] is None:
+            self._logger.info("Normalization: Gauss smoothing skipped")
+        else:
+            self._logger.info("Normalization: Gauss smoothing applied")
 
         #Get normed values
         ND = norm.normalisation(phenotypes, N, updateBridge=False,

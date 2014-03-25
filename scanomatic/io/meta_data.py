@@ -194,6 +194,34 @@ class Meta_Data(object):
 
         return Meta_Data.MATCH_NO
 
+    def _endTrimRows(self, rows):
+
+        breakRows = False
+
+        for i, row in enumerate(rows[::-1]):
+
+            tcs = row.getElementsByType(table.TableCell)
+
+            if len(tcs) == 0:
+                break
+
+            for tc in tcs:
+                ps = tc.getElementsByType(P)
+                if (len(ps)) > 0:
+                    if (u''.join(
+                            [pps.firstChild.data for pps in ps]) != u''):
+
+                        breakRows = True
+                        break
+
+            if breakRows:
+                break
+
+        while i > 0:
+
+            rows.pop()
+            i -= 1
+
     def _makeRectangle(self, data, fill=u''):
 
         maxWidth = max(map(len, data))
@@ -222,13 +250,17 @@ class Meta_Data(object):
 
                 rows = t.getElementsByType(table.TableRow)
 
+                self._endTrimRows(rows)
+
                 matchType = self._hasValidRows(rows)
 
                 if matchType == Meta_Data.MATCH_NO:
 
                     self._logger.warning(
-                        u"Sheet {0} of {1} had no understandable data".format(
-                            t.getAttribute("name"), os.path.basename(path)))
+                        (u"Sheet {0} of {1} had no understandable data" +
+                         u"({2} rows)").format(
+                             t.getAttribute("name"), os.path.basename(path),
+                             len(rows)))
 
                 else:
 

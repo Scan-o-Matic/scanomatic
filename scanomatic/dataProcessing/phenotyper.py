@@ -49,20 +49,28 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     PHEN_FIT_PARAM3 = 9
     PHEN_FIT_PARAM4 = 10
     PHEN_FIT_PARAM5 = 11
+    PHEN_INIT_VAL_A = 12
+    PHEN_INIT_VAL_B = 13
+    PHEN_INIT_VAL_C = 14
+    PHEN_INIT_VAL_D = 15
 
     NAMES_OF_PHENOTYPES = {
-        0:  "Generation Time",
-        1:  "Error of GT-fit",
-        2:  "Time for fastest growth",
-        3:  "Generation Time (2nd place)",
-        4:  "Error of GT (2nd place) - fit",
-        5:  "Time of second fastest growth",
-        6:  "Chapman Richards model fit",
-        7:  "Chapman Richards b1 (untransformed)",
-        8:  "Chapman Richards b2 (untransformed)",
-        9:  "Chapman Richards b3 (untransformed)",
-        10:  "Chapman Richards b4 (untransformed)",
-        11:  "Chapman Richards extension D (initial cells)",
+        0: "Generation Time",
+        1: "Error of GT-fit",
+        2: "Time for fastest growth",
+        3: "Generation Time (2nd place)",
+        4: "Error of GT (2nd place) - fit",
+        5: "Time of second fastest growth",
+        6: "Chapman Richards model fit",
+        7: "Chapman Richards b1 (untransformed)",
+        8: "Chapman Richards b2 (untransformed)",
+        9: "Chapman Richards b3 (untransformed)",
+        10: "Chapman Richards b4 (untransformed)",
+        11: "Chapman Richards extension D (initial cells)",
+        12: "Initial Value",
+        13: "Initial Value (mean 2)",
+        14: "Initial Value (mean 3)",
+        15: "Initial Value (min 3)"
     }
 
     def __init__(self, dataObject, timeObject=None,
@@ -403,38 +411,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 strides=(plate.strides[1],
                          plate.strides[2], plate.strides[2]))
 
-            """ THIS CODE WOULD BE NEATER BUT ISN'T FASTER NOR VERY CLEAR
-
-            timesStrided = np.lib.stride_tricks.as_strided(
-            self._timeObject,
-            shape=(stridedPlate.shape[0],
-            stridedPlate.shape[1],
-            self._linRegSize),
-            strides=(0,
-            self._timeObject.strides[0],
-            self._timeObject.strides[0]))
-            t = ([timesStrided[..., i] for i in range(
-            timesStrided.shape[-1])] +
-            [stridedPlate[..., i] for i in range(
-            stridedPlate.shape[-1])])
-
-            plateData = np.array(linRegUFunc(*t))
-
-            argSort = plateData[..., -1].argsort(axis=-1)
-            vals = np.array((
-            1.0 / plateData[argSort[..., -1]][..., 0],
-            plateData[argSort[..., -1]][..., 1],
-            argSort[..., -1] + posOffset))
-
-            allGT.append(np.lib.stride_tricks.as_strided(
-            vals,
-            shape=(
-            plate.shape[0], plate.shape[1], vals.shape[-1]),
-            strides=(
-            plate.shape[1] * vals.strides[-2], vals.strides[-2],
-            vals.strides[-1])))
-
-            """
             phenotypes = np.zeros((plate.shape[:2]) + (nPhenotypes,),
                                   dtype=plate.dtype)
 
@@ -494,6 +470,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     curPhenos[self.PHEN_FIT_PARAM3] = p[1][2]
                     curPhenos[self.PHEN_FIT_PARAM4] = p[1][3]
                     curPhenos[self.PHEN_FIT_PARAM5] = p[1][4]
+                    curPhenos[self.PHEN_INIT_VAL_A] = plate[idX, idY, 0]
+                    curPhenos[self.PHEN_INIT_VAL_B] = plate[idX, idY, :2][
+                        np.isfinite(plate[idX, idY, :2])].mean()
+                    curPhenos[self.PHEN_INIT_VAL_C] = plate[idX, idY, :3][
+                        np.isfinite(plate[idX, idY, :3])].mean()
+                    curPhenos[self.PHEN_INIT_VAL_D] = plate[idX, idY, :3][
+                        np.isfinite(plate[idX, idY, :3])].min()
 
                     #STORING PHENOTYPES
                     phenotypes[idX, idY, ...] = curPhenos

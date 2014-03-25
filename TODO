@@ -2,19 +2,7 @@
 ##### THE TAKE OVER #####
    ####################
 
-*** Remake ods to have "Ref" as strain for ref-positions
-
 *** Should splining be done on missing reference points before data points
-
-*** Linear regression of early points to get T=0 deposition. 
-
-    Make 3-5 first value measures to compare
-
-*** Median filter instead of gauss at end?
-
-*** Move median-filter to after laplace?
-
-*** Allow disabling of steps in norm
 
 ***	In badness, use same strain variation and deviation from strain mean as
 	badness indicator.
@@ -190,6 +178,18 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Median filter instead of gauss at end?
+
+*** Move median-filter to after laplace?
+
+*** Allow disabling of steps in norm
+
+*** Linear regression of early points to get T=0 deposition. 
+
+    Make 3-5 first value measures to compare
+
+*** Remake ods to have "Ref" as strain for ref-positions
 
 ***	Saving heatmap image destroys connection with phenotype and plates
 	changes

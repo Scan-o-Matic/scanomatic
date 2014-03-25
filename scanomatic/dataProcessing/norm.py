@@ -4,7 +4,7 @@
 
 import numpy as np
 from scipy.interpolate import griddata
-from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter
+from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter, median_filter
 
 #
 #   INTERNAL DEPENDENCIES
@@ -273,7 +273,9 @@ def getNormalisationSurfaceWithGridData(
         normalisationSequence=('cubic', 'linear', 'nearest'),
         useAccumulated=False,
         missingDataValue=np.nan,
-        controlPositionKernel=None, smoothing=None):
+        controlPositionKernel=None,
+        medianSmoothing=None,
+        gaussSmoothing=None):
     """Constructs normalisation surface using iterative runs of
     scipy.interpolate's gridddata based on sequence of supplied
     method preferences.
@@ -374,11 +376,18 @@ def getNormalisationSurfaceWithGridData(
 
     normInterpolations = np.array(normInterpolations)
 
-    if smoothing is not None:
+    if medianSmoothing is not None:
+        for measureIndex in xrange(plate.shape[2]):
+            applyMedianSmoothing(
+                normInterpolations,
+                filterShape=medianSmoothing,
+                measure=measureIndex)
+
+    if gaussSmoothing is not None:
         for measureIndex in xrange(plate.shape[2]):
             applyGaussSmoothing(
                 normInterpolations,
-                sigma=smoothing,
+                sigma=gaussSmoothing,
                 measure=measureIndex)
 
     return normInterpolations
@@ -560,6 +569,17 @@ def applyGaussSmoothing(dataArray, measure=1, sigma=3.5, **kwargs):
 
         dataArray[plateIndex][..., measure] = gaussian_filter(
             dataArray[plateIndex][..., measure], sigma=sigma, **kwargs)
+
+
+def applyMedianSmoothing(dataArray, measure=1, filterShape=(3, 3), **kwargs):
+
+    if ('mode' not in kwargs):
+        kwargs['mode'] = 'nearest'
+
+    for plateIndex, plate in enumerate(dataArray):
+
+        dataArray[plateIndex][..., measure] = median_filter(
+            plate[..., measure], size=filterShape, **kwargs)
 
 
 def applySigmaFilter(dataArray, nSigma=3):

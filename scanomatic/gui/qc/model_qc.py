@@ -240,6 +240,10 @@ _stagePresets = {
     'reference-positions': None,
     'set-references': "Reference Plate Set",
 
+    'no-reference': "No Reference",
+    'yes-reference': "Ref: ",
+    'reference-offset-names': ("Up Left", "Up Right", "Low Left", "Low Right"),
+
     'image-saved': "Image saved at '{0}'",
 
     'saveTo': "Save to...",
