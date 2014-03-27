@@ -103,7 +103,11 @@ def getControlPositionsArray(dataBridge,
     in the control positions are maintained (without affecting the contents
     of the Databridge)."""
 
-    data = dataBridge.getAsArray()
+    if (not isinstance(dataBridge, np.ndarray)):
+        data = dataBridge.getAsArray()
+    else:
+        data = dataBridge
+
     nPlates = data.shape[0]
     tmpCtrlPosPlateHolder = []
 
@@ -601,6 +605,27 @@ def applySigmaFilter(dataArray, nSigma=3):
 
 
 #
+#   FITTING METHODS: For normalisation with GT and inital value
+#
+
+
+def initalPlateTransform(IPV, FlexScalingV, MagnitudeScalingV):
+
+    return MagnitudeScalingV * (FlexScalingV * (IPV -
+                                                IPV[np.isfinite(IPV)].mean()))
+
+
+def IPVresidue(scalingParams, IPV, GT):
+
+    iPflex = scalingParams[: scalingParams.size / 2]
+    iPscale = scalingParams[scalingParams.size / 2:]
+    rVal = np.array([GT[idP] - initalPlateTransform(
+        IPV, iPflex[idP], iPscale[idP]) for idP in xrange(GT.shape[0])
+        if GT[idP].size > 0], dtype=np.float)
+
+    return np.hstack([p[np.isfinite(p)].ravel() for p in rVal])
+
+#
 #   METHODS: Normalisation method
 #
 
@@ -609,7 +634,11 @@ def normalisation(dataBridge, normalisationSurface, updateBridge=True,
                   log=False):
 
     normalData = []
-    bridgeArray = dataBridge.getAsArray()
+    if (not isinstance(dataBridge, np.ndarray)):
+        bridgeArray = dataBridge.getAsArray()
+    else:
+        bridgeArray = dataBridge
+
     for plateIndex in range(normalisationSurface.shape[0]):
 
         if (bridgeArray[plateIndex] is None or

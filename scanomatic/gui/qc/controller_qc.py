@@ -16,6 +16,7 @@ __status__ = "Development"
 #import gobject
 from matplotlib import pyplot as plt
 import numpy as np
+from scipy.optimize import leastsq
 
 #
 # INTERNAL DEPENDENCIES
@@ -194,7 +195,7 @@ class Controller(controller_generic.Controller):
 
         pos = tuple(pos)
         p = self._model["plate_selections"]
-        p[pos] = p[pos] == False
+        p[pos] = p[pos] is np.False_
 
         return p[pos][self._model['absPhenotype']]
 
@@ -355,6 +356,7 @@ class Controller(controller_generic.Controller):
     def normalize(self):
 
         normalizedPhenotypes = (phenotyper.Phenotyper.PHEN_GT_VALUE,)
+        log = True
 
         aCopy = []
 
@@ -367,8 +369,32 @@ class Controller(controller_generic.Controller):
 
         phenotypes = data_bridge.Data_Bridge(np.array(aCopy))
 
+        normInfo = {
+            'ref-usage': np.ones((phenotypes.shape[0],)),
+            'ref-usage-warning':
+            np.zeros((phenotypes.shape[0],), dtype=np.bool),
+            'ref-CV': np.zeros((phenotypes.shape[0],)),
+            'ref-CV-warning':
+            np.zeros((phenotypes.shape[0],), dtype=np.bool),
+        }
+
         subSampler = sub_plates.SubPlates(
             phenotypes, kernels=self._model['reference-positions'])
+
+        #If using initial values in norm
+        if self._model['norm-use-initial-values']:
+            iVals = np.array([
+                (p is None and None or
+                 np.log2(p[..., [phenotyper.Phenotyper.PHEN_INIT_VAL_C]]))
+                for p in self._model['phenotyper'].phenotypes])
+
+            if log:
+                phenotypes = np.array([p is None and None or np.log2(p) for p in
+                                       phenotypes])
+
+                log = False
+
+            iParamGuesses = np.ones((len(iVals) * 2,), dtype=np.float)
 
         #If user has missed dubious positions they are filtered out
         if self._model['norm-outlier-iterations'] > 0:
@@ -378,21 +404,68 @@ class Controller(controller_generic.Controller):
                     k=self._model['norm-outlier-k'],
                     p=self._model['norm-outlier-p'],
                     maxIterations=self._model['norm-outlier-iterations'])
+
+            #If using initial values in norm pt2
+            if self._model['norm-use-initial-values']:
+                norm.applyOutlierFilter(
+                    iVals, measure=0,
+                    k=self._model['norm-outlier-k'],
+                    p=self._model['norm-outlier-p'],
+                    maxIterations=self._model['norm-outlier-iterations'])
+
             self._logger.info("Normalization: Outlier filter applied")
         else:
             self._logger.info("Normalization: Outlier filter skipped")
 
-        #Data array
-        NA = norm.getControlPositionsArray(
-            phenotypes,
-            controlPositionKernel=subSampler.kernels)
+        for pId, plate in enumerate(subSampler):
 
-        #Get smothened norm surface
-        N = norm.getNormalisationSurfaceWithGridData(
-            NA, useAccumulated=False,
-            medianSmoothing=self._model['norm-outlier-fillSize'],
-            gaussSmoothing=self._model['norm-smoothing'],
-            normalisationSequence=self._model['norm-spline-seq'])
+            rPlate = plate.ravel()
+            rPlateFinite = rPlate[np.isfinite(rPlate)]
+
+            normInfo['ref-usage'][pId] = rPlateFinite.size / \
+                float(rPlate.size)
+
+            normInfo['ref-usage-warning'][pId] = normInfo['ref-usage'][pId] < \
+                self._model['norm-ref-usage-threshold']
+
+            normInfo['ref-CV'][pId] = rPlateFinite.std() / rPlateFinite.mean()
+            normInfo['ref-CV-warning'][pId] = normInfo['ref-CV'][pId] > \
+                self._model['norm-ref-CV-threshold']
+
+        #If using initial values in norm pt3
+        if self._model['norm-use-initial-values']:
+            iParams = leastsq(norm.IPVresidue, iParamGuesses,
+                              args=(iVals, phenotypes))[0]
+            print "Scalings", iParams
+            iPflex = iParams[: iParams.size / 2]
+            iPscale = iParams[iParams.size / 2:]
+            N = np.array([(p is None and None or
+                           norm.initalPlateTransform(
+                               p, iPflex[pId], iPscale[pId]))
+                          for pId, p in enumerate(iVals)])
+
+            """
+            #Data array
+            NA = norm.getControlPositionsArray(
+                np.array([(p is None and None or
+                           norm.initalPlateTransform(
+                               p, iPflex[pId], iPscale[pId]))
+                          for pId, p in enumerate(iVals)]),
+                controlPositionKernel=subSampler.kernels)
+            """
+
+        else:
+            #Data array
+            NA = norm.getControlPositionsArray(
+                phenotypes,
+                controlPositionKernel=subSampler.kernels)
+
+            #Get smothened norm surface
+            N = norm.getNormalisationSurfaceWithGridData(
+                NA, useAccumulated=False,
+                medianSmoothing=self._model['norm-outlier-fillSize'],
+                gaussSmoothing=self._model['norm-smoothing'],
+                normalisationSequence=self._model['norm-spline-seq'])
 
         if self._model['norm-outlier-fillSize'] is not None:
             self._logger.info("Normalization: Median filter applied")
@@ -406,7 +479,7 @@ class Controller(controller_generic.Controller):
 
         #Get normed values
         ND = norm.normalisation(phenotypes, N, updateBridge=False,
-                                log=True)
+                                log=log)
 
         if self._model['debug-mode']:
 
@@ -438,3 +511,5 @@ class Controller(controller_generic.Controller):
                  self._model['normalized-phenotype-names'].items()})
 
         self._view.get_stage().updateAvailablePhenotypes()
+
+        return normInfo

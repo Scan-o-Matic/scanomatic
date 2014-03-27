@@ -89,7 +89,7 @@ def loadCSV2Numpy(path, measure=-1, delim='\t', dtype=np.float):
                     measure, h))
             return False
     elif isinstance(measure, int):
-        if measure == -1:
+        if measure <= 0:
             measure = slice(measure, None)
         else:
             measure = slice(measure, measure + 1)

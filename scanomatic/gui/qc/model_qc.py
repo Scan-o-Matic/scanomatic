@@ -266,6 +266,15 @@ _stagePresets = {
     'norm-outlier-k': 2.0,
     'norm-outlier-p': 10,
     'norm-outlier-iterations': 10,
-    'norm-smoothing': 2.0,
+    'norm-smoothing': 1.0,
     'norm-spline-seq': ('cubic', 'linear', 'nearest'),
+    'norm-use-initial-values': False,
+    'norm-use-initial-text': "Use initial values as guide",
+
+    'norm-ref-usage-threshold': 0.95,
+    'norm-ref-CV-threshold': 0.236,  # Magic number estimated by Dr. A. Skyman
+    'ref-warning-head': """Some plates may have bad quality and should be
+discarded, or you failed to remove all bad positions:\n""",
+    'ref-bad-plate': """Plate {0} has only used {1:.1f} percent of references
+and has a CV of {2:.3f}""",
 }

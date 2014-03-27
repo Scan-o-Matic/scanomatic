@@ -484,6 +484,18 @@ class QC_Stage(gtk.VBox):
             vbox2.pack_start(gtk.HSeparator(),
                              expand=False, fill=False, padding=4)
 
+            self._toggleInitialValueUse = gtk.CheckButton(
+                self._model['norm-use-initial-text'])
+            self._toggleInitialValueUse.set_active(
+                self._model['norm-use-initial-values'])
+            self._toggleInitialValueUse.connect("toggled",
+                                                self._setNormWithInitals)
+
+            vbox2.pack_start(self._toggleInitialValueUse,
+                             expand=False, fill=False)
+
+            self._widgets_require_references.add(self._toggleInitialValueUse)
+
             hbox = gtk.HBox(False, spacing=2)
             hbox.pack_start(gtk.Label("Spline"),
                             expand=False, fill=False)
@@ -650,6 +662,9 @@ class QC_Stage(gtk.VBox):
             widget.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY,
                                        None)
 
+    def _setNormWithInitals(self, widget):
+        self._model['norm-use-initial-values'] = widget.get_active()
+
     def _setNormSplineSeq(self, widget):
 
         defaults = ('cubic', 'linear', 'nearest')
@@ -771,7 +786,35 @@ class QC_Stage(gtk.VBox):
 
     def _doNormalize(self, widget):
 
-        self._controller.normalize()
+        normInfo = self._controller.normalize()
+
+        print normInfo
+
+        if (normInfo['ref-CV-warning'].any() or
+                normInfo['ref-usage-warning'].any()):
+
+            msg = "\n\n".join(
+
+                self._model['ref-bad-plate'].format(
+                    pId + 1,
+                    normInfo['ref-usage'][pId] * 100,
+                    normInfo['ref-CV'][pId])
+
+                for pId in range(normInfo['ref-CV'].size)
+
+                if normInfo['ref-CV-warning'][pId] or
+                normInfo['ref-usage-warning'][pId])
+
+            if len(msg) > 0:
+
+                d = gtk.MessageDialog(
+                    type=gtk.MESSAGE_WARNING,
+                    buttons=gtk.BUTTONS_OK,
+                    message_format=self._model['ref-warning-head'] + msg)
+
+                d.run()
+                d.destroy()
+
         self._widgets_require_norm.sensitive = True
         self._HeatMapInfo.set_text(self._model['normalized-text'])
         if (self._model['phenotype'] != self._model['absPhenotype']):
