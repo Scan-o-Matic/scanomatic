@@ -446,6 +446,19 @@ class QC_Stage(gtk.VBox):
 
         if isDebug:
 
+            self._toggleAlgInLog = gtk.CheckButton(
+                self._model['norm-alg-in-log-text'])
+            self._toggleAlgInLog.set_active(
+                self._model['norm-alg-in-log'])
+            self._toggleAlgInLog.connect("toggled",
+                                         self._setToggleLogInAlg)
+            self._widgets_require_references.add(self._toggleAlgInLog)
+            vbox2.pack_start(self._toggleAlgInLog,
+                             expand=False, fill=False)
+
+            vbox2.pack_start(gtk.HSeparator(),
+                             expand=False, fill=False, padding=4)
+
             hbox = gtk.HBox(False, spacing=2)
             hbox.pack_start(gtk.Label("n-sigma"), expand=False, fill=False)
             e = gtk.Entry()
@@ -615,6 +628,10 @@ class QC_Stage(gtk.VBox):
                                        gtk.STOCK_DIALOG_ERROR)
 
         return v
+
+    def _setToggleLogInAlg(self, widget):
+
+        self._model['norm-alg-in-log'] = widget.get_active()
 
     def _setNormSmoothing(self, widget):
 

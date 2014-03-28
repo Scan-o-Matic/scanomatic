@@ -261,13 +261,15 @@ _stagePresets = {
     'normalized-phenotype-names': dict(),
     'normalized-phenotype': "2D Normalized {0}",
     'normalized-text': "2D Normalization Done",
+    'norm-alg-in-log-text': "Algorithm in Log",
 
-    'norm-outlier-fillSize': (3, 3),
+    'norm-alg-in-log': False,
+    'norm-outlier-fillSize': None,
     'norm-outlier-k': 2.0,
     'norm-outlier-p': 10,
     'norm-outlier-iterations': 10,
     'norm-smoothing': 1.0,
-    'norm-spline-seq': ('cubic', 'linear', 'nearest'),
+    'norm-spline-seq': ('cubic', 'nearest'),
     'norm-use-initial-values': False,
     'norm-use-initial-text': "Use initial values as guide",
 

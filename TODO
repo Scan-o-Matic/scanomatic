@@ -2,11 +2,6 @@
 ##### THE TAKE OVER #####
    ####################
 
-*** LeastSQ init-vals surf (clean nan)  GTref == a * (IV * b - IVmean)
-	as norm surface
-
-*** Use logged values for norm?
-
 *** Plot InitialValVsTimeOfGT
 
 *** New Phenotypes to conscider:
@@ -16,10 +11,6 @@
 	* End cells
 	* Yield
 	* #Cells @48h
-
-*** Should more than GT be taken into account in norming (initial value)
-
-*** Should splining be done on missing reference points before data points
 
 ***	In badness, use same strain variation and deviation from strain mean as
 	badness indicator.
@@ -195,6 +186,15 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Should more than GT be taken into account in norming (initial value)
+
+*** Should splining be done on missing reference points before data points
+
+*** Use logged values for norm?
+
+*** LeastSQ init-vals surf (clean nan)  GTref == a * (IV * b - IVmean)
+	as norm surface
 
 *** Signal to noise ratio in ref warnings and warning for few refs left
 

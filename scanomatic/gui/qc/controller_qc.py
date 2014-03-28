@@ -356,7 +356,7 @@ class Controller(controller_generic.Controller):
     def normalize(self):
 
         normalizedPhenotypes = (phenotyper.Phenotyper.PHEN_GT_VALUE,)
-        log = True
+        log = self._model['norm-alg-in-log']
 
         aCopy = []
 
@@ -366,6 +366,9 @@ class Controller(controller_generic.Controller):
                 aCopy.append(p[..., normalizedPhenotypes].filled().copy())
             else:
                 aCopy.append(p[..., normalizedPhenotypes].copy())
+
+        if log:
+            aCopy = [np.log2(p) for p in aCopy]
 
         phenotypes = data_bridge.Data_Bridge(np.array(aCopy))
 
@@ -388,11 +391,13 @@ class Controller(controller_generic.Controller):
                  np.log2(p[..., [phenotyper.Phenotyper.PHEN_INIT_VAL_C]]))
                 for p in self._model['phenotyper'].phenotypes])
 
-            if log:
+            #np.save("qc_ivals.npy", iVals)
+
+            if not log:
                 phenotypes = np.array([p is None and None or np.log2(p) for p in
                                        phenotypes])
 
-                log = False
+                log = True
 
             iParamGuesses = np.ones((len(iVals) * 2,), dtype=np.float)
 
@@ -412,6 +417,8 @@ class Controller(controller_generic.Controller):
                     k=self._model['norm-outlier-k'],
                     p=self._model['norm-outlier-p'],
                     maxIterations=self._model['norm-outlier-iterations'])
+
+                #np.save("qc_ivals_filt.npy", iVals)
 
             self._logger.info("Normalization: Outlier filter applied")
         else:
@@ -455,10 +462,15 @@ class Controller(controller_generic.Controller):
             """
 
         else:
+
+            #np.save("qc_debug_P.npy", phenotypes)
+
             #Data array
             NA = norm.getControlPositionsArray(
                 phenotypes,
                 controlPositionKernel=subSampler.kernels)
+
+            #np.save("qc_debug_NA.npy", NA)
 
             #Get smothened norm surface
             N = norm.getNormalisationSurfaceWithGridData(
@@ -479,7 +491,7 @@ class Controller(controller_generic.Controller):
 
         #Get normed values
         ND = norm.normalisation(phenotypes, N, updateBridge=False,
-                                log=log)
+                                log=not log)
 
         if self._model['debug-mode']:
 

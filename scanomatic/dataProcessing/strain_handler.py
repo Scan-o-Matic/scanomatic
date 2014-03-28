@@ -85,8 +85,8 @@ def loadCSV2Numpy(path, measure=-1, delim='\t', dtype=np.float):
 
             fs.close()
             _L.error(
-                "Could not find {0} among headers {1}".format(
-                    measure, h))
+                "{0}: Could not find {1} among headers {2}".format(
+                    path, measure, h))
             return False
     elif isinstance(measure, int):
         if measure <= 0:
@@ -104,11 +104,11 @@ def loadCSV2Numpy(path, measure=-1, delim='\t', dtype=np.float):
             if rowLength == 0:
                 rowLength = len(rowList)
         except ValueError:
-            _L.info("Not data row, could be headers {0}".format(
-                rowList))
+            _L.info("{0}: Not data row, could be headers {1}".format(
+                path, rowList))
         except IndexError:
-            _L.info("Unexpeded length of row {0}".format(
-                rowList))
+            _L.info("{0}: Unexpeded length of row {1}".format(
+                path, rowList))
 
     fs.close()
 
@@ -141,8 +141,9 @@ def loadCSV2Numpy(path, measure=-1, delim='\t', dtype=np.float):
                     plate[k][...] = v
             except:
                 _L.critical(
-                    "Unexpected data for shape {0}, pos {1}: {2}".format(
-                        plate.shape, k, v))
+                    ("{0}: Unexpected data for shape {1}," +
+                     "plate {2} pos {3}: {4}").format(
+                         path, plate.shape, plateI, k, v))
                 return None
 
         else:
