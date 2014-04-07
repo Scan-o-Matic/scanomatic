@@ -882,7 +882,7 @@ class QC_Stage(gtk.VBox):
             if dialog.run() == gtk.RESPONSE_YES:
 
                 self._model['removed_filter'][...] = np.False_
-                self._model['platesHaveUnsaved'][self._model['plate']] = True
+                self._model['platesHaveUnsaved'][self._model['plate']] = False
                 self._newPhenotype()
 
             dialog.destroy()

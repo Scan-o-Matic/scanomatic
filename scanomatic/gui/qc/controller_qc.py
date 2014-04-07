@@ -105,7 +105,7 @@ class Controller(controller_generic.Controller):
             self._model['phenotyper-path'],
             askOverwrite=False)
 
-        self._model['_platesHaveUnsaved'][...] = False
+        self._model['platesHaveUnsaved'][...] = False
 
         return True
 
