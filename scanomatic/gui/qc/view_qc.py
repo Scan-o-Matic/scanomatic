@@ -1279,6 +1279,8 @@ class QC_Stage(gtk.VBox):
             else:
                 self._HeatMapInfo.set_text(self._model['phenotype-fail-text'])
 
+        print self._model['removed_filter_phenotype'].sum()
+
         self._widgets_require_removed.sensitive = \
             self._model['removed_filter_phenotype'].any()
 
