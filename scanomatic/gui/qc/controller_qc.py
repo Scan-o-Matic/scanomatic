@@ -77,14 +77,17 @@ class Controller(controller_generic.Controller):
 
     def loadPhenotypes(self, pathToDirectory):
 
+        self._logger.info("Loading {0}".format(pathToDirectory))
         try:
             p = phenotyper.Phenotyper.LoadFromSate(pathToDirectory)
         except IOError:
+            self._logger.error("Phenotyper reported IOError, bad path?")
             p = None
 
         if (p is None or p.source is None or p.phenotypes is None or
                 p.times is None or p.smoothData is None or p.shape[0] == 0):
 
+            self._logger.error("Project is corrupt or missing")
             return False
 
         self._model['phenotyper'] = p
@@ -110,6 +113,8 @@ class Controller(controller_generic.Controller):
 
         if (self._model['phenotyper'] is None or
                 self._model['phenotyper'][plate] is None):
+
+            self._logger.warning("No data for plate, why does it exist?")
             self._view.get_stage().plotNoData(fig)
             return
 
@@ -141,7 +146,7 @@ class Controller(controller_generic.Controller):
         if (self._model['phenotyper'] is None or
                 self._model['phenotyper'][plate] is None):
             self._view.get_stage().plotNoData(fig)
-            return
+            return False
 
         if newColorSpace is not None:
             stage = self._view.get_stage()
@@ -176,6 +181,16 @@ class Controller(controller_generic.Controller):
 
             data = self._model['normalized-data']
 
+        if (data is not None and (data[plate] is None or data[plate].size == 0
+                                  or data[plate].shape[-1] <= measure)
+                or measure >= self._model['phenotyper'].nPhenotypesInData):
+
+            self._logger.error(
+                "Can't plot non-existing plate, maybe support for phenotype "
+                " was added after extraction was done!")
+            self._view.get_stage().plotNoData(fig)
+            return False
+
         self._model['phenotyper'].plotPlateHeatmap(
             plate,
             measure=measure,
@@ -190,6 +205,7 @@ class Controller(controller_generic.Controller):
             hideAxis=False,
             fig=fig,
             showFig=False)
+        return True
 
     def toggleSelection(self, pos):
 
@@ -355,10 +371,25 @@ class Controller(controller_generic.Controller):
 
     def normalize(self):
 
-        normalizedPhenotypes = (phenotyper.Phenotyper.PHEN_GT_VALUE,)
+        normalizedPhenotypes = (phenotyper.Phenotyper.PHEN_GT_VALUE,
+                                phenotyper.Phenotyper.PHEN_LAG,
+                                phenotyper.Phenotyper.PHEN_YIELD)
+
         log = self._model['norm-alg-in-log']
 
         aCopy = []
+
+        padding = self._model['phenotyper'].padPhenotypes()
+
+        if (padding):
+
+            rp = []
+
+            rp = self._model['reference-posiitons'].tolist()
+
+            rp += [rp[0].copy() for _ in range(padding)]
+
+            self._model['reference-positions'] = np.array(rp)
 
         for p in self._model['phenotyper'].phenotypes:
 

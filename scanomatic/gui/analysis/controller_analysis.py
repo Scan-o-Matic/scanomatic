@@ -28,7 +28,7 @@ from subprocess import Popen, PIPE
 import model_analysis
 import view_analysis
 
-import scanomatic.gui.subprocs.communications.gui_communicator as gui_communicator
+#import scanomatic.gui.subprocs.communications.gui_communicator as gui_communicator
 import scanomatic.gui.generic.view_generic as view_generic
 import scanomatic.gui.generic.controller_generic as controller_generic
 
@@ -1871,7 +1871,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
             pm = pm[:-1]
             a_dict["-m"] = pm
 
-        tc.add_subprocess(gui_communicator.ANALYSIS, a_dict=a_dict)
+        #tc.add_subprocess(gui_communicator.ANALYSIS, a_dict=a_dict)
 
     def set_log_file(self, widget, log_files=None):
 

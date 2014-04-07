@@ -22,7 +22,7 @@ import re
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.logger as logger
+import scanomatic.io.logger as logger
 
 #
 # CLASSES

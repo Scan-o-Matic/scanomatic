@@ -28,11 +28,11 @@ import view_main
 #Controllers
 import generic.controller_generic as controller_generic
 
-import subprocs.controller_subprocs as controller_subprocs
-import analysis.controller_analysis as controller_analysis
-import experiment.controller_experiment as controller_experiment
-import config.controller_config as controller_config
-import calibration.controller_calibration as controller_calibration
+#import subprocs.controller_subprocs as controller_subprocs
+import scanomatic.gui.analysis.controller_analysis as controller_analysis
+import scanomatic.gui.experiment.controller_experiment as controller_experiment
+import scanomatic.gui.config.controller_config as controller_config
+import scanomatic.gui.calibration.controller_calibration as controller_calibration
 
 #Resources
 import scanomatic.io.scanner as scanner
@@ -99,11 +99,11 @@ class Controller(controller_generic.Controller):
     def _second_init_step(self):
 
         #Subprocs
-        self.subprocs = controller_subprocs.Subprocs_Controller(self)
-        self.add_subprocess = self.subprocs.add_subprocess
+        #self.subprocs = controller_subprocs.Subprocs_Controller(self)
+        #self.add_subprocess = self.subprocs.add_subprocess
         #self.add_subcontroller(self.subprocs)
         view = self._view
-        view.populate_stats_area(self.subprocs.get_view())
+        #view.populate_stats_area(self.subprocs.get_view())
         view.populate_panel()
 
     def set_simple_logger(self):

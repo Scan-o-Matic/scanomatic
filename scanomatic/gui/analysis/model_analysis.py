@@ -6,7 +6,8 @@
 # INTERNAL DEPENDENCIES
 #
 
-import src.gui.generic.model_generic as model_generic
+import scanomatic.gui.generic.model_generic as model_generic
+import scanomatic.io.paths as paths_module
 
 #
 # FUNCTIONS
@@ -34,7 +35,7 @@ class Analysis_GUI_Model(model_generic.Model): pass
 # GLOBALS
 #
 
-PATHS = model_generic.resource_path.Paths()
+PATHS = paths_module.Paths()
 
 #
 # MODELS

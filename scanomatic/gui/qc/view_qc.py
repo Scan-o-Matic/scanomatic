@@ -15,6 +15,7 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
+import pango
 
 import numpy as np
 
@@ -204,6 +205,8 @@ class QC_Stage(gtk.VBox):
         self.connect('key_release_event', self._releaseKey)
 
         self._HeatMapInfo = gtk.Label("")
+        self._HeatMapInfo.set_justify(gtk.JUSTIFY_CENTER)
+        self._HeatMapInfo.set_ellipsize(pango.ELLIPSIZE_MIDDLE)
 
         self._plateSaveImage = gtk.Button(self._model['plate-save'])
         self._plateSaveImage.connect("clicked", self._saveImage)
@@ -869,7 +872,23 @@ class QC_Stage(gtk.VBox):
 
     def _undoRemove(self, wiget):
 
-        self._widgets_require_removed.sensitive = self._controller.undoLast()
+        didSomething = self._controller.undoLast()
+        if (not(didSomething)):
+
+            dialog = gtk.MessageDialog(
+                flags=gtk.DIALOG_DESTROY_WITH_PARENT,
+                type=gtk.MESSAGE_WARNING,
+                buttons=gtk.BUTTONS_YES_NO,
+                message_format=self._model["unremove-text"])
+
+            if dialog.run() == gtk.RESPONSE_YES:
+
+                self._model['removed_filter'][...] = np.False_
+
+            dialog.destroy()
+
+        self._widgets_require_removed.sensitive = \
+            self._model['removed_filter_phenotype'].any()
 
     def _saveImage(self, widget):
 
@@ -992,6 +1011,13 @@ class QC_Stage(gtk.VBox):
                         self._badSelectorAdjustment.set_value(0)
                         self._selectBad(self._badSelector)
                         self._setReferences()
+                        self._HeatMapInfo.set_text(
+                            self._model['loaded-text'])
+
+                    else:
+
+                        self._HeatMapInfo.set_text(
+                            self._model['load-fail-text'])
 
             elif widget is self._plateSelector:
 
@@ -1017,7 +1043,8 @@ class QC_Stage(gtk.VBox):
 
     def plotNoData(self, fig, msg="No Data Loaded"):
 
-        fig.gca().cla()
+        for ax in fig.axes:
+            ax.cla()
         fig.text(0.25, 0.5, msg)
 
     def _setBoundaries(self):
@@ -1101,7 +1128,8 @@ class QC_Stage(gtk.VBox):
 
     def _mousePress(self, event, *args, **kwargs):
 
-        if not(None in (event.xdata, event.ydata)):
+        if (not(None in (event.xdata, event.ydata)) and
+                self._model['plate_exists']):
             self._curSelection = tuple(
                 np.round([event.ydata, event.xdata]).tolist())
 
@@ -1111,7 +1139,8 @@ class QC_Stage(gtk.VBox):
 
     def _mouseRelease(self, event, *args):
 
-        if not(None in (event.xdata, event.ydata)):
+        if (not(None in (event.xdata, event.ydata)) and
+                self._model['plate_exists']):
             curSelection = tuple(np.round([event.ydata, event.xdata]).tolist())
             if (curSelection == self._curSelection):
 
@@ -1216,7 +1245,6 @@ class QC_Stage(gtk.VBox):
 
         self._controller.removeCurves(onlyCurrent=True)
         self._unselect()
-        self._widgets_require_removed.sensitive = True
         self._newPhenotype()
         if (self._model['auto-selecting']):
             self._badSelectorAdjustment.set_value(
@@ -1226,7 +1254,6 @@ class QC_Stage(gtk.VBox):
 
         self._controller.removeCurves(onlyCurrent=False)
         self._unselect()
-        self._widgets_require_removed.sensitive = True
         self._newPhenotype()
         if (self._model['auto-selecting']):
             self._badSelectorAdjustment.set_value(
@@ -1243,10 +1270,15 @@ class QC_Stage(gtk.VBox):
 
         if self._model['plate'] is not None:
             self._unselect()
-            self._controller.plotHeatmap(self._plate_figure)
-            self._drawSelectionsDataSeries()
-            self._setBoundaries()
-            self._updateBounds()
+            if self._controller.plotHeatmap(self._plate_figure):
+                self._drawSelectionsDataSeries()
+                self._setBoundaries()
+                self._updateBounds()
+            else:
+                self._HeatMapInfo.set_text(self._model['phenotype-fail-text'])
+
+        self._widgets_require_removed.sensitive = \
+            self._model['removed_filter_phenotype'].any()
 
     def _pressKey(self, widget, event):
 

@@ -50,11 +50,19 @@ class NewModel(object):
 
     def visibleMin(self):
 
-        return self['visibleValues'].min()
+        v = self['visibleValues']
+        if (v.size):
+            return v.min()
+        else:
+            return 0
 
     def visibleMax(self):
 
-        return self['visibleValues'].max()
+        v = self['visibleValues']
+        if (v.size):
+            return v.max()
+        else:
+            return 0
 
     def absPhenotype(self):
 
@@ -103,6 +111,12 @@ class NewModel(object):
     def showGT(self):
 
         return not self['multiSelecting']
+
+    def plate_exists(self):
+
+        return (self['phenotyper'] is not None and
+                self['plate'] is not None and
+                self['phenotyper'][self['plate']] is not None)
 
     def plate_shapes(self):
 
@@ -154,7 +168,10 @@ class NewModel(object):
 
     def removed_filter_phenotype(self):
 
-        return self['removed_filter'][..., self['absPhenotype']]
+        if self['plate'] is not None:
+            return self['removed_filter'][..., self['absPhenotype']]
+        else:
+            return np.array([])
 
     def unsaved(self):
 
@@ -196,6 +213,12 @@ _stagePresets = {
     'button-load-data': "Load experiment data",
     'button-load-meta': "Load meta-data",
 
+    'load-fail-text': """The project could not be loaded, either files are
+ corrupt or missing""",
+    'phenotype-fail-text': """The phenotype has not been extracted, maybe
+ re-run extraction?""",
+    'loaded-text': "Loaded Project",
+
     'label-plate': "Plate:",
     'plate-save': "Save Plate Image",
 
@@ -209,10 +232,14 @@ _stagePresets = {
 
     'selections-section': "Selections & Undo",
     'unselect': "Unselect All",
+
     'badness-label': 'Badness',
     'removeCurvesPhenotype': "Delete marked, this phenotype",
     'removeCurvesAllPhenotypes': "Delete marked, all phenotypes",
     'undo': "Undo",
+    'unremove-text': """Unfortunately the undo history is empty.
+Do you wish to restore all removed curves for all phenotypes for
+the current plate?""",
 
     'auto-selecting': True,
 

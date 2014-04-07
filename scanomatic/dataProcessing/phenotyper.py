@@ -53,6 +53,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     PHEN_INIT_VAL_B = 13
     PHEN_INIT_VAL_C = 14
     PHEN_INIT_VAL_D = 15
+    PHEN_FINAL_VAL = 16
+    PHEN_YIELD = 17
+    PHEN_LAG = 18
+    PHEN_GT_CELL_COUNT = 19
 
     NAMES_OF_PHENOTYPES = {
         0: "Generation Time",
@@ -70,7 +74,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         12: "Initial Value",
         13: "Initial Value (mean 2)",
         14: "Initial Value (mean 3)",
-        15: "Initial Value (min 3)"
+        15: "Initial Value (min 3)",
+        16: "Final Value",
+        17: "Yield",
+        18: "Lag",
+        19: "Value at Generation Time",
     }
 
     def __init__(self, dataObject, timeObject=None,
@@ -383,8 +391,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         def _linReg2(*args):
             return linregress(args[:linRegSize], args[linRegSize:])[0::4]
 
-        self._logger.info("Phenotype Extraction Started")
-
         timesStrided = np.lib.stride_tricks.as_strided(
             self._timeObject,
             shape=(self._timeObject.shape[0] - (self._linRegSize - 1),
@@ -400,6 +406,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         #linRegUFunc = np.frompyfunc(_linReg2, linRegSize * 2, 2)
         posOffset = (linRegSize - 1) / 2
         nPhenotypes = self.nPhenotypeTypes
+
+        self._logger.info("Phenotypes (N={0}) Extraction Started".format(
+            nPhenotypes))
 
         for plateI, plate in enumerate(self._dataObject):
 
@@ -438,30 +447,59 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                         vals.append(_linReg(T, V))
 
                     vals = np.array(vals)
-                    vArgSort = vals[..., 0].argsort()
+                    mVals = np.ma.masked_invalid(vals[..., 0])
+                    bestFinite = -mVals.mask.sum() - 1
+                    vArgSort = mVals.argsort()
 
-                    #REGISTRATING GT PHENOTYPES
-                    curPhenos[self.PHEN_GT_VALUE] = 1.0 / vals[
-                        vArgSort[-1], self.PHEN_GT_VALUE]
-
-                    curPhenos[self.PHEN_GT_ERR] = vals[
-                        vArgSort[-1], self.PHEN_GT_ERR]
-
-                    curPhenos[self.PHEN_GT_POS] = vArgSort[-1] + posOffset
-
-                    curPhenos[self.PHEN_GT_2ND_VALUE] = 1.0 / vals[
-                        vArgSort[-2], self.PHEN_GT_VALUE]
-
-                    curPhenos[self.PHEN_GT_2ND_ERR] = vals[
-                        vArgSort[-2], self.PHEN_GT_ERR]
-
-                    curPhenos[self.PHEN_GT_2ND_POS] = vArgSort[-2] + posOffset
+                    curve = np.ma.masked_invalid(plate[idX, idY])
 
                     #CALCULATING CURVE FITS
                     Yobs = plate[idX, idY].ravel().astype(np.float64)
 
                     p = Phenotyper.CalculateFitRSquare(
                         flatT, np.log2(Yobs))
+
+                    #YIELD TYPE OF PHENOTYPES
+                    curPhenos[self.PHEN_INIT_VAL_A] = curve[0]
+                    curPhenos[self.PHEN_INIT_VAL_B] = curve[:2].mean()
+                    curPhenos[self.PHEN_INIT_VAL_C] = curve[:3].mean()
+                    curPhenos[self.PHEN_INIT_VAL_D] = curve[:3].min()
+                    curPhenos[self.PHEN_FINAL_VAL] = curve[3:].mean()
+                    curPhenos[self.PHEN_YIELD] = \
+                        curPhenos[self.PHEN_FINAL_VAL] - \
+                        curPhenos[self.PHEN_INIT_VAL_C]
+
+                    #REGISTRATING GT PHENOTYPES
+                    if (abs(bestFinite) <= vArgSort.size):
+                        curPhenos[self.PHEN_GT_VALUE] = 1.0 / vals[
+                            vArgSort[bestFinite], self.PHEN_GT_VALUE]
+
+                        curPhenos[self.PHEN_GT_ERR] = vals[
+                            vArgSort[bestFinite], self.PHEN_GT_ERR]
+
+                        curPhenos[self.PHEN_GT_POS] = vArgSort[bestFinite] +\
+                            posOffset
+
+                        if (abs(bestFinite) < vArgSort.size):
+                            curPhenos[self.PHEN_GT_2ND_VALUE] = 1.0 / vals[
+                                vArgSort[bestFinite - 1], self.PHEN_GT_VALUE]
+
+                            curPhenos[self.PHEN_GT_2ND_ERR] = vals[
+                                vArgSort[bestFinite - 1], self.PHEN_GT_ERR]
+
+                            curPhenos[self.PHEN_GT_2ND_POS] = \
+                                vArgSort[bestFinite - 1] + posOffset
+
+                        curPhenos[self.PHEN_GT_CELL_COUNT] = \
+                            np.median(
+                                curve[curPhenos[self.PHEN_GT_POS] - posOffset:
+                                      curPhenos[self.PHEN_GT_POS] + posOffset
+                                      + 1])
+
+                        curPhenos[self.PHEN_LAG] = (
+                            np.log2(curPhenos[self.PHEN_INIT_VAL_C]) -
+                            np.log2(curPhenos[self.PHEN_GT_CELL_COUNT])) * \
+                            curPhenos[self.PHEN_GT_VALUE]
 
                     #REGISTRATING CURVE FITS
                     curPhenos[self.PHEN_FIT_VALUE] = p[0]
@@ -470,13 +508,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     curPhenos[self.PHEN_FIT_PARAM3] = p[1][2]
                     curPhenos[self.PHEN_FIT_PARAM4] = p[1][3]
                     curPhenos[self.PHEN_FIT_PARAM5] = p[1][4]
-                    curPhenos[self.PHEN_INIT_VAL_A] = plate[idX, idY, 0]
-                    curPhenos[self.PHEN_INIT_VAL_B] = plate[idX, idY, :2][
-                        np.isfinite(plate[idX, idY, :2])].mean()
-                    curPhenos[self.PHEN_INIT_VAL_C] = plate[idX, idY, :3][
-                        np.isfinite(plate[idX, idY, :3])].mean()
-                    curPhenos[self.PHEN_INIT_VAL_D] = plate[idX, idY, :3][
-                        np.isfinite(plate[idX, idY, :3])].min()
 
                     #STORING PHENOTYPES
                     phenotypes[idX, idY, ...] = curPhenos
@@ -497,6 +528,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return max(getattr(self, attr) for attr in dir(self) if
                    attr.startswith("PHEN_")) + 1
+
+    @property
+    def nPhenotypesInData(self):
+
+        return max((p is None and 0 or p.shape[-1]) for p in self._phenotypes)
 
     @property
     def curveFits(self):
@@ -540,6 +576,28 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             value = np.array(value, dtype=np.float)
 
         self._timeObject = value
+
+    def padPhenotypes(self):
+
+        padding = self.nPhenotypeTypes - self.nPhenotypesInData
+
+        if (padding):
+            phenotypes = []
+            removes = []
+            for i, p in enumerate(self._phenotypes):
+
+                if p is not None:
+                    pad = np.zeros(p.shape[:-1] + (padding,))
+                    phenotypes.append(np.dstack((p, pad * np.nan)))
+                    removes.append(np.dstack((p, pad == 0)))
+                else:
+                    removes.append(None)
+                    phenotypes.append(None)
+
+            self._phenotypes = np.array(phenotypes)
+            self._removeFilter = np.array(removes)
+
+        return padding
 
     def add2RemoveFilter(self, plate, positionList, phenotype=None):
         """Adds positions as removed from data.
