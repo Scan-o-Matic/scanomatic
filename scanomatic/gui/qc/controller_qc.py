@@ -371,24 +371,16 @@ class Controller(controller_generic.Controller):
 
     def normalize(self):
 
-        normalizedPhenotypes = (phenotyper.Phenotyper.PHEN_GT_VALUE,
+        normalizedPhenotypes = (phenotyper.Phenotyper.PHEN_GT_VALUE,)
+        """
                                 phenotyper.Phenotyper.PHEN_LAG,
                                 phenotyper.Phenotyper.PHEN_YIELD)
+        """
         log = self._model['norm-alg-in-log']
 
         aCopy = []
 
-        self._model['phenotyper'].padPhenotypes()
-
-        """
-        if (padding):
-
-            rp = self._model['reference-positions']
-
-            rp = rp.tolist() + [rp[0].copy() for _ in range(padding)]
-
-            self._model['reference-positions'] = np.array(rp)
-        """
+        #self._model['phenotyper'].padPhenotypes()
 
         for p in self._model['phenotyper'].phenotypes:
 

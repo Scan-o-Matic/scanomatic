@@ -1045,7 +1045,9 @@ class QC_Stage(gtk.VBox):
 
         for ax in fig.axes:
             ax.cla()
-        fig.text(0.25, 0.5, msg)
+        ax.text(0.25, 0.5, msg)
+        if (fig == self._plate_figure):
+            self._plate_image_canvas.draw()
 
     def _setBoundaries(self):
 

@@ -874,10 +874,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if (len(fig.axes)):
             ax = fig.axes[0]
-            ax.cla()
             if (len(fig.axes) == 2):
                 cax = fig.axes[1]
                 cax.cla()
+                fig.delaxes(cax)
+                cax = None
+            ax.cla()
         else:
             ax = fig.gca()
 
