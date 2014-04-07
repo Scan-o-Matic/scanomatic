@@ -1196,7 +1196,7 @@ class QC_Stage(gtk.VBox):
 
         elif (self._model['selection_patches'] is not None):
 
-            self._logger.info("Unknown selection {0}".format(data))
+            #self._logger.info("Unknown selection {0}".format(data))
 
             self._model['selection_patches'].set_data([], [])
 
