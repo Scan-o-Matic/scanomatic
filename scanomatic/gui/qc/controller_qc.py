@@ -105,6 +105,8 @@ class Controller(controller_generic.Controller):
             self._model['phenotyper-path'],
             askOverwrite=False)
 
+        self._model['_platesHaveUnsaved'][...] = False
+
         return True
 
     def plotData(self, fig):
@@ -229,6 +231,8 @@ class Controller(controller_generic.Controller):
             plate=self._model['plate'],
             positionList=self._model['selectionWhere'],
             phenotype=onlyCurrent and self._model['absPhenotype'] or None)
+
+        self._model['platesHaveUnsaved'][self._model['plate']] = True
 
     def undoLast(self):
 
@@ -465,7 +469,7 @@ class Controller(controller_generic.Controller):
         if self._model['norm-use-initial-values']:
             iParams = leastsq(norm.IPVresidue, iParamGuesses,
                               args=(iVals, phenotypes))[0]
-            print "Scalings", iParams
+            #print "Scalings", iParams
             iPflex = iParams[: iParams.size / 2]
             iPscale = iParams[iParams.size / 2:]
             N = np.array([(p is None and None or

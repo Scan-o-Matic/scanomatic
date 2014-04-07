@@ -158,18 +158,26 @@ class NewModel(object):
         return (self['phenotyper'] is None and None or
                 self['phenotyper'].getRemoveFilter(self['plate']))
 
-    def removed_filter_phenotype(self):
+    def plate_has_removed(self):
 
         return (self['phenotyper'] is None and None or
                 self['phenotyper'].hasRemoved(self['plate']))
 
+    def platesHaveUnsaved(self):
+
+        self._initUnsaved()
+        return self['_platesHaveUnsaved']
+
     def unsaved(self):
 
-        rf = self['phenotyper'].hasAnyRemoved()
-        sf = self['_selectionFilter']
-        return (rf or
-                sf is not None and any([f.any() for f in sf]))
+        self._initUnsaved()
+        return any(self['_platesHaveUnsaved'])
 
+    def _initUnsaved(self):
+
+        if self['_platesHaveUnsaved'] is None:
+            self['_platesHaveUnsaved'] = np.array(
+                [False for _ in self['phenotyper']])
 #
 # MODEL DEFAULTS
 #
@@ -195,6 +203,7 @@ _stagePresets = {
     '_selectionFilter': None,
 
     'plates': None,
+    '_platesHaveUnsaved': None,
     'subplateSelected': np.zeros((2, 2), dtype=bool),
     'selection_patches': None,  # dict(),
     'selectOnAllPhenotypes': True,

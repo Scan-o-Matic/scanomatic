@@ -808,8 +808,6 @@ class QC_Stage(gtk.VBox):
 
         normInfo = self._controller.normalize()
 
-        print normInfo
-
         if (normInfo['ref-CV-warning'].any() or
                 normInfo['ref-usage-warning'].any()):
 
@@ -884,11 +882,13 @@ class QC_Stage(gtk.VBox):
             if dialog.run() == gtk.RESPONSE_YES:
 
                 self._model['removed_filter'][...] = np.False_
+                self._model['platesHaveUnsaved'][self._model['plate']] = True
+                self._newPhenotype()
 
             dialog.destroy()
 
         self._widgets_require_removed.sensitive = \
-            self._model['removed_filter_phenotype'].any()
+            self._model['plate_has_removed']
 
     def _saveImage(self, widget):
 
@@ -1279,10 +1279,8 @@ class QC_Stage(gtk.VBox):
             else:
                 self._HeatMapInfo.set_text(self._model['phenotype-fail-text'])
 
-        print self._model['removed_filter_phenotype'].sum()
-
         self._widgets_require_removed.sensitive = \
-            self._model['removed_filter_phenotype'].any()
+            self._model['plate_has_removed']
 
     def _pressKey(self, widget, event):
 
