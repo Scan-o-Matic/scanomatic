@@ -870,8 +870,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if fig is None:
             fig = plt.figure()
 
-        fig.clf()
-        ax = fig.gca()
+        cax = None
+
+        if (len(fig.axes)):
+            ax = fig.axes[0]
+            ax.cla()
+            if (len(fig.axes) == 2):
+                cax = fig.axes[1]
+                cax.cla()
+        else:
+            ax = fig.gca()
 
         if (titleText is not None):
             ax.set_title(titleText)
@@ -917,7 +925,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if (showColorBar):
             divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", "5%", pad="3%")
+            if (cax is None):
+                cax = divider.append_axes("right", "5%", pad="3%")
             plt.colorbar(im, cax=cax)
 
         if (hideAxis):
