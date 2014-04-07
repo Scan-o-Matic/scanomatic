@@ -165,9 +165,9 @@ class NewModel(object):
 
     def unsaved(self):
 
-        rf = self['_removeFilter']
+        rf = self['phenotyper'].hasAnyRemoved()
         sf = self['_selectionFilter']
-        return (rf is not None and any([f.any() for f in rf]) or
+        return (rf or
                 sf is not None and any([f.any() for f in sf]))
 
 #
@@ -194,7 +194,6 @@ _stagePresets = {
     'colorsAll': True,
     '_selectionFilter': None,
 
-    '_removeFilter': None,
     'plates': None,
     'subplateSelected': np.zeros((2, 2), dtype=bool),
     'selection_patches': None,  # dict(),
