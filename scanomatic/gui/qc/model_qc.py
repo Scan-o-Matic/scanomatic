@@ -155,23 +155,13 @@ class NewModel(object):
 
     def removed_filter(self):
 
-        rf = self['_removeFilter']
-        if rf is None or not all(f.shape[:2] == s.shape for f, s in zip(
-                rf, self['phenotyper'][self['plate']])):
-
-            rf = [np.zeros(s.shape[:2] + (self['phenotyper'].nPhenotypeTypes,),
-                           dtype=bool) for s in self['phenotyper']]
-
-            self['_removeFilter'] = rf
-
-        return rf[self['plate']]
+        return (self['phenotyper'] is None and None or
+                self['phenotyper'].getRemoveFilter(self['plate']))
 
     def removed_filter_phenotype(self):
 
-        if self['plate'] is not None:
-            return self['removed_filter'][..., self['absPhenotype']]
-        else:
-            return np.array([])
+        return (self['phenotyper'] is None and None or
+                self['phenotyper'].hasRemoved(self['plate']))
 
     def unsaved(self):
 
