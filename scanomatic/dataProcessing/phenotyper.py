@@ -659,6 +659,15 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return (self._removeFilter[plate] is None and False or
                 self._removeFilter[plate].any())
 
+    def hasAnyRemoved(self):
+        """If any plate has anything removed
+
+        Returns:
+            bool    The removal status
+        """
+        return any(self.hasAnyRemoved(i) for i in
+                   range(self._removeFilter.shape[0]))
+
     def getPositionListFiltered(self, posList, valueType=PHEN_GT_VALUE):
         """Get phenotypes for the list of positions.
 
