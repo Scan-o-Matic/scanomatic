@@ -626,7 +626,17 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._removeFilter[plate][positionList] = True
 
     def getRemoveFilter(self, plate):
+        """Get remove filter for plate.
 
+        Args:
+
+            plate (int)   Index of plate
+
+        Returns:
+
+            numpy.ndarray (dtype=np.bool)
+                The per position status of removal
+        """
         if (self._removeFilter[plate] is None):
             self._removeFilter[plate] = np.zeros(
                 self._phenotypes[plate].shape,
@@ -635,6 +645,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return self._removeFilter[plate]
 
     def hasRemoved(self, plate):
+        """Get if plate has anything removed.
+
+        Args:
+
+            plate (int)   Index of plate
+
+        Returns:
+
+            bool    The status of the plate removals
+        """
 
         return (self._removeFilter[plate] is None and False or
                 self._removeFilter[plate].any())
