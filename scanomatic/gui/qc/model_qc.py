@@ -178,6 +178,17 @@ class NewModel(object):
         if self['_platesHaveUnsaved'] is None:
             self['_platesHaveUnsaved'] = np.array(
                 [False for _ in self['phenotyper']])
+
+    def badSortingPhenotypes(self):
+
+        p = self['phenotyper']
+        if p is None:
+            return tuple()
+
+        return (p.PHEN_GT_ERR, p.PHEN_GT_POS,
+                p.PHEN_GT_2ND_ERR, p.PHEN_GT_2ND_POS,
+                p.PHEN_FIT_VALUE)
+
 #
 # MODEL DEFAULTS
 #
@@ -196,7 +207,7 @@ _stagePresets = {
     'showRaw': True,
     'phenotype': None,
     'phenotyper': None,
-    'phenotyper-path': None,
+    'phenotyper-path': "",
     'plate': None,
     'fixedColors': (None, None),
     'colorsAll': True,
@@ -231,7 +242,7 @@ _stagePresets = {
     'selections-section': "Selections & Undo",
     'unselect': "Unselect All",
 
-    'badness-label': 'Badness',
+    'badness-label': 'Quality Index',
     'removeCurvesPhenotype': "Delete marked, this phenotype",
     'removeCurvesAllPhenotypes': "Delete marked, all phenotypes",
     'undo': "Undo",

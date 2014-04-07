@@ -245,6 +245,19 @@ class Controller(controller_generic.Controller):
         ub = self._model['visibleMax']
         return lb, ub, lb, ub
 
+    def getPhenotypeBad(self, index=0):
+
+        p = self._model['phenotyper']
+        pl = self._model['plate']
+        ph = self._model['phenotype']
+        s = 1
+        if ph == p.PHEN_FIT_VALUE:
+            s = -1
+
+        vals = p.phenotypes[pl][..., ph]
+        return np.where(
+            vals == vals.ravel()[vals.ravel().argsort()[::s][-index]])
+
     def getMostProbableBad(self, index=0):
 
         wFit = 0.25

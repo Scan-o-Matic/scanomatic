@@ -755,6 +755,7 @@ class QC_Stage(gtk.VBox):
             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
                      gtk.RESPONSE_OK))
         dialog.set_action(gtk.FILE_CHOOSER_ACTION_SAVE)
+        dialog.set_current_folder(self._model['phenotyper-path'])
 
         savePath = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
                     or None)
@@ -771,6 +772,7 @@ class QC_Stage(gtk.VBox):
             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
                      gtk.RESPONSE_OK))
         dialog.set_action(gtk.FILE_CHOOSER_ACTION_SAVE)
+        dialog.set_current_folder(self._model['phenotyper-path'])
 
         savePath = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
                     or None)
@@ -897,6 +899,7 @@ class QC_Stage(gtk.VBox):
             buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE,
                      gtk.RESPONSE_OK))
         dialog.set_action(gtk.FILE_CHOOSER_ACTION_SAVE)
+        dialog.set_current_folder(self._model['phenotyper-path'])
 
         fname = (dialog.run() == gtk.RESPONSE_OK and dialog.get_filename()
                  or None)
@@ -949,6 +952,7 @@ class QC_Stage(gtk.VBox):
 
         dialog.set_action(gtk.FILE_CHOOSER_ACTION_OPEN)
         dialog.set_select_multiple(True)
+        dialog.set_current_folder(self._model['phenotyper-path'])
 
         pathMetaData = (dialog.run() == gtk.RESPONSE_OK and
                         dialog.get_filenames()
@@ -978,6 +982,7 @@ class QC_Stage(gtk.VBox):
                              gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 
                 dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+                dialog.set_current_folder(self._model['phenotyper-path'])
 
                 dataPath = (dialog.run() == gtk.RESPONSE_OK and
                             dialog.get_filename() or None)
@@ -1212,7 +1217,10 @@ class QC_Stage(gtk.VBox):
     def _selectBad(self, widget):
 
         self._model['auto-selecting'] = True
-        pos = self._controller.getMostProbableBad(widget.get_value_as_int())
+        if self._model['phenotype'] not in self._model['badSortingPhenotypes']:
+            pos = self._controller.getMostProbableBad(widget.get_value_as_int())
+        else:
+            pos = self._controller.getPhenotypeBad(widget.get_value_as_int())
 
         self._model['plate_selections'][...] = False
 
@@ -1289,6 +1297,16 @@ class QC_Stage(gtk.VBox):
         if ctrlKey or event.state & gtk.gdk.CONTROL_MASK:
             self._multiSelecting = True
             self._HeatMapInfo.set_text(self._model['msg-multiSelecting'])
+        else:
+            keyName = gtk.gdk.keyval_name(event.keyval).upper()
+            if (keyName == "D"):
+                self._removeCurvesAllPhenotype()
+            elif (keyName in ["N", "W", "D", "L"]):
+                self._badSelectorAdjustment.set_value(
+                    self._badSelectorAdjustment.get_value() + 1)
+            elif (keyName in ["B", "S", "A", "H"]):
+                self._badSelectorAdjustment.set_value(
+                    self._badSelectorAdjustment.get_value() - 1)
 
     def _releaseKey(self, widget, event):
 
@@ -1300,6 +1318,11 @@ class QC_Stage(gtk.VBox):
             self._curve_figure_ax.cla()
             self._controller.plotData(self._curve_figure)
             self._curve_image_canvas.draw()
+        """
+        else:
+
+            keyName = gtk.gdk.keyval_name(event.keyval).upper()
+        """
 
 
 class SensitivityGroup(object):
