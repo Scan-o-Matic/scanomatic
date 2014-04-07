@@ -383,13 +383,13 @@ class Controller(controller_generic.Controller):
 
         if (padding):
 
-            rp = []
+            """
+            rp = self._model['reference-positions']
 
-            rp = self._model['reference-posiitons'].tolist()
-
-            rp += [rp[0].copy() for _ in range(padding)]
+            rp = rp.tolist() + [rp[0].copy() for _ in range(padding)]
 
             self._model['reference-positions'] = np.array(rp)
+            """
 
         for p in self._model['phenotyper'].phenotypes:
 
@@ -434,9 +434,9 @@ class Controller(controller_generic.Controller):
 
         #If user has missed dubious positions they are filtered out
         if self._model['norm-outlier-iterations'] > 0:
-            for measure in normalizedPhenotypes:
+            for idM, measure in enumerate(normalizedPhenotypes):
                 norm.applyOutlierFilter(
-                    subSampler, measure=measure,
+                    subSampler, measure=idM,
                     k=self._model['norm-outlier-k'],
                     p=self._model['norm-outlier-p'],
                     maxIterations=self._model['norm-outlier-iterations'])

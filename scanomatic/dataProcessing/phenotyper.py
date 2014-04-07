@@ -880,6 +880,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             data = self.phenotypes
 
         plateData = data[plateIndex][..., measure]
+        if (np.isfinite(plateData).sum() == 0):
+            self._logger.error("No finite data")
+            return False
 
         if not horizontalOrientation:
             plateData = plateData.T

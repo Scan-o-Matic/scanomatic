@@ -181,7 +181,7 @@ def getExperimentPosistionsCoordinates(dataObject, controlPositionKernels=None):
     if controlPositionKernels is None:
         controlPositionKernels = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
 
-    experimentPositionKernels = [k == False for k in controlPositionKernels]
+    experimentPositionKernels = [k == np.False_ for k in controlPositionKernels]
 
     return _getPositionsForKernelTrue(dataObject, experimentPositionKernels)
 
@@ -260,7 +260,7 @@ def getControlPositionsAverage(controlPositionsDataArray,
 
                 measureVector.append(
                     averageMethod(plate[..., measureIndex][
-                        expPosTest(plate[..., measureIndex]) == False]))
+                        expPosTest(plate[..., measureIndex]) == np.False_]))
 
             else:
 
@@ -338,43 +338,45 @@ def getNormalisationSurfaceWithGridData(
 
                 if useAccumulated:
                     points = np.where(missingTest(plate[..., measureIndex]) ==
-                                      False)
+                                      np.False_)
 
                 values = plate[..., measureIndex][points]
 
                 finitePoints = np.isfinite(values)
-                if (finitePoints == False).any():
+                if (finitePoints.sum() > 0):
 
-                    points = tuple(p[finitePoints] for p in points)
-                    values = values[finitePoints]
+                    if (finitePoints == np.False_).any():
 
-                res = griddata(
-                    tuple(points),
-                    #np.array(tuple(p.ravel() for p in points)).T.shape,
-                    values,
-                    (grid_x, grid_y),
-                    method=method,
-                    fill_value=missingDataValue)
+                        points = tuple(p[finitePoints] for p in points)
+                        values = values[finitePoints]
 
-                accPoints = np.where(
-                    missingTest(plate[..., measureIndex]))
+                    res = griddata(
+                        tuple(points),
+                        #np.array(tuple(p.ravel() for p in points)).T.shape,
+                        values,
+                        (grid_x, grid_y),
+                        method=method,
+                        fill_value=missingDataValue)
 
-                """
-                print method
-                print "Before:", missingTest(plate[..., measureIndex]).sum()
-                print "Change size:", (missingTest(res[accPoints]) == False).sum()
-                print "After:", missingTest(res).sum()
-                """
+                    accPoints = np.where(
+                        missingTest(plate[..., measureIndex]))
 
-                plate[..., measureIndex][accPoints] = res[accPoints]
+                    """
+                    print method
+                    print "Before:", missingTest(plate[..., measureIndex]).sum()
+                    print "Change size:", (missingTest(res[accPoints]) == False).sum()
+                    print "After:", missingTest(res).sum()
+                    """
 
-                """
-                print "True After:", missingTest(plate[..., measureIndex]).sum()
-                print "--"
-                """
+                    plate[..., measureIndex][accPoints] = res[accPoints]
 
-                if not missingTest(plate[..., measureIndex]).any():
-                    break
+                    """
+                    print "True After:", missingTest(plate[..., measureIndex]).sum()
+                    print "--"
+                    """
+
+                    if not missingTest(plate[..., measureIndex]).any():
+                        break
 
             #print "***"
 
