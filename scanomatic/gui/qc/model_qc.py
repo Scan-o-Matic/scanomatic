@@ -13,7 +13,8 @@ class NewModel(object):
 
             return self._values[key]
 
-        elif hasattr(self, key):
+        elif (hasattr(self, key) and key[0].lower() == key[0] and
+              not key.startswith("_")):
 
             return getattr(self, key)()
 

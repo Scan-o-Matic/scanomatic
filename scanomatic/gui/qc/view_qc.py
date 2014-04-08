@@ -343,7 +343,8 @@ class QC_Stage(gtk.VBox):
         self._badSelector = gtk.SpinButton(self._badSelectorAdjustment,
                                            0, 0)
 
-        self._badSelector.connect("value_changed", self._selectBad)
+        self._badSelEvent = self._badSelector.connect(
+            "value_changed", self._selectBad)
 
         self._badSelector.set_wrap(True)
         self._badSelector.set_snap_to_ticks(True)
@@ -1162,6 +1163,13 @@ class QC_Stage(gtk.VBox):
                 if self._multiSelecting is False:
                     self._unselect()
                     self._controller.setSelected(curSelection, True)
+                    self._badSelector.handler_block(
+                        self._badSelEvent)
+                    self._badSelectorAdjustment.set_value(
+                        self._controller.getBadnessIndexOfPos(
+                            curSelection))
+                    self._badSelector.handler_unblock(
+                        self._badSelEvent)
                 else:
                     self._controller.toggleSelection(curSelection)
 
@@ -1285,6 +1293,11 @@ class QC_Stage(gtk.VBox):
 
             self._model['phenotype'] = self._phenotypeName2Key[key]
             self._plate_image_canvas.grab_focus()
+            if self._badSelectorAdjustment.get_value() == 1:
+                self._badSelector.emit("value-changed")
+            else:
+                self._badSelectorAdjustment.set_value(1)
+
 
         #if self._model['plate'] is not None:
         self._unselect()
@@ -1308,8 +1321,6 @@ class QC_Stage(gtk.VBox):
         else:
             keyName = gtk.gdk.keyval_name(event.keyval).upper()
 
-            print keyName
-
             if (keyName == "D"):
                 self._removeCurvesAllPhenotype()
             elif (keyName == "U"):
@@ -1317,10 +1328,12 @@ class QC_Stage(gtk.VBox):
             elif (keyName == "P"):
                 self._phenotypeSelector.popup()
                 self._phenotypeSelector.grab_focus()
-            elif (keyName in ["N", "W", "D", "J"]):
+            elif (keyName in ["N", "J"]):
+                self._model['auto-selecting'] = True
                 self._badSelectorAdjustment.set_value(
                     self._badSelectorAdjustment.get_value() + 1)
-            elif (keyName in ["B", "S", "A", "K"]):
+            elif (keyName in ["B", "K"]):
+                self._model['auto-selecting'] = True
                 self._badSelectorAdjustment.set_value(
                     self._badSelectorAdjustment.get_value() - 1)
 

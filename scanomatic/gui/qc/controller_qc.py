@@ -245,6 +245,29 @@ class Controller(controller_generic.Controller):
         ub = self._model['visibleMax']
         return lb, ub, lb, ub
 
+    def getBadness(self):
+
+        wFit = 0.25
+        p = self._model['phenotyper']
+        pl = self._model['plate']
+
+        gt = p.phenotypes[pl][..., p.PHEN_GT_VALUE]
+        gtErr = p.phenotypes[pl][..., p.PHEN_GT_ERR]
+        curvFit = p.phenotypes[pl][..., p.PHEN_FIT_VALUE]
+
+        gtBar = gt.ravel()[np.isfinite(gt.ravel())].mean()
+
+        """DEBUG
+        if pos is not None and len(pos) == 2 and len(pos[0]) >= 0:
+
+            print np.abs(gt[pos[0], pos[1]] - gtBar) / gtBar
+            print (gtErr[pos[0], pos[1]]) * 100
+            print wFit * (1 - curvFit.clip(0, 1)[pos[0], pos[1]]) * 100
+        """
+
+        return (np.abs(gt - gtBar) / gtBar + (gtErr) * 100 +
+                wFit * (1 - curvFit.clip(0, 1)) * 100)
+
     def getPhenotypeBad(self, index=0):
 
         p = self._model['phenotyper']
@@ -260,30 +283,33 @@ class Controller(controller_generic.Controller):
 
     def getMostProbableBad(self, index=0):
 
-        wFit = 0.25
-        p = self._model['phenotyper']
-        pl = self._model['plate']
-
-        gt = p.phenotypes[pl][..., p.PHEN_GT_VALUE]
-        gtErr = p.phenotypes[pl][..., p.PHEN_GT_ERR]
-        curvFit = p.phenotypes[pl][..., p.PHEN_FIT_VALUE]
-
-        gtBar = gt.ravel()[np.isfinite(gt.ravel())].mean()
-
-        badness = (np.abs(gt - gtBar) / gtBar +
-                   (gtErr) * 100 +
-                   wFit * (1 - curvFit.clip(0, 1)) * 100)
+        badness = self.getBadness()
 
         pos = np.where(badness == badness.ravel()[
             badness.ravel().argsort()[-index]])
 
-        """DEBUG
-        if pos is not None and len(pos) == 2 and len(pos[0]) >= 0:
+        return pos
 
-            print np.abs(gt[pos[0], pos[1]] - gtBar) / gtBar
-            print (gtErr[pos[0], pos[1]]) * 100
-            print wFit * (1 - curvFit.clip(0, 1)[pos[0], pos[1]]) * 100
-        """
+    def getBadnessIndexOfPos(self, sel):
+
+        s = -1
+        m = self._model
+        ph = m['phenotype']
+
+        if ph in m['badSortingPhenotypes']:
+
+            if ph == m['phenotyper'].PHEN_FIT_VALUE:
+                s = 1
+
+            badness = m['phenotyper'].phenotypes[m['plate']][..., ph]
+
+        else:
+
+            badness = self.getBadness()
+
+        pos = badness.argsort(None)[::s].argsort().reshape(
+            badness.shape)[sel] + 1
+
         return pos
 
     def loadMetaData(self, paths):
