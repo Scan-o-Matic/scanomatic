@@ -2,33 +2,10 @@
 ##### THE TAKE OVER #####
    ####################
 
-*** Plot InitialValVsTimeOfGT
-
-*** New Phenotypes to conscider:
-
-	* Warringer's Lag initial value
-	* #Cells @ GT
-	* End cells
-	* Yield
-	* #Cells @48h
-
-***	In badness, use same strain variation and deviation from strain mean as
-	badness indicator.
-
 Changing in selection in model does nothing.
 
 Make status label have centric elipsis
 
-**	QC UI:
-
-		v Import meta-data
-
-		v Group selection sliders
-
-			for each phenotype min max range for selecting outliers.
-				After sliding allow manual toggling of selection
-
-        v Undo
 --
 
 **  RPC needs to accumulate job information until requested but still
@@ -186,6 +163,30 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+**	QC UI:
+
+		v Import meta-data
+
+		v Group selection sliders
+
+			for each phenotype min max range for selecting outliers.
+				After sliding allow manual toggling of selection
+
+        v Undo
+
+*** Plot InitialValVsTimeOfGT
+
+*** New Phenotypes to conscider:
+
+	* Warringer's Lag initial value
+	* #Cells @ GT
+	* End cells
+	* Yield
+	* #Cells @48h
+
+***	In badness, use same strain variation and deviation from strain mean as
+	badness indicator.
 
 *** Should more than GT be taken into account in norming (initial value)
 

@@ -57,6 +57,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     PHEN_YIELD = 17
     PHEN_LAG = 18
     PHEN_GT_CELL_COUNT = 19
+    PHEN_48_CELL_COUNT = 20
 
     NAMES_OF_PHENOTYPES = {
         0: "Generation Time",
@@ -400,6 +401,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         flatT = self._timeObject.ravel()
 
+        idT48 = np.abs(np.subtract.outer(self._timeObject, [48])).argmin()
+
         allPhenotypes = []
 
         linRegSize = self._linRegSize
@@ -468,6 +471,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     curPhenos[self.PHEN_YIELD] = \
                         curPhenos[self.PHEN_FINAL_VAL] - \
                         curPhenos[self.PHEN_INIT_VAL_C]
+                    curPhenos[self.PHEN_48_CELL_COUNT] = curve[idT48]
 
                     #REGISTRATING GT PHENOTYPES
                     if (abs(bestFinite) <= vArgSort.size):
