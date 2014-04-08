@@ -22,7 +22,15 @@ class NewModel(object):
 
     def __setitem__(self, key, value):
 
-        self._values[key] = value
+        if hasattr(self, key):
+            if key in ("plate",):
+                key = "_" + key
+            else:
+                raise ValueError("Key '{0}' can only be read".format(key))
+        if key in self._values:
+            self._values[key] = value
+        else:
+            raise ValueError("Key '{0}' unknown".format(key))
 
     @classmethod
     def LoadAppModel(cls):
@@ -160,8 +168,10 @@ class NewModel(object):
 
     def plate_has_removed(self):
 
-        return (self['phenotyper'] is None and None or
-                self['phenotyper'].hasRemoved(self['plate']))
+        if self['phenotyper'] is None:
+            return False
+        else:
+            return self['phenotyper'].hasRemoved(self['plate'])
 
     def platesHaveUnsaved(self):
 
@@ -194,6 +204,15 @@ class NewModel(object):
                 p.PHEN_GT_2ND_ERR, p.PHEN_GT_2ND_POS,
                 p.PHEN_FIT_VALUE)
 
+    def plate(self):
+
+        if (self['phenotyper'] is None):
+            raise TypeError("Phenotyper cannot be None")
+        if (self['_plate'] is None):
+            raise TypeError("Plate cannot be None")
+
+        return self['_plate']
+
 #
 # MODEL DEFAULTS
 #
@@ -213,7 +232,7 @@ _stagePresets = {
     'phenotype': None,
     'phenotyper': None,
     'phenotyper-path': "",
-    'plate': None,
+    '_plate': 0,
     'fixedColors': (None, None),
     'colorsAll': True,
     '_selectionFilter': None,
