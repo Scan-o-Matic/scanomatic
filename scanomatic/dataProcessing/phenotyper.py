@@ -188,8 +188,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         p = os.path.join(dirPath, _p.phenotypes_filter)
         if os.path.isfile(p):
             pFilter = np.load(p)
-            if all(p.shape == pFilter[i].shape for i, p in phenotypes
-                   if p is not None):
+            if all(p.shape == pFilter[i].shape for i, p in enumerate(phenotypes)
+                   if p is not None and pFilter[i] is not None):
 
                 #phenotypes._removeFilter = pFilter
                 pass
