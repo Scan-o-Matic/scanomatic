@@ -1298,9 +1298,9 @@ class QC_Stage(gtk.VBox):
             else:
                 self._badSelectorAdjustment.set_value(1)
 
-
         #if self._model['plate'] is not None:
         self._unselect()
+
         if self._controller.plotHeatmap(self._plate_figure):
             self._drawSelectionsDataSeries()
             self._setBoundaries()
