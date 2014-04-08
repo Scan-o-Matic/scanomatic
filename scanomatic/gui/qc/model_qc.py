@@ -175,9 +175,14 @@ class NewModel(object):
 
     def _initUnsaved(self):
 
-        if self['_platesHaveUnsaved'] is None:
-            self['_platesHaveUnsaved'] = np.array(
-                [False for _ in self['phenotyper']])
+        if (self['_platesHaveUnsaved'] is None or
+                self['_platesHaveUnsaved'].size == 0):
+
+            if self['phenotyper'] is None:
+                self['_platesHaveUnsaved'] = np.array([])
+            else:
+                self['_platesHaveUnsaved'] = np.array(
+                    [False for _ in self['phenotyper']])
 
     def badSortingPhenotypes(self):
 
