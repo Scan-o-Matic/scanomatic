@@ -872,7 +872,7 @@ class QC_Stage(gtk.VBox):
                 self._phenotypeSelector.append_text(n)
                 self._phenotypeName2Key[n] = k + offset
 
-    def _undoRemove(self, wiget):
+    def _undoRemove(self, *args):
 
         didSomething = self._controller.undoLast()
         if (not(didSomething)):
@@ -1047,6 +1047,8 @@ class QC_Stage(gtk.VBox):
                     self._newPhenotype()
                     if (self._model['auto-selecting']):
                         self._badSelectorAdjustment.set_value(0)
+
+                self._plate_image_canvas.grab_focus()
 
     def plotNoData(self, fig, msg="No Data Loaded"):
 
@@ -1243,6 +1245,7 @@ class QC_Stage(gtk.VBox):
         self._curve_image_canvas.draw()
         self._drawSelectionsDataSeries()
         self._widgets_require_selection.sensitive = True
+        self._plate_image_canvas.grab_focus()
 
     def _unselect(self, *args):
 
@@ -1279,6 +1282,7 @@ class QC_Stage(gtk.VBox):
             key = model[row][0]
 
             self._model['phenotype'] = self._phenotypeName2Key[key]
+            self._plate_image_canvas.grab_focus()
 
         #if self._model['plate'] is not None:
         self._unselect()
@@ -1306,10 +1310,15 @@ class QC_Stage(gtk.VBox):
 
             if (keyName == "D"):
                 self._removeCurvesAllPhenotype()
-            elif (keyName in ["N", "W", "D", "L"]):
+            elif (keyName == "U"):
+                self._undoRemove()
+            elif (keyName == "P"):
+                self._phenotypeSelector.popup()
+                self._phenotypeSelector.grab_focus()
+            elif (keyName in ["N", "W", "D", "J"]):
                 self._badSelectorAdjustment.set_value(
                     self._badSelectorAdjustment.get_value() + 1)
-            elif (keyName in ["B", "S", "A", "H"]):
+            elif (keyName in ["B", "S", "A", "K"]):
                 self._badSelectorAdjustment.set_value(
                     self._badSelectorAdjustment.get_value() - 1)
 
