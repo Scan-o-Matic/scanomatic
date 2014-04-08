@@ -936,6 +936,8 @@ class QC_Stage(gtk.VBox):
             self._widgets_require_fixed_color.sensitive = True
             if self._colorMin.get_text() == "":
                 self._colorMin.set_text("0")
+            if self._colorMax.get_text() == "":
+                self._colorMax.set_text(str(self._model['visibleMax']))
 
         elif widget.get_active():
             self._widgets_require_fixed_color.sensitive = \
