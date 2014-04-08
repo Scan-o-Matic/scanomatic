@@ -586,6 +586,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         padding = self.nPhenotypeTypes - self.nPhenotypesInData
 
         if (padding):
+            self._logger.info(
+                "Padding phenotypes, adding" +
+                " {1} to become {2}, current shape {3}".format(
+                    padding,
+                    self.nPhenotypeTypes,
+                    self._phenotypes.shape))
+
             phenotypes = []
             removes = []
             for i, p in enumerate(self._phenotypes):
@@ -600,6 +607,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             self._phenotypes = np.array(phenotypes)
             self._removeFilter = np.array(removes)
+
+            self._logger.info(
+                "New phenotypes shapes {0}".format(
+                    self._phenotypes.shape))
 
         return padding
 

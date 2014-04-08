@@ -397,7 +397,7 @@ class Controller(controller_generic.Controller):
 
         aCopy = []
 
-        #self._model['phenotyper'].padPhenotypes()
+        self._model['phenotyper'].padPhenotypes()
 
         for p in self._model['phenotyper'].phenotypes:
 
@@ -442,7 +442,7 @@ class Controller(controller_generic.Controller):
 
         #If user has missed dubious positions they are filtered out
         if self._model['norm-outlier-iterations'] > 0:
-            for idM, measure in enumerate(normalizedPhenotypes):
+            for idM in range(len(normalizedPhenotypes)):
                 norm.applyOutlierFilter(
                     subSampler, measure=idM,
                     k=self._model['norm-outlier-k'],
