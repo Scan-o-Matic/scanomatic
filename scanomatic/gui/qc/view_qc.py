@@ -1280,14 +1280,14 @@ class QC_Stage(gtk.VBox):
 
             self._model['phenotype'] = self._phenotypeName2Key[key]
 
-        if self._model['plate'] is not None:
-            self._unselect()
-            if self._controller.plotHeatmap(self._plate_figure):
-                self._drawSelectionsDataSeries()
-                self._setBoundaries()
-                self._updateBounds()
-            else:
-                self._HeatMapInfo.set_text(self._model['phenotype-fail-text'])
+        #if self._model['plate'] is not None:
+        self._unselect()
+        if self._controller.plotHeatmap(self._plate_figure):
+            self._drawSelectionsDataSeries()
+            self._setBoundaries()
+            self._updateBounds()
+        else:
+            self._HeatMapInfo.set_text(self._model['phenotype-fail-text'])
 
         self._widgets_require_removed.sensitive = \
             self._model['plate_has_removed']
@@ -1380,6 +1380,7 @@ class SensitivityGroup(object):
             False
 
         """
+
         self._lastValue = startingValue
         self._members = set()
         self._dependentGroups = set()
@@ -1480,7 +1481,10 @@ class SensitivityGroup(object):
     def sensitive(self, value):
 
         for member in self._members:
-            member.set_sensitive(value)
+            try:
+                member.set_sensitive(value)
+            except TypeError:
+                member.set_sensitive(int(value))
 
         if value is False:
             for group in self._dependentGroups:
