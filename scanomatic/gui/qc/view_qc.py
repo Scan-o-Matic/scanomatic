@@ -1299,6 +1299,9 @@ class QC_Stage(gtk.VBox):
             self._HeatMapInfo.set_text(self._model['msg-multiSelecting'])
         else:
             keyName = gtk.gdk.keyval_name(event.keyval).upper()
+
+            print keyName
+
             if (keyName == "D"):
                 self._removeCurvesAllPhenotype()
             elif (keyName in ["N", "W", "D", "L"]):
