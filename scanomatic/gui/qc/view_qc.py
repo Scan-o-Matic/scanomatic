@@ -211,6 +211,7 @@ class QC_Stage(gtk.VBox):
         self._plateSaveImage = gtk.Button(self._model['plate-save'])
         self._plateSaveImage.connect("clicked", self._saveImage)
         self._widgets_require_data.append(self._plateSaveImage)
+        self._widgets_require_data.add(self._plate_image_canvas)
 
         vboxLeft.pack_start(self._plate_image_canvas, expand=True, fill=True)
         hbox2 = gtk.HBox(False, spacing=2)
@@ -382,6 +383,7 @@ class QC_Stage(gtk.VBox):
         self._curveSaveImage.connect("clicked", self._saveImage)
 
         self._widgets_require_selection.append(self._curveSaveImage)
+        self._widgets_require_selection.add(self._curve_image_canvas)
 
         vboxLeft.pack_start(self._curve_image_canvas, expand=True, fill=True)
 
