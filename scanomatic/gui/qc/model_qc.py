@@ -10,6 +10,7 @@ class NewModel(object):
     def __getitem__(self, key):
 
         if key in self._values:
+
             return self._values[key]
 
         elif hasattr(self, key):
@@ -23,13 +24,21 @@ class NewModel(object):
     def __setitem__(self, key, value):
 
         if hasattr(self, key):
+
             if key in ("plate",):
+
                 key = "_" + key
+
             else:
-                raise ValueError("Key '{0}' can only be read".format(key))
+
+                raise ValueError("Key '{0}' is read-only".format(key))
+
         if key in self._values:
+
             self._values[key] = value
+
         else:
+
             raise ValueError("Key '{0}' unknown".format(key))
 
     @classmethod
