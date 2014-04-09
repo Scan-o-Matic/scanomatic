@@ -29,6 +29,7 @@ from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 
 import scanomatic.dataProcessing.phenotyper as phenotyper
 import scanomatic.io.logger as logger
+import scanomatic.gui.generic.toggle_box as toggle_box
 
 #import scanomatic.gui.generic.view_generic as view_generic
 
@@ -139,12 +140,17 @@ class QC_Stage(gtk.VBox):
 
         hbox = gtk.HBox(False, spacing=2)
 
+        """
         self._plateSelectionAdjustment = gtk.Adjustment(0, 0, 0, 1, 1, 0)
         self._plateSelector = gtk.SpinButton(self._plateSelectionAdjustment,
                                              0, 0)
         self._plateSelector.connect("value_changed", self._loadPlate)
         self._plateSelector.set_wrap(True)
         self._plateSelector.set_snap_to_ticks(True)
+        """
+
+        self._plateSelector = toggle_box.Toggle_Box()
+        self._plateSelector.connect("changed", self._loadPlate)
 
         self._widgets_require_data.append(self._plateSelector)
 
@@ -1002,10 +1008,12 @@ class QC_Stage(gtk.VBox):
                             self._phenotypeSelector.set_active(0)
 
                         self._widgets_require_data.sensitive = True
-                        self._plateSelectionAdjustment.set_lower(1)
-                        self._plateSelectionAdjustment.set_upper(
+                        #self._plateSelectionAdjustment.set_lower(1)
+                        #self._plateSelectionAdjustment.set_upper(
+                        self._plateSelector.set_size(
                             self._model['phenotyper'].shape[0])
-                        self._plateSelectionAdjustment.set_value(1)
+                        self._plateSelector.set_active(1)
+                        #self._plateSelectionAdjustment.set_value(1)
                         self._setColors()
                         if self._model['plate'] == 0:
                             self._newPhenotype()
@@ -1031,7 +1039,7 @@ class QC_Stage(gtk.VBox):
 
             elif widget is self._plateSelector:
 
-                p = self._plateSelector.get_value_as_int() - 1
+                p = self._plateSelector.get_active()  # get_value_as_int() - 1
 
                 if p != self._model['plate']:
                     self._model['plate'] = p
