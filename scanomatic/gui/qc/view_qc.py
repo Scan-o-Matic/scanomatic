@@ -17,6 +17,7 @@ pygtk.require('2.0')
 import gtk
 import pango
 
+import string
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -1345,6 +1346,8 @@ class QC_Stage(gtk.VBox):
                 self._model['auto-selecting'] = True
                 self._badSelectorAdjustment.set_value(
                     self._badSelectorAdjustment.get_value() - 1)
+            elif (keyName in string.digits):
+                self._plateSelector.set_active(int(keyName))
 
     def _releaseKey(self, widget, event):
 
