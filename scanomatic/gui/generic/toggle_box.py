@@ -9,6 +9,8 @@ class Toggle_Box(gtk.HBox):
 
         super(Toggle_Box, self).__init__(homogenous, spacing)
 
+        self._size = 0
+
         self._changedSignal = None
         self._changedActive = True
         self._changedArgs = None
@@ -66,7 +68,19 @@ class Toggle_Box(gtk.HBox):
             self.pack_start(tb, expand=False, fill=False)
             tb.show()
 
-        self.emit(self.HANDLER)
+        self._size = len(elements)
+        self._ensureOneSelected()
+
+    def _ensureOneSelected(self):
+
+        if self._size <= 0:
+            return
+
+        for e in self.get_children():
+            if e.get_active():
+                return
+
+        self.get_children()[0].set_active(True)
 
     def set_size(self, size):
 
@@ -95,5 +109,5 @@ class Toggle_Box(gtk.HBox):
 
     def set_active(self, index):
 
-        if index in range(1, len(self.children) + 1):
+        if index in range(1, len(self.children()) + 1):
             self.get_children()[index - 1].set_active(True)
