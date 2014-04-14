@@ -149,7 +149,8 @@ class QC_Stage(gtk.VBox):
         self._plateSelector.set_snap_to_ticks(True)
         """
 
-        self._plateSelector = toggle_box.Toggle_Box()
+        self._plateSelector = toggle_box.Toggle_Box(
+            emptyText=self._model['no-plates-loaded'])
         self._plateSelector.connect("changed", self._loadPlate)
 
         self._widgets_require_data.append(self._plateSelector)

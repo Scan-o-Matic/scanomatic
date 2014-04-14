@@ -261,6 +261,7 @@ _stagePresets = {
     'phenotype-fail-text': """The phenotype has not been extracted, maybe
  re-run extraction?""",
     'loaded-text': "Loaded Project",
+    'no-plates-loaded': "-Not Loaded-",
 
     'label-plate': "Plate:",
     'plate-save': "Save Plate Image",

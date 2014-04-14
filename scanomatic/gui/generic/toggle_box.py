@@ -5,11 +5,13 @@ class Toggle_Box(gtk.HBox):
 
     HANDLER = "customChangedSignal"
 
-    def __init__(self, homogenous=False, spacing=0, size=None, elements=None):
+    def __init__(self, homogenous=False, spacing=0, size=0, elements=None,
+                 emptyText=""):
 
         super(Toggle_Box, self).__init__(homogenous, spacing)
 
         self._size = 0
+        self._emptyText = emptyText
 
         self._changedSignal = None
         self._changedActive = True
@@ -17,8 +19,7 @@ class Toggle_Box(gtk.HBox):
 
         if elements is not None:
             self.set_elements(elements)
-
-        if size is not None:
+        else:
             self.set_size(size)
 
     def connect(self, signal, func, *args):
@@ -90,7 +91,10 @@ class Toggle_Box(gtk.HBox):
             print self, " got bad size, must be int"
             return
 
-        self.set_elements(range(1, size + 1))
+        if size == 0:
+            self.set_elements((self._emptyText,))
+        else:
+            self.set_elements(range(1, size + 1))
 
     def _set_toggles(self, widget):
 
