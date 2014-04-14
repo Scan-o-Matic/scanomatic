@@ -2,10 +2,6 @@
 ##### THE TAKE OVER #####
    ####################
 
-Changing in selection in model does nothing.
-
-Make status label have centric elipsis
-
 --
 
 **  RPC needs to accumulate job information until requested but still
@@ -137,6 +133,7 @@ Server shutdown is not terminating ongoing jobs
 ##### OUTDATED DUE TO SWITCH TO NEW METHODS #####
    ###########################################
 
+
 *** Investigate resolving equal grid start pos with using most 
     centric, and using the R-value as well...(some missed peaks will
     affect placement)
@@ -163,6 +160,8 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Make status label have centric elipsis
 
 **	QC UI:
 
