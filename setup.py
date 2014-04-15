@@ -6,6 +6,7 @@ __version__ = "0.9991"
 #
 
 import os
+import sys
 from subprocess import Popen, PIPE
 
 #
@@ -158,4 +159,34 @@ _logger.info("Copying data and configuration files")
 postSetup.InstallDataFiles()
 _logger.info("Post Setup Complete")
 
+if (sys.argv[-1].upper() == "--USER"):
+    print """
+
+    INFORMATION ABOUT LOCAL / USER INSTALL
+    --------------------------------------
+
+    The scripts for launching the Scan-o-Matic
+    programs should be directly accessible from
+    the commandline by e.g. writing:
+
+        scan-o-matic
+
+    If this is not the case you will have to
+    modify your PATH-variable in bash as follows:
+
+        export PATH=$PATH:$HOME/.local/bin/
+
+    If above gives you direct access to Scan-o-Matic
+    then you should put that line at the end of your
+    .bashrc file, usually located in your $HOME.
+
+    If it doesn't work, you need to check the setup
+    output above to see where the files were copied and
+    extend the path accordingly.
+
+    Alternatively, if you install Scan-o-Matic for all
+    users then the launch scripts should be copied
+    into a folder that is already in path.
+
+"""
 _logger.info("Install Complete")
