@@ -115,6 +115,16 @@ class _ClientProxy(object):
         return retTup
 
     @property
+    def online(self):
+
+        return bool(self._allowedMethods())
+
+    @property
+    def local(self):
+
+        return "127.0.0.1" in self.host or "localhost" in self.host
+
+    @property
     def userID(self):
 
         return self._userID
