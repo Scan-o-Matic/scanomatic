@@ -24,6 +24,7 @@ import grid_array
 import first_pass_image
 import support
 import scanomatic.io.paths as paths
+import scanomatic.io.app_config as app_config_module
 
 #
 # EXCEPTIONS
@@ -49,7 +50,7 @@ class Project_Image():
             p_uuid=None, verbose=False, visual=False,
             suppress_analysis=False,
             grid_array_settings=None, gridding_settings=None,
-            grid_cell_settings=None, log_version=0, path=None,
+            grid_cell_settings=None, log_version=0,
             app_config=None, grid_correction=None):
 
         #self._logger = logging.getLogger('Analysis Image')
@@ -75,16 +76,13 @@ class Project_Image():
         self.grid_cell_settings = grid_cell_settings
 
         #PATHS
-        if path is None:
-            self._paths = paths.Paths(src_path=__file__)
-        else:
-            self._paths = path
+        self._paths = paths.Paths()
 
         self._file_path_base = file_path_base
 
         #APP CONFIG
         if app_config is None:
-            self._config = app_config.Config(paths=self._paths)
+            self._config = app_config_module.Config()
         else:
             self._config = app_config
 
@@ -99,8 +97,7 @@ class Project_Image():
         self.fixture = first_pass_image.Image(
             fixture_name,
             fixture_directory=fixture_directory,
-            paths=self._paths,
-            app_config=self._config)
+            appConfig=self._config)
 
         self._grayscaleTarget = self.fixture['grayscaleTarget']
 
