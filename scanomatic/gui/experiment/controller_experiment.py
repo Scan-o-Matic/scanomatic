@@ -30,7 +30,7 @@ import view_experiment
 
 import scanomatic.gui.generic.controller_generic as controller_generic
 import scanomatic.gui.generic.view_generic as view_generic
-import scanomatic.gui.subprocs.communications.gui_communicator as gui_communicator
+#import scanomatic.gui.subprocs.communications.gui_communicator as gui_communicator
 import scanomatic.io.verificationTags as verificationTags
 import scanomatic.io.logger as logger
 
@@ -699,10 +699,10 @@ class Project_Controller(controller_generic.Controller):
 
     def start(self, *args):
 
-        tc = self.get_top_controller()
-        sm = self._specific_model
-        tc.add_subprocess(gui_communicator.EXPERIMENT_SCANNING, sm=sm)
-
+        #tc = self.get_top_controller()
+        #sm = self._specific_model
+        #tc.add_subprocess(gui_communicator.EXPERIMENT_SCANNING, sm=sm)
+        raise Exception("Not implemented")
         self.set_view_stage(None, 'running')
 
     def set_allow_run(self):
