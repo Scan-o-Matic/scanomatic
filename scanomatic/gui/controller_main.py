@@ -36,7 +36,7 @@ import scanomatic.gui.calibration.controller_calibration as controller_calibrati
 
 #Resources
 import scanomatic.io.scanner as scanner
-import scanomatic.io.fixture as fixture
+import scanomatic.io.fixtures as fixtures
 import scanomatic.io.paths as paths
 import scanomatic.io.app_config as app_config
 import scanomatic.io.logger as logger
@@ -72,7 +72,7 @@ class Controller(controller_generic.Controller):
     def __init__(self, program_path, debug_mode=False):
 
         #PATHS NEED TO INIT BEFORE GUI
-        self.paths = paths.Paths(root=program_path)
+        self.paths = paths.Paths()
 
         model = model_main.load_app_model()
         view = view_main.Main_Window(controller=self, model=model)
@@ -88,7 +88,7 @@ class Controller(controller_generic.Controller):
             self.set_simple_logger()
         """
         self.config = app_config.Config(self.paths)
-        self.fixtures = fixture.Fixtures(self.paths, self.config)
+        self.fixtures = fixtures.Fixtures(self.paths, self.config)
         self.scanners = scanner.Scanners(self.paths, self.config)
 
         self._view.show_notebook_or_logo()

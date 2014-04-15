@@ -62,8 +62,7 @@ class Grid_Array():
 
         if parent is None:
 
-            self._paths = paths.Paths(
-                src_path=os.path.abspath(__file__))
+            self._paths = paths.Paths()
             self.fixture = None
 
         else:

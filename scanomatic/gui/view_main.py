@@ -50,7 +50,7 @@ class Splash(gtk.Window):
         self.add(vbox)
 
         image = gtk.Image()
-        image.set_from_file(paths.Paths(root=program_path).logo)
+        image.set_from_file(paths.Paths().logo)
         vbox.pack_start(image, False, False, PADDING_NONE)
 
         label = gtk.Label("Loading...")
