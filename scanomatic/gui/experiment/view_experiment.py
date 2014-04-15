@@ -63,16 +63,19 @@ class Top_Root(view_generic.Top):
 
         button = gtk.Button()
         button.set_label(model['mode-selection-top-project'])
+        button.set_sensitive(False)
         button.connect("clicked", controller.set_mode, 'project')
         self.pack_start(button, False, False, PADDING_MEDIUM)
 
         button = gtk.Button()
         button.set_label(model['mode-selection-top-gray'])
+        button.set_sensitive(False)
         button.connect("clicked", controller.set_mode, 'gray')
         self.pack_start(button, False, False, PADDING_MEDIUM)
 
         button = gtk.Button()
         button.set_label(model['mode-selection-top-color'])
+        button.set_sensitive(False)
         button.connect("clicked", controller.set_mode, 'color')
         self.pack_start(button, False, False, PADDING_MEDIUM)
 
