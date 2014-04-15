@@ -28,7 +28,7 @@ import scanomatic.gui.generic.controller_generic as controller_generic
 import scanomatic.imageAnalysis.imageFixture as imageFixture
 import scanomatic.io.scanner as scanner
 import scanomatic.imageAnalysis.grayscale as grayscale
-import scanomatic.io.imageAnalysis as first_pass_image
+import scanomatic.imageAnalysis.first_pass_image as first_pass_image
 import scanomatic.io.logger as logger
 
 #
