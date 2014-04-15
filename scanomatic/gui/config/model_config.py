@@ -8,10 +8,12 @@ import scanomatic.gui.generic.model_generic as model_generic
 # FUNCTIONS
 #
 
-def get_gui_model(paths=None):
 
-    m = Config_GUI_Model(private_model=model,
-        generic_model=model_generic.get_model(), paths=paths)
+def get_gui_model():
+
+    m = Config_GUI_Model(
+        private_model=model,
+        generic_model=model_generic.get_model())
 
     return m
 

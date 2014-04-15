@@ -12,12 +12,15 @@ import scanomatic.gui.generic.model_generic as model_generic
 # FUNCTIONS
 #
 
-def get_gui_model(paths=None):
 
-    m = Composite_Subproc_GUI_Model(private_model=composite_model,
-        generic_model=model_generic.get_model(), paths=paths)
+def get_gui_model():
+
+    m = Composite_Subproc_GUI_Model(
+        private_model=composite_model,
+        generic_model=model_generic.get_model())
 
     return m
+
 
 def get_composite_specific_model():
 
@@ -30,6 +33,7 @@ def get_composite_specific_model():
 
     return m
 
+
 def copy_model(model):
 
     return model_generic.copy.deepcopy(model)
@@ -38,8 +42,13 @@ def copy_model(model):
 # SUBCLASSING
 #
 
-class Composite_Subproc_GUI_Model(model_generic.Model): pass
-class Subproc_Generic_Specific_Model(model_generic.Model): pass
+
+class Composite_Subproc_GUI_Model(model_generic.Model):
+    pass
+
+
+class Subproc_Generic_Specific_Model(model_generic.Model):
+    pass
 
 #
 # MODELS

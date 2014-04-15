@@ -12,10 +12,12 @@ import scanomatic.gui.generic.model_generic as model_generic
 # FUNCTIONS
 #
 
-def get_gui_model(paths=None):
 
-    m = Calibration_GUI_Model(private_model=model,
-        generic_model=model_generic.get_model(), paths=paths)
+def get_gui_model():
+
+    m = Calibration_GUI_Model(
+        private_model=model,
+        generic_model=model_generic.get_model())
 
     return m
 
@@ -28,7 +30,9 @@ def copy_model(model):
 # SUBCLASSING
 #
 
-class Calibration_GUI_Model(model_generic.Model): pass
+
+class Calibration_GUI_Model(model_generic.Model):
+    pass
 
 #
 # MODELS

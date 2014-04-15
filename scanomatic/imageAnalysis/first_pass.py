@@ -21,6 +21,7 @@ import os
 
 import imageFixture
 import scanomatic.io.logger as logger
+import scanomatic.io.paths as paths
 
 #
 # GLOBALS
@@ -42,7 +43,7 @@ class Marker_Detection_Failed(Exception):
 
 
 def analyse(file_name, im_acq_time=None, experiment_directory=None,
-            paths=None, fixture_name=None,
+            fixture_name=None,
             fixture_directory=None):
 
     if im_acq_time is None:
@@ -53,7 +54,7 @@ def analyse(file_name, im_acq_time=None, experiment_directory=None,
     _logger.info("Fixture init for {0}".format(file_name))
 
     if fixture_name is None:
-        fixture_name = paths.experiment_local_fixturename
+        fixture_name = paths.Paths().experiment_local_fixturename
 
     if fixture_directory is None:
         fixture_directory = experiment_directory

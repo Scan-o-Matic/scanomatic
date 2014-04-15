@@ -93,8 +93,7 @@ def get_grid_cell_from_first_pass_file(
         fixture_name=meta_data['Fixture'],
         p_uuid=meta_data['UUID'],
         suppress_analysis=True,
-        log_version=meta_data['Version'],
-        paths=_paths)
+        log_version=meta_data['Version'])
 
     image_dicts = project_log.get_image_entries(path=fpath)
     image_dict = image_dicts[image]

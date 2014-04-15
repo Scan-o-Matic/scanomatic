@@ -13,10 +13,12 @@ import scanomatic.io.paths as paths_module
 # FUNCTIONS
 #
 
-def get_gui_model(paths=None):
 
-    m = Analysis_GUI_Model(private_model=model,
-        generic_model=model_generic.get_model(), paths=paths)
+def get_gui_model():
+
+    m = Analysis_GUI_Model(
+        private_model=model,
+        generic_model=model_generic.get_model())
 
     return m
 
@@ -29,7 +31,9 @@ def copy_model(model):
 # SUBCLASSING
 #
 
-class Analysis_GUI_Model(model_generic.Model): pass
+
+class Analysis_GUI_Model(model_generic.Model):
+    pass
 
 #
 # GLOBALS

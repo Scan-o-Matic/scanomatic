@@ -180,6 +180,7 @@ class Controller(controller_generic.Controller):
 
     def ask_quit(self, *args):
 
+        """DEPRECATED
         #CHECK SO NOT ORPHANING SUBPROCS
         if self.subprocs.get_saved() is False:
 
@@ -190,6 +191,7 @@ class Controller(controller_generic.Controller):
                     yn_buttons=True) != 1:
 
                 return True
+        """
 
         #THEN IF UNSAVED EXISTS
         if self.ask_destroy():

@@ -111,8 +111,7 @@ class Analysis_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        tc = self.get_top_controller()
-        return model_analysis.get_gui_model(tc.paths)
+        return model_analysis.get_gui_model()
 
     def _callback(self, user_data):
 

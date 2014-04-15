@@ -233,14 +233,12 @@ class Image(object):
     def __init__(self, fixture, image_path=None,
                  image=None, markings=None, define_reference=False,
                  fixture_directory=None, markings_path=None,
-                 im_scale=None, path=None, appConfig=None):
+                 im_scale=None, appConfig=None):
 
         self._logger = logger.Logger("Fixture Image")
 
-        if path is None:
-            self._paths = paths.Paths()
-        else:
-            self._paths = path
+        self._paths = paths.Paths()
+
         if appConfig is None:
             self._config = app_config.Config(self._paths)
         else:
