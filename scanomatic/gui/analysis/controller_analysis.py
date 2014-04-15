@@ -1076,7 +1076,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
         else:
 
             self._specific_model['manual-calibration-target'] = \
-                grayscale.GRAYSCALES[grayscaleName]['targets']
+                grayscale.getGrayscaleTargets(grayscaleName)
             self._specific_model['manual-calibration-grayscaleName'] = \
                 grayscaleName
             self._manualGrayscale()

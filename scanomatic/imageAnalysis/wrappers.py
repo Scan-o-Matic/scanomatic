@@ -25,7 +25,6 @@ import os
 
 import grid_array
 import grid_cell
-import analysis as project
 import analysis_image
 import scanomatic.io.project_log as project_log
 import support
@@ -221,8 +220,7 @@ class Grid_Cell(grid_cell.Grid_Cell):
 
 
 class Project_Image(analysis_image.Project_Image):
-    def __init__(self, im_path):
-        project.Project_Image.__init__(self, im_path)
+    pass
 
 
 #

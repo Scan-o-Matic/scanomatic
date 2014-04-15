@@ -306,8 +306,7 @@ class Image(object):
             elif self._gs_indices is not None:
                 return self._gs_indices
             else:
-                return grayscale.GRAYSCALES[self['grayscale_type']][
-                    'targets']
+                return grayscale.getGrayscaleTargets(self['grayscale_type'])
 
         elif key in ["grayscaleSource"]:
 
@@ -342,7 +341,7 @@ class Image(object):
             gs_type = self.fixture_reference.get('grayscale_type')
             if gs_type is None:
                 self._logger.warning("Using default Grayscale")
-                gs_type = grayscale.DEFAULT_GRAYSCALE
+                gs_type = grayscale.getDefualtGrayscale()
             return gs_type
         else:
 
@@ -357,7 +356,7 @@ class Image(object):
 
         elif key in ['grayscale_type']:
 
-            if val in grayscale.GRAYSCALES:
+            if val in grayscale.getGrayscales():
                 self.fixture_current['grayscale_type'] = val
             else:
                 self.fixture_current['grayscale_type'] = None

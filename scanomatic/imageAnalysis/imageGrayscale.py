@@ -48,7 +48,6 @@ class Analyse_Grayscale(object):
 
     def __init__(self, target_type="Kodak", image=None, scale_factor=1.0):
 
-        global GRAYSCALES
         self.grayscale_type = target_type
 
         for k, v in grayscale.getGrayscale(target_type).items():

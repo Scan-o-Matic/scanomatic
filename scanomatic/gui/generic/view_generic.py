@@ -259,11 +259,13 @@ def get_grayscale_combo():
     gs.addGrayscale = types.MethodType(_addGrayscale, gs)
 
     model = gs.get_model()
+    idGS = 0
 
-    for key in grayscale.GRAYSCALES:
+    for key in grayscale.getGrayscales():
         model.append([key])
+        idGS += 1
 
-    if len(grayscale.GRAYSCALES) > 0:
+    if idGS > 0:
         gs.set_active(0)
 
     return gs
