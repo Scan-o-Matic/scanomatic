@@ -45,6 +45,11 @@ try updating your program""",
         'status-not-implemented-error':
         """Detailed status not yet re-implemented.""",
 
+        'server-host-label': 'Host:',
+        'server-cpu-label': 'CPU',
+        'server-mem-label': 'MEM',
+        'server-local-label': 'Local',
+
         'status-server-remote-no-connection':
         "Can't Reach Host",
 
@@ -58,8 +63,13 @@ try updating your program""",
         "A server is already running, can't have two!",
 
         'server-online-check-time': -1,
+        'server-resource-check-time': -1,
+        'server-resource-check-spacing': 5,
         'rpc-client': None,
         'server-offline': False,
+        'cpu-ok': False,
+        'mem-ok': False,
+        'up-time': -1,
     }
 
     def serverOnline(self):

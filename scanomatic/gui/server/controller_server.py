@@ -46,24 +46,44 @@ class Controller(controller_generic.Controller):
 
         if not model['server-offline']:
 
+            t = time.time()
+
             if not model['serverOnline']:
 
                 if model['server-online-check-time'] == -1:
-                    model['server-online-check-time'] = time.time()
+                    model['server-online-check-time'] = t
                     Popen('scan-o-matic_server')  # , stderr=PIPE, stdout=PIPE)
                     self._logger.info("Server Launched Attempted")
 
                 elif model['server-online-check-time'] < -1:
-                    if time.time() + model['server-online-check-time'] > 30:
+                    if t + model['server-online-check-time'] > 30:
                         self._view.error(
                             model['status-local-server-error'])
                         model['server-online-check-time'] = 0
                 elif model['server-online-check-time'] == 0:
                     pass
-                elif time.time() - model['server-online-check-time'] > 30:
-                    model['server-online-check-time'] = -time.time()
+                elif t - model['server-online-check-time'] > 30:
+                    model['server-online-check-time'] = -t
+
             else:
                 model['server-online-check-time'] = -1
+
+                if (t - model['server-resource-check-time'] >
+                        model['server-resource-check-spacing']):
+
+                    if (hasattr(model['rpc-client'], "getServerStatus")):
+                        model['server-resource-check-time'] = t
+                        status = model['rpc-client'].getServerStatus()
+                        if 'ServerUpTime' in status:
+                            model['up-time'] = status['ServerUpTime']
+                        if 'ResourceMem' in status:
+                            model['mem-ok'] = status['ResourceMem']
+                        if 'ResourceCPU' in status:
+                            model['cpu-ok'] = status['ResourceCPU']
+                    else:
+                        model['up-time'] = -1
+                        model['cpu-ok'] = False
+                        model['mem-ok'] = False
 
     def connected(self):
 

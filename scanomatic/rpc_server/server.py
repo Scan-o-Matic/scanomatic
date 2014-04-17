@@ -81,16 +81,7 @@ class SOM_RPC(object):
 
     def _setStatuses(self, statuses):
 
-        if self._serverStartTime is None:
-            runTime = "Not Running"
-        else:
-            m, s = divmod(time.time() - self._serverStartTime, 60)
-            h, m = divmod(m, 60)
-            runTime = "{0:d}h, {1:d}m, {2:.2f}s".format(
-                trunc(h), trunc(m), s)
-        statuses = [
-            {"ServerUpTime": runTime}
-        ] + statuses
+        statuses = [self.getServerStatus()] + statuses
 
         self._statuses = statuses
 
@@ -253,6 +244,31 @@ class SOM_RPC(object):
         else:
             self._logger.error("The job {0} is not running".format(jobID))
             return False
+
+    def getServerStatus(self, userID=None):
+        """Gives a dictionary of the servers status
+
+        Kwargs:
+            userID (str):   The ID of the user requesting status
+                            The full purpose of userID is to maintain
+                            method interface for all exposed RPC methods
+
+        Returns:
+            dictionary. Key value pairs for the different aspects of the
+                        server status.
+        """
+
+        if self._serverStartTime is None:
+            runTime = "Not Running"
+        else:
+            m, s = divmod(time.time() - self._serverStartTime, 60)
+            h, m = divmod(m, 60)
+            runTime = "{0:d}h, {1:d}m, {2:.2f}s".format(
+                trunc(h), trunc(m), s)
+        return {
+            "ServerUpTime": runTime,
+            "ResourceMem": Resource_Status.check_mem(),
+            "ResourceCPU": Resource_Status.check_cpu()}
 
     def getStatuses(self, userID=None):
         """Gives a list or statuses.
