@@ -2,11 +2,11 @@
 ##### THE TAKE OVER #####
    ####################
 
-*** Improve Err MSG with bad analysis dir
-
 *** Make setup suggest manual installing odfpy etc
 
 *** Add server shutdown to config with warning
+
+*** Extend server communicativeness
 
 --
 
@@ -166,6 +166,8 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Improve Err MSG with bad analysis dir
 
 *** Make status label have centric elipsis
 

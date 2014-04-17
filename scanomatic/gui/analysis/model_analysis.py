@@ -225,7 +225,9 @@ analysis of the project.</i></span>""",
 'extract-dialog-title': 'Select folder with analysis files',
 'extract-tag-label': 'Understandable Job Tag',
 'extract-launch-error': """Server refused or was not reachable""",
-'extract-bad-directory': """The directory selected is not an analysis directory""",
+'extract-bad-directory': """The directory selected is not an analysis directory.
+Maybe you only have an xml-file in it and need to do
+a conversion first?""",
 
 #ANALYSIS STAGE IMAGE NORM MANUAL
 'analysis-stage-image-sectioning-title':

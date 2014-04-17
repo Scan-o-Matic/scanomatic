@@ -67,7 +67,7 @@ class Controller(controller_generic.Controller):
 
     def connected(self):
 
-        return self._model['online']
+        return self._model['serverOnline']
 
     def addExtractionJob(self, path, tag):
 

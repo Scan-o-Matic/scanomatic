@@ -119,19 +119,22 @@ class Analysis_Extract_Stage(gtk.VBox):
         dialog.destroy()
 
         if path is not None:
-            if (self._controller.check_path(path) and
-                    self._tag.get_text() == ""):
+            if (self._controller.check_path(path)):
 
                 self._path.set_text(path)
-                p = os.path.sep.split(path)
-                i = None
-                try:
-                    i = p.index("analysis")
-                except ValueError:
 
-                    i = len(p) - 3
+                if (self._tag.get_text() == ""):
+                    p = os.path.abspath(path).split(os.path.sep)
+                    i = None
+                    print path, p, i
+                    try:
+                        i = p.index("analysis") - 1
 
-                if i >= 0:
-                    self._tag.set_text(p[i])
+                    except ValueError:
+
+                        i = len(p) - 2
+
+                    if i >= 0:
+                        self._tag.set_text(p[i])
             else:
                 self.error(self._model['extract-bad-directory'])

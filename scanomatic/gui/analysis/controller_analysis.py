@@ -499,16 +499,21 @@ class Analysis_Extract(controller_generic.Controller):
     def test_allow_start(self):
 
         sm = self._specific_model
-        self.get_stage().get_top().set_allow_next(
+        self.get_view().get_top().set_allow_next(
             os.path.isdir(sm['path']) and sm['tag'] != "" and
             self.get_top_controller().server.connected())
 
     def check_path(self, path):
 
         p = self._paths
-        return (len(glob.glob(os.path.join(
-            path, p.image_analysis_img_data.format("*")))) > 2 and
-            os.path.isfile(os.path.join(path, p.image_analysis_time_series)))
+        if (len(glob.glob(os.path.join(
+                path, p.image_analysis_img_data.format("*")))) > 2 and
+                os.path.isfile(os.path.join(path, p.image_analysis_time_series))):
+
+            self._specific_model['path'] = path
+            return True
+
+        return False
 
     def start(self, *args):
 
