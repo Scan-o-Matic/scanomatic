@@ -4,8 +4,6 @@
 
 *** Make setup suggest manual installing odfpy etc
 
-*** Add server shutdown to config with warning
-
 *** Extend server communicativeness
 
 --
@@ -139,6 +137,7 @@ Server shutdown is not terminating ongoing jobs
 ##### OUTDATED DUE TO SWITCH TO NEW METHODS #####
    ###########################################
 
+*** Add server shutdown to config with warning
 
 *** Investigate resolving equal grid start pos with using most 
     centric, and using the R-value as well...(some missed peaks will

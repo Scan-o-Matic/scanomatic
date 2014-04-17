@@ -14,7 +14,6 @@ from subprocess import Popen, PIPE
 #
 
 import scanomatic.io.logger as logger
-import postSetup
 
 _logger = logger.Logger("Scan-o-Matic Setup")
 _logger.level = _logger.INFO
@@ -62,8 +61,8 @@ _logger.info("Preparing setup parameters")
 #
 
 package_dependencies = [
-    'argparse', 'matplotlib', 'multiprocessing', 'odf',
-    'numpy', 'sh', 'nmap', 'configparse', 'scikits-image',
+    'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
+    'numpy', 'sh', 'nmap', 'configparse', 'scikit-image',
     'uuid', 'PIL', 'scipy',  'unittest', 'pygtk']
 
 data_files = []
@@ -155,6 +154,7 @@ _logger.info("Scan-o-Matic is setup on system")
 # POST-INSTALL
 #
 
+import postSetup
 _logger.info("Copying data and configuration files")
 postSetup.InstallDataFiles()
 _logger.info("Post Setup Complete")
@@ -189,4 +189,7 @@ if (sys.argv[-1].upper() == "--USER"):
     into a folder that is already in path.
 
 """
+
+#postSetup.CheckDependencies(package_dependencies)
+
 _logger.info("Install Complete")
