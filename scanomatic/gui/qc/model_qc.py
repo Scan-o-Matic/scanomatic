@@ -134,7 +134,7 @@ class Model(new_model_generic.Model):
         'norm-alg-in-log-text': "Algorithm in Log",
 
         'norm-alg-in-log': False,
-        'norm-outlier-fillSize': None,
+        'norm-outlier-fillSize': (3, 3),
         'norm-outlier-k': 2.0,
         'norm-outlier-p': 10,
         'norm-outlier-iterations': 10,
