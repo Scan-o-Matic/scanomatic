@@ -21,9 +21,13 @@ data_files = [
     (os.path.join('config', 'fixtures'), {}),
     ('logs', {}),
     ('locks', {}),
+    ('.', {'help.html': True,
+           'style.css': True}),
     ('images', {'orientation_marker_150dpi.png': True,
                 'martin3.png': True,
-                'scan-o-matic.png': True})
+                'scan-o-matic.png': True,
+                'help_logo.png': True,
+                'help_bg.png': True})
 ]
 
 

@@ -6,6 +6,7 @@
 
 body {
 	background: #cd8b34;
+	background-image: url('images/help_bg.png');
 }
 
 p {
@@ -101,14 +102,14 @@ ul {
 	max-width: 200px;
 	min-height: 200px;
 	font-size: 70%;
-	box-shadow: 0px 0px 5px #e7d2b7;
+	box-shadow: 5px 5px 15px #541f0f;
+	padding-bottom: 32px;
 }
 
 #toc h1 {
 	text-transform: uppercase;
-	text-decoration: underline;
-	letter-spacing: 105%;
-	font-size: 115%;
+	letter-spacing: 150%;
+	font-size: 200%;
 	display: block;
 	width: 100%;
 	text-align: center;
