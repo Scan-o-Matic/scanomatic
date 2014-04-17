@@ -3,6 +3,7 @@
 <head>
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<title>Scan-o-Matic</title>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 </head>
 <body>
 <div id='toc'>
@@ -11,7 +12,10 @@
 	<h2><a href="#quality">Quality Control</a></h2>
 	<h2><a href="#server">The Server</a></h2>
 </div>
-<img src='../data/images/scan-o-matic.png'>
+<img id='logo' src='../data/images/scan-o-matic.png'>
+	<script>
+$("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
+	</script>
 <div id='cont'>
 	<div class='section'>
 		<h1><a id="installing">Installation</a></h1>
