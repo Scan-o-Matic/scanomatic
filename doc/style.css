@@ -1,0 +1,128 @@
+* {
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+body {
+	background: #cd8b34;
+}
+
+p {
+	padding: 12px;
+	margin-below: 6px;
+	text-align: justify;
+	line-height: 150%;
+}
+
+a {
+	background: #f8e03e;
+	color: #541f0f;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: 6px;
+    margin-right: 6px;
+}
+
+blockquote {
+    margin-left: 40px;
+    margin-right: 40px;
+}
+
+code {
+	background: #a45e60;
+	color: #e7d2b7;
+	padding: 3px;
+}
+
+li {
+	margin-bottom: 6px;
+}
+
+ul {
+	padding:12px;
+	background: #e7d2b7;
+	color: #cd8b34;
+	list-style: none;
+}
+
+#cont {
+	margin-left: 40px;
+	max-width: 550px;
+	min-width: 300px;
+	background: #541f0f;
+	color: #e7d2b7;
+	padding: 6px;
+	box-shadow: 5px 5px 15px #541f0f;
+}
+
+.section h1 {
+	text-transform: uppercase;
+	letter-spacing: 20px;
+	font-size: 115%;
+	display: block;
+	width: 100%;
+	text-align: center;
+	margin-top: 24px;
+	margin-bottom: 6px;
+}
+
+.section h1 a {
+	padding-top: 12px;
+	padding-bottom: 6px;
+}
+
+.section h2 {
+	text-transform: uppercase;
+	letter-spacing: 100%;
+	font-size: 105%;
+	display: block;
+	width: 100%;
+	text-align: center;
+	margin-top: 24px;
+	margin-bottom: 12px;
+}
+
+.section h3 {
+	text-decoration: underline;
+	font-size: 90%;
+	margin-top:12px;
+	margin-bottom: 6px;
+}
+
+#toc {
+	position: fixed;
+	right: 10px;
+	background: #f8e03e;
+	color: #541f0f;
+	bottom: 20px;
+	min-width: 180px;
+	max-width: 200px;
+	min-height: 200px;
+	font-size: 70%;
+	box-shadow: 0px 0px 5px #e7d2b7;
+}
+
+#toc h1 {
+	text-transform: uppercase;
+	text-decoration: underline;
+	letter-spacing: 105%;
+	font-size: 115%;
+	display: block;
+	width: 100%;
+	text-align: center;
+	margin-top: 24px;
+	margin-bottom: 12px;
+}
+
+#toc a {
+    text-decoration: none;
+	color: #f8e03e;
+	background: #cd8b34;
+	padding: 6px;
+}
+
+#toc h2 {
+    margin-top: 6px;
+    margin-bottom: 18px;
+}

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<title>Scan-o-Matic</title>
+</head>
+<body>
+<div id='toc'>
+	<h1>Contents</h1>
+	<h2><a href="#installing">Installation</a></h2>
+	<h2><a href="#quality">Quality Control</a></h2>
+</div>
+<img src='../data/images/scan-o-matic.png'>
+<div id='cont'>
+	<div class='section'>
+		<h1><a id="installing">Installation</a></h1>
+		<p>Scan-o-Matic can is easiest installed by running
+		<code>python setup.py install --user</code>. If you require it for
+		all user, you may want to run <code>sudo python setup.py install</code>
+		instead.
+		</p>
+		<p>The setup may ask you to install other non-python dependencies,
+		these are not needed if the install is not intended to control
+		any scanners.
+		In such a case you can simply dismiss that dialog</p>
+		<p>Scan-o-Matic uses several python modules and the setup script will
+		attempt to install them. If however this fails the following should
+		install the required modules:</p>
+		<blockquote><code>sudo easy_install argparse matplotlib 
+		multiprocessing odfpy numpy sh configparse scikit-image uuid PIL scipy
+		unittest pygtk</code></blockquote>
+		<p>There's anothos module <code>nmap</code> that may be installed on
+		Ubuntu systems by doing:
+		<code>sudo apt-get install nmap python-nmap</code>
+		else you may have to build it
+		(<a href="http://xael.org/norman/python/python-nmap/">More info here</a>)
+		</p>
+	</div>
+	<div class='section'>
+		<h1><a id="quality">Quality Control</a></h1>
+		<h2>Workflow</h2>
+		<p>The general workflow is as follows:
+		<em>Load Data</em>&gt;<em>Load Meta Data</em> (<u>Optional</u>)&gt;
+		<em>Quality control positions on all plates</em>&gt;
+		<em>Set reference positions</em>&gt;<em>Normalization</em>&gt;
+		<em>Saving</em>.
+		If meta-data is loaded, the output of saving will automatically add
+		the phenotype information after the metadata for each strain.
+		More on the requirements on the metadata further down.
+		The quality control is assisted by the system ranking the positions
+		on how good/bad they seem.
+		<em>Note</em> that this ranking is done on per phenotype.
+		Positions can either be selected by clicking on the heatmap or
+		by browsing them on their ranks.
+		When a position is selected, its corresponding curve is shown on
+		the curves panel.
+		If no data exists for the position, the curves panel will appear
+		empty.
+		To be able to normalize, the reference positions must be set.
+		Which is the correct offset is usually easy to spot due to its
+		relatively systematic deviation from other positions.
+		When normailisation has been done, new phenotypes appear in the
+		drop-down selector.
+		</p>
+
+		<h2>Meta Data</h2>
+		<p>The meta data is only read from ods (Open Office Spreadsheets).
+		The metadata is expected to be organized as the plates are.
+		First and foremost each meta-data sheet in the selected meta-data
+		files must come in the order of the plates.
+		Each sheet used must have information for either a whole plate or
+		for one of the subplates.
+		Each sheet can either have exactly as many rows needed or one more,
+		in which case it will be treated as a header row and not used.
+		The order always follows the long axis as first axis.
+
+		<h2>Quality Control</h2>
+
+		<h3>Hotkeys</h3>
+		<ul class="keylist">
+			<li><code>1</code> - <code>9</code>: Selects the corresponding plate</li>
+			<li><code>D</code>: Removes curve for all phenotypes</li>
+			<li><code>P</code>: Toggles selection of new phenotype</li>
+			<li><code>B</code>, <code>K</code>: Selects curve with higher rank</li>
+			<li><code>N</code>, <code>J</code>: Selects curve with lower rank</li>
+			<li><code>U</code>: Undo</li>
+		</ul>
+
+		<p>
+		To get a proper normalisation, bad curves must be removed.
+		The evaluation of curve quality should primarily be done by checking
+		if <b>(A)</b> there's high level on noise, <b>(B)</b> there's uncommon
+		types of noise that weakens the general trust in the curve and
+		<b>(C)</b> the phenotype of interest seems to be affected by
+		<em>normal</em> noise located precisely so that it affects the
+		phenotype.
+		</p>
+
+		<h2>Normalization</h2>
+
+		<p>By default usage, standard parameters are used to normalize.
+		There's a possibility to test other parameter settings by starting
+		the quality control interface as a stand-alone application from the
+		command line by running <code>scan-o-matic_qc -d</code>.</p>
+		<p>When normalization has been performed new phenotypes appear in the
+		selector</p>
+
+		<h2>Saving</h2>
+
+		<p>Saving original data will save the phenotypes as they were read
+		into a csv type format but with one exception.
+		<em>Removed curves will be written as missing data</em></p>
+
+		<p>Saving normalized saves only those phenotypes that are normalized.
+		Put differently, it saves the information on the phenotypes that appear
+		after the normalization button has been pressed.
+		</p>
+
+		<p>Saving the state saves the internal representation on what has been
+		removed.
+		By doing so, one can easily pick up work later from exactly the same
+		position as one was.
+		The state remembers undo.</p>
+	</div>
+</div>
+</body>
+</html>
