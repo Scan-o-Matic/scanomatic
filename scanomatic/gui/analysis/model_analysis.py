@@ -219,6 +219,8 @@ analysis of the project.</i></span>""",
 'convert-xml-conversions-done': "Completed Conversions",
 'convert-completed': "{0}: {1}",
 'convert-completed-status': ["FAILED", "SUCCESS"],
+'convert-info': """The status below is only available while this tab is left open.
+If closed, the processes will continue but you won't know when they're done.""",
 
 #ANALYSIS STAGE EXTRACT
 'extract-dialog': 'Select Directory...',

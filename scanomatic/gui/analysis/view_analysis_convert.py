@@ -58,12 +58,15 @@ class Analysis_Convert_Stage(gtk.VBox):
 
         hbox = gtk.HBox(False, spacing=PADDING_SMALL)
         hbox.pack_start(gtk.Label(model['convert-xml-select-label']),
-                        expand=True, fill=False)
+                        expand=False, fill=False)
         button = gtk.Button(label=model['convert-xml-select-button'])
         button.connect("clicked", self._selectXmlDialog)
         hbox.pack_start(button, expand=False, fill=False)
 
         self.pack_start(hbox, expand=False, fill=False, padding=PADDING_MEDIUM)
+
+        self.pack_start(gtk.Label(model['convert-info']), expand=False,
+                        fill=False, padding=PADDING_MEDIUM)
 
         frame = gtk.Frame(model['convert-xml-conversions'])
         self._conversions = gtk.VBox(False, spacing=PADDING_SMALL)

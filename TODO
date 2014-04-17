@@ -4,8 +4,6 @@
 
 *** Make setup suggest manual installing odfpy etc
 
-*** Extend server communicativeness
-
 --
 
 **  RPC needs to accumulate job information until requested but still
@@ -165,6 +163,8 @@ Server shutdown is not terminating ongoing jobs
   ###################################
 ##### HALL OF COMPLETIONLIKE STATE #####
    ###################################
+
+*** Extend server communicativeness
 
 *** Improve Err MSG with bad analysis dir
 
