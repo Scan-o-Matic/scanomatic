@@ -126,7 +126,6 @@ class Analysis_Extract_Stage(gtk.VBox):
                 if (self._tag.get_text() == ""):
                     p = os.path.abspath(path).split(os.path.sep)
                     i = None
-                    print path, p, i
                     try:
                         i = p.index("analysis") - 1
 

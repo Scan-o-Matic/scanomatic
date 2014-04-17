@@ -526,7 +526,7 @@ class Analysis_Extract(controller_generic.Controller):
 
         else:
 
-            self.destroy()
+            self.set_abort()
 
 
 class Analysis_Convert(controller_generic.Controller):
