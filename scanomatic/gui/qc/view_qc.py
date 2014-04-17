@@ -32,7 +32,8 @@ import scanomatic.dataProcessing.phenotyper as phenotyper
 import scanomatic.io.logger as logger
 import scanomatic.gui.generic.toggle_box as toggle_box
 
-#import scanomatic.gui.generic.view_generic as view_generic
+from scanomatic.gui.generic.view_generic import \
+    PADDING_NONE
 
 #
 # CLASSES
@@ -78,6 +79,29 @@ class Main_Window(gtk.Window):
     def get_stage(self):
 
         return self.child
+
+
+class QC_Dummy(gtk.VBox):
+
+    def __init__(self, model, controller):
+
+        super(QC_Dummy, self).__init__()
+        self._model = model
+        self._controller = controller
+        self._stage = QC_Stage(model, controller)
+        self.pack_start(self._stage, expand=True, fill=True,
+                        padding=PADDING_NONE)
+
+    def get_stage(self):
+
+        return self._stage
+
+    def __getattr__(self, key):
+
+        if hasattr(self._stage, key):
+            return getattr(self._stage, key)
+        else:
+            raise AttributeError(key)
 
 
 class QC_Stage(gtk.VBox):
