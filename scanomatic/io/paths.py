@@ -95,6 +95,10 @@ class Paths(object):
         self.rpc_queue = os.path.join(self.root, 'job_queue.cfg')
         self.rpc_jobs = os.path.join(self.root, 'jobs.cfg')
 
+        #HELP
+        self.help = "file://{0}".format(
+            os.path.join(os.path.abspath(self.root), 'help.html'))
+
         #IMAGES
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
         self.martin = os.path.join(self.images, "martin3.png")

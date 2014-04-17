@@ -16,24 +16,19 @@ __status__ = "Development"
 import pygtk
 pygtk.require('2.0')
 import gtk
-#import gobject
+import webbrowser
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-from generic.view_generic import *
 import scanomatic.io.paths as paths
 
 #
 # STATIC GLOBALS
 #
-
-"""Gotten from view_generic instead
-PADDING_LARGE = 10
-PADDING_MEDIUM = 4
-PADDING_SMALL = 2
-"""
+from generic.view_generic import \
+    PADDING_LARGE, PADDING_MEDIUM, PADDING_SMALL, PADDING_NONE
 
 #
 # CLASSES
@@ -74,6 +69,7 @@ class Main_Window(gtk.Window):
     def __init__(self, controller=None, model=None):
 
         super(Main_Window, self).__init__()
+        self._paths = paths.Paths()
 
         self.set_default_size(800, 600)
         self.move(0, 0)
@@ -89,7 +85,7 @@ class Main_Window(gtk.Window):
         self._content_notebook = gtk.Notebook()
         hbox.pack_end(self._content_notebook, True, True, PADDING_SMALL)
         self.logo = gtk.Image()
-        self.logo.set_from_file(controller.paths.logo)
+        self.logo.set_from_file(self._paths.logo)
         hbox.pack_end(self.logo, True, True, PADDING_SMALL)
 
         if model is not None:
@@ -160,17 +156,26 @@ class Main_Window(gtk.Window):
         button.connect("clicked", c.add_contents, 'qc')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
 
-        vbox.pack_start(gtk.HSeparator(), False, False, PADDING_MEDIUM)
+        vbox.pack_start(gtk.HSeparator(), False, False, PADDING_LARGE)
 
         button = gtk.Button()
         button.set_label(m['panel-actions-calibration'])
         button.connect("clicked", c.add_contents, 'calibration')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
 
+        vbox.pack_start(gtk.HSeparator(), False, False, PADDING_LARGE)
+
         button = gtk.Button()
         button.set_label(m['panel-actions-config'])
         button.connect("clicked", c.add_contents, 'config')
         vbox.pack_start(button, False, False, PADDING_MEDIUM)
+
+        button = gtk.Button()
+        button.set_label(m['panel-actions-help'])
+        button.connect("clicked", self._help, )
+        vbox.pack_start(button, False, False, PADDING_MEDIUM)
+
+        vbox.pack_start(gtk.HSeparator(), False, False, PADDING_LARGE)
 
         button = gtk.Button()
         button.set_label(m['panel-actions-quit'])
@@ -181,6 +186,10 @@ class Main_Window(gtk.Window):
             panel.pack_start(self._stats_area, False, False, PADDING_LARGE)
 
         panel.show_all()
+
+    def _help(self, widget):
+
+        webbrowser.open_new_tab(self._paths.help)
 
     def populate_stats_area(self, stats_widget):
 

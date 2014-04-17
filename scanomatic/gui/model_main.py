@@ -42,6 +42,7 @@ model = {
 'panel-actions-calibration': 'Calibration',
 'panel-actions-config': 'Application Config',
 'panel-actions-qc': 'Quality Control',
+'panel-actions-help': 'Help',
 'panel-actions-quit': 'Quit',
 
 #MAIN
