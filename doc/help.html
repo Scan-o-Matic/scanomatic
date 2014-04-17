@@ -9,6 +9,7 @@
 	<h1>Contents</h1>
 	<h2><a href="#installing">Installation</a></h2>
 	<h2><a href="#quality">Quality Control</a></h2>
+	<h2><a href="#server">The Server</a></h2>
 </div>
 <img src='../data/images/scan-o-matic.png'>
 <div id='cont'>
@@ -22,7 +23,7 @@
 		<p>The setup may ask you to install other non-python dependencies,
 		these are not needed if the install is not intended to control
 		any scanners.
-		In such a case you can simply dismiss that dialog</p>
+		In such a case you can simply dismiss that dialog.</p>
 		<p>Scan-o-Matic uses several python modules and the setup script will
 		attempt to install them. If however this fails the following should
 		install the required modules:</p>
@@ -39,11 +40,14 @@
 	<div class='section'>
 		<h1><a id="quality">Quality Control</a></h1>
 		<h2>Workflow</h2>
-		<p>The general workflow is as follows:
-		<em>Load Data</em>&gt;<em>Load Meta Data</em> (<u>Optional</u>)&gt;
-		<em>Quality control positions on all plates</em>&gt;
-		<em>Set reference positions</em>&gt;<em>Normalization</em>&gt;
+		<p>The general workflow is as follows:</p>
+		<blockquote>
+		<em>Load Data</em> &gt; <em>Load Meta Data</em> (<u>Optional</u>) &gt;
+		<em>Quality control positions on all plates</em> &gt; 
+		<em>Set reference positions</em> &gt; <em>Normalization</em> &gt;
 		<em>Saving</em>.
+		</blockquote>
+		<p>
 		If meta-data is loaded, the output of saving will automatically add
 		the phenotype information after the metadata for each strain.
 		More on the requirements on the metadata further down.
@@ -121,6 +125,19 @@
 		By doing so, one can easily pick up work later from exactly the same
 		position as one was.
 		The state remembers undo.</p>
+	</div>
+	<div class='section'>
+		<h1><a id="server">The Server</a></h1>
+		<p>The purpose of the server is to work in the background with
+		tasks that last over more than neglectable time.
+		It also correlates the workload of the computer so that it doesn't
+		stall as a result of eager scientists.
+		The server is automatically started as soon as Scan-o-Matic starts
+		and will remain running indefinately until the computer is shut down.
+		</p>
+		<p>Should the need arise to force a stop and/or restart of the
+		server, such controls can be accessed inside Scan-o-Matic under
+		<u>Application Config</u></p>
 	</div>
 </div>
 </body>
