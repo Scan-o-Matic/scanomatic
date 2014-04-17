@@ -28,6 +28,7 @@ class Model(new_model_generic.Model):
 
     _PRESETS_STAGE = {
         'status-server': 'Server Status:',
+        'status-server-offline': "Offline",
         'status-server-checking': 'Checking...',
         'status-server-running': 'Connected',
         'status-server-launching': 'Launching...',
@@ -41,31 +42,56 @@ class Model(new_model_generic.Model):
         'status-local-server-error': """Local server could not be started,
 try updating your program""",
 
-        'status-not-implemented-error': """Detailed status not yet
-        re-implemented.""",
+        'status-not-implemented-error':
+        """Detailed status not yet re-implemented.""",
+
+        'status-server-remote-no-connection':
+        "Can't Reach Host",
+
+        'server-shutdown-error':
+        "Can't shut down a server that is not running",
+
+        'server-shutdown-warning':
+        "This will shut down ALL jobs running on the server. Are you sure?",
+
+        'server-startup-error':
+        "A server is already running, can't have two!",
+
         'server-online-check-time': -1,
-        'rpc-client': None
+        'rpc-client': None,
+        'server-offline': False,
     }
 
     def serverOnline(self):
 
         c = self['rpc-client']
-        return c is None and False or c.online
+        if c:
+            return c.online
+        else:
+            return False
 
     def serverLocal(self):
 
         c = self['rpc-client']
-        return c is None and False or c.local
+        if c:
+            return c.local
+        else:
+            return True
 
     def serverPort(self):
 
         c = self['rpc-client']
-        return c is None and -1 or c.port
+        if c:
+            return c.port
+        else:
+            return -1
 
     def serverHost(self):
 
         c = self['rpc-client']
-        return c is None and "" or c.host
+        if c:
+            return c.host
+        return ""
 
     def serverLaunchChecking(self):
 
@@ -74,16 +100,16 @@ try updating your program""",
     def queueLength(self):
 
         c = self['rpc-client']
-        if c is not None and c.online:
+        if c and c.online:
             return len(c.getJobsInQueue())
-        return 0
+        return -1
 
     def jobsLength(self):
 
         c = self['rpc-client']
-        if c is not None and c.online:
+        if c and c.online:
             return len(c.getActiveJobs())
-        return 0
+        return -1
 
     def scannersFree(self):
 

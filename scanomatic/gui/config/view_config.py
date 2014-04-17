@@ -21,24 +21,21 @@ import gtk
 # INTERNAL DEPENDENCIES
 #
 
-from scanomatic.gui.generic.view_generic import *
+import scanomatic.gui.generic.view_generic as view_generic
 
 #
 # STATIC GLOBALS
 #
 
-"""Gotten from view_generic instead
-PADDING_LARGE = 10
-PADDING_MEDIUM = 4
-PADDING_SMALL = 2
-"""
+from scanomatic.gui.generic.view_generic import \
+    PADDING_SMALL, PADDING_MEDIUM, PADDING_LARGE
 
 #
 # CLASSES
 #
 
 
-class Config_View(Page):
+class Config_View(view_generic.Page):
 
     def __init__(self, controller, model, top=None, stage=None):
 
@@ -55,7 +52,7 @@ class Config_View(Page):
         return Top_Title(self._controller, self._model)
 
 
-class Top_Title(Top):
+class Top_Title(view_generic.Top):
 
     def __init__(self, controller, model):
 
@@ -186,7 +183,32 @@ class Settings_Cont(gtk.VBox):
         button = gtk.Button(label=model['config-settings-save'])
         button.connect('clicked', controller.save_current_config)
         table.attach(button, 0, 1, 3, 4)
+
+        frame = gtk.Frame(model['config-server'])
+        self.pack_start(frame, expand=False, fill=False, padding=PADDING_LARGE)
+
+        hbox = gtk.HBox()
+        frame.add(hbox)
+
+        button = gtk.Button(model['config-server-stop'])
+        button.connect("clicked", self._serverStop)
+        hbox.pack_start(button, expand=False, fill=False,
+                        padding=PADDING_MEDIUM)
+
+        button = gtk.Button(model['config-server-start'])
+        button.connect("clicked", self._serverStart)
+        hbox.pack_start(button, expand=False, fill=False,
+                        padding=PADDING_MEDIUM)
+
         self.show_all()
+
+    def _serverStart(self, widget):
+
+        self._controller.get_top_controller().server.startUp()
+
+    def _serverStop(self, widget):
+
+        self._controller.get_top_controller().server.shutDown()
 
     def _set_cur_fixture(self, widget):
 
@@ -209,8 +231,9 @@ class Settings_Cont(gtk.VBox):
         fixture = self._specific_model['delete-fixture']
 
         if fixture is not None and fixture != "":
-            if dialog(w, self._model['config-fixture-dialog'].format(fixture),
-                      'warning', yn_buttons=True):
+            if view_generic.dialog(
+                    w, self._model['config-fixture-dialog'].format(fixture),
+                    'warning', yn_buttons=True):
 
                 c.remove_fixture(fixture)
                 self._fill_fixtures(self._fixtures)
@@ -221,7 +244,7 @@ class Settings_Cont(gtk.VBox):
 
     def set_new_experiments_root(self, widget, path_widget):
 
-        file_list = select_dir(path_widget.get_text())
+        file_list = view_generic.select_dir(path_widget.get_text())
 
         if file_list is not None:
 

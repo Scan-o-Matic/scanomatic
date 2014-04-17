@@ -13,7 +13,7 @@ __status__ = "Development"
 #
 
 import time
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 #
 # INTERNAL DEPENDENCIES
@@ -32,11 +32,9 @@ class Controller(controller_generic.Controller):
 
     def __init__(self, parent=None):
 
-        self._rpcClient = rpc_client.get_client(admin=True)
-
         model = model_server.Model.LoadStageModel()
 
-        model['rpc-client'] = self._rpcClient
+        model['rpc-client'] = rpc_client.get_client(admin=True)
 
         view = view_server.Server_Status(model, self)
 
@@ -46,28 +44,52 @@ class Controller(controller_generic.Controller):
 
         model = self._model
 
-        if not self._rpcClient.online:
+        if not model['server-offline']:
 
-            if model['server-online-check-time'] == -1:
-                model['server-online-check-time'] = time.time()
-                self._p = Popen('scan-o-matic_server', stderr=PIPE, stdout=PIPE)
-                self._logger.info("Server Launched {0}".format(self._p.poll()))
+            if not model['serverOnline']:
 
-            elif model['server-online-check-time'] < -1:
-                if time.time() + model['server-online-check-time'] > 30:
-                    self._view.error(
-                        model['status-local-server-error'])
-                    model['server-online-check-time'] = 0
-            elif model['server-online-check-time'] == 0:
-                self._logger.error(self._p.stdout.read())
-            elif time.time() - model['server-online-check-time'] > 30:
-                model['server-online-check-time'] = -time.time()
-        else:
-            model['server-online-check-time'] = -1
+                if model['server-online-check-time'] == -1:
+                    model['server-online-check-time'] = time.time()
+                    Popen('scan-o-matic_server')  # , stderr=PIPE, stdout=PIPE)
+                    self._logger.info("Server Launched Attempted")
+
+                elif model['server-online-check-time'] < -1:
+                    if time.time() + model['server-online-check-time'] > 30:
+                        self._view.error(
+                            model['status-local-server-error'])
+                        model['server-online-check-time'] = 0
+                elif model['server-online-check-time'] == 0:
+                    pass
+                elif time.time() - model['server-online-check-time'] > 30:
+                    model['server-online-check-time'] = -time.time()
+            else:
+                model['server-online-check-time'] = -1
 
     def connected(self):
 
         return self._model['serverOnline']
+
+    def shutDown(self):
+
+        model = self._model
+
+        if (not model['serverOnline']):
+
+            self._view.error(model['server-shutdown-error'])
+
+        elif (self._view.warning(model['server-shutdown-warning'], yn=True)):
+
+            model['server-offline'] = True
+            model['rpc-client'].serverShutDown()
+
+    def startUp(self):
+
+        model = self._model
+        if (self._model['serverOnline']):
+            self._view.error(model['server-startup-error'])
+        else:
+            model['server-online-check-time'] = -1
+            model['server-offline'] = False
 
     def addExtractionJob(self, path, tag):
 

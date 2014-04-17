@@ -89,20 +89,17 @@ class Server_Status(gtk.Frame):
                 gtk.STOCK_CONNECT,
                 gtk.ICON_SIZE_MENU)
 
-            for b, modelKey in ((self._queue, 'queueLength'),
-                                (self._jobs, 'jobsLength'),
-                                (self._scanners, 'scannersFree')):
-
-                v = m[modelKey]
-                if v < 0:
-                    b.set_label(m['status-unknown-count'])
-                    b.set_sensitive(False)
-                else:
-                    b.set_label(str(v))
-                    b.set_sensitive(True)
         else:
 
-            if (m['serverLocal']):
+            if (m['server-offline']):
+
+                self._statusLabel.set_text(
+                    m['status-server-offline'])
+                self._statusIcon.set_from_stock(
+                    gtk.STOCK_DIALOG_WARNING,
+                    gtk.ICON_SIZE_MENU)
+
+            elif (m['serverLocal']):
 
                 if (m['serverLaunchChecking']):
 
@@ -127,7 +124,31 @@ class Server_Status(gtk.Frame):
                     gtk.STOCK_DIALOG_WARNING,
                     gtk.ICON_SIZE_MENU)
 
+        for b, modelKey in ((self._queue, 'queueLength'),
+                            (self._jobs, 'jobsLength'),
+                            (self._scanners, 'scannersFree')):
+
+            v = m[modelKey]
+            if v < 0:
+                b.set_label(m['status-unknown-count'])
+                b.set_sensitive(False)
+            else:
+                b.set_label(str(v))
+                b.set_sensitive(True)
+
         return True
+
+    def warning(self, message, yn=False):
+
+        dialog = gtk.MessageDialog(
+            flags=gtk.DIALOG_DESTROY_WITH_PARENT,
+            type=gtk.MESSAGE_WARNING,
+            buttons=yn and gtk.BUTTONS_YES_NO or gtk.BUTTONS_OK,
+            message_format=message)
+
+        val = dialog.run() in (gtk.RESPONSE_YES, gtk.RESPONSE_OK)
+        dialog.destroy()
+        return val
 
     def error(self, message):
 

@@ -90,4 +90,9 @@ model = {
 
 #SAVE
 'config-settings-save': 'Save and Apply Settings',
+
+#SERVER
+'config-server': "Server Admin",
+'config-server-start': "Start",
+'config-server-stop': "Stop",
 }
