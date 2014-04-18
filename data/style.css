@@ -23,6 +23,13 @@ a {
     padding-right: 6px;
     margin-left: 6px;
     margin-right: 6px;
+    text-decoration: none;
+	transition: box-shadow 1s ease;
+}
+
+.linkOut:hover {
+	text-decoration: underline;
+	box-shadow: 0px 0px 20px #e7d2b7;
 }
 
 blockquote {
@@ -122,6 +129,10 @@ ul {
 	color: #f8e03e;
 	background: #cd8b34;
 	padding: 6px;
+}
+
+#toc a:hover {
+	box-shadow: 0px 0px 20px #541f0f;
 }
 
 #toc h2 {
