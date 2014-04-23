@@ -9,6 +9,7 @@
 <div id='toc'>
 	<h1>Contents</h1>
 	<h2><a href="#installing">Installation</a></h2>
+	<h2><a href="#files">The Files</a></h2>
 	<h2><a href="#conversion">XML Conversion</a></h2>
 	<h2><a href="#extraction">Feature Extraction</a></h2>
 	<h2><a href="#quality">Quality Control</a></h2>
@@ -21,10 +22,14 @@ $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
 <div id='cont'>
 	<div class='section'>
 		<h1><a id="installing">Installation</a></h1>
+		<p><em>Please note that each Scan-o-Matic update downloaded must
+			be installed using the procedure described here.</em></p>
 		<p>Scan-o-Matic can is easiest installed by running
 		<code>python setup.py install --user</code>. If you require it for
 		all user, you may want to run <code>sudo python setup.py install</code>
 		instead.
+		Whichever method you choose, to avoid headaches down the road,
+		stick to one of them.
 		</p>
 		<p>The setup may ask you to install other non-python dependencies,
 		these are not needed if the install is not intended to control
@@ -42,6 +47,7 @@ $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
 		else you may have to build it:
 		<a class="linkOut" href="http://xael.org/norman/python/python-nmap/">More info here</a>.
 		</p>
+		<h2>Launching Scan-o-Matic</h2>
 		<p>After the install several Scan-o-Matic scripts will be accessible
 		within the system.
 		All of them start with <code>scan-o-matic</code>.
@@ -51,7 +57,105 @@ $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
 		the OS disagree where to place them.
 		The setup script should have prompted you with instructions on how
 		to fix this.</p>
+		<h2>Removing Installed Files</h2>
+		<p>User data and application configurations and several log-files
+		are all stored in a directory called <code>.scan-o-matic</code>
+		directly in the user's home directory.</p>
+		<p>The location of the python files and the launch scripts will
+		depend on your OS and the way you installed them.
+		When the <code>setup.py</code> script is run, it typically will inform
+		on where the files were put and these can simply be removed manually.
+		</p>
+		<p>On Ubuntu the scanomatic-python library is put in either
+		<code>~/.local/lib/python2.7/site-packages/scanomatic/</code>
+		or <code>/usr/lib/python2.7/dist-packages/scanomatic/</code>
+		depending on install-method.
+		The scanomatic-folder can be removed entirely.</p>
+		<p>To remove the launch-scripts <code>rm scan-o-matic*</code> in the
+		appropriate folder should be safe.
+		Launch scripts are either put in <code>/usr/bin</code> or
+		<code>~/.local/bin/</code>.
+		</p>
 
+	</div>
+	<div class='section'>
+		<h1><a id="files">The Project Files</a></h1>
+		<p>Here follows a description of most of the files encountered
+		within a project, their use and value.</p>
+		<p>Each project is housed in its own directory.
+		The project's base directory holds the primary data, which is the
+		image files and the instructions given and used by scan-o-matic while
+		aquiring those images.
+		The project also holds one or more analysis folders, which holds the
+		output of the image analysis, the growth curve feature extraction
+		as well and final data completed by the quality and normalization
+		step.
+		</p>
+		<h2>Image Files</h2>
+		<p><u>File Pattern:</u> <code>PROJECTNAME_INDEX_TIME.tiff</code></p>
+		<p><em>The image files contain complete information to rebuild
+			all steps of growth data.</em>
+		The only thing lacking is meta-data about what were the strains
+		and the media.</p>
+		<p>As an example, a file could be named
+		<code>Clot_0185_222151.9179.tiff</code>,
+		which means it is part of the project "Clot"
+		and that it is the 185th scan after the initial zero-position.
+		The scan was performed 222151.9179 seconds after the project was
+		started.</p>
+		<h2>First Pass Analysis</h2>
+		<p><u>File Pattern:</u> <code>PROJECTNAME_1.pass.analysis</code></p>
+		<p>This file holds the first pass image analysis results of the project
+		as well as basic meta-data about the project.
+		For practical purposes, even if image analysis is to be redone, life
+		is much easier saving this file.</p>
+		<p>The first-pass analysis primarily identifies the grayscale
+		calibration values and the positions of the plates.</p>
+		<h2>Fixture Config</h2>
+		<p><u>File Pattern:</u> <code>fixture.config</code></p>
+		<p>This is a copy of the scanner's fixture as it was configured
+		when the project was initially started.</p>
+		<h2>Experiment Run Log</h2>
+		<p><u>File Pattern:</u> <code>experiment.run</code></p>
+		<p>This is a log file for the experiment while it was running</p>
+		<h2>Analysis: Image Analysis Files</h2>
+		<p><u>File Pattern:</u> <code>analysis/image_INDEX_data.npy</code> and
+		<code>analysis/time_data.npy</code></p>
+		<p>The output of the image analysis is stored in numpy-format.
+		There's one file for each image scanned and one seperate holding
+		the vector of scan-times.
+		Should specific scans be corrupt and needing removal, the corresponding
+		numpy-file can simply be deleted.</p>
+		<p>For compatibility with external applications there are also two
+		xml-files created (<code>analysis/analysis.xml</code> &amp; 
+		<code>analysis/analysis_slimmed.xml</code>).
+		Neither is used by Scan-o-Matic, but should your project lack any or
+		all of the image analysis files, they can be
+		<a href="#conversion">recreated from these xml-files</a>.</p>
+		<h2>Analysis: Feature Extraction</h2>
+		<p><u>File Pattern:</u> <code>analysis/phenotypes_raw.npy</code>,
+		<code>analysis/curves_raw.npy</code>,
+		<code>analysis/curves_smooth.npy</code>
+		<code>analysis/phenotype_params.npy</code> and 
+		<code>analysis/phenotype_times.npy</code></p>
+		<p>The curve files represent the same data as the image analysis data
+		files but restructured by each colony, instead of by scans.
+		The smooth file also has been processed according to the smoothing
+		algorithm for curves.</p>
+		<p>The phenotype_params.npy contains the feature extraction settings
+		used.
+		The phenotype_times.npy has the data-times used.
+		The phenotypes_raw.npy holds the un-normalized features extracted
+		from the crues.</p>
+		<h2>Analysis: Quality Control</h2>
+		<p><u>File Pattern:</u> <code>analysis/phenotypes_filter.npy</code></p>
+		<p>This file holds information about what curves have been removed.
+		If this file is deleted, all removed curves will reappear.</p>
+		<p>When saving the state in the quality control interface, it is
+		this filter file that is updated.</p>
+		<h2>Analysis: Normaliztion</h2>
+		<p>There are no internal files represented by this stage, instead
+		it is up to the user to save the final output as the user sees fit.</p>
 	</div>
 	<div class='section'>
 		<h1><a id="conversion">XML Conversion</a></h1>
