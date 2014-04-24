@@ -63,7 +63,7 @@ _logger.info("Preparing setup parameters")
 package_dependencies = [
     'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
     'numpy', 'sh', 'nmap', 'configparse', 'scikit-image',
-    'uuid', 'PIL', 'scipy',  'unittest', 'pygtk']
+    'uuid', 'PIL', 'scipy',  'pygtk']
 
 data_files = []
 
