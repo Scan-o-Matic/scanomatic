@@ -50,6 +50,7 @@ class Model(new_model_generic.Model):
         '_platesHaveUnsaved': None,
         'subplateSelected': np.zeros((2, 2), dtype=bool),
         'selection_patches': None,  # dict(),
+        'selection_patches_white': None,
         'selectOnAllPhenotypes': True,
 
         'button-load-data': "Load experiment data",

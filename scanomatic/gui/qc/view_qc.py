@@ -1235,18 +1235,25 @@ class QC_Stage(gtk.VBox):
 
                 self._model['selection_patches'] = ax.plot(
                     X, Y, mec='k', mew=1,
-                    ms=1, ls="None",
-                    marker='s', fillstyle='none')[0]
+                    ms=4.5, ls="None",
+                    marker='s', mfc='none')[0]
+
+                self._model['selection_patches_white'] = ax.plot(
+                    X, Y, mec='w', mew=1,
+                    ms=3.5, ls="None",
+                    marker='s', mfc='none')[0]
 
             else:
 
                 self._model['selection_patches'].set_data(X, Y)
+                self._model['selection_patches_white'].set_data(X, Y)
 
         elif (self._model['selection_patches'] is not None):
 
             #self._logger.info("Unknown selection {0}".format(data))
 
             self._model['selection_patches'].set_data([], [])
+            self._model['selection_patches_white'].set_data([], [])
 
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
