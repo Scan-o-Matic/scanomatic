@@ -16,6 +16,7 @@ __status__ = "Development"
 
 from argparse import ArgumentParser
 import os
+import sys
 
 #
 # INTERNAL DEPENDENCIES
@@ -24,6 +25,33 @@ import os
 import scanomatic.io.xml.reader as reader
 import scanomatic.io.image_data as image_data
 import scanomatic.io.logger as logger
+
+#
+# GLOBALS
+#
+
+DEFAULT_SEQUENCE = {
+    'cell:area': 0,
+    'cell:pixel-sum': 1,
+    'cell:median': 2,
+    'cell:IQR': 3,
+    'cell:IQR-mean': 4,
+    'cell:mean': 5,
+    'blob:perimeter': 6,
+    'blob:area': 7,
+    'blob:pixel-sum': 8,
+    'blob:median': 9,
+    'blob:IQR': 10,
+    'blob:IQR-mean': 11,
+    'blob:center-of-mass': 12,
+    'blob:mean': 13,
+    'bg:area': 14,
+    'bg:pixel-sum': 15,
+    'bg:median': 16,
+    'bg:IQR': 17,
+    'bg:IQR-mean': 18,
+    'bg:mean': 19
+}
 
 #
 # SCRIPT BEHAVIOUR
@@ -51,6 +79,9 @@ if __name__ == "__main__":
                         "files in output directory. Default: False",
                         default=False)
 
+    parser.add_argument("-m", "--measure", type=str, dest="measure",
+                        help="Specify measure to be used", default=0)
+
     args = parser.parse_args()
 
     if (args.inputFile is None or not os.path.isfile(args.inputFile)):
@@ -61,6 +92,19 @@ if __name__ == "__main__":
 
     if (args.outputPath == ""):
         args.outputPath = "."
+
+    if (isinstance(args.measure, str)):
+
+        if args.measure in DEFAULT_SEQUENCE:
+
+            args.measure = DEFAULT_SEQUENCE[args.measure]
+
+        else:
+
+            parser.error(
+                "Unknown measure \"{0}\", allowed are nubers and:\n{1}".format(
+                args.measure, DEFAULT_SEQUENCE.keys()))
+            sys.exit(-1)
 
     if not os.path.isdir(args.outputPath):
         os.mkdir(args.outputPath)
@@ -80,7 +124,8 @@ if __name__ == "__main__":
 
     log.info("Scan Time data saved")
 
-    image_data.Image_Data.iterWriteImageFromXML(args.outputPath, xmlData)
+    image_data.Image_Data.iterWriteImageFromXML(args.outputPath, xmlData,
+                                                measure=args.measure)
 
     log.info("Image Data saved")
     log.info("Done!")
