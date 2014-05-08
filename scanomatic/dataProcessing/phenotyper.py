@@ -56,11 +56,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     p = Phenotyper.LoadFromState(...)
     </code>
 
-    The names of the currently supported phenotypes are stored as 
-    class vairable in <code>Phenotyper.NAMES_OF_PHENOTYPES</code>.
+    The names of the currently supported phenotypes are stored in static
+    dictionary lookup <code>Phenotyper.NAMES_OF_PHENOTYPES</code>.
 
-    The static variables for lookup of specific phenotypes are stored
-    as <code>Phenotyper.PHEN_*</code>.
+    The matching lookup-keys for accessing specific phenotype indices in the
+    phenotypes array are stored as static integers on the class following
+    the pattern <code>Phenotyper.PHEN_*</code>. 
     """
 
     PHEN_GT_VALUE = 0
@@ -768,7 +769,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    annotateGTpos=True, annotateFit=True,
                    annotatePosition=True, annotatePhenotypeValue=True,
                    xMarkTimes=None, plusMarkTimes=None, altMeasures=None,
-                   fig=None, figClear=True, showFig=True):
+                   drawable=None, clearDrawable=True):
         """Plots a curve with phenotypes marked based on a position.
 
         Optional Parameters:
@@ -800,14 +801,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             as an iterable of (textLabel, value) tuples.
             Default: None
 
-            fig             A figure to continue drawing on rather than
-            creating a new one
+            drawable        A figure or axes from matplotlib to continue 
+            drawing on rather than creating a new figure
 
-
-            figClear        If the supplied figure should be cleared
-
-            showFig         If a figure was submitted, if it should be
-                            shown.
+            clearDrawable   If the supplied drawable should be cleared
             """
 
         def _markCurve(positions, colorChar):
@@ -820,12 +817,22 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 plotRaw and self._source[position[0]][position[0]][markIndices],
                 colorChar)
 
-        if fig is not None:
-            f = fig
-            if figClear:
-                f.clf()
+        if drawable is not None:
+            if isinstance(drawable, plt.Figure):
+                f = drawable
+                if clearDrawable:
+                    f.clf()
+                ax = f.gca()
+            elif isinstance(drawable, plt.Axes):
+                ax = drawable
+                f = ax.figure
+                if clearDrawable:
+                    drawable.cla()
+
         else:
             f = plt.figure()
+            ax = f.gca()
+            drawable = f
 
         font = {'family': 'sans',
                 'weight': 'normal',
@@ -833,7 +840,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         matplotlib.rc('font', **font)
 
-        ax = f.gca()
         ax.tick_params(axis='x', which='both', bottom='on', top='off')
         ax.tick_params(axis='y', which='both', left='on', right='off')
 
@@ -934,10 +940,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         ax.set_xlim(left=0)
 
-        if (fig is not None and showFig):
-            f.show()
-
-        return f
+        return drawable
 
     def plotPlateHeatmap(self, plateIndex,
                          markPositions=[],
