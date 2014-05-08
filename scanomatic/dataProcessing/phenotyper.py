@@ -787,9 +787,21 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             extraction should be plotted
             Default: True
 
+            plotFit         If curve fit line be plotted
+
             annotateGTpos   If GT position used should be marked with
             arrow
             Default: True
+
+            annotateFit     If curve fit should be annotated,
+
+            annotatePosition
+                            If a text be written informing the position
+            on the plate of the plotted curve
+
+            annotatePhenotypeValue
+                            If the value of the generation time should
+                            be written out.
 
             xMarkTimes      Times on raw data to be marked with x
             Default: None
