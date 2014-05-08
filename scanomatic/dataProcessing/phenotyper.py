@@ -36,6 +36,32 @@ import scanomatic.io.paths as paths
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
+    """The Phenotyper class is a class for producing phenotypes
+    based on growth curves as well as storing and easy displaying them.
+
+    There are fource modes of instanciating a phenotyper instance:
+
+    <code>
+    #Generic instanciation
+    p = Phenotyper(...)
+
+    #Instanciation from xml based data
+    p = Phenotyper.LoadFromXML(...)
+
+    #Instanciation from numpy data
+    p = Phenotyper.LoadFromNumPy(...)
+
+    #Instanciation from a saved phenotyper-state
+    #this method will not try to make new phenotypes
+    p = Phenotyper.LoadFromState(...)
+    </code>
+
+    The names of the currently supported phenotypes are stored as 
+    class vairable in <code>Phenotyper.NAMES_OF_PHENOTYPES</code>.
+
+    The static variables for lookup of specific phenotypes are stored
+    as <code>Phenotyper.PHEN_*</code>.
+    """
 
     PHEN_GT_VALUE = 0
     PHEN_GT_ERR = 1
@@ -151,7 +177,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return cls(xml, baseName=path, **kwargs)
 
     @classmethod
-    def LoadFromSate(cls, dirPath):
+    def LoadFromState(cls, dirPath):
         """Creates an instance based on previously saved phenotyper state
         in specified directory.
 

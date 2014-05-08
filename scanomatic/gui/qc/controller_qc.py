@@ -79,7 +79,7 @@ class Controller(controller_generic.Controller):
 
         self._logger.info("Loading {0}".format(pathToDirectory))
         try:
-            p = phenotyper.Phenotyper.LoadFromSate(pathToDirectory)
+            p = phenotyper.Phenotyper.LoadFromState(pathToDirectory)
         except IOError:
             self._logger.error("Phenotyper reported IOError, bad path?")
             p = None
