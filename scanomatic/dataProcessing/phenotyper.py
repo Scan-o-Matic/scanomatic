@@ -83,8 +83,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     PHEN_FINAL_VAL = 16
     PHEN_YIELD = 17
     PHEN_LAG = 18
-    PHEN_GT_CELL_COUNT = 19
-    PHEN_48_CELL_COUNT = 20
+    PHEN_GT_Y_VALUE = 19
+    PHEN_48_Y_VALUE = 20
 
     NAMES_OF_PHENOTYPES = {
         0: "Generation Time",
@@ -107,6 +107,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         17: "Yield",
         18: "Lag",
         19: "Value at Generation Time",
+        20: "Value at 48h"
     }
 
     def __init__(self, dataObject, timeObject=None,
@@ -504,7 +505,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     curPhenos[self.PHEN_YIELD] = \
                         curPhenos[self.PHEN_FINAL_VAL] - \
                         curPhenos[self.PHEN_INIT_VAL_C]
-                    curPhenos[self.PHEN_48_CELL_COUNT] = curve[idT48]
+                    curPhenos[self.PHEN_48_Y_VALUE] = curve[idT48]
 
                     #REGISTRATING GT PHENOTYPES
                     if (abs(bestFinite) <= vArgSort.size):
@@ -527,7 +528,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                             curPhenos[self.PHEN_GT_2ND_POS] = \
                                 vArgSort[bestFinite - 1] + posOffset
 
-                        curPhenos[self.PHEN_GT_CELL_COUNT] = \
+                        curPhenos[self.PHEN_GT_Y_VALUE] = \
                             np.median(
                                 curve[curPhenos[self.PHEN_GT_POS] - posOffset:
                                       curPhenos[self.PHEN_GT_POS] + posOffset
@@ -535,7 +536,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                         curPhenos[self.PHEN_LAG] = (
                             np.log2(curPhenos[self.PHEN_INIT_VAL_C]) -
-                            np.log2(curPhenos[self.PHEN_GT_CELL_COUNT])) * \
+                            np.log2(curPhenos[self.PHEN_GT_Y_VALUE])) * \
                             curPhenos[self.PHEN_GT_VALUE]
 
                     #REGISTRATING CURVE FITS
