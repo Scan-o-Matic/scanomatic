@@ -132,9 +132,8 @@ class Controller(controller_generic.Controller):
                 annotateFit=self._model['showFitValue'],
                 annotatePosition=not(self._model['multiSelecting']),
                 annotatePhenotypeValue=not(self._model['multiSelecting']),
-                fig=fig,
-                figClear=False,
-                showFig=False)
+                drawable=fig,
+                clearDrawable=False)
 
     def getPhenotypes(self):
 

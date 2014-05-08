@@ -759,7 +759,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         zpos = int(np.floor(np.log10(n)) + 1)
 
         for i in range(n):
-            figure = self.plotACurve(fig=figure, figClear=figClear,
+            figure = self.plotACurve(drawable=figure, clearDrawable=figClear,
                                      **kwargs)
             figure.savefig(pathPattern.format(str(i + 1).zfill(zpos)))
 
