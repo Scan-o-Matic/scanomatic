@@ -87,27 +87,27 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     PHEN_48_Y_VALUE = 20
 
     NAMES_OF_PHENOTYPES = {
-        0: "Generation Time",
-        1: "Error of GT-fit",
-        2: "Time for fastest growth",
-        3: "Generation Time (2nd place)",
-        4: "Error of GT (2nd place) - fit",
-        5: "Time of second fastest growth",
-        6: "Chapman Richards model fit",
-        7: "Chapman Richards b1 (untransformed)",
-        8: "Chapman Richards b2 (untransformed)",
-        9: "Chapman Richards b3 (untransformed)",
-        10: "Chapman Richards b4 (untransformed)",
-        11: "Chapman Richards extension D (initial cells)",
-        12: "Initial Value",
-        13: "Initial Value (mean 2)",
-        14: "Initial Value (mean 3)",
-        15: "Initial Value (min 3)",
-        16: "Final Value",
-        17: "Yield",
-        18: "Lag",
-        19: "Value at Generation Time",
-        20: "Value at 48h"
+        PHEN_GT_VALUE: "Generation Time",
+        PHEN_GT_ERR: "Error of GT-fit",
+        PHEN_GT_POS: "Time for fastest growth",
+        PHEN_GT_2ND_VALUE: "Generation Time (2nd place)",
+        PHEN_GT_2ND_ERR: "Error of GT (2nd place) - fit",
+        PHEN_GT_2ND_POS: "Time of second fastest growth",
+        PHEN_FIT_VALUE: "Chapman Richards model fit",
+        PHEN_FIT_PARAM1: "Chapman Richards b1 (untransformed)",
+        PHEN_FIT_PARAM2: "Chapman Richards b2 (untransformed)",
+        PHEN_FIT_PARAM3: "Chapman Richards b3 (untransformed)",
+        PHEN_FIT_PARAM4: "Chapman Richards b4 (untransformed)",
+        PHEN_FIT_PARAM5: "Chapman Richards extension D (initial cells)",
+        PHEN_INIT_VAL_A: "Initial Value",
+        PHEN_INIT_VAL_B: "Initial Value (mean 2)",
+        PHEN_INIT_VAL_C: "Initial Value (mean 3)",
+        PHEN_INIT_VAL_D: "Initial Value (min 3)",
+        PHEN_FINAL_VAL: "Final Value",
+        PHEN_YIELD: "Yield",
+        PHEN_LAG: "Lag",
+        PHEN_GT_Y_VALUE: "Value at Generation Time",
+        PHEN_48_Y_VALUE: "Value at 48h"
     }
 
     def __init__(self, dataObject, timeObject=None,
@@ -158,6 +158,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if not self._itermode and runAnalysis:
             self._analyse()
+
+    @classmethod
+    def phenotypeNames(cls):
+
+        return (p for p in cls.__dict__ if p.startswith("PHEN_"))
 
     @classmethod
     def LoadFromXML(cls, path, **kwargs):
