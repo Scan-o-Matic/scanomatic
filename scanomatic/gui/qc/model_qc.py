@@ -13,6 +13,7 @@ __status__ = "Development"
 #
 
 import numpy as np
+import os
 
 #
 # INTERNAL DEPENDENCIES
@@ -151,6 +152,17 @@ class Model(new_model_generic.Model):
         'ref-bad-plate': """Plate {0} has only used {1:.1f} percent of references
     and has a CV of {2:.3f}""",
     }
+
+
+    def loadedName(self):
+
+        pList = self['phenotyper-path'].split(os.sep)
+        if (pList[-1] == 'analysis' and len(pList) >= 2):
+            pName = pList[-2]
+        else:
+            pName = os.sep.join(pList[-2:])
+
+        return pName
 
     def visibleValues(self):
 

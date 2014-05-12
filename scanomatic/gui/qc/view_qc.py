@@ -153,8 +153,12 @@ class QC_Stage(gtk.VBox):
         self._buttonLoadMetaData = gtk.Button(self._model['button-load-meta'])
         self._buttonLoadMetaData.connect("clicked", self._loadMetaData)
 
+        self._loadedDirectory = gtk.Label("")
+        self._loadedDirectory.set_ellipsize(pango.ELLIPSIZE_START)
+        
         hbox.pack_start(self._buttonLoadData, expand=False, fill=False)
         hbox.pack_start(self._buttonLoadMetaData, expand=False, fill=False)
+        hbox.pack_start(self._loadedDirectory, expand=True, fill=True)
         self.pack_start(hbox, expand=False, fill=False)
 
         self._widgets_require_data.add(self._buttonLoadMetaData)
@@ -1057,6 +1061,9 @@ class QC_Stage(gtk.VBox):
                         self._setReferences()
                         self._HeatMapInfo.set_text(
                             self._model['loaded-text'])
+
+                        self._loadedDirectory.set_text(
+                                self._model['loadedName'])
 
                     else:
 
