@@ -1062,6 +1062,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             if ('y' not in raw_input("Overwrite existing file? (y/N)").lower()):
                 return False
 
+        #SAVES OUT DATA AS NPY AS WELL
+        np.save(path + ".npy", data)
+
         fh = open(path, 'w')
 
         headers = ('Plate', 'Row', 'Column')
