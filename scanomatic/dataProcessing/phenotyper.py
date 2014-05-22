@@ -633,7 +633,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (padding):
             self._logger.info(
                 "Padding phenotypes, adding" +
-                " {1} to become {2}, current shape {3}".format(
+                " {0} to become {1}, current shape {2}".format(
                     padding,
                     self.nPhenotypeTypes,
                     self._phenotypes.shape))
