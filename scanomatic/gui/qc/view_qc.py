@@ -488,6 +488,16 @@ class QC_Stage(gtk.VBox):
 
         if isDebug:
 
+            self._toggleNormByExperiment = gtk.CheckButton(
+                self._model['norm-by-experiment-label'])
+            self._toggleNormByExperiment.set_active(
+                self._model['normByExperiment'][0])
+            self._toggleNormByExperiment.connect(
+                "toggled", self._setToggleNormByExperiment)
+            self._widgets_require_references.add(self._toggleNormByExperiment)
+            vbox2.pack_start(self._toggleNormByExperiment,
+                             expand=False, fill=False)
+
             self._toggleAlgInLog = gtk.CheckButton(
                 self._model['norm-alg-in-log-text'])
             self._toggleAlgInLog.set_active(
@@ -670,6 +680,12 @@ class QC_Stage(gtk.VBox):
                                        gtk.STOCK_DIALOG_ERROR)
 
         return v
+
+    def _setToggleNormByExperiment(self, widget):
+
+        self._model['normByExperiment'][
+                self._model['plate']] = widget.get_active()
+        self._controller.getExperimentToReferenceCorrelation()
 
     def _setToggleLogInAlg(self, widget):
 
