@@ -539,10 +539,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                                       curPhenos[self.PHEN_GT_POS] + posOffset
                                       + 1])
 
-                        curPhenos[self.PHEN_LAG] = (
-                            np.log2(curPhenos[self.PHEN_INIT_VAL_C]) -
-                            np.log2(curPhenos[self.PHEN_GT_Y_VALUE])) * \
-                            curPhenos[self.PHEN_GT_VALUE]
+                        dY = (np.log2(curPhenos[self.PHEN_GT_Y_VALUE]) -                                           
+                              np.log2(curPhenos[self.PHEN_INIT_VAL_C]))
+
+                        if dY > 0:
+
+                            curPhenos[self.PHEN_LAG] = \
+                                flatT[curPhenos[self.PHEN_GT_POS]] - \
+                                dY * curPhenos[self.PHEN_GT_VALUE]
+                        else:
+                            curPhenos[self.PHEN_LAG] = np.nan
 
                     #REGISTRATING CURVE FITS
                     curPhenos[self.PHEN_FIT_VALUE] = p[0]
