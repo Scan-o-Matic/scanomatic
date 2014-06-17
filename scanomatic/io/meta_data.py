@@ -362,6 +362,19 @@ class Meta_Data_Base(object):
                 self.appendColumns(k, v)
                 appendColumns.pop(k)
 
+    def generateCoordinates(self):
+
+        for plate, pShape in enumerate(self._plateShapes):
+
+            if pShape is not None:
+
+                for rowI in xrange(pShape[0]):
+
+                    for colI in xrange(pShape[1]):
+
+                        yield plate, rowI, colI
+
+
 
 class Meta_Data(Meta_Data_Base):
 
@@ -384,18 +397,6 @@ class Meta_Data(Meta_Data_Base):
 
         self._loadPaths()
         self._guessLoaded = self._guessCoordinates()
-
-    def generateCoordinates(self):
-
-        for plate, pShape in enumerate(self._plateShapes):
-
-            if pShape is not None:
-
-                for rowI in xrange(pShape[0]):
-
-                    for colI in xrange(pShape[1]):
-
-                        yield plate, rowI, colI
 
     def getHeaderRow(self, plate):
         """Gives header column labels for plate
