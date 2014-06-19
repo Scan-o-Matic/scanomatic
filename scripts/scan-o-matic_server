@@ -40,7 +40,7 @@ if __name__ == "__main__":
                     "request refused!")
                 sys.exit(9)
 
-        except psutil.error.NoSuchProcess:
+        except psutil.NoSuchProcess:
 
             pass
 
