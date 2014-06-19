@@ -35,12 +35,12 @@ if __name__ == "__main__":
             if isinstance(p.name, str):
                 name = p.name
             else:
-                name = lambda p: p.name()
+                name = p.name()
 
             if isinstance(p.pid, int):
                 pid = p.pid
             else:
-                pid = lambda pid: p.pid()
+                pid = p.pid()
 
             if (name.startswith(basename) and
                     os.getpid() != pid):
