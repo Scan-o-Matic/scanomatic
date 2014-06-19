@@ -32,8 +32,18 @@ if __name__ == "__main__":
 
         try:
 
-            if (p.name.startswith(basename) and
-                    os.getpid() != p.pid):
+            if isinstance(p.name, str):
+                name = p.name
+            else:
+                name = lambda p: p.name()
+
+            if isinstance(p.pid, int):
+                pid = p.pid
+            else:
+                pid = lambda pid: p.pid()
+
+            if (name.startswith(basename) and
+                    os.getpid() != pid):
 
                 logger.Logger("Scan-o-Matic server launcher").critical(
                     "There is already a Scan-o-Matic server running, " +
