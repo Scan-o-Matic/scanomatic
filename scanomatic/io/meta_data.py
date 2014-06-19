@@ -572,6 +572,8 @@ class Meta_Data(Meta_Data_Base):
             fileType = path.lower().split(".")[-1]
 
             if fileType in ["xls", "xlsx"]:
+                if not _PANDAS:
+                    raise ImportError("Requires pandas for saving")
                 try:
                     doc = pd.ExcelFile(path)
                 except:
