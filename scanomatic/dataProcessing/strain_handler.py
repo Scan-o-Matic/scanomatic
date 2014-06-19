@@ -209,6 +209,26 @@ def filterUniquesOnPlate(uniqueDict, plate):
     return {k: v for k, v in uniqueDict.items() if k[-1] == plate}
 
 
+def splitStrainsPerPlates(strainDict):
+    """If `forcePlatewise` was `True`, this will make an ordered list with
+    each plate's info in a separate item.
+
+    Parameters
+    ----------
+
+    strainDict: dict
+        A dict with strain meta-data as keys
+
+    Returns
+    -------
+
+    list of dicts
+        A 4 long list with a subset of the input dict matching each plate
+    """
+
+    return [filterUniquesOnPlate(strainDict, p) for p in range(4)]
+
+
 def getDataPerUnique(uniqueDict, dataObject, measure=None):
     """Collects all measures for each strain
 

@@ -4,6 +4,12 @@
 
 *** Add delta GT as qual measure for 2nd best GT 
 
+*** Output early and late grid image
+
+*** Check if center of mass of blob skips much
+
+*** Several QC interfer /use same model
+
 *** Make setup suggest manual installing odfpy etc
 
 --

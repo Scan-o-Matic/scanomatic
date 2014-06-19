@@ -21,7 +21,7 @@ import copy
 
 class Model(object):
 
-    def __init__(self, presets=dict(), doCopy=False):
+    def __init__(self, presets=dict(), doCopy=True):
 
         if doCopy:
             presets = copy.deepcopy(presets)
@@ -64,7 +64,7 @@ class Model(object):
             raise ValueError("Key '{0}' unknown".format(key))
 
     @classmethod
-    def LoadAppModel(cls, doCopy=False):
+    def LoadAppModel(cls, doCopy=True):
 
         if not(hasattr(cls, '_PRESETS_STAGE')
                and hasattr(cls, '_PRESETS_APP')):
@@ -77,7 +77,7 @@ class Model(object):
                    doCopy=doCopy)
 
     @classmethod
-    def LoadStageModel(cls, doCopy=False):
+    def LoadStageModel(cls, doCopy=True):
 
         if not(hasattr(cls, '_PRESETS_STAGE')):
 

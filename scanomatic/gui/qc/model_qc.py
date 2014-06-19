@@ -13,6 +13,7 @@ __status__ = "Development"
 #
 
 import numpy as np
+import os
 
 #
 # INTERNAL DEPENDENCIES
@@ -133,7 +134,9 @@ class Model(new_model_generic.Model):
         'normalized-phenotype': "2D Normalized {0}",
         'normalized-text': "2D Normalization Done",
         'norm-alg-in-log-text': "Algorithm in Log",
+        'norm-by-experiment-label': "Use experiments to normalize",
 
+        'norm-by-experiment': None,
         'norm-alg-in-log': False,
         'norm-outlier-fillSize': (3, 3),
         'norm-outlier-k': 2.0,
@@ -151,6 +154,17 @@ class Model(new_model_generic.Model):
         'ref-bad-plate': """Plate {0} has only used {1:.1f} percent of references
     and has a CV of {2:.3f}""",
     }
+
+
+    def loadedName(self):
+
+        pList = self['phenotyper-path'].split(os.sep)
+        if (pList[-1] == 'analysis' and len(pList) >= 2):
+            pName = pList[-2]
+        else:
+            pName = os.sep.join(pList[-2:])
+
+        return pName
 
     def visibleValues(self):
 
@@ -192,6 +206,19 @@ class Model(new_model_generic.Model):
         else:
 
             return self['phenotype'] - self['normalized-index-offset']
+
+    def normByExperiment(self):
+
+        if self['phenotyper'] is None:
+            return np.zeros((1,), dtype=np.bool)
+
+        if (self['norm-by-experiment'] is None or
+                self['norm-by-experiment'].size != self['phenotyper'].shape[0]):
+
+            self['norm-by-experiment'] = np.zeros(
+                (self['phenotyper'].shape[0]), dtype=np.bool)
+
+        return self['norm-by-experiment']
 
     def numberOfSelections(self):
 

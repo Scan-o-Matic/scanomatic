@@ -36,6 +36,33 @@ import scanomatic.io.paths as paths
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
+    """The Phenotyper class is a class for producing phenotypes
+    based on growth curves as well as storing and easy displaying them.
+
+    There are fource modes of instanciating a phenotyper instance:
+
+    <code>
+    #Generic instanciation
+    p = Phenotyper(...)
+
+    #Instanciation from xml based data
+    p = Phenotyper.LoadFromXML(...)
+
+    #Instanciation from numpy data
+    p = Phenotyper.LoadFromNumPy(...)
+
+    #Instanciation from a saved phenotyper-state
+    #this method will not try to make new phenotypes
+    p = Phenotyper.LoadFromState(...)
+    </code>
+
+    The names of the currently supported phenotypes are stored in static
+    dictionary lookup <code>Phenotyper.NAMES_OF_PHENOTYPES</code>.
+
+    The matching lookup-keys for accessing specific phenotype indices in the
+    phenotypes array are stored as static integers on the class following
+    the pattern <code>Phenotyper.PHEN_*</code>. 
+    """
 
     PHEN_GT_VALUE = 0
     PHEN_GT_ERR = 1
@@ -56,30 +83,31 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     PHEN_FINAL_VAL = 16
     PHEN_YIELD = 17
     PHEN_LAG = 18
-    PHEN_GT_CELL_COUNT = 19
-    PHEN_48_CELL_COUNT = 20
+    PHEN_GT_Y_VALUE = 19
+    PHEN_48_Y_VALUE = 20
 
     NAMES_OF_PHENOTYPES = {
-        0: "Generation Time",
-        1: "Error of GT-fit",
-        2: "Time for fastest growth",
-        3: "Generation Time (2nd place)",
-        4: "Error of GT (2nd place) - fit",
-        5: "Time of second fastest growth",
-        6: "Chapman Richards model fit",
-        7: "Chapman Richards b1 (untransformed)",
-        8: "Chapman Richards b2 (untransformed)",
-        9: "Chapman Richards b3 (untransformed)",
-        10: "Chapman Richards b4 (untransformed)",
-        11: "Chapman Richards extension D (initial cells)",
-        12: "Initial Value",
-        13: "Initial Value (mean 2)",
-        14: "Initial Value (mean 3)",
-        15: "Initial Value (min 3)",
-        16: "Final Value",
-        17: "Yield",
-        18: "Lag",
-        19: "Value at Generation Time",
+        PHEN_GT_VALUE: "Generation Time",
+        PHEN_GT_ERR: "Error of GT-fit",
+        PHEN_GT_POS: "Time for fastest growth",
+        PHEN_GT_2ND_VALUE: "Generation Time (2nd place)",
+        PHEN_GT_2ND_ERR: "Error of GT (2nd place) - fit",
+        PHEN_GT_2ND_POS: "Time of second fastest growth",
+        PHEN_FIT_VALUE: "Chapman Richards model fit",
+        PHEN_FIT_PARAM1: "Chapman Richards b1 (untransformed)",
+        PHEN_FIT_PARAM2: "Chapman Richards b2 (untransformed)",
+        PHEN_FIT_PARAM3: "Chapman Richards b3 (untransformed)",
+        PHEN_FIT_PARAM4: "Chapman Richards b4 (untransformed)",
+        PHEN_FIT_PARAM5: "Chapman Richards extension D (initial cells)",
+        PHEN_INIT_VAL_A: "Initial Value",
+        PHEN_INIT_VAL_B: "Initial Value (mean 2)",
+        PHEN_INIT_VAL_C: "Initial Value (mean 3)",
+        PHEN_INIT_VAL_D: "Initial Value (min 3)",
+        PHEN_FINAL_VAL: "Final Value",
+        PHEN_YIELD: "Yield",
+        PHEN_LAG: "Lag",
+        PHEN_GT_Y_VALUE: "Value at Generation Time",
+        PHEN_48_Y_VALUE: "Value at 48h"
     }
 
     def __init__(self, dataObject, timeObject=None,
@@ -132,6 +160,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._analyse()
 
     @classmethod
+    def phenotypeNames(cls):
+
+        return (p for p in cls.__dict__ if p.startswith("PHEN_"))
+
+    @classmethod
     def LoadFromXML(cls, path, **kwargs):
         """Class Method used to create a Phenotype Strider directly
         from a path do an xml
@@ -151,7 +184,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return cls(xml, baseName=path, **kwargs)
 
     @classmethod
-    def LoadFromSate(cls, dirPath):
+    def LoadFromState(cls, dirPath):
         """Creates an instance based on previously saved phenotyper state
         in specified directory.
 
@@ -477,7 +510,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     curPhenos[self.PHEN_YIELD] = \
                         curPhenos[self.PHEN_FINAL_VAL] - \
                         curPhenos[self.PHEN_INIT_VAL_C]
-                    curPhenos[self.PHEN_48_CELL_COUNT] = curve[idT48]
+                    curPhenos[self.PHEN_48_Y_VALUE] = curve[idT48]
 
                     #REGISTRATING GT PHENOTYPES
                     if (abs(bestFinite) <= vArgSort.size):
@@ -500,16 +533,22 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                             curPhenos[self.PHEN_GT_2ND_POS] = \
                                 vArgSort[bestFinite - 1] + posOffset
 
-                        curPhenos[self.PHEN_GT_CELL_COUNT] = \
+                        curPhenos[self.PHEN_GT_Y_VALUE] = \
                             np.median(
                                 curve[curPhenos[self.PHEN_GT_POS] - posOffset:
                                       curPhenos[self.PHEN_GT_POS] + posOffset
                                       + 1])
 
-                        curPhenos[self.PHEN_LAG] = (
-                            np.log2(curPhenos[self.PHEN_INIT_VAL_C]) -
-                            np.log2(curPhenos[self.PHEN_GT_CELL_COUNT])) * \
-                            curPhenos[self.PHEN_GT_VALUE]
+                        dY = (np.log2(curPhenos[self.PHEN_GT_Y_VALUE]) -                                           
+                              np.log2(curPhenos[self.PHEN_INIT_VAL_C]))
+
+                        if dY > 0:
+
+                            curPhenos[self.PHEN_LAG] = \
+                                flatT[curPhenos[self.PHEN_GT_POS]] - \
+                                dY * curPhenos[self.PHEN_GT_VALUE]
+                        else:
+                            curPhenos[self.PHEN_LAG] = np.nan
 
                     #REGISTRATING CURVE FITS
                     curPhenos[self.PHEN_FIT_VALUE] = p[0]
@@ -594,7 +633,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (padding):
             self._logger.info(
                 "Padding phenotypes, adding" +
-                " {1} to become {2}, current shape {3}".format(
+                " {0} to become {1}, current shape {2}".format(
                     padding,
                     self.nPhenotypeTypes,
                     self._phenotypes.shape))
@@ -732,7 +771,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         zpos = int(np.floor(np.log10(n)) + 1)
 
         for i in range(n):
-            figure = self.plotACurve(fig=figure, figClear=figClear,
+            figure = self.plotACurve(drawable=figure, clearDrawable=figClear,
                                      **kwargs)
             figure.savefig(pathPattern.format(str(i + 1).zfill(zpos)))
 
@@ -742,7 +781,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    annotateGTpos=True, annotateFit=True,
                    annotatePosition=True, annotatePhenotypeValue=True,
                    xMarkTimes=None, plusMarkTimes=None, altMeasures=None,
-                   fig=None, figClear=True, showFig=True):
+                   drawable=None, clearDrawable=True):
         """Plots a curve with phenotypes marked based on a position.
 
         Optional Parameters:
@@ -760,9 +799,21 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             extraction should be plotted
             Default: True
 
+            plotFit         If curve fit line be plotted
+
             annotateGTpos   If GT position used should be marked with
             arrow
             Default: True
+
+            annotateFit     If curve fit should be annotated,
+
+            annotatePosition
+                            If a text be written informing the position
+            on the plate of the plotted curve
+
+            annotatePhenotypeValue
+                            If the value of the generation time should
+                            be written out.
 
             xMarkTimes      Times on raw data to be marked with x
             Default: None
@@ -774,14 +825,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             as an iterable of (textLabel, value) tuples.
             Default: None
 
-            fig             A figure to continue drawing on rather than
-            creating a new one
+            drawable        A figure or axes from matplotlib to continue 
+            drawing on rather than creating a new figure
 
-
-            figClear        If the supplied figure should be cleared
-
-            showFig         If a figure was submitted, if it should be
-                            shown.
+            clearDrawable   If the supplied drawable should be cleared
             """
 
         def _markCurve(positions, colorChar):
@@ -794,12 +841,22 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 plotRaw and self._source[position[0]][position[0]][markIndices],
                 colorChar)
 
-        if fig is not None:
-            f = fig
-            if figClear:
-                f.clf()
+        if drawable is not None:
+            if isinstance(drawable, plt.Figure):
+                f = drawable
+                if clearDrawable:
+                    f.clf()
+                ax = f.gca()
+            elif isinstance(drawable, plt.Axes):
+                ax = drawable
+                f = ax.figure
+                if clearDrawable:
+                    drawable.cla()
+
         else:
             f = plt.figure()
+            ax = f.gca()
+            drawable = f
 
         font = {'family': 'sans',
                 'weight': 'normal',
@@ -807,7 +864,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         matplotlib.rc('font', **font)
 
-        ax = f.gca()
         ax.tick_params(axis='x', which='both', bottom='on', top='off')
         ax.tick_params(axis='y', which='both', left='on', right='off')
 
@@ -908,10 +964,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         ax.set_xlim(left=0)
 
-        if (fig is not None and showFig):
-            f.show()
-
-        return f
+        return drawable
 
     def plotPlateHeatmap(self, plateIndex,
                          markPositions=[],
@@ -1014,6 +1067,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (os.path.isfile(path) and askOverwrite):
             if ('y' not in raw_input("Overwrite existing file? (y/N)").lower()):
                 return False
+
+        #SAVES OUT DATA AS NPY AS WELL
+        np.save(path + ".npy", data)
 
         fh = open(path, 'w')
 

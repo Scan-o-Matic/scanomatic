@@ -17,6 +17,8 @@ __status__ = "Development"
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy.optimize import leastsq
+from scipy.stats import pearsonr
+from scipy.ndimage import gaussian_filter
 
 #
 # INTERNAL DEPENDENCIES
@@ -45,6 +47,12 @@ import scanomatic.dataProcessing.norm as norm
 
 
 class Controller(controller_generic.Controller):
+
+    NORMALIZATION_PHENOTYPES = (phenotyper.Phenotyper.PHEN_GT_VALUE,)
+    """
+                            phenotyper.Phenotyper.PHEN_LAG,
+                            phenotyper.Phenotyper.PHEN_YIELD)
+    """
 
     def __init__(self, asApp=False, debugMode=False, parent=None):
 
@@ -79,7 +87,7 @@ class Controller(controller_generic.Controller):
 
         self._logger.info("Loading {0}".format(pathToDirectory))
         try:
-            p = phenotyper.Phenotyper.LoadFromSate(pathToDirectory)
+            p = phenotyper.Phenotyper.LoadFromState(pathToDirectory)
         except IOError:
             self._logger.error("Phenotyper reported IOError, bad path?")
             p = None
@@ -90,6 +98,7 @@ class Controller(controller_generic.Controller):
             self._logger.error("Project is corrupt or missing")
             return False
 
+        self._model['reference-positions'] = None
         self._model['phenotyper'] = p
         self._model['phenotyper-path'] = pathToDirectory
 
@@ -132,9 +141,8 @@ class Controller(controller_generic.Controller):
                 annotateFit=self._model['showFitValue'],
                 annotatePosition=not(self._model['multiSelecting']),
                 annotatePhenotypeValue=not(self._model['multiSelecting']),
-                fig=fig,
-                figClear=False,
-                showFig=False)
+                drawable=fig,
+                clearDrawable=False)
 
     def getPhenotypes(self):
 
@@ -412,14 +420,42 @@ class Controller(controller_generic.Controller):
             self._model['reference-positions'][self._model['plate']] = \
                 self._model['subplateSelected'].copy()
 
-    def normalize(self):
+    def getExperimentToReferenceCorrelation(self):
 
-        normalizedPhenotypes = (phenotyper.Phenotyper.PHEN_GT_VALUE,)
-        """
-                                phenotyper.Phenotyper.PHEN_LAG,
-                                phenotyper.Phenotyper.PHEN_YIELD)
-        """
-        log = self._model['norm-alg-in-log']
+        s = self._model['norm-smoothing']
+        if (s is None):
+            s = 4
+
+        Kref = self._model['reference-positions']
+        phenotypes = self.getPhenotypesToBeNormed()
+
+
+        ref = sub_plates.SubPlates(phenotypes, kernels=Kref)
+
+        outcome = np.zeros((ref.shape[0], 4, ref.shape[-1])) * np.inf
+
+        for idPl in xrange(outcome.shape[0]):
+
+            expPos = zip(*np.where(Kref[idPl] == np.False_))
+
+            for idSP, offset in enumerate(expPos):
+
+                subPlate = phenotypes[idPl][offset[0]::2, offset[1]::2]
+
+                for idPh in xrange(outcome.shape[-1]):
+
+                    R = gaussian_filter(ref[idPl][..., idPh], sigma=s).ravel()
+                    S = gaussian_filter(subPlate[..., idPh], sigma=s).ravel()
+                    M = np.logical_and(np.isfinite(R), np.isfinite(S))
+
+                    outcome[idPl, idSP, idPh] = pearsonr(R[M], S[M])[0]
+
+        print outcome
+
+        return np.ma.masked_invalid(outcome)
+
+
+    def getPhenotypesToBeNormed(self, log=False):
 
         aCopy = []
 
@@ -428,14 +464,21 @@ class Controller(controller_generic.Controller):
         for p in self._model['phenotyper'].phenotypes:
 
             if isinstance(p, np.ma.masked_array):
-                aCopy.append(p[..., normalizedPhenotypes].filled().copy())
+                aCopy.append(p[..., self.NORMALIZATION_PHENOTYPES].filled().copy())
             else:
-                aCopy.append(p[..., normalizedPhenotypes].copy())
+                aCopy.append(p[..., self.NORMALIZATION_PHENOTYPES].copy())
 
         if log:
             aCopy = [np.log2(p) for p in aCopy]
 
-        phenotypes = data_bridge.Data_Bridge(np.array(aCopy))
+        return data_bridge.Data_Bridge(np.array(aCopy))
+
+    def normalize(self):
+
+        m = self._model
+        log = self._model['norm-alg-in-log']
+
+        phenotypes = self.getPhenotypesToBeNormed(log=log)
 
         normInfo = {
             'ref-usage': np.ones((phenotypes.shape[0],)),
@@ -446,15 +489,26 @@ class Controller(controller_generic.Controller):
             np.zeros((phenotypes.shape[0],), dtype=np.bool),
         }
 
-        subSampler = sub_plates.SubPlates(
-            phenotypes, kernels=self._model['reference-positions'])
+        #TODO: Hack to check any
+        if m['normByExperiment'].any():
+            guidingSample = np.array([p is None and None or p.copy()
+                for p in phenotypes])
+
+            for idP in range(len(phenotypes)):
+                if phenotypes[idP] is not None:
+                    idX, idY = zip(*np.where(m['reference-positions'][idP]))[0]
+                    guidingSample[idP][idX::2, idY::2] = np.nan
+                            
+        else:
+            guidingSample = sub_plates.SubPlates(
+                phenotypes, kernels=m['reference-positions'])
 
         #If using initial values in norm
-        if self._model['norm-use-initial-values']:
+        if m['norm-use-initial-values']:
             iVals = np.array([
                 (p is None and None or
                  np.log2(p[..., [phenotyper.Phenotyper.PHEN_INIT_VAL_C]]))
-                for p in self._model['phenotyper'].phenotypes])
+                for p in m['phenotyper'].phenotypes])
 
             #np.save("qc_ivals.npy", iVals)
 
@@ -467,21 +521,21 @@ class Controller(controller_generic.Controller):
             iParamGuesses = np.ones((len(iVals) * 2,), dtype=np.float)
 
         #If user has missed dubious positions they are filtered out
-        if self._model['norm-outlier-iterations'] > 0:
-            for idM in range(len(normalizedPhenotypes)):
+        if m['norm-outlier-iterations'] > 0:
+            for idM in range(len(self.NORMALIZATION_PHENOTYPES)):
                 norm.applyOutlierFilter(
-                    subSampler, measure=idM,
-                    k=self._model['norm-outlier-k'],
-                    p=self._model['norm-outlier-p'],
-                    maxIterations=self._model['norm-outlier-iterations'])
+                    guidingSample, measure=idM,
+                    k=m['norm-outlier-k'],
+                    p=m['norm-outlier-p'],
+                    maxIterations=m['norm-outlier-iterations'])
 
             #If using initial values in norm pt2
-            if self._model['norm-use-initial-values']:
+            if m['norm-use-initial-values']:
                 norm.applyOutlierFilter(
                     iVals, measure=0,
-                    k=self._model['norm-outlier-k'],
-                    p=self._model['norm-outlier-p'],
-                    maxIterations=self._model['norm-outlier-iterations'])
+                    k=m['norm-outlier-k'],
+                    p=m['norm-outlier-p'],
+                    maxIterations=m['norm-outlier-iterations'])
 
                 #np.save("qc_ivals_filt.npy", iVals)
 
@@ -489,7 +543,7 @@ class Controller(controller_generic.Controller):
         else:
             self._logger.info("Normalization: Outlier filter skipped")
 
-        for pId, plate in enumerate(subSampler):
+        for pId, plate in enumerate(guidingSample):
 
             rPlate = plate.ravel()
             rPlateFinite = rPlate[np.isfinite(rPlate)]
@@ -498,14 +552,14 @@ class Controller(controller_generic.Controller):
                 float(rPlate.size)
 
             normInfo['ref-usage-warning'][pId] = normInfo['ref-usage'][pId] < \
-                self._model['norm-ref-usage-threshold']
+                m['norm-ref-usage-threshold']
 
             normInfo['ref-CV'][pId] = rPlateFinite.std() / rPlateFinite.mean()
             normInfo['ref-CV-warning'][pId] = normInfo['ref-CV'][pId] > \
-                self._model['norm-ref-CV-threshold']
+                m['norm-ref-CV-threshold']
 
         #If using initial values in norm pt3
-        if self._model['norm-use-initial-values']:
+        if m['norm-use-initial-values']:
             iParams = leastsq(norm.IPVresidue, iParamGuesses,
                               args=(iVals, phenotypes))[0]
             #print "Scalings", iParams
@@ -531,15 +585,25 @@ class Controller(controller_generic.Controller):
             #np.save("qc_debug_P.npy", phenotypes)
 
             #Data array
-            NA = norm.getControlPositionsArray(
-                phenotypes,
-                controlPositionKernel=subSampler.kernels)
+            #TODO: Hack to check any
+            if m['normByExperiment'].any():
+                NA = guidingSample
+                #TODO: Hack, only checks removed on generation-time
+                refPositions = [np.where(np.isfinite(
+                    p[..., self.NORMALIZATION_PHENOTYPES[0]])) for p in NA]
+            else:
+                NA = norm.getControlPositionsArray(
+                    phenotypes,
+                    controlPositionKernel=guidingSample.kernels)
+                refPositions = None
 
             #np.save("qc_debug_NA.npy", NA)
 
             #Get smothened norm surface
             N = norm.getNormalisationSurfaceWithGridData(
                 NA, useAccumulated=False,
+                controlPositionsCoordinates=refPositions,
+                controlPositionKernel=m['reference-positions'],
                 medianSmoothing=self._model['norm-outlier-fillSize'],
                 gaussSmoothing=self._model['norm-smoothing'],
                 normalisationSequence=self._model['norm-spline-seq'])
@@ -575,18 +639,20 @@ class Controller(controller_generic.Controller):
             phenotyper.Phenotyper.NAMES_OF_PHENOTYPES)
         self._model['normalized-phenotype-names'] = {
             i: phenotyper.Phenotyper.NAMES_OF_PHENOTYPES[k] for i, k in
-            enumerate(normalizedPhenotypes)}
+            enumerate(self.NORMALIZATION_PHENOTYPES)}
         """
         i: name for i, (val, name) in enumerate(
             phenotyper.Phenotyper.NAMES_OF_PHENOTYPES.items())
-        if val in normalizedPhenotypes}
+        if val in self.NORMALIZATION_PHENOTYPES}
         """
         if self._model['debug-mode']:
-            lNormed = len(normalizedPhenotypes)
+            lNormed = len(self.NORMALIZATION_PHENOTYPES)
             self._model['normalized-phenotype-names'].update(
                 {k + lNormed: "surface for " + v for k, v in
                  self._model['normalized-phenotype-names'].items()})
 
         self._view.get_stage().updateAvailablePhenotypes()
+
+        print normInfo
 
         return normInfo

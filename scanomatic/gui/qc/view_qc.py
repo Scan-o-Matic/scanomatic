@@ -153,8 +153,12 @@ class QC_Stage(gtk.VBox):
         self._buttonLoadMetaData = gtk.Button(self._model['button-load-meta'])
         self._buttonLoadMetaData.connect("clicked", self._loadMetaData)
 
+        self._loadedDirectory = gtk.Label("")
+        self._loadedDirectory.set_ellipsize(pango.ELLIPSIZE_START)
+        
         hbox.pack_start(self._buttonLoadData, expand=False, fill=False)
         hbox.pack_start(self._buttonLoadMetaData, expand=False, fill=False)
+        hbox.pack_start(self._loadedDirectory, expand=True, fill=True)
         self.pack_start(hbox, expand=False, fill=False)
 
         self._widgets_require_data.add(self._buttonLoadMetaData)
@@ -484,6 +488,16 @@ class QC_Stage(gtk.VBox):
 
         if isDebug:
 
+            self._toggleNormByExperiment = gtk.CheckButton(
+                self._model['norm-by-experiment-label'])
+            self._toggleNormByExperiment.set_active(
+                self._model['normByExperiment'][0])
+            self._toggleNormByExperiment.connect(
+                "toggled", self._setToggleNormByExperiment)
+            self._widgets_require_references.add(self._toggleNormByExperiment)
+            vbox2.pack_start(self._toggleNormByExperiment,
+                             expand=False, fill=False)
+
             self._toggleAlgInLog = gtk.CheckButton(
                 self._model['norm-alg-in-log-text'])
             self._toggleAlgInLog.set_active(
@@ -666,6 +680,12 @@ class QC_Stage(gtk.VBox):
                                        gtk.STOCK_DIALOG_ERROR)
 
         return v
+
+    def _setToggleNormByExperiment(self, widget):
+
+        self._model['normByExperiment'][
+                self._model['plate']] = widget.get_active()
+        self._controller.getExperimentToReferenceCorrelation()
 
     def _setToggleLogInAlg(self, widget):
 
@@ -1057,6 +1077,9 @@ class QC_Stage(gtk.VBox):
                         self._setReferences()
                         self._HeatMapInfo.set_text(
                             self._model['loaded-text'])
+
+                        self._loadedDirectory.set_text(
+                                self._model['loadedName'])
 
                     else:
 
