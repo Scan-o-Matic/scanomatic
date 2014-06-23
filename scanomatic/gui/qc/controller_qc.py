@@ -332,14 +332,16 @@ class Controller(controller_generic.Controller):
     def guessBestColumn(self):
 
         MD = self._model['meta-data']
-        CR = MD[self._model['plate']]
+        p = self._model['plate']
+        CR = MD[p]
 
-        hRow = MD.getHeaderRow(self._model['plate'])
+        hRow = MD.getHeaderRow(p)
 
         if CR.full == MD.PLATE_PARTIAL:
 
             rows = [
-                CR(*pos) for pos in [(0, 0), (1, 0), (0, 1), (1, 1)]]
+                CR(*pos) for pos in [(p, 0, 0), (p, 1, 0),
+                                     (p, 0, 1), (p, 1, 1)]]
 
             allowedCols = min(len(r) for r in rows if rows is not None)
 
@@ -351,7 +353,7 @@ class Controller(controller_generic.Controller):
 
         for i, h in enumerate(hRow):
 
-            if h.lower().rstrip("s") in ['strain', 'specie', 'organism',
+            if h.lower().rstrip("s") in ['strain', 'specieis', 'organism',
                                          'construct', 'mutation', 'content']:
 
                 self._model['meta-data-info-column'] = i
