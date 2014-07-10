@@ -279,6 +279,94 @@ class Meta_Data_Base(object):
                 for row in self._data[idPlate]:
                     row.append(columnData[self._sheetReadOrder.index(idPlate)])
 
+    def find(self, key, exact=True):
+        """Generate coordinate tuples for where key matches meta-data
+
+        Parameters
+        ----------
+
+        key : str or list
+            Strain meta-data to look for
+
+        exact : bool, optional
+            If key needs to fully match meta-data (default) or if it is
+            sufficient that key exists in meta-data.
+
+        Returns
+        -------
+
+        generator
+            Each item being a (plate, row, column)-tuple.
+        """
+
+        for coord in self.generateCoordinates():
+
+            if exact and key == self(*coord):
+                yield coord
+            elif not exact and key in self(*coord):
+                yield coord
+
+    def sliceByFound(self, obj, key, exact=True, plates=None):
+        """Produces a slice of passed object according to found key possitions.
+
+        Note:: This only works with four uniform plates.
+
+        Parameters
+        ----------
+
+        obj : str or numpy.ndarray-like
+            If string is passed and such an object exists on self, 
+
+        key : str or list
+            Strain meta-data to look for
+
+        exact : bool, optional
+            If key needs to fully match meta-data (default) or if it is
+            sufficient that key exists in meta-data.
+
+        plates : tuple, optional
+            A tuple of plate indices to include in searching for the key.
+            If not supplied, all plates are searched (default).
+
+        Returns
+        -------
+
+        obj-slice
+            A slice out of `obj` for the indices where key was matching.
+
+        Raises
+        ------
+
+        AttributeError
+            If `obj` is passed as a string and no such attribute exists on 
+            `self`
+
+        TypeError
+            If `obj` is not `numpy.ndarray`-like
+
+        IndexError
+            If obj is not matching in shape `self` and index is found outside
+            the range of `obj`
+
+        KeyError
+            If key not known
+        """
+        if isinstance(obj, str):
+            if hasattr(self, obj):
+                obj = getattr(self, obj)
+            else:
+                raise AttributeError("Unknown attribute on self `{0}`".format(
+                    obj))
+    
+        vals = tuple(zip(*(c for c in self.find(key, exact=exact) if
+            plates is None and True or c[0] in plates)))
+
+        if not vals:
+            raise KeyError("The key '{0}' is not known in meta-data".format(
+                key))
+
+        return obj[vals]
+
     def findPlate(self, val, colSlice=None):
         
         if colSlice is None:
