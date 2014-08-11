@@ -306,8 +306,8 @@ def generalStatsOnStrains(uniqueDict, dataObject, measure=None):
             n=vals.size,
             nans=vals.size - finVals.size,
             mean=finVals.mean(),
-            std=finVals.std(),
-            cv=finVals.std() / finVals.mean())
+            std=finVals.std(ddof=1),
+            cv=finVals.std(ddof=1) / finVals.mean())
 
     return _stats
 
