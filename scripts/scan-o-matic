@@ -20,6 +20,8 @@ import gtk
 import gobject
 import os
 from argparse import ArgumentParser
+import matplotlib as mpl
+mpl.rcParams['text.usetex'] = False
 
 #
 # INTERNAL DEPENDENCIES
