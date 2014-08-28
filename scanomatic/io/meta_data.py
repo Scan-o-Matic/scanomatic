@@ -15,6 +15,7 @@ __status__ = "Development"
 import odf.opendocument as opendocument
 import odf.table as table
 from odf.text import P
+from odf.element import Text
 import md5
 import os
 import copy
@@ -632,16 +633,33 @@ class Meta_Data(Meta_Data_Base):
             if lRow != maxWidth:
                 row += [fill] * (maxWidth - lRow)
 
-    def _getRowContentFromOds(self, row):
+    @staticmethod
+    def _getTextInElementFromOds(elem):
+        ret = ""
+
+        if isinstance(elem, Text):
+            ret += elem.data
+    
+        if elem.hasChildNodes():
+
+            ret += Meta_Data._getTextInElementFromOds(elem.firstChild)
+
+        if elem.nextSibling:
+            ret += Meta_Data._getTextInElementFromOds(elem.nextSibling)
+
+        return ret
+
+    @staticmethod
+    def _getRowContentFromOds(row):
 
         dataRow = []
         for tc in row.getElementsByType(table.TableCell):
-            ps = tc.getElementsByType(P)
-            if (len(ps)) == 0:
+            E = tc.getElementsByType(P)
+            if (len(E)) == 0:
                 dataRow.append(u'')
             else:
                 dataRow.append(u', '.join(
-                    [pps.firstChild.data for pps in ps]))
+                    Meta_Data._getTextInElementFromOds(e) for e in E))
 
         while len(dataRow) > 0 and dataRow[-1] == u'':
             dataRow.pop()
