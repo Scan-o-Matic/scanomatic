@@ -669,9 +669,8 @@ class Meta_Data(Meta_Data_Base):
                         "Could not read Excel file '{0}'".format(path))
                     continue
 
-                sheetsGenerator = (doc.parse(n).fillna(value=u'') for n in doc.sheet_names)
+                sheetsGenerator = (doc.parse(n, header=None).fillna(value=u'') for n in doc.sheet_names)
                 rowsLister = lambda df: list(r.tolist() for i, r in df.iterrows())
-                headerLister = lambda df: df.columns.tolist()
                 rowContentExtractor = lambda row: row
                 sheetNamer = lambda _ : doc.sheet_names[idSheet]
 
@@ -686,7 +685,6 @@ class Meta_Data(Meta_Data_Base):
                 sheetsGenerator = doc.getElementsByType(table.Table)
                 rowsLister = lambda sheet: sheet.getElementsByType(
                     table.TableRow)
-                headerLister = lambda sheet: None
                 rowContentExtractor = self._getRowContentFromOds
                 sheetNamer = lambda sheet : sheet.getAttribute("name")
 
@@ -721,12 +719,9 @@ class Meta_Data(Meta_Data_Base):
                     self._makeRectangle(data)
 
                     name = sheetNamer(t)
-                    sheetID = md5.new(str(time.time())).hexdigest()
+                    sheetID = md5.new(name + str(time.time())).hexdigest()
 
-                    if headerLister(t) is not None:
-                        self._headers[sheetID] = headerLister(t)
-
-                    elif matchType == Meta_Data.MATCH_PLATE:
+                    if matchType == Meta_Data.MATCH_PLATE:
 
                         self._headers[sheetID] = ["" for _ in
                                                   range(len(data[0]))]
