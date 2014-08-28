@@ -124,6 +124,7 @@ class Model(new_model_generic.Model):
         'meta-data-files': "Select Meta-Data Files",
         'meta-data-loaded': "Meta-Data Loaded!",
         'meta-data-info-column': 0,
+        'meta-data-info-columnName': "",
 
         'hover-position': 'Row {0}, Column {1}',
         'load-data-dir': "Select Directory With Data Files",
