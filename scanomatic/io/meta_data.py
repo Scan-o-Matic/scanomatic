@@ -768,7 +768,7 @@ class Meta_Data(Meta_Data_Base):
         if not(full is Meta_Data_Base.PLATE_FULL and
                 nInData == len(self._data[dataKey]) or
                 full is Meta_Data.PLATE_PARTIAL and
-                nInData * 4 == len(self._data[dataKey])):
+                nInData == 4 * len(self._data[dataKey])):
 
             self._logger.error(
                 u"Sheet {0} can't be assigned as {1}".format(
