@@ -527,9 +527,9 @@ class Meta_Data(Meta_Data_Base):
                         for j in range(4):
 
                             if j != 0:
+                                n += 1
                                 dID = self._sheetReadOrder[n]
                                 lD = len(self._data[dID])
-                                n += 1
                                 if not(lD * 4 == shape):
                                     self._logger.warning(
                                         "Meta-Data did not fill up plate")
