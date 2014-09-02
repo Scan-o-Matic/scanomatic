@@ -93,32 +93,32 @@ class SOM_RPC(object):
 
     def _main(self):
 
-        sleeps = 30.0
+        sleep = 0.51
+        i = 0
+
 
         while self._running:
 
             sleepDuration = 0.51 * 4
 
-            if (Resource_Status.check_resources()):
-                nextJob = self._queue.popHighestPriority()
-                if (nextJob is not None):
-                    if not self._jobs.add(nextJob):
-                        #TODO: should nextJob be recircled or written some
-                        #place or added to statuses
-                        pass
+            if (i == 24 and self._queue):
+                if (Resource_Status.check_resources()):
+                    nextJob = self._queue.popHighestPriority()
+                    if (nextJob is not None):
+                        if not self._jobs.add(nextJob):
+                            #TODO: should nextJob be recircled or written some
+                            #place or added to statuses
+                            pass
 
-                    sleepDuration *= 2
-                else:
-                    sleepDuration *= 20
-            elif Resource_Status.currentPasses() == 0:
-                sleepDuration *= 15
+                        i = 20
+                elif (Resource_Status.currentPasses() == 0):
+                    i = 10
 
-            self._setStatuses(self._jobs.poll())
+            self._setStatuses(self._jobs.poll(), merge=i!=24)
 
-            sleepI = 0
-            while (self._running and sleepI < sleeps):
-                sleepI += 1
-                time.sleep(sleepDuration / sleeps)
+            time.sleep(sleep)
+            i += 1
+            i %= 25
 
         self._logger.info("Main process shutting down")
         self._niceQuitProcesses()
