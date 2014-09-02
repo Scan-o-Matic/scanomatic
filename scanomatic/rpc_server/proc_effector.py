@@ -52,7 +52,7 @@ class ProcEffector(object):
         self._gateMessages = False
         self._messages = []
 
-        self._iteratorI = 0
+        self._iteratorI = None
 
     @property
     def keepAlive(self):
@@ -132,7 +132,6 @@ class ProcEffector(object):
 
     def next(self):
 
-        self._iteratorI = 0
         while self._running is False and not self._stopping:
             sleep(0.1)
             self._logger.info(
