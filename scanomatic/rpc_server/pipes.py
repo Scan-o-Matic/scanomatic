@@ -48,7 +48,7 @@ class _PipeEffector(object):
 
             response = None
             dataRecvd = self._pipe.recv()
-            self._logger.info("Pipe recieved {0}".format(dataRecvd))
+            self._logger.debug("Pipe recieved {0}".format(dataRecvd))
 
             try:
                 if dataRecvd[0] == self.REQUEST_ALLOWED:
@@ -99,7 +99,7 @@ class _PipeEffector(object):
                                 response))
 
                     else:
-                        self._logger.info("No response")
+                        self._logger.debug("No response")
 
                 except:
 
