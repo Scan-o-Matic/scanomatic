@@ -80,7 +80,12 @@ class SOM_RPC(object):
 
         self._serverStartTime = time.time()
 
-    def _setStatuses(self, statuses):
+    def _setStatuses(self, statuses, merge=False):
+
+        if merge:
+            ids = (s['id'] for s in statuses)
+            statuses = [s for s in self._statuses[1:] if s['id'] not in ids] +\
+                statuses
 
         statuses = [self.getServerStatus()] + statuses
 
