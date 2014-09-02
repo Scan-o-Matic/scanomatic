@@ -16,16 +16,23 @@ __status__ = "Development"
 from time import sleep
 
 #
+# INTERNAL DEPENDENCIES
+#
+
+import scanomatic.io.logger as logger
+
+#
 # CLASSES
 #
 
 
 class ProcEffector(object):
 
-    def __init__(self, identifier, label):
+    def __init__(self, identifier, label, loggerName="Process Effector"):
 
         self._identifier = identifier
         self._label = label
+        self._logger = logger.Logger(loggerName)
 
         self._specificStatuses = {}
         self._allowedCalls = {}
