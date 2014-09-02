@@ -20,7 +20,6 @@ import time
 #
 
 import proc_effector
-import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 import scanomatic.dataProcessing.phenotyper as phenotyper
@@ -34,10 +33,11 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
     def __init__(self, identifier, label):
 
-        self._logger = logger.Logger("Data Processor '{0}'".format(label))
         self._paths = paths.Paths()
 
-        super(PhenotypeExtractionEffector, self).__init__(identifier, label)
+        super(PhenotypeExtractionEffector, self).__init__(
+            identifier, label,
+            loggerName="Data Processor '{0}'".format(label))
 
         self._specificStatuses['progress'] = 'progress'
         self._specificStatuses['runTime'] = 'runTime'
