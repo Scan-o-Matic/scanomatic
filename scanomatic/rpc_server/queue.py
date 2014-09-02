@@ -37,6 +37,9 @@ class Queue(object):
     TYPE_REBUILD_PROJECT = 0
     TYPE_IMAGE_ANALSYS = 1
     TYPE_FEATURE_EXTRACTION = 2
+    TYPES = {TYPE_REBUILD_PROJECT: "Rebuild Project",
+             TYPE_IMAGE_ANALSYS: "Analysis",
+             TYPE_FEATURE_EXTRACTION: "Feature Extraction"}
 
     def __init__(self):
 
@@ -88,24 +91,27 @@ class Queue(object):
 
         try:
             return (jobId, self._queue.get(jobId, "label"),
+                    Queue.TYPES[self._queue.getint(jobId, "type")],
                     self._queue.getint(jobId, "priority"))
         except:
             self._logger.warning(
                 "Problem extracting info on job {0}, '{1}'".format(
                     jobId,
                     ["No queue", "Id not in queue", "No label",
-                     "No prio", "Other"][
+                     "No prio", "Unknown job type", "Other"][
                          self._queue is None and 0 or
                          self._queue.has_section(jobId) is False and 1 or
                          self._queue.has_option(jobId, "label") is False and 2
                          or self._queue.has_option(jobId, "priority") is False
-                         and 3 or 4]))
+                         and 3 or
+                         self._queue.has_option(jobId, "type") and 4 or 5
+                         ]))
             return None
 
     def getJobsInQueue(self):
 
         l = [self.getJobInfo(j) for j in self._queue.sections()]
-        return sorted([i for i in l if i is not None], key=itemgetter(2),
+        return sorted([i for i in l if i is not None], key=itemgetter(3),
                       reverse=True)
 
     def popHighestPriority(self):

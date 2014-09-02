@@ -392,7 +392,8 @@ class SOM_RPC(object):
 
                 0 --    (str) The job identifier
                 1 --    (str) The job label / description
-                2 --    (int) The job's priority ranking. Jobs are started
+                2 --    (str) Job type
+                3 --    (int) The job's priority ranking. Jobs are started
                         based on their prioriy. When enqueued they are given
                         a priority based on the job type. Over time, the job
                         accumulates priority such that no job should get
