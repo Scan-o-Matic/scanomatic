@@ -47,7 +47,7 @@ class Image_Data(object):
             return
 
         if measure is None:
-            measure = ('blob', 'sum')
+            measure = ('blob', 'pixelsum')
 
         plates = [None] * nPlates
         for pID in xrange(nPlates):
@@ -65,9 +65,14 @@ class Image_Data(object):
                         if cell is not None:
                             if isinstance(measure, int):
                                 plates[pID][id1, id2] = cell[measure]
-                            else:
+                            elif (measure[0] in cell and 
+                                    measure[1] in cell[measure[0]]):
                                 plates[pID][id1, id2] = cell[
                                     measure[0]][measure[1]]
+                            else:
+                                Image_Data._LOGGER.error(
+                                    "{0} does not have {1} data".format(
+                                        cell, measure))
 
         Image_Data._LOGGER.info("Saved Image Data '{0}' with {1} plates".format(
             path, len(plates)))
