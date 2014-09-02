@@ -39,11 +39,12 @@ import scanomatic.imageAnalysis.analysis_image as analysis_image
 
 class AnalysisEffector(proc_effector.ProcEffector):
 
-    def __init__(self):
+    def __init__(self, identifier, label):
 
         #sys.excepthook = support.custom_traceback
 
-        super(AnalysisEffector, self).__init__(loggerName="Analysis Effector")
+        super(AnalysisEffector, self).__init__(identifier, label,
+                                               loggerName="Analysis Effector")
 
         self._curImageId = -1
 
