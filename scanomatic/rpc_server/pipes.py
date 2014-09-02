@@ -46,6 +46,7 @@ class _PipeEffector(object):
 
         while self._pipe.poll():
 
+            response = None
             dataRecvd = self._pipe.recv()
             self._logger.info("Pipe recieved {0}".format(dataRecvd))
 
