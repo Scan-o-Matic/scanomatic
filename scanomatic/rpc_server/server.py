@@ -161,9 +161,9 @@ class SOM_RPC(object):
         if (self._mainThread is None and self._server is None):
             return
 
-        self._running = False
-        self._shutDownComplete = False
         self._forceJobsToStop = forceJobsToStop
+        self._shutDownComplete = False
+        self._running = False
         while (self._mainThread is not None and
                 self._mainThread.is_alive()):
 
