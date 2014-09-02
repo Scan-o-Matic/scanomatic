@@ -33,6 +33,7 @@ class ProcEffector(object):
         self._identifier = identifier
         self._label = label
         self._logger = logger.Logger(loggerName)
+        self._type = "Generic"
 
         self._specificStatuses = {}
         self._allowedCalls = {}
@@ -91,6 +92,7 @@ class ProcEffector(object):
 
         return dict([('id', self._identifier),
                      ('label', self._label),
+                     ('type', self._type),
                      ('running', self._running),
                      ('paused', self._paused),
                      ('stopping', self._stopping),

@@ -46,6 +46,7 @@ class AnalysisEffector(proc_effector.ProcEffector):
         super(AnalysisEffector, self).__init__(identifier, label,
                                                loggerName="Analysis Effector")
 
+        self._type = "Analysis"
         self._config = None
         self._startTime = None
         self._metaData = {}
