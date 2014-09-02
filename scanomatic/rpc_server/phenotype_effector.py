@@ -117,6 +117,10 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
         if not self._allowStart:
             return super(PhenotypeExtractionEffector, self).next()
 
+        if self._stopping:
+            self._progress = None
+            self._running = False
+
         if self._iteratorI == 0:
             self._startTime = time.time()
 
@@ -142,12 +146,13 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
                 "Resume {0}".format(self._running))
 
         if (not self._running):
-            self._curPhenotyper.savePhenotypes(
-                path=os.path.join(self._analysisBase,
-                                  self._paths.phenotypes_raw_csv),
-                askOverwrite=False)
+            if (not self._stopping):
+                self._curPhenotyper.savePhenotypes(
+                    path=os.path.join(self._analysisBase,
+                                    self._paths.phenotypes_raw_csv),
+                    askOverwrite=False)
 
-            self._curPhenotyper.saveState(self._analysisBase,
-                                          askOverwrite=False)
+                self._curPhenotyper.saveState(self._analysisBase,
+                                            askOverwrite=False)
 
             raise StopIteration
