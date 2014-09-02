@@ -104,16 +104,16 @@ class Jobs(object):
     def poll(self):
 
         statuses = []
+        jobKeys = self.activeJobs
 
-        jobKeys = list(self._jobs.keys())
         for job in jobKeys:
 
             curJob = self._jobs[job]
-            if curJob.is_alive():
+            if not self._forcingStop:
                 curJob.pipe.poll()
-            elif not self._forcingStop:
-                del self._jobs[job]
-                self._jobsData.remove_section(job)
+                if not curJob.is_alive():
+                    del self._jobs[job]
+                    self._jobsData.remove_section(job)
 
             statuses.append(curJob.status)
 
