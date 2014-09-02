@@ -423,6 +423,68 @@ class SOM_RPC(object):
 
         kwargs : dict, optional
             Further settings to be passed to analysis effector upon setup
+            All optional
+
+            configFile: str
+                Path to file with setup-instructions.
+                Any instructions passed while creating the job will
+                overwrite the instructions in the file
+
+            pinningMatrices: list
+                List of tuples, one per plate, for pinning formats
+                Default: What is specified in first pass file
+
+            localFixture : bool
+                If fixture config in directory of the input-file should be
+                used.
+                Default: False
+
+            lastImage: int
+                Index of last image to be included in analysis,
+                all images with higher index omitted
+                Default: None (all images included)
+
+            ouputDirectory: str
+                Relative path of output directory for the analysis
+                Default: analysis
+
+            watchPosition: ???
+                If a specific position should be monitored extra
+                Default: None
+                
+            gridImageIndices: list of int
+                The times for which grid-images will be produced
+                Default: last image
+
+            supressUnwatched: bool
+                If analysis of not watched positions should be omitted
+                Default: False
+
+            xmlFormat: dict
+                Configuration of xml, known features:
+                    'short', 'omit_compartments', 'omit_measures'
+                Default: short set to True, no omissions.
+
+            gridArraySettings: dict
+                Configuration of grid arryas, known features:
+                    'animation'
+                Default: animation set to False
+
+            gridSettings: dict
+                Configuration of gridding, know features:
+                    'use_utso', 'median_coeff', 'manual_threshold'
+                Default: Using utso, median coefficient at 0.99 and manual
+                threshold at 0.05
+
+            gridCellSettings: dict
+                Configuration of grid cells, know features:
+                    'blob_detect'
+                Default: Use 'default' blob detection
+
+            gridCorrection: list of tuples
+                Corrects grids by shifting detected positions by
+                indicated amounts
+                Default: None
 
         Returns
         =======
