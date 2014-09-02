@@ -56,6 +56,7 @@ class SOM_RPC(object):
         self._server = None
         self._running = False
         self._forceJobsToStop = False
+        Resource_Status.loggingLevel('ERROR')
 
     def _startServer(self):
 
