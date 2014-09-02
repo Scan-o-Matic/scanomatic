@@ -37,7 +37,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
         super(PhenotypeExtractionEffector, self).__init__(
             identifier, label,
-            loggerName="Data Processor '{0}'".format(label))
+            loggerName="Phenotype Extractor '{0}'".format(label))
 
         self._specificStatuses['progress'] = 'progress'
         self._specificStatuses['runTime'] = 'runTime'
