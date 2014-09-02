@@ -54,8 +54,7 @@ class Jobs(object):
 
         for job in self._jobs:
 
-            #TODO: This is spoof code:
-            if self._jobs[job].status["running"] is True:
+            if self._jobs[job].is_alive():
                 return True
 
         return False
