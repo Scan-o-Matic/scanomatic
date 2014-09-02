@@ -1071,11 +1071,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             if ('y' not in raw_input("Overwrite existing file? (y/N)").lower()):
                 return False
 
-        #SAVES OUT DATA AS NPY AS WELL
-        np.save(path + ".npy", data)
-
-        fh = open(path, 'w')
-
         headers = ('Plate', 'Row', 'Column')
 
         #USING RAW PHENOTYPE DATA
@@ -1087,45 +1082,52 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._logger.info("Using raw phenotypes")
             data = self.phenotypes
 
-        #HEADER ROW
-        metaData = self._metaData
-        allHeadersSame = True
-        metaDataHeaders = tuple()
+        if data is None:
+            self._logger.warning("Could not save data since there is no data")
+            return False
 
-        if metaData is not None:
-            self._logger.info("Using meta-data")
-            metaDataHeaders = metaData.getHeaderRow(0)
-            for plateI in range(1, len(data)):
-                if metaDataHeaders != metaData.getHeaderRow(plateI):
-                    allHeadersSame = False
-                    break
-            metaDataHeaders = tuple(metaDataHeaders)
+        with open(path, 'w') as fh:
 
-        if allHeadersSame:
-            fh.write("{0}{1}".format(delim.join(
-                map(str, headers + metaDataHeaders + dataHeaders)), newline))
+            #SAVES OUT DATA AS NPY AS WELL
+            np.save(path + ".npy", data)
 
-        #DATA
-        for plateI, plate in enumerate(data):
+            #HEADER ROW
+            metaData = self._metaData
+            allHeadersSame = True
+            metaDataHeaders = tuple()
 
-            if not allHeadersSame:
+            if metaData is not None:
+                self._logger.info("Using meta-data")
+                metaDataHeaders = metaData.getHeaderRow(0)
+                for plateI in range(1, len(data)):
+                    if metaDataHeaders != metaData.getHeaderRow(plateI):
+                        allHeadersSame = False
+                        break
+                metaDataHeaders = tuple(metaDataHeaders)
+
+            if allHeadersSame:
                 fh.write("{0}{1}".format(delim.join(
-                    map(str, headers + tuple(metaData.getHeaderRow(plateI)) +
-                        dataHeaders)), newline))
+                    map(str, headers + metaDataHeaders + dataHeaders)), newline))
 
-            for idX, X in enumerate(plate):
+            #DATA
+            for plateI, plate in enumerate(data):
 
-                for idY, Y in enumerate(X):
+                if not allHeadersSame:
+                    fh.write("{0}{1}".format(delim.join(
+                        map(str, headers + tuple(metaData.getHeaderRow(plateI)) +
+                            dataHeaders)), newline))
 
-                    if metaData is None:
-                        fh.write("{0}{1}".format(delim.join(map(
-                            str, [plateI, idX, idY] + Y.tolist())), newline))
-                    else:
-                        fh.write("{0}{1}".format(delim.join(map(
-                            str, [plateI, idX, idY] + metaData(plateI, idX, idY)
-                            + Y.tolist())), newline))
+                for idX, X in enumerate(plate):
 
-        fh.close()
+                    for idY, Y in enumerate(X):
+
+                        if metaData is None:
+                            fh.write("{0}{1}".format(delim.join(map(
+                                str, [plateI, idX, idY] + Y.tolist())), newline))
+                        else:
+                            fh.write("{0}{1}".format(delim.join(map(
+                                str, [plateI, idX, idY] + metaData(plateI, idX, idY)
+                                + Y.tolist())), newline))
 
         self._logger.info("Saved csv absolute phenotypes to {0}".format(
             path))
