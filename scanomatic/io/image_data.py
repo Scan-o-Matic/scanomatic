@@ -106,7 +106,8 @@ class Image_Data(object):
                                                        currentData.size)]
 
         currentData[imageIndex] = imageMetaData['Time']
-        np.save(Image_Data.path2dataPathTuple(path, times=True), currentData)
+        np.save(os.path.join(*Image_Data.path2dataPathTuple(path, times=True)),
+                currentData)
 
     @staticmethod
     def writeTimesFromXML(path, xmlObject):
