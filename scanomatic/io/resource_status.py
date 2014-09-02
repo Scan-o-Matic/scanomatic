@@ -34,6 +34,10 @@ class Resource_Status(object):
 
     _passes = 0
 
+    @classmethod
+    def loggingLevel(cls, val):
+        cls._LOGGER.level = val
+
     @staticmethod
     def currentPasses():
         return Resource_Status._passes
