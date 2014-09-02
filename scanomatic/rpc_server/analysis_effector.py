@@ -41,10 +41,9 @@ class AnalysisEffector(proc_effector.ProcEffector):
 
     def __init__(self):
 
-        self._logger = logger.Logger("Analysis Effector")
         #sys.excepthook = support.custom_traceback
 
-        super(AnalysisEffector, self).__init__()
+        super(AnalysisEffector, self).__init__(loggerName="Analysis Effector")
 
         self._curImageId = -1
 
