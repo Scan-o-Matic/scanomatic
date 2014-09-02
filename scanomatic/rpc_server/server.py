@@ -130,9 +130,13 @@ class SOM_RPC(object):
         self._logger.info("Nice-quitting forcing={0}, jobs running={1}".format(
             self._forceJobsToStop, self._jobs.running))
 
+        i = 0
         while self._forceJobsToStop and self._jobs.running:
             self._jobs.forceStop = True
-            self._logger.info("Waiting for jobs to terminate")
+            if i == 0:
+                self._logger.info("Waiting for jobs to terminate")
+            i += 1
+            i %= 30
             time.sleep(0.1)
 
         self._shutDownComplete = True
