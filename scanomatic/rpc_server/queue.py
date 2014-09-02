@@ -49,6 +49,10 @@ class Queue(object):
             self._logger.info("No queue existing, creating new empy")
             self._queue.write(open(self._paths.rpc_queue, 'w'))
 
+    def __nonzero__(self):
+
+        return self._queue.sections() != []
+
     def writeUpdates(self):
 
         self._queue.write(open(self._paths.rpc_queue, 'w'))
