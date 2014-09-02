@@ -152,6 +152,7 @@ class ChildPipeEffector(_PipeEffector):
 
         if (procEffector is None):
             self._procEffector = None
+            self._allowedCalls = {}
         else:
             self.procEffector = procEffector
 
