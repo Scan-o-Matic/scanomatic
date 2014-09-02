@@ -237,11 +237,15 @@ class SOM_RPC(object):
         job = self._jobs[jobID]
         if job is not None:
             try:
-                return job.pipe.send(title, **kwargs)
+                ret = job.pipe.send(title, **kwargs)
+                self._logger.info("The job {0} got message {1}".format(
+                    job.identifier, title))
+                return ret
             except AttributeError:
                 self._logger.error("The job {0} has no valid call {1}".format(
-                    jobID, title))
+                    job.identifier, title))
                 return False
+            return True
         else:
             self._logger.error("The job {0} is not running".format(jobID))
             return False
