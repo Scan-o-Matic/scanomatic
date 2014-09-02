@@ -47,6 +47,7 @@ class _PipeEffector(object):
         while self._pipe.poll():
 
             dataRecvd = self._pipe.recv()
+            self._logger.info("Pipe recieved {0}".format(dataRecvd))
 
             try:
                 if dataRecvd[0] == self.REQUEST_ALLOWED:
@@ -60,6 +61,8 @@ class _PipeEffector(object):
                     response = None
                 else:
                     if self._allowedRemoteCalls is None:
+                        self._logger.info(
+                            "No allowed calls")
                         self._sendOwnAllowedKeys()
 
                     response = self._allowedCalls[dataRecvd[0]](*dataRecvd[1],
@@ -78,13 +81,24 @@ class _PipeEffector(object):
 
             else:
 
+                """
+                self._logger.critical("Unforseen error calling '{0}'".format(
+                    dataRecvd))
+                """
                 try:
                     if response is not None:
                         if (isinstance(response, dict) and
                                 dataRecvd[0] == "status"):
                             self.send(dataRecvd[0], **response)
+                            self._logger.info("Sent status response {0}".format(
+                                response))
                         else:
                             self.send(response[0], *response[1], **response[2])
+                            self._logger.info("Sent response {0}".format(
+                                response))
+
+                    else:
+                        self._logger.info("No response")
 
                 except:
 
@@ -124,6 +138,7 @@ class ParentPipeEffector(_PipeEffector):
 
     def _setStatus(self, *args, **kwargs):
 
+        #self._logger.info("Pipe made its status {0}".format(kwargs))
         self._status = kwargs
 
 
