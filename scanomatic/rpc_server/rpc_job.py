@@ -76,7 +76,7 @@ class RPC_Job(Process):
             _l.info("Will not recieve any more communications")
 
         jobRunning = True
-        _l = logger.Logger("RPC Job")
+        _l = logger.Logger("RPC Job (proc-side)")
 
         pipeEffector = pipes.ChildPipeEffector(
             self._childPipe, self._target(self._identifier, self._label))
