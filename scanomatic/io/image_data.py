@@ -102,8 +102,9 @@ class Image_Data(object):
             currentData = np.array([], dtype=np.float)
 
         if not (imageIndex < currentData.size):
-            currentData = np.r_[currentData, [None] * (1 + imageIndex -
-                                                       currentData.size)]
+            currentData = np.r_[
+                currentData,
+                [None] * (1 + imageIndex - currentData.size)].astype(np.float)
 
         currentData[imageIndex] = imageMetaData['Time']
         np.save(os.path.join(*Image_Data.path2dataPathTuple(path, times=True)),
