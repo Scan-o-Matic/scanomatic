@@ -418,12 +418,21 @@ class SOM_RPC(object):
 
         if userID == self._admin:
 
-            if (not(isinstance(runDirectory, str)) or
-                    os.path.abspath(runDirectory) != runDirectory):
+            if (not(isinstance(runDirectory, str))):
+                self._logger.error(
+                    ("Job '{0}' can't be started, " +
+                     "invalid runDirectory {1}").format(
+                         label, runDirectory))
+
+                return False
+
+            runDirectory = runDirectory.rstrip("/")
+
+            if (os.path.abspath(runDirectory) != runDirectory):
 
                 self._logger.error(
                     "The path for the feature extraction " +
-                    "job '{0}' was not absolute".format(label))
+                    "job '{0}' was not absolute path".format(label))
 
                 return False
 
