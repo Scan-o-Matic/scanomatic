@@ -66,10 +66,11 @@ class Jobs(object):
     @forceStop.setter
     def forceStop(self, value):
 
-        if value is True and self._forcingStop is False:
+        if value is True:
             self._forcingStop = True
-            #TODO: Stop all job
-            pass
+            for job in self._jobs:
+                if self._jobs[job].is_alive():
+                    self._jobs[job].pipe.send("stop")
 
         self._forcingStop = value
 
