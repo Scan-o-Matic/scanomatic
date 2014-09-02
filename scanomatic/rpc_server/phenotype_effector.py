@@ -121,7 +121,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
             self._progress = None
             self._running = False
 
-        if self._iteratorI == 0:
+        if self._iteratorI is None:
             self._startTime = time.time()
 
             curPhenotyper = phenotyper.Phenotyper(
