@@ -122,6 +122,9 @@ class SOM_RPC(object):
 
     def _niceQuitProcesses(self):
 
+        self._logger.info("Nice-quitting forcing={0}, jobs running={1}".format(
+            self._forceJobsToStop, self._jobs.running))
+
         while self._forceJobsToStop and self._jobs.running:
             self._jobs.forceStop = True
             self._logger.info("Waiting for jobs to terminate")
