@@ -46,14 +46,15 @@ class AnalysisEffector(proc_effector.ProcEffector):
         super(AnalysisEffector, self).__init__(identifier, label,
                                                loggerName="Analysis Effector")
 
-        self._curImageId = -1
         self._config = None
         self._startTime = None
         self._metaData = {}
+        self._firstImg = None
 
         self._specificStatuses['progress'] = 'progress'
         self._specificStatuses['total'] = 'totalImages'
         self._specificStatuses['runTime'] = 'runTime'
+        self._specificStatuses['currentImage'] = 'curImage'
 
         self._allowedCalls['setup'] = self.setup
 
@@ -66,6 +67,14 @@ class AnalysisEffector(proc_effector.ProcEffector):
             return time.time() - self._startTime
 
     @property
+    def curImage(self):
+
+        if self._iteratorI is None:
+            return -1
+
+        return self._iteratorI
+
+    @property
     def totalImages(self):
 
         if not self._allowStart or 'Images' not in self._metaData:
@@ -76,11 +85,16 @@ class AnalysisEffector(proc_effector.ProcEffector):
     @property
     def progress(self):
 
-        total = self.totalImages
-        if total > 0 and self._curImageId >= 0:
-            return total - self._curImageId - 1
+        total = float(self.totalImages)
+        if self._firstImg is None:
+            init = 0
+        else:
+            init = 1
 
-        return -1
+        if total > 0 and self._iteratorI is not None:
+            return (init + total - self._iteratorI - 1) / (total + 1)
+
+        return 0
 
     def next(self):
 
