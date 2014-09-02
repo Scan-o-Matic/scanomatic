@@ -397,6 +397,74 @@ class SOM_RPC(object):
 
         return self._queue.getJobsInQueue()
 
+    def createAnalysisJob(self, userID, inputFile, label,
+                          priority=None, kwargs={}):
+        """Enques a new analysis job.
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        inputFile : str
+            Absolute path to the first pass analysis file containing
+            the information about which images to be analysed
+
+        label : str
+            Name for the job on the server in human friendly format
+
+        priority : int, optional
+            The priority of the job, to put it at the start of the queue
+
+        kwargs : dict, optional
+            Further settings to be passed to analysis effector upon setup
+
+        Returns
+        =======
+
+        bool
+            Success of enquinig
+        """
+
+        if userID != self._admin:
+
+            self._logger.warning(
+                "User '{0}' tried to create analysis job".format(
+                    userID))
+            return False
+
+        if (os.path.abspath(inputFile) != inputFile):
+
+            self._logger.error(
+                "Job '{0}' was not started with absolute path".format(
+                    label))
+
+            return False
+
+        if (os.path.isfile(inputFile) is False):
+
+            self._logger.error(
+                ("Job '{0}' pointed to file ({1}) that doesn't exist".format(
+                    label, inputFile)))
+
+            return False
+                    
+        kwargs['inputFile'] = inputFile
+
+        self._logger.info("Adding Image Analysis {0} based on {1}".format(
+            label, inputFile))
+
+        return self._queue.add(
+            queue.Queue.TYPE_IMAGE_ANALSYS,
+            jobLabel=label,
+            priority=priority,
+            **kwargs)
+
     def createFeatureExtractJob(self, userID, runDirectory, label,
                                 priority=None, kwargs={}):
         """Enques a new feature extraction job.
