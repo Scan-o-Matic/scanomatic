@@ -110,5 +110,5 @@ class RPC_Job(Process):
                 sleep(0.29)
 
         pipeEffector.sendStatus(pipeEffector.procEffector.status())
-        t.join()
+        t.join(timeout=1)
         _l.info("Job completed")
