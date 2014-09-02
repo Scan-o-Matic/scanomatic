@@ -599,6 +599,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     def phenotypes(self):
 
         ret = []
+        if self._phenotypes is None:
+            return None
+
         for i, p in enumerate(self._phenotypes):
             if (self._removeFilter[i] is not None and p is not None):
                 ret.append(
