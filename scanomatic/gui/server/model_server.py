@@ -72,6 +72,20 @@ try updating your program""",
         'up-time': -1,
     }
 
+    _PRESETS_QUEUE = {
+        'current-queue': [],
+        'rpc-client': None,
+        'queue-title': "Jobs Queue on Scan-o-Matic Server",
+        'page-title': "Queue",
+        'queue-flush': 'Flush',
+        'queue-flushed': "Everything in queue removed",
+        'queue-flushed-refused': "Refused, probably lacking admin-permissions",
+        'queue-removed': "Job removed",
+        'queue-removed-refused': "Refused, either job not in queue or insufficient permissions",
+        'queue-item-prio': "Priority",
+        'queue-item-remove': "Remove",
+    }
+
     def serverOnline(self):
 
         c = self['rpc-client']

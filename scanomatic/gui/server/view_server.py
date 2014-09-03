@@ -19,6 +19,12 @@ import gobject
 #import pango
 
 #
+# INTERNAL DEPENDENCIES
+#
+
+import scanomatic.gui.generic.view_generic as view_generic
+
+#
 # GLOBALS
 #
 
@@ -225,9 +231,21 @@ class Server_Status(gtk.Frame):
         dialog.run()
         dialog.destroy()
 
+    def info(self, message):
+
+        dialog = gtk.MessageDialog(
+            flags=gtk.DIALOG_DESTROY_WITH_PARENT,
+            type=gtk.MESSAGE_INFO,
+            buttons=gtk.BUTTONS_OK,
+            message_format=message)
+
+        dialog.run()
+        dialog.destroy()
+
+
     def _showQueue(self, widget):
 
-        self.error(self._model['status-not-implemented-error'])
+        self._controller.showQueue()
 
     def _showJobs(self, widget):
 
@@ -236,3 +254,124 @@ class Server_Status(gtk.Frame):
     def _showScanners(self, widget):
 
         self.error(self._model['status-not-implemented-error'])
+
+class Server_Queue_Top(gtk.HBox):
+
+    def __init__(self, model, controller):
+
+        super(Server_Queue_Top, self).__init__()
+        self.pack_start(gtk.Label(model['queue-title']), True, True)
+        b = gtk.Button(model['queue-flush'])
+        self.pack_start(b, False, False)
+        b.connect("clicked", controller.clear_queue)
+
+class Queue_Item(gtk.Frame):
+
+    def __init__(self, data, callback, model):
+
+        super(Queue_Item, self).__init__(data[1])
+        self._callback = callback
+        self._jobID = data[0]
+        hbox = gtk.HBox()
+        self.add(hbox)
+
+        #TYPE
+        self._type = gtk.Label(data[2])
+        hbox.pack_start(self._type, False, False)
+
+        #PRIORITY
+        hbox.pack_start(gtk.Label(model['queue-item-prio']), True, False)
+
+        self._prio = gtk.Label(str(data[3]))
+        hbox.pack_start(self._prio, True, False)
+
+        #REMOVING
+        b = gtk.Button(model['queue-item-remove'])
+        b.connect('clicked', self._preCallback)
+        hbox.pack_start(b, False, False)
+
+        self.show_all()
+
+    def setFromData(self, data):
+
+        self._jobID = data[0]
+        self.set_label(data[1])
+        self._prio.set_text(str(data[3]))
+        self._type.set_text(data[2])
+
+    def _preCallback(self, *args):
+
+        self._callback(self._jobID)
+
+
+class Server_Queue(view_generic.Page):
+
+    def __init__(self, model, controller):
+
+        top = Server_Queue_Top(model, controller)
+        stage = gtk.VBox()
+        super(Server_Queue, self).__init__(controller, model, top=top,
+                                       stage=stage)
+
+        gobject.timeout_add(1003, self.update)
+
+    def update(self, *args):
+
+        self._controller.update()
+
+        s = self.get_stage()
+        cur = self._model['current-queue']
+        l = len(cur)
+
+        i = -1
+
+        for i, child in enumerate(s.children()):
+
+            if i < l:
+
+                child.setFromData(cur[i])
+            else:
+                s.remove(child)
+
+        for j in range(l - i - 1):
+            s.pack_start(Queue_Item(cur[j], self._controller.remove_job,
+                                    self._model),
+                         False, False)
+
+        return self._controller.visible()
+
+    def warning(self, message, yn=False):
+
+        dialog = gtk.MessageDialog(
+            flags=gtk.DIALOG_DESTROY_WITH_PARENT,
+            type=gtk.MESSAGE_WARNING,
+            buttons=yn and gtk.BUTTONS_YES_NO or gtk.BUTTONS_OK,
+            message_format=message)
+
+        val = dialog.run() in (gtk.RESPONSE_YES, gtk.RESPONSE_OK)
+        dialog.destroy()
+        return val
+
+    def error(self, message):
+
+        dialog = gtk.MessageDialog(
+            flags=gtk.DIALOG_DESTROY_WITH_PARENT,
+            type=gtk.MESSAGE_ERROR,
+            buttons=gtk.BUTTONS_OK,
+            message_format=message)
+
+        dialog.run()
+        dialog.destroy()
+
+    def info(self, message):
+
+        dialog = gtk.MessageDialog(
+            flags=gtk.DIALOG_DESTROY_WITH_PARENT,
+            type=gtk.MESSAGE_INFO,
+            buttons=gtk.BUTTONS_OK,
+            message_format=message)
+
+        dialog.run()
+        dialog.destroy()
+
+

@@ -119,3 +119,51 @@ class Controller(controller_generic.Controller):
             return model['rpc-client'].createFeatureExtractJob(path, tag)
 
         return False
+
+    def showQueue(self):
+        tc = self.get_top_controller()
+        print tc
+        if not tc.show_content_by_type(Queue_Controller):
+            tc.add_contents_by_controller(Queue_Controller(tc))
+
+
+class Queue_Controller(controller_generic.Controller):
+
+    def __init__(self, parent):
+
+        model = model_server.Model.LoadStageModel("QUEUE")
+
+        model['rpc-client'] = rpc_client.get_client(admin=True)
+
+        view = view_server.Server_Queue(model, self)
+
+        super(Queue_Controller, self).__init__(parent, view=view, model=model)
+
+    def update(self, *args):
+
+        self._model['current-queue'] = \
+            self._model['rpc-client'].getJobsInQueue()
+
+    def get_page_title(self):
+
+        return self._model['page-title']
+
+    def clear_queue(self, *args):
+
+        w = self.get_view()
+        if self._model['rpc-client'].flushQueue():
+            w.info(self._model['queue-flushed'])
+        else:
+            w.error(self._model['queue-flushed-refused'])
+
+    def remove_job(self, jobID):
+
+        w = self.get_view()
+        if self._model['rpc-client'].removeFromQueue(jobID):
+            w.info(self._model['queue-removed'])
+        else:
+            w.error(self._model['queue-removed-refused'])
+
+    def visible(self):
+
+        return self.get_top_controller().is_subcontroller(self)
