@@ -84,6 +84,14 @@ class Controller(object):
 
         self._allow_friendly_remove = True
 
+    def get_parent(self):
+
+        if self._parent is None or self._parent() is None:
+
+            raise ValueError("{0} has not parent".format(self))
+
+        return self._parent()
+
     def get_top_controller(self):
 
         if self._parent is None or self._parent() is None:
@@ -97,6 +105,10 @@ class Controller(object):
     def add_subcontroller(self, controller):
 
         self._controllers.append(controller)
+
+    def is_subcontroller(self, controller):
+
+        return controller in self._controllers
 
     def get_saved(self):
 
