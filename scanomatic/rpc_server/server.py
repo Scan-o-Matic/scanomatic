@@ -402,6 +402,84 @@ class SOM_RPC(object):
 
         return self._queue.getJobsInQueue()
 
+    def flushQueue(self, userID):
+        """Clears the queue
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        Returns
+        =======
+
+        bool
+            Success status
+
+        See Also
+        ========
+        
+        removeFromQueue
+            Remove individual job from queue
+        """
+
+        if userID != self._admin:
+
+            self._logger.warning(
+                "User '{0}' tried to flush queue".format(
+                    userID))
+
+            return False
+
+        while self._queue:
+            self._queue.popHighestPriority()
+
+        return True
+
+    def removeFromQueue(self, userID, jobID):
+        """Removes job from queue
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        jobID : str
+            The ID of job to be removed
+
+        Returns
+        =======
+
+        bool
+            Success status
+
+        See Also
+        ========
+        
+        flushQueue
+            Remove all queued jobs
+        """
+
+        if userID != self._admin:
+
+            self._logger.warning(
+                "User '{0}' tried to remove job from queue".format(
+                    userID))
+            return False
+
+        return self._queue.remove(jobID)
+
+   
     def createAnalysisJob(self, userID, inputFile, label,
                           priority=None, kwargs={}):
         """Enques a new analysis job.
