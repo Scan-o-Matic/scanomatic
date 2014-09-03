@@ -21,6 +21,31 @@ import copy
 
 class Model(object):
 
+    _PRESETS_UI = {
+
+        'start-text': 'Run',
+
+        #FIXTURES
+        'plate-label': 'Plate {0}',
+
+        'pinning-matrices': {'A: 8 x 12 (96)': (8, 12),
+                            'B: 16 x 24 (384)': (16, 24),
+                            'C: 32 x 48 (1536)': (32, 48),
+                            'D: 64 x 96 (6144)': (64, 96),
+                            '--Empty--': None},
+
+        'pinning-matrices-reversed': {(8, 12): 'A: 8 x 12 (96)',
+                            (16, 24): 'B: 16 x 24 (384)',
+                            (32, 48): 'C: 32 x 48 (1536)',
+                            (64, 96): 'D: 64 x 96 (6144)',
+                            None: '--Empty--'},
+
+        'pinning-default': (32, 48),
+
+        #ERRORS
+        'error-not-implemented': "That feature hasn't been implemented yet!"
+    }
+
     def __init__(self, presets=dict(), doCopy=True):
 
         if doCopy:
@@ -41,7 +66,7 @@ class Model(object):
 
         else:
 
-            raise KeyError
+            raise KeyError("{0} has no key '{1}'".format(self, key))
 
     def __setitem__(self, key, value):
 
@@ -63,6 +88,12 @@ class Model(object):
 
             raise ValueError("Key '{0}' unknown".format(key))
 
+    @staticmethod
+    def _MergePresets(name, preset):
+
+        return dict(hasattr(Model, name) and getattr(Model, name) or {},
+                    **preset)
+
     @classmethod
     def LoadAppModel(cls, doCopy=True):
 
@@ -72,16 +103,22 @@ class Model(object):
             raise TypeError("{0} does not support Application Models".format(
                 cls))
 
-        return cls(presets=dict(cls._PRESETS_APP.items() +
-                                cls._PRESETS_STAGE.items()),
+        return cls(
+            presets=dict(
+                Model._MergePresets("_PRESETS_APP", cls._PRESETS_APP),
+                **Model._MergePresets("_PRESETS_STAGE", cls._PRESETS_STAGE)),
                    doCopy=doCopy)
 
     @classmethod
-    def LoadStageModel(cls, doCopy=True):
+    def LoadStageModel(cls, stage='STAGE', doCopy=True):
 
-        if not(hasattr(cls, '_PRESETS_STAGE')):
 
-            raise TypeError("{0} does not support Stage Models".format(
-                cls))
+        if not(hasattr(cls, '_PRESETS_' + stage)):
 
-        return cls(presets=cls._PRESETS_STAGE, doCopy=doCopy)
+            raise TypeError("{0} does not support Stage {1} Model".format(
+                cls, stage))
+
+        return cls(
+            presets=Model._MergePresets("_PRESETS_" + stage,
+                                        getattr(cls, '_PRESETS_' + stage)),
+            doCopy=doCopy)
