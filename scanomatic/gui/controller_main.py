@@ -91,7 +91,7 @@ class Controller(controller_generic.Controller):
         self.config = app_config.Config(self.paths)
         self.fixtures = fixtures.Fixtures(self.paths, self.config)
         self.scanners = scanner.Scanners(self.paths, self.config)
-        self.server = controller_server.Controller()
+        self.server = controller_server.Controller(self)
 
         self._view.show_notebook_or_logo()
 
@@ -119,6 +119,17 @@ class Controller(controller_generic.Controller):
 
         sys.stdout.close()
         sys.stderr.close()
+
+    def show_content_by_type(self, cType):
+
+        for i, c in enumerate(self._controllers):
+
+            if isinstance(c, cType):
+
+                self._view.set_current_page(i)
+                return True
+
+        return False
 
     def add_contents_by_controller(self, c):
 
