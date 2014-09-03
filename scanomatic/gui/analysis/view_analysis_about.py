@@ -57,7 +57,6 @@ class Analysis_Top_Root(view_generic.Top):
 
         button = gtk.Button()
         button.set_label(model["analysis-top-root-project_button-text"])
-        button.set_sensitive(False)
         self.pack_start(button, False, False, PADDING_SMALL)
         button.connect("clicked", controller.set_analysis_stage, "project")
 

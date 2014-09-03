@@ -43,6 +43,7 @@ import scanomatic.io.verificationTags as verificationTags
 import scanomatic.io.logger as logger
 import scanomatic.io.project_log as project_log
 import scanomatic.io.paths as paths
+import scanomatic.io.rpc_client as rpc_client
 #from run_make_project import Make_Project
 
 #
@@ -112,7 +113,7 @@ class Analysis_Controller(controller_generic.Controller):
 
     def _get_default_model(self):
 
-        return model_analysis.get_gui_model()
+        return model_analysis.Model.LoadStageModel("UI")
 
     def _callback(self, user_data):
 
@@ -489,8 +490,7 @@ class Analysis_Extract(controller_generic.Controller):
 
         self._paths = paths.Paths()
 
-        self.set_specific_model(model_analysis.copy_model(
-            model_analysis.specific_extract))
+        self.set_specific_model(model_analysis.Model.LoadStageModel("EXTRACT"))
 
     def set_abort(self, *args):
 
@@ -577,8 +577,7 @@ class Analysis_Inspect(controller_generic.Controller):
 
     def set_analysis(self, run_file, project_name=None):
 
-        self.set_specific_model(model_analysis.copy_model(
-            model_analysis.specific_inspect))
+        self.set_specific_model(model_analysis.Model.LoadStageModel("INSPECT"))
 
         sm = self._specific_model
         sm['run-file'] = run_file
@@ -813,8 +812,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         super(Analysis_First_Pass, self).__init__(
             parent, view=view, model=model)
 
-        self.set_specific_model(model_analysis.copy_model(
-            model_analysis.specific_first))
+        self.set_specific_model(model_analysis.Model.LoadStageModel("REBUILD"))
 
         self._logger = logger.Logger("1st Pass Analysis Controller")
 
@@ -1906,8 +1904,7 @@ class Analysis_Transparency_Controller(Analysis_Image_Controller):
 
     def build_blank_specific_model(self):
 
-        self.set_specific_model(model_analysis.copy_model(
-            model_analysis.specific_transparency))
+        self.set_specific_model(model_analysis.Model.LoadStageModel("MANUAL"))
 
 
 class Analysis_Project_Controller(controller_generic.Controller):
@@ -1925,9 +1922,9 @@ class Analysis_Project_Controller(controller_generic.Controller):
             if k in sm:
                 sm[k] = kwargs[k]
 
-        if sm['analysis-project-log_file'] != '':
+        if sm['log_file'] != '':
             gobject.timeout_add(199, self.set_log_file, None,
-                                [sm['analysis-project-log_file']])
+                                [sm['log_file']])
 
     def set_abort(self, *args):
 
@@ -1935,8 +1932,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
     def build_blank_specific_model(self):
 
-        self.set_specific_model(model_analysis.copy_model(
-            model_analysis.specific_project))
+        self.set_specific_model(model_analysis.Model.LoadStageModel("PROJECT"))
 
     def start(self, *args, **kwargs):
 
@@ -1948,22 +1944,15 @@ class Analysis_Project_Controller(controller_generic.Controller):
         view.set_stage(
             view_analysis.Analysis_Stage_Project_Running(self, self._model))
 
-        a_dict = tc.config.get_default_analysis_query()
-        a_dict['-i'] = sm['analysis-project-log_file']
-        a_dict['-o'] = sm['analysis-project-output-path']
 
-        if sm['analysis-project-pinnings-active'] != 'file':
+        rpcC = rpc_client.get_client(admin=True)
 
-            pm = ""
+        rpcC.createAnalysisJob(
+            sm['log_file'],
+            sm['projectAnalysisLabel'],
+            sm['analysisProjectPrioriy'],
+            sm['analysisKwargs'])
 
-            for plate in sm['analysis-project-pinnings']:
-
-                pm += str(plate).replace(" ", "") + ":"
-
-            pm = pm[:-1]
-            a_dict["-m"] = pm
-
-        #tc.add_subprocess(gui_communicator.ANALYSIS, a_dict=a_dict)
 
     def set_log_file(self, widget, log_files=None):
 
@@ -1991,11 +1980,11 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
             if validProject:
 
-                sm['analysis-project-log_file'] = log_files[0]
-                sm['analysis-project-log_file_dir'] = \
+                sm['log_file'] = log_files[0]
+                sm['log_file_dir'] = \
                     os.sep.join(log_files[0].split(os.sep)[: -1])
 
-                sm['analysis-project-pinnings-active'] = 'file'
+                sm['pinnings-active'] = 'file'
 
                 if 'Pinning Matrices' in meta_data:
 
@@ -2014,14 +2003,14 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
                         pinning_matrices = None
 
-                sm['analysis-project-pinnings-from-file'] = pinning_matrices
-                sm['analysis-project-pinnings'] = copy.copy(pinning_matrices)
+                sm['pinnings-from-file'] = pinning_matrices
+                sm['pinnings'] = copy.copy(pinning_matrices)
 
             else:
 
-                sm['analysis-project-log_file'] = ""
-                sm['analysis-project-log_file_dir'] = ""
-                sm['analysis-project-pinnings'] = []
+                sm['log_file'] = ""
+                sm['log_file_dir'] = ""
+                sm['pinnings'] = []
 
             stage.set_valid_log_file(validProject)
 
@@ -2045,9 +2034,9 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         if event == "exit" and output_path == "":
 
-            output_path = sm['analysis-project-output-default']
+            output_path = sm['_output-default']
 
-        sm['analysis-project-output-path'] = output_path
+        sm['output-path'] = output_path
 
         if output_path != widget.get_text():
 
@@ -2064,9 +2053,9 @@ class Analysis_Project_Controller(controller_generic.Controller):
             view = self._view.get_stage()
 
         if rel_path is None:
-            rel_path = sm['analysis-project-output-path']
+            rel_path = sm['output-path']
 
-        full_path = sm['analysis-project-log_file_dir'] + \
+        full_path = sm['log_file_dir'] + \
             os.sep + rel_path
 
         view.set_output_warning(os.path.isdir(full_path))
@@ -2077,16 +2066,16 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         if widget.get_active():
 
-            sm['analysis-project-pinnings-active'] = 'file'
+            sm['pinnings-active'] = 'file'
             view.set_pinning(
-                sm['analysis-project-pinnings-from-file'],
+                sm['pinnings-from-file'],
                 sensitive=False)
 
         else:
 
-            sm['analysis-project-pinnings-active'] = 'gui'
+            sm['pinnings-active'] = 'gui'
             view.set_pinning(
-                sm['analysis-project-pinnings'],
+                sm['pinnings'],
                 sensitive=True)
 
         self.set_ready_to_run()
@@ -2103,7 +2092,7 @@ class Analysis_Project_Controller(controller_generic.Controller):
         else:
             pinning = None
 
-        sm['analysis-project-pinnings'][plate - 1] = pinning
+        sm['pinnings'][plate - 1] = pinning
 
         self.set_ready_to_run()
 
@@ -2111,17 +2100,17 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
         sm = self._specific_model
 
-        if sm['analysis-project-pinnings-active'] == 'file':
+        if sm['pinnings-active'] == 'file':
 
-            sm_key = 'analysis-project-pinnings-from-file'
+            sm_key = 'pinnings-from-file'
 
         else:
 
-            sm_key = 'analysis-project-pinnings'
+            sm_key = 'pinnings'
 
         plates_ok = sum([p is not None for p in sm[sm_key]]) > 0
 
-        file_loaded = sm['analysis-project-log_file'] != ""
+        file_loaded = sm['log_file'] != ""
 
         self._view.get_top().set_allow_next(file_loaded and plates_ok)
 
@@ -2130,7 +2119,7 @@ class Analysis_Log_Controller(controller_generic.Controller):
 
     def __init__(self, parent, general_model, parent_model):
 
-        model = model_analysis.copy_model(model_analysis.specific_log_book)
+        model = model_analysis.Model.LoadStageModel("LOG")
         self._parent_model = parent_model
         self._general_model = general_model
         self._look_up_coords = list()

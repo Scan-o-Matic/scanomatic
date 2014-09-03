@@ -74,7 +74,7 @@ class Analysis_Stage_Project_Running(gtk.VBox):
         label = gtk.Label()
         label.set_markup(
             model['analysis-stage-project-running-info'].format(
-                sm['analysis-project-log_file']))
+                sm['log_file']))
 
         self.pack_start(label, False, False, PADDING_LARGE)
 
@@ -107,7 +107,7 @@ class Analysis_Stage_Project(gtk.VBox):
         hbox.set_border_width(PADDING_MEDIUM)
         vbox.pack_start(hbox, False, False, PADDING_SMALL)
         self.log_file = gtk.Entry()
-        self.log_file.set_text(sm['analysis-project-log_file'])
+        self.log_file.set_text(sm['log_file'])
         self.log_file.set_sensitive(False)
         hbox.pack_start(self.log_file, True, True, PADDING_SMALL)
         button = gtk.Button(
@@ -225,7 +225,7 @@ class Analysis_Stage_Project(gtk.VBox):
 
     def set_log_file(self):
 
-        self.log_file.set_text(self._specific_model['analysis-project-log_file'])
+        self.log_file.set_text(self._specific_model['log_file'])
 
     def set_pinning(self, pinnings_list, sensitive=None):
 
