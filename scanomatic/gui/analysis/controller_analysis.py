@@ -1001,7 +1001,9 @@ class Analysis_First_Pass(controller_generic.Controller):
                                            (n_plates -
                                             len(md['Pinning Matrices'])))
 
-            self.get_view().get_stage().set_pinning()
+            s = self.get_view().get_stage()
+            s.set_pinning()
+            
 
         self._set_allow_run()
 
@@ -1014,7 +1016,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         pm = self._model['pinning-matrices'][key]
 
         self._specific_model['meta-data']['Pinning Matrices'][plate] = pm
-
+        
         self._set_allow_run()
 
     def set_local_fixture(self, widget, *args):
@@ -2021,6 +2023,8 @@ class Analysis_Project_Controller(controller_generic.Controller):
                 str(len(images)))
 
             stage.set_pinning(pinning_matrices)
+            stage.set_corrections(pinning_matrices)
+
 
             self.set_output_dupe()
 

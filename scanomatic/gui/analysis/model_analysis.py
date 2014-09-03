@@ -25,6 +25,10 @@ class Model(new_model_generic.Model):
 
     _PRESETS_UI = {
 
+        'grid-correction': "Plate {0}",
+        'grid-correction-horizontal': "H",
+        'grid-correction-vertical': "V",
+
         #ANALYSIS TOP ROOT
         'analysis-top-root-project_button-text': 'Project',
         'analysis-top-root-tpu_button-text': 'Transparency Image',
@@ -116,6 +120,9 @@ class Model(new_model_generic.Model):
         """<span weight="heavy">Running Analysis on '{0}'</span>
         <span><i>This process runs in the background and will appear as any
         experiment under running experiments.</i></span>""",
+        'analysis-stage-project-correction': "Manual Adjustment of Detected Grids",
+
+
         #ANALYSIS STAGE FIRST PASS
         'analysis-stage-first-title':
         """<span weight='heavy' size='large'>First Pass Analysis</span>

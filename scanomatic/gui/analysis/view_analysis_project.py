@@ -184,6 +184,14 @@ class Analysis_Stage_Project(gtk.VBox):
 
         self.show_all()
 
+        #CORRECTION
+        self._correction_frame = gtk.Frame(
+            model['analysis-stage-project-correction'])
+        self._correction_box = gtk.HBox()
+        self._correction_frame.add(self._correction_box)
+        vbox.pack_start(self._correction_frame)
+        self._correction_frame.hide()
+
     def _output_focus_out(self, widget, *args, **kwargs):
 
         self._controller.set_output(widget, self, "exit")
@@ -227,6 +235,21 @@ class Analysis_Stage_Project(gtk.VBox):
 
         self.log_file.set_text(self._specific_model['log_file'])
 
+    def set_corrections(self, pinnings_list):
+
+        box = self._correction_box
+        if pinnings_list is not None:
+            while len(box.children()) < len(pinnings_list):
+                _Correction(box, self._model,
+                            self._specific_model, "grid-correction")
+
+            while len(box.children()) > len(pinnings_list):
+                box.remove(box.children()[-1])
+
+            box.show()
+        else:
+            box.hide()
+
     def set_pinning(self, pinnings_list, sensitive=None):
 
         box = self._pm_box
@@ -259,3 +282,67 @@ class Analysis_Stage_Project(gtk.VBox):
                 child.set_pinning(pinnings_list[i])
 
         box.show_all()
+
+class _Correction(gtk.Frame):
+
+    def __init__(self, parent, model, onChange, onChangeKey):
+
+        super(_Correction, self).__init__(model['grid-correction'].format(
+            len(parent.get_children()) + 1))
+
+        self._onChange = onChange
+        self._onChangeKey = onChangeKey
+        self._pos = len(parent.get_children())
+
+        hbox = gtk.HBox()
+        self.add(hbox)
+        hbox.pack_start(gtk.Label(model['grid-correction-horizontal']),
+                False, False)
+
+        self._h = gtk.Entry()
+        self._h.set_width_chars(2)
+        self._h.set_size_request(30, -1)
+        self._h.connect(
+            "changed",
+            self._callback)
+        hbox.pack_start(self._h, False, False)
+
+        hbox.pack_start(gtk.Label(model['grid-correction-vertical']))
+
+        self._v = gtk.Entry()
+        self._v.set_width_chars(2)
+        self._v.set_size_request(30, -1)
+        self._v.connect(
+            "changed",
+            self._callback)
+        hbox.pack_start(self._v, False, False)
+        parent.pack_start(self, False, False)
+        self.show_all()
+
+    def _callback(self, *args):
+
+        cur = self._onChange[self._onChangeKey]
+        if cur is None:
+            cur = []
+
+        try:
+            h = int(self._h.get_text())
+        except ValueError:
+            h = 0
+            if self._h.get_text() not in ("-", ""):
+                self._h.set_text(str(h))
+        try:
+            v = int(self._v.get_text())
+        except ValueError:
+            v = 0
+            if self._v.get_text() not in ("-", ""):
+                self._v.set_text(str(v))
+
+        if len(cur) < self._pos + 1:
+            cur = cur + [(0, 0) for _ in range(self._pos + 1 - len(cur))]
+
+        cur[self._pos] = (h, v)
+        if not sum(map(sum, zip(*cur))):
+            cur = None
+
+        self._onChange[self._onChangeKey] = cur
