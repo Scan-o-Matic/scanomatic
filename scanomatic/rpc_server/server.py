@@ -527,7 +527,7 @@ class SOM_RPC(object):
                 all images with higher index omitted
                 Default: None (all images included)
 
-            ouputDirectory: str
+            outputDirectory: str
                 Relative path of output directory for the analysis
                 Default: analysis
 
