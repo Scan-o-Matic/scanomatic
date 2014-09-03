@@ -55,6 +55,9 @@ class _ClientProxy(object):
         self._userID = userID
         self._adminMethods = ('communicateWith',
                               'createFeatureExtractJob',
+                              'createAnalysisJob',
+                              'removeFromQueue',
+                              'flushQueue',
                               'serverRestart',
                               'serverShutDown')
 
