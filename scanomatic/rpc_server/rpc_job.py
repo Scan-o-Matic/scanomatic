@@ -16,6 +16,8 @@ __status__ = "Development"
 from multiprocessing import Process
 from threading import Thread
 from time import sleep
+import psutil
+import setproctitle
 
 #
 # INTERNAL DEPENDENCIES
@@ -29,16 +31,17 @@ import scanomatic.io.logger as logger
 #
 
 
-class RPC_Job(Process):
+class Fake(object):
 
-    def __init__(self, identifier, label, target, parentPipe, childPipe):
+    def __init__(self, identifier, label, pid, parentPipe):
 
-        super(RPC_Job, self).__init__()
-        self._label = label
         self._identifier = identifier
-        self._target = target
+        self._label = label
         self._parentPipe = pipes.ParentPipeEffector(parentPipe)
-        self._childPipe = childPipe
+        self._pid = pid
+        self._logger = logger.Logger("Fake Process {0}".format(label))
+        self._logger.info("Running ({0}) with pid {1}".format(
+            self.is_alive(), pid))
 
     @property
     def identifier(self):
@@ -47,6 +50,24 @@ class RPC_Job(Process):
     @property
     def label(self):
         return self._label
+
+    @property
+    def pipe(self):
+        return self._parentPipe
+
+    @property
+    def pid(self):
+
+        return self._pid
+
+    @pid.setter
+    def pid(self, value):
+
+        try:
+            self._pid = int(value)
+        except TypeError:
+            self._logger.error("Only ints are valid process IDs ({0})".format(
+                value))
 
     @property
     def status(self):
@@ -61,9 +82,27 @@ class RPC_Job(Process):
 
         return s
 
-    @property
-    def pipe(self):
-        return self._parentPipe
+    def is_alive(self):
+
+        return psutil.pid_exists(self._pid)
+
+    def update_pid(self):
+
+        if self.pid < 0 and 'pid' in self.pipe.status:
+            self.pid = self.pipe.status['pid']
+
+class RPC_Job(Process, Fake):
+
+    def __init__(self, identifier, label, target, parentPipe, childPipe):
+
+        super(RPC_Job, self).__init__()
+        self._label = label
+        self._identifier = identifier
+        self._target = target
+        self._parentPipe = pipes.ParentPipeEffector(parentPipe)
+        self._childPipe = childPipe
+        self._logger = logger.Logger("Job {0} Process".format(label))
+        self._pid = -1
 
     def run(self):
 
@@ -80,6 +119,9 @@ class RPC_Job(Process):
 
         pipeEffector = pipes.ChildPipeEffector(
             self._childPipe, self._target(self._identifier, self._label))
+        
+        setproctitle.setproctitle("SoM {0}".format(
+            pipeEffector.procEffector.type))
 
         t = Thread(target=_communicator)
         t.start()
