@@ -20,6 +20,8 @@ import time
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from math import trunc
 import os
+import sys
+import socket
 
 #
 # INTERNAL DEPENDENCIES
@@ -66,13 +68,23 @@ class SOM_RPC(object):
         host = self._appConfig.rpc_host
         port = self._appConfig.rpc_port
 
-        self._server = SimpleXMLRPCServer((host, port), logRequests=False)
+        try:
+            self._server = SimpleXMLRPCServer((host, port), logRequests=False)
+        except socket.error:
+            self._logger.critical(
+                "Sever is alread running or the " +
+                "port {0} is in use by other program".format(
+                    port))
+
+            sys.exit(1)
+
         self._server.register_introspection_functions()
 
         self._running = True
         self._mainThread = None
 
-        self._logger.info("Server listens to {0}:{1}".format(host, port))
+        self._logger.info("Server (pid {0}) listens to {1}:{2}".format(
+            os.getpid(), host, port))
 
         [self._server.register_function(getattr(self, m), m) for m
          in dir(self) if not(m.startswith("_") or m in
