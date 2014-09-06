@@ -210,6 +210,7 @@ class SOM_RPC(object):
 
         self._mainThread = None
         self._server = None
+        os._exit(0)
 
     def serverShutDown(self, userID, forceJobsToStop=False):
 
