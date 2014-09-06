@@ -125,7 +125,12 @@ class Queue(object):
 
                 self.setPriority(s, 0, writeOnUpdate=False)
 
-            prio = self._queue.getint(s, "priority")
+            try:
+                prio = self._queue.getint(s, "priority")
+            except ValueError:
+                prio = 0
+                self.setPriority(prioSection, prio, writeOnUpdate=False)
+
             if (prio > highestPrio):
                 if (prioSection is not None):
                     self.setPriority(prioSection, highestPrio + 1,
@@ -178,6 +183,7 @@ class Queue(object):
             self.writeUpdates()
             return procInfo
 
+        self.writeUpdates()
         return None
 
     def add(self, subprocType, jobLabel, priority=None, *args, **kwargs):
@@ -188,9 +194,16 @@ class Queue(object):
             self._logger.error("Unknown subprocess type ({0})".format(
                 subprocType))
             return None
-
+        
         if priority is None:
             priority = subprocType
+
+        if not(isinstance(subprocType, int) and isinstance(priority, int) and
+                isinstance(jobLabel, str)):
+
+            self._logger.error(
+                "Trying to add job with bad parameter types.")
+            return False
 
         goodName = False
 
