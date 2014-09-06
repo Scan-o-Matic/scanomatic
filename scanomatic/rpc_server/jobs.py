@@ -75,6 +75,10 @@ class Jobs(object):
 
         self._forcingStop = value
 
+    def __contains__(self, key):
+
+        return key in self._jobs
+
     def __getitem__(self, key):
 
         if key in self._jobs:
