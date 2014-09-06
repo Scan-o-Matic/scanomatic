@@ -12,7 +12,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoOptionError
 from multiprocessing import Pipe
 
 #
@@ -102,9 +102,22 @@ class Jobs(object):
 
         for job in self._jobsData.sections():
 
-            #TODO: Resume code here
+            childPipe, parentPipe = Pipe()
 
-            pass
+            try:
+                label = self._jobsData.get(job, "label")
+            except NoOptionError:
+                label = ""
+            try:
+                pid = int(self._jobsData.get(job, "pid"))
+            except (TypeError, NoOptionError):
+                pid = -1
+
+            self._jobs[job] = rpc_job.Fake(
+                job,
+                label,
+                pid,
+                parentPipe)
 
     def poll(self):
 
@@ -133,6 +146,8 @@ class Jobs(object):
         self._jobsData.set(job.identifier, "label", str(job.label))
         self._jobsData.set(job.identifier, "setupArgs", str(setupArgs))
         self._jobsData.set(job.identifier, "setupKwargs", str(setupKwargs))
+        self._jobsData.set(job.identifier, "pid", job.pid)
+        self._jobs[job.identifier] = job
         self._saveJobsData()
 
     def add(self, procData):
