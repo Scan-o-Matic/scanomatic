@@ -209,8 +209,6 @@ class SOM_RPC(object):
             time.sleep(0.05)
 
         self._mainThread = None
-        self._server = None
-        os._exit(0)
 
     def serverShutDown(self, userID, forceJobsToStop=False):
 
@@ -240,7 +238,11 @@ class SOM_RPC(object):
         except KeyboardInterrupt:
             self._logger.info("Server-side forced exit")
             self._serverShutDown(True)
+
+        self._server.server_close()
+        self._server = None
         self._logger.info("Server Quit")
+        os._exit(0)
 
     def reestablishMe(self, userID, jobID, label, pid):
         """Interface for orphaned daemons to re-gain contact with server.
