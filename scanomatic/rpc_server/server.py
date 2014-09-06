@@ -38,6 +38,23 @@ from scanomatic.io.resource_status import Resource_Status
 # CLASSES
 #
 
+class StoppableXMLRPCServer(SimpleXMLRPCServer):
+
+    def __init__(self, *args, **kwargs):
+
+        SimpleXMLRPCServer.__init__(self, *args, **kwargs)
+        self._keepAlive = True
+
+    def stop(self):
+
+        self._keepAlive = False
+
+    def serve_forever(self, poll_interval=0.5):
+
+        while self._keepAlive:
+            self.handle_request()
+            time.sleep(poll_interval)
+
 
 class SOM_RPC(object):
 
@@ -135,6 +152,7 @@ class SOM_RPC(object):
         self._logger.info("Main process shutting down")
         self._niceQuitProcesses()
         self._logger.info("Shutting down server")
+        #self._server.stop()
         self._server.shutdown()
 
     def _niceQuitProcesses(self):
