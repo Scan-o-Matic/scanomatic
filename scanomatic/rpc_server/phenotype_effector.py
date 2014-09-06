@@ -101,6 +101,8 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
         self._times = times
         self._data = data
+        #TODO: All parameters not understood by initiation of phenotyper needs
+        #to be separated out and dealt with in other ways
         self._phenotyperKwargs = phenotyperKwargs
         self._analysisBase = image_data.Image_Data.path2dataPathTuple(path)[0]
 
