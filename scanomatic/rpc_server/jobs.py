@@ -129,9 +129,12 @@ class Jobs(object):
             curJob = self._jobs[job]
             if not self._forcingStop:
                 curJob.pipe.poll()
+                if curJob.pid < 0:
+                    curJob.update_pid()
                 if not curJob.is_alive():
                     del self._jobs[job]
                     self._jobsData.remove_section(job)
+                    self._saveJobsData()
 
             statuses.append(curJob.status)
 
@@ -149,6 +152,13 @@ class Jobs(object):
         self._jobsData.set(job.identifier, "pid", job.pid)
         self._jobs[job.identifier] = job
         self._saveJobsData()
+
+    def fakeProcess(self, jobID, label, pid):
+
+        childPipe, parentPipe = Pipe()
+        job = rpc_job.Fake(jobID, label, pid, parentPipe) 
+        self._add2JobsData(job, tuple(), dict())
+        return childPipe
 
     def add(self, procData):
         """Launches and adds a new jobs.
@@ -193,6 +203,7 @@ class Jobs(object):
             parentPipe,
             childPipe)
 
+        job.daemon = True
         job.start()
         job.pipe.send('setup',
                       *procData['args'],

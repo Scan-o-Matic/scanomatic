@@ -242,6 +242,61 @@ class SOM_RPC(object):
             self._serverShutDown(True)
         self._logger.info("Server Quit")
 
+    def reestablishMe(self, userID, jobID, label, pid):
+        """Interface for orphaned daemons to re-gain contact with server.
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        jobID : str
+
+            The job identifier of the job that wants to regain contact.
+            This job must be known to the server
+
+        label : str
+
+            User-friendly string with info about the job
+
+        pid : int
+
+            The process id of the orphaned daemon
+
+        Returns
+        =======
+
+        multiprocessing.Connection or False
+            Returns the part of the pipe used by the child-process if
+            re-establishment is allowed, else False
+
+        """
+        if userID != self._admin:
+
+            self._logger.warning(
+                "User '{0}' tried to flush queue".format(
+                    userID))
+
+            return False
+
+        if jobID in self._jobs:
+
+            return self._jobs.fakeProcess(jobID, label, pid)
+
+        else:
+
+            self._logger.warning(
+                "Unknown job "+
+                "'{0}'({1}, pid {2}) tried to claim it exists".format(
+                    label, jobID, pid))
+
+            return False
+
     def communicateWith(self, userID, jobID, title, kwargs={}):
         """Used to communicate with active jobs.
 

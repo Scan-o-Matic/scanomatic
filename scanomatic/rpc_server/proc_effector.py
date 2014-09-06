@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 from time import sleep
+import os
 
 #
 # INTERNAL DEPENDENCIES
@@ -35,6 +36,8 @@ class ProcEffector(object):
         self._logger = logger.Logger(loggerName)
         self._type = "Generic"
 
+        self._failVunerableCalls = tuple()
+
         self._specificStatuses = {}
         self._allowedCalls = {}
         self._allowedCalls['pause'] = self.pause
@@ -43,7 +46,7 @@ class ProcEffector(object):
         self._allowedCalls['start'] = self.start
         self._allowedCalls['status'] = self.status
         self._allowedCalls['stop'] = self.stop
-
+        
         self._allowStart = False
         self._running = False
         self._started = False
@@ -54,6 +57,16 @@ class ProcEffector(object):
         self._messages = []
 
         self._iteratorI = None
+        self._pid = os.getpid()
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def failVunerableCalls(self):
+
+        return self._failVunerableCalls
 
     @property
     def keepAlive(self):
@@ -91,6 +104,7 @@ class ProcEffector(object):
     def status(self, *args, **kwargs):
 
         return dict([('id', self._identifier),
+                     ('pid', self._pid),
                      ('label', self._label),
                      ('type', self._type),
                      ('running', self._running),
