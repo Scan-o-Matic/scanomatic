@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Resource scanner """
+"""Resource for scanning"""
 __author__ = "Martin Zackrisson"
 __copyright__ = "Swedish copyright laws apply"
 __credits__ = ["Martin Zackrisson"]
