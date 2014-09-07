@@ -73,7 +73,6 @@ scripts = [
         "scan-o-matic_server",
         "scan-o-matic_qc",
         "scan-o-matic_calibration",
-        "scan-o-matic_experiment",
         "scan-o-matic_analysis_move_plate",
         "scan-o-matic_analysis_patch_times",
         "scan-o-matic_make_project",
