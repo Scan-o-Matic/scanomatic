@@ -36,7 +36,6 @@ import scanomatic.gui.calibration.controller_calibration as controller_calibrati
 import scanomatic.gui.qc.controller_qc as controller_qc
 
 #Resources
-import scanomatic.io.scanner as scanner
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.paths as paths
 import scanomatic.io.app_config as app_config
@@ -90,7 +89,6 @@ class Controller(controller_generic.Controller):
         """
         self.config = app_config.Config(self.paths)
         self.fixtures = fixtures.Fixtures(self.paths, self.config)
-        self.scanners = scanner.Scanners(self.paths, self.config)
         self.server = controller_server.Controller(self)
 
         self._view.show_notebook_or_logo()
