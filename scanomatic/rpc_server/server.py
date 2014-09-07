@@ -239,6 +239,7 @@ class SOM_RPC(object):
             self._logger.info("Server-side forced exit")
             self._serverShutDown(True)
 
+        self._server.socket.shutdown(socket.SHUT_RDWR)
         self._server.server_close()
         self._server = None
         self._logger.info("Server Quit")
