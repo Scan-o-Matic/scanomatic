@@ -32,6 +32,7 @@ import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.rpc_server.queue as queue
 import scanomatic.rpc_server.jobs as jobs
+import scanomatic.io.scanner_admin as scanner_admin
 from scanomatic.io.resource_status import Resource_Status
 
 #
@@ -67,7 +68,7 @@ class SOM_RPC(object):
 
         self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
-
+        self._scannerManager = scanner_admin.Scanner_Manager()
         self._admin = self._appConfig.rpc_admin
 
         self._serverStartTime = None

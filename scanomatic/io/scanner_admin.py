@@ -13,6 +13,12 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
+import ConfigParser
+
+#
+# INTERNAL DEPENDENCIES
+#
+
 import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
@@ -21,7 +27,6 @@ import scanomatic.io.power_manager as power_manager
 
 class Scanner_Manager(object):
 
-    SECTION_PATTERN = "Scanner {0}"
     POWER_FLICKER_DELAY = 0.25
 
     def __init__(self):
@@ -32,21 +37,28 @@ class Scanner_Manager(object):
 
         self._scannerStatus = ConfigParser.ConfigParser(
             allow_no_value=True)
-        self._scannerStatus.readfp(open(
-            self._paths.scanner_status, 'r'))
+        try:
+            self._scannerStatus.readfp(open(
+                self._paths.rpc_scanner_status, 'r'))
+        except IOError:
+            self._logger.info(
+                "No scanner statuses previously known, starting fresh")
 
         self._scannerConfs = ConfigParser.ConfigParser(
             allow_no_value=True)
-        self._scannerConfs.readfp(open(
-            self._paths.scanner_configs, 'r'))
+        try:
+            self._scannerConfs.readfp(open(
+                self._paths.config_scanners, 'r'))
+        except IOError:
+            self._logger.info(
+                "No specific scanner configurations, all asumed default")
 
         self._set_powerManagers()
 
     def _get(self, scanner, key, defaultVal):
         
-        if isinstance(scanner, int):
-            scanner = self.SECTION_PATTERN.format(scanner)
-        
+        scanner = self._conf.get_scanner_name(scanner)
+
         if not self._scannerStatus.has_section(scanner):
             self._scannerStatus.add_section(scanner)
 
@@ -54,9 +66,8 @@ class Scanner_Manager(object):
 
     def _set(self, scanner, key, value):
 
-        if isinstance(scanner, int):
-            scanner = self.SECTION_PATTERN.format(scanner)
-        
+        scanner = self._conf.get_scanner_name(scanner)
+
         if not self._scannerStatus.has_section(scanner):
             self._scannerStatus.add_section(scanner)
 
@@ -115,7 +126,7 @@ class Scanner_Manager(object):
 
     def _save(self):
 
-        self._scannerStatus.write(open(self._paths.scanner_status, 'w'))
+        self._scannerStatus.write(open(self._paths.rpc_scanner_status, 'w'))
 
     def _rescue(self, usbList, claim):
 
@@ -140,7 +151,7 @@ class Scanner_Manager(object):
             usb = scannerList.pop()
             found = False
             for c in claim:
-                if claim[c]{'usb'] and claim[c]['usb'] == usb:
+                if claim[c]['usb'] and claim[c]['usb'] == usb:
                     claim[c]['matched'] = True
                     found = True
                     break
@@ -149,7 +160,7 @@ class Scanner_Manager(object):
 
                 noFounds.push(usb)
 
-        if len(noFounds) > 1):
+        if len(noFounds) > 1:
             self._critical("More than one unclaimed scanner")
             self._rescue(noFounds, claim)
             return False
@@ -181,7 +192,7 @@ class Scanner_Manager(object):
 
     def _get_power_type(self, scanner):
 
-        sName = self.SECTION_PATTERN.format(scanner)
+        sName = self._conf.get_scanner_name(scanner)
         if self._scannerConfs.has_section(sName):
 
             powerType = self._scannerConfs.get(sName, 'powerType', 'SIMPLE')
@@ -251,14 +262,14 @@ class Scanner_Manager(object):
         if scanner > self._conf.number_of_scanners:
             return False
         
-        sName = self.SECTION_PATTERN.format(scanner)
+        sName = self._conf.get_scanner_name(scanner)
 
         try:
             ownerProc = int(self._get(scanner, 'pid', -1))
         except (ValueError, TypeError):
             ownerProc = -1
 
-        if ownerProc > 0 && pid != ownerProc:
+        if ownerProc > 0 and pid != ownerProc:
 
             if psutil.pid_exists(ownerProc):
 

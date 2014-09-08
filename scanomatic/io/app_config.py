@@ -34,6 +34,8 @@ import logger
 
 class Config(object):
 
+    SCANNER_PATTERN = "Scanner {0}"
+
     def __init__(self, path=None):
 
         if path is None:
@@ -57,17 +59,11 @@ class Config(object):
         self.scan_program = "scanimage"
         self.scan_program_version_flag = "-V"
         self._scanner_models = {
-            'Scanner 1': 'EPSON V700',
-            'Scanner 2': 'EPSON V700',
-            'Scanner 3': 'EPSON V700',
-            'Scanner 4': 'EPSON V700'}
+            self.SCANNER_PATTERN.format(i): 'EPSON V700' for i in range(1, 4)}
 
         #POWER MANAGER
         self._scanner_sockets = {
-            'Scanner 1': 1,
-            'Scanner 2': 2,
-            'Scanner 3': 3,
-            'Scanner 4': 4}
+            self.SCANNER_PATTERN.format(i): i for i in range(1, 4)}
 
         self.pm_type = 'usb'
         self._pm_host = "192.168.0.100"
@@ -247,15 +243,23 @@ class Config(object):
 
     def get_scanner_model(self, scanner):
 
-        return self._scanner_models[scanner]
+        return self._scanner_models[self.get_scanner_name(scanner)]
 
+    def get_scanner_name(self, scanner):
+
+        if isinstance(scanner, int):
+            scanner = self.SCANNER_PATTERN.format(scanner)
+
+        return scanner
+    
     def get_scanner_socket(self, scanner):
 
-        return self._scanner_sockets[scanner]
+        return self._scanner_sockets[self.get_scanner_name(scanner)]
 
     def get_pm(self, scanner_name, **pm_kwargs):
 
-        scanner_pm_socket = self._scanner_sockets[scanner_name]
+        scanner_pm_socket = self._scanner_sockets[
+            self.get_scanner_name(scanner_name)]
         if pm_kwargs == {}:
             pm_kwargs = self._pm_arguments
 

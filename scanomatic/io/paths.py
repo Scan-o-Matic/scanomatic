@@ -90,10 +90,12 @@ class Paths(object):
         self.config_mac = os.path.join(self.config, 'mac_address.config')
         self.config_rpc = os.path.join(self.config, 'rpc.config')
         self.config_rpc_admin = os.path.join(self.config, 'rpc.admin')
+        self.config_scanners = os.path.join(self.config, 'scanners.config')
 
         #RPC
         self.rpc_queue = os.path.join(self.root, 'job_queue.cfg')
         self.rpc_jobs = os.path.join(self.root, 'jobs.cfg')
+        self.rpc_scanner_status = os.path.join(self.root, 'scanner_status.cfg')
 
         #HELP
         self.help = "file://{0}".format(
