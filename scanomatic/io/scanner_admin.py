@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import ConfigParser
+from subprocess import Popen, PIPE
 
 #
 # INTERNAL DEPENDENCIES
@@ -24,6 +25,8 @@ import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 import scanomatic.io.power_manager as power_manager
 
+
+#TODO: Sets power to true when no pm
 
 class Scanner_Manager(object):
 
@@ -55,6 +58,15 @@ class Scanner_Manager(object):
 
         self._set_powerManagers()
 
+    def __contains__(self, scanner):
+
+        try:
+            self._conf.get_scanner_socket(scanner)
+        except KeyError:
+            return False
+
+        return True
+
     def _get(self, scanner, key, defaultVal):
         
         scanner = self._conf.get_scanner_name(scanner)
@@ -62,7 +74,14 @@ class Scanner_Manager(object):
         if not self._scannerStatus.has_section(scanner):
             self._scannerStatus.add_section(scanner)
 
-        return self._scannerStatus.get(scanner, key, defaultVal)
+        if self._scannerStatus.has_option(scanner, key):
+            val = self._scannerStatus.get(scanner, key)
+            if val == '':
+                return None
+            else:
+                return val
+        else:
+            return defaultVal
 
     def _set(self, scanner, key, value):
 
@@ -71,13 +90,19 @@ class Scanner_Manager(object):
         if not self._scannerStatus.has_section(scanner):
             self._scannerStatus.add_section(scanner)
 
-        self._scannerStatus.set(scanner, key, value)
+        if value is None:
+            self._scannerStatus.set(scanner, key, '')
+        elif isinstance(value, bool):
+            self._scannerStatus.set(scanner, key, int(value))
+        else:
+            self._scannerStatus.set(scanner, key, str(value))
 
     def _set_powerManagers(self):
 
         self._pm = dict()
         for i in range(1, self._conf.number_of_scanners + 1):
             self._pm[i] = self._conf.get_pm(i)
+
 
     def _get_alive_scanners(self):
 
@@ -122,7 +147,7 @@ class Scanner_Manager(object):
 
             self._set(c, 'usb', claim[c]['usb'])
             self._set(c, 'power', claim[c]['power'])
-            self._save()
+        self._save()
 
     def _save(self):
 
@@ -212,6 +237,11 @@ class Scanner_Manager(object):
 
         if self.sync():
 
+            if self._get(sName, 'power', False):
+                usb = self._get(sName, 'usb', None)
+                if usb:
+                    return True
+
             if not self.isOwner(scanner, jobID):
                 self._logger.error("Can't turn on, owner missmatch")
                 return False
@@ -219,7 +249,6 @@ class Scanner_Manager(object):
             powerType = self._get_power_type(scanner)
 
             self._set(sName, 'usb', None)
-            self._set(sName, 'power', True)
 
             if powerType == 'SIMPLE':
                 self._pm[scanner].on()
@@ -227,6 +256,8 @@ class Scanner_Manager(object):
                 self._pm[scanner].on()
                 time.sleep(self.POWER_FLICKER_DELAY)
                 self._pm[scanner].off()
+
+            self._set(sName, 'power', True)
 
             self._save()
 
@@ -291,6 +322,7 @@ class Scanner_Manager(object):
         self._set(scanner, "pid", pid)
         self._set(scanner, "jobID", jobID)
         self._save()
+        return True
 
     def releaseScanner(self, scanner):
 
@@ -300,12 +332,30 @@ class Scanner_Manager(object):
         self._set(scanner, "pid", None)
         self._set(scanner, "jobID", None)
         self._save()
+        return True
 
     def owner(self, scanner):
 
         return (self._get(scanner, "pid", None), 
                 self._get(scanner, "jobID", None))
         
+    def isOwner(self, scanner, jobID):
+
+        return jobID is not None and self._get(scanner, "jobID", None) == jobID
+
+    def usb(self, scanner, jobID):
+        
+        if jobID is None or jobID != self._get(scanner, "jobID", None):
+            self._logger.warning("Incorrect jobID for scanner {0}".format(
+                scanner))
+            return False
+
+        elif not self._get(scanner, "power", False):
+
+            return None
+
+        return self._get(scanner, "usb", None)
+
     def sync(self):
 
         return self._match_scanners(self._get_alive_scanners())

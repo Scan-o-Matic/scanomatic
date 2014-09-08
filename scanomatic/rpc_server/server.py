@@ -144,6 +144,9 @@ class SOM_RPC(object):
                 elif (Resource_Status.currentPasses() == 0):
                     i = 10
 
+            if (i % 2):
+                self._scannerManager.sync()
+
             self._setStatuses(self._jobs.poll(), merge=i!=24)
 
             time.sleep(sleep)
@@ -171,6 +174,16 @@ class SOM_RPC(object):
             time.sleep(0.1)
 
         self._shutDownComplete = True
+
+    def _createJobID(self):
+
+        badName = True
+
+        while badName:
+            jobID= md5.new(str(time.time())).hexdigest()
+            badName = jobID in self._queue or jobID in self._jobs
+
+        return jobID
 
     def serverRestart(self, userID, forceJobsToStop=False):
         """This method is not in use since the technical issues have
@@ -569,7 +582,69 @@ class SOM_RPC(object):
 
         return self._queue.remove(jobID)
 
-   
+    def scanOperations(self, userID, jobID, scanner, operation):
+        """Interface for subprocess to request scanner operations
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        jobID : str
+            Identifier for the job that owns the scanner to be controlled
+
+        scanner: int or string
+            Name of the scanner to be controlled
+
+        operation : str
+            "ON" Turn power on to scanner / retrieve USB-port
+            "OFF" Turn power off
+            "RELEASE" Free scanner from claim
+        """
+
+        if userID != self._admin:
+
+            self._logger.warning(
+                "User '{0}' tried to manipulate scanners".format(
+                    userID))
+            return False
+
+        if not scanner in self._scannerManager:
+
+            self._logger.warning(
+                "Unknown scanner: {0}".format(scanner))
+
+            return False
+
+        if not self._scannerManager.isOwner(scanner, jobID):
+
+            self._logger.warning(
+                "Job '{0}' tried to manipulate someone elses scanners".format(
+                    jobID))
+
+            return False
+
+        if operation == "ON":
+
+            usb = self._scannerManager.usb(scanner, jobID)
+            if isinstance(usb, str):
+                return usb
+
+            return self._scannerManager.requestOn(scanner, jobID)
+
+        elif operation == "OFF":
+
+            return self._scannerManager.requestOff(scanner, jobID)
+
+        elif operation == "RELEASE":
+
+            return self._scannerManager.releaseScanner(scanner)
+
     def createAnalysisJob(self, userID, inputFile, label,
                           priority=None, kwargs={}):
         """Enques a new analysis job.
@@ -696,9 +771,163 @@ class SOM_RPC(object):
 
         return self._queue.add(
             queue.Queue.TYPE_IMAGE_ANALSYS,
+            jobID=self._createJobID(),
             jobLabel=label,
             priority=priority,
             **kwargs)
+
+    def createScanningJob(
+            self, userID, scanner, scans, interval, fixture,
+            projectsRoot, label, kwargs={}):
+        """Attempts to start a scanning job.
+
+        This is a common interface for all type of scan jobs.
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        scanner : int or str
+            Which scanner to attempt to claim
+            **Note**: If scanner is in use, job-creation will fail.
+
+        scans : int
+            Number of images to scan
+            Must be at least 1
+
+        interval : float
+            Number of minutes between scans.
+            **NOTE**: Less that 7 minutes is refused
+
+        fixture: str
+            Name of fixture to be used.
+
+        projectsRoot : str
+            Path to folder in which to place current job
+
+        label: str
+            Name of current job and the folder.
+            **Note**: If folder exist, job creation will be refused
+            **Note**: Only english letters, digits and underscore allowed
+
+        kwargs: dict
+            Further settings to override the scanner's defaults or other
+            information to be passed 
+
+            Known keys are:
+
+                description: str
+                    Information about what is on which plate
+
+                projectID: str
+                    Identifier string for the larger project the job is part of
+
+                layoutID: str
+                    Identifier string for the current job
+
+                pinning_matrices: list of tuples
+                    The number of rows and columns per plate in the fixture.
+                    Typically (32, 48) per plate.
+
+                mode: str
+                    'TPU' (default) produces transparency scan
+                    'COLOR' produces reflective color scan
+        """
+
+        if userID != self._admin:
+
+            self._logger.warning(
+                "User '{0}' tried to use the scan {1}".format(
+                    userID, label))
+            return False
+
+        if not isinstance(scans, int) or scans < 1:
+
+            self._logger.error(
+                "Invalid number of scans ({0}) for '{1}'".format(
+                    scans, label))
+
+            return False
+
+        try:
+            interval = float(interval)
+        except (ValueError, TypeError):
+
+            self._logger.error(
+                "Invalid interval ({0}) for '{1}'".format(
+                    interval, label))
+
+            return False
+
+        #TODO: Ask the scanners config/app config instead
+        if interval < 7:
+
+            self._logger.error(
+                "Interval too short ({0}) for '{1}'".format(
+                    interval, label))
+
+            return False
+
+        if self._scannerManager.fixtureExists(fixture) is False:
+
+            self._logger.error(
+                "{0}'s fixture '{0}' is not know".format(
+                    label, fixture))
+
+            return False
+
+        if not(os.path.isdir(projectsRoot)):
+
+            self._logger.error(
+                "{0}'s project root '{0}' is not a directory".format(
+                    label, projectsRoot))
+
+            return False
+
+        if len(label) != len(c for c in label
+                             if c in string.letter + string.digits + "_"):
+
+            self._logger.error(
+                "Label {0} has illegal characters. Only accepting: {1}".format(
+                    label, string.letters + string.digits + "_"))
+
+            return False
+
+        if os.path.exists(os.path.join(projectsRoot, label)):
+
+            self._logger.error(
+                "{0} already exists in '{0}'".format(
+                    label, projectsRoot))
+
+            return False
+
+        jobID = self._createJobID()
+
+        success = self._scannerManager.requestClaim(scanner, os.getpid(), jobID)
+
+        if success:
+
+            #No waiting, lets start
+            if not self._jobs.add(dict(
+                    id=jobID,
+                    type=self._queue.TYPE_SCAN,
+                    label=label,
+                    args=(scanner, scans, interval, fixture, projectsRoot),
+                    kwargs=kwargs
+                    )):
+                self._scannerManager.releaseScanner(scanner, jobID)
+                return False
+
+            return jobID
+
+        return False
+
 
     def createFeatureExtractJob(self, userID, runDirectory, label,
                                 priority=None, kwargs={}):
@@ -754,6 +983,7 @@ class SOM_RPC(object):
 
             return self._queue.add(
                 queue.Queue.TYPE_FEATURE_EXTRACTION,
+                jobID=self._createJobID(),
                 jobLabel=label,
                 priority=priority,
                 **kwargs)

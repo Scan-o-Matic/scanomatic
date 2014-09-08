@@ -56,6 +56,10 @@ class Queue(object):
 
         return self._queue.sections() != []
 
+    def __contains__(self, jobID):
+
+        return self._queue.has_section(jobID)
+
     def writeUpdates(self):
 
         self._queue.write(open(self._paths.rpc_queue, 'w'))
@@ -186,7 +190,7 @@ class Queue(object):
         self.writeUpdates()
         return None
 
-    def add(self, subprocType, jobLabel, priority=None, *args, **kwargs):
+    def add(self, subprocType, jobID, jobLabel, priority=None, *args, **kwargs):
 
         if (subprocType not in [getattr(self, p) for p in dir(self) if
                                 p.startswith("TYPE_")]):
@@ -205,24 +209,14 @@ class Queue(object):
                 "Trying to add job with bad parameter types.")
             return False
 
-        goodName = False
+        self._queue.set(jobID, "type", str(subprocType))
+        self._queue.set(jobID, "label", str(jobLabel))
 
-        while not goodName:
-            subprocId = md5.new(str(time.time())).hexdigest()
-            try:
-                self._queue.add_section(subprocId)
-                goodName = True
-            except ConfigParser.DuplicateSectionError:
-                pass
+        self.setPriority(jobID, priority, writeOnUpdate=False)
 
-        self._queue.set(subprocId, "type", str(subprocType))
-        self._queue.set(subprocId, "label", str(jobLabel))
-
-        self.setPriority(subprocId, priority, writeOnUpdate=False)
-
-        self._queue.set(subprocId, "args", str(args))
-        self._queue.set(subprocId, "kwargs", str(kwargs))
+        self._queue.set(jobID, "args", str(args))
+        self._queue.set(jobID, "kwargs", str(kwargs))
 
         self.writeUpdates()
 
-        return subprocId
+        return jobID 
