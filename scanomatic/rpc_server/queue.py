@@ -26,6 +26,9 @@ import collections
 
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
+import scanomatic.rpc_server.phenotype_effector as phenotype_effector
+import scanomatic.rpc_server.analysis_effector as analysis_effector
+import scanomatic.rpc_server.proc_effector as proc_effector
 
 #
 # CLASSES
@@ -34,11 +37,13 @@ import scanomatic.io.logger as logger
 
 class Queue(object):
 
-    TYPE_REBUILD_PROJECT = 0
-    TYPE_IMAGE_ANALSYS = 1
-    TYPE_FEATURE_EXTRACTION = 2
+    TYPE_REBUILD_PROJECT = proc_effector.ProcEffector.TYPE
+    TYPE_IMAGE_ANALSYS = analysis_effector.AnalysisEffector.TYPE
+    TYPE_FEATURE_EXTRACTION = phenotype_effector.PhenotypeExtractionEffector.TYPE
+    TYPE_SCAN = proc_effector.ProcEffector.TYPE
     TYPES = {TYPE_REBUILD_PROJECT: "Rebuild Project",
              TYPE_IMAGE_ANALSYS: "Analysis",
+             TYPE_SCAN: "Scan",
              TYPE_FEATURE_EXTRACTION: "Feature Extraction"}
 
     def __init__(self):

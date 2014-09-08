@@ -29,6 +29,8 @@ import scanomatic.io.logger as logger
 
 class ProcEffector(object):
 
+    TYPE = -1
+
     def __init__(self, identifier, label, loggerName="Process Effector"):
 
         self._identifier = identifier

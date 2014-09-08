@@ -148,6 +148,10 @@ class SOM_RPC(object):
                 self._scannerManager.sync()
 
             self._setStatuses(self._jobs.poll(), merge=i!=24)
+            for jobID in self._jobs.scanningPids:
+                self._scannerManager.updatePid(
+                    jobID,
+                    self._jobs.scanningPids[jobID])
 
             time.sleep(sleep)
             i += 1
@@ -259,7 +263,7 @@ class SOM_RPC(object):
         self._logger.info("Server Quit")
         os._exit(0)
 
-    def reestablishMe(self, userID, jobID, label, pid):
+    def reestablishMe(self, userID, jobID, label, jobType, pid):
         """Interface for orphaned daemons to re-gain contact with server.
 
         Parameters
@@ -276,6 +280,10 @@ class SOM_RPC(object):
 
             The job identifier of the job that wants to regain contact.
             This job must be known to the server
+
+        jobType: int
+
+            The type of job the job is.
 
         label : str
 
@@ -303,7 +311,7 @@ class SOM_RPC(object):
 
         if jobID in self._jobs:
 
-            return self._jobs.fakeProcess(jobID, label, pid)
+            return self._jobs.fakeProcess(jobID, label, jobType, pid)
 
         else:
 

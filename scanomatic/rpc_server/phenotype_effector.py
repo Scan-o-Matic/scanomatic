@@ -31,6 +31,8 @@ import scanomatic.dataProcessing.phenotyper as phenotyper
 
 class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
+    TYPE = 1
+
     def __init__(self, identifier, label):
 
         self._paths = paths.Paths()

@@ -44,6 +44,7 @@ class Jobs(object):
 
         self._forcingStop = False
         self._statuses = []
+        self._scanningPids = {}
 
     @property
     def activeJobs(self):
@@ -74,6 +75,10 @@ class Jobs(object):
                     self._jobs[job].pipe.send("stop")
 
         self._forcingStop = value
+
+    @property
+    def scanningPids(self):
+        return {k: v for k, v in self._scanningPids.items()}
 
     def __contains__(self, key):
 
@@ -113,9 +118,15 @@ class Jobs(object):
             except (TypeError, NoOptionError):
                 pid = -1
 
+            try:
+                jobType = int(sef._jobsData.get(job, "type"))
+            except:
+                jobType = -1
+
             self._jobs[job] = rpc_job.Fake(
                 job,
                 label,
+                jobType,
                 pid,
                 parentPipe)
 
@@ -131,6 +142,8 @@ class Jobs(object):
                 curJob.pipe.poll()
                 if curJob.pid < 0:
                     curJob.update_pid()
+                    if curJob.pid > 0 and curJob.type == queue.Queue.TYPE_SCAN:
+                        self._scanningPids[curJob.identifier] = curJob.pid
                 if not curJob.is_alive():
                     del self._jobs[job]
                     self._jobsData.remove_section(job)
@@ -153,10 +166,10 @@ class Jobs(object):
         self._jobs[job.identifier] = job
         self._saveJobsData()
 
-    def fakeProcess(self, jobID, label, pid):
+    def fakeProcess(self, jobID, label, jonType, pid):
 
         childPipe, parentPipe = Pipe()
-        job = rpc_job.Fake(jobID, label, pid, parentPipe) 
+        job = rpc_job.Fake(jobID, label, jobType, pid, parentPipe) 
         self._add2JobsData(job, tuple(), dict())
         return childPipe
 
@@ -199,6 +212,7 @@ class Jobs(object):
         job = rpc_job.RPC_Job(
             procData['id'],
             procData['label'],
+            procData['type'],
             JobEffector,
             parentPipe,
             childPipe)

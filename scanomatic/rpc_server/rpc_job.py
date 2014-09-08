@@ -33,15 +33,20 @@ import scanomatic.io.logger as logger
 
 class Fake(object):
 
-    def __init__(self, identifier, label, pid, parentPipe):
+    def __init__(self, identifier, label, jobType, pid, parentPipe):
 
         self._identifier = identifier
         self._label = label
+        self._jobType = jobType
         self._parentPipe = pipes.ParentPipeEffector(parentPipe)
         self._pid = pid
         self._logger = logger.Logger("Fake Process {0}".format(label))
         self._logger.info("Running ({0}) with pid {1}".format(
             self.is_alive(), pid))
+
+    @property
+    def type(self):
+        return self._jobType
 
     @property
     def identifier(self):
@@ -93,12 +98,14 @@ class Fake(object):
 
 class RPC_Job(Process, Fake):
 
-    def __init__(self, identifier, label, target, parentPipe, childPipe):
+    def __init__(self, identifier, label, jobType, 
+                 target, parentPipe, childPipe):
 
         super(RPC_Job, self).__init__()
         self._label = label
         self._identifier = identifier
         self._target = target
+        self._jobType = jobType
         self._parentPipe = pipes.ParentPipeEffector(parentPipe)
         self._childPipe = childPipe
         self._logger = logger.Logger("Job {0} Process".format(label))

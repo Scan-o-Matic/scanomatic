@@ -26,8 +26,6 @@ import scanomatic.io.logger as logger
 import scanomatic.io.power_manager as power_manager
 
 
-#TODO: Sets power to true when no pm
-
 class Scanner_Manager(object):
 
     POWER_FLICKER_DELAY = 0.25
@@ -336,12 +334,26 @@ class Scanner_Manager(object):
 
     def owner(self, scanner):
 
-        return (self._get(scanner, "pid", None), 
+        return (int(self._get(scanner, "pid", None)),
                 self._get(scanner, "jobID", None))
         
     def isOwner(self, scanner, jobID):
 
         return jobID is not None and self._get(scanner, "jobID", None) == jobID
+
+    def updatePid(self, jobID, pid):
+
+        if jobID is None or not isinstance(pid, int) and pid < 1:
+            return False
+
+        for scanner in self._scannerStatus.sections():
+            job = self._get(scanner, "jobID", None)
+            if job == jobID:
+                self._set(scanner, "pid", pid)
+                self._save()
+                return True
+
+        return False
 
     def usb(self, scanner, jobID):
         

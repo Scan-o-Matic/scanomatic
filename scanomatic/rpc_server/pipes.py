@@ -263,6 +263,7 @@ class ChildPipeEffector(_PipeEffector):
                 pipe = rC.reestablishMe(
                     self.procEffector.identifier,
                     self.procEffector.label,
+                    self.procEffector.TYPE,
                     os.getpid())
 
                 if (pipe is False):

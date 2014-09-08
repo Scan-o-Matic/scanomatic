@@ -39,6 +39,8 @@ import scanomatic.imageAnalysis.analysis_image as analysis_image
 
 class AnalysisEffector(proc_effector.ProcEffector):
 
+    TYPE = 2
+
     def __init__(self, identifier, label):
 
         #sys.excepthook = support.custom_traceback
