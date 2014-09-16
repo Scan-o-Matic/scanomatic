@@ -115,8 +115,8 @@ class AnalysisEffector(proc_effector.ProcEffector):
 
             for p in image_data.Image_Data.iterImagePaths(self._outdataDir):
                 os.remove(p)
+                self._logger.info("Removed pre-exisiting file '{0}'".format(p))
 
-            self._logger.info("Removed pre-exisiting file '{0}'".format(p))
             #
             # INITIALIZE WATCH GRAPH IF REQUESTED
             #
