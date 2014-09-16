@@ -25,7 +25,7 @@ import view_calibration
 import scanomatic.gui.generic.view_generic as view_generic
 import scanomatic.gui.generic.controller_generic as controller_generic
 
-import scanomatic.imageAnalysis.imageFixture as imageFixture
+import scanomatic.imageAnalysis.first_pass_image as imageFixture
 import scanomatic.io.scanner as scanner
 import scanomatic.imageAnalysis.grayscale as grayscale
 import scanomatic.imageAnalysis.first_pass_image as first_pass_image
