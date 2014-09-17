@@ -649,10 +649,15 @@ class Fixture_Controller(controller_generic.Controller):
             gs_source = np.array(gs_source)
             gs_target = np.array(gs_target)
 
-            np.save("tmp_gs_{0}_source.npy".format(self.f_settings['name']),
+            np.save(self._paths.join(
+                "fixtures",
+                "tmp_gs_{0}_source.npy".format(self.f_settings['name'])),
                     gs_source)
-            np.save("tmp_gs_{0}_target.npy".format(self.f_settings['name']),
+            np.save(self._paths.join(
+                "fixtures",
+                "tmp_gs_{0}_target.npy".format(self.f_settings['name'])),
                     gs_target)
+
             if grayscale.validate(self.f_settings):
 
                 sm['grayscale-sources'] = gs_source
