@@ -182,6 +182,13 @@ class Paths(object):
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"
 
+    def join(self, attr, *other):
+        
+        if hasattr(self, attr):
+            return os.path.join(getattr(self, attr), *other)
+        else:
+            raise AttributeError("Unknown path attribute '{0}'".format(attr))
+
     @property
     def src(self):
 
