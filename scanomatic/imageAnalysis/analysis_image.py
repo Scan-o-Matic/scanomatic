@@ -187,7 +187,9 @@ class Project_Image():
                 """
                 im = self.get_im_section(plate_positions[idGA], scale_factor)
 
-                if self._grid_correction is None:
+                if im is None:
+                    return None
+                elif self._grid_correction is None:
                     self._grid_arrays[idGA].set_grid(
                         im, save_name=save_name,
                         grid_correction=None)
@@ -311,7 +313,8 @@ class Project_Image():
 
             else:
 
-                raise Slice_Outside_Image(
+                self._logger.critical(
+                    "Plate will be disregarded. " +
                     "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
                         im.shape,
                         np.s_[F[low, dim1]:F[high, dim1], F[low, dim2],
@@ -319,6 +322,8 @@ class Project_Image():
                         scale_factor,
                         self.fixture['name'],
                         self.fixture['version']))
+
+                return None
 
     def _set_current_grid_move(self, d1, d2):
 
@@ -331,7 +336,8 @@ class Project_Image():
 
             s = "Current shape is {0} x {1}.".format(d1, d2)
             s += " Image is {0} x {1}.".format(im.shape[0], im.shape[1])
-            raise Slice_Error(s)
+            s += " They must have same orientation"
+            self._logger.critical(s)
 
             return False
 
@@ -416,6 +422,9 @@ class Project_Image():
         for plateIndex in range(len(features)):
 
             im = self.get_im_section(features[plateIndex], scale_factor)
+            if im is None:
+                continue
+
             gridArray = self._grid_arrays[plateIndex]
             gridArray.doAnalysis(
                 im,
