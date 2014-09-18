@@ -25,6 +25,7 @@ import first_pass_image
 import support
 import scanomatic.io.paths as paths
 import scanomatic.io.app_config as app_config_module
+import scanomatic.io.logger as logger
 
 #
 # EXCEPTIONS
@@ -53,7 +54,7 @@ class Project_Image():
             grid_cell_settings=None, log_version=0,
             app_config=None, grid_correction=None):
 
-        #self._logger = logging.getLogger('Analysis Image')
+        self._logger = logger.Logger('Analysis Image')
 
         self.p_uuid = p_uuid
         self._log_version = log_version
