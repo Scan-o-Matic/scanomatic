@@ -852,6 +852,22 @@ class Image(object):
         """
 
     def _get_rotated_point(self, point, alpha, offset=(0, 0)):
+        """Returns a rotated and offset point.
+
+        Parameters
+        ==========
+
+        point : array-like
+            A two position array for the source position
+
+        alpha : float
+            Rotation angle 
+
+        offset : arrary-like, optional
+            The offset of the point / how much it will be moved after the
+            rotation.
+            Default is to not move.
+        """
 
         if alpha is None:
             return (None, None)
@@ -865,6 +881,29 @@ class Image(object):
         new_alpha = tmp_alpha + alpha
         new_x = np.cos(new_alpha) * tmp_l + offset[0]
         new_y = np.sin(new_alpha) * tmp_l + offset[1]
+
+        if new_x > self.EXPECTED_IM_SIZE[0]:
+            self._logger.warning(
+                    "Point X-value ({1}) outside image {0}".format(
+                        self._name, new_x))
+            new_x = self.EXPECTED_IM_SIZE[0]
+        elif new_x < 0:
+            self._logger.warning(
+                    "Point X-value ({1}) outside image {0}".format(
+                        self._name, new_x))
+            new_x = 0
+
+
+        if new_y > self.EXPECTED_IM_SIZE[1]:
+            self._logger.warning(
+                    "Point Y-value ({1}) outside image {0}".format(
+                        self._name, new_y))
+            new_y = self.EXPECTED_IM_SIZE[1]
+        elif new_y < 0:
+            self._logger.warning(
+                    "Point Y-value ({1}) outside image {0}".format(
+                        self._name, new_y))
+            new_y = 0
 
         return (new_x, new_y)
 
