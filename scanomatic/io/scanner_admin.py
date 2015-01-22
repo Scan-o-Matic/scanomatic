@@ -15,6 +15,8 @@ __status__ = "Development"
 
 import ConfigParser
 from subprocess import Popen, PIPE
+from enum import EnumMeta
+from cPickle import loads, dumps
 
 #
 # INTERNAL DEPENDENCIES
@@ -66,38 +68,67 @@ class Scanner_Manager(object):
 
         return True
 
-    def _get(self, scanner, key, defaultVal):
+    def __iter__(self):
+
+        return iter(self._scannerStatus.sections())
+
+    def _verifyDataStore(self, dataStore):
+
+        if dataStore is None:
+            dataStore = self._scannerStatus
+
+        return dataStore
+
+    def _verifySection(self, scanner, dataStore=None):
+
+        dataStore = self._verifyDataStore(dataStore)
+
+        if not dataStore.has_section(scanner):
+            dataStore.add_section(scanner)
+
+        return dataStore
+
+    def _get(self, scanner, key, default=None, dataStore=None):
         
+        dataStore = self._verifyDataStore(dataStore) 
         scanner = self._conf.get_scanner_name(scanner)
+        self._verifySection(scanner, dataStore=dataStore)
 
-        if not self._scannerStatus.has_section(scanner):
-            self._scannerStatus.add_section(scanner)
 
-        if self._scannerStatus.has_option(scanner, key):
-            val = self._scannerStatus.get(scanner, key)
+        if dataStore.has_option(scanner, key):
+            val = dataStore.get(scanner, key)
+            if isinstance(val, EnumMeta):
+                try:
+                    val = loads(val)
+                except:
+                    self._logging.warning(
+                        "Bad data for {0} on scanner {1} ({2})".format(
+                            key, scanner, val))
             if val != '':
                 return val
-        return defaultVal
 
-    def _set(self, scanner, key, value):
+        return default 
 
+    def _set(self, scanner, key, value, dataStore=None):
+
+        dataStore = self._verifyDataStore(dataStore) 
         scanner = self._conf.get_scanner_name(scanner)
-
-        if not self._scannerStatus.has_section(scanner):
-            self._scannerStatus.add_section(scanner)
+        self._verifySection(scanner, dataStore=dataStore)
 
         if value is None:
-            self._scannerStatus.set(scanner, key, '')
+            dataStore.set(scanner, key, '')
         elif isinstance(value, bool):
-            self._scannerStatus.set(scanner, key, str(int(value)))
+            dataStore.set(scanner, key, str(int(value)))
+        elif isinstance(value, EnumMeta):
+            dataStore.set(scanner, key, dumps(value))
         else:
-            self._scannerStatus.set(scanner, key, str(value))
+            dataStore.set(scanner, key, str(value))
 
     def _set_powerManagers(self):
 
         self._pm = dict()
         for i in range(1, self._conf.number_of_scanners + 1):
-            self._pm[i] = self._conf.get_pm(i)
+            self._pm[self._conf.get_scanner_name(i)] = self._conf.get_pm(i)
 
 
     def _get_alive_scanners(self):
@@ -117,19 +148,19 @@ class Scanner_Manager(object):
 
         claims = dict()
 
-        for sect in self._scannerStatus.sections():
+        for scanner in self._scannerStatus.sections():
 
             try:
-                i = int(sect[-1])
+                i = int(scanner[-1])
             except (ValueError, TypeError):
                 self._logger.error(
                     "Scanner Status File has corrupt section '{0}'".format(
-                        sect))
+                        scanner))
                 continue
 
             claims[i] = dict(
-                    usb=self._get(sect, 'usb', ''),
-                    power=bool(self._get(sect, 'power', False)))
+                    usb=self.getUSB(scanner, default=None),
+                    power=bool(self._get(scanner, 'power', False)))
 
         for i in range(1, self._conf.number_of_scanners + 1):
             if i not in claims:
@@ -213,16 +244,8 @@ class Scanner_Manager(object):
 
     def _get_power_type(self, scanner):
 
-        sName = self._conf.get_scanner_name(scanner)
-        if self._scannerConfs.has_section(sName):
-
-            powerType = self._scannerConfs.get(sName, 'powerType', 'SIMPLE')
-
-        else:
-
-            powerType = 'SIMPLE'
-
-        return powerType
+        return self._get(scanner, 'powerType',
+                         default='SIMPLE', dataStore=self._scannerConfs)
         
     def isOwner(self, scanner, jobID):
 
@@ -308,8 +331,7 @@ class Scanner_Manager(object):
 
     def releaseScanner(self, scanner):
 
-        usb = self._get(scanner, "usb", None)
-        if usb:
+        if self.getUSB(scanner, default=False):
             self.requestOff(scanner)
         self._set(scanner, "pid", None)
         self._set(scanner, "jobID", None)
@@ -339,18 +361,26 @@ class Scanner_Manager(object):
 
         return False
 
-    def usb(self, scanner, jobID):
+    def getUSB(self, scanner, jobID=None, default=''):
+        """Gets the usb that a scanner is connected on.
+        """
         
+        """
         if jobID is None or jobID != self._get(scanner, "jobID", None):
             self._logger.warning("Incorrect jobID for scanner {0}".format(
                 scanner))
             return False
+        """
+        
+        if not self._get(scanner, "power", False):
 
-        elif not self._get(scanner, "power", False):
+            return default
 
-            return None
+        return self._get(scanner, "usb", default)
 
-        return self._get(scanner, "usb", None)
+    def getPower(self, scanner):
+
+        return bool(int(self._get(scanner, "power", 0)))
 
     def sync(self):
 
@@ -358,11 +388,20 @@ class Scanner_Manager(object):
 
     def fixtureExists(self, fixtureName):
 
-        return self._fixtures.exists(fixtureName)
+        return fixtureName in self._fixtures
 
     def getFixtureNames(self):
 
         return self._fixtures.get_names()
+
+    def getStatus(self, scanner):
+
+        return dict(
+            name=self._conf.get_scanner_name(scanner),
+            pid=self._get(scanner, "pid", ""),
+            power=self.getPower(scanner),
+            owner=self._get(scanner, "jobID", ""),
+            usb=self.getUSB(scanner))
 
     @property
     def powerStatus(self):
