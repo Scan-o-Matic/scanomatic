@@ -467,7 +467,7 @@ class Scanner(object):
             self._wait_for_power_up_turn()
 
             #Power up and catch new scanner
-            is_on = self._pm.on()
+            is_on = self._pm.powerUpScanner()
             if is_on:
                 self._logger.info("Getting scanner address")
                 self._write_scanner_address_claim()
@@ -485,7 +485,7 @@ class Scanner(object):
         if self.get_claimed_by_other() is False or byforce:
 
             #Power down and remove scanner address lock
-            is_on = not self._pm.off()
+            is_on = not self._pm.powerDownScanner()
             self._remove_scanner_address_lock()
             self._is_on = is_on
 
