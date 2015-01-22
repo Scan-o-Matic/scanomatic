@@ -69,6 +69,13 @@ def _ToggleScannerOn(self):
 def _ToggleScannerOff(self):
     return self._off()
 
+
+def hasValue(E, value):
+    return any(elem for elem in E if elem.value == value)
+
+def getEnumTypeFromValue(E, value):
+    return list(elem for elem in E if elem.value == value)[0]
+
 #
 # CLASSES
 #
