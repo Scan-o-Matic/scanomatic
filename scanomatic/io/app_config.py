@@ -16,6 +16,7 @@ __status__ = "Development"
 import os
 import md5
 import random
+from cPickle import loads, dumps
 from ConfigParser import ConfigParser
 
 #
@@ -35,6 +36,7 @@ import logger
 class Config(object):
 
     SCANNER_PATTERN = "Scanner {0}"
+    POWER_DEFAULT = power_manager.POWER_MODES.Impulse 
 
     def __init__(self, path=None):
 
@@ -65,7 +67,7 @@ class Config(object):
         self._scanner_sockets = {
             self.SCANNER_PATTERN.format(i): i for i in range(1, 4)}
 
-        self.pm_type = 'usb'
+        self.pm_type = power_manager.POWER_MANAGER_TYPE.LAN
         self._pm_host = "192.168.0.100"
         self._pm_pwd = None
         self._pm_verify_name = False
@@ -101,7 +103,11 @@ class Config(object):
 
         pm = self._config_file['pm-type']
         if pm is not None:
-            self.pm_type = pm
+            try:
+                self.pm_type = loads(pm)
+            except:
+                self._logger.warning("Power Manager Type {0} not valid".format(
+                    pm))
 
         experiments_root = self._config_file['experiments-root']
         if experiments_root is not None:
@@ -125,15 +131,18 @@ class Config(object):
 
     def _set_pm_extras(self):
 
-        if self.pm_type == 'usb':
+        if self.pm_type == power_manager.POWER_MANAGER_TYPE.linuxUSB:
 
             self._PM = power_manager.USB_PM_LINUX
-            self._pm_arguments = {}
+            self._pm_arguments = {
+                'power_mode' : self.POWER_DEFAULT
+                    }
 
-        elif self.pm_type == 'lan':
+        elif self.pm_type == power_manager.POWER_MANAGER_TYPE.LAN:
             self._PM = power_manager.LAN_PM
 
             self._pm_arguments = {
+                'power_mode' : self.POWER_DEFAULT,
                 'host': self._pm_host,
                 'password': self._pm_pwd,
                 'verify_name': self._pm_verify_name,
@@ -142,7 +151,9 @@ class Config(object):
             }
         else:
             self._PM = power_manager.NO_PM
-            self._pm_arguments = {}
+            self._pm_arguments = {
+                    'power_mode' : self.POWER_DEFAULT
+                    }
 
     @staticmethod
     def _safeCfgGet(cfg, section, item, defaultValue=None, vtype=None):
@@ -225,8 +236,10 @@ class Config(object):
     def set(self, key, value):
 
         if key == 'pm-type':
-            if value in ('usb', 'lan', 'no'):
-                self.pm_type = value
+            if value in power_manager.hasValue(
+                    power_manager.POWER_MANAGER_TYPE, value): 
+                self.pm_type = power_manager.getEnumTypeFromValue(
+                    power_manager.POWER_MANAGER_TYPE, value)
                 self._set_pm_extras()
 
         elif key == 'number-of-scanners':
@@ -236,7 +249,7 @@ class Config(object):
 
     def save_settings(self):
 
-        self._config_file['pm-type'] = self.pm_type
+        self._config_file['pm-type'] = dumps(self.pm_type)
         self._config_file['number-of-scanners'] = self.number_of_scanners
         self._config_file['experiments-root'] = self._paths.experiment_root
         self._config_file.save()
@@ -260,7 +273,7 @@ class Config(object):
 
         scanner_pm_socket = self._scanner_sockets[
             self.get_scanner_name(scanner_name)]
-        if pm_kwargs == {}:
+        if len(pm_kwargs) == 0:
             pm_kwargs = self._pm_arguments
 
         self._logger.info(
