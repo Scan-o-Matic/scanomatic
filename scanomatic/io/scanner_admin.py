@@ -29,7 +29,6 @@ import scanomatic.io.fixtures as fixtures
 
 class Scanner_Manager(object):
 
-    POWER_FLICKER_DELAY = 0.25
 
     def __init__(self):
 
@@ -234,29 +233,22 @@ class Scanner_Manager(object):
 
         if self.sync():
 
-            if self._get(sName, 'power', False):
-                usb = self._get(sName, 'usb', None)
-                if usb:
-                    return True
+            if self.getUSB(scanner, default=False):
+                #Scanner is already On and connected
+                return True
 
             if not self.isOwner(scanner, jobID):
                 self._logger.error("Can't turn on, owner missmatch")
                 return False
 
-            powerType = self._get_power_type(scanner)
+            self._set(scanner, 'usb', None)
 
-            self._set(sName, 'usb', None)
+            success = self._pm[scanner].powerUpScanner()
 
-            if powerType == 'SIMPLE':
-                self._pm[scanner].on()
-            else:
-                self._pm[scanner].on()
-                time.sleep(self.POWER_FLICKER_DELAY)
-                self._pm[scanner].off()
-
-            self._set(sName, 'power', True)
+            self._set(scanner, 'power', sucess)
 
             self._save()
+            return success
 
         else:
 
@@ -268,22 +260,15 @@ class Scanner_Manager(object):
             self._logger.error("Can't turn on, owner missmatch")
             return False
 
-        powerType = self._get_power_type(scanner)
+        success = self._pm[scanner].powerDownScanner()
 
-        if powerType == 'SIMPLE':
-            self._pm[scanner].off()
-        else:
-            self._pm[scanner].on()
-            time.sleep(self.POWER_FLICKER_DELAY)
-            self._pm[scanner].off()
-
-        if updateClaim:
+        if success and updateClaim:
             self._set(scanner, 'usb', None)
             self._set(scanner, 'power', False)
 
             self._save()
 
-        return True
+        return success 
 
     def requestClaim(self, scanner, pid, jobID):
 
