@@ -520,7 +520,7 @@ class SOM_RPC(object):
         ==========
 
         userID : str, optional
-            The ID of the user requesting to create a job.
+            The ID of the user requesting the fixture names.
             This is not needed but used as a place holder to maintain
             function call interface
 
@@ -533,6 +533,35 @@ class SOM_RPC(object):
 
         return self._scannerManager.getFixtureNames()
 
+    def getScannerStatuses(self, userID=None):
+
+        return tuple(self.getScannerStatus(userID, scanner) for scanner in
+                    self._scannerManager)
+
+    def getScannerStatus(self, userID, scanner):
+        """Returns the status of a specific scanner.
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting the status, all users allowed.
+
+        scanner : int or str
+            The scanner name, e.g. ``"Scanner 1"`` or its enumerator ``1``
+
+        Returns
+        =======
+
+        dict
+            Information about the scanner
+        """
+
+        if scanner not in self._scannerManager:
+            return dict(installed=False)
+        else:
+            return dict(installed=True, 
+                        **self._scannerManager.getStatus(scanner))
 
     def flushQueue(self, userID):
         """Clears the queue
