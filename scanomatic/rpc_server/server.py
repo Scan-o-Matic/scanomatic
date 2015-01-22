@@ -885,7 +885,7 @@ class SOM_RPC(object):
         if self._scannerManager.fixtureExists(fixture) is False:
 
             self._logger.error(
-                "{0}'s fixture '{0}' is not know".format(
+                "{0}'s fixture '{1}' is not know".format(
                     label, fixture))
 
             return False
@@ -893,7 +893,7 @@ class SOM_RPC(object):
         if not(os.path.isdir(projectsRoot)):
 
             self._logger.error(
-                "{0}'s project root '{0}' is not a directory".format(
+                "{0}'s project root '{1}' is not a directory".format(
                     label, projectsRoot))
 
             return False
