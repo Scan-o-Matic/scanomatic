@@ -113,3 +113,5 @@ T wants to communicate with the back-ends to hook up Scan-o-Matic in larger
 contexts or to automate production of data downstream.
 T wants to be able to get direct access to all relevant intermidiary data
 stages and be able to obtain the graphs as data objects.
+
+Wants API to group information based on meta-data.
