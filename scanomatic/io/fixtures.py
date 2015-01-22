@@ -172,7 +172,7 @@ class Fixtures(object):
 
     def exists(self, name):
 
-        return self._fixtures is not None and fixture in self._fixtures
+        return self._fixtures is not None and name in self._fixtures
 
     def update(self):
 
