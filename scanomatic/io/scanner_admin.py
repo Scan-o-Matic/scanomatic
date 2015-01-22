@@ -24,6 +24,7 @@ import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 import scanomatic.io.power_manager as power_manager
+import scanomatic.io.fixtures as fixtures
 
 
 class Scanner_Manager(object):
@@ -35,6 +36,7 @@ class Scanner_Manager(object):
         self._logger = logger.Logger("Scanner Manager")
         self._conf = app_config.Config()
         self._paths = paths.Paths()
+        self._fixtures = fixtures.Fixtures(self._paths, self._conf)
 
         self._scannerStatus = ConfigParser.ConfigParser(
             allow_no_value=True)
@@ -371,6 +373,10 @@ class Scanner_Manager(object):
     def sync(self):
 
         return self._match_scanners(self._get_alive_scanners())
+
+    def fixtureExists(self, fixtureName):
+
+        return self._fixtures.exists(fixtureName)
 
     @property
     def powerStatus(self):
