@@ -16,6 +16,7 @@ __status__ = "Development"
 import ConfigParser
 from subprocess import Popen, PIPE
 from enum import EnumMeta
+import re
 from cPickle import loads, dumps
 
 #
@@ -133,45 +134,25 @@ class Scanner_Manager(object):
 
     def _get_alive_scanners(self):
 
-        p = Popen(["scanimage", "-L", "|",
-            "sed", "-n", "-E", r"s/^.*device[^\`]*.(.*libusb[^\`']*).*$/\1/p",
-            ], shell=True, stdout=PIPE, stderr=PIPE)
+        p = Popen(["scanimage", "-L"], shell=False, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
-        
-        if 'no SANE devices' in stderr:
-            return []
-        else:
-            #TODO: why map str?
-            return [s for s in map(str, stdout.split('\n')) if len(s) > 0]
+        return re.findall(r"device[^\`]*.(.*libusb[^\`']*)", stdout)
 
     def _get_recorded_statuses(self):
 
         claims = dict()
 
-        for scanner in self._scannerStatus.sections():
+        for scanner in self:
 
-            try:
-                i = int(scanner[-1])
-            except (ValueError, TypeError):
-                self._logger.error(
-                    "Scanner Status File has corrupt section '{0}'".format(
-                        scanner))
-                continue
-
-            claims[i] = dict(
+            claims[scanner] = dict(
                     usb=self.getUSB(scanner, default=None),
-                    power=bool(self._get(scanner, 'power', False)))
-
-        for i in range(1, self._conf.number_of_scanners + 1):
-            if i not in claims:
-                claims[i] = dict(usb=None, power=False)
+                    power=self.getPower(scanner))
 
         return claims
 
     def _updateStatus(self, claim):
 
         for c in claim:
-
             self._set(c, 'usb', claim[c]['usb'])
             self._set(c, 'power', claim[c]['power'])
         self._save()
@@ -180,18 +161,20 @@ class Scanner_Manager(object):
 
         self._scannerStatus.write(open(self._paths.rpc_scanner_status, 'w'))
 
-    def _rescue(self, usbList, claim):
+    def _rescue(self, orphanUSBs, claim):
 
-        power = list(self.powerStatus)
-        offs = 0
+        power = self.powerStatus
+    
+        for scanner in self:
 
-        for i in range(1, self._conf.number_of_scanners + 1):
+            if ((power[scanner] or claim[scanner]['power']) and 
+                    (claim[scanner]['usb'] in orphanUSBs
+                     or not claim[scanner]['usb'])):
 
-            if power[i] and claim[i]['usb'] in usbList or not claim[i]['usb']:
-                self.requestOff(i, updateClaim=False)
-                power[i] = False
-                offs += 1
-                claim[i] = dict(usb=None, power=False)
+                if self.requestOff(scanner, self._get(scanner, 'jobID', ''),
+                                   updateClaim=False):
+
+                    claim[scanner] = dict(usb=None, power=False)
 
         self._updateStatus(claim)
 
@@ -210,19 +193,21 @@ class Scanner_Manager(object):
 
             if not found:
 
-                noFounds.push(usb)
+                noFounds.append(usb)
 
         if len(noFounds) > 1:
-            self._critical("More than one unclaimed scanner")
+            self._logger.critical("More than one unclaimed scanner {0}".format(
+                noFounds))
             self._rescue(noFounds, claim)
             return False
+        elif len(noFounds)==1:
 
-        for usb in noFounds:
+            usb = noFounds[0]
 
             found = False
             for c in claim:
 
-                if claim[c]['power'] and not claim[c]:
+                if claim[c]['power'] and not claim[c]['usb']:
 
                     if not found:
                         claim[c]['usb'] = usb
@@ -235,6 +220,21 @@ class Scanner_Manager(object):
                         self._rescue(noFounds, claim)
                         return False
                     
+            if not found:
+
+                powers = self.powerStatus
+                if (sum(powers.values()) == 1):
+                    scanner = tuple(scanner for scanner in powers if powers[scanner])[0]
+                    claim[scanner]['power'] = True
+                    claim[scanner]['usb'] = usb
+                else:
+
+                    self._logger.critical(
+                        "There's one scanner on {0}, but non claims to be".format(
+                            usb))
+                    self._rescue(noFounds, claim)
+                    return False
+
         self._updateStatus(claim)
 
         return sum(1 for c in claim 
@@ -249,8 +249,7 @@ class Scanner_Manager(object):
         
     def isOwner(self, scanner, jobID):
 
-        owner = self._get(scanner, 'jobID')
-        return owner is not None and owner == jobID
+        return jobID == self._get(scanner, 'jobID', '')
 
     def requestOn(self, scanner, jobID):
 
@@ -260,8 +259,10 @@ class Scanner_Manager(object):
                 #Scanner is already On and connected
                 return True
 
-            if not self.isOwner(scanner, jobID):
-                self._logger.error("Can't turn on, owner missmatch")
+            if self.isOwner(scanner, jobID) is False:
+                self._logger.error(
+                    "Can't turn on {2}, owner missmatch ('{0}'!='{1}')".format(
+                        jobID, self._get(scanner, "jobID", ""), scanner))
                 return False
 
             self._set(scanner, 'usb', None)
@@ -279,8 +280,10 @@ class Scanner_Manager(object):
 
     def requestOff(self, scanner, jobID, updateClaim=True):
 
-        if not self.isOwner(scanner, jobID):
-            self._logger.error("Can't turn on, owner missmatch")
+        if self.isOwner(scanner, jobID) is False:
+            self._logger.error(
+                "Can't turn off {2}, owner missmatch ('{0}'!='{1}')".format(
+                    jobID, self._get(scanner, "jobID", ""), scanner))
             return False
 
         success = self._pm[scanner].powerDownScanner()
@@ -329,10 +332,10 @@ class Scanner_Manager(object):
         self._save()
         return True
 
-    def releaseScanner(self, scanner):
+    def releaseScanner(self, scanner, jobID):
 
         if self.getUSB(scanner, default=False):
-            self.requestOff(scanner)
+            self.requestOff(scanner, jobID)
         self._set(scanner, "pid", None)
         self._set(scanner, "jobID", None)
         self._save()
@@ -343,10 +346,6 @@ class Scanner_Manager(object):
         return (int(self._get(scanner, "pid", None)),
                 self._get(scanner, "jobID", None))
         
-    def isOwner(self, scanner, jobID):
-
-        return jobID is not None and self._get(scanner, "jobID", None) == jobID
-
     def updatePid(self, jobID, pid):
 
         if jobID is None or not isinstance(pid, int) and pid < 1:
@@ -405,5 +404,5 @@ class Scanner_Manager(object):
 
     @property
     def powerStatus(self):
-        return (self._pm[i].status() for i in 
-                range(1, self._conf.number_of_scanners + 1))
+        return {scanner: self._pm[scanner].couldHavePower() 
+                for scanner in self}
