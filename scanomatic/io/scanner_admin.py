@@ -76,12 +76,9 @@ class Scanner_Manager(object):
 
         if self._scannerStatus.has_option(scanner, key):
             val = self._scannerStatus.get(scanner, key)
-            if val == '':
-                return None
-            else:
+            if val != '':
                 return val
-        else:
-            return defaultVal
+        return defaultVal
 
     def _set(self, scanner, key, value):
 
@@ -93,7 +90,7 @@ class Scanner_Manager(object):
         if value is None:
             self._scannerStatus.set(scanner, key, '')
         elif isinstance(value, bool):
-            self._scannerStatus.set(scanner, key, int(value))
+            self._scannerStatus.set(scanner, key, str(int(value)))
         else:
             self._scannerStatus.set(scanner, key, str(value))
 
@@ -119,7 +116,7 @@ class Scanner_Manager(object):
 
     def _get_recorded_statuses(self):
 
-        claim = dict()
+        claims = dict()
 
         for sect in self._scannerStatus.sections():
 
@@ -131,15 +128,15 @@ class Scanner_Manager(object):
                         sect))
                 continue
 
-            claim[i] = dict(
+            claims[i] = dict(
                     usb=self._get(sect, 'usb', ''),
                     power=bool(self._get(sect, 'power', False)))
 
         for i in range(1, self._conf.number_of_scanners + 1):
-            if i not in claim:
-                claim[i] = dict(usb=None, power=False)
+            if i not in claims:
+                claims[i] = dict(usb=None, power=False)
 
-        return claim
+        return claims
 
     def _updateStatus(self, claim):
 
