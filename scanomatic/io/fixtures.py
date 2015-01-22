@@ -198,9 +198,9 @@ class Fixtures(object):
     def get_names(self):
 
         if self._fixtures is None:
-            return list()
+            return tuple()
 
-        return sorted(self._fixtures.keys())
+        return tuple(sorted(self._fixtures.keys()))
 
     def fill_model(self, model):
 

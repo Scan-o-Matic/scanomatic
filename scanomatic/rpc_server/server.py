@@ -513,6 +513,27 @@ class SOM_RPC(object):
 
         return self._queue.getJobsInQueue()
 
+    def getFixtureNames(self, userID=None):
+        """Gives the names of the fixtures known to the server.
+
+        Parameters
+        ==========
+
+        userID : str, optional
+            The ID of the user requesting to create a job.
+            This is not needed but used as a place holder to maintain
+            function call interface
+
+        Returns
+        =======
+
+        tuple of strings
+            The names known to the server
+        """
+
+        return self._scannerManager.getFixtureNames()
+
+
     def flushQueue(self, userID):
         """Clears the queue
 

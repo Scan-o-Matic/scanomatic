@@ -375,6 +375,10 @@ class Scanner_Manager(object):
 
         return self._fixtures.exists(fixtureName)
 
+    def getFixtureNames(self):
+
+        return self._fixtures.get_names()
+
     @property
     def powerStatus(self):
         return (self._pm[i].status() for i in 
