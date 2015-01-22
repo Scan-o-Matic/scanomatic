@@ -117,6 +117,10 @@ class NO_PM(object):
         self._logger.warning("claiming to be off")
         return False
 
+    def couldHavePower(self):
+
+        return (self._power_mode is POWER_MODES.Impulse or 
+                self.status() is not False)
 
 class USB_PM(NO_PM):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
@@ -428,14 +432,13 @@ class LAN_PM(NO_PM):
             return None
 
         page = u.read()
-        self._logger.info('LAN PM, trying to report status')
         if not self._verify_name or self._pm_server_str in page:
 
-            states = re.findall(r'sockstates = ([^;])', page)[0].strip()
+            states = re.findall(r'sockstates = ([^;]*)', page)[0].strip()
             try:
                 states = eval(states)
-                if len(states) > self._socket:
-                    return states[self._socket] == 1
+                if len(states) >= self._socket:
+                    return states[self._socket - 1] == 1
             except:
                 pass
 
