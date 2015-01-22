@@ -16,10 +16,13 @@ __status__ = "Development"
 import os
 import re
 from subprocess import Popen, PIPE
+import time
 
 #LAN-specific dependencies
 import urllib2
+import types
 from urllib import urlencode
+from enum import Enum #NOTE: For python<3.4 use 'pip install enum34' to obtain module
 #FURTHER LAN-specific dependenies further down
 
 #
@@ -42,6 +45,29 @@ class Invalid_Init(Exception):
 
 URL_TIMEOUT = 2
 MAX_CONNECTION_TRIES = 10
+POWER_MANAGER_TYPE = Enum("POWER_MANAGER_TYPE",
+                     names=("notInstalled", "USB", "LAN", "linuxUSB", 
+                            "windowsUSB"))
+POWER_MODES = Enum("POWER_MODES", names=("Toggle", "Impulse"))
+POWER_FLICKER_DELAY = 0.25
+
+#
+# FUNCTIONS
+#
+
+
+def _ImpulseScanner(self):
+    onSuccess = self._on()
+    time.sleep(POWER_FLICKER_DELAY)
+    return self._off() and onSuccess
+
+
+def _ToggleScannerOn(self):
+    return self._on()
+
+
+def _ToggleScannerOff(self):
+    return self._off()
 
 #
 # CLASSES
@@ -50,43 +76,59 @@ MAX_CONNECTION_TRIES = 10
 
 class NO_PM(object):
 
-    def __init__(*args, **kwargs):
+    def __init__(self, socket, 
+                 power_mode=POWER_MODES.Impulse, name="not installed"):
 
-        pass
+        if power_mode is POWER_MODES.Impulse:
+            self.powerUpScanner = types.MethodType(_ImpulseScanner, self)
+            self.powerDownScanner = types.MethodType(_ImpulseScanner, self)
 
-    def on(self):
+        elif power_mode is POWER_MODES.Toggle:
+            self.powerUpScanner = types.MethodType(_ToggleScannerOn, self)
+            self.powerDownScanner = types.MethodType(_ToggleScannerOff, self)
+
+        self._power_mode = power_mode
+        self._socket = socket
+        self.name = name
+        self._logger = logger.Logger("Power Manager {0}".format(name))
+
+    @property
+    def power_mode(self):
+        return str(self._power_mode)
+
+    def _on(self):
+
 
         return True
 
-    def off(self):
+    def _off(self):
 
         return True
 
     def status(self):
 
-        print "NO PM, claiming to be off"
+        self._logger.warning("claiming to be off")
         return False
 
 
 class USB_PM(NO_PM):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
-    def __init__(self, path, on_args=[], off_args=[]):
+    def __init__(self, socket, path, on_args=[], off_args=[],
+                 power_mode=POWER_MODES.Impulse, name="USB"):
 
-        self.name = "USB connected PM"
+        super(USB_PM, self).__init__(socket, power_mode=power_mode, name=name)
+
         self._on_cmd = [path] + on_args
         self._off_cmd = [path] + off_args
         self._fail_error = "No GEMBIRD SiS-PM found"
-        self._socket = "None"
 
-        self._logger = logger.Logger("Power Manager USB")
-
-    def on(self):
+    def _on(self):
         on_success = self._exec(self._on_cmd)
         self._logger.info('USB PM, Turning on socket {0} ({1})'.format(
             self._socket, on_success))
         return on_success
 
-    def off(self):
+    def _off(self):
         off_success = self._exec(self._off_cmd)
         self._logger.info('USB PM, Turning off socket {0} ({1})'.format(
             self._socket, off_success))
@@ -113,17 +155,16 @@ class USB_PM_LINUX(USB_PM):
     ON_TEXT = "on"
     OFF_TEXT = "off"
 
-    def __init__(self, socket, path="sispmctl"):
+    def __init__(self, socket, path="sispmctl",
+                 power_mode=POWER_MODES.Impulse):
 
         super(USB_PM_LINUX, self).__init__(
+            socket,
             path,
             on_args=["-o", "{0}".format(socket)],
-            off_args=["-f", "{0}".format(socket)])
-
-        self._logger = logger.Logger("Power Manager USB(Linux)")
-
-        self.name = "USB connected PM (Linux)"
-        self._socket = socket
+            off_args=["-f", "{0}".format(socket)],
+            power_mode=power_mode,
+            name="USB(Linux)")
 
     def status(self):
 
@@ -147,17 +188,16 @@ class USB_PM_LINUX(USB_PM):
 class USB_PM_WIN(USB_PM):
     """Class for handling USB connected PM:s on windows."""
     def __init__(self, socket,
-                 path=r"C:\Program Files\Gembird\Power Manager\pm.exe"):
+                 path=r"C:\Program Files\Gembird\Power Manager\pm.exe",
+                 power_mode=POWER_MODES.Impulse):
 
         super(USB_PM_LINUX, self).__init__(
+            socket,
             path,
             on_args=["-on", "-PW1", "-Scanner{0}".format(socket)],
-            off_args=["-off", "-PW1", "-Scanner{0}".format(socket)])
-
-        self._logger = logger.Logger("Power Manager USB(Windows)")
-
-        self.name = "USB connected PM (Windows)"
-        self._socket = socket
+            off_args=["-off", "-PW1", "-Scanner{0}".format(socket)],
+            power_mode=power_mode,
+            name="USB(Windows)")
 
 
 class LAN_PM(NO_PM):
@@ -167,17 +207,16 @@ class LAN_PM(NO_PM):
     If no password is supplied, default password is used."""
 
     def __init__(self, socket, host=None, password="1", verify_name=False,
-                 pm_name="Server 1", MAC=None):
+                 pm_name="Server 1", MAC=None,
+                 power_mode=POWER_MODES.Impulse):
 
-        self.name = "LAN connected PM"
+        super(LAN_PM, self).__init__(socket, name="LAN",
+                                     power_mode=power_mode)
         self._host = host
         self._MAC = MAC
-        self._socket = socket
         if password is None:
             password = "1"
         self._password = password
-
-        self._logger = logger.Logger("Power Manager LAN")
 
         self._pm_server_name = pm_name
         self._pm_server_str = "<h2>{0}".format(pm_name)
@@ -326,7 +365,7 @@ class LAN_PM(NO_PM):
 
         return self._host is not None
 
-    def on(self):
+    def _on(self):
 
         u = self._login()
 
@@ -348,7 +387,7 @@ class LAN_PM(NO_PM):
             self._logger.error("LAN PM, Failed to turn on socket {0}".format(self._socket))
             return False
 
-    def off(self):
+    def _off(self):
 
         u = self._login()
 
@@ -417,17 +456,17 @@ class Power_Manager():
         else:
             self._logger.debug("No device to talk to")
 
-    def on(self):
+    def _on(self):
 
         if self._installed and self._on is not True:
-            self._pm.on()
+            self._pm.powerUpScanner()
             self._on = True
             self._logger.debug("Switching on {0}, Socket {1}".format(
                 self._pm.name, self._pm._socket))
 
-    def off(self):
+    def _off(self):
         if self._installed and self._on is not False:
-            self._pm.off()
+            self._pm.powerDownScanner()
             self._on = False
             self._logger.debug("Switching off {0}, Socket {1}".format(
                 self._pm.name, self._pm._socket))
