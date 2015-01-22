@@ -36,7 +36,7 @@ import logger
 class Config(object):
 
     SCANNER_PATTERN = "Scanner {0}"
-    POWER_DEFAULT = power_manager.POWER_MODES.Impulse 
+    POWER_DEFAULT = power_manager.POWER_MODES.Toggle
 
     def __init__(self, path=None):
 
