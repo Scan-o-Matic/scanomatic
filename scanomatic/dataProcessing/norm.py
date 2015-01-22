@@ -145,7 +145,7 @@ def _getPositionsForKernelTrue(dataObject, positionKernels):
 
     for plateIndex in range(len(dataObject)):
 
-        plateCoordinates = [[], []]
+        plateCoordinates = [[], [], []]
         kernel = positionKernels[plateIndex]
         kernelD1, kernelD2 = kernel.shape
 
@@ -154,9 +154,14 @@ def _getPositionsForKernelTrue(dataObject, positionKernels):
             for idx2 in xrange(dataObject[plateIndex].shape[1]):
 
                 if kernel[idx1 % kernelD1, idx2 % kernelD2]:
+                        
+                    for m in xrange(dataObject[plateIndex].shape[2]):
 
-                    plateCoordinates[0].append(idx1)
-                    plateCoordinates[1].append(idx2)
+                        if not np.isnan(dataObject[plateIndex][idx1, idx2, m]):
+
+                            plateCoordinates[0].append(idx1)
+                            plateCoordinates[1].append(idx2)
+                            plateCoordinates[2].append(m)
 
         platesCoordinates.append(map(np.array, plateCoordinates))
 
@@ -340,7 +345,7 @@ def getNormalisationSurfaceWithGridData(
                     points = np.where(missingTest(plate[..., measureIndex]) ==
                                       np.False_)
 
-                values = plate[..., measureIndex][points]
+                values = plate[points]
 
                 finitePoints = np.isfinite(values)
                 if (finitePoints.sum() > 0):
@@ -351,7 +356,7 @@ def getNormalisationSurfaceWithGridData(
                         values = values[finitePoints]
 
                     res = griddata(
-                        tuple(points),
+                        tuple(points[:2]),
                         #np.array(tuple(p.ravel() for p in points)).T.shape,
                         values,
                         (grid_x, grid_y),
