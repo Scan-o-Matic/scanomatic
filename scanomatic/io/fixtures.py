@@ -165,12 +165,12 @@ class Fixtures(object):
 
     def __getitem__(self, fixture):
 
-        if exists(fixture):
+        if fixture in self:
             return self._fixtures[fixture]
 
         return None
 
-    def exists(self, name):
+    def __contains__(self, name):
 
         return self._fixtures is not None and name in self._fixtures
 
