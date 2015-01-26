@@ -164,13 +164,17 @@ class Scanner_Manager(object):
 
     def _rescue(self, orphanUSBs, claim):
 
+        self._orphanUSBs = self._orphanUSBs.union(orphanUSBs)
+
         power = self.powerStatus
     
         for scanner in self:
 
-            if ((power[scanner] or claim[scanner]['power']) and 
-                    (claim[scanner]['usb'] in orphanUSBs
-                     or not claim[scanner]['usb'])):
+            couldHaveOrClaimsPower = (power[scanner] or claim[scanner]['power'])
+            hasNoneOrBadUSB =  (claim[scanner]['usb'] in orphanUSBs                                                               
+                                         or not claim[scanner]['usb'])
+
+            if (couldHaveOrClaimsPower and hasNoneOrBadUSB):
 
                 if self.requestOff(scanner, self._get(scanner, 'jobID', ''),
                                    updateClaim=False):
@@ -236,8 +240,16 @@ class Scanner_Manager(object):
         if (sum(powers.values()) == 1):
 
             scanner = tuple(scanner for scanner in powers if powers[scanner])[0]
-            claim[scanner]['power'] = True
-            claim[scanner]['usb'] = usb
+
+            if (self._pm[scanner].sureToHavePower()):
+                claim[scanner]['power'] = True
+                claim[scanner]['usb'] = usb
+            else:
+                self._logger.critical(
+                    "There's one scanner on {0}, but can't safely assign it to {1}".format(
+                        usb, scanner))
+                return False
+
 
         else:
 
@@ -286,19 +298,14 @@ class Scanner_Manager(object):
 
         return unknownUSBs
 
-    def _updateOrphanedUSBs(self, usbs):
+    def _updateOrphanedUSBs(self, currentUSBs):
 
-        self._orphanUSBs = self._orphanUSBs.intersection(usbs)
+        self._orphanUSBs = self._orphanUSBs.intersection(currentUSBs)
 
     def _filterOutOrphanedUSBs(self, usbs):
 
         return set(usbs).difference(self._orphanUSBs)
 
-    def _get_power_type(self, scanner):
-
-        return self._get(scanner, 'powerType',
-                         default='SIMPLE', dataStore=self._scannerConfs)
-        
     def isOwner(self, scanner, jobID):
 
         return jobID == self._get(scanner, 'jobID', '')

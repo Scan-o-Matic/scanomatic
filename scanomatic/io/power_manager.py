@@ -122,6 +122,12 @@ class NO_PM(object):
         return (self._power_mode is POWER_MODES.Impulse or 
                 self.status() is not False)
 
+    def sureToHavePower(self):
+
+        return (self._power_mode is not POWER_MODES.Impulse and
+                self.status() is not False)
+
+
 class USB_PM(NO_PM):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
     def __init__(self, socket, path, on_args=[], off_args=[],
