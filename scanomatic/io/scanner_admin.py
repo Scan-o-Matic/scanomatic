@@ -39,6 +39,7 @@ class Scanner_Manager(object):
         self._conf = app_config.Config()
         self._paths = paths.Paths()
         self._fixtures = fixtures.Fixtures(self._paths, self._conf)
+        self._orphanUSBs = set()
 
         self._scannerStatus = ConfigParser.ConfigParser(
             allow_no_value=True)
@@ -178,12 +179,100 @@ class Scanner_Manager(object):
 
         self._updateStatus(claim)
 
-    def _match_scanners(self, scannerList):
+    def _match_scanners(self, currentUSBs):
 
         claim = self._get_recorded_statuses()
-        noFounds = []
-        while scannerList:
-            usb = scannerList.pop()
+        self._updateOrphanedUSBs(currentUSBs)
+        currentUSBs = self._filterOutOrphanedUSBs(currentUSBs)
+        unknownUSBs = self._getUnknownUSBs(currentUSBs, claim)
+
+        if (self._canAssignUnknownUSBs(unknownUSBs)):
+            if self._assignUnknownUSBtoClaim(unknownUSBs, claim):
+                self._rescue(unknownUSBs, claim)
+                return False
+        else:
+            self._rescue(unknownUSBs, claim)
+            return False
+        
+
+
+        self._updateStatus(claim)
+
+        return self._getUSBclaimIsValid(claim)
+
+
+    def _getUSBclaimIsValid(self, claim):
+
+        scannersClaimingToKnowUSBs = sum(1 for c in claim 
+                   if 'matched' in claim[c] and claim[c]['matched'])
+        scannersWithAssignedUSBs = sum(1 for c in claim
+                   if 'usb' in claim[c] and claim[c]['usb'])
+
+        return scannersWithAssignedUSBs == scannersClaimingToKnowUSBs
+
+    def _canAssignUnknownUSBs(self, unknownUSBs):
+
+        if len(unknownUSBs) > 1:
+            self._logger.critical("More than one unclaimed scanner {0}".format(
+                unknownUSBs))
+            return False
+        return True
+
+    def _assignUnknownUSBtoClaim(self, unknownUSBs, claim):
+
+        if len(unknownUSBs)==1:
+
+            usb = unknownUSBs[0]
+
+            if (not self._setUSBtoClaim(usb, claim)):
+
+                return self._setUSBtoScannerThatCouldBeOn(usb, claim)
+
+        return len(unknownUSBs) == 0
+
+    def _setUSBtoScannerThatCouldBeOn(self, usb, claim):
+
+        powers = self.powerStatus
+        if (sum(powers.values()) == 1):
+
+            scanner = tuple(scanner for scanner in powers if powers[scanner])[0]
+            claim[scanner]['power'] = True
+            claim[scanner]['usb'] = usb
+
+        else:
+
+            self._logger.critical(
+                "There's one scanner on {0}, but non claims to be".format(
+                    usb))
+            return False
+
+        return True
+
+    def _setUSBtoClaim(self, usb, claim):
+
+        foundScannerWithPowerAndNoUSB = None
+        for c in claim:
+
+            if claim[c]['power'] and not claim[c]['usb']:
+
+                if not foundScannerWithPowerAndNoUSB:
+                    claim[c]['usb'] = usb
+                    foundScannerWithPowerAndNoUSB = c 
+                else:
+                    self._logger.critical(
+                        "More than one scanner claiming to" +
+                        "be on without matched usb")
+
+                    claim[foundScannerWithPowerAndNoUSB]['usb'] = ''
+                    return False
+
+        return foundScannerWithPowerAndNoUSB != None
+                    
+    def _getUnknownUSBs(self, currentUSBs, claim):
+
+        unknownUSBs= []
+        while currentUSBs:
+            usb = currentUSBs.pop()
             found = False
             for c in claim:
                 if claim[c]['usb'] and claim[c]['usb'] == usb:
@@ -193,54 +282,17 @@ class Scanner_Manager(object):
 
             if not found:
 
-                noFounds.append(usb)
+                unknownUSBs.append(usb)
 
-        if len(noFounds) > 1:
-            self._logger.critical("More than one unclaimed scanner {0}".format(
-                noFounds))
-            self._rescue(noFounds, claim)
-            return False
-        elif len(noFounds)==1:
+        return unknownUSBs
 
-            usb = noFounds[0]
+    def _updateOrphanedUSBs(self, usbs):
 
-            found = False
-            for c in claim:
+        self._orphanUSBs = self._orphanUSBs.intersection(usbs)
 
-                if claim[c]['power'] and not claim[c]['usb']:
+    def _filterOutOrphanedUSBs(self, usbs):
 
-                    if not found:
-                        claim[c]['usb'] = usb
-                        found = True
-                    else:
-                        self._logger.critical(
-                            "More than one scanner claiming to" +
-                            "be on without matched usb")
-                
-                        self._rescue(noFounds, claim)
-                        return False
-                    
-            if not found:
-
-                powers = self.powerStatus
-                if (sum(powers.values()) == 1):
-                    scanner = tuple(scanner for scanner in powers if powers[scanner])[0]
-                    claim[scanner]['power'] = True
-                    claim[scanner]['usb'] = usb
-                else:
-
-                    self._logger.critical(
-                        "There's one scanner on {0}, but non claims to be".format(
-                            usb))
-                    self._rescue(noFounds, claim)
-                    return False
-
-        self._updateStatus(claim)
-
-        return sum(1 for c in claim 
-                   if 'matched' in claim[c] and claim[c]['matched']) == \
-               sum(1 for c in claim
-                   if 'usb' in claim[c] and claim[c]['usb'])
+        return set(usbs).difference(self._orphanUSBs)
 
     def _get_power_type(self, scanner):
 
