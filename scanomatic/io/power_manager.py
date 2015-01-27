@@ -340,7 +340,7 @@ class LAN_PM(NO_PM):
 
         else:
 
-            self._logger.info("LAN PM, Logging in")
+            self._logger.debug("LAN PM, Logging in")
             return self._run_url(self._login_out_url, self._pwd_params, timeout=URL_TIMEOUT)
 
     def _logout(self):
@@ -352,7 +352,7 @@ class LAN_PM(NO_PM):
 
         else:
 
-            self._logger.info("LAN PM, Logging out")
+            self._logger.debug("LAN PM, Logging out")
             return self._run_url(self._login_out_url, timeout=URL_TIMEOUT)
 
     def test_ip(self):
