@@ -27,13 +27,14 @@ import power_manager
 import paths
 import config_file
 import logger
+from scanomatic.generics.singleton import Singleton
 
 #
 # CLASSES
 #
 
 
-class Config(object):
+class Config(Singleton):
 
     SCANNER_PATTERN = "Scanner {0}"
     POWER_DEFAULT = power_manager.POWER_MODES.Toggle

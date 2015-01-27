@@ -21,6 +21,7 @@ import re
 
 import logger
 import scanomatic.faulty_reference as faulty_reference
+from scanomatic.generics import Singleton
 
 #
 # EXCEPTIONS
@@ -35,23 +36,8 @@ class Invalid_Root(Exception):
 #
 
 
-class Paths(object):
+class Paths(Singleton):
 
-    _INSTANCE = None
-
-    def __new__(cls, *args):
-
-        if cls is Paths:
-
-            if cls._INSTANCE is None:
-
-                cls._INSTANCE = super(Paths, cls).__new__(cls, *args)
-
-            return cls._INSTANCE
-
-        else:
-
-            return super(Paths, cls).__new__(cls)
 
     def __init__(self, *args):
 
