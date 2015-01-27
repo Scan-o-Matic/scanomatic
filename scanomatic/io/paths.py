@@ -21,7 +21,7 @@ import re
 
 import logger
 import scanomatic.faulty_reference as faulty_reference
-from scanomatic.generics import Singleton
+from scanomatic.generics.singleton import Singleton
 
 #
 # EXCEPTIONS
