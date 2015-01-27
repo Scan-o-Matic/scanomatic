@@ -107,6 +107,7 @@ setup(
     install_requires=package_dependencies,
     packages=[
         "scanomatic",
+        "scanomatic.generics",
         "scanomatic.io",
         "scanomatic.io.xml",
         "scanomatic.rpc_server",
