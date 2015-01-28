@@ -52,7 +52,7 @@ class Model(object):
         if cls._hasSetFieldTypes():
             raise AttributeError("Can't change field types")
         else:
-            cls.FIELD_TYPES = Enum(cls.__name__, types)
+            cls.FIELD_TYPES = Enum(cls.__name__, {t: hash(t) for t in types})
 
     def _setInitialized(self):
 
