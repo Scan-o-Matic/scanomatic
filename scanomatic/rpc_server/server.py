@@ -22,6 +22,8 @@ from math import trunc
 import os
 import sys
 import socket
+import string
+import md5
 
 #
 # INTERNAL DEPENDENCIES
@@ -63,7 +65,6 @@ class SOM_RPC(object):
 
         self._logger = logger.Logger("Scan-o-Matic RPC Server")
         self._appConfig = app_config.Config()
-
         self._paths = paths.Paths()
 
         self._queue = queue.Queue()
@@ -948,8 +949,8 @@ class SOM_RPC(object):
 
             return False
 
-        if len(label) != len(c for c in label
-                             if c in string.letter + string.digits + "_"):
+        if len(label) != len(tuple(c for c in label
+                             if c in string.letters + string.digits + "_")):
 
             self._logger.error(
                 "Label {0} has illegal characters. Only accepting: {1}".format(
