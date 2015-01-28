@@ -38,7 +38,7 @@ class Scanner_Manager(object):
         self._logger = logger.Logger("Scanner Manager")
         self._conf = app_config.Config()
         self._paths = paths.Paths()
-        self._fixtures = fixtures.Fixtures(self._paths, self._conf)
+        self._fixtures = fixtures.Fixtures()
         self._orphanUSBs = set()
 
         self._scannerStatus = ConfigParser.ConfigParser(
@@ -357,10 +357,12 @@ class Scanner_Manager(object):
 
     def requestClaim(self, scanner, pid, jobID):
 
-        if scanner > self._conf.number_of_scanners:
+        scanner = self._conf.get_scanner_name(scanner)
+
+        if scanner not in self:
+            self._logger.warning("Unknown scanner referenced ({0})".format(
+                scanner))
             return False
-        
-        sName = self._conf.get_scanner_name(scanner)
 
         try:
             ownerProc = int(self._get(scanner, 'pid', -1))
@@ -372,19 +374,19 @@ class Scanner_Manager(object):
             if psutil.pid_exists(ownerProc):
 
                 self._logger.warning("Trying to claim {0} when claimed".format(
-                    sName))
+                    scanner))
                 return False
 
             else:
                 self._logger.info(
                     "Releasing {0} since owner process is dead".format(
-                        sName))
+                        scanner))
 
                 self.releaseScanner(scanner)
 
         if self._get(scanner, "jobID", None):
             self._logger.warning("Overwriting previous jobID for {0}".format(
-                sName))
+                scanner))
 
         self._set(scanner, "pid", pid)
         self._set(scanner, "jobID", jobID)
