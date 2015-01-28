@@ -108,6 +108,8 @@ setup(
     packages=[
         "scanomatic",
         "scanomatic.generics",
+        "scanomatic.models",
+        "scanomatic.models.factories",
         "scanomatic.io",
         "scanomatic.io.xml",
         "scanomatic.rpc_server",

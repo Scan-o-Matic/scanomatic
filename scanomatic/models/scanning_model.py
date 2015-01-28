@@ -7,7 +7,7 @@ class ScanningModel(model.Model):
                  projectName="", directoryContainingProject="",
                  projectTag="", scannerTag="",
                  description="", email="", pinningFormats=tuple(),
-                 fixture="", scanner=""):
+                 fixture="", scanner=1):
 
         super(ScanningModel, self).__init__(
             numberOfScans=numberOfScans, timeBetweenScans=timeBetweenScans,                                                         

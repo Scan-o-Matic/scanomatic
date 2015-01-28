@@ -1,5 +1,4 @@
 import scanomatic.generics.model as model
-import scanomatic.io.logger as logger
 
 import copy
 
@@ -7,7 +6,6 @@ import copy
 class AbstractModelFactory(object) :
 
     _MODEL = model.Model
-    _LOGGER = logger.Logger("Abstract Model Factory")
 
     def __new__(cls, *args):
 
@@ -56,7 +54,7 @@ class AbstractModelFactory(object) :
     def _getValidationResults(cls, model):
 
         return (getattr(cls, attr)(model) for attr in dir(cls)                                          
-                               if attr.startswith("validate_"))
+                               if attr.startswith("_validate"))
 
     @classmethod
     def setInvalidToDefault(cls, model):
@@ -95,3 +93,65 @@ class AbstractModelFactory(object) :
                     setattr(model, attr, minVal)
                 elif (maxVal is not None and val > maxVal):
                     setattr(model, attr, maxVal)
+
+    @classmethod
+    def _correctTypeAndInBounds(cls, model, attr, dtype, minModelCaller,
+            maxModelCaller):
+
+        if not isinstance(getattr(model, attr), dtype):
+
+            return getattr(model.FIELD_TYPES, attr)
+
+        elif not AbstractModelFactory._inBounds(
+                model,
+                minModelCaller(model, factory=cls),
+                maxModelCaller(model, factory=cls),
+                attr):
+
+            return getattr(model.FIELD_TYPES, attr)
+
+        else:
+
+            return True 
+
+    @staticmethod
+    def _inBounds(model, lowerBounds, upperBounds, attr):
+
+        val = getattr(model, attr)
+        minVal = getattr(lowerBounds, attr)
+        maxVal = getattr(upperBounds, attr)
+
+        if minVal is not None and val < minVal:
+            return False
+        elif maxVal is not None and val > maxVal:
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def _isPinningFormats(pinningFormats):
+
+        try:
+    
+            return all(AbstractModelFactory._isPinningFormat(pinningFormat) for
+                    pinningFormat in pinningFormats)
+
+        except:
+
+            pass
+
+        return False
+            
+
+    def _isPinningFormat(pinningFormat):
+
+        try:
+
+            return all(isinstance(val, int) and val > 0 
+                       for val in pinningFormat)
+
+        except:
+
+            pass
+
+        return False

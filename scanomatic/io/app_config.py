@@ -28,6 +28,7 @@ import paths
 import config_file
 import logger
 from scanomatic.generics.singleton import Singleton
+import scanomatic.models.scanning_model as scanning_model
 
 #
 # CLASSES
@@ -48,6 +49,35 @@ class Config(Singleton):
 
         self._logger = logger.Logger("Application Config")
 
+        self._minMaxModels = {
+            scanning_model.ScanningModel: {
+                "min": dict(
+                    timeBetweenScans=7.0,
+                    numberOfScans=1,
+                    projectName=None,
+                    directoryContainingProject=None,
+                    projectTag=None,
+                    scannerTag=None,
+                    description=None,
+                    email=None,
+                    pinningFormats=None,                                                     
+                    fixture=None,
+                    scanner=1),
+                "max": dict(
+                    timeBetweenScans=None,
+                    numberOfScans=9999,
+                    projectName=None,
+                    directoryContainingProject=None,
+                    projectTag=None,
+                    scannerTag=None,
+                    description=None,
+                    email=None,
+                    pinningFormats=None,                                                     
+                    fixture=None,
+                    scanner=1),
+                }
+
+            }
         #TMP SOLUTION TO BIGGER PROBLEMS
 
         #VERSION HANDLING
@@ -261,8 +291,16 @@ class Config(Singleton):
 
     def get_scanner_name(self, scanner):
 
-        if isinstance(scanner, int):
+        if isinstance(scanner, int) and 0 < scanner < self.number_of_scanners:
             scanner = self.SCANNER_PATTERN.format(scanner)
+        elif isinstance(scanner, str):
+            numbers = map(int, re.findall(r'\d+', 'Scanner 1000'))
+            if not(len(numbers) == 1 and 
+                   0 < numbers[0] < self.number_of_scanners):
+                
+                return None
+        else:
+            return None
 
         return scanner
     
@@ -315,3 +353,11 @@ class Config(Singleton):
         }
 
         return analysis_query
+
+    def getMinModel(self, model, factory):
+
+        return factory.create(**self._minMaxModels[type(model)]['min'])  
+
+    def getMaxModel(self, model, factory):
+
+        return factory.create(**self._minMaxModels[type(model)]['max'])
