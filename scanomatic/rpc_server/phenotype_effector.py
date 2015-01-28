@@ -31,7 +31,7 @@ import scanomatic.dataProcessing.phenotyper as phenotyper
 
 class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
-    TYPE = 1
+    TYPE = jobType.EXTRACTION
 
     def __init__(self, identifier, label):
 
@@ -43,19 +43,8 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
         self._type = "Phenotype Extractor"
         self._specificStatuses['progress'] = 'progress'
-        self._specificStatuses['runTime'] = 'runTime'
 
         self._progress = 0
-
-        self._startTime = None
-
-    @property
-    def runTime(self):
-
-        if self._startTime is None:
-            return 0
-        else:
-            return time.time() - self._startTime
 
     @property
     def progress(self):

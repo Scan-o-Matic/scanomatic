@@ -24,7 +24,9 @@ import scanomatic.io.paths as paths
 import scanomatic.rpc_server.queue as queue
 import scanomatic.rpc_server.phenotype_effector as phenotype_effector
 import scanomatic.rpc_server.analysis_effector as analysis_effector
+import scanomatic.rpc_server.scanner_effector as scanner_effector
 import scanomatic.rpc_server.rpc_job as rpc_job
+from scanomatic.rpc_server.proc_effector import ProcTypes
 
 #
 # CLASSES
@@ -119,9 +121,10 @@ class Jobs(object):
                 pid = -1
 
             try:
-                jobType = int(sef._jobsData.get(job, "type"))
+                jobType = ProcTypes.GetByIntRepresentation(
+                        int(sef._jobsData.get(job, "type")))
             except:
-                jobType = -1
+                jobType = ProcTypes.GetDefault()
 
             self._jobs[job] = rpc_job.Fake(
                 job,
@@ -188,19 +191,24 @@ class Jobs(object):
             return False
 
         #SELECTS EFFECTOR BASED ON TYPE
-        if (procData["type"] == queue.Queue.TYPE_FEATURE_EXTRACTION):
+        if (procData["type"] == ProcTypes.EXTRACTION):
 
             JobEffector = phenotype_effector.PhenotypeExtractionEffector
 
-        elif (procData["type"] == queue.Queue.TYPE_IMAGE_ANALSYS):
+        elif (procData["type"] == ProcTypes.ANALYSIS):
 
             JobEffector = analysis_effector.AnalysisEffector
+
+        elif (procData["type"] == ProcTypes.SCANNER)
+
+            JobEffector = scanner_effector.ScannerEffector
 
         else:
 
             self._logger.critical(
-                ("Job '{0}' ({1}) lost, functionality not yet implemented"
-                 ).format(procData['label'], procData['id']))
+                ("Job '{0}' ({1}) lost, {2} not yet implemented"
+                 ).format(procData['label'], procData['id'],
+                          procData["type"].textRepresentation))
 
             return False
 

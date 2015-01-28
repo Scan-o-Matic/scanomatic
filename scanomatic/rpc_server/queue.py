@@ -28,7 +28,7 @@ import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 import scanomatic.rpc_server.phenotype_effector as phenotype_effector
 import scanomatic.rpc_server.analysis_effector as analysis_effector
-import scanomatic.rpc_server.proc_effector as proc_effector
+from scanomatic.rpc_server.proc_effector import ProcTypes
 
 #
 # CLASSES
@@ -37,14 +37,6 @@ import scanomatic.rpc_server.proc_effector as proc_effector
 
 class Queue(object):
 
-    TYPE_REBUILD_PROJECT = proc_effector.ProcEffector.TYPE
-    TYPE_IMAGE_ANALSYS = analysis_effector.AnalysisEffector.TYPE
-    TYPE_FEATURE_EXTRACTION = phenotype_effector.PhenotypeExtractionEffector.TYPE
-    TYPE_SCAN = proc_effector.ProcEffector.TYPE
-    TYPES = {TYPE_REBUILD_PROJECT: "Rebuild Project",
-             TYPE_IMAGE_ANALSYS: "Analysis",
-             TYPE_SCAN: "Scan",
-             TYPE_FEATURE_EXTRACTION: "Feature Extraction"}
 
     def __init__(self):
 
@@ -100,7 +92,8 @@ class Queue(object):
 
         try:
             return (jobId, self._queue.get(jobId, "label"),
-                    Queue.TYPES[self._queue.getint(jobId, "type")],
+                    procTypes.GetByIntRepresentation(
+                        self._queue.getint(jobId, "type")).textRepresentation,
                     self._queue.getint(jobId, "priority"))
         except:
             self._logger.warning(
@@ -161,7 +154,7 @@ class Queue(object):
             if (self._queue.has_option(prioSection, "type")):
                 procInfo['type'] = self._queue.getint(prioSection, "type")
             else:
-                procInfo['type'] = None
+                procInfo['type'] = procTypes.GetDefault() 
 
             if (self._queue.has_option(prioSection, "args")):
                 try:
@@ -197,13 +190,6 @@ class Queue(object):
 
     def add(self, subprocType, jobID, jobLabel, priority=None, *args, **kwargs):
 
-        if (subprocType not in [getattr(self, p) for p in dir(self) if
-                                p.startswith("TYPE_")]):
-
-            self._logger.error("Unknown subprocess type ({0})".format(
-                subprocType))
-            return None
-        
         if priority is None:
             priority = subprocType
 
@@ -214,7 +200,8 @@ class Queue(object):
                 "Trying to add job with bad parameter types.")
             return False
 
-        self._queue.set(jobID, "type", str(subprocType))
+        self._queue.set(jobID, "type", str(procTypes.GetByIntRepresentation(
+            subprocType)))
         self._queue.set(jobID, "label", str(jobLabel))
 
         self.setPriority(jobID, priority, writeOnUpdate=False)

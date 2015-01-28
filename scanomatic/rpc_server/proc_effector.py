@@ -15,6 +15,7 @@ __status__ = "Development"
 
 from time import sleep
 import os
+from enum import Enum
 
 #
 # INTERNAL DEPENDENCIES
@@ -27,9 +28,37 @@ import scanomatic.io.logger as logger
 #
 
 
+class ProcTypes(Enum):
+    
+    SCANNER = ("Scanner Job", 0)
+    REBUILD = ("Rebuild Job", 1)
+    ANALYSIS = ("Analysis Job", 10)
+    EXTRACTION = ("Feature Extraction Job", 20)
+    UNKNOWN = ("Unknown Job", -1)
+    
+    @property
+    def intRepresentation(self):
+        return self.value[1]
+
+    @property
+    def textRepresentation(self):
+        return self.value[0]
+
+    @classmethod
+    def GetByIntRepresentation(cls, value):
+        for member in cls.__members__.values():
+            if value == member.intRepresentation:
+                return member
+        return cls.GetDefault()
+    
+    @classmethod
+    def GetDefault(cls):
+        return cls.UNKNOWN
+
+
 class ProcEffector(object):
 
-    TYPE = -1
+    TYPE = ProcTypes.GetDefault()
 
     def __init__(self, identifier, label, loggerName="Process Effector"):
 
@@ -61,9 +90,20 @@ class ProcEffector(object):
         self._iteratorI = None
         self._pid = os.getpid()
 
+        self._startTime = None
+
     @property
     def type(self):
         return self._type
+
+    @property
+    def runTime(self):
+
+        if self._startTime is None:
+            return 0
+        else:
+            return time.time() - self._startTime
+
 
     @property
     def failVunerableCalls(self):
@@ -111,6 +151,7 @@ class ProcEffector(object):
                      ('type', self._type),
                      ('running', self._running),
                      ('paused', self._paused),
+                     ('runTime', self.runTime), 
                      ('stopping', self._stopping),
                      ('messages', self.messages)] +
                     [(k, getattr(self, v)) for k, v in

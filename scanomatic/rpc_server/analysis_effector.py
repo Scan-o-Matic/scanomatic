@@ -39,7 +39,7 @@ import scanomatic.imageAnalysis.analysis_image as analysis_image
 
 class AnalysisEffector(proc_effector.ProcEffector):
 
-    TYPE = 2
+    TYPE = jobType.ANALYSIS
 
     def __init__(self, identifier, label):
 
@@ -50,24 +50,14 @@ class AnalysisEffector(proc_effector.ProcEffector):
 
         self._type = "Analysis"
         self._config = None
-        self._startTime = None
         self._metaData = {}
         self._firstImg = None
 
         self._specificStatuses['progress'] = 'progress'
         self._specificStatuses['total'] = 'totalImages'
-        self._specificStatuses['runTime'] = 'runTime'
         self._specificStatuses['currentImage'] = 'curImage'
 
         self._allowedCalls['setup'] = self.setup
-
-    @property
-    def runTime(self):
-
-        if self._startTime is None:
-            return 0
-        else:
-            return time.time() - self._startTime
 
     @property
     def curImage(self):
