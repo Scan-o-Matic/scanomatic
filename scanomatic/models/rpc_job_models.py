@@ -6,7 +6,7 @@ JOB_TYPE = Enum("JOB_TYPE",
 
 JOB_STATUS = Enum("JOB_STATUS",
                   names=("Requested", "Queued", "Running", "Restoring",
-                         "Done", "Unknown"))
+                         "Done", "Aborted", "Crashed", "Unknown"))
 
 
 class RPCjobModel(model.Model):
@@ -15,7 +15,7 @@ class RPCjobModel(model.Model):
                  id=None,
                  type=JOB_TYPE.Unknown,
                  status=JOB_STATUS.Unknown,
-                 content_model=None,
+                 contentModel=None,
                  pid=None):
 
         super(RPCjobModel, self).__init__(
