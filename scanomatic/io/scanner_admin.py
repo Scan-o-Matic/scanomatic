@@ -355,9 +355,9 @@ class Scanner_Manager(object):
 
         return success 
 
-    def requestClaim(self, scanner, pid, jobID):
+    def requestClaim(self, rpcJobModel):
 
-        scanner = self._conf.get_scanner_name(scanner)
+        scanner = self._conf.get_scanner_name(rpcJobModel.contentModel.scanner)
 
         if scanner not in self:
             self._logger.warning("Unknown scanner referenced ({0})".format(
@@ -369,7 +369,7 @@ class Scanner_Manager(object):
         except (ValueError, TypeError):
             ownerProc = -1
 
-        if ownerProc > 0 and pid != ownerProc:
+        if ownerProc > 0 and rpcJobModel.pid != ownerProc:
 
             if psutil.pid_exists(ownerProc):
 
@@ -382,7 +382,7 @@ class Scanner_Manager(object):
                     "Releasing {0} since owner process is dead".format(
                         scanner))
 
-                self.releaseScanner(scanner)
+                self.releaseScanner(rpcJobModel)
 
         if self._get(scanner, "jobID", None):
             self._logger.warning("Overwriting previous jobID for {0}".format(
@@ -393,12 +393,21 @@ class Scanner_Manager(object):
         self._save()
         return True
 
-    def releaseScanner(self, scanner, jobID):
+    def releaseScanner(self, rpcJobModel):
 
-        if self.getUSB(scanner, default=False):
-            self.requestOff(scanner, jobID)
-        self._set(scanner, "pid", None)
-        self._set(scanner, "jobID", None)
+        contentModel = rpcJobModel.contentModel
+
+        if self.getUSB(rpcJobModel, default=False):
+            self.requestOff(rpcJobModel)
+        self._set(contentModel.scanner, "pid", None)
+        self._set(contentModel.scanner, "jobID", None)
+
+        if (contentModel.status == scanning_model.JOB_STATUS.Running or
+                contentModel.status == scanning_model.JOB_STATUS.Queued or
+                contentModel.status == scanning_model.JOB_STATUS.Requested):
+
+            contentModel.status = scanning_model.JOB_STATUS.Done
+
         self._save()
         return True
 
@@ -407,9 +416,12 @@ class Scanner_Manager(object):
         return (int(self._get(scanner, "pid", None)),
                 self._get(scanner, "jobID", None))
         
-    def updatePid(self, jobID, pid):
+    def updatePid(self, rpcJobModel):
 
-        if jobID is None or not isinstance(pid, int) and pid < 1:
+        scanner = rpcJobModel.contentModel.scanner
+        scanner = self._conf.get_scanner_name(scanner)
+
+        if RPC_Job_Model_Factory.validate(rpcJobModel)
             return False
 
         for scanner in self._scannerStatus.sections():
@@ -421,7 +433,7 @@ class Scanner_Manager(object):
 
         return False
 
-    def getUSB(self, scanner, jobID=None, default=''):
+    def getUSB(self, rpcJobModel, default=''):
         """Gets the usb that a scanner is connected on.
         """
         
@@ -432,6 +444,8 @@ class Scanner_Manager(object):
             return False
         """
         
+        scanner = rpcJobModel.contentModel.scanner
+
         if not self._get(scanner, "power", False):
 
             return default
