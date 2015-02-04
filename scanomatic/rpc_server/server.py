@@ -835,9 +835,7 @@ class SOM_RPC(object):
             priority=priority,
             **kwargs)
 
-    def createScanningJob(
-            self, userID, scanner, scans, interval, fixture,
-            projectsRoot, label, kwargs={}):
+    def createScanningJob(self, userID, scanningModel):
         """Attempts to start a scanning job.
 
         This is a common interface for all type of scan jobs.
@@ -852,51 +850,8 @@ class SOM_RPC(object):
             **NOTE**: If using a rpc_client from scanomatic.io the client
             will typically prepend this parameter
 
-        scanner : int or str
-            Which scanner to attempt to claim
-            **Note**: If scanner is in use, job-creation will fail.
-
-        scans : int
-            Number of images to scan
-            Must be at least 1
-
-        interval : float
-            Number of minutes between scans.
-            **NOTE**: Less that 7 minutes is refused
-
-        fixture: str
-            Name of fixture to be used.
-
-        projectsRoot : str
-            Path to folder in which to place current job
-
-        label: str
-            Name of current job and the folder.
-            **Note**: If folder exist, job creation will be refused
-            **Note**: Only english letters, digits and underscore allowed
-
-        kwargs: dict
-            Further settings to override the scanner's defaults or other
-            information to be passed 
-
-            Known keys are:
-
-                description: str
-                    Information about what is on which plate
-
-                projectID: str
-                    Identifier string for the larger project the job is part of
-
-                layoutID: str
-                    Identifier string for the current job
-
-                pinning_matrices: list of tuples
-                    The number of rows and columns per plate in the fixture.
-                    Typically (32, 48) per plate.
-
-                mode: str
-                    'TPU' (default) produces transparency scan
-                    'COLOR' produces reflective color scan
+        scanningModel : dict
+            Dictionary representation of model for scanning
         """
 
         if userID != self._admin:
@@ -906,84 +861,32 @@ class SOM_RPC(object):
                     userID, label))
             return False
 
-        if not isinstance(scans, int) or scans < 1:
+        scanningModel = Scanning_Model_Factory.create(**scanningModel)
 
-            self._logger.error(
-                "Invalid number of scans ({0}) for '{1}'".format(
-                    scans, label))
+        if not Scanning_Model_Factory.validate(scanningModel):
 
+            self._logger.error("Model not valid")
             return False
 
-        try:
-            interval = float(interval)
-        except (ValueError, TypeError):
+        rpcJobModel = RPC_Job_Model_Factory.create(
+                id=self._createJobID(),
+                pid=os.getpid(),
+                type=rpc_job_models.JOB_TYPE.Scanning,
+                status=rpc_job_models.JOB_STATUS.Requested,
+                contentModel=scanningModel)
 
-            self._logger.error(
-                "Invalid interval ({0}) for '{1}'".format(
-                    interval, label))
+        if not RPC_Job_Model_Factory.validate(rpcJobModel):
 
-            return False
+            self._logger.error("Failed to create rpc job model")
 
-        #TODO: Ask the scanners config/app config instead
-        if interval < 7:
-
-            self._logger.error(
-                "Interval too short ({0}) for '{1}'".format(
-                    interval, label))
-
-            return False
-
-        if self._scannerManager.fixtureExists(fixture) is False:
-
-            self._logger.error(
-                "{0}'s fixture '{1}' is not know".format(
-                    label, fixture))
-
-            return False
-
-        if not(os.path.isdir(projectsRoot)):
-
-            self._logger.error(
-                "{0}'s project root '{1}' is not a directory".format(
-                    label, projectsRoot))
-
-            return False
-
-        if len(label) != len(tuple(c for c in label
-                             if c in string.letters + string.digits + "_")):
-
-            self._logger.error(
-                "Label {0} has illegal characters. Only accepting: {1}".format(
-                    label, string.letters + string.digits + "_"))
-
-            return False
-
-        if os.path.exists(os.path.join(projectsRoot, label)):
-
-            self._logger.error(
-                "{0} already exists in '{0}'".format(
-                    label, projectsRoot))
-
-            return False
-
-        jobID = self._createJobID()
-
-        success = self._scannerManager.requestClaim(scanner, os.getpid(), jobID)
-
-        if success:
+        if self._scannerManager.requestClaim(rpcJobModel):
 
             #No waiting, lets start
-            if not self._jobs.add(dict(
-                    id=jobID,
-                    type=self._queue.TYPE_SCAN,
-                    label=label,
-                    args=(scanner, scans, interval, fixture, projectsRoot),
-                    kwargs=kwargs
-                    )):
-                self._scannerManager.releaseScanner(scanner, jobID)
+            if not self._jobs.add(rpcJobModel):
+                self._scannerManager.releaseScanner(rpcJobModel)
                 return False
 
-            return jobID
+            return rpcJobModel.id 
 
         return False
 
