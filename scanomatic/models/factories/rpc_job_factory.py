@@ -1,6 +1,6 @@
-import scanomatic.model.rpc_job_models as rpc_job_models
-from scanomatic.generic.abstract_model_factory import AbstractModelFactory
-from scanomatic.generic.model import Model
+import scanomatic.models.rpc_job_models as rpc_job_models
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory
+from scanomatic.generics.model import Model
 
 class RPC_Job_Model_Factory(AbstractModelFactory):
 
@@ -18,7 +18,7 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
     @classmethod
     def _validate_id(cls, model):
 
-        if isinstance(model.id, str)
+        if isinstance(model.id, str):
     
             return True
 
