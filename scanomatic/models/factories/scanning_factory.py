@@ -7,11 +7,26 @@ import os
 import re
 import string
 
-class Scanning_Model_Factory(AbstractModelFactory):
+class ScanningModelFactory(AbstractModelFactory):
 
     _MODEL = ScanningModel
     _GET_MIN_MODEL = app_config.Config().getMinModel
     _GET_MAX_MODEL = app_config.Config().getMaxModel
+    STORE_SECTION_HEAD = ("scanner",)
+    STORE_SECTION_SERLIALIZERS = dict(
+        numberOfScans=int,
+        timeBetweenScans=float,
+        projectName=str,
+        directoryContainingProject=str,
+        projectTag=str,
+        scannerTag=str,
+        description=str,
+        email=str,
+        pinningFormats=tuple,
+        fixture=str,
+        scanner=int,
+        mode=str
+    )
 
     @classmethod
     def clamp(cls, model):
@@ -19,16 +34,17 @@ class Scanning_Model_Factory(AbstractModelFactory):
         return cls._clamp(model, cls._GET_MIN_MODEL(model, factory=cls),
                           cls._GET_MAX_MODEL(model, factory=cls))
 
+    # noinspection PyMethodOverriding
     @classmethod
-    def _correctTypeAndInBounds(cls, model, attr, dtype):
+    def _correct_type_and_in_bounds(cls, model, attr, dtype):
 
-        return super(Scanning_Model_Factory, cls)._correctTypeAndInBounds(
-                model, attr, dtype, cls._GET_MIN_MODEL, cls._GET_MAX_MODEL)
+        return super(ScanningModelFactory, cls)._correct_type_and_in_bounds(
+            model, attr, dtype, cls._GET_MIN_MODEL, cls._GET_MAX_MODEL)
 
     @classmethod
     def _validate_numberOfScans(cls, model):
 
-        return cls._correctTypeAndInBounds(model, "numberOfScans", int)
+        return cls._correct_type_and_in_bounds(model, "numberOfScans", int)
 
     @classmethod
     def _validate_timeBetweenScans(cls, model):
@@ -38,7 +54,7 @@ class Scanning_Model_Factory(AbstractModelFactory):
         except:
             return model.FIELD_TYPES.timeBetweenScans
 
-        return cls._correctTypeAndInBounds(model, "timeBetweenScans", float)
+        return cls._correct_type_and_in_bounds(model, "timeBetweenScans", float)
 
     @classmethod
     def _validate_projectName(cls, model):
@@ -99,7 +115,7 @@ class Scanning_Model_Factory(AbstractModelFactory):
 
     @classmethod
     def _validate_pinningFormats(cls, model):
-        if AbstractModelFactory._isPinningFormats(model.pinningFormats):
+        if AbstractModelFactory._is_pinning_formats(model.pinningFormats):
             return True
 
         return model.FIELD_TYPES.pinningFormarts
