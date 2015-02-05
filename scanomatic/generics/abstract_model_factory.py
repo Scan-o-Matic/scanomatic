@@ -4,10 +4,10 @@ import scanomatic.generics.decorators as decorators
 import copy
 from enum import Enum
 from ConfigParser import ConfigParser
+import cPickle
 
 
 class AbstractModelFactory(object):
-
     _MODEL = Model
     STORE_SECTION_HEAD = tuple()
     STORE_SECTION_SERLIALIZERS = dict()
@@ -20,15 +20,15 @@ class AbstractModelFactory(object):
     @decorators.classproperty
     def serializer(cls):
 
-        return  Serializer(cls)
+        return Serializer(cls)
 
     @staticmethod
-    def toDict(model):
+    def to_dict(model):
 
         return {key: copy.deepcopy(value) for key, value in model}
 
     @classmethod
-    def _verifyCorrectModel(cls, model):
+    def _verify_correct_model(cls, model):
 
         if not isinstance(model, cls._MODEL):
             raise TypeError("Wrong model for factory {0}!={1}".format(
@@ -44,133 +44,133 @@ class AbstractModelFactory(object):
     @classmethod
     def copy(cls, model):
 
-        if cls._verifyCorrectModel(model):
-            return cls.create(**AbstractModelFactory.toDict(model))
+        if cls._verify_correct_model(model):
+            return cls.create(**AbstractModelFactory.to_dict(model))
 
     @classmethod
     def validate(cls, model):
 
-        if cls._verifyCorrectModel(model):
-            return all(v is True for v in cls._getValidationResults(model))
+        if cls._verify_correct_model(model):
+            return all(v is True for v in cls._get_validation_results(model))
 
         return False
 
     @classmethod
-    def getInvalid(cls, model):
+    def get_invalid(cls, model):
 
-        return (v for v in set(cls._getValidationResults(model))
+        return (v for v in set(cls._get_validation_results(model))
                 if v is not True)
 
     @classmethod
-    def _getValidationResults(cls, model):
+    def _get_validation_results(cls, model):
 
-        return (getattr(cls, attr)(model) for attr in dir(cls)                                          
-                               if attr.startswith("_validate"))
-
-    @classmethod
-    def setInvalidToDefault(cls, model):
-
-        if cls._verifyCorrectModel(model):
-            cls.setDefault(model, fields=tuple(cls.getInvalid(model)))
+        return (getattr(cls, attr)(model) for attr in dir(cls) if attr.startswith("_validate"))
 
     @classmethod
-    def setDefault(cls, model, fields=None):
+    def set_invalid_to_default(cls, model):
 
-        if cls._verifyCorrectModel(model):
+        if cls._verify_correct_model(model):
+            cls.set_default(model, fields=tuple(cls.get_invalid(model)))
 
-            defaultModel = cls._MODEL()
+    @classmethod
+    def set_default(cls, model, fields=None):
 
-            for attr, val in defaultModel:
-                if fields is None or getattr(defaultModel.FIELD_TYPES, attr) in fields:
+        if cls._verify_correct_model(model):
+
+            default_model = cls._MODEL()
+
+            for attr, val in default_model:
+                if fields is None or getattr(default_model.FIELD_TYPES, attr) in fields:
                     setattr(model, attr, val)
 
     @classmethod
-    def clamp(cls):
+    def clamp(cls, model):
 
         pass
 
     @classmethod
-    def _clamp(cls, model, minModel, maxModel):
+    def _clamp(cls, model, min_model, max_model):
 
-        if (cls._verifyCorrectModel(model) and 
-                cls._verifyCorrectModel(minModel) and
-                cls._verifyCorrectModel(maxModel)):
+        if (cls._verify_correct_model(model) and
+                cls._verify_correct_model(min_model) and
+                cls._verify_correct_model(max_model)):
 
             for attr, val in model:
-                minVal = getattr(minModel, attr)
-                maxVal = getattr(maxModel, attr)
+                min_val = getattr(min_model, attr)
+                max_val = getattr(max_model, attr)
 
-                if (minVal is not None and val < minVal):
-                    setattr(model, attr, minVal)
-                elif (maxVal is not None and val > maxVal):
-                    setattr(model, attr, maxVal)
+                if min_val is not None and val < min_val:
+                    setattr(model, attr, min_val)
+                elif max_val is not None and val > max_val:
+                    setattr(model, attr, max_val)
 
     @classmethod
-    def _correctTypeAndInBounds(cls, model, attr, dtype, minModelCaller,
-            maxModelCaller):
+    def _correct_type_and_in_bounds(cls, model, attr, dtype, min_model_caller,
+                                    max_model_caller):
 
         if not isinstance(getattr(model, attr), dtype):
 
             return getattr(model.FIELD_TYPES, attr)
 
-        elif not AbstractModelFactory._inBounds(
+        elif not AbstractModelFactory._in_bounds(
                 model,
-                minModelCaller(model, factory=cls),
-                maxModelCaller(model, factory=cls),
+                min_model_caller(model, factory=cls),
+                max_model_caller(model, factory=cls),
                 attr):
 
             return getattr(model.FIELD_TYPES, attr)
 
         else:
 
-            return True 
+            return True
 
     @staticmethod
-    def _inBounds(model, lowerBounds, upperBounds, attr):
+    def _in_bounds(model, lower_bounds, upper_bounds, attr):
 
         val = getattr(model, attr)
-        minVal = getattr(lowerBounds, attr)
-        maxVal = getattr(upperBounds, attr)
+        min_val = getattr(lower_bounds, attr)
+        max_val = getattr(upper_bounds, attr)
 
-        if minVal is not None and val < minVal:
+        if min_val is not None and val < min_val:
             return False
-        elif maxVal is not None and val > maxVal:
+        elif max_val is not None and val > max_val:
             return False
         else:
             return True
 
     @staticmethod
-    def _isPinningFormats(pinningFormats):
+    def _is_pinning_formats(pinning_formats):
 
+        # noinspection PyBroadException
         try:
-    
-            return all(AbstractModelFactory._isPinningFormat(pinningFormat) for
-                    pinningFormat in pinningFormats)
+
+            return all(_is_pinning_format(pinningFormat) for
+                       pinningFormat in pinning_formats)
 
         except:
 
             pass
 
         return False
-            
-    @staticmethod
-    def _isPinningFormat(pinningFormat):
 
-        try:
 
-            return all(isinstance(val, int) and val > 0 
-                       for val in pinningFormat)
+def _is_pinning_format(pinning_format):
 
-        except:
+    # noinspection PyBroadException
+    try:
 
-            pass
+        return all(isinstance(val, int) and val > 0
+                   for val in pinning_format)
 
-        return False
+    except:
+
+        pass
+
+    return False
 
 
 @decorators.memoize
 class Serializer(object):
-
     def __init__(self, factory):
 
         self._factory = factory
@@ -181,116 +181,129 @@ class Serializer(object):
 
         if factory.STORE_SECTION_HEAD and factory.validate(model):
 
-            conf = Serializer._getConfig(path)
-            serializedModel = self.serialize(model)
-            section = self.getSectionName(model)
+            conf = SerializationHelper.get_config(path)
+            serialized_model = self.serialize(model)
+            section = self.get_section_name(model)
 
-            if conf and serializedModel and section:
-
-                Serializer._updateConfig(conf, section, serializedModel)
-                return Serializer._saveConfig(conf, path)
+            if conf and serialized_model and section:
+                SerializationHelper.update_config(conf, section, serialized_model)
+                return SerializationHelper.save_config(conf, path)
 
         return False
 
     def load(self, path):
 
-        conf = Serializer._getConfig(path)
+        conf = SerializationHelper.get_config(path)
 
         if conf:
             for section in conf.sections():
-                yield self._unserializeSection(conf, section)
+                yield self._unserialize_section(conf, section)
 
-    def _unserializeSection(self, conf, section):
+    def _unserialize_section(self, conf, section):
 
         keys, vals = zip(*conf.items(section))
-        return self._parseSerialization(keys, vals)
+        return self._parse_serialization(keys, vals)
 
-    def _parseSerialization(self, keys, vals):
+    def _parse_serialization(self, keys, vals):
 
         factory = self._factory
-        keys = map(Serializer._str2keyPath, keys)
+        keys = map(SerializationHelper.get_str_from_path, keys)
         dtypes = tuple(factory.STORE_SECTION_SERLIALIZERS[key] for key in keys)
         model = factory.create(
-            **{key: self._unserializeSection(val, dtype)
+            **{key: self._unserialize_section(val, dtype)
                for key, val, dtype in zip(keys, vals, dtypes)
                if len(key) == 1 and
                not issubclass(dtype, AbstractModelFactory)})
 
-        for key, dtype in zip(keys, dtypes):
+        for key, val, dtype in zip(keys, vals, dtypes):
 
             if issubclass(dtype, AbstractModelFactory) and len(key) == 1:
-
-                #TODO: Check this so function get right params
-                setattr(model, key, dtype.serializer._parseSerialization(
-                    Serializer._filterMemberModel(keys, vals, dtypes, key)))
+                # TODO: Check this so function get right params
+                setattr(model, key, SerializationHelper.unserialize(val, dtype).serializer._parse_serialization(
+                    SerializationHelper._filterMemberModel(keys, vals, dtypes, key)))
 
         return model
 
-    @staticmethod
-    def _filterMemberModel(keys, vals, dtypes, keyFilter):
-
-        filterLength = len(keyFilter)
-        for key, val, dtype in zip(keys, vals, dtypes):
-
-            if all(filt == k for filt, k in zip(keyFilter, key)):
-
-                yield key[filterLength:], val
-
-
     def serialize(self, model):
 
-        serializedModel = dict()
+        serialized_model = dict()
 
-        for keyPath, dtype in self._deepSerializeKeysAndTypes():
+        for keyPath, dtype in self._deep_serialize_keys_and_types():
+            serializable_val = SerializationHelper.get_value_by_path(model, keyPath)
+            serialized_model[SerializationHelper.get_path_from_str(keyPath)] = \
+                SerializationHelper.serialize(serializable_val, dtype)
 
-            serializableVal = Serializer._getValueByPath(model, keyPath)
-            serializedModel[Serializer._keyPath2str(keyPath)] = Serializer._serialize(serializableVal, dtype)
+        return serialized_model
 
-        return serializedModel
-
-
-    def _deepSerializeKeysAndTypes(self):
+    def _deep_serialize_keys_and_types(self):
 
         factory = self._factory
-        for keyPath, dtype in factory.STORE_SECTION_SERLIALIZERS.items():
+        for key_path, dtype in factory.STORE_SECTION_SERLIALIZERS.items():
 
             if issubclass(dtype, AbstractModelFactory):
-                for subKeyPath, dtype in dtype.serializer._deepSerializeKeysAndTypes():
-                    yield keyPath + subKeyPath, dtype
+                for sub_key_path, sub_dtype in dtype.serializer._deep_serialize_keys_and_types():
+                    yield key_path + sub_key_path, sub_dtype
             else:
-                yield keyPath, dtype
+                yield key_path, dtype
+
+    def get_section_name(self, model):
+
+        return SerializationHelper.get_value_by_path(model, self._factory.STORE_SECTION_HEAD)
+
+
+class SerializationHelper(object):
+    def __new__(cls, *args):
+
+        raise Exception("This class is static, can't be instantiated")
 
     @staticmethod
-    def _keyPath2str(keyPath):
+    def _filterMemberModel(keys, vals, dtypes, key_filter):
+
+        filter_length = len(key_filter)
+        for key, val, dtype in zip(keys, vals, dtypes):
+
+            if all(filt == k for filt, k in zip(key_filter, key)):
+                yield key[filter_length:], val
+
+    @staticmethod
+    def get_path_from_str(keyPath):
 
         return ".".join(keyPath)
 
     @staticmethod
-    def _str2keyPath(key):
+    def get_str_from_path(key):
 
         return tuple(key.split("."))
 
     @staticmethod
-    def _serialize(obj, dtype):
-        #maybe pickle?
+    def serialize(obj, dtype):
+
         if issubclass(dtype, Enum):
 
             return obj.name
 
-        else:
+        elif dtype in (int, float, str, bool):
 
             return str(obj)
 
+        else:
+
+            return cPickle.dumps(obj)
 
     @staticmethod
-    def _unserialize(obj, dtype):
+    def unserialize(obj, dtype):
 
         if issubclass(dtype, Enum):
             try:
-                return  dtype[obj]
+                return dtype[obj]
             except:
                 return None
-        else:
+        elif dtype is bool:
+            try:
+                return eval(obj)
+            except:
+                return None
+        elif dtype in (int, float, str):
             try:
                 return dtype(obj)
             except:
@@ -298,13 +311,14 @@ class Serializer(object):
                     return eval(obj)
                 except:
                     return None
-
-    def getSectionName(self, model):
-
-        return Serializer._getValueByPath(model, self._factory.STORE_SECTION_HEAD)
+        else:
+            try:
+                return cPickle.loads(obj)
+            except:
+                return None
 
     @staticmethod
-    def _getValueByPath(model, valuePath):
+    def get_value_by_path(model, valuePath):
 
         ret = None
         for attr in valuePath:
@@ -314,7 +328,7 @@ class Serializer(object):
         return ret
 
     @staticmethod
-    def _getConfig(path):
+    def get_config(path):
 
         conf = ConfigParser(
             allow_no_value=True)
@@ -327,7 +341,7 @@ class Serializer(object):
         return conf
 
     @staticmethod
-    def _updateConfig(conf, section, serializedModel):
+    def update_config(conf, section, serializedModel):
 
         conf.remove_section(section)
         conf.add_section(section)
@@ -335,7 +349,7 @@ class Serializer(object):
             conf.set(section, key, val)
 
     @staticmethod
-    def _saveConfig(conf, path):
+    def save_config(conf, path):
 
         try:
             with open(path, 'w') as fh:
