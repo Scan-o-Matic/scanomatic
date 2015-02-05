@@ -4,7 +4,15 @@ from scanomatic.generics.model import Model
 
 class RPC_Job_Model_Factory(AbstractModelFactory):
 
-    _MODEL = rpc_job_models.RPCjobModel 
+    _MODEL = rpc_job_models.RPCjobModel
+    STORE_SECTION_HEAD = ('id',)
+    STORE_SECTION_SERLIALIZERS = dict(
+        id=int,
+        type=rpc_job_models.JOB_TYPE,
+        status=rpc_job_models.JOB_STATUS,
+        model=AbstractModelFactory,
+        pid=int)
+
 
     @classmethod
     def _validate_pid(cls, model):
