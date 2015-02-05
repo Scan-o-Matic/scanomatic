@@ -18,6 +18,7 @@ from subprocess import Popen, PIPE
 from enum import EnumMeta
 import re
 from cPickle import loads, dumps
+import psutil
 
 #
 # INTERNAL DEPENDENCIES
@@ -26,8 +27,9 @@ from cPickle import loads, dumps
 import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
-import scanomatic.io.power_manager as power_manager
 import scanomatic.io.fixtures as fixtures
+import scanomatic.models.scanning_model as scanning_model
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 
 
 class Scanner_Manager(object):
@@ -328,7 +330,7 @@ class Scanner_Manager(object):
 
             success = self._pm[scanner].powerUpScanner()
 
-            self._set(scanner, 'power', sucess)
+            self._set(scanner, 'power', success)
 
             self._save()
             return success
@@ -357,7 +359,8 @@ class Scanner_Manager(object):
 
     def requestClaim(self, rpcJobModel):
 
-        scanner = self._conf.get_scanner_name(rpcJobModel.contentModel.scanner)
+        content_model = rpcJobModel.contentModel
+        scanner = self._conf.get_scanner_name(content_model.scanner)
 
         if scanner not in self:
             self._logger.warning("Unknown scanner referenced ({0})".format(
@@ -388,25 +391,25 @@ class Scanner_Manager(object):
             self._logger.warning("Overwriting previous jobID for {0}".format(
                 scanner))
 
-        self._set(scanner, "pid", pid)
-        self._set(scanner, "jobID", jobID)
+        self._set(scanner, "pid", rpcJobModel.pid)
+        self._set(scanner, "jobID", rpcJobModel.id)
         self._save()
         return True
 
     def releaseScanner(self, rpcJobModel):
 
-        contentModel = rpcJobModel.contentModel
+        content_model = rpcJobModel.contentModel
 
         if self.getUSB(rpcJobModel, default=False):
             self.requestOff(rpcJobModel)
-        self._set(contentModel.scanner, "pid", None)
-        self._set(contentModel.scanner, "jobID", None)
+        self._set(content_model.scanner, "pid", None)
+        self._set(content_model.scanner, "jobID", None)
 
-        if (contentModel.status == scanning_model.JOB_STATUS.Running or
-                contentModel.status == scanning_model.JOB_STATUS.Queued or
-                contentModel.status == scanning_model.JOB_STATUS.Requested):
+        if (content_model.status == scanning_model.JOB_STATUS.Running or
+                content_model.status == scanning_model.JOB_STATUS.Queued or
+                content_model.status == scanning_model.JOB_STATUS.Requested):
 
-            contentModel.status = scanning_model.JOB_STATUS.Done
+            content_model.status = scanning_model.JOB_STATUS.Done
 
         self._save()
         return True
@@ -421,13 +424,13 @@ class Scanner_Manager(object):
         scanner = rpcJobModel.contentModel.scanner
         scanner = self._conf.get_scanner_name(scanner)
 
-        if RPC_Job_Model_Factory.validate(rpcJobModel)
+        if RPC_Job_Model_Factory.validate(rpcJobModel):
             return False
 
         for scanner in self._scannerStatus.sections():
             job = self._get(scanner, "jobID", None)
-            if job == jobID:
-                self._set(scanner, "pid", pid)
+            if job == rpcJobModel.id:
+                self._set(scanner, "pid", rpcJobModel.pid)
                 self._save()
                 return True
 
