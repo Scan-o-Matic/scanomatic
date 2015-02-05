@@ -34,7 +34,6 @@ from scanomatic.rpc_server.proc_effector import ProcTypes
 
 
 class Jobs(object):
-
     def __init__(self):
 
         self._logger = logger.Logger("Jobs Handler")
@@ -122,7 +121,7 @@ class Jobs(object):
 
             try:
                 jobType = ProcTypes.GetByIntRepresentation(
-                        int(sef._jobsData.get(job, "type")))
+                    int(self._jobsData.get(job, "type")))
             except:
                 jobType = ProcTypes.GetDefault()
 
@@ -169,10 +168,10 @@ class Jobs(object):
         self._jobs[job.identifier] = job
         self._saveJobsData()
 
-    def fakeProcess(self, jobID, label, jonType, pid):
+    def fakeProcess(self, jobID, label, job_type, pid):
 
         childPipe, parentPipe = Pipe()
-        job = rpc_job.Fake(jobID, label, jobType, pid, parentPipe) 
+        job = rpc_job.Fake(jobID, label, job_type, pid, parentPipe)
         self._add2JobsData(job, tuple(), dict())
         return childPipe
 
@@ -180,10 +179,9 @@ class Jobs(object):
         """Launches and adds a new jobs.
         """
 
-        #VERIFIES NO DUPLICATE IDENTIFIER
+        # VERIFIES NO DUPLICATE IDENTIFIER
         if (procData['id'] in self._jobs or self._jobsData.has_section(
                 procData['id'])):
-
             self._logger.critical(
                 "Cannot have jobs with same identifier ({0}), ".format(
                     procData['id']) +
@@ -199,7 +197,7 @@ class Jobs(object):
 
             JobEffector = analysis_effector.AnalysisEffector
 
-        elif (procData["type"] == ProcTypes.SCANNER)
+        elif (procData["type"] == ProcTypes.SCANNER):
 
             JobEffector = scanner_effector.ScannerEffector
 
@@ -207,8 +205,8 @@ class Jobs(object):
 
             self._logger.critical(
                 ("Job '{0}' ({1}) lost, {2} not yet implemented"
-                 ).format(procData['label'], procData['id'],
-                          procData["type"].textRepresentation))
+                ).format(procData['label'], procData['id'],
+                         procData["type"].textRepresentation))
 
             return False
 
