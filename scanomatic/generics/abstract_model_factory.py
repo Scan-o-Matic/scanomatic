@@ -1,5 +1,6 @@
 from scanomatic.generics.model import Model
 import scanomatic.generics.decorators as decorators
+from scanomatic.io.logger import Logger
 
 import copy
 from enum import Enum
@@ -9,6 +10,7 @@ import cPickle
 
 class AbstractModelFactory(object):
     _MODEL = Model
+    _SUB_FACTORIES = dict()
     STORE_SECTION_HEAD = tuple()
     STORE_SECTION_SERLIALIZERS = dict()
 
@@ -21,6 +23,14 @@ class AbstractModelFactory(object):
     def serializer(cls):
 
         return Serializer(cls)
+
+    @classmethod
+    def get_sub_factory(cls, model):
+
+        model_type = type(model)
+        if model_type not in cls._SUB_FACTORIES:
+            return AbstractModelFactory
+        return cls._SUB_FACTORIES[model_type]
 
     @staticmethod
     def to_dict(model):
@@ -155,7 +165,6 @@ class AbstractModelFactory(object):
 
 
 def _is_pinning_format(pinning_format):
-
     # noinspection PyBroadException
     try:
 
@@ -174,12 +183,14 @@ class Serializer(object):
     def __init__(self, factory):
 
         self._factory = factory
+        self._logger = Logger(factory.__name__)
 
     def dump(self, model, path):
 
         factory = self._factory
+        valid = factory.validate(model)
 
-        if factory.STORE_SECTION_HEAD and factory.validate(model):
+        if factory.STORE_SECTION_HEAD and valid:
 
             conf = SerializationHelper.get_config(path)
             serialized_model = self.serialize(model)
@@ -188,6 +199,11 @@ class Serializer(object):
             if conf and serialized_model and section:
                 SerializationHelper.update_config(conf, section, serialized_model)
                 return SerializationHelper.save_config(conf, path)
+
+        if not factory.STORE_SECTION_HEAD:
+            self._logger.warning("Factory does not know head for sections")
+        if not valid:
+            self._logger.warning("Model {0} does not have valid data".format(model))
 
         return False
 
@@ -207,48 +223,72 @@ class Serializer(object):
     def _parse_serialization(self, keys, vals):
 
         factory = self._factory
-        keys = map(SerializationHelper.get_str_from_path, keys)
-        dtypes = tuple(factory.STORE_SECTION_SERLIALIZERS[key] for key in keys)
-        model = factory.create(
-            **{key: self._unserialize_section(val, dtype)
-               for key, val, dtype in zip(keys, vals, dtypes)
-               if len(key) == 1 and
-               not issubclass(dtype, AbstractModelFactory)})
+        key_paths = map(SerializationHelper.get_path_from_str, keys)
+        dtypes = tuple(self._get_data_type(key_path) for key_path in key_paths)
 
-        for key, val, dtype in zip(keys, vals, dtypes):
+        model_dict = {key: SerializationHelper.unserialize(val, dtype)
+                      for key, key_path, val, dtype in zip(keys, key_paths, vals, dtypes)
+                      if not self._get_is_sub_model(dtype, key_path) and not self._get_belongs_to_sub_model(key_path)}
 
-            if issubclass(dtype, AbstractModelFactory) and len(key) == 1:
+        model = factory.create(**model_dict)
+
+        for key, key_path, val, dtype in zip(keys, key_paths, vals, dtypes):
+
+            if self._get_is_sub_model(dtype, key_path):
                 # TODO: Check this so function get right params
+                print zip(*SerializationHelper.filter_member_model(keys, vals, key_path))
                 setattr(model, key, SerializationHelper.unserialize(val, dtype).serializer._parse_serialization(
-                    SerializationHelper._filterMemberModel(keys, vals, dtypes, key)))
+                    *zip(*SerializationHelper.filter_member_model(keys, vals, key_path))))
 
         return model
+
+    def _get_is_sub_model(self, dtype, key_path):
+
+        return dtype is not None and len(key_path) == 1 and issubclass(dtype, AbstractModelFactory)
+
+    def _get_belongs_to_sub_model(self, key_path):
+
+        return len(key_path) > 1
+
+    def _get_data_type(self, key):
+
+        factory = self._factory
+        if key in factory.STORE_SECTION_SERLIALIZERS:
+            return factory.STORE_SECTION_SERLIALIZERS[key]
+        return None
 
     def serialize(self, model):
 
         serialized_model = dict()
 
-        for keyPath, dtype in self._deep_serialize_keys_and_types():
+        for keyPath, dtype in self._deep_serialize_keys_and_types(model):
             serializable_val = SerializationHelper.get_value_by_path(model, keyPath)
-            serialized_model[SerializationHelper.get_path_from_str(keyPath)] = \
+            serialized_model[SerializationHelper.get_str_from_path(keyPath)] = \
                 SerializationHelper.serialize(serializable_val, dtype)
 
         return serialized_model
 
-    def _deep_serialize_keys_and_types(self):
+    def _deep_serialize_keys_and_types(self, model):
 
         factory = self._factory
         for key_path, dtype in factory.STORE_SECTION_SERLIALIZERS.items():
 
             if issubclass(dtype, AbstractModelFactory):
-                for sub_key_path, sub_dtype in dtype.serializer._deep_serialize_keys_and_types():
+
+                sub_model = getattr(model, SerializationHelper.get_str_from_path(key_path))
+                if dtype is AbstractModelFactory:
+                    dtype = factory.get_sub_factory(sub_model)
+
+                yield key_path, dtype
+
+                for sub_key_path, sub_dtype in dtype.serializer._deep_serialize_keys_and_types(sub_model):
                     yield key_path + sub_key_path, sub_dtype
             else:
                 yield key_path, dtype
 
     def get_section_name(self, model):
 
-        return SerializationHelper.get_value_by_path(model, self._factory.STORE_SECTION_HEAD)
+        return str(SerializationHelper.get_value_by_path(model, self._factory.STORE_SECTION_HEAD))
 
 
 class SerializationHelper(object):
@@ -257,21 +297,21 @@ class SerializationHelper(object):
         raise Exception("This class is static, can't be instantiated")
 
     @staticmethod
-    def _filterMemberModel(keys, vals, dtypes, key_filter):
+    def filter_member_model(keys, vals, key_filter):
 
         filter_length = len(key_filter)
-        for key, val, dtype in zip(keys, vals, dtypes):
+        for key, val in zip(keys, vals):
 
             if all(filt == k for filt, k in zip(key_filter, key)):
                 yield key[filter_length:], val
 
     @staticmethod
-    def get_path_from_str(keyPath):
+    def get_str_from_path(keyPath):
 
         return ".".join(keyPath)
 
     @staticmethod
-    def get_str_from_path(key):
+    def get_path_from_str(key):
 
         return tuple(key.split("."))
 
@@ -286,6 +326,8 @@ class SerializationHelper(object):
 
             return str(obj)
 
+        elif issubclass(dtype, AbstractModelFactory):
+            return cPickle.dumps(dtype)
         else:
 
             return cPickle.dumps(obj)
@@ -293,7 +335,7 @@ class SerializationHelper(object):
     @staticmethod
     def unserialize(obj, dtype):
 
-        if issubclass(dtype, Enum):
+        if dtype is not None and issubclass(dtype, Enum):
             try:
                 return dtype[obj]
             except:
@@ -336,7 +378,7 @@ class SerializationHelper(object):
             with open(path, 'r') as fh:
                 conf.readfp(fh)
         except IOError:
-            return None
+            pass
 
         return conf
 

@@ -18,6 +18,7 @@ import md5
 import random
 from cPickle import loads, dumps
 from ConfigParser import ConfigParser
+import re
 
 #
 # INTERNAL DEPENDENCIES
@@ -52,27 +53,27 @@ class Config(Singleton):
         self._minMaxModels = {
             scanning_model.ScanningModel: {
                 "min": dict(
-                    timeBetweenScans=7.0,
-                    numberOfScans=1,
-                    projectName=None,
-                    directoryContainingProject=None,
-                    projectTag=None,
-                    scannerTag=None,
+                    time_between_scans=7.0,
+                    number_of_scans=1,
+                    project_name=None,
+                    directory_containing_project=None,
+                    project_tag=None,
+                    scanner_tag=None,
                     description=None,
                     email=None,
-                    pinningFormats=None,                                                     
+                    pinning_formats=None,
                     fixture=None,
                     scanner=1),
                 "max": dict(
-                    timeBetweenScans=None,
-                    numberOfScans=9999,
-                    projectName=None,
-                    directoryContainingProject=None,
-                    projectTag=None,
-                    scannerTag=None,
+                    time_between_scans=None,
+                    number_of_scans=9999,
+                    project_name=None,
+                    directory_containing_project=None,
+                    project_tag=None,
+                    scanner_tag=None,
                     description=None,
                     email=None,
-                    pinningFormats=None,                                                     
+                    pinning_formats=None,
                     fixture=None,
                     scanner=1),
                 }

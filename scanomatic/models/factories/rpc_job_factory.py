@@ -1,17 +1,19 @@
 import scanomatic.models.rpc_job_models as rpc_job_models
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 from scanomatic.generics.model import Model
+from scanomatic.models.factories.scanning_factory import ScanningModel, ScanningModelFactory
 
 class RPC_Job_Model_Factory(AbstractModelFactory):
 
     _MODEL = rpc_job_models.RPCjobModel
+    _SUB_FACTORIES = {ScanningModel: ScanningModelFactory}
     STORE_SECTION_HEAD = ('id',)
-    STORE_SECTION_SERLIALIZERS = dict(
-        id=int,
-        type=rpc_job_models.JOB_TYPE,
-        status=rpc_job_models.JOB_STATUS,
-        model=AbstractModelFactory,
-        pid=int)
+    STORE_SECTION_SERLIALIZERS = {
+        ('id',): int,
+        ('type',): rpc_job_models.JOB_TYPE,
+        ('status',): rpc_job_models.JOB_STATUS,
+        ('content_model',): AbstractModelFactory,
+        ('pid',): int}
 
 
     @classmethod
@@ -26,7 +28,7 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
     @classmethod
     def _validate_id(cls, model):
 
-        if isinstance(model.id, str):
+        if isinstance(model.id, int):
     
             return True
 
@@ -54,8 +56,8 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
     @classmethod
     def _vaildate_content_model(cls, model):
 
-        if isinstance(model.contentModel, Model):
+        if isinstance(model.content_model, Model):
 
             return True
 
-        return model.FIELD_TYPES.contentModel
+        return model.FIELD_TYPES.content_model

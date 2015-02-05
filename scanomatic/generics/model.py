@@ -11,6 +11,9 @@ class Model(object):
         if not self._hasSetFieldTypes():
             self._setFieldTypes(content.keys())
 
+        if not all(key == key.lower() for key in content):
+            raise AttributeError("Model fields may only be lower case to work with serializers {0}".format(content.keys()))
+
         for key, val in content.items():
             self.__dict__[key] = val
 
