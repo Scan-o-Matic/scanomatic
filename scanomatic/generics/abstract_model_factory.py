@@ -1,19 +1,27 @@
-import scanomatic.generics.model as model
+from scanomatic.generics.model import Model
+import scanomatic.generics.decorators as decorators
 
 import copy
 from enum import Enum
+from ConfigParser import ConfigParser
 
 
-class AbstractModelFactory(object) :
+class AbstractModelFactory(object):
 
-    _MODEL = model.Model
-    _STORE_SECTION_HEAD = tuple()
-    _STORE_SECTION_SERLIALIZERS = dict()
+    _MODEL = Model
+    STORE_SECTION_HEAD = tuple()
+    STORE_SECTION_SERLIALIZERS = dict()
 
     def __new__(cls, *args):
 
         raise Exception("This class is static, can't be instantiated")
-    
+
+    # noinspection PyMethodParameters
+    @decorators.classproperty
+    def serializer(cls):
+
+        return  Serializer(cls)
+
     @staticmethod
     def toDict(model):
 
@@ -25,7 +33,7 @@ class AbstractModelFactory(object) :
         if not isinstance(model, cls._MODEL):
             raise TypeError("Wrong model for factory {0}!={1}".format(
                 cls._MODEL, model))
-            return False
+
         return True
 
     @classmethod
@@ -73,7 +81,7 @@ class AbstractModelFactory(object) :
             defaultModel = cls._MODEL()
 
             for attr, val in defaultModel:
-                if fields is None or getattr(cls.FIELD_TYPES, attr) in fields:
+                if fields is None or getattr(defaultModel.FIELD_TYPES, attr) in fields:
                     setattr(model, attr, val)
 
     @classmethod
@@ -159,46 +167,53 @@ class AbstractModelFactory(object) :
 
         return False
 
-    @classmethod
-    def dump(cls, model, path):
 
-        if cls._STORE_SECTION_HEAD and cls.validate(model):
+@decorators.memoize
+class Serializer(object):
 
-            conf = AbstractModelFactory._getConfig(path)
-            serializedModel = cls.serialize(model)
-            section = cls.getSectionName(model)
+    def __init__(self, factory):
+
+        self._factory = factory
+
+    def dump(self, model, path):
+
+        factory = self._factory
+
+        if factory.STORE_SECTION_HEAD and factory.validate(model):
+
+            conf = Serializer._getConfig(path)
+            serializedModel = self.serialize(model)
+            section = self.getSectionName(model)
 
             if conf and serializedModel and section:
 
-                AbstractModelFactory._updateConfig(conf, section, serializedModel)
-                return AbstractModelFactory._saveConfig(conf, path)
+                Serializer._updateConfig(conf, section, serializedModel)
+                return Serializer._saveConfig(conf, path)
 
         return False
 
-    @classmethod
-    def load(cls, path):
+    def load(self, path):
 
-        conf = AbstractModelFactory._getConfig(path)
+        conf = Serializer._getConfig(path)
 
         if conf:
             for section in conf.sections():
-                yield cls._unserializeSection(conf, section)
+                yield self._unserializeSection(conf, section)
 
-    @classmethod
-    def _unserializeSection(cls, section):
+    def _unserializeSection(self, conf, section):
 
         keys, vals = zip(*conf.items(section))
-        return cls._parseSerialization(keys, vals)
+        return self._parseSerialization(keys, vals)
 
-    @classmethod
-    def _parseSerialization(cls, keys, vals):
+    def _parseSerialization(self, keys, vals):
 
-        keys = map(AbstractModelFactory._str2keyPath, keys)
-        dtypes = tuple(cls._STORE_SECTION_SERLIALIZERS[key] for key in keys)
-        model = cls.create(
-            **{key: AbstractModelFactory._unserializeSection(val, dtype)
-               for key, val, dtype in zip(keys, vals, dtypes) 
-               if len(key) == 1 and 
+        factory = self._factory
+        keys = map(Serializer._str2keyPath, keys)
+        dtypes = tuple(factory.STORE_SECTION_SERLIALIZERS[key] for key in keys)
+        model = factory.create(
+            **{key: self._unserializeSection(val, dtype)
+               for key, val, dtype in zip(keys, vals, dtypes)
+               if len(key) == 1 and
                not issubclass(dtype, AbstractModelFactory)})
 
         for key, dtype in zip(keys, dtypes):
@@ -206,13 +221,13 @@ class AbstractModelFactory(object) :
             if issubclass(dtype, AbstractModelFactory) and len(key) == 1:
 
                 #TODO: Check this so function get right params
-                setattr(model, key, dtype._parseSerialization(
-                    cls._filterMemberModel(keys, vals, dtypes, key)))
+                setattr(model, key, dtype.serializer._parseSerialization(
+                    Serializer._filterMemberModel(keys, vals, dtypes, key)))
 
         return model
-    
-    @classmethod
-    def _filterMemberModel(cls, keys, vals, dtypes, keyFilter):
+
+    @staticmethod
+    def _filterMemberModel(keys, vals, dtypes, keyFilter):
 
         filterLength = len(keyFilter)
         for key, val, dtype in zip(keys, vals, dtypes):
@@ -221,35 +236,33 @@ class AbstractModelFactory(object) :
 
                 yield key[filterLength:], val
 
-    @classmethod
-    def serialize(cls, model):
+
+    def serialize(self, model):
 
         serializedModel = dict()
 
-        for keyPath, dtype in cls._deepSerializeKeysAndTypes():
-            
-            serializableVal = AbstractModelFactory._getValueByPath(model,
-                                                                   keyPath)
-            serializedModel[AbstractModelFactory._keyPath2str(keyPath)] = \
-                    AbstractModelFactory._serialize(serializableVal, dtype)
+        for keyPath, dtype in self._deepSerializeKeysAndTypes():
 
-        return serializedModel 
+            serializableVal = Serializer._getValueByPath(model, keyPath)
+            serializedModel[Serializer._keyPath2str(keyPath)] = Serializer._serialize(serializableVal, dtype)
+
+        return serializedModel
 
 
-    @classmethod
-    def _deepSerializeKeysAndTypes(cls):
+    def _deepSerializeKeysAndTypes(self):
 
-        for keyPath, dtype in cls._STORE_SECTION_SERLIALIZERS.items():
+        factory = self._factory
+        for keyPath, dtype in factory.STORE_SECTION_SERLIALIZERS.items():
 
             if issubclass(dtype, AbstractModelFactory):
-                for subKeyPath, dtype in dtype._deepSerializeKeysAndTypes():
+                for subKeyPath, dtype in dtype.serializer._deepSerializeKeysAndTypes():
                     yield keyPath + subKeyPath, dtype
             else:
                 yield keyPath, dtype
 
     @staticmethod
     def _keyPath2str(keyPath):
-    
+
         return ".".join(keyPath)
 
     @staticmethod
@@ -286,11 +299,9 @@ class AbstractModelFactory(object) :
                 except:
                     return None
 
-    @classmethod
-    def getSectionName(cls, model):
+    def getSectionName(self, model):
 
-        return AbstractModelFactory._getValueByPath(model,
-                                                    cls._STORE_SECTION_HEAD)
+        return Serializer._getValueByPath(model, self._factory.STORE_SECTION_HEAD)
 
     @staticmethod
     def _getValueByPath(model, valuePath):
@@ -305,14 +316,14 @@ class AbstractModelFactory(object) :
     @staticmethod
     def _getConfig(path):
 
-        conf = ConfigParser.ConfigParser(
+        conf = ConfigParser(
             allow_no_value=True)
         try:
-            with open(paths, 'r') as fh:
-                self._scannerConfs.readfp(fh)
+            with open(path, 'r') as fh:
+                conf.readfp(fh)
         except IOError:
             return None
-        
+
         return conf
 
     @staticmethod
@@ -327,9 +338,8 @@ class AbstractModelFactory(object) :
     def _saveConfig(conf, path):
 
         try:
-            with open(paths, 'w') as fh:
+            with open(path, 'w') as fh:
                 conf.write(fh)
         except IOError:
             return False
         return True
-
