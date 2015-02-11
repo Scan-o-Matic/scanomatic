@@ -1,3 +1,9 @@
+import scanomatic.io.logger as logger
+
+import time
+import datetime
+import multiprocessing
+from inspect import ismethod
 
 
 class _ClassPropertyDescriptor(object):
@@ -42,14 +48,64 @@ def _get_id_tuple(f, args, kwargs, mark=object()):
         l.append(id(v))
     return tuple(l)
 
-_memoized = {}
+_MEMOIZED = {}
 
 
 def memoize(f):
 
     def memoized(*args, **kwargs):
         key = _get_id_tuple(f, args, kwargs)
-        if key not in _memoized:
-            _memoized[key] = f(*args, **kwargs)
-        return _memoized[key]
+        if key not in _MEMOIZED:
+            _MEMOIZED[key] = f(*args, **kwargs)
+        return _MEMOIZED[key]
     return memoized
+
+
+_TIME_LOGGER = logger.Logger("Time It")
+
+
+def timeit(f):
+
+    def timer(*args, **kwargs):
+
+        t = time.time()
+        _TIME_LOGGER.info("Calling {0}".format(f))
+        ret = f(*args, **kwargs)
+        _TIME_LOGGER.info("Call to {0} lasted {1}".format(f, str(datetime.timedelta(seconds=time.time() - t))))
+        return ret
+
+    return timer
+
+_PATH_LOCK = dict()
+
+
+def path_lock(f):
+
+    def _acquire(path):
+
+        try:
+            while not _PATH_LOCK[path].acquire(False):
+                time.sleep(0.05)
+        except KeyError:
+            raise IndentationError("Path '{0}' not registered as lock".format(path))
+
+    def locking_wrapper_method(self_cls, path, *args, **kwargs):
+        _acquire(path)
+        ret = f(self_cls, path, *args, **kwargs)
+        _PATH_LOCK[path].release()
+        return ret
+
+    def locking_wrapper_function(path, *args, **kwargs):
+        _acquire(path)
+        ret = f(path, *args, **kwargs)
+        _PATH_LOCK[path].release()
+        return ret
+
+    if ismethod(f):
+        return locking_wrapper_method
+    else:
+        return locking_wrapper_function
+
+
+def register_path_lock(path):
+    _PATH_LOCK[path] = multiprocessing.Lock()
