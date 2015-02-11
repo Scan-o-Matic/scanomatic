@@ -235,10 +235,10 @@ class Serializer(object):
         for key, key_path, val, dtype in zip(keys, key_paths, vals, dtypes):
 
             if self._get_is_sub_model(dtype, key_path):
-                # TODO: Check this so function get right params
-                print zip(*SerializationHelper.filter_member_model(keys, vals, key_path))
+
+                filtered_members = zip(*SerializationHelper.filter_member_model(key_path, key_paths, keys, vals))[1:]
                 setattr(model, key, SerializationHelper.unserialize(val, dtype).serializer._parse_serialization(
-                    *zip(*SerializationHelper.filter_member_model(keys, vals, key_path))))
+                    *filtered_members))
 
         return model
 
@@ -297,13 +297,14 @@ class SerializationHelper(object):
         raise Exception("This class is static, can't be instantiated")
 
     @staticmethod
-    def filter_member_model(keys, vals, key_filter):
+    def filter_member_model(key_filter, keys, *args):
 
         filter_length = len(key_filter)
-        for key, val in zip(keys, vals):
+        for filteree in zip(keys, *args):
 
-            if all(filt == k for filt, k in zip(key_filter, key)):
-                yield key[filter_length:], val
+            key = filteree[0]
+            if all(filt == k for filt, k in zip(key_filter, key)) and len(key) > filter_length:
+                yield (key[filter_length:],) + filteree[1:]
 
     @staticmethod
     def get_str_from_path(keyPath):
