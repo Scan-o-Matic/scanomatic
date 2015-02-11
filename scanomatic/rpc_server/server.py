@@ -40,6 +40,15 @@ from scanomatic.io.resource_status import Resource_Status
 #
 # CLASSES
 #
+class Server(object):
+    pass
+
+    def shutdown(self, user_id):
+        pass
+
+    def safe_shutdown(self, user_id):
+        pass
+
 
 class StoppableXMLRPCServer(SimpleXMLRPCServer):
 
@@ -63,7 +72,7 @@ class SOM_RPC(object):
 
     def __init__(self):
 
-        self._logger = logger.Logger("Scan-o-Matic RPC Server")
+        self._logger = logger.Logger("RPC Server")
         self._appConfig = app_config.Config()
         self._paths = paths.Paths()
 
