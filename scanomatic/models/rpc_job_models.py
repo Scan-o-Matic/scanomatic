@@ -15,9 +15,9 @@ class RPCjobModel(model.Model):
                  id=None,
                  type=JOB_TYPE.Unknown,
                  status=JOB_STATUS.Unknown,
-                 contentModel=None,
+                 content_model=None,
                  pid=None):
 
         super(RPCjobModel, self).__init__(
                 id=id, type=type, status=status, pid=pid,
-                contentModel=contentModel)
+                content_model=content_model)
