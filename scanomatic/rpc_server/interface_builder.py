@@ -3,6 +3,7 @@ __author__ = 'martin'
 import socket
 import sys
 import os
+from time import sleep
 
 from scanomatic.io.app_config import Config
 from scanomatic.generics.singleton import Singleton
@@ -10,7 +11,7 @@ import scanomatic.io.logger as logger
 from scanomatic.rpc_server.server import Server
 from scanomatic.rpc_server.stoppable_rpc_server import Stoppable_RPC_Server
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
-
+import scanomatic.generics.decorators as decorators
 
 def _verify_admin(f):
 
@@ -76,23 +77,21 @@ class Interface_Builder(Singleton):
         del self._rpc_server
         self._som_server.logger.info("Server no longer accepting requests")
 
-    def _remove_som_server(self, forceJobsToStop):
+    def _remove_som_server(self, wait_for_jobs_to_stop):
 
-        if forceJobsToStop:
+        if wait_for_jobs_to_stop:
             successful_stop = self._som_server.shutdown()
         else:
             successful_stop = self._som_server.safe_shutdown()
 
-        del self._som_server
-
         return successful_stop
 
     @_verify_admin
-    def _server_shutdown(self, user_id, forceJobsToStop=False):
+    def _server_shutdown(self, user_id, wait_for_jobs_to_stop=False):
 
         self._remove_rpc_server()
 
-        val = self._remove_som_server(forceJobsToStop=forceJobsToStop)
+        val = self._remove_som_server(wait_for_jobs_to_stop=wait_for_jobs_to_stop)
 
         if val:
             self._som_server.logger.info("Server is shut down")
@@ -102,17 +101,27 @@ class Interface_Builder(Singleton):
         return  val
 
     @_verify_admin
-    def _server_restart(self, user_id, force_jobs_to_stop=False):
+    def _server_restart(self, user_id, wait_for_jobs_to_stop=False):
 
         self._remove_rpc_server()
 
-        if self._remove_som_server(forceJobsToStop=force_jobs_to_stop):
-            self._start_som_server()
-            self._start_rpc_server()
-        else:
-            return False
+        self._restart_server_thread(wait_for_jobs_to_stop)
+
         return True
 
+    @decorators.threaded
+    def _restart_server_thread(self, wait_for_jobs_to_stop):
+
+        som_server = self._som_server
+        self._remove_som_server(wait_for_jobs_to_stop=wait_for_jobs_to_stop)
+
+        while som_server.serving:
+            sleep(0.1)
+
+        del som_server
+
+        self._start_som_server()
+        self._start_rpc_server()
 
     def _server_get_status(self, user_id=None):
 

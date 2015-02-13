@@ -286,7 +286,7 @@ class Scanner_Manager(object):
 
         unknownUSBs= []
         while currentUSBs:
-            usb = currentUSBs.pop()
+            usb = currentUSBs.get_highest_priority()
             found = False
             for c in claim:
                 if claim[c]['usb'] and claim[c]['usb'] == usb:

@@ -621,7 +621,7 @@ class Meta_Data(Meta_Data_Base):
 
         while i > 0:
 
-            rows.pop()
+            rows.get_highest_priority()
             i -= 1
 
     def _makeRectangle(self, data, fill=u''):

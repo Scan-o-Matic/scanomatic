@@ -36,7 +36,7 @@ import scanomatic.rpc_server.queue as queue
 import scanomatic.rpc_server.jobs as jobs
 import scanomatic.io.scanner_admin as scanner_admin
 from scanomatic.io.resource_status import Resource_Status
-
+import scanomatic.generics.decorators as decorators
 
 #
 # CLASSES
@@ -47,18 +47,109 @@ class Server(object):
 
     def __init__(self):
 
+        config = app_config.Config()
+
         self.logger = logger.Logger("Server")
-        self._admin = self._appConfig.rpc_admin
+        self._admin = config.rpc_admin
+        self._running = False
+        self._started = False
+        self._waitForJobsToTerminate = False
+
+        self._queue = queue.Queue()
+        self._jobs = jobs.Jobs()
+        self._scannerManager = scanner_admin.Scanner_Manager()
+
+    @property
+    def serving(self):
+
+        return self._started
+
 
     def shutdown(self):
-        pass
+        self._waitForJobsToTerminate = False
+        self._running = False
 
     def safe_shutdown(self):
-        pass
+        self._waitForJobsToTerminate = True
+        self._running = False
 
     def get_server_status(self):
 
         pass
+
+    def start(self):
+
+        if not self._started:
+            self._run()
+        else:
+            self.logger.warning("Attempted to start Scan-o-Matic server that is already running")
+
+    def _attempt_job_creation(self):
+
+        if Resource_Status.check_resources():
+            next_job = self._queue.get_highest_priority()
+            if next_job is not None:
+                if self._jobs.add(next_job):
+                    self._queue.remove(next_job)
+                else:
+                    self._queue.reinstate(next_job)
+
+
+    @decorators.threaded
+    def _run(self):
+
+        self._running = True
+        sleep = 0.51
+        i = 0
+
+        while self._running:
+
+            if (i == 0 and self._queue):
+                self._attempt_job_creation()
+            elif (i <= 1):
+                self._scannerManager.sync()
+            else:
+                self._prepare_statuses()
+
+            time.sleep(sleep)
+            i += 1
+            i %= 3
+
+        self._shutdown_cleanup()
+
+    def _shutdown_cleanup(self):
+
+        self.logger.info("Som Server Main process shutting down")
+        self._terminate_jobs()
+
+        if self._waitForJobsToTerminate:
+            self._wait_on_jobs()
+
+        self._save_state()
+
+        self.logger.info("Scan-o-Matic server shutdown complete")
+        self._started = False
+
+    def _save_state(self):
+        pass
+
+    def _terminate_jobs(self):
+
+        if self._jobs.running:
+            self.logger.info("Asking all jobs to terminate")
+
+            self._jobs.forceStop = True
+
+    def _wait_on_jobs(self):
+        i = 0
+        while self._jobs.running:
+
+            if i == 0:
+                self.logger.info("Waiting for jobs to terminate")
+            i += 1
+            i %= 30
+            time.sleep(0.1)
+
 
 
 class SOM_RPC(object):
@@ -136,7 +227,7 @@ class SOM_RPC(object):
 
             if (i == 24 and self._queue):
                 if (Resource_Status.check_resources()):
-                    nextJob = self._queue.popHighestPriority()
+                    nextJob = self._queue.get_highest_priority()
                     if (nextJob is not None):
                         if not self._jobs.add(nextJob):
                             #TODO: should nextJob be recircled or written some
@@ -165,22 +256,6 @@ class SOM_RPC(object):
         self._logger.info("Shutting down server")
         #self._server.stop()
         self._server.shutdown()
-
-    def _niceQuitProcesses(self):
-
-        self._logger.info("Nice-quitting forcing={0}, jobs running={1}".format(
-            self._forceJobsToStop, self._jobs.running))
-
-        i = 0
-        while self._forceJobsToStop and self._jobs.running:
-            self._jobs.forceStop = True
-            if i == 0:
-                self._logger.info("Waiting for jobs to terminate")
-            i += 1
-            i %= 30
-            time.sleep(0.1)
-
-        self._shutDownComplete = True
 
     def _createJobID(self):
 
@@ -601,7 +676,7 @@ class SOM_RPC(object):
             return False
 
         while self._queue:
-            self._queue.popHighestPriority()
+            self._queue.get_highest_priority()
 
         return True
 

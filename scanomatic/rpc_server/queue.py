@@ -116,7 +116,7 @@ class Queue(object):
         return sorted([i for i in l if i is not None], key=itemgetter(3),
                       reverse=True)
 
-    def popHighestPriority(self):
+    def get_highest_priority(self):
 
         prioSection = None
         highestPrio = -1
