@@ -4,6 +4,7 @@ import time
 import datetime
 import multiprocessing
 from inspect import ismethod
+from threading import Thread
 
 
 class _ClassPropertyDescriptor(object):
@@ -109,3 +110,13 @@ def path_lock(f):
 
 def register_path_lock(path):
     _PATH_LOCK[path] = multiprocessing.Lock()
+
+
+def threaded(f):
+
+    def _threader(*args, **kwargs):
+
+        thread = Thread(target=f, args=args, kwargs=kwargs)
+        thread.start()
+
+    return  _threader

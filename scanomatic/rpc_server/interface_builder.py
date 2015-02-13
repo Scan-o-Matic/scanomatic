@@ -3,24 +3,24 @@ __author__ = 'martin'
 import socket
 import sys
 import os
-from SimpleXMLRPCServer import SimpleXMLRPCServer
 
 from scanomatic.io.app_config import Config
 from scanomatic.generics.singleton import Singleton
 import scanomatic.io.logger as logger
 from scanomatic.rpc_server.server import Server
+from scanomatic.rpc_server.stoppable_rpc_server import Stoppable_RPC_Server
 
 
-class RPC_Interface(Singleton):
+class Interface_Builder(Singleton):
 
     def __init__(self):
 
         self._rpc_server = None
-        self._server = Server()
+        self._som_server = Server()
         self._logger = logger.Logger("RPC Server")
-        self._startServer()
+        self._start_rpc_server()
 
-    def _startServer(self):
+    def _start_rpc_server(self):
 
         app_config = Config()
         host = app_config.rpc_host
@@ -30,7 +30,7 @@ class RPC_Interface(Singleton):
             raise Exception("Server is already running")
 
         try:
-            self._rpc_server = SimpleXMLRPCServer((host, port), logRequests=False)
+            self._rpc_server = Stoppable_RPC_Server((host, port), logRequests=False)
         except socket.error:
             self._logger.critical(
                 "Sever is already running or the " +
@@ -41,9 +41,6 @@ class RPC_Interface(Singleton):
 
         self._rpc_server.register_introspection_functions()
 
-        self._running = True
-        self._mainThread = None
-
         self._logger.info("Server (pid {0}) listens to {1}:{2}".format(
             os.getpid(), host, port))
 
@@ -53,10 +50,12 @@ class RPC_Interface(Singleton):
 
     def server_shutdown(self, user_id, forceJobsToStop=False):
 
+        self._rpc_server
+
         if forceJobsToStop:
-            return self._server.shutdown(user_id)
+            return self._som_server.shutdown(user_id)
         else:
-            return self._server.safe_shutdown(user_id)
+            return self._som_server.safe_shutdown(user_id)
 
     def get_status(self, user_id=None):
 
@@ -68,12 +67,12 @@ class RPC_Interface(Singleton):
 
     def get_queue_status(self, user_id=None):
 
+        pass
+
     def get_job_status(self, user_id, job_id):
 
         pass
 
-    def communicate(self, user_id, job_id, communication_type, **content):
+    def communicate(self, user_id, job_id, communication, **communication_content):
 
         pass
-
-
