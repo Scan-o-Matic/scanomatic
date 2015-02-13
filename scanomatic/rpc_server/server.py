@@ -37,35 +37,28 @@ import scanomatic.rpc_server.jobs as jobs
 import scanomatic.io.scanner_admin as scanner_admin
 from scanomatic.io.resource_status import Resource_Status
 
+
 #
 # CLASSES
 #
+
+
 class Server(object):
-    pass
 
-    def shutdown(self, user_id):
+    def __init__(self):
+
+        self.logger = logger.Logger("Server")
+        self._admin = self._appConfig.rpc_admin
+
+    def shutdown(self):
         pass
 
-    def safe_shutdown(self, user_id):
+    def safe_shutdown(self):
         pass
 
+    def get_server_status(self):
 
-class StoppableXMLRPCServer(SimpleXMLRPCServer):
-
-    def __init__(self, *args, **kwargs):
-
-        SimpleXMLRPCServer.__init__(self, *args, **kwargs)
-        self._keepAlive = True
-
-    def stop(self):
-
-        self._keepAlive = False
-
-    def serve_forever(self, poll_interval=0.5):
-
-        while self._keepAlive:
-            self.handle_request()
-            time.sleep(poll_interval)
+        pass
 
 
 class SOM_RPC(object):
@@ -79,7 +72,7 @@ class SOM_RPC(object):
         self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
         self._scannerManager = scanner_admin.Scanner_Manager()
-        self._admin = self._appConfig.rpc_admin
+
 
         self._serverStartTime = None
         self._setStatuses([])
