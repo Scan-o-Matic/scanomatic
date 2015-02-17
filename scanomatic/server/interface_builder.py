@@ -71,6 +71,9 @@ class Interface_Builder(Singleton):
             if (m.startswith("_server_")):
                 self._rpc_server.register_function(getattr(self, m), m[8:])
 
+        self._rpc_server.serve_forever()
+
+
     def _remove_rpc_server(self):
 
         self._rpc_server.stop()

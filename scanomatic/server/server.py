@@ -10,6 +10,8 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+#TODO: Who handls keyboard interrupts?
+
 #
 # DEPENDENCIES
 #
@@ -23,7 +25,7 @@ import os
 import sys
 import socket
 import string
-import md5
+import hashlib
 
 #
 # INTERNAL DEPENDENCIES
@@ -150,6 +152,16 @@ class Server(object):
             i %= 30
             time.sleep(0.1)
 
+    def _create_id(self):
+
+        job_id = ""
+        bad_name = True
+
+        while bad_name:
+            job_id= hashlib.md5(str(time.time())).hexdigest()
+            bad_name = job_id in self._queue or job_id in self._jobs
+
+        return job_id
 
 
 class SOM_RPC(object):
@@ -172,38 +184,6 @@ class SOM_RPC(object):
         self._forceJobsToStop = False
         Resource_Status.loggingLevel('ERROR')
 
-    def _startServer(self):
-
-        if (self._server is not None):
-            raise Exception("Server is already running")
-
-        host = self._appConfig.rpc_host
-        port = self._appConfig.rpc_port
-
-        try:
-            self._server = SimpleXMLRPCServer((host, port), logRequests=False)
-        except socket.error:
-            self._logger.critical(
-                "Sever is alread running or the " +
-                "port {0} is in use by other program".format(
-                    port))
-
-            sys.exit(1)
-
-        self._server.register_introspection_functions()
-
-        self._running = True
-        self._mainThread = None
-
-        self._logger.info("Server (pid {0}) listens to {1}:{2}".format(
-            os.getpid(), host, port))
-
-        [self._server.register_function(getattr(self, m), m) for m
-         in dir(self) if not(m.startswith("_") or m in
-                             self._appConfig.rpcHiddenMethods)]
-
-        self._serverStartTime = time.time()
-
     def _setStatuses(self, statuses, merge=False):
 
         if merge:
@@ -215,81 +195,6 @@ class SOM_RPC(object):
 
         self._statuses = statuses
 
-    def _main(self):
-
-        sleep = 0.51
-        i = 0
-
-
-        while self._running:
-
-            sleepDuration = 0.51 * 4
-
-            if (i == 24 and self._queue):
-                if (Resource_Status.check_resources()):
-                    nextJob = self._queue.get_highest_priority()
-                    if (nextJob is not None):
-                        if not self._jobs.add(nextJob):
-                            #TODO: should nextJob be recircled or written some
-                            #place or added to statuses
-                            pass
-
-                        i = 20
-                elif (Resource_Status.currentPasses() == 0):
-                    i = 10
-
-            if (i % 2):
-                self._scannerManager.sync()
-
-            self._setStatuses(self._jobs.poll(), merge=i!=24)
-            for jobID in self._jobs.scanningPids:
-                self._scannerManager.updatePid(
-                    jobID,
-                    self._jobs.scanningPids[jobID])
-
-            time.sleep(sleep)
-            i += 1
-            i %= 25
-
-        self._logger.info("Main process shutting down")
-        self._niceQuitProcesses()
-        self._logger.info("Shutting down server")
-        #self._server.stop()
-        self._server.shutdown()
-
-    def _createJobID(self):
-
-        badName = True
-
-        while badName:
-            jobID= md5.new(str(time.time())).hexdigest()
-            badName = jobID in self._queue or jobID in self._jobs
-
-        return jobID
-
-    def serverRestart(self, userID, forceJobsToStop=False):
-        """This method is not in use since the technical issues have
-        not been resolved.
-
-        If implemented, it will restart the server
-        """
-        #TODO: If this should be possible... how to free the
-        #address fron run() ... server_forever()
-
-        return False
-
-        if userID == self._admin:
-
-            t = threading.Thread(target=self._serverRestart,
-                                 args=(forceJobsToStop,))
-            t.start()
-            return True
-        return False
-
-    def _serverRestart(self, forceJobsToStop):
-
-        self._serverShutDown(forceJobsToStop)
-        self.run()
 
     def _serverShutDown(self, forceJobsToStop):
 
