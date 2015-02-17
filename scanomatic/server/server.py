@@ -36,7 +36,7 @@ import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.server.queue as queue
 import scanomatic.server.jobs as jobs
-import scanomatic.io.scanner_admin as scanner_admin
+import scanomatic.io.scanner_manager as scanner_admin
 from scanomatic.io.resource_status import Resource_Status
 import scanomatic.generics.decorators as decorators
 
