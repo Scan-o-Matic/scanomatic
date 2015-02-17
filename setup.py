@@ -112,7 +112,7 @@ setup(
         "scanomatic.models.factories",
         "scanomatic.io",
         "scanomatic.io.xml",
-        "scanomatic.rpc_server",
+        "scanomatic.server",
         "scanomatic.imageAnalysis", "scanomatic.dataProcessing",
         "scanomatic.dataProcessing.visualization",
         "scanomatic.gui",

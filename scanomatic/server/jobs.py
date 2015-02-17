@@ -21,12 +21,12 @@ from multiprocessing import Pipe
 
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
-import scanomatic.rpc_server.queue as queue
-import scanomatic.rpc_server.phenotype_effector as phenotype_effector
-import scanomatic.rpc_server.analysis_effector as analysis_effector
-import scanomatic.rpc_server.scanner_effector as scanner_effector
-import scanomatic.rpc_server.rpc_job as rpc_job
-from scanomatic.rpc_server.proc_effector import ProcTypes
+import scanomatic.server.queue as queue
+import scanomatic.server.phenotype_effector as phenotype_effector
+import scanomatic.server.analysis_effector as analysis_effector
+import scanomatic.server.scanner_effector as scanner_effector
+import scanomatic.server.rpc_job as rpc_job
+from scanomatic.server.proc_effector import ProcTypes
 
 #
 # CLASSES

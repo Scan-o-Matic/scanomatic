@@ -24,7 +24,7 @@ import time
 
 import proc_effector
 import scanomatic.io.logger as logger
-from scanomatic.rpc_server.proc_effector import ProcTypes
+from scanomatic.server.proc_effector import ProcTypes
 
 class ScannerEffector(proc_effector.ProcEffector):
 

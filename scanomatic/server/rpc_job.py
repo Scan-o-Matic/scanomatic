@@ -23,7 +23,7 @@ import setproctitle
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.rpc_server.pipes as pipes
+import scanomatic.server.pipes as pipes
 import scanomatic.io.logger as logger
 
 #

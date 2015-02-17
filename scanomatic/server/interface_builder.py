@@ -8,8 +8,8 @@ from time import sleep
 from scanomatic.io.app_config import Config
 from scanomatic.generics.singleton import Singleton
 import scanomatic.io.logger as logger
-from scanomatic.rpc_server.server import Server
-from scanomatic.rpc_server.stoppable_rpc_server import Stoppable_RPC_Server
+from scanomatic.server.server import Server
+from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 import scanomatic.generics.decorators as decorators
 

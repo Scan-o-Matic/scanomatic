@@ -26,9 +26,9 @@ import collections
 
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
-import scanomatic.rpc_server.phenotype_effector as phenotype_effector
-import scanomatic.rpc_server.analysis_effector as analysis_effector
-from scanomatic.rpc_server.proc_effector import ProcTypes
+import scanomatic.server.phenotype_effector as phenotype_effector
+import scanomatic.server.analysis_effector as analysis_effector
+from scanomatic.server.proc_effector import ProcTypes
 
 #
 # CLASSES

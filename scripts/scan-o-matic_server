@@ -22,7 +22,7 @@ import os
 #
 
 import scanomatic.io.logger as logger
-import scanomatic.rpc_server.server as server
+import scanomatic.server.server as server
 
 if __name__ == "__main__":
 
