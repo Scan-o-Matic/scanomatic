@@ -23,6 +23,7 @@ import proc_effector
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 import scanomatic.dataProcessing.phenotyper as phenotyper
+from scanomatic.server.proc_effector import ProcTypes
 
 #
 # CLASSES
@@ -31,7 +32,7 @@ import scanomatic.dataProcessing.phenotyper as phenotyper
 
 class PhenotypeExtractionEffector(proc_effector.ProcEffector):
 
-    TYPE = jobType.EXTRACTION
+    TYPE = ProcTypes.EXTRACTION
 
     def __init__(self, identifier, label):
 

@@ -31,6 +31,7 @@ import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
+from scanomatic.server.proc_effector import ProcTypes
 
 #
 # CLASSES
@@ -39,7 +40,7 @@ import scanomatic.imageAnalysis.analysis_image as analysis_image
 
 class AnalysisEffector(proc_effector.ProcEffector):
 
-    TYPE = jobType.ANALYSIS
+    TYPE = ProcTypes.ANALYSIS
 
     def __init__(self, identifier, label):
 
