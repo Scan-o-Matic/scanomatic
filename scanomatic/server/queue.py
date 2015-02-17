@@ -86,15 +86,25 @@ class Queue(object):
 
     def get_highest_priority(self):
 
-        job_type = self.next_priority
+        job_type = self.__next_priority
         if self.has_job_of_type(job_type):
             return sorted(self.get_job_by_type(job_type), key=lambda job: job.priority)[0]
         return None
 
     @property
-    def next_priority(self):
+    def __next_priority(self):
 
-        #TODO: Fix smart cycling
+        attempts = 0
+        while not self.has_job_of_type(self._next_priority) and attempts < len(rpc_job_models.JOB_TYPE):
+
+            next_job_type_value = self._next_priority.value + 1
+            if len(rpc_job_models.JOB_TYPE) < next_job_type_value:
+                next_job_type_value = 1
+
+            self._next_priority = [job_type for job_type in rpc_job_models.JOB_TYPE
+                                   if job_type.value == next_job_type_value][0]
+            attempts += 1
+
         return self._next_priority
 
     def has_job_of_type(self, job_type):

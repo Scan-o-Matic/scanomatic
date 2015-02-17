@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/generics/abstract_model_factory.py" afterPath="$PROJECT_DIR$/scanomatic/generics/abstract_model_factory.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/queue.py" afterPath="$PROJECT_DIR$/scanomatic/server/queue.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/models/factories/rpc_job_factory.py" afterPath="$PROJECT_DIR$/scanomatic/models/factories/rpc_job_factory.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/models/rpc_job_models.py" afterPath="$PROJECT_DIR$/scanomatic/models/rpc_job_models.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/server.py" afterPath="$PROJECT_DIR$/scanomatic/server/server.py" />
     </list>
     <ignored path="scan-o-matic.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -69,8 +65,8 @@
       <file leaf-file-name="queue.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/scanomatic/server/queue.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.35108152" vertical-offset="1229" max-vertical-offset="1845">
-              <caret line="96" column="8" selection-start-line="96" selection-start-column="8" selection-end-line="96" selection-end-column="8" />
+            <state vertical-scroll-proportion="0.049916804" vertical-offset="0" max-vertical-offset="1995">
+              <caret line="2" column="21" selection-start-line="2" selection-start-column="21" selection-end-line="2" selection-end-column="21" />
               <folding>
                 <element signature="e#428#463#0" expanded="true" />
               </folding>
@@ -702,16 +698,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/models/rpc_job_models.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="465">
-          <caret line="23" column="34" selection-start-line="23" selection-start-column="34" selection-end-line="23" selection-end-column="34" />
-          <folding>
-            <element signature="e#0#41#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-12.264706" vertical-offset="4098" max-vertical-offset="4665">
@@ -722,10 +708,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/models/rpc_job_models.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="465">
+          <caret line="23" column="34" selection-start-line="23" selection-start-column="34" selection-end-line="23" selection-end-column="34" />
+          <folding>
+            <element signature="e#0#41#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/server/queue.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.35108152" vertical-offset="1229" max-vertical-offset="1845">
-          <caret line="96" column="8" selection-start-line="96" selection-start-column="8" selection-end-line="96" selection-end-column="8" />
+        <state vertical-scroll-proportion="0.049916804" vertical-offset="0" max-vertical-offset="1995">
+          <caret line="2" column="21" selection-start-line="2" selection-start-column="21" selection-end-line="2" selection-end-column="21" />
           <folding>
             <element signature="e#428#463#0" expanded="true" />
           </folding>
