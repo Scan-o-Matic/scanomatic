@@ -39,6 +39,8 @@ import scanomatic.server.jobs as jobs
 import scanomatic.io.scanner_manager as scanner_admin
 from scanomatic.io.resource_status import Resource_Status
 import scanomatic.generics.decorators as decorators
+import scanomatic.models.rpc_job_models as rpc_job_models
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 
 #
 # CLASSES
@@ -59,7 +61,11 @@ class Server(object):
 
         self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
-        self._scannerManager = scanner_admin.Scanner_Manager()
+        self._scanner_manager = scanner_admin.Scanner_Manager()
+
+    @property
+    def scanner_manager(self):
+        return self._scanner_manager
 
     @property
     def serving(self):
@@ -110,7 +116,7 @@ class Server(object):
             if (i == 0 and self._queue):
                 self._attempt_job_creation()
             elif (i <= 1):
-                self._scannerManager.sync()
+                self._scanner_manager.sync()
             else:
                 self._prepare_statuses()
 
@@ -153,7 +159,7 @@ class Server(object):
             i %= 30
             time.sleep(0.1)
 
-    def _create_id(self):
+    def _get_job_id(self):
 
         job_id = ""
         bad_name = True
@@ -167,6 +173,31 @@ class Server(object):
     def get_job(self, job_id):
 
         return
+
+    def enqueue(self, model, job_type):
+
+        if job_type is rpc_job_models.JOB_TYPE.Scanning and not self.scanner_manager.has_scanners:
+            self.logger.error("There are no scanners reachable from server")
+            return False
+
+        rpcJobModel = RPC_Job_Model_Factory.create(
+            id=self._get_job_id(),
+            pid=os.getpid(),
+            type=job_type,
+            status=rpc_job_models.JOB_STATUS.Requested,
+            contentModel=type(model))
+
+        if not RPC_Job_Model_Factory.validate(rpcJobModel):
+            self.logger.error("Failed to create rpc job model")
+
+        if self.scanner_manager.requestClaim(rpcJobModel):
+
+            #No waiting, lets start
+            if not self._jobs.add(rpcJobModel):
+                self.scanner_manager.releaseScanner(rpcJobModel)
+                return False
+
+            return rpcJobModel.id
 
 
 class SOM_RPC(object):
@@ -713,62 +744,6 @@ class SOM_RPC(object):
             jobLabel=label,
             priority=priority,
             **kwargs)
-
-    def createScanningJob(self, userID, scanningModel):
-        """Attempts to start a scanning job.
-
-        This is a common interface for all type of scan jobs.
-
-        Parameters
-        ==========
-
-        userID : str
-            The ID of the user requesting to create a job.
-            This must match the current ID of the server admin or
-            the request will be refused.
-            **NOTE**: If using a rpc_client from scanomatic.io the client
-            will typically prepend this parameter
-
-        scanningModel : dict
-            Dictionary representation of model for scanning
-        """
-
-        if userID != self._admin:
-
-            self._logger.warning(
-                "User '{0}' tried to use the scan {1}".format(
-                    userID, label))
-            return False
-
-        scanningModel = Scanning_Model_Factory.create(**scanningModel)
-
-        if not Scanning_Model_Factory.validate(scanningModel):
-
-            self._logger.error("Model not valid")
-            return False
-
-        rpcJobModel = RPC_Job_Model_Factory.create(
-                id=self._createJobID(),
-                pid=os.getpid(),
-                type=rpc_job_models.JOB_TYPE.Scanning,
-                status=rpc_job_models.JOB_STATUS.Requested,
-                contentModel=scanningModel)
-
-        if not RPC_Job_Model_Factory.validate(rpcJobModel):
-
-            self._logger.error("Failed to create rpc job model")
-
-        if self._scannerManager.requestClaim(rpcJobModel):
-
-            #No waiting, lets start
-            if not self._jobs.add(rpcJobModel):
-                self._scannerManager.releaseScanner(rpcJobModel)
-                return False
-
-            return rpcJobModel.id 
-
-        return False
-
 
     def createFeatureExtractJob(self, userID, runDirectory, label,
                                 priority=None, kwargs={}):

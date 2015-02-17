@@ -485,3 +485,8 @@ class Scanner_Manager(object):
     def powerStatus(self):
         return {scanner: self._pm[scanner].couldHavePower() 
                 for scanner in self}
+
+    @property
+    def has_scanners(self):
+
+        return self._pm and any(not isinstance(pm, NO_PM) for pm in self._pm.values())

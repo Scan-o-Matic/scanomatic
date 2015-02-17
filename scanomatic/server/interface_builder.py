@@ -12,6 +12,8 @@ from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 import scanomatic.generics.decorators as decorators
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+import scanomatic.models.rpc_job_models as rpc_job_models
 
 _SOM_SERVER = None
 _RPC_SERVER = None
@@ -36,7 +38,6 @@ def _verify_admin(f):
 
 
 class Interface_Builder(Singleton):
-
     def __init__(self):
 
         self.logger = logger.Logger("Server Manager")
@@ -267,8 +268,39 @@ class Interface_Builder(Singleton):
         # else:
         #
         # self._logger.warning(
-        #         "Unknown job "+
-        #         "'{0}'({1}, pid {2}) tried to claim it exists".format(
+        # "Unknown job "+
+        # "'{0}'({1}, pid {2}) tried to claim it exists".format(
         #             label, jobID, pid))
         #
         #     return False
+
+
+    @_verify_admin
+    def _server_create_scanning_job(self, userID, scanningModel):
+
+        """Attempts to start a scanning job.
+
+        This is a common interface for all type of scan jobs.
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        scanningModel : dict
+            Dictionary representation of model for scanning
+        """
+        global _SOM_SERVER
+
+        scanningModel = ScanningModelFactory.create(**scanningModel)
+
+        if not ScanningModelFactory.validate(scanningModel):
+            self.logger.error("Invalid arguments for scanner job")
+            return False
+
+        return _SOM_SERVER.enqueue(scanningModel, rpc_job_models.JOB_TYPE.Scanner)
