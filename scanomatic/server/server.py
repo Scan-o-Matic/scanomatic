@@ -69,11 +69,13 @@ class Server(object):
     def shutdown(self):
         self._waitForJobsToTerminate = False
         self._running = False
+        return  True
 
     def safe_shutdown(self):
         self._waitForJobsToTerminate = True
         self._running = False
-
+        return  True
+    
     def get_server_status(self):
 
         pass

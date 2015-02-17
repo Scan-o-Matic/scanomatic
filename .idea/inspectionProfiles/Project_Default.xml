@@ -20,6 +20,7 @@
           <option value="scanomatic.io.logger.Logger.info" />
           <option value="scanomatic.io.logger.Logger.critical" />
           <option value="scanomatic.io.logger.Logger.*" />
+          <option value="scanomatic.models.scanning_model.*" />
         </list>
       </option>
     </inspection_tool>

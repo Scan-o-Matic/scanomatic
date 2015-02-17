@@ -307,12 +307,18 @@ class Config(Singleton):
     
     def get_scanner_socket(self, scanner):
 
-        return self._scanner_sockets[self.get_scanner_name(scanner)]
+        scanner_name = self.get_scanner_name(scanner)
+        if scanner_name in self._scanner_sockets:
+            return self._scanner_sockets[scanner_name]
+        else:
+            self._logger.error("{0} not a scanner, can't return its power socket".format(scanner_name))
+            return None
 
     def get_pm(self, scanner_name, **pm_kwargs):
 
-        scanner_pm_socket = self._scanner_sockets[
-            self.get_scanner_name(scanner_name)]
+        scanner_pm_socket = self.get_scanner_socket(scanner_name)
+        if scanner_pm_socket is None:
+            return power_manager.NO_PM("None")
         if len(pm_kwargs) == 0:
             pm_kwargs = self._pm_arguments
 

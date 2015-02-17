@@ -25,7 +25,7 @@ def _verify_admin(f):
 
         if _SOM_SERVER and user_id == _SOM_SERVER.admin:
 
-            return f(user_id, *args, **kwargs)
+            return f(interface_builder, user_id, *args, **kwargs)
 
         else:
 
@@ -87,7 +87,7 @@ class Interface_Builder(Singleton):
         _RPC_SERVER.stop()
         del _RPC_SERVER
         _RPC_SERVER = None
-        _SOM_SERVER.info("Server no longer accepting requests")
+        _SOM_SERVER.logger.info("Server no longer accepting requests")
 
     @staticmethod
     def _remove_som_server(wait_for_jobs_to_stop):

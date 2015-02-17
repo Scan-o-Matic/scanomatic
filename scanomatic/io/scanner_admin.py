@@ -30,7 +30,7 @@ import scanomatic.io.logger as logger
 import scanomatic.io.fixtures as fixtures
 import scanomatic.models.scanning_model as scanning_model
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
-
+from scanomatic.io.power_manager import Invalid_Init, NO_PM
 
 class Scanner_Manager(object):
 
@@ -61,7 +61,7 @@ class Scanner_Manager(object):
             self._logger.info(
                 "No specific scanner configurations, all asumed default")
 
-        self._set_powerManagers()
+        self._set_power_manager()
 
     def __contains__(self, scanner):
 
@@ -105,7 +105,7 @@ class Scanner_Manager(object):
                 try:
                     val = loads(val)
                 except:
-                    self._logging.warning(
+                    self._logger.warning(
                         "Bad data for {0} on scanner {1} ({2})".format(
                             key, scanner, val))
             if val != '':
@@ -128,12 +128,15 @@ class Scanner_Manager(object):
         else:
             dataStore.set(scanner, key, str(value))
 
-    def _set_powerManagers(self):
+    def _set_power_manager(self):
 
         self._pm = dict()
-        for i in range(1, self._conf.number_of_scanners + 1):
-            self._pm[self._conf.get_scanner_name(i)] = self._conf.get_pm(i)
-
+        for power_socket in range(1, self._conf.number_of_scanners + 1):
+            scanner_name = self._conf.get_scanner_name(power_socket)
+            try:
+                self._pm[scanner_name] = self._conf.get_pm(power_socket)
+            except Invalid_Init:
+                self._pm[scanner_name] = NO_PM(power_socket)
 
     def _get_alive_scanners(self):
 
@@ -147,9 +150,7 @@ class Scanner_Manager(object):
 
         for scanner in self:
 
-            claims[scanner] = dict(
-                    usb=self.getUSB(scanner, default=None),
-                    power=self.getPower(scanner))
+            claims[scanner] = {'usb': self.getUSB(scanner, default=None), 'power': self.getPower(scanner)}
 
         return claims
 
