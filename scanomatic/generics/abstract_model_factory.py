@@ -207,6 +207,20 @@ class Serializer(object):
 
         return False
 
+    def purge(self, model, path):
+
+        conf = SerializationHelper.get_config(path)
+
+        if conf:
+
+            for section in conf.sections():
+
+                if self.get_section_name(model) == section:
+
+                    conf.remove_section(section)
+                    return SerializationHelper.save_config(conf, path)
+        return  False
+
     def load(self, path):
 
         conf = SerializationHelper.get_config(path)

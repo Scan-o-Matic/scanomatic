@@ -180,24 +180,20 @@ class Server(object):
             self.logger.error("There are no scanners reachable from server")
             return False
 
-        rpcJobModel = RPC_Job_Model_Factory.create(
+        rpc_job = RPC_Job_Model_Factory.create(
             id=self._get_job_id(),
             pid=os.getpid(),
             type=job_type,
             status=rpc_job_models.JOB_STATUS.Requested,
             contentModel=type(model))
 
-        if not RPC_Job_Model_Factory.validate(rpcJobModel):
+        if not RPC_Job_Model_Factory.validate(rpc_job):
             self.logger.error("Failed to create rpc job model")
+            return False
 
-        if self.scanner_manager.requestClaim(rpcJobModel):
+        self._queue.add(rpc_job)
 
-            #No waiting, lets start
-            if not self._jobs.add(rpcJobModel):
-                self.scanner_manager.releaseScanner(rpcJobModel)
-                return False
-
-            return rpcJobModel.id
+        return rpc_job.id
 
 
 class SOM_RPC(object):

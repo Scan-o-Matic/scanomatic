@@ -45,6 +45,11 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
         return model.FIELD_TYPES.type
 
     @classmethod
+    def _validate_priority(cls, model):
+
+        return isinstance(model.priority, int)
+
+    @classmethod
     def _validate_status(cls, model):
 
         if model.status in rpc_job_models.JOB_STATUS:

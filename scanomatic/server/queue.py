@@ -14,11 +14,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import md5
-import time
-import ConfigParser
-from operator import itemgetter
-import collections
 
 #
 # INTERNAL DEPENDENCIES
@@ -26,9 +21,8 @@ import collections
 
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
-import scanomatic.server.phenotype_effector as phenotype_effector
-import scanomatic.server.analysis_effector as analysis_effector
-from scanomatic.server.proc_effector import ProcTypes
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
+import scanomatic.models.rpc_job_models as rpc_job_models
 
 #
 # CLASSES
@@ -37,178 +31,87 @@ from scanomatic.server.proc_effector import ProcTypes
 
 class Queue(object):
 
-
     def __init__(self):
 
         self._paths = paths.Paths()
-        self._logger = logger.Logger("RPC Subproc Queue")
-        self._queue = ConfigParser.ConfigParser()
-        try:
-            self._queue.readfp(open(self._paths.rpc_queue))
-        except IOError:
-            self._logger.info("No queue existing, creating new empy")
-            self._queue.write(open(self._paths.rpc_queue, 'w'))
+        self._logger = logger.Logger("Job Queue")
+        self._next_priority = rpc_job_models.JOB_TYPE.Scan
+        self._queue = list(RPC_Job_Model_Factory.serializer.load(self._paths.rpc_queue))
 
     def __nonzero__(self):
 
-        return self._queue.sections() != []
+        return len(self._queue) != 0
 
-    def __contains__(self, jobID):
+    def __contains__(self, job_id):
 
-        return self._queue.has_section(jobID)
+        return any(job.id == job_id for job in self._queue)
 
-    def writeUpdates(self):
+    def __getitem__(self, job_id):
 
-        self._queue.write(open(self._paths.rpc_queue, 'w'))
+        if job_id in self:
+            return [job for job in self._queue if job.id == job_id][0]
+        return None
 
-    def setPriority(self, subProcId, priority, writeOnUpdate=True):
+    def set_priority(self, job_id, priority):
 
-        try:
-            self._queue.set(subProcId, "priority", str(priority))
-        except ConfigParser.NoSectionError:
-            self._logger.error("The subproc id {0} does not exist".format(
-                subProcId))
-            return False
+        job = self[job_id]
 
-        if writeOnUpdate:
-            self.writeUpdates()
+        if job:
+            job.priority = priority
+            RPC_Job_Model_Factory.serializer.dump(job, self._paths.rpc_queue)
+            return True
+        return False
 
-        return True
+    def remove(self, job_id):
 
-    def remove(self, subProcId):
+        job = self[job_id]
 
-        try:
-            self._queue.remove_section(subProcId)
-        except ConfigParser.NoSectionError:
-            self._logger.error("The subproc id {0} is unknown".format(
-                subProcId))
-            return False
+        if job:
 
-        self.writeUpdates()
+            self._queue.remove(job)
 
-        return True
+            return RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_queue)
 
-    def getJobInfo(self, jobId):
+        return False
 
-        try:
-            return (jobId, self._queue.get(jobId, "label"),
-                    procTypes.GetByIntRepresentation(
-                        self._queue.getint(jobId, "type")).textRepresentation,
-                    self._queue.getint(jobId, "priority"))
-        except:
-            self._logger.warning(
-                "Problem extracting info on job {0}, '{1}'".format(
-                    jobId,
-                    ["No queue", "Id not in queue", "No label",
-                     "No prio", "Unknown job type", "Other"][
-                         self._queue is None and 0 or
-                         self._queue.has_section(jobId) is False and 1 or
-                         self._queue.has_option(jobId, "label") is False and 2
-                         or self._queue.has_option(jobId, "priority") is False
-                         and 3 or
-                         self._queue.has_option(jobId, "type") and 4 or 5
-                         ]))
-            return None
+    def reinstate(self, job):
 
-    def getJobsInQueue(self):
+        if self[job.id] is None:
 
-        l = [self.getJobInfo(j) for j in self._queue.sections()]
-        return sorted([i for i in l if i is not None], key=itemgetter(3),
-                      reverse=True)
+            self._queue.append(job)
+            RPC_Job_Model_Factory.serializer.dump(job, self._paths.rpc_queue)
+            return True
+
+        return False
 
     def get_highest_priority(self):
 
-        prioSection = None
-        highestPrio = -1
-
-        for s in self._queue.sections():
-
-            if not self._queue.has_option(s, "priority"):
-
-                self.setPriority(s, 0, writeOnUpdate=False)
-
-            try:
-                prio = self._queue.getint(s, "priority")
-            except ValueError:
-                prio = 0
-                self.setPriority(prioSection, prio, writeOnUpdate=False)
-
-            if (prio > highestPrio):
-                if (prioSection is not None):
-                    self.setPriority(prioSection, highestPrio + 1,
-                                     writeOnUpdate=False)
-
-                highestPrio = prio
-                prioSection = s
-            else:
-                self.setPriority(prioSection, prio + 1)
-
-        if prioSection is not None:
-
-            procInfo = {'id': prioSection}
-            if (self._queue.has_option(prioSection, "label")):
-                procInfo['label'] = self._queue.get(prioSection, "label")
-            else:
-                procInfo['label'] = ""
-
-            if (self._queue.has_option(prioSection, "type")):
-                procInfo['type'] = self._queue.getint(prioSection, "type")
-            else:
-                procInfo['type'] = procTypes.GetDefault() 
-
-            if (self._queue.has_option(prioSection, "args")):
-                try:
-                    procInfo['args'] = eval(
-                        self._queue.get(prioSection, "args"))
-                    iter(procInfo['args'])
-                except (TypeError, SyntaxError):
-                    procInfo['args'] = tuple()
-            else:
-                procInfo['args'] = tuple()
-
-            if (self._queue.has_option(prioSection, "kwargs")):
-
-                try:
-                    procInfo['kwargs'] = eval(
-                        self._queue.get(prioSection, "kwargs"))
-                except SyntaxError:
-                    procInfo['kwargs'] = dict()
-
-                if not isinstance(procInfo['kwargs'], collections.Mapping):
-
-                    procInfo['kwargs'] = dict()
-
-            else:
-                procInfo['kwargs'] = dict()
-
-            self.remove(prioSection)
-            self.writeUpdates()
-            return procInfo
-
-        self.writeUpdates()
+        job_type = self.next_priority
+        if self.has_job_of_type(job_type):
+            return sorted(self.get_job_by_type(job_type), key=lambda job: job.priority)[0]
         return None
 
-    def add(self, subprocType, jobID, jobLabel, priority=None, *args, **kwargs):
+    @property
+    def next_priority(self):
 
-        if priority is None:
-            priority = subprocType
+        #TODO: Fix smart cycling
+        return self._next_priority
 
-        if not(isinstance(subprocType, int) and isinstance(priority, int) and
-                isinstance(jobLabel, str)):
+    def has_job_of_type(self, job_type):
 
-            self._logger.error(
-                "Trying to add job with bad parameter types.")
-            return False
+        return any(*self.get_job_by_type(job_type))
 
-        self._queue.set(jobID, "type", str(procTypes.GetByIntRepresentation(
-            subprocType)))
-        self._queue.set(jobID, "label", str(jobLabel))
+    def get_job_by_type(self, job_type):
 
-        self.setPriority(jobID, priority, writeOnUpdate=False)
+        return (job for job in self._queue if job.type == job_type)
 
-        self._queue.set(jobID, "args", str(args))
-        self._queue.set(jobID, "kwargs", str(kwargs))
+    def add(self, job):
+        if job.priority < 0:
 
-        self.writeUpdates()
+            if self.has_job_of_type(job.type):
+                job.priority = sorted(self.get_job_by_type(job.type),
+                                      key=lambda job_in_queue: job_in_queue.priority)[-1] + 1
+            else:
+                job.priority = 1
 
-        return jobID 
+        return self.reinstate(job)
