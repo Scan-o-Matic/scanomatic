@@ -3,6 +3,7 @@ __author__ = 'martin'
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 
 import scanomatic.generics.decorators as decorators
+import scanomatic.io.logger as logger
 
 
 class Stoppable_RPC_Server(SimpleXMLRPCServer):
@@ -10,6 +11,7 @@ class Stoppable_RPC_Server(SimpleXMLRPCServer):
     def __init__(self, *args, **kwargs):
 
         SimpleXMLRPCServer.__init__(self, *args, **kwargs)
+        self.logger = logger.Logger("RPC Server")
         self._keepAlive = True
 
     def restart(self):

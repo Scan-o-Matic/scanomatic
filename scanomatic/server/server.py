@@ -52,7 +52,7 @@ class Server(object):
         config = app_config.Config()
 
         self.logger = logger.Logger("Server")
-        self._admin = config.rpc_admin
+        self.admin = config.rpc_admin
         self._running = False
         self._started = False
         self._waitForJobsToTerminate = False
@@ -65,7 +65,6 @@ class Server(object):
     def serving(self):
 
         return self._started
-
 
     def shutdown(self):
         self._waitForJobsToTerminate = False
@@ -163,6 +162,10 @@ class Server(object):
 
         return job_id
 
+    def get_job(self, job_id):
+
+        return
+
 
 class SOM_RPC(object):
 
@@ -196,114 +199,6 @@ class SOM_RPC(object):
         self._statuses = statuses
 
 
-    def _serverShutDown(self, forceJobsToStop):
-
-        if (self._mainThread is None and self._server is None):
-            return
-
-        self._forceJobsToStop = forceJobsToStop
-        self._shutDownComplete = False
-        self._running = False
-        while (self._mainThread is not None and
-                self._mainThread.is_alive()):
-
-            time.sleep(0.05)
-
-        self._mainThread = None
-
-    def serverShutDown(self, userID, forceJobsToStop=False):
-
-        if userID == self._admin:
-            t = threading.Thread(target=self._serverShutDown,
-                                 args=(forceJobsToStop,))
-            t.start()
-            return True
-
-        return False
-
-    def run(self):
-
-        if self._running is True:
-
-            raise Exception("Server is already running")
-
-        self._logger.info("Starting server")
-        self._startServer()
-
-        self._mainThread = threading.Thread(target=self._main)
-        self._mainThread.start()
-
-        self._logger.info("Server serves forever")
-        try:
-            self._server.serve_forever()
-        except KeyboardInterrupt:
-            self._logger.info("Server-side forced exit")
-            self._serverShutDown(True)
-
-        self._server.socket.shutdown(socket.SHUT_RDWR)
-        self._server.server_close()
-        self._server = None
-        self._logger.info("Server Quit")
-        os._exit(0)
-
-    def reestablishMe(self, userID, jobID, label, jobType, pid):
-        """Interface for orphaned daemons to re-gain contact with server.
-
-        Parameters
-        ==========
-
-        userID : str
-            The ID of the user requesting to create a job.
-            This must match the current ID of the server admin or
-            the request will be refused.
-            **NOTE**: If using a rpc_client from scanomatic.io the client
-            will typically prepend this parameter
-
-        jobID : str
-
-            The job identifier of the job that wants to regain contact.
-            This job must be known to the server
-
-        jobType: int
-
-            The type of job the job is.
-
-        label : str
-
-            User-friendly string with info about the job
-
-        pid : int
-
-            The process id of the orphaned daemon
-
-        Returns
-        =======
-
-        multiprocessing.Connection or False
-            Returns the part of the pipe used by the child-process if
-            re-establishment is allowed, else False
-
-        """
-        if userID != self._admin:
-
-            self._logger.warning(
-                "User '{0}' tried to flush queue".format(
-                    userID))
-
-            return False
-
-        if jobID in self._jobs:
-
-            return self._jobs.fakeProcess(jobID, label, jobType, pid)
-
-        else:
-
-            self._logger.warning(
-                "Unknown job "+
-                "'{0}'({1}, pid {2}) tried to claim it exists".format(
-                    label, jobID, pid))
-
-            return False
 
     def communicateWith(self, userID, jobID, title, kwargs={}):
         """Used to communicate with active jobs.
