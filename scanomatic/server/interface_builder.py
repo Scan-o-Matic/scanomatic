@@ -39,7 +39,7 @@ class Interface_Builder(Singleton):
 
     def __init__(self):
 
-        self.logger = logger.Logger("Server Interface Builder")
+        self.logger = logger.Logger("Server Manager")
         self._start_som_server()
         self._start_rpc_server()
 
@@ -59,7 +59,7 @@ class Interface_Builder(Singleton):
         host = app_config.rpc_host
         port = app_config.rpc_port
 
-        if _RPC_SERVER is not None:
+        if _RPC_SERVER is not None and _RPC_SERVER.running:
             _RPC_SERVER.logger.warning("Attempt to launch second instance of server")
             return False
 
@@ -84,8 +84,8 @@ class Interface_Builder(Singleton):
 
         _RPC_SERVER.serve_forever()
 
-    @staticmethod
-    def _remove_rpc_server():
+    @decorators.threaded
+    def _remove_rpc_server(self):
 
         global _RPC_SERVER
         global _SOM_SERVER
@@ -93,7 +93,12 @@ class Interface_Builder(Singleton):
         _RPC_SERVER.stop()
         _RPC_SERVER = None
 
-        _SOM_SERVER.logger.info("Server no longer accepting requests")
+        if _SOM_SERVER:
+            L = _SOM_SERVER.logger
+        else:
+            L = self.logger
+
+        L.info("Server no longer accepting requests")
 
     @staticmethod
     def _remove_som_server(wait_for_jobs_to_stop):
