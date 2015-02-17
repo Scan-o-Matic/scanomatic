@@ -36,6 +36,7 @@ def _verify_admin(f):
 
 
 class Interface_Builder(Singleton):
+
     def __init__(self):
 
         self.logger = logger.Logger("Server Interface Builder")
@@ -46,7 +47,10 @@ class Interface_Builder(Singleton):
     def _start_som_server():
 
         global _SOM_SERVER
-        _SOM_SERVER = Server()
+        if _SOM_SERVER is None:
+            _SOM_SERVER = Server()
+        else:
+            _SOM_SERVER.logger.warning("Attempt to launch second instance of server")
 
     def _start_rpc_server(self):
 
@@ -56,7 +60,8 @@ class Interface_Builder(Singleton):
         port = app_config.rpc_port
 
         if _RPC_SERVER is not None:
-            raise Exception("Server is already running")
+            _RPC_SERVER.logger.warning("Attempt to launch second instance of server")
+            return False
 
         try:
             _RPC_SERVER = Stoppable_RPC_Server((host, port), logRequests=False)
@@ -65,7 +70,7 @@ class Interface_Builder(Singleton):
                 "Sever is already running or the " +
                 "port {0} is in use by other program".format(
                     port))
-
+            self._remove_som_server(False)
             sys.exit(1)
 
         _RPC_SERVER.register_introspection_functions()
@@ -84,9 +89,10 @@ class Interface_Builder(Singleton):
 
         global _RPC_SERVER
         global _SOM_SERVER
+
         _RPC_SERVER.stop()
-        del _RPC_SERVER
         _RPC_SERVER = None
+
         _SOM_SERVER.logger.info("Server no longer accepting requests")
 
     @staticmethod

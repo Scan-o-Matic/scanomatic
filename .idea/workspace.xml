@@ -2,11 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/io/app_config.py" afterPath="$PROJECT_DIR$/scanomatic/io/app_config.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" afterPath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/io/scanner_admin.py" afterPath="$PROJECT_DIR$/scanomatic/io/scanner_admin.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/server.py" afterPath="$PROJECT_DIR$/scanomatic/server/server.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/stoppable_rpc_server.py" afterPath="$PROJECT_DIR$/scanomatic/server/stoppable_rpc_server.py" />
     </list>
     <ignored path="scan-o-matic.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -33,9 +31,21 @@
       <file leaf-file-name="interface_builder.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-7.3235292" vertical-offset="1026" max-vertical-offset="3855">
-              <caret line="96" column="46" selection-start-line="96" selection-start-column="46" selection-end-line="96" selection-end-column="46" />
+            <state vertical-scroll-proportion="-15.470589" vertical-offset="719" max-vertical-offset="3945">
+              <caret line="94" column="0" selection-start-line="94" selection-start-column="0" selection-end-line="94" selection-end-column="0" />
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="stoppable_rpc_server.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/scanomatic/server/stoppable_rpc_server.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="160" max-vertical-offset="930">
+              <caret line="36" column="0" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
+              <folding>
+                <element signature="e#23#72#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -43,8 +53,8 @@
       <file leaf-file-name="server.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/scanomatic/server/server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.7820299" vertical-offset="685" max-vertical-offset="12615">
-              <caret line="77" column="4" selection-start-line="77" selection-start-column="4" selection-end-line="77" selection-end-column="4" />
+            <state vertical-scroll-proportion="0.33208254" vertical-offset="10908" max-vertical-offset="12615">
+              <caret line="739" column="28" selection-start-line="739" selection-start-column="28" selection-end-line="739" selection-end-column="28" />
               <folding>
                 <element signature="e#414#430#0" expanded="true" />
               </folding>
@@ -114,16 +124,6 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="rpc_job.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/server/rpc_job.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2475">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="scanning_effector.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scanomatic/server/scanning_effector.py">
           <provider selected="true" editor-type-id="text-editor">
@@ -156,14 +156,14 @@
         <option value="$PROJECT_DIR$/scanomatic/generics/decorators.py" />
         <option value="$PROJECT_DIR$/scanomatic/rpc_server/interface_builder.py" />
         <option value="$PROJECT_DIR$/scanomatic/rpc_server/server.py" />
-        <option value="$PROJECT_DIR$/scanomatic/server/stoppable_rpc_server.py" />
         <option value="$PROJECT_DIR$/scanomatic/server/phenotype_effector.py" />
         <option value="$PROJECT_DIR$/scanomatic/server/analysis_effector.py" />
         <option value="$PROJECT_DIR$/scanomatic/server/jobs.py" />
         <option value="$PROJECT_DIR$/scanomatic/io/scanner_admin.py" />
         <option value="$PROJECT_DIR$/scanomatic/io/app_config.py" />
-        <option value="$PROJECT_DIR$/scanomatic/server/interface_builder.py" />
         <option value="$PROJECT_DIR$/scanomatic/server/server.py" />
+        <option value="$PROJECT_DIR$/scanomatic/server/stoppable_rpc_server.py" />
+        <option value="$PROJECT_DIR$/scanomatic/server/interface_builder.py" />
       </list>
     </option>
   </component>
@@ -493,8 +493,8 @@
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3272727" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3272727" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32834226" sideWeight="0.5002636" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -559,16 +559,6 @@
         <state vertical-scroll-proportion="0.0" vertical-offset="3040" max-vertical-offset="10995">
           <caret line="220" column="8" selection-start-line="220" selection-start-column="8" selection-end-line="220" selection-end-column="8" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/server/stoppable_rpc_server.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="570">
-          <caret line="13" column="41" selection-start-line="13" selection-start-column="41" selection-end-line="13" selection-end-column="41" />
-          <folding>
-            <element signature="e#23#72#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -662,18 +652,28 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/server/stoppable_rpc_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="160" max-vertical-offset="930">
+          <caret line="36" column="0" selection-start-line="36" selection-start-column="0" selection-end-line="36" selection-end-column="0" />
+          <folding>
+            <element signature="e#23#72#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-7.3235292" vertical-offset="1026" max-vertical-offset="3855">
-          <caret line="96" column="46" selection-start-line="96" selection-start-column="46" selection-end-line="96" selection-end-column="46" />
+        <state vertical-scroll-proportion="-15.470589" vertical-offset="719" max-vertical-offset="3945">
+          <caret line="94" column="0" selection-start-line="94" selection-start-column="0" selection-end-line="94" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/server/server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7820299" vertical-offset="685" max-vertical-offset="12615">
-          <caret line="77" column="4" selection-start-line="77" selection-start-column="4" selection-end-line="77" selection-end-column="4" />
+        <state vertical-scroll-proportion="0.33208254" vertical-offset="10908" max-vertical-offset="12615">
+          <caret line="739" column="28" selection-start-line="739" selection-start-column="28" selection-end-line="739" selection-end-column="28" />
           <folding>
             <element signature="e#414#430#0" expanded="true" />
           </folding>

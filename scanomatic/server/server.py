@@ -75,7 +75,7 @@ class Server(object):
         self._waitForJobsToTerminate = True
         self._running = False
         return  True
-    
+
     def get_server_status(self):
 
         pass
