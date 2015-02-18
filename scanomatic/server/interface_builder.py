@@ -95,11 +95,11 @@ class Interface_Builder(Singleton):
         _RPC_SERVER = None
 
         if _SOM_SERVER:
-            L = _SOM_SERVER.logger
+            logger_instance = _SOM_SERVER.logger
         else:
-            L = self.logger
+            logger_instance = self.logger
 
-        L.info("Server no longer accepting requests")
+        logger_instance.info("Server no longer accepting requests")
 
     @staticmethod
     def _remove_som_server(wait_for_jobs_to_stop):
@@ -373,3 +373,76 @@ class Interface_Builder(Singleton):
             queue.remove(job)
 
         return True
+
+    @_verify_admin
+    def scanOperations(self, user_id, job_id, scanner, operation):
+        """Interface for subprocess to request scanner operations
+
+        Parameters
+        ==========
+
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        jobID : str
+            Identifier for the job that owns the scanner to be controlled
+            If operation in "CLAIM" set this to None
+
+        scanner: int or string
+            Name of the scanner to be controlled
+
+        operation : str
+            "CLAIM" Gets a job id for further operations
+            "ON" Turn power on to scanner
+            "SCAN" Perform a scan.
+            "OFF" Turn power off
+            "RELEASE" Free scanner from claim
+        """
+
+        global _SOM_SERVER
+
+        scanner_manager = _SOM_SERVER.scanner_manager
+        operation = operation.to_upper()
+
+        if scanner not in scanner_manager:
+
+            _SOM_SERVER.logger.warning(
+                "Unknown scanner: {0}".format(scanner))
+
+            return False
+
+        if operation == "CLAIM":
+
+            return scanner_manager.claim(scanner)
+
+        if not scanner_manager.isOwner(scanner, job_id):
+
+            _SOM_SERVER.logger.warning(
+                "Job '{0}' tried to manipulate someone elses scanners".format(
+                    job_id))
+
+            return False
+
+        if operation == "ON":
+
+            return scanner_manager.requestOn(scanner, job_id)
+
+        elif operation == "OFF":
+
+            return scanner_manager.requestOff(scanner, job_id)
+
+        elif operation == "SCAN":
+
+            return scanner_manager.scan(scanner, job_id)
+
+        elif operation == "RELEASE":
+
+            return scanner_manager.releaseScanner(scanner)
+
+        else:
+
+            return False
