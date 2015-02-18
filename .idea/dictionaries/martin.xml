@@ -2,6 +2,10 @@
   <dictionary name="martin">
     <words>
       <w>dtype</w>
+      <w>memoization</w>
+      <w>memoize</w>
+      <w>memoized</w>
+      <w>zackrisson</w>
     </words>
   </dictionary>
 </component>

@@ -95,14 +95,10 @@ class Server(object):
 
     def _attempt_job_creation(self):
 
-        if Resource_Status.check_resources():
-            next_job = self._queue.get_highest_priority()
-            if next_job is not None:
-                if self._jobs.add(next_job):
-                    self._queue.remove(next_job)
-                else:
-                    self._queue.reinstate(next_job)
-
+        next_job = self._queue.get_highest_priority()
+        if next_job is not None:
+            if self._jobs.add(next_job):
+                self._queue.remove(next_job)
 
     @decorators.threaded
     def _run(self):

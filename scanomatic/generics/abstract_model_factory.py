@@ -19,7 +19,7 @@ class AbstractModelFactory(object):
         raise Exception("This class is static, can't be instantiated")
 
     # noinspection PyMethodParameters
-    @decorators.classproperty
+    @decorators.class_property
     def serializer(cls):
 
         return Serializer(cls)

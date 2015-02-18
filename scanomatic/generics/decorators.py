@@ -7,31 +7,39 @@ from inspect import ismethod
 from threading import Thread
 
 
+class UnknownLock(KeyError):
+    pass
+
+#
+#   CLASS PROPERTY
+#
+
+
 class _ClassPropertyDescriptor(object):
 
-    def __init__(self, fget, fset=None):
-        self._fget = fget
-        self._fset = fset
+    def __init__(self, get_function, set_function=None):
+        self._get_function = get_function
+        self._set_function = set_function
 
     def __get__(self, obj, cls=None):
         if cls is None:
             cls = type(obj)
-        return self._fget.__get__(obj, cls)()
+        return self._get_function.__get__(obj, cls)()
 
     def __set__(self, obj, value):
-        if not self._fset:
+        if not self._set_function:
             raise AttributeError("can't set attribute")
         type_ = type(obj)
-        return self._fset.__get__(obj, type_)(value)
+        return self._set_function.__get__(obj, type_)(value)
 
     def setter(self, func):
         if not isinstance(func, (classmethod, staticmethod)):
             func = classmethod(func)
-        self._fset = func
+        self._set_function = func
         return self
 
 
-def classproperty(func):
+def class_property(func):
     if not isinstance(func, (classmethod, staticmethod)):
         func = classmethod(func)
 
@@ -49,6 +57,10 @@ def _get_id_tuple(f, args, kwargs, mark=object()):
         l.append(id(v))
     return tuple(l)
 
+#
+#   MEMOIZATION
+#
+
 _MEMOIZED = {}
 
 
@@ -61,6 +73,10 @@ def memoize(f):
         return _MEMOIZED[key]
     return memoized
 
+
+#
+#   TIMING
+#
 
 _TIME_LOGGER = logger.Logger("Time It")
 
@@ -77,26 +93,33 @@ def timeit(f):
 
     return timer
 
+
+#
+#   PATH LOCKING
+#
+
 _PATH_LOCK = dict()
 
 
 def path_lock(f):
 
     def _acquire(path):
-
+        global _PATH_LOCK
         try:
             while not _PATH_LOCK[path].acquire(False):
                 time.sleep(0.05)
         except KeyError:
-            raise IndentationError("Path '{0}' not registered as lock".format(path))
+            raise UnknownLock("Path '{0}' not registered by {1}".format(path, register_path_lock))
 
     def locking_wrapper_method(self_cls, path, *args, **kwargs):
+        global _PATH_LOCK
         _acquire(path)
         ret = f(self_cls, path, *args, **kwargs)
         _PATH_LOCK[path].release()
         return ret
 
     def locking_wrapper_function(path, *args, **kwargs):
+        global _PATH_LOCK
         _acquire(path)
         ret = f(path, *args, **kwargs)
         _PATH_LOCK[path].release()
@@ -109,7 +132,45 @@ def path_lock(f):
 
 
 def register_path_lock(path):
+    global _PATH_LOCK
     _PATH_LOCK[path] = multiprocessing.Lock()
+
+
+#
+#   TYPE LOCKING
+#
+
+_TYPE_LOCK = {}
+
+
+def register_type_lock(object_instance):
+    global _TYPE_LOCK
+    _TYPE_LOCK[type(object_instance)] = multiprocessing.Lock()
+
+
+def type_lock(f):
+
+    def _acquire(object_type):
+        global _TYPE_LOCK
+        try:
+            while not _TYPE_LOCK[object_type].acquire(False):
+                time.sleep(0.05)
+        except KeyError:
+            raise UnknownLock("{0} never registered by (1)".format(object_type, register_type_lock))
+
+    def locking_wrapper(self, *args, **kwargs):
+        global _TYPE_LOCK
+        object_type = type(self)
+        _acquire(object_type)
+        result = f(self, *args, **kwargs)
+        _TYPE_LOCK[object_type].release()
+        return result
+
+    return locking_wrapper
+
+#
+#   THREADING
+#
 
 
 def threaded(f):
@@ -119,4 +180,4 @@ def threaded(f):
         thread = Thread(target=f, args=args, kwargs=kwargs)
         thread.start()
 
-    return  _threader
+    return _threader
