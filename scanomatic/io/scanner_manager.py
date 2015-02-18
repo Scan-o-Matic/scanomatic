@@ -59,7 +59,7 @@ class Scanner_Manager(object):
                 self._paths.config_scanners, 'r'))
         except IOError:
             self._logger.info(
-                "No specific scanner configurations, all asumed default")
+                "No specific scanner configurations, all assumed default")
 
         self._set_power_manager()
 

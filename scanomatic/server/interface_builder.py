@@ -590,9 +590,13 @@ class Interface_Builder(Singleton):
             Success of enquinig
         """
 
+        global _SOM_SERVER
+        analysis_model = None
+
+        """
         if (os.path.abspath(inputFile) != inputFile):
 
-            self._logger.error(
+            _SOM_SERVER.logger.error(
                 "Job '{0}' was not started with absolute path".format(
                     label))
 
@@ -617,6 +621,9 @@ class Interface_Builder(Singleton):
             jobLabel=label,
             priority=priority,
             **kwargs)
+            """
+
+        _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)
 
     @_verify_admin
     def _server_create_feature_extract_job(self, user_id, runDirectory, label,
@@ -646,9 +653,13 @@ class Interface_Builder(Singleton):
                     ``False``
         """
 
+        global _SOM_SERVER
 
+        feature_extract_model = None
+
+        """
         if (not(isinstance(runDirectory, str))):
-            self._logger.error(
+            _SOM_SERVER.logger.error(
                 ("Job '{0}' can't be started, " +
                  "invalid runDirectory {1}").format(
                      label, runDirectory))
@@ -659,7 +670,7 @@ class Interface_Builder(Singleton):
 
         if (os.path.abspath(runDirectory) != runDirectory):
 
-            self._logger.error(
+            _SOM_SERVER.logger.error(
                 "The path for the feature extraction " +
                 "job '{0}' was not absolute path".format(label))
 
@@ -667,13 +678,6 @@ class Interface_Builder(Singleton):
 
         kwargs['runDirectory'] = runDirectory
 
-        self._logger.info("Adding Feature Extraction '{0}' to queue".format(
-            label))
+        """
 
-        return self._queue.add(
-            queue.Queue.TYPE_FEATURE_EXTRACTION,
-            jobID=self._createJobID(),
-            jobLabel=label,
-            priority=priority,
-            **kwargs)
-
+        return _SOM_SERVER.enqueue(feature_extract_model, rpc_job_models.JOB_TYPE.Features)
