@@ -171,7 +171,8 @@ class Interface_Builder(Singleton):
 
     def _server_get_queue_status(self, user_id=None):
 
-        pass
+        global _SOM_SERVER
+        return _SOM_SERVER.queue.status
 
     def _server_get_job_status(self, user_id, job_id):
         """Gives a list or statuses.
@@ -198,7 +199,7 @@ class Interface_Builder(Singleton):
 
         """
         global _SOM_SERVER
-        return _SOM_SERVER.jobs.get_job_statuses()
+        return _SOM_SERVER.jobs.status
 
     @_verify_admin
     def _server_communicate(self, user_id, job_id, communication, **communication_content):
@@ -407,7 +408,7 @@ class Interface_Builder(Singleton):
         return True
 
     @_verify_admin
-    def scanOperations(self, user_id, job_id, scanner, operation):
+    def _server_request_scanner_operation(self, user_id, job_id, scanner, operation):
         """Interface for subprocess to request scanner operations
 
         Parameters
@@ -478,3 +479,16 @@ class Interface_Builder(Singleton):
         else:
 
             return False
+
+    def _server_get_fixtures(self, user_id=None):
+        """Gives the names of the fixtures known to the server.
+
+        Returns
+        =======
+
+        tuple of strings
+            The names known to the server
+        """
+
+        global _SOM_SERVER
+        return _SOM_SERVER.scanner_manager.get_fixtures()

@@ -244,51 +244,6 @@ class SOM_RPC(object):
 
         return self._statuses
 
-    def getJobsInQueue(self, userID=None):
-        """Gives a list of enqueued jobs.
-
-        Kwargs:
-            userID (str):   The ID of the user requesting status
-                            The full purpose of userID is to maintain
-                            method interface for all exposed RPC methods
-
-        Returns:
-            list.   List of enqueued job each item being a list with the
-                    following information (per index).::
-
-                0 --    (str) The job identifier
-                1 --    (str) The job label / description
-                2 --    (str) Job type
-                3 --    (int) The job's priority ranking. Jobs are started
-                        based on their prioriy. When enqueued they are given
-                        a priority based on the job type. Over time, the job
-                        accumulates priority such that no job should get
-                        stuck in the queue for ever.
-        """
-
-        return self._queue.getJobsInQueue()
-
-    def getFixtureNames(self, userID=None):
-        """Gives the names of the fixtures known to the server.
-
-        Parameters
-        ==========
-
-        userID : str, optional
-            The ID of the user requesting the fixture names.
-            This is not needed but used as a place holder to maintain
-            function call interface
-
-        Returns
-        =======
-
-        tuple of strings
-            The names known to the server
-        """
-
-        return self._scannerManager.getFixtureNames()
-
-
 
     def createAnalysisJob(self, userID, inputFile, label,
                           priority=None, kwargs={}):

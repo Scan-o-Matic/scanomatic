@@ -68,9 +68,9 @@ class Jobs(object):
         return self._jobs.keys()
 
     @property
-    def statuses(self):
+    def status(self):
 
-        return {}
+        return []
 
     @property
     def running(self):

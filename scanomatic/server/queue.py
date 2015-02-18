@@ -62,6 +62,11 @@ class Queue(object):
             return [job for job in self._queue if job.id == job_id][0]
         return None
 
+    @property
+    @decorators.type_lock
+    def status(self):
+        return [RPC_Job_Model_Factory.serializer.dumps(m) for m in self._queue]
+
     @decorators.type_lock
     def set_priority(self, job_id, priority):
 
