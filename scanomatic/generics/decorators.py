@@ -121,9 +121,13 @@ def path_lock(f):
     def locking_wrapper_function(path, *args, **kwargs):
         global _PATH_LOCK
         _acquire(path)
-        ret = f(path, *args, **kwargs)
+        try:
+            result = f(path, *args, **kwargs)
+        except Exception as e:
+            _PATH_LOCK[path].release()
+            raise e
         _PATH_LOCK[path].release()
-        return ret
+        return result
 
     if ismethod(f):
         return locking_wrapper_method
@@ -153,16 +157,20 @@ def type_lock(f):
     def _acquire(object_type):
         global _TYPE_LOCK
         try:
-            while not _TYPE_LOCK[object_type].acquire(False):
+            while not _TYPE_LOCK[object_type].acquire():
                 time.sleep(0.05)
         except KeyError:
-            raise UnknownLock("{0} never registered by (1)".format(object_type, register_type_lock))
+            raise UnknownLock("{0} never registered by {1}".format(object_type, register_type_lock))
 
     def locking_wrapper(self, *args, **kwargs):
         global _TYPE_LOCK
         object_type = type(self)
         _acquire(object_type)
-        result = f(self, *args, **kwargs)
+        try:
+            result = f(self, *args, **kwargs)
+        except Exception as e:
+            _TYPE_LOCK[object_type].release()
+            raise e
         _TYPE_LOCK[object_type].release()
         return result
 
