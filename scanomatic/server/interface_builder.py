@@ -174,8 +174,31 @@ class Interface_Builder(Singleton):
         pass
 
     def _server_get_job_status(self, user_id, job_id):
+        """Gives a list or statuses.
 
-        pass
+        First entry is always the status of the server followed by
+        an item for each job.
+
+        Kwargs:
+            userID (str):   The ID of the user requesting status
+                            The full purpose of userID is to maintain
+                            method interface for all exposed RPC methods
+
+        Returns:
+            list.   Each item in the list is a dictionary.
+                    For information about the job dictionaries and
+                    their structure, see ``self.getStatus``.
+                    The first item of the list will be a dictionary
+                    containing general information about the server.::
+
+            ServerUpTime:  (str) Either the message 'Server Not Running'
+                           or a string with like "XXh, YYm, ZZ.ZZs"
+                           expressing the time that the server has been
+                           running.
+
+        """
+        global _SOM_SERVER
+        return _SOM_SERVER.jobs.get_job_statuses()
 
     @_verify_admin
     def _server_communicate(self, user_id, job_id, communication, **communication_content):
@@ -431,7 +454,7 @@ class Interface_Builder(Singleton):
         if not scanner_manager.isOwner(scanner, job_id):
 
             _SOM_SERVER.logger.warning(
-                "Job '{0}' tried to manipulate someone elses scanners".format(
+                "Job '{0}' tried to manipulate someone else's scanners".format(
                     job_id))
 
             return False

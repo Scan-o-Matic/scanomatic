@@ -49,11 +49,28 @@ class Jobs(object):
 
     def __len__(self):
         return len(self._jobs)
-    
+
+    def __contains__(self, key):
+
+        return key in self._jobs
+
+    def __getitem__(self, key):
+
+        if key in self._jobs:
+            return self._jobs[key]
+        else:
+            self._logger.warning("Unknown job {0} requested".format(key))
+            return None
+
     @property
     def activeJobs(self):
 
         return self._jobs.keys()
+
+    @property
+    def statuses(self):
+
+        return {}
 
     @property
     def running(self):
@@ -84,17 +101,9 @@ class Jobs(object):
     def scanningPids(self):
         return {k: v for k, v in self._scanningPids.items()}
 
-    def __contains__(self, key):
+    def prepare_statuses(self):
 
-        return key in self._jobs
-
-    def __getitem__(self, key):
-
-        if key in self._jobs:
-            return self._jobs[key]
-        else:
-            self._logger.warning("Unknown job {0} requested".format(key))
-            return None
+        pass
 
     def _saveJobsData(self):
 

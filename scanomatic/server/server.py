@@ -10,21 +10,15 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
-#TODO: Who handls keyboard interrupts?
+# TODO: Who handles keyboard interrupts?
 
 #
 # DEPENDENCIES
 #
 
-import xmlrpclib
-import threading
 import time
-from SimpleXMLRPCServer import SimpleXMLRPCServer
 from math import trunc
 import os
-import sys
-import socket
-import string
 import hashlib
 
 #
@@ -71,6 +65,10 @@ class Server(object):
     @property
     def queue(self):
         return self._queue
+
+    @property
+    def jobs(self):
+        return self._jobs
 
     @property
     def serving(self):
@@ -133,7 +131,7 @@ class Server(object):
             elif (i <= 1):
                 self._scanner_manager.sync()
             else:
-                self._prepare_statuses()
+                self._jobs.prepare_statuses()
 
             time.sleep(sleep)
             i += 1
@@ -243,96 +241,8 @@ class SOM_RPC(object):
         self._statuses = statuses
 
 
-    def getStatuses(self, userID=None):
-        """Gives a list or statuses.
-
-        First entry is always the status of the server followed by
-        an item for each job.
-
-        Kwargs:
-            userID (str):   The ID of the user requesting status
-                            The full purpose of userID is to maintain
-                            method interface for all exposed RPC methods
-
-        Returns:
-            list.   Each item in the list is a dictionary.
-                    For information about the job dictionaries and
-                    their structure, see ``self.getStatus``.
-                    The first item of the list will be a dictionary
-                    containing general information about the server.::
-
-            ServerUpTime:  (str) Either the message 'Server Not Running'
-                           or a string with like "XXh, YYm, ZZ.ZZs"
-                           expressing the time that the server has been
-                           running.
-
-        """
 
         return self._statuses
-
-    def getStatus(self, userID, jobId=None):
-        """Gives last recorded status for an active job.
-
-        Args:
-            userID (str):   The ID of the user requesting status
-                            The full purpose of userID is to maintain
-                            method interface for all exposed RPC methods
-                            (see jobID keyword for more info).
-
-        Kwargs:
-            jobID (str):    The job for which to request information.
-                            If jobID is not supplied or is None, the
-                            userID is assumed to hold the requested
-                            job identifier.
-
-        Returns:
-            dict            **Either** an empty dictionary if no job
-                            with the requested identifier was active
-                            **or** a dictionary having as a minimum the
-                            following keys::
-
-                id:       (str) The identifier of the job
-                label:    (str) The label / job description
-                running: (bool) If job is currently running. A job
-                            yet to start or having finished would return
-                            ``False``
-                paused:  (bool) If the job has been paused
-                stopping:    (bool) If the job is in the process of
-                               being stopped.
-                messages:    (list) If the job has messages to
-                               communicate with the user.
-
-        .. note::
-
-            The method may return more status information depending on the
-            type of job.
-
-            ``RPC_Job.TYPE_FEATURE_EXTRACTION`` also gives these::
-
-                'progress' :    (float) Fraction of total job completed.
-                                Not in time, but work-load.
-                'runTime' :     (float) Time in seconds that the process
-                                have been running
-
-        """
-
-        if jobId is None:
-            jobId = userID
-
-        return self._jobs.getStatus(jobId)
-
-    def getActiveJobs(self, userID=None):
-        """Gives a list of identifiers for the currently active jobs
-
-        Kwargs:
-            userID (str):   The ID of the user requesting status
-                            The full purpose of userID is to maintain
-                            method interface for all exposed RPC methods
-
-        Returns:
-            list.   List of active job identifiers
-        """
-        return self._jobs.activeJobs
 
     def getJobsInQueue(self, userID=None):
         """Gives a list of enqueued jobs.
