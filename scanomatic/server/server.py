@@ -27,7 +27,6 @@ import hashlib
 
 import scanomatic.io.logger as logger
 import scanomatic.io.app_config as app_config
-import scanomatic.io.paths as paths
 import scanomatic.server.queue as queue
 import scanomatic.server.jobs as jobs
 import scanomatic.io.scanner_manager as scanner_admin
@@ -42,7 +41,6 @@ from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 
 
 class Server(object):
-
     def __init__(self):
 
         config = app_config.Config()
@@ -78,25 +76,25 @@ class Server(object):
     def shutdown(self):
         self._waitForJobsToTerminate = False
         self._running = False
-        return  True
+        return True
 
     def safe_shutdown(self):
         self._waitForJobsToTerminate = True
         self._running = False
-        return  True
+        return True
 
     def get_server_status(self):
 
         if self._server_start_time is None:
-            runTime = "Not Running"
+            run_time = "Not Running"
         else:
             m, s = divmod(time.time() - self._server_start_time, 60)
             h, m = divmod(m, 60)
-            runTime = "{0:d}h, {1:d}m, {2:.2f}s".format(
+            run_time = "{0:d}h, {1:d}m, {2:.2f}s".format(
                 trunc(h), trunc(m), s)
 
         return {
-            "ServerUpTime": runTime,
+            "ServerUpTime": run_time,
             "QueueLength": len(self._queue),
             "NumberOfJobs": len(self._jobs),
             "ResourceMem": Resource_Status.check_mem(),
@@ -126,9 +124,9 @@ class Server(object):
 
         while self._running:
 
-            if (i == 0 and self._queue):
+            if i == 0 and self._queue:
                 self._attempt_job_creation()
-            elif (i <= 1):
+            elif i <= 1:
                 self._scanner_manager.sync()
             else:
                 self._jobs.prepare_statuses()
@@ -178,14 +176,19 @@ class Server(object):
         bad_name = True
 
         while bad_name:
-            job_id= hashlib.md5(str(time.time())).hexdigest()
+            job_id = hashlib.md5(str(time.time())).hexdigest()
             bad_name = job_id in self._queue or job_id in self._jobs
 
         return job_id
 
     def get_job(self, job_id):
 
-        return
+        if job_id in self._queue:
+            return self._queue[job_id]
+        elif job_id in self._jobs:
+            return self._jobs[job_id]
+        else:
+            return False
 
     def enqueue(self, model, job_type):
 
@@ -207,202 +210,3 @@ class Server(object):
         self._queue.add(rpc_job)
 
         return rpc_job.id
-
-
-class SOM_RPC(object):
-
-
-    def createAnalysisJob(self, userID, inputFile, label,
-                          priority=None, kwargs={}):
-        """Enques a new analysis job.
-
-        Parameters
-        ==========
-
-        userID : str
-            The ID of the user requesting to create a job.
-            This must match the current ID of the server admin or
-            the request will be refused.
-            **NOTE**: If using a rpc_client from scanomatic.io the client
-            will typically prepend this parameter
-
-        inputFile : str
-            Absolute path to the first pass analysis file containing
-            the information about which images to be analysed
-
-        label : str
-            Name for the job on the server in human friendly format
-
-        priority : int, optional
-            The priority of the job, to put it at the start of the queue
-
-        kwargs : dict, optional
-            Further settings to be passed to analysis effector upon setup
-            All optional
-
-            configFile: str
-                Path to file with setup-instructions.
-                Any instructions passed while creating the job will
-                overwrite the instructions in the file
-
-            pinningMatrices: list
-                List of tuples, one per plate, for pinning formats
-                Default: What is specified in first pass file
-
-            localFixture : bool
-                If fixture config in directory of the input-file should be
-                used.
-                Default: False
-
-            lastImage: int
-                Index of last image to be included in analysis,
-                all images with higher index omitted
-                Default: None (all images included)
-
-            outputDirectory: str
-                Relative path of output directory for the analysis
-                Default: analysis
-
-            watchPosition: ???
-                If a specific position should be monitored extra
-                Default: None
-                
-            gridImageIndices: list of int
-                The times for which grid-images will be produced
-                Default: last image
-
-            supressUnwatched: bool
-                If analysis of not watched positions should be omitted
-                Default: False
-
-            xmlFormat: dict
-                Configuration of xml, known features:
-                    'short', 'omit_compartments', 'omit_measures'
-                Default: short set to True, no omissions.
-
-            gridArraySettings: dict
-                Configuration of grid arryas, known features:
-                    'animation'
-                Default: animation set to False
-
-            gridSettings: dict
-                Configuration of gridding, know features:
-                    'use_utso', 'median_coeff', 'manual_threshold'
-                Default: Using utso, median coefficient at 0.99 and manual
-                threshold at 0.05
-
-            gridCellSettings: dict
-                Configuration of grid cells, know features:
-                    'blob_detect'
-                Default: Use 'default' blob detection
-
-            gridCorrection: list of tuples
-                Corrects grids by shifting detected positions by
-                indicated amounts
-                Default: None
-
-        Returns
-        =======
-
-        bool
-            Success of enquinig
-        """
-
-        if userID != self._admin:
-
-            self._logger.warning(
-                "User '{0}' tried to create analysis job".format(
-                    userID))
-            return False
-
-        if (os.path.abspath(inputFile) != inputFile):
-
-            self._logger.error(
-                "Job '{0}' was not started with absolute path".format(
-                    label))
-
-            return False
-
-        if (os.path.isfile(inputFile) is False):
-
-            self._logger.error(
-                ("Job '{0}' pointed to file ({1}) that doesn't exist".format(
-                    label, inputFile)))
-
-            return False
-                    
-        kwargs['inputFile'] = inputFile
-
-        self._logger.info("Adding Image Analysis {0} based on {1}".format(
-            label, inputFile))
-
-        return self._queue.add(
-            queue.Queue.TYPE_IMAGE_ANALSYS,
-            jobID=self._createJobID(),
-            jobLabel=label,
-            priority=priority,
-            **kwargs)
-
-    def createFeatureExtractJob(self, userID, runDirectory, label,
-                                priority=None, kwargs={}):
-        """Enques a new feature extraction job.
-
-        Args:
-            userID (str):   The ID of the user, this must match the
-                            current ID of the server admin or request
-                            will be refused.
-            runDirectory (str): The path to the directory containing
-                                the native export numpy files from
-                                an image analysis job.
-                                Note that the path must be absolute.
-            label (str):    A free text field for human readable identification
-                            of the job.
-
-        Kwargs:
-            priority (int): If supplied, the initial priority of the job
-                            will not be set by the type of job but by the
-                            supplied value.
-            kwargs (dict):  Keyword structured arguments to be passed on to
-                            the job effector's setup.
-
-        Returns:
-            bool.   ``True`` if job request was successfully enqueued, else
-                    ``False``
-        """
-
-        if userID == self._admin:
-
-            if (not(isinstance(runDirectory, str))):
-                self._logger.error(
-                    ("Job '{0}' can't be started, " +
-                     "invalid runDirectory {1}").format(
-                         label, runDirectory))
-
-                return False
-
-            runDirectory = runDirectory.rstrip("/")
-
-            if (os.path.abspath(runDirectory) != runDirectory):
-
-                self._logger.error(
-                    "The path for the feature extraction " +
-                    "job '{0}' was not absolute path".format(label))
-
-                return False
-
-            kwargs['runDirectory'] = runDirectory
-
-            self._logger.info("Adding Feature Extraction '{0}' to queue".format(
-                label))
-
-            return self._queue.add(
-                queue.Queue.TYPE_FEATURE_EXTRACTION,
-                jobID=self._createJobID(),
-                jobLabel=label,
-                priority=priority,
-                **kwargs)
-        else:
-            self._logger.warning(
-                "Unknown user '{0}' tried to create feature extract job".format(
-                    userID))
-            return False

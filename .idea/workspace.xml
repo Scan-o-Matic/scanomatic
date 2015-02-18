@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" afterPath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/dictionaries/martin.xml" afterPath="$PROJECT_DIR$/.idea/dictionaries/martin.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/server.py" afterPath="$PROJECT_DIR$/scanomatic/server/server.py" />
     </list>
     <ignored path="scan-o-matic.iws" />
@@ -29,8 +31,8 @@
       <file leaf-file-name="interface_builder.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="6884" max-vertical-offset="7485">
-              <caret line="410" column="41" selection-start-line="410" selection-start-column="41" selection-end-line="410" selection-end-column="41" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="8875" max-vertical-offset="10275">
+              <caret line="651" column="49" selection-start-line="651" selection-start-column="49" selection-end-line="651" selection-end-column="49" />
               <folding>
                 <element signature="e#23#36#0" expanded="true" />
               </folding>
@@ -53,8 +55,8 @@
       <file leaf-file-name="server.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/scanomatic/server/server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0765391" vertical-offset="3134" max-vertical-offset="6210">
-              <caret line="212" column="0" selection-start-line="212" selection-start-column="0" selection-end-line="212" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3255">
+              <caret line="0" column="58" selection-start-line="0" selection-start-column="58" selection-end-line="0" selection-end-column="58" />
               <folding>
                 <element signature="e#416#427#0" expanded="true" />
               </folding>
@@ -809,8 +811,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="6884" max-vertical-offset="7485">
-          <caret line="410" column="41" selection-start-line="410" selection-start-column="41" selection-end-line="410" selection-end-column="41" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="8875" max-vertical-offset="10275">
+          <caret line="651" column="49" selection-start-line="651" selection-start-column="49" selection-end-line="651" selection-end-column="49" />
           <folding>
             <element signature="e#23#36#0" expanded="true" />
           </folding>
@@ -819,8 +821,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/server/server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0765391" vertical-offset="3134" max-vertical-offset="6210">
-          <caret line="212" column="0" selection-start-line="212" selection-start-column="0" selection-end-line="212" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3255">
+          <caret line="0" column="58" selection-start-line="0" selection-start-column="58" selection-end-line="0" selection-end-column="58" />
           <folding>
             <element signature="e#416#427#0" expanded="true" />
           </folding>
