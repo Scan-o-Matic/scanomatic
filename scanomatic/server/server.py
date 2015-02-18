@@ -211,39 +211,6 @@ class Server(object):
 
 class SOM_RPC(object):
 
-    def __init__(self):
-
-        self._logger = logger.Logger("RPC Server")
-        self._appConfig = app_config.Config()
-        self._paths = paths.Paths()
-
-        self._queue = queue.Queue()
-        self._jobs = jobs.Jobs()
-        self._scannerManager = scanner_admin.Scanner_Manager()
-
-
-        self._serverStartTime = None
-        self._setStatuses([])
-        self._server = None
-        self._running = False
-        self._forceJobsToStop = False
-        Resource_Status.loggingLevel('ERROR')
-
-    def _setStatuses(self, statuses, merge=False):
-
-        if merge:
-            ids = (s['id'] for s in statuses)
-            statuses = [s for s in self._statuses[1:] if s['id'] not in ids] +\
-                statuses
-
-        statuses = [self.getServerStatus()] + statuses
-
-        self._statuses = statuses
-
-
-
-        return self._statuses
-
 
     def createAnalysisJob(self, userID, inputFile, label,
                           priority=None, kwargs={}):
