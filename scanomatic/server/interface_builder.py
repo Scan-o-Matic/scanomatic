@@ -310,7 +310,7 @@ class Interface_Builder(Singleton):
 
 
     @_verify_admin
-    def _server_create_scanning_job(self, userID, scanningModel):
+    def _server_create_scanning_job(self, userID, scanning_model):
 
         """Attempts to start a scanning job.
 
@@ -331,13 +331,13 @@ class Interface_Builder(Singleton):
         """
         global _SOM_SERVER
 
-        scanningModel = ScanningModelFactory.create(**scanningModel)
+        scanning_model = ScanningModelFactory.create(**scanning_model)
 
-        if not ScanningModelFactory.validate(scanningModel):
+        if not ScanningModelFactory.validate(scanning_model):
             self.logger.error("Invalid arguments for scanner job")
             return False
 
-        return _SOM_SERVER.enqueue(scanningModel, rpc_job_models.JOB_TYPE.Scanner)
+        return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scanner)
 
     @_verify_admin
     def _server_remove_from_queue(self, user_id, job_id):
@@ -495,7 +495,7 @@ class Interface_Builder(Singleton):
         return _SOM_SERVER.scanner_manager.get_fixtures()
 
     @_verify_admin
-    def _server_create_analysis_job(self, user_id):
+    def _server_create_analysis_job(self, user_id, analysis_model):
         """Enques a new analysis job.
 
         Parameters
@@ -591,7 +591,6 @@ class Interface_Builder(Singleton):
         """
 
         global _SOM_SERVER
-        analysis_model = None
 
         """
         if (os.path.abspath(inputFile) != inputFile):
@@ -626,8 +625,7 @@ class Interface_Builder(Singleton):
         _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)
 
     @_verify_admin
-    def _server_create_feature_extract_job(self, user_id, runDirectory, label,
-                                priority=None, kwargs={}):
+    def _server_create_feature_extract_job(self, user_id, feature_extract_model):
         """Enques a new feature extraction job.
 
         Args:
@@ -654,8 +652,6 @@ class Interface_Builder(Singleton):
         """
 
         global _SOM_SERVER
-
-        feature_extract_model = None
 
         """
         if (not(isinstance(runDirectory, str))):
