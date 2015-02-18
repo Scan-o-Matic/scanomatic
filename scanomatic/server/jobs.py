@@ -47,6 +47,9 @@ class Jobs(object):
         self._statuses = []
         self._scanningPids = {}
 
+    def __len__(self):
+        return len(self._jobs)
+    
     @property
     def activeJobs(self):
 

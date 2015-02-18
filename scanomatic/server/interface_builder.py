@@ -10,7 +10,6 @@ from scanomatic.generics.singleton import Singleton
 import scanomatic.io.logger as logger
 from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 import scanomatic.generics.decorators as decorators
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.models.rpc_job_models as rpc_job_models
@@ -152,9 +151,19 @@ class Interface_Builder(Singleton):
 
     @staticmethod
     def _server_get_status(user_id=None):
+        """Gives a dictionary of the servers status
 
+        Kwargs:
+            user_id (str):   The ID of the user requesting status
+                            The full purpose of userID is to maintain
+                            method interface for all exposed RPC methods
+
+        Returns:
+            dictionary. Key value pairs for the different aspects of the
+                        server status.
+        """
         global _SOM_SERVER
-        return AbstractModelFactory.to_dict(_SOM_SERVER.get_server_status())
+        return _SOM_SERVER.get_server_status()
 
     def _server_get_scanner_status(self, user_id=None):
 

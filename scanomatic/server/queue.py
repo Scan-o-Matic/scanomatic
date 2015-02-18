@@ -41,6 +41,11 @@ class Queue(object):
         decorators.register_type_lock(self)
 
     @decorators.type_lock
+    def __len__(self):
+
+        return  len(self._queue)
+
+    @decorators.type_lock
     def __nonzero__(self):
 
         return len(self._queue) != 0

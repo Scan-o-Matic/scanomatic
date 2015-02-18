@@ -58,6 +58,7 @@ class Server(object):
         self._running = False
         self._started = False
         self._waitForJobsToTerminate = False
+        self._server_start_time = None
 
         self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
@@ -88,7 +89,20 @@ class Server(object):
 
     def get_server_status(self):
 
-        pass
+        if self._server_start_time is None:
+            runTime = "Not Running"
+        else:
+            m, s = divmod(time.time() - self._server_start_time, 60)
+            h, m = divmod(m, 60)
+            runTime = "{0:d}h, {1:d}m, {2:.2f}s".format(
+                trunc(h), trunc(m), s)
+
+        return {
+            "ServerUpTime": runTime,
+            "QueueLength": len(self._queue),
+            "NumberOfJobs": len(self._jobs),
+            "ResourceMem": Resource_Status.check_mem(),
+            "ResourceCPU": Resource_Status.check_cpu()}
 
     def start(self):
 
@@ -108,6 +122,7 @@ class Server(object):
     def _run(self):
 
         self._running = True
+        self._server_start_time = time.time()
         sleep = 0.51
         i = 0
 
@@ -227,31 +242,6 @@ class SOM_RPC(object):
 
         self._statuses = statuses
 
-
-    def getServerStatus(self, userID=None):
-        """Gives a dictionary of the servers status
-
-        Kwargs:
-            userID (str):   The ID of the user requesting status
-                            The full purpose of userID is to maintain
-                            method interface for all exposed RPC methods
-
-        Returns:
-            dictionary. Key value pairs for the different aspects of the
-                        server status.
-        """
-
-        if self._serverStartTime is None:
-            runTime = "Not Running"
-        else:
-            m, s = divmod(time.time() - self._serverStartTime, 60)
-            h, m = divmod(m, 60)
-            runTime = "{0:d}h, {1:d}m, {2:.2f}s".format(
-                trunc(h), trunc(m), s)
-        return {
-            "ServerUpTime": runTime,
-            "ResourceMem": Resource_Status.check_mem(),
-            "ResourceCPU": Resource_Status.check_cpu()}
 
     def getStatuses(self, userID=None):
         """Gives a list or statuses.
