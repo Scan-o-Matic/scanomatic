@@ -68,6 +68,10 @@ class Server(object):
         return self._scanner_manager
 
     @property
+    def queue(self):
+        return self._queue
+
+    @property
     def serving(self):
 
         return self._started
@@ -184,7 +188,7 @@ class Server(object):
             contentModel=type(model))
 
         if not RPC_Job_Model_Factory.validate(rpc_job):
-            self.logger.error("Failed to create rpc job model")
+            self.logger.error("Failed to create job model")
             return False
 
         self._queue.add(rpc_job)
@@ -223,58 +227,6 @@ class SOM_RPC(object):
 
         self._statuses = statuses
 
-
-
-    def communicateWith(self, userID, jobID, title, kwargs={}):
-        """Used to communicate with active jobs.
-
-        Args:
-            userID (str):   The ID of the user, this must match the
-                            current ID of the server admin or request
-                            will be refused.
-
-            jobID (str):    The ID for the job to communicate with.
-
-            title (str):    The name, as understood by the job, for what you
-                            want to do. The following are universally
-                            understood::
-
-                setup:  Passing settings before the job has been started.
-                        This ``title`` is preferrably coupled with ``kwargs``
-                        while the other universally used titles have no use
-                        for extra parameters.
-                start:  Starting the job's execution
-                pause:  Temporarily pausing the job
-                resume: Temporarily resuming the job
-                stop:   Stopping the job
-                status: Requesting that the job sends back the current status
-
-            kwargs (dict):  Extra parameters to send with the communication.
-
-        Returns:
-
-            bool.   ``True`` if communication was allowed (user was admin and
-                    title was accepted imperative) else ``False``
-        """
-
-        if (userID != self._admin):
-            return False
-
-        job = self._jobs[jobID]
-        if job is not None:
-            try:
-                ret = job.pipe.send(title, **kwargs)
-                self._logger.info("The job {0} got message {1}".format(
-                    job.identifier, title))
-                return ret
-            except AttributeError:
-                self._logger.error("The job {0} has no valid call {1}".format(
-                    job.identifier, title))
-                return False
-            return True
-        else:
-            self._logger.error("The job {0} is not running".format(jobID))
-            return False
 
     def getServerStatus(self, userID=None):
         """Gives a dictionary of the servers status
@@ -465,83 +417,6 @@ class SOM_RPC(object):
         else:
             return dict(installed=True, 
                         **self._scannerManager.getStatus(scanner))
-
-    def flushQueue(self, userID):
-        """Clears the queue
-
-        Parameters
-        ==========
-
-        userID : str
-            The ID of the user requesting to create a job.
-            This must match the current ID of the server admin or
-            the request will be refused.
-            **NOTE**: If using a rpc_client from scanomatic.io the client
-            will typically prepend this parameter
-
-        Returns
-        =======
-
-        bool
-            Success status
-
-        See Also
-        ========
-        
-        removeFromQueue
-            Remove individual job from queue
-        """
-
-        if userID != self._admin:
-
-            self._logger.warning(
-                "User '{0}' tried to flush queue".format(
-                    userID))
-
-            return False
-
-        while self._queue:
-            self._queue.get_highest_priority()
-
-        return True
-
-    def removeFromQueue(self, userID, jobID):
-        """Removes job from queue
-
-        Parameters
-        ==========
-
-        userID : str
-            The ID of the user requesting to create a job.
-            This must match the current ID of the server admin or
-            the request will be refused.
-            **NOTE**: If using a rpc_client from scanomatic.io the client
-            will typically prepend this parameter
-
-        jobID : str
-            The ID of job to be removed
-
-        Returns
-        =======
-
-        bool
-            Success status
-
-        See Also
-        ========
-        
-        flushQueue
-            Remove all queued jobs
-        """
-
-        if userID != self._admin:
-
-            self._logger.warning(
-                "User '{0}' tried to remove job from queue".format(
-                    userID))
-            return False
-
-        return self._queue.remove(jobID)
 
     def scanOperations(self, userID, jobID, scanner, operation):
         """Interface for subprocess to request scanner operations

@@ -304,3 +304,72 @@ class Interface_Builder(Singleton):
             return False
 
         return _SOM_SERVER.enqueue(scanningModel, rpc_job_models.JOB_TYPE.Scanner)
+
+    @_verify_admin
+    def _server_remove_from_queue(self, user_id, job_id):
+        """Removes job from queue
+
+        Parameters
+        ==========
+
+        user_id : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        jobID : str
+            The ID of job to be removed
+
+        Returns
+        =======
+
+        bool
+            Success status
+
+        See Also
+        ========
+
+        flush_queue
+            Remove all queued jobs
+        """
+
+        global _SOM_SERVER
+        return _SOM_SERVER.queue.remove(job_id)
+
+    @_verify_admin
+    def _server_flush_queue(self, user_id):
+        """Clears the queue
+
+        Parameters
+        ==========
+
+        user_id : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
+
+        Returns
+        =======
+
+        bool
+            Success status
+
+        See Also
+        ========
+
+        remove_from_queue
+            Remove individual job from queue
+        """
+
+        global _SOM_SERVER
+        queue = _SOM_SERVER.queue
+
+        while queue:
+            job = queue.get_highest_priority()
+            queue.remove(job)
+
+        return True
