@@ -523,6 +523,7 @@ class Interface_Builder(Singleton):
 
         analysis_model = AnalysisModelFactory.create(**analysis_model)
         if not AnalysisModelFactory.validate(analysis_model):
+            _SOM_SERVER.logger.warning("Attempted to create analysis with invalid parameters")
             return False
 
         _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)
