@@ -3,6 +3,7 @@ import scanomatic.generics.decorators as decorators
 from scanomatic.io.logger import Logger
 
 import copy
+import os
 from enum import Enum
 from ConfigParser import ConfigParser
 import cPickle
@@ -12,7 +13,7 @@ class AbstractModelFactory(object):
     _MODEL = Model
     _SUB_FACTORIES = dict()
     STORE_SECTION_HEAD = tuple()
-    STORE_SECTION_SERLIALIZERS = dict()
+    STORE_SECTION_SERIALIZERS = dict()
 
     def __new__(cls, *args):
 
@@ -48,6 +49,15 @@ class AbstractModelFactory(object):
 
     @classmethod
     def create(cls, **settings):
+
+        for key in settings:
+            tuple_key = (key,)
+            if (settings[key] is not None and
+                    tuple_key in cls.STORE_SECTION_SERIALIZERS and
+                    isinstance(cls.STORE_SECTION_SERIALIZERS[tuple_key], AbstractModelFactory) and
+                    not isinstance(settings[key], AbstractModelFactory)):
+
+                settings[key] = cls.STORE_SECTION_SERIALIZERS[tuple_key].create(**settings[key])
 
         return cls._MODEL(**settings)
 
@@ -134,6 +144,15 @@ class AbstractModelFactory(object):
 
             return True
 
+    @classmethod
+    def _validate_submodel(cls, model, key):
+
+        sub_model = getattr(model, key)
+        sub_model_type = type(sub_model)
+        if isinstance(sub_model, Model) and sub_model_type in cls._SUB_FACTORIES:
+            return cls._SUB_FACTORIES[sub_model_type].validate(sub_model)
+        return False
+
     @staticmethod
     def _in_bounds(model, lower_bounds, upper_bounds, attr):
 
@@ -154,8 +173,8 @@ class AbstractModelFactory(object):
         # noinspection PyBroadException
         try:
 
-            return all(_is_pinning_format(pinningFormat) for
-                       pinningFormat in pinning_formats)
+            return all(pinning_format is None or _is_pinning_format(pinning_format) for
+                       pinning_format in pinning_formats)
 
         except:
 
@@ -163,13 +182,23 @@ class AbstractModelFactory(object):
 
         return False
 
+    @staticmethod
+    def _is_file(path):
+
+        return isinstance(path, str) and os.path.isfile(path)
+
+    @staticmethod
+    def _is_tuple_or_list(obj):
+
+        return isinstance(obj, tuple) or isinstance(obj, list)
+
 
 def _is_pinning_format(pinning_format):
     # noinspection PyBroadException
     try:
 
         return all(isinstance(val, int) and val > 0
-                   for val in pinning_format)
+                   for val in pinning_format) and len(pinning_format) == 2
 
     except:
 

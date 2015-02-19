@@ -12,6 +12,7 @@ from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
 import scanomatic.generics.decorators as decorators
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 import scanomatic.models.rpc_job_models as rpc_job_models
 
 _SOM_SERVER = None
@@ -622,7 +623,10 @@ class Interface_Builder(Singleton):
             **kwargs)
             """
 
-        _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)
+        if not AnalysisModelFactory.validate(analysis_model):
+            return  False
+
+        _SOM_SERVER.enqueue(AnalysisModelFactory.create(**analysis_model), rpc_job_models.JOB_TYPE.Analysis)
 
     @_verify_admin
     def _server_create_feature_extract_job(self, user_id, feature_extract_model):
