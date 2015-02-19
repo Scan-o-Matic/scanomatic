@@ -12,7 +12,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from ConfigParser import ConfigParser, NoOptionError
 from multiprocessing import Pipe
 
 #
@@ -21,13 +20,12 @@ from multiprocessing import Pipe
 
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
-import scanomatic.server.queue as queue
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
+import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.server.phenotype_effector as phenotype_effector
 import scanomatic.server.analysis_effector as analysis_effector
 import scanomatic.server.scanning_effector as scanning_effector
 import scanomatic.server.rpc_job as rpc_job
-from scanomatic.server.proc_effector import ProcTypes
 from scanomatic.generics.singleton import Singleton
 
 #
@@ -41,7 +39,7 @@ class Jobs(Singleton):
         self._logger = logger.Logger("Jobs Handler")
         self._paths = paths.Paths()
 
-        self._jobs = []
+        self._jobs = {}
         self._loadFromFile()
 
         self._forcingStop = False
@@ -70,7 +68,7 @@ class Jobs(Singleton):
     @property
     def status(self):
 
-        return []
+        return self._statuses
 
     @property
     def running(self):
@@ -97,136 +95,89 @@ class Jobs(Singleton):
 
         self._forcingStop = value
 
-    def prepare_statuses(self):
-
-        pass
-
-    def _saveJobsData(self):
-
-        self._jobsData.write(open(self._paths.rpc_jobs, 'w'))
-
     def _loadFromFile(self):
 
-        # TODO: what happens to child pipe?
         jobs = list(RPC_Job_Model_Factory.serializer.load(self._paths.rpc_jobs))
-
-
         for job in jobs:
+            childPipe, parent_pipe = Pipe()
+            self._jobs[job] = rpc_job.Fake(job, parent_pipe)
 
-            childPipe, parentPipe = Pipe()
-
-            self._jobs[job] = rpc_job.Fake(
-                job
-                parentPipe)
-
-    def poll(self):
+    def sync(self):
 
         statuses = []
-        jobKeys = self.active_jobs
-
-        for job in jobKeys:
-
-            curJob = self._jobs[job]
+        jobs = self._jobs.keys()
+        for job in jobs:
+            job_process = self._jobs[job]
             if not self._forcingStop:
-                curJob.pipe.poll()
-                if curJob.pid < 0:
-                    curJob.update_pid()
-                    if curJob.pid > 0 and curJob.type == queue.Queue.TYPE_SCAN:
-                        self._scanningPids[curJob.identifier] = curJob.pid
-                if not curJob.is_alive():
+                job_process.pipe.poll()
+                if job.pid < 0:
+                    job_process.update_pid()
+                if not job_process.is_alive():
                     del self._jobs[job]
-                    self._jobsData.remove_section(job)
-                    self._saveJobsData()
-
-            statuses.append(curJob.status)
+                    RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_jobs)
+            statuses.append(job_process.status)
 
         self._statuses = statuses
-        return statuses
 
-    def _add2JobsData(self, job, setupArgs, setupKwargs):
-        """Creates a minimal job data post with sufficient information
-        to restart job if need be"""
-
-        self._jobsData.add_section(job.identifier)
-        self._jobsData.set(job.identifier, "label", str(job.label))
-        self._jobsData.set(job.identifier, "setupArgs", str(setupArgs))
-        self._jobsData.set(job.identifier, "setupKwargs", str(setupKwargs))
-        self._jobsData.set(job.identifier, "pid", job.pid)
-        self._jobs[job.identifier] = job
-        self._saveJobsData()
-
-    def fakeProcess(self, jobID, label, job_type, pid):
-
-        childPipe, parentPipe = Pipe()
-        job = rpc_job.Fake(jobID, label, job_type, pid, parentPipe)
-        self._add2JobsData(job, tuple(), dict())
-        return childPipe
-
-    def add(self, procData):
+    def add(self, job):
         """Launches and adds a new jobs.
         """
+        if any(job.id == j.id for j in self._jobs):
+            self._logger.error("Job {0} already exists, will drop current request".format(job.id))
+            return True
 
-        # VERIFIES NO DUPLICATE IDENTIFIER
-        if (procData['id'] in self._jobs or self._jobsData.has_section(
-                procData['id'])):
-            self._logger.critical(
-                "Cannot have jobs with same identifier ({0}), ".format(
-                    procData['id']) +
-                "new job '{0}' not launched.".format(procData['label']))
-            return False
+        job_effector = self._get_job_effector(job)
+
+        #CONSTRUCTS PIPE PAIR
+        parent_pipe, child_pipe = Pipe()
+
+        #INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
+        #identifier, label, target, parent_pipe, child_pipe
+        job_process = rpc_job.RPC_Job(
+            job,
+            job_effector,
+            parent_pipe,
+            child_pipe)
+
+        self._initialize_job_process(job_process, job)
+        self._set_initialized_job(job, job_process)
+
+        self._logger.info("Job '{0}' ({1}) started".format(
+            job.id, job.type))
+
+        return True
+
+    def _set_initialized_job(self, job, job_process):
+
+        self._jobs[job] = job_process
+        job.status = rpc_job_models.JOB_STATUS.Running
+        RPC_Job_Model_Factory.serializer.dump(job, self._paths.rpc_jobs)
+
+    def _initialize_job_process(self, job_process, job):
+
+        job_process.daemon = True
+        job_process.start()
+        job_process.pipe.send('setup', RPC_Job_Model_Factory.to_dict(job.content_model))
+        job_process.pipe.send('start')
+
+    def _get_job_effector(self, job):
 
         #SELECTS EFFECTOR BASED ON TYPE
-        if (procData["type"] == ProcTypes.EXTRACTION):
+        if job.type is rpc_job_models.JOB_TYPE.Features:
 
-            JobEffector = phenotype_effector.PhenotypeExtractionEffector
+            return phenotype_effector.PhenotypeExtractionEffector
 
-        elif (procData["type"] == ProcTypes.ANALYSIS):
+        elif job.type is rpc_job_models.JOB_TYPE.Analysis:
 
-            JobEffector = analysis_effector.AnalysisEffector
+            return analysis_effector.AnalysisEffector
 
-        elif (procData["type"] == ProcTypes.SCANNER):
+        elif job.type is rpc_job_models.JOB_TYPE.Scan:
 
-            JobEffector = scanning_effector.ScannerEffector
+            return scanning_effector.ScannerEffector
 
         else:
 
             self._logger.critical(
-                ("Job '{0}' ({1}) lost, {2} not yet implemented"
-                ).format(procData['label'], procData['id'],
-                         procData["type"].textRepresentation))
+                "Job '{0}' ({1}) lost, process not yet implemented".format(job.id, job.type.name))
 
-            return False
-
-        #CONSTRUCTS PIPE PAIR
-        parentPipe, childPipe = Pipe()
-
-        #INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
-        #identifier, label, target, parentPipe, childPipe
-        job = rpc_job.RPC_Job(
-            procData['id'],
-            procData['label'],
-            procData['type'],
-            JobEffector,
-            parentPipe,
-            childPipe)
-
-        job.daemon = True
-        job.start()
-        job.pipe.send('setup',
-                      *procData['args'],
-                      **procData['kwargs'])
-        job.pipe.send('start')
-
-        #ADDS JOB AND CREATES JOB DATA POST
-        self._jobs[job.identifier] = job
-        self._add2JobsData(job, procData['args'], procData['kwargs'])
-
-        self._logger.info("Job '{0}' ({1}) started".format(
-            job.label, job.identifier))
-
-        return True
-
-    def getStatus(self, jobId):
-
-        statuses = [s for s in self._statuses if s['id'] == jobId]
-        return len(statuses) > 0 and statuses[0] or dict()
+            return None

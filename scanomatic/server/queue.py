@@ -96,7 +96,7 @@ class Queue(Singleton):
     def reinstate(self, job):
 
         if self[job.id] is None:
-
+            job.status = rpc_job_models.JOB_STATUS.Queued
             self._queue.append(job)
             RPC_Job_Model_Factory.serializer.dump(job, self._paths.rpc_queue)
             return True
@@ -135,7 +135,6 @@ class Queue(Singleton):
 
         return (job for job in self._queue if job.type == job_type)
 
-    @decorators.type_lock
     def add(self, job):
         if job.priority < 0:
 

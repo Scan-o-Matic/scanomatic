@@ -238,6 +238,7 @@ class Interface_Builder(Singleton):
         """
 
         global _SOM_SERVER
+        # TODO: This is bad... fixit
         job = _SOM_SERVER.get_job(job_id)
 
         if job is not None:

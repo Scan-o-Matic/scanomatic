@@ -129,7 +129,7 @@ class Server(object):
             elif i <= 1:
                 self._scanner_manager.sync()
             else:
-                self._jobs.prepare_statuses()
+                self._jobs.sync()
 
             time.sleep(sleep)
             i += 1
