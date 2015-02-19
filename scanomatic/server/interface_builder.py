@@ -13,6 +13,7 @@ from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
 import scanomatic.generics.decorators as decorators
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.features_factory import FeaturesFactory
 import scanomatic.models.rpc_job_models as rpc_job_models
 
 _SOM_SERVER = None
@@ -532,52 +533,27 @@ class Interface_Builder(Singleton):
     def _server_create_feature_extract_job(self, user_id, feature_extract_model):
         """Enques a new feature extraction job.
 
-        Args:
-            userID (str):   The ID of the user, this must match the
-                            current ID of the server admin or request
-                            will be refused.
-            runDirectory (str): The path to the directory containing
-                                the native export numpy files from
-                                an image analysis job.
-                                Note that the path must be absolute.
-            label (str):    A free text field for human readable identification
-                            of the job.
+        Parameters
+        ==========
 
-        Kwargs:
-            priority (int): If supplied, the initial priority of the job
-                            will not be set by the type of job but by the
-                            supplied value.
-            kwargs (dict):  Keyword structured arguments to be passed on to
-                            the job effector's setup.
+        userID : str
+            The ID of the user requesting to create a job.
+            This must match the current ID of the server admin or
+            the request will be refused.
+            **NOTE**: If using a rpc_client from scanomatic.io the client
+            will typically prepend this parameter
 
-        Returns:
+
+        feature_extract_model : dict
+            A dictionary representation of scanomatic.models.features_model.FeaturesModel
+
+        Returns
+        =======
             bool.   ``True`` if job request was successfully enqueued, else
                     ``False``
         """
 
         global _SOM_SERVER
 
-        """
-        if (not(isinstance(runDirectory, str))):
-            _SOM_SERVER.logger.error(
-                ("Job '{0}' can't be started, " +
-                 "invalid runDirectory {1}").format(
-                     label, runDirectory))
-
-            return False
-
-        runDirectory = runDirectory.rstrip("/")
-
-        if (os.path.abspath(runDirectory) != runDirectory):
-
-            _SOM_SERVER.logger.error(
-                "The path for the feature extraction " +
-                "job '{0}' was not absolute path".format(label))
-
-            return False
-
-        kwargs['runDirectory'] = runDirectory
-
-        """
-
+        feature_extract_model = FeaturesFactory.create(**feature_extract_model)
         return _SOM_SERVER.enqueue(feature_extract_model, rpc_job_models.JOB_TYPE.Features)
