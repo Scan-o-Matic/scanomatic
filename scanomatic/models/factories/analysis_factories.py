@@ -32,7 +32,7 @@ class AnalysisModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_first_pass_file(cls, model):
 
-        return cls._is_file(model.first_pass_file)
+        return cls._is_file(model.first_pass_file) and os.path.abspath(model.first_pass_file) == model.first_pass_file
 
     @classmethod
     def _validate_analysis_config_file(cls, model):

@@ -593,40 +593,11 @@ class Interface_Builder(Singleton):
 
         global _SOM_SERVER
 
-        """
-        if (os.path.abspath(inputFile) != inputFile):
-
-            _SOM_SERVER.logger.error(
-                "Job '{0}' was not started with absolute path".format(
-                    label))
-
-            return False
-
-        if (os.path.isfile(inputFile) is False):
-
-            self._logger.error(
-                ("Job '{0}' pointed to file ({1}) that doesn't exist".format(
-                    label, inputFile)))
-
-            return False
-
-        kwargs['inputFile'] = inputFile
-
-        self._logger.info("Adding Image Analysis {0} based on {1}".format(
-            label, inputFile))
-
-        return self._queue.add(
-            queue.Queue.TYPE_IMAGE_ANALSYS,
-            jobID=self._createJobID(),
-            jobLabel=label,
-            priority=priority,
-            **kwargs)
-            """
-
+        analysis_model = AnalysisModelFactory.create(**analysis_model)
         if not AnalysisModelFactory.validate(analysis_model):
-            return  False
+            return False
 
-        _SOM_SERVER.enqueue(AnalysisModelFactory.create(**analysis_model), rpc_job_models.JOB_TYPE.Analysis)
+        _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)
 
     @_verify_admin
     def _server_create_feature_extract_job(self, user_id, feature_extract_model):
