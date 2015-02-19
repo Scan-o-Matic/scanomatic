@@ -15,8 +15,11 @@ class FeaturesFactory(AbstractModelFactory):
     def _validate_analysis_directory(cls, model):
 
         if not isinstance(model.analysis_directory, str):
-            return False
+            return model.FIELD_TYPES.analysis_directory
 
         analysis_directory = model.analysis_directory.rstrip("/")
-        return (os.path.abspath(analysis_directory) == analysis_directory and
-                os.path.isdir(model.analysis_directory))
+        if (os.path.abspath(analysis_directory) == analysis_directory and
+                os.path.isdir(model.analysis_directory)):
+
+            return True
+        return model.FIELD_TYPES.analysis_directory

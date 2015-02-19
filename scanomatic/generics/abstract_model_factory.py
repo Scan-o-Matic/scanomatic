@@ -145,7 +145,7 @@ class AbstractModelFactory(object):
             return True
 
     @classmethod
-    def _validate_submodel(cls, model, key):
+    def _is_valid_submodel(cls, model, key):
 
         sub_model = getattr(model, key)
         sub_model_type = type(sub_model)

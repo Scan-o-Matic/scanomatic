@@ -69,7 +69,7 @@ class ScanningModelFactory(AbstractModelFactory):
             return model.FIELD_TYPES.project_name
 
         if len(model.project_name) != len(tuple(c for c in model.project_name
-                                               if c in string.letters + string.digits + "_")):
+                                                if c in string.letters + string.digits + "_")):
             return model.FIELD_TYPES.project_name
 
         return True
@@ -91,7 +91,7 @@ class ScanningModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_description(cls, model):
 
-        if (isinstance(model.description, str)):
+        if isinstance(model.description, str):
             return True
 
         return model.FIELD_TYPES.description
@@ -99,14 +99,12 @@ class ScanningModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_email(cls, model):
 
-
         if (isinstance(model.email, str) and
                 (model.email == '' or
                      re.match(r'[^@]+@[^@]+\.[^@]+', model.email))):
             return True
 
         return model.FIELD_TYPES.email
-
 
     @classmethod
     def _validate_pinning_formats(cls, model):

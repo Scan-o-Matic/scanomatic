@@ -26,4 +26,4 @@ class RPCjobModel(model.Model):
 
     def __hash__(self):
 
-        return self.id
+        return hash(self.id)

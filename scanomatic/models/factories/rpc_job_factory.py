@@ -28,7 +28,7 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
     @classmethod
     def _validate_id(cls, model):
 
-        if isinstance(model.id, int):
+        if isinstance(model.id, str):
     
             return True
 

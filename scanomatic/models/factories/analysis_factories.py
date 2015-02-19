@@ -32,36 +32,51 @@ class AnalysisModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_first_pass_file(cls, model):
 
-        return cls._is_file(model.first_pass_file) and os.path.abspath(model.first_pass_file) == model.first_pass_file
+        if cls._is_file(model.first_pass_file) and os.path.abspath(model.first_pass_file) == model.first_pass_file:
+            return True
+        return model.FIELD_TYPES.first_pass_file
 
     @classmethod
     def _validate_analysis_config_file(cls, model):
 
-        return model.analysis_config_file in (None, "") or AbstractModelFactory._is_file(model.analysis_config_file)
+        if model.analysis_config_file in (None, "") or AbstractModelFactory._is_file(model.analysis_config_file):
+            return True
+        return model.FIELD_TYPES.analysis_config_file
 
     @classmethod
     def _validate_pinning_matrices(cls, model):
 
-        return AbstractModelFactory._is_pinning_formats(model.pinning_matrices)
+        if AbstractModelFactory._is_pinning_formats(model.pinning_matrices):
+            return True
+        return model.FIELD_TYPES.pinning_matrices
 
     @classmethod
     def _validate_use_local_fixture(cls, model):
 
-        return isinstance(model.use_local_fixture, bool)
+        if isinstance(model.use_local_fixture, bool):
+            return True
+        return model.FIELD_TYPES.use_local_fixture
 
     @classmethod
     def _validate_stop_at_image(cls, model):
 
-        return isinstance(model.stop_at_image, int)
+        if isinstance(model.stop_at_image, int):
+            return True
+        return model.FIELD_TYPES.stop_at_image
 
     @classmethod
     def _validate_output_directory(cls, model):
 
-        return (model.output_directory is None or isinstance(model.output_directory, str) and
-                os.sep not in model.output_directory)
+        if (model.output_directory is None or isinstance(model.output_directory, str) and
+                os.sep not in model.output_directory):
+            return True
+        return model.FIELD_TYPES.output_directory
 
     @classmethod
     def _validate_focus_position(cls, model):
+
+        if model.focus_position is None:
+            return True
 
         is_coordinate = (cls._is_tuple_or_list(model.focus_position) and
                          all(isinstance(value, int) for value in model.focus_position) and
@@ -72,26 +87,33 @@ class AnalysisModelFactory(AbstractModelFactory):
             plate_exists = (0 <= model.focus_position[0] < len(model.pinning_matrices) and
                             model.pinning_matrices[model.focus_position[0]] is not None)
 
-            return plate_exists and (0 <= val < dim_max for val, dim_max in
-                                     zip(model.focus_position[1:], model.pinning_matrices[model.focus_position[0]]))
-        return False
+            if plate_exists and (0 <= val < dim_max for val, dim_max in
+                                 zip(model.focus_position[1:], model.pinning_matrices[model.focus_position[0]])):
+                return True
+        return model.FIELD_TYPES.focus_position
 
     @classmethod
     def _validate_suppress_non_focal(cls, model):
 
-        return isinstance(model.suppress_non_focal, bool)
+        if isinstance(model.suppress_non_focal, bool):
+            return True
+        return model.FIELD_TYPES.suppress_non_focal
 
     @classmethod
     def _validate_animate_focal(cls, model):
 
-        return isinstance(model.animate_focal, bool)
+        if isinstance(model.animate_focal, bool):
+            return True
+        return model.FIELD_TYPES.animate_focal
 
     @classmethod
     def _validate_grid_images(cls, model):
 
-        return model.grid_images is None or (
-            cls._is_tuple_or_list(model.grid_images) and
-            all(isinstance(val, int) and 0 <= val for val in model.grid_images))
+        if model.grid_images is None or (
+                    cls._is_tuple_or_list(model.grid_images) and
+                    all(isinstance(val, int) and 0 <= val for val in model.grid_images)):
+            return True
+        return model.FIELD_TYPES.grid_images
 
     @classmethod
     def _validate_grid_correction(cls, model):
@@ -101,25 +123,30 @@ class AnalysisModelFactory(AbstractModelFactory):
             return value is None or (len(value) == 2 and all(isinstance(offset, int) for offset in value))
 
         try:
-            return (all(_valid_correction(plate) for plate in model.grid_correction) and
-                    len(model.grid_correction) == len(model.pinning_matrices))
+            if (all(_valid_correction(plate) for plate in model.grid_correction) and
+                        len(model.grid_correction) == len(model.pinning_matrices)):
+                return True
         except (TypeError, IndexError):
+            pass
 
-            return False
+        return model.FIELD_TYPES.grid_correction
 
     @classmethod
     def _validate_grid_model(cls, model):
 
-        return cls._validate_submodel(model, "grid_model")
+        if cls._is_valid_submodel(model, "grid_model"):
+            return True
+        return model.FIELD_TYPES.grid_model
 
     @classmethod
     def _validate_xml_model(cls, model):
 
-        return cls._validate_submodel(model, "xml_model")
+        if cls._is_valid_submodel(model, "xml_model"):
+            return True
+        return model.FIELD_TYPES.xml_model
 
 
 class GridModelFactory(AbstractModelFactory):
-
     _MODEL = GridModel
     STORE_SECTION_SERIALIZERS = {
         ('use_utso',): bool,
@@ -130,21 +157,26 @@ class GridModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_use_utso(cls, model):
 
-        return isinstance(model.use_utso, bool)
+        if isinstance(model.use_utso, bool):
+            return True
+        return model.FIELD_TYPES.use_otsu
 
     @classmethod
     def _validate_median_coefficient(cls, model):
 
-        return isinstance(model.median_coefficient, float)
+        if isinstance(model.median_coefficient, float):
+            return True
+        return model.FIELD_TYPES.median_coefficient
 
     @classmethod
     def _validate_manual_threshold(cls, model):
 
-        return isinstance(model.manual_threshold, float)
+        if isinstance(model.manual_threshold, float):
+            return True
+        return model.FIELD_TYPES.manual_threshold
 
 
 class XMLModelFactory(AbstractModelFactory):
-
     _MODEL = XMLModel
     STORE_SECTION_SERIALIZERS = {
         ("exclude_compartments",): tuple,
@@ -156,21 +188,29 @@ class XMLModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_exclude_compartments(cls, model):
 
-        return (cls._is_tuple_or_list(model.exclude_compartments) and
-                all(compartment in COMPARTMENTS for compartment in model.exclude_compartments))
+        if (cls._is_tuple_or_list(model.exclude_compartments) and
+                all(compartment in COMPARTMENTS for compartment in model.exclude_compartments)):
+            return True
+        return model.FIELD_TYPES.exclude_compartments
 
     @classmethod
     def _validate_exclude_measures(cls, model):
 
-        return (cls._is_tuple_or_list(model.exclude_measures) and
-                all(measure in MEASURES for measure in model.exclude_measures))
+        if (cls._is_tuple_or_list(model.exclude_measures) and
+                all(measure in MEASURES for measure in model.exclude_measures)):
+            return True
+        return model.FIELD_TYPES.exclude_measures
 
     @classmethod
     def _validate_make_short_tag_version(cls, model):
 
-        return isinstance(model.make_short_tag_version, bool)
+        if isinstance(model.make_short_tag_version, bool):
+            return True
+        return model.FIELD_TYPES.make_short_tag_version
 
     @classmethod
     def _validate_short_tag_measure(cls, model):
 
-        return model.short_tage_measure in MEASURES
+        if model.short_tage_measure in MEASURES:
+            return True
+        return model.FIELD_TYPES.short_tag_measure
