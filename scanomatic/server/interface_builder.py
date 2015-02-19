@@ -509,86 +509,14 @@ class Interface_Builder(Singleton):
             **NOTE**: If using a rpc_client from scanomatic.io the client
             will typically prepend this parameter
 
-        inputFile : str
-            Absolute path to the first pass analysis file containing
-            the information about which images to be analysed
-
-        label : str
-            Name for the job on the server in human friendly format
-
-        priority : int, optional
-            The priority of the job, to put it at the start of the queue
-
-        kwargs : dict, optional
-            Further settings to be passed to analysis effector upon setup
-            All optional
-
-            configFile: str
-                Path to file with setup-instructions.
-                Any instructions passed while creating the job will
-                overwrite the instructions in the file
-
-            pinningMatrices: list
-                List of tuples, one per plate, for pinning formats
-                Default: What is specified in first pass file
-
-            localFixture : bool
-                If fixture config in directory of the input-file should be
-                used.
-                Default: False
-
-            lastImage: int
-                Index of last image to be included in analysis,
-                all images with higher index omitted
-                Default: None (all images included)
-
-            outputDirectory: str
-                Relative path of output directory for the analysis
-                Default: analysis
-
-            watchPosition: ???
-                If a specific position should be monitored extra
-                Default: None
-
-            gridImageIndices: list of int
-                The times for which grid-images will be produced
-                Default: last image
-
-            supressUnwatched: bool
-                If analysis of not watched positions should be omitted
-                Default: False
-
-            xmlFormat: dict
-                Configuration of xml, known features:
-                    'short', 'omit_compartments', 'omit_measures'
-                Default: short set to True, no omissions.
-
-            gridArraySettings: dict
-                Configuration of grid arryas, known features:
-                    'animation'
-                Default: animation set to False
-
-            gridSettings: dict
-                Configuration of gridding, know features:
-                    'use_utso', 'median_coeff', 'manual_threshold'
-                Default: Using utso, median coefficient at 0.99 and manual
-                threshold at 0.05
-
-            gridCellSettings: dict
-                Configuration of grid cells, know features:
-                    'blob_detect'
-                Default: Use 'default' blob detection
-
-            gridCorrection: list of tuples
-                Corrects grids by shifting detected positions by
-                indicated amounts
-                Default: None
+        analysis_model : dict
+            A dictionary representation of a scanomatic.models.analysis_model.AnalysisModel
 
         Returns
         =======
 
         bool
-            Success of enquinig
+            Success of putting job in queue
         """
 
         global _SOM_SERVER

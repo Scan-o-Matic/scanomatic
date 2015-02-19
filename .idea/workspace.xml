@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" afterPath="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" afterPath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" />
     </list>
     <ignored path="scan-o-matic.iws" />
@@ -43,8 +42,8 @@
       <file leaf-file-name="interface_builder.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.3877551" vertical-offset="8757" max-vertical-offset="9885">
-              <caret line="599" column="29" selection-start-line="599" selection-start-column="29" selection-end-line="599" selection-end-column="29" />
+            <state vertical-scroll-proportion="0.65816325" vertical-offset="7383" max-vertical-offset="8805">
+              <caret line="518" column="43" selection-start-line="518" selection-start-column="43" selection-end-line="518" selection-end-column="43" />
               <folding>
                 <element signature="e#23#36#0" expanded="true" />
               </folding>
@@ -932,8 +931,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.3877551" vertical-offset="8757" max-vertical-offset="9885">
-          <caret line="599" column="29" selection-start-line="599" selection-start-column="29" selection-end-line="599" selection-end-column="29" />
+        <state vertical-scroll-proportion="0.65816325" vertical-offset="7383" max-vertical-offset="8805">
+          <caret line="518" column="43" selection-start-line="518" selection-start-column="43" selection-end-line="518" selection-end-column="43" />
           <folding>
             <element signature="e#23#36#0" expanded="true" />
           </folding>
