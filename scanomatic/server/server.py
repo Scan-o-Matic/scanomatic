@@ -158,7 +158,7 @@ class Server(object):
         if self._jobs.running:
             self.logger.info("Asking all jobs to terminate")
 
-            self._jobs.forceStop = True
+            self._jobs.force_stop = True
 
     def _wait_on_jobs(self):
         i = 0

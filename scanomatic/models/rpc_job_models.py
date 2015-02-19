@@ -23,3 +23,7 @@ class RPCjobModel(model.Model):
                 id=id, type=type, status=status, pid=pid,
                 priority=priority,
                 content_model=content_model)
+
+    def __hash__(self):
+
+        return self.id

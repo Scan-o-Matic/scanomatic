@@ -22,30 +22,30 @@ from multiprocessing import Pipe
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.server.queue as queue
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 import scanomatic.server.phenotype_effector as phenotype_effector
 import scanomatic.server.analysis_effector as analysis_effector
 import scanomatic.server.scanning_effector as scanning_effector
 import scanomatic.server.rpc_job as rpc_job
 from scanomatic.server.proc_effector import ProcTypes
+from scanomatic.generics.singleton import Singleton
 
 #
 # CLASSES
 #
 
 
-class Jobs(object):
+class Jobs(Singleton):
     def __init__(self):
 
         self._logger = logger.Logger("Jobs Handler")
         self._paths = paths.Paths()
 
-        self._jobs = {}
-        self._jobsData = None
+        self._jobs = []
         self._loadFromFile()
 
         self._forcingStop = False
         self._statuses = []
-        self._scanningPids = {}
 
     def __len__(self):
         return len(self._jobs)
@@ -63,7 +63,7 @@ class Jobs(object):
             return None
 
     @property
-    def activeJobs(self):
+    def active_jobs(self):
 
         return self._jobs.keys()
 
@@ -83,11 +83,11 @@ class Jobs(object):
         return False
 
     @property
-    def forceStop(self):
+    def force_stop(self):
         return self._forcingStop
 
-    @forceStop.setter
-    def forceStop(self, value):
+    @force_stop.setter
+    def force_stop(self, value):
 
         if value is True:
             self._forcingStop = True
@@ -96,10 +96,6 @@ class Jobs(object):
                     self._jobs[job].pipe.send("stop")
 
         self._forcingStop = value
-
-    @property
-    def scanningPids(self):
-        return {k: v for k, v in self._scanningPids.items()}
 
     def prepare_statuses(self):
 
@@ -111,43 +107,22 @@ class Jobs(object):
 
     def _loadFromFile(self):
 
-        self._jobsData = ConfigParser(allow_no_value=True)
-        try:
-            self._jobsData.readfp(open(self._paths.rpc_jobs, 'r'))
-        except IOError:
-            self._saveJobsData()
-            self._logger.info("Created runnig jobs log since non existed")
+        # TODO: what happens to child pipe?
+        jobs = list(RPC_Job_Model_Factory.serializer.load(self._paths.rpc_jobs))
 
-        for job in self._jobsData.sections():
+
+        for job in jobs:
 
             childPipe, parentPipe = Pipe()
 
-            try:
-                label = self._jobsData.get(job, "label")
-            except NoOptionError:
-                label = ""
-            try:
-                pid = int(self._jobsData.get(job, "pid"))
-            except (TypeError, NoOptionError):
-                pid = -1
-
-            try:
-                jobType = ProcTypes.GetByIntRepresentation(
-                    int(self._jobsData.get(job, "type")))
-            except:
-                jobType = ProcTypes.GetDefault()
-
             self._jobs[job] = rpc_job.Fake(
-                job,
-                label,
-                jobType,
-                pid,
+                job
                 parentPipe)
 
     def poll(self):
 
         statuses = []
-        jobKeys = self.activeJobs
+        jobKeys = self.active_jobs
 
         for job in jobKeys:
 

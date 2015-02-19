@@ -24,13 +24,14 @@ import scanomatic.io.logger as logger
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.generics.decorators as decorators
+from scanomatic.generics.singleton import Singleton
 
 #
 # CLASSES
 #
 
 
-class Queue(object):
+class Queue(Singleton):
 
     def __init__(self):
 
