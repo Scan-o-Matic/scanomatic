@@ -33,12 +33,12 @@ import scanomatic.io.logger as logger
 
 class Fake(object):
 
-    def __init__(self, identifier, label, jobType, pid, parentPipe):
+    def __init__(self, identifier, label, job_type, pid, parent_pipe):
 
         self._identifier = identifier
         self._label = label
-        self._jobType = jobType
-        self._parentPipe = pipes.ParentPipeEffector(parentPipe)
+        self._jobType = job_type
+        self._parentPipe = pipes.ParentPipeEffector(parent_pipe)
         self._pid = pid
         self._logger = logger.Logger("Fake Process {0}".format(label))
         self._logger.info("Running ({0}) with pid {1}".format(
@@ -96,68 +96,65 @@ class Fake(object):
         if self.pid < 0 and 'pid' in self.pipe.status:
             self.pid = self.pipe.status['pid']
 
-class RPC_Job(Process, Fake):
 
-    def __init__(self, identifier, label, jobType, 
-                 target, parentPipe, childPipe):
+class RpcJob(Process, Fake):
 
-        super(RPC_Job, self).__init__()
-        self._label = label
-        self._identifier = identifier
-        self._target = target
-        self._jobType = jobType
-        self._parentPipe = pipes.ParentPipeEffector(parentPipe)
-        self._childPipe = childPipe
-        self._logger = logger.Logger("Job {0} Process".format(label))
-        self._pid = -1
+    def __init__(self, job, job_effector, parent_pipe, child_pipe):
+
+        super(RpcJob, self).__init__()
+        self._job = job
+        self._job_effector = job_effector
+        self._parentPipe = pipes.ParentPipeEffector(parent_pipe)
+        self._childPipe = child_pipe
+        self._logger = logger.Logger("Job {0} Process".format(job.id))
 
     def run(self):
 
         def _communicator():
 
-            while pipeEffector.keepAlive and jobRunning:
-                pipeEffector.poll()
+            while pipe_effector.keepAlive and job_running:
+                pipe_effector.poll()
                 sleep(0.29)
 
             _l.info("Will not recieve any more communications")
 
-        jobRunning = True
+        job_running = True
         _l = logger.Logger("RPC Job (proc-side)")
 
-        pipeEffector = pipes.ChildPipeEffector(
-            self._childPipe, self._target(self._identifier, self._label))
+        pipe_effector = pipes.ChildPipeEffector(
+            self._childPipe, self._job_effector(self._identifier, self._label))
         
         setproctitle.setproctitle("SoM {0}".format(
-            pipeEffector.procEffector.type))
+            pipe_effector.procEffector.type))
 
         t = Thread(target=_communicator)
         t.start()
 
         _l.info("Communications thread started")
 
-        effectorIterator = pipeEffector.procEffector
+        effector_iterator = pipe_effector.procEffector
 
         _l.info("Starting main loop using")
 
-        while t.is_alive() and jobRunning:
+        while t.is_alive() and job_running:
 
-            if (pipeEffector.keepAlive):
+            if pipe_effector.keepAlive:
 
                 try:
 
-                    effectorIterator.next()
+                    effector_iterator.next()
 
                 except StopIteration:
 
-                    jobRunning = False
-                    #pipeEffector.keepAlive = False
+                    job_running = False
+                    # pipe_effector.keepAlive = False
 
-                pipeEffector.sendStatus(pipeEffector.procEffector.status())
+                pipe_effector.sendStatus(pipe_effector.procEffector.status())
                 sleep(0.05)
 
             else:
                 sleep(0.29)
 
-        pipeEffector.sendStatus(pipeEffector.procEffector.status())
+        pipe_effector.sendStatus(pipe_effector.procEffector.status())
         t.join(timeout=1)
         _l.info("Job completed")

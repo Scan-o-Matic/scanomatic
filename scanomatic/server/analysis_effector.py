@@ -96,6 +96,8 @@ class AnalysisEffector(proc_effector.ProcEffector):
             return super(AnalysisEffector, self).next()
 
         elif self._iteratorI is None:
+
+            # TODO: Make sure iteration is done on time and not index in 1st pass file
             self._iteratorI = self.totalImages - 1
             self._startTime = time.time()
             meta_data = self._metaData

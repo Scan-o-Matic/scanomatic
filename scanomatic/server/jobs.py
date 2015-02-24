@@ -25,7 +25,7 @@ import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.server.phenotype_effector as phenotype_effector
 import scanomatic.server.analysis_effector as analysis_effector
 import scanomatic.server.scanning_effector as scanning_effector
-import scanomatic.server.rpc_job as rpc_job
+import scanomatic.server.rpcjob as rpc_job
 from scanomatic.generics.singleton import Singleton
 
 #
@@ -133,7 +133,7 @@ class Jobs(Singleton):
 
         #INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
         #identifier, label, target, parent_pipe, child_pipe
-        job_process = rpc_job.RPC_Job(
+        job_process = rpc_job.RpcJob(
             job,
             job_effector,
             parent_pipe,
