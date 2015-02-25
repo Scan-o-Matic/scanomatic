@@ -33,50 +33,22 @@ import scanomatic.io.logger as logger
 
 class Fake(object):
 
-    def __init__(self, identifier, label, job_type, pid, parent_pipe):
+    def __init__(self, job, parent_pipe):
 
-        self._identifier = identifier
-        self._label = label
-        self._jobType = job_type
-        self._parentPipe = pipes.ParentPipeEffector(parent_pipe)
-        self._pid = pid
-        self._logger = logger.Logger("Fake Process {0}".format(label))
+        self._job = job
+        self._parent_pipe = pipes.ParentPipeEffector(parent_pipe)
+        self._logger = logger.Logger("Fake Process {0}".format(job.id))
         self._logger.info("Running ({0}) with pid {1}".format(
-            self.is_alive(), pid))
-
-    @property
-    def type(self):
-        return self._jobType
-
-    @property
-    def identifier(self):
-        return self._identifier
-
-    @property
-    def label(self):
-        return self._label
+            self.is_alive(), job.pid))
 
     @property
     def pipe(self):
-        return self._parentPipe
-
-    @property
-    def pid(self):
-
-        return self._pid
-
-    @pid.setter
-    def pid(self, value):
-
-        try:
-            self._pid = int(value)
-        except TypeError:
-            self._logger.error("Only ints are valid process IDs ({0})".format(
-                value))
+        return self._parent_pipe
 
     @property
     def status(self):
 
+        # TODO: Make real status somehow
         s = self.pipe.status
         if 'id' not in s:
             s['id'] = self.identifier
@@ -89,12 +61,11 @@ class Fake(object):
 
     def is_alive(self):
 
-        return psutil.pid_exists(self._pid)
+        return psutil.pid_exists(self._job.pid)
 
     def update_pid(self):
 
-        if self.pid < 0 and 'pid' in self.pipe.status:
-            self.pid = self.pipe.status['pid']
+        self._job.pid = self.pipe.status['pid']
 
 
 class RpcJob(Process, Fake):
@@ -104,7 +75,7 @@ class RpcJob(Process, Fake):
         super(RpcJob, self).__init__()
         self._job = job
         self._job_effector = job_effector
-        self._parentPipe = pipes.ParentPipeEffector(parent_pipe)
+        self._parent_pipe = pipes.ParentPipeEffector(parent_pipe)
         self._childPipe = child_pipe
         self._logger = logger.Logger("Job {0} Process".format(job.id))
 
@@ -122,7 +93,7 @@ class RpcJob(Process, Fake):
         _l = logger.Logger("RPC Job (proc-side)")
 
         pipe_effector = pipes.ChildPipeEffector(
-            self._childPipe, self._job_effector(self._identifier, self._label))
+            self._childPipe, self._job_effector(self._job))
         
         setproctitle.setproctitle("SoM {0}".format(
             pipe_effector.procEffector.type))

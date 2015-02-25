@@ -257,7 +257,7 @@ class Interface_Builder(Singleton):
             return False
 
     @_verify_admin
-    def _server_reestablish_process(self, user_id, job_id, label, job_type, pid):
+    def _server_reestablish_process(self, user_id, job_id, label, job_type, process_pid):
         """Interface for orphaned daemons to re-gain contact with server.
 
         Parameters

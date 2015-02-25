@@ -14,8 +14,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import os
-from ConfigParser import ConfigParser
 import time
 
 #
@@ -23,38 +21,38 @@ import time
 #
 
 import proc_effector
-import scanomatic.io.logger as logger
-from scanomatic.server.proc_effector import ProcTypes
+from scanomatic.models.rpc_job_models import JOB_TYPE
 
-class ScannerEffector(proc_effector.ProcEffector):
 
-    TYPE = ProcTypes.SCANNER 
+class ScannerEffector(proc_effector.ProcessEffector):
 
-    def __init__(self, identifier, label):
+    TYPE = JOB_TYPE.Scan
 
-        #sys.excepthook = support.custom_traceback
+    def __init__(self, job):
 
-        super(ScannerEffector, self).__init__(identifier, label,
-                                               loggerName="Scanner Effector")
+        # sys.excepthook = support.custom_traceback
 
-        self._specificStatuses['progress'] = 'progress'
-        self._specificStatuses['total'] = 'totalImages'
-        self._specificStatuses['currentImage'] = 'curImage'
+        super(ScannerEffector, self).__init__(job, logger_name="Scanner Effector")
 
-        self._allowedCalls['setup'] = self.setup
+        self._specific_statuses['progress'] = 'progress'
+        self._specific_statuses['total'] = 'totalImages'
+        self._specific_statuses['currentImage'] = 'curImage'
+        self._allowed_calls['setup'] = self.setup
+        self._scanning_job = job.content_model
+        self._progress = None
 
-    def setup(self, *lostArgs, **scannerKwargs):
+    def setup(self, *args, **kwargs):
 
         pass
 
     def next(self):
 
-        if not self._allowStart:
+        if not self._allow_start:
             return super(ScannerEffector, self).next()
 
         if self._stopping:
             self._progress = None
             self._running = False
 
-        if self._iteratorI is None:
+        if self._iteration_index is None:
             self._startTime = time.time()

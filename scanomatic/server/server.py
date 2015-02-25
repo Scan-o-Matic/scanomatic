@@ -18,7 +18,6 @@ __status__ = "Development"
 
 import time
 from math import trunc
-import os
 import hashlib
 
 #
@@ -198,7 +197,7 @@ class Server(object):
 
         rpc_job = RPC_Job_Model_Factory.create(
             id=self._get_job_id(),
-            pid=os.getpid(),
+            pid=None,
             type=job_type,
             status=rpc_job_models.JOB_STATUS.Requested,
             contentModel=type(model))

@@ -40,7 +40,7 @@ class Jobs(Singleton):
         self._paths = paths.Paths()
 
         self._jobs = {}
-        self._loadFromFile()
+        self._load_from_file()
 
         self._forcingStop = False
         self._statuses = []
@@ -95,11 +95,11 @@ class Jobs(Singleton):
 
         self._forcingStop = value
 
-    def _loadFromFile(self):
+    def _load_from_file(self):
 
         jobs = list(RPC_Job_Model_Factory.serializer.load(self._paths.rpc_jobs))
         for job in jobs:
-            childPipe, parent_pipe = Pipe()
+            child_pipe, parent_pipe = Pipe()
             self._jobs[job] = rpc_job.Fake(job, parent_pipe)
 
     def sync(self):
@@ -110,7 +110,7 @@ class Jobs(Singleton):
             job_process = self._jobs[job]
             if not self._forcingStop:
                 job_process.pipe.poll()
-                if job.pid < 0:
+                if not job.pid:
                     job_process.update_pid()
                 if not job_process.is_alive():
                     del self._jobs[job]
@@ -128,11 +128,11 @@ class Jobs(Singleton):
 
         job_effector = self._get_job_effector(job)
 
-        #CONSTRUCTS PIPE PAIR
+        # CONSTRUCTS PIPE PAIR
         parent_pipe, child_pipe = Pipe()
 
-        #INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
-        #identifier, label, target, parent_pipe, child_pipe
+        # INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
+        # identifier, label, target, parent_pipe, child_pipe
         job_process = rpc_job.RpcJob(
             job,
             job_effector,
@@ -153,7 +153,8 @@ class Jobs(Singleton):
         job.status = rpc_job_models.JOB_STATUS.Running
         RPC_Job_Model_Factory.serializer.dump(job, self._paths.rpc_jobs)
 
-    def _initialize_job_process(self, job_process, job):
+    @staticmethod
+    def _initialize_job_process(job_process, job):
 
         job_process.daemon = True
         job_process.start()
@@ -162,7 +163,7 @@ class Jobs(Singleton):
 
     def _get_job_effector(self, job):
 
-        #SELECTS EFFECTOR BASED ON TYPE
+        # SELECTS EFFECTOR BASED ON TYPE
         if job.type is rpc_job_models.JOB_TYPE.Features:
 
             return phenotype_effector.PhenotypeExtractionEffector
