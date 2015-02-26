@@ -32,6 +32,7 @@ import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.analysis_model import ImageModel
 
 #
 # CLASSES
@@ -101,23 +102,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             return self._finalize_analysis()
 
     def _finalize_analysis(self):
-            #
-            # CLOSING XML TAGS AND FILES
-            #
 
             self._xmlWriter.close()
 
-            #
-            # FINALIZING WATCH GRAPHS
-            #
-
             if self._watchGraph is not None:
+                self._focus_graph.finalize()
 
-                self._watchGrapher.finalize()
-
-            #
-            # OUTPUTS TO USER
-            #
 
             self._logger.info("ANALYSIS, Full analysis took {0} minutes".format(
                 ((time.time() - self._startTime) / 60.0)))
@@ -136,9 +126,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         # UPDATING LOOP SPECIFIC VARIABLES
         #
 
-        #self._logger.info("__Is__ {0}".format(len(self._imageDictionaries) - self._iteratorI))
         scan_start_time = time.time()
-        img_dict_pointer = self._imageDictionaries[self._iteration_index]
+        img_dict_pointer = self._image_models[self._iteration_index]
+        image_model = ImageModel()
         plate_positions = []
 
         # PLATE COORDINATES
@@ -167,14 +157,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         #
 
         features = self._project_image.get_analysis(
-            img_dict_pointer['File'],
+            image_model.path,
             plate_positions,
-            grayscaleSource=img_dict_pointer['grayscale_values'],
-            watch_colony=self._watchGraph,
+            grayscaleSource=image_model.grayscale_values,
             save_grid_name=save_grid_name,
             identifier_time=self._iteration_index,
-            # timestamp=img_dict_pointer['Time'],
-            grayscaleTarget=img_dict_pointer['grayscale_indices'],
+            grayscaleTarget=image_model.grayscale_targets,
             image_dict=img_dict_pointer)
 
         if features is None:
@@ -202,7 +190,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 self._project_image.watch_source is not None and
                 self._project_image.watch_blob is not None):
 
-            self._watchGrapher.add_image(
+            self._focus_graph.add_image(
                 self._project_image.watch_source,
                 self._project_image.watch_blob)
 
@@ -261,31 +249,32 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._startTime = time.time()
         meta_data = self._metaData
 
-        appConfig = app_config.Config()
+        application_config = app_config.Config()
 
         #
         # CLEANING UP PREVIOUS FILES
         #
 
-        for p in image_data.Image_Data.iterImagePaths(self._outdataDir):
+        # TODO: Need to convert to absolute
+        for p in image_data.Image_Data.iterImagePaths(self._analysis_job.output_directory):
             os.remove(p)
 
-        self._loger.info("Removed pre-exisiting file '{0}'".format(p))
+        self._loger.info("Removed pre-existing file '{0}'".format(p))
         #
         # INITIALIZE WATCH GRAPH IF REQUESTED
         #
 
-        if self._watchGraph is not None:
+        if self._analysis_job.focus_position is not None:
 
-            self._watchGrapher = support.Watch_Graph(
-                self._watchGraph, self._outdataDir)
+            self._focus_graph = support.Watch_Graph(
+                self._analysis_job.focus_position, self._analysis_job.output_directory)
 
         #
         # INITIALIZE XML WRITER
         #
 
         self._xmlWriter = xml_writer.XML_Writer(
-            self._outdataDir, self._xmlFormat, paths.Paths())
+            self._analysis_job.output_directory, self._analysis_job.xml_model)
 
         if self._xmlWriter.get_initialized() is False:
 
@@ -300,8 +289,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         #
 
         self._plates, self._plate_position_keys = support.get_active_plates(
-            meta_data, self._suppressAnalysis, self._watchGraph,
-            config=appConfig)
+            meta_data, self._analysis_job.suppress_non_focal, self._analysis_job.focus_position,
+            config=application_config)
 
         plates = self._plates
         plate_position_keys = self._plate_position_keys
@@ -310,11 +299,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             'ANALYSIS: These plates ({0}) will be analysed: {1}'.format(
                 plates, plate_position_keys))
 
-        if self._suppressAnalysis is True:
+        if self._analysis_job.suppress_non_focal is True:
 
-            meta_data['Pinning Matrices'] = \
-                [meta_data['Pinning Matrices'][self._watchGraph[0]]]  # Only keep one
-
+            meta_data['Pinning Matrices'] = [meta_data['Pinning Matrices'][self._watchGraph[0]]]
             self._watchGraph[0] = 0  # Since only this one plate is left, it is now 1st
 
         #
@@ -331,7 +318,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             gridding_settings=self._griddingSettings,
             grid_cell_settings=self._gridCellSettings,
             log_version=meta_data['Version'],
-            app_config=appConfig,
+            app_config=application_config,
             grid_correction=self._gridCorrection
         )
 
@@ -356,14 +343,14 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         # SETTING GRID FROM REASONABLE TIME POINT
         if len(self._gridImageIndices) > 0:
             pos = max(self._gridImageIndices)
-            if pos >= len(self._imageDictionaries):
-                pos = len(self._imageDictionaries) - 1
+            if pos >= len(self._image_models):
+                pos = len(self._image_models) - 1
         else:
 
-            pos = len(self._imageDictionaries) - 1
+            pos = len(self._image_models) - 1
             """
-            pos = (len(self._imageDictionaries) > appConfig.default_gridtime and
-                appConfig.default_gridtime or len(self._imageDictionaries) - 1)
+            pos = (len(self._imageDictionaries) > application_config.default_gridtime and
+                application_config.default_gridtime or len(self._imageDictionaries) - 1)
             """
 
         plate_positions = []
@@ -371,10 +358,10 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         for i in xrange(plates):
 
             plate_positions.append(
-                self._imageDictionaries[pos][plate_position_keys[i]])
+                self._image_models[pos][plate_position_keys[i]])
 
         self._project_image.set_grid(
-            self._imageDictionaries[pos]['File'],
+            self._image_models[pos]['File'],
             plate_positions,
             save_name=os.sep.join((
                 self._outdataDir,
@@ -475,12 +462,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         meta_data = self._metaData
 
         ## IMAGES
-        self._imageDictionaries = project_log.get_image_entries(
-            self._firstPassFile)
-        if self._lastImage is not None:
-            self._imageDictionaries[:self._lastImage + 1] #include zero
+        self._image_models = project_log.get_image_entries(self._firstPassFile)
 
-        if len(self._imageDictionaries) == 0:
+        if self._lastImage is not None:
+            self._image_models[:self._lastImage + 1] #include zero
+
+        if len(self._image_models) == 0:
             self._logger.critical(
                 "ANALYSIS: There are no images to analyse, aborting")
 
@@ -489,29 +476,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._logger.info(
             "ANALYSIS: A total of " +
             "{0} images to analyse in project with UUID {1}".format(
-                len(self._imageDictionaries), meta_data['UUID']))
+                len(self._image_models), meta_data['UUID']))
 
-        meta_data['Images'] = len(self._imageDictionaries)
-
-        return True
-
-    def _check_sanity(self):
-
-        #
-        # SANITY CHECK
-        #
-
-        if support.get_run_will_do_something(
-                self._suppressAnalysis,
-                self._watchGraph,
-                self._metaData,
-                self._imageDictionaries) is False:
-
-            """
-            In principle, if user requests to supress analysis of other
-            colonies than the one watched -- then there should be one
-            watched and that one needs a pinning matrice.
-            """
-            return False
+        meta_data['Images'] = len(self._image_models)
 
         return True

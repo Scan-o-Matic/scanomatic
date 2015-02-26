@@ -55,3 +55,11 @@ class XMLModel(model.Model):
                                        exclude_measures=exclude_measures,
                                        make_short_tag_version=make_short_tag_version,
                                        short_tag_measure=short_tag_measure)
+
+
+class ImageModel(model.Model):
+
+    def __init__(self, path="", grayscale_values=None, grayscale_targets=None):
+
+        super(ImageModel, self).__init__(path=path, grayscale_values=grayscale_values,
+                                         grayscale_targets=grayscale_targets)
