@@ -392,16 +392,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         if self._job.analysis_config_file:
             self._update_job_from_config_file()
 
-        """
-        #1st tries to set from explicit path to where project is
-        #2nd tries to set from path where first pass file is
-        #3rd tries to set from runInstructions path
-        self._filePathBase = os.path.abspath(os.path.dirname(
-            self._safeCfgGet(
-                "Analysis", "basePath", self._safeCfgGet(
-                    "First Pass", "path", runInstructions))))
-        """
-
         inits.append(self._check_fixture())
         inits.append(self._check_pinning())
         inits.append(self._set_image_dictionary())
