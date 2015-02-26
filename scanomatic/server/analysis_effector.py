@@ -23,7 +23,6 @@ import time
 #
 
 import proc_effector
-import scanomatic.io.project_log as project_log
 import scanomatic.io.xml.writer as xml_writer
 import scanomatic.io.image_data as image_data
 import scanomatic.imageAnalysis.support as support
@@ -199,8 +198,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         if self._running:
             self.add_message("Cannot change settings while running")
 
-        self._metaData = None
-
         if self._job.analysis_config_file:
             self._update_job_from_config_file()
 
@@ -213,95 +210,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
     def _update_job_from_config_file(self):
 
         config = ConfigParser(allow_no_value=True)
-        config.readfp(open(self.))
+        config.readfp(open(self._analysis_job.analysis_config_file))
         AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Analysis")))
         AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Output")))
-
-    def _load_first_pass_file(self, path, pms, localFixture):
-
-        #
-        # CHECK ANALYSIS-FILE FROM FIRST PASS
-        #
-
-        if not os.path.isfile(path):
-            return False
-
-        self._firstPassFile = path
-
-        ## META-DATA
-        meta_data = project_log.get_meta_data(
-            path=path)
-
-        ### METE-DATA BACK COMPATIBILITY
-        for key, val in (('Version', 0), ('UUID', None),
-                        ('Manual Gridding', None), ('Prefix', ""),
-                        ('Project ID', ""), ('Scanner Layout ID', "")):
-
-            if key not in meta_data:
-                meta_data[key] = val
-
-        ### OVERWRITE META-DATA WITH USER INPUT
-        if pms is not None:
-            meta_data['Pinning Matrices'] = pms
-            self._logger.info(
-                'Pinning matrices overridden with: {0}'.format(
-                    pms))
-
-        if localFixture:
-            meta_data['Fixture'] = None
-            self._logger.info('Local fixture copy to be used')
-
-        self._metaData = meta_data
-
-        return True
-
-    def _check_fixture(self):
-
-        meta_data = self._metaData
-
-        #### Test to find Fixture
-        if ('Fixture' not in meta_data or
-                support.get_finds_fixture(meta_data['Fixture']) is False):
-
-            self._logger.critical(
-                'ANALYSIS: Could not localize fixture settings')
-            return False
-
-        return True
-
-    def _check_pinning(self):
-
-        meta_data = self._metaData
-
-        #### Test if any pinning matrices
-        if meta_data['Pinning Matrices'] is None:
-            self._logger.critical(
-                "ANALYSIS: need some pinning matrices to analyse anything")
-            return False
-
-        return True
-
-    def _set_image_dictionary(self):
-
-        meta_data = self._metaData
-
-        ## IMAGES
-        self._first_pass_results = project_log.get_image_entries(self._firstPassFile)
-
-        if self._lastImage is not None:
-            self._first_pass_results[:self._lastImage + 1] #include zero
-
-        if len(self._first_pass_results) == 0:
-            self._logger.critical(
-                "ANALYSIS: There are no images to analyse, aborting")
-
-            return False
-
-        self._logger.info(
-            "ANALYSIS: A total of " +
-            "{0} images to analyse in project with UUID {1}".format(
-                len(self._first_pass_results), meta_data['UUID']))
-
-        meta_data['Images'] = len(self._first_pass_results)
-
-        return True

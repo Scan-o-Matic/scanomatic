@@ -159,7 +159,7 @@ class Project_Image():
                         "adjustments to {0}, plate non-existent'.format(k))
     '''
 
-    def set_grid(self, im_path, plate_positions, save_name=None):
+    def set_grid(self, image_model, save_name=None):
 
         if save_name is None:
              save_name=os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
