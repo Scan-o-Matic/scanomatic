@@ -37,7 +37,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         model.output_directory = cls._get_absolute_path(model.output_directory, base_path)
 
     @classmethod
-    def _get_absolute_path(cls, model, path, base_path):
+    def _get_absolute_path(cls, path, base_path):
 
         if os.path.abspath(path) != path:
             return os.path.join(base_path, path)
