@@ -382,85 +382,15 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._firstImg = True
         return True
 
-    def _safeCfgGet(self, section, item, runKey, defaultValue=None):
-
-        if runKey in self._runInstructions:
-            return self._runInstructions[runKey]
-
-        try:
-
-            defaultValue = self._config.get(section, item)
-
-        except:
-
-            pass
-
-        return defaultValue
-
-    def setup(self, *lostArgs, **runInstructions):
+    def setup(self, *args, **kwargs):
 
         if self._running:
-            self.add_message("Cannot change settings while runnig")
+            self.add_message("Cannot change settings while running")
 
         self._metaData = None
 
-        inits = []
-        self._runInstructions = runInstructions
-        self._config = ConfigParser(allow_no_value=True)
-        if ('configFile' in runInstructions):
-            self._config.readfp(open(runInstructions['configFile']))
-
-        self._filePathBase = os.path.dirname(runInstructions['inputFile'])
-
-        inits.append(self._load_first_pass_file(
-            runInstructions['inputFile'],
-            self._safeCfgGet("Experiment", "pms", "pinningMatrices"),
-            self._safeCfgGet("Analysis", "localFixture", "localFixture", 
-                                False)))
-
-        self._lastImage = self._safeCfgGet("Analysis", "lastImage", 
-                "lastImage", None)
-
-        self._outdataDir = support.verify_outdata_directory(os.path.join(
-            self._filePathBase,
-            self._safeCfgGet("Analysis", "outputDir",
-                "outputDirectory", "analysis")))
-
-        self._watchGraph = self._safeCfgGet("Analysis", "watchPosition",
-                "watchPosition")
-
-        self._gridImageIndices = self._safeCfgGet(
-                "Analysis", "gridImageIndices", "gridImageIndices", [])
-
-        self._suppressAnalysis = self._safeCfgGet(
-            "Analysis", "supressUnwatched", "supressUnwatched", False)
-
-        self._xmlFormat = self._safeCfgGet(
-            "Output", "xmlFormat", "xmlFormat", {
-                'short': True, 'omit_compartments': [],
-                'omit_measures': []})
-
-        self._gridArraySettings = self._safeCfgGet(
-            "Analysis", "gridArraySetting", 'gridArraySettings', 
-            {'animate': False})
-
-        self._griddingSettings = self._safeCfgGet(
-            "Analysis", "griddingSettings", "griddSettings",
-            {'use_otsu': True, 'median_coeff': 0.99,
-            'manual_threshold': 0.05})
-
-        """
-        self._gridTimes = self._safeCfgGet(
-            "Analysis", "gridTimes", [])
-        """
-        
-        self._gridCellSettings = self._safeCfgGet(
-            "Analysis", "gridCellSettings", "gridCellSettings",
-            {'blob_detect': 'default'})
-
-        self._gridCorrection = self._safeCfgGet(
-            "Analysis", "gridCorrection", "gridCorrection", None)
-
+        if self._job.analysis_config_file:
+            self._update_job_from_config_file()
 
         """
         #1st tries to set from explicit path to where project is
@@ -486,6 +416,73 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                     {k: v for k, v in zip(
                         ("First Pass File", "Fixture", "Pinning", "Images",
                          "It all makes sense"), inits)}))
+
+    def _update_job_from_config_file(self):
+
+        self._config = ConfigParser(allow_no_value=True)
+        if ('configFile' in runInstructions):
+            self._config.readfp(open(runInstructions['configFile']))
+
+        self._filePathBase = os.path.dirname(runInstructions['inputFile'])
+
+        inits.append(self._load_first_pass_file(
+            runInstructions['inputFile'],
+            self._safeCfgGet("Experiment", "pms", "pinningMatrices"),
+            self._safeCfgGet("Analysis", "localFixture", "localFixture",
+                                False)))
+
+        self._lastImage = self._safeCfgGet("Analysis", "lastImage",
+                "lastImage", None)
+
+        self._outdataDir = support.verify_outdata_directory(os.path.join(
+            self._filePathBase,
+            self._safeCfgGet("Analysis", "outputDir",
+                "outputDirectory", "analysis")))
+
+        self._watchGraph = self._safeCfgGet("Analysis", "watchPosition",
+                "watchPosition")
+
+        self._gridImageIndices = self._safeCfgGet(
+                "Analysis", "gridImageIndices", "gridImageIndices", [])
+
+        self._suppressAnalysis = self._safeCfgGet(
+            "Analysis", "supressUnwatched", "supressUnwatched", False)
+
+        self._xmlFormat = self._safeCfgGet(
+            "Output", "xmlFormat", "xmlFormat", {
+                'short': True, 'omit_compartments': [],
+                'omit_measures': []})
+
+        self._gridArraySettings = self._safeCfgGet(
+            "Analysis", "gridArraySetting", 'gridArraySettings',
+            {'animate': False})
+
+        self._griddingSettings = self._safeCfgGet(
+            "Analysis", "griddingSettings", "griddSettings",
+            {'use_otsu': True, 'median_coeff': 0.99,
+            'manual_threshold': 0.05})
+
+        self._gridCellSettings = self._safeCfgGet(
+            "Analysis", "gridCellSettings", "gridCellSettings",
+            {'blob_detect': 'default'})
+
+        self._gridCorrection = self._safeCfgGet(
+            "Analysis", "gridCorrection", "gridCorrection", None)
+
+    def _safeCfgGet(self, section, item, runKey, defaultValue=None):
+
+        if runKey in self._runInstructions:
+            return self._runInstructions[runKey]
+
+        try:
+
+            defaultValue = self._config.get(section, item)
+
+        except:
+
+            pass
+
+        return defaultValue
 
     def _load_first_pass_file(self, path, pms, localFixture):
 

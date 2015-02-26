@@ -45,6 +45,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._times = None
         self._data = None
         self._analysis_base_path = None
+        self._phenotyper = None
 
     @property
     def progress(self):
@@ -83,7 +84,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._analysis_base_path = image_data.Image_Data.path2dataPathTuple(self._feature_job.analysis_directory)[0]
 
         """
-        #DEBUG CODE
+        # DEBUG CODE
         import numpy as np
         np.save(os.path.join(self._analysisBase, "debug.npy"), self._data)
         np.save(os.path.join(self._analysisBase, "debugTimes.npy"), self._times)
