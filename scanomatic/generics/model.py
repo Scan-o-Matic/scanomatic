@@ -43,6 +43,10 @@ class Model(object):
 
             self.__dict__[attr] = value
 
+    def __contains__(self, item):
+
+        return  item in self.__dict__
+
     @classmethod
     def _hasSetFieldTypes(cls):
 

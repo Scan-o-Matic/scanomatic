@@ -31,6 +31,7 @@ import scanomatic.io.paths as paths
 import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
 #
 # CLASSES
@@ -55,8 +56,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._specific_statuses['current_image_index'] = 'current_image_index'
 
         self._allowed_calls['setup'] = self.setup
-
         self._iteration_index = None
+        self._analysis_job = job.content_model
 
     @property
     def current_image_index(self):
@@ -392,87 +393,18 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         if self._job.analysis_config_file:
             self._update_job_from_config_file()
 
-        inits.append(self._check_fixture())
-        inits.append(self._check_pinning())
-        inits.append(self._set_image_dictionary())
-        inits.append(self._check_sanity())
-
-        self._allow_start = sum(inits) == len(inits)
-        self._stopping = not self._allow_start
+        self._allow_start = AnalysisModelFactory.validate(self._analysis_job)
 
         if not self._allow_start:
-            self._logger.error(
-                "Can't perform analysis, not all init steps OK: {0}".format(
-                    {k: v for k, v in zip(
-                        ("First Pass File", "Fixture", "Pinning", "Images",
-                         "It all makes sense"), inits)}))
+            self._logger.error("Can't perform analysis; instructions don't validate.")
+            self.add_message("Can't perform analysis; instructions don't validate.")
 
     def _update_job_from_config_file(self):
 
-        self._config = ConfigParser(allow_no_value=True)
-        if ('configFile' in runInstructions):
-            self._config.readfp(open(runInstructions['configFile']))
-
-        self._filePathBase = os.path.dirname(runInstructions['inputFile'])
-
-        inits.append(self._load_first_pass_file(
-            runInstructions['inputFile'],
-            self._safeCfgGet("Experiment", "pms", "pinningMatrices"),
-            self._safeCfgGet("Analysis", "localFixture", "localFixture",
-                                False)))
-
-        self._lastImage = self._safeCfgGet("Analysis", "lastImage",
-                "lastImage", None)
-
-        self._outdataDir = support.verify_outdata_directory(os.path.join(
-            self._filePathBase,
-            self._safeCfgGet("Analysis", "outputDir",
-                "outputDirectory", "analysis")))
-
-        self._watchGraph = self._safeCfgGet("Analysis", "watchPosition",
-                "watchPosition")
-
-        self._gridImageIndices = self._safeCfgGet(
-                "Analysis", "gridImageIndices", "gridImageIndices", [])
-
-        self._suppressAnalysis = self._safeCfgGet(
-            "Analysis", "supressUnwatched", "supressUnwatched", False)
-
-        self._xmlFormat = self._safeCfgGet(
-            "Output", "xmlFormat", "xmlFormat", {
-                'short': True, 'omit_compartments': [],
-                'omit_measures': []})
-
-        self._gridArraySettings = self._safeCfgGet(
-            "Analysis", "gridArraySetting", 'gridArraySettings',
-            {'animate': False})
-
-        self._griddingSettings = self._safeCfgGet(
-            "Analysis", "griddingSettings", "griddSettings",
-            {'use_otsu': True, 'median_coeff': 0.99,
-            'manual_threshold': 0.05})
-
-        self._gridCellSettings = self._safeCfgGet(
-            "Analysis", "gridCellSettings", "gridCellSettings",
-            {'blob_detect': 'default'})
-
-        self._gridCorrection = self._safeCfgGet(
-            "Analysis", "gridCorrection", "gridCorrection", None)
-
-    def _safeCfgGet(self, section, item, runKey, defaultValue=None):
-
-        if runKey in self._runInstructions:
-            return self._runInstructions[runKey]
-
-        try:
-
-            defaultValue = self._config.get(section, item)
-
-        except:
-
-            pass
-
-        return defaultValue
+        config = ConfigParser(allow_no_value=True)
+        config.readfp(open(self.))
+        AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Analysis")))
+        AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Output")))
 
     def _load_first_pass_file(self, path, pms, localFixture):
 
