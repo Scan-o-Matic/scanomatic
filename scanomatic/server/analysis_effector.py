@@ -54,6 +54,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._allowed_calls['setup'] = self.setup
         self._analysis_job = job.content_model
+        AnalysisModelFactory.set_absolute_paths(self._analysis_job)
         self._scan_model = None
         self._focus_graph = None
         self._current_image_model = None
@@ -82,9 +83,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         return 0.0
 
+    @property
+    def waiting(self):
+        return not(self._allow_start and self._running)
+
     def next(self):
-        # TODO: Simplify to check if running...
-        if not self._allow_start or not self._running:
+        if self.waiting:
             return super(AnalysisEffector, self).next()
         elif self._current_image_model is None:
             return self._setup_first_iteration()
@@ -176,7 +180,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def _remove_files_from_previous_analysis(self):
 
-        # TODO: Need to convert to absolute
         for p in image_data.Image_Data.iterImagePaths(self._analysis_job.output_directory):
             os.remove(p)
             self._logger.info("Removed pre-existing file '{0}'".format(p))

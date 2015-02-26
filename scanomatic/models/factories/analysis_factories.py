@@ -30,6 +30,20 @@ class AnalysisModelFactory(AbstractModelFactory):
     }
 
     @classmethod
+    def set_absolute_paths(cls, model):
+
+        base_path = os.path.dirname(model.first_pass_file)
+        model.analysis_config_file = cls._get_absolute_path(model.analysis_config_file, base_path)
+        model.output_directory = cls._get_absolute_path(model.output_directory, base_path)
+
+    @classmethod
+    def _get_absolute_path(cls, model, path, base_path):
+
+        if os.path.abspath(path) != path:
+            return os.path.join(base_path, path)
+        return path
+
+    @classmethod
     def _validate_first_pass_file(cls, model):
 
         if cls._is_file(model.first_pass_file) and os.path.abspath(model.first_pass_file) == model.first_pass_file:
