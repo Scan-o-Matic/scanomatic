@@ -44,14 +44,10 @@ class Slice_Error(Exception):
 
 
 class Project_Image():
-    def __init__(
-            self, pinning_matrices, im_path=None, plate_positions=None,
-            animate=False, file_path_base="", fixture_name=None,
-            p_uuid=None, verbose=False, visual=False,
-            suppress_analysis=False,
-            grid_array_settings=None, gridding_settings=None,
-            grid_cell_settings=None, log_version=0,
-            app_config=None, grid_correction=None):
+    def __init__(self, analysis_model, scanning_model):
+
+        self._analysis_model = analysis_model
+        self._scanning_model = scanning_model
 
         #self._logger = logging.getLogger('Analysis Image')
 
@@ -81,10 +77,8 @@ class Project_Image():
         self._file_path_base = file_path_base
 
         #APP CONFIG
-        if app_config is None:
-            self._config = app_config_module.Config()
-        else:
-            self._config = app_config
+        self._app_config = app_config_module.Config()
+
 
         #Fixture setting is used for pinning history in the arrays
         if fixture_name is None:
@@ -97,9 +91,7 @@ class Project_Image():
         self.fixture = first_pass_image.Image(
             fixture_name,
             fixture_directory=fixture_directory,
-            appConfig=self._config)
-
-        self._grayscaleTarget = self.fixture['grayscaleTarget']
+            appConfig=self._app_config)
 
         self.im = None
 
@@ -169,12 +161,15 @@ class Project_Image():
 
     def set_grid(self, im_path, plate_positions, save_name=None):
 
+        if save_name is None:
+             save_name=os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
+
         #self._logger.info("Setting grids from image {0}".format(im_path))
         self._im_path = im_path
         self.load_image()
         if self._im_loaded:
 
-            if self._log_version < self._config.version_first_pass_change_1:
+            if self._log_version < self._app_config.version_first_pass_change_1:
                 scale_factor = 4.0
             else:
                 scale_factor = 1.0
@@ -252,7 +247,7 @@ class Project_Image():
 
             #SET AXIS ORDER DEPENDING ON VERSION
             if (self.fixture['version'] >=
-                    self._config.version_first_pass_change_1):
+                    self._app_config.version_first_pass_change_1):
 
                 dim1 = 1
                 dim2 = 0
@@ -337,39 +332,7 @@ class Project_Image():
 
         return True
 
-    def get_analysis(
-            self, im_path, features, grayscaleSource,
-            watch_colony=None, save_grid_name=None,
-            identifier_time=None,
-            grayscaleTarget=None, image_dict=None):
-
-        """
-            @param im_path: An path to an image
-
-            @param features: A list of pinning grids to look for
-
-            @param grayscaleSource : An array of the grayscale pixelvalues
-
-            @param watch_colony : A particular colony to gather information
-            about.
-
-            @param suppress_other : If only the watched colony should be
-            analysed
-
-            @param save_grid_name : A custom name for the saved image, if none
-            no grid image is saved
-
-            @param identifier_time : A time index to update the identifier with
-
-            @param grayscaleTarget : An array of the targets of the fixtures
-            grayscale.
-
-            @param image_dict : A dictionary of setting for how image is
-            loaded, (see Analysis_Image.load_image)
-
-            The function returns two arrays, one per dimension, of the
-            positions of the spikes and a quality index
-        """
+    def get_analysis(self, image_model):
 
         #
         #   LOAD IMAGE
@@ -398,7 +361,7 @@ class Project_Image():
         #   CONFIG FILE COMPATIBILITY, COORDINATE VALUE SCALINGS
         #
 
-        if self._log_version < self._config.version_first_pass_change_1:
+        if self._log_version < self._app_config.version_first_pass_change_1:
             scale_factor = 4.0
         else:
             scale_factor = 1.0
@@ -445,3 +408,11 @@ class Project_Image():
         """
 
         return self.features
+
+    def _get_grid_image_name(self, image_model):
+
+        if image_model.index in self._analysis_job.grid_images:
+            return os.sep.join((
+                self._analysis_job.output_directory,
+                "grid__time_index_{0}_plate_".format(str(self._iteration_index).zfill(4))))
+        return None

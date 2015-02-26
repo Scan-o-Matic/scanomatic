@@ -26,13 +26,12 @@ import proc_effector
 import scanomatic.io.project_log as project_log
 import scanomatic.io.xml.writer as xml_writer
 import scanomatic.io.image_data as image_data
-import scanomatic.io.app_config as app_config
-import scanomatic.io.paths as paths
 import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.analysis_model import ImageModel
+import scanomatic.imageAnalysis.first_pass_results as first_pass_results
+
 
 #
 # CLASSES
@@ -49,54 +48,48 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         super(AnalysisEffector, self).__init__(job, logger_name="Analysis Effector")
         self._config = None
-        self._metaData = {}
-        self._firstImg = None
 
         self._specific_statuses['progress'] = 'progress'
         self._specific_statuses['total'] = 'total'
         self._specific_statuses['current_image_index'] = 'current_image_index'
 
         self._allowed_calls['setup'] = self.setup
-        self._iteration_index = None
         self._analysis_job = job.content_model
+        self._scan_model = None
+        self._focus_graph = None
+        self._current_image_model = None
 
     @property
     def current_image_index(self):
-
-        if self._iteration_index is None:
-            return -1
-
-        return self._iteration_index
+        if self._current_image_model:
+            return self._current_image_model.index
+        return -1
 
     @property
     def total(self):
-
-        if not self._allow_start or 'Images' not in self._metaData:
-            return -1
-
-        return self._metaData['Images']
+        if self._allow_start and self._scan_model:
+            return self._scan_model.number_of_scans
+        return -1
 
     @property
     def progress(self):
 
         total = float(self.total)
-        if self._firstImg is None:
-            init = 0
-        else:
-            init = 1
+        initiation_weight = 1
 
-        if total > 0 and self._iteration_index is not None:
-            return (init + total - self._iteration_index - 1) / (total + 1)
+        # TODO: Verify this is correct, may underestimate progress
+        if total and self._current_image_model:
+            return (total - self._current_image_model.index) / float(total + initiation_weight)
 
-        return 0
+        return 0.0
 
     def next(self):
         # TODO: Simplify to check if running...
         if not self._allow_start or not self._running:
             return super(AnalysisEffector, self).next()
-        elif self._iteration_index is None:
+        elif self._current_image_model is None:
             return self._setup_first_iteration()
-        elif not self._stopping and self._iteration_index >= 0:
+        elif not self._stopping and self._current_image_model.index > 0:
             return self._analyze_image()
         else:
             return self._finalize_analysis()
@@ -105,9 +98,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             self._xmlWriter.close()
 
-            if self._watchGraph is not None:
+            if self._focus_graph is not None:
                 self._focus_graph.finalize()
-
 
             self._logger.info("ANALYSIS, Full analysis took {0} minutes".format(
                 ((time.time() - self._startTime) / 60.0)))
@@ -119,128 +111,42 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def _analyze_image(self):
 
-        plates = self._plates
-        plate_position_keys = self._plate_position_keys
-
-        #
-        # UPDATING LOOP SPECIFIC VARIABLES
-        #
-
         scan_start_time = time.time()
-        img_dict_pointer = self._image_models[self._iteration_index]
-        image_model = ImageModel()
-        plate_positions = []
+        image_model = self._first_pass_results.get_next_image()
+        if not image_model:
+            self._stopping = True
+            return True
 
-        # PLATE COORDINATES
-        for i in xrange(plates):
+        self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.path))
 
-            plate_positions.append(
-                img_dict_pointer[plate_position_keys[i]])
-
-        # GRID IMAGE SAVE STRING
-        if self._iteration_index in self._gridImageIndices:
-            save_grid_name = os.sep.join((
-                self._outdataDir,
-                "grid__time_{0}_plate_".format(str(self._iteration_index).zfill(4))))
-        else:
-            save_grid_name = None
-
-        #
-        # INFO TO USER
-        #
-
-        self._logger.info("ANALYSIS, Running analysis on '{}'".format(
-            img_dict_pointer['File']))
-
-        #
-        # GET ANALYSIS
-        #
-
-        features = self._project_image.get_analysis(
-            image_model.path,
-            plate_positions,
-            grayscaleSource=image_model.grayscale_values,
-            save_grid_name=save_grid_name,
-            identifier_time=self._iteration_index,
-            grayscaleTarget=image_model.grayscale_targets,
-            image_dict=img_dict_pointer)
+        features = self._project_image.get_analysis(image_model)
 
         if features is None:
             self._logger.warning("No analysis produced for image")
 
-        #
-        # WRITE TO FILES
-        #
+        image_data.Image_Data.writeTimes(self._analysis_job, image_model)
+        image_data.Image_Data.writeImage(self._analysis_job, image_model, features)
 
-        image_data.Image_Data.writeTimes(
-            self._outdataDir, self._iteration_index, img_dict_pointer,
-            overwrite=self._firstImg)
-        image_data.Image_Data.writeImage(
-            self._outdataDir, self._iteration_index, features, plates)
+        self._xmlWriter.write_image_features(image_model, features)
 
-        self._xmlWriter.write_image_features(
-            self._iteration_index, features, img_dict_pointer, plates,
-            self._metaData)
+        if self._focus_graph:
 
-        #
-        # IF WATCHING A COLONY UPDATE WATCH IMAGE
-        #
+            self._focus_graph.add_image(self._project_image.watch_source, self._project_image.watch_blob)
 
-        if (self._watchGraph is not None and
-                self._project_image.watch_source is not None and
-                self._project_image.watch_blob is not None):
-
-            self._focus_graph.add_image(
-                self._project_image.watch_source,
-                self._project_image.watch_blob)
-
-        #
-        # USER INFO
-        #
-
-        self._logger.info(
-            "Image took {0} seconds".format(
-                (time.time() - scan_start_time)))
-
-        #
-        # UPDATE IMAGE_POS
-        #
-
-        self._iteration_index -= 1
-        self._firstImg = False
+        self._logger.info("Image took {0} seconds".format(time.time() - scan_start_time))
 
         return True
 
     def _setup_first_iteration(self):
 
-        # TODO: Make sure iteration is done on time and not index in 1st pass file
-        self._iteration_index = self.total - 1
         self._startTime = time.time()
-        meta_data = self._metaData
+        self._first_pass_results = first_pass_results.FirstPassResults(self._analysis_job.first_pass_file)
 
-        application_config = app_config.Config()
-
-        #
-        # CLEANING UP PREVIOUS FILES
-        #
-
-        # TODO: Need to convert to absolute
-        for p in image_data.Image_Data.iterImagePaths(self._analysis_job.output_directory):
-            os.remove(p)
-
-        self._loger.info("Removed pre-existing file '{0}'".format(p))
-        #
-        # INITIALIZE WATCH GRAPH IF REQUESTED
-        #
+        self._remove_files_from_previous_analysis()
 
         if self._analysis_job.focus_position is not None:
-
             self._focus_graph = support.Watch_Graph(
                 self._analysis_job.focus_position, self._analysis_job.output_directory)
-
-        #
-        # INITIALIZE XML WRITER
-        #
 
         self._xmlWriter = xml_writer.XML_Writer(
             self._analysis_job.output_directory, self._analysis_job.xml_model)
@@ -253,91 +159,40 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             raise StopIteration
 
-        #
-        # GET NUMBER OF PLATES AND THEIR NAMES IN THIS ANALYSIS
-        #
-
-        self._plates, self._plate_position_keys = support.get_active_plates(
-            meta_data, self._analysis_job.suppress_non_focal, self._analysis_job.focus_position,
-            config=application_config)
-
-        plates = self._plates
-        plate_position_keys = self._plate_position_keys
-
         self._logger.info(
             'ANALYSIS: These plates ({0}) will be analysed: {1}'.format(
-                plates, plate_position_keys))
+                self._first_pass_results.plates,
+                self._first_pass_results.plate_position_keys))
 
-        if self._analysis_job.suppress_non_focal is True:
+        self._project_image = analysis_image.Project_Image(self._analysis_job, self._scan_model)
 
-            meta_data['Pinning Matrices'] = [meta_data['Pinning Matrices'][self._watchGraph[0]]]
-            self._watchGraph[0] = 0  # Since only this one plate is left, it is now 1st
-
-        #
-        # INITIALIZING THE IMAGE OBJECT
-        #
-
-        self._project_image = analysis_image.Project_Image(
-            meta_data['Pinning Matrices'],
-            file_path_base=self._filePathBase,
-            fixture_name=meta_data['Fixture'],
-            p_uuid=meta_data['UUID'],
-            suppress_analysis=self._suppressAnalysis,
-            grid_array_settings=self._gridArraySettings,
-            gridding_settings=self._griddingSettings,
-            grid_cell_settings=self._gridCellSettings,
-            log_version=meta_data['Version'],
-            app_config=application_config,
-            grid_correction=self._gridCorrection
-        )
-
-        '''
-        # MANUAL GRIDS
-        if self._manual_grid and meta_data['Manual Gridding'] is not None:
-
-            self._logger.info("ANALYSIS: Will implement manual adjustments of "
-                        "grid on plates {0}".format(meta_data['Maunual Gridding'].keys()))
-
-            self._project_image.set_manual_ideal_grids(meta_data['Manual Grid'])
-        '''
-
-        #
-        # WRITING XML HEADERS AND OPENS SCAN TAG
-        #
-
-        self._xmlWriter.write_header(meta_data, plates)
+        self._xmlWriter.write_header(self._first_pass_results.meta_data, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
 
-        #
-        # SETTING GRID FROM REASONABLE TIME POINT
-        if len(self._gridImageIndices) > 0:
-            pos = max(self._gridImageIndices)
-            if pos >= len(self._image_models):
-                pos = len(self._image_models) - 1
+        index_for_gridding = self._get_index_for_gridding()
+
+        self._project_image.set_grid(self._first_pass_results[index_for_gridding])
+
+        return True
+
+    def _remove_files_from_previous_analysis(self):
+
+        # TODO: Need to convert to absolute
+        for p in image_data.Image_Data.iterImagePaths(self._analysis_job.output_directory):
+            os.remove(p)
+            self._logger.info("Removed pre-existing file '{0}'".format(p))
+
+    def _get_index_for_gridding(self):
+
+        if self._analysis_job.grid_images:
+            pos = max(self._analysis_job.grid_images)
+            if pos >= len(self._first_pass_results):
+                pos = len(self._first_pass_results) - 1
         else:
 
-            pos = len(self._image_models) - 1
-            """
-            pos = (len(self._imageDictionaries) > application_config.default_gridtime and
-                application_config.default_gridtime or len(self._imageDictionaries) - 1)
-            """
+            pos = len(self._first_pass_results) - 1
 
-        plate_positions = []
-
-        for i in xrange(plates):
-
-            plate_positions.append(
-                self._image_models[pos][plate_position_keys[i]])
-
-        self._project_image.set_grid(
-            self._image_models[pos]['File'],
-            plate_positions,
-            save_name=os.sep.join((
-                self._outdataDir,
-                "grid___origin_plate_")))
-
-        self._firstImg = True
-        return True
+        return pos
 
     def setup(self, *args, **kwargs):
 
@@ -431,12 +286,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         meta_data = self._metaData
 
         ## IMAGES
-        self._image_models = project_log.get_image_entries(self._firstPassFile)
+        self._first_pass_results = project_log.get_image_entries(self._firstPassFile)
 
         if self._lastImage is not None:
-            self._image_models[:self._lastImage + 1] #include zero
+            self._first_pass_results[:self._lastImage + 1] #include zero
 
-        if len(self._image_models) == 0:
+        if len(self._first_pass_results) == 0:
             self._logger.critical(
                 "ANALYSIS: There are no images to analyse, aborting")
 
@@ -445,8 +300,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._logger.info(
             "ANALYSIS: A total of " +
             "{0} images to analyse in project with UUID {1}".format(
-                len(self._image_models), meta_data['UUID']))
+                len(self._first_pass_results), meta_data['UUID']))
 
-        meta_data['Images'] = len(self._image_models)
+        meta_data['Images'] = len(self._first_pass_results)
 
         return True

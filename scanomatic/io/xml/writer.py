@@ -23,7 +23,7 @@ import re
 #
 
 import scanomatic.io.logger as logger
-
+from scanomatic.io.paths import Paths
 #
 # CLASSES
 #
@@ -59,12 +59,12 @@ class XML_Writer(object):
 
     COMPARTMENTS = ('cell', 'blob', 'background')
 
-    def __init__(self, output_directory, xml_format, paths):
+    def __init__(self, output_directory, xml_format):
 
         self._directory = output_directory
         self._formatting = xml_format
         self._logger = logger.Logger("XML writer")
-        self._paths = paths
+        self._paths = Paths()
 
         self._outdata_full = os.sep.join((output_directory, "analysis.xml"))
         self._outdata_slim = os.sep.join((output_directory,
@@ -304,8 +304,7 @@ class XML_Writer(object):
                     ['time', 't'][tag_format],
                     img_dict_pointer['Time']))
 
-    def write_image_features(self, image_pos, features, img_dict_pointer,
-                             plates, meta_data):
+    def write_image_features(self, image_model, features):
 
         self._write_image_head(image_pos, features, img_dict_pointer)
 

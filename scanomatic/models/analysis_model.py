@@ -14,8 +14,7 @@ class AnalysisModel(model.Model):
 
     def __init__(self, first_pass_file="", analysis_config_file="", pinning_matrices=tuple(), use_local_fixture=False,
                  stop_at_image=-1, output_directory="", focus_position=None, suppress_non_focal=False,
-                 animate_focal=False, grid_images=None,
-                 grid_correction=None, grid_model=None, xml_model=None):
+                 animate_focal=False, grid_images=None, grid_model=None, xml_model=None):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -33,17 +32,17 @@ class AnalysisModel(model.Model):
                                             suppress_non_focal=suppress_non_focal,
                                             animate_focal=animate_focal,
                                             grid_images=grid_images,
-                                            grid_correction=grid_correction,
                                             grid_model=grid_model,
                                             xml_model=xml_model)
 
 
 class GridModel(model.Model):
 
-    def __init__(self, use_utso=True, median_coefficient=0.99, manual_threshold=0.05):
+    def __init__(self, use_utso=True, median_coefficient=0.99, manual_threshold=0.05, grid=None, gridding_offsets=None):
 
         super(GridModel, self).__init__(use_utso=use_utso, median_coefficient=median_coefficient,
-                                        manual_threshold=manual_threshold)
+                                        manual_threshold=manual_threshold, grid=grid,
+                                        gridding_offsets=gridding_offsets)
 
 
 class XMLModel(model.Model):
@@ -59,7 +58,7 @@ class XMLModel(model.Model):
 
 class ImageModel(model.Model):
 
-    def __init__(self, path="", grayscale_values=None, grayscale_targets=None):
+    def __init__(self, path="", grayscale_values=None, grayscale_targets=None, time=0, index=0):
 
         super(ImageModel, self).__init__(path=path, grayscale_values=grayscale_values,
-                                         grayscale_targets=grayscale_targets)
+                                         grayscale_targets=grayscale_targets, time=time, index=index)
