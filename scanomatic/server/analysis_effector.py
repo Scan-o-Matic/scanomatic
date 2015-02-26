@@ -202,43 +202,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             "Image took {0} seconds".format(
                 (time.time() - scan_start_time)))
 
-        """
-        for handler in self._logger.handlers:
-            handler.flush()
-        """
-
-        """
-        resource_analysis_support.print_progress_bar(
-            fraction=(self._metaData['Images'] - self._iteratorI) /
-            float(self._metaData['Images']),
-            size=60, start_time=start_time)
-        """
         #
         # UPDATE IMAGE_POS
         #
 
         self._iteration_index -= 1
         self._firstImg = False
-
-        """
-        #DEBUGGING memory
-        print "--"
-        objgraph.show_growth(limit=20)
-
-        for dbgI in range(40):
-            objgraph.show_chain(
-                objgraph.find_backref_chain(
-                    random.choice(objgraph.by_type(
-                        'list')), inspect.ismodule),
-                filename='memDebug{0}.{1}.png'.format(
-                    str(self._iteratorI).zfill(4), dbgI))
-
-                #self._project_image[0][(0, 0)].blob.filter_array, inspect.ismodule),
-
-            print ">im", dbgI
-        random.choice(objgraph.by_type(
-            'instance')),
-        """
 
         return True
 
