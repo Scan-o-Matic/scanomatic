@@ -49,32 +49,12 @@ class Project_Image():
         self._analysis_model = analysis_model
         self._scanning_model = scanning_model
 
-        #self._logger = logging.getLogger('Analysis Image')
-
-        self.p_uuid = p_uuid
-        self._log_version = log_version
-
-        self._im_path = im_path
         self._im_loaded = False
 
-        self._plate_positions = plate_positions
-        self._pinning_matrices = pinning_matrices
         self._ref_plate_d1 = None
         self._ref_plate_d2 = None
-        self._grid_correction = grid_correction
 
-        self.verbose = verbose
-        self.visual = visual
-        self.suppress_analysis = suppress_analysis
-
-        self.grid_array_settings = grid_array_settings
-        self.gridding_settings = gridding_settings
-        self.grid_cell_settings = grid_cell_settings
-
-        #PATHS
         self._paths = paths.Paths()
-
-        self._file_path_base = file_path_base
 
         #APP CONFIG
         self._app_config = app_config_module.Config()

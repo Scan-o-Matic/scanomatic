@@ -21,7 +21,10 @@ class FirstPassResults(object):
             self._loadPath(self._file_path, sort_mode=sort_mode)
 
     @classmethod
-    def create_from_data(cls, path, meta_data, image_models, used_models=[]):
+    def create_from_data(cls, path, meta_data, image_models, used_models=None):
+
+        if used_models is None:
+            used_models=[]
 
         new = cls()
         new._file_path = path
@@ -79,11 +82,7 @@ class FirstPassResults(object):
     @property
     def plates(self):
 
-        return self._plates
-
-    @property
-    def plate_position_keys(self):
-        return self._plate_position_keys
+        return self[-1].plates
 
     @property
     def last_index(self):

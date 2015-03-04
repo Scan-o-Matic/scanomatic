@@ -59,10 +59,10 @@ class XML_Writer(object):
 
     COMPARTMENTS = ('cell', 'blob', 'background')
 
-    def __init__(self, output_directory, xml_format):
+    def __init__(self, output_directory, xml_model):
 
         self._directory = output_directory
-        self._formatting = xml_format
+        self._formatting = xml_model
         self._logger = logger.Logger("XML writer")
         self._paths = Paths()
 
@@ -169,10 +169,8 @@ class XML_Writer(object):
 
     def write_header(self, meta_data, plates):
 
-        tag_format = self._formatting['short']
-        omit_compartments = self._formatting['omit_compartments']
-        omit_measures = self._formatting['omit_measures']
-
+        formatting = self._formatting
+        use_short_tags = formatting.make_short_tag_version
         self._open_tags.insert(0, 'project')
 
         mac = self._get_computer_ID()
@@ -184,77 +182,76 @@ class XML_Writer(object):
                 f.write('<project>')
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['version', 'ver'][tag_format], __version__))
+                    ['version', 'ver'][use_short_tags], __version__))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['computer-mac', 'mac'][tag_format],
+                    ['computer-mac', 'mac'][use_short_tags],
                     mac))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['start-time', 'start-t'][tag_format],
-                    meta_data['Start Time']))
+                    ['start-time', 'start-t'][use_short_tags],
+                    meta_data.start_time))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['prefix', 'pref'][tag_format], meta_data['Prefix']))
+                    ['prefix', 'pref'][use_short_tags], meta_data.name))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['project_tag', 'ptag'][tag_format], meta_data['Project ID']))
+                    ['project_tag', 'ptag'][use_short_tags], meta_data.project_id))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['scanner_layout_tag', 'sltag'][tag_format],
-                    meta_data['Scanner Layout ID']))
+                    ['scanner_layout_tag', 'sltag'][use_short_tags],
+                    meta_data.scanner_layout_id))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['description', 'desc'][tag_format],
-                    meta_data['Description']))
+                    ['description', 'desc'][use_short_tags],
+                    meta_data.description))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['number-of-scans', 'n-scans'][tag_format],
-                    meta_data['Images']))
+                    ['number-of-scans', 'n-scans'][use_short_tags],
+                    meta_data.images))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['interval-time', 'int-t'][tag_format],
-                    meta_data['Interval']))
+                    ['interval-time', 'int-t'][use_short_tags],
+                    meta_data.interval))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['plates-per-scan', 'n-plates'][tag_format],
-                    plates))
+                    ['plates-per-scan', 'n-plates'][use_short_tags],
+                    len(plates)))
 
                 f.write(self.XML_OPEN.format(
-                    ['pinning-matrices', 'matrices'][tag_format]))
+                    ['pinning-matrices', 'matrices'][use_short_tags]))
 
                 p_string = ""
-                pms = meta_data['Pinning Matrices']
 
-                for pos in xrange(len(pms)):
-                    if pms[pos] is not None:
+                for pos, pinning in enumerate(meta_data.pinnings):
+                    if pinning is not None:
 
                         f.write(self.XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(
-                                ['pinning-matrix', 'p-m'][tag_format],
-                                ['index', 'i'][tag_format], pos,
-                                pms[pos]))
+                                ['pinning-matrix', 'p-m'][use_short_tags],
+                                ['index', 'i'][use_short_tags], pos,
+                                pinning))
 
-                        p_string += "Plate {0}: {1}\t".format(pos, pms[pos])
+                        p_string += "Plate {0}: {1}\t".format(pos, pinning)
 
                 self._logger.debug(p_string)
 
                 f.write(self.XML_CLOSE.format(
-                        ['pinning-matrices', 'matrices'][tag_format]))
+                        ['pinning-matrices', 'matrices'][use_short_tags]))
 
                 f.write(self.XML_OPEN.format('d-types'))
 
                 for d_type, info in self.DATA_TYPES.items():
 
                     if (f is not self._file_handles['slim'] or
-                            d_type[0] not in omit_measures):
+                            d_type[0] not in formatting.exclude_measures):
 
                         f.write(self.XML_SINGLE_W_THREE_PARAM.format(
                                 'd-type',
-                                ['measure', 'm'][tag_format],
-                                d_type[tag_format],
-                                ['unit', 'u'][tag_format],
+                                ['measure', 'm'][use_short_tags],
+                                d_type[use_short_tags],
+                                ['unit', 'u'][use_short_tags],
                                 info[0],
-                                ['type', 't'][tag_format],
+                                ['type', 't'][use_short_tags],
                                 info[1]))
 
                 f.write(self.XML_CLOSE.format('d-types'))
@@ -264,7 +261,7 @@ class XML_Writer(object):
                 for compartment in self.COMPARTMENTS:
 
                     if (f is not self._file_handles['slim'] or
-                            compartment not in omit_compartments):
+                            compartment not in formatting.exclude_compartments):
 
                         f.write(self.XML_OPEN_CONT_CLOSE.format(
                             'compartment', compartment))
@@ -279,16 +276,16 @@ class XML_Writer(object):
 
         self._open_tags.insert(0, 'scans')
 
-    def _write_image_head(self, image_pos, features, img_dict_pointer):
+    def _write_image_head(self, image_model, features):
 
-        tag_format = self._formatting['short']
+        tag_format = self._formatting.make_short_tag_version
 
         for f in self._file_handles.values():
 
             f.write(self.XML_OPEN_W_ONE_PARAM.format(
                 ['scan', 's'][tag_format],
                 ['index', 'i'][tag_format],
-                image_pos))
+                image_model.index))
 
             f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['scan-valid', 'ok'][tag_format],
@@ -297,20 +294,16 @@ class XML_Writer(object):
             if features is not None:
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['calibration', 'cal'][tag_format],
-                    img_dict_pointer['grayscale_values']))
-
-                f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['time', 't'][tag_format],
-                    img_dict_pointer['Time']))
+                    image_model.time))
 
     def write_image_features(self, image_model, features):
 
-        self._write_image_head(image_pos, features, img_dict_pointer)
+        self._write_image_head(image_model, features)
 
-        tag_format = self._formatting['short']
-        omit_compartments = self._formatting['omit_compartments']
-        omit_measures = self._formatting['omit_measures']
+        tag_format = self._formatting.make_short_tag_version
+        omit_compartments = self._formatting.exclue_compartments
+        omit_measures = self._formatting.exclude_measures
         fh = self._file_handles['full']
         fhs = self._file_handles['slim']
 
@@ -323,28 +316,20 @@ class XML_Writer(object):
                     ['plates', 'pls'][tag_format]))
 
             #FOR EACH PLATE
-            for i in xrange(plates):
+            for plate in image_model.plates:
 
+                index = plate.index
                 for f in self._file_handles.values():
 
                     f.write(self.XML_OPEN_W_ONE_PARAM.format(
                         ['plate', 'p'][tag_format],
                         ['index', 'i'][tag_format],
-                        i))
-
-                    f.write(self.XML_OPEN_CONT_CLOSE.format(
-                        ['plate-matrix', 'pm'][tag_format],
-                        meta_data['Pinning Matrices'][i]))
-
-                    """ DEPRECATED TAG
-                    f.write(XML_OPEN_CONT_CLOSE.format('R',
-                        str(project_image.R[i])))
-                    """
+                        index))
 
                     f.write(self.XML_OPEN.format(
                         ['grid-cells', 'gcs'][tag_format]))
 
-                for x, rows in enumerate(features[i]):
+                for x, rows in enumerate(features[index]):
 
                     for y, cell in enumerate(rows):
 

@@ -162,10 +162,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             raise StopIteration
 
-        self._logger.info(
-            'ANALYSIS: These plates ({0}) will be analysed: {1}'.format(
-                self._first_pass_results.plates,
-                self._first_pass_results.plate_position_keys))
 
         self._image = analysis_image.Project_Image(self._analysis_job, self._scan_model)
 

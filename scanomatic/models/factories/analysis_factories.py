@@ -317,7 +317,7 @@ class MetaDataFactory(AbstractModelFactory):
         ("name",): str,
         ("description",): str,
         ("interval",): float,
-        ("measures",): int,
+        ("images",): int,
         ("uuid",): str,
         ("fixture", ): str,
         ("scanner",): str,
@@ -333,7 +333,7 @@ class MetaDataFactory(AbstractModelFactory):
 
         for (old_name, new_name) in [("Start Time", "start_time"),
                 ("Prefix", "name"), ("Interval", "interval"), ("Description", "description"),
-                ("Version", "version"), ("UUID", "uuid"), ("Measures", "measures"), ("Fixture", "fixture"),
+                ("Version", "version"), ("UUID", "uuid"), ("Measures", "images"), ("Fixture", "fixture"),
                 ("Scanner", "scanner"), ("Pinning Matrices", "pinnings"), ("Project ID", "project_id"),
                 ("Scanner Layout ID", "scanner_layout_id")]:
 
