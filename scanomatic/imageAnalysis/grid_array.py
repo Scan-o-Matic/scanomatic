@@ -51,24 +51,32 @@ class Grid_Array():
         None: None
     }
 
-    def __init__(self, parent, identifier, pinning_matrix,
-                 visual=False, suppress_analysis=False,
-                 grid_array_settings=None, gridding_settings=None,
-                 grid_cell_settings=None):
+    def __init__(self, identifier, pinning, fixture, analysis_model):
 
-        self._parent = weakref.ref(parent) if parent else None
 
-        #self.logger = logging.getLogger("Grid Array {0}".format(identifier))
 
-        if parent is None:
+        self._paths = paths.Paths()
+        self.fixture = fixture
+        self._identifier = self._get_identifier(identifier)
+        self.watch_source = None
+        self.watch_blob = None
+        self.watch_results = None
+        self._pinning_matrix = pinning
+        self._analysis_model = analysis_model
+        self._polynomial_coeffs = self.get_calibration_polynomial_coeffs()
+        self._guess_grid_cell_size = None
+        self._grid_cell_size = None
+        self._grid_cells = None
+        self._grid = None
+        self._features = []
+        self._first_analysis = True
+        self._im_dim_order = None
 
-            self._paths = paths.Paths()
-            self.fixture = None
 
-        else:
+    def __getitem__(self, key):
+        return self._grid_cells[key[0]][key[1]]
 
-            self._paths = parent._paths
-            self.fixture = parent.fixture
+    def _get_identifier(self, identifier):
 
         if isinstance(identifier, int):
 
@@ -82,61 +90,7 @@ class Grid_Array():
 
             identifier = [identifier[0], identifier[1]]
 
-        self._identifier = identifier
-
-        self.watch_source = None
-        self.watch_blob = None
-        self.watch_results = None
-
-        self._pinning_matrix = None
-
-        default_settings = {'animate': False}
-
-        if grid_array_settings is None:
-
-            grid_array_settings = default_settings
-
-        for k in default_settings.keys():
-
-            if k in grid_array_settings.keys():
-
-                setattr(self, k, grid_array_settings[k])
-
-            else:
-
-                setattr(self, k, default_settings[k])
-
-        self.visual = visual
-        self.suppress_analysis = suppress_analysis
-
-        if grid_cell_settings is None:
-
-            grid_cell_settings = dict()
-
-        grid_cell_settings['polynomial_coeffs'] = \
-            self.get_calibration_polynomial_coeffs()
-
-        self.grid_cell_settings = grid_cell_settings
-
-        self._guess_grid_cell_size = None
-        self._grid_cell_size = None
-        self._grid_cells = None
-        self._grid = None
-
-        self._features = []
-
-        self._first_analysis = True
-
-        self._pinning_matrix = pinning_matrix
-
-        self._im_dim_order = None
-
-        if pinning_matrix is not None:
-            self._init_pinning_matrix()
-
-    def __getitem__(self, key):
-        return self._grid_cells[key[0]][key[1]]
-
+        return identifier
     #
     # PROPERTIES
     #
@@ -393,16 +347,8 @@ class Grid_Array():
             #self.logger.info("ANALYSIS GRID: Image saved!")
 
     def _init_pinning_matrix(self):
-        """
-            set_pinning_matrix sets the pinning_matrix.
 
-            The function takes the following argument:
-
-            @pinning_matrix  A list/tuple/array where first position is
-                            the number of rows to be detected and second
-                            is the number of columns to be detected.
-
-        """
+        #TODO: Rewrite
         pinning_matrix = self._pinning_matrix
 
         self._guess_grid_cell_size = self._APPROXIMATE_GRID_CELL_SIZES[

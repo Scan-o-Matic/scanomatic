@@ -23,7 +23,7 @@ import numpy as np
 import grid_array
 import first_pass_image
 import support
-import scanomatic.io.paths as paths
+from scanomatic.io.paths import Paths
 import scanomatic.io.app_config as app_config_module
 
 #
@@ -43,39 +43,40 @@ class Slice_Error(Exception):
 #
 
 
-class Project_Image():
+class Project_Image(object):
+
     def __init__(self, analysis_model, scanning_model):
 
         self._analysis_model = analysis_model
         self._scanning_model = scanning_model
 
+        self.fixture = self._load_fixture()
+
         self._im_loaded = False
-
-        self._ref_plate_d1 = None
-        self._ref_plate_d2 = None
-
-        self._paths = paths.Paths()
+        self.im = None
 
         #APP CONFIG
         self._app_config = app_config_module.Config()
 
+        self.features = []
 
-        #Fixture setting is used for pinning history in the arrays
-        if fixture_name is None:
-            fixture_name = self._paths.experiment_local_fixturename
-            fixture_directory = self._file_path_base
+        self._grid_arrays = self._get_grid_arrays()
+
+    def _load_fixture(self):
+
+        paths = Paths()
+        if self._analysis_model.use_local_fixture or not self._scanning_model.fixture_name:
+            fixture_name = paths.experiment_local_fixturename
+            fixture_directory = os.path.dirname(self._analysis_model.first_pass_file)
         else:
-            fixture_name = self._paths.get_fixture_path(fixture_name, only_name=True)
+            fixture_name = paths.get_fixture_path(self._scanning_model.fixture_name, only_name=True)
             fixture_directory = None
 
-        self.fixture = first_pass_image.Image(
+        return first_pass_image.Image(
             fixture_name,
             fixture_directory=fixture_directory,
             appConfig=self._app_config)
 
-        self.im = None
-
-        self.set_pinning_matrices(pinning_matrices)
 
     def __getitem__(self, key):
 
@@ -85,59 +86,21 @@ class Project_Image():
 
         return self._file_path_base
 
-    def set_pinning_matrices(self, pinning_matrices):
+    def _get_grid_arrays(self):
 
-        self.R = []
-        self.features = []
-        self._grid_arrays = []
-        self._pinning_matrices = pinning_matrices
+        grid_arrays = {}
 
-        for a in xrange(len(pinning_matrices)):
+        for index, pinning in enumerate(self._analysis_model.pinning_matrices):
 
-            if pinning_matrices[a] is not None:
+           if pinning and self._plate_is_analysed(index):
 
-                self._grid_arrays.append(grid_array.Grid_Array(
-                    self, (a,),
-                    pinning_matrices[a], visual=self.visual,
-                    suppress_analysis=self.suppress_analysis,
-                    grid_array_settings=self.grid_array_settings,
-                    gridding_settings=self.gridding_settings,
-                    grid_cell_settings=self.grid_cell_settings))
+                grid_arrays[index] = grid_array.Grid_Array(index, pinning, self.fixture, self._analysis_model)
 
-                self.features.append(None)
-                self.R.append(None)
+        return grid_arrays
 
-        if len(pinning_matrices) > len(self._grid_arrays):
+    def _plate_is_analysed(self, index):
 
-            """
-            self._logger.info(
-                "Analysis will run on {0} plates out of {1}".format(
-                len(self._grid_arrays), len(pinning_matrices)))
-            """
-
-    '''
-    def set_manual_ideal_grids(self, grid_adjustments):
-        """Overrides grid detection with a specified grid supplied in grid
-        adjustments
-
-        @param grid_adjustments:    A dictionary of pinning grids with plate
-                                    numbers as keys and items being tuples of
-                                    row and column position lists.
-        """
-
-        for k in grid_adjustments.keys():
-
-            if self._pinning_matrices[k] is not None:
-
-                try:
-
-                    self._grid_arrays[k].set_manual_ideal_grid(grid_adjustments[k])
-
-                except IndexError:
-
-                    self._logger.error('Failed to set manual grid "+ \
-                        "adjustments to {0}, plate non-existent'.format(k))
-    '''
+        return not self._analysis_model.suppress_non_focal or index == self._analysis_model.focus_position[0]
 
     def set_grid(self, image_model, save_name=None):
 
