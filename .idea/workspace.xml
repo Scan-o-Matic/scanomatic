@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py" afterPath="$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py" afterPath="$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py" />
     </list>
     <ignored path="scan-o-matic.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -92,11 +92,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="analysis_image.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="analysis_image.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.22628951" vertical-offset="839" max-vertical-offset="3930">
-              <caret line="65" column="68" selection-start-line="65" selection-start-column="68" selection-end-line="65" selection-end-column="68" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1019" max-vertical-offset="3930">
+              <caret line="69" column="23" selection-start-line="69" selection-start-column="23" selection-end-line="69" selection-end-column="23" />
               <folding>
                 <element signature="e#344#353#0" expanded="true" />
                 <element signature="e#4695#4706#0" expanded="false" />
@@ -106,21 +106,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="first_pass_image.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/first_pass_image.py">
+      <file leaf-file-name="grid_array.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="4120" max-vertical-offset="15225">
-              <caret line="297" column="37" selection-start-line="297" selection-start-column="22" selection-end-line="297" selection-end-column="37" />
+            <state vertical-scroll-proportion="0.66137564" vertical-offset="765" max-vertical-offset="7635">
+              <caret line="76" column="31" selection-start-line="76" selection-start-column="31" selection-end-line="76" selection-end-column="31" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="grid_array.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py">
+      <file leaf-file-name="first_pass_image.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/first_pass_image.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-4.970588" vertical-offset="656" max-vertical-offset="8895">
-              <caret line="55" column="0" selection-start-line="55" selection-start-column="0" selection-end-line="55" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="4120" max-vertical-offset="15225">
+              <caret line="297" column="37" selection-start-line="297" selection-start-column="22" selection-end-line="297" selection-end-column="37" />
               <folding />
             </state>
           </provider>
@@ -186,8 +186,8 @@
         <option value="$PROJECT_DIR$/scanomatic/models/analysis_model.py" />
         <option value="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" />
         <option value="$PROJECT_DIR$/scanomatic/io/xml/writer.py" />
-        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py" />
         <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py" />
+        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py" />
       </list>
     </option>
   </component>
@@ -1043,14 +1043,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-4.970588" vertical-offset="656" max-vertical-offset="8895">
-          <caret line="55" column="0" selection-start-line="55" selection-start-column="0" selection-end-line="55" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/models/scanning_model.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="285" max-vertical-offset="375">
@@ -1077,13 +1069,21 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.22628951" vertical-offset="839" max-vertical-offset="3930">
-          <caret line="65" column="68" selection-start-line="65" selection-start-column="68" selection-end-line="65" selection-end-column="68" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="2369" max-vertical-offset="3930">
+          <caret line="69" column="23" selection-start-line="69" selection-start-column="23" selection-end-line="69" selection-end-column="23" />
           <folding>
             <element signature="e#344#353#0" expanded="true" />
             <element signature="e#4695#4706#0" expanded="false" />
             <element signature="e#4755#5183#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.66137564" vertical-offset="765" max-vertical-offset="7635">
+          <caret line="76" column="31" selection-start-line="76" selection-start-column="31" selection-end-line="76" selection-end-column="31" />
+          <folding />
         </state>
       </provider>
     </entry>

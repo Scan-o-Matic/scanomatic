@@ -53,28 +53,33 @@ class Grid_Array():
 
     def __init__(self, identifier, pinning, fixture, analysis_model):
 
-
-
         self._paths = paths.Paths()
+
         self.fixture = fixture
         self._identifier = self._get_identifier(identifier)
+        self._analysis_model = analysis_model
+        self._pinning_matrix = pinning
+
         self.watch_source = None
         self.watch_blob = None
         self.watch_results = None
-        self._pinning_matrix = pinning
-        self._analysis_model = analysis_model
+
         self._polynomial_coeffs = self.get_calibration_polynomial_coeffs()
+
         self._guess_grid_cell_size = None
         self._grid_cell_size = None
-        self._grid_cells = None
+        self._grid_cells = []
         self._grid = None
+
         self._features = []
         self._first_analysis = True
-        self._im_dim_order = None
-
 
     def __getitem__(self, key):
-        return self._grid_cells[key[0]][key[1]]
+        try:
+            key = key[0] * self._pinning_matrix[0] + key[1]
+        except TypeError:
+            pass
+        return self._grid_cells[key]
 
     def _get_identifier(self, identifier):
 
@@ -91,44 +96,10 @@ class Grid_Array():
             identifier = [identifier[0], identifier[1]]
 
         return identifier
-    #
-    # PROPERTIES
-    #
 
     @property
     def features(self):
         return self._features
-
-    @property
-    def R(self):
-        return None
-
-    #
-    # SET functions
-    #
-
-    """ Legacy methods, could possibly be useful 2013-08-22
-    def set_manual_ideal_grid(self, grid):
-
-        best_fit_rows = grid[0]
-        r = len(best_fit_rows)
-        best_fit_columns = grid[1]
-        c = len(best_fit_columns)
-
-        X = np.array(best_fit_rows * c).reshape(c, r).T
-        Y = np.array(best_fit_columns * r).reshape(r, c)
-        self._grid = np.zeros((2, r, c), dtype=np.float)
-        self._grid[0, ...] = X
-        self._grid[1, ...] = Y
-        self._set_grid_cell_size()
-        self.unset_history()
-
-    def set_manual_grid(self, grid):
-
-        self._grid = grid
-        self._set_grid_cell_size()
-        self.unset_history()
-    """
 
     def _set_grid_cell_size(self):
 
@@ -136,44 +107,6 @@ class Grid_Array():
         dy = (self._grid[1, :, 1:] - self._grid[1, :, :-1]).mean()
 
         self._grid_cell_size = map(lambda x: int(round(x)), (dx, dy))
-
-        """ Should be set based on im and not depend on im-orientation
-
-        if self._im_dim_order is not None:
-            self._grid_cell_size = [
-                    self._grid_cell_size[self._im_dim_order[0]],
-                    self._grid_cell_size[self._im_dim_order[1]]]
-
-        """
-
-    def unset_history(self):
-
-        grid_history = self.fixture['history']
-
-        p_uuid = self._parent().p_uuid
-        plate = self._identifier[1]
-
-        if p_uuid is not None:
-
-            grid_history.unset_gridding_parameters(
-                p_uuid, self._pinning_matrix, plate)
-
-    def set_history(self, center, spacings):
-
-        grid_history = self.fixture['history']
-
-        p_uuid = self._parent().p_uuid
-        plate = self._identifier[1]
-
-        if p_uuid is not None:
-
-            grid_history.set_gridding_parameters(
-                p_uuid, self._pinning_matrix,
-                plate, center, spacings)
-
-        else:
-            #self.logger.error("Gridding could not be saved because of no uuid")
-            pass
 
     def set_grid(self, im, save_name=None, grid_correction=None):
 
@@ -186,29 +119,12 @@ class Grid_Array():
         grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])],
                       self._pinning_matrix[int(self._im_dim_order[1])])
 
-        #self.logger.info("Setting a grid with format {0}".format(
-        #    grid_shape))
-
-        #gh = np.array(self.get_history())
-        #self.logger.debug("Grid History {0}".format(gh))
-
         #If too little data, use very rough guesses
         if True:
             validate_parameters = False
             expected_spacings = self._guess_grid_cell_size
             expected_center = tuple([s / 2.0 for s in im.shape])
-        """
-        elif gh.size >= 40:  # Require 10 projects (4 measures per project)
-            gh_median = np.median(gh, axis=0)
-            validate_parameters = True
-            expected_spacings = tuple(gh_median[2:])
-            expected_center = tuple(gh_median[:2])
-        if True:  # If some measures (3-9), use them
-            validate_parameters = False  # But don't enforce
-            gh_mean = np.mean(gh, axis=0)
-            expected_spacings = tuple(gh_mean[2:])
-            expected_center = tuple(gh_mean[:2])
-        """
+
 
         grd, X, Y, center, spacings, adjusted_values = grid.get_grid(
             im,
