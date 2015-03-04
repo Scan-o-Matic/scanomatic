@@ -28,6 +28,8 @@ class FirstPassResults(object):
         new._meta_data = MetaDataFactory.copy(meta_data)
         new._image_models = [AnalysisImageFactory.copy(model) for model in image_models]
         new._used_models = [AnalysisImageFactory.copy(model) for model in used_models]
+        new._loading_length = len(new._image_models)
+        return  new
 
     def _loadPath(self, path, sort_mode=FIRST_PASS_SORTING.Time):
 
@@ -41,6 +43,8 @@ class FirstPassResults(object):
                 AnalysisImageFactory.create_many_update_times(project_log.get_image_entries(path))
             )
 
+        self._loading_length = len(self._image_models)
+
     def __len__(self):
 
         return self._loading_length
@@ -49,19 +53,21 @@ class FirstPassResults(object):
 
         if item < 0:
             item %= len(self._image_models)
-        return sorted(self._image_models, key="time")[item]
+        return sorted(self._image_models, key=lambda x:x.time)[item]
 
     def __add__(self, other):
 
         start_time_difference = other.meta_data.start_time - self.meta_data.start_time
+        other_start_index = len(self)
         other_image_models = []
         for index in range(len(other)):
             model = AnalysisImageFactory.copy(other[index])
             model.time += start_time_difference
+            model.index += other_start_index
             other_image_models.append(model)
 
         other_image_models += self._image_models
-        other_image_models = sorted(other_image_models, key="time")
+        other_image_models = sorted(other_image_models, key=lambda x:x.time)
 
         return FirstPassResults.create_from_data(self._file_path, self._meta_data, other_image_models, self._used_models)
 

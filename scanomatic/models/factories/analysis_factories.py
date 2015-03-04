@@ -7,17 +7,88 @@ from scanomatic.models.analysis_model import *
 
 def _rename_old(settings, old_name, new_name):
 
-    if (new_name not in settings and old_name in settings):
-        settings[new_name] = settings[old_name]
-    del settings[old_name]
+    if old_name in settings:
+        if not new_name in settings:
+            settings[new_name] = settings[old_name]
+        del settings[old_name]
+
+
+class GridModelFactory(AbstractModelFactory):
+    _MODEL = GridModel
+    STORE_SECTION_SERIALIZERS = {
+        ('use_utso',): bool,
+        ("median_coefficient",): float,
+        ("manual_threshold",): float
+    }
+
+    @classmethod
+    def _validate_use_utso(cls, model):
+
+        if isinstance(model.use_utso, bool):
+            return True
+        return model.FIELD_TYPES.use_otsu
+
+    @classmethod
+    def _validate_median_coefficient(cls, model):
+
+        if isinstance(model.median_coefficient, float):
+            return True
+        return model.FIELD_TYPES.median_coefficient
+
+    @classmethod
+    def _validate_manual_threshold(cls, model):
+
+        if isinstance(model.manual_threshold, float):
+            return True
+        return model.FIELD_TYPES.manual_threshold
+
+
+class XMLModelFactory(AbstractModelFactory):
+    _MODEL = XMLModel
+    STORE_SECTION_SERIALIZERS = {
+        ("exclude_compartments",): tuple,
+        ("exclude_measures",): tuple,
+        ("make_short_tag_version",): bool,
+        ("short_tag_measure",): MEASURES
+    }
+
+    @classmethod
+    def _validate_exclude_compartments(cls, model):
+
+        if (cls._is_tuple_or_list(model.exclude_compartments) and
+                all(compartment in COMPARTMENTS for compartment in model.exclude_compartments)):
+            return True
+        return model.FIELD_TYPES.exclude_compartments
+
+    @classmethod
+    def _validate_exclude_measures(cls, model):
+
+        if (cls._is_tuple_or_list(model.exclude_measures) and
+                all(measure in MEASURES for measure in model.exclude_measures)):
+            return True
+        return model.FIELD_TYPES.exclude_measures
+
+    @classmethod
+    def _validate_make_short_tag_version(cls, model):
+
+        if isinstance(model.make_short_tag_version, bool):
+            return True
+        return model.FIELD_TYPES.make_short_tag_version
+
+    @classmethod
+    def _validate_short_tag_measure(cls, model):
+
+        if model.short_tage_measure in MEASURES:
+            return True
+        return model.FIELD_TYPES.short_tag_measure
 
 
 class AnalysisModelFactory(AbstractModelFactory):
     _MODEL = AnalysisModel
     STORE_SECTION_HEAD = ("first_pass_file",)
     _SUB_FACTORIES = {
-        GridModel: GridModelFactory,
-        XMLModel: XMLModelFactory
+        XMLModel: XMLModelFactory,
+        GridModel: GridModelFactory
     }
     STORE_SECTION_SERIALIZERS = {
         ('first_pass_file',): str,
@@ -166,75 +237,6 @@ class AnalysisModelFactory(AbstractModelFactory):
         return model.FIELD_TYPES.xml_model
 
 
-class GridModelFactory(AbstractModelFactory):
-    _MODEL = GridModel
-    STORE_SECTION_SERIALIZERS = {
-        ('use_utso',): bool,
-        ("median_coefficient",): float,
-        ("manual_threshold",): float
-    }
-
-    @classmethod
-    def _validate_use_utso(cls, model):
-
-        if isinstance(model.use_utso, bool):
-            return True
-        return model.FIELD_TYPES.use_otsu
-
-    @classmethod
-    def _validate_median_coefficient(cls, model):
-
-        if isinstance(model.median_coefficient, float):
-            return True
-        return model.FIELD_TYPES.median_coefficient
-
-    @classmethod
-    def _validate_manual_threshold(cls, model):
-
-        if isinstance(model.manual_threshold, float):
-            return True
-        return model.FIELD_TYPES.manual_threshold
-
-
-class XMLModelFactory(AbstractModelFactory):
-    _MODEL = XMLModel
-    STORE_SECTION_SERIALIZERS = {
-        ("exclude_compartments",): tuple,
-        ("exclude_measures",): tuple,
-        ("make_short_tag_version",): bool,
-        ("short_tag_measure",): MEASURES
-    }
-
-    @classmethod
-    def _validate_exclude_compartments(cls, model):
-
-        if (cls._is_tuple_or_list(model.exclude_compartments) and
-                all(compartment in COMPARTMENTS for compartment in model.exclude_compartments)):
-            return True
-        return model.FIELD_TYPES.exclude_compartments
-
-    @classmethod
-    def _validate_exclude_measures(cls, model):
-
-        if (cls._is_tuple_or_list(model.exclude_measures) and
-                all(measure in MEASURES for measure in model.exclude_measures)):
-            return True
-        return model.FIELD_TYPES.exclude_measures
-
-    @classmethod
-    def _validate_make_short_tag_version(cls, model):
-
-        if isinstance(model.make_short_tag_version, bool):
-            return True
-        return model.FIELD_TYPES.make_short_tag_version
-
-    @classmethod
-    def _validate_short_tag_measure(cls, model):
-
-        if model.short_tage_measure in MEASURES:
-            return True
-        return model.FIELD_TYPES.short_tag_measure
-
 class AnalysisImageFactory(AbstractModelFactory):
 
     _MODEL = ImageModel
@@ -270,6 +272,7 @@ class AnalysisImageFactory(AbstractModelFactory):
             if plate_name in settings and settings[plate_name]:
                 (x1, y1), (x2, y2) = settings[plate_name]
                 settings["plates"].append(ImagePlateFactory.create(index=index, x1=x1, x2=x2, y1=y1, y2=y2))
+                del settings[plate_name]
 
         return super(AnalysisImageFactory, cls).create(**settings)
 
@@ -277,7 +280,7 @@ class AnalysisImageFactory(AbstractModelFactory):
     def create_many_update_indices(cls, iterable):
 
         models = [cls.create(**data) for data in iterable]
-        for (index, m) in enumerate(sorted(models, key="time")):
+        for (index, m) in enumerate(sorted(models, key=lambda x:x.time)):
             m.index=index
             yield m
 
