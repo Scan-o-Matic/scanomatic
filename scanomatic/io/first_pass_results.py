@@ -1,0 +1,97 @@
+__author__ = 'martin'
+
+import scanomatic.io.project_log as project_log
+from enum import Enum
+from scanomatic.models.factories.analysis_factories import AnalysisImageFactory, MetaDataFactory
+
+FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
+
+class FirstPassResults(object):
+
+    def __init__(self, path="", sort_mode=FIRST_PASS_SORTING.Time):
+
+        self._file_path = path
+        self._meta_data = None
+        self._plates = None
+        self._plate_position_keys = None
+        self._image_models = []
+        self._used_models = []
+        self._loading_length = 0
+        if path:
+            self._loadPath(self._file_path, sort_mode=sort_mode)
+
+    @classmethod
+    def create_from_data(cls, path, meta_data, image_models, used_models=[]):
+
+        new = cls()
+        new._file_path = path
+        new._meta_data = MetaDataFactory.copy(meta_data)
+        new._image_models = [AnalysisImageFactory.copy(model) for model in image_models]
+        new._used_models = [AnalysisImageFactory.copy(model) for model in used_models]
+
+    def _loadPath(self, path, sort_mode=FIRST_PASS_SORTING.Time):
+
+        self._meta_data = MetaDataFactory.create(**project_log.get_meta_data(path))
+        if sort_mode is FIRST_PASS_SORTING.Time:
+            self._image_models = list(
+                AnalysisImageFactory.create_many_update_indices(project_log.get_image_entries(path))
+            )
+        else:
+            self._image_models = list(
+                AnalysisImageFactory.create_many_update_times(project_log.get_image_entries(path))
+            )
+
+    def __len__(self):
+
+        return self._loading_length
+
+    def __getitem__(self, item):
+
+        if item < 0:
+            item %= len(self._image_models)
+        return sorted(self._image_models, key="time")[item]
+
+    def __add__(self, other):
+
+        start_time_difference = other.meta_data.start_time - self.meta_data.start_time
+        other_image_models = []
+        for index in range(len(other)):
+            model = AnalysisImageFactory.copy(other[index])
+            model.time += start_time_difference
+            other_image_models.append(model)
+
+        other_image_models += self._image_models
+        other_image_models = sorted(other_image_models, key="time")
+
+        return FirstPassResults.create_from_data(self._file_path, self._meta_data, other_image_models, self._used_models)
+
+    @property
+    def meta_data(self):
+
+        return self._meta_data
+
+    @property
+    def plates(self):
+
+        return self._plates
+
+    @property
+    def plate_position_keys(self):
+        return self._plate_position_keys
+
+    @property
+    def last_index(self):
+
+        return len(self._image_models) - 1
+
+    def recycle(self):
+
+        self._image_models += self._used_models
+        self._used_models = []
+
+    def get_next_image_model(self):
+
+        model = self[-1]
+        self._image_models.remove(model)
+        self._used_models.append(model)
+        return model

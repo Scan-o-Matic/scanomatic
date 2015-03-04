@@ -23,116 +23,90 @@ import proc_effector
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 import scanomatic.dataProcessing.phenotyper as phenotyper
-from scanomatic.server.proc_effector import ProcTypes
+from scanomatic.models.rpc_job_models import JOB_TYPE
+import scanomatic.models.factories.features_factory as feature_factory
 
 #
 # CLASSES
 #
 
 
-class PhenotypeExtractionEffector(proc_effector.ProcEffector):
+class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
+    TYPE = JOB_TYPE.Features
 
-    TYPE = ProcTypes.EXTRACTION
-
-    def __init__(self, identifier, label):
+    def __init__(self, job):
 
         self._paths = paths.Paths()
 
-        super(PhenotypeExtractionEffector, self).__init__(
-            identifier, label,
-            loggerName="Phenotype Extractor '{0}'".format(label))
-
-        self._type = "Phenotype Extractor"
-        self._specificStatuses['progress'] = 'progress'
-
+        super(PhenotypeExtractionEffector, self).__init__(job, logger_name="Phenotype Extractor '{0}'".format(job.id))
+        self._specific_statuses['progress'] = 'progress'
+        self._feature_job = job.content_model
         self._progress = 0
+        self._times = None
+        self._data = None
+        self._analysis_base_path = None
+        self._phenotyper = None
 
     @property
     def progress(self):
 
         return self._progress is None and 1 or self._progress
 
-    def setup(self, *lostArgs, **phenotyperKwargs):
+    def setup(self, *args, **kwargs):
 
         if self._started:
-
             self._logger.warning("Can't setup when started")
             return False
 
-        path = None
-
-        if "runDirectory" in phenotyperKwargs:
-            path = phenotyperKwargs["runDirectory"]
-            del phenotyperKwargs["runDirectory"]
-
-        if path is None or not os.path.isdir(os.path.dirname(path)):
-
-            self._logger.error("Path '{0}' does not exist".format(
-                path is None and 'NONE' or
-                os.path.abspath(os.path.dirname(path))))
+        if feature_factory.FeaturesFactory.validate(self._feature_job) is not True:
+            self._logger.warning("Can't setup, instructions don't validate")
             return False
 
-        if (len(lostArgs) > 0):
-            self._logger.warning("Setup got unknown args {0}".format(
-                lostArgs))
-
         self._logger.info("Loading files image data from '{0}'".format(
-            path))
+            self._feature_job.analysis_directory))
 
-        times, data = image_data.Image_Data.readImageDataAndTimes(path)
+        times, data = image_data.Image_Data.readImageDataAndTimes(self._feature_job.analysis_directory)
 
         if None in (times, data):
             self._logger.error(
                 "Could not filter image times to match data or no data. " +
                 "Do you have the right directory?")
-            self.addMessage("There is no image data in given directory or " +
-                            "the image data is corrupt")
+
+            self.add_message("There is no image data in given directory or " +
+                             "the image data is corrupt")
+
             self._running = False
             self._stopping = True
-            return None
+            return False
 
         self._times = times
         self._data = data
-        #TODO: All parameters not understood by initiation of phenotyper needs
-        #to be separated out and dealt with in other ways
-        self._phenotyperKwargs = phenotyperKwargs
-        self._analysisBase = image_data.Image_Data.path2dataPathTuple(path)[0]
+        self._analysis_base_path = image_data.Image_Data.path2dataPathTuple(self._feature_job.analysis_directory)[0]
 
         """
-        #DEBUG CODE
+        # DEBUG CODE
         import numpy as np
         np.save(os.path.join(self._analysisBase, "debug.npy"), self._data)
         np.save(os.path.join(self._analysisBase, "debugTimes.npy"), self._times)
         """
 
-        self._allowStart = True
+        self._allow_start = True
 
     def next(self):
 
-        if not self._allowStart:
+        if not self._allow_start:
             return super(PhenotypeExtractionEffector, self).next()
 
         if self._stopping:
             self._progress = None
             self._running = False
 
-        if self._iteratorI is None:
-            self._startTime = time.time()
+        if self._iteration_index is None:
+            self._setup_extraction_iterator()
 
-            curPhenotyper = phenotyper.Phenotyper(
-                dataObject=self._data,
-                timeObject=self._times,
-                itermode=True,
-                **self._phenotyperKwargs)
-
-            self._phenoIter = curPhenotyper.iterAnalyse()
-            self._curPhenotyper = curPhenotyper
-            self._iteratorI = 1
-            self._logger.info("Starting phenotype extraction")
-
-        if (not self._paused and self._running):
+        if not self._paused and self._running:
             try:
-                self._progress = self._phenoIter.next()
+                self._progress = self._phenotype_iterator.next()
             except StopIteration:
                 self._running = False
                 self._progress = None
@@ -140,14 +114,27 @@ class PhenotypeExtractionEffector(proc_effector.ProcEffector):
                 "One phenotype extraction iteration completed. " +
                 "Resume {0}".format(self._running))
 
-        if (not self._running):
-            if (not self._stopping):
-                self._curPhenotyper.savePhenotypes(
-                    path=os.path.join(self._analysisBase,
-                                    self._paths.phenotypes_raw_csv),
+        if not self._running:
+            if not self._stopping:
+                self._phenotyper.savePhenotypes(
+                    path=os.path.join(self._analysis_base_path,
+                                      self._paths.phenotypes_raw_csv),
                     askOverwrite=False)
 
-                self._curPhenotyper.saveState(self._analysisBase,
-                                            askOverwrite=False)
+                self._phenotyper.saveState(self._analysis_base_path,
+                                           askOverwrite=False)
 
             raise StopIteration
+
+    def _setup_extraction_iterator(self):
+
+        self._startTime = time.time()
+
+        self._phenotyper = phenotyper.Phenotyper(
+            dataObject=self._data,
+            timeObject=self._times,
+            itermode=True)
+
+        self._phenotype_iterator = self._phenotyper.iterAnalyse()
+        self._iteration_index = 1
+        self._logger.info("Starting phenotype extraction")

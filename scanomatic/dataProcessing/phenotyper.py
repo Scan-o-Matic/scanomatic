@@ -425,6 +425,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def _calculatePhenotypes(self):
 
+        # TODO? Add "OD" levels 0-5%, 5-15, ... linear regresions.
+
         def _linReg(X, Y):
             return linregress(X, Y)[0::4]
 

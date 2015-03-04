@@ -13,115 +13,75 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from time import sleep
+import time
 import os
-from enum import Enum
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 import scanomatic.io.logger as logger
+import scanomatic.models.rpc_job_models as rpc_job_models
+import scanomatic.generics.decorators as decorators
 
 #
 # CLASSES
 #
 
 
-class ProcTypes(Enum):
-    
-    SCANNER = ("Scanner Job", 0)
-    REBUILD = ("Rebuild Job", 1)
-    ANALYSIS = ("Analysis Job", 10)
-    EXTRACTION = ("Feature Extraction Job", 20)
-    UNKNOWN = ("Unknown Job", -1)
-    
-    @property
-    def intRepresentation(self):
-        return self.value[1]
+class ProcessEffector(object):
 
-    @property
-    def textRepresentation(self):
-        return self.value[0]
+    TYPE = rpc_job_models.JOB_TYPE.Unknown
 
-    @classmethod
-    def GetByIntRepresentation(cls, value):
-        for member in cls.__members__.values():
-            if value == member.intRepresentation:
-                return member
-        return cls.GetDefault()
-    
-    @classmethod
-    def GetDefault(cls):
-        return cls.UNKNOWN
+    def __init__(self, job, logger_name="Process Effector"):
 
+        self._job = job
+        self._logger = logger.Logger(logger_name)
 
-class ProcEffector(object):
+        self._fail_vunerable_calls = tuple()
 
-    TYPE = ProcTypes.GetDefault()
+        self._specific_statuses = {}
 
-    def __init__(self, identifier, label, loggerName="Process Effector"):
+        self._allowed_calls = {
+            'pause': self.pause,
+            'resume': self.resume,
+            'setup': self.setup,
+            'start': self.start,
+            'status': self.status,
+            'stop': self.stop
+        }
 
-        self._identifier = identifier
-        self._label = label
-        self._logger = logger.Logger(loggerName)
-        self._type = "Generic"
-
-        self._failVunerableCalls = tuple()
-
-        self._specificStatuses = {}
-        self._allowedCalls = {}
-        self._allowedCalls['pause'] = self.pause
-        self._allowedCalls['resume'] = self.resume
-        self._allowedCalls['setup'] = self.setup
-        self._allowedCalls['start'] = self.start
-        self._allowedCalls['status'] = self.status
-        self._allowedCalls['stop'] = self.stop
-        
-        self._allowStart = False
+        self._allow_start = False
         self._running = False
         self._started = False
         self._stopping = False
         self._paused = False
 
-        self._gateMessages = False
         self._messages = []
 
-        self._iteratorI = None
+        self._iteration_index = None
         self._pid = os.getpid()
 
         self._startTime = None
+        decorators.register_type_lock(self)
 
     @property
-    def type(self):
-        return self._type
-
-    @property
-    def runTime(self):
+    def run_time(self):
 
         if self._startTime is None:
             return 0
         else:
             return time.time() - self._startTime
 
+    @property
+    def fail_vunerable_calls(self):
+
+        return self._fail_vunerable_calls
 
     @property
-    def failVunerableCalls(self):
-
-        return self._failVunerableCalls
-
-    @property
-    def keepAlive(self):
+    def keep_alive(self):
 
         return not self._started and not self._stopping or self._running
-
-    @property
-    def identifier(self):
-        return self._identifier
-
-    @property
-    def label(self):
-        return self._label
 
     def pause(self, *args, **kwargs):
 
@@ -133,57 +93,47 @@ class ProcEffector(object):
 
     def setup(self, *args, **kwargs):
 
-        if (len(args) > 0 or len(kwargs) > 0):
+        if 0 < len(args) or 0 < len(kwargs):
             self._logger.warning(
                 "Setup is not overwritten, {0} and {1} lost.".format(
                     args, kwargs))
 
     def start(self, *args, **kwargs):
 
-        if (self._allowStart):
+        if self._allow_start:
             self._running = True
 
     def status(self, *args, **kwargs):
 
-        return dict([('id', self._identifier),
+        return dict([('id', self._job.id),
                      ('pid', self._pid),
-                     ('label', self._label),
-                     ('type', self._type),
+                     ('type', self.TYPE.text),
                      ('running', self._running),
                      ('paused', self._paused),
-                     ('runTime', self.runTime), 
+                     ('runTime', self.run_time),
                      ('stopping', self._stopping),
                      ('messages', self.messages)] +
                     [(k, getattr(self, v)) for k, v in
-                     self._specificStatuses.items()])
+                     self._specific_statuses.items()])
 
     def stop(self, *args, **kwargs):
 
         self._stopping = True
 
-    def _messageGate(self):
-        while self._gateMessages:
-            sleep(0.07)
-        self._gateMessages = True
-
+    @decorators.type_lock
     @property
     def messages(self):
-
-        self._messageGate()
         msgs = self._messages
         self._messages = []
-        self._gateMessages = False
         return msgs
 
-    def addMessage(self, msg):
-
-        self._messageGate()
+    @decorators.type_lock
+    def add_message(self, msg):
         self._messages.append(msg)
-        self._gateMessages = False
 
     @property
-    def allowedCalls(self):
-        return self._allowedCalls
+    def allow_calls(self):
+        return self._allowed_calls
 
     def __iter__(self):
 
@@ -192,7 +142,7 @@ class ProcEffector(object):
     def next(self):
 
         while self._running is False and not self._stopping:
-            sleep(0.1)
+            time.sleep(0.1)
             self._logger.debug(
                 "Pre-running and waiting run {0} and stop {1}".format(
                     self._running, self._stopping))

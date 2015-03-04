@@ -15,7 +15,6 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
         ('content_model',): AbstractModelFactory,
         ('pid',): int}
 
-
     @classmethod
     def _validate_pid(cls, model):
 

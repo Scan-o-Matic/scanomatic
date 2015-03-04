@@ -62,6 +62,15 @@ class AbstractModelFactory(object):
         return cls._MODEL(**settings)
 
     @classmethod
+    def update(cls, model, **settings):
+
+        for parameter, value in settings.items():
+
+            if parameter in model:
+
+                setattr(model, parameter, value)
+
+    @classmethod
     def copy(cls, model):
 
         if cls._verify_correct_model(model):

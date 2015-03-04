@@ -8,6 +8,9 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+import os
+import time
+from subprocess import Popen
 #
 # INTERNAL DEPENDENCIES
 #
@@ -133,7 +136,7 @@ class _PipeEffector(object):
                     self._logger.error("Could not send response '{0}'".format(
                         response))
 
-    def _failSend(callName, *args, **kwargs):
+    def _failSend(self, callName, *args, **kwargs):
         """Stores send request in buffer to be sent upon new connection
 
         If `callName` exists in buffer, it is replaced by the newer send
@@ -241,7 +244,7 @@ class ChildPipeEffector(_PipeEffector):
     def keepAlive(self):
 
         return (self._procEffector is None and True or
-                self._procEffector.keepAlive)
+                self._procEffector.keep_alive)
 
     def _failSend(self, callName, *args, **kwargs):
 
@@ -256,7 +259,7 @@ class ChildPipeEffector(_PipeEffector):
 
                 self._logger.info("Re-booting server process")
                 Popen('scan-o-matic_server')
-                sleep(2)
+                time.sleep(2)
 
             if rC.online:
 
@@ -289,8 +292,8 @@ class ChildPipeEffector(_PipeEffector):
     def procEffector(self, procEffector):
 
         self._procEffector = procEffector
-        self.setAllowedCalls(procEffector.allowedCalls)
-        self.setFailVunerableCalls(*procEffector.failVunerableCalls)
+        self.setAllowedCalls(procEffector.allow_calls)
+        self.setFailVunerableCalls(*procEffector.fail_vunerable_calls)
 
     def sendStatus(self, status):
 

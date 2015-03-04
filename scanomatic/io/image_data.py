@@ -36,7 +36,7 @@ class Image_Data(object):
     _PATHS = paths.Paths()
 
     @staticmethod
-    def writeImage(path, imageIndex, features, nPlates, measure=None):
+    def writeImage(analysis_model, image_model, features):
 
         path = os.path.join(*Image_Data.path2dataPathTuple(
             path, imageIndex=imageIndex))
@@ -94,7 +94,7 @@ class Image_Data(object):
             Image_Data.writeImage(path, idS, features, nPlates, measure=measure)
 
     @staticmethod
-    def writeTimes(path, imageIndex, imageMetaData, overwrite=False):
+    def writeTimes(analysis_model, image_model):
 
         if not overwrite:
             currentData = Image_Data.readTimes(path)

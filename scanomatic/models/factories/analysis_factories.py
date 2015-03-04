@@ -3,7 +3,13 @@ __author__ = 'martin'
 import os
 
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
-from scanomatic.models.analysis_model import AnalysisModel, GridModel, XMLModel, MEASURES, COMPARTMENTS
+from scanomatic.models.analysis_model import *
+
+def _rename_old(settings, old_name, new_name):
+
+    if (new_name not in settings and old_name in settings):
+        settings[new_name] = settings[old_name]
+    del settings[old_name]
 
 
 class AnalysisModelFactory(AbstractModelFactory):
@@ -28,6 +34,20 @@ class AnalysisModelFactory(AbstractModelFactory):
         ('grid_model',): GridModelFactory,
         ('xml_model',): XMLModelFactory
     }
+
+    @classmethod
+    def set_absolute_paths(cls, model):
+
+        base_path = os.path.dirname(model.first_pass_file)
+        model.analysis_config_file = cls._get_absolute_path(model.analysis_config_file, base_path)
+        model.output_directory = cls._get_absolute_path(model.output_directory, base_path)
+
+    @classmethod
+    def _get_absolute_path(cls, path, base_path):
+
+        if os.path.abspath(path) != path:
+            return os.path.join(base_path, path)
+        return path
 
     @classmethod
     def _validate_first_pass_file(cls, model):
@@ -214,3 +234,110 @@ class XMLModelFactory(AbstractModelFactory):
         if model.short_tage_measure in MEASURES:
             return True
         return model.FIELD_TYPES.short_tag_measure
+
+class AnalysisImageFactory(AbstractModelFactory):
+
+    _MODEL = ImageModel
+    STORE_SECTION_SERIALIZERS = {
+        ('grayscale_indices',): list,
+        ("grayscale_targets",): list,
+        ("orientation_marks_x",): list,
+        ("orientation_marks_y",): list,
+        ("shape",): list,
+        ("coordinates_scale",): float,
+        ("path",): str,
+        ("time",): float,
+        ("plates",): list, # TODO: This won't serialize well
+    }
+
+    @classmethod
+    def create(cls, **settings):
+
+        for (old_name, new_name) in [("grayscale_indices", "grayscale_targets"),
+                                     ("mark_X", "orientation_marks_x"),
+                                     ("mark_Y", "orientation_marks_y"),
+                                     ("Image Shape", "shape"), ("Scale", "coordinates_scale"),
+                                     ("File", "path"), ("Time", "time")]:
+
+            _rename_old(settings, old_name, new_name)
+
+        plate_str = "plate_{0}_area"
+        if not "plates" in settings or not settings["plates"]:
+            settings["plates"] = []
+
+        for index in range(10):
+            plate_name = plate_str.format(index)
+            if plate_name in settings and settings[plate_name]:
+                (x1, y1), (x2, y2) = settings[plate_name]
+                settings["plates"].append(ImagePlateFactory.create(index=index, x1=x1, x2=x2, y1=y1, y2=y2))
+
+        return super(AnalysisImageFactory, cls).create(**settings)
+
+    @classmethod
+    def create_many_update_indices(cls, iterable):
+
+        models = [cls.create(**data) for data in iterable]
+        for (index, m) in enumerate(sorted(models, key="time")):
+            m.index=index
+            yield m
+
+    @classmethod
+    def create_many_update_times(cls, iterable):
+
+        models = [cls.create(**data) for data in iterable]
+        inject_time = 0
+        previous_time = 0
+        for (index, m) in enumerate(models):
+            m.index = index
+            if m.time < previous_time:
+                inject_time += previous_time - m.time
+            m.time += inject_time
+            yield m
+
+
+class ImagePlateFactory(AbstractModelFactory):
+    _MODEL = ImagePlateModel
+    STORE_SECTION_SERIALIZERS = {
+        ("index",): int,
+        ("x1",): int,
+        ("y1",): int,
+        ("x2",): int,
+        ("y2",): int
+    }
+
+
+
+class MetaDataFactory(AbstractModelFactory):
+    _MODEL = AnalysisMetaData
+    STORE_SECTION_SERIALIZERS = {
+        ("start_time",): float,
+        ("name",): str,
+        ("description",): str,
+        ("interval",): float,
+        ("measures",): int,
+        ("uuid",): str,
+        ("fixture", ): str,
+        ("scanner",): str,
+        ("project_id",): str,
+        ("scanner_layout_id",): str,
+        ("version",): float,
+        ("pinnings",): list
+    }
+
+    @classmethod
+    def create(cls, **settings):
+
+
+        for (old_name, new_name) in [("Start Time", "start_time"),
+                ("Prefix", "name"), ("Interval", "interval"), ("Description", "description"),
+                ("Version", "version"), ("UUID", "uuid"), ("Measures", "measures"), ("Fixture", "fixture"),
+                ("Scanner", "scanner"), ("Pinning Matrices", "pinnings"), ("Project ID", "project_id"),
+                ("Scanner Layout ID", "scanner_layout_id")]:
+
+            _rename_old(settings, old_name, new_name)
+
+
+        if ("Manual Gridding" in settings):
+            del settings["Manual Gridding"]
+
+        return super(MetaDataFactory, cls).create(**settings)

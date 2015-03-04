@@ -323,6 +323,8 @@ class Watch_Graph(object):
 
     def add_image(self, im, detection):
 
+        if im is None or detection is None:
+            return
         composite = np.array(((im, detection),))
         if self._data is None:
             self._data = composite
