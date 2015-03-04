@@ -36,11 +36,12 @@ class Grid_Cell():
     MAX_THRESHOLD = 4200
     MIN_THRESHOLD = 0
 
-    def __init__(self, identifier, grid_cell_settings=None):
+    def __init__(self, identifier, analysis_model):
 
         #self.logger = logging.getLogger("Grid Cell {0}".format(identifier))
 
         self._identifier = identifier
+        self.position = (identifier[-2], identifier[-1])
         self._adjustment_warning = False
 
         default_settings = {

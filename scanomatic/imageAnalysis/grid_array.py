@@ -15,17 +15,15 @@ __status__ = "Development"
 #
 
 import numpy as np
-#from scipy.optimize import fsolve
 import os
 from matplotlib import pyplot as plt
-import weakref
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
 import grid
-import grid_cell
+from grid_cell import Grid_Cell
 import scanomatic.io.paths as paths
 import imageBasics
 
@@ -36,6 +34,112 @@ import imageBasics
 class Invalid_Grid(Exception):
     pass
 
+
+def _analyse_grid_cell(grid_cell, im, transpose_polynomial, features):
+
+    if transpose_polynomial is not None:
+
+        _set_image_transposition(im, grid_cell, transpose_polynomial)
+
+    else:
+
+        grid_cell.set_source(_get_image_slice(im, grid_cell).copy())
+
+    if not grid_cell.ready:
+
+        grid_cell.attach_analysis(
+            blob=True, background=True, cell=True,
+            run_detect=False)
+
+    features[grid_cell.position] = grid_cell.get_analysis(remember_filter=True)
+
+
+def _set_image_transposition(source, grid_cell, transpose_polynomial):
+
+    xy = grid_cell.xy
+    wh = grid_cell.wh
+
+    source_view = source[xy[0]: xy[0] + wh[0], xy[1]: xy[1] + wh[1]]
+
+    if source_view.shape != grid_cell.source.shape:
+
+        raise Invalid_Grid(
+            "Grid Cell @ {0} has wrong size ({1} != {2})".format(
+                xy, source_view.shape, grid_cell.source.shape))
+
+    grid_cell.source[...] = transpose_polynomial(source_view)
+
+
+def _get_image_slice(im, grid_cell):
+
+    return im[grid_cell.x[0]: grid_cell.x[1], grid_cell.y[0]: grid_cell.y[1]]
+
+
+def _create_grid_array_identifier(identifier):
+
+    if isinstance(identifier, int):
+
+        identifier = ("unknown", identifier)
+
+    elif len(identifier) == 1:
+
+        identifier = ["unknown", identifier[0]]
+
+    else:
+
+        identifier = [identifier[0], identifier[1]]
+
+    return identifier
+
+
+def make_grid_im(im, grid, save_grid_name=None, X=None, Y=None):
+
+    grid_image = plt.figure()
+    grid_plot = grid_image.add_subplot(111)
+    grid_plot.imshow(im, cmap=plt.cm.gray)
+
+    for row in xrange(grid.shape[1]):
+
+        grid_plot.plot(
+            grid[1, row, :],
+            grid[0, row, :],
+            'r-')
+
+    for col in xrange(grid.shape[2]):
+
+        grid_plot.plot(
+            grid[1, :, col],
+            grid[0, :, col],
+            'r-')
+
+    grid_plot.plot(grid[1, 0, 0],
+                   grid[0, 0, 0],
+                   'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
+
+    if X is not None and Y is not None:
+
+        grid_plot.plot(Y, X, 'o', alpha=0.75,
+                       ms=5, mfc='none', mec='red', mew=1)
+
+    ax = grid_image.gca()
+    ax.set_xlim(0, im.shape[1])
+    ax.set_ylim(0, im.shape[0])
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+
+    if save_grid_name is None:
+
+        grid_image.show()
+        return grid_image
+
+    else:
+
+        grid_image.savefig(save_grid_name, pad_inches=0.01,
+                           format='svg', bbox_inches='tight')
+
+        grid_image.clf()
+        plt.close(grid_image)
+        del grid_image
 #
 # CLASS: Grid_Array
 #
@@ -51,12 +155,12 @@ class Grid_Array():
         None: None
     }
 
-    def __init__(self, identifier, pinning, fixture, analysis_model):
+    def __init__(self, image_identifier, pinning, fixture, analysis_model):
 
         self._paths = paths.Paths()
 
         self.fixture = fixture
-        self._identifier = self._get_identifier(identifier)
+        self._identifier = _create_grid_array_identifier(image_identifier)
         self._analysis_model = analysis_model
         self._pinning_matrix = pinning
 
@@ -70,47 +174,19 @@ class Grid_Array():
         self._grid_cell_size = None
         self._grid_cells = []
         self._grid = None
+        self._grid_cell_corners = None
 
-        self._features = []
+        self.features = []
         self._first_analysis = True
 
-    def __getitem__(self, key):
-        try:
-            key = key[0] * self._pinning_matrix[0] + key[1]
-        except TypeError:
-            pass
-        return self._grid_cells[key]
-
-    def _get_identifier(self, identifier):
-
-        if isinstance(identifier, int):
-
-            identifier = ("unknown", identifier)
-
-        elif len(identifier) == 1:
-
-            identifier = ["unknown", identifier[0]]
-
-        else:
-
-            identifier = [identifier[0], identifier[1]]
-
-        return identifier
-
     @property
-    def features(self):
-        return self._features
-
-    def _set_grid_cell_size(self):
-
-        dx = (self._grid[0, 1:, :] - self._grid[0, :-1, :]).mean()
-        dy = (self._grid[1, :, 1:] - self._grid[1, :, :-1]).mean()
-
-        self._grid_cell_size = map(lambda x: int(round(x)), (dx, dy))
+    def __index__(self):
+        return self._identifier[-1]
 
     def set_grid(self, im, save_name=None, grid_correction=None):
 
-        #Map so grid axis concur with image rotation
+        self._init_pinning_matrix()
+
         if self._im_dim_order is None:
 
             self._im_dim_order = self._get_grid_to_im_axis_mapping(
@@ -165,7 +241,7 @@ class Grid_Array():
                 pass
 
             if save_name is not None:
-                self.make_grid_im(im, save_grid_name=save_name, grid=grd)
+                self.make_grid_im(im, grid, save_grid_name=save_name.format(self.index))
 
             return False
 
@@ -179,92 +255,49 @@ class Grid_Array():
                 (self._pinning_matrix[self._im_dim_order[0]],
                 self._pinning_matrix[self._im_dim_order[1]])))
 
-            return False
-
         #self.logger.info("Got center {0} and Spacings {1}".format(
         #    center, spacings))
 
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
 
-        if adjusted_values:
-            #self.logger.info("Gridding got adjusted by history")
-            self.unset_history()
-        else:
-            #self.logger.info("Setting gridding history")
-            self.set_history(center, spacings)
-
         if save_name is not None:
-            self.make_grid_im(im, save_grid_name=save_name)
+            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name)
 
         if self.visual:
 
-            self.make_grid_im(im)
+            make_grid_im(im, self._grid_cell_corners)
 
         return True
 
-    def make_grid_im(self, im, save_grid_name=None, grid=None, X=None, Y=None):
+    def _set_grid_cell_corners(self):
 
-        grid_image = plt.figure()
-        grid_plot = grid_image.add_subplot(111)
-        grid_plot.imshow(im, cmap=plt.cm.gray)
+        # TODO: Make corner grid and update all grid_cells
+        # Remember to add extra col and row for nice drawing
 
-        if grid is None:
-            grid = self._grid
+        im_dim_order = self._im_dim_order
+        dim_reversed = im_dim_order[0] == 1
 
-        for row in xrange(grid.shape[1]):
+        #Setting shortcuts for repeatedly used variable
+        s_g = self._grid.copy()
+        s_gcs = self._grid_cell_size
+        s_g[0, ...] -= s_gcs[0] / 2.0  # To get min-corner
+        s_g[1, ...] -= s_gcs[1] / 2.0  # To get min-corner
 
-            grid_plot.plot(
-                grid[1, row, :],
-                grid[0, row, :],
-                'r-')
-
-        for col in xrange(grid.shape[2]):
-
-            grid_plot.plot(
-                grid[1, :, col],
-                grid[0, :, col],
-                'r-')
-
-        grid_plot.plot(grid[1, 0, 0],
-                       grid[0, 0, 0],
-                       'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
-
-        if X is not None and Y is not None:
-
-            grid_plot.plot(Y, X, 'o', alpha=0.75,
-                           ms=5, mfc='none', mec='red', mew=1)
-
-        ax = grid_image.gca()
-        ax.set_xlim(0, im.shape[1])
-        ax.set_ylim(0, im.shape[0])
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
-        if save_grid_name is None:
-
-            grid_image.show()
-            return grid_image
-
+        l_d1 = pm[0]  # im_dim_order[0]]
+        l_d2 = pm[1]  # im_dim_order[1]]
+        """
+        if dim_reversed:
+            row_min = s_g[0, col, row]
+            col_min = s_g[1, col, row]
         else:
+            row_min = s_g[0, row, col]
+            col_min = s_g[1, row, col]
 
-            save_grid_name += "{0}.svg".format(self._identifier[1] + 1)
-            #self.logger.info(
-            #    "ANALYSIS GRID: Saving grid-image as file" +
-            #    " '{0}' for plate {1}".format(
-            #    save_grid_name, self._identifier[1]))
-
-            grid_image.savefig(save_grid_name, pad_inches=0.01,
-                               format='svg', bbox_inches='tight')
-
-            grid_image.clf()
-            plt.close(grid_image)
-            del grid_image
-
-            #self.logger.info("ANALYSIS GRID: Image saved!")
+        rc_min_tuple = (row_min, col_min)
+        """
 
     def _init_pinning_matrix(self):
 
-        #TODO: Rewrite
         pinning_matrix = self._pinning_matrix
 
         self._guess_grid_cell_size = self._APPROXIMATE_GRID_CELL_SIZES[
@@ -272,36 +305,22 @@ class Grid_Array():
 
         self._grid = None
         self._grid_cell_size = None
-
         self._grid_cells = []
-        self._features = []
+        self.features = {}
 
         for row in xrange(pinning_matrix[0]):
 
-            self._grid_cells.append([])
-            self._features.append([])
-
             for column in xrange(pinning_matrix[1]):
 
-                self._grid_cells[row].append(grid_cell.Grid_Cell(
-                    [self._identifier,  [row, column]],
-                    grid_cell_settings=self.grid_cell_settings))
+                if (not self._analysis_model.suppress_non_focal or
+                        self._analysis_model.focus_position == (self._identifier[1], row, column)):
 
-                self._features[row].append(None)
+                    self._grid_cells.append(Grid_Cell(
+                        [self._identifier, [row, column]], self._analysis_model))
 
     #
     # Get functions
     #
-
-    def get_history(self):
-
-        grid_history = self.fixture['history']
-
-        plate = self._identifier[1]
-
-        gh = grid_history.get_gridding_history(plate, self._pinning_matrix)
-
-        return gh
 
     def get_calibration_polynomial_coeffs(self):
 
@@ -350,154 +369,44 @@ class Grid_Array():
 
         return im_axis_order
 
-    def _set_image_transposition(self, source, target, ul, wh,
-                                 imTransposePoly):
+    def doAnalysis(self, im, image_model, save_grid_name=None):
 
-        sourceView = source[ul[0]: ul[0] + wh[0], ul[1]: ul[1] + wh[1]]
-
-        if sourceView.shape != target.shape:
-
-            raise Invalid_Grid(
-                "Grid Cell @ {0} has wrong size ({1} != {2})".format(
-                    ul, sourceView.shape, target.shape))
-
-        target[...] = imTransposePoly(sourceView)
-
-    def doAnalysis(
-            self, im, grayscaleSource=None, grayscaleTarget=None,
-            grayscalePolyCoeffs=None,
-            identifier_time=None, watch_colony=None,
-            save_grid_name=None, grid_correction=None):
-
-        #Resetting the values of the indepth watch colony
         self.watch_source = None
         self.watch_blob = None
         self.watch_results = None
 
-        #Update info for future self-id reporting
-        if identifier_time is not None:
-            self._identifier[0] = identifier_time
+        self._identifier[0] = image_model.index
 
         #Get an image-specific inter-scan-neutral transformation dictionary
         try:
-            transposePoly = imageBasics.Image_Transpose(
-                sourceValues=grayscaleSource,
-                targetValues=grayscaleTarget,
-                polyCoeffs=grayscalePolyCoeffs)
+            transpose_polynomial = imageBasics.Image_Transpose(
+                sourceValues=image_model.grayscale_values,
+                targetValues=image_model.grayscale_targets,
+                polyCoeffs=self._polynomial_coeffs)
         except:
-            transposePoly = None
+            transpose_polynomial = None
 
-        #Fast access to the pinning matrix
-        pm = self._pinning_matrix
-
-        #Only place grid if not yet placed
         if self._grid is None:
-
             if not self.set_grid(im):
-
-                #self.logger.critical(
-                #    'Failed to set grid on ' +
-                #    '{0} and none to use'.format(self._identifier))
-
                 return None
 
-        im_dim_order = self._im_dim_order
-        dim_reversed = im_dim_order[0] == 1
+        if save_grid_name:
+            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_grid_name)
 
-        #Save grid image if requested
-        if save_grid_name is not None:
+        for grid_cell in self._grid_cells.values():
+            _analyse_grid_cell(grid_cell, im, transpose_polynomial, self.features)
 
-            self.make_grid_im(im, save_grid_name=save_grid_name)
+        self._set_focus_colony_results()
 
-        #Setting shortcuts for repeatedly used variable
-        s_g = self._grid.copy()
-        s_gcs = self._grid_cell_size
-        s_g[0, ...] -= s_gcs[0] / 2.0  # To get min-corner
-        s_g[1, ...] -= s_gcs[1] / 2.0  # To get min-corner
-        l_d1 = pm[0]  # im_dim_order[0]]
-        l_d2 = pm[1]  # im_dim_order[1]]
+        return self.features
 
-        #Setting up target array for trasnformation so it fits axis order
-        tm_im = np.zeros(s_gcs, dtype=np.float64)
+    def _set_focus_colony_results(self):
 
-        #Go through the pinning abstract positions in order designated by pm
-        for row in xrange(l_d1):
+        if self._analysis_model.focus_position:
 
-            for col in xrange(l_d2):
+            grid_cell = self.grid_cells[(self._analysis_model.focus_position[1], self._analysis_model.focus_position[2])]
 
-                #Only work on watched colonies if other's are suppressed
-                if (self.suppress_analysis is False or
-                        (watch_colony is not None and
-                         watch_colony[1] == row and watch_colony[2] == col)):
+            self.watch_blob = grid_cell.get_item('blob').filter_array.copy()
 
-                    #Set up shortcuts
-                    _cur_gc = self._grid_cells[row][col]
-                    if dim_reversed:
-                        row_min = s_g[0, col, row]
-                        col_min = s_g[1, col, row]
-                    else:
-                        row_min = s_g[0, row, col]
-                        col_min = s_g[1, row, col]
-
-                    rc_min_tuple = (row_min, col_min)
-
-                    #
-                    #Transforming to inter-scan neutal values
-                    #----------------------------------------
-                    #
-
-                    #Set the tm_im for the region
-                    if transposePoly is not None:
-
-                        #self._set_tm_im(im, tm_im, rc_min_tuple, tm, row, col)
-                        self._set_image_transposition(
-                            im, tm_im, rc_min_tuple, s_gcs, transposePoly)
-
-                    else:
-
-                        #Shold make sure that tm_im is okay
-                        #self.logger.critical("ANALYSIS GRID ARRAY Lacks" +
-                        #                     " transformation possibilities")
-                        pass
-
-                    #
-                    #Setting up the grid cell
-                    #------------------------
-                    #
-
-                    #Sets the tm_im as the gc data source
-                    _cur_gc.set_data_source(tm_im)
-
-                    #This happens only the first time, setting up the analysis
-                    #layers of the grid cell
-
-                    if self._first_analysis:
-
-                        _cur_gc.attach_analysis(
-                            blob=True, background=True, cell=True,
-                            run_detect=False)
-
-                    #
-                    #Getting the analysis for all layers of the Grid Cell
-                    #----------------------------------------------------
-                    #
-
-                    self._features[row][col] = \
-                        _cur_gc.get_analysis(remember_filter=True)
-
-                    #Info on the watched colony hooked up if that's the one
-                    #analysed
-                    if watch_colony is not None:
-
-                        if (row == watch_colony[1] and
-                                col == watch_colony[2]):
-
-                            self.watch_blob = \
-                                _cur_gc.get_item('blob').filter_array.copy()
-
-                            self.watch_source = \
-                                _cur_gc.get_item('blob').grid_array.copy()
-
-                            self.watch_results = self._features[row][col]
-
-        return self._features
+            self.watch_source = grid_cell.get_item('blob').grid_array.copy()
+            self.watch_results = self.features[grid_cell.position]
