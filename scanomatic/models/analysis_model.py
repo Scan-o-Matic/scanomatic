@@ -10,6 +10,9 @@ COMPARTMENTS = Enum("COMPARTMENTS", names=("Total", "Background", "Blob"))
 
 MEASURES = Enum("MEASURES", names=("Count", "Sum", "Mean", "Median", "Perimeter", "IQR", "IQR_Mean", "Centroid"))
 
+VALUES = Enum("Values", names=("Pixels", "Grayscale_Targets", "Cell_Estimates"))
+
+ITEMS = Enum("ITEMS", names=("Cell", "Blob", "Background"))
 
 class AnalysisModel(model.Model):
 

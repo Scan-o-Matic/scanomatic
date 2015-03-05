@@ -159,7 +159,7 @@ def get_grid_cell_from_array(
                 'blob_detect': 'default', 'remember_filter': False,
                 'polynomial_coeffs': poly}
 
-    cell = grid_cell.Grid_Cell((0, 0, 0),
+    cell = grid_cell.GridCell((0, 0, 0),
                                grid_cell_settings=settings)
 
     cell.attach_analysis(center=center, radius=radius)
@@ -213,9 +213,9 @@ class GridArray(grid_array.GridArray):
         grid_array.GridArray.__init__(self, root, (0,))
 
 
-class Grid_Cell(grid_cell.Grid_Cell):
+class GridCell(grid_cell.GridCell):
     def __init__(self):
-        grid_cell.Grid_Cell.__init__(self, (0, 0, 0))
+        grid_cell.GridCell.__init__(self, (0, 0, 0))
 
 
 class Project_Image(analysis_image.Project_Image):
