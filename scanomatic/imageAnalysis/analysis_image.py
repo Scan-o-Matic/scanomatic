@@ -93,7 +93,7 @@ class Project_Image(object):
 
            if pinning and self._plate_is_analysed(index):
 
-                grid_arrays[index] = grid_array.Grid_Array(index, pinning, self.fixture, self._analysis_model)
+                grid_arrays[index] = grid_array.GridArray(index, pinning, self.fixture, self._analysis_model)
 
         return grid_arrays
 
@@ -254,7 +254,7 @@ class Project_Image(object):
 
                 im = self.get_im_section(plate)
                 grid_array = self._grid_arrays[plate.index]
-                grid_array.doAnalysis(im, image_model)
+                grid_array.analyse(im, image_model)
 
                 self.features[plate.index] = grid_array.features
 

@@ -41,7 +41,7 @@ class Grid_Cell():
         #self.logger = logging.getLogger("Grid Cell {0}".format(identifier))
 
         self._identifier = identifier
-        self.position = (identifier[-2], identifier[-1])
+        self.position = tuple(identifier[-1])
         self._adjustment_warning = False
 
         default_settings = {

@@ -35,7 +35,7 @@ import scanomatic.io.paths as paths
 #
 
 _pi = analysis_image.Project_Image([])
-_ga = grid_array.Grid_Array(_pi, (0,), None)
+_ga = grid_array.GridArray(_pi, (0,), None)
 POLY = _ga.get_calibration_polynomial_coeffs()
 _paths = paths.Paths()
 
@@ -208,9 +208,9 @@ def get_gray_scale_transformation_matrix(gs_values):
 #
 
 
-class Grid_Array(grid_array.Grid_Array):
+class GridArray(grid_array.GridArray):
     def __init__(self, root):
-        grid_array.Grid_Array.__init__(self, root, (0,))
+        grid_array.GridArray.__init__(self, root, (0,))
 
 
 class Grid_Cell(grid_cell.Grid_Cell):

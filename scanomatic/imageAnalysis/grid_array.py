@@ -173,7 +173,7 @@ def _get_grid_to_im_axis_mapping(pm, im):
 #
 
 
-class Grid_Array():
+class GridArray():
 
     _APPROXIMATE_GRID_CELL_SIZES = {
         (8, 12): (212, 212),
@@ -196,11 +196,11 @@ class Grid_Array():
         self.watch_blob = None
         self.watch_results = None
 
-        self._polynomial_coeffs = self.get_calibration_polynomial_coeffs()
+        self._polynomial_coeffs = get_calibration_polynomial_coeffs()
 
         self._guess_grid_cell_size = None
         self._grid_cell_size = None
-        self._grid_cells = []
+        self._grid_cells = {}
         self._grid = None
         self._grid_cell_corners = None
 
@@ -208,83 +208,31 @@ class Grid_Array():
         self._first_analysis = True
 
     @property
-    def __index__(self):
+    def index(self):
         return self._identifier[-1]
 
     def set_grid(self, im, save_name=None, grid_correction=None):
 
-        self._init_pinning_matrix()
+        self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
-        if self._im_dim_order is None:
-
-            self._im_dim_order = self._get_grid_to_im_axis_mapping(
-                self._pinning_matrix, im)
-
-        grid_shape = (self._pinning_matrix[int(self._im_dim_order[0])],
-                      self._pinning_matrix[int(self._im_dim_order[1])])
-
-        #If too little data, use very rough guesses
-        if True:
-            validate_parameters = False
-            expected_spacings = self._guess_grid_cell_size
-            expected_center = tuple([s / 2.0 for s in im.shape])
-
-
-        grd, X, Y, center, spacings, adjusted_values = grid.get_grid(
-            im,
-            expected_spacing=expected_spacings,
-            expected_center=expected_center,
-            validate_parameters=validate_parameters,
-            grid_shape=grid_shape,
-            grid_correction=grid_correction)
-
-        dx, dy = spacings
-        self._grid, adjusted_values = grid.get_validated_grid(
-            im, grd, dy, dx, adjusted_values)
-
-        #self.logger.info("Expecting center {0} and Spacings {1}".format(
-        #    expected_center, expected_spacings))
+        spacings = self._calculate_grid_and_get_spacings(im, grid_correction=grid_correction)
 
         if self._grid is None or np.isnan(spacings).any():
-            #self.logger.error(
-            #    "Could not produce a grid for im-shape {0}".format(im.shape))
 
             error_file = os.path.join(
-                os.sep,
-                self._parent().get_file_base_dir(),
-                self._paths.experiment_grid_error_image.format(
-                    self._identifier[1]))
+                os.path.dirname(self._analysis_model.first_pass_file),
+                self._paths.experiment_grid_error_image.format(self._identifier[1]))
 
-            if not os.path.isfile(error_file):
-
-                np.save(error_file, im)
-
-                #self.logger.critical('Saved image slice to {0}'.format(
-                #    error_file))
-
-            else:
-
-                #self.logger.critical("Won't save failed gridding {0}".format(
-                #    error_file) + ", file allready exists")
-                pass
-
-            if save_name is not None:
-                self.make_grid_im(im, grid, save_grid_name=save_name.format(self.index))
+            np.save(error_file, im)
+            save_name = error_file + ".png"
+            make_grid_im(im, grid, save_grid_name=save_name.format(self.index))
 
             return False
 
-        if (self._grid.shape[1] != self._pinning_matrix[self._im_dim_order[0]]
-                or self._grid.shape[2] !=
-                self._pinning_matrix[self._im_dim_order[1]]):
+        if not self._is_valid_grid_shape():
 
             raise InvalidGridException(
-                "Grid shape {0} missmatch with pinning matrix {1}".format(
-                self._grid.shape,
-                (self._pinning_matrix[self._im_dim_order[0]],
-                self._pinning_matrix[self._im_dim_order[1]])))
-
-        #self.logger.info("Got center {0} and Spacings {1}".format(
-        #    center, spacings))
+                "Grid shape {0} missmatch with pinning matrix {1}".format(self._grid.shape, self._pinning_matrix))
 
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
 
@@ -296,15 +244,40 @@ class Grid_Array():
 
         return True
 
+    def _calculate_grid_and_get_spacings(self, im, grid_correction=None):
+
+        validate_parameters = False
+        expected_spacings = self._guess_grid_cell_size
+        expected_center = tuple([s / 2.0 for s in im.shape])
+
+        draft_grid, _, _, _, spacings, adjusted_values = grid.get_grid(
+            im,
+            expected_spacing=expected_spacings,
+            expected_center=expected_center,
+            validate_parameters=validate_parameters,
+            grid_shape=self._pinning_matrix,
+            grid_correction=grid_correction)
+
+        dx, dy = spacings
+
+        self._grid, _ = grid.get_validated_grid(
+            im, draft_grid, dy, dx, adjusted_values)
+
+        return spacings
+
+    def _is_valid_grid_shape(self):
+
+        return all(g == i for g, i in zip(self._grid.shape[1:], self._pinning_matrix))
+
     def _set_grid_cell_corners(self):
 
         self._grid_cell_corners = np.zeros((2, self._grid.shape[1] + 1, self._grid.shape[2] + 1))
 
         # For both dimensions sets higher value boundaries
-        self._grid_cell_corners[0, 1:, 1:] =  self._grid[0] + self._grid_cell_size[0] / 2.0
+        self._grid_cell_corners[0, 1:, 1:] = self._grid[0] + self._grid_cell_size[0] / 2.0
         self._grid_cell_corners[1, 1:, 1:] = self._grid[1] + self._grid_cell_size[1] / 2.0
         # For all but the far right and bottom over-writes and sets lower values boundaries
-        self._grid_cell_corners[0, :-1 :-1] =  self._grid[0] - self._grid_cell_size[0] / 2.0
+        self._grid_cell_corners[0, :-1, :-1] = self._grid[0] - self._grid_cell_size[0] / 2.0
         self._grid_cell_corners[1, :-1, :-1] = self._grid[1] - self._grid_cell_size[1] / 2.0
 
     def _update_grid_cells(self):
@@ -313,8 +286,9 @@ class Grid_Array():
 
             grid_cell.set_grid_coordinates(self._grid_cell_corners)
 
-    def _init_pinning_matrix(self):
+    def _init_grid_cells(self, dimension_order=(0, 1)):
 
+        self._pinning_matrix = (self._pinning_matrix[dimension_order[0]], self._pinning_matrix[dimension_order[1]])
         pinning_matrix = self._pinning_matrix
 
         self._guess_grid_cell_size = self._APPROXIMATE_GRID_CELL_SIZES[
@@ -332,14 +306,10 @@ class Grid_Array():
                 if (not self._analysis_model.suppress_non_focal or
                         self._analysis_model.focus_position == (self._identifier[1], row, column)):
 
-                    self._grid_cells.append(Grid_Cell(
-                        [self._identifier, [row, column]], self._analysis_model))
+                    grid_cell = Grid_Cell([self._identifier, [row, column]], self._analysis_model)
+                    self._grid_cells[grid_cell.position] = grid_cell
 
-    #
-    # Get functions
-    #
-
-    def doAnalysis(self, im, image_model, save_grid_name=None):
+    def analyse(self, im, image_model, save_grid_name=None):
 
         self.watch_source = None
         self.watch_blob = None
@@ -347,13 +317,15 @@ class Grid_Array():
 
         self._identifier[0] = image_model.index
 
-        #Get an image-specific inter-scan-neutral transformation dictionary
+        # noinspection PyBroadException
         try:
             transpose_polynomial = imageBasics.Image_Transpose(
                 sourceValues=image_model.grayscale_values,
                 targetValues=image_model.grayscale_targets,
                 polyCoeffs=self._polynomial_coeffs)
-        except:
+
+        except Exception:
+
             transpose_polynomial = None
 
         if self._grid is None:
@@ -374,7 +346,7 @@ class Grid_Array():
 
         if self._analysis_model.focus_position:
 
-            grid_cell = self.grid_cells[(self._analysis_model.focus_position[1], self._analysis_model.focus_position[2])]
+            grid_cell = self._grid_cells[tuple(self._analysis_model.focus_position[1:])]
 
             self.watch_blob = grid_cell.get_item('blob').filter_array.copy()
 
