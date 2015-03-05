@@ -196,8 +196,6 @@ class GridArray():
         self.watch_blob = None
         self.watch_results = None
 
-        self._polynomial_coeffs = get_calibration_polynomial_coeffs()
-
         self._guess_grid_cell_size = None
         self._grid_cell_size = None
         self._grid_cells = {}
@@ -298,6 +296,7 @@ class GridArray():
         self._grid_cell_size = None
         self._grid_cells = []
         self.features = {}
+        polynomial_coeffs = get_calibration_polynomial_coeffs()
 
         for row in xrange(pinning_matrix[0]):
 
@@ -306,7 +305,7 @@ class GridArray():
                 if (not self._analysis_model.suppress_non_focal or
                         self._analysis_model.focus_position == (self._identifier[1], row, column)):
 
-                    grid_cell = GridCell([self._identifier, [row, column]], self._analysis_model)
+                    grid_cell = GridCell([self._identifier, [row, column]], polynomial_coeffs)
                     self._grid_cells[grid_cell.position] = grid_cell
 
     def analyse(self, im, image_model, save_grid_name=None):
@@ -321,8 +320,7 @@ class GridArray():
         try:
             transpose_polynomial = imageBasics.Image_Transpose(
                 sourceValues=image_model.grayscale_values,
-                targetValues=image_model.grayscale_targets,
-                polyCoeffs=self._polynomial_coeffs)
+                targetValues=image_model.grayscale_targets)
 
         except Exception:
 

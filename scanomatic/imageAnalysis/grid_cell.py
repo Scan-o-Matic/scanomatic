@@ -36,11 +36,11 @@ class GridCell():
     MAX_THRESHOLD = 4200
     MIN_THRESHOLD = 0
 
-    def __init__(self, identifier, analysis_model):
+    def __init__(self, identifier, polynomial_coeffs):
 
         self._identifier = identifier
         self.position = tuple(identifier[-1])
-        self._analysis_model = analysis_model
+        self._polynomial_coeffs = polynomial_coeffs
         self._adjustment_warning = False
         self.xy1 = []
         self.xy2 = []
@@ -157,7 +157,7 @@ class GridCell():
         background = self._analysis_items[ITEMS.Background]
 
         self.set_new_data_source_space(space=VALUES.Cell_Estimates, bg_sub_source=background.filter_array,
-            polynomial_coeffs=self.polynomial_coeffs)
+                                       polynomial_coeffs=self._polynomial_coeffs)
 
         for item_name, item in self._analysis_items.items():
 
@@ -227,8 +227,8 @@ class GridCell():
         if background and self._analysis_items[ITEMS.Blob]:
 
             self._analysis_items[ITEMS.Background] = grid_cell_extra.Background(
-                    [self._identifier, ['background']], self.source,
-                    self._analysis_items[ITEMS.Blob], run_detect=run_detect)
+                [self._identifier, ['background']], self.source,
+                self._analysis_items[ITEMS.Blob], run_detect=run_detect)
 
         self.set_ready_state()
 

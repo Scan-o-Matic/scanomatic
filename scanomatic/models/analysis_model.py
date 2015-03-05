@@ -82,8 +82,8 @@ class ImagePlateModel(model.Model):
 class AnalysisMetaData(model.Model):
 
     def __init__(self, start_time=0, name="", description="", interval=20.0, images=0,
-            uuid="", fixture="", scanner="", project_id="", scanner_layout_id="", version=__version__,
-            pinnings=[]):
+                 uuid="", fixture="", scanner="", project_id="", scanner_layout_id="", version=__version__,
+                 pinnings=[]):
 
         super(AnalysisMetaData, self).__init__(start_time=start_time, name=name, description=description,
                                                interval=interval, images=images, uuid=uuid, fixture=fixture,
