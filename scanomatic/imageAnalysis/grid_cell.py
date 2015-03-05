@@ -53,7 +53,7 @@ class GridCell():
 
     def _set_empty_analysis_items(self):
 
-        for item_name in ('blob', 'background', 'cell'):
+        for item_name in ITEMS:
 
             self._analysis_items[item_name] = None
 
@@ -130,7 +130,7 @@ class GridCell():
 
             return None
 
-    def get_analysis(self, no_detect=False, remember_filter=False):
+    def get_analysis(self, detect=True, remember_filter=False):
         """get_analysis iterates through all possible cell items
         and runs their detect and do_analysis if they are attached.
 
@@ -138,59 +138,52 @@ class GridCell():
         dictionary with the items' names as keys.
 
         If cell item is not attached, a None is put in the
-        dictionary to avoid key errors.
+        dictionary to avoid key errors..
+        """
 
-        Function takes one optional argument:
+        background = self._analysis_items[ITEMS.Background]
 
-        @no_detect      If true, it will re-use the
-                        previously used detection.
+        if detect:
+            self.detect(remember_filter=remember_filter)
 
-        @remember_filter    Makes the cell-item object remember the
-                            detection filter array. Default = False.
-                            Note: Only relevant when no_detect = False.
+        if background.filter_array.sum() == 0:
+            return None
 
-        @use_fallback       Optionally sets detection to iterative
-                            thresholding"""
+        return self._get_features()
 
-        features_dict = {}
+    def _get_features(self):
 
-        if not no_detect:
+        features = {}
+        background = self._analysis_items[ITEMS.Background]
 
-            self.get_item('blob').detect(remember_filter=remember_filter)
-            self.get_item('background').detect()
+        self.set_new_data_source_space(space=VALUES.Cell_Estimates, bg_sub_source=background.filter_array,
+            polynomial_coeffs=self.polynomial_coeffs)
 
-        bg_filter = self.get_item('background').filter_array
+        for item_name, item in self._analysis_items.items():
 
-        if bg_filter.sum() == 0:
+            if item:
 
-            features_dict = None
+                item.set_data_source(self.source)
+                item.do_analysis()
 
-        else:
+                features[item_name] = item.features
 
-            self.set_new_data_source_space(space=VALUES.Cell_Estimates, bg_sub_source=bg_filter,
-                polynomial_coeffs=self.polynomial_coeffs)
+            else:
 
-            for item_name in self._analysis_item_names:
+                features[item_name] = None
 
-                if self._analysis_items[item_name]:
+        return features
 
-                    self._analysis_items[item_name].set_data_source(self.source)
-                    self._analysis_items[item_name].do_analysis()
+    def detect(self, remember_filter=False):
 
-                    features_dict[item_name] = self._analysis_items[item_name].features
+        blob = self._analysis_items[ITEMS.Blob]
+        background = self._analysis_items[ITEMS.Background]
 
-                else:
-
-                    features_dict[item_name] = None
-
-        return features_dict
-
-    #
-    # Other functions
-    #
+        blob.detect(remember_filter=remember_filter)
+        background.detect()
 
     def attach_analysis(self, blob=True, background=True, cell=True,
-                        blob_detect='default', run_detect=None, center=None,
+                        blob_detect='default', run_detect=False, center=None,
                         radius=None):
 
         """attach_analysis connects the analysis modules to the Grid_Cell.
@@ -219,32 +212,23 @@ class GridCell():
                         (if not supplied, blob will be detected
                         automatically)"""
 
-        if blob_detect is None:
-
-            blob_detect = self.blob_detect
-
-        if run_detect is None:
-
-            run_detect = not(self.no_detect)
-
         if cell:
-            self._analysis_items['cell'] = grid_cell_extra.Cell(
+            self._analysis_items[ITEMS.Cell] = grid_cell_extra.Cell(
                 [self._identifier, ['cell']], self.source,
                 run_detect=run_detect)
 
         if blob:
 
-            self._analysis_items['blob'] = grid_cell_extra.Blob(
+            self._analysis_items[ITEMS.Blob] = grid_cell_extra.Blob(
                 [self._identifier, ['blob']], self.source,
                 blob_detect=blob_detect, run_detect=run_detect,
                 center=center, radius=radius)
 
-        if background and self._analysis_items['blob']:
+        if background and self._analysis_items[ITEMS.Blob]:
 
-            self._analysis_items['background'] = \
-                grid_cell_extra.Background(
+            self._analysis_items[ITEMS.Background] = grid_cell_extra.Background(
                     [self._identifier, ['background']], self.source,
-                    self._analysis_items['blob'], run_detect=run_detect)
+                    self._analysis_items[ITEMS.Blob], run_detect=run_detect)
 
         self.set_ready_state()
 
