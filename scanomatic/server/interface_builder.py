@@ -51,6 +51,7 @@ class Interface_Builder(Singleton):
         global _SOM_SERVER
         if _SOM_SERVER is None:
             _SOM_SERVER = Server()
+            _SOM_SERVER.start()
         else:
             _SOM_SERVER.logger.warning("Attempt to launch second instance of server")
 
