@@ -31,22 +31,18 @@ import imageBasics
 # EXCEPTIONS
 
 
-class Invalid_Grid(Exception):
+class InvalidGridException(Exception):
     pass
 
 
 def _analyse_grid_cell(grid_cell, im, transpose_polynomial, features):
 
+    grid_cell.source = _get_image_slice(im, grid_cell)
+
     if transpose_polynomial is not None:
-
-        _set_image_transposition(im, grid_cell, transpose_polynomial)
-
-    else:
-
-        grid_cell.set_source(_get_image_slice(im, grid_cell).copy())
+        _set_image_transposition(grid_cell, transpose_polynomial)
 
     if not grid_cell.ready:
-
         grid_cell.attach_analysis(
             blob=True, background=True, cell=True,
             run_detect=False)
@@ -54,25 +50,17 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, features):
     features[grid_cell.position] = grid_cell.get_analysis(remember_filter=True)
 
 
-def _set_image_transposition(source, grid_cell, transpose_polynomial):
+def _set_image_transposition(grid_cell, transpose_polynomial):
 
-    xy = grid_cell.xy
-    wh = grid_cell.wh
-
-    source_view = source[xy[0]: xy[0] + wh[0], xy[1]: xy[1] + wh[1]]
-
-    if source_view.shape != grid_cell.source.shape:
-
-        raise Invalid_Grid(
-            "Grid Cell @ {0} has wrong size ({1} != {2})".format(
-                xy, source_view.shape, grid_cell.source.shape))
-
-    grid_cell.source[...] = transpose_polynomial(source_view)
+    grid_cell.source[...] = transpose_polynomial(grid_cell.source)
 
 
 def _get_image_slice(im, grid_cell):
 
-    return im[grid_cell.x[0]: grid_cell.x[1], grid_cell.y[0]: grid_cell.y[1]]
+    xy1 = grid_cell.xy1
+    xy2 = grid_cell.xy2
+
+    return im[xy1[0]: xy2[0], xy1[1]: xy2[1]].copy()
 
 
 def _create_grid_array_identifier(identifier):
@@ -92,33 +80,33 @@ def _create_grid_array_identifier(identifier):
     return identifier
 
 
-def make_grid_im(im, grid, save_grid_name=None, X=None, Y=None):
+def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=None):
 
     grid_image = plt.figure()
     grid_plot = grid_image.add_subplot(111)
     grid_plot.imshow(im, cmap=plt.cm.gray)
 
-    for row in xrange(grid.shape[1]):
+    for row in xrange(grid_corners.shape[1]):
 
         grid_plot.plot(
             grid[1, row, :],
             grid[0, row, :],
             'r-')
 
-    for col in xrange(grid.shape[2]):
+    for col in xrange(grid_corners.shape[2]):
 
         grid_plot.plot(
             grid[1, :, col],
             grid[0, :, col],
             'r-')
 
-    grid_plot.plot(grid[1, 0, 0],
-                   grid[0, 0, 0],
+    grid_plot.plot(grid_corners[1, 0, 0],
+                   grid_corners[0, 0, 0],
                    'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
-    if X is not None and Y is not None:
+    if x_values is not None and y_values is not None:
 
-        grid_plot.plot(Y, X, 'o', alpha=0.75,
+        grid_plot.plot(y_values, x_values, 'o', alpha=0.75,
                        ms=5, mfc='none', mec='red', mew=1)
 
     ax = grid_image.gca()
@@ -140,6 +128,46 @@ def make_grid_im(im, grid, save_grid_name=None, X=None, Y=None):
         grid_image.clf()
         plt.close(grid_image)
         del grid_image
+
+
+def get_calibration_polynomial_coeffs():
+
+    try:
+
+        fs = open(paths.Paths().analysis_polynomial, 'r')
+
+    except IOError:
+
+        return None
+
+    polynomial_coeffs = []
+
+    for l in fs:
+
+        l_data = eval(l.strip("\n"))
+
+        if isinstance(l_data, list):
+
+            polynomial_coeffs = l_data[-1]
+            break
+
+    fs.close()
+
+    if not polynomial_coeffs:
+
+        return None
+
+    return polynomial_coeffs
+
+
+def _get_grid_to_im_axis_mapping(pm, im):
+
+    pm_max_pos = int(max(pm) == pm[1])
+    im_max_pos = int(max(im.shape) == im.shape[1])
+
+    shuffle = pm_max_pos != im_max_pos
+    return [int(shuffle), int(not shuffle)]
+
 #
 # CLASS: Grid_Array
 #
@@ -249,7 +277,7 @@ class Grid_Array():
                 or self._grid.shape[2] !=
                 self._pinning_matrix[self._im_dim_order[1]]):
 
-            raise Invalid_Grid(
+            raise InvalidGridException(
                 "Grid shape {0} missmatch with pinning matrix {1}".format(
                 self._grid.shape,
                 (self._pinning_matrix[self._im_dim_order[0]],
@@ -263,9 +291,8 @@ class Grid_Array():
         if save_name is not None:
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name)
 
-        if self.visual:
-
-            make_grid_im(im, self._grid_cell_corners)
+        self._set_grid_cell_corners()
+        self._update_grid_cells()
 
         return True
 
@@ -279,6 +306,12 @@ class Grid_Array():
         # For all but the far right and bottom over-writes and sets lower values boundaries
         self._grid_cell_corners[0, :-1 :-1] =  self._grid[0] - self._grid_cell_size[0] / 2.0
         self._grid_cell_corners[1, :-1, :-1] = self._grid[1] - self._grid_cell_size[1] / 2.0
+
+    def _update_grid_cells(self):
+
+        for grid_cell in self._grid_cells:
+
+            grid_cell.set_grid_coordinates(self._grid_cell_corners)
 
     def _init_pinning_matrix(self):
 
@@ -305,53 +338,6 @@ class Grid_Array():
     #
     # Get functions
     #
-
-    def get_calibration_polynomial_coeffs(self):
-
-        polynomial_coeffs = None
-
-        try:
-
-            fs = open(self._paths.analysis_polynomial, 'r')
-
-        except:
-
-            #self.logger.critical(
-            #    "GRID ARRAY, Cannot open polynomial info file")
-
-            return None
-
-        polynomial_coeffs = []
-
-        for l in fs:
-
-            l_data = eval(l.strip("\n"))
-
-            if isinstance(l_data, list):
-
-                polynomial_coeffs = l_data[-1]
-                break
-
-        fs.close()
-
-        if polynomial_coeffs == []:
-
-            polynomial_coeffs = None
-
-        return polynomial_coeffs
-
-    def _get_grid_to_im_axis_mapping(self, pm, im):
-
-        pm_max_pos = int(max(pm) == pm[1])
-        im_max_pos = int(max(im.shape) == im.shape[1])
-
-        im_axis_order = [int(pm_max_pos != im_max_pos)]
-        im_axis_order.append(int(im_axis_order[0] == 0))
-
-        #self.logger.info("Axis order set to {0} based on pm {1} and im {2}".format(
-        #    im_axis_order, pm, im.shape))
-
-        return im_axis_order
 
     def doAnalysis(self, im, image_model, save_grid_name=None):
 

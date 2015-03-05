@@ -97,6 +97,11 @@ class Grid_Cell():
     # SET functions
     #
 
+    def set_grid_coordinates(self, grid_cell_corners):
+
+        self.xy1 = grid_cell_corners[:, self.position[0], self.position[1]]
+        self.xy2 = grid_cell_corners[:, self.position[0] + 1, self.position[1] + 1]
+
     @property
     def background(self):
 
