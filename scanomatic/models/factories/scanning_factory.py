@@ -1,5 +1,5 @@
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
-from scanomatic.models.scanning_model import ScanningModel
+from scanomatic.models.scanning_model import ScanningModel, ScannerOwnerModel
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
 
@@ -128,3 +128,22 @@ class ScanningModelFactory(AbstractModelFactory):
             return True
 
         return model.FIELD_TYPES.scanner
+
+
+class ScannerOwnerFactory(AbstractModelFactory):
+
+    _MODEL = ScannerOwnerModel
+    STORE_SECTION_HEAD = ("scanner_name",)
+    STORE_SECTION_SERLIALIZERS = {
+        ('socket',): int,
+        ('scanner_name',): str,
+        ('job_id',): str,
+        ('usb',): str,
+        ('power',): bool,
+        ("expected_interval",): float,
+        ("email",): str,
+        ("warned",): bool,
+        ("owner_pid"): int,
+        ("claiming"): bool
+
+    }

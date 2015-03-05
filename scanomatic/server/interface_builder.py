@@ -434,9 +434,7 @@ class Interface_Builder(Singleton):
             Name of the scanner to be controlled
 
         operation : str
-            "CLAIM" Gets a job id for further operations
-            "ON" Turn power on to scanner
-            "SCAN" Perform a scan.
+            "ON" Turn power on to scanner / obtain USB
             "OFF" Turn power off
             "RELEASE" Free scanner from claim
         """
@@ -453,11 +451,9 @@ class Interface_Builder(Singleton):
 
             return False
 
-        if operation == "CLAIM":
+        scanner_model = scanner_manager[scanner]
 
-            return scanner_manager.claim(scanner)
-
-        if not scanner_manager.isOwner(scanner, job_id):
+        if not scanner_model.job_id != job_id:
 
             _SOM_SERVER.logger.warning(
                 "Job '{0}' tried to manipulate someone else's scanners".format(
@@ -467,19 +463,15 @@ class Interface_Builder(Singleton):
 
         if operation == "ON":
 
-            return scanner_manager.requestOn(scanner, job_id)
+            return scanner_manager.request_on(job_id)
 
         elif operation == "OFF":
 
-            return scanner_manager.requestOff(scanner, job_id)
-
-        elif operation == "SCAN":
-
-            return scanner_manager.scan(scanner, job_id)
+            return scanner_manager.request_off(job_id)
 
         elif operation == "RELEASE":
 
-            return scanner_manager.releaseScanner(scanner)
+            return scanner_manager.release_scanner(job_id)
 
         else:
 
@@ -496,7 +488,7 @@ class Interface_Builder(Singleton):
         """
 
         global _SOM_SERVER
-        return _SOM_SERVER.scanner_manager.get_fixtures()
+        return _SOM_SERVER.scanner_manager.fixtures
 
     @_verify_admin
     def _server_create_analysis_job(self, user_id, analysis_model):

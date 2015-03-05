@@ -53,10 +53,14 @@ class Server(object):
 
         self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
-        self._scanner_manager = scanner_admin.Scanner_Manager()
+        self._scanner_manager = scanner_admin.ScannerPowerManager()
 
     @property
     def scanner_manager(self):
+        """
+
+        :rtype : scanner_admin.ScannerPowerManager
+        """
         return self._scanner_manager
 
     @property
@@ -126,7 +130,7 @@ class Server(object):
             if i == 0 and self._queue:
                 self._attempt_job_creation()
             elif i <= 1:
-                self._scanner_manager.sync()
+                self._scanner_manager.update()
             else:
                 self._jobs.sync()
 
