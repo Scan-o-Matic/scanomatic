@@ -271,30 +271,14 @@ class Grid_Array():
 
     def _set_grid_cell_corners(self):
 
-        # TODO: Make corner grid and update all grid_cells
-        # Remember to add extra col and row for nice drawing
+        self._grid_cell_corners = np.zeros((2, self._grid.shape[1] + 1, self._grid.shape[2] + 1))
 
-        im_dim_order = self._im_dim_order
-        dim_reversed = im_dim_order[0] == 1
-
-        #Setting shortcuts for repeatedly used variable
-        s_g = self._grid.copy()
-        s_gcs = self._grid_cell_size
-        s_g[0, ...] -= s_gcs[0] / 2.0  # To get min-corner
-        s_g[1, ...] -= s_gcs[1] / 2.0  # To get min-corner
-
-        l_d1 = pm[0]  # im_dim_order[0]]
-        l_d2 = pm[1]  # im_dim_order[1]]
-        """
-        if dim_reversed:
-            row_min = s_g[0, col, row]
-            col_min = s_g[1, col, row]
-        else:
-            row_min = s_g[0, row, col]
-            col_min = s_g[1, row, col]
-
-        rc_min_tuple = (row_min, col_min)
-        """
+        # For both dimensions sets higher value boundaries
+        self._grid_cell_corners[0, 1:, 1:] =  self._grid[0] + self._grid_cell_size[0] / 2.0
+        self._grid_cell_corners[1, 1:, 1:] = self._grid[1] + self._grid_cell_size[1] / 2.0
+        # For all but the far right and bottom over-writes and sets lower values boundaries
+        self._grid_cell_corners[0, :-1 :-1] =  self._grid[0] - self._grid_cell_size[0] / 2.0
+        self._grid_cell_corners[1, :-1, :-1] = self._grid[1] - self._grid_cell_size[1] / 2.0
 
     def _init_pinning_matrix(self):
 
