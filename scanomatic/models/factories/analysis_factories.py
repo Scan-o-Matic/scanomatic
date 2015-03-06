@@ -51,6 +51,9 @@ class GridModelFactory(AbstractModelFactory):
 
             return value is None or (len(value) == 2 and all(isinstance(offset, int) for offset in value))
 
+        if model.gridding_offsets is None:
+            return True
+
         try:
             if all(_valid_correction(plate) for plate in model.gridding_offsets):
                 return True
@@ -95,7 +98,7 @@ class XMLModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_short_tag_measure(cls, model):
 
-        if model.short_tage_measure in analysis_model.MEASURES:
+        if model.short_tag_measure in analysis_model.MEASURES:
             return True
         return model.FIELD_TYPES.short_tag_measure
 

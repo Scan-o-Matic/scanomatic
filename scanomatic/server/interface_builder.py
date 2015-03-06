@@ -122,7 +122,7 @@ class Interface_Builder(Singleton):
         val = self._remove_som_server(wait_for_jobs_to_stop=wait_for_jobs_to_stop)
 
         if val:
-            self.logger.info("Server is shut down")
+            self.logger.info("Server is shutting down")
         else:
             self.logger.error("Unknown error shutting down Scan-o-Matic server")
 
@@ -296,7 +296,7 @@ class Interface_Builder(Singleton):
             re-establishment is allowed, else False
 
         """
-        pass
+        return False
 
 
         # if jobID in self._jobs:
@@ -338,7 +338,7 @@ class Interface_Builder(Singleton):
         scanning_model = ScanningModelFactory.create(**scanning_model)
 
         if not ScanningModelFactory.validate(scanning_model):
-            self.logger.error("Invalid arguments for scanner job")
+            _SOM_SERVER.logger.error("Invalid arguments for scanner job")
             return False
 
         return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scanner)
@@ -521,7 +521,7 @@ class Interface_Builder(Singleton):
             _SOM_SERVER.logger.warning("Attempted to create analysis with invalid parameters")
             return False
 
-        _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)
+        return _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)
 
     @_verify_admin
     def _server_create_feature_extract_job(self, user_id, feature_extract_model):

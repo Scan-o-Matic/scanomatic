@@ -17,7 +17,7 @@ ITEMS = Enum("ITEMS", names=("Cell", "Blob", "Background"))
 class AnalysisModel(model.Model):
 
     def __init__(self, first_pass_file="", analysis_config_file="", pinning_matrices=tuple(), use_local_fixture=False,
-                 stop_at_image=-1, output_directory="", focus_position=None, suppress_non_focal=False,
+                 stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
                  animate_focal=False, grid_images=None, grid_model=None, xml_model=None):
 
         if grid_model is None:

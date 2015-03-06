@@ -212,4 +212,5 @@ class Server(object):
 
         self._queue.add(rpc_job)
 
+        self.logger.info("Job {0} with id {1} added to queue".format(rpc_job, rpc_job.id))
         return rpc_job.id

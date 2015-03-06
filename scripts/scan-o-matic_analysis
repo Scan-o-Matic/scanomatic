@@ -24,5 +24,9 @@ if __name__ == "__main__":
     if AnalysisModelFactory.validate(analysis_model):
 
         client = rpc_client.get_client(admin=True)
-        client.create_analysis_job(analysis_model)
-        print "Job requested."
+        try:
+            client.create_analysis_job(analysis_model)
+        except AttributeError:
+            print "Not enough privileges or server not running"
+        else:
+            print "Job requested."

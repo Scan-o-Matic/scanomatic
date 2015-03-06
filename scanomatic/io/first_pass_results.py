@@ -6,6 +6,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisImageFactory,
 
 FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
 
+
 class FirstPassResults(object):
 
     def __init__(self, path="", sort_mode=FIRST_PASS_SORTING.Time):
@@ -18,13 +19,13 @@ class FirstPassResults(object):
         self._used_models = []
         self._loading_length = 0
         if path:
-            self._loadPath(self._file_path, sort_mode=sort_mode)
+            self._load_path(self._file_path, sort_mode=sort_mode)
 
     @classmethod
     def create_from_data(cls, path, meta_data, image_models, used_models=None):
 
         if used_models is None:
-            used_models=[]
+            used_models = []
 
         new = cls()
         new._file_path = path
@@ -32,9 +33,9 @@ class FirstPassResults(object):
         new._image_models = [AnalysisImageFactory.copy(model) for model in image_models]
         new._used_models = [AnalysisImageFactory.copy(model) for model in used_models]
         new._loading_length = len(new._image_models)
-        return  new
+        return new
 
-    def _loadPath(self, path, sort_mode=FIRST_PASS_SORTING.Time):
+    def _load_path(self, path, sort_mode=FIRST_PASS_SORTING.Time):
 
         self._meta_data = MetaDataFactory.create(**project_log.get_meta_data(path))
         if sort_mode is FIRST_PASS_SORTING.Time:
@@ -56,7 +57,7 @@ class FirstPassResults(object):
 
         if item < 0:
             item %= len(self._image_models)
-        return sorted(self._image_models, key=lambda x:x.time)[item]
+        return sorted(self._image_models, key=lambda x: x.time)[item]
 
     def __add__(self, other):
 
@@ -70,9 +71,10 @@ class FirstPassResults(object):
             other_image_models.append(model)
 
         other_image_models += self._image_models
-        other_image_models = sorted(other_image_models, key=lambda x:x.time)
+        other_image_models = sorted(other_image_models, key=lambda x: x.time)
 
-        return FirstPassResults.create_from_data(self._file_path, self._meta_data, other_image_models, self._used_models)
+        return FirstPassResults.create_from_data(self._file_path, self._meta_data, other_image_models,
+                                                 self._used_models)
 
     @property
     def meta_data(self):
