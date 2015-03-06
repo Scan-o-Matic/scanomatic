@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/scripts/scan-o-matic_analysis.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/models/analysis_model.py" afterPath="$PROJECT_DIR$/scanomatic/models/analysis_model.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/io/first_pass_results.py" afterPath="$PROJECT_DIR$/scanomatic/io/first_pass_results.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" afterPath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/setup.py" afterPath="$PROJECT_DIR$/setup.py" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/scripts/scan-o-matic_analysis.py" afterPath="$PROJECT_DIR$/scripts/scan-o-matic_analysis" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" afterPath="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="scan-o-matic.iws" />
@@ -56,21 +53,19 @@
       <file leaf-file-name="setup.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/setup.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="779" max-vertical-offset="3000">
+            <state vertical-scroll-proportion="0.0" vertical-offset="149" max-vertical-offset="3000">
               <caret line="75" column="32" selection-start-line="75" selection-start-column="32" selection-end-line="75" selection-end-column="32" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="scan-o-matic_analysis.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/scripts/scan-o-matic_analysis.py">
+      <file leaf-file-name="scan-o-matic_analysis" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/scripts/scan-o-matic_analysis">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.4162042" vertical-offset="0" max-vertical-offset="901">
-              <caret line="25" column="30" selection-start-line="25" selection-start-column="30" selection-end-line="25" selection-end-column="30" />
-              <folding>
-                <element signature="e#0#35#0" expanded="true" />
-              </folding>
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="495">
+              <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -90,9 +85,21 @@
       <file leaf-file-name="analysis_model.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scanomatic/models/analysis_model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="59" max-vertical-offset="1425">
-              <caret line="90" column="47" selection-start-line="90" selection-start-column="47" selection-end-line="90" selection-end-column="47" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1425">
+              <caret line="48" column="56" selection-start-line="48" selection-start-column="40" selection-end-line="48" selection-end-column="56" />
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="analysis_factories.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.8501665" vertical-offset="4334" max-vertical-offset="5235">
+              <caret line="340" column="40" selection-start-line="340" selection-start-column="40" selection-end-line="340" selection-end-column="40" />
+              <folding>
+                <element signature="e#23#32#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -147,7 +154,6 @@
         <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/support.py" />
         <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/first_pass_results.py" />
         <option value="$PROJECT_DIR$/scanomatic/server/analysis_effector.py" />
-        <option value="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" />
         <option value="$PROJECT_DIR$/scanomatic/io/xml/writer.py" />
         <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py" />
         <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/grid_cell.py" />
@@ -162,6 +168,8 @@
         <option value="$PROJECT_DIR$/scripts/scan-o-matic_analysis.py" />
         <option value="$PROJECT_DIR$/scanomatic/models/analysis_model.py" />
         <option value="$PROJECT_DIR$/scanomatic/io/first_pass_results.py" />
+        <option value="$PROJECT_DIR$/scripts/scan-o-matic_analysis" />
+        <option value="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" />
       </list>
     </option>
   </component>
@@ -293,6 +301,28 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="models" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="scan-o-matic" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="scan-o-matic" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="scanomatic" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="models" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="factories" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -705,6 +735,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="209" max-vertical-offset="1200">
           <caret line="38" column="33" selection-start-line="38" selection-start-column="33" selection-end-line="38" selection-end-column="33" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -734,16 +765,6 @@
         <state vertical-scroll-proportion="-0.45" vertical-offset="1350" max-vertical-offset="6765">
           <caret line="80" column="0" selection-start-line="80" selection-start-column="0" selection-end-line="80" selection-end-column="0" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="4608" max-vertical-offset="5265">
-          <caret line="324" column="36" selection-start-line="324" selection-start-column="36" selection-end-line="324" selection-end-column="36" />
-          <folding>
-            <element signature="e#23#32#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -912,14 +933,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/setup.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="779" max-vertical-offset="3000">
-          <caret line="75" column="32" selection-start-line="75" selection-start-column="32" selection-end-line="75" selection-end-column="32" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/dev/first_pass_results.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2970">
@@ -935,14 +948,6 @@
           <folding>
             <element signature="e#23#36#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/models/analysis_model.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="509" max-vertical-offset="1425">
-          <caret line="90" column="47" selection-start-line="90" selection-start-column="47" selection-end-line="90" selection-end-column="47" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -964,12 +969,36 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scripts/scan-o-matic_analysis.py">
+    <entry file="file://$PROJECT_DIR$/setup.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.4162042" vertical-offset="0" max-vertical-offset="901">
-          <caret line="25" column="30" selection-start-line="25" selection-start-column="30" selection-end-line="25" selection-end-column="30" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="149" max-vertical-offset="3000">
+          <caret line="75" column="32" selection-start-line="75" selection-start-column="32" selection-end-line="75" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scripts/scan-o-matic_analysis">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="495">
+          <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/models/analysis_model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1425">
+          <caret line="48" column="56" selection-start-line="48" selection-start-column="40" selection-end-line="48" selection-end-column="56" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.8501665" vertical-offset="4334" max-vertical-offset="5235">
+          <caret line="340" column="40" selection-start-line="340" selection-start-column="40" selection-end-line="340" selection-end-column="40" />
           <folding>
-            <element signature="e#0#35#0" expanded="true" />
+            <element signature="e#23#32#0" expanded="true" />
           </folding>
         </state>
       </provider>

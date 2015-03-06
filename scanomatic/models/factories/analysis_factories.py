@@ -3,22 +3,24 @@ __author__ = 'martin'
 import os
 
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
-from scanomatic.models.analysis_model import *
+import scanomatic.models.analysis_model as analysis_model
+
 
 def _rename_old(settings, old_name, new_name):
 
     if old_name in settings:
-        if not new_name in settings:
+        if new_name not in settings:
             settings[new_name] = settings[old_name]
         del settings[old_name]
 
 
 class GridModelFactory(AbstractModelFactory):
-    _MODEL = GridModel
+    _MODEL = analysis_model.GridModel
     STORE_SECTION_SERIALIZERS = {
         ('use_utso',): bool,
         ("median_coefficient",): float,
-        ("manual_threshold",): float
+        ("manual_threshold",): float,
+        ("gridding_offsets",): list
     }
 
     @classmethod
@@ -42,21 +44,36 @@ class GridModelFactory(AbstractModelFactory):
             return True
         return model.FIELD_TYPES.manual_threshold
 
+    @classmethod
+    def _validate_grid_offsets(cls, model):
+
+        def _valid_correction(value):
+
+            return value is None or (len(value) == 2 and all(isinstance(offset, int) for offset in value))
+
+        try:
+            if all(_valid_correction(plate) for plate in model.gridding_offsets):
+                return True
+        except (TypeError, IndexError):
+            pass
+
+        return model.FIELD_TYPES.gridding_offsets
+
 
 class XMLModelFactory(AbstractModelFactory):
-    _MODEL = XMLModel
+    _MODEL = analysis_model.XMLModel
     STORE_SECTION_SERIALIZERS = {
         ("exclude_compartments",): tuple,
         ("exclude_measures",): tuple,
         ("make_short_tag_version",): bool,
-        ("short_tag_measure",): MEASURES
+        ("short_tag_measure",): analysis_model.MEASURES
     }
 
     @classmethod
     def _validate_exclude_compartments(cls, model):
 
         if (cls._is_tuple_or_list(model.exclude_compartments) and
-                all(compartment in COMPARTMENTS for compartment in model.exclude_compartments)):
+                all(compartment in analysis_model.COMPARTMENTS for compartment in model.exclude_compartments)):
             return True
         return model.FIELD_TYPES.exclude_compartments
 
@@ -64,7 +81,7 @@ class XMLModelFactory(AbstractModelFactory):
     def _validate_exclude_measures(cls, model):
 
         if (cls._is_tuple_or_list(model.exclude_measures) and
-                all(measure in MEASURES for measure in model.exclude_measures)):
+                all(measure in analysis_model.MEASURES for measure in model.exclude_measures)):
             return True
         return model.FIELD_TYPES.exclude_measures
 
@@ -78,17 +95,17 @@ class XMLModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_short_tag_measure(cls, model):
 
-        if model.short_tage_measure in MEASURES:
+        if model.short_tage_measure in analysis_model.MEASURES:
             return True
         return model.FIELD_TYPES.short_tag_measure
 
 
 class AnalysisModelFactory(AbstractModelFactory):
-    _MODEL = AnalysisModel
+    _MODEL = analysis_model.AnalysisModel
     STORE_SECTION_HEAD = ("first_pass_file",)
     _SUB_FACTORIES = {
-        XMLModel: XMLModelFactory,
-        GridModel: GridModelFactory
+        analysis_model.XMLModel: XMLModelFactory,
+        analysis_model.GridModel: GridModelFactory
     }
     STORE_SECTION_SERIALIZERS = {
         ('first_pass_file',): str,
@@ -101,7 +118,6 @@ class AnalysisModelFactory(AbstractModelFactory):
         ('suppress_non_focal',): bool,
         ('animate_focal',): bool,
         ('grid_images',): list,
-        ('grid_correction',): list,
         ('grid_model',): GridModelFactory,
         ('xml_model',): XMLModelFactory
     }
@@ -201,26 +217,10 @@ class AnalysisModelFactory(AbstractModelFactory):
     def _validate_grid_images(cls, model):
 
         if model.grid_images is None or (
-                    cls._is_tuple_or_list(model.grid_images) and
-                    all(isinstance(val, int) and 0 <= val for val in model.grid_images)):
+                cls._is_tuple_or_list(model.grid_images) and
+                all(isinstance(val, int) and 0 <= val for val in model.grid_images)):
             return True
         return model.FIELD_TYPES.grid_images
-
-    @classmethod
-    def _validate_grid_correction(cls, model):
-
-        def _valid_correction(value):
-
-            return value is None or (len(value) == 2 and all(isinstance(offset, int) for offset in value))
-
-        try:
-            if (all(_valid_correction(plate) for plate in model.grid_correction) and
-                        len(model.grid_correction) == len(model.pinning_matrices)):
-                return True
-        except (TypeError, IndexError):
-            pass
-
-        return model.FIELD_TYPES.grid_correction
 
     @classmethod
     def _validate_grid_model(cls, model):
@@ -239,7 +239,7 @@ class AnalysisModelFactory(AbstractModelFactory):
 
 class AnalysisImageFactory(AbstractModelFactory):
 
-    _MODEL = ImageModel
+    _MODEL = analysis_model.ImageModel
     STORE_SECTION_SERIALIZERS = {
         ('grayscale_indices',): list,
         ("grayscale_targets",): list,
@@ -249,7 +249,7 @@ class AnalysisImageFactory(AbstractModelFactory):
         ("coordinates_scale",): float,
         ("path",): str,
         ("time",): float,
-        ("plates",): list, # TODO: This won't serialize well
+        ("plates",): list,  # TODO: This won't serialize well
     }
 
     @classmethod
@@ -264,7 +264,7 @@ class AnalysisImageFactory(AbstractModelFactory):
             _rename_old(settings, old_name, new_name)
 
         plate_str = "plate_{0}_area"
-        if not "plates" in settings or not settings["plates"]:
+        if "plates" not in settings or not settings["plates"]:
             settings["plates"] = []
 
         for index in range(10):
@@ -280,8 +280,8 @@ class AnalysisImageFactory(AbstractModelFactory):
     def create_many_update_indices(cls, iterable):
 
         models = [cls.create(**data) for data in iterable]
-        for (index, m) in enumerate(sorted(models, key=lambda x:x.time)):
-            m.index=index
+        for (index, m) in enumerate(sorted(models, key=lambda x: x.time)):
+            m.index = index
             yield m
 
     @classmethod
@@ -299,7 +299,7 @@ class AnalysisImageFactory(AbstractModelFactory):
 
 
 class ImagePlateFactory(AbstractModelFactory):
-    _MODEL = ImagePlateModel
+    _MODEL = analysis_model.ImagePlateModel
     STORE_SECTION_SERIALIZERS = {
         ("index",): int,
         ("x1",): int,
@@ -309,9 +309,8 @@ class ImagePlateFactory(AbstractModelFactory):
     }
 
 
-
 class MetaDataFactory(AbstractModelFactory):
-    _MODEL = AnalysisMetaData
+    _MODEL = analysis_model.AnalysisMetaData
     STORE_SECTION_SERIALIZERS = {
         ("start_time",): float,
         ("name",): str,
@@ -330,8 +329,8 @@ class MetaDataFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
 
-
-        for (old_name, new_name) in [("Start Time", "start_time"),
+        for (old_name, new_name) in [
+                ("Start Time", "start_time"),
                 ("Prefix", "name"), ("Interval", "interval"), ("Description", "description"),
                 ("Version", "version"), ("UUID", "uuid"), ("Measures", "images"), ("Fixture", "fixture"),
                 ("Scanner", "scanner"), ("Pinning Matrices", "pinnings"), ("Project ID", "project_id"),
@@ -339,8 +338,7 @@ class MetaDataFactory(AbstractModelFactory):
 
             _rename_old(settings, old_name, new_name)
 
-
-        if ("Manual Gridding" in settings):
+        if "Manual Gridding" in settings:
             del settings["Manual Gridding"]
 
         return super(MetaDataFactory, cls).create(**settings)
