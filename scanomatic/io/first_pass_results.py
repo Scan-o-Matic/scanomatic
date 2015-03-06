@@ -2,7 +2,7 @@ __author__ = 'martin'
 
 import scanomatic.io.project_log as project_log
 from enum import Enum
-from scanomatic.models.factories.analysis_factories import AnalysisImageFactory, MetaDataFactory
+from scanomatic.models.factories.analysis_factories import AnalysisImageFactory, MetaDataFactory, AnalysisModelFactory
 
 FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
 
@@ -78,6 +78,13 @@ class FirstPassResults(object):
     def meta_data(self):
 
         return self._meta_data
+
+    @property
+    def analysis_model(self):
+
+        return AnalysisModelFactory.create(
+            first_pass_file=self._file_path
+        )
 
     @property
     def plates(self):

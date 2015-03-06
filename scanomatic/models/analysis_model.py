@@ -87,5 +87,6 @@ class AnalysisMetaData(model.Model):
 
         super(AnalysisMetaData, self).__init__(start_time=start_time, name=name, description=description,
                                                interval=interval, images=images, uuid=uuid, fixture=fixture,
-                                               scanner=scanner, project_id=project_id, scanner_layout_id=scanner_layout_id,
+                                               scanner=scanner, project_id=project_id,
+                                               scanner_layout_id=scanner_layout_id,
                                                version=version, pinnings=pinnings)
