@@ -51,9 +51,9 @@ class Fake(object):
         # TODO: Make real status somehow
         s = self.pipe.status
         if 'id' not in s:
-            s['id'] = self.identifier
+            s['id'] = self._job.id
         if 'label' not in s:
-            s['label'] = self.label
+            s['label'] = self._job.id
         if 'running' not in s:
             s['running'] = True
 
@@ -96,7 +96,7 @@ class RpcJob(Process, Fake):
             self._childPipe, self._job_effector(self._job))
         
         setproctitle.setproctitle("SoM {0}".format(
-            pipe_effector.procEffector.type))
+            pipe_effector.procEffector.TYPE))
 
         t = Thread(target=_communicator)
         t.start()
