@@ -137,7 +137,7 @@ def path_lock(f):
 
 def register_path_lock(path):
     global _PATH_LOCK
-    _PATH_LOCK[path] = multiprocessing.Lock()
+    _PATH_LOCK[path] = multiprocessing.RLock()
 
 
 #
@@ -149,7 +149,7 @@ _TYPE_LOCK = {}
 
 def register_type_lock(object_instance):
     global _TYPE_LOCK
-    _TYPE_LOCK[type(object_instance)] = multiprocessing.Lock()
+    _TYPE_LOCK[type(object_instance)] = multiprocessing.RLock()
 
 
 def type_lock(f):
