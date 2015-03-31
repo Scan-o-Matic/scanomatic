@@ -117,12 +117,7 @@ class Queue(Singleton):
         attempts = 0
         while not self._has_job_of_type(self._next_priority) and attempts < len(rpc_job_models.JOB_TYPE):
 
-            next_job_type_value = self._next_priority.value + 1
-            if len(rpc_job_models.JOB_TYPE) < next_job_type_value:
-                next_job_type_value = 1
-
-            self._next_priority = [job_type for job_type in rpc_job_models.JOB_TYPE
-                                   if job_type.value == next_job_type_value][0]
+            self._next_priority = self._next_priority.cycle_known_jobs
             attempts += 1
 
         return self._next_priority

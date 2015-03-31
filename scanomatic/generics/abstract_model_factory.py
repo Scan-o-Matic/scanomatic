@@ -305,8 +305,8 @@ class Serializer(object):
     def _get_data_type(self, key):
 
         factory = self._factory
-        if key in factory.STORE_SECTION_SERLIALIZERS:
-            return factory.STORE_SECTION_SERLIALIZERS[key]
+        if key in factory.STORE_SECTION_SERIALIZERS:
+            return factory.STORE_SECTION_SERIALIZERS[key]
         return None
 
     def serialize(self, model):
@@ -323,7 +323,7 @@ class Serializer(object):
     def _deep_serialize_keys_and_types(self, model):
 
         factory = self._factory
-        for key_path, dtype in factory.STORE_SECTION_SERLIALIZERS.items():
+        for key_path, dtype in factory.STORE_SECTION_SERIALIZERS.items():
 
             if issubclass(dtype, AbstractModelFactory):
 

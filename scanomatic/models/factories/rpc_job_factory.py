@@ -8,7 +8,7 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
     _MODEL = rpc_job_models.RPCjobModel
     _SUB_FACTORIES = {ScanningModel: ScanningModelFactory}
     STORE_SECTION_HEAD = ('id',)
-    STORE_SECTION_SERLIALIZERS = {
+    STORE_SECTION_SERIALIZERS = {
         ('id',): int,
         ('type',): rpc_job_models.JOB_TYPE,
         ('status',): rpc_job_models.JOB_STATUS,

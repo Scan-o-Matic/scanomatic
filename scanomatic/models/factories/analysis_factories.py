@@ -110,6 +110,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         analysis_model.XMLModel: XMLModelFactory,
         analysis_model.GridModel: GridModelFactory
     }
+
     STORE_SECTION_SERIALIZERS = {
         ('first_pass_file',): str,
         ('analysis_config_file',): str,
