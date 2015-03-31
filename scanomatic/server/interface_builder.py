@@ -341,7 +341,7 @@ class Interface_Builder(Singleton):
             _SOM_SERVER.logger.error("Invalid arguments for scanner job")
             return False
 
-        return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scanner)
+        return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan)
 
     @_verify_admin
     def _server_remove_from_queue(self, user_id, job_id):
