@@ -289,8 +289,9 @@ class Serializer(object):
             if self._get_is_sub_model(dtype, key_path):
 
                 filtered_members = zip(*SerializationHelper.filter_member_model(key_path, key_paths, keys, vals))[1:]
-                setattr(model, key, SerializationHelper.unserialize(val, dtype).serializer._parse_serialization(
-                    *filtered_members))
+                if filtered_members:
+                    setattr(model, key, SerializationHelper.unserialize(val, dtype).serializer._parse_serialization(
+                        *filtered_members))
 
         return model
 

@@ -99,8 +99,9 @@ class Jobs(Singleton):
 
         jobs = list(RPC_Job_Model_Factory.serializer.load(self._paths.rpc_jobs))
         for job in jobs:
-            child_pipe, parent_pipe = Pipe()
-            self._jobs[job] = rpc_job.Fake(job, parent_pipe)
+            if job and job.content_model:
+                child_pipe, parent_pipe = Pipe()
+                self._jobs[job] = rpc_job.Fake(job, parent_pipe)
 
     def sync(self):
 
@@ -158,6 +159,7 @@ class Jobs(Singleton):
 
         job_process.daemon = True
         job_process.start()
+        print(job.content_model)
         job_process.pipe.send('setup', RPC_Job_Model_Factory.to_dict(job.content_model))
         job_process.pipe.send('start')
 

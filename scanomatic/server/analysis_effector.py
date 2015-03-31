@@ -53,7 +53,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._specific_statuses['current_image_index'] = 'current_image_index'
 
         self._allowed_calls['setup'] = self.setup
-        self._analysis_job = AnalysisModelFactory.create(**job.content_model)
+        print(job.content_model)
+        if job.content_model:
+            self._analysis_job = AnalysisModelFactory.create(**job.content_model)
+        else:
+            self._analysis_job = AnalysisModelFactory.create()
+            self._logger.warning("No job instructions")
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
         self._scan_model = None
         self._focus_graph = None
