@@ -140,14 +140,14 @@ class Jobs(Singleton):
             child_pipe)
 
         self._initialize_job_process(job_process, job)
-        self._set_initialized_job(job, job_process)
+        self._set_initialized_job(job_process, job)
 
         self._logger.info("Job '{0}' ({1}) started".format(
             job.id, job.type))
 
         return True
 
-    def _set_initialized_job(self, job, job_process):
+    def _set_initialized_job(self, job_process, job):
 
         self._jobs[job] = job_process
         job.status = rpc_job_models.JOB_STATUS.Running

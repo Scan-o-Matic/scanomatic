@@ -106,13 +106,13 @@ class Queue(Singleton):
     @decorators.type_lock
     def get_highest_priority(self):
 
-        job_type = self.__next_priority
+        job_type = self.__next_priority_job_type
         if self._has_job_of_type(job_type):
             return sorted(self._get_job_by_type(job_type), key=lambda job: job.priority)[0]
         return None
 
     @property
-    def __next_priority(self):
+    def __next_priority_job_type(self):
 
         attempts = 0
         while not self._has_job_of_type(self._next_priority) and attempts < len(rpc_job_models.JOB_TYPE):

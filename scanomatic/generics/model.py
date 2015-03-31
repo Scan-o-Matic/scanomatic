@@ -14,6 +14,12 @@ class Model(object):
         if not all(key == key.lower() for key in content):
             raise AttributeError("Model fields may only be lower case to work with serializers {0}".format(content.keys()))
 
+        if "keys" in content.keys():
+            raise AttributeError("Attribute 'keys' is reserved and can't be defined")
+
+        if any(k for k in content.keys() if k.startswith("_")):
+            raise AttributeError("Model attributes may not be hidden")
+
         for key, val in content.items():
             self.__dict__[key] = val
 
@@ -47,6 +53,10 @@ class Model(object):
 
         return  item in self.__dict__
 
+    def __getitem__(self, item):
+
+        return getattr(self, item)
+
     @classmethod
     def _hasSetFieldTypes(cls):
 
@@ -72,3 +82,6 @@ class Model(object):
 
         return self.__dict__[Model._INITIALIZED]
 
+    def keys(self):
+
+        return (k for k in self.__dict__.keys() if not k.startswith("_") and k != "keys")
