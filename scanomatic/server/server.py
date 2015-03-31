@@ -195,7 +195,7 @@ class Server(object):
 
     def enqueue(self, model, job_type):
 
-        if job_type is rpc_job_models.JOB_TYPE.Scanning and not self.scanner_manager.has_scanners:
+        if job_type is rpc_job_models.JOB_TYPE.Scan and not self.scanner_manager.has_scanners:
             self.logger.error("There are no scanners reachable from server")
             return False
 
