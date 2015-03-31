@@ -204,7 +204,7 @@ class Server(object):
             pid=None,
             type=job_type,
             status=rpc_job_models.JOB_STATUS.Requested,
-            contentModel=type(model))
+            content_model=type(model))
 
         if not RPC_Job_Model_Factory.validate(rpc_job):
             self.logger.error("Failed to create job model")
