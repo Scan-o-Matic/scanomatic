@@ -129,7 +129,7 @@ class Queue(Singleton):
 
     def _has_job_of_type(self, job_type):
 
-        return any(*self._get_job_by_type(job_type))
+        return any(self._get_job_by_type(job_type))
 
     def _get_job_by_type(self, job_type):
 
