@@ -50,6 +50,8 @@ class _PipeEffector(object):
         #Reaction will depend on if server or client side
         self._failVunerableCalls = []
 
+        self._pid = os.getpid()
+
     def setFailVunerableCalls(self, *calls):
 
         self._failVunerableCalls = calls
@@ -212,7 +214,8 @@ class ParentPipeEffector(_PipeEffector):
 
         super(ParentPipeEffector, self).__init__(
             pipe, loggerName="Parent Pipe Effector")
-        self._status = dict()
+
+        self._status = {'pid': self._pid}
 
         self._allowedCalls['status'] = self._setStatus
 
@@ -223,7 +226,9 @@ class ParentPipeEffector(_PipeEffector):
 
     def _setStatus(self, *args, **kwargs):
 
-        #self._logger.info("Pipe made its status {0}".format(kwargs))
+        if 'pid' not in kwargs:
+            kwargs['pid'] = self._pid
+
         self._status = kwargs
 
 

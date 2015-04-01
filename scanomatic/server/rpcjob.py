@@ -17,6 +17,7 @@ from multiprocessing import Process
 from threading import Thread
 from time import sleep
 import psutil
+import os
 import setproctitle
 
 #
@@ -56,6 +57,8 @@ class Fake(object):
             s['label'] = self._job.id
         if 'running' not in s:
             s['running'] = True
+        if 'pid' not in s:
+            s['pid'] = os.getpid()
 
         return s
 
@@ -92,6 +95,7 @@ class RpcJob(Process, Fake):
         job_running = True
         _l = logger.Logger("RPC Job (proc-side)")
 
+        print(self._job)
         pipe_effector = pipes.ChildPipeEffector(
             self._childPipe, self._job_effector(self._job))
         
