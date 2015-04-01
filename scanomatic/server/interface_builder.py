@@ -93,7 +93,10 @@ class Interface_Builder(Singleton):
         global _RPC_SERVER
         global _SOM_SERVER
 
-        _RPC_SERVER.stop()
+        if _RPC_SERVER
+            _RPC_SERVER.stop()
+        else
+            self.logger.warning("Trying to stop a server that is not running")
         _RPC_SERVER = None
 
         if _SOM_SERVER:
