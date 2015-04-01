@@ -57,6 +57,16 @@ class Model(object):
 
         return getattr(self, item)
 
+    def __eq__(self, other):
+
+        for key in self.keys():
+
+            if key not in other or other[key] != self[key]
+
+                return False
+
+        return True
+
     @classmethod
     def _hasSetFieldTypes(cls):
 
