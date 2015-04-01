@@ -61,7 +61,7 @@ class Model(object):
 
         for key in self.keys():
 
-            if key not in other or other[key] != self[key]
+            if key not in other or other[key] != self[key]:
 
                 return False
 
