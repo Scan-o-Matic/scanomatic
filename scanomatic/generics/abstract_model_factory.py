@@ -23,6 +23,10 @@ class AbstractModelFactory(object):
     @decorators.class_property
     def serializer(cls):
 
+        """
+
+        :rtype : Serializer
+        """
         return Serializer(cls)
 
     @classmethod
@@ -32,11 +36,6 @@ class AbstractModelFactory(object):
         if model_type not in cls._SUB_FACTORIES:
             return AbstractModelFactory
         return cls._SUB_FACTORIES[model_type]
-
-    @staticmethod
-    def to_dict(model):
-
-        return {key: copy.deepcopy(value) for key, value in model}
 
     @classmethod
     def _verify_correct_model(cls, model):
@@ -74,7 +73,9 @@ class AbstractModelFactory(object):
     def copy(cls, model):
 
         if cls._verify_correct_model(model):
-            return cls.create(**AbstractModelFactory.to_dict(model))
+            return cls.serializer.load_serialized_object(
+                copy.deepcopy(
+                    cls.serializer.serialize(model)))
 
     @classmethod
     def validate(cls, model):
@@ -225,10 +226,7 @@ class Serializer(object):
 
     def dump(self, model, path):
 
-        factory = self._factory
-        valid = factory.validate(model)
-
-        if factory.STORE_SECTION_HEAD and valid:
+        if self._can_dump_to_file(model):
 
             conf = SerializationHelper.get_config(path)
             serialized_model = self.serialize(model)
@@ -238,8 +236,19 @@ class Serializer(object):
                 SerializationHelper.update_config(conf, section, serialized_model)
                 return SerializationHelper.save_config(conf, path)
 
+        return False
+
+    def _can_dump_to_file(self, model):
+
+        factory = self._factory
+        valid = factory.validate(model)
+
+        if factory.STORE_SECTION_HEAD and valid:
+            return True
+
         if not factory.STORE_SECTION_HEAD:
             self._logger.warning("Factory does not know head for sections")
+
         if not valid:
             self._logger.warning("Model {0} does not have valid data".format(model))
 
@@ -257,7 +266,7 @@ class Serializer(object):
 
                     conf.remove_section(section)
                     return SerializationHelper.save_config(conf, path)
-        return  False
+        return False
 
     def load(self, path):
 
@@ -271,6 +280,10 @@ class Serializer(object):
 
         keys, vals = zip(*conf.items(section))
         return self._parse_serialization(keys, vals)
+
+    def load_serialized_object(self, serialized_object):
+
+        return self._parse_serialization(*zip(*serialized_object.items()))
 
     def _parse_serialization(self, keys, vals):
 
@@ -288,18 +301,34 @@ class Serializer(object):
 
             if self._get_is_sub_model(dtype, key_path):
 
-                filtered_members = zip(*SerializationHelper.filter_member_model(key_path, key_paths, keys, vals))[1:]
+                filtered_members = zip(*SerializationHelper.filter_member_model(
+                    key_path, key_paths, keys, vals))
+                filter_keypaths, filter_keys, filter_vals = filtered_members
                 if filtered_members:
-                    setattr(model, key, SerializationHelper.unserialize(val, dtype).serializer._parse_serialization(
-                        *filtered_members))
+                    filter_keys = tuple(self._get_trimmed_keys(filter_keys, key))
+                    submodel_factory = self._get_submodel_factory(val, dtype)
+                    setattr(model, key, submodel_factory.serializer._parse_serialization(filter_keys, filter_vals))
 
         return model
+
+    @staticmethod
+    def _get_trimmed_keys(keys, prefix_to_trim_away):
+
+        trim_pos = len(prefix_to_trim_away) + 1
+        for key in keys:
+            yield key[trim_pos:]
+
+    @staticmethod
+    def _get_submodel_factory(serialized_value, dtype):
+
+        return SerializationHelper.unserialize(serialized_value, dtype)
 
     def _get_is_sub_model(self, dtype, key_path):
 
         return dtype is not None and len(key_path) == 1 and issubclass(dtype, AbstractModelFactory)
 
-    def _get_belongs_to_sub_model(self, key_path):
+    @staticmethod
+    def _get_belongs_to_sub_model(key_path):
 
         return len(key_path) > 1
 
