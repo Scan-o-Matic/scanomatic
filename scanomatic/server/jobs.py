@@ -159,8 +159,7 @@ class Jobs(Singleton):
 
         job_process.daemon = True
         job_process.start()
-        print(job.content_model)
-        job_process.pipe.send('setup', RPC_Job_Model_Factory.to_dict(job.content_model))
+        job_process.pipe.send('setup', RPC_Job_Model_Factory.serializer.serialize(job))
         job_process.pipe.send('start')
 
     def _get_job_effector(self, job):
