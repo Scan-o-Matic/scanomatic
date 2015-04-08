@@ -59,7 +59,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         else:
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
-        AnalysisModelFactory.set_absolute_paths(self._analysis_job)
+
         self._scan_model = None
         self._focus_graph = None
         self._current_image_model = None
@@ -148,6 +148,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
     def _setup_first_iteration(self):
 
         self._startTime = time.time()
+
+        AnalysisModelFactory.set_absolute_paths(self._analysis_job)
+
         self._first_pass_results = first_pass_results.FirstPassResults(self._analysis_job.first_pass_file)
 
         self._remove_files_from_previous_analysis()
@@ -211,7 +214,11 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         if not self._allow_start:
             self._logger.error("Can't perform analysis; instructions don't validate.")
+            for bad_instruction in AnalysisModelFactory.get_invalid(self._analysis_job):
+                self._logger.error("Bad value {0}={1}".format(bad_instruction, self._analysis_job[bad_instruction.name]
+                                                              ))
             self.add_message("Can't perform analysis; instructions don't validate.")
+            self._stopping = True
 
     def _update_job_from_config_file(self):
 
@@ -222,6 +229,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         except IOError:
             self._logger.warning("There was no config file at {0}".format(self._analysis_job.analysis_config_file) +
                                  "(if use of analysis config file wasn't intended, please disregard this warning)")
+            self._analysis_job.analysis_config_file = None
             return
 
         AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Analysis")))
