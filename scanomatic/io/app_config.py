@@ -14,9 +14,9 @@ __status__ = "Development"
 #
 
 import os
-import md5
+from hashlib import  md5
 import random
-from cPickle import loads, dumps
+from cPickle import loads, dumps, UnpickleableError
 from ConfigParser import ConfigParser
 import re
 
@@ -79,14 +79,14 @@ class Config(Singleton):
                 }
 
             }
-        #TMP SOLUTION TO BIGGER PROBLEMS
+        # TMP SOLUTION TO BIGGER PROBLEMS
 
-        #VERSION HANDLING
+        # VERSION HANDLING
         self.version_first_pass_change_1 = 0.997
         self.version_fixture_grid_history_change_1 = 0.998
         self.version_oldest_allow_fixture = 0.9991
 
-        #SCANNER
+        # SCANNER
         self.number_of_scanners = 3
         self.scanner_name_pattern = "Scanner {0}"
         self.scanner_names = list()
@@ -95,7 +95,7 @@ class Config(Singleton):
         self._scanner_models = {
             self.SCANNER_PATTERN.format(i): 'EPSON V700' for i in range(1, 4)}
 
-        #POWER MANAGER
+        # POWER MANAGER
         self._scanner_sockets = {
             self.SCANNER_PATTERN.format(i): i for i in range(1, 4)}
 
@@ -106,20 +106,20 @@ class Config(Singleton):
         self._pm_MAC = None
         self._pm_name = "Server 1"
 
-        #RPC SERVER
+        # RPC SERVER
         self._rpc_port = None
         self._rpc_host = None
         self._config_rpc_admin = None
-        self._serverCfg = None
+        self._server_config = None
 
-        #HARDWARE RESOURCES
+        # HARDWARE RESOURCES
         self.resources_min_checks = 3
         self.resources_mem_min = 30
         self.resources_cpu_tot_free = 30
         self.resources_cpu_single = 75
         self.resources_cpu_n = 1
 
-        #LOAD CONFIG FROM FILE
+        # LOAD CONFIG FROM FILE
         self._load_config_from_file()
 
         self._set_pm_extras()
@@ -137,7 +137,7 @@ class Config(Singleton):
         if pm is not None:
             try:
                 self.pm_type = loads(pm)
-            except:
+            except UnpickleableError:
                 self._logger.warning("Power Manager Type {0} not valid".format(
                     pm))
 
@@ -167,14 +167,14 @@ class Config(Singleton):
 
             self._PM = power_manager.USB_PM_LINUX
             self._pm_arguments = {
-                'power_mode' : self.POWER_DEFAULT
-                    }
+                'power_mode': self.POWER_DEFAULT
+            }
 
         elif self.pm_type == power_manager.POWER_MANAGER_TYPE.LAN:
             self._PM = power_manager.LAN_PM
 
             self._pm_arguments = {
-                'power_mode' : self.POWER_DEFAULT,
+                'power_mode': self.POWER_DEFAULT,
                 'host': self._pm_host,
                 'password': self._pm_pwd,
                 'verify_name': self._pm_verify_name,
@@ -184,40 +184,39 @@ class Config(Singleton):
         else:
             self._PM = power_manager.NO_PM
             self._pm_arguments = {
-                    'power_mode' : self.POWER_DEFAULT
-                    }
+                'power_mode': self.POWER_DEFAULT
+            }
 
     @staticmethod
-    def _safeCfgGet(cfg, section, item, defaultValue=None, vtype=None):
+    def _safe_config_get(cfg, section, item, default_value=None, vtype=None):
 
         try:
 
-            defaultValue = cfg.get(section, item)
+            default_value = cfg.get(section, item)
             if vtype is not None:
-                defaultValue = vtype(defaultValue)
+                default_value = vtype(default_value)
 
         except:
 
             pass
 
-        return defaultValue
+        return default_value
 
     @property
-    def serverCfg(self):
+    def server_config(self):
 
-        if self._serverCfg is None:
-            self._serverCfg = ConfigParser(allow_no_value=True)
-            self._serverCfg.readfp(open(self._paths.config_rpc))
+        if self._server_config is None:
+            self._server_config = ConfigParser(allow_no_value=True)
+            self._server_config.readfp(open(self._paths.config_rpc))
             self._logger.info("Loaded RPC config from '{0}'".format(
                 self._paths.config_rpc))
-        return self._serverCfg
+        return self._server_config
 
     @property
     def rpc_host(self):
 
         if self._rpc_host is None:
-            host = self._safeCfgGet(self.serverCfg, 'Communication',
-                                    'host', '127.0.0.1')
+            host = self._safe_config_get(self.server_config, 'Communication', 'host', '127.0.0.1')
             self._rpc_host = host
 
         return self._rpc_host
@@ -227,21 +226,10 @@ class Config(Singleton):
 
         if self._rpc_port is None:
 
-            port = self._safeCfgGet(self.serverCfg, 'Communication', 'port',
-                                    14547, int)
-
+            port = self._safe_config_get(self.server_config, 'Communication', 'port', 14547, int)
             self._rpc_port = port
 
         return self._rpc_port
-
-    @property
-    def rpcHiddenMethods(self):
-
-        hm = 'Hidden Methods'
-        if (hm in self.serverCfg.sections()):
-            return self.serverCfg.options(hm)
-        else:
-            return tuple()
 
     @property
     def rpc_admin(self):
@@ -251,12 +239,12 @@ class Config(Singleton):
 
         path = self._paths.config_rpc_admin
 
-        if (os.path.isfile(path)):
+        if os.path.isfile(path):
             fh = open(path, 'r')
             admin = fh.read().strip()
             fh.close()
         else:
-            admin = md5.new(str(random.random())).hexdigest()
+            admin = md5(str(random.random())).hexdigest()
             fh = open(path, 'w')
             fh.write(admin)
             fh.close()
@@ -351,7 +339,7 @@ class Config(Singleton):
         analysis_query = {
             "-i": "",  # No default input file
             "-o": self._paths.experiment_analysis_relative_path,  # Default subdir
-            #"-t" : 100,  # Time to set grid
+            # "-t" : 100,  # Time to set grid
             '--xml-short': 'True',  # Short output format
             '--xml-omit-compartments': 'background,cell',  # Only look at blob
             '--xml-omit-measures':
@@ -361,10 +349,10 @@ class Config(Singleton):
 
         return analysis_query
 
-    def getMinModel(self, model, factory):
+    def get_min_model(self, model, factory):
 
         return factory.create(**self._minMaxModels[type(model)]['min'])  
 
-    def getMaxModel(self, model, factory):
+    def get_max_model(self, model, factory):
 
         return factory.create(**self._minMaxModels[type(model)]['max'])

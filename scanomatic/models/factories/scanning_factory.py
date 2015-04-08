@@ -10,8 +10,8 @@ import string
 
 class ScanningModelFactory(AbstractModelFactory):
     _MODEL = ScanningModel
-    _GET_MIN_MODEL = app_config.Config().getMinModel
-    _GET_MAX_MODEL = app_config.Config().getMaxModel
+    _GET_MIN_MODEL = app_config.Config().get_min_model
+    _GET_MAX_MODEL = app_config.Config().get_max_model
     STORE_SECTION_HEAD = ("scanner",)
     STORE_SECTION_SERLIALIZERS = {
         ('number_of_scans',): int,
