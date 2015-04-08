@@ -23,7 +23,7 @@ _logger.info("Checking non-python dependencies")
 # INSTALLING NON-PYTHONIC PROGRAMS
 #
 
-program_dependencies = ('nmap', 'sispmctl')
+program_dependencies = ('nmap',)
 PROGRAM_NOT_FOUND = 32512
 install_dependencies = []
 
@@ -188,6 +188,9 @@ if (sys.argv[-1].upper() == "--USER"):
     Alternatively, if you install Scan-o-Matic for all
     users then the launch scripts should be copied
     into a folder that is already in path.
+
+    If you use a USB-connected PowerManager, make sure
+    sispmctl is installed.
 
 """
 
