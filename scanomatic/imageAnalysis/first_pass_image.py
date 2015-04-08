@@ -233,16 +233,13 @@ class Image(object):
     def __init__(self, fixture, image_path=None,
                  image=None, markings=None, define_reference=False,
                  fixture_directory=None, markings_path=None,
-                 im_scale=None, appConfig=None):
+                 im_scale=None):
 
         self._logger = logger.Logger("Fixture Image")
 
         self._paths = paths.Paths()
 
-        if appConfig is None:
-            self._config = app_config.Config(self._paths)
-        else:
-            self._config = appConfig
+        self._config = app_config.Config(self._paths)
 
         self._define_reference = define_reference
         self.fixture_name = fixture
@@ -612,13 +609,13 @@ class Image(object):
 
     def run_marker_analysis(self):
 
-        logger = self._logger
+        _logger = self._logger
 
         t = time.time()
 
         if self.marking_path is None or self.markings < 1:
 
-            logger.error(
+            _logger.error(
                 "No marker set ('{0}') or no markings ({1}).".format(
                     self.marking_path, self.markings))
 
@@ -642,7 +639,7 @@ class Image(object):
 
         target_conf_file.set("version", __version__)
 
-        logger.debug("Scaling image")
+        _logger.debug("Scaling image")
 
         if self.im_scale is not None:
 
@@ -655,7 +652,7 @@ class Image(object):
 
             self.im_scale = self.MARKER_DETECTION_SCALE / self.im_original_scale
 
-        logger.debug(
+        _logger.debug(
             "New scale {0} (acc {1} s)".format(
                 self.MARKER_DETECTION_SCALE / self.im_original_scale,
                 time.time() - t))
@@ -666,7 +663,7 @@ class Image(object):
             #imsave(analysis_im_path, analysis_img, format='tiff')
             np.save(analysis_im_path, analysis_img)
 
-        logger.debug(
+        _logger.debug(
             "Setting up Image Analysis (acc {0} s)".format(time.time() - t))
 
         im_analysis = imageFixture.FixtureImage(
@@ -675,7 +672,7 @@ class Image(object):
             scale=self.im_scale,
             resource_paths=self._paths)
 
-        logger.debug(
+        _logger.debug(
             "Finding pattern (acc {0} s)".format(time.time() - t))
 
         Xs, Ys = im_analysis.find_pattern(markings=self.markings)
@@ -685,15 +682,15 @@ class Image(object):
 
         if Xs is None or Ys is None:
 
-            logger.error("No markers found")
+            _logger.error("No markers found")
 
         elif len(Xs) == self.markings:
 
             self._set_markings_in_conf(target_conf_file, Xs, Ys)
-            logger.debug("Setting makers {0}, {1}".format(
+            _logger.debug("Setting makers {0}, {1}".format(
                 Xs, Ys))
 
-        logger.debug(
+        _logger.debug(
             "Marker Detection complete (acc {0} s)".format(time.time() - t))
 
         return analysis_im_path
