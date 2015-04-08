@@ -34,7 +34,7 @@ import scanomatic.io.paths as paths
 # Globals
 #
 
-_pi = analysis_image.Project_Image([])
+_pi = analysis_image.ProjectImage([])
 _ga = grid_array.GridArray(_pi, (0,), None)
 POLY = _ga.get_calibration_polynomial_coeffs()
 _paths = paths.Paths()
@@ -87,7 +87,7 @@ def get_grid_cell_from_first_pass_file(
 
     file_path_base = os.path.dirname(fpath)
 
-    project_image = analysis_image.Project_Image(
+    project_image = analysis_image.ProjectImage(
         meta_data['Pinning Matrices'],
         file_path_base=file_path_base,
         fixture_name=meta_data['Fixture'],
@@ -218,7 +218,7 @@ class GridCell(grid_cell.GridCell):
         grid_cell.GridCell.__init__(self, (0, 0, 0))
 
 
-class Project_Image(analysis_image.Project_Image):
+class Project_Image(analysis_image.ProjectImage):
     pass
 
 

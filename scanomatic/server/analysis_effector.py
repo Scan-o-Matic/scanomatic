@@ -170,7 +170,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             raise StopIteration
 
-        self._image = analysis_image.Project_Image(self._analysis_job, self._scan_model)
+        self._image = analysis_image.ProjectImage(self._analysis_job, self._scan_model)
 
         self._xmlWriter.write_header(self._first_pass_results.meta_data, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()

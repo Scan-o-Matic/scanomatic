@@ -25,19 +25,6 @@ import first_pass_image
 from scanomatic.io.paths import Paths
 import scanomatic.io.app_config as app_config_module
 
-
-#
-# EXCEPTIONS
-#
-
-
-class Slice_Outside_Image(Exception):
-    pass
-
-
-class Slice_Error(Exception):
-    pass
-
 IMAGE_ROTATIONS = Enum("IMAGE_ROTATIONS", names=("Landscape", "Portrait", "None"))
 
 
@@ -46,7 +33,7 @@ IMAGE_ROTATIONS = Enum("IMAGE_ROTATIONS", names=("Landscape", "Portrait", "None"
 #
 
 
-class Project_Image(object):
+class ProjectImage(object):
 
     def __init__(self, analysis_model, scanning_model):
 
@@ -58,9 +45,7 @@ class Project_Image(object):
         self._im_loaded = False
         self.im = None
 
-        #APP CONFIG
         self._app_config = app_config_module.Config()
-
 
         self._grid_arrays = self._get_grid_arrays()
         self.features = [None] * (max(self._grid_arrays.keys()) + 1)
@@ -80,7 +65,6 @@ class Project_Image(object):
             fixture_directory=fixture_directory,
             appConfig=self._app_config)
 
-
     def __getitem__(self, key):
 
         return self._grid_arrays[key]
@@ -91,7 +75,7 @@ class Project_Image(object):
 
         for index, pinning in enumerate(self._analysis_model.pinning_matrices):
 
-           if pinning and self._plate_is_analysed(index):
+            if pinning and self._plate_is_analysed(index):
 
                 grid_arrays[index] = grid_array.GridArray(index, pinning, self.fixture, self._analysis_model)
 
@@ -104,22 +88,17 @@ class Project_Image(object):
     def set_grid(self, image_model, save_name=None):
 
         if save_name is None:
-             save_name=os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
+            save_name = os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
 
         self.load_image(image_model.path)
 
         if self._im_loaded:
 
-            if self._scanning_model.version < self._app_config.version_first_pass_change_1:
-                scale_factor = 4.0
-            else:
-                scale_factor = 1.0
-
-            for index, grid_array in enumerate(self._grid_arrays):
+            for index in range(len(self._grid_arrays)):
 
                 plate_model = [plate_model for plate_model in image_model.plates if plate_model.index == index][0]
 
-                im = self.get_im_section(plate_model, scale_factor)
+                im = self.get_im_section(plate_model)
 
                 if self._analysis_model.grid.gridding_offsets is None:
                     self._grid_arrays[index].set_grid(
@@ -158,7 +137,6 @@ class Project_Image(object):
         if self.im.ndim == 3:
             self.im = np.dot(self.im[..., :3], [0.299, 0.587, 0.144])
 
-
     def validate_rotation(self):
 
         pass
@@ -173,27 +151,27 @@ class Project_Image(object):
         else:
             return IMAGE_ROTATIONS.Portait
 
-    def get_im_section(self, plate_model, scale_factor=4.0, im=None):
+    def get_im_section(self, plate_model, im=None):
 
-        def _flip_axis(X, Y):
+        def _flip_axis(a, b):
 
-            return Y, X
+            return b, a
 
-        def _bound(bounds, X, Y):
+        def _bound(bounds, a, b):
 
             def bounds_check(bound, val):
 
                 if 0 <= val < bound:
-                    return  val
+                    return val
                 elif val < 0:
                     return 0
                 else:
                     return bound - 1
 
-            return ((bounds_check(bounds[0], X[0]),
-                     bounds_check(bounds[0], X[1])),
-                    (bounds_check(bounds[1], Y[0]),
-                     bounds_check(bounds[1], Y[1])))
+            return ((bounds_check(bounds[0], a[0]),
+                     bounds_check(bounds[0], a[1])),
+                    (bounds_check(bounds[1], b[0]),
+                     bounds_check(bounds[1], b[1])))
 
         if not im:
             if self._im_loaded:
@@ -201,31 +179,39 @@ class Project_Image(object):
             else:
                 return
 
-        X = sorted(plate_model.x1, plate_model.x2)
-        Y = sorted(plate_model.y1, plate_model.y2)
+        x = sorted(plate_model.x1, plate_model.x2)
+        y = sorted(plate_model.y1, plate_model.y2)
 
         if (self.fixture['version'] >=
                 self._app_config.version_first_pass_change_1):
 
             if self.orientation == IMAGE_ROTATIONS.Portait:
-                X, Y = _flip_axis(X, Y)
+                x, y = _flip_axis(x, y)
 
         elif self.orientation == IMAGE_ROTATIONS.Landscape:
 
-            X, Y = _flip_axis(X, Y)
+            x, y = _flip_axis(x, y)
 
-        X, Y = _bound(im.shape, X, Y)
-        section = im[X[0]: X[1], Y[0]: Y[1]]
+        x, y = _bound(im.shape, x, y)
+        section = im[x[0]: x[1], y[0]: y[1]]
 
         return self._flip_short_dimension(section, im.shape)
 
-    def _flip_short_dimension(self, section, im_shape):
+    @staticmethod
+    def _flip_short_dimension(section, im_shape):
 
         short_dim = [p == min(im_shape) for
                      p in im_shape].index(True)
 
-        slicer = [i != short_dim and slice(None, None, None) or
-                  slice(None, None, -1) for i in range(len(im_shape))]
+        def get_slicer(idx):
+            if idx == short_dim:
+                return slice(None, None, -1)
+            else:
+                return slice(None)
+
+        slicer = []
+        for i in range(len(im_shape)):
+            slicer.append(get_slicer(i))
 
         return section[slicer]
 
@@ -253,10 +239,10 @@ class Project_Image(object):
             if plate.index in self._grid_arrays:
 
                 im = self.get_im_section(plate)
-                grid_array = self._grid_arrays[plate.index]
-                grid_array.analyse(im, image_model)
+                grid_arr = self._grid_arrays[plate.index]
+                grid_arr.analyse(im, image_model)
 
-                self.features[plate.index] = grid_array.features
+                self.features[plate.index] = grid_arr.features
 
         if self._analysis_model.focus_position:
             self._record_focus_colony_data()
