@@ -60,7 +60,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
 
-        self._scan_model = None
         self._focus_graph = None
         self._current_image_model = None
 
@@ -72,9 +71,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     @property
     def total(self):
-        if self._allow_start and self._scan_model:
-            return self._scan_model.number_of_scans
+        if self._get_is_analysing_images():
+            return self._first_pass_results.meta_data.number_of_scans
         return -1
+
+    def _get_is_analysing_images(self):
+        return self._allow_start and hasattr(self, "first_pass_results") and self._first_pass_results
 
     @property
     def progress(self):
@@ -170,7 +172,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             raise StopIteration
 
-        self._image = analysis_image.ProjectImage(self._analysis_job, self._scan_model)
+        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.meta_data)
 
         self._xmlWriter.write_header(self._first_pass_results.meta_data, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()

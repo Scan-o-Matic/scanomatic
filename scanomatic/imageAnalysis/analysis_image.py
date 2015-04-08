@@ -35,10 +35,10 @@ IMAGE_ROTATIONS = Enum("IMAGE_ROTATIONS", names=("Landscape", "Portrait", "None"
 
 class ProjectImage(object):
 
-    def __init__(self, analysis_model, scanning_model):
+    def __init__(self, analysis_model, scanning_meta_data):
 
         self._analysis_model = analysis_model
-        self._scanning_model = scanning_model
+        self._scanning_meta_data = scanning_meta_data
 
         self.fixture = self._load_fixture()
 
@@ -53,11 +53,11 @@ class ProjectImage(object):
     def _load_fixture(self):
 
         paths = Paths()
-        if self._analysis_model.use_local_fixture or not self._scanning_model.fixture_name:
+        if self._analysis_model.use_local_fixture or not self._scanning_meta_data.fixture_name:
             fixture_name = paths.experiment_local_fixturename
             fixture_directory = os.path.dirname(self._analysis_model.first_pass_file)
         else:
-            fixture_name = paths.get_fixture_path(self._scanning_model.fixture_name, only_name=True)
+            fixture_name = paths.get_fixture_path(self._scanning_meta_data.fixture, only_name=True)
             fixture_directory = None
 
         return first_pass_image.Image(
