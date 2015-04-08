@@ -131,7 +131,7 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         base_path = os.path.dirname(model.first_pass_file)
         model.analysis_config_file = cls._get_absolute_path(model.analysis_config_file, base_path)
-        model.output_directory = cls._get_absolute_path(model.output_directory, base_path) + os.sep
+        model.output_directory = cls._get_absolute_path(model.output_directory, base_path)
 
     @classmethod
     def _get_absolute_path(cls, path, base_path):
