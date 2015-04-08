@@ -157,6 +157,12 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._remove_files_from_previous_analysis()
 
+        try:
+            os.makedirs(self._analysis_job.output_directory)
+        except OSError:
+            self._stopping = True
+            return
+
         if self._analysis_job.focus_position is not None:
             self._focus_graph = support.Watch_Graph(
                 self._analysis_job.focus_position, self._analysis_job.output_directory)
