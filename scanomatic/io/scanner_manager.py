@@ -69,8 +69,7 @@ class ScannerPowerManager(object):
         :rtype : bool
         """
         try:
-            self[item]
-            return True
+            return self[item] is not None
         except IndexError:
             return False
 
