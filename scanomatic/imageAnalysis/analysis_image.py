@@ -23,6 +23,7 @@ from enum import Enum
 import grid_array
 import first_pass_image
 from scanomatic.io.paths import Paths
+from scanomatic.io.logger import Logger
 import scanomatic.io.app_config as app_config_module
 
 IMAGE_ROTATIONS = Enum("IMAGE_ROTATIONS", names=("Landscape", "Portrait", "None"))
@@ -39,7 +40,7 @@ class ProjectImage(object):
 
         self._analysis_model = analysis_model
         self._scanning_meta_data = scanning_meta_data
-
+        self._logger = Logger("Analysis Image")
         self.fixture = self._load_fixture()
 
         self._im_loaded = False
@@ -128,9 +129,13 @@ class ProjectImage(object):
 
         except:
 
+
             alt_path = os.path.join(os.path.dirname(self._analysis_model.first_pass_file),
                                     os.path.basename(path))
 
+            self._logger.warning("Failed to load image at '{0}', trying '{1}'.".format(
+                path, alt_path
+            ))
             try:
 
                 self.im = plt_img.imread(alt_path)
@@ -139,6 +144,11 @@ class ProjectImage(object):
             except:
 
                 self._im_loaded = False
+
+        if self._im_loaded:
+            self._logger.info("Image loaded")
+        else:
+            self._logger.error("Failed to load image")
 
         self.validate_rotation()
         self._convert_to_grayscale()
