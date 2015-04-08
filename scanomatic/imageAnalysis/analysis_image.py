@@ -53,7 +53,7 @@ class ProjectImage(object):
     def _load_fixture(self):
 
         paths = Paths()
-        if self._analysis_model.use_local_fixture or not self._scanning_meta_data.fixture_name:
+        if self._analysis_model.use_local_fixture or not self._scanning_meta_data.fixture:
             fixture_name = paths.experiment_local_fixturename
             fixture_directory = os.path.dirname(self._analysis_model.first_pass_file)
         else:
