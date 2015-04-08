@@ -135,7 +135,7 @@ class Queue(Singleton):
 
             if self._has_job_of_type(job.type):
                 job.priority = sorted(self._get_job_by_type(job.type),
-                                      key=lambda job_in_queue: job_in_queue.priority)[-1] + 1
+                                      key=lambda job_in_queue: job_in_queue.priority)[-1].priority + 1
             else:
                 job.priority = 1
 
