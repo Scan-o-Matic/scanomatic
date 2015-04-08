@@ -99,7 +99,7 @@ class Config(Singleton):
         self._scanner_sockets = {
             self.SCANNER_PATTERN.format(i): i for i in range(1, 4)}
 
-        self.pm_type = power_manager.POWER_MANAGER_TYPE.LAN
+        self.pm_type = power_manager.POWER_MANAGER_TYPE.notInstalled
         self._pm_host = "192.168.0.100"
         self._pm_pwd = None
         self._pm_verify_name = False
