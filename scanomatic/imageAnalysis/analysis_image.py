@@ -46,7 +46,10 @@ class ProjectImage(object):
         self.im = None
 
         self._grid_arrays = self._get_grid_arrays()
-        self.features = [None] * (max(self._grid_arrays.keys()) + 1)
+        if (self._grid_arrays):
+            self.features = [None] * (max(self._grid_arrays.keys()) + 1)
+        else:
+            self.features = []
 
     def _load_fixture(self):
 
@@ -75,6 +78,16 @@ class ProjectImage(object):
             if pinning and self._plate_is_analysed(index):
 
                 grid_arrays[index] = grid_array.GridArray(index, pinning, self.fixture, self._analysis_model)
+
+            else:
+
+                if pinning:
+
+                    self._logger.info("Skipping plate {0} because suppressing non-focal positions".format(index))
+
+                else:
+
+                    self._logger.info("Plate {0} not analysed because lacks pinning".format(index))
 
         return grid_arrays
 
