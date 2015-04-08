@@ -134,6 +134,7 @@ class Jobs(Singleton):
 
         # INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
         # identifier, label, target, parent_pipe, child_pipe
+
         job_process = rpc_job.RpcJob(
             job,
             job_effector,

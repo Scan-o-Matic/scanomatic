@@ -53,7 +53,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._specific_statuses['current_image_index'] = 'current_image_index'
 
         self._allowed_calls['setup'] = self.setup
-        print(job.content_model)
+
         if job.content_model:
             self._analysis_job = AnalysisModelFactory.create(**job.content_model)
         else:
@@ -167,7 +167,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             raise StopIteration
 
-
         self._image = analysis_image.Project_Image(self._analysis_job, self._scan_model)
 
         self._xmlWriter.write_header(self._first_pass_results.meta_data, self._first_pass_results.plates)
@@ -201,8 +200,11 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         if self._running:
             self.add_message("Cannot change settings while running")
+            return
 
-        if self._job.analysis_config_file:
+        self._logger.info("Setup got {0} {1}".format(args, kwargs))
+
+        if self._analysis_job.analysis_config_file:
             self._update_job_from_config_file()
 
         self._allow_start = AnalysisModelFactory.validate(self._analysis_job)
@@ -214,6 +216,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
     def _update_job_from_config_file(self):
 
         config = ConfigParser(allow_no_value=True)
-        config.readfp(open(self._analysis_job.analysis_config_file))
+
+        try:
+            config.readfp(open(self._analysis_job.analysis_config_file))
+        except IOError:
+            self._logger.warning("There was no config file at {0}".format(self._analysis_job.analysis_config_file) +
+                                 "(if use of analysis config file wasn't intended, please disregard this warning)")
+            return
+
         AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Analysis")))
         AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Output")))
