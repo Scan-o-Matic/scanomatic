@@ -100,7 +100,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             return super(AnalysisEffector, self).next()
         elif self._analysis_needs_init:
             return self._setup_first_iteration()
-        elif not self._stopping and self._current_image_model.index > 0:
+        elif not self._stopping:
             return self._analyze_image()
         else:
             return self._finalize_analysis()
