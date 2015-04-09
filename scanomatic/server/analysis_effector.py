@@ -136,8 +136,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         if features is None:
             self._logger.warning("No analysis produced for image")
 
-        image_data.Image_Data.writeTimes(self._analysis_job, image_model)
-        image_data.Image_Data.writeImage(self._analysis_job, image_model, features)
+        image_data.ImageData.write_times(self._analysis_job, image_model)
+        image_data.ImageData.write_image(self._analysis_job, image_model, features)
 
         self._xmlWriter.write_image_features(image_model, features)
 
@@ -198,7 +198,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def _remove_files_from_previous_analysis(self):
 
-        for p in image_data.Image_Data.iterImagePaths(self._analysis_job.output_directory):
+        for p in image_data.ImageData.iter_image_paths(self._analysis_job.output_directory):
             os.remove(p)
             self._logger.info("Removed pre-existing file '{0}'".format(p))
 

@@ -65,7 +65,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._logger.info("Loading files image data from '{0}'".format(
             self._feature_job.analysis_directory))
 
-        times, data = image_data.Image_Data.readImageDataAndTimes(self._feature_job.analysis_directory)
+        times, data = image_data.ImageData.read_image_data_and_time(self._feature_job.analysis_directory)
 
         if None in (times, data):
             self._logger.error(
@@ -81,7 +81,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         self._times = times
         self._data = data
-        self._analysis_base_path = image_data.Image_Data.path2dataPathTuple(self._feature_job.analysis_directory)[0]
+        self._analysis_base_path = image_data.ImageData.directory_path_to_data_path_tuple(self._feature_job.analysis_directory)[0]
 
         """
         # DEBUG CODE
