@@ -18,7 +18,8 @@ class AnalysisModel(model.Model):
 
     def __init__(self, first_pass_file="", analysis_config_file="", pinning_matrices=tuple(), use_local_fixture=False,
                  stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
-                 animate_focal=False, grid_images=None, grid_model=None, xml_model=None):
+                 animate_focal=False, grid_images=None, grid_model=None, xml_model=None,
+                 image_data_output_item=ITEMS.Blob, image_data_output_value=VALUES.Sum):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -37,7 +38,9 @@ class AnalysisModel(model.Model):
                                             animate_focal=animate_focal,
                                             grid_images=grid_images,
                                             grid_model=grid_model,
-                                            xml_model=xml_model)
+                                            xml_model=xml_model,
+                                            image_data_output_item=image_data_output_item,
+                                            image_data_output_value=image_data_output_value)
 
 
 class GridModel(model.Model):

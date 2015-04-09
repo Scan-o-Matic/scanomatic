@@ -38,19 +38,24 @@ class ImageData(object):
     @staticmethod
     def write_image(analysis_model, image_model, features):
 
+        # TODO: Add requested measure
+        return ImageData._write_image(analysis_model.output_directory, image_model.index, len(image_model.plates),
+                                      features, analysis_model.image_data_output_item,
+                                      analysis_model.image_data_output_value)
+
+    @staticmethod
+    def _write_image(path, image_index, features, number_of_plates, output_item, output_value):
+
         path = os.path.join(*ImageData.directory_path_to_data_path_tuple(
-            analysis_model.output_directory, image_index=image_model.index))
+            path, image_index=image_index))
 
         if features is None:
             ImageData._LOGGER.warning(
-                "Image {0} had no data".format(image_model.index))
+                "Image {0} had no data".format(image_index))
             return
 
-        if measure is None:
-            measure = ('blob', 'pixelsum')
-
-        plates = [None] * nPlates
-        for plate_id in xrange(nPlates):
+        plates = [None] * number_of_plates
+        for plate_id in xrange(number_of_plates):
             if features[plate_id] is not None:
 
                 len_dim1 = len(features[plate_id])
@@ -63,16 +68,12 @@ class ImageData(object):
                     for id2 in xrange(len_dim2):
                         cell = features_dim1[id2]
                         if cell is not None:
-                            if isinstance(measure, int):
-                                plates[plate_id][id1, id2] = cell[measure]
-                            elif (measure[0] in cell and 
-                                    measure[1] in cell[measure[0]]):
-                                plates[plate_id][id1, id2] = cell[
-                                    measure[0]][measure[1]]
-                            else:
+                            try:
+                                plates[plate_id][id1, id2] = cell[output_item][output_value]
+                            except KeyError:
                                 ImageData._LOGGER.error(
                                     "{0} does not have {1} data".format(
-                                        cell, measure))
+                                        cell, (output_item.name, output_value.name)))
 
         ImageData._LOGGER.info("Saved Image Data '{0}' with {1} plates".format(
             path, len(plates)))
