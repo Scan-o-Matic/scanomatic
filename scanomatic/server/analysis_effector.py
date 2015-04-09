@@ -62,6 +62,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._focus_graph = None
         self._current_image_model = None
+        self._analysis_needs_init = True
 
     @property
     def current_image_index(self):
@@ -97,7 +98,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
     def next(self):
         if self.waiting:
             return super(AnalysisEffector, self).next()
-        elif self._current_image_model is None:
+        elif self._analysis_needs_init:
             return self._setup_first_iteration()
         elif not self._stopping and self._current_image_model.index > 0:
             return self._analyze_image()
@@ -123,6 +124,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         scan_start_time = time.time()
         image_model = self._first_pass_results.get_next_image_model()
+        self._current_image_model = image_model
         if not image_model:
             self._stopping = True
             return True
@@ -160,8 +162,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         try:
             os.makedirs(self._analysis_job.output_directory)
         except OSError:
-            self._stopping = True
-            return
+            self._running = False
+            self._logger.critical("Can't create output directory '{0}'".format(self._analysis_job.output_directory))
+            raise StopIteration
 
         if self._analysis_job.focus_position is not None:
             self._focus_graph = support.Watch_Graph(
@@ -186,6 +189,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         index_for_gridding = self._get_index_for_gridding()
 
         self._image.set_grid(self._first_pass_results[index_for_gridding])
+        self._analysis_needs_init = False
 
         return True
 
