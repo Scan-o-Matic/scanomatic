@@ -162,7 +162,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         try:
             os.makedirs(self._analysis_job.output_directory)
         except OSError, e:
-            if e == os.errno.EEXIST:
+            if e.errno == os.errno.EEXIST:
                 self._logger.warning("Output directory exists, previous data will be wiped")
             else:
                 self._running = False
