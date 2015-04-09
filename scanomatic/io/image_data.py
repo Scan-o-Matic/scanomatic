@@ -39,11 +39,11 @@ class Image_Data(object):
     def writeImage(analysis_model, image_model, features):
 
         path = os.path.join(*Image_Data.path2dataPathTuple(
-            path, imageIndex=imageIndex))
+            analysis_model.output_directory, imageIndex=image_model.index))
 
         if features is None:
             Image_Data._LOGGER.warning(
-                "Image {0} had no data".format(imageIndex))
+                "Image {0} had no data".format(image_model.index))
             return
 
         if measure is None:
@@ -101,12 +101,12 @@ class Image_Data(object):
         else:
             currentData = np.array([], dtype=np.float)
 
-        if not (imageIndex < currentData.size):
+        if not (image_model.index < currentData.size):
             currentData = np.r_[
                 currentData,
-                [None] * (1 + imageIndex - currentData.size)].astype(np.float)
+                [None] * (1 + image_model.index - currentData.size)].astype(np.float)
 
-        currentData[imageIndex] = imageMetaData['Time']
+        currentData[image_model.index] = imageMetaData['Time']
         np.save(os.path.join(*Image_Data.path2dataPathTuple(path, times=True)),
                 currentData)
 
@@ -137,23 +137,17 @@ class Image_Data(object):
             return None
 
     @staticmethod
-    def path2dataPathTuple(path, imageIndex="*", times=False):
+    def path2dataPathTuple(directory_path, imageIndex="*", times=False):
 
-        if os.path.isdir(path) and not path.endswith(os.path.sep):
-            path += os.path.sep
+        if os.path.isdir(directory_path) and not directory_path.endswith(os.path.sep):
+            directory_path += os.path.sep
 
-        pathDir = os.path.dirname(path)
-        pathBasename = os.path.basename(path)
-        if (len(pathBasename) == 0 or pathBasename == "."):
-            if times:
-                pathBasename = Image_Data._PATHS.image_analysis_time_series
-            else:
-                pathBasename = Image_Data._PATHS.image_analysis_img_data
+        pathDir = os.path.dirname(directory_path)
 
-        """
-        Image_Data._LOGGER.info("Path tuple is {0}".format((
-            pathDir, pathBasename.format(imageIndex))))
-        """
+        if times:
+            pathBasename = Image_Data._PATHS.image_analysis_time_series
+        else:
+            pathBasename = Image_Data._PATHS.image_analysis_img_data
 
         return pathDir, pathBasename.format(imageIndex)
 
