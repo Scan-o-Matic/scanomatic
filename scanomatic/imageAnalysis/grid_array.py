@@ -206,6 +206,10 @@ class GridArray():
         self._first_analysis = True
 
     @property
+    def grid_cell_size(self):
+        return self._grid_cell_size
+
+    @property
     def index(self):
         return self._identifier[-1]
 

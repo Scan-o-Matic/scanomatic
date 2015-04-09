@@ -34,6 +34,7 @@ IMAGE_ROTATIONS = Enum("IMAGE_ROTATIONS", names=("Landscape", "Portrait", "None"
 #
 
 
+# noinspection PyTypeChecker
 class ProjectImage(object):
 
     def __init__(self, analysis_model, scanning_meta_data):
@@ -47,7 +48,7 @@ class ProjectImage(object):
         self.im = None
 
         self._grid_arrays = self._get_grid_arrays()
-        if (self._grid_arrays):
+        if self._grid_arrays:
             self.features = [None] * (max(self._grid_arrays.keys()) + 1)
         else:
             self.features = []
@@ -127,8 +128,7 @@ class ProjectImage(object):
             self.im = plt_img.imread(path)
             self._im_loaded = True
 
-        except:
-
+        except (TypeError, IOError):
 
             alt_path = os.path.join(os.path.dirname(self._analysis_model.first_pass_file),
                                     os.path.basename(path))
@@ -141,7 +141,7 @@ class ProjectImage(object):
                 self.im = plt_img.imread(alt_path)
                 self._im_loaded = True
 
-            except:
+            except (TypeError, IOError):
 
                 self._im_loaded = False
 
@@ -227,6 +227,7 @@ class ProjectImage(object):
             if idx == short_dim:
                 return slice(None, None, -1)
             else:
+                # noinspection PyTypeChecker
                 return slice(None)
 
         slicer = []
@@ -249,9 +250,9 @@ class ProjectImage(object):
         if not image_model.grayscale_values:
             return None
 
-        if not image_model.grayscale_target:
-            image_model.grayscale_target = self.fixture['grayscaleTarget']
-            if not image_model.grayscale_target:
+        if not image_model.grayscale_targets:
+            image_model.grayscale_targets = self.fixture['grayscaleTarget']
+            if not image_model.grayscale_targets:
                 return None
 
         for plate in image_model.plates:
@@ -273,7 +274,7 @@ class ProjectImage(object):
 
         focus_plate = self._grid_arrays[self._analysis_model.focus_position[0]]
 
-        self.watch_grid_size = focus_plate._grid_cell_size
+        self.watch_grid_size = focus_plate.grid_cell_size
         self.watch_source = focus_plate.watch_source
         self.watch_blob = focus_plate.watch_blob
         self.watch_results = focus_plate.watch_results
