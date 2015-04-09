@@ -161,10 +161,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         try:
             os.makedirs(self._analysis_job.output_directory)
-        except OSError:
-            self._running = False
-            self._logger.critical("Can't create output directory '{0}'".format(self._analysis_job.output_directory))
-            raise StopIteration
+        except OSError, e:
+            if e == os.errno.EEXIST:
+                self._logger.warning("Output directory exists, previous data will be wiped")
+            else:
+                self._running = False
+                self._logger.critical("Can't create output directory '{0}'".format(self._analysis_job.output_directory))
+                raise StopIteration
 
         if self._analysis_job.focus_position is not None:
             self._focus_graph = support.Watch_Graph(
