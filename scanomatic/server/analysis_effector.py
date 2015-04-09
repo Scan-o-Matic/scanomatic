@@ -124,6 +124,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         scan_start_time = time.time()
         image_model = self._first_pass_results.get_next_image_model()
+        first_image_analysed = self._current_image_model is None
         self._current_image_model = image_model
         if not image_model:
             self._stopping = True
@@ -136,7 +137,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         if features is None:
             self._logger.warning("No analysis produced for image")
 
-        image_data.ImageData.write_times(self._analysis_job, image_model)
+        image_data.ImageData.write_times(self._analysis_job, image_model, overwrite=first_image_analysed)
         image_data.ImageData.write_image(self._analysis_job, image_model, features)
 
         self._xmlWriter.write_image_features(image_model, features)
