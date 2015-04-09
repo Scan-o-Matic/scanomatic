@@ -38,8 +38,9 @@ class ImageData(object):
     @staticmethod
     def write_image(analysis_model, image_model, features):
 
-        return ImageData._write_image(analysis_model.output_directory, image_model.index, len(image_model.plates),
-                                      features, analysis_model.image_data_output_item,
+        return ImageData._write_image(analysis_model.output_directory, image_model.index, features,
+                                      len(image_model.plates),
+                                      analysis_model.image_data_output_item,
                                       analysis_model.image_data_output_measure)
 
     @staticmethod
