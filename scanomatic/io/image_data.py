@@ -40,7 +40,7 @@ class ImageData(object):
 
         return ImageData._write_image(analysis_model.output_directory, image_model.index, len(image_model.plates),
                                       features, analysis_model.image_data_output_item,
-                                      analysis_model.image_data_output_value)
+                                      analysis_model.image_data_output_measure)
 
     @staticmethod
     def _write_image(path, image_index, features, number_of_plates, output_item, output_value):
