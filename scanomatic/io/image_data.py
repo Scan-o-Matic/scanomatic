@@ -38,7 +38,6 @@ class ImageData(object):
     @staticmethod
     def write_image(analysis_model, image_model, features):
 
-        # TODO: Add requested measure
         return ImageData._write_image(analysis_model.output_directory, image_model.index, len(image_model.plates),
                                       features, analysis_model.image_data_output_item,
                                       analysis_model.image_data_output_value)
@@ -81,7 +80,7 @@ class ImageData(object):
         np.save(path, plates)
 
     @staticmethod
-    def iter_write_image_from_xml(path, xml_object, measure=0):
+    def iter_write_image_from_xml(path, xml_object, output_item, output_value):
 
         scans = xml_object.get_scan_times().size
         plates = max(xml_object.get_data().keys()) + 1
@@ -92,10 +91,10 @@ class ImageData(object):
             for plate_id in range(plates):
                 features[plate_id] = data[plate_id][:, :, scan_id]
 
-            ImageData.write_image(path, scan_id, features, plates, measure=measure)
+            ImageData._write_image(path, scan_id, features, plates, output_item=output_item, output_value=output_value)
 
     @staticmethod
-    def write_times(analysis_model, image_model):
+    def write_times(analysis_model, image_model, overwrite):
 
         if not overwrite:
             current_data = ImageData.read_times(analysis_model.output_directory)
@@ -107,8 +106,8 @@ class ImageData(object):
                 current_data,
                 [None] * (1 + image_model.index - current_data.size)].astype(np.float)
 
-        current_data[image_model.index] = imageMetaData['Time']
-        np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(path, times=True)),
+        current_data[image_model.index] = image_model.time
+        np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(analysis_model.output_directory, times=True)),
                 current_data)
 
     @staticmethod
