@@ -209,8 +209,8 @@ class ProjectImage(object):
             else:
                 return
 
-        x = sorted(plate_model.x1, plate_model.x2)
-        y = sorted(plate_model.y1, plate_model.y2)
+        x = sorted((plate_model.x1, plate_model.x2))
+        y = sorted((plate_model.y1, plate_model.y2))
 
         if (self.fixture['version'] >=
                 app_config_module.Config().version_first_pass_change_1):
