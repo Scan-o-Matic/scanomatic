@@ -122,14 +122,14 @@ class ProjectImage(object):
 
                 im = self.get_im_section(plate_model)
 
-                if self._analysis_model.grid.gridding_offsets is None:
+                if self._analysis_model.grid_model.gridding_offsets is None:
                     self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
                         grid_correction=None)
                 else:
                     self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
-                        grid_correction=self._analysis_model.grid.gridding_offset[index])
+                        grid_correction=self._analysis_model.grid_model.gridding_offset[index])
 
     def load_image(self, path):
 
