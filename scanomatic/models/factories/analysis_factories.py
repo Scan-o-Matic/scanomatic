@@ -1,7 +1,7 @@
 __author__ = 'martin'
 
 import os
-
+import re
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 import scanomatic.models.analysis_model as analysis_model
 
@@ -259,6 +259,13 @@ class AnalysisImageFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
 
+        plate_str = "plate_{0}_area"
+        plate_index_pattern = r"\d+"
+
+        def get_index_from_name(name):
+            peoples_index_offset = 1
+            return int(re.search(plate_index_pattern, name).group()) - peoples_index_offset
+
         for (old_name, new_name) in [("grayscale_indices", "grayscale_targets"),
                                      ("mark_X", "orientation_marks_x"),
                                      ("mark_Y", "orientation_marks_y"),
@@ -267,12 +274,12 @@ class AnalysisImageFactory(AbstractModelFactory):
 
             _rename_old(settings, old_name, new_name)
 
-        plate_str = "plate_{0}_area"
+
         if "plates" not in settings or not settings["plates"]:
             settings["plates"] = []
 
-        for index in range(10):
-            plate_name = plate_str.format(index)
+        for plate_name in re.findall(plate_str.format(plate_index_pattern), ", ".join(settings.keys())):
+            index = get_index_from_name(plate_name)
             if plate_name in settings and settings[plate_name]:
                 (x1, y1), (x2, y2) = settings[plate_name]
                 settings["plates"].append(ImagePlateFactory.create(index=index, x1=x1, x2=x2, y1=y1, y2=y2))
