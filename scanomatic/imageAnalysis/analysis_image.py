@@ -177,9 +177,9 @@ class ProjectImage(object):
         if not self._im_loaded:
             return IMAGE_ROTATIONS.None
         elif self.im.shape[0] > self.im.shape[1]:
-            return IMAGE_ROTATIONS.Landscape
+            return IMAGE_ROTATIONS.Portrait
         else:
-            return IMAGE_ROTATIONS.Portait
+            return IMAGE_ROTATIONS.Landscape
 
     def get_im_section(self, plate_model, im=None):
 
