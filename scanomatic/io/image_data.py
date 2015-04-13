@@ -39,12 +39,11 @@ class ImageData(object):
     def write_image(analysis_model, image_model, features):
 
         return ImageData._write_image(analysis_model.output_directory, image_model.index, features,
-                                      len(image_model.plates),
                                       analysis_model.image_data_output_item,
                                       analysis_model.image_data_output_measure)
 
     @staticmethod
-    def _write_image(path, image_index, features, number_of_plates, output_item, output_value):
+    def _write_image(path, image_index, features, output_item, output_value):
 
         path = os.path.join(*ImageData.directory_path_to_data_path_tuple(
             path, image_index=image_index))
@@ -54,6 +53,7 @@ class ImageData(object):
                 "Image {0} had no data".format(image_index))
             return
 
+        number_of_plates = len(features)
         plates = [None] * number_of_plates
         for plate_id in xrange(number_of_plates):
             if features[plate_id] is not None:
@@ -92,7 +92,7 @@ class ImageData(object):
             for plate_id in range(plates):
                 features[plate_id] = data[plate_id][:, :, scan_id]
 
-            ImageData._write_image(path, scan_id, features, plates, output_item=output_item, output_value=output_value)
+            ImageData._write_image(path, scan_id, features, output_item=output_item, output_value=output_value)
 
     @staticmethod
     def write_times(analysis_model, image_model, overwrite):

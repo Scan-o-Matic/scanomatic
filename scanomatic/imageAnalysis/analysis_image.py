@@ -53,6 +53,10 @@ class ProjectImage(object):
         else:
             self.features = []
 
+    @property
+    def active_plates(self):
+        return len(self._grid_arrays)
+
     def _load_fixture(self):
 
         paths = Paths()
