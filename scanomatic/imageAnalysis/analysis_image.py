@@ -15,7 +15,6 @@ __status__ = "Development"
 import os
 import matplotlib.image as plt_img
 import numpy as np
-from enum import Enum
 #
 # SCANNOMATIC LIBRARIES
 #
@@ -25,8 +24,7 @@ import first_pass_image
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 import scanomatic.io.app_config as app_config_module
-
-IMAGE_ROTATIONS = Enum("IMAGE_ROTATIONS", names=("Landscape", "Portrait", "None"))
+from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 
 
 #

@@ -6,6 +6,8 @@ from enum import Enum
 import scanomatic.generics.model as model
 
 
+IMAGE_ROTATIONS = Enum("IMAGE_ROTATIONS", names=("Landscape", "Portrait", "None"))
+
 COMPARTMENTS = Enum("COMPARTMENTS", names=("Total", "Background", "Blob"))
 
 MEASURES = Enum("MEASURES", names=("Count", "Sum", "Mean", "Median", "Perimeter", "IQR", "IQR_Mean", "Centroid"))
