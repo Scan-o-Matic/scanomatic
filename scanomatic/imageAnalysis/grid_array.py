@@ -267,7 +267,7 @@ class GridArray():
 
             np.save(error_file, im)
             save_name = error_file + ".png"
-            make_grid_im(im, grid, save_grid_name=save_name.format(self.index))
+            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name.format(self.index))
 
             return False
 
