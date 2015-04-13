@@ -23,7 +23,6 @@ import grid_array
 import first_pass_image
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
-import scanomatic.io.app_config as app_config_module
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 
 
@@ -111,7 +110,7 @@ class ProjectImage(object):
             for index in range(1, len(self._grid_arrays) + 1):
 
                 plate_models = [plate_model for plate_model in image_model.plates if plate_model.index == index]
-                if (plate_models):
+                if plate_models:
                     plate_model = plate_models[0]
                 else:
                     self._logger.error("Expected to find a plate model with index {0}, but only have {1}".format(
@@ -210,14 +209,7 @@ class ProjectImage(object):
         x = sorted((plate_model.x1, plate_model.x2))
         y = sorted((plate_model.y1, plate_model.y2))
 
-        if (self.fixture['version'] >=
-                app_config_module.Config().version_first_pass_change_1):
-
-            if self.orientation == IMAGE_ROTATIONS.Portrait:
-                x, y = _flip_axis(x, y)
-
-        elif self.orientation == IMAGE_ROTATIONS.Landscape:
-
+        if self.orientation == IMAGE_ROTATIONS.Landscape:
             x, y = _flip_axis(x, y)
 
         x, y = _bound(im.shape, x, y)
