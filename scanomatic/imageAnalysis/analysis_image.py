@@ -45,10 +45,18 @@ class ProjectImage(object):
         self.im = None
 
         self._grid_arrays = self._get_grid_arrays()
-        if self._grid_arrays:
-            self.features = [None] * (max(self._grid_arrays.keys()) + 1)
+        self.features = self._get_init_features(self._grid_arrays)
+
+    def _get_init_features(self, grid_arrays):
+
+        def length_needed(keys):
+
+            return max(keys) + 1
+
+        if grid_arrays:
+            return [None] * length_needed(grid_arrays.keys())
         else:
-            self.features = []
+            return []
 
     @property
     def active_plates(self):
