@@ -25,7 +25,9 @@ from matplotlib import pyplot as plt
 import grid
 from grid_cell import GridCell
 import scanomatic.io.paths as paths
+import scanomatic.io.logger as logger
 import imageBasics
+from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 
 #
 # EXCEPTIONS
@@ -173,15 +175,52 @@ def _get_grid_to_im_axis_mapping(pm, im):
 #
 
 
-class GridArray():
+class GridCellSizes(object):
+
+    _LOGGER = logger.Logger("Grid Cell Sizes")
 
     _APPROXIMATE_GRID_CELL_SIZES = {
         (8, 12): (212, 212),
         (16, 24): (106, 106),
         (32, 48): (53.64928854, 52.69155633),
         (64, 96): (40.23696640, 39.5186672475),
-        None: None
     }
+
+    @staticmethod
+    def get(item):
+        """
+
+        :type item: tuple
+        """
+        if not isinstance(item, tuple):
+            GridCellSizes._LOGGER.error("Grid formats can only be tuples {0}".format(type(item)))
+            return None
+
+        approximate_size = None
+        # noinspection PyTypeChecker
+        reverse_slice = slice(None, None, -1)
+
+        for rotation in IMAGE_ROTATIONS:
+
+            if rotation is IMAGE_ROTATIONS.None:
+                continue
+
+            elif item in GridCellSizes._APPROXIMATE_GRID_CELL_SIZES:
+                approximate_size = GridCellSizes._APPROXIMATE_GRID_CELL_SIZES[item]
+                if rotation is IMAGE_ROTATIONS.Portrait:
+                    approximate_size = approximate_size[reverse_slice]
+
+            elif rotation is IMAGE_ROTATIONS.Portrait:
+                # noinspection PyTypeChecker
+                item = item[reverse_slice]
+
+        if not approximate_size:
+            GridCellSizes._LOGGER.warning("Unknown pinning format {0}".format(item))
+
+        return approximate_size
+
+
+class GridArray():
 
     def __init__(self, image_identifier, pinning, fixture, analysis_model):
 
@@ -293,9 +332,7 @@ class GridArray():
         self._pinning_matrix = (self._pinning_matrix[dimension_order[0]], self._pinning_matrix[dimension_order[1]])
         pinning_matrix = self._pinning_matrix
 
-        self._guess_grid_cell_size = self._APPROXIMATE_GRID_CELL_SIZES[
-            pinning_matrix]
-
+        self._guess_grid_cell_size = GridCellSizes.get(pinning_matrix)
         self._grid = None
         self._grid_cell_size = None
         self._grid_cells = []
