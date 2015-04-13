@@ -209,9 +209,8 @@ class GridCellSizes(object):
                 approximate_size = GridCellSizes._APPROXIMATE_GRID_CELL_SIZES[item]
                 if rotation is IMAGE_ROTATIONS.Portrait:
                     approximate_size = approximate_size[reverse_slice]
-
-            elif rotation is IMAGE_ROTATIONS.Portrait:
-                # noinspection PyTypeChecker
+                break
+            else:
                 item = item[reverse_slice]
 
         if not approximate_size:
