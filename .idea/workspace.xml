@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="scan-o-matic.iws" />
@@ -26,84 +27,26 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="analysis_effector.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/server/analysis_effector.py">
+      <file leaf-file-name="blob.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/blob.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-9.911765" vertical-offset="1808" max-vertical-offset="3825">
-              <caret line="145" column="0" selection-start-line="145" selection-start-column="0" selection-end-line="145" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="image_data.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/scanomatic/io/image_data.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.7239583" vertical-offset="524" max-vertical-offset="4005">
-              <caret line="75" column="85" selection-start-line="75" selection-start-column="85" selection-end-line="75" selection-end-column="85" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="analysis_model.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/models/analysis_model.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1470">
-              <caret line="42" column="69" selection-start-line="42" selection-start-column="69" selection-end-line="42" selection-end-column="69" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="phenotype_effector.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/rpc_server/phenotype_effector.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1443" max-vertical-offset="2520">
-              <caret line="108" column="50" selection-start-line="108" selection-start-column="50" selection-end-line="108" selection-end-column="50" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="first_pass_results.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/io/first_pass_results.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="376" max-vertical-offset="1710">
-              <caret line="46" column="21" selection-start-line="46" selection-start-column="21" selection-end-line="46" selection-end-column="21" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="analysis_image.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="3236" max-vertical-offset="4275">
-              <caret line="227" column="44" selection-start-line="227" selection-start-column="44" selection-end-line="227" selection-end-column="44" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1217" max-vertical-offset="2850">
+              <caret line="91" column="16" selection-start-line="91" selection-start-column="16" selection-end-line="91" selection-end-column="16" />
               <folding>
-                <element signature="e#344#353#0" expanded="true" />
+                <element signature="e#362#380#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="grid_array.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py">
+      <file leaf-file-name="grid_cell_extra.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_cell_extra.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="2886" max-vertical-offset="5385">
-              <caret line="210" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="210" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="first_pass_image.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/first_pass_image.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="390" max-vertical-offset="15180">
-              <caret line="30" column="0" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="0" />
-              <folding />
+            <state vertical-scroll-proportion="0.5778689" vertical-offset="10023" max-vertical-offset="14625">
+              <caret line="687" column="39" selection-start-line="687" selection-start-column="39" selection-end-line="687" selection-end-column="39" />
+              <folding>
+                <element signature="e#468#486#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -116,9 +59,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/scanomatic/rpc_server/jobs.py" />
-        <option value="$PROJECT_DIR$/scanomatic/rpc_server/scanning_effector.py" />
-        <option value="$PROJECT_DIR$/scanomatic/rpc_server/stoppable_rpc_server.py" />
         <option value="$PROJECT_DIR$/scanomatic/rpc_server/rpc_interface.py" />
         <option value="$PROJECT_DIR$/scanomatic/rpc_server/interface_builder.py" />
         <option value="$PROJECT_DIR$/scanomatic/rpc_server/server.py" />
@@ -159,18 +99,26 @@
         <option value="$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/rpc_server/rpc_job.py" />
         <option value="$PROJECT_DIR$/setup.py" />
         <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/first_pass_image.py" />
-        <option value="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" />
-        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py" />
-        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py" />
         <option value="$PROJECT_DIR$/scanomatic/server/analysis_effector.py" />
-        <option value="$PROJECT_DIR$/scanomatic/models/analysis_model.py" />
+        <option value="$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/rpc_server/analysis_effector.py" />
         <option value="$PROJECT_DIR$/scanomatic/io/image_data.py" />
+        <option value="$PROJECT_DIR$/scanomatic/models/analysis_model.py" />
+        <option value="$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/models/factories/analysis_factories.py" />
+        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/grid.py" />
+        <option value="$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py" />
+        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py" />
+        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py" />
+        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/blob.py" />
+        <option value="$PROJECT_DIR$/scanomatic/imageAnalysis/grid_cell_extra.py" />
       </list>
     </option>
   </component>
+  <component name="NamedScopeManager">
+    <scope name="module and scripts" pattern="file[scan-o-matic]:scanomatic/*||file[scan-o-matic]:scripts/*" />
+  </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="178" />
-    <option name="y" value="92" />
+    <option name="x" value="201" />
+    <option name="y" value="90" />
     <option name="width" value="1719" />
     <option name="height" value="948" />
   </component>
@@ -262,65 +210,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="server" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scan-o-matic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scan-o-matic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scanomatic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="models" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scan-o-matic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scan-o-matic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scanomatic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="models" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="factories" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scan-o-matic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scan-o-matic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scanomatic" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="io" />
+              <option name="myItemId" value="imageAnalysis" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -538,16 +428,16 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="178" y="92" width="1719" height="948" extended-state="0" />
+    <frame x="201" y="90" width="1719" height="948" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32941177" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32891566" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37831324" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19451766" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.37831324" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19398585" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.276533" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2759434" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32771084" sideWeight="0.49973643" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32834226" sideWeight="0.5002636" order="7" side_tool="true" content_ui="tabs" />
@@ -606,34 +496,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/scanomatic/io/xml/writer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="495" max-vertical-offset="6585">
-          <caret line="61" column="50" selection-start-line="61" selection-start-column="41" selection-end-line="61" selection-end-column="50" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_cell.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="374" max-vertical-offset="3630">
-          <caret line="60" column="0" selection-start-line="60" selection-start-column="0" selection-end-line="60" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/imageBasics.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.18302828" vertical-offset="880" max-vertical-offset="1860">
-          <caret line="69" column="8" selection-start-line="69" selection-start-column="8" selection-end-line="69" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-5.5588236" vertical-offset="7386" max-vertical-offset="9435">
-          <caret line="507" column="29" selection-start-line="507" selection-start-column="20" selection-end-line="507" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/io/project_log.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.20798668" vertical-offset="355" max-vertical-offset="5880">
@@ -899,6 +761,67 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="1553" max-vertical-offset="2355">
           <caret line="134" column="14" selection-start-line="134" selection-start-column="14" selection-end-line="134" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/rpc_server/analysis_effector.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.3319672" vertical-offset="2373" max-vertical-offset="9120">
+          <caret line="171" column="49" selection-start-line="171" selection-start-column="49" selection-end-line="171" selection-end-column="49" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/server/analysis_effector.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="2613" max-vertical-offset="3825">
+          <caret line="187" column="37" selection-start-line="187" selection-start-column="37" selection-end-line="187" selection-end-column="37" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3398" max-vertical-offset="8025">
+          <caret line="259" column="17" selection-start-line="259" selection-start-column="17" selection-end-line="259" selection-end-column="17" />
+          <folding>
+            <element signature="e#369#387#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/models/factories/analysis_factories.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.11886793" vertical-offset="3852" max-vertical-offset="5400">
+          <caret line="261" column="0" selection-start-line="261" selection-start-column="0" selection-end-line="287" selection-end-column="66" />
+          <folding>
+            <element signature="e#23#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/models/analysis_model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="728" max-vertical-offset="1530">
+          <caret line="81" column="13" selection-start-line="81" selection-start-column="13" selection-end-line="81" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3960" max-vertical-offset="5400">
+          <caret line="288" column="0" selection-start-line="288" selection-start-column="0" selection-end-line="288" selection-end-column="0" />
+          <folding>
+            <element signature="e#23#32#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/rpc_server/phenotype_effector.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1443" max-vertical-offset="2520">
+          <caret line="107" column="36" selection-start-line="107" selection-start-column="36" selection-end-line="107" selection-end-column="36" />
           <folding />
         </state>
       </provider>
@@ -911,71 +834,70 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py">
+    <entry file="file://$PROJECT_DIR$/scanomatic/io/image_data.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="2886" max-vertical-offset="5385">
-          <caret line="210" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="210" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/models/factories/analysis_factories.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.39344263" vertical-offset="3438" max-vertical-offset="5250">
-          <caret line="245" column="33" selection-start-line="245" selection-start-column="33" selection-end-line="245" selection-end-column="33" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/rpc_server/phenotype_effector.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1443" max-vertical-offset="2520">
-          <caret line="108" column="50" selection-start-line="108" selection-start-column="50" selection-end-line="108" selection-end-column="50" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/build/lib.linux-x86_64-2.7/scanomatic/rpc_server/analysis_effector.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.3319672" vertical-offset="4218" max-vertical-offset="9120">
-          <caret line="294" column="33" selection-start-line="294" selection-start-column="33" selection-end-line="294" selection-end-column="33" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="237" max-vertical-offset="4005">
+          <caret line="32" column="24" selection-start-line="32" selection-start-column="24" selection-end-line="32" selection-end-column="24" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/analysis_image.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="3236" max-vertical-offset="4275">
-          <caret line="227" column="44" selection-start-line="227" selection-start-column="44" selection-end-line="227" selection-end-column="44" />
+        <state vertical-scroll-proportion="-7.0588236" vertical-offset="510" max-vertical-offset="4395">
+          <caret line="50" column="0" selection-start-line="50" selection-start-column="0" selection-end-line="50" selection-end-column="0" />
           <folding>
-            <element signature="e#344#353#0" expanded="true" />
+            <element signature="e#344#353#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/server/analysis_effector.py">
+    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_array.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-9.911765" vertical-offset="1808" max-vertical-offset="3825">
-          <caret line="145" column="0" selection-start-line="145" selection-start-column="0" selection-end-line="145" selection-end-column="0" />
+        <state vertical-scroll-proportion="-5.2941175" vertical-offset="810" max-vertical-offset="5970">
+          <caret line="68" column="0" selection-start-line="68" selection-start-column="0" selection-end-line="68" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/models/analysis_model.py">
+    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/blob.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1470">
-          <caret line="42" column="69" selection-start-line="42" selection-start-column="69" selection-end-line="42" selection-end-column="69" />
-          <folding />
+        <state vertical-scroll-proportion="0.0" vertical-offset="1217" max-vertical-offset="2850">
+          <caret line="91" column="16" selection-start-line="91" selection-start-column="16" selection-end-line="91" selection-end-column="16" />
+          <folding>
+            <element signature="e#362#380#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scanomatic/io/image_data.py">
+    <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/grid_cell_extra.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7239583" vertical-offset="524" max-vertical-offset="4005">
-          <caret line="75" column="85" selection-start-line="75" selection-start-column="85" selection-end-line="75" selection-end-column="85" />
-          <folding />
+        <state vertical-scroll-proportion="0.5778689" vertical-offset="10023" max-vertical-offset="14625">
+          <caret line="687" column="39" selection-start-line="687" selection-start-column="39" selection-end-line="687" selection-end-column="39" />
+          <folding>
+            <element signature="e#468#486#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ScopeChooserConfigurable.UI">
+        <settings>
+          <last-edited>module and scripts</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+          <order>
+            <scope name="module and scripts" />
+          </order>
+        </settings>
+      </state>
+    </states>
   </component>
 </project>

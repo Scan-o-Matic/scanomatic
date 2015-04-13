@@ -28,6 +28,10 @@
           <option value="scanomatic.io.logger.Logger.critical" />
           <option value="scanomatic.io.logger.Logger.*" />
           <option value="scanomatic.models.scanning_model.*" />
+          <option value="matplotlib.cm.gray" />
+          <option value="bool.astype" />
+          <option value="bool.*" />
+          <option value="tuple.sort" />
         </list>
       </option>
     </inspection_tool>
