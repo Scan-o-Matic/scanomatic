@@ -67,13 +67,14 @@ def _get_image_slice(im, grid_cell):
 
 def _create_grid_array_identifier(identifier):
 
+    no_image_reference = "unknown image"
     if isinstance(identifier, int):
 
-        identifier = ("unknown", identifier)
+        identifier = [no_image_reference, identifier]
 
     elif len(identifier) == 1:
 
-        identifier = ["unknown", identifier[0]]
+        identifier = [no_image_reference, identifier[0]]
 
     else:
 
