@@ -379,12 +379,12 @@ class Blob(Cell_Item):
     ITERATIVE = 1
     THRESHOLD = 2
 
-    BLOB_RECIPE = blob.Analysis_Recipe_Empty()
-    blob.Analysis_Recipe_Median_Filter(BLOB_RECIPE)
-    blob.Analysis_Threshold_Otsu(BLOB_RECIPE,
-                                 thresholdUnitAdjust=0.5)
+    BLOB_RECIPE = blob.AnalysisRecipeEmpty()
+    blob.AnalysisRecipeMedianFilter(BLOB_RECIPE)
+    blob.AnalysisThresholdOtsu(BLOB_RECIPE,
+                                 threshold_unit_adjust=0.5)
     #blob.Analysis_Recipe_Erode(BLOB_RECIPE)
-    blob.Analysis_Recipe_Dilate(BLOB_RECIPE, iterations=2)
+    blob.AnalysisRecipeDilate(BLOB_RECIPE, iterations=2)
     #blob.Analysis_Recipe_Erode_Small(self, self.BLOB_RECIPE)
     #blob.Analysis_Recipe_Erode_Conditional(self, self.BLOB_RECIPE)
 
