@@ -241,7 +241,7 @@ class GridArray():
         self._grid = None
         self._grid_cell_corners = None
 
-        self.features = []
+        self.features = {}
         self._first_analysis = True
 
     @property
@@ -323,7 +323,7 @@ class GridArray():
 
     def _update_grid_cells(self):
 
-        for grid_cell in self._grid_cells:
+        for grid_cell in self._grid_cells.values():
 
             grid_cell.set_grid_coordinates(self._grid_cell_corners)
 
@@ -335,8 +335,8 @@ class GridArray():
         self._guess_grid_cell_size = GridCellSizes.get(pinning_matrix)
         self._grid = None
         self._grid_cell_size = None
-        self._grid_cells = []
-        self.features = {}
+        self._grid_cells.clear()
+        self.features.clear()
         polynomial_coeffs = get_calibration_polynomial_coeffs()
 
         for row in xrange(pinning_matrix[0]):
