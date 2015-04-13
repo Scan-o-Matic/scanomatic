@@ -243,11 +243,16 @@ def get_heatmap(data, votes, weights, sigma):
     unique_votes = np.unique(flat_votes_xy)
     unique_votes.sort()
 
-    # Make weighted histogram (the returning array will match the
-    # sorted unique_votes, +0.5 is OK since we know indices will be
-    # ints and the lowest be 0 (thus -1 is also safe)
+    def get_between_votes_bins(votes):
+        index_bin_offset = 0.5
+        return get_appended_vote_bins(votes) + index_bin_offset
+
+    def get_appended_vote_bins(votes):
+        first_bin_edge = -1
+        return np.hstack(((first_bin_edge,), votes))
+
     unique_vote_weights, _ = np.histogram(
-        flat_votes_xy, bins=np.hstack(((-1,), unique_votes)) + 0.5,
+        flat_votes_xy, bins=get_between_votes_bins(unique_votes),
         weights=votes_weights)
 
     heatmap.ravel()[unique_votes] = unique_vote_weights
