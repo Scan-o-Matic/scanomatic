@@ -262,7 +262,7 @@ class GridArray():
         if self._grid is None or np.isnan(spacings).any():
 
             error_file = os.path.join(
-                os.path.dirname(self._analysis_model.first_pass_file),
+                self._analysis_model.output_directory,
                 self._paths.experiment_grid_error_image.format(self._identifier[1]))
 
             np.save(error_file, im)
