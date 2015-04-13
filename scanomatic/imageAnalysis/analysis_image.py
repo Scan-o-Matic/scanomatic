@@ -215,7 +215,7 @@ class ProjectImage(object):
         if (self.fixture['version'] >=
                 app_config_module.Config().version_first_pass_change_1):
 
-            if self.orientation == IMAGE_ROTATIONS.Portait:
+            if self.orientation == IMAGE_ROTATIONS.Portrait:
                 x, y = _flip_axis(x, y)
 
         elif self.orientation == IMAGE_ROTATIONS.Landscape:
