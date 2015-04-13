@@ -110,9 +110,15 @@ class ProjectImage(object):
 
         if self._im_loaded:
 
-            for index in range(len(self._grid_arrays)):
+            for index in range(1, len(self._grid_arrays) + 1):
 
-                plate_model = [plate_model for plate_model in image_model.plates if plate_model.index == index][0]
+                plate_models = [plate_model for plate_model in image_model.plates if plate_model.index == index]
+                if (plate_models):
+                    plate_model = plate_models[0]
+                else:
+                    self._logger.error("Expected to find a plate model with index {0}, but only have {1}".format(
+                        index, [plate_model.index for plate_model in image_model.plates]))
+                    continue
 
                 im = self.get_im_section(plate_model)
 
