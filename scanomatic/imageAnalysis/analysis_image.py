@@ -115,7 +115,7 @@ class ProjectImage(object):
 
         if self._im_loaded:
 
-            for index in range(1, len(self._grid_arrays) + 1):
+            for index in self._grid_arrays:
 
                 plate_models = [plate_model for plate_model in image_model.plates if plate_model.index == index]
                 if plate_models:
