@@ -22,10 +22,6 @@ from skimage import filter as ski_filter
 from scipy import ndimage
 
 #
-# SCANNOMATIC LIBRARIES
-#
-
-#
 # FUNCTIONS
 #
 
@@ -166,10 +162,10 @@ def is_almost_round(feature_slice, blob):
     return abs(1 - feature_slice.size * _INSET_CIRCLE_IN_SQUARE_FACTOR / blob.sum()) > _DEVIATION_FROM_CIRCLE_TOLERANCE
 
 
-def get_grid_parameters_4(x, y, grid_shape, spacings=(54, 54)):
+def get_grid_parameters(x_data, y_data, grid_shape, spacings=(54, 54)):
 
-    data = (x, y)
-    new_spacings = get_grid_spacings(x, y, *spacings)
+    data = (x_data, y_data)
+    new_spacings = get_grid_spacings(x_data, y_data, *spacings)
     centers = get_centre_candidates(grid_shape, new_spacings)
     votes = get_votes(data, centers)
     weights = get_weights(votes, data, 1.0)
@@ -486,7 +482,7 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
 
         if run_dev:
 
-            center, spacings = get_grid_parameters_4(
+            center, spacings = get_grid_parameters(
                 x_data, y_data, grid_shape, spacings=expected_spacing)
 
             if validate_parameters:
@@ -497,7 +493,7 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
 
         else:
 
-            center, spacings = get_grid_parameters_4(
+            center, spacings = get_grid_parameters(
                 x_data, y_data, grid_shape, spacings=expected_spacing)
 
             if grid_correction is not None:
