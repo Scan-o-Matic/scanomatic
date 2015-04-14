@@ -292,14 +292,13 @@ class Config(Singleton):
 
     def get_scanner_name(self, scanner):
 
-        if isinstance(scanner, int) and 0 < scanner < self.number_of_scanners:
+        if isinstance(scanner, int) and 0 <= scanner < self.number_of_scanners:
             scanner = self.SCANNER_PATTERN.format(scanner)
         elif isinstance(scanner, str):
             numbers = map(int, re.findall(r'\d+', scanner))
-            if not(len(numbers) == 1 and 
-                   0 < numbers[0] < self.number_of_scanners):
-                
+            if len(numbers) != 1 or numbers[0] < 0 or numbers[0] >= self.number_of_scanners:
                 return None
+            scanner = self.SCANNER_PATTERN.format(numbers[0])
         else:
             return None
 
