@@ -39,7 +39,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._specific_statuses['currentImage'] = 'current_image'
         self._allowed_calls['setup'] = self.setup
         self._scanning_job = job.content_model
-        self._progress = None
+        self._current_image = -1
 
     def setup(self, *args, **kwargs):
 
@@ -48,17 +48,22 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def progress(self):
 
-        return -1
+        if self._current_image < 0:
+            return 0.0
+        elif self._current_image is None:
+            return 1.0
+        else:
+            return float(self._current_image + 1.0) / self.total_images
 
     @property
     def total_images(self):
 
-        return -1
+        return self._scanning_job.number_of_scans
 
     @property
     def current_image(self):
 
-        return -1
+        return self._current_image
 
     def next(self):
 
@@ -66,7 +71,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             return super(ScannerEffector, self).next()
 
         if self._stopping:
-            self._progress = None
+            self._current_image = None
             self._running = False
 
         if self._iteration_index is None:
