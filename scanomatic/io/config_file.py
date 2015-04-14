@@ -37,6 +37,7 @@ class Config_File(object):
             "Config File '{0}'".format(os.path.basename(location)))
 
         self._no_name_enumerator = 0
+        self._comment_index = -1
 
         fs = self.load(location)
 
@@ -67,9 +68,8 @@ class Config_File(object):
             location = self.get_location()
 
         self._logger.info("Loading file {0}".format(location))
-        #self._logger.exception("Call for {0} came from...".format(location))
-
         no_file = False
+        fs = None
 
         try:
 
@@ -202,7 +202,6 @@ class Config_File(object):
                     except:
                         pass
 
-                    #d = str(d)
                     line = "{0}\t{1}".format(str(data_row), d)
 
                 line += "\r\n"
@@ -304,7 +303,7 @@ class Config_File(object):
 
             return True
 
-    def insert(self, key, value, pos=None, before_key=None, after_key=None):
+    def insert(self, key, value, pos=None):
 
         if str(key) in self._file_data_order:
 
