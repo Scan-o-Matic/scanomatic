@@ -92,6 +92,11 @@ class AbstractModelFactory(object):
                 if v is not True)
 
     @classmethod
+    def get_invalid_names(cls, model):
+
+        return (v.name for v in cls.get_invalid(model))
+
+    @classmethod
     def _get_validation_results(cls, model):
 
         return (getattr(cls, attr)(model) for attr in dir(cls) if attr.startswith("_validate"))
