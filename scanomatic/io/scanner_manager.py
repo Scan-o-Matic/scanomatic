@@ -86,6 +86,8 @@ class ScannerPowerManager(object):
                 scanner = ScannerOwnerFactory.create(socket=socket, scanner_name=self._conf.get_scanner_name(socket))
                 scanners[scanner.socket] = scanner
 
+        self._logger.info("Scanners inited: {0}".format(scanners))
+
         return scanners
 
     def _enumerate_scanner_sockets(self):
@@ -101,8 +103,10 @@ class ScannerPowerManager(object):
             try:
                 pm[power_socket] = self._conf.get_pm(power_socket)
             except InvalidInit:
+                self._logger.error("Failed to init socket {0}".format(power_socket))
                 pm[power_socket] = PowerManagerNull(power_socket)
 
+        self._logger.info("Power Managers inited {0}".format(pm))
         return pm
 
     def _save(self, scanner_owner_model):
@@ -348,4 +352,6 @@ class ScannerPowerManager(object):
 
     @property
     def has_scanners(self):
-        return self._pm and any(not isinstance(pm, PowerManagerNull) for pm in self._pm.values())
+        reachable_pms = any(not isinstance(pm, PowerManagerNull) for pm in self._pm.values())
+        self._logger.info("Power Manager {0} is reachable? {1}".format(self._pm, reachable_pms))
+        return self._pm and reachable_pms

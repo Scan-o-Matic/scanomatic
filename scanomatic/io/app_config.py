@@ -138,12 +138,15 @@ class Config(Singleton):
         if pm is not None:
             try:
                 self.pm_type = loads(pm)
+                self._logger.info("Updating Power Manager to: {0}".format(self.pm_type))
+
             except ValueError:
                 mode_by_name = tuple(mode.name.lower() == pm.lower() for mode in power_manager.POWER_MANAGER_TYPE)
                 if any(mode_by_name):
                     for pm_type, mode in zip(mode_by_name, power_manager.POWER_MANAGER_TYPE):
                         if mode:
                             self.pm_type = pm_type
+                            self._logger.info("Updating Power Manager by value to: {0}".format(self.pm_type))
                             break
                 else:
                     self._logger.error("Power Manager Mode '{0}' not recognized only valid: {1}".format(
@@ -317,6 +320,7 @@ class Config(Singleton):
 
         scanner_pm_socket = self.get_scanner_socket(scanner_name)
         if scanner_pm_socket is None:
+            self._logger.error("Socket for scanner {0} is unknown".format(scanner_name))
             return power_manager.PowerManagerNull("None")
         if len(pm_kwargs) == 0:
             pm_kwargs = self._pm_arguments
