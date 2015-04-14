@@ -143,7 +143,7 @@ class Config(Singleton):
             except ValueError:
                 mode_by_name = tuple(mode.name.lower() == pm.lower() for mode in power_manager.POWER_MANAGER_TYPE)
                 if any(mode_by_name):
-                    for pm_type, mode in zip(mode_by_name, power_manager.POWER_MANAGER_TYPE):
+                    for mode, pm_type in zip(mode_by_name, power_manager.POWER_MANAGER_TYPE):
                         if mode:
                             self.pm_type = pm_type
                             self._logger.info("Updating Power Manager by value to: {0}".format(self.pm_type))
