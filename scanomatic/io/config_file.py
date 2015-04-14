@@ -135,6 +135,7 @@ class ConfigFile(object):
         for line in fs.readlines():
 
             key, value = line_to_key_value(line)
+            self._logger.debug("Read '{0}' maps to '{1}'".format(key, value))
 
             if key is not None and key is not "#":
 
