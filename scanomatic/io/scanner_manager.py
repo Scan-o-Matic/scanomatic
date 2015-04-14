@@ -352,6 +352,6 @@ class ScannerPowerManager(object):
 
     @property
     def has_scanners(self):
-        reachable_pms = any(not isinstance(pm, PowerManagerNull) for pm in self._pm.values())
+        reachable_pms = any(type(pm) is not PowerManagerNull for pm in self._pm.values())
         self._logger.info("Power Manager {0} is reachable? {1}".format(self._pm, reachable_pms))
         return self._pm and reachable_pms
