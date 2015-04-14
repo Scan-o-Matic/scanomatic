@@ -342,6 +342,8 @@ class Interface_Builder(Singleton):
 
         if not ScanningModelFactory.validate(scanning_model):
             _SOM_SERVER.logger.error("Invalid arguments for scanner job")
+            _SOM_SERVER.logger.error("Invalid settings: {0}".format(
+                tuple(ScanningModelFactory.get_invalid_names(scanning_model))))
             return False
 
         return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan)
