@@ -35,8 +35,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
         super(ScannerEffector, self).__init__(job, logger_name="Scanner Effector")
 
         self._specific_statuses['progress'] = 'progress'
-        self._specific_statuses['total'] = 'totalImages'
-        self._specific_statuses['currentImage'] = 'curImage'
+        self._specific_statuses['total'] = 'total_images'
+        self._specific_statuses['currentImage'] = 'current_image'
         self._allowed_calls['setup'] = self.setup
         self._scanning_job = job.content_model
         self._progress = None
@@ -44,6 +44,21 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def setup(self, *args, **kwargs):
 
         pass
+
+    @property
+    def progress(self):
+
+        return -1
+
+    @property
+    def total_images(self):
+
+        return -1
+
+    @property
+    def current_image(self):
+
+        return -1
 
     def next(self):
 
