@@ -126,7 +126,7 @@ class Config(Singleton):
 
     def _load_config_from_file(self):
 
-        self._config_file = config_file.Config_File(
+        self._config_file = config_file.ConfigFile(
             self._paths.config_main_app)
 
         scanners = self._config_file['number-of-scanners']

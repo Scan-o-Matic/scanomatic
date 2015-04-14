@@ -26,7 +26,7 @@ import logger
 #
 
 
-class Config_File(object):
+class ConfigFile(object):
 
     def __init__(self, location):
 

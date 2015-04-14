@@ -1029,7 +1029,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         if os.path.isfile(os.path.join(sm['output-directory'],
                                        local_name)):
 
-            f = config_file.Config_File(
+            f = config_file.ConfigFile(
                 os.path.join(sm['output-directory'], local_name))
 
             try:

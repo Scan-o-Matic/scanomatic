@@ -99,7 +99,7 @@ class Gridding_History(object):
 
     def _load(self):
 
-        conf_file = config_file.Config_File(self._paths.get_fixture_path(self._name))
+        conf_file = config_file.ConfigFile(self._paths.get_fixture_path(self._name))
         if conf_file.get_loaded() is False:
             self._settings = None
             return False
@@ -402,7 +402,7 @@ class Image(object):
         self._logger.info("Reference fixture loaded from {0}".format(
             fixture_path))
 
-        self.fixture_reference = config_file.Config_File(fixture_path)
+        self.fixture_reference = config_file.ConfigFile(fixture_path)
 
         cur_name = self.fixture_reference.get('name')
         if cur_name is None or cur_name == "":
@@ -411,7 +411,7 @@ class Image(object):
         if self._define_reference:
             self.fixture_current = self.fixture_reference
         else:
-            self.fixture_current = config_file.Config_File(fixture_path + "_tmp")
+            self.fixture_current = config_file.ConfigFile(fixture_path + "_tmp")
 
     def get_name_in_ref(self):
 

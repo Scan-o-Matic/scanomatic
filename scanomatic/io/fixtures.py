@@ -60,7 +60,7 @@ class Fixture_Settings(object):
 
     def load_from_file(self):
 
-        f = config_file.Config_File(self.conf_path)
+        f = config_file.ConfigFile(self.conf_path)
 
         #Version
         self.version = f['version']
