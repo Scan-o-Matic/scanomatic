@@ -112,7 +112,7 @@ class ConfigFile(object):
 
             for split_char in ("\t", "="):
                 if split_char in current_line:
-                    ret_list = [part.strip() for part in current_line.split("\t", 1)]
+                    ret_list = [part.strip() for part in current_line.split(split_char, 1)]
                     if len(ret_list) == 1:
                         ret_list.append("")
                     return ret_list
