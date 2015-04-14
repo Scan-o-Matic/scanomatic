@@ -132,6 +132,7 @@ class Config(Singleton):
         scanners = self._config_file['number-of-scanners']
         if scanners is not None:
             self.number_of_scanners = scanners
+            self._logger.info("Updating number of scanners to {0}".format(scanners))
 
         pm = self._config_file['pm-type']
         if pm is not None:
