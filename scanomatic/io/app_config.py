@@ -103,7 +103,7 @@ class Config(Singleton):
         self._pm_host = "192.168.0.100"
         self._pm_pwd = None
         self._pm_verify_name = False
-        self._pm_MAC = None
+        self._pm_mac = None
         self._pm_name = "Server 1"
 
         # RPC SERVER
@@ -174,7 +174,7 @@ class Config(Singleton):
 
         pm_mac = self._config_file['pm-MAC']
         if pm_mac is not None:
-            self._pm_MAC = pm_mac
+            self._pm_mac = pm_mac
 
     def _set_pm_extras(self):
 
@@ -194,7 +194,7 @@ class Config(Singleton):
                 'password': self._pm_pwd,
                 'verify_name': self._pm_verify_name,
                 'pm_name': self._pm_name,
-                'MAC': self._pm_MAC,
+                'mac': self._pm_mac,
             }
         else:
             self._PM = power_manager.PowerManagerNull
