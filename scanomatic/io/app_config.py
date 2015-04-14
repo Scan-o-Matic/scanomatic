@@ -138,6 +138,17 @@ class Config(Singleton):
         if pm is not None:
             try:
                 self.pm_type = loads(pm)
+            except ValueError:
+                mode_by_name = tuple(mode.name.lower() == pm.lower() for mode in power_manager.POWER_MANAGER_TYPE)
+                if any(mode_by_name):
+                    for pm_type, mode in zip(mode_by_name, power_manager.POWER_MANAGER_TYPE):
+                        if mode:
+                            self.pm_type = pm_type
+                            break
+                else:
+                    self._logger.error("Power Manager Mode '{0}' not recognized only valid: {1}".format(
+                        pm, power_manager.POWER_MANAGER_TYPE.__members__.keys()))
+
             except UnpickleableError:
                 self._logger.warning("Power Manager Type {0} not valid".format(
                     pm))
