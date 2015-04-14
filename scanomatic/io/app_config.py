@@ -93,11 +93,11 @@ class Config(Singleton):
         self.scan_program = "scanimage"
         self.scan_program_version_flag = "-V"
         self._scanner_models = {
-            self.SCANNER_PATTERN.format(i): 'EPSON V700' for i in range(1, 4)}
+            self.SCANNER_PATTERN.format(i): 'EPSON V700' for i in range(4)}
 
         # POWER MANAGER
         self._scanner_sockets = {
-            self.SCANNER_PATTERN.format(i): i for i in range(1, 4)}
+            self.SCANNER_PATTERN.format(i): i for i in range(4)}
 
         self.pm_type = power_manager.POWER_MANAGER_TYPE.notInstalled
         self._pm_host = "192.168.0.100"
@@ -177,13 +177,13 @@ class Config(Singleton):
 
         if self.pm_type == power_manager.POWER_MANAGER_TYPE.linuxUSB:
 
-            self._PM = power_manager.USB_PM_LINUX
+            self._PM = power_manager.PowerManagerUsbLinux
             self._pm_arguments = {
                 'power_mode': self.POWER_DEFAULT
             }
 
         elif self.pm_type == power_manager.POWER_MANAGER_TYPE.LAN:
-            self._PM = power_manager.LAN_PM
+            self._PM = power_manager.PowerManagerLan
 
             self._pm_arguments = {
                 'power_mode': self.POWER_DEFAULT,
@@ -194,7 +194,7 @@ class Config(Singleton):
                 'MAC': self._pm_MAC,
             }
         else:
-            self._PM = power_manager.NO_PM
+            self._PM = power_manager.PowerManagerNull
             self._pm_arguments = {
                 'power_mode': self.POWER_DEFAULT
             }
@@ -268,9 +268,9 @@ class Config(Singleton):
     def set(self, key, value):
 
         if key == 'pm-type':
-            if value in power_manager.hasValue(
+            if value in power_manager.has_value(
                     power_manager.POWER_MANAGER_TYPE, value): 
-                self.pm_type = power_manager.getEnumTypeFromValue(
+                self.pm_type = power_manager.get_enum_name_from_value(
                     power_manager.POWER_MANAGER_TYPE, value)
                 self._set_pm_extras()
 
@@ -295,7 +295,7 @@ class Config(Singleton):
         if isinstance(scanner, int) and 0 < scanner < self.number_of_scanners:
             scanner = self.SCANNER_PATTERN.format(scanner)
         elif isinstance(scanner, str):
-            numbers = map(int, re.findall(r'\d+', 'Scanner 1000'))
+            numbers = map(int, re.findall(r'\d+', scanner))
             if not(len(numbers) == 1 and 
                    0 < numbers[0] < self.number_of_scanners):
                 
@@ -311,14 +311,14 @@ class Config(Singleton):
         if scanner_name in self._scanner_sockets:
             return self._scanner_sockets[scanner_name]
         else:
-            self._logger.error("{0} not a scanner, can't return its power socket".format(scanner_name))
+            self._logger.error("{0}/{1} not a scanner, can't return its power socket".format(scanner, scanner_name))
             return None
 
     def get_pm(self, scanner_name, **pm_kwargs):
 
         scanner_pm_socket = self.get_scanner_socket(scanner_name)
         if scanner_pm_socket is None:
-            return power_manager.NO_PM("None")
+            return power_manager.PowerManagerNull("None")
         if len(pm_kwargs) == 0:
             pm_kwargs = self._pm_arguments
 

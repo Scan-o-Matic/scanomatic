@@ -26,7 +26,7 @@ import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 import scanomatic.io.fixtures as fixtures
 from scanomatic.models.factories.scanning_factory import ScannerOwnerFactory
-from scanomatic.io.power_manager import Invalid_Init, NO_PM
+from scanomatic.io.power_manager import InvalidInit, PowerManagerNull
 import scanomatic.generics.decorators as decorators
 
 
@@ -48,7 +48,7 @@ class ScannerPowerManager(object):
         self._orphan_usbs = set()
 
         self._scanners = self._get_scanner_owners_from_file()
-        self._pm = self._get_power_manager()
+        self._pm = self._get_power_manager(self._scanners)
         self._scanner_queue = []
         decorators.register_type_lock(self)
 
@@ -90,18 +90,18 @@ class ScannerPowerManager(object):
 
     def _enumerate_scanner_sockets(self):
 
-        for power_socket in range(1, self._conf.number_of_scanners + 1):
+        for power_socket in range(self._conf.number_of_scanners):
             yield power_socket
 
-    def _get_power_manager(self):
+    def _get_power_manager(self, scanners):
 
         pm = {}
-        for power_socket in self._scanners:
+        for power_socket in scanners:
 
             try:
                 pm[power_socket] = self._conf.get_pm(power_socket)
-            except Invalid_Init:
-                pm[power_socket] = NO_PM(power_socket)
+            except InvalidInit:
+                pm[power_socket] = PowerManagerNull(power_socket)
 
         return pm
 
@@ -177,7 +177,7 @@ class ScannerPowerManager(object):
             socket = tuple(scanner for scanner in powers if powers[scanner])[0]
             scanner = self._scanners[socket]
 
-            if self._pm[socket].sureToHavePower():
+            if self._pm[socket].sure_to_have_power():
                 scanner.power = True
                 scanner.usb = usb
                 self._save(scanner)
@@ -343,9 +343,9 @@ class ScannerPowerManager(object):
 
     @property
     def power_statuses(self):
-        return {scanner_socket: self._pm[scanner_socket].couldHavePower()
+        return {scanner_socket: self._pm[scanner_socket].could_have_power()
                 for scanner_socket in self._pm}
 
     @property
     def has_scanners(self):
-        return self._pm and any(not isinstance(pm, NO_PM) for pm in self._pm.values())
+        return self._pm and any(not isinstance(pm, PowerManagerNull) for pm in self._pm.values())
