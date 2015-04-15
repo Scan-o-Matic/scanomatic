@@ -62,16 +62,16 @@ class ProcessEffector(object):
         self._iteration_index = None
         self._pid = os.getpid()
 
-        self._startTime = None
+        self._start_time = None
         decorators.register_type_lock(self)
 
     @property
     def run_time(self):
 
-        if self._startTime is None:
+        if self._start_time is None:
             return 0
         else:
-            return time.time() - self._startTime
+            return time.time() - self._start_time
 
     @property
     def fail_vunerable_calls(self):
