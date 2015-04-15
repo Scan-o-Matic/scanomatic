@@ -23,6 +23,7 @@ import os
 
 import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
+from scanomatic.generics import decorators
 
 
 class ScannerEffector(proc_effector.ProcessEffector):
@@ -38,10 +39,20 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._specific_statuses['progress'] = 'progress'
         self._specific_statuses['total'] = 'total_images'
         self._specific_statuses['currentImage'] = 'current_image'
+
         self._allowed_calls['setup'] = self.setup
+        self._allowed_calls['add_scanned_image'] = self._add_scanned_image
+
         self._scanning_job = job.content_model
         self._current_image = -1
         self._previous_scan_time = -1.0
+        self._images_ready_for_firstpass_analysis = []
+        self._images_requested_scan = []
+        self._images_with_started_analysis = []
+        self._images_done = []
+
+        self._first_pass_analysis_thread = None
+        decorators.register_type_lock(self)
 
     def setup(self, *args, **kwargs):
 
@@ -86,7 +97,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         # if can scan, scan
 
-        # if can analyse start analysis
+        if not self._firstpass_is_running and self._images_ready_for_firstpass_analysis:
+            self._start_first_pass_analysis()
 
         if self._current_image >= self._scanning_job.number_of_scans or self._current_image is None:
             raise StopIteration
@@ -95,3 +107,20 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         os.makedirs(os.path.join(self._scanning_job.directory_containing_project.rstrip(os.sep),
                                  self._scanning_job.project_name))
+
+
+    @property
+    def _firstpass_is_running(self):
+
+        return self._first_pass_analysis_thread is not None and self._first_pass_analysis_thread.isalive()
+
+    @decorators.type_lock
+    def _start_first_pass_analysis(self):
+
+        index, time_stamp, path = self._images_ready_for_firstpass_analysis.pop(0)
+        self._images_with_started_analysis[index] = (time_stamp, path)
+
+    @decorators.type_lock
+    def _add_scanned_image(self, index, time_stamp, path):
+
+        self._images_ready_for_firstpass_analysis.append((index, time_stamp, path))
