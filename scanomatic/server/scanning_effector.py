@@ -15,6 +15,7 @@ __status__ = "Development"
 #
 
 import time
+import os
 
 #
 # INTERNAL DEPENDENCIES
@@ -40,10 +41,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._allowed_calls['setup'] = self.setup
         self._scanning_job = job.content_model
         self._current_image = -1
+        self._previous_scan_time = -1.0
 
     def setup(self, *args, **kwargs):
 
-        pass
+        self._setup_directory()
+        self._allow_start = True
 
     @property
     def progress(self):
@@ -70,9 +73,25 @@ class ScannerEffector(proc_effector.ProcessEffector):
         if not self._allow_start:
             return super(ScannerEffector, self).next()
 
-        if self._stopping:
-            self._current_image = None
-            self._running = False
+        if self._current_image < 0:
+            self._start_time = time.time()
+            self._previous_scan_time = -self._scanning_job.time_between_scans * 1.1
+            self._current_image = 0
 
-        if self._iteration_index is None:
-            self._startTime = time.time()
+        project_time = time.time() - self._start_time
+
+        if project_time >= self._scanning_job.time_between_scans:
+            self._previous_scan_time = project_time
+            # Request scanner
+
+        # if can scan, scan
+
+        # if can analyse start analysis
+
+        if self._current_image >= self._scanning_job.number_of_scans or self._current_image is None:
+            raise StopIteration
+
+    def _setup_directory(self):
+
+        os.makedirs(os.path.join(self._scanning_job.directory_containing_project.rstrip(os.sep),
+                                 self._scanning_job.project_name))
