@@ -173,4 +173,4 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @decorators.type_lock
     def _add_scanned_image(self, index, time_stamp, path):
 
-        self._images_ready_for_firstpass_analysis.append((index, time_stamp, path))
+        self._scanning_effector_data.images_ready_for_first_pass_analysis.append((index, time_stamp, path))
