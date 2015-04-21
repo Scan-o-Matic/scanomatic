@@ -37,6 +37,9 @@ def get_alive_scanners():
     return re.findall(r'device[^\`]*.(.*libusb[^\`\']*)', stdout)
 
 
+JOB_CALL_SCANNER_REQUEST_ON = "request_scanner_on"
+JOB_CALL_SCANNER_REQUEST_OFF = "request_scanner_off"
+
 class ScannerPowerManager(object):
 
     def __init__(self):

@@ -25,13 +25,16 @@ import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.generics import decorators
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningModelEffectorData
+from scanomatic.io import scanner_manager
 
+JOBS_CALL_SET_USB = "set_usb"
 
 class ScannerEffector(proc_effector.ProcessEffector):
 
     TYPE = JOB_TYPE.Scan
     WAIT_FOR_USB_TOLERANCE_FACTOR = 0.33
     WAIT_FOR_SCAN_TOLERANCE_FACTOR = 0.5
+    FAKE_INITIAL_WAITING_FACTOR = 1.1
 
     def __init__(self, job):
 
@@ -44,7 +47,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._specific_statuses['currentImage'] = 'current_image'
 
         self._allowed_calls['setup'] = self.setup
-        self._allowed_calls['set_usb'] = self._set_usb_port
+        self._allowed_calls[JOBS_CALL_SET_USB] = self._set_usb_port
 
         self._scanning_job = job.content_model
         self._scanning_effector_data = ScanningModelEffectorData()
@@ -131,7 +134,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self.current_image < 0:
             self._start_time = time.time()
-            self._scanning_effector_data.previous_scan_time = -self._scanning_job.time_between_scans * 1.1
+            self._scanning_effector_data.previous_scan_time = -self._scanning_job.time_between_scans * self.FAKE_INITIAL_WAITING_FACTOR
             self._scanning_effector_data.current_image = 0
             return SCAN_STEP.NextMajor
 
@@ -146,26 +149,29 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _do_wait_for_usb(self):
         if self._scanning_effector_data.usb_port:
             return  SCAN_STEP.NextMajor
-        elif (time.time() - self._scanning_effector_data.current_step_start_time <
-                      self._scanning_job.time_between_scans * self.WAIT_FOR_USB_TOLERANCE_FACTOR):
+        elif self._shoud_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
         else:
             return SCAN_STEP.NextMinor
 
     def _do_wait_for_scan(self):
 
-        if (time.time() - self._scanning_effector_data.current_step_start_time <
-            self._scanning_job.time_between_scans * self.WAIT_FOR_SCAN_TOLERANCE_FACTOR)
-        return SCAN_STEP.Wait
+        if self._shoud_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
+            return SCAN_STEP.Wait
+
+    def _shoud_continue_waiting(self, max_between_scan_fraction):
+
+        return (time.time() - self._scanning_effector_data.current_step_start_time <
+                self._scanning_job.time_between_scans * max_between_scan_fraction)
 
     def _do_request_scanner_on(self):
 
-        self.pipe_effector.send("request_scanner_on", self._scanning_job.scanner)
+        self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_ON, self._scanning_job.scanner)
         return SCAN_STEP.NextMinor
 
     def _do_request_scanner_off(self):
 
-        self.pipe_effector.send("request_scanner_off", self._scanning_job.scanner)
+        self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_OFF, self._scanning_job.scanner)
         return SCAN_STEP.NextMajor
 
     def _do_request_first_pass_analysis(self):
