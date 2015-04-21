@@ -1,6 +1,20 @@
 __version__ = "0.9991"
 
 import scanomatic.generics.model as model
+from scanomatic.generics.enums import MinorMajorStepEnum
+
+class SCAN_STEPS(MinorMajorStepEnum):
+
+    Wait = 0
+    RequestScanner = 10
+    WaitForUSB = 11
+    ReportNotObtainedUSB = 12
+    Scan = 20
+    WaitForScanComplete = 21
+    ReportScanError = 22
+    RequestScannerOff = 30
+    RequestFirstPassAnalysis = 40
+
 
 class ScanningModel(model.Model):
 
