@@ -25,9 +25,12 @@ import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningModelEffectorData
 from scanomatic.io import scanner_manager
+from scanomatic.io import sane
+from scanomatic.io import paths
 import scanomatic.io.rpc_client as rpc_client
 
 JOBS_CALL_SET_USB = "set_usb"
+
 
 class ScannerEffector(proc_effector.ProcessEffector):
 
@@ -51,7 +54,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanning_job = job.content_model
         self._scanning_effector_data = ScanningModelEffectorData()
         self._rpc_client = rpc_client.get_client(admin=True)
-
+        self._scanner = None
         self._scan_cycle_step = SCAN_CYCLE.Wait
 
         self._scan_cycle = {
@@ -67,6 +70,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def setup(self, *args, **kwargs):
 
         self._setup_directory()
+        self._scanning_effector_data.current_image_path_pattern = os.path.join(
+            self._project_directory,
+            paths.Paths().experiment_scan_image_pattern)
+        self._scanner = sane.Sane_Base(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
         self._allow_start = True
 
     @property
@@ -125,7 +132,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         elif step_action is SCAN_STEP.NextMinor:
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_minor
 
-        if not step_action is SCAN_STEP.Wait:
+        if step_action is not SCAN_STEP.Wait:
             self._scanning_effector_data.current_step_start_time = time.time()
 
     def _do_wait(self):
@@ -138,13 +145,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self.run_time >= self._scanning_job.time_between_scans:
             self._scanning_effector_data.previous_scan_time = self.run_time
-            return  SCAN_STEP.NextMajor
+            return SCAN_STEP.NextMajor
 
         return SCAN_STEP.Wait
 
     def _do_wait_for_usb(self):
         if self._scanning_effector_data.usb_port:
-            return  SCAN_STEP.NextMajor
+            return SCAN_STEP.NextMajor
         elif self._shoud_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
         else:
@@ -180,6 +187,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_OFF, self._scanning_job.scanner)
         self._scanning_effector_data.usb_port = ""
+        self._scanning_effector_data.current_image += 1
         return SCAN_STEP.NextMajor
 
     def _do_request_first_pass_analysis(self):
@@ -193,16 +201,38 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_scan(self):
 
-        self._scanning_effector_data.previous_scan_time = self.run_time
+        if self._scanning_effector_data.usb_port:
+            # TODO: This has to be a process
+            self._scanning_effector_data.previous_scan_time = self.run_time
 
-        # TODO: Set real path
-        self._scanning_effector_data.current_image_path = "SOMETHING"
-        return SCAN_STEP.NextMinor
+            self._scanning_effector_data.current_image_path = \
+                self._scanning_effector_data.current_image_path_pattern.format(
+                    self._scanning_job.project_name, str(self._scanning_effector_data.current_image).zfill(4),
+                    self._scanning_effector_data.previous_scan_time)
+
+            if not self._scanner.AcquireByFile(scanner=self._scanning_effector_data.usb_port,
+                                               filename=self._scanning_effector_data.current_image_path):
+
+                self._do_report_error_trying_to_scan()
+                return SCAN_STEP.NextMajor
+
+            return SCAN_STEP.NextMinor
+        else:
+            return SCAN_STEP.NextMajor
+
+    def _do_report_error_trying_to_scan(self):
+
+        pass
 
     def _setup_directory(self):
 
-        os.makedirs(os.path.join(self._scanning_job.directory_containing_project.rstrip(os.sep),
-                                 self._scanning_job.project_name))
+        os.makedirs(self._project_directory)
+
+    @property
+    def _project_directory(self):
+
+        return os.path.join(self._scanning_job.directory_containing_project.rstrip(os.sep),
+                            self._scanning_job.project_name)
 
     def _set_usb_port(self, port):
 

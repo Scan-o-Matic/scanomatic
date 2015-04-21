@@ -30,7 +30,7 @@ class ScanningModel(model.Model):
                  project_name="", directory_containing_project="",
                  project_tag="", scanner_tag="",
                  description="", email="", pinning_formats=tuple(),
-                 fixture="", scanner=1, mode="TPU", version=__version__):
+                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",  version=__version__):
 
         super(ScanningModel, self).__init__(
             number_of_scans=number_of_scans, time_between_scans=time_between_scans,
@@ -39,7 +39,7 @@ class ScanningModel(model.Model):
             project_tag=project_tag, scanner_tag=scanner_tag,
             description=description, email=email,
             pinning_formats=pinning_formats,
-            fixture=fixture, scanner=scanner, mode=mode, version=__version__)
+            fixture=fixture, scanner=scanner, scanner_hardware=scanner_hardware, mode=mode, version=version)
 
 class ScannerOwnerModel(model.Model):
 
@@ -54,7 +54,7 @@ class ScannerOwnerModel(model.Model):
 class ScanningModelEffectorData(model.Model):
 
     def __init__(self, current_cycle_step=SCAN_CYCLE.Wait, current_step_start_time=-1, current_image=-1,
-                 current_image_path="",
+                 current_image_path="", current_image_path_pattern="",
                  project_time=-1.0, previous_scan_time=-1.0, images_ready_for_first_pass_analysis=[],
                  scanning_image_name="", usb_port=""):
 
@@ -62,6 +62,7 @@ class ScanningModelEffectorData(model.Model):
                                                         current_step_start_time=current_step_start_time,
                                                         current_image=current_image,
                                                         current_image_path=current_image_path,
+                                                        current_image_path_pattern=current_image_path_pattern,
                                                         project_time=project_time,
                                                         previous_scan_time=previous_scan_time,
                                                         images_ready_for_first_pass_analysis=images_ready_for_first_pass_analysis,
