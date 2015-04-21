@@ -22,7 +22,7 @@ class SCAN_STEP(Enum):
     Wait = 0
     NextMinor = 1
     NextMajor = 2
-    
+
 
 class ScanningModel(model.Model):
 

@@ -24,6 +24,7 @@ import os
 import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.generics import decorators
+from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP
 
 
 class ScannerEffector(proc_effector.ProcessEffector):
@@ -53,6 +54,18 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._first_pass_analysis_thread = None
         decorators.register_type_lock(self)
+
+        self._scan_cycle_step = SCAN_CYCLE.Wait
+
+        self._scan_cycle = {
+            SCAN_CYCLE.Wait: self._do_wait,
+            SCAN_CYCLE.RequestScanner: self._do_request_scanner_on,
+            SCAN_CYCLE.RequestScannerOff: self._do_request_scanner_off,
+            SCAN_CYCLE.RequestFirstPassAnalysis: self._do_request_first_pass_analysis,
+            SCAN_CYCLE.Scan: self._do_scan,
+            SCAN_CYCLE.WaitForScanComplete: self._do_wait_for_scan,
+            SCAN_CYCLE.WaitForUSB: self._do_wait_for_usb
+        }
 
     def setup(self, *args, **kwargs):
 
@@ -84,24 +97,76 @@ class ScannerEffector(proc_effector.ProcessEffector):
         if not self._allow_start:
             return super(ScannerEffector, self).next()
 
+        try:
+            step_action = self._scan_cycle[self._scan_cycle_step]()
+        except KeyError:
+            step_action = self._get_step_to_next_scan_cycle_step()
+
+        self._update_scan_cycle_step(step_action)
+
+        if self._job_completed:
+            raise StopIteration
+        else:
+            return self._scan_cycle_step
+
+    @property
+    def _job_completed(self):
+
+        return self._current_image >= self._scanning_job.number_of_scans or self._current_image is None
+
+    def _get_step_to_next_scan_cycle_step(self):
+
+        if self._scan_cycle_step.next_minor is self._scan_cycle_step:
+            return SCAN_STEP.NextMajor
+        else:
+            return SCAN_STEP.NextMinor
+
+    def _update_scan_cycle_step(self, step_action):
+
+        if step_action is SCAN_STEP.NextMajor:
+            self._scan_cycle_step = self._scan_cycle_step.next_major
+        elif step_action is SCAN_STEP.NextMinor:
+            self._scan_cycle_step = self._scan_cycle_step.next_minor
+
+    def _do_wait(self):
+
         if self._current_image < 0:
             self._start_time = time.time()
             self._previous_scan_time = -self._scanning_job.time_between_scans * 1.1
             self._current_image = 0
+            return SCAN_STEP.NextMajor
 
         project_time = time.time() - self._start_time
 
         if project_time >= self._scanning_job.time_between_scans:
             self._previous_scan_time = project_time
-            # Request scanner
+            return  SCAN_STEP.NextMajor
 
-        # if can scan, scan
+        return SCAN_STEP.Wait
 
-        if not self._firstpass_is_running and self._images_ready_for_firstpass_analysis:
-            self._start_first_pass_analysis()
+    def _do_wait_for_usb(self):
 
-        if self._current_image >= self._scanning_job.number_of_scans or self._current_image is None:
-            raise StopIteration
+        return SCAN_STEP.Wait
+
+    def _do_wait_for_scan(self):
+
+        return SCAN_STEP.Wait
+
+    def _do_request_scanner_on(self):
+
+        return SCAN_STEP.NextMinor
+
+    def _do_request_scanner_off(self):
+
+        return SCAN_STEP.NextMajor
+
+    def _do_request_first_pass_analysis(self):
+
+        return SCAN_STEP.NextMajor
+
+    def _do_scan(self):
+
+        return SCAN_STEP.NextMinor
 
     def _setup_directory(self):
 
