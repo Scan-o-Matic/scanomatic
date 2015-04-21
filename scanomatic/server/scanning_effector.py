@@ -30,6 +30,8 @@ from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningMode
 class ScannerEffector(proc_effector.ProcessEffector):
 
     TYPE = JOB_TYPE.Scan
+    WAIT_FOR_USB_TOLERANCE_FACTOR = 0.33
+    WAIT_FOR_SCAN_TOLERANCE_FACTOR = 0.5
 
     def __init__(self, job):
 
@@ -42,7 +44,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._specific_statuses['currentImage'] = 'current_image'
 
         self._allowed_calls['setup'] = self.setup
-        self._allowed_calls['add_scanned_image'] = self._add_scanned_image
+        self._allowed_calls['set_usb'] = self._set_usb_port
 
         self._scanning_job = job.content_model
         self._scanning_effector_data = ScanningModelEffectorData()
@@ -142,19 +144,28 @@ class ScannerEffector(proc_effector.ProcessEffector):
         return SCAN_STEP.Wait
 
     def _do_wait_for_usb(self):
-
-        return SCAN_STEP.Wait
+        if self._scanning_effector_data.usb_port:
+            return  SCAN_STEP.NextMajor
+        elif (time.time() - self._scanning_effector_data.current_step_start_time <
+                      self._scanning_job.time_between_scans * self.WAIT_FOR_USB_TOLERANCE_FACTOR):
+            return SCAN_STEP.Wait
+        else:
+            return SCAN_STEP.NextMinor
 
     def _do_wait_for_scan(self):
 
+        if (time.time() - self._scanning_effector_data.current_step_start_time <
+            self._scanning_job.time_between_scans * self.WAIT_FOR_SCAN_TOLERANCE_FACTOR)
         return SCAN_STEP.Wait
 
     def _do_request_scanner_on(self):
 
+        self.pipe_effector.send("request_scanner_on", self._scanning_job.scanner)
         return SCAN_STEP.NextMinor
 
     def _do_request_scanner_off(self):
 
+        self.pipe_effector.send("request_scanner_off", self._scanning_job.scanner)
         return SCAN_STEP.NextMajor
 
     def _do_request_first_pass_analysis(self):
@@ -169,6 +180,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         os.makedirs(os.path.join(self._scanning_job.directory_containing_project.rstrip(os.sep),
                                  self._scanning_job.project_name))
+
+    def _set_usb_port(self, port):
+
+        self._scanning_effector_data.usb_port = port
 
     @decorators.type_lock
     def _add_scanned_image(self, index, time_stamp, path):
