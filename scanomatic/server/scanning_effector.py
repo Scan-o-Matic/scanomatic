@@ -24,7 +24,7 @@ import os
 import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.generics import decorators
-from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP
+from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningModelEffectorData
 
 
 class ScannerEffector(proc_effector.ProcessEffector):
@@ -45,15 +45,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._allowed_calls['add_scanned_image'] = self._add_scanned_image
 
         self._scanning_job = job.content_model
-        self._current_image = -1
-        self._previous_scan_time = -1.0
-        self._current_step_initiation_time = 0.0
-        self._images_ready_for_firstpass_analysis = []
-        self._images_requested_scan = []
-        self._images_with_started_analysis = []
-        self._images_done = []
+        self._scanning_effector_data = ScanningModelEffectorData()
 
-        self._first_pass_analysis_thread = None
         decorators.register_type_lock(self)
 
         self._scan_cycle_step = SCAN_CYCLE.Wait
@@ -76,12 +69,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def progress(self):
 
-        if self._current_image < 0:
+        if self.current_image < 0:
             return 0.0
-        elif self._current_image is None:
+        elif self.current_image is None:
             return 1.0
         else:
-            return float(self._current_image + 1.0) / self.total_images
+            return float(self.current_image + 1.0) / self.total_images
 
     @property
     def total_images(self):
@@ -91,7 +84,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def current_image(self):
 
-        return self._current_image
+        return self._scanning_effector_data.current_image
 
     def next(self):
 
@@ -99,7 +92,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             return super(ScannerEffector, self).next()
 
         try:
-            step_action = self._scan_cycle[self._scan_cycle_step]()
+            step_action = self._scan_cycle[self._scanning_effector_data.current_cycle_step]()
         except KeyError:
             step_action = self._get_step_to_next_scan_cycle_step()
 
@@ -113,11 +106,11 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def _job_completed(self):
 
-        return self._current_image >= self._scanning_job.number_of_scans or self._current_image is None
+        return self.current_image >= self._scanning_job.number_of_scans or self.current_image is None
 
     def _get_step_to_next_scan_cycle_step(self):
 
-        if self._scan_cycle_step.next_minor is self._scan_cycle_step:
+        if self._scanning_effector_data.current_cycle_step.next_minor is self._scan_cycle_step:
             return SCAN_STEP.NextMajor
         else:
             return SCAN_STEP.NextMinor
@@ -125,25 +118,25 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _update_scan_cycle_step(self, step_action):
 
         if step_action is SCAN_STEP.NextMajor:
-            self._scan_cycle_step = self._scan_cycle_step.next_major
+            self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_major
         elif step_action is SCAN_STEP.NextMinor:
-            self._scan_cycle_step = self._scan_cycle_step.next_minor
+            self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_minor
 
         if not step_action is SCAN_STEP.Wait:
-            self._current_step_initiation_time = time.time()
+            self._scanning_effector_data.current_step_start_time = time.time()
 
     def _do_wait(self):
 
-        if self._current_image < 0:
+        if self.current_image < 0:
             self._start_time = time.time()
-            self._previous_scan_time = -self._scanning_job.time_between_scans * 1.1
-            self._current_image = 0
+            self._scanning_effector_data.previous_scan_time = -self._scanning_job.time_between_scans * 1.1
+            self._scanning_effector_data.current_image = 0
             return SCAN_STEP.NextMajor
 
         project_time = time.time() - self._start_time
 
         if project_time >= self._scanning_job.time_between_scans:
-            self._previous_scan_time = project_time
+            self._scanning_effector_data.previous_scan_time = project_time
             return  SCAN_STEP.NextMajor
 
         return SCAN_STEP.Wait
