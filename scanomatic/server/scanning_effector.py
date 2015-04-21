@@ -170,18 +170,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
         os.makedirs(os.path.join(self._scanning_job.directory_containing_project.rstrip(os.sep),
                                  self._scanning_job.project_name))
 
-
-    @property
-    def _firstpass_is_running(self):
-
-        return self._first_pass_analysis_thread is not None and self._first_pass_analysis_thread.isalive()
-
-    @decorators.type_lock
-    def _start_first_pass_analysis(self):
-
-        index, time_stamp, path = self._images_ready_for_firstpass_analysis.pop(0)
-        self._images_with_started_analysis[index] = (time_stamp, path)
-
     @decorators.type_lock
     def _add_scanned_image(self, index, time_stamp, path):
 
