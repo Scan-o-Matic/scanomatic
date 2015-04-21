@@ -2,8 +2,9 @@ __version__ = "0.9991"
 
 import scanomatic.generics.model as model
 from scanomatic.generics.enums import MinorMajorStepEnum
+from enum import Enum
 
-class SCAN_STEPS(MinorMajorStepEnum):
+class SCAN_CYCLE(MinorMajorStepEnum):
 
     Wait = 0
     RequestScanner = 10
@@ -15,6 +16,13 @@ class SCAN_STEPS(MinorMajorStepEnum):
     RequestScannerOff = 30
     RequestFirstPassAnalysis = 40
 
+
+class SCAN_STEP(Enum):
+
+    Wait = 0
+    NextMinor = 1
+    NextMajor = 2
+    
 
 class ScanningModel(model.Model):
 
