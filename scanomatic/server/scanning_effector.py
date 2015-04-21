@@ -23,9 +23,9 @@ import os
 
 import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
-from scanomatic.generics import decorators
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningModelEffectorData
 from scanomatic.io import scanner_manager
+import scanomatic.io.rpc_client as rpc_client
 
 JOBS_CALL_SET_USB = "set_usb"
 
@@ -50,8 +50,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._scanning_job = job.content_model
         self._scanning_effector_data = ScanningModelEffectorData()
-
-        decorators.register_type_lock(self)
+        self._rpc_client = rpc_client.get_client(admin=True)
 
         self._scan_cycle_step = SCAN_CYCLE.Wait
 
@@ -137,10 +136,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._scanning_effector_data.current_image = 0
             return SCAN_STEP.NextMajor
 
-        project_time = time.time() - self._start_time
-
-        if project_time >= self._scanning_job.time_between_scans:
-            self._scanning_effector_data.previous_scan_time = project_time
+        if self.run_time >= self._scanning_job.time_between_scans:
+            self._scanning_effector_data.previous_scan_time = self.run_time
             return  SCAN_STEP.NextMajor
 
         return SCAN_STEP.Wait
@@ -155,8 +152,19 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_wait_for_scan(self):
 
-        if self._shoud_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
+        if self._scan_completed():
+            self._add_scanned_image(self.current_image, self._scanning_effector_data.previous_scan_time,
+                                    self._scanning_effector_data.current_image_path)
+            return SCAN_STEP.NextMajor
+        elif self._shoud_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
+        else:
+            return SCAN_STEP.NextMinor
+
+    def _scan_completed(self):
+
+        # TODO: Check how to check if scan is done
+        return False
 
     def _shoud_continue_waiting(self, max_between_scan_fraction):
 
@@ -171,14 +179,24 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _do_request_scanner_off(self):
 
         self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_OFF, self._scanning_job.scanner)
+        self._scanning_effector_data.usb_port = ""
         return SCAN_STEP.NextMajor
 
     def _do_request_first_pass_analysis(self):
 
-        return SCAN_STEP.NextMajor
+        # TODO: Add model creation to rpc client job passage
+        if self._rpc_client.create_first_pass_job():
+            self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
+            return SCAN_STEP.NextMajor
+        else:
+            return SCAN_STEP.NextMinor
 
     def _do_scan(self):
 
+        self._scanning_effector_data.previous_scan_time = self.run_time
+
+        # TODO: Set real path
+        self._scanning_effector_data.current_image_path = "SOMETHING"
         return SCAN_STEP.NextMinor
 
     def _setup_directory(self):
@@ -190,7 +208,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._scanning_effector_data.usb_port = port
 
-    @decorators.type_lock
     def _add_scanned_image(self, index, time_stamp, path):
 
         self._scanning_effector_data.images_ready_for_first_pass_analysis.append((index, time_stamp, path))

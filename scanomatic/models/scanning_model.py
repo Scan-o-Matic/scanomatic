@@ -54,12 +54,14 @@ class ScannerOwnerModel(model.Model):
 class ScanningModelEffectorData(model.Model):
 
     def __init__(self, current_cycle_step=SCAN_CYCLE.Wait, current_step_start_time=-1, current_image=-1,
+                 current_image_path="",
                  project_time=-1.0, previous_scan_time=-1.0, images_ready_for_first_pass_analysis=[],
-                 scanning_image_name="", usb_port=''):
+                 scanning_image_name="", usb_port=""):
 
         super(ScanningModelEffectorData, self).__init__(current_cycle_step=current_cycle_step,
                                                         current_step_start_time=current_step_start_time,
                                                         current_image=current_image,
+                                                        current_image_path=current_image_path,
                                                         project_time=project_time,
                                                         previous_scan_time=previous_scan_time,
                                                         images_ready_for_first_pass_analysis=images_ready_for_first_pass_analysis,
