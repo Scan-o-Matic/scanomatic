@@ -296,9 +296,14 @@ class ChildPipeEffector(_PipeEffector):
     @procEffector.setter
     def procEffector(self, procEffector):
 
+        """
+
+        :type procEffector: scanomatic.server.proc_effector.ProcessEffector
+        """
         self._procEffector = procEffector
         self.setAllowedCalls(procEffector.allow_calls)
         self.setFailVunerableCalls(*procEffector.fail_vunerable_calls)
+        procEffector.pipe_effector = self
 
     def sendStatus(self, status):
 

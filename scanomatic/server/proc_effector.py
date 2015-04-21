@@ -23,6 +23,7 @@ import os
 import scanomatic.io.logger as logger
 import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.generics.decorators as decorators
+from pipes import ChildPipeEffector
 
 #
 # CLASSES
@@ -61,10 +62,28 @@ class ProcessEffector(object):
 
         self._iteration_index = None
         self._pid = os.getpid()
-
+        self._pipe_effector = None
         self._start_time = None
         decorators.register_type_lock(self)
 
+    @property
+    def pipe_effector(self):
+    
+        """
+
+        :rtype : ChildPipeEffector
+        """
+        if self._pipe_effector is None:
+            self._logger.warning("Attempting to get pipe effector that has not been set")
+            
+        return self._pipe_effector
+    
+    @pipe_effector.setter
+    def _pipe_effector_setter(self, value):
+        
+        if value is None or isinstance(value, ChildPipeEffector): 
+            self._pipe_effector = value
+    
     @property
     def run_time(self):
 
