@@ -47,6 +47,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanning_job = job.content_model
         self._current_image = -1
         self._previous_scan_time = -1.0
+        self._current_step_initiation_time = 0.0
         self._images_ready_for_firstpass_analysis = []
         self._images_requested_scan = []
         self._images_with_started_analysis = []
@@ -127,6 +128,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._scan_cycle_step = self._scan_cycle_step.next_major
         elif step_action is SCAN_STEP.NextMinor:
             self._scan_cycle_step = self._scan_cycle_step.next_minor
+
+        if not step_action is SCAN_STEP.Wait:
+            self._current_step_initiation_time = time.time()
 
     def _do_wait(self):
 
