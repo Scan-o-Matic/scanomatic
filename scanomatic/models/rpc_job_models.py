@@ -1,10 +1,11 @@
 import scanomatic.generics.model as model
 import scanomatic.generics.decorators as decorators
+from scanomatic.generics.enums import CycleEnum
 from enum import Enum
 import numpy as np
 
 
-class JOB_TYPE(Enum):
+class JOB_TYPE(CycleEnum):
 
     Scan = ("Scanner Job", 0)
     Rebuild = ("Rebuild Job", 1)
@@ -25,12 +26,6 @@ class JOB_TYPE(Enum):
 
         next_int_val = (1 + np.round(self.int_value/10.)) * 10
         return self.get_by_int_representation(next_int_val)
-
-    @property
-    def cycle_known_jobs(self):
-
-        known = tuple(m for m in type(self).__members__.values() if m is not self.default)
-        return known[(known.index(self) + 1) % len(known)]
 
     @classmethod
     def get_by_int_representation(cls, value):
