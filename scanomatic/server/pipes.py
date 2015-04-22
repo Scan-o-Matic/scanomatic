@@ -124,7 +124,7 @@ class _PipeEffector(object):
                     dataRecvd))
                 """
                 try:
-                    if response is not None:
+                    if response not in (None, True, False):
                         if (isinstance(response, dict) and
                                 dataRecvd[0] == "status"):
                             self.send(dataRecvd[0], **response)
