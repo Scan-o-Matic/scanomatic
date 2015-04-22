@@ -214,14 +214,9 @@ class ScannerPowerManager(Singleton):
 
         return set(usbs).difference(self._orphan_usbs)
 
-    def owns_scanner(self, owner_pid, job_id):
-
-        return any(True for scanner in self._scanners.values()
-                   if scanner.job_id == job_id and scanner.owner_pid == owner_pid)
-
     def request_on(self, job_id):
 
-        scanner = self._get_scanner_by_job_id(job_id)
+        scanner = self._get_scanner_by_owner_id(job_id)
         if scanner:
             if scanner.usb:
                 return scanner.usb
@@ -242,7 +237,7 @@ class ScannerPowerManager(Singleton):
 
     def request_off(self, job_id):
 
-        scanner = self._get_scanner_by_job_id(job_id)
+        scanner = self._get_scanner_by_owner_id(job_id)
 
         if not scanner:
             self._logger.error(
@@ -266,7 +261,7 @@ class ScannerPowerManager(Singleton):
 
     def request_claim(self, rpc_job_model):
 
-        scanner = rpc_job_model.contentModel.scanner
+        scanner = rpc_job_model.content_model.scanner
         scanner_name = self._conf.get_scanner_name(scanner)
 
         if scanner not in self._scanners:
@@ -276,9 +271,9 @@ class ScannerPowerManager(Singleton):
 
         scanner_owner_model = self._scanners[scanner]
 
-        if scanner_owner_model.job_id != rpc_job_model.id:
+        if scanner_owner_model.owner and scanner_owner_model.owner.id != rpc_job_model.id:
 
-            if psutil.pid_exists(scanner_owner_model.owner_pid):
+            if psutil.pid_exists(scanner_owner_model.owner.pid):
 
                 self._logger.warning("Trying to claim {0} when claimed".format(
                     scanner_name))
@@ -289,11 +284,9 @@ class ScannerPowerManager(Singleton):
                     "Releasing {0} since owner process is dead".format(
                         scanner_name))
 
-                scanner_owner_model.job_id = ""
                 self._power_down(scanner_owner_model)
 
-        scanner_owner_model.job_id = rpc_job_model.id
-        scanner_owner_model.owner_pid = rpc_job_model.pid
+        scanner_owner_model.owner = rpc_job_model
 
         self._save(scanner_owner_model)
 
@@ -301,7 +294,7 @@ class ScannerPowerManager(Singleton):
 
     def release_scanner(self, job_id):
 
-        scanner = self._get_scanner_by_job_id(job_id)
+        scanner = self._get_scanner_by_owner_id(job_id)
         if scanner.power or scanner.usb:
             self._power_down(scanner)
 
@@ -310,9 +303,9 @@ class ScannerPowerManager(Singleton):
 
         return True
 
-    def _get_scanner_by_job_id(self, job_id):
+    def _get_scanner_by_owner_id(self, job_id):
 
-        scanners = [scanner for scanner in self._scanners.values() if scanner.job_id == job_id]
+        scanners = [scanner for scanner in self._scanners.values() if scanner.owner.id == job_id]
         if scanners:
             return scanners[0]
         return None

@@ -195,10 +195,6 @@ class Server(object):
 
     def enqueue(self, model, job_type):
 
-        if job_type is rpc_job_models.JOB_TYPE.Scan and not self.scanner_manager.has_scanners:
-            self.logger.error("There are no scanners reachable from server")
-            return False
-
         rpc_job = RPC_Job_Model_Factory.create(
             id=self._get_job_id(),
             pid=None,
@@ -210,7 +206,18 @@ class Server(object):
             self.logger.error("Failed to create job model")
             return False
 
+        if job_type is rpc_job_models.JOB_TYPE.Scan and not self.verify_scanner_claim(rpc_job):
+            return False
+
         self._queue.add(rpc_job)
 
         self.logger.info("Job {0} with id {1} added to queue".format(rpc_job, rpc_job.id))
         return rpc_job.id
+
+    def verify_scanner_claim(self, rpc_job_model):
+
+        if not self.scanner_manager.has_scanners:
+            self.logger.error("There are no scanners reachable from server")
+            return False
+
+        return self.scanner_manager.request_claim(rpc_job_model)
