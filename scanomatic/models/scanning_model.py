@@ -4,6 +4,7 @@ import scanomatic.generics.model as model
 from scanomatic.generics.enums import MinorMajorStepEnum
 from enum import Enum
 
+
 class SCAN_CYCLE(MinorMajorStepEnum):
 
     Wait = 0
@@ -41,6 +42,7 @@ class ScanningModel(model.Model):
             pinning_formats=pinning_formats,
             fixture=fixture, scanner=scanner, scanner_hardware=scanner_hardware, mode=mode, version=version)
 
+
 class ScannerOwnerModel(model.Model):
 
     def __init__(self, socket=-1, scanner_name="", owner=None, usb="", power=False, last_on=-1, last_off=-1,
@@ -49,7 +51,8 @@ class ScannerOwnerModel(model.Model):
         super(ScannerOwnerModel, self).__init__(socket=socket, scanner_name=scanner_name, usb=usb,
                                                 power=power, last_on=last_on, last_off=last_off,
                                                 expected_interval=expected_interval, email=email, warned=warned,
-                                                owner_pid=owner_pid, claiming=claiming)
+                                                owner=owner, claiming=claiming)
+
 
 class ScanningModelEffectorData(model.Model):
 
