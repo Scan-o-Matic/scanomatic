@@ -27,6 +27,7 @@ import scanomatic.server.analysis_effector as analysis_effector
 import scanomatic.server.scanning_effector as scanning_effector
 import scanomatic.server.rpcjob as rpc_job
 from scanomatic.generics.singleton import Singleton
+from scanomatic.io import scanner_manager
 
 #
 # CLASSES
@@ -38,7 +39,7 @@ class Jobs(Singleton):
 
         self._logger = logger.Logger("Jobs Handler")
         self._paths = paths.Paths()
-
+        self._scanner_manager = scanner_manager.ScannerPowerManager()
         self._jobs = {}
         self._load_from_file()
 
@@ -155,13 +156,30 @@ class Jobs(Singleton):
         job.status = rpc_job_models.JOB_STATUS.Running
         RPC_Job_Model_Factory.serializer.dump(job, self._paths.rpc_jobs)
 
-    @staticmethod
-    def _initialize_job_process(job_process, job):
 
+    def _initialize_job_process(self, job_process, job):
+
+        """
+
+        :type job_process: scanomatic.server.rpcjob.RpcJob
+        """
         job_process.daemon = True
         job_process.start()
-        job_process.pipe.send('setup', RPC_Job_Model_Factory.serializer.serialize(job))
+        if job.type is rpc_job_models.JOB_TYPE.Scan:
+            self._add_scanner_operations_to_job(job_process)
+            job.content_model.id = job.id
+
+        job_process.pipe.send('setup', RPC_Job_Model_Factory.serializer.serialize(job.content_model))
         job_process.pipe.send('start')
+
+    def _add_scanner_operations_to_job(self, job_process):
+
+        """
+
+        :type job_process: scanomatic.server.rpcjob.RpcJob
+        """
+
+        job_process.pipe.add_allowed_calls(self._scanner_manager.subprocess_operations)
 
     def _get_job_effector(self, job):
 

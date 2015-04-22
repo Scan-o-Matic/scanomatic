@@ -28,7 +28,7 @@ class ScanningModel(model.Model):
 
     def __init__(self, number_of_scans=217, time_between_scans=20,
                  project_name="", directory_containing_project="",
-                 project_tag="", scanner_tag="",
+                 project_tag="", scanner_tag="", id="",
                  description="", email="", pinning_formats=tuple(),
                  fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",  version=__version__):
 

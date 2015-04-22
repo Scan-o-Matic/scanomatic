@@ -63,6 +63,11 @@ class _PipeEffector(object):
         self._allowedCalls = allowedCalls
         self._sendOwnAllowedKeys()
 
+    def add_allowed_calls(self, additional_calls):
+
+        self._allowedCalls.update(additional_calls)
+        self._sendOwnAllowedKeys()
+
     def _sendOwnAllowedKeys(self):
 
         self._logger.info("Informing other side of pipe about my allowed calls")

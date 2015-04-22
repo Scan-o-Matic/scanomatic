@@ -28,7 +28,7 @@ import scanomatic.io.logger as logger
 import scanomatic.io.app_config as app_config
 import scanomatic.server.queue as queue
 import scanomatic.server.jobs as jobs
-import scanomatic.io.scanner_manager as scanner_admin
+import scanomatic.io.scanner_manager as scanner_manager
 from scanomatic.io.resource_status import Resource_Status
 import scanomatic.generics.decorators as decorators
 import scanomatic.models.rpc_job_models as rpc_job_models
@@ -53,7 +53,7 @@ class Server(object):
 
         self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
-        self._scanner_manager = scanner_admin.ScannerPowerManager()
+        self._scanner_manager = scanner_manager.ScannerPowerManager()
 
     @property
     def scanner_manager(self):

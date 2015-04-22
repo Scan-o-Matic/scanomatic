@@ -28,6 +28,7 @@ import scanomatic.io.fixtures as fixtures
 from scanomatic.models.factories.scanning_factory import ScannerOwnerFactory
 from scanomatic.io.power_manager import InvalidInit, PowerManagerNull
 import scanomatic.generics.decorators as decorators
+from scanomatic.generics.singleton import Singleton
 
 
 def get_alive_scanners():
@@ -40,7 +41,7 @@ def get_alive_scanners():
 JOB_CALL_SCANNER_REQUEST_ON = "request_scanner_on"
 JOB_CALL_SCANNER_REQUEST_OFF = "request_scanner_off"
 
-class ScannerPowerManager(object):
+class ScannerPowerManager(Singleton):
 
     def __init__(self):
 
@@ -358,3 +359,12 @@ class ScannerPowerManager(object):
         reachable_pms = any(type(pm) is not PowerManagerNull for pm in self._pm.values())
         self._logger.info("Power Manager {0} is reachable? {1}".format(self._pm, reachable_pms))
         return self._pm and reachable_pms
+
+    @property
+    def subprocess_operations(self):
+
+        global JOB_CALL_SCANNER_REQUEST_ON, JOB_CALL_SCANNER_REQUEST_OFF
+        return {
+            JOB_CALL_SCANNER_REQUEST_ON: self.request_on,
+            JOB_CALL_SCANNER_REQUEST_OFF: self.request_off
+        }

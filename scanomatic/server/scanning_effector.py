@@ -68,8 +68,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.WaitForUSB: self._do_wait_for_usb
         }
 
-    def setup(self, *args, **kwargs):
+    def setup(self, scanning_job):
 
+        self._scanning_job.id = scanning_job['id']
         self._setup_directory()
         self._scanning_effector_data.current_image_path_pattern = os.path.join(
             self._project_directory,
@@ -190,7 +191,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_request_scanner_on(self):
 
-        self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_ON, self._scanning_job.scanner)
+        self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_ON, self._scanning_job.id)
         return SCAN_STEP.NextMinor
 
     def _do_request_scanner_off(self):
