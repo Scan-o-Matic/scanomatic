@@ -135,7 +135,7 @@ class ProcessEffector(object):
                      ('paused', self._paused),
                      ('runTime', self.run_time),
                      ('stopping', self._stopping),
-                     ('messages', self.messages)] +
+                     ('messages', self.get_messages())] +
                     [(k, getattr(self, v)) for k, v in
                      self._specific_statuses.items()])
 
@@ -144,8 +144,7 @@ class ProcessEffector(object):
         self._stopping = True
 
     @decorators.type_lock
-    @property
-    def messages(self):
+    def get_messages(self):
         msgs = self._messages
         self._messages = []
         return msgs
