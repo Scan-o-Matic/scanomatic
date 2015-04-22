@@ -27,6 +27,7 @@ from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningMode
 from scanomatic.io import scanner_manager
 from scanomatic.io import sane
 from scanomatic.io import paths
+from threading import Thread
 import scanomatic.io.rpc_client as rpc_client
 
 JOBS_CALL_SET_USB = "set_usb"
@@ -152,28 +153,37 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _do_wait_for_usb(self):
         if self._scanning_effector_data.usb_port:
             return SCAN_STEP.NextMajor
-        elif self._shoud_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
+        elif self._should_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
         else:
             return SCAN_STEP.NextMinor
 
     def _do_wait_for_scan(self):
 
-        if self._scan_completed():
-            self._add_scanned_image(self.current_image, self._scanning_effector_data.previous_scan_time,
-                                    self._scanning_effector_data.current_image_path)
-            return SCAN_STEP.NextMajor
-        elif self._shoud_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
+        if self._scan_completed:
+            if self._scanning_effector_data.scan_success:
+                self._add_scanned_image(self.current_image, self._scanning_effector_data.previous_scan_time,
+                                        self._scanning_effector_data.current_image_path)
+                return SCAN_STEP.NextMajor
+            else:
+                self._do_report_error_scanning()
+                return SCAN_STEP.NextMinor
+
+        elif self._should_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
         else:
             return SCAN_STEP.NextMinor
 
+    @property
     def _scan_completed(self):
 
-        # TODO: Check how to check if scan is done
-        return False
+        return not self._scanning_effector_data.scanning_thread.is_alive
 
-    def _shoud_continue_waiting(self, max_between_scan_fraction):
+    def _do_report_error_scanning(self):
+
+        self._logger.error("Could not scan file {0}".format(self._scanning_effector_data.current_image_path))
+
+    def _should_continue_waiting(self, max_between_scan_fraction):
 
         return (time.time() - self._scanning_effector_data.current_step_start_time <
                 self._scanning_job.time_between_scans * max_between_scan_fraction)
@@ -202,7 +212,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _do_scan(self):
 
         if self._scanning_effector_data.usb_port:
-            # TODO: This has to be a process
+
             self._scanning_effector_data.previous_scan_time = self.run_time
 
             self._scanning_effector_data.current_image_path = \
@@ -210,19 +220,18 @@ class ScannerEffector(proc_effector.ProcessEffector):
                     self._scanning_job.project_name, str(self._scanning_effector_data.current_image).zfill(4),
                     self._scanning_effector_data.previous_scan_time)
 
-            if not self._scanner.AcquireByFile(scanner=self._scanning_effector_data.usb_port,
-                                               filename=self._scanning_effector_data.current_image_path):
-
-                self._do_report_error_trying_to_scan()
-                return SCAN_STEP.NextMajor
+            self._scanning_effector_data.scanning_thread = Thread(target=self._scan_thread)
+            self._scanning_effector_data.scanning_thread.start()
 
             return SCAN_STEP.NextMinor
         else:
             return SCAN_STEP.NextMajor
 
-    def _do_report_error_trying_to_scan(self):
+    def _scan_thread(self):
 
-        pass
+        self._scanning_effector_data.scan_success = self._scanner.AcquireByFile(
+            scanner=self._scanning_effector_data.usb_port,
+            filename=self._scanning_effector_data.current_image_path)
 
     def _setup_directory(self):
 
