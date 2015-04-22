@@ -252,6 +252,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _set_usb_port(self, port):
 
+        self._logger.info("Got an usb port '{0}'".format(port))
         self._scanning_effector_data.usb_port = port
 
     def _add_scanned_image(self, index, time_stamp, path):

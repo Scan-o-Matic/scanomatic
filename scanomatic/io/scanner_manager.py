@@ -172,6 +172,7 @@ class ScannerPowerManager(Singleton):
         scanner = self._claimer
         scanner.usb = unknown_usbs[0]
         scanner.claiming = False
+        scanner.reported = False
         self._save(scanner)
 
     def _set_usb_to_scanner_that_could_be_on(self, usb):
@@ -188,6 +189,7 @@ class ScannerPowerManager(Singleton):
             if self._pm[socket].sure_to_have_power():
                 scanner.power = True
                 scanner.usb = usb
+                scanner.reported = False
                 self._save(scanner)
                 return True
             else:
@@ -256,6 +258,8 @@ class ScannerPowerManager(Singleton):
         if success:
             scanner.usb = ""
             scanner.power = False
+            scanner.claimer = False
+            scanner.reported = True
 
         return success
 
@@ -362,3 +366,8 @@ class ScannerPowerManager(Singleton):
             JOB_CALL_SCANNER_REQUEST_ON: self.request_on,
             JOB_CALL_SCANNER_REQUEST_OFF: self.request_off
         }
+
+    @property
+    def non_reported_usbs(self):
+
+        return (scanner for scanner in self._scanners.values() if scanner.usb and not scanner.reported)

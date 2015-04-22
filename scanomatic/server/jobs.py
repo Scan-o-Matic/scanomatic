@@ -119,7 +119,17 @@ class Jobs(Singleton):
                     RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_jobs)
             statuses.append(job_process.status)
 
+        self.handle_scanners()
+
         self._statuses = statuses
+
+    def handle_scanners(self):
+
+        self._scanner_manager.update()
+        if any(self._scanner_manager.non_reported_usbs):
+            for scanner in self._scanner_manager.non_reported_usbs:
+                self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb)
+                scanner.reported = True
 
     def add(self, job):
         """Launches and adds a new jobs.

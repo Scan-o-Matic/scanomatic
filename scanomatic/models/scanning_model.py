@@ -46,12 +46,12 @@ class ScanningModel(model.Model):
 class ScannerOwnerModel(model.Model):
 
     def __init__(self, socket=-1, scanner_name="", owner=None, usb="", power=False, last_on=-1, last_off=-1,
-                 expected_interval=0, email="", warned=False, claiming=False):
+                 expected_interval=0, email="", warned=False, claiming=False, reported=False):
 
         super(ScannerOwnerModel, self).__init__(socket=socket, scanner_name=scanner_name, usb=usb,
                                                 power=power, last_on=last_on, last_off=last_off,
                                                 expected_interval=expected_interval, email=email, warned=warned,
-                                                owner=owner, claiming=claiming)
+                                                owner=owner, claiming=claiming, reported=reported)
 
 
 class ScanningModelEffectorData(model.Model):
