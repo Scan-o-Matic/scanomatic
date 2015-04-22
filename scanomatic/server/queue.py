@@ -86,10 +86,11 @@ class Queue(Singleton):
 
         if job:
 
+            self._logger.info("Removing job {0} from queue".format(job_id))
             self._queue.remove(job)
-
             return RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_queue)
 
+        self._logger.warning("No known job {0} in queue, can't remove".format(job_id))
         return False
 
     @decorators.type_lock
