@@ -163,6 +163,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self._scan_completed:
             if self._scanning_effector_data.scan_success:
+                self._logger.info("Completed scanning image {0} located {1}".format(
+                    self.current_image, self._scanning_effector_data.current_image_path))
                 self._add_scanned_image(self.current_image, self._scanning_effector_data.previous_scan_time,
                                         self._scanning_effector_data.current_image_path)
                 return SCAN_STEP.NextMajor
@@ -192,6 +194,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _do_request_scanner_on(self):
 
         self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_ON, self._scanning_job.id)
+        self._logger.info("Requested power")
         return SCAN_STEP.NextMinor
 
     def _do_request_scanner_off(self):
@@ -206,8 +209,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
         # TODO: Add model creation to rpc client job passage
         if self._rpc_client.create_compile_project_job({}):
             self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
+            self._logger.info("Created compile project")
             return SCAN_STEP.NextMajor
         else:
+            self._logger.warning("Failed to create a compile project job, refused by server")
             return SCAN_STEP.NextMinor
 
     def _do_scan(self):
@@ -223,9 +228,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             self._scanning_effector_data.scanning_thread = Thread(target=self._scan_thread)
             self._scanning_effector_data.scanning_thread.start()
-
+            self._logger.info("Initiated scanning")
             return SCAN_STEP.NextMinor
         else:
+            self._logger.error("No registered USB port when attempting to scan")
             return SCAN_STEP.NextMajor
 
     def _scan_thread(self):
