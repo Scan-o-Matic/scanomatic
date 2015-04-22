@@ -308,6 +308,7 @@ class ChildPipeEffector(_PipeEffector):
         self._procEffector = procEffector
         self.setAllowedCalls(procEffector.allow_calls)
         self.setFailVunerableCalls(*procEffector.fail_vunerable_calls)
+        print(type(procEffector))
         procEffector.pipe_effector = self
 
     def sendStatus(self, status):

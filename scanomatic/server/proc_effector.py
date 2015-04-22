@@ -79,9 +79,13 @@ class ProcessEffector(object):
         return self._pipe_effector
     
     @pipe_effector.setter
-    def _pipe_effector_setter(self, value):
+    def pipe_effector(self, value):
         
-        if value is None or isinstance(value, ChildPipeEffector): 
+        """
+
+        :type value: ChildPipeEffector
+        """
+        if value is None or isinstance(value, ChildPipeEffector):
             self._pipe_effector = value
     
     @property
