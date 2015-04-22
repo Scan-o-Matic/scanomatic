@@ -317,7 +317,7 @@ class Interface_Builder(Singleton):
 
 
     @_verify_admin
-    def _server_create_scanning_job(self, userID, scanning_model):
+    def _server_create_scanning_job(self, user_id, scanning_model):
 
         """Attempts to start a scanning job.
 
@@ -347,6 +347,12 @@ class Interface_Builder(Singleton):
             return False
 
         return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan)
+
+    def _server_create_compile_project_job(self, user_id, make_project_model):
+
+        global _SOM_SERVER
+        _SOM_SERVER.logger.error("Compiling projects not implemented yet")
+        return False
 
     @_verify_admin
     def _server_remove_from_queue(self, user_id, job_id):
