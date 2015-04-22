@@ -6,7 +6,7 @@ import os
 from time import sleep
 
 from scanomatic.io.app_config import Config
-from scanomatic.generics.singleton import Singleton
+from scanomatic.generics.singleton import SingeltonOneInit
 import scanomatic.io.logger as logger
 from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
@@ -38,8 +38,8 @@ def _verify_admin(f):
     return _verify_global_admin
 
 
-class Interface_Builder(Singleton):
-    def __init__(self):
+class Interface_Builder(SingeltonOneInit):
+    def __one_init__(self):
 
         self.logger = logger.Logger("Server Manager")
         self._start_som_server()

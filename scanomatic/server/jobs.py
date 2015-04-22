@@ -26,7 +26,7 @@ import scanomatic.server.phenotype_effector as phenotype_effector
 import scanomatic.server.analysis_effector as analysis_effector
 import scanomatic.server.scanning_effector as scanning_effector
 import scanomatic.server.rpcjob as rpc_job
-from scanomatic.generics.singleton import Singleton
+from scanomatic.generics.singleton import SingeltonOneInit
 from scanomatic.io import scanner_manager
 
 #
@@ -34,8 +34,8 @@ from scanomatic.io import scanner_manager
 #
 
 
-class Jobs(Singleton):
-    def __init__(self):
+class Jobs(SingeltonOneInit):
+    def __one_init__(self):
 
         self._logger = logger.Logger("Jobs Handler")
         self._paths = paths.Paths()

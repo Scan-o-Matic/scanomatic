@@ -28,7 +28,7 @@ import scanomatic.io.fixtures as fixtures
 from scanomatic.models.factories.scanning_factory import ScannerOwnerFactory
 from scanomatic.io.power_manager import InvalidInit, PowerManagerNull
 import scanomatic.generics.decorators as decorators
-from scanomatic.generics.singleton import Singleton
+from scanomatic.generics.singleton import SingeltonOneInit
 
 
 def get_alive_scanners():
@@ -41,9 +41,9 @@ def get_alive_scanners():
 JOB_CALL_SCANNER_REQUEST_ON = "request_scanner_on"
 JOB_CALL_SCANNER_REQUEST_OFF = "request_scanner_off"
 
-class ScannerPowerManager(Singleton):
+class ScannerPowerManager(SingeltonOneInit):
 
-    def __init__(self):
+    def __one_init__(self):
 
         self._logger = logger.Logger("Scanner Manager")
         self._conf = app_config.Config()

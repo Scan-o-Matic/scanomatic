@@ -24,7 +24,7 @@ import scanomatic.io.logger as logger
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.generics.decorators as decorators
-from scanomatic.generics.singleton import Singleton
+from scanomatic.generics.singleton import SingeltonOneInit
 from scanomatic.io.scanner_manager import ScannerPowerManager
 
 #
@@ -32,9 +32,9 @@ from scanomatic.io.scanner_manager import ScannerPowerManager
 #
 
 
-class Queue(Singleton):
+class Queue(SingeltonOneInit):
 
-    def __init__(self):
+    def __one_init__(self):
 
         self._paths = paths.Paths()
         self._logger = logger.Logger("Job Queue")

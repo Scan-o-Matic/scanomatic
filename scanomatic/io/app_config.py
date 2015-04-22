@@ -28,7 +28,7 @@ import power_manager
 import paths
 import config_file
 import logger
-from scanomatic.generics.singleton import Singleton
+from scanomatic.generics.singleton import SingeltonOneInit
 import scanomatic.models.scanning_model as scanning_model
 
 #
@@ -36,12 +36,12 @@ import scanomatic.models.scanning_model as scanning_model
 #
 
 
-class Config(Singleton):
+class Config(SingeltonOneInit):
 
     SCANNER_PATTERN = "Scanner {0}"
     POWER_DEFAULT = power_manager.POWER_MODES.Toggle
 
-    def __init__(self, path=None):
+    def __one_init__(self):
 
         if path is None:
             self._paths = paths.Paths()

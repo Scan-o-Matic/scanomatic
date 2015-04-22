@@ -9,20 +9,41 @@ __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
 
-class Singleton(object):
+import warnings
 
-    _INSTANCE = None
+_INSTANCES = {}
+_INITED = {}
+
+
+class Singleton(object):
 
     def __new__(cls, *args):
 
-        if cls is Singleton:
+        global _INSTANCES
+        if cls not in _INSTANCES:
+            if cls is Singleton:
+                _INSTANCES[cls] = super(Singleton, cls).__new__(Singleton, *args)
+            else:
+                _INSTANCES[cls] = super(Singleton, cls).__new__(cls)
+        return _INSTANCES[cls]
 
-            if cls._INSTANCE is None:
 
-                cls._INSTANCE = super(Singleton, cls).__new__(Singleton, *args)
+class SingeltonOneInit(Singleton):
 
-            return cls._INSTANCE
+    def __new__(cls, *args):
 
-        else:
+        global _INITED
+        instance = super(SingeltonOneInit, cls).__new__(cls)
+        if instance not in _INITED:
+            _INITED[instance] = False
+        return instance
 
-            return super(Singleton, cls).__new__(cls)
+    def __init__(self):
+        global _INITED
+        if self not in _INITED or not _INITED[self]:
+            self.__one_init__()
+            _INITED[self] = True
+
+    def __one_init__(self):
+
+        warnings.warn("One init not overwritten on {0}".format(type(self)))
