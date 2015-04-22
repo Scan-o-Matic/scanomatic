@@ -291,6 +291,7 @@ class ScannerPowerManager(Singleton):
                 self._power_down(scanner_owner_model)
 
         scanner_owner_model.owner = rpc_job_model
+        self._logger.info("Acquire scanner successful, owner set to {0}".format(scanner_owner_model.owner))
 
         self._save(scanner_owner_model)
 
@@ -302,7 +303,8 @@ class ScannerPowerManager(Singleton):
         if scanner.power or scanner.usb:
             self._power_down(scanner)
 
-        scanner.owner = ""
+        scanner.owner = None
+        self._logger.info("Removed owner for scanner {0}".format(scanner.scanner_name))
         self._save(scanner)
 
         return True
@@ -312,6 +314,8 @@ class ScannerPowerManager(Singleton):
         scanners = [scanner for scanner in self._scanners.values() if scanner.owner and scanner.owner.id == job_id]
         if scanners:
             return scanners[0]
+        self._logger.warning("Job id '{0}' unknown known claims on scanners are {1}".format(
+            job_id, [scanner.owner.id for scanner in self._scanners.values() if scanner.owner]))
         return None
 
     def update(self):
