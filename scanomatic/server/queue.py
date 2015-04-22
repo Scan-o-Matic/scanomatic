@@ -94,7 +94,7 @@ class Queue(Singleton):
         return False
 
     @decorators.type_lock
-    def remove_and_free_scanner_claim(self, job):
+    def remove_and_free_potential_scanner_claim(self, job):
 
         if self.remove(job):
             if job.type ==  rpc_job_models.JOB_TYPE.Scan:

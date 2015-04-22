@@ -65,10 +65,18 @@ class Server(object):
 
     @property
     def queue(self):
+        """
+
+        :type self: scanomatic.server.queue.Queue
+        """
         return self._queue
 
     @property
     def jobs(self):
+        """
+
+        :type self: scanomatic.server.jobs.Jobs
+        """
         return self._jobs
 
     @property

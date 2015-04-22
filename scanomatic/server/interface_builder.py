@@ -385,7 +385,7 @@ class Interface_Builder(Singleton):
         """
 
         global _SOM_SERVER
-        return _SOM_SERVER.queue.remove(job_id)
+        return _SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job_id)
 
     @_verify_admin
     def _server_flush_queue(self, user_id):
@@ -419,7 +419,7 @@ class Interface_Builder(Singleton):
 
         while queue:
             job = queue.get_highest_priority()
-            queue.remove(job)
+            queue.remove_and_free_potential_scanner_claim(job)
 
         return True
 
