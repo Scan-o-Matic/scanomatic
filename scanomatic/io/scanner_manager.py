@@ -305,7 +305,7 @@ class ScannerPowerManager(Singleton):
 
     def _get_scanner_by_owner_id(self, job_id):
 
-        scanners = [scanner for scanner in self._scanners.values() if scanner.owner.id == job_id]
+        scanners = [scanner for scanner in self._scanners.values() if scanner.owner and scanner.owner.id == job_id]
         if scanners:
             return scanners[0]
         return None
