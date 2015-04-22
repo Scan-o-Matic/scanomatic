@@ -198,9 +198,9 @@ class _PipeEffector(object):
 
             try:
                 self._pipe.send((callName, args, kwargs))
-            except:
-                self._logger.warning("Lost contact, can't send {0}".format(
-                    (callName, args, kwargs)))
+            except Exception, e:
+                self._logger.warning("Failed to send {0} ({1})".format(
+                    (callName, args, kwargs), (e, e.message)))
                 self._hasContact = False
                 return False
 
@@ -308,7 +308,6 @@ class ChildPipeEffector(_PipeEffector):
         self._procEffector = procEffector
         self.setAllowedCalls(procEffector.allow_calls)
         self.setFailVunerableCalls(*procEffector.fail_vunerable_calls)
-        print(type(procEffector))
         procEffector.pipe_effector = self
 
     def sendStatus(self, status):

@@ -229,13 +229,14 @@ class ScannerPowerManager(Singleton):
                 return self._add_to_claim_queue(scanner)
 
         else:
-
+            self._logger.warning("No scanner has been claimed by {0}".format(job_id))
             return False
 
     @decorators.type_lock
     def _add_to_claim_queue(self, scanner):
 
         if scanner not in self._scanner_queue:
+            self._logger.info("Added scanner to queue for on/off action")
             self._scanner_queue.append(scanner)
         return True
 
