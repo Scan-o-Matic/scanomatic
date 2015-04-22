@@ -36,7 +36,7 @@ class ScanningModel(model.Model):
             number_of_scans=number_of_scans, time_between_scans=time_between_scans,
             project_name=project_name,
             directory_containing_project=directory_containing_project,
-            project_tag=project_tag, scanner_tag=scanner_tag,
+            project_tag=project_tag, scanner_tag=scanner_tag, id=id
             description=description, email=email,
             pinning_formats=pinning_formats,
             fixture=fixture, scanner=scanner, scanner_hardware=scanner_hardware, mode=mode, version=version)
