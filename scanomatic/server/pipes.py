@@ -136,12 +136,12 @@ class _PipeEffector(object):
                                 response))
 
                     else:
-                        self._logger.debug("No response")
+                        self._logger.debug("No response to request")
 
-                except:
+                except Exception, e:
 
-                    self._logger.error("Could not send response '{0}'".format(
-                        response))
+                    self._logger.error("Could not send response '{0}' ({1})".format(
+                        response, (e, e.message)))
 
     def _failSend(self, callName, *args, **kwargs):
         """Stores send request in buffer to be sent upon new connection
