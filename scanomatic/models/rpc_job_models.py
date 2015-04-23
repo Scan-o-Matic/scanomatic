@@ -8,7 +8,7 @@ import numpy as np
 class JOB_TYPE(CycleEnum):
 
     Scan = ("Scanner Job", 0)
-    Rebuild = ("Rebuild Job", 1)
+    Compile = ("Compile Project", 1)
     Analysis = ("Analysis Job", 10)
     Features = ("Feature Extraction Job", 20)
     Unknown = ("Unknown Job", -1)

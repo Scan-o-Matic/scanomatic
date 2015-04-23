@@ -34,19 +34,24 @@ from scanomatic.io.scanner_manager import ScannerPowerManager
 
 class Queue(SingeltonOneInit):
 
-    def __one_init__(self):
+    def __one_init__(self, jobs):
 
+        """
+
+        :type jobs: scanomatic.server.jobs.Jobs
+        """
         self._paths = paths.Paths()
         self._logger = logger.Logger("Job Queue")
         self._next_priority = rpc_job_models.JOB_TYPE.Scan
         self._queue = list(RPC_Job_Model_Factory.serializer.load(self._paths.rpc_queue))
         self._scanner_manager = ScannerPowerManager()
+        self._jobs = jobs
         decorators.register_type_lock(self)
 
     @decorators.type_lock
     def __len__(self):
 
-        return  len(self._queue)
+        return len(self._queue)
 
     @decorators.type_lock
     def __nonzero__(self):
@@ -97,7 +102,7 @@ class Queue(SingeltonOneInit):
     def remove_and_free_potential_scanner_claim(self, job):
 
         if self.remove(job):
-            if job.type ==  rpc_job_models.JOB_TYPE.Scan:
+            if job.type is rpc_job_models.JOB_TYPE.Scan:
                 return self._scanner_manager.release_scanner(job.id)
             return True
         return False
@@ -118,8 +123,25 @@ class Queue(SingeltonOneInit):
 
         job_type = self.__next_priority_job_type
         if self._has_job_of_type(job_type):
-            return sorted(self._get_job_by_type(job_type), key=lambda job: job.priority)[0]
+            jobs = self._get_job_by_type(job_type)
+            if job_type is rpc_job_models.JOB_TYPE.Compile:
+                jobs = self._get_allowed_compile_project_jobs(jobs)
+
+            return sorted(jobs, key=lambda job: job.priority)[0]
         return None
+
+    def _get_allowed_compile_project_jobs(self, queued_jobs):
+
+        reference_jobs = queued_jobs + self._jobs.active_compile_project_jobs
+
+        def _start_condition_met(this_job):
+
+            for other_job in reference_jobs:
+                if other_job.id == this_job.content_model.start_contidition:
+                    return False
+            return True
+
+        return [job for job in queued_jobs if _start_condition_met(job)]
 
     @property
     def __next_priority_job_type(self):

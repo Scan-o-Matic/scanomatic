@@ -62,6 +62,11 @@ class Jobs(SingeltonOneInit):
             return None
 
     @property
+    def active_compile_project_jobs(self):
+
+        return [job for job in self.active_jobs if job.type is rpc_job_models.JOB_TYPE.Compile]
+
+    @property
     def active_jobs(self):
 
         return self._jobs.keys()

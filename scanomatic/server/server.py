@@ -51,8 +51,9 @@ class Server(object):
         self._waitForJobsToTerminate = False
         self._server_start_time = None
 
-        self._queue = queue.Queue()
         self._jobs = jobs.Jobs()
+        self._queue = queue.Queue(self._jobs)
+
         self._scanner_manager = scanner_manager.ScannerPowerManager()
 
     @property
