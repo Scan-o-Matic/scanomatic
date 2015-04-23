@@ -41,6 +41,7 @@ def get_alive_scanners():
 JOB_CALL_SCANNER_REQUEST_ON = "request_scanner_on"
 JOB_CALL_SCANNER_REQUEST_OFF = "request_scanner_off"
 
+
 class ScannerPowerManager(SingeltonOneInit):
 
     def __one_init__(self):
@@ -170,7 +171,7 @@ class ScannerPowerManager(SingeltonOneInit):
     def _assign_usb_to_claim(self, unknown_usbs):
 
         scanner = self._claimer
-        scanner.usb = unknown_usbs[0]
+        scanner.usb = unknown_usbs.pop()
         scanner.claiming = False
         scanner.reported = False
         self._save(scanner)
