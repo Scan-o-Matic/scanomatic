@@ -21,14 +21,14 @@ import re
 
 import logger
 import scanomatic.faulty_reference as faulty_reference
-from scanomatic.generics.singleton import Singleton
+from scanomatic.generics.singleton import SingeltonOneInit
 
 #
 # EXCEPTIONS
 #
 
 
-class Invalid_Root(Exception):
+class InvalidRoot(Exception):
     pass
 
 #
@@ -36,13 +36,12 @@ class Invalid_Root(Exception):
 #
 
 
-class Paths(Singleton):
+class Paths(SingeltonOneInit):
 
-
-    def __init__(self, *args):
+    def __one_init__(self, *args):
 
         self._logger = logger.Logger("Paths Class")
-        if (len(args) > 0):
+        if len(args) > 0:
             self._logger.warning(
                 "Some class instantiated a Paths object wit parameters." +
                 " They are ignorded as this is no longer valid")
@@ -50,20 +49,18 @@ class Paths(Singleton):
         self.root = os.path.join(os.path.expanduser("~"), ".scan-o-matic")
 
         if os.path.isdir(self.root) is False:
-            raise Invalid_Root(self.root)
+            raise InvalidRoot(self.root)
 
         self.config = os.path.join(self.root, "config")
         self.fixtures = os.path.join(self.config, "fixtures")
         self.images = os.path.join(self.root, "images")
 
-        #INSTALL
         self.desktop_file = "scan-o-matic.desktop"
         self.desktop_file_path = os.path.join(
             self.config, self.desktop_file)
         self.install_filezilla = os.path.join(
             self.config, "install_filezilla.sh")
 
-        #RUN-files
         self.scanomatic = "scan_o_matic"
         self.analysis = "scan-o-matic_analysis"
         self.experiment = "scan-o-matic_experiment"
@@ -71,28 +68,23 @@ class Paths(Singleton):
         self.revive = "scan-o-matic_relauncher"
         self.install_autostart = "scan-o-matic_autostart"
 
-        #CONFIG
         self.config_main_app = os.path.join(self.config, 'main.config')
         self.config_mac = os.path.join(self.config, 'mac_address.config')
         self.config_rpc = os.path.join(self.config, 'rpc.config')
         self.config_rpc_admin = os.path.join(self.config, 'rpc.admin')
         self.config_scanners = os.path.join(self.config, 'scanners.config')
 
-        #RPC
         self.rpc_queue = os.path.join(self.root, 'job_queue.cfg')
         self.rpc_jobs = os.path.join(self.root, 'jobs.cfg')
         self.rpc_scanner_status = os.path.join(self.root, 'scanner_status.cfg')
 
-        #HELP
         self.help = "file://{0}".format(
             os.path.join(os.path.abspath(self.root), 'help.html'))
 
-        #IMAGES
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
         self.martin = os.path.join(self.images, "martin3.png")
         self.logo = os.path.join(self.images, "scan-o-matic.png")
 
-        #FIXTURE_FILES
         self.fixture_conf_file_suffix = ".config"
         self.fixture_conf_file_rel_pattern = "{0}" + \
             self.fixture_conf_file_suffix
@@ -104,30 +96,21 @@ class Paths(Singleton):
         self.fixture_tmp_scan_image = \
             self.fixture_image_file_pattern.format(".tmp")
 
-        #LOG
         self.log = os.path.join(self.root, "logs")
         self.log_scanner_out = os.path.join(self.log, "scanner_{0}.stdout")
         self.log_scanner_err = os.path.join(self.log, "scanner_{0}.stderr")
         self.log_main_out = os.path.join(self.log, "main.stdout")
         self.log_main_err = os.path.join(self.log, "main.stderr")
-        #self._last_analysis_log_index = 0
-        self.log_rebuild_in = os.path.join(self.log, "rebuild_{0}.stdin")
-        self.log_rebuild_out = os.path.join(self.log, "rebuild_{0}.stdout")
-        self.log_rebuild_err = os.path.join(self.log, "rebuild_{0}.stderr")
-        self.log_analysis_in = os.path.join(self.log, "analysis_{0}.stdin")
-        self.log_analysis_out = os.path.join(self.log, "analysis_{0}.stdout")
-        self.log_analysis_err = os.path.join(self.log, "analysis_{0}.stderr")
+
         self.log_relaunch = os.path.join(self.log, "relaunch.log")
         self.log_project_progress = os.path.join(self.log, "progress.projects")
 
-        #EXPERIMENT
         self.experiment_root = os.path.join(os.path.expanduser("~"), "Documents")
         self.experiment_scan_image_pattern = "{0}_{1}_{2:.4f}.tiff"
         self.experiment_analysis_relative_path = "analysis"
         self.experiment_analysis_file_name = "analysis.log"
         self.experiment_rebuild_instructions = "rebuild.instructions"
 
-        #ANALSYS FILES
         self.analysis_polynomial = os.path.join(
             self.config, "calibration.polynomials")
         self.analysis_calibration_data = os.path.join(
@@ -144,7 +127,6 @@ class Paths(Singleton):
         self.experiment_grid_image_pattern = "grid___origin_plate_{0}.svg"
         self.experiment_grid_error_image = "_no_grid_{0}.npy"
 
-        #PHENOTYPES FILES
         self.phenotypes_raw_csv = "phenotypes_raw.csv"
         self.phenotypes_raw_npy = "phenotypes_raw.npy"
         self.phenotypes_filter = "phenotypes_filter.npy"
@@ -153,20 +135,6 @@ class Paths(Singleton):
         self.phenotypes_extraction_params = "phenotype_params.npy"
         self.phenotype_times = "phenotype_times.npy"
 
-        #LOCK FILES
-        self.lock_root = os.path.join(self.root, 'locks')
-        self.lock_power_up_new_scanner = os.path.join(
-            self.lock_root, "new_scanner.lock")
-        self.lock_scanner_pattern = os.path.join(
-            self.lock_root, "scanner.{0}.lock")
-        self.lock_scanner_addresses = os.path.join(
-            self.lock_root, "addresses.lock")
-
-        #EXPERIMENT FILE PIPE
-        self.experiment_stdin = os.path.join(
-            self.lock_root, "scanner.{0}.stdin")
-
-        #IMAGE ANALSYSIS OUTPUT
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"
 
@@ -199,11 +167,13 @@ class Paths(Singleton):
 
         return fixture.capitalize().replace("_", " ")
 
-    def get_scanner_path_name(self, scanner):
+    @staticmethod
+    def get_scanner_path_name(scanner):
 
         return scanner.lower().replace(" ", "_")
 
-    def get_scanner_index(self, scanner_path):
+    @staticmethod
+    def get_scanner_index(scanner_path):
 
         candidates = map(int, re.findall(r"\d+", scanner_path))
         if len(candidates) > 0:
