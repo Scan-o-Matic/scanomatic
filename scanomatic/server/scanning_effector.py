@@ -149,6 +149,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_wait(self):
 
+        self._logger.info("Job {0} waiting for next time to scan".format(self._scanning_job.id))
         if self.current_image < 0:
             self._start_time = time.time()
             self._scanning_effector_data.previous_scan_time = 0
@@ -162,6 +163,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
         return SCAN_STEP.Wait
 
     def _do_wait_for_usb(self):
+
+        self._logger.info("Job {0} waiting usb".format(self._scanning_job.id))
         if self._scanning_effector_data.usb_port:
             return SCAN_STEP.NextMajor
         elif self._should_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
@@ -171,6 +174,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_wait_for_scan(self):
 
+        self._logger.info("Job {0} waiting for scan to complete".format(self._scanning_job.id))
         if self._scan_completed:
             if self._scanning_effector_data.scan_success:
                 self._logger.info("Completed scanning image {0} located {1}".format(
@@ -194,6 +198,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_report_error_scanning(self):
 
+        self._logger.info("Job {0} reports scanning error".format(self._scanning_job.id))
         self._logger.error("Could not scan file {0}".format(self._scanning_effector_data.current_image_path))
 
     def _should_continue_waiting(self, max_between_scan_fraction):
@@ -203,18 +208,20 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_request_scanner_on(self):
 
+        self._logger.info("Job {0} requested scanner on".format(self._scanning_job.id))
         self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_ON, self._scanning_job.id)
-        self._logger.info("Requested power")
         return SCAN_STEP.NextMinor
 
     def _do_request_scanner_off(self):
 
+        self._logger.info("Job {0} requested scanner off".format(self._scanning_job.id))
         self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_OFF, self._scanning_job.scanner)
         self._scanning_effector_data.usb_port = ""
         self._scanning_effector_data.current_image += 1
         return SCAN_STEP.NextMajor
 
     def _do_request_first_pass_analysis(self):
+
 
         compile_job_id = self._rpc_client.create_compile_project_job(
             compile_project_factory.CompileProjectFactory.serializer.serialize(
@@ -224,7 +231,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         if compile_job_id:
             self._scanning_effector_data.previous_compile_job = compile_job_id
             self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
-            self._logger.info("Created compile project")
+            self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
             return SCAN_STEP.NextMajor
         else:
             self._logger.warning("Failed to create a compile project job, refused by server")
@@ -243,7 +250,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             self._scanning_effector_data.scanning_thread = Thread(target=self._scan_thread)
             self._scanning_effector_data.scanning_thread.start()
-            self._logger.info("Initiated scanning")
+            self._logger.info("Job {0} started scan".format(self._scanning_job.id))
             return SCAN_STEP.NextMinor
         else:
             self._logger.error("No registered USB port when attempting to scan")
