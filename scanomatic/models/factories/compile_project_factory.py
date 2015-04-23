@@ -6,6 +6,41 @@ from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 from scanomatic.models import compile_project_model
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
+
+class CompileImageFactory(AbstractModelFactory):
+
+    MODEL = compile_project_model.CompileImageModel
+
+    STORE_SECTION_SERIALIZERS = {
+        ('index',): int,
+        ('time_stamp',): float,
+        ('path',): str
+    }
+    STORE_SECTION_HEAD = ("index",)
+
+    @classmethod
+    def _validate_index(cls, model):
+
+        if model.index >= 0:
+            return True
+        return model.FIELD_TYPES.index
+
+    @classmethod
+    def _validate_path(cls, model):
+
+        if os.path.abspath(model.path) == model.path and os.path.isfile(model.path):
+            return True
+        return model.FIELD_TYPES.path
+
+    @classmethod
+    def _validate_time_stamp(cls, model):
+
+        if model.time_stamp >= 0.0:
+
+            return True
+        return model.FIELD_TYPES.time_stamp
+
+
 class CompileProjectFactory(AbstractModelFactory):
 
     MODEL = compile_project_model.CompileInstructionsModel
@@ -46,37 +81,3 @@ class CompileProjectFactory(AbstractModelFactory):
         if model.path != dirname and os.path.isdir(dirname) and os.path.abspath(dirname) == dirname and basename:
             return True
         return model.FIELD_TYPES.path
-
-
-class CompileImageFactory(AbstractModelFactory):
-
-    MODEL = compile_project_model.CompileImageModel
-
-    STORE_SECTION_SERIALIZERS = {
-        ('index',): int,
-        ('time_stamp',): float,
-        ('path',): str
-    }
-    STORE_SECTION_HEAD = ("index",)
-
-    @classmethod
-    def _validate_index(cls, model):
-
-        if model.index >= 0:
-            return True
-        return model.FIELD_TYPES.index
-
-    @classmethod
-    def _validate_path(cls, model):
-
-        if os.path.abspath(model.path) == model.path and os.path.isfile(model.path):
-            return True
-        return model.FIELD_TYPES.path
-
-    @classmethod
-    def _validate_time_stamp(cls, model):
-
-        if model.time_stamp >= 0.0:
-
-            return True
-        return model.FIELD_TYPES.time_stamp
