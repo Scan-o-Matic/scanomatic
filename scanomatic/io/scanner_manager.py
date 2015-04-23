@@ -259,7 +259,7 @@ class ScannerPowerManager(SingeltonOneInit):
         if success:
             scanner.usb = ""
             scanner.power = False
-            scanner.claimer = False
+            scanner.claiming = False
             scanner.reported = True
 
         return success
