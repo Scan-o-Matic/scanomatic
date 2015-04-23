@@ -207,7 +207,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _do_request_first_pass_analysis(self):
 
         # TODO: Add model creation to rpc client job passage
-        if self._rpc_client.create_compile_project_job({}):
+        compile_job_id = self._rpc_client.create_compile_project_job({})
+
+        if compile_job_id:
+            self._scanning_effector_data.previous_compile_job = compile_job_id
             self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
             self._logger.info("Created compile project")
             return SCAN_STEP.NextMajor
