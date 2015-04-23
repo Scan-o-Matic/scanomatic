@@ -43,10 +43,7 @@ class Config(SingeltonOneInit):
 
     def __one_init__(self):
 
-        if path is None:
-            self._paths = paths.Paths()
-        else:
-            self._paths = path
+        self._paths = paths.Paths()
 
         self._logger = logger.Logger("Application Config")
 

@@ -38,12 +38,12 @@ class SingeltonOneInit(Singleton):
             _INITED[instance] = False
         return instance
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         global _INITED
         if self not in _INITED or not _INITED[self]:
-            self.__one_init__()
+            self.__one_init__(*args, **kwargs)
             _INITED[self] = True
 
-    def __one_init__(self):
+    def __one_init__(self, *args, **kwargs):
 
         warnings.warn("One init not overwritten on {0}".format(type(self)))
