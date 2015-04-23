@@ -138,6 +138,8 @@ class Paths(SingeltonOneInit):
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"
 
+        self.compile_project_file_pattern = "{0}.project.compilation"
+
     @property
     def src(self):
 
@@ -166,6 +168,11 @@ class Paths(SingeltonOneInit):
                 fixture = fixture[:-len(self.fixture_conf_file_suffix)]
 
         return fixture.capitalize().replace("_", " ")
+
+    def get_compile_project_name(self, scan_model):
+
+        return self.compile_project_file_pattern.format(
+            os.path.join(scan_model.directory_containing_project, scan_model.project_name, scan_model.project_name))
 
     @staticmethod
     def get_scanner_path_name(scanner):

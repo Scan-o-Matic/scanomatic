@@ -29,6 +29,7 @@ from scanomatic.io import sane
 from scanomatic.io import paths
 from threading import Thread
 import scanomatic.io.rpc_client as rpc_client
+from scanomatic.models.factories import compile_project_factory
 
 JOBS_CALL_SET_USB = "set_usb"
 
@@ -72,10 +73,19 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._scanning_job.id = scanning_job['id']
         self._setup_directory()
+
         self._scanning_effector_data.current_image_path_pattern = os.path.join(
             self._project_directory,
             paths.Paths().experiment_scan_image_pattern)
+
         self._scanner = sane.Sane_Base(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
+
+        self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory().create(
+            compile_action=compile_project_factory.compile_project_model.COMPILE_ACTION.Initiate,
+            images=self._scanning_effector_data.images_ready_for_first_pass_analysis,
+            scan_model=self._scanning_job,
+            path=paths.Paths().get_compile_project_name(self._scanning_job))
+
         self._allow_start = True
 
     @property
@@ -206,8 +216,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_request_first_pass_analysis(self):
 
-        # TODO: Add model creation to rpc client job passage
-        compile_job_id = self._rpc_client.create_compile_project_job({})
+        compile_job_id = self._rpc_client.create_compile_project_job(
+            compile_project_factory.CompileProjectFactory.serializer.serialize(
+                self._scanning_effector_data.compile_project_model
+            ))
 
         if compile_job_id:
             self._scanning_effector_data.previous_compile_job = compile_job_id
@@ -260,4 +272,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _add_scanned_image(self, index, time_stamp, path):
 
-        self._scanning_effector_data.images_ready_for_first_pass_analysis.append((index, time_stamp, path))
+        image_model = compile_project_factory.CompileImageFactory.create(
+            index=index, time_stamp=time_stamp, path=path)
+
+        self._scanning_effector_data.images_ready_for_first_pass_analysis.append(image_model)

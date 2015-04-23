@@ -9,7 +9,7 @@ import string
 
 
 class ScanningModelFactory(AbstractModelFactory):
-    _MODEL = ScanningModel
+    MODEL = ScanningModel
     _GET_MIN_MODEL = app_config.Config().get_min_model
     _GET_MAX_MODEL = app_config.Config().get_max_model
     STORE_SECTION_HEAD = ("scanner",)
@@ -132,7 +132,7 @@ class ScanningModelFactory(AbstractModelFactory):
 
 class ScannerOwnerFactory(AbstractModelFactory):
 
-    _MODEL = ScannerOwnerModel
+    MODEL = ScannerOwnerModel
     STORE_SECTION_HEAD = ("scanner_name",)
     STORE_SECTION_SERLIALIZERS = {
         ('socket',): int,

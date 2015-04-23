@@ -15,7 +15,7 @@ def _rename_old(settings, old_name, new_name):
 
 
 class GridModelFactory(AbstractModelFactory):
-    _MODEL = analysis_model.GridModel
+    MODEL = analysis_model.GridModel
     STORE_SECTION_SERIALIZERS = {
         ('use_utso',): bool,
         ("median_coefficient",): float,
@@ -64,7 +64,7 @@ class GridModelFactory(AbstractModelFactory):
 
 
 class XMLModelFactory(AbstractModelFactory):
-    _MODEL = analysis_model.XMLModel
+    MODEL = analysis_model.XMLModel
     STORE_SECTION_SERIALIZERS = {
         ("exclude_compartments",): tuple,
         ("exclude_measures",): tuple,
@@ -104,7 +104,7 @@ class XMLModelFactory(AbstractModelFactory):
 
 
 class AnalysisModelFactory(AbstractModelFactory):
-    _MODEL = analysis_model.AnalysisModel
+    MODEL = analysis_model.AnalysisModel
     STORE_SECTION_HEAD = ("first_pass_file",)
     _SUB_FACTORIES = {
         analysis_model.XMLModel: XMLModelFactory,
@@ -243,7 +243,7 @@ class AnalysisModelFactory(AbstractModelFactory):
 
 class AnalysisImageFactory(AbstractModelFactory):
 
-    _MODEL = analysis_model.ImageModel
+    MODEL = analysis_model.ImageModel
     STORE_SECTION_SERIALIZERS = {
         ('grayscale_indices',): list,
         ("grayscale_targets",): list,
@@ -310,7 +310,7 @@ class AnalysisImageFactory(AbstractModelFactory):
 
 
 class ImagePlateFactory(AbstractModelFactory):
-    _MODEL = analysis_model.ImagePlateModel
+    MODEL = analysis_model.ImagePlateModel
     STORE_SECTION_SERIALIZERS = {
         ("index",): int,
         ("x1",): int,
@@ -321,7 +321,7 @@ class ImagePlateFactory(AbstractModelFactory):
 
 
 class MetaDataFactory(AbstractModelFactory):
-    _MODEL = analysis_model.AnalysisMetaData
+    MODEL = analysis_model.AnalysisMetaData
     STORE_SECTION_SERIALIZERS = {
         ("start_time",): float,
         ("name",): str,

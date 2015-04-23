@@ -10,7 +10,7 @@ import cPickle
 
 
 class AbstractModelFactory(object):
-    _MODEL = Model
+    MODEL = Model
     _SUB_FACTORIES = dict()
     STORE_SECTION_HEAD = tuple()
     STORE_SECTION_SERIALIZERS = dict()
@@ -40,9 +40,9 @@ class AbstractModelFactory(object):
     @classmethod
     def _verify_correct_model(cls, model):
 
-        if not isinstance(model, cls._MODEL):
+        if not isinstance(model, cls.MODEL):
             raise TypeError("Wrong model for factory {0}!={1}".format(
-                cls._MODEL, model))
+                cls.MODEL, model))
 
         return True
 
@@ -58,7 +58,7 @@ class AbstractModelFactory(object):
 
                 settings[key] = cls.STORE_SECTION_SERIALIZERS[tuple_key].create(**settings[key])
 
-        return cls._MODEL(**settings)
+        return cls.MODEL(**settings)
 
     @classmethod
     def update(cls, model, **settings):
@@ -112,7 +112,7 @@ class AbstractModelFactory(object):
 
         if cls._verify_correct_model(model):
 
-            default_model = cls._MODEL()
+            default_model = cls.MODEL()
 
             for attr, val in default_model:
                 if fields is None or getattr(default_model.FIELD_TYPES, attr) in fields:

@@ -7,7 +7,7 @@ from scanomatic.models.analysis_model import AnalysisModel
 
 class RPC_Job_Model_Factory(AbstractModelFactory):
 
-    _MODEL = rpc_job_models.RPCjobModel
+    MODEL = rpc_job_models.RPCjobModel
     _SUB_FACTORIES = {ScanningModel: ScanningModelFactory, AnalysisModel: AnalysisModelFactory }
     STORE_SECTION_HEAD = ('id',)
     STORE_SECTION_SERIALIZERS = {
