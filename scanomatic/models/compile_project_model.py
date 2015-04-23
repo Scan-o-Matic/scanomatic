@@ -14,7 +14,7 @@ class COMPILE_ACTION(Enum):
 
 class CompileInstructionsModel(Model):
 
-    def __init__(self, compile_action=COMPILE_ACTION.Overwrite, images=tuple(), path="",
+    def __init__(self, compile_action=COMPILE_ACTION.Initiate, images=tuple(), path="",
                  start_condition="", scan_model=None):
 
         super(CompileInstructionsModel, self).__init__(
