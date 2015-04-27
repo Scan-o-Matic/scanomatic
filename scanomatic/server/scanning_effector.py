@@ -198,7 +198,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def _scan_completed(self):
 
-        return not self._scanning_effector_data.scanning_thread.is_alive
+        return not self._scanning_effector_data.scanning_thread.is_alive()
 
     def _do_report_error_scanning(self):
 
