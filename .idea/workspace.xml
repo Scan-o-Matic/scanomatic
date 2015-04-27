@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" afterPath="$PROJECT_DIR$/scanomatic/server/interface_builder.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/scanomatic/models/factories/scanning_factory.py" afterPath="$PROJECT_DIR$/scanomatic/models/factories/scanning_factory.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-    </list>
+    <list default="true" id="b7cedbd9-f480-46e2-962e-269a690d24c1" name="Default" comment="" />
     <ignored path="scan-o-matic.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -115,8 +111,8 @@
       <file leaf-file-name="interface_builder.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.4672586" vertical-offset="4949" max-vertical-offset="8835">
-              <caret line="358" column="20" selection-start-line="358" selection-start-column="20" selection-end-line="358" selection-end-column="20" />
+            <state vertical-scroll-proportion="0.7336293" vertical-offset="4949" max-vertical-offset="8835">
+              <caret line="374" column="30" selection-start-line="374" selection-start-column="30" selection-end-line="374" selection-end-column="30" />
               <folding>
                 <element signature="e#23#36#0" expanded="true" />
               </folding>
@@ -1039,8 +1035,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/scanomatic/server/interface_builder.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.4672586" vertical-offset="4949" max-vertical-offset="8835">
-          <caret line="358" column="20" selection-start-line="358" selection-start-column="20" selection-end-line="358" selection-end-column="20" />
+        <state vertical-scroll-proportion="0.7336293" vertical-offset="4949" max-vertical-offset="8835">
+          <caret line="374" column="30" selection-start-line="374" selection-start-column="30" selection-end-line="374" selection-end-column="30" />
           <folding>
             <element signature="e#23#36#0" expanded="true" />
           </folding>
