@@ -39,6 +39,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
     TYPE = JOB_TYPE.Scan
     WAIT_FOR_USB_TOLERANCE_FACTOR = 0.33
     WAIT_FOR_SCAN_TOLERANCE_FACTOR = 0.5
+    WAIT_FOR_NEXT_SCAN = 1.0
 
     def __init__(self, job):
 
@@ -158,9 +159,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._start_time = time.time()
             self._scanning_effector_data.previous_scan_time = 0
             self._scanning_effector_data.current_image = 0
+
             return SCAN_STEP.NextMajor
 
-        if self.run_time >= self._scanning_job.time_between_scans:
+        if self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN):
             self._scanning_effector_data.previous_scan_time = self.run_time
             return SCAN_STEP.NextMajor
 
