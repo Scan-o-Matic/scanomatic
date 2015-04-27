@@ -14,6 +14,7 @@ import scanomatic.generics.decorators as decorators
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
+from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 import scanomatic.models.rpc_job_models as rpc_job_models
 
 _SOM_SERVER = None
@@ -347,11 +348,18 @@ class Interface_Builder(SingeltonOneInit):
 
         return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan)
 
-    def _server_create_compile_project_job(self, user_id, make_project_model):
+    def _server_create_compile_project_job(self, user_id, compile_project_model):
 
         global _SOM_SERVER
-        _SOM_SERVER.logger.error("Compiling projects not implemented yet")
-        return False
+
+        compile_project_model = CompileProjectFactory.create(**compile_project_model)
+
+        if not CompileProjectFactory.validate(compile_project_model):
+            _SOM_SERVER.logger.error("Invalid settings: {0}".format(
+                tuple(CompileProjectFactory.get_invalid_names(compile_project_model))))
+            return False
+
+        return _SOM_SERVER.enqueue(compile_project_model, rpc_job_models.JOB_TYPE.Compile)
 
     @_verify_admin
     def _server_remove_from_queue(self, user_id, job_id):
