@@ -224,13 +224,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def _do_request_scanner_off(self):
 
         self._logger.info("Job {0} requested scanner off".format(self._scanning_job.id))
-        self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_OFF, self._scanning_job.scanner)
+        self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_OFF, self._scanning_job.id)
         self._scanning_effector_data.usb_port = ""
         self._scanning_effector_data.current_image += 1
         return SCAN_STEP.NextMajor
 
     def _do_request_first_pass_analysis(self):
-
 
         compile_job_id = self._rpc_client.create_compile_project_job(
             compile_project_factory.CompileProjectFactory.serializer.serialize(
