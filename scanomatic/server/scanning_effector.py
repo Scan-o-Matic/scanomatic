@@ -66,6 +66,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.RequestFirstPassAnalysis: self._do_request_first_pass_analysis,
             SCAN_CYCLE.Scan: self._do_scan,
             SCAN_CYCLE.ReportNotObtainedUSB: self._do_report_error_obtaining_scanner,
+            SCAN_CYCLE.ReportScanError: self._do_report_error_scanning,
             SCAN_CYCLE.WaitForScanComplete: self._do_wait_for_scan,
             SCAN_CYCLE.WaitForUSB: self._do_wait_for_usb
         }
