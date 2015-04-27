@@ -603,7 +603,7 @@ class Scanners(object):
         if self._sane_version is None:
 
             print "***WARNING:\tHoping driver works as last known version"
-            self._sane_versi0n = v
+            self._sane_version = v
 
         current = copy.deepcopy(self._sane_generic)
 
