@@ -32,7 +32,7 @@ import scanomatic.io.rpc_client as rpc_client
 from scanomatic.models.factories import compile_project_factory
 
 JOBS_CALL_SET_USB = "set_usb"
-
+SECONDS_PER_MINUTE = 60.0
 
 class ScannerEffector(proc_effector.ProcessEffector):
 
@@ -212,8 +212,15 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _should_continue_waiting(self, max_between_scan_fraction):
 
-        return (time.time() - self._scanning_effector_data.current_step_start_time <
-                self._scanning_job.time_between_scans * max_between_scan_fraction)
+        global SECONDS_PER_MINUTE
+
+        return (self.scan_cycle_duration <
+                self._scanning_job.time_between_scans * SECONDS_PER_MINUTE * max_between_scan_fraction)
+
+    @property
+    def scan_cycle_duration(self):
+
+        return time.time() - self._scanning_effector_data.current_step_start_time
 
     def _do_request_scanner_on(self):
 
