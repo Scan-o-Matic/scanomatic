@@ -60,7 +60,7 @@ class ScanningModelEffectorData(model.Model):
                  current_image_path="", current_image_path_pattern="",
                  project_time=-1.0, previous_scan_time=-1.0, images_ready_for_first_pass_analysis=[],
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
-                 previous_compile_job=None, compile_project_model=None):
+                 compile_project_model=None):
 
         super(ScanningModelEffectorData, self).__init__(
             current_cycle_step=current_cycle_step,
@@ -75,5 +75,4 @@ class ScanningModelEffectorData(model.Model):
             images_ready_for_first_pass_analysis=images_ready_for_first_pass_analysis,
             scanning_image_name=scanning_image_name,
             usb_port=usb_port,
-            previous_compile_job=previous_compile_job,
             compile_project_model=compile_project_model)

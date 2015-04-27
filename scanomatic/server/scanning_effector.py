@@ -24,6 +24,7 @@ import os
 import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningModelEffectorData
+from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.io import scanner_manager
 from scanomatic.io import sane
 from scanomatic.io import paths
@@ -84,7 +85,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanner = sane.Sane_Base(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
 
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
-            compile_action=compile_project_factory.compile_project_model.COMPILE_ACTION.Initiate,
+            compile_action=COMPILE_ACTION.Initiate,
             images=self._scanning_effector_data.images_ready_for_first_pass_analysis,
             scan_model=self._scanning_job,
             path=paths.Paths().get_compile_project_name(self._scanning_job))
@@ -248,7 +249,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
             ))
 
         if compile_job_id:
-            self._scanning_effector_data.previous_compile_job = compile_job_id
+            # TODO: Add check if compile action should be finalize.
+            self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
+            self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
             self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
             self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
         else:
