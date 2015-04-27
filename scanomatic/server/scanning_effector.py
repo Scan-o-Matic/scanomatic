@@ -65,6 +65,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.RequestScannerOff: self._do_request_scanner_off,
             SCAN_CYCLE.RequestFirstPassAnalysis: self._do_request_first_pass_analysis,
             SCAN_CYCLE.Scan: self._do_scan,
+            SCAN_CYCLE.ReportNotObtainedUSB: self._do_report_error_obtaining_scanner,
             SCAN_CYCLE.WaitForScanComplete: self._do_wait_for_scan,
             SCAN_CYCLE.WaitForUSB: self._do_wait_for_usb
         }
@@ -183,7 +184,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
                                         self._scanning_effector_data.current_image_path)
                 return SCAN_STEP.NextMajor
             else:
-                self._do_report_error_scanning()
                 return SCAN_STEP.NextMinor
 
         elif self._should_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
@@ -200,6 +200,11 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._logger.info("Job {0} reports scanning error".format(self._scanning_job.id))
         self._logger.error("Could not scan file {0}".format(self._scanning_effector_data.current_image_path))
+
+    def _do_report_error_obtaining_scanner(self):
+
+        self._logger.error("Server never gave me my scanner.")
+        return SCAN_STEP.NextMajor
 
     def _should_continue_waiting(self, max_between_scan_fraction):
 
