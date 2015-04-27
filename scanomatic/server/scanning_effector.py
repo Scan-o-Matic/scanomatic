@@ -153,7 +153,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_wait(self):
 
-        self._logger.info("Job {0} waiting for next time to scan".format(self._scanning_job.id))
         if self.current_image < 0:
             self._start_time = time.time()
             self._scanning_effector_data.previous_scan_time = 0
@@ -168,17 +167,18 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_wait_for_usb(self):
 
-        self._logger.info("Job {0} waiting usb".format(self._scanning_job.id))
         if self._scanning_effector_data.usb_port:
+            self._logger.info("Job {0} knows its USB".format(self._scanning_job.id))
             return SCAN_STEP.NextMajor
         elif self._should_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
         else:
+            self._logger.info("Job {0} gave up waiting usb after {1:.2f} min".format(
+                self._scanning_job.id, self.scan_cycle_duration / 60.0))
             return SCAN_STEP.NextMinor
 
     def _do_wait_for_scan(self):
 
-        self._logger.info("Job {0} waiting for scan to complete".format(self._scanning_job.id))
         if self._scan_completed:
             if self._scanning_effector_data.scan_success:
                 self._logger.info("Completed scanning image {0} located {1}".format(
