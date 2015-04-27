@@ -132,10 +132,11 @@ class Jobs(SingeltonOneInit):
     def handle_scanners(self):
 
         self._scanner_manager.update()
-        if any(self._scanner_manager.non_reported_usbs):
-            for scanner in self._scanner_manager.non_reported_usbs:
-                self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb)
-                scanner.reported = True
+
+        for scanner in self._scanner_manager.non_reported_usbs:
+            self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb)
+            scanner.reported = True
+            self._logger.info("Reported USB for scanner {0} to {1}".format(scanner.socket, scanner.owner))
 
     def add(self, job):
         """Launches and adds a new jobs.
