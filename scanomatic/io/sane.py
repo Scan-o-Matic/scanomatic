@@ -15,7 +15,7 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from subprocess import call, Popen
+from subprocess import Popen, PIPE
 import re
 import copy
 
@@ -156,11 +156,12 @@ class Sane_Base():
                         self.next_file_name)
                 return args
             else:
-                call(scan_query,  stdout=im, shell=False)
+                scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
+                _, stderr = scan_proc.communicate()
 
                 im.close()
 
-                return True
+                return stderr is None or "invalid argument" not in stderr.lower()
 
         else:
             return False
