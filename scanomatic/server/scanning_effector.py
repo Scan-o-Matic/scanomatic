@@ -203,6 +203,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._logger.info("Job {0} reports scanning error".format(self._scanning_job.id))
         self._logger.error("Could not scan file {0}".format(self._scanning_effector_data.current_image_path))
+        return SCAN_STEP.NextMajor
 
     def _do_report_error_obtaining_scanner(self):
 
@@ -240,10 +241,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._scanning_effector_data.previous_compile_job = compile_job_id
             self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
             self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
-            return SCAN_STEP.NextMajor
         else:
             self._logger.warning("Failed to create a compile project job, refused by server")
-            return SCAN_STEP.NextMinor
+
+        return SCAN_STEP.NextMajor
 
     def _do_scan(self):
 
