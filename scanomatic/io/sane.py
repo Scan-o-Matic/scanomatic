@@ -16,19 +16,28 @@ __status__ = "Development"
 #
 
 from subprocess import call, Popen
+import re
+import copy
 
 #
 # INTERNAL DEPENDENCIES
 #
 
 import logger
-
+import app_config
 
 #
 # CLASSES
 #
 
 class Sane_Base():
+
+    _sane_flags_replace = {
+        (1, 0, 23): [],
+        (1, 0, 24): [(('EPSON V700', 'TPU', '--source'), 'TPU8x10')]
+    }
+
+    _backend_version = None
 
     def __init__(self, owner=None, model=None, scan_mode=None,
                  scan_settings=None):
@@ -74,7 +83,41 @@ class Sane_Base():
         else:
             self._mode = scan_mode
 
-        self._scan_settings = self._scan_settings_repo[self._model][self._mode]
+        if self._backend_version is None:
+            self._set_sane_version()
+
+        self._scan_settings = self._get_sane_version_safe_settings_copy(
+            self._scan_settings_repo[self._model][self._mode])
+
+    @classmethod
+    def _set_sane_version(cls):
+
+        conf = app_config.Config()
+        p = Popen([
+            conf.scan_program,
+            conf.scan_program_version_flag],
+            shell=False, stdout=PIPE)
+
+        stdout, _ = p.communicate()
+        front_end_version, back_end_version = re.findall(r' ([0-9]+\.[0-9]+\.[0-9]+)', stdout.strip('\n'))
+
+        cls._backend_version = tuple(int(val) for val in back_end_version.split("."))
+
+    def _get_sane_version_safe_settings_copy(self, settings):
+
+        settings = copy.deepcopy(settings)
+
+        if self._backend_version in self._sane_flags_replace:
+
+            for (scan_model, scan_mode, scan_setting), value in self._sane_flags_replace[self._backend_version]:
+                settings_key_index = settings[scan_model][scan_mode].index(scan_setting)
+                settings[scan_model][scan_mode][settings_key_index + 1] = value
+
+        else:
+
+            self._logger.warning("Using untested version of SANE, might or might not work.")
+
+        return settings
 
     def OpenScanner(self, mainWindow=None, ProductName=None, UseCallback=False):
         pass
