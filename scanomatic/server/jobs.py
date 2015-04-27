@@ -57,9 +57,9 @@ class Jobs(SingeltonOneInit):
 
         if key in self._jobs:
             return self._jobs[key]
-        else:
-            self._logger.warning("Unknown job {0} requested".format(key))
-            return None
+
+        self._logger.warning("Unknown job {0} requested".format(key))
+        return None
 
     @property
     def active_compile_project_jobs(self):
@@ -134,9 +134,12 @@ class Jobs(SingeltonOneInit):
         self._scanner_manager.update()
 
         for scanner in self._scanner_manager.non_reported_usbs:
-            self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb)
-            scanner.reported = True
-            self._logger.info("Reported USB for scanner {0} to {1}".format(scanner.socket, scanner.owner))
+            if scanner.owner in self:
+                self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb)
+                scanner.reported = True
+                self._logger.info("Reported USB for scanner {0} to {1}".format(scanner.socket, scanner.owner))
+            else:
+                self._logger.warning("Unknown scanner claiming process {0}".format(scanner.owner))
 
     def add(self, job):
         """Launches and adds a new jobs.

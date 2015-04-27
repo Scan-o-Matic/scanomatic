@@ -91,12 +91,17 @@ class ScannerEffector(proc_effector.ProcessEffector):
             images=self._scanning_effector_data.images_ready_for_first_pass_analysis,
             path=paths_object.get_compile_project_name(self._scanning_job))
 
-        ScanningModelFactory.serializer.dump(
-            self._scanning_job,
-            os.path.join(
-                self._project_directory,
-                paths_object.scan_project_file_pattern.format(self._scanning_job.project_name)))
+        scan_project_file_path = os.path.join(
+            self._project_directory,
+            paths_object.scan_project_file_pattern.format(self._scanning_job.project_name))
 
+        if ScanningModelFactory.serializer.dump(self._scanning_job, scan_project_file_path):
+
+            self._logger.info("Saved project settings to '{0}'".format(scan_project_file_path))
+
+        else:
+
+            self._logger.error("Could not save project settings to '{0}'".format(scan_project_file_path))
         self._allow_start = True
 
     @property
