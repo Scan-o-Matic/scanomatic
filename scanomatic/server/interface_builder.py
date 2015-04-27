@@ -341,7 +341,6 @@ class Interface_Builder(SingeltonOneInit):
         scanning_model = ScanningModelFactory.create(**scanning_model)
 
         if not ScanningModelFactory.validate(scanning_model):
-            _SOM_SERVER.logger.error("Invalid arguments for scanner job")
             _SOM_SERVER.logger.error("Invalid settings: {0}".format(
                 tuple(ScanningModelFactory.get_invalid_names(scanning_model))))
             return False
