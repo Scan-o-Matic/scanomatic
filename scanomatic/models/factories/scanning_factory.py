@@ -59,15 +59,6 @@ class ScanningModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_project_name(cls, model):
 
-        try:
-            if os.path.isdir(os.path.join(model.directory_containing_project,
-                                          model.project_name)):
-                return model.FIELD_TYPES.project_name
-
-        except:
-
-            return model.FIELD_TYPES.project_name
-
         if not model.project_name or len(model.project_name) != len(
                 tuple(c for c in model.project_name if c in string.letters + string.digits + "_")):
             return model.FIELD_TYPES.project_name

@@ -340,10 +340,23 @@ class Interface_Builder(SingeltonOneInit):
         global _SOM_SERVER
 
         scanning_model = ScanningModelFactory.create(**scanning_model)
+        path_valid = True
 
-        if not ScanningModelFactory.validate(scanning_model):
-            _SOM_SERVER.logger.error("Invalid settings: {0}".format(
-                tuple(ScanningModelFactory.get_invalid_names(scanning_model))))
+        try:
+            path_valid = not os.path.isdir(os.path.join(scanning_model.directory_containing_project,
+                                          scanning_model.project_name))
+
+
+        except:
+
+            path_valid = False
+
+        if not path_valid or not ScanningModelFactory.validate(scanning_model):
+            if not path_valid:
+                _SOM_SERVER.logger.error("Project name duplicate in containing directory")
+            else:
+                _SOM_SERVER.logger.error("Invalid settings: {0}".format(
+                    tuple(ScanningModelFactory.get_invalid_names(scanning_model))))
             return False
 
         return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan)
