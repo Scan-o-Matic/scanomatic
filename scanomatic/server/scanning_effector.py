@@ -159,11 +159,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._start_time = time.time()
             self._scanning_effector_data.previous_scan_time = 0
             self._scanning_effector_data.current_image = 0
-
+            self._logger.info("Making initial scan")
             return SCAN_STEP.NextMajor
 
         elif not self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN):
             self._scanning_effector_data.previous_scan_time = self.run_time
+            self._logger.info("Next scan cycle initiated")
             return SCAN_STEP.NextMajor
 
         return SCAN_STEP.Wait
