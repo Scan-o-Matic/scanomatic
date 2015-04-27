@@ -224,6 +224,7 @@ class ScannerPowerManager(SingeltonOneInit):
             if scanner.usb:
                 return scanner.usb
             else:
+                self._logger.info("Scanner {0} requested to be turned on by {1}.".format(scanner.socket, job_id))
                 return self._add_to_claim_queue(scanner)
 
         else:
@@ -247,6 +248,7 @@ class ScannerPowerManager(SingeltonOneInit):
                 "Can't turn off scanner for unknown job {1}".format(job_id))
             return False
 
+        self._logger.info("Scanner {0} requested to be turned on by {1}.".format(scanner.socket, job_id))
         if self._power_down(scanner):
             self._save(scanner)
             return True
