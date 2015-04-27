@@ -120,6 +120,7 @@ class Paths(SingeltonOneInit):
 
         self.analysis_run_log = 'analysis.run'
 
+
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
         self.experiment_first_pass_log_relative = ".1_pass.log"
         self.experiment_local_fixturename = \
@@ -139,6 +140,7 @@ class Paths(SingeltonOneInit):
         self.image_analysis_time_series = "time_data.npy"
 
         self.compile_project_file_pattern = "{0}.project.compilation"
+        self.scan_project_file_pattern = "{0}.scan.instructions"
 
     @property
     def src(self):
