@@ -166,8 +166,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._scanning_effector_data.previous_scan_time = self.run_time
             self._logger.info("Next scan cycle initiated")
             return SCAN_STEP.NextMajor
-
-        return SCAN_STEP.Wait
+        else:
+            return SCAN_STEP.Wait
 
     def _do_wait_for_usb(self):
 
