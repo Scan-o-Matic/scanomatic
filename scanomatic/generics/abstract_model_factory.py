@@ -226,6 +226,10 @@ def _is_pinning_format(pinning_format):
 class Serializer(object):
     def __init__(self, factory):
 
+        """
+
+        :type factory: AbstractModelFactory
+        """
         self._factory = factory
         self._logger = Logger(factory.__name__)
 
@@ -256,6 +260,9 @@ class Serializer(object):
 
         if not valid:
             self._logger.warning("Model {0} does not have valid data".format(model))
+            for invalid in factory.get_invalid_names(model):
+                self._logger.error("Faulty value in model {0} for {1} as {2}".format(
+                    model, invalid, model[invalid]))
 
         return False
 
