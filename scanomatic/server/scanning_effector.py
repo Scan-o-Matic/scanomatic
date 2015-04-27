@@ -24,6 +24,7 @@ import os
 import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningModelEffectorData
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.io import scanner_manager
 from scanomatic.io import sane
@@ -75,21 +76,27 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def setup(self, scanning_job):
 
+        paths_object = paths.Paths()
         self._scanning_job.id = scanning_job['id']
         self._setup_directory()
 
         self._scanning_effector_data.current_image_path_pattern = os.path.join(
             self._project_directory,
-            paths.Paths().experiment_scan_image_pattern)
+            paths_object.experiment_scan_image_pattern)
 
         self._scanner = sane.Sane_Base(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
 
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
             compile_action=COMPILE_ACTION.Initiate,
             images=self._scanning_effector_data.images_ready_for_first_pass_analysis,
-            path=paths.Paths().get_compile_project_name(self._scanning_job))
+            path=paths_object.get_compile_project_name(self._scanning_job))
 
-        # TODO: Scanning model should be save out separately from first pass model
+        ScanningModelFactory.serializer.dump(
+            self._scanning_job,
+            os.path.join(
+                self._project_directory,
+                paths_object.scan_project_file_pattern.format(self._scanning_job.project_name)))
+
         self._allow_start = True
 
     @property
