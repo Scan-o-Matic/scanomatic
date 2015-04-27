@@ -15,14 +15,14 @@ class COMPILE_ACTION(Enum):
 class CompileInstructionsModel(Model):
 
     def __init__(self, compile_action=COMPILE_ACTION.Initiate, images=tuple(), path="",
-                 start_condition="", scan_model=None):
+                 start_condition="", fixture=None):
 
         super(CompileInstructionsModel, self).__init__(
             compile_action=compile_action,
             images=images,
             path=path,
             start_condition=start_condition,
-            scan_model=scan_model
+            fixture=fixture
         )
 
 

@@ -87,9 +87,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
             compile_action=COMPILE_ACTION.Initiate,
             images=self._scanning_effector_data.images_ready_for_first_pass_analysis,
-            scan_model=self._scanning_job,
             path=paths.Paths().get_compile_project_name(self._scanning_job))
 
+        # TODO: Scanning model should be save out separately from first pass model
         self._allow_start = True
 
     @property
