@@ -162,7 +162,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             return SCAN_STEP.NextMajor
 
-        if self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN):
+        elif not self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN):
             self._scanning_effector_data.previous_scan_time = self.run_time
             return SCAN_STEP.NextMajor
 
