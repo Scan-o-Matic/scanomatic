@@ -47,7 +47,6 @@ class CompileProjectFactory(AbstractModelFactory):
     STORE_SECTION_HEAD = ("scan_model", "project_name")
     _SUB_FACTORIES = {
         compile_project_model.CompileInstructionsModel: CompileImageFactory,
-        ScanningModelFactory.MODEL: ScanningModelFactory
     }
 
     STORE_SECTION_SERIALIZERS = {
@@ -55,7 +54,7 @@ class CompileProjectFactory(AbstractModelFactory):
         ('images',): list,
         ('path',): str,
         ('start_condition',): str,
-        ('scan_model',): ScanningModelFactory.MODEL
+        ('fixture',): str
     }
 
     @classmethod

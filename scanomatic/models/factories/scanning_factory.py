@@ -12,8 +12,8 @@ class ScanningModelFactory(AbstractModelFactory):
     MODEL = ScanningModel
     _GET_MIN_MODEL = app_config.Config().get_min_model
     _GET_MAX_MODEL = app_config.Config().get_max_model
-    STORE_SECTION_HEAD = ("scanner",)
-    STORE_SECTION_SERLIALIZERS = {
+    STORE_SECTION_HEAD = ("project_name",)
+    STORE_SECTION_SERIALIZERS = {
         ('number_of_scans',): int,
         ('time_between_scans',): float,
         ('project_name',): str,
@@ -68,8 +68,8 @@ class ScanningModelFactory(AbstractModelFactory):
 
             return model.FIELD_TYPES.project_name
 
-        if len(model.project_name) != len(tuple(c for c in model.project_name
-                                                if c in string.letters + string.digits + "_")):
+        if not model.project_name or len(model.project_name) != len(
+                tuple(c for c in model.project_name if c in string.letters + string.digits + "_")):
             return model.FIELD_TYPES.project_name
 
         return True
@@ -134,16 +134,15 @@ class ScannerOwnerFactory(AbstractModelFactory):
 
     MODEL = ScannerOwnerModel
     STORE_SECTION_HEAD = ("scanner_name",)
-    STORE_SECTION_SERLIALIZERS = {
+    STORE_SECTION_SERIALIZERS = {
         ('socket',): int,
         ('scanner_name',): str,
-        ('job_id',): str,
         ('usb',): str,
         ('power',): bool,
         ("expected_interval",): float,
         ("email",): str,
         ("warned",): bool,
-        ("owner_pid"): int,
-        ("claiming"): bool
+        ("owner",): int,
+        ("claiming",): bool
 
     }
