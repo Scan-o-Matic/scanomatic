@@ -1,18 +1,18 @@
 from enum import Enum
 
+
 class Model(object):
 
     _INITIALIZED = "_initialized"
     _RESERVED_WORDS = ('keys',)
     FIELD_TYPES = None
 
-
     def __init__(self):
 
         content = [attribute for attribute in self]
         fields, _ = zip(*content)
-        if not self._hasSetFieldTypes():
-            self._setFieldTypes(fields)
+        if not self._has_set_field_types():
+            self._set_field_types(fields)
 
         if not all(key == key.lower() for key in fields):
             raise AttributeError("Model fields may only be lower case to work with serializers {0}".format(fields()))
@@ -23,7 +23,7 @@ class Model(object):
         if any(k for k in fields if k.startswith("_")):
             raise AttributeError("Model attributes may not be hidden")
 
-        self._setInitialized()
+        self._set_initialized()
 
     def __iter__(self):
 
@@ -35,24 +35,18 @@ class Model(object):
 
     def __setattr__(self, attr, value):
 
-        if (attr == Model._INITIALIZED):
-
-            raise AttributeError(
-                "Can't directly set model to initialized state")
-
-        elif (self._isInitialzed() and not hasattr(self, attr)):
-
-            raise AttributeError(
-                "Can't add new attributes after initialization")
-        elif (attr in self._RESERVED_WORDS):
+        if attr == Model._INITIALIZED:
+            raise AttributeError("Can't directly set model to initialized state")
+        elif self._is_initialized() and not hasattr(self, attr):
+            raise AttributeError("Can't add new attributes after initialization")
+        elif attr in self._RESERVED_WORDS:
             raise AttributeError("Can't set reserved words")
         else:
-
             self.__dict__[attr] = value
 
     def __contains__(self, item):
 
-        return  item in self.__dict__
+        return item in self.__dict__
 
     def __getitem__(self, item):
 
@@ -69,26 +63,26 @@ class Model(object):
         return True
 
     @classmethod
-    def _hasSetFieldTypes(cls):
+    def _has_set_field_types(cls):
 
         return ("FIELD_TYPES" in cls.__dict__ and 
                 cls.__dict__["FIELD_TYPES"] is not None)
 
     @classmethod
-    def _setFieldTypes(cls, names):
+    def _set_field_types(cls, names):
 
-        if cls._hasSetFieldTypes():
+        if cls._has_set_field_types():
             raise AttributeError("Can't change field types")
         else:
             cls.FIELD_TYPES = Enum(cls.__name__, {n: hash(n) for n in names})
 
-    def _setInitialized(self):
+    def _set_initialized(self):
 
         self.__dict__[Model._INITIALIZED] = True
 
-    def _isInitialzed(self):
+    def _is_initialized(self):
 
-        if (Model._INITIALIZED not in self.__dict__):
+        if Model._INITIALIZED not in self.__dict__:
             self.__dict__[Model._INITIALIZED] = False
 
         return self.__dict__[Model._INITIALIZED]
