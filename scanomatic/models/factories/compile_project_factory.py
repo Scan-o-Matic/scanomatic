@@ -1,6 +1,7 @@
 __author__ = 'martin'
 
 import os
+import re
 
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 from scanomatic.models import compile_project_model
@@ -16,6 +17,19 @@ class CompileImageFactory(AbstractModelFactory):
         ('path',): str
     }
     STORE_SECTION_HEAD = ("index",)
+
+    @classmethod
+    def create(cls, **settings):
+
+        model = super(CompileImageFactory, cls).create(**settings)
+
+        if not model.time_stamp:
+            cls.set_time_stamp_from_path(model)
+
+        if model.index < 0:
+            cls.set_index_from_path(model)
+
+        return model
 
     @classmethod
     def _validate_index(cls, model):
@@ -38,6 +52,20 @@ class CompileImageFactory(AbstractModelFactory):
 
             return True
         return model.FIELD_TYPES.time_stamp
+
+    @classmethod
+    def set_time_stamp_from_path(cls, model):
+
+        match = re.search(r'(\d+\.\d+)\.tiff$', model.path)
+        if match:
+            model.time_stamp = float(match.groups()[0])
+
+    @classmethod
+    def set_index_from_path(cls, model):
+
+        match = re.search(r'_(\d+)_(\d+\.\d+)\.tiff$', model.path)
+        if match:
+            model.index = int(match.groups()[0])
 
 
 class CompileProjectFactory(AbstractModelFactory):
