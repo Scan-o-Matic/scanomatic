@@ -30,106 +30,107 @@ import scanomatic.io.logger as logger
 #
 
 
-class Image_Data(object):
+class ImageData(object):
 
     _LOGGER = logger.Logger("Static Image Data Class")
     _PATHS = paths.Paths()
 
     @staticmethod
-    def writeImage(path, imageIndex, features, nPlates, measure=None):
+    def write_image(analysis_model, image_model, features):
 
-        path = os.path.join(*Image_Data.path2dataPathTuple(
-            path, imageIndex=imageIndex))
+        return ImageData._write_image(analysis_model.output_directory, image_model.index, features,
+                                      analysis_model.image_data_output_item,
+                                      analysis_model.image_data_output_measure)
+
+    @staticmethod
+    def _write_image(path, image_index, features, output_item, output_value):
+
+        path = os.path.join(*ImageData.directory_path_to_data_path_tuple(
+            path, image_index=image_index))
 
         if features is None:
-            Image_Data._LOGGER.warning(
-                "Image {0} had no data".format(imageIndex))
+            ImageData._LOGGER.warning(
+                "Image {0} had no data".format(image_index))
             return
 
-        if measure is None:
-            measure = ('blob', 'pixelsum')
+        number_of_plates = len(features)
+        plates = [None] * number_of_plates
+        for plate_id in xrange(number_of_plates):
+            if features[plate_id] is not None:
 
-        plates = [None] * nPlates
-        for pID in xrange(nPlates):
-            if features[pID] is not None:
+                len_dim1 = len(features[plate_id])
+                len_dim2 = len(features[plate_id][0])
+                plates[plate_id] = np.zeros((len_dim1, len_dim2)) * np.nan
+                feature_plate = features[plate_id]
 
-                lD1 = len(features[pID])
-                lD2 = len(features[pID][0])
-                plates[pID] = np.zeros((lD1, lD2)) * np.nan
-                fPlate = features[pID]
-
-                for id1 in xrange(lD1):
-                    d1V = fPlate[id1]
-                    for id2 in xrange(lD2):
-                        cell = d1V[id2]
+                for id1 in xrange(len_dim1):
+                    features_dim1 = feature_plate[id1]
+                    for id2 in xrange(len_dim2):
+                        cell = features_dim1[id2]
                         if cell is not None:
-                            if isinstance(measure, int):
-                                plates[pID][id1, id2] = cell[measure]
-                            elif (measure[0] in cell and 
-                                    measure[1] in cell[measure[0]]):
-                                plates[pID][id1, id2] = cell[
-                                    measure[0]][measure[1]]
-                            else:
-                                Image_Data._LOGGER.error(
+                            try:
+                                plates[plate_id][id1, id2] = cell[output_item][output_value]
+                            except KeyError:
+                                ImageData._LOGGER.error(
                                     "{0} does not have {1} data".format(
-                                        cell, measure))
+                                        cell, (output_item.name, output_value.name)))
 
-        Image_Data._LOGGER.info("Saved Image Data '{0}' with {1} plates".format(
+        ImageData._LOGGER.info("Saved Image Data '{0}' with {1} plates".format(
             path, len(plates)))
 
         np.save(path, plates)
 
     @staticmethod
-    def iterWriteImageFromXML(path, xmlObject, measure=0):
+    def iter_write_image_from_xml(path, xml_object, output_item, output_value):
 
-        scans = xmlObject.get_scan_times().size
-        nPlates = max(xmlObject.get_data().keys()) + 1
-        data = xmlObject.get_data()
+        scans = xml_object.get_scan_times().size
+        plates = max(xml_object.get_data().keys()) + 1
+        data = xml_object.get_data()
 
-        for idS in range(scans):
-            features = [None] * nPlates
-            for idP in range(nPlates):
-                features[idP] = data[idP][:, :, idS]
+        for scan_id in range(scans):
+            features = [None] * plates
+            for plate_id in range(plates):
+                features[plate_id] = data[plate_id][:, :, scan_id]
 
-            Image_Data.writeImage(path, idS, features, nPlates, measure=measure)
+            ImageData._write_image(path, scan_id, features, output_item=output_item, output_value=output_value)
 
     @staticmethod
-    def writeTimes(path, imageIndex, imageMetaData, overwrite=False):
+    def write_times(analysis_model, image_model, overwrite):
 
         if not overwrite:
-            currentData = Image_Data.readTimes(path)
+            current_data = ImageData.read_times(analysis_model.output_directory)
         else:
-            currentData = np.array([], dtype=np.float)
+            current_data = np.array([], dtype=np.float)
 
-        if not (imageIndex < currentData.size):
-            currentData = np.r_[
-                currentData,
-                [None] * (1 + imageIndex - currentData.size)].astype(np.float)
+        if not (image_model.index < current_data.size):
+            current_data = np.r_[
+                current_data,
+                [None] * (1 + image_model.index - current_data.size)].astype(np.float)
 
-        currentData[imageIndex] = imageMetaData['Time']
-        np.save(os.path.join(*Image_Data.path2dataPathTuple(path, times=True)),
-                currentData)
-
-    @staticmethod
-    def writeTimesFromXML(path, xmlObject):
-
-        np.save(os.path.join(*Image_Data.path2dataPathTuple(
-            path, times=True)), xmlObject.get_scan_times())
+        current_data[image_model.index] = image_model.time
+        np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(analysis_model.output_directory, times=True)),
+                current_data)
 
     @staticmethod
-    def readTimes(path):
+    def write_times_from_xml(path, xml_object):
 
-        path = os.path.join(*Image_Data.path2dataPathTuple(path, times=True))
-        Image_Data._LOGGER.info("Reading times from {0}".format(
+        np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(
+            path, times=True)), xml_object.get_scan_times())
+
+    @staticmethod
+    def read_times(path):
+
+        path = os.path.join(*ImageData.directory_path_to_data_path_tuple(path, times=True))
+        ImageData._LOGGER.info("Reading times from {0}".format(
             path))
         if os.path.isfile(path):
             return np.load(path)
         else:
-            Image_Data._LOGGER.warning("Times data file not found")
+            ImageData._LOGGER.warning("Times data file not found")
             return np.array([], dtype=np.float)
 
     @staticmethod
-    def readImage(path):
+    def read_image(path):
 
         if os.path.isfile(path):
             return np.load(path)
@@ -137,34 +138,28 @@ class Image_Data(object):
             return None
 
     @staticmethod
-    def path2dataPathTuple(path, imageIndex="*", times=False):
+    def directory_path_to_data_path_tuple(directory_path, image_index="*", times=False):
 
-        if os.path.isdir(path) and not path.endswith(os.path.sep):
-            path += os.path.sep
+        if os.path.isdir(directory_path) and not directory_path.endswith(os.path.sep):
+            directory_path += os.path.sep
 
-        pathDir = os.path.dirname(path)
-        pathBasename = os.path.basename(path)
-        if (len(pathBasename) == 0 or pathBasename == "."):
-            if times:
-                pathBasename = Image_Data._PATHS.image_analysis_time_series
-            else:
-                pathBasename = Image_Data._PATHS.image_analysis_img_data
+        path_dir = os.path.dirname(directory_path)
 
-        """
-        Image_Data._LOGGER.info("Path tuple is {0}".format((
-            pathDir, pathBasename.format(imageIndex))))
-        """
+        if times:
+            path_basename = ImageData._PATHS.image_analysis_time_series
+        else:
+            path_basename = ImageData._PATHS.image_analysis_img_data
 
-        return pathDir, pathBasename.format(imageIndex)
+        return path_dir, path_basename.format(image_index)
 
     @staticmethod
-    def iterImagePaths(pathPattern):
+    def iter_image_paths(path_pattern):
 
         return (p for p in glob.iglob(os.path.join(
-            *Image_Data.path2dataPathTuple(pathPattern))))
+            *ImageData.directory_path_to_data_path_tuple(path_pattern))))
 
     @staticmethod
-    def iterReadImages(path):
+    def iter_read_images(path):
         """A generator for reading image data given a directory path.
 
         Args:
@@ -189,11 +184,11 @@ class Image_Data(object):
             This method does **not** return the data in time order.
 
         """
-        for p in Image_Data.iterImagePaths(path):
-            yield Image_Data.readImage(p)
+        for p in ImageData.iter_image_paths(path):
+            yield ImageData.read_image(p)
 
     @staticmethod
-    def convertPerTime2PerPlate(data):
+    def convert_per_time_to_per_plate(data):
         """Conversion method for data per time (scan) as generated by the
         image analysis to data per plate as used by feature extraction,
         quality control and user output.
@@ -208,30 +203,29 @@ class Image_Data(object):
             numpy array.    The data restrucutred to be sorted by plates.
 
         """
-        if (not hasattr(data, "shape")):
+        if not hasattr(data, "shape"):
             data = np.array(data)
 
         try:
-            newData = [[] for _ in range(max(s.shape[0] for s in data if
-                                             isinstance(s, np.ndarray)))]
+            new_data = [[] for _ in range(max(s.shape[0] for s in data if isinstance(s, np.ndarray)))]
         except ValueError:
-            Image_Data._LOGGER.error("There is no data")
+            ImageData._LOGGER.error("There is no data")
             return None
 
         for scan in data:
-            for pId, plate in enumerate(scan):
-                newData[pId].append(plate)
+            for plate_id, plate in enumerate(scan):
+                new_data[plate_id].append(plate)
 
-        for pId, plate in enumerate(newData):
+        for plate_id, plate in enumerate(new_data):
             p = np.array(plate)
-            newData[pId] = np.lib.stride_tricks.as_strided(
+            new_data[plate_id] = np.lib.stride_tricks.as_strided(
                 p, (p.shape[1], p.shape[2], p.shape[0]),
                 (p.strides[1], p.strides[2], p.strides[0]))
 
-        return np.array(newData)
+        return np.array(new_data)
 
     @staticmethod
-    def readImageDataAndTimes(path):
+    def read_image_data_and_time(path):
         """Reads all images data files in a directory and report the
         indices used and data restructured per plate.
 
@@ -244,27 +238,27 @@ class Image_Data(object):
             tuple (numpy array of time points, numpy array of data)
 
         """
-        times = Image_Data.readTimes(path)
+        times = ImageData.read_times(path)
 
         data = []
-        timeIndices = []
-        for p in Image_Data.iterImagePaths(path):
+        time_indices = []
+        for p in ImageData.iter_image_paths(path):
 
             try:
-                timeIndices.append(int(re.findall(r"\d+", p)[-1]))
+                time_indices.append(int(re.findall(r"\d+", p)[-1]))
                 data.append(np.load(p))
             except AttributeError:
-                Image_Data._LOGGER(
+                ImageData._LOGGER.warning(
                     "File '{0}' has no index number in it, need that!".format(
                         p))
 
         try:
-            times = np.array(times[timeIndices])
+            times = np.array(times[time_indices])
         except IndexError:
-            Image_Data._LOGGER.error(
+            ImageData._LOGGER.error(
                 "Could not filter image times to match data")
             return None, None
 
-        sortList = np.array(timeIndices).argsort()
-        return times[sortList],  Image_Data.convertPerTime2PerPlate(
-            np.array(data)[sortList])
+        sort_list = np.array(time_indices).argsort()
+        return times[sort_list],  ImageData.convert_per_time_to_per_plate(
+            np.array(data)[sort_list])

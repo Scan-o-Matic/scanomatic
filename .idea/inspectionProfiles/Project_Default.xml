@@ -1,0 +1,39 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0" is_locked="false">
+    <option name="myName" value="Project Default" />
+    <option name="myLocal" value="false" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="4">
+            <item index="0" class="java.lang.String" itemvalue="pygtk" />
+            <item index="1" class="java.lang.String" itemvalue="PIL" />
+            <item index="2" class="java.lang.String" itemvalue="configparse" />
+            <item index="3" class="java.lang.String" itemvalue="nmap" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyShadowingBuiltinsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredNames">
+        <list>
+          <option value="id" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="scanomatic.io.logger.Logger.info" />
+          <option value="scanomatic.io.logger.Logger.critical" />
+          <option value="scanomatic.io.logger.Logger.*" />
+          <option value="scanomatic.models.scanning_model.*" />
+          <option value="matplotlib.cm.gray" />
+          <option value="bool.astype" />
+          <option value="bool.*" />
+          <option value="tuple.sort" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

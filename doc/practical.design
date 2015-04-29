@@ -1,0 +1,117 @@
+Scan-o-Matic Practical Design Specificaion
+==========================================
+
+Author: Martin Zackrisson
+Revision Date: 2015-01-20
+
+THIS DOCUMENT IS A STATMENT ABOUT PRINCIPLES AND GUIDLINES FOR EXPECTED
+BEHAVIOUR AND END USER INTERACTION.
+IT IS NOT A FINAL, NOR COMPLETE SPECIFICATION.
+
+Purpose of Scan-o-Matic
++++++++++++++++++++++++
+
+To (1) robustly control image aquisition of yeast growth experiments and
+(2) give high quality reading of population densities over time.
+These growth curves should have (3) features extracted and allow for
+user (4) quality control.
+
+The final output should be mergable with user meta-data about the experiment
+and saved such that it can be manipulated by both computers and humans.
+
+Scenarios
++++++++++
+
+Admin A
+-------
+
+The Admin A is a user who has indepth experience with the practicalities of
+Scan-o-Matic. A is responsible for verifying the functionality of the hardware
+and setting up new units.
+
+Common issues include:
+
+* Router management/resetting when Scan-o-Matic can't reach the power manager
+* Detecting malfunctioning scanners
+* Calibrating fixtures for new scanners
+* Calibrating grayscales in new fixtures
+* Benchmarking fixtures and scanners so that they remain in high quality
+* Managing storage space on computers
+
+Common User C
+-------------
+
+Experiments
+...........
+
+C is your average lab person. C expects an intuitive client where it is a
+sequence of clear buttons to press to run an experiment on a scanner. For
+this, C needs to know which scanners are free, or when they will be freed up.
+C needs to be able to inform Scan-o-Matic for how long and what frequency of
+scans and where to place the data. When C returns, the data should be ready
+to be quality controlled. Since each experiment takes several days, it would
+be good to C if the program informed C of how much time remained. Ideally
+C would get an e-mail half an hour before completion. The next user in queue
+to use Scan-o-Matic would also like to be informed some time before.
+
+If Scan-o-Matic experiences technical/hardware issues, it should urgently
+notify the user.
+To reduce issues propagating between the scanners, control of power supply
+for each scanner should be as independent as possible from the other scanners.
+
+Merging experiments
+...................
+
+If needed to terminate a malfunctioning project and then starting a new,
+the images from the two need to be mergable.
+
+Restarting
+..........
+
+For Common User C, it does happen at times that the automated process failed,
+hence there needs to be easy ways to restart the process after tweakings
+so that:
+
+* Images can be re-analyzed
+* Phenotypes can be re-extracted
+* Phenotypes can be assed/QC:d from scratch a second time.
+
+QC
+..
+
+For QC work the common user may need to make part of the work to continue
+another time.
+The QC process needs to be clear and give a multitude of visual feedback as
+to the quality of each growth curve as well as the extraction of each
+phenotype from each curve.
+The QC process also needs to be able to give feedback on the general quality
+of the plates.
+
+For QC the common user needs help finding curves where
+
+* there was no growth
+* the experiment failed due to failed measurment of the colony, or failed
+extraction of the phenotype.
+* where plates seems to have had general problems with quality
+* growth curves where missing or failed scans happened
+* points on the curve where curve smoothing has worked badly, select data
+points to use original data
+
+It is also useful for the user to be able to merge meta-data about the 
+experiments with the results after QC.
+
+Scan-o-Matic is not
+...................
+
+* maintaining a database of the progress for the different projects through
+the pipeline.
+
+Tech-Savvy T
+------------
+
+T wants to communicate with the back-ends to hook up Scan-o-Matic in larger
+contexts or to automate production of data downstream.
+T wants to be able to get direct access to all relevant intermidiary data
+stages and be able to obtain the graphs as data objects.
+
+Wants API to group information based on meta-data.

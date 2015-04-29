@@ -34,8 +34,8 @@ import scanomatic.io.paths as paths
 # Globals
 #
 
-_pi = analysis_image.Project_Image([])
-_ga = grid_array.Grid_Array(_pi, (0,), None)
+_pi = analysis_image.ProjectImage([])
+_ga = grid_array.GridArray(_pi, (0,), None)
 POLY = _ga.get_calibration_polynomial_coeffs()
 _paths = paths.Paths()
 
@@ -87,7 +87,7 @@ def get_grid_cell_from_first_pass_file(
 
     file_path_base = os.path.dirname(fpath)
 
-    project_image = analysis_image.Project_Image(
+    project_image = analysis_image.ProjectImage(
         meta_data['Pinning Matrices'],
         file_path_base=file_path_base,
         fixture_name=meta_data['Fixture'],
@@ -159,7 +159,7 @@ def get_grid_cell_from_array(
                 'blob_detect': 'default', 'remember_filter': False,
                 'polynomial_coeffs': poly}
 
-    cell = grid_cell.Grid_Cell((0, 0, 0),
+    cell = grid_cell.GridCell((0, 0, 0),
                                grid_cell_settings=settings)
 
     cell.attach_analysis(center=center, radius=radius)
@@ -208,17 +208,17 @@ def get_gray_scale_transformation_matrix(gs_values):
 #
 
 
-class Grid_Array(grid_array.Grid_Array):
+class GridArray(grid_array.GridArray):
     def __init__(self, root):
-        grid_array.Grid_Array.__init__(self, root, (0,))
+        grid_array.GridArray.__init__(self, root, (0,))
 
 
-class Grid_Cell(grid_cell.Grid_Cell):
+class GridCell(grid_cell.GridCell):
     def __init__(self):
-        grid_cell.Grid_Cell.__init__(self, (0, 0, 0))
+        grid_cell.GridCell.__init__(self, (0, 0, 0))
 
 
-class Project_Image(analysis_image.Project_Image):
+class Project_Image(analysis_image.ProjectImage):
     pass
 
 

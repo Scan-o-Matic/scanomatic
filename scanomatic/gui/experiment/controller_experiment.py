@@ -538,7 +538,7 @@ class Project_Controller(controller_generic.Controller):
 
             #Update order of entry made
             dso = sm['duration-settings-order']
-            dso.pop(dso.index(widget_name))
+            dso.get_highest_priority(dso.index(widget_name))
             dso.append(widget_name)
 
             self._check_duration_consistencies()

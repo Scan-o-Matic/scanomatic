@@ -29,7 +29,7 @@ from skimage import filter as ski_filter
 #
 
 
-class Analysis_Recipe_Abstraction(object):
+class AnalysisRecipeAbstraction(object):
     """Holds an instruction and/or a list of subinstructions."""
 
     def __init__(self, parent=None, description=""):
@@ -49,43 +49,9 @@ class Analysis_Recipe_Abstraction(object):
 
         return "<{0} {1}>".format(id(self), self.description)
 
-    """
-    def set_reference_image(self, im, inplace=False, enforce_self=False,
-                                                        do_copy=True):
+    def analyse(self, im, filter_array, base_level=True):
 
-        if enforce_self or self.parent is None:
-
-            dest = self
-
-        else:
-
-            dest = self.parent
-
-        if self._analysis_image is None and inplace:
-
-            inplace = False
-
-        if inplace:
-
-            dest._analysis_image[:, :] = im
-
-        else:
-
-            if do_copy:
-
-                im = im.copy()
-
-            dest._analysis_image = im
-
-        if enforce_self == False and self.analysis_order != [self]:
-
-            self.set_reference_image(im, inplace=inplace, enforce_self=True,
-                                        do_copy=False)
-    """
-
-    def analyse(self, im, filter_array, baseLvl=True):
-
-        if baseLvl:
+        if base_level:
             filter_array[...] = im.copy()
 
         for a in self.analysis_order:
@@ -96,7 +62,7 @@ class Analysis_Recipe_Abstraction(object):
 
             else:
 
-                a.analyse(im, filter_array, baseLvl=False)
+                a.analyse(im, filter_array, base_level=False)
 
     def add_anlysis(self, a, pos=-1):
 
@@ -113,24 +79,23 @@ class Analysis_Recipe_Abstraction(object):
         pass
 
 
-class Analysis_Recipe_Empty(Analysis_Recipe_Abstraction):
+class AnalysisRecipeEmpty(AnalysisRecipeAbstraction):
 
     def __init__(self, parent=None):
 
-        super(Analysis_Recipe_Empty, self).__init__(
+        super(AnalysisRecipeEmpty, self).__init__(
             parent, description="Recipe")
 
         self.analysis_order = []
 
 
-class Analysis_Threshold_Otsu(Analysis_Recipe_Abstraction):
+class AnalysisThresholdOtsu(AnalysisRecipeAbstraction):
 
-    def __init__(self, parent, thresholdUnitAdjust=0.0):
+    def __init__(self, parent, threshold_unit_adjust=0.0):
 
-        super(Analysis_Threshold_Otsu, self).__init__(
-            parent, description="Otsu Threshold")
+        super(AnalysisThresholdOtsu, self).__init__(parent, description="Otsu Threshold")
 
-        self._thresholdUnitAdjust = thresholdUnitAdjust
+        self._thresholdUnitAdjust = threshold_unit_adjust
 
     def _do(self, filter_array):
 
@@ -138,7 +103,7 @@ class Analysis_Threshold_Otsu(Analysis_Recipe_Abstraction):
             filter_array) + self._thresholdUnitAdjust
 
 
-class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
+class AnalysisRecipeErode(AnalysisRecipeAbstraction):
 
     kernel = np.array([[0, 0, 1, 0, 0],
                        [0, 1, 1, 1, 0],
@@ -148,20 +113,15 @@ class Analysis_Recipe_Erode(Analysis_Recipe_Abstraction):
 
     def __init__(self, parent):
 
-        super(Analysis_Recipe_Erode, self).__init__(
+        super(AnalysisRecipeErode, self).__init__(
             parent, description="Binary Erode")
 
     def _do(self, filter_array):
-
-        #Erosion kernel
-        #kernel = get_round_kernel(radius=2)
-        #print kernel.astype(int)
-        #print "***Erosion kernel ready"
 
         filter_array[...] = binary_erosion(filter_array, iterations=3)
 
 
-class Analysis_Recipe_Erode_Small(Analysis_Recipe_Abstraction):
+class AnalysisRecipeErodeSmall(AnalysisRecipeAbstraction):
 
     kernel = np.array([[0, 1, 0],
                        [1, 1, 1],
@@ -169,44 +129,15 @@ class Analysis_Recipe_Erode_Small(Analysis_Recipe_Abstraction):
 
     def __init__(self, parent):
 
-        super(Analysis_Recipe_Erode_Small, self).__init__(
+        super(AnalysisRecipeErodeSmall, self).__init__(
             parent, description="Binary Erode (small)")
 
     def _do(self, filter_array):
 
-        binary_erosion[...] = binary_erosion(
-            filter_array, origin=(1, 1), structure=self.kernel)
+        filter_array[...] = binary_erosion(filter_array, origin=(1, 1), structure=self.kernel)
 
 
-"""
-class Analysis_Recipe_Erode_Conditional(Analysis_Recipe_Abstraction):
-
-    kernel = np.array([[0, 1, 0],
-                       [1, 1, 1],
-                       [0, 1, 0]])
-
-    threshold = 4
-
-    def __init__(self, parent):
-
-        super(Analysis_Recipe_Erode_Conditional, self).__init__(
-            parent, description="Binary Erode")
-
-    def _do(self, filter_array):
-
-        fa = self.grid_cell.filter_array
-
-        if np.median(im[np.where(fa == 1)]) / \
-                float(np.median(im[np.where(fa == 0)])) < self.threshold:
-
-            self.grid_cell.filter_array = binary_erosion(
-                                fa,
-                                origin=(1,1),
-                                structure=self.kernel)
-"""
-
-
-class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
+class AnalysisRecipeDilate(AnalysisRecipeAbstraction):
 
     kernel = np.array([[0, 0, 1, 1, 1, 0, 0],
                        [0, 1, 1, 1, 1, 1, 0],
@@ -218,29 +149,21 @@ class Analysis_Recipe_Dilate(Analysis_Recipe_Abstraction):
 
     def __init__(self, parent, iterations=4):
 
-        super(Analysis_Recipe_Dilate, self).__init__(
+        super(AnalysisRecipeDilate, self).__init__(
             parent, description="Binary Dilate")
 
         self._iterations = iterations
 
     def _do(self, filter_array):
 
-        #Erosion kernel
-        #kernel = get_round_kernel(radius=2)
-        #print kernel.astype(int)
-        #print "***Erosion kernel ready"
-
-        filter_array[...] = binary_dilation(filter_array,
-                                            iterations=self._iterations)
-        #origin=(3,3),
-        #structure=self.kernel)
+        filter_array[...] = binary_dilation(filter_array, iterations=self._iterations)
 
 
-class Analysis_Recipe_Gauss_2(Analysis_Recipe_Abstraction):
+class AnalysisRecipeGauss2(AnalysisRecipeAbstraction):
 
     def __init__(self, parent):
 
-        super(Analysis_Recipe_Gauss_2, self).__init__(
+        super(AnalysisRecipeGauss2, self).__init__(
             parent, description="Gaussian size 2")
 
     def _do(self, filter_array):
@@ -248,11 +171,11 @@ class Analysis_Recipe_Gauss_2(Analysis_Recipe_Abstraction):
         gaussian_filter(filter_array, 2, output=filter_array)
 
 
-class Analysis_Recipe_Median_Filter(Analysis_Recipe_Abstraction):
+class AnalysisRecipeMedianFilter(AnalysisRecipeAbstraction):
 
     def __init__(self, parent):
 
-        super(Analysis_Recipe_Median_Filter, self).__init__(
+        super(AnalysisRecipeMedianFilter, self).__init__(
             parent, description="Median Filter")
 
     def _do(self, filter_array):

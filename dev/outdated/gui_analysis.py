@@ -1132,7 +1132,7 @@ class Analyse_One(gtk.Frame):
 
                 self._cell.data_source = self._cell.kodak_data_source.copy()
                 self._cell.kodak_data_source = None
-                self._cell.set_grid_array_pointers()
+                self._cell.push_source_data_to_cell_items()
                 self.DMS('ANALYSE ONE', 'Kodak reversal is {0}'.format(\
                     np.all(self._cell.get_item('blob').grid_array == self._cell.original_data_source)),
                     "L", debug_level="debug")

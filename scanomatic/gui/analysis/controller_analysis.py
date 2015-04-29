@@ -1029,7 +1029,7 @@ class Analysis_First_Pass(controller_generic.Controller):
         if os.path.isfile(os.path.join(sm['output-directory'],
                                        local_name)):
 
-            f = config_file.Config_File(
+            f = config_file.ConfigFile(
                 os.path.join(sm['output-directory'], local_name))
 
             try:
@@ -1974,11 +1974,17 @@ class Analysis_Project_Controller(controller_generic.Controller):
                 validProject = (
                     float(meta_data['Version']) >=
                     self.get_top_controller().config.version_oldest_allow_fixture)
+                if not validProject:
+                    self._logger.warning('Log file version too old')
             except:
                 validProject = False
+                self._logger.warning(
+                    'Version-data missing or unknown error with log file')
 
             sm = self._specific_model
             stage = self._view.get_stage()
+            
+            pinning_matrices = None
 
             if validProject:
 
@@ -2001,18 +2007,15 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
                         pinning_matrices = [None] * plates
 
-                    else:
-
-                        pinning_matrices = None
-
                 sm['pinnings-from-file'] = pinning_matrices
-                sm['pinnings'] = copy.copy(pinning_matrices)
 
             else:
 
                 sm['log_file'] = ""
                 sm['log_file_dir'] = ""
                 sm['pinnings'] = []
+
+            sm['pinnings'] = copy.copy(pinning_matrices)
 
             stage.set_valid_log_file(validProject)
 
@@ -2112,7 +2115,10 @@ class Analysis_Project_Controller(controller_generic.Controller):
 
             sm_key = 'pinnings'
 
-        plates_ok = sum([p is not None for p in sm[sm_key]]) > 0
+        if sm[sm_key] is None:
+            plates_ok = False
+        else:
+            plates_ok = sum([p is not None for p in sm[sm_key]]) > 0
 
         file_loaded = sm['log_file'] != ""
 

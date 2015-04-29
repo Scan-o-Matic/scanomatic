@@ -109,7 +109,7 @@ if __name__ == "__main__":
     if not os.path.isdir(args.outputPath):
         os.mkdir(args.outputPath)
 
-    for p in image_data.Image_Data.iterImagePaths(args.outputPath):
+    for p in image_data.ImageData.iter_image_paths(args.outputPath):
         if (not args.ask or
                 "n" not in raw_input("Remove {0}? (Y/n)".format(p)).lower()):
 
@@ -120,11 +120,11 @@ if __name__ == "__main__":
 
     log.info("Data read")
 
-    image_data.Image_Data.writeTimesFromXML(args.outputPath, xmlData)
+    image_data.ImageData.write_times_from_xml(args.outputPath, xmlData)
 
     log.info("Scan Time data saved")
 
-    image_data.Image_Data.iterWriteImageFromXML(args.outputPath, xmlData,
+    image_data.ImageData.iter_write_image_from_xml(args.outputPath, xmlData,
                                                 measure=args.measure)
 
     log.info("Image Data saved")

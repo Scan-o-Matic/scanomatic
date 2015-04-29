@@ -26,7 +26,6 @@ import scanomatic.gui.generic.view_generic as view_generic
 import scanomatic.gui.generic.controller_generic as controller_generic
 
 import scanomatic.imageAnalysis.first_pass_image as imageFixture
-import scanomatic.io.scanner as scanner
 import scanomatic.imageAnalysis.grayscale as grayscale
 import scanomatic.imageAnalysis.first_pass_image as first_pass_image
 import scanomatic.io.logger as logger
@@ -297,7 +296,6 @@ class Fixture_Controller(controller_generic.Controller):
         tc = self.get_top_controller()
         self._paths = tc.paths
         self._config = tc.config
-        self._scanners = scanner.Scanners(self._paths, self._config)
 
         self._window = self.get_window()
 

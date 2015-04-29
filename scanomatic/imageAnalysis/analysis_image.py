@@ -15,443 +15,276 @@ __status__ = "Development"
 import os
 import matplotlib.image as plt_img
 import numpy as np
-
 #
 # SCANNOMATIC LIBRARIES
 #
 
 import grid_array
 import first_pass_image
-import support
-import scanomatic.io.paths as paths
-import scanomatic.io.app_config as app_config_module
-import scanomatic.io.logger as logger
+from scanomatic.io.paths import Paths
+from scanomatic.io.logger import Logger
+from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 
-#
-# EXCEPTIONS
-#
-
-
-class Slice_Outside_Image(Exception):
-    pass
-
-
-class Slice_Error(Exception):
-    pass
 
 #
 # CLASS Project_Image
 #
 
 
-class Project_Image():
-    def __init__(
-            self, pinning_matrices, im_path=None, plate_positions=None,
-            animate=False, file_path_base="", fixture_name=None,
-            p_uuid=None, verbose=False, visual=False,
-            suppress_analysis=False,
-            grid_array_settings=None, gridding_settings=None,
-            grid_cell_settings=None, log_version=0,
-            app_config=None, grid_correction=None):
+# noinspection PyTypeChecker
+class ProjectImage(object):
 
-        self._logger = logger.Logger('Analysis Image')
+    def __init__(self, analysis_model, scanning_meta_data):
 
-        self.p_uuid = p_uuid
-        self._log_version = log_version
+        self._analysis_model = analysis_model
+        self._scanning_meta_data = scanning_meta_data
+        self._logger = Logger("Analysis Image")
+        self.fixture = self._load_fixture()
 
-        self._im_path = im_path
         self._im_loaded = False
-
-        self._plate_positions = plate_positions
-        self._pinning_matrices = pinning_matrices
-        self._ref_plate_d1 = None
-        self._ref_plate_d2 = None
-        self._grid_correction = grid_correction
-
-        self.verbose = verbose
-        self.visual = visual
-        self.suppress_analysis = suppress_analysis
-
-        self.grid_array_settings = grid_array_settings
-        self.gridding_settings = gridding_settings
-        self.grid_cell_settings = grid_cell_settings
-
-        #PATHS
-        self._paths = paths.Paths()
-
-        self._file_path_base = file_path_base
-
-        #APP CONFIG
-        if app_config is None:
-            self._config = app_config_module.Config()
-        else:
-            self._config = app_config
-
-        #Fixture setting is used for pinning history in the arrays
-        if fixture_name is None:
-            fixture_name = self._paths.experiment_local_fixturename
-            fixture_directory = self._file_path_base
-        else:
-            fixture_name = self._paths.get_fixture_path(fixture_name, only_name=True)
-            fixture_directory = None
-
-        self.fixture = first_pass_image.Image(
-            fixture_name,
-            fixture_directory=fixture_directory,
-            appConfig=self._config)
-
-        self._grayscaleTarget = self.fixture['grayscaleTarget']
-
         self.im = None
 
-        self.set_pinning_matrices(pinning_matrices)
+        self._grid_arrays = self._get_grid_arrays()
+        self.features = self._get_init_features(self._grid_arrays)
+
+    def _get_init_features(self, grid_arrays):
+
+        def length_needed(keys):
+
+            return max(keys) + 1
+
+        if grid_arrays:
+            return [None] * length_needed(grid_arrays.keys())
+        else:
+            return []
+
+    @property
+    def active_plates(self):
+        return len(self._grid_arrays)
+
+    def _load_fixture(self):
+
+        paths = Paths()
+        if self._analysis_model.use_local_fixture or not self._scanning_meta_data.fixture:
+            fixture_name = paths.experiment_local_fixturename
+            fixture_directory = os.path.dirname(self._analysis_model.first_pass_file)
+        else:
+            fixture_name = paths.get_fixture_path(self._scanning_meta_data.fixture, only_name=True)
+            fixture_directory = None
+
+        return first_pass_image.Image(
+            fixture_name,
+            fixture_directory=fixture_directory)
 
     def __getitem__(self, key):
 
         return self._grid_arrays[key]
 
-    def get_file_base_dir(self):
+    def _get_grid_arrays(self):
 
-        return self._file_path_base
+        grid_arrays = {}
 
-    def set_pinning_matrices(self, pinning_matrices):
+        for index, pinning in enumerate(self._analysis_model.pinning_matrices):
 
-        self.R = []
-        self.features = []
-        self._grid_arrays = []
-        self._pinning_matrices = pinning_matrices
+            if pinning and self._plate_is_analysed(index):
 
-        for a in xrange(len(pinning_matrices)):
+                grid_arrays[index] = grid_array.GridArray(index, pinning, self.fixture, self._analysis_model)
 
-            if pinning_matrices[a] is not None:
+            else:
 
-                self._grid_arrays.append(grid_array.Grid_Array(
-                    self, (a,),
-                    pinning_matrices[a], visual=self.visual,
-                    suppress_analysis=self.suppress_analysis,
-                    grid_array_settings=self.grid_array_settings,
-                    gridding_settings=self.gridding_settings,
-                    grid_cell_settings=self.grid_cell_settings))
+                if pinning:
 
-                self.features.append(None)
-                self.R.append(None)
+                    self._logger.info("Skipping plate {0} because suppressing non-focal positions".format(index))
 
-        if len(pinning_matrices) > len(self._grid_arrays):
+                else:
 
-            """
-            self._logger.info(
-                "Analysis will run on {0} plates out of {1}".format(
-                len(self._grid_arrays), len(pinning_matrices)))
-            """
+                    self._logger.info("Plate {0} not analysed because lacks pinning".format(index))
 
-    '''
-    def set_manual_ideal_grids(self, grid_adjustments):
-        """Overrides grid detection with a specified grid supplied in grid
-        adjustments
+        return grid_arrays
 
-        @param grid_adjustments:    A dictionary of pinning grids with plate
-                                    numbers as keys and items being tuples of
-                                    row and column position lists.
-        """
+    def _plate_is_analysed(self, index):
 
-        for k in grid_adjustments.keys():
+        return not self._analysis_model.suppress_non_focal or index == self._analysis_model.focus_position[0]
 
-            if self._pinning_matrices[k] is not None:
+    def set_grid(self, image_model, save_name=None):
 
-                try:
+        if save_name is None:
+            save_name = os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
 
-                    self._grid_arrays[k].set_manual_ideal_grid(grid_adjustments[k])
+        self.load_image(image_model.path)
 
-                except IndexError:
-
-                    self._logger.error('Failed to set manual grid "+ \
-                        "adjustments to {0}, plate non-existent'.format(k))
-    '''
-
-    def set_grid(self, im_path, plate_positions, save_name=None):
-
-        #self._logger.info("Setting grids from image {0}".format(im_path))
-        self._im_path = im_path
-        self.load_image()
         if self._im_loaded:
 
-            if self._log_version < self._config.version_first_pass_change_1:
-                scale_factor = 4.0
-            else:
-                scale_factor = 1.0
+            for index in self._grid_arrays:
 
-            for idGA in xrange(len(self._grid_arrays)):
+                plate_models = [plate_model for plate_model in image_model.plates if plate_model.index == index]
+                if plate_models:
+                    plate_model = plate_models[0]
+                else:
+                    self._logger.error("Expected to find a plate model with index {0}, but only have {1}".format(
+                        index, [plate_model.index for plate_model in image_model.plates]))
+                    continue
 
-                """
-                self._logger.info("Setting grid on plate {0}".format(
-                    grid_array))
-                """
-                im = self.get_im_section(plate_positions[idGA], scale_factor)
+                im = self.get_im_section(plate_model)
 
                 if im is None:
                     return None
-                elif self._grid_correction is None:
-                    self._grid_arrays[idGA].set_grid(
+                if self._analysis_model.grid_model.gridding_offsets is None:
+                    self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
                         grid_correction=None)
                 else:
-                    self._grid_arrays[idGA].set_grid(
+                    self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
-                        grid_correction=self._grid_correction[idGA])
+                        grid_correction=self._analysis_model.grid_model.gridding_offset[index])
 
-    def load_image(self, image_dict=None):
+    def load_image(self, path):
 
         try:
 
-            self.im = plt_img.imread(self._im_path)
+            self.im = plt_img.imread(path)
             self._im_loaded = True
 
-        except:
+        except (TypeError, IOError):
 
-            alt_path = os.path.join(self._file_path_base,
-                                    os.path.basename(self._im_path))
+            alt_path = os.path.join(os.path.dirname(self._analysis_model.first_pass_file),
+                                    os.path.basename(path))
 
-            """
-            self._logger.warning(
-                "ANALYSIS IMAGE, Could not open image at " +
-                "'{0}' trying in log-file directory ('{1}').".format(
-                    self._im_path, alt_path))
-            """
+            self._logger.warning("Failed to load image at '{0}', trying '{1}'.".format(
+                path, alt_path
+            ))
             try:
 
                 self.im = plt_img.imread(alt_path)
                 self._im_loaded = True
-                self._im_path = alt_path
 
-            except:
+            except (TypeError, IOError):
 
-                #self._logger.warning("ANALYSIS IMAGE, No image found... sorry")
                 self._im_loaded = False
 
-        #This makes sure that the image is 'standing' and not a 'landscape'
-        if (image_dict is not None and 'Image Shape' in image_dict and
-                image_dict['Image Shape'] is not None):
-
-            ref_shape = image_dict['Image Shape']
-
+        if self._im_loaded:
+            self._logger.info("Image loaded")
         else:
+            self._logger.error("Failed to load image")
 
-            ref_shape = (1, 0)
+        self.validate_rotation()
+        self._convert_to_grayscale()
 
-        if self.im is not None:
-            self.im = support.get_first_rotated(
-                self.im, ref_shape)
+    def _convert_to_grayscale(self):
+        if self.im.ndim == 3:
+            self.im = np.dot(self.im[..., :3], [0.299, 0.587, 0.144])
 
-    def get_im_section(self, features, scale_factor=4.0, im=None,
-                       run_insane=False):
+    def validate_rotation(self):
 
-        if self._im_loaded or im is not None:
+        pass
 
-            #SCALE AND ORDER BOUNDS
-            F = np.round(np.array(features, dtype=np.float) *
-                         scale_factor).astype(np.int)
+    @property
+    def orientation(self):
 
-            F.sort(axis=0)
+        if not self._im_loaded:
+            return IMAGE_ROTATIONS.None
+        elif self.im.shape[0] > self.im.shape[1]:
+            return IMAGE_ROTATIONS.Portrait
+        else:
+            return IMAGE_ROTATIONS.Landscape
 
-            #SET AXIS ORDER DEPENDING ON VERSION
-            if (self.fixture['version'] >=
-                    self._config.version_first_pass_change_1):
+    def get_im_section(self, plate_model, im=None):
 
-                dim1 = 1
-                dim2 = 0
+        def _flip_axis(a, b):
 
-            else:
+            return b, a
 
-                dim1 = 0
-                dim2 = 1
+        def _bound(bounds, a, b):
 
-            #TAKE LOADED IM IF NON SUPPLIED
-            if im is None:
+            def bounds_check(bound, val):
+
+                if 0 <= val < bound:
+                    return val
+                elif val < 0:
+                    return 0
+                else:
+                    return bound - 1
+
+            return ((bounds_check(bounds[0], a[0]),
+                     bounds_check(bounds[0], a[1])),
+                    (bounds_check(bounds[1], b[0]),
+                     bounds_check(bounds[1], b[1])))
+
+        if not im:
+            if self._im_loaded:
                 im = self.im
-
-            #CORRECT FOR IM OUT OF BOUNDS
-            low = 0
-            high = 1
-            d1_correction = 0
-            d2_correction = 0
-
-            if F[low, dim1] < 0:
-                #upper_correction = F[0, dim1]
-                F[low, dim1] = 0
-            if F[low, dim2] < 0:
-                #upper_correction = F[0, dim2]
-                F[low, dim2] = 0
-
-            if F[high, dim1] > im.shape[0]:
-                F[high, dim1] = im.shape[0]
-            if F[high, dim2] > im.shape[1]:
-                F[high, dim2] = im.shape[1]
-
-            #RECORD LOW VALUE CORRECTION ON EITHER DIM (THIS MEANS GRID
-            #NEEDS TO BE OFFSET
-            self._set_current_grid_move(d1=d1_correction, d2=d2_correction)
-
-            #CHECK SO THAT PLATE SHAPE IS AGREEING WITH IM SHAPE
-            #(MUST HAVE THE SAME ORIENTATION)
-            if self._get_slice_sanity_check(
-                    im,
-                    d1=F[high, dim1] - F[low, dim1],
-                    d2=F[high, dim2] - F[low, dim2]) or run_insane:
-
-                #Sections the area of the image referring to the plate
-                plate_im = im[F[low, dim1]: F[high, dim1],
-                              F[low, dim2]: F[high, dim2]]
-
-                #Determines the shorter dimension
-                short_dim = [p == min(plate_im.shape) for
-                             p in plate_im.shape].index(True)
-
-                #Causes the flipping along the short dimension
-                slicer = [i != short_dim and slice(None, None, None) or
-                          slice(None, None, -1) for i in range(plate_im.ndim)]
-
-                return plate_im[slicer]
-
             else:
+                return
 
-                self._logger.critical(
-                    "Plate will be disregarded. " +
-                    "im {0} , slice {1}, scaled by {2} fixture {3} {4}".format(
-                        im.shape,
-                        np.s_[F[low, dim1]:F[high, dim1], F[low, dim2],
-                              F[high, dim2]],
-                        scale_factor,
-                        self.fixture['name'],
-                        self.fixture['version']))
+        x = sorted((plate_model.x1, plate_model.x2))
+        y = sorted((plate_model.y1, plate_model.y2))
 
-                return None
+        if self.orientation == IMAGE_ROTATIONS.Landscape:
+            x, y = _flip_axis(x, y)
+
+        x, y = _bound(im.shape, x, y)
+        section = im[x[0]: x[1], y[0]: y[1]]
+
+        return self._flip_short_dimension(section, im.shape)
+
+    @staticmethod
+    def _flip_short_dimension(section, im_shape):
+
+        short_dim = [p == min(im_shape) for
+                     p in im_shape].index(True)
+
+        def get_slicer(idx):
+            if idx == short_dim:
+                return slice(None, None, -1)
+            else:
+                # noinspection PyTypeChecker
+                return slice(None)
+
+        slicer = []
+        for i in range(len(im_shape)):
+            slicer.append(get_slicer(i))
+
+        return section[slicer]
 
     def _set_current_grid_move(self, d1, d2):
 
         self._grid_corrections = np.array((d1, d2))
 
-    def _get_slice_sanity_check(self, im, d1=None, d2=None):
+    def get_analysis(self, image_model):
 
-        if ((float(im.shape[0]) / im.shape[1] > 1) !=
-                (float(d1) / d2 > 1)):
+        self.load_image(image_model.path)
 
-            s = "Current shape is {0} x {1}.".format(d1, d2)
-            s += " Image is {0} x {1}.".format(im.shape[0], im.shape[1])
-            s += " They must have same orientation"
-            self._logger.critical(s)
-
-            return False
-
-        return True
-
-    def get_analysis(
-            self, im_path, features, grayscaleSource,
-            watch_colony=None, save_grid_name=None,
-            identifier_time=None,
-            grayscaleTarget=None, image_dict=None):
-
-        """
-            @param im_path: An path to an image
-
-            @param features: A list of pinning grids to look for
-
-            @param grayscaleSource : An array of the grayscale pixelvalues
-
-            @param watch_colony : A particular colony to gather information
-            about.
-
-            @param suppress_other : If only the watched colony should be
-            analysed
-
-            @param save_grid_name : A custom name for the saved image, if none
-            no grid image is saved
-
-            @param identifier_time : A time index to update the identifier with
-
-            @param grayscaleTarget : An array of the targets of the fixtures
-            grayscale.
-
-            @param image_dict : A dictionary of setting for how image is
-            loaded, (see Analysis_Image.load_image)
-
-            The function returns two arrays, one per dimension, of the
-            positions of the spikes and a quality index
-        """
-
-        #
-        #   LOAD IMAGE
-        #
-        if im_path is not None:
-
-            self._im_path = im_path
-            self.load_image(image_dict=image_dict)
-
-        #
-        #   VERIFY IMAGE FORMAT
-        #
-        if self._im_loaded is True:
-
-            if self.im.ndim == 3:
-                #Makes image grayscale balancing colors' effect and
-                #trashing the alpha-channel (if any)
-                self.im = np.dot(self.im[..., :3], [0.299, 0.587, 0.144])
-                #self._logger.warning("Color image got converted to grayscale")
-
-        else:
-            #self._logger.error("Failed to load image, all methods exhausted")
+        if self._im_loaded is False:
             return None
 
-        #
-        #   CONFIG FILE COMPATIBILITY, COORDINATE VALUE SCALINGS
-        #
-
-        if self._log_version < self._config.version_first_pass_change_1:
-            scale_factor = 4.0
-        else:
-            scale_factor = 1.0
-
-        if grayscaleSource is None:
-            #self._logger.error("Grayscale sources can't be None")
+        if not image_model.grayscale_values:
             return None
 
-        if grayscaleTarget is None:
-            grayscaleTarget = self._grayscaleTarget
-            if grayscaleTarget is None:
-                #self._logger.error("Grayscale targets not inited correctly")
-                pass
+        if not image_model.grayscale_targets:
+            image_model.grayscale_targets = self.fixture['grayscaleTarget']
+            if not image_model.grayscale_targets:
+                return None
 
-        for plateIndex in range(len(features)):
+        for plate in image_model.plates:
 
-            im = self.get_im_section(features[plateIndex], scale_factor)
-            if im is None:
-                continue
+            if plate.index in self._grid_arrays:
 
-            gridArray = self._grid_arrays[plateIndex]
-            gridArray.doAnalysis(
-                im,
-                grayscaleSource=grayscaleSource,
-                grayscaleTarget=grayscaleTarget,
-                watch_colony=watch_colony,
-                save_grid_name=save_grid_name,
-                identifier_time=identifier_time,
-                grid_correction=self._grid_corrections)
+                im = self.get_im_section(plate)
+                grid_arr = self._grid_arrays[plate.index]
+                grid_arr.analyse(im, image_model)
 
-            self.features[plateIndex] = gridArray.features
-            self.R[plateIndex] = gridArray.R
+                self.features[plate.index] = grid_arr.features
 
-        if watch_colony is not None:
-
-            watchPlate = self._grid_arrays[watch_colony[0]]
-            self.watch_grid_size = watchPlate._grid_cell_size
-
-            self.watch_source = watchPlate.watch_source
-            self.watch_blob = watchPlate.watch_blob
-
-            self.watch_results = watchPlate.watch_results
-
-        """
-        for handler in self._logger.handlers:
-            handler.flush()
-        """
+        if self._analysis_model.focus_position:
+            self._record_focus_colony_data()
 
         return self.features
+
+    def _record_focus_colony_data(self):
+
+        focus_plate = self._grid_arrays[self._analysis_model.focus_position[0]]
+
+        self.watch_grid_size = focus_plate.grid_cell_size
+        self.watch_source = focus_plate.watch_source
+        self.watch_blob = focus_plate.watch_blob
+        self.watch_results = focus_plate.watch_results
