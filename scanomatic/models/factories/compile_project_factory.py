@@ -8,6 +8,7 @@ from scanomatic.models import compile_project_model
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 
+
 class CompileImageFactory(AbstractModelFactory):
 
     MODEL = compile_project_model.CompileImageModel
@@ -136,7 +137,7 @@ class CompileProjectFactory(AbstractModelFactory):
         elif model.fixture is compile_project_model.FIXTURE.Global:
             if model.fixture_name in Fixtures():
                 return True
-            else
+            else:
                 return model.FIELD_TYPES.fixture_name
         else:
             return model.FIELD_TYPES.fixture
