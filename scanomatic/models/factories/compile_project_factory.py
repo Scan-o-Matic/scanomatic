@@ -85,6 +85,21 @@ class CompileProjectFactory(AbstractModelFactory):
     }
 
     @classmethod
+    def create(cls, **settings):
+
+        model = super(CompileProjectFactory, cls).create(**settings)
+        cls.enforce_subfactory_list(model)
+        return model
+
+    @classmethod
+    def enforce_subfactory_list(cls, model):
+
+        for i in range(len(model.images)):
+
+            if not isinstance(model.images[i], compile_project_model.CompileImageModel):
+                model.images[i] = CompileImageFactory.create(**model.images[i])
+
+    @classmethod
     def _validate_images(cls, model):
 
         try:
