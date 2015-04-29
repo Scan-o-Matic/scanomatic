@@ -7,4 +7,6 @@ class FeaturesModel(model.Model):
 
     def __init__(self, analysis_directory=""):
 
-        super(FeaturesModel, self).__init__(analysis_directory=analysis_directory)
+        self.analysis_directory = analysis_directory
+
+        super(FeaturesModel, self).__init__()
