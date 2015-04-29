@@ -73,7 +73,7 @@ class CompileProjectFactory(AbstractModelFactory):
     MODEL = compile_project_model.CompileInstructionsModel
     STORE_SECTION_HEAD = ("scan_model", "project_name")
     _SUB_FACTORIES = {
-        compile_project_model.CompileInstructionsModel: CompileImageFactory,
+        compile_project_model.CompileImageModel: CompileImageFactory,
     }
 
     STORE_SECTION_SERIALIZERS = {
