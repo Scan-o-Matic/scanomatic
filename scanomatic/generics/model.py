@@ -6,22 +6,21 @@ class Model(object):
     FIELD_TYPES = None
 
 
-    def __init__(self, **content):
+    def __init__(self):
 
+        content = [attribute for attribute in self]
+        fields, _ = zip(*content)
         if not self._hasSetFieldTypes():
-            self._setFieldTypes(content.keys())
+            self._setFieldTypes(fields)
 
-        if not all(key == key.lower() for key in content):
-            raise AttributeError("Model fields may only be lower case to work with serializers {0}".format(content.keys()))
+        if not all(key == key.lower() for key in fields):
+            raise AttributeError("Model fields may only be lower case to work with serializers {0}".format(fields()))
 
-        if "keys" in content.keys():
+        if "keys" in fields:
             raise AttributeError("Attribute 'keys' is reserved and can't be defined")
 
-        if any(k for k in content.keys() if k.startswith("_")):
+        if any(k for k in fields if k.startswith("_")):
             raise AttributeError("Model attributes may not be hidden")
-
-        for key, val in content.items():
-            self.__dict__[key] = val
 
         self._setInitialized()
 
@@ -74,12 +73,12 @@ class Model(object):
                 cls.__dict__["FIELD_TYPES"] is not None)
 
     @classmethod
-    def _setFieldTypes(cls, types):
+    def _setFieldTypes(cls, names):
 
         if cls._hasSetFieldTypes():
             raise AttributeError("Can't change field types")
         else:
-            cls.FIELD_TYPES = Enum(cls.__name__, {t: hash(t) for t in types})
+            cls.FIELD_TYPES = Enum(cls.__name__, {n: hash(n) for n in names})
 
     def _setInitialized(self):
 
