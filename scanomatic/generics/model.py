@@ -3,6 +3,7 @@ from enum import Enum
 class Model(object):
 
     _INITIALIZED = "_initialized"
+    _RESERVED_WORDS = ('keys',)
     FIELD_TYPES = None
 
 
@@ -16,8 +17,8 @@ class Model(object):
         if not all(key == key.lower() for key in fields):
             raise AttributeError("Model fields may only be lower case to work with serializers {0}".format(fields()))
 
-        if "keys" in fields:
-            raise AttributeError("Attribute 'keys' is reserved and can't be defined")
+        if any(field in self._RESERVED_WORDS for field in fields):
+            raise AttributeError("Attributes {0} are reserved and can't be defined".format(self._RESERVED_WORDS))
 
         if any(k for k in fields if k.startswith("_")):
             raise AttributeError("Model attributes may not be hidden")
@@ -43,7 +44,8 @@ class Model(object):
 
             raise AttributeError(
                 "Can't add new attributes after initialization")
-
+        elif (attr in self._RESERVED_WORDS):
+            raise AttributeError("Can't set reserved words")
         else:
 
             self.__dict__[attr] = value
