@@ -8,13 +8,13 @@ class COMPILE_ACTION(Enum):
 
     Initiate = 0
     Append = 1
-    Finalize = 2
-    FinalizeAndSpawnAnalysis = 3
+    InitiateAndSpawnAnalysis = 10
+    AppendAndSpawnAnalysis = 11
 
 
 class CompileInstructionsModel(Model):
 
-    def __init__(self, compile_action=COMPILE_ACTION.Initiate, images=tuple(), path="",
+    def __init__(self, compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis, images=tuple(), path="",
                  start_condition="", fixture=None):
 
         super(CompileInstructionsModel, self).__init__(
