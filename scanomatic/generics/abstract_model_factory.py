@@ -49,6 +49,10 @@ class AbstractModelFactory(object):
     @classmethod
     def create(cls, **settings):
 
+        """
+
+        :rtype : scanomatic.genercs.model.Model
+        """
         for key in settings:
             tuple_key = (key,)
             if (settings[key] is not None and

@@ -23,6 +23,10 @@ class CompileImageFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
 
+        """
+
+        :rtype : scanomatic.models.compile_project_model.CompileImageModel
+        """
         model = super(CompileImageFactory, cls).create(**settings)
 
         if not model.time_stamp:
@@ -36,20 +40,27 @@ class CompileImageFactory(AbstractModelFactory):
     @classmethod
     def _validate_index(cls, model):
 
+        """
+        :type model: scanomatic.models.compile_project_model.CompileImageModel
+        """
         if model.index >= 0:
             return True
         return model.FIELD_TYPES.index
 
     @classmethod
     def _validate_path(cls, model):
-
+        """
+        :type model: scanomatic.models.compile_project_model.CompileImageModel
+        """
         if os.path.abspath(model.path) == model.path and os.path.isfile(model.path):
             return True
         return model.FIELD_TYPES.path
 
     @classmethod
     def _validate_time_stamp(cls, model):
-
+        """
+        :type model: scanomatic.models.compile_project_model.CompileImageModel
+        """
         if model.time_stamp >= 0.0:
 
             return True
@@ -57,14 +68,18 @@ class CompileImageFactory(AbstractModelFactory):
 
     @classmethod
     def set_time_stamp_from_path(cls, model):
-
+        """
+        :type model: scanomatic.models.compile_project_model.CompileImageModel
+        """
         match = re.search(r'(\d+\.\d+)\.tiff$', model.path)
         if match:
             model.time_stamp = float(match.groups()[0])
 
     @classmethod
     def set_index_from_path(cls, model):
-
+        """
+        :type model: scanomatic.models.compile_project_model.CompileImageModel
+        """
         match = re.search(r'_(\d+)_(\d+\.\d+)\.tiff$', model.path)
         if match:
             model.index = int(match.groups()[0])
@@ -89,14 +104,18 @@ class CompileProjectFactory(AbstractModelFactory):
 
     @classmethod
     def create(cls, **settings):
-
+        """
+        :rtype : scanomatic.models.compile_project_model.CompileInstructionsModel
+        """
         model = super(CompileProjectFactory, cls).create(**settings)
         cls.enforce_subfactory_list(model)
         return model
 
     @classmethod
     def enforce_subfactory_list(cls, model):
-
+        """
+        :type model: scanomatic.models.compile_project_model.CompileInstructionsModel
+        """
         for i in range(len(model.images)):
 
             if not isinstance(model.images[i], compile_project_model.CompileImageModel):
@@ -104,7 +123,9 @@ class CompileProjectFactory(AbstractModelFactory):
 
     @classmethod
     def _validate_images(cls, model):
-
+        """
+        :type model: scanomatic.models.compile_project_model.CompileInstructionsModel
+        """
         try:
             for image in model.images:
                 if not CompileImageFactory.validate(image):
@@ -118,7 +139,9 @@ class CompileProjectFactory(AbstractModelFactory):
 
     @classmethod
     def _validate_path(cls, model):
-
+        """
+        :type model: scanomatic.models.compile_project_model.CompileInstructionsModel
+        """
         basename = os.path.basename(model.path)
         dirname = os.path.dirname(model.path)
 
@@ -128,7 +151,9 @@ class CompileProjectFactory(AbstractModelFactory):
 
     @classmethod
     def _validate_fixture(cls, model):
-
+        """
+        :type model: scanomatic.models.compile_project_model.CompileInstructionsModel
+        """
         if model.fixture is compile_project_model.FIXTURE.Local:
             if os.path.isfile(os.path.join(model.path, Paths().experiment_local_fixturename)):
                 return True
