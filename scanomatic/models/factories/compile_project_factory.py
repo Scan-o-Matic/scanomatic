@@ -4,7 +4,6 @@ import os
 
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 from scanomatic.models import compile_project_model
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
 
 class CompileImageFactory(AbstractModelFactory):
