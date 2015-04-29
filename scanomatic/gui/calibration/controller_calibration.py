@@ -25,7 +25,7 @@ import view_calibration
 import scanomatic.gui.generic.view_generic as view_generic
 import scanomatic.gui.generic.controller_generic as controller_generic
 
-import scanomatic.imageAnalysis.imageFixture as imageFixture
+import scanomatic.imageAnalysis.first_pass_image as imageFixture
 import scanomatic.imageAnalysis.grayscale as grayscale
 import scanomatic.imageAnalysis.first_pass_image as first_pass_image
 import scanomatic.io.logger as logger
@@ -647,10 +647,15 @@ class Fixture_Controller(controller_generic.Controller):
             gs_source = np.array(gs_source)
             gs_target = np.array(gs_target)
 
-            np.save("tmp_gs_{0}_source.npy".format(self.f_settings['name']),
+            np.save(self._paths.join(
+                "fixtures",
+                "tmp_gs_{0}_source.npy".format(self.f_settings['name'])),
                     gs_source)
-            np.save("tmp_gs_{0}_target.npy".format(self.f_settings['name']),
+            np.save(self._paths.join(
+                "fixtures",
+                "tmp_gs_{0}_target.npy".format(self.f_settings['name'])),
                     gs_target)
+
             if grayscale.validate(self.f_settings):
 
                 sm['grayscale-sources'] = gs_source

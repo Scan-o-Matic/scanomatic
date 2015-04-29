@@ -50,7 +50,7 @@ class Logger(object):
 
     _LOGLEVELS_TO_TEXT = {}
 
-    def __init__(self, loggerName):
+    def __init__(self, loggerName, active=True):
 
         self._level = self.INFO
         self._logFile = None
@@ -58,6 +58,7 @@ class Logger(object):
         self._logLevelToMethod = {}
         self._usePrivateOutput = False
         self._suppressPrints = False
+        self._active = active
 
         if (len(self._LOGLEVELS_TO_TEXT) != len(self._LOGLEVELS)):
             Logger.SetLogLevels()
@@ -203,6 +204,14 @@ class Logger(object):
             sys.stderr = self.__stderr__
 
     @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value):
+        self._active = value
+
+    @property
     def supressPrints(self):
 
         return self._suppressPrints
@@ -220,7 +229,8 @@ class Logger(object):
 
     def _output(self, lvl, msg):
 
-        if (lvl <= self._level and lvl in self._LOGLEVELS_TO_TEXT):
+        if (self._active and lvl <= self._level and
+                lvl in self._LOGLEVELS_TO_TEXT):
 
             output = (self._usePrivateOutput and self._logFile or
                       self._DEFAULT_LOGFILE)

@@ -515,7 +515,7 @@ class Meta_Data(Meta_Data_Base):
                 if shape is not None:
 
                     shape = shape[0] * shape[1]
-                    if not(i < len(self._sheetReadOrder)):
+                    if not(n < len(self._sheetReadOrder)):
                         self._logger.warning(
                             "Not enough valid data-sheets")
                         return False

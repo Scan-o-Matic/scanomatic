@@ -127,6 +127,8 @@ class ProjectImage(object):
 
                 im = self.get_im_section(plate_model)
 
+                if im is None:
+                    return None
                 if self._analysis_model.grid_model.gridding_offsets is None:
                     self._grid_arrays[index].set_grid(
                         im, save_name=save_name,

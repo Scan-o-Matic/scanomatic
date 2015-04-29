@@ -142,6 +142,13 @@ class Paths(SingeltonOneInit):
         self.compile_project_file_pattern = "{0}.project.compilation"
         self.scan_project_file_pattern = "{0}.scan.instructions"
 
+    def join(self, attr, *other):
+        
+        if hasattr(self, attr):
+            return os.path.join(getattr(self, attr), *other)
+        else:
+            raise AttributeError("Unknown path attribute '{0}'".format(attr))
+
     @property
     def src(self):
 
