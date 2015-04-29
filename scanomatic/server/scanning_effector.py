@@ -262,7 +262,11 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if compile_job_id:
             # TODO: Add check if compile action should be finalize.
-            self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
+            next_image_is_last = False
+            if (next_image_is_last):
+                self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.AppendAndSpawnAnalysis
+            else:
+                self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
             self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
             self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
             self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))

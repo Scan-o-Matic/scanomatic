@@ -33,14 +33,23 @@ class ScanningModel(model.Model):
                  description="", email="", pinning_formats=tuple(),
                  fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",  version=__version__):
 
-        super(ScanningModel, self).__init__(
-            number_of_scans=number_of_scans, time_between_scans=time_between_scans,
-            project_name=project_name,
-            directory_containing_project=directory_containing_project,
-            project_tag=project_tag, scanner_tag=scanner_tag, id=id,
-            description=description, email=email,
-            pinning_formats=pinning_formats,
-            fixture=fixture, scanner=scanner, scanner_hardware=scanner_hardware, mode=mode, version=version)
+        self.number_of_scans = number_of_scans
+        self.time_between_scans = time_between_scans
+        self.project_name = project_name
+        self.directory_containing_project = directory_containing_project
+        self.project_tag = project_tag
+        self.scanner_tag = scanner_tag
+        self.id = id
+        self.description = description
+        self.email = email
+        self.pinning_formats = pinning_formats
+        self.fixture = fixture
+        self.scanner = scanner
+        self.scanner_hardware = scanner_hardware
+        self.mode = mode
+        self.version = version
+
+        super(ScanningModel, self).__init__()
 
 
 class ScannerOwnerModel(model.Model):
@@ -48,10 +57,20 @@ class ScannerOwnerModel(model.Model):
     def __init__(self, socket=-1, scanner_name="", owner=None, usb="", power=False, last_on=-1, last_off=-1,
                  expected_interval=0, email="", warned=False, claiming=False, reported=False):
 
-        super(ScannerOwnerModel, self).__init__(socket=socket, scanner_name=scanner_name, usb=usb,
-                                                power=power, last_on=last_on, last_off=last_off,
-                                                expected_interval=expected_interval, email=email, warned=warned,
-                                                owner=owner, claiming=claiming, reported=reported)
+        self.socket = socket
+        self.scanner_name = scanner_name
+        self.usb = usb
+        self.power = power
+        self.last_on = last_on
+        self.last_off = last_off
+        self.expected_interval = expected_interval
+        self.email = email
+        self.warned = warned
+        self.owner = owner
+        self.claiming = claiming
+        self.reported = reported
+
+        super(ScannerOwnerModel, self).__init__()
 
 
 class ScanningModelEffectorData(model.Model):
@@ -62,17 +81,18 @@ class ScanningModelEffectorData(model.Model):
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
                  compile_project_model=None):
 
-        super(ScanningModelEffectorData, self).__init__(
-            current_cycle_step=current_cycle_step,
-            current_step_start_time=current_step_start_time,
-            current_image=current_image,
-            current_image_path=current_image_path,
-            current_image_path_pattern=current_image_path_pattern,
-            project_time=project_time,
-            previous_scan_time=previous_scan_time,
-            scanning_thread=scanning_thread,
-            scan_success=scan_success,
-            images_ready_for_first_pass_analysis=images_ready_for_first_pass_analysis,
-            scanning_image_name=scanning_image_name,
-            usb_port=usb_port,
-            compile_project_model=compile_project_model)
+        self.current_cycle_step = current_cycle_step
+        self.current_step_start_time = current_step_start_time
+        self.current_image = current_image
+        self.current_image_path = current_image_path
+        self.current_image_path_pattern = current_image_path_pattern
+        self.project_time = project_time
+        self.previous_scan_time = previous_scan_time
+        self.scanning_thread = scanning_thread
+        self.scan_success = scan_success
+        self.images_ready_for_first_pass_analysis = images_ready_for_first_pass_analysis
+        self.scanning_image_name = scanning_image_name
+        self.usb_port = usb_port
+        self.compile_project_model = compile_project_model
+
+        super(ScanningModelEffectorData, self).__init__()

@@ -54,10 +54,14 @@ class RPCjobModel(model.Model):
                  priority=-1,
                  pid=None):
 
-        super(RPCjobModel, self).__init__(
-                id=id, type=type, status=status, pid=pid,
-                priority=priority,
-                content_model=content_model)
+        self.id = id
+        self.type = type
+        self.status = status
+        self.pid = pid
+        self.priority = priority
+        self.content_model = content_model
+
+        super(RPCjobModel, self).__init__()
 
     def __hash__(self):
 
