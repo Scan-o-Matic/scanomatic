@@ -295,7 +295,7 @@ class Grid(gtk.Frame):
     def make_repinning(self):
            
         if self.analysis_image:
-            self.analysis_image.set_pinning_matrices(self._pinning_matrices)
+            self.analysis_image._get_grid_arrays(self._pinning_matrices)
             self.analysis_image.set_manual_grids(self.repinnings)
             active = self.plate_selector.get_active()
             plate = self.analysis_image.get_plate(active)

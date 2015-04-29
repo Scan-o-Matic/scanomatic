@@ -23,7 +23,7 @@ _logger.info("Checking non-python dependencies")
 # INSTALLING NON-PYTHONIC PROGRAMS
 #
 
-program_dependencies = ('nmap', 'sispmctl')
+program_dependencies = ('nmap',)
 PROGRAM_NOT_FOUND = 32512
 install_dependencies = []
 
@@ -63,7 +63,7 @@ _logger.info("Preparing setup parameters")
 package_dependencies = [
     'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
     'numpy', 'sh', 'nmap', 'configparse', 'scikit-image',
-    'uuid', 'PIL', 'scipy',  'pygtk']
+    'uuid', 'PIL', 'scipy',  'pygtk', 'setproctitle', 'psutil']
 
 data_files = []
 
@@ -73,12 +73,11 @@ scripts = [
         "scan-o-matic_server",
         "scan-o-matic_qc",
         "scan-o-matic_calibration",
-        "scan-o-matic_experiment",
+        "scan-o-matic_analysis",
         "scan-o-matic_analysis_move_plate",
         "scan-o-matic_analysis_patch_times",
         "scan-o-matic_make_project",
         "scan-o-matic_analysis_skip_gs_norm",
-        "scan-o-matic_relauncher",
         "scan-o-matic_analysis_xml_upgrade",
         "scan-o-matic_xml2image_data",
     ]
@@ -109,9 +108,12 @@ setup(
     install_requires=package_dependencies,
     packages=[
         "scanomatic",
+        "scanomatic.generics",
+        "scanomatic.models",
+        "scanomatic.models.factories",
         "scanomatic.io",
         "scanomatic.io.xml",
-        "scanomatic.rpc_server",
+        "scanomatic.server",
         "scanomatic.imageAnalysis", "scanomatic.dataProcessing",
         "scanomatic.dataProcessing.visualization",
         "scanomatic.gui",
@@ -186,6 +188,9 @@ if (sys.argv[-1].upper() == "--USER"):
     Alternatively, if you install Scan-o-Matic for all
     users then the launch scripts should be copied
     into a folder that is already in path.
+
+    If you use a USB-connected PowerManager, make sure
+    sispmctl is installed.
 
 """
 

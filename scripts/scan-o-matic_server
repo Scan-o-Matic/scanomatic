@@ -22,7 +22,7 @@ import os
 #
 
 import scanomatic.io.logger as logger
-import scanomatic.rpc_server.server as server
+import scanomatic.server.interface_builder as interface_builder
 
 if __name__ == "__main__":
 
@@ -54,5 +54,4 @@ if __name__ == "__main__":
 
             pass
 
-    rpcServer = server.SOM_RPC()
-    rpcServer.run()
+    interface_builder.Interface_Builder()

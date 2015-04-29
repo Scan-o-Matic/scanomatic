@@ -26,7 +26,7 @@ import logger
 #
 
 
-class Config_File(object):
+class ConfigFile(object):
 
     def __init__(self, location):
 
@@ -37,6 +37,7 @@ class Config_File(object):
             "Config File '{0}'".format(os.path.basename(location)))
 
         self._no_name_enumerator = 0
+        self._comment_index = -1
 
         fs = self.load(location)
 
@@ -67,9 +68,8 @@ class Config_File(object):
             location = self.get_location()
 
         self._logger.info("Loading file {0}".format(location))
-        #self._logger.exception("Call for {0} came from...".format(location))
-
         no_file = False
+        fs = None
 
         try:
 
@@ -104,6 +104,22 @@ class Config_File(object):
 
     def read(self, fs=None, location=None):
 
+        def line_to_key_value(current_line):
+            if not current_line.strip():
+                return None, ""
+            elif current_line.startswith("#"):
+                return "#", current_line[1:]
+
+            for split_char in ("\t", "="):
+                if split_char in current_line:
+                    ret_list = [part.strip() for part in current_line.split(split_char, 1)]
+                    if len(ret_list) == 1:
+                        ret_list.append("")
+                    return ret_list
+
+            self._logger.error("Badly formatted line: '{0}'".format(current_line))
+            return None, None
+
         self._data = {}
         self._file_data_order = []
         self._comment_index = -1
@@ -118,57 +134,39 @@ class Config_File(object):
 
         for line in fs.readlines():
 
-            line = line.strip()
+            key, value = line_to_key_value(line)
+            self._logger.debug("Read '{0}' maps to '{1}'".format(key, value))
 
-            if len(line) > 0 and line[0] != "#":
+            if key is not None and key is not "#":
 
-                line_list = line.split("\t", 1)
-                bad_conf_line = False
+                self._file_data_order.append(key)
 
-                if len(line_list) == 2:
+                try:
 
-                    self._file_data_order.append(line_list[0])
+                    self._data[key] = eval(value)
 
-                    try:
+                except:
 
-                        self._data[str(line_list[0])] = eval(line_list[1])
+                    self._data[key] = value
 
-                    except:
+            elif key is not "#" and value:
 
-                        #IF it doesn't evaluate we think its a string
-                        self._data[str(line_list[0])] = line_list[1]
+                self._file_data_order.append(str(self._no_name_enumerator))
+                self._no_name_enumerator += 1
 
-                elif len(line_list) == 1:
+                try:
 
-                    self._file_data_order.append(str(self._no_name_enumerator))
-                    self._no_name_enumerator += 1
+                    self._data[self._file_data_order[-1]] = eval(value)
 
-                    try:
+                except:
 
-                        self._data[self._file_data_order[-1]] = eval(line_list[0])
+                    self._data[self._file_data_order[-1]] = value
 
-                    except:
-
-                        bad_conf_line = True
-                        self._no_name_enumerator -= 1
-                        del self._file_data_order[-1]
-
-                else:
-
-                    bad_conf_line = True
-
-                if bad_conf_line:
-
-                    print "*** Log-file error in file", location
-                    print "** The following is not a correct data row:"
-                    print line
-                    print "** Now commented out (once data is saved)"
-
-            if len(line) == 0 or line[0] == "#" or bad_conf_line:
+            elif value is not None:
 
                 self._comment_index += 1
                 self._file_data_order.append("#" + str(self._comment_index))
-                self._data[self._file_data_order[-1]] = line
+                self._data[self._file_data_order[-1]] = value
 
         fs.close()
 
@@ -202,7 +200,6 @@ class Config_File(object):
                     except:
                         pass
 
-                    #d = str(d)
                     line = "{0}\t{1}".format(str(data_row), d)
 
                 line += "\r\n"
@@ -304,7 +301,7 @@ class Config_File(object):
 
             return True
 
-    def insert(self, key, value, pos=None, before_key=None, after_key=None):
+    def insert(self, key, value, pos=None):
 
         if str(key) in self._file_data_order:
 

@@ -17,3 +17,4 @@ gs_test*.png
 bundle_version.sh
 ver_upgrade.py
 GIT_HELP
+scripts/scan-o-matic_job

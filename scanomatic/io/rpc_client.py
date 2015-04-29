@@ -57,6 +57,7 @@ class _ClientProxy(object):
                               'createFeatureExtractJob',
                               'createAnalysisJob',
                               'removeFromQueue',
+                              'reestablishMe',
                               'flushQueue',
                               'serverRestart',
                               'serverShutDown')

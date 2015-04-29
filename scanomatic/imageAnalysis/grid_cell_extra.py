@@ -17,10 +17,8 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-#import cv
 import numpy as np
-#import logging
-#import weakref
+
 from scipy.stats.mstats import mquantiles, tmean
 from scipy.ndimage import binary_erosion, \
     center_of_mass, label, \
@@ -74,14 +72,13 @@ def points_in_circle(circle):
         for j in xrange(intceil(j0 - ri), intceil(j0 + ri)):
 
             yield (i, j)
-            #yield arr[i][j]
 
 
-def get_round_kernel(radius=6, outline=False):
+def get_round_kernel(radius=6.0, outline=False):
 
     round_kernel = np.zeros(((radius + 1) * 2 + 1, (radius + 1) * 2 + 1))
 
-    center_1D = radius + 1
+    center_offset = radius + 1
 
     y, x = np.ogrid[-radius: radius, -radius: radius]
 
@@ -93,28 +90,13 @@ def get_round_kernel(radius=6, outline=False):
 
         index = x ** 2 + y ** 2 <= radius ** 2
 
-    round_kernel[center_1D - radius: center_1D + radius,
-                 center_1D - radius: center_1D + radius][index] = True
+    round_kernel[center_offset - radius: center_offset + radius,
+                 center_offset - radius: center_offset + radius][index] = True
 
     return round_kernel
 
 
-def get_round_kernel2(radius=3):
-
-    round_kernel = np.zeros(((radius + 1) * 2 + 1, (radius + 1) * 2 + 1))
-
-    center_1D = radius + 1
-
-    circle = points_in_circle(((center_1D, center_1D), radius))
-
-    for pt in circle:
-
-        round_kernel[pt] = 1
-
-    return round_kernel
-
-
-def get_array_subtraction(A1, A2, offset, output=None):
+def get_array_subtraction(array_one, array_two, offset, output=None):
     """Makes offsetted subtractions for A1 - A2 independent of sizes
 
     If output is supplied it will be fed directly into it, else,
@@ -124,8 +106,8 @@ def get_array_subtraction(A1, A2, offset, output=None):
     o1_low = offset[0]
     o2_low = offset[1]
 
-    o1_high = o1_low + A2.shape[0]
-    o2_high = o2_low + A2.shape[1]
+    o1_high = o1_low + array_two.shape[0]
+    o2_high = o2_low + array_two.shape[1]
 
     if o1_low < 0:
 
@@ -145,48 +127,48 @@ def get_array_subtraction(A1, A2, offset, output=None):
 
         b2_low = 0
 
-    if o1_high > A1.shape[0]:
+    if o1_high > array_one.shape[0]:
 
-        b1_high = A2.shape[0] - (o1_high - A1.shape[0])
-        o1_high = A1.shape[0]
-
-    else:
-
-        b1_high = A2.shape[0]
-
-    if o2_high > A1.shape[1]:
-
-        b2_high = A2.shape[1] - (o2_high - A1.shape[1])
-        o2_high = A1.shape[1]
+        b1_high = array_two.shape[0] - (o1_high - array_one.shape[0])
+        o1_high = array_one.shape[0]
 
     else:
 
-        b2_high = A2.shape[1]
+        b1_high = array_two.shape[0]
+
+    if o2_high > array_one.shape[1]:
+
+        b2_high = array_two.shape[1] - (o2_high - array_one.shape[1])
+        o2_high = array_one.shape[1]
+
+    else:
+
+        b2_high = array_two.shape[1]
 
     if output is None:
 
-        diff_array = A1.copy()
+        diff_array = array_one.copy()
 
         diff_array[o1_low: o1_high, o2_low: o2_high] -= \
-            A2[b1_low: b1_high, b2_low: b2_high]
+            array_two[b1_low: b1_high, b2_low: b2_high]
 
         return diff_array
 
     else:
 
         output[o1_low: o1_high, o2_low: o2_high] = \
-            A1[o1_low: o1_high, o2_low: o2_high] - \
-            A2[b1_low: b1_high, b2_low: b2_high]
+            array_one[o1_low: o1_high, o2_low: o2_high] - \
+            array_two[b1_low: b1_high, b2_low: b2_high]
 
 #
 # CLASSES Cell_Item
 #
 
 
-class Cell_Item():
+class CellItem():
 
     def __init__(self, identifier, grid_array):
-        """Cell_Item is a super-class for Blob, Backgroun and Cell and should
+        """Cell_Item is a super-class for Blob, Background and Cell and should
         not be accessed directly.
 
         It takes these argument:
@@ -208,9 +190,6 @@ class Cell_Item():
 
         get_round_kernel    A function to get a binary array with a circle
                             in the center."""
-
-        #self.logger = logging.getLogger("Grid Cell {0} Feature".format(
-        #    identifier))
 
         self.grid_array = grid_array.copy()
         self.filter_array = np.zeros(grid_array.shape, dtype=grid_array.dtype)
@@ -235,13 +214,10 @@ class Cell_Item():
 
         if self.grid_array.shape != self.filter_array.shape:
 
-            #self.logger.warning("I just changed shape! Why?")
-
             self.filter_array = np.zeros(self.grid_array.shape,
                                          dtype=self.grid_array.dtype)
 
     def set_type(self):
-
         """Empties the features-dictionary (as a precausion)
         and sets the cell item type.
 
@@ -290,10 +266,6 @@ class Cell_Item():
         if self.CELLITEM_TYPE == 0 or self.filter_array is None:
 
             self.features = dict()
-
-            #self.logger.warning(
-            #    "Not properly initialized cell compartment")
-
             return None
 
         self.features = {k: None for k in self._features_key_list}
@@ -309,17 +281,10 @@ class Cell_Item():
             if self.features['area'] != 0:
 
                 print "GCdissect", self._identifier, "No background"
-                #self.logger.warning("All pixels value 1")
 
             else:
 
                 print "GCdissect", self._identifier, "No blob"
-                #self.logger.warning("Area is 0")
-
-            """
-            for handler in self.logger.handlers:
-                handler.flush()
-            """
 
             return None
 
@@ -373,29 +338,51 @@ class Cell_Item():
 #
 
 
-class Blob(Cell_Item):
+def get_onion_values(array, array_filter, layer_size):
+    """
+    get_onion_value peals off bits of the A_filter and sums up
+    what is left in A until nothing rematins in A_filter. At each
+    layer it subtracts itself from the previous to become an onion.
+    It returns a 2D array of sum and pixel count pairs.
+    It leaves all sent parameters untouched...
+    """
+
+    onion_filter = array_filter.copy()
+    onion = []
+
+    while onion_filter.sum() > 0:
+
+        onion.insert(0, [np.sum(array * onion_filter), onion_filter.sum()])
+
+        if onion[0][0] <= 0:
+
+            onion[0][0] = 1
+
+        if len(onion) > 1:
+
+            onion[1] = (np.log2(onion[1][0]) - np.log2(onion[0][0]),
+                        onion[1][1] - onion[0][1])
+
+        onion_filter = binary_erosion(onion_filter, iterations=layer_size)
+
+    return np.asarray(onion)
+
+
+class Blob(CellItem):
 
     DEFAULT = 0
     ITERATIVE = 1
     THRESHOLD = 2
 
-    BLOB_RECIPE = blob.Analysis_Recipe_Empty()
-    blob.Analysis_Recipe_Median_Filter(BLOB_RECIPE)
-    blob.Analysis_Threshold_Otsu(BLOB_RECIPE,
-                                 thresholdUnitAdjust=0.5)
-    #blob.Analysis_Recipe_Erode(BLOB_RECIPE)
-    blob.Analysis_Recipe_Dilate(BLOB_RECIPE, iterations=2)
-    #blob.Analysis_Recipe_Erode_Small(self, self.BLOB_RECIPE)
-    #blob.Analysis_Recipe_Erode_Conditional(self, self.BLOB_RECIPE)
+    BLOB_RECIPE = blob.AnalysisRecipeEmpty()
+    blob.AnalysisRecipeMedianFilter(BLOB_RECIPE)
+    blob.AnalysisThresholdOtsu(BLOB_RECIPE, threshold_unit_adjust=0.5)
+    blob.AnalysisRecipeDilate(BLOB_RECIPE, iterations=2)
 
-    def __init__(self, identifier, grid_array, run_detect=True,
-                 threshold=None, blob_detect='default',
+    def __init__(self, identifier, grid_array, run_detect=True, threshold=None, blob_detect='default',
                  image_color_logic="norm", center=None, radius=None):
 
-        Cell_Item.__init__(self, identifier, grid_array)
-
-        #self.logger = logging.getLogger("Grid Cell {0} Blob".format(
-        #    identifier))
+        CellItem.__init__(self, identifier, grid_array)
 
         self.threshold = threshold
 
@@ -408,7 +395,7 @@ class Blob(Cell_Item):
 
             self.blob_detect = detect_types[blob_detect.lower()]
 
-        except:
+        except KeyError:
 
             self.blob_detect = self.DEFAULT
 
@@ -515,35 +502,6 @@ class Blob(Cell_Item):
     # GET functions
     #
 
-    def get_onion_values(self, A, A_filter, layer_size):
-        """
-        get_onion_value peals off bits of the A_filter and sums up
-        what is left in A until nothing rematins in A_filter. At each
-        layer it subtracts itself from the previous to become an onion.
-        It returns a 2D array of sum and pixel count pairs.
-        It leaves all sent parameters untouched...
-        """
-
-        onion_filter = A_filter.copy()
-        onion = []
-
-        while onion_filter.sum() > 0:
-
-            onion.insert(0, [np.sum(A * onion_filter), onion_filter.sum()])
-
-            if onion[0][0] <= 0:
-
-                onion[0][0] = 1
-
-            if len(onion) > 1:
-
-                onion[1] = (np.log2(onion[1][0]) - np.log2(onion[0][0]),
-                            onion[1][1] - onion[0][1])
-
-            onion_filter = binary_erosion(onion_filter, iterations=layer_size)
-
-        return np.asarray(onion)
-
     def get_diff(self, other_img, other_blob):
         """
         get_diff withdraws the other_img values from current image
@@ -585,7 +543,7 @@ class Blob(Cell_Item):
 
         radius = (np.sum(c_array) / np.pi) ** 0.5
 
-        return (center_of_mass_position, radius)
+        return center_of_mass_position, radius
 
     def get_circularity(self, c_array=None):
         """
@@ -627,13 +585,6 @@ class Blob(Cell_Item):
         diff_array = np.abs(get_array_subtraction(
             c_array, perfect_blob, offset))
 
-        ###DEBUG CIRCULARITY
-        #if self.grid_array.max() < 1000:
-            #from matplotlib import pyplot as plt
-            #plt.imshow(diff_array)
-            #plt.show()
-        ###DEBUG END
-
         return diff_array.sum() / (np.sqrt(c_array.sum()) * np.pi)
 
     #
@@ -655,7 +606,6 @@ class Blob(Cell_Item):
                                     devided by old filters sum of pixels.
         """
 
-        #DETECT BLOB ACCORDING TO METHOD
         if self.filter_array is not None:
 
             self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
@@ -680,21 +630,17 @@ class Blob(Cell_Item):
 
             self.default_detect()
 
-        #DEAL WITH WHAT COULD BE DUST ETC -> TRASHED PIXELS
-        if self.trash_array is not None:
+        if self.trash_array is None:
 
             self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
 
-        #COMPAIR WITH OLD FILTER
         if self.old_filter is not None:
 
-            #DEMAND NOT TO LOOSE FILTER COMPLETELY
             if self.filter_array.sum() == 0:
-
                 self.filter_array = self.old_filter.copy()
 
-            #SHOULD BE MOVED/USE GENERAL FUNCTION AT MODlvl
             blob_diff = (np.abs(self.old_filter - self.filter_array)).sum()
+
             sqrt_of_oldsum = self.old_filter.sum() ** 0.5
 
             if blob_diff / float(sqrt_of_oldsum) > max_change_threshold:
@@ -713,8 +659,6 @@ class Blob(Cell_Item):
                     dim_1_offset = int(old_com[0] - new_com[0])
                     dim_2_offset = int(old_com[1] - new_com[1])
 
-                    diff_filter = self.old_filter.copy()
-
                     if dim_1_offset > 0 and dim_2_offset > 0:
 
                         diff_filter = \
@@ -724,19 +668,19 @@ class Blob(Cell_Item):
                     elif dim_1_offset < 0 and dim_2_offset < 0:
 
                         diff_filter = \
-                            self.old_filter[: dim_1_offset, : dim_2_offset] -\
+                            self.old_filter[: dim_1_offset, : dim_2_offset] - \
                             self.filter_array[-dim_1_offset:, -dim_2_offset:]
 
-                    elif dim_1_offset > 0 and dim_2_offset < 0:
+                    elif dim_1_offset > 0 > dim_2_offset:
 
                         diff_filter = \
-                            self.old_filter[dim_1_offset:, : dim_2_offset] -\
+                            self.old_filter[dim_1_offset:, : dim_2_offset] - \
                             self.filter_array[:-dim_1_offset, -dim_2_offset:]
 
-                    elif dim_1_offset < 0 and dim_2_offset > 0:
+                    elif dim_1_offset < 0 < dim_2_offset:
 
                         diff_filter = \
-                            self.old_filter[: dim_1_offset, dim_2_offset:] -\
+                            self.old_filter[: dim_1_offset, dim_2_offset:] - \
                             self.filter_array[-dim_1_offset:, :-dim_2_offset]
 
                     elif dim_1_offset == 0 and dim_2_offset < 0:
@@ -757,7 +701,7 @@ class Blob(Cell_Item):
                             self.old_filter[: dim_1_offset, :] -\
                             self.filter_array[-dim_1_offset:, :]
 
-                    elif dim_1_offset > 0 and dim_2_offset == 0:
+                    elif dim_1_offset > 0 == dim_2_offset:
                         diff_filter = \
                             self.old_filter[dim_1_offset:, :] -\
                             self.filter_array[:-dim_1_offset, :]
@@ -779,14 +723,6 @@ class Blob(Cell_Item):
 
                         self.trash_array = self.old_trash.copy()
 
-                    """
-                    self.logger.warning(
-                        "Blob detection gone bad, using old " +
-                        "(Error: {0:.2f})".format(
-                            blob_diff / float(sqrt_of_oldsum)))
-                    """
-
-        #IF FILTER SHOULD BE REMEMBERED THEN DO SO
         if remember_filter:
 
             self.old_filter = self.filter_array.copy()
@@ -797,7 +733,6 @@ class Blob(Cell_Item):
 
     def iterative_threshold_detect(self):
 
-        #De-noising the image with a smooth
         grid_array = gaussian_filter(self.grid_array, 2)
 
         threshold = 1
@@ -855,48 +790,42 @@ class Blob(Cell_Item):
         if (self.filter_array.shape[0] > center[0] + x_size + 1
                 and center[0] - x_size >= 0):
 
-            xSlice = slice(center[0] - x_size, center[0] + x_size + 1, None)
-            xStencilSlice = slice(None, None, None)
+            x_slice = slice(center[0] - x_size, center[0] + x_size + 1, None)
+            x_stencil_slice = slice(None, None, None)
 
         elif center[0] - x_size < 0:
 
-            xSlice = slice(None, center[0] + x_size + 1, None)
-            xStencilSlice = slice(stencil.shape[0] -
-                                  (center[0] + x_size + 1), None, None)
+            x_slice = slice(None, center[0] + x_size + 1, None)
+            x_stencil_slice = slice(stencil.shape[0] - (center[0] + x_size + 1), None, None)
 
         else:
 
-            xSlice = slice(center[0] - x_size, None, None)
-            xStencilSlice = slice(None,
-                                  self.filter_array.shape[0] -
-                                  center[0] + x_size, None)
+            x_slice = slice(center[0] - x_size, None, None)
+            x_stencil_slice = slice(None, self.filter_array.shape[0] - center[0] + x_size, None)
 
         if (self.filter_array.shape[1] > center[1] + y_size + 1
                 and center[1] - y_size >= 0):
 
-            ySlice = slice(center[1] - y_size, center[1] + y_size + 1, None)
-            yStencilSlice = slice(None, None, None)
+            y_slice = slice(center[1] - y_size, center[1] + y_size + 1, None)
+            y_stencil_slice = slice(None, None, None)
 
         elif center[1] - y_size < 0:
 
-            ySlice = slice(None, center[1] + y_size + 1, None)
-            yStencilSlice = slice(stencil.shape[1] -
-                                  (center[1] + y_size + 1), None, None)
+            y_slice = slice(None, center[1] + y_size + 1, None)
+            y_stencil_slice = slice(stencil.shape[1] - (center[1] + y_size + 1), None, None)
 
         else:
 
-            ySlice = slice(center[1] - y_size, None, None)
-            yStencilSlice = slice(None,
-                                  self.filter_array.shape[1] -
-                                  center[1] + y_size, None)
+            y_slice = slice(center[1] - y_size, None, None)
+            y_stencil_slice = slice(None, self.filter_array.shape[1] - center[1] + y_size, None)
 
-        self.filter_array[(xSlice, ySlice)] += stencil[(xStencilSlice,
-                                                        yStencilSlice)]
+        self.filter_array[(x_slice, y_slice)] += stencil[(x_stencil_slice, y_stencil_slice)]
 
     def default_detect(self):
 
-        self.BLOB_RECIPE.analyse(self.grid_array, self.filter_array)
-        self.keep_best_blob()
+        if self.grid_array.size:
+            self.BLOB_RECIPE.analyse(self.grid_array, self.filter_array)
+            self.keep_best_blob()
 
     def get_candidate_blob_ranks(self):
 
@@ -914,10 +843,10 @@ class Blob(Cell_Item):
 
                 cur_pxs = np.sum(cur_item)
 
-                oneD = np.where(np.sum(cur_item, 1) > 0)[0]
-                dim1 = oneD[-1] - oneD[0]
-                oneD = np.where(np.sum(cur_item, 0) > 0)[0]
-                dim2 = oneD[-1] - oneD[0]
+                over_axis_sum = np.where(np.sum(cur_item, 1) > 0)[0]
+                dim1 = over_axis_sum[-1] - over_axis_sum[0]
+                over_axis_sum = np.where(np.sum(cur_item, 0) > 0)[0]
+                dim2 = over_axis_sum[-1] - over_axis_sum[0]
 
                 if dim1 > dim2:
 
@@ -929,6 +858,7 @@ class Blob(Cell_Item):
 
         return number_of_labels, qualities, c_o_m, label_array
 
+    # noinspection PyTypeChecker
     def keep_best_blob(self):
         """Evaluates all blobs detected and keeps the best one"""
 
@@ -954,33 +884,26 @@ class Blob(Cell_Item):
 
                     composite_trash.append(item + 1)
 
-            #if len(composite_blob) > 1
             self.filter_array = np.in1d(
-                label_array, np.array(composite_blob)).reshape(
-                    self.filter_array.shape, order='C')
+                label_array, np.array(composite_blob)).reshape(self.filter_array.shape, order='C')
 
-            #self.trash_array = (label_array > 0) * (label_array != q_best +1)
             self.trash_array = np.in1d(
-                label_array, np.array(composite_trash)).reshape(
-                    self.filter_array.shape, order='C')
+                label_array, np.array(composite_trash)).reshape(self.filter_array.shape, order='C')
 
 #
 # CLASSES Background (inverse blob area)
 #
 
 
-class Background(Cell_Item):
+class Background(CellItem):
 
-    def __init__(self, identifier, grid_array, blob, run_detect=True):
+    def __init__(self, identifier, grid_array, blob_instance, run_detect=True):
 
-        Cell_Item.__init__(self, identifier, grid_array)
+        CellItem.__init__(self, identifier, grid_array)
 
-        #self.logger = logging.getLogger("Grid Cell {0} Background".format(
-        #    identifier))
+        if isinstance(blob_instance, Blob):
 
-        if isinstance(blob, Blob):
-
-            self.blob = blob
+            self.blob = blob_instance
 
         else:
 
@@ -1005,45 +928,29 @@ class Background(Cell_Item):
 
             self.filter_array[:, :] = 1
 
-            #print "BG", self._identifier, "total area", self.filter_array.sum()
             self.filter_array[np.where(self.blob.filter_array)] = 0
 
-            #print "BG", self._identifier, "blob compliment area ",
-            #print self.filter_array.sum()
-            #print "BG", self._identifier, "blob area is",
-            #print self.blob.filter_array.sum()
-
             self.filter_array[np.where(self.blob.trash_array)] = 0
-
-            #print "BG", self._identifier, "blob + trash compiment area ",
-            #print self.filter_array.sum()
 
             self.filter_array = binary_erosion(
                 self.filter_array, iterations=3, border_value=1)
 
-            #print "BG", self._identifier, "area ",
-            #print self.filter_array.sum()
-
         else:
 
             print "BG", self._identifier, "no blob"
-            #self.logger.warning(
-            #    "Blob was not set, thus background is wrong")
+
 
 #
 # CLASSES Cell (entire area)
 #
 
 
-class Cell(Cell_Item):
+class Cell(CellItem):
 
     def __init__(self, identifier, grid_array,
                  run_detect=True, threshold=-1):
 
-        Cell_Item.__init__(self, identifier, grid_array)
-
-        #self.logger = logging.getLogger("Grid Cell {0} Cell".format(
-        #    identifier))
+        CellItem.__init__(self, identifier, grid_array)
 
         self.threshold = threshold
 
@@ -1053,7 +960,8 @@ class Cell(Cell_Item):
 
             self.detect()
 
-    def detect(self, **kwargs):
+    @staticmethod
+    def detect(**kwargs):
         """
         detect makes a filter that is true for the full area
 

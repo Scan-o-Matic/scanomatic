@@ -21,6 +21,8 @@ import copy
 #
 
 import config_file
+import paths
+import app_config
 
 #
 # CLASSES
@@ -29,15 +31,15 @@ import config_file
 
 class Fixture_Settings(object):
 
-    def __init__(self, dir_path, name, paths):
+    def __init__(self, dir_path, name):
 
-        name = paths.get_fixture_path(name, only_name=True)
-        self._paths = paths
+        self._paths = paths.Paths()
+        name = self._paths.get_fixture_path(name, only_name=True)
         self.dir_path = dir_path
-        self.conf_rel_path = paths.fixture_conf_file_rel_pattern.format(name)
+        self.conf_rel_path = self._paths.fixture_conf_file_rel_pattern.format(name)
         self.conf_path = os.sep.join((dir_path, self.conf_rel_path))
         self.im_path = os.sep.join(
-            (dir_path, paths.fixture_image_file_rel_pattern.format(name)))
+            (dir_path, self._paths.fixture_image_file_rel_pattern.format(name)))
         self.scale = 0.25
 
         #THIS SHOULD BE DONE ELSEWHERE
@@ -58,7 +60,7 @@ class Fixture_Settings(object):
 
     def load_from_file(self):
 
-        f = config_file.Config_File(self.conf_path)
+        f = config_file.ConfigFile(self.conf_path)
 
         #Version
         self.version = f['version']
@@ -156,20 +158,23 @@ class Fixture_Settings(object):
 
 class Fixtures(object):
 
-    def __init__(self, paths, app_config):
+    def __init__(self):
 
-        self._paths = paths
-        self._app_config = app_config
+        self._paths = paths.Paths()
+        self._app_config = app_config.Config()
         self._fixtures = None
         self.update()
 
     def __getitem__(self, fixture):
 
-        if self._fixtures is not None and fixture in self._fixtures:
-
+        if fixture in self:
             return self._fixtures[fixture]
 
         return None
+
+    def __contains__(self, name):
+
+        return self._fixtures is not None and name in self._fixtures
 
     def update(self):
 
@@ -181,11 +186,10 @@ class Fixtures(object):
                                 if file.lower().endswith(extension)])
 
         self._fixtures = dict()
-        paths = self._paths
 
         for f in list_fixtures:
             if f.lower() != "fixture":
-                fixture = Fixture_Settings(directory, f, paths)
+                fixture = Fixture_Settings(directory, f)
 
                 if (float(fixture.version) >=
                         self._app_config.version_oldest_allow_fixture):
@@ -195,9 +199,9 @@ class Fixtures(object):
     def get_names(self):
 
         if self._fixtures is None:
-            return list()
+            return tuple()
 
-        return sorted(self._fixtures.keys())
+        return tuple(sorted(self._fixtures.keys()))
 
     def fill_model(self, model):
 
