@@ -5,7 +5,8 @@ import re
 
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 from scanomatic.models import compile_project_model
-
+from scanomatic.io.paths import Paths
+from scanomatic.io.fixtures import Fixtures
 
 class CompileImageFactory(AbstractModelFactory):
 
@@ -81,7 +82,8 @@ class CompileProjectFactory(AbstractModelFactory):
         ('images',): list,
         ('path',): str,
         ('start_condition',): str,
-        ('fixture',): str
+        ('fixture',): compile_project_model.FIXTURE,
+        ('fixture_name',): str
     }
 
     @classmethod
@@ -122,3 +124,19 @@ class CompileProjectFactory(AbstractModelFactory):
         if model.path != dirname and os.path.isdir(dirname) and os.path.abspath(dirname) == dirname and basename:
             return True
         return model.FIELD_TYPES.path
+
+    @classmethod
+    def _validate_fixture(cls, model):
+
+        if model.fixture is compile_project_model.FIXTURE.Local:
+            if os.path.isfile(os.path.join(model.path, Paths().experiment_local_fixturename)):
+                return True
+            else:
+                return model.FIELD_TYPES.fixture
+        elif model.fixture is compile_project_model.FIXTURE.Global:
+            if model.fixture_name in Fixtures():
+                return True
+            else
+                return model.FIELD_TYPES.fixture_name
+        else:
+            return model.FIELD_TYPES.fixture

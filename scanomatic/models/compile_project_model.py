@@ -12,17 +12,24 @@ class COMPILE_ACTION(Enum):
     AppendAndSpawnAnalysis = 11
 
 
+class FIXTURE(Enum):
+
+    Local = 0
+    Global = 1
+
+
 class CompileInstructionsModel(Model):
 
     def __init__(self, compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis, images=tuple(), path="",
-                 start_condition="", fixture=None):
+                 start_condition="", fixture=FIXTURE.Local, fixture_name=None):
 
         super(CompileInstructionsModel, self).__init__(
             compile_action=compile_action,
             images=images,
             path=path,
             start_condition=start_condition,
-            fixture=fixture
+            fixture=fixture,
+            fixture_name=fixture_name
         )
 
 
