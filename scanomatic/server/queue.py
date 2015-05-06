@@ -127,7 +127,9 @@ class Queue(SingeltonOneInit):
             if job_type is rpc_job_models.JOB_TYPE.Compile:
                 jobs = self._get_allowed_compile_project_jobs(jobs)
 
-            return sorted(jobs, key=lambda job: job.priority)[0]
+            ordered_jobs = sorted(jobs, key=lambda job: job.priority)
+            if ordered_jobs:
+                return ordered_jobs[0]
         return None
 
     def _get_allowed_compile_project_jobs(self, queued_jobs):
