@@ -10,18 +10,13 @@ __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
 #
-# DEPENDENCIES
-#
-
-import os
-
-#
 # INTERNAL DEPENDENCIES
 #
 
-import imageFixture
 import scanomatic.io.logger as logger
-import scanomatic.io.paths as paths
+from scanomatic.models.factories.analysis_factories import AnalysisImageFactory, ImagePlateFactory
+from scanomatic.imageAnalysis.first_pass_image import Image
+
 
 #
 # GLOBALS
@@ -34,7 +29,7 @@ _logger = logger.Logger("1st Pass Analysis")
 #
 
 
-class Marker_Detection_Failed(Exception):
+class MarkerDetectionFailed(Exception):
     pass
 
 #
@@ -42,86 +37,86 @@ class Marker_Detection_Failed(Exception):
 #
 
 
-def analyse(file_name, im_acq_time=None, experiment_directory=None,
-            fixture_name=None,
-            fixture_directory=None):
+def analyse(compile_image_model, fixture):
+    """
 
-    if im_acq_time is None:
-        im_acq_time = os.stat(file_name).st_mtime
 
-    im_data = {'Time': im_acq_time, 'File': file_name}
+    :type fixture: scanomatic.io.fixtures.Fixture_Settings
+    :type compile_image_model: scanomatic.models.compile_project_model.CompileImageModel
+    :rtype : scanomatic.models.analysis_model.ImageModel
+    """
 
-    _logger.info("Fixture init for {0}".format(file_name))
+    image_model = AnalysisImageFactory.create(index=compile_image_model.index,
+                                              time=compile_image_model.time_stamp,
+                                              path=compile_image_model.path)
 
-    if fixture_name is None:
-        fixture_name = paths.Paths().experiment_local_fixturename
+    image = Image(fixture=fixture, image_path=image_model.path)
 
-    if fixture_directory is None:
-        fixture_directory = experiment_directory
+    _do_markers(image_model, image)
 
-    if experiment_directory is not None:
-        file_name = os.path.join(experiment_directory,
-                                 os.path.basename(file_name))
+    _logger.info("Setting current image areas for {0}".format(compile_image_model.path))
 
-        _logger.info(
-            "File path changed to match experiment directory: {0}".format(
-                file_name))
+    image.set_current_areas()
 
-    fixture = imageFixture.Fixture_Image(
-        fixture_name,
-        fixture_directory=fixture_directory,
-        image_path=file_name)
+    _do_grayscale(image_model, image)
 
-    #logger.info("Fixture set for {0}".format(file_name))
+    _do_plates(image_model, image)
 
-    #fixture.set_image(image_path=file_name)
+    image_model.coordinates_scale = image['scale']
+    image_model.shape = image['shape']
 
-    _logger.info("Image loaded for fixture {0}".format(file_name))
+    _logger.info("First pass analysis done for {0}".format(image_model.path))
 
-    im_data['im_shape'] = fixture['image'].shape
+    return image_model
 
-    _logger.info("Image has shape {0}".format(im_data['im_shape']))
 
-    fixture.run_marker_analysis()
+def _do_markers(image_model, image):
 
-    _logger.info("Marker analysis run".format(file_name))
+    """
+    :type image: scanomatic.imageAnalysis.first_pass_image.Image
+    :type image_model: scanomatic.models.analysis_model.ImageModel
+    """
+    _logger.info("Running marker analysis on {0}".format(image_model.path))
 
-    im_data['mark_X'], im_data['mark_Y'] = fixture['markers']
+    image.run_marker_analysis()
 
-    if im_data['mark_X'] is None:
-        raise Marker_Detection_Failed()
-        return None
+    _logger.info("Marker analysis run".format(image_model.path))
 
-    fixture.set_current_areas()
+    image_model.orientation_marks_x, image_model.orientation_marks_y = image['markers']
 
-    _logger.info("Setting current image areas for {0}".format(file_name))
+    if image_model.orientation_marks_x is None:
+        raise MarkerDetectionFailed()
 
-    im_data['scale'] = fixture['scale']
-    fixture.analyse_grayscale()
 
-    _logger.info("Grayscale analysed for {0}".format(file_name))
+def _do_grayscale(image_model, image):
 
-    gsTarget = fixture['grayscaleTarget']
-    gsSource = fixture['grayscaleSource']
+    """
+    :type image: scanomatic.imageAnalysis.first_pass_image.Image
+    :type image_model: scanomatic.models.analysis_model.ImageModel
+    """
+    image.analyse_grayscale()
 
-    if gsTarget is None:
+    _logger.info("Grayscale analysed for {0}".format(image_model.path))
+
+    image_model.grayscale_targets = image['grayscaleTarget']
+    image_model.grayscale_values = image['grayscaleSource']
+
+    if image_model.grayscale_targets is None:
         _logger.error("Grayscale not properly set up (used {0})".format(
-            fixture['grayscale_type']))
-    if gsSource is None:
+            image['grayscale_type']))
+    if image_model.grayscale_values is None:
         _logger.error("Grayscale analysis failed (used {0})".format(
-            fixture['grayscale_type']))
+            image['grayscale_type']))
 
-    im_data['grayscale_values'] = gsSource
-    im_data['grayscale_indices'] = gsTarget
 
-    sections_areas = fixture['plates']
+def _do_plates(image_model, image):
 
-    im_data['plates'] = len(sections_areas)
+    """
 
-    plate_str = "plate_{0}_area"
+    :type image: scanomatic.imageAnalysis.first_pass_image.Image
+    :type image_model: scanomatic.models.analysis_model.ImageModel
+    """
+    sections_areas = image['plates']
+
     for i, a in enumerate(sections_areas):
-        im_data[plate_str.format(i)] = list(a)
-
-    _logger.info("First pass analysis done for {0}".format(file_name))
-
-    return im_data
+        image_model.plates.append(ImagePlateFactory.create(index=i, **a))
