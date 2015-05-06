@@ -132,7 +132,7 @@ class Queue(SingeltonOneInit):
 
     def _get_allowed_compile_project_jobs(self, queued_jobs):
 
-        reference_jobs = queued_jobs + self._jobs.active_compile_project_jobs
+        reference_jobs = list(queued_jobs) + self._jobs.active_compile_project_jobs
 
         def _start_condition_met(this_job):
 
