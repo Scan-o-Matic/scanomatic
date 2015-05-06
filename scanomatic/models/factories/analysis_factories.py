@@ -259,6 +259,10 @@ class AnalysisImageFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
 
+        """
+
+        :rtype : scanomatic.models.analysis_model.ImageModel
+        """
         plate_str = "plate_{0}_area"
         plate_index_pattern = r"\d+"
 
