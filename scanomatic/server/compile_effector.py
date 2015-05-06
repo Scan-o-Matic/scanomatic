@@ -53,7 +53,9 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         if not self._allow_start:
             return super(CompileProjectEffector, self).next()
 
-        if self._image_to_analyse < len(self._compile_job.images) and not self._stopping:
+        if self._stopping:
+            raise StopIteration()
+        elif self._image_to_analyse < len(self._compile_job.images):
 
             self._analyse_image(self._compile_job.images[self._image_to_analyse])
             self._image_to_analyse += 1
