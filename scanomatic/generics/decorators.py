@@ -169,6 +169,9 @@ def type_lock(f):
         try:
             result = f(self, *args, **kwargs)
         except Exception as e:
+            logger.Logger("Type Lock").critical(
+                "Something failed attempting to call {0} with '{1}' as args and '{2}' as kwargs".format(
+                    f, args, kwargs))
             _TYPE_LOCK[object_type].release()
             raise e
         _TYPE_LOCK[object_type].release()
