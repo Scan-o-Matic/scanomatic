@@ -15,7 +15,7 @@ __status__ = "Development"
 
 import scanomatic.io.logger as logger
 from scanomatic.models.factories.analysis_factories import AnalysisImageFactory, ImagePlateFactory
-from scanomatic.imageAnalysis.first_pass_image import Image
+from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 
 
 #
@@ -50,7 +50,7 @@ def analyse(compile_image_model, fixture):
                                               time=compile_image_model.time_stamp,
                                               path=compile_image_model.path)
 
-    image = Image(fixture=fixture, image_path=image_model.path)
+    image = FixtureImage(fixture=fixture, image_path=image_model.path)
 
     _do_markers(image_model, image)
 
@@ -73,7 +73,7 @@ def analyse(compile_image_model, fixture):
 def _do_markers(image_model, image):
 
     """
-    :type image: scanomatic.imageAnalysis.first_pass_image.Image
+    :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
     :type image_model: scanomatic.models.analysis_model.ImageModel
     """
     _logger.info("Running marker analysis on {0}".format(image_model.path))
@@ -91,7 +91,7 @@ def _do_markers(image_model, image):
 def _do_grayscale(image_model, image):
 
     """
-    :type image: scanomatic.imageAnalysis.first_pass_image.Image
+    :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
     :type image_model: scanomatic.models.analysis_model.ImageModel
     """
     image.analyse_grayscale()
@@ -113,7 +113,7 @@ def _do_plates(image_model, image):
 
     """
 
-    :type image: scanomatic.imageAnalysis.first_pass_image.Image
+    :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
     :type image_model: scanomatic.models.analysis_model.ImageModel
     """
     sections_areas = image['plates']

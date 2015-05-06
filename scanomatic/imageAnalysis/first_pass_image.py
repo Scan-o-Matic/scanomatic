@@ -19,7 +19,6 @@ import time
 import itertools
 import numpy as np
 from matplotlib.pyplot import imread
-#import weakref
 
 #
 # SCANNOMATIC LIBRARIES
@@ -41,7 +40,7 @@ import grayscale
 #
 
 
-def GH_loaded_decorator(f):
+def grid_history_loaded_decorator(f):
     """Intended to work with Gridding History class"""
     def wrap(*args, **kwargs):
         self = args[0]
@@ -60,7 +59,7 @@ def GH_loaded_decorator(f):
 #
 
 
-class Gridding_History(object):
+class GriddingHistory(object):
     """This class keeps track of the gridding-histories of the fixture
     using the configuration-file in the fixtures-directory"""
 
@@ -68,20 +67,18 @@ class Gridding_History(object):
     pinning_formats = ((8, 12), (16, 24), (32, 48), (64, 96))
     plate_area_pattern = "plate_{0}_area"
 
-    def __init__(self, parent, fixture_name, paths, app_config=None):
+    def __init__(self, fixture):
+        """
 
-        #self._parent = weakref.ref(parent) if parent else None
-
+        :type fixture: scanomatic.io.fixtures.Fixture_Settings
+        """
         self._logger = logger.Logger("Gridding History")
-        self._name = fixture_name
-        self._paths = paths
-        self._app_config = app_config
+        self._name = fixture.name
 
         self._settings = None
         self._compatibility_check()
 
     def __getitem__(self, key):
-        #This is purposly insecure function
 
         if self._settings is None:
             return None
@@ -94,12 +91,11 @@ class Gridding_History(object):
 
     def _get_gridding_history(self, plate, pinning_format):
 
-        #self._settings.reload()
         return self._settings[self._get_plate_pinning_str(plate, pinning_format)]
 
     def _load(self):
 
-        conf_file = config_file.ConfigFile(self._paths.get_fixture_path(self._name))
+        conf_file = config_file.ConfigFile(paths.Paths().get_fixture_path(self._name))
         if conf_file.get_loaded() is False:
             self._settings = None
             return False
@@ -107,7 +103,7 @@ class Gridding_History(object):
             self._settings = conf_file
             return True
 
-    @GH_loaded_decorator
+    @grid_history_loaded_decorator
     def get_gridding_history(self, plate, pinning_format):
 
         h = self._get_gridding_history(plate, pinning_format)
@@ -123,9 +119,8 @@ class Gridding_History(object):
             self._name, plate, pinning_format))
         return np.array(h.values())
 
-    @GH_loaded_decorator
-    def get_gridding_history_specific_plate(self, p_uuid, plate,
-                                            pinning_format):
+    @grid_history_loaded_decorator
+    def get_gridding_history_specific_plate(self, p_uuid, plate, pinning_format):
 
         h = self._get_gridding_history(plate, pinning_format)
         if h is None or p_uuid not in h:
@@ -136,11 +131,11 @@ class Gridding_History(object):
 
         self._logger.info(
             "Returning history for {0} plate {1} format {2} uuid {3}".format(
-            self._name, plate, pinning_format, p_uuid))
+                self._name, plate, pinning_format, p_uuid))
 
         return h[p_uuid]
 
-    @GH_loaded_decorator
+    @grid_history_loaded_decorator
     def set_gridding_parameters(self, project_id, pinning_format, plate,
                                 center, spacings):
 
@@ -159,7 +154,7 @@ class Gridding_History(object):
         f.set(self._get_plate_pinning_str(plate, pinning_format), h)
         f.save()
 
-    @GH_loaded_decorator
+    @grid_history_loaded_decorator
     def unset_gridding_parameters(self, project_id, pinning_format, plate):
 
         h = self._get_gridding_history(plate, pinning_format)
@@ -184,7 +179,7 @@ class Gridding_History(object):
 
         return True
 
-    @GH_loaded_decorator
+    @grid_history_loaded_decorator
     def reset_gridding_history(self, plate):
 
         f = self._settings
@@ -194,7 +189,7 @@ class Gridding_History(object):
 
         f.save()
 
-    @GH_loaded_decorator
+    @grid_history_loaded_decorator
     def reset_all_gridding_histories(self):
 
         f = self._settings
@@ -210,65 +205,41 @@ class Gridding_History(object):
 
             i += 1
 
-    @GH_loaded_decorator
+    @grid_history_loaded_decorator
     def _compatibility_check(self):
-        '''As of version 0.998 a change was made to the structure of pinning
+        """As of version 0.998 a change was made to the structure of pinning
         history storing, both what is stored and how. Thus older histories must
-        be cleared. When done, version is changed to 0.998'''
+        be cleared. When done, version is changed to 0.998"""
 
         f = self._settings
         v = f.get('version')
-        if (v < self._app_config.version_fixture_grid_history_change_1):
+        if v < app_config.Config().version_fixture_grid_history_change_1:
 
             self.reset_all_gridding_histories()
-            f.set('version', self._app_config.version_fixture_grid_history_change_1)
+            f.set('version', app_config.Config().version_fixture_grid_history_change_1)
             f.save()
 
 
-class Image(object):
+class FixtureImage(object):
 
     MARKER_DETECTION_SCALE = 0.25
     EXPECTED_IM_SIZE = (6000, 4800)
 
-    def __init__(self, fixture, image_path=None,
-                 image=None, markings=None, define_reference=False,
-                 fixture_directory=None, markings_path=None,
-                 im_scale=None):
+    def __init__(self, fixture=None):
 
+        """
+
+        :type fixture: scanomatic.io.fixtures.Fixture_Settings
+        """
         self._logger = logger.Logger("Fixture Image")
 
-        self._paths = paths.Paths()
+        self._reference_fixture_settings = fixture
+        self._current_fixture_settings = None
+        """:type : scanomatic.io.fixtures.Fixture_Settings"""
+        self._history = GriddingHistory(self, fixture)
 
-        self._config = app_config.Config(self._paths)
-
-        self._define_reference = define_reference
-        self.fixture_name = fixture
-        self.im_scale = im_scale
-        self.im_original_scale = im_scale
-
-        self.set_reference_file(
-            fixture,
-            fixture_directory=fixture_directory,
-            image_path=image_path)
-
-        f_name = self.get_name_in_ref()
-        if f_name is None:
-            f_name = fixture
-        self._history = Gridding_History(
-            self, f_name, self._paths,
-            app_config=self._config)
-
-        self._markers_X = None
-        self._markers_Y = None
-        self._gs_values = None
-        self._gs_indices = None
         self.im = None
-
-        self.set_image(image=image, image_path=image_path)
-        self.set_marking_path(markings_path)
-        self.set_number_of_markings(markings)
-
-        #print fixture, self['fixture-path']
+        self.im_original_scale = None
 
     def __getitem__(self, key):
 
@@ -278,38 +249,36 @@ class Image(object):
 
         elif key in ['current']:
 
-            return self.fixture_current
+            return self._current_fixture_settings
 
         elif key in ['fixture']:
 
-            return self.fixture_reference
+            return self._reference_fixture_settings
 
         elif key in ['fixture-path']:
 
-            return self._fixture_reference_path
+            return self._reference_fixture_settings.conf_path
 
         elif key in ['name']:
 
-            return self.fixture_name
+            return self._reference_fixture_settings.name
 
         elif key in ["grayscaleTarget"]:
 
-            refTarget = self.fixture_reference.get("grayscale_indices")
+            reference_target = self._reference_fixture_settings.get("grayscale_indices")
 
-            if refTarget is not None:
-                return refTarget
-            elif self._gs_indices is not None:
-                return self._gs_indices
+            if reference_target is not None:
+                return reference_target
             else:
                 return grayscale.getGrayscaleTargets(self['grayscale_type'])
 
         elif key in ["grayscaleSource"]:
 
-            return self._gs_values
+            return self._current_fixture_settings.grayscale
 
         elif key in ["markers", "marks"]:
 
-            return self._markers_X, self._markers_Y
+            return self._get_markings(source="current")
 
         elif key in ["ref-markers"]:
 
@@ -321,7 +290,7 @@ class Image(object):
 
         elif key in ['version', 'Version']:
 
-            return self.fixture_reference.get('version')
+            return self._reference_fixture_settings.get('version')
 
         elif key in ['history', 'pinning', 'pinnings', 'gridding']:
 
@@ -333,7 +302,7 @@ class Image(object):
 
         elif key in ['grayscale_type', 'grayscaleType', 'grayscaleName']:
 
-            gs_type = self.fixture_reference.get('grayscale_type')
+            gs_type = self._reference_fixture_settings.get('grayscale_type')
             if gs_type is None:
                 self._logger.warning("Using default Grayscale")
                 gs_type = grayscale.getDefualtGrayscale()
@@ -356,12 +325,12 @@ class Image(object):
             else:
                 self.fixture_current['grayscale_type'] = None
 
-            self._setCurrentFixtureHasGrayscale()
+            self._set_current_fixture_has_grayscale()
 
         elif key in ['grayscale', 'greyscale', 'gs']:
 
             self.fixture_current['grayscale_indices'] = val
-            self._setCurrentFixtureHasGrayscale()
+            self._set_current_fixture_has_grayscale()
 
         elif key in ['plate-coords']:
 
@@ -381,7 +350,7 @@ class Image(object):
 
             raise("Failed to set {0} to {1}, key unkown".format(key, str(val)))
 
-    def _setCurrentFixtureHasGrayscale(self):
+    def _set_current_fixture_has_grayscale(self):
 
         indices = self.fixture_current['grayscale']
         if ((indices is None or isinstance(indices, bool) or
@@ -394,24 +363,6 @@ class Image(object):
         self._logger.info("The grayscale status is set to {0}".format(has_gs))
 
         self.fixture_current['grayscale'] = has_gs
-
-    def _load_reference(self):
-
-        fixture_path = self._fixture_reference_path
-
-        self._logger.info("Reference fixture loaded from {0}".format(
-            fixture_path))
-
-        self.fixture_reference = config_file.ConfigFile(fixture_path)
-
-        cur_name = self.fixture_reference.get('name')
-        if cur_name is None or cur_name == "":
-            self.fixture_reference.set('name', self._paths.get_fixture_name(self.fixture_name))
-
-        if self._define_reference:
-            self.fixture_current = self.fixture_reference
-        else:
-            self.fixture_current = config_file.ConfigFile(fixture_path + "_tmp")
 
     def get_name_in_ref(self):
 
@@ -507,53 +458,6 @@ class Image(object):
             self.im = None
 
         self.set_im_scale()
-
-    def set_reference_file(self, fixture_name, fixture_directory=None,
-                           image_path=None):
-
-        if fixture_directory is not None:
-
-            self._fixture_reference_path = \
-                self._paths.get_fixture_path(
-                    fixture_name,
-                    own_path=fixture_directory)
-
-            self._logger.info(
-                "Refernce set to " +
-                "{0} by using fixture directory: {1} and {2}".format(
-                    self._fixture_reference_path,
-                    fixture_directory,
-                    fixture_name))
-
-            self._fixture_config_root = fixture_directory
-
-        elif image_path is not None:
-
-            self._fixture_config_root = os.path.dirname(image_path)
-
-            self._fixture_reference_path = self._paths.get_fixture_path(
-                fixture_name,
-                own_path=self._fixture_config_root)
-
-            self._logger.info(
-                "Refernce set to {0} by using image path: {1} and {2}".format(
-                    self._fixture_reference_path,
-                    image_path,
-                    fixture_name))
-
-        else:
-
-            self._fixture_config_root = "."
-            self._fixture_reference_path = self._paths.get_fixture_path(
-                fixture_name, own_path="")
-
-            self._logger.info(
-                "Reference set to " +
-                "{0} by using current directory and name {1}".format(
-                    self._fixture_reference_path,
-                    fixture_name))
-
-        self._load_reference()
 
     def threaded(self):
 

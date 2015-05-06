@@ -521,7 +521,7 @@ class Fixture_Controller(controller_generic.Controller):
             if sm['marker-path'] is None:
                 sm['marker-path'] = self.get_top_controller().paths.marker
 
-            self.f_settings = imageFixture.Image(
+            self.f_settings = imageFixture.FixtureImage(
                 sm['fixture-file'],
                 fixture_directory=self.get_top_controller().paths.fixtures,
                 image_path=sm['im-path'],
