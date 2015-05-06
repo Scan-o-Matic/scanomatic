@@ -89,7 +89,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
             compile_action=COMPILE_ACTION.Initiate,
             images=self._scanning_effector_data.images_ready_for_first_pass_analysis,
-            path=paths_object.get_compile_project_name(self._scanning_job))
+            path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job))
 
         scan_project_file_path = os.path.join(
             self._project_directory,
