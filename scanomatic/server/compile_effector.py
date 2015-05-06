@@ -33,6 +33,8 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         if not self._allow_start:
             return super(CompileProjectEffector, self).next()
 
+        raise StopIteration()
+
     def _load_fixture(self):
 
         if self._compile_job.fixture is FIXTURE.Global:
