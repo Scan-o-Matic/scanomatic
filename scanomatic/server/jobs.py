@@ -25,6 +25,7 @@ import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.server.phenotype_effector as phenotype_effector
 import scanomatic.server.analysis_effector as analysis_effector
 import scanomatic.server.scanning_effector as scanning_effector
+import scanomatic.server.compile_effector as compile_effector
 import scanomatic.server.rpcjob as rpc_job
 from scanomatic.generics.singleton import SingeltonOneInit
 from scanomatic.io import scanner_manager
@@ -203,6 +204,10 @@ class Jobs(SingeltonOneInit):
     def _get_job_effector(self, job):
 
         # SELECTS EFFECTOR BASED ON TYPE
+        """
+
+        :type job: scanomatic.models.rpc_job_models.RPCjobModel
+        """
         if job.type is rpc_job_models.JOB_TYPE.Features:
 
             return phenotype_effector.PhenotypeExtractionEffector
@@ -214,6 +219,10 @@ class Jobs(SingeltonOneInit):
         elif job.type is rpc_job_models.JOB_TYPE.Scan:
 
             return scanning_effector.ScannerEffector
+
+        elif job.type is rpc_job_models.JOB_TYPE.Compile:
+
+            return compile_effector.CompileProjectEffector
 
         else:
 
