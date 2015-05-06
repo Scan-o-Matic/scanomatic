@@ -176,7 +176,6 @@ class Jobs(SingeltonOneInit):
         job.status = rpc_job_models.JOB_STATUS.Running
         RPC_Job_Model_Factory.serializer.dump(job, self._paths.rpc_jobs)
 
-
     def _initialize_job_process(self, job_process, job):
 
         """
