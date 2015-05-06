@@ -5,7 +5,8 @@ import proc_effector
 from scanomatic.models.compile_project_model import FIXTURE, COMPILE_ACTION
 from scanomatic.io.fixtures import Fixtures, Fixture_Settings
 from scanomatic.io.paths import Paths
-
+from scanomatic.imageAnalysis import first_pass
+from scanomatic.models.factories.analysis_factories import AnalysisImageFactory
 
 class CompileProjectEffector(proc_effector.ProcessEffector):
 
@@ -84,6 +85,18 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
                 self._logger.warning("Not yet implemented first pass analysis, skipping {0}".format(
                     compile_image_model))
 
+                try:
+                    image_model = first_pass.analyse(compile_image_model, self._fixture)
+                    AnalysisImageFactory.serializer.dump_to_filehandle(image_model, fh)
+
+                except first_pass.MarkerDetectionFailed:
+
+                    self._logger.error("Failed to detect the markers on {0} using fixture {1}".format(
+                        compile_image_model.path, self._fixture['path']))
+                except IOError:
+
+                    self._logger.error("Could not output analysis to file {0}".format(
+                        compile_image_model.path))
         except IOError:
 
             self._logger.critical("Could not write to project file {0}".format(self._compile_job.path))
