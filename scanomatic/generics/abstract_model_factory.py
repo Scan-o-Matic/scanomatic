@@ -251,6 +251,17 @@ class Serializer(object):
 
         return False
 
+    def dump_to_filehandle(self, model, filehandle):
+
+        if self._can_dump_to_file(model):
+
+            serialized_model = self.serialize(model)
+            section = self.get_section_name(model)
+            conf = ConfigParser(allow_no_value=True)
+            SerializationHelper.update_config(conf, section, serialized_model)
+            conf.write(filehandle)
+            return True
+
     def _can_dump_to_file(self, model):
 
         factory = self._factory
