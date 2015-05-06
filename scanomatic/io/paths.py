@@ -193,7 +193,7 @@ class Paths(SingeltonOneInit):
 
         if os.path.isdir(compile_model.path):
 
-            project_name = os.path.dirname(compile_model.path).split(os.sep)[-1]
+            project_name = compile_model.path.rstrip(os.sep).split(os.sep)[-1]
             return self.project_compilation_pattern.format(os.path.join(compile_model.path, project_name))
 
         return compile_model.path
