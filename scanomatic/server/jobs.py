@@ -150,11 +150,11 @@ class Jobs(SingeltonOneInit):
 
         job_effector = self._get_job_effector(job)
 
-        # CONSTRUCTS PIPE PAIR
-        parent_pipe, child_pipe = Pipe()
+        if not job_effector:
+            self._logger.error("Job {0} can't be exectued, will drop request".format(job.id))
+            return True
 
-        # INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
-        # identifier, label, target, parent_pipe, child_pipe
+        parent_pipe, child_pipe = Pipe()
 
         job_process = rpc_job.RpcJob(
             job,
