@@ -174,6 +174,7 @@ class Queue(SingeltonOneInit):
         return (job for job in self._queue if job.type == job_type)
 
     def add(self, job):
+
         if job.priority < 0:
 
             if self._has_job_of_type(job.type):
