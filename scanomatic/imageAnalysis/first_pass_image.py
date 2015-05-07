@@ -211,7 +211,6 @@ class FixtureImage(object):
 
             self._logger.critical("Missmatch in number of markings!")
 
-
     def __set_current_mark_order(self, sort_order):
 
         current_model = self["current"].model
@@ -241,28 +240,40 @@ class FixtureImage(object):
 
         s = range(len(length))
 
-        tmp_dL = []
-        tmp_s = []
-        for i in itertools.permutations(s):
+        length_deltas = []
+        sort_orders = []
+        for sort_order in itertools.permutations(s):
 
-            tmp_dL.append((length[list(i)] - reference_length) ** 2)
-            tmp_s.append(i)
+            length_deltas.append((length[list(sort_order)] - reference_length) ** 2)
+            sort_orders.append(sort_order)
 
-        dLs = np.array(tmp_dL).sum(1)
-        return list(tmp_s[dLs.argmin()]), np.sqrt(dLs.min())
+        length_deltas = np.array(length_deltas).sum(1)
+        return list(sort_orders[length_deltas.argmin()]), np.sqrt(length_deltas.min())
 
-    @staticmethod
-    def _get_rotations(dX, dY, L, ref_dX, ref_dY, ref_L, s):
+    def _get_rotation(self):
 
-        A = np.arccos(dX / L)
-        A = A * (dY > 0) + -1 * A * (dY < 0)
+        x_centered, y_centered = self._get_centered_mark_positions("current")
+        x_centered_ref, y_centered_ref = self._get_centered_mark_positions("reference")
+        length = np.sqrt(x_centered ** 2 + y_centered ** 2)
+        length_ref = np.sqrt(x_centered_ref ** 2 + y_centered_ref ** 2)
 
-        ref_A = np.arccos(ref_dX / ref_L)
-        ref_A = ref_A * (ref_dY > 0) + -1 * ref_A * (ref_dY < 0)
+        rotations = np.arccos(x_centered / length)
+        rotations = rotations * (y_centered > 0) + -1 * rotations * (y_centered < 0)
 
-        dA = A[s] - ref_A
-        """:type : numpy.array"""
-        return dA.mean()
+        rotations_ref = np.arccos(x_centered_ref / length_ref)
+        rotations_ref = rotations_ref * (y_centered_ref > 0) + -1 * rotations_ref * (y_centered_ref < 0)
+
+        """:type : float"""
+        return (rotations - rotations_ref).mean()
+
+    def _get_offset(self):
+
+        current_model = self['current'].model
+        ref_model = self['reference'].model
+
+        x_delta = current_model.orientation_marks_x - ref_model.orientation_marks_x
+        y_delta = current_model.orientation_marks_y - ref_model.orientation_marks_y
+        return x_delta.mean(), y_delta.mean()
 
     def get_subsection(self, section, scale=1.0):
 
@@ -308,7 +319,7 @@ class FixtureImage(object):
         self._gs_values = gs_values
 
 
-    def _get_relative_point(self, point, alpha=None, offset=(0, 0)):
+    def _get_relative_point(self, point, rotation=None, offset=(0, 0)):
         """Returns a rotated and offset point.
 
         Parameters
@@ -326,7 +337,7 @@ class FixtureImage(object):
             Default is to not move.
         """
 
-        if alpha is None:
+        if rotation is None:
             return (None, None)
 
         tmp_l = np.sqrt(point[0] ** 2 + point[1] ** 2)
@@ -335,7 +346,7 @@ class FixtureImage(object):
         tmp_alpha = (tmp_alpha * (point[1] > 0) + -1 * tmp_alpha *
                      (point[1] < 0))
 
-        new_alpha = tmp_alpha + alpha
+        new_alpha = tmp_alpha + rotation
         new_x = np.cos(new_alpha) * tmp_l + offset[0]
         new_y = np.sin(new_alpha) * tmp_l + offset[1]
 
