@@ -14,7 +14,8 @@ __status__ = "Development"
 #
 
 import scanomatic.io.logger as logger
-from scanomatic.models.factories.analysis_factories import AnalysisImageFactory, ImagePlateFactory
+from scanomatic.models.factories.analysis_factories import FixturePlateFactory
+from scanomatic.models.factories.fixture_factories import FixtureFactory, FixturePlateFactory
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 
 
@@ -43,10 +44,10 @@ def analyse(compile_image_model, fixture):
 
     :type fixture: scanomatic.io.fixtures.Fixture_Settings
     :type compile_image_model: scanomatic.models.compile_project_model.CompileImageModel
-    :rtype : scanomatic.models.analysis_model.ImageModel
+    :rtype : scanomatic.models.fixture_models.FixtureModel
     """
 
-    image_model = AnalysisImageFactory.create(index=compile_image_model.index,
+    image_model = FixtureFactory.create(index=compile_image_model.index,
                                               time=compile_image_model.time_stamp,
                                               path=compile_image_model.path)
 
@@ -74,7 +75,7 @@ def _do_markers(image_model, image):
 
     """
     :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
-    :type image_model: scanomatic.models.analysis_model.ImageModel
+    :type image_model: scanomatic.models.fixture_models.FixtureModel
     """
     _logger.info("Running marker analysis on {0}".format(image_model.path))
 
@@ -92,7 +93,7 @@ def _do_grayscale(image_model, image):
 
     """
     :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
-    :type image_model: scanomatic.models.analysis_model.ImageModel
+    :type image_model: scanomatic.models.fixture_models.FixtureModel
     """
     image.analyse_grayscale()
 
@@ -114,9 +115,9 @@ def _do_plates(image_model, image):
     """
 
     :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
-    :type image_model: scanomatic.models.analysis_model.ImageModel
+    :type image_model: scanomatic.models.fixture_models.FixtureModel
     """
     sections_areas = image['plates']
 
     for i, a in enumerate(sections_areas):
-        image_model.plates.append(ImagePlateFactory.create(index=i, **a))
+        image_model.plates.append(FixturePlateFactory.create(index=i, **a))

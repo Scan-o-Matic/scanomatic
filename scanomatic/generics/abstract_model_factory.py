@@ -518,3 +518,11 @@ class SerializationHelper(object):
         except IOError:
             return False
         return True
+
+
+def rename_setting(settings, old_name, new_name):
+
+    if old_name in settings:
+        if new_name not in settings:
+            settings[new_name] = settings[old_name]
+        del settings[old_name]

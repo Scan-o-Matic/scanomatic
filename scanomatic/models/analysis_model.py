@@ -76,38 +76,6 @@ class XMLModel(model.Model):
         super(XMLModel, self).__init__()
 
 
-class ImageModel(model.Model):
-
-    def __init__(self, path="", grayscale_values=None, grayscale_targets=None, time=0, index=0, orientation_marks_x=[],
-                 orientation_marks_y=[], shape=[], coordinates_scale=1, plates=[]):
-
-        self.path = path
-        self.grayscale_values = grayscale_values
-        self.grayscale_targets = grayscale_targets
-        self.time = time
-        self.index = index
-        self.orientation_marks_x = orientation_marks_x
-        self.orientation_marks_y = orientation_marks_y
-        self.shape = shape
-        self.coordinates_scale = coordinates_scale
-        self.plates = plates
-
-        super(ImageModel, self).__init__()
-
-
-class ImagePlateModel(model.Model):
-
-    def __init__(self, index=0, x1=0, x2=0, y1=0, y2=0):
-
-        self.index = index
-        self.x1 = x1
-        self.x2 = x2
-        self.y1 = y1
-        self.y2 = y2
-
-        super(ImagePlateModel, self).__init__()
-
-
 class AnalysisMetaData(model.Model):
 
     def __init__(self, start_time=0, name="", description="", interval=20.0, images=0,
