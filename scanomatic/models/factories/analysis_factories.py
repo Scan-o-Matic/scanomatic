@@ -258,7 +258,7 @@ class GridHistoryFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
 
-        def _replace(key, new_key_pattern, new_key_index_names)
+        def _replace(key, new_key_pattern, new_key_index_names):
             if key in settings:
 
                 for index, new_key_index_name in enumerate(new_key_index_names):
@@ -383,7 +383,6 @@ class AnalysisImageFactory(AbstractModelFactory):
                                      ("File", "path"), ("Time", "time")]:
 
             _rename_old(settings, old_name, new_name)
-
 
         if "plates" not in settings or not settings["plates"]:
             settings["plates"] = []
