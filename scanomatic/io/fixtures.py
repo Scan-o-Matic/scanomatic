@@ -50,9 +50,13 @@ class FixtureSettings(object):
     def get_marker_position(self, index):
 
         try:
-            return self.model.orientation_marks_x[index], self.model.orientation_marks_y[index]
+            return self.get_marker_positions()[index]
         except (IndexError, TypeError):
             return None
+
+    def get_marker_positions(self):
+
+        return zip(self.model.orientation_marks_x, self.model.orientation_marks_y)
 
     @property
     def path(self):
@@ -87,7 +91,7 @@ class FixtureSettings(object):
         experiment_model['marker-count'] = len(self.model.orientation_marks_x)
         experiment_model['grayscale'] = self.model.grayscale
         experiment_model['grayscale-area'] = copy.copy(self.model.grayscale)
-        experiment_model['ref-marker-positions'] = zip(self.model.orientation_marks_x, self.model.orientation_marks_y)
+        experiment_model['ref-marker-positions'] =
         experiment_model['marker-path'] = self.get_marker_path()
 
 

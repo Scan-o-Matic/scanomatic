@@ -14,7 +14,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import os
 import time
 import itertools
 import numpy as np
@@ -24,15 +23,12 @@ from matplotlib.pyplot import imread
 # SCANNOMATIC LIBRARIES
 #
 
-import scanomatic.io.paths as paths
-import scanomatic.io.app_config as app_config
-
+from scanomatic.io.grid_history import GriddingHistory
 from scanomatic.io.logger import Logger
 
 import imageBasics
 import imageFixture
 import imageGrayscale
-import grayscale
 
 
 def _get_coords_sorted(coords):
@@ -72,183 +68,24 @@ class FixtureImage(object):
         self._reference_fixture_settings = fixture
         self._current_fixture_settings = None
         """:type : scanomatic.io.fixtures.Fixture_Settings"""
-        self._history = GriddingHistory(self, fixture)
+        self._history = GriddingHistory(fixture)
 
         self.im = None
         self.im_original_scale = None
 
     def __getitem__(self, key):
 
-        if key in ['image']:
-
-            return self.im
-
-        elif key in ['current']:
+        if key in ['current']:
 
             return self._current_fixture_settings
 
-        elif key in ['fixture']:
+        elif key in ['fixture', 'reference']:
 
             return self._reference_fixture_settings
 
-        elif key in ['fixture-path']:
-
-            return self._reference_fixture_settings.conf_path
-
-        elif key in ['name']:
-
-            return self._reference_fixture_settings.name
-
-        elif key in ["grayscaleTarget"]:
-
-            reference_target = self._reference_fixture_settings.get("grayscale_indices")
-
-            if reference_target is not None:
-                return reference_target
-            else:
-                return grayscale.getGrayscaleTargets(self['grayscale_type'])
-
-        elif key in ["grayscaleSource"]:
-
-            return self._current_fixture_settings.grayscale
-
-        elif key in ["markers", "marks"]:
-
-            return self._get_markings(source="current")
-
-        elif key in ["ref-markers"]:
-
-            return self._get_markings(source="fixture")
-
-        elif key in ["plates"]:
-
-            return self.get_plates()
-
-        elif key in ['version', 'Version']:
-
-            return self._reference_fixture_settings.get('version')
-
-        elif key in ['history', 'pinning', 'pinnings', 'gridding']:
-
-            return self._history
-
-        elif key in ['scale']:
-
-            return self.im_original_scale
-
-        elif key in ['grayscale_type', 'grayscaleType', 'grayscaleName']:
-
-            gs_type = self._reference_fixture_settings.get('grayscale_type')
-            if gs_type is None:
-                self._logger.warning("Using default Grayscale")
-                gs_type = grayscale.getDefualtGrayscale()
-            return gs_type
         else:
 
-            raise Exception("***ERROR: Unknown key {0}".format(key))
-
-    def __setitem__(self, key, val):
-
-        if key in ['grayscale-area', 'grayscale-coords', 'gs-area',
-                   'gs-coords', 'greyscale-area', 'greyscale-coords']:
-
-            self.fixture_current['grayscale_area'] = val
-
-        elif key in ['grayscale_type']:
-
-            if val in grayscale.getGrayscales():
-                self.fixture_current['grayscale_type'] = val
-            else:
-                self.fixture_current['grayscale_type'] = None
-
-            self._set_current_fixture_has_grayscale()
-
-        elif key in ['grayscale', 'greyscale', 'gs']:
-
-            self.fixture_current['grayscale_indices'] = val
-            self._set_current_fixture_has_grayscale()
-
-        elif key in ['plate-coords']:
-
-            try:
-                plate, coords = val
-                plate = int(plate)
-            except:
-                self._logger.error(
-                    "Plate coordinates must be a tuple/list of " +
-                    "plate index and coords")
-                return
-
-            plate_str = "plate_{0}_area".format(plate)
-            self.fixture_current[plate_str] = coords
-
-        else:
-
-            raise("Failed to set {0} to {1}, key unkown".format(key, str(val)))
-
-    def _set_current_fixture_has_grayscale(self):
-
-        indices = self.fixture_current['grayscale']
-        if ((indices is None or isinstance(indices, bool) or
-                len(indices) == 0) and
-                self.fixture_current['grayscale_type'] in (None, '')):
-            has_gs = False
-        else:
-            has_gs = True
-
-        self._logger.info("The grayscale status is set to {0}".format(has_gs))
-
-        self.fixture_current['grayscale'] = has_gs
-
-    def get_name_in_ref(self):
-
-        name_in_file = self.fixture_reference.get('name')
-        name_from_file = self._paths.get_fixture_name(
-            self._fixture_reference_path)
-
-        if name_in_file != name_from_file:
-            self._logger.warning(
-                "Missmatch in fixture name in file compared to file name! " +
-                "In used file: '{0}', In system reference: '{1}'".format(
-                    name_in_file, name_from_file))
-
-        return name_from_file
-
-    def set_number_of_markings(self, markings):
-
-        self.markings = None
-        if markings is not None:
-
-            try:
-                self.markings = int(markings)
-            except:
-                pass
-
-        if self.markings is None:
-
-            try:
-
-                self.markings = int(self.fixture_reference.get("marker_count"))
-            except:
-                self.markings = 3
-
-        if self._define_reference:
-
-            self['fixture'].set("marker_count", self.markings)
-
-    def set_marking_path(self, marking_path):
-
-        if marking_path is not None and os.path.isfile(marking_path):
-
-            self.marking_path = marking_path
-
-        else:
-
-            self.marking_path = self._paths.marker
-
-        if self._define_reference:
-
-            self['fixture'].set("marker_path", self.marking_path)
+            raise KeyError(key)
 
     def set_image(self, image=None, image_path=None):
 
@@ -263,17 +100,14 @@ class FixtureImage(object):
                 self._logger.error("Could not load image")
 
             else:
-                self._logger.info("Loaded image {0} with shape {1}".format(
-                    image_path, self.im.shape))
+                self._logger.info("Loaded image {0} with shape {1}".format(image_path, self.im.shape))
         else:
 
-            self._logger.warning(
-                "No information supplied about how to load image," +
-                "thuse none loaded")
+            self._logger.warning("No information supplied about how to load image, thus none loaded")
 
             self.im = None
 
-        get_image_scale()
+        self.im_original_scale = get_image_scale(self.im)
 
     def analyse_current(self):
 
@@ -304,29 +138,15 @@ class FixtureImage(object):
         logger.debug(
             "Threading done (took: {0} s)".format(time.time() - t))
 
-    def _get_markings(self, source='fixture'):
+    def _get_markings(self, source='reference'):
 
-        x_values = []
-        y_values = []
+        markers = self[source].get_marker_positions()
 
-        if self.markings == 0 or self.markings is None:
+        if markers:
 
-            return None, None
+            return np.array(markers[0]), np.array(markers[1])
 
-        for marking_index in xrange(self.markings):
-
-            z_score = self[source].get_marker_position(marking_index)
-
-            if z_score:
-
-                x_values.append(z_score[0])
-                y_values.append(z_score[1])
-
-        if not x_values:
-
-            return None, None
-
-        return np.array(x_values), np.array(y_values)
+        return None, None
 
     def run_marker_analysis(self):
 
@@ -334,96 +154,41 @@ class FixtureImage(object):
 
         t = time.time()
 
-        if self.marking_path is None or self.markings < 1:
-
-            _logger.error(
-                "No marker set ('{0}') or no markings ({1}).".format(
-                    self.marking_path, self.markings))
-
-            return None
-
-        if self._define_reference:
-
-            analysis_im_path = \
-                self._paths.fixture_image_file_pattern.format(
-                    self.fixture_name)
-
-            #analysis_im_path = self._fixture_config_root + os.sep + \
-            #        self.fixture_name + ".tiff"
-
-            target_conf_file = self.fixture_reference
-
-        else:
-
-            analysis_im_path = None
-            target_conf_file = self.fixture_current
-
-        target_conf_file.set("version", __version__)
-
         _logger.debug("Scaling image")
 
-        if self.im_scale is not None:
+        analysis_img = self._get_image_in_correct_scale()
 
+        _logger.debug("Setting up Image Analysis (acc {0} s)".format(time.time() - t))
+
+        im_analysis = imageFixture.FixtureImage(
+            image=analysis_img,
+            pattern_image_path=self["reference"].get_marker_path(),
+            scale=self['reference'].model.scale)
+
+        _logger.debug("Finding pattern (acc {0} s)".format(time.time() - t))
+
+        x_positions, y_positions = im_analysis.find_pattern(self["reference"].get_marker_positions())
+
+        self["current"].model.orientation_marks_x = x_positions
+        self["current"].model.orientation_marks_y = y_positions
+
+        if x_positions is None or y_positions is None:
+
+            _logger.error("No markers found")
+
+        _logger.debug("Marker Detection complete (acc {0} s)".format(time.time() - t))
+
+    def _get_image_in_correct_scale(self):
+
+        scale = self['reference'].model.scale
+        if scale is None or scale == self.im_original_scale:
             analysis_img = self.im
         else:
-
             analysis_img = imageBasics.Quick_Scale_To_im(
                 im=self.im,
                 scale=self.MARKER_DETECTION_SCALE / self.im_original_scale)
 
-            self.im_scale = self.MARKER_DETECTION_SCALE / self.im_original_scale
-
-        _logger.debug(
-            "New scale {0} (acc {1} s)".format(
-                self.MARKER_DETECTION_SCALE / self.im_original_scale,
-                time.time() - t))
-
-        if analysis_im_path is not None:
-
-            #from matplotlib.image import imsave
-            #imsave(analysis_im_path, analysis_img, format='tiff')
-            np.save(analysis_im_path, analysis_img)
-
-        _logger.debug(
-            "Setting up Image Analysis (acc {0} s)".format(time.time() - t))
-
-        im_analysis = imageFixture.FixtureImage(
-            image=analysis_img,
-            pattern_image_path=self.marking_path,
-            scale=self.im_scale,
-            resource_paths=self._paths)
-
-        _logger.debug(
-            "Finding pattern (acc {0} s)".format(time.time() - t))
-
-        Xs, Ys = im_analysis.find_pattern(markings=self.markings)
-
-        self._markers_X = Xs
-        self._markers_Y = Ys
-
-        if Xs is None or Ys is None:
-
-            _logger.error("No markers found")
-
-        elif len(Xs) == self.markings:
-
-            self._set_markings_in_conf(target_conf_file, Xs, Ys)
-            _logger.debug("Setting makers {0}, {1}".format(
-                Xs, Ys))
-
-        _logger.debug(
-            "Marker Detection complete (acc {0} s)".format(time.time() - t))
-
-        return analysis_im_path
-
-    def _set_markings_in_conf(self, conf_file, Xs, Ys):
-
-        if Xs is not None:
-
-            for i in xrange(len(Xs)):
-                conf_file.set("marking_" + str(i), (Xs[i], Ys[i]))
-
-            conf_file.set("marking_center_of_mass", (Xs.mean(), Ys.mean()))
+        return analysis_img
 
     def _version_check_positions_arr(self, *args):
         """Note that it only works for NP-ARRAYS and NOT for lists"""
