@@ -328,14 +328,23 @@ class FixtureImage(object):
 
         current_model.grayscale.values = ag.get_source_values()
 
-    def _get_relative_point(self, point, rotation=None, offset=(0, 0)):
+    def _get_rotated_vector(self, x, y, rotation, boundary):
 
-        tmp_l = np.sqrt(point[0] ** 2 + point[1] ** 2)
+        return x, y
+    
+    def _set_plate_relative(self, plate, rotation=None, offset=(0, 0)):
+
+        """
+
+        :type plate: scanomatic.models.fixture_models.FixturePlateModel
+        """
+
+        tmp_l = np.sqrt(plate[0] ** 2 + plate[1] ** 2)
 
         if rotation:
 
-            rotation_tmp = np.arccos(point[0] / tmp_l)
-            rotation_tmp = (rotation_tmp * (point[1] > 0) + -1 * rotation_tmp * (point[1] < 0))
+            rotation_tmp = np.arccos(plate[0] / tmp_l)
+            rotation_tmp = (rotation_tmp * (plate[1] > 0) + -1 * rotation_tmp * (plate[1] < 0))
 
             rotation_new = rotation_tmp + rotation
             new_x = np.cos(rotation_new) * tmp_l + offset[0]
@@ -363,134 +372,10 @@ class FixtureImage(object):
     def set_current_areas(self):
 
         self._set_current_mark_order()
-        X, Y = self._get_markings(source='current')
-        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
+        offset = self._get_offset()
+        rotation = self._get_rotation()
+        current_model = self["current"].model
+        for plate in current_model.plates:
+            self._set_plate_relative(plate, rotation, offset)
 
-        dMcom = Mcom - ref_Mcom
-
-        self['current'].flush()
-        self._set_markings_in_conf(self['current'], X, Y)
-
-        version = self['fixture']['version']
-        ref_gs = np.array(self['fixture']["grayscale_area"])
-        ref_gs *= self.im_original_scale
-
-        self._version_check_positions_arr(ref_Mcom)
-
-        if (version is None or
-                version < self._config.version_first_pass_change_1):
-
-            scale_factor = 4.0
-
-        else:
-
-            scale_factor = 1.0
-
-        if ref_gs is not None and bool(self['fixture']["grayscale"]) is True:
-
-            Gs1 = scale_factor * ref_gs[0]
-            Gs2 = scale_factor * ref_gs[1]
-
-            self['current'].set("grayscale_area",
-                [self._get_relative_point(Gs1, alpha, offset=dMcom),
-                 self._get_relative_point(Gs2, alpha, offset=dMcom)])
-
-        else:
-
-            if bool(self['fixture']['grayscale']) is not True:
-
-                self._logger.warning("No grayscale enabled in reference")
-
-            if ref_gs is None:
-
-                self._logger.warning("No grayscale area in reference")
-
-        i = 0
-
-        p_str = "plate_{0}_area"
-        f_plates = self['fixture'].get_all("plate_%n_area")
-
-        for i, p in enumerate(f_plates):
-            p = np.array(p)
-            p *= self.im_original_scale
-            M1 = scale_factor * p[0]
-            M2 = scale_factor * p[1]
-
-            self['current'].set(p_str.format(i),
-                [self._get_relative_point(M1, alpha, offset=dMcom),
-                 self._get_relative_point(M2, alpha, offset=dMcom)])
-
-
-    def _set_current_areas(self):
-
-        self._set_current_mark_order()
-
-        X, Y = self._get_markings(source='current')
-        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        ref_Mcom *= self.im_original_scale
-
-        self['current'].flush()
-        self._set_markings_in_conf(self['current'], X, Y)
-
-        version = self['fixture']['version']
-        ref_gs = np.array(self['fixture']["grayscale_area"])
-        ref_gs *= self.im_original_scale
-
-        self._version_check_positions_arr(ref_Mcom)
-
-        if (version is None or
-                version < self._config.version_first_pass_change_1):
-
-            scale_factor = 4.0
-
-        else:
-
-            scale_factor = 1.0
-
-        if ref_gs is not None and bool(self['fixture']["grayscale"]) is True:
-
-            dGs1 = scale_factor * ref_gs[0] - ref_Mcom
-            dGs2 = scale_factor * ref_gs[1] - ref_Mcom
-
-            self['current'].set("grayscale_area",
-                [self._get_relative_point(dGs1, alpha, offset=Mcom),
-                 self._get_relative_point(dGs2, alpha, offset=Mcom)])
-
-        i = 0
-        #ref_m = True
-        p_str = "plate_{0}_area"
-        f_plates = self['fixture'].get_all("plate_%n_area")
-
-        for i, p in enumerate(f_plates):
-            p = np.array(p)
-            p *= self.im_original_scale
-            dM1 = scale_factor * p[0] - ref_Mcom
-            dM2 = scale_factor * p[1] - ref_Mcom
-
-            self['current'].set(p_str.format(i),
-                [self._get_relative_point(dM1, alpha, offset=Mcom),
-                 self._get_relative_point(dM2, alpha, offset=Mcom)])
-
-    def get_plates(self, source="current", indices=False):
-
-        plate_list = []
-
-        p = True
-        ps = "plate_{0}_area"
-        i = 0
-
-        while p is not None:
-
-            p = self[source][ps.format(i)]
-
-            if p is not None:
-
-                if indices:
-                    plate_list.append(i)
-                else:
-                    p = _get_coords_sorted(p)
-                    plate_list.append(p)
-
-            i += 1
-
-        return plate_list
+        self._set_grayscale_area_relative(current_model.grayscale)
