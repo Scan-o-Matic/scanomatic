@@ -65,7 +65,7 @@ class FixtureImage(object):
 
         """
 
-        :type fixture: scanomatic.io.fixtures.Fixture_Settings
+        :type fixture: scanomatic.io.fixtures.FixtureSettings
         """
         self._logger = Logger("Fixture Image")
 

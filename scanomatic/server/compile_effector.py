@@ -3,7 +3,7 @@ __author__ = 'martin'
 import os
 import proc_effector
 from scanomatic.models.compile_project_model import FIXTURE, COMPILE_ACTION
-from scanomatic.io.fixtures import Fixtures, Fixture_Settings
+from scanomatic.io.fixtures import Fixtures, FixtureSettings
 from scanomatic.io.paths import Paths
 from scanomatic.imageAnalysis import first_pass
 from scanomatic.models.factories.fixture_factories import FixtureFactory
@@ -43,7 +43,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         if self._compile_job.fixture is FIXTURE.Global:
             self._fixture = Fixtures[self._compile_job.fixture_name]
         else:
-            self._fixture = Fixture_Settings(os.path.dirname(self._compile_job.path),
+            self._fixture = FixtureSettings(os.path.dirname(self._compile_job.path),
                                              Paths().experiment_local_fixturename)
 
     def _tweak_path(self):

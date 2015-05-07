@@ -21,7 +21,7 @@ class GriddingHistory(object):
 
     def __init__(self, fixture_settings):
         """
-        :type fixture_settings: scanomatic.io.fixtures.Fixture_Settings
+        :type fixture_settings: scanomatic.io.fixtures.FixtureSettings
         """
         self._logger = Logger("Gridding History {0}".format(fixture_settings.model.name))
         self._fixture_settings = fixture_settings

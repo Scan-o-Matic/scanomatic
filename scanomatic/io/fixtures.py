@@ -24,15 +24,19 @@ from paths import Paths
 import app_config
 import grid_history
 from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.io.logger import Logger
+
 
 #
 # CLASSES
 #
 
 
-class Fixture_Settings(object):
+class FixtureSettings(object):
 
     def __init__(self, dir_path, name):
+
+        self._logger = Logger("Fixture {0}".format(name))
 
         path_name = Paths().get_fixture_path(name, only_name=True)
 
@@ -57,71 +61,46 @@ class Fixture_Settings(object):
 
     def get_marker_path(self):
 
-        #Evaluate math from settings-file
-        good_path = True
-        try:
+        paths = Paths()
 
-            fs = open(self.marker_path, 'rb')
-            fs.close()
-        except:
-            good_path = False
+        for path in (self.model.orentation_mark_path,
+                     os.path.join(paths.images, os.path.basename(self.model.orentation_mark_path)),
+                     paths.marker):
+            try:
 
-        if good_path:
-            return self.marker_path
-
-        #Evaluate name of file from settings-file with default path
-        good_name = True
-        try:
-            fs = open(self._paths.images + os.sep + self.marker_name, 'rb')
-            fs.close()
-        except:
-            good_name = False
-
-        if good_name:
-            return self._paths.images + os.sep + self.marker_name
-
-        #Evalutate default marker path
-        good_default = True
-        try:
-
-            fs = open(self._paths.marker, 'rb')
-            fs.close()
-
-        except:
-            good_default = False
-
-        if good_default:
-
-            return self._paths.marker
+                with open(path, 'rb') as _:
+                    return path
+            except IOError:
+                self._logger.error("The designated orientation marker file does not exist ({0})".format(path))
 
         return None
 
     def save(self):
-        pass
 
-    def set_experiment_model(self, model, default_pinning=None):
+        FixtureFactory.serializer.dump(self.model, self.path)
 
-        model['fixture'] = self.name
-        model['plate-areas'] = copy.copy(self.plate_areas)
-        model['pinnings-list'] = [default_pinning] * len(self.plate_areas)
-        model['marker-count'] = self.marker_count
-        model['grayscale'] = self.grayscale
-        model['grayscale-area'] = copy.copy(self.grayscale_area)
-        model['ref-marker-positions'] = copy.copy(self.marker_positions)
-        model['marker-path'] = self.get_marker_path()
+    def set_experiment_model(self, experiment_model, default_pinning=None):
+
+        experiment_model['fixture'] = self.model.name
+        experiment_model['plate-areas'] = copy.copy(self.model.plates)
+        experiment_model['pinnings-list'] = [default_pinning] * len(self.model.plates)
+        experiment_model['marker-count'] = len(self.model.orientation_marks_x)
+        experiment_model['grayscale'] = self.model.grayscale
+        experiment_model['grayscale-area'] = copy.copy(self.model.grayscale)
+        experiment_model['ref-marker-positions'] = zip(self.model.orientation_marks_x, self.model.orientation_marks_y)
+        experiment_model['marker-path'] = self.get_marker_path()
 
 
 class Fixtures(object):
 
     def __init__(self):
 
-        self._paths = paths.Paths()
         self._app_config = app_config.Config()
         self._fixtures = None
         self.update()
 
     def __getitem__(self, fixture):
-
+        """:rtype : FixtureSettings"""
         if fixture in self:
             return self._fixtures[fixture]
 
@@ -133,23 +112,19 @@ class Fixtures(object):
 
     def update(self):
 
-        directory = self._paths.fixtures
+        directory = Paths().fixtures
         extension = ".config"
 
         list_fixtures = map(lambda x: x.split(extension, 1)[0],
-                            [file for file in os.listdir(directory)
-                                if file.lower().endswith(extension)])
+                            [fixture for fixture in os.listdir(directory)
+                                if fixture.lower().endswith(extension)])
 
         self._fixtures = dict()
 
         for f in list_fixtures:
             if f.lower() != "fixture":
-                fixture = Fixture_Settings(directory, f)
-
-                if (float(fixture.version) >=
-                        self._app_config.version_oldest_allow_fixture):
-
-                    self._fixtures[fixture.name] = fixture
+                fixture = FixtureSettings(directory, f)
+                self._fixtures[fixture.model.name] = fixture
 
     def get_names(self):
 
@@ -160,17 +135,14 @@ class Fixtures(object):
 
     def fill_model(self, model):
 
-        fixture = model['fixture']
-        if fixture in self._fixtures.keys():
-
-            model['im-original-scale'] = self._fixtures[fixture].scale
-            model['im-scale'] = self._fixtures[fixture].scale
-            model['im-path'] = self._fixtures[fixture].im_path
-            model['fixture-file'] = self._fixtures[fixture].conf_rel_path
+        fixture_name = model['fixture']
+        if fixture_name in self:
+            fixture = self[fixture_name]
+            model['im-original-scale'] = fixture.model.scale
+            model['fixture-file'] = fixture.path
 
         else:
 
             model['im-original-scale'] = 1.0
             model['im-scale'] = 1.0
-            model['im-path'] = None
-            model['fixture-file'] = self._paths.get_fixture_path(model['fixture'], only_name=True)
+            model['fixture-file'] = Paths().get_fixture_path(model['fixture'], only_name=True)

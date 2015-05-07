@@ -42,7 +42,7 @@ def analyse(compile_image_model, fixture):
     """
 
 
-    :type fixture: scanomatic.io.fixtures.Fixture_Settings
+    :type fixture: scanomatic.io.fixtures.FixtureSettings
     :type compile_image_model: scanomatic.models.compile_project_model.CompileImageModel
     :rtype : scanomatic.models.fixture_models.FixtureModel
     """
