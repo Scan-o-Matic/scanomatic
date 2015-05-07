@@ -23,6 +23,7 @@ import copy
 import config_file
 import paths
 import app_config
+import grid_history
 
 #
 # CLASSES
@@ -42,10 +43,11 @@ class Fixture_Settings(object):
             (dir_path, self._paths.fixture_image_file_rel_pattern.format(name)))
         self.scale = 0.25
 
-        self._history =
         self.name = name.replace("_", " ").capitalize()
 
         self.marker_name = None
+
+        self.history = grid_history.GriddingHistory(self)
 
         for attrib in ('marker_path', 'marker_count', 'grayscale',
                        'marker_positions', 'plate_areas', 'grayscale_area'):
@@ -149,10 +151,6 @@ class Fixture_Settings(object):
             return self._paths.marker
 
         return None
-
-    def history(self):
-
-        pass
 
     def save(self):
         pass
