@@ -402,7 +402,11 @@ class Serializer(object):
 
     def get_section_name(self, model):
 
-        return str(SerializationHelper.get_value_by_path(model, self._factory.STORE_SECTION_HEAD))
+        if isinstance(self._factory.STORE_SECTION_HEAD, list):
+            return ", ".join(
+                [str(SerializationHelper.get_value_by_path(model, head)) for head in self._factory.STORE_SECTION_HEAD])
+        else:
+            return str(SerializationHelper.get_value_by_path(model, self._factory.STORE_SECTION_HEAD))
 
 
 class SerializationHelper(object):

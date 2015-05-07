@@ -244,7 +244,7 @@ class AnalysisModelFactory(AbstractModelFactory):
 class GridHistoryFactory(AbstractModelFactory):
 
     MODEL = analysis_model.GridHistoryModel
-    STORE_SECTION_HEAD = ('project_id',)
+    STORE_SECTION_HEAD = [('project_id',), ('plate',)]
     STORE_SECTION_SERIALIZERS = {
         ('project_id',): str,
         ('pinning',): tuple,
