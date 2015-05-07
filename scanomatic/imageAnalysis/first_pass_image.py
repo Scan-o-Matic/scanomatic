@@ -329,60 +329,36 @@ class FixtureImage(object):
         current_model.grayscale.values = ag.get_source_values()
 
     def _get_relative_point(self, point, rotation=None, offset=(0, 0)):
-        """Returns a rotated and offset point.
-
-        Parameters
-        ==========
-
-        point : array-like
-            A two position array for the source position
-
-        alpha : float
-            Rotation angle 
-
-        offset : arrary-like, optional
-            The offset of the point / how much it will be moved after the
-            rotation.
-            Default is to not move.
-        """
-
-        if rotation is None:
-            return (None, None)
 
         tmp_l = np.sqrt(point[0] ** 2 + point[1] ** 2)
-        tmp_alpha = np.arccos(point[0] / tmp_l)
 
-        tmp_alpha = (tmp_alpha * (point[1] > 0) + -1 * tmp_alpha *
-                     (point[1] < 0))
+        if rotation:
 
-        new_alpha = tmp_alpha + rotation
-        new_x = np.cos(new_alpha) * tmp_l + offset[0]
-        new_y = np.sin(new_alpha) * tmp_l + offset[1]
+            rotation_tmp = np.arccos(point[0] / tmp_l)
+            rotation_tmp = (rotation_tmp * (point[1] > 0) + -1 * rotation_tmp * (point[1] < 0))
+
+            rotation_new = rotation_tmp + rotation
+            new_x = np.cos(rotation_new) * tmp_l + offset[0]
+            new_y = np.sin(rotation_new) * tmp_l + offset[1]
+        else:
+            new_x = tmp_l + offset[0]
+            new_y = tmp_l + offset[1]
 
         if new_x > self.EXPECTED_IM_SIZE[0]:
-            self._logger.warning(
-                    "Point X-value ({1}) outside image {0}".format(
-                        self._name, new_x))
+            self._logger.warning("Point X-value ({0}) outside image".format(new_x))
             new_x = self.EXPECTED_IM_SIZE[0]
         elif new_x < 0:
-            self._logger.warning(
-                    "Point X-value ({1}) outside image {0}".format(
-                        self._name, new_x))
+            self._logger.warning("Point X-value ({0}) outside image".format(new_x))
             new_x = 0
 
-
         if new_y > self.EXPECTED_IM_SIZE[1]:
-            self._logger.warning(
-                    "Point Y-value ({1}) outside image {0}".format(
-                        self._name, new_y))
+            self._logger.warning("Point Y-value ({0}) outside image".format(new_y))
             new_y = self.EXPECTED_IM_SIZE[1]
         elif new_y < 0:
-            self._logger.warning(
-                    "Point Y-value ({1}) outside image {0}".format(
-                        self._name, new_y))
+            self._logger.warning("Point Y-value ({0}) outside image".format(new_y))
             new_y = 0
 
-        return (new_x, new_y)
+        return new_x, new_y
 
     def set_current_areas(self):
 
