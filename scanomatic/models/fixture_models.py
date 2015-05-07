@@ -37,8 +37,9 @@ class GrayScaleModel(model.Model):
 class FixtureModel(model.Model):
 
     def __init__(self, path="", grayscale_values=None, grayscale_targets=None, time=0, index=0, orientation_marks_x=[],
-                 orientation_marks_y=[], shape=[], coordinates_scale=1, plates=[]):
+                 orientation_marks_y=[], shape=[], coordinates_scale=1, plates=[], name=""):
 
+        self.name = name
         self.path = path
         self.grayscale_values = grayscale_values
         self.grayscale_targets = grayscale_targets

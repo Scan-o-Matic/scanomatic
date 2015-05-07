@@ -23,7 +23,7 @@ class GriddingHistory(object):
         """
         :type fixture_settings: scanomatic.io.fixtures.Fixture_Settings
         """
-        self._logger = Logger("Gridding History {0}".format(fixture_settings.name))
+        self._logger = Logger("Gridding History {0}".format(fixture_settings.model.name))
         self._fixture_settings = fixture_settings
         self._models_per_plate_pinning = defaultdict(dict)
 
@@ -38,11 +38,11 @@ class GriddingHistory(object):
     @property
     def path(self):
 
-        return Paths().fixture_grid_history_pattern.format(self._fixture_settings.conf_path)
+        return Paths().fixture_grid_history_pattern.format(self._fixture_settings.path)
 
     @property
     def _name(self):
-        return self._fixture_settings.name
+        return self._fixture_settings.model.name
 
     def _get_gridding_history(self, plate, pinning_format):
 

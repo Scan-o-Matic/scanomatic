@@ -20,10 +20,10 @@ import copy
 # INTERNAL DEPENDENCIES
 #
 
-import config_file
-import paths
+from paths import Paths
 import app_config
 import grid_history
+from scanomatic.models.factories.fixture_factories import FixtureFactory
 
 #
 # CLASSES
@@ -34,82 +34,26 @@ class Fixture_Settings(object):
 
     def __init__(self, dir_path, name):
 
-        self._paths = paths.Paths()
-        name = self._paths.get_fixture_path(name, only_name=True)
-        self.dir_path = dir_path
-        self.conf_rel_path = self._paths.fixture_conf_file_rel_pattern.format(name)
-        self.conf_path = os.sep.join((dir_path, self.conf_rel_path))
-        self.im_path = os.sep.join(
-            (dir_path, self._paths.fixture_image_file_rel_pattern.format(name)))
-        self.scale = 0.25
+        path_name = Paths().get_fixture_path(name, only_name=True)
 
-        self.name = name.replace("_", " ").capitalize()
+        conf_rel_path = Paths().fixture_conf_file_rel_pattern.format(path_name)
 
-        self.marker_name = None
-
+        self._conf_path = os.path.join(dir_path, conf_rel_path)
         self.history = grid_history.GriddingHistory(self)
-
-        for attrib in ('marker_path', 'marker_count', 'grayscale',
-                       'marker_positions', 'plate_areas', 'grayscale_area'):
-
-            self.__setattr__(attrib, None)
-
-        self.load_from_file()
+        self.model = FixtureFactory.serializer.load(self._conf_path)
+        """:type : scanomatic.models.fixture_models.FixtureModel"""
 
     def get_marker_position(self, index):
 
-        if index < len(self.marker_positions):
-            return self.marker_positions[index]
-
-
-    def get_location(self):
-
-        return self.cont_path
-
-    def load_from_file(self):
-
-        f = config_file.ConfigFile(self.conf_path)
-
-        #Version
-        self.version = f['version']
-        if self.version is None:
-            self.version = 0
-
-        #Marker path and name
-        self.marker_path = f['marker_path']
-        if self.marker_path is not None:
-            self.marker_name = self.marker_path.split(os.sep)[-1]
-        else:
-            self.marker_name = None
-
-        #Marker count
         try:
-            self.marker_count = int(f['marker_count'])
-        except:
-            self.marker_count = 0
+            return self.model.orientation_marks_x[index], self.model.orientation_marks_y[index]
+        except (IndexError, TypeError):
+            return None
 
-        #Marker positions
-        if self.marker_count is None:
-            self.marker_positions = None
-        else:
-            m_str = 'marking_{0}'
-            markings = list()
-            for m in range(self.marker_count):
-                markings.append(f[m_str.format(m)])
-            self.marker_positions = markings
+    @property
+    def path(self):
 
-        #Plate areas
-        p_str = 'plate_{0}_area'
-        p = 0
-        plates = list()
-        while f[p_str.format(p)] is not None:
-            plates.append(f[p_str.format(p)])
-            p += 1
-        self.plate_areas = plates
-
-        #Grayscale
-        self.grayscale = f['grayscale']
-        self.grayscale_area = f['grayscale_area']
+        return self._conf_path
 
     def get_marker_path(self):
 
