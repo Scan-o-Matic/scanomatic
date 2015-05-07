@@ -410,14 +410,6 @@ class FixtureImage(object):
 
             self.marking_path = self._paths.marker
 
-        """
-        else:
-
-            self.marking_path = self.fixture_reference.get("marker_path")
-
-        self._logger.info("Marker set to: {0} {1}".format(self.marking_path, type(self.marking_path)))
-        """
-
         if self._define_reference:
 
             self['fixture'].set("marker_path", self.marking_path)
@@ -726,10 +718,6 @@ class FixtureImage(object):
         im = self.get_subsection(self['current']['grayscale_area'],
                                  scale=1.0)
 
-        """
-        print id(im), type(im), "For save", self['current']['grayscale_area'], self.im_original_scale
-        """
-
         if im is None or 0 in im.shape:
             self._logger.error(
                 "No valid grayscale area (Current area: {0})".format(
@@ -746,11 +734,6 @@ class FixtureImage(object):
         gs_values = ag.get_source_values()
         self._gs_values = gs_values
 
-        """Outdated since default is to just use fixture name
-        if self._define_reference:
-
-            self['fixture'].set('grayscale_indices', gs_indices)
-        """
 
     def _get_rotated_point(self, point, alpha, offset=(0, 0)):
         """Returns a rotated and offset point.
@@ -813,12 +796,8 @@ class FixtureImage(object):
         alpha, Mcom = self._get_markings_rotations()
         X, Y = self._get_markings(source='current')
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        #print ref_Mcom, self.im_original_scale
-        #ref_Mcom *= self.im_original_scale
 
         dMcom = Mcom - ref_Mcom
-
-        #print "dMcom", dMcom, alpha
 
         self['current'].flush()
         self._set_markings_in_conf(self['current'], X, Y)
@@ -856,10 +835,9 @@ class FixtureImage(object):
             if ref_gs is None:
 
                 self._logger.warning("No grayscale area in reference")
-            #print Gs1, self._get_rotated_point(Gs1, alpha, offset=dMcom)
 
         i = 0
-        #ref_m = True
+
         p_str = "plate_{0}_area"
         f_plates = self['fixture'].get_all("plate_%n_area")
 
@@ -873,7 +851,6 @@ class FixtureImage(object):
                 [self._get_rotated_point(M1, alpha, offset=dMcom),
                  self._get_rotated_point(M2, alpha, offset=dMcom)])
 
-            #print M1, self._get_rotated_point(M1, alpha, offset=dMcom)
 
     def _set_current_areas(self):
 
