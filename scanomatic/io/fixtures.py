@@ -54,6 +54,12 @@ class Fixture_Settings(object):
 
         self.load_from_file()
 
+    def get_marker_position(self, index):
+
+        if index < len(self.marker_positions):
+            return self.marker_positions[index]
+
+
     def get_location(self):
 
         return self.cont_path

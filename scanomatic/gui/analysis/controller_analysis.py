@@ -1138,7 +1138,7 @@ class Analysis_Image_Controller(controller_generic.Controller):
                 specific_model['image']][0],
             fixture_directory=fixture_path)
 
-        thread = threading.Thread(target=self.fixture.threaded)
+        thread = threading.Thread(target=self.fixture.analyse_current)
 
         thread.start()
 

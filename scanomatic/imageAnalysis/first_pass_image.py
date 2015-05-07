@@ -28,7 +28,7 @@ import scanomatic.io.paths as paths
 import scanomatic.io.config_file as config_file
 import scanomatic.io.app_config as app_config
 
-import scanomatic.io.logger as logger
+from scanomatic.io.logger import Logger
 
 import imageBasics
 import imageFixture
@@ -67,23 +67,23 @@ class GriddingHistory(object):
     pinning_formats = ((8, 12), (16, 24), (32, 48), (64, 96))
     plate_area_pattern = "plate_{0}_area"
 
-    def __init__(self, fixture):
+    def __init__(self, fixture_image, fixture):
         """
-
+        :type fixture_image: FixtureImage
         :type fixture: scanomatic.io.fixtures.Fixture_Settings
         """
-        self._logger = logger.Logger("Gridding History")
+        self._logger = Logger("Gridding History")
         self._name = fixture.name
 
-        self._settings = None
+        self._fixture_image = fixture_image
         self._compatibility_check()
 
     def __getitem__(self, key):
 
-        if self._settings is None:
+        if self._fixture_image is None:
             return None
 
-        return self._settings.get(key)
+        return self._fixture_image.get(key)
 
     def _get_plate_pinning_str(self, plate, pinning_format):
 
@@ -91,16 +91,16 @@ class GriddingHistory(object):
 
     def _get_gridding_history(self, plate, pinning_format):
 
-        return self._settings[self._get_plate_pinning_str(plate, pinning_format)]
+        return self._fixture_image[self._get_plate_pinning_str(plate, pinning_format)]
 
     def _load(self):
 
         conf_file = config_file.ConfigFile(paths.Paths().get_fixture_path(self._name))
         if conf_file.get_loaded() is False:
-            self._settings = None
+            self._fixture_image = None
             return False
         else:
-            self._settings = conf_file
+            self._fixture_image = conf_file
             return True
 
     @grid_history_loaded_decorator
@@ -116,7 +116,7 @@ class GriddingHistory(object):
 
         self._logger.info(
             "Returning history for {0} plate {1} format {2}".format(
-            self._name, plate, pinning_format))
+                self._name, plate, pinning_format))
         return np.array(h.values())
 
     @grid_history_loaded_decorator
@@ -150,7 +150,7 @@ class GriddingHistory(object):
         self._logger.info("Setting history {0} on {1} for {2} {3}".format(
             center + spacings, self._name, project_id, plate))
 
-        f = self._settings
+        f = self._fixture_image
         f.set(self._get_plate_pinning_str(plate, pinning_format), h)
         f.save()
 
@@ -173,7 +173,7 @@ class GriddingHistory(object):
                     self._name, project_id, plate, pinning_format))
             return False
 
-        f = self._settings
+        f = self._fixture_image
         f.set(self._get_plate_pinning_str(plate, pinning_format), h)
         f.save()
 
@@ -182,7 +182,7 @@ class GriddingHistory(object):
     @grid_history_loaded_decorator
     def reset_gridding_history(self, plate):
 
-        f = self._settings
+        f = self._fixture_image
 
         for pin_format in self.pinning_formats:
             f.set(self._get_plate_pinning_str(plate, pin_format), {})
@@ -192,7 +192,7 @@ class GriddingHistory(object):
     @grid_history_loaded_decorator
     def reset_all_gridding_histories(self):
 
-        f = self._settings
+        f = self._fixture_image
         plate = True
         i = 0
 
@@ -211,13 +211,34 @@ class GriddingHistory(object):
         history storing, both what is stored and how. Thus older histories must
         be cleared. When done, version is changed to 0.998"""
 
-        f = self._settings
+        f = self._fixture_image
         v = f.get('version')
         if v < app_config.Config().version_fixture_grid_history_change_1:
 
             self.reset_all_gridding_histories()
             f.set('version', app_config.Config().version_fixture_grid_history_change_1)
             f.save()
+
+
+def _get_coords_sorted(coords):
+
+    return zip(*map(sorted, zip(*coords)))
+
+
+def get_image_scale(im):
+
+    small_error = 0.01
+    invalid_scale = -1.0
+
+    if im:
+
+        scale_d1, scale_d2 = [im.shape[i] / float(FixtureImage.EXPECTED_IM_SIZE[i]) for i in range(2)]
+
+        if abs(scale_d1 - scale_d2) < small_error:
+
+            return (scale_d1 + scale_d2) / 2.0
+
+        return invalid_scale
 
 
 class FixtureImage(object):
@@ -231,7 +252,7 @@ class FixtureImage(object):
 
         :type fixture: scanomatic.io.fixtures.Fixture_Settings
         """
-        self._logger = logger.Logger("Fixture Image")
+        self._logger = Logger("Fixture Image")
 
         self._reference_fixture_settings = fixture
         self._current_fixture_settings = None
@@ -414,19 +435,6 @@ class FixtureImage(object):
 
             self['fixture'].set("marker_path", self.marking_path)
 
-    def set_im_scale(self):
-
-        if self.im is not None and self.im_original_scale is None:
-
-            #Check so equally scaled both dimensions
-            scale_d1, scale_d2 = [
-                self.im.shape[i] / float(self.EXPECTED_IM_SIZE[i])
-                for i in range(2)]
-
-            if abs(scale_d1 - scale_d2) < 0.01:
-
-                self.im_original_scale = (scale_d1 + scale_d2) / 2.0
-
     def set_image(self, image=None, image_path=None):
 
         if image is not None:
@@ -449,11 +457,12 @@ class FixtureImage(object):
                 "thuse none loaded")
             self.im = None
 
-        self.set_im_scale()
+        get_image_scale()
 
-    def threaded(self):
+    def analyse_current(self):
 
         logger = self._logger
+
         t = time.time()
         logger.debug("Threading invokes marker analysis")
 
@@ -481,27 +490,27 @@ class FixtureImage(object):
 
     def _get_markings(self, source='fixture'):
 
-        X = []
-        Y = []
+        x_values = []
+        y_values = []
 
         if self.markings == 0 or self.markings is None:
 
             return None, None
 
-        for m in xrange(self.markings):
+        for marking_index in xrange(self.markings):
 
-            Z = self[source]['marking_{0}'.format(m)]
+            z_score = self[source].get_marker_position(marking_index)
 
-            if Z is not None:
+            if z_score:
 
-                X.append(Z[0])
-                Y.append(Z[1])
+                x_values.append(z_score[0])
+                y_values.append(z_score[1])
 
-        if len(X) == 0:
+        if not x_values:
 
             return None, None
 
-        return np.array(X), np.array(Y)
+        return np.array(x_values), np.array(y_values)
 
     def run_marker_analysis(self):
 
@@ -647,42 +656,16 @@ class FixtureImage(object):
 
         if Y.shape == refX.shape == refY.shape:
 
-            #Find min diff order
-            #s_reseed = range(len(ref_L))
-            s = range(len(L))
-
-            tmp_dL = []
-            tmp_s = []
-            for i in itertools.permutations(s):
-
-                tmp_dL.append((L[list(i)] - ref_L) ** 2)
-                tmp_s.append(i)
-
-            dLs = np.array(tmp_dL).sum(1)
-            s = list(tmp_s[dLs.argmin()])
-
+            sort_order, sort_error = self._get_sort_order(L, ref_L)
             self._logger.debug(
-                "Found sort order that matches the reference" +
-                "{0} (error {1})".format(s, np.sqrt(dLs.min())))
-            #Quality control of all the markers so that none is bad
-            #Later
+                "Found sort order that matches the reference {0} (error {1})".format(sort_order, sort_error))
 
-            #Rotations
-            A = np.arccos(dX / L)
-            A = A * (dY > 0) + -1 * A * (dY < 0)
-
-            ref_A = np.arccos(ref_dX / ref_L)
-            ref_A = ref_A * (ref_dY > 0) + -1 * ref_A * (ref_dY < 0)
-
-            dA = A[s] - ref_A
-
-            d_alpha = dA.mean()
-            self._logger.debug("Found average rotation {0} from {1}".format(
-                d_alpha, dA))
+            d_alpha = self._get_rotations(dX, dY, L, ref_dX, ref_dY, ref_L, sort_order)
 
             #Setting the current marker order so it matches the
             #Reference one according to the returns variables!
-            self._set_markings_in_conf(self['current'], X[s], Y[s])
+            self._set_markings_in_conf(self['current'], X[sort_order], Y[sort_order])
+            self._logger.debug("Found average rotation {0}".format(d_alpha))
 
             return d_alpha, Mcom
 
@@ -690,6 +673,34 @@ class FixtureImage(object):
 
             self._logger.critical("Missmatch in number of markings!")
             return None
+
+    @staticmethod
+    def _get_sort_order(length, reference_length):
+
+        s = range(len(length))
+
+        tmp_dL = []
+        tmp_s = []
+        for i in itertools.permutations(s):
+
+            tmp_dL.append((length[list(i)] - reference_length) ** 2)
+            tmp_s.append(i)
+
+        dLs = np.array(tmp_dL).sum(1)
+        return list(tmp_s[dLs.argmin()]), np.sqrt(dLs.min())
+
+    @staticmethod
+    def _get_rotations(dX, dY, L, ref_dX, ref_dY, ref_L, s):
+
+        A = np.arccos(dX / L)
+        A = A * (dY > 0) + -1 * A * (dY < 0)
+
+        ref_A = np.arccos(ref_dX / ref_L)
+        ref_A = ref_A * (ref_dY > 0) + -1 * ref_A * (ref_dY < 0)
+
+        dA = A[s] - ref_A
+        """:type : numpy.array"""
+        return dA.mean()
 
     def get_subsection(self, section, scale=1.0):
 
@@ -901,10 +912,6 @@ class FixtureImage(object):
                 [self._get_rotated_point(dM1, alpha, offset=Mcom),
                  self._get_rotated_point(dM2, alpha, offset=Mcom)])
 
-    def _get_coords_sorted(self, coords):
-
-        return zip(*map(sorted, zip(*coords)))
-
     def get_plates(self, source="current", indices=False):
 
         plate_list = []
@@ -922,7 +929,7 @@ class FixtureImage(object):
                 if indices:
                     plate_list.append(i)
                 else:
-                    p = self._get_coords_sorted(p)
+                    p = _get_coords_sorted(p)
                     plate_list.append(p)
 
             i += 1
