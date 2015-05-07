@@ -77,7 +77,7 @@
         <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/first_pass_image.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.1350906" vertical-offset="4913" max-vertical-offset="5790">
-              <caret line="333" column="4" selection-start-line="333" selection-start-column="4" selection-end-line="333" selection-end-column="4" />
+              <caret line="333" column="0" selection-start-line="333" selection-start-column="0" selection-end-line="333" selection-end-column="0" />
               <folding>
                 <element signature="e#356#367#0" expanded="true" />
               </folding>
@@ -950,7 +950,7 @@
     <entry file="file://$PROJECT_DIR$/scanomatic/imageAnalysis/first_pass_image.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.1350906" vertical-offset="4913" max-vertical-offset="5790">
-          <caret line="333" column="4" selection-start-line="333" selection-start-column="4" selection-end-line="333" selection-end-column="4" />
+          <caret line="333" column="0" selection-start-line="333" selection-start-column="0" selection-end-line="333" selection-end-column="0" />
           <folding>
             <element signature="e#356#367#0" expanded="true" />
           </folding>
