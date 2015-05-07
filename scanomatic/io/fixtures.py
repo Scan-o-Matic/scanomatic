@@ -42,7 +42,7 @@ class Fixture_Settings(object):
             (dir_path, self._paths.fixture_image_file_rel_pattern.format(name)))
         self.scale = 0.25
 
-        #THIS SHOULD BE DONE ELSEWHERE
+        self._history =
         self.name = name.replace("_", " ").capitalize()
 
         self.marker_name = None
@@ -149,6 +149,13 @@ class Fixture_Settings(object):
             return self._paths.marker
 
         return None
+
+    def history(self):
+
+        pass
+
+    def save(self):
+        pass
 
     def set_experiment_model(self, model, default_pinning=None):
 

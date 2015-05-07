@@ -25,7 +25,6 @@ from matplotlib.pyplot import imread
 #
 
 import scanomatic.io.paths as paths
-import scanomatic.io.config_file as config_file
 import scanomatic.io.app_config as app_config
 
 from scanomatic.io.logger import Logger
@@ -34,190 +33,6 @@ import imageBasics
 import imageFixture
 import imageGrayscale
 import grayscale
-
-#
-# DECORATORS
-#
-
-
-def grid_history_loaded_decorator(f):
-    """Intended to work with Gridding History class"""
-    def wrap(*args, **kwargs):
-        self = args[0]
-        if self._settings is None:
-            if self._load() is False:
-                return None
-        else:
-            self._settings.reload()
-
-        return f(*args, **kwargs)
-
-    return wrap
-
-#
-# CLASSES
-#
-
-
-class GriddingHistory(object):
-    """This class keeps track of the gridding-histories of the fixture
-    using the configuration-file in the fixtures-directory"""
-
-    plate_pinning_pattern = "plate_{0}_pinning_{1}"
-    pinning_formats = ((8, 12), (16, 24), (32, 48), (64, 96))
-    plate_area_pattern = "plate_{0}_area"
-
-    def __init__(self, fixture_image, fixture):
-        """
-        :type fixture_image: FixtureImage
-        :type fixture: scanomatic.io.fixtures.Fixture_Settings
-        """
-        self._logger = Logger("Gridding History")
-        self._name = fixture.name
-
-        self._fixture_image = fixture_image
-        self._compatibility_check()
-
-    def __getitem__(self, key):
-
-        if self._fixture_image is None:
-            return None
-
-        return self._fixture_image.get(key)
-
-    def _get_plate_pinning_str(self, plate, pinning_format):
-
-        return self.plate_pinning_pattern.format(plate, pinning_format)
-
-    def _get_gridding_history(self, plate, pinning_format):
-
-        return self._fixture_image[self._get_plate_pinning_str(plate, pinning_format)]
-
-    def _load(self):
-
-        conf_file = config_file.ConfigFile(paths.Paths().get_fixture_path(self._name))
-        if conf_file.get_loaded() is False:
-            self._fixture_image = None
-            return False
-        else:
-            self._fixture_image = conf_file
-            return True
-
-    @grid_history_loaded_decorator
-    def get_gridding_history(self, plate, pinning_format):
-
-        h = self._get_gridding_history(plate, pinning_format)
-
-        if h is None:
-            self._logger.info(
-                "No history in {2} on plate {0} format {1}".format(
-                    plate, pinning_format, self._name))
-            return None
-
-        self._logger.info(
-            "Returning history for {0} plate {1} format {2}".format(
-                self._name, plate, pinning_format))
-        return np.array(h.values())
-
-    @grid_history_loaded_decorator
-    def get_gridding_history_specific_plate(self, p_uuid, plate, pinning_format):
-
-        h = self._get_gridding_history(plate, pinning_format)
-        if h is None or p_uuid not in h:
-            self._logger.info(
-                "No history in {2} on plate {0} format {1}".format(
-                    plate, pinning_format, self._name))
-            return None
-
-        self._logger.info(
-            "Returning history for {0} plate {1} format {2} uuid {3}".format(
-                self._name, plate, pinning_format, p_uuid))
-
-        return h[p_uuid]
-
-    @grid_history_loaded_decorator
-    def set_gridding_parameters(self, project_id, pinning_format, plate,
-                                center, spacings):
-
-        h = self._get_gridding_history(plate, pinning_format)
-
-        if h is None:
-
-            h = {}
-
-        h[project_id] = center + spacings
-
-        self._logger.info("Setting history {0} on {1} for {2} {3}".format(
-            center + spacings, self._name, project_id, plate))
-
-        f = self._fixture_image
-        f.set(self._get_plate_pinning_str(plate, pinning_format), h)
-        f.save()
-
-    @grid_history_loaded_decorator
-    def unset_gridding_parameters(self, project_id, pinning_format, plate):
-
-        h = self._get_gridding_history(plate, pinning_format)
-
-        if h is None:
-
-            return None
-
-        try:
-            del h[project_id]
-        except:
-            self._logger.warning((
-                "Gridding history for {0} project {1}"
-                " plate {2} pinning format {3} did not exist, thus"
-                " nothing to delete").format(
-                    self._name, project_id, plate, pinning_format))
-            return False
-
-        f = self._fixture_image
-        f.set(self._get_plate_pinning_str(plate, pinning_format), h)
-        f.save()
-
-        return True
-
-    @grid_history_loaded_decorator
-    def reset_gridding_history(self, plate):
-
-        f = self._fixture_image
-
-        for pin_format in self.pinning_formats:
-            f.set(self._get_plate_pinning_str(plate, pin_format), {})
-
-        f.save()
-
-    @grid_history_loaded_decorator
-    def reset_all_gridding_histories(self):
-
-        f = self._fixture_image
-        plate = True
-        i = 0
-
-        while plate is not None:
-
-            plate = f.get(self.plate_area_pattern.format(i))
-            if plate is not None:
-
-                self.reset_gridding_history(i)
-
-            i += 1
-
-    @grid_history_loaded_decorator
-    def _compatibility_check(self):
-        """As of version 0.998 a change was made to the structure of pinning
-        history storing, both what is stored and how. Thus older histories must
-        be cleared. When done, version is changed to 0.998"""
-
-        f = self._fixture_image
-        v = f.get('version')
-        if v < app_config.Config().version_fixture_grid_history_change_1:
-
-            self.reset_all_gridding_histories()
-            f.set('version', app_config.Config().version_fixture_grid_history_change_1)
-            f.save()
 
 
 def _get_coords_sorted(coords):
@@ -455,6 +270,7 @@ class FixtureImage(object):
             self._logger.warning(
                 "No information supplied about how to load image," +
                 "thuse none loaded")
+
             self.im = None
 
         get_image_scale()

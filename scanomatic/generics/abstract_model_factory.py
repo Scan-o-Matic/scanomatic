@@ -295,6 +295,11 @@ class Serializer(object):
                     return SerializationHelper.save_config(conf, path)
         return False
 
+    def purge_all(self, path):
+
+        conf = SerializationHelper.get_config(None)
+        return SerializationHelper.save_config(conf, path)
+
     def load(self, path):
 
         conf = SerializationHelper.get_config(path)
