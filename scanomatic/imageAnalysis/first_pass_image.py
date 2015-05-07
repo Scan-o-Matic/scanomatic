@@ -331,7 +331,7 @@ class FixtureImage(object):
     def _get_rotated_vector(self, x, y, rotation, boundary):
 
         return x, y
-    
+
     def _set_plate_relative(self, plate, rotation=None, offset=(0, 0)):
 
         """
