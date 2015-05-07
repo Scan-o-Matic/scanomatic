@@ -6,17 +6,6 @@ from scanomatic.io.logger import Logger
 import numpy as np
 from scanomatic.io.paths import Paths
 
-def grid_history_loaded_decorator(f):
-    """Intended to work with Gridding History class"""
-    def wrap(*args, **kwargs):
-        self = args[0]
-        """:type : GriddingHistory"""
-        self.load()
-
-        return f(*args, **kwargs)
-
-    return wrap
-
 #
 # CLASSES
 #
