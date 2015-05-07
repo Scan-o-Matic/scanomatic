@@ -653,7 +653,7 @@ class Analyse_One(gtk.Frame):
                 dpi_factor = 4.0
                 self.f_settings.A.load_other_size(filename, dpi_factor)
                 if rotated:
-                    grayscale = self.f_settings.A.get_subsection(self.f_settings.current_analysis_image_config.get("grayscale_area"))
+                    grayscale = self.f_settings.A.get_plate_im_section(self.f_settings.current_analysis_image_config.get("grayscale_area"))
                 #EMPTYING self.plots_vbox
                 #for child in self.plots_vbox.get_children():
                 #    self.plots_vbox.remove(child)
