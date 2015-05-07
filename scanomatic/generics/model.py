@@ -5,6 +5,7 @@ class Model(object):
 
     _INITIALIZED = "_initialized"
     _RESERVED_WORDS = ('keys',)
+    _STR_PATTERN = "<{0} {1}={2}>"
     FIELD_TYPES = None
 
     def __init__(self):
@@ -61,6 +62,29 @@ class Model(object):
                 return False
 
         return True
+
+    def __str__(self):
+
+        classname = str(type(self)).split(".")[-1].rstrip("'>")
+        value = None
+        for key in ("name", "id"):
+            if key in self:
+                value = self[key]
+                break
+
+        if value is None:
+
+            keys = [key for key in self.keys() if key.endswith("id") or key.endswith("name")]
+            if keys:
+                key = keys[0]
+                value = self[key]
+
+        if value is None:
+
+            key = self.keys()[0]
+            value = self[key]
+
+        return Model._STR_PATTERN.format(classname, key, value)
 
     @classmethod
     def _has_set_field_types(cls):
