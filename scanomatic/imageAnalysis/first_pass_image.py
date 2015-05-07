@@ -275,49 +275,58 @@ class FixtureImage(object):
         y_delta = current_model.orientation_marks_y - ref_model.orientation_marks_y
         return x_delta.mean(), y_delta.mean()
 
-    def get_subsection(self, section, scale=1.0):
+    def get_plate_im_section(self, plate_model, scale=1.0):
 
-        im = self['image']
+        """
 
-        if im is not None and section is not None:
+        :type plate_model: scanomatic.models.fixture_models.FixturePlateModel
+        """
+        im = self.im
 
-            section = zip(*map(sorted, zip(*section)))
+        if im is not None and plate_model is not None:
 
             try:
 
-                subsection = im[
-                    section[0][1] * scale: section[1][1] * scale,
-                    section[0][0] * scale: section[1][0] * scale]
+                return im[plate_model.x1 * scale: plate_model.x2 * scale,
+                          plate_model.y2 * scale: plate_model.y2 * scale]
 
-            except:
+            except (IndexError, TypeError):
 
-                subsection = None
+                return None
 
-            return subsection
+    def get_grayscale_im_section(self, grayscale_model, scale=1.0):
+        """
 
-        return None
+        :type grayscale_model: scanomatic.models.fixture_models.GrayScaleAreaModel
+        """
+        im = self.im
+
+        if im is not None and grayscale_model is not None:
+
+            try:
+
+                return im[grayscale_model.x1 * scale: grayscale_model.x2 * scale,
+                          grayscale_model.y2 * scale: grayscale_model.y2 * scale]
+
+            except (IndexError, TypeError):
+
+                return None
 
     def analyse_grayscale(self):
 
-        im = self.get_subsection(self['current']['grayscale_area'],
-                                 scale=1.0)
+        current_model = self["current"].model
+        im = self.get_grayscale_im_section(current_model.grayscale, scale=1.0)
 
         if im is None or 0 in im.shape:
             self._logger.error(
-                "No valid grayscale area (Current area: {0})".format(
-                    self['current']['grayscale_area']))
+                "No valid grayscale area (Current area: {0})".format(current_model.grayscale))
             return False
 
-        #np.save(".tmp.npy", im)
         ag = imageGrayscale.Analyse_Grayscale(
-            target_type=self['grayscale_type'], image=im,
+            target_type=current_model.grayscale.name, image=im,
             scale_factor=self.im_original_scale)
 
-        gs_indices = ag.get_target_values()
-        self._gs_indices = gs_indices
-        gs_values = ag.get_source_values()
-        self._gs_values = gs_values
-
+        current_model.grayscale.values = ag.get_source_values()
 
     def _get_relative_point(self, point, rotation=None, offset=(0, 0)):
         """Returns a rotated and offset point.
