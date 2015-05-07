@@ -190,70 +190,51 @@ class FixtureImage(object):
 
         return analysis_img
 
-    def _version_check_positions_arr(self, *args):
-        """Note that it only works for NP-ARRAYS and NOT for lists"""
-        version = self['fixture']['version']
-        if version is None or \
-                version < self._config.version_first_pass_change_1:
+    def _set_current_mark_order(self):
 
-            args = list(args)
-            for a in args:
-                if a is not None:
-                    a *= 4
+        x_centered, y_centered = self._get_centered_mark_positions("current")
+        x_centered_ref, y_centered_ref = self._get_centered_mark_positions("reference")
 
-    def _get_markings_rotations(self):
+        if x_centered and y_centered and x_centered_ref and y_centered_ref:
 
-        #CURRENT SETTINGS
-        X, Y = self._get_markings(source="current")
+            length = np.sqrt(x_centered ** 2 + y_centered ** 2)
+            length_ref = np.sqrt(x_centered_ref ** 2 + y_centered_ref ** 2)
 
-        if X is None or Y is None:
-            return None, None
+            sort_order, sort_error = self._get_sort_order(length, length_ref)
 
-        X = np.array(X)
-        Y = np.array(Y)
-        Mcom = self['current']['marking_center_of_mass']
-        #print "Rotation in", X, Y, Mcom
-        if Mcom is None:
-            Mcom = np.array((X.mean(), Y.mean()))
-        else:
-            Mcom = np.array(Mcom)
-        dX = X - Mcom[0]
-        dY = Y - Mcom[1]
-
-        L = np.sqrt(dX ** 2 + dY ** 2)
-
-        #FIXTURE SETTINGS
-        #version = self['fixture']['version']
-        refX, refY = self._get_markings(source="fixture")
-        refX = np.array(refX) * self.im_original_scale
-        refY = np.array(refY) * self.im_original_scale
-        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        ref_Mcom *= self.im_original_scale
-        self._version_check_positions_arr(ref_Mcom, refX, refY)
-        ref_dX = refX - ref_Mcom[0]
-        ref_dY = refY - ref_Mcom[1]
-
-        ref_L = np.sqrt(ref_dX ** 2 + ref_dY ** 2)
-
-        if Y.shape == refX.shape == refY.shape:
-
-            sort_order, sort_error = self._get_sort_order(L, ref_L)
             self._logger.debug(
                 "Found sort order that matches the reference {0} (error {1})".format(sort_order, sort_error))
 
-            d_alpha = self._get_rotations(dX, dY, L, ref_dX, ref_dY, ref_L, sort_order)
-
-            #Setting the current marker order so it matches the
-            #Reference one according to the returns variables!
-            self._set_markings_in_conf(self['current'], X[sort_order], Y[sort_order])
-            self._logger.debug("Found average rotation {0}".format(d_alpha))
-
-            return d_alpha, Mcom
+            self.__set_current_mark_order(sort_order)
 
         else:
 
             self._logger.critical("Missmatch in number of markings!")
-            return None
+
+
+    def __set_current_mark_order(self, sort_order):
+
+        current_model = self["current"].model
+        current_model.orientation_marks_x = current_model.orientation_marks_x[sort_order]
+        current_model.orientation_marks_y = current_model.orientation_marks_y[sort_order]
+
+    def _get_centered_mark_positions(self, source="current"):
+
+        x_positions = self[source].model.orientation_marks_x
+        y_positions = self[source].model.orientation_marks_y
+
+        if x_positions is None or y_positions is None:
+            return None, None
+
+        x_positions = np.array(x_positions)
+        y_positions = np.array(y_positions)
+
+        marking_center = np.array((x_positions.mean(), y_positions.mean()))
+
+        x_centered = x_positions - marking_center[0]
+        y_centered = y_positions - marking_center[1]
+
+        return x_centered, y_centered
 
     @staticmethod
     def _get_sort_order(length, reference_length):
@@ -327,7 +308,7 @@ class FixtureImage(object):
         self._gs_values = gs_values
 
 
-    def _get_rotated_point(self, point, alpha, offset=(0, 0)):
+    def _get_relative_point(self, point, alpha=None, offset=(0, 0)):
         """Returns a rotated and offset point.
 
         Parameters
@@ -385,7 +366,7 @@ class FixtureImage(object):
 
     def set_current_areas(self):
 
-        alpha, Mcom = self._get_markings_rotations()
+        self._set_current_mark_order()
         X, Y = self._get_markings(source='current')
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
 
@@ -415,8 +396,8 @@ class FixtureImage(object):
             Gs2 = scale_factor * ref_gs[1]
 
             self['current'].set("grayscale_area",
-                [self._get_rotated_point(Gs1, alpha, offset=dMcom),
-                 self._get_rotated_point(Gs2, alpha, offset=dMcom)])
+                [self._get_relative_point(Gs1, alpha, offset=dMcom),
+                 self._get_relative_point(Gs2, alpha, offset=dMcom)])
 
         else:
 
@@ -440,13 +421,14 @@ class FixtureImage(object):
             M2 = scale_factor * p[1]
 
             self['current'].set(p_str.format(i),
-                [self._get_rotated_point(M1, alpha, offset=dMcom),
-                 self._get_rotated_point(M2, alpha, offset=dMcom)])
+                [self._get_relative_point(M1, alpha, offset=dMcom),
+                 self._get_relative_point(M2, alpha, offset=dMcom)])
 
 
     def _set_current_areas(self):
 
-        alpha, Mcom = self._get_markings_rotations()
+        self._set_current_mark_order()
+
         X, Y = self._get_markings(source='current')
         ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
         ref_Mcom *= self.im_original_scale
@@ -475,8 +457,8 @@ class FixtureImage(object):
             dGs2 = scale_factor * ref_gs[1] - ref_Mcom
 
             self['current'].set("grayscale_area",
-                [self._get_rotated_point(dGs1, alpha, offset=Mcom),
-                 self._get_rotated_point(dGs2, alpha, offset=Mcom)])
+                [self._get_relative_point(dGs1, alpha, offset=Mcom),
+                 self._get_relative_point(dGs2, alpha, offset=Mcom)])
 
         i = 0
         #ref_m = True
@@ -490,8 +472,8 @@ class FixtureImage(object):
             dM2 = scale_factor * p[1] - ref_Mcom
 
             self['current'].set(p_str.format(i),
-                [self._get_rotated_point(dM1, alpha, offset=Mcom),
-                 self._get_rotated_point(dM2, alpha, offset=Mcom)])
+                [self._get_relative_point(dM1, alpha, offset=Mcom),
+                 self._get_relative_point(dM2, alpha, offset=Mcom)])
 
     def get_plates(self, source="current", indices=False):
 
