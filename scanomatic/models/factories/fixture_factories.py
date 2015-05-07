@@ -1,8 +1,9 @@
 __author__ = 'martin'
 
 import re
+
 from scanomatic.models.fixture_models import FixtureModel, FixturePlateModel
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, split_and_replace
 from scanomatic.models import fixture_models
 
 
@@ -23,19 +24,8 @@ class GridHistoryFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
 
-        def _replace(key, new_key_pattern, new_key_index_names):
-            if key in settings:
-
-                for index, new_key_index_name in enumerate(new_key_index_names):
-                    try:
-                        settings[new_key_pattern.format(new_key_index_name)] = settings[key][index]
-                    except (IndexError, TypeError):
-                        pass
-
-                del settings[key]
-
-        _replace("center", "center_{0}", ("x", "y"))
-        _replace("delta", "delta_{0}", ("x", "y"))
+        split_and_replace(settings, "center", "center_{0}", ("x", "y"))
+        split_and_replace(settings, "delta", "delta_{0}", ("x", "y"))
 
         return super(GridHistoryFactory, cls).create(**settings)
 

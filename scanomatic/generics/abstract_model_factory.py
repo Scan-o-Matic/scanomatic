@@ -526,3 +526,15 @@ def rename_setting(settings, old_name, new_name):
         if new_name not in settings:
             settings[new_name] = settings[old_name]
         del settings[old_name]
+
+
+def split_and_replace(settings, key, new_key_pattern, new_key_index_names):
+    if key in settings:
+
+        for index, new_key_index_name in enumerate(new_key_index_names):
+            try:
+                settings[new_key_pattern.format(new_key_index_name)] = settings[key][index]
+            except (IndexError, TypeError):
+                pass
+
+        del settings[key]
