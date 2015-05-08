@@ -43,9 +43,9 @@ class FixtureSettings(object):
         conf_rel_path = Paths().fixture_conf_file_rel_pattern.format(path_name)
 
         self._conf_path = os.path.join(dir_path, conf_rel_path)
-        self.history = grid_history.GriddingHistory(self)
         self.model = FixtureFactory.serializer.load(self._conf_path)
         """:type : scanomatic.models.fixture_models.FixtureModel"""
+        self.history = grid_history.GriddingHistory(self)
 
     def get_marker_position(self, index):
 
