@@ -81,7 +81,7 @@ class Model(object):
 
         if value is None:
 
-            key = self.keys()[0]
+            key = tuple(self.keys())[0]
             value = self[key]
 
         return Model._STR_PATTERN.format(classname, key, value)
