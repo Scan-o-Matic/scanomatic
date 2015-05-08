@@ -46,7 +46,7 @@ class GrayScaleAreaModel(model.Model):
 class FixtureModel(model.Model):
 
     def __init__(self, path="", grayscale=None,
-                 orientation_mark_path, orientation_marks_x=[], orientation_marks_y=[], shape=[],
+                 orientation_mark_path="", orientation_marks_x=[], orientation_marks_y=[], shape=[],
                  coordinates_scale=1, plates=[], name="", scale=1.0):
 
         self.name = name
