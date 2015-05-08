@@ -24,6 +24,7 @@ import app_config
 import grid_history
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.io.logger import Logger
+import ConfigParser
 
 
 #
@@ -50,7 +51,9 @@ class FixtureSettings(object):
 
         try:
             return tuple(FixtureFactory.serializer.load(self._conf_path))[0]
-        except IndexError:
+        except (IndexError, ConfigParser.Error), e:
+            if isinstance(e, ConfigParser.Error):
+                self._logger.error("Trying to load an outdated fixture at {0}, this won't work".format(self._conf_path))
             return FixtureFactory.create(path=self._conf_path, name=name)
 
     def get_marker_position(self, index):
