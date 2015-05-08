@@ -129,13 +129,18 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if not self._allow_start:
             return super(ScannerEffector, self).next()
+        elif not self._stopping:
+            try:
+                step_action = self._scan_cycle[self._scanning_effector_data.current_cycle_step]()
+            except KeyError:
+                step_action = self._get_step_to_next_scan_cycle_step()
 
-        try:
-            step_action = self._scan_cycle[self._scanning_effector_data.current_cycle_step]()
-        except KeyError:
-            step_action = self._get_step_to_next_scan_cycle_step()
-
-        self._update_scan_cycle_step(step_action)
+            self._update_scan_cycle_step(step_action)
+        else:
+            self._logger.info("Interrupted progress {0} at {1} ({3})".format(
+                self._scanning_job,
+                self._scanning_effector_data.current_cycle_step,
+                self._scanning_effector_data.previous_scan_time))
 
         if self._job_completed:
             raise StopIteration
