@@ -83,17 +83,6 @@ class FixtureSettings(object):
 
         FixtureFactory.serializer.dump(self.model, self.path)
 
-    def set_experiment_model(self, experiment_model, default_pinning=None):
-
-        experiment_model['fixture'] = self.model.name
-        experiment_model['plate-areas'] = copy.copy(self.model.plates)
-        experiment_model['pinnings-list'] = [default_pinning] * len(self.model.plates)
-        experiment_model['marker-count'] = len(self.model.orientation_marks_x)
-        experiment_model['grayscale'] = self.model.grayscale
-        experiment_model['grayscale-area'] = copy.copy(self.model.grayscale)
-        experiment_model['ref-marker-positions'] =
-        experiment_model['marker-path'] = self.get_marker_path()
-
 
 class Fixtures(object):
 
