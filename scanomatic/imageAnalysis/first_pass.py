@@ -14,7 +14,6 @@ __status__ = "Development"
 #
 
 import scanomatic.io.logger as logger
-from scanomatic.models.factories.analysis_factories import FixturePlateFactory
 from scanomatic.models.factories.fixture_factories import FixtureFactory, FixturePlateFactory
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 
