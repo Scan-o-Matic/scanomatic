@@ -36,6 +36,7 @@ from scanomatic.models.factories import compile_project_factory
 JOBS_CALL_SET_USB = "set_usb"
 SECONDS_PER_MINUTE = 60.0
 
+
 class ScannerEffector(proc_effector.ProcessEffector):
 
     TYPE = JOB_TYPE.Scan
@@ -181,7 +182,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._logger.info("Making initial scan")
             return SCAN_STEP.NextMajor
 
-        elif not self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN):
+        elif not self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN, delta_time=self.time_since_last_scan):
             self._scanning_effector_data.previous_scan_time = self.run_time
             self._logger.info("Next scan cycle initiated")
             return SCAN_STEP.NextMajor
@@ -197,7 +198,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             return SCAN_STEP.Wait
         else:
             self._logger.info("Job {0} gave up waiting usb after {1:.2f} min".format(
-                self._scanning_job.id, self.scan_cycle_duration / 60.0))
+                self._scanning_job.id, self.scan_cycle_step_duration / 60.0))
             return SCAN_STEP.NextMinor
 
     def _do_wait_for_scan(self):
@@ -233,15 +234,23 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._logger.error("Server never gave me my scanner.")
         return SCAN_STEP.NextMajor
 
-    def _should_continue_waiting(self, max_between_scan_fraction):
+    def _should_continue_waiting(self, max_between_scan_fraction, delta_time=None):
 
         global SECONDS_PER_MINUTE
 
-        return (self.scan_cycle_duration <
+        if delta_time is None:
+            delta_time = self.scan_cycle_step_duration
+
+        return (delta_time <
                 self._scanning_job.time_between_scans * SECONDS_PER_MINUTE * max_between_scan_fraction)
 
     @property
-    def scan_cycle_duration(self):
+    def time_since_last_scan(self):
+
+        return self.run_time - self._scanning_effector_data.previous_scan_time
+
+    @property
+    def scan_cycle_step_duration(self):
 
         return time.time() - self._scanning_effector_data.current_step_start_time
 
@@ -271,7 +280,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             if compile_job_id:
                 # TODO: Add check if compile action should be finalize.
                 next_image_is_last = False
-                if (next_image_is_last):
+                if next_image_is_last:
                     self._scanning_effector_data.compile_project_model.compile_action = \
                         COMPILE_ACTION.AppendAndSpawnAnalysis
                 else:
