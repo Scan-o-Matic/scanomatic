@@ -107,7 +107,7 @@ class ScanningModelFactory(AbstractModelFactory):
     @classmethod
     def _validate_fixture(cls, model):
 
-        if model.fixture in fixtures.Fixtures():
+        if model.fixture in fixtures.Fixtures() or not model.fixture:
             return True
 
         return model.FIELD_TYPES.fixture
