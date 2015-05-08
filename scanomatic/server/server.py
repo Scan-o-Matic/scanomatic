@@ -204,10 +204,6 @@ class Server(object):
 
     def enqueue(self, model, job_type):
 
-        if job_type is rpc_job_models.JOB_TYPE.Compile:
-            self.logger.error("Compiling projects not implemented yet")
-            return False
-
         rpc_job = RPC_Job_Model_Factory.create(
             id=self._get_job_id(),
             pid=None,
