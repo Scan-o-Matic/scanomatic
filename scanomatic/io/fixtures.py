@@ -14,7 +14,6 @@ __status__ = "Development"
 #
 
 import os
-import copy
 
 #
 # INTERNAL DEPENDENCIES
@@ -43,9 +42,16 @@ class FixtureSettings(object):
         conf_rel_path = Paths().fixture_conf_file_rel_pattern.format(path_name)
 
         self._conf_path = os.path.join(dir_path, conf_rel_path)
-        self.model = FixtureFactory.serializer.load(self._conf_path)
-        """:type : scanomatic.models.fixture_models.FixtureModel"""
+        self.model = self._load_model(name)
         self.history = grid_history.GriddingHistory(self)
+
+    def _load_model(self, name):
+        """:rtype : scanomatic.models.fixture_models.FixtureModel"""
+
+        try:
+            return tuple(FixtureFactory.serializer.load(self._conf_path))[0]
+        except IndexError:
+            return FixtureFactory.create(path=self._conf_path, name=name)
 
     def get_marker_position(self, index):
 
