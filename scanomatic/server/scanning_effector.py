@@ -57,6 +57,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._allowed_calls[JOBS_CALL_SET_USB] = self._set_usb_port
 
         self._scanning_job = job.content_model
+        """:type : scanomatic.models.scanning_model.ScanningModel"""
         self._scanning_effector_data = ScanningModelEffectorData()
         self._rpc_client = rpc_client.get_client(admin=True)
         self._scanner = None
@@ -255,23 +256,26 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_request_first_pass_analysis(self):
 
-        compile_job_id = self._rpc_client.create_compile_project_job(
-            compile_project_factory.CompileProjectFactory.serializer.serialize(
-                self._scanning_effector_data.compile_project_model
-            ))
+        if self._scanning_job.fixture:
 
-        if compile_job_id:
-            # TODO: Add check if compile action should be finalize.
-            next_image_is_last = False
-            if (next_image_is_last):
-                self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.AppendAndSpawnAnalysis
+            compile_job_id = self._rpc_client.create_compile_project_job(
+                compile_project_factory.CompileProjectFactory.serializer.serialize(
+                    self._scanning_effector_data.compile_project_model
+                ))
+
+            if compile_job_id:
+                # TODO: Add check if compile action should be finalize.
+                next_image_is_last = False
+                if (next_image_is_last):
+                    self._scanning_effector_data.compile_project_model.compile_action = \
+                        COMPILE_ACTION.AppendAndSpawnAnalysis
+                else:
+                    self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
+                self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
+                self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
+                self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
             else:
-                self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
-            self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
-            self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
-            self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
-        else:
-            self._logger.warning("Failed to create a compile project job, refused by server")
+                self._logger.warning("Failed to create a compile project job, refused by server")
 
         return SCAN_STEP.NextMajor
 
