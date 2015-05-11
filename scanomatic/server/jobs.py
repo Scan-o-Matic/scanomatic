@@ -111,7 +111,7 @@ class Jobs(SingeltonOneInit):
 
     def sync(self):
 
-        self._logger.info("Syncing jobs")
+        self._logger.debug("Syncing jobs")
         statuses = []
         jobs = self._jobs.keys()
         for job in jobs:

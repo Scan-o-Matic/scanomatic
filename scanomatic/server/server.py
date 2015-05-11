@@ -131,7 +131,7 @@ class Server(object):
 
         self._running = True
         self._server_start_time = time.time()
-        sleep = 0.51
+        sleep = 0.07
         i = 0
 
         while self._running:
