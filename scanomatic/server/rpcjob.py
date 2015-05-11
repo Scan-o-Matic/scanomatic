@@ -99,7 +99,7 @@ class RpcJob(Process, Fake):
             self._childPipe, self._job_effector(self._job))
         
         setproctitle.setproctitle("SoM {0}".format(
-            pipe_effector.procEffector.TYPE))
+            pipe_effector.procEffector.TYPE.name))
 
         t = Thread(target=_communicator)
         t.start()
