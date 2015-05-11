@@ -141,7 +141,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._logger.info("Interrupted progress {0} at {1} ({3})".format(
                 self._scanning_job,
                 self._scanning_effector_data.current_cycle_step,
-                self._scanning_effector_data.previous_scan_time))
+                self._scanning_effector_data.previous_scan_cycle_start))
 
         if self._job_completed:
             raise StopIteration
@@ -177,13 +177,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self.current_image < 0:
             self._start_time = time.time()
-            self._scanning_effector_data.previous_scan_time = 0
+            self._scanning_effector_data.previous_scan_cycle_start = 0
             self._scanning_effector_data.current_image = 0
             self._logger.info("Making initial scan")
             return SCAN_STEP.NextMajor
 
         elif not self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN, delta_time=self.time_since_last_scan):
-            self._scanning_effector_data.previous_scan_time = self.run_time
+            self._scanning_effector_data.previous_scan_cycle_start = self.run_time
             self._logger.info("Next scan cycle initiated")
             return SCAN_STEP.NextMajor
         else:
@@ -207,7 +207,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             if self._scanning_effector_data.scan_success:
                 self._logger.info("Completed scanning image {0} located {1}".format(
                     self.current_image, self._scanning_effector_data.current_image_path))
-                self._add_scanned_image(self.current_image, self._scanning_effector_data.previous_scan_time,
+                self._add_scanned_image(self.current_image, self._scanning_effector_data.current_scan_time,
                                         self._scanning_effector_data.current_image_path)
                 return SCAN_STEP.NextMajor
             else:
@@ -247,7 +247,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def time_since_last_scan(self):
 
-        return self.run_time - self._scanning_effector_data.previous_scan_time
+        return self.run_time - self._scanning_effector_data.previous_scan_cycle_start
 
     @property
     def scan_cycle_step_duration(self):
@@ -297,12 +297,11 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self._scanning_effector_data.usb_port:
 
-            self._scanning_effector_data.previous_scan_time = self.run_time
-
+            self._scanning_effector_data.current_scan_time = self.run_time
             self._scanning_effector_data.current_image_path = \
                 self._scanning_effector_data.current_image_path_pattern.format(
                     self._scanning_job.project_name, str(self._scanning_effector_data.current_image).zfill(4),
-                    self._scanning_effector_data.previous_scan_time)
+                    self._scanning_effector_data.current_scan_time)
 
             self._scanning_effector_data.scanning_thread = Thread(target=self._scan_thread)
             self._scanning_effector_data.scanning_thread.start()
