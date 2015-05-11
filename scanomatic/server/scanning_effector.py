@@ -42,7 +42,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
     TYPE = JOB_TYPE.Scan
     WAIT_FOR_USB_TOLERANCE_FACTOR = 0.33
     WAIT_FOR_SCAN_TOLERANCE_FACTOR = 0.5
-    WAIT_FOR_NEXT_SCAN = 0.987
+    WAIT_FOR_NEXT_SCAN = 1.0
 
     def __init__(self, job):
 

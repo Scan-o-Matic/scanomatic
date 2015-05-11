@@ -88,7 +88,7 @@ class RpcJob(Process, Fake):
 
             while pipe_effector.keepAlive and job_running:
                 pipe_effector.poll()
-                sleep(0.29)
+                sleep(0.07)
 
             _l.info("Will not recieve any more communications")
 
