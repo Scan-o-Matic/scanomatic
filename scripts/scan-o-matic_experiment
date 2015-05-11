@@ -111,11 +111,11 @@ input file for the analysis script.""")
         logger.warning("Exactly how do you intend to scan when you don't inform me of which scanner to use?")
 
     elif client.create_scanning_job({"number_of_scans": args.number_of_scans,
-                                   "time_between_scans": args.interval,
-                                   "scanner": args.scanner - 1,
-                                   "directory_containing_project": args.root,
-                                   "project_name": args.prefix,
-                                   "description": args.description}):
+                                     "time_between_scans": args.interval,
+                                     "scanner": args.scanner - 1,
+                                     "directory_containing_project": args.root,
+                                     "project_name": args.prefix,
+                                     "description": args.description}):
 
         logger.info("Project accepted! Have a nice day. Do something unexpected.")
 
