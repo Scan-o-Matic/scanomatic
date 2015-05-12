@@ -43,6 +43,7 @@ class CompileImageModel(Model):
 
         super(CompileImageModel, self).__init__()
 
+
 class CompileImageAnalysisModel(Model):
 
     def __init__(self, image=None, fixture=None):

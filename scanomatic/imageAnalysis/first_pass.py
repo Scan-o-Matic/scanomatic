@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import scanomatic.io.logger as logger
 from scanomatic.models.factories.fixture_factories import FixtureFactory, FixturePlateFactory
+from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 
 
@@ -46,9 +47,8 @@ def analyse(compile_image_model, fixture):
     :rtype : scanomatic.models.fixture_models.FixtureModel
     """
 
-    image_model = FixtureFactory.create(index=compile_image_model.index,
-                                              time=compile_image_model.time_stamp,
-                                              path=compile_image_model.path)
+    image_model = CompileImageAnalysisFactory.create(image=compile_image_model,
+                                                     fixture=FixtureFactory.copy(fixture))
 
     image = FixtureImage(fixture=fixture, image_path=image_model.path)
 
