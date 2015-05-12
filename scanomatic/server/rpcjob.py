@@ -88,7 +88,7 @@ class RpcJob(Process, Fake):
 
             while pipe_effector.keepAlive and job_running:
                 pipe_effector.poll()
-                sleep(0.29)
+                sleep(0.07)
 
             _l.info("Will not recieve any more communications")
 
@@ -99,7 +99,7 @@ class RpcJob(Process, Fake):
             self._childPipe, self._job_effector(self._job))
         
         setproctitle.setproctitle("SoM {0}".format(
-            pipe_effector.procEffector.TYPE))
+            pipe_effector.procEffector.TYPE.name))
 
         t = Thread(target=_communicator)
         t.start()

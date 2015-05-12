@@ -16,7 +16,7 @@ __status__ = "Development"
 import os
 from hashlib import  md5
 import random
-from cPickle import loads, dumps, UnpickleableError
+from cPickle import loads, dumps, UnpickleableError, UnpicklingError
 from ConfigParser import ConfigParser
 import re
 
@@ -137,7 +137,7 @@ class Config(SingeltonOneInit):
                 self.pm_type = loads(pm)
                 self._logger.info("Updating Power Manager to: {0}".format(self.pm_type))
 
-            except ValueError:
+            except (ValueError, UnpicklingError):
                 mode_by_name = tuple(mode.name.lower() == pm.lower() for mode in power_manager.POWER_MANAGER_TYPE)
                 if any(mode_by_name):
                     for mode, pm_type in zip(mode_by_name, power_manager.POWER_MANAGER_TYPE):

@@ -36,6 +36,7 @@ from scanomatic.models.factories import compile_project_factory
 JOBS_CALL_SET_USB = "set_usb"
 SECONDS_PER_MINUTE = 60.0
 
+
 class ScannerEffector(proc_effector.ProcessEffector):
 
     TYPE = JOB_TYPE.Scan
@@ -57,6 +58,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._allowed_calls[JOBS_CALL_SET_USB] = self._set_usb_port
 
         self._scanning_job = job.content_model
+        """:type : scanomatic.models.scanning_model.ScanningModel"""
         self._scanning_effector_data = ScanningModelEffectorData()
         self._rpc_client = rpc_client.get_client(admin=True)
         self._scanner = None
@@ -128,13 +130,18 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if not self._allow_start:
             return super(ScannerEffector, self).next()
+        elif not self._stopping:
+            try:
+                step_action = self._scan_cycle[self._scanning_effector_data.current_cycle_step]()
+            except KeyError:
+                step_action = self._get_step_to_next_scan_cycle_step()
 
-        try:
-            step_action = self._scan_cycle[self._scanning_effector_data.current_cycle_step]()
-        except KeyError:
-            step_action = self._get_step_to_next_scan_cycle_step()
-
-        self._update_scan_cycle_step(step_action)
+            self._update_scan_cycle_step(step_action)
+        else:
+            self._logger.info("Interrupted progress {0} at {1} ({3})".format(
+                self._scanning_job,
+                self._scanning_effector_data.current_cycle_step,
+                self._scanning_effector_data.previous_scan_cycle_start))
 
         if self._job_completed:
             raise StopIteration
@@ -170,13 +177,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self.current_image < 0:
             self._start_time = time.time()
-            self._scanning_effector_data.previous_scan_time = 0
+            self._scanning_effector_data.previous_scan_cycle_start = 0
             self._scanning_effector_data.current_image = 0
             self._logger.info("Making initial scan")
             return SCAN_STEP.NextMajor
 
-        elif not self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN):
-            self._scanning_effector_data.previous_scan_time = self.run_time
+        elif not self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN, delta_time=self.time_since_last_scan):
+            self._scanning_effector_data.previous_scan_cycle_start = self.run_time
             self._logger.info("Next scan cycle initiated")
             return SCAN_STEP.NextMajor
         else:
@@ -191,7 +198,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             return SCAN_STEP.Wait
         else:
             self._logger.info("Job {0} gave up waiting usb after {1:.2f} min".format(
-                self._scanning_job.id, self.scan_cycle_duration / 60.0))
+                self._scanning_job.id, self.scan_cycle_step_duration / 60.0))
             return SCAN_STEP.NextMinor
 
     def _do_wait_for_scan(self):
@@ -200,7 +207,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             if self._scanning_effector_data.scan_success:
                 self._logger.info("Completed scanning image {0} located {1}".format(
                     self.current_image, self._scanning_effector_data.current_image_path))
-                self._add_scanned_image(self.current_image, self._scanning_effector_data.previous_scan_time,
+                self._add_scanned_image(self.current_image, self._scanning_effector_data.current_scan_time,
                                         self._scanning_effector_data.current_image_path)
                 return SCAN_STEP.NextMajor
             else:
@@ -227,15 +234,23 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._logger.error("Server never gave me my scanner.")
         return SCAN_STEP.NextMajor
 
-    def _should_continue_waiting(self, max_between_scan_fraction):
+    def _should_continue_waiting(self, max_between_scan_fraction, delta_time=None):
 
         global SECONDS_PER_MINUTE
 
-        return (self.scan_cycle_duration <
+        if delta_time is None:
+            delta_time = self.scan_cycle_step_duration
+
+        return (delta_time <
                 self._scanning_job.time_between_scans * SECONDS_PER_MINUTE * max_between_scan_fraction)
 
     @property
-    def scan_cycle_duration(self):
+    def time_since_last_scan(self):
+
+        return self.run_time - self._scanning_effector_data.previous_scan_cycle_start
+
+    @property
+    def scan_cycle_step_duration(self):
 
         return time.time() - self._scanning_effector_data.current_step_start_time
 
@@ -255,23 +270,26 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _do_request_first_pass_analysis(self):
 
-        compile_job_id = self._rpc_client.create_compile_project_job(
-            compile_project_factory.CompileProjectFactory.serializer.serialize(
-                self._scanning_effector_data.compile_project_model
-            ))
+        if self._scanning_job.fixture:
 
-        if compile_job_id:
-            # TODO: Add check if compile action should be finalize.
-            next_image_is_last = False
-            if (next_image_is_last):
-                self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.AppendAndSpawnAnalysis
+            compile_job_id = self._rpc_client.create_compile_project_job(
+                compile_project_factory.CompileProjectFactory.serializer.serialize(
+                    self._scanning_effector_data.compile_project_model
+                ))
+
+            if compile_job_id:
+                # TODO: Add check if compile action should be finalize.
+                next_image_is_last = False
+                if next_image_is_last:
+                    self._scanning_effector_data.compile_project_model.compile_action = \
+                        COMPILE_ACTION.AppendAndSpawnAnalysis
+                else:
+                    self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
+                self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
+                self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
+                self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
             else:
-                self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
-            self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
-            self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
-            self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
-        else:
-            self._logger.warning("Failed to create a compile project job, refused by server")
+                self._logger.warning("Failed to create a compile project job, refused by server")
 
         return SCAN_STEP.NextMajor
 
@@ -279,12 +297,11 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self._scanning_effector_data.usb_port:
 
-            self._scanning_effector_data.previous_scan_time = self.run_time
-
+            self._scanning_effector_data.current_scan_time = self.run_time
             self._scanning_effector_data.current_image_path = \
                 self._scanning_effector_data.current_image_path_pattern.format(
                     self._scanning_job.project_name, str(self._scanning_effector_data.current_image).zfill(4),
-                    self._scanning_effector_data.previous_scan_time)
+                    self._scanning_effector_data.current_scan_time)
 
             self._scanning_effector_data.scanning_thread = Thread(target=self._scan_thread)
             self._scanning_effector_data.scanning_thread.start()
