@@ -49,6 +49,8 @@ class CompileImageAnalysisModel(Model):
     def __init__(self, image=None, fixture=None):
 
         self.image = image
+        """:type : CompileImageModel"""
         self.fixture = fixture
+        """:type : scanomatic.models.fixture_models.FixtureModel"""
 
         super(CompileImageAnalysisModel, self).__init__()

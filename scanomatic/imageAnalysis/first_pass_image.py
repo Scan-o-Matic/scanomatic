@@ -87,6 +87,10 @@ class FixtureImage(object):
 
             raise KeyError(key)
 
+    def set_current_fixture_settings(self, current_fixture_settings):
+
+        self._current_fixture_settings = current_fixture_settings
+
     def set_image(self, image=None, image_path=None):
 
         if image is not None:
