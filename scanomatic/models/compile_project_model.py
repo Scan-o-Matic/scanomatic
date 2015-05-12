@@ -42,3 +42,12 @@ class CompileImageModel(Model):
         self.time_stamp = time_stamp
 
         super(CompileImageModel, self).__init__()
+
+class CompileImageAnalysisModel(Model):
+
+    def __init__(self, image=None, fixture=None):
+
+        self.image = image
+        self.fixture = fixture
+
+        super(CompileImageAnalysisModel, self).__init__()
