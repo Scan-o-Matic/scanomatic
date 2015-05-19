@@ -78,8 +78,10 @@ class Paths(SingeltonOneInit):
         self.rpc_jobs = os.path.join(self.root, 'jobs.cfg')
         self.rpc_scanner_status = os.path.join(self.root, 'scanner_status.cfg')
 
+        self.help_file = "help.html"
         self.help = "file://{0}".format(
-            os.path.join(os.path.abspath(self.root), 'help.html'))
+            os.path.join(os.path.abspath(self.root), self.help_file))
+
 
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
         self.martin = os.path.join(self.images, "martin3.png")
