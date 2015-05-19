@@ -1,7 +1,7 @@
 __author__ = 'martin'
 
 import time
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, request, send_from_directory
 import webbrowser
 from threading import Thread
 from socket import error
@@ -10,6 +10,7 @@ import os
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
+from scanomatic.io.rpc_client import get_client
 
 _url = None
 _logger = Logger("UI-server")
@@ -20,6 +21,7 @@ def launch_server(is_local=None, port=None, host=None):
     global _url
 
     app = Flask("Scan-o-Matic UI")
+    local_client = get_client(admin=True)
 
     if port is None:
         port = Config().ui_port
@@ -47,6 +49,25 @@ def launch_server(is_local=None, port=None, host=None):
     @app.route("/style.css")
     def _css_base():
         return send_from_directory(Paths().root, "style.css")
+
+    @app.route("/fixtures/<name>")
+    def _fixture_data(name=None):
+        if local_client.online and name in local_client.get_fixtures():
+            return "Not implemented sending fixture data"
+        else:
+            return ""
+
+    @app.route("/fixtures", methods=['post', 'get'])
+    def _fixtures():
+
+        if request.args.get("names"):
+
+            if local_client.online:
+                return ",".join(local_client.get_fixtures())
+            else:
+                return ""
+
+        return "Unknown command"
 
     try:
         if is_local:
