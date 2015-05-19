@@ -324,7 +324,14 @@ class ScannerPowerManager(SingeltonOneInit):
     def update(self):
 
         self._manage_claimer()
-        return self._match_scanners(get_alive_scanners())
+        try:
+            alive_scanners = get_alive_scanners()
+        except OSError:
+            self._pm.clear()
+            self._scanners.clear()
+            self._logger.warning("SANE is not installed, server can't scan")
+        else:
+            return self._match_scanners(alive_scanners)
 
     @decorators.type_lock
     def _manage_claimer(self):
