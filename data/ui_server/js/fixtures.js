@@ -1,5 +1,7 @@
 var current_fixture_id;
 var new_fixture_data_id;
+var new_fixture_detect_id;
+var new_fixture_image_id;
 
 function get_fixture_as_name(fixture) {
     return fixture.replace("_", " ")
@@ -9,7 +11,6 @@ function get_fixture_as_name(fixture) {
 
 function unselect(target) {
     target.val("");
-    //target.("select option:selected" ).each(function() {this.prop("selected", false);})
 }
 
 function get_fixtures() {
@@ -28,11 +29,18 @@ function get_fixtures() {
 function add_fixture() {
     var options = $(current_fixture_id)
     unselect(options);
+    set_fixture_image();
     $(new_fixture_data_id).show()
 }
 
 function get_fixture() {
     var options = $(current_fixture_id);
     $(new_fixture_data_id).hide();
+}
 
+function set_fixture_image() {
+    if ($(new_fixture_image_id).val() == null)
+        $(new_fixture_detect_id).attr("disabled", "disabled");
+    else
+        $(new_fixture_detect_id).removeAttr("disabled");
 }
