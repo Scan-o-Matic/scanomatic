@@ -6,7 +6,7 @@
 
 body {
 	background: #cd8b34;
-	background-image: url('images/help_bg.png');
+	background-image: url('/images/help_bg.png');
 }
 
 p {

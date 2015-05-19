@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="style/main.css">
+	<title>Scan-o-Matic</title>
+	<script src="/js/jquery-2.1.4.min.js"></script>
+    <script src="/js/fixtures.js"></script>
+</head>
+<body>
+<div id="cont">
+    <form onchange="javascript:get_fixture('#current-fixture');">
+    <span id="selecting-fixture">
+        Fixtures:
+        <select name="current-fixtures" id="current-fixture"></select>
+        <input name="add-fixture" id="add-fixture" onclick="add_fixture('#current-fixture')"  type="button" value="Add new...">
+    </span>
+    </form>
+    <script>get_fixtures("#current-fixture");</script>
+</div>
+</body>
+</html>
