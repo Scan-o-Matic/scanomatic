@@ -91,7 +91,7 @@ def launch_server(is_local=None, port=None, host=None):
             else:
                 return ""
 
-        return "Unknown command"
+        return send_from_directory(Paths().ui_root, Paths().fixture_file)
 
     try:
         if is_local:
