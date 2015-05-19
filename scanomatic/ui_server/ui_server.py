@@ -1,7 +1,7 @@
 __author__ = 'martin'
 
 import time
-from flask import Flask, request, send_from_directory
+from flask import Flask, request, send_from_directory, redirect
 import webbrowser
 from threading import Thread
 from socket import error
@@ -49,6 +49,7 @@ def launch_server(is_local=None, port=None, host=None):
         </script>
         <ul>
         <li><a href="/help">Help</a></li>
+        <li><a href="/wiki">Wiki</a></li>
         <li><a href="/fixtures">Fixtures</a></li>
         </ul>
         </body>
@@ -58,6 +59,10 @@ def launch_server(is_local=None, port=None, host=None):
     @app.route("/help")
     def _help():
         return send_from_directory(Paths().ui_root, Paths().help_file)
+
+    @app.route("/wiki")
+    def _wiki():
+        return redirect("https://github.com/local-minimum/scanomatic/wiki")
 
     @app.route("/images/<image_name>")
     def _help_logo(image_name=None):
