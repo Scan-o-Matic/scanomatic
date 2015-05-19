@@ -13,8 +13,9 @@
 <body>
 <div id="cont">
     <h1>Fixtures</h1>
+    <form action="?update=1" method="post">
     <span id="selecting-fixture">
-        <label for="current-fixutres">Select:</label>
+        <label for="current-fixture">Select:</label>
         <select name="current-fixtures" id="current-fixture"
                 onchange="javascript:get_fixture('#current-fixture', '#new-fixture-name');"></select>
         <input name="add-fixture" id="add-fixture"
@@ -23,10 +24,14 @@
 
     <span id="new-fixture-data">
         <h2>New Fixture</h2>
-        <label for="new-fixutre-name">Name:</label>
+        <label for="new-fixture-name">Name:</label>
         <input name="new-fixture-name" id="new-fixture-name">
     </span>
     <script>get_fixtures("#current-fixture", "#new-fixture-name");</script>
+
+     <input type="hidden" name="update-type" value="update">
+     <span><button type="submit" id="submit-button">Save</button></span>
+    </form>
 </div>
 </body>
 </html>

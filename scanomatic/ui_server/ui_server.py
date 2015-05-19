@@ -96,6 +96,9 @@ def launch_server(is_local=None, port=None, host=None):
             else:
                 return ""
 
+        elif request.args.get("update"):
+            return "Not implemented saving/creating fixtures...sorry"
+
         return send_from_directory(Paths().ui_root, Paths().fixture_file)
 
     try:
