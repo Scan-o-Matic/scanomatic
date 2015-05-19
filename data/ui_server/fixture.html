@@ -5,17 +5,28 @@
 	<title>Scan-o-Matic</title>
 	<script src="/js/jquery-2.1.4.min.js"></script>
     <script src="/js/fixtures.js"></script>
+    <script>
+        current_fixture_id = "#current-fixture";
+        new_fixture_data_id = "#new-fixture-data";
+    </script>
 </head>
 <body>
 <div id="cont">
-    <form onchange="javascript:get_fixture('#current-fixture');">
+    <h1>Fixtures</h1>
     <span id="selecting-fixture">
-        Fixtures:
-        <select name="current-fixtures" id="current-fixture"></select>
-        <input name="add-fixture" id="add-fixture" onclick="add_fixture('#current-fixture')"  type="button" value="Add new...">
+        <label for="current-fixutres">Select:</label>
+        <select name="current-fixtures" id="current-fixture"
+                onchange="javascript:get_fixture('#current-fixture', '#new-fixture-name');"></select>
+        <input name="add-fixture" id="add-fixture"
+               onclick="add_fixture('#current-fixture', '#new-fixture-name')"  type="button" value="Add new...">
     </span>
-    </form>
-    <script>get_fixtures("#current-fixture");</script>
+
+    <span id="new-fixture-data">
+        <h2>New Fixture</h2>
+        <label for="new-fixutre-name">Name:</label>
+        <input name="new-fixture-name" id="new-fixture-name">
+    </span>
+    <script>get_fixtures("#current-fixture", "#new-fixture-name");</script>
 </div>
 </body>
 </html>
