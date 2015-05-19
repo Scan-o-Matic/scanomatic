@@ -4,6 +4,7 @@ import time
 from flask import Flask
 import webbrowser
 from threading import Thread
+from socket import error
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -30,10 +31,21 @@ def launch_server(is_local=None, port=None, host=None):
     _url = "http://{host}:{port}".format(host=host, port=port)
 
     @app.route("/")
-    def placeholder():
+    def root():
+        return app.name
+
+    @app.route("/help")
+    def help():
         return app.send_static_file(Paths().help)
 
-    app.run(port=port)
+    try:
+        app.run(port=port)
+    except error:
+        _logger.warning("Could not bind socket, probably server is already running and this is nothing to worry about."
+                        + "\n\tIf old server is not responding, try killing its process."
+                        + "\n\tIf something else is blocking the port, try setting another port using --help.")
+        return False
+    return True
 
 def launch_webbrowser(delay=0.0):
 
