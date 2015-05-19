@@ -36,7 +36,25 @@ def launch_server(is_local=None, port=None, host=None):
 
     @app.route("/")
     def _root():
-        return app.name
+        return """<!DOCTYPE: html>
+        <html>
+        <head>
+            <link rel="stylesheet" type="text/css" href="style.css">
+            <title>Scan-o-Matic</title>
+            <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        </head>
+        <body>
+        <img id='logo' src='images/help_logo.png'>
+        <script>
+        $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
+        </script>
+        <ul>
+        <li><a href="/help">Help</a></li>
+        <li><a href="/fixtures">Fixtures</a></li>
+        </ul>
+        </body>
+        </html>
+        """
 
     @app.route("/help")
     def _help():
