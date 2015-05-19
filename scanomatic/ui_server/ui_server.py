@@ -5,7 +5,6 @@ from flask import Flask, request, send_from_directory
 import webbrowser
 from threading import Thread
 from socket import error
-import os
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -39,7 +38,7 @@ def launch_server(is_local=None, port=None, host=None):
         return """<!DOCTYPE: html>
         <html>
         <head>
-            <link rel="stylesheet" type="text/css" href="style.css">
+            <link rel="stylesheet" type="text/css" href="style/main.css">
             <title>Scan-o-Matic</title>
             <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
         </head>
@@ -58,15 +57,22 @@ def launch_server(is_local=None, port=None, host=None):
 
     @app.route("/help")
     def _help():
-        return send_from_directory(Paths().root, Paths().help_file)
+        return send_from_directory(Paths().ui_root, Paths().help_file)
 
-    @app.route("/images/help_logo.png")
-    def _help_logo():
-        return send_from_directory(Paths().images, "help_logo.png")
+    @app.route("/images/<image_name>")
+    def _help_logo(image_name=None):
+        if image_name:
+            return send_from_directory(Paths().images, image_name)
 
-    @app.route("/style.css")
-    def _css_base():
-        return send_from_directory(Paths().root, "style.css")
+    @app.route("/style/<style>")
+    def _css_base(style=None):
+        if style:
+            return send_from_directory(Paths().ui_css, style)
+
+    @app.route("/js/<js>")
+    def _js_base(js=None):
+        if js:
+            return send_from_directory(Paths().ui_js, js)
 
     @app.route("/fixtures/<name>")
     def _fixture_data(name=None):

@@ -1,6 +1,7 @@
 import os
 import shutil
 import sys
+import glob
 
 import scanomatic.io.logger as logger
 
@@ -21,63 +22,78 @@ data_files = [
     (os.path.join('config', 'fixtures'), {}),
     ('logs', {}),
     ('locks', {}),
-    ('.', {'help.html': True,
-           'style.css': True}),
     ('images', {'orientation_marker_150dpi.png': True,
                 'martin3.png': True,
                 'scan-o-matic.png': True,
                 'help_logo.png': True,
-                'help_bg.png': True})
+                'help_bg.png': True}),
+    ('ui_server', None)
 ]
 
 
-def InstallDataFiles(targetBase=None, sourceBase=None, installList=None):
+def _clone_all_files_in(path):
 
-    if targetBase is None:
-        targetBase = os.path.join(homeDir, installPath)
+    for child in glob.glob(os.path.join(path, "*")):
+        local_child = child[len(path) + (not path.endswith(os.sep) and 1 or 0):]
+        if os.path.isdir(child):
+            for grandchild, _ in _clone_all_files_in(child):
+                yield os.path.join(local_child, grandchild), True
+        else:
+            yield local_child, True
 
-    if sourceBase is None:
-        sourceBase = defaultSourceBase
 
-    if installList is None:
-        installList = data_files
+def install_data_files(target_base=None, source_base=None, install_list=None):
 
-    if not os.path.isdir(targetBase):
-        os.mkdir(targetBase)
-        os.chmod(targetBase, 0755)
+    if target_base is None:
+        target_base = os.path.join(homeDir, installPath)
 
-    for installType in installList:
+    if source_base is None:
+        source_base = defaultSourceBase
 
-        curDir, dirFiles = installType
-        sourceDir = os.path.join(sourceBase, curDir)
-        targetDir = os.path.join(targetBase, curDir)
+    if install_list is None:
+        install_list = data_files
 
-        if not os.path.isdir(targetDir):
+    if not os.path.isdir(target_base):
+        os.mkdir(target_base)
+        os.chmod(target_base, 0755)
 
-            os.mkdir(targetDir)
-            os.chmod(targetDir, 0755)
+    for install_instruction in install_list:
 
-        for fileName in dirFiles:
+        relative_directory, files = install_instruction
+        source_directory = os.path.join(source_base, relative_directory)
+        target_directory = os.path.join(target_base, relative_directory)
 
-            sourcePath = os.path.join(sourceDir, fileName)
-            targetPath = os.path.join(targetDir, fileName)
+        if files is None:
+            files = dict(_clone_all_files_in(source_directory))
+            print files
 
-            if (not os.path.isfile(targetPath) and dirFiles[fileName] is None):
-                _logger.info("Creating file {0}".format(targetPath))
-                fh = open(targetPath, 'w')
-                fh.cloe()
-            elif (not os.path.isfile(targetPath) or dirFiles[fileName]
+        for file_name in files:
+
+            source_path = os.path.join(source_directory, file_name)
+            target_path = os.path.join(target_directory, file_name)
+
+            os.path.dirname(target_path)
+
+            if not os.path.isdir(os.path.dirname(target_path)):
+
+                os.makedirs(os.path.dirname(target_path), 0755)
+
+            if not os.path.isfile(target_path) and files[file_name] is None:
+                _logger.info("Creating file {0}".format(target_path))
+                fh = open(target_path, 'w')
+                fh.close()
+            elif (not os.path.isfile(target_path) or files[file_name]
                     or 'y' in raw_input(
                         "Do you want to overwrite {0} (y/N)".format(
-                            targetPath)).lower()):
+                            target_path)).lower()):
 
                 _logger.info(
                     "Copying file: {0} => {1}".format(
-                        sourcePath, targetPath))
+                        source_path, target_path))
 
-                shutil.copy(sourcePath, targetPath)
-                os.chmod(targetPath, defaltPermission)
+                shutil.copy(source_path, target_path)
+                os.chmod(target_path, defaltPermission)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1].lower() == 'install':
-        InstallDataFiles()
+        install_data_files()
