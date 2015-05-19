@@ -34,6 +34,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--host', type=str, dest="host", help="Manually setting host address of server")
 
+    parser.add_argument(
+        "--browser", type=str, dest="browser", default="Y", help="Open url to Scan-o-Matic in new tab (default True)"
+    )
+
     args = parser.parse_args()
 
-    ui_server.launch(is_local=args.local, port=args.port, host=args.host)
+    ui_server.launch(open_browser_url=args.browser.upper() in ['Y', 'YES', 'TRUE', 'T'], is_local=args.local, port=args.port, host=args.host)

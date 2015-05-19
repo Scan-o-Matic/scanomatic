@@ -123,7 +123,8 @@ def launch_webbrowser(delay=0.0):
         _logger.error("No server launched")
 
 
-def launch(**kwargs):
+def launch(open_browser_url=True, **kwargs):
 
-    Thread(target=launch_webbrowser, kwargs={"delay": 2}).start()
+    if open_browser_url:
+        Thread(target=launch_webbrowser, kwargs={"delay": 2}).start()
     launch_server(**kwargs)
