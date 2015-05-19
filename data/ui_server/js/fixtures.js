@@ -14,6 +14,7 @@ function unselect(target) {
 
 function get_fixtures() {
     var options = $(current_fixture_id);
+    options.empty();
     $.get("/fixtures?names=1", function(data, status) {
         $.each(data.split(","), function() {
             options.append($("<option />").val(this).text(get_fixture_as_name(this)));
