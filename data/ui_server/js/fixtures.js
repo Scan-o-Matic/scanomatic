@@ -111,7 +111,6 @@ function update_fixture_name() {
 function load_fixture(name, img_data, is_tiff) {
     $(fixture_name_id).text(get_fixture_as_name(name));
     $(selected_fixture_div_id).show();
-    var ctx = $(selected_fixture_canvas_id)[0].getContext('2d');
     if (img_data) {
         if (is_tiff) {
             var xhr = new XMLHttpRequest();
