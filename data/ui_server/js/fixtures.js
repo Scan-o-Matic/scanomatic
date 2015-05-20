@@ -141,6 +141,11 @@ function load_fixture(name, img_data, is_tiff) {
 function set_fixture_markers(data) {
     console.log(data);
     markers = position_string_to_array(data);
+    if (markers.length ==0) {
+        markers = null;
+        context_warning = "Name or image refused";
+        $(new_fixture_data_id).show();
+    }
     draw_fixture();
 }
 
@@ -169,7 +174,7 @@ function draw_fixture() {
         context.font = '20pt Calibri';
         context.textAlign = 'center';
         context.fillStyle = 'red';
-        context.fillText('Marker detection failed', x, y);
+        context.fillText(context_warning, x, y);
     }
 }
 
