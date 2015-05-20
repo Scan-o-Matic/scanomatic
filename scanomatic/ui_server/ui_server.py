@@ -132,7 +132,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 fixture.set_image(image_path=path)
                 fixture.run_marker_analysis(markings=markers)
 
-                return fixture['current'].get_marker_positions()
+                return str(fixture['current'].get_marker_positions())
 
             _logger.info("Detect keys files: {0} values: {1}".format(request.files.keys(), request.values.keys()))
             _logger.info("Have request image {0}".format(image))

@@ -82,6 +82,7 @@ function detect_markers() {
         processData: false,
         success: function (data) {
             context_warning = ""
+            $(new_fixture_data_id).hide();
             set_fixture_markers(data);
         },
         error: function (data) {
@@ -96,7 +97,6 @@ function update_fixture_name() {
 }
 
 function load_fixture(name, img_data) {
-    $(new_fixture_data_id).hide();
     $(fixture_name_id).text(get_fixture_as_name(name));
     $(selected_fixture_div_id).show();
     var ctx = $(selected_fixture_canvas_id)[0].getContext('2d');

@@ -199,7 +199,7 @@ class FixtureImage(object):
 
         _logger.debug("Finding pattern (acc {0} s)".format(time.time() - t))
 
-        x_positions, y_positions = im_analysis.find_pattern(self["reference"].get_marker_positions(), markings=markings)
+        x_positions, y_positions = im_analysis.find_pattern(markings=markings)
 
         self["current"].model.orientation_marks_x = x_positions
         self["current"].model.orientation_marks_y = y_positions
