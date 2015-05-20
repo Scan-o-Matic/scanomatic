@@ -25,6 +25,7 @@ from matplotlib.pyplot import imread
 
 from scanomatic.io.grid_history import GriddingHistory
 from scanomatic.io.logger import Logger
+from scanomatic.io.fixtures import FixtureSettings
 
 import imageBasics
 import imageFixture
@@ -41,7 +42,7 @@ def get_image_scale(im):
     small_error = 0.01
     invalid_scale = -1.0
 
-    if im:
+    if im is not None:
 
         scale_d1, scale_d2 = [im.shape[i] / float(FixtureImage.EXPECTED_IM_SIZE[i]) for i in range(2)]
 
@@ -75,14 +76,19 @@ class FixtureImage(object):
 
         self.im = None
         self.im_original_scale = None
+        self._name = "default"
 
     def __getitem__(self, key):
 
         if key in ['current']:
-
+            if self._current_fixture_settings is None:
+                self._current_fixture_settings = FixtureSettings(self.name)
             return self._current_fixture_settings
 
         elif key in ['fixture', 'reference']:
+            if self._reference_fixture_settings is None:
+                self._reference_fixture_settings = FixtureSettings(self.name)
+                self._name = self.name
 
             return self._reference_fixture_settings
 
@@ -93,6 +99,23 @@ class FixtureImage(object):
     def set_current_fixture_settings(self, current_fixture_settings):
 
         self._current_fixture_settings = current_fixture_settings
+
+    @property
+    def name(self):
+
+        if self._reference_fixture_settings:
+            return self._reference_fixture_settings.model.name
+        else:
+            return self._name
+
+    @name.setter
+    def name(self, value):
+
+        if self._reference_fixture_settings:
+            self._reference_fixture_settings.model.name = value
+        else:
+            self._name = value
+
 
     def set_image(self, image=None, image_path=None):
 

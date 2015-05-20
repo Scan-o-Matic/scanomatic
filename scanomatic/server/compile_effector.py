@@ -43,8 +43,9 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         if self._compile_job.fixture is FIXTURE.Global:
             self._fixture = Fixtures[self._compile_job.fixture_name]
         else:
-            self._fixture = FixtureSettings(os.path.dirname(self._compile_job.path),
-                                             Paths().experiment_local_fixturename)
+            self._fixture = FixtureSettings(
+                Paths().experiment_local_fixturename,
+                dir_path=os.path.dirname(self._compile_job.path))
 
     def _tweak_path(self):
 

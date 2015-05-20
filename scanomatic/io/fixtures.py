@@ -34,15 +34,18 @@ import ConfigParser
 
 class FixtureSettings(object):
 
-    def __init__(self, dir_path, name):
+    def __init__(self, name, dir_path=None):
 
         self._logger = Logger("Fixture {0}".format(name))
 
         path_name = Paths().get_fixture_path(name, only_name=True)
 
-        conf_rel_path = Paths().fixture_conf_file_rel_pattern.format(path_name)
+        if dir_path:
+            conf_rel_path = Paths().fixture_conf_file_rel_pattern.format(path_name)
+            self._conf_path = os.path.join(dir_path, conf_rel_path)
+        else:
+            self._conf_path = Paths().get_fixture_path(name)
 
-        self._conf_path = os.path.join(dir_path, conf_rel_path)
         self.model = self._load_model(name)
         self.history = grid_history.GriddingHistory(self)
 
@@ -125,7 +128,7 @@ class Fixtures(object):
 
         for f in list_fixtures:
             if f.lower() != "fixture":
-                fixture = FixtureSettings(directory, f)
+                fixture = FixtureSettings(f, directory)
                 self._fixtures[fixture.model.name] = fixture
 
     def get_names(self):

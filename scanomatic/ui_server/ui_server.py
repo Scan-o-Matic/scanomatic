@@ -128,6 +128,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 image.save(path)
 
                 fixture = FixtureImage()
+                fixture.name = name
                 fixture.set_image(image_path=path)
                 fixture.run_marker_analysis(markings=markers)
 
