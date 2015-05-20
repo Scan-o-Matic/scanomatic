@@ -8,6 +8,9 @@ var fixture_name_id;
 var selected_fixture_canvas_id;
 var new_fixture_name;
 
+var context_warning = "";
+var fixture_image = null;
+
 function get_fixture_as_name(fixture) {
     return fixture.replace(/_/g, " ")
         .replace(/^[a-z]/g,
@@ -71,17 +74,20 @@ function detect_markers() {
     $(new_fixture_detect_id).attr("disabled", true);
     $(new_fixture_detect_id).val("...");
     $.ajax({
-    url: '?detect=1',
-    type: 'POST',
-    contentType: false,
-    enctype: 'multipart/form-data',
-    data: formData,
-    processData: false,
-    success: function (data) {
-        set_fixture_markers(data);
-    }
-
-});
+        url: '?detect=1',
+        type: 'POST',
+        contentType: false,
+        enctype: 'multipart/form-data',
+        data: formData,
+        processData: false,
+        success: function (data) {
+            context_warning = ""
+            set_fixture_markers(data);
+        },
+        error: function (data) {
+            context_warning = "Marker detection failed";
+            draw_fixture();
+        }});
     load_fixture($(new_fixture_name).val(), $(new_fixture_image_id)[0].files[0]);
 }
 
@@ -96,11 +102,38 @@ function load_fixture(name, img_data) {
     var ctx = $(selected_fixture_canvas_id)[0].getContext('2d');
     if (img_data) {
         var img = new Image;
-        img.onload = function() {ctx.drawImage(img, 0,0);}
+        img.onload = function() {
+            fixture_image = img;
+            draw_fixture();
+        }
         img.src = URL.createObjectURL(img_data);
+    } else {
+        fixture_image = null;
+        draw_fixture();
     }
 }
 
 function set_fixture_markers(data) {
     console.log(data);
+    draw_fixture();
+}
+
+function draw_fixture() {
+
+    var canvas =  $(selected_fixture_canvas_id)[0];
+    var context = canvas.getContext('2d');
+    var x = canvas.width / 2;
+    var y = canvas.height / 2;
+
+    context.fill();
+
+    if (fixture_image)
+        context.drawImage(fixture_image, 0, 0);
+
+    if (context_warning) {
+        context.font = '20pt Calibri';
+        context.textAlign = 'center';
+        context.fillStyle = 'red';
+        context.fillText('Marker detection failed', x, y);
+    }
 }
