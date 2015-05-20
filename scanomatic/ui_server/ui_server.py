@@ -12,18 +12,17 @@ from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.io.rpc_client import get_client
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
-from scanomatic.imageAnalysis.support import get_numpy_array_from_image_buffer
 
 _url = None
 _logger = Logger("UI-server")
-_ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'tiff'}
+_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'tiff'}
 
 
 def _launch_scanomatic_rpc_server():
     Popen(["scan-o-matic_server"])
 
 
-def _allowed_file(filename):
+def _allowed_image(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in _ALLOWED_EXTENSIONS
 
 
@@ -116,12 +115,28 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return "Not implemented saving/creating fixtures...sorry"
 
         elif request.args.get("detect"):
+
+            markers = request.values.get('markers', default=3, type=int)
+            image = request.files.get('image')
+            name = request.values.get("name", '', type=str)
+
+            _logger.info("Working on detecting marker for fixture {0} using image {1} ({2})".format(
+                name, image.filename, _allowed_image(image.name)));
+
+            if name and _allowed_image(image.filename):
+                path = ".".join((Paths().get_fixture_path(name), image.filename.rsplit('.', 1)[1]))
+                image.save(path)
+
+                fixture = FixtureImage()
+                fixture.set_image(image_path=path)
+                fixture.run_marker_analysis(markings=markers)
+
+                return fixture['current'].get_marker_positions()
+
             _logger.info("Detect keys files: {0} values: {1}".format(request.files.keys(), request.values.keys()))
-            _logger.info("Have request image {0}".format(request.files.get('image')))
-            _logger.info("Decting on image for {0} markers".format(request.values.get('markers')))
-            fixture = FixtureImage()
-            fixture.set_image(image=get_numpy_array_from_image_buffer(request.files['image']))
-            fixture.run_marker_analysis()
+            _logger.info("Have request image {0}".format(image))
+            _logger.info("Decting on image for {0} markers".format(markers))
+
             return "Resutls..."
 
         return send_from_directory(Paths().ui_root, Paths().fixture_file)

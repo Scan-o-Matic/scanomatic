@@ -14,6 +14,12 @@ function get_fixture_as_name(fixture) {
             function ($1) { return $1.toUpperCase();});
 }
 
+function get_fixture_from_name(fixture) {
+    return fixture.replace(/ /g, "_")
+        .replace(/A-Z/g, function ($1) { return $1.toLowerCase();})
+        .replace(/[^a-z1-9_]/g,"");
+}
+
 function unselect(target) {
     target.val("");
 }
@@ -61,6 +67,7 @@ function detect_markers() {
     var formData = new FormData();
     formData.append("markers", $(new_fixture_markers_id).val());
     formData.append("image", $(new_fixture_image_id)[0].files[0]);
+    formData.append("name", $(new_fixture_name).val());
     $(new_fixture_detect_id).attr("disabled", true);
     $(new_fixture_detect_id).val("...");
     $.ajax({
