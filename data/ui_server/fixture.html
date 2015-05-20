@@ -11,6 +11,7 @@
         new_fixture_data_id = "#new-fixture-data";
         new_fixture_detect_id = "#new-fixture-detect";
         new_fixture_image_id = "#new-fixture-image";
+        new_fixture_markers_id = "#new-fixture-markers";
         new_fixture_name = "#new-fixture-name";
         selected_fixture_div_id = "#selected-fixture";
         fixture_name_id = "#selected-fixture-name";
@@ -35,10 +36,10 @@
                 <li><label for="new-fixture-name">Name:</label>
                     <input name="new-fixture-name" id="new-fixture-name" onchange="update_fixture_name();"></li>
                 <li><label for="new-fixture-image">Reference Image:</label>
-                    <input name="new-fixture-image" id="new-fixture-image" type="file"
+                    <input name="new-fixture-image" id="new-fixture-image" type="file" enctype="multipart/form-data"
                            onchange="set_fixture_image();"></li>
                 <li><label for="new-fixture-markers">Orientation Markers:</label>
-                    <input type="number" value="3" id="new-fixture-markers" min="3" max="7">
+                    <input type="number" value="3" name="new-fixture-markers" id="new-fixture-markers" min="3" max="7">
                     <button onclick="detect_markers()" type="button" id="new-fixture-detect">Detect</button> </li>
             </ol>
         </div>

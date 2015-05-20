@@ -14,11 +14,13 @@ from scanomatic.io.rpc_client import get_client
 
 _url = None
 _logger = Logger("UI-server")
-
+_ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'tiff'])
 
 def _launch_scanomatic_rpc_server():
     Popen(["scan-o-matic_server"])
 
+def _allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1] in _ALLOWED_EXTENSIONS
 
 def launch_server(is_local=None, port=None, host=None):
 
@@ -108,6 +110,9 @@ def launch_server(is_local=None, port=None, host=None):
             return "Not implemented saving/creating fixtures...sorry"
 
         elif request.args.get("detect"):
+            _logger.info("Detect keys files: {0} values: {1}".format(request.files.keys(), request.values.keys()))
+            _logger.info("Have request image {0}".format(request.files.get('image')))
+            _logger.info("Decting on image for {0} markers".format(request.values.get('markers')))
             return ""
 
         return send_from_directory(Paths().ui_root, Paths().fixture_file)
