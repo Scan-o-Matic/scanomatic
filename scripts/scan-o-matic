@@ -38,6 +38,14 @@ if __name__ == "__main__":
         "--browser", type=str, dest="browser", default="Y", help="Open url to Scan-o-Matic in new tab (default True)"
     )
 
+    parser.add_argument(
+        "--debug", type=str, dest="debug", default="N", help="Run debug server (will crash and stuff on exceptions)" +
+        " (default False)"
+    )
+
     args = parser.parse_args()
 
-    ui_server.launch(open_browser_url=args.browser.upper() in ['Y', 'YES', 'TRUE', 'T'], is_local=args.local, port=args.port, host=args.host)
+    true_strings = ['Y', 'YES', 'TRUE', 'T']
+    ui_server.launch(open_browser_url=args.browser.upper() in true_strings,
+                     debug=args.debug.upper() in true_strings,
+                     is_local=args.local, port=args.port, host=args.host)

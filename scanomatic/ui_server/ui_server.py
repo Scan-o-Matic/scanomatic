@@ -19,10 +19,12 @@ _ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'tiff'])
 def _launch_scanomatic_rpc_server():
     Popen(["scan-o-matic_server"])
 
+
 def _allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in _ALLOWED_EXTENSIONS
 
-def launch_server(is_local=None, port=None, host=None):
+
+def launch_server(is_local=None, port=None, host=None, debug=False):
 
     global _url
 
@@ -37,6 +39,7 @@ def launch_server(is_local=None, port=None, host=None):
 
     if is_local is True or (Config().ui_local and is_local is None):
         host = "localhost"
+        is_local = True
     elif host is None:
         host = "0.0.0.0"
         is_local = False
@@ -113,15 +116,23 @@ def launch_server(is_local=None, port=None, host=None):
             _logger.info("Detect keys files: {0} values: {1}".format(request.files.keys(), request.values.keys()))
             _logger.info("Have request image {0}".format(request.files.get('image')))
             _logger.info("Decting on image for {0} markers".format(request.values.get('markers')))
-            return ""
+            fixture = FixtureImage()
+            fixture.set_image(image=get_numpy_array_from_image_buffer(request.files['image']))
+            fixture.run_marker_analysis()
+            return "Resutls..."
 
         return send_from_directory(Paths().ui_root, Paths().fixture_file)
 
     try:
         if is_local:
-            app.run(port=port)
+            if debug:
+                _logger.info("Running in debug mode.")
+            app.run(port=port, debug=debug)
         else:
+            if debug:
+                _logger.warning("Debugging is only allowed on local servers")
             app.run(port=port, host=host)
+
     except error:
         _logger.warning("Could not bind socket, probably server is already running and this is nothing to worry about."
                         + "\n\tIf old server is not responding, try killing its process."
