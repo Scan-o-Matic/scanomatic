@@ -20,7 +20,7 @@ __status__ = "Development"
 import sys
 import os
 import time
-from PIL import Image
+import Image
 import numpy as np
 
 
@@ -42,6 +42,10 @@ _logger = logger.Logger("Resource Analysis Support")
 # FUNCTIONS
 #
 
+
+def get_numpy_array_from_image_buffer(stream):
+    image = Image.frombuffer(stream)
+    return np.array(image.getdata(), np.uint8).reshape(image.size[1], image.size[0], 3)
 
 def get_first_rotated(A, B):
     """Evaluates if both have the same orientation (lanscape or standing)

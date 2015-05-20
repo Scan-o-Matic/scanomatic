@@ -11,10 +11,13 @@ from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.io.rpc_client import get_client
+from scanomatic.imageAnalysis.first_pass_image import FixtureImage
+from scanomatic.imageAnalysis.support import get_numpy_array_from_image_buffer
 
 _url = None
 _logger = Logger("UI-server")
-_ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'tiff'])
+_ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'tiff'}
+
 
 def _launch_scanomatic_rpc_server():
     Popen(["scan-o-matic_server"])
