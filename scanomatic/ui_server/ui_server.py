@@ -138,7 +138,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             _logger.info("Have request image {0}".format(image))
             _logger.info("Decting on image for {0} markers".format(markers))
 
-            return "Resutls..."
+            return "[]"
 
         return send_from_directory(Paths().ui_root, Paths().fixture_file)
 

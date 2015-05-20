@@ -113,6 +113,7 @@ function load_fixture(name, img_data, is_tiff) {
     $(selected_fixture_div_id).show();
     if (img_data) {
         if (is_tiff) {
+            /* Non-working solution
             var xhr = new XMLHttpRequest();
             xhr.responseType = 'arraybuffer';
             xhr.open('GET', URL.createObjectURL(img_data));
@@ -120,7 +121,8 @@ function load_fixture(name, img_data, is_tiff) {
                 var tiff = new Tiff({buffer: xhr.response});
                 fixture_image = tiff.toCanvas();
             };
-            xhr.send();
+            xhr.send();*/
+            draw_fixture();
         } else {
             var img = new Image;
             img.onload = function() {
@@ -137,6 +139,7 @@ function load_fixture(name, img_data, is_tiff) {
 }
 
 function set_fixture_markers(data) {
+    console.log(data);
     markers = position_string_to_array(data);
     draw_fixture();
 }
