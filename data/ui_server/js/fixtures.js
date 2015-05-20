@@ -10,6 +10,7 @@ var new_fixture_name;
 
 var context_warning = "";
 var fixture_image = null;
+var markers = null;
 
 function get_fixture_as_name(fixture) {
     return fixture.replace(/_/g, " ")
@@ -21,6 +22,10 @@ function get_fixture_from_name(fixture) {
     return fixture.replace(/ /g, "_")
         .replace(/A-Z/g, function ($1) { return $1.toLowerCase();})
         .replace(/[^a-z1-9_]/g,"");
+}
+
+function position_string_to_array(pos_str) {
+    return JSON.parse(pos_str.replace(/\(|\)/g, function ($1) { return $1 == "(" ? "[" : "]";}));
 }
 
 function unselect(target) {
@@ -87,6 +92,7 @@ function detect_markers() {
         },
         error: function (data) {
             context_warning = "Marker detection failed";
+            markers = null;
             draw_fixture();
         }});
     load_fixture($(new_fixture_name).val(), $(new_fixture_image_id)[0].files[0]);
@@ -114,7 +120,7 @@ function load_fixture(name, img_data) {
 }
 
 function set_fixture_markers(data) {
-    console.log(data);
+    markers = position_string_to_array(data);
     draw_fixture();
 }
 
@@ -130,10 +136,24 @@ function draw_fixture() {
     if (fixture_image)
         context.drawImage(fixture_image, 0, 0);
 
+    if (markers) {
+        var radius = 30;
+        for (var len = markers.length, i=0; i<len;i++)
+            draw_marker(context, markers[i][0], markers[i][1], radius, "blue", 5);
+    }
+
     if (context_warning) {
         context.font = '20pt Calibri';
         context.textAlign = 'center';
         context.fillStyle = 'red';
         context.fillText('Marker detection failed', x, y);
     }
+}
+
+function draw_marker(context, centerX, centerY, radius, color, lineWidth) {
+    context.beginPath();
+    context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+    context.lineWidth = lineWidth;
+    context.strokeStyle = color;
+    context.stroke();
 }
