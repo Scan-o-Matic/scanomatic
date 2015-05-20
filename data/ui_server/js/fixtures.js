@@ -36,6 +36,7 @@ function add_fixture() {
     unselect(options);
     unselect($(new_fixture_image_id));
     set_fixture_image();
+    $(new_fixture_detect_id).val("Detect");
     $(new_fixture_data_id).show();
     $(selected_fixture_div_id).hide();
 }
@@ -55,11 +56,12 @@ function set_fixture_image() {
 }
 
 function detect_markers() {
+
     var formData = new FormData();
     formData.append("markers", $(new_fixture_markers_id).val());
     formData.append("image", $(new_fixture_image_id)[0].files[0]);
-    var dat = $.param($([new_fixture_image_id, new_fixture_markers_id].join(", ")));
-
+    $(new_fixture_detect_id).attr("disabled", true);
+    $(new_fixture_detect_id).val("...");
     $.ajax({
     url: '?detect=1',
     type: 'POST',
@@ -70,6 +72,7 @@ function detect_markers() {
     success: function (data) {
         set_fixture_markers(data);
     }
+
 });
     load_fixture($(new_fixture_name).val());
 }
