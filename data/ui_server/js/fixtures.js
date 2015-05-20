@@ -95,24 +95,42 @@ function detect_markers() {
             markers = null;
             draw_fixture();
         }});
-    load_fixture($(new_fixture_name).val(), $(new_fixture_image_id)[0].files[0]);
+
+    var new_image = $(new_fixture_image_id);
+    load_fixture($(new_fixture_name).val(), new_image[0].files[0], endsWith(new_image.val().toLowerCase(), ".tiff"));
+}
+
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
 function update_fixture_name() {
     $(fixture_name_id).text(get_fixture_as_name($(new_fixture_name).val()));
 }
 
-function load_fixture(name, img_data) {
+function load_fixture(name, img_data, is_tiff) {
     $(fixture_name_id).text(get_fixture_as_name(name));
     $(selected_fixture_div_id).show();
     var ctx = $(selected_fixture_canvas_id)[0].getContext('2d');
     if (img_data) {
-        var img = new Image;
-        img.onload = function() {
-            fixture_image = img;
-            draw_fixture();
+        if (is_tiff) {
+            var xhr = new XMLHttpRequest();
+            xhr.responseType = 'arraybuffer';
+            xhr.open('GET', URL.createObjectURL(img_data));
+            xhr.onload = function (e) {
+                var tiff = new Tiff({buffer: xhr.response});
+                fixture_image = tiff.toCanvas();
+            };
+            xhr.send();
+        } else {
+            var img = new Image;
+            img.onload = function() {
+                fixture_image = img;
+                draw_fixture();
+            }
+            img.src = URL.createObjectURL(img_data);
         }
-        img.src = URL.createObjectURL(img_data);
+
     } else {
         fixture_image = null;
         draw_fixture();
@@ -128,26 +146,35 @@ function draw_fixture() {
 
     var canvas =  $(selected_fixture_canvas_id)[0];
     var context = canvas.getContext('2d');
-    var x = canvas.width / 2;
-    var y = canvas.height / 2;
+    var scale = 1.0;
 
-    context.fill();
+    context.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (fixture_image)
-        context.drawImage(fixture_image, 0, 0);
+    if (fixture_image) {
+        scale = get_updated_scale(scale, canvas, fixture_image);
+        context.drawImage(fixture_image, 0, 0, fixture_image.width * scale, fixture_image.height * scale);
+    }
 
     if (markers) {
-        var radius = 30;
+        var radius = 30 * scale;
         for (var len = markers.length, i=0; i<len;i++)
-            draw_marker(context, markers[i][0], markers[i][1], radius, "blue", 5);
+            draw_marker(context, markers[i][0] * scale, markers[i][1] * scale, radius, "blue", 5);
     }
 
     if (context_warning) {
+        var x = canvas.width / 2;
+        var y = canvas.height / 2;
         context.font = '20pt Calibri';
         context.textAlign = 'center';
         context.fillStyle = 'red';
         context.fillText('Marker detection failed', x, y);
     }
+}
+
+function get_updated_scale(scale, canvas, obj) {
+    var x_scale = canvas.width / obj.width;
+    var y_scale = canvas.height / obj.height;
+    return Math.min(scale, x_scale, y_scale);
 }
 
 function draw_marker(context, centerX, centerY, radius, color, lineWidth) {
