@@ -33,6 +33,7 @@ function get_fixtures() {
 function add_fixture() {
     var options = $(current_fixture_id)
     unselect(options);
+    unselect($(new_fixture_image_id));
     set_fixture_image();
     $(new_fixture_data_id).show();
     $(selected_fixture_div_id).hide();
@@ -45,10 +46,11 @@ function get_fixture() {
 }
 
 function set_fixture_image() {
-    if ($(new_fixture_image_id).val() == null)
-        $(new_fixture_detect_id).attr("disabled", "disabled");
-    else
+    if ($(new_fixture_image_id).val() == "") {
+        $(new_fixture_detect_id).attr("disabled", true);
+    } else {
         $(new_fixture_detect_id).removeAttr("disabled");
+    }
 }
 
 function detect_markers() {
@@ -60,7 +62,7 @@ function update_fixture_name() {
 }
 
 function load_fixture(name) {
-   $(new_fixture_image_id).hide();
+   $(new_fixture_data_id).hide();
    $(fixture_name_id).text(get_fixture_as_name(name));
    $(selected_fixture_div_id).show();
 }
