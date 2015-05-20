@@ -5,6 +5,7 @@ var new_fixture_image_id;
 var new_fixture_markers_id;
 var selected_fixture_div_id;
 var fixture_name_id;
+var selected_fixture_canvas_id;
 var new_fixture_name;
 
 function get_fixture_as_name(fixture) {
@@ -74,17 +75,23 @@ function detect_markers() {
     }
 
 });
-    load_fixture($(new_fixture_name).val());
+    load_fixture($(new_fixture_name).val(), $(new_fixture_image_id)[0].files[0]);
 }
 
 function update_fixture_name() {
     $(fixture_name_id).text(get_fixture_as_name($(new_fixture_name).val()));
 }
 
-function load_fixture(name) {
-   $(new_fixture_data_id).hide();
-   $(fixture_name_id).text(get_fixture_as_name(name));
-   $(selected_fixture_div_id).show();
+function load_fixture(name, img_data) {
+    $(new_fixture_data_id).hide();
+    $(fixture_name_id).text(get_fixture_as_name(name));
+    $(selected_fixture_div_id).show();
+    var ctx = $(selected_fixture_canvas_id)[0].getContext('2d');
+    if (img_data) {
+        var img = new Image;
+        img.onload = function() {ctx.drawImage(img, 0,0);}
+        img.src = URL.createObjectURL(img_data);
+    }
 }
 
 function set_fixture_markers(data) {
