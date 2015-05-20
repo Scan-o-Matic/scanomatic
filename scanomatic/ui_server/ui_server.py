@@ -5,6 +5,7 @@ from flask import Flask, request, send_from_directory, redirect
 import webbrowser
 from threading import Thread
 from socket import error
+from subprocess import Popen
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -15,12 +16,19 @@ _url = None
 _logger = Logger("UI-server")
 
 
+def _launch_scanomatic_rpc_server():
+    Popen(["scan-o-matic_server"])
+
+
 def launch_server(is_local=None, port=None, host=None):
 
     global _url
 
     app = Flask("Scan-o-Matic UI")
-    local_client = get_client(admin=True)
+    rpc_client = get_client(admin=True)
+
+    if rpc_client.local and rpc_client.online is False:
+        _launch_scanomatic_rpc_server()
 
     if port is None:
         port = Config().ui_port
@@ -81,7 +89,7 @@ def launch_server(is_local=None, port=None, host=None):
 
     @app.route("/fixtures/<name>")
     def _fixture_data(name=None):
-        if local_client.online and name in local_client.get_fixtures():
+        if rpc_client.online and name in rpc_client.get_fixtures():
             return "Not implemented sending fixture data"
         else:
             return ""
@@ -91,8 +99,8 @@ def launch_server(is_local=None, port=None, host=None):
 
         if request.args.get("names"):
 
-            if local_client.online:
-                return ",".join(local_client.get_fixtures())
+            if rpc_client.online:
+                return ",".join(rpc_client.get_fixtures())
             else:
                 return ""
 
