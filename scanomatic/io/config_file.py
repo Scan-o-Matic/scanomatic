@@ -272,7 +272,7 @@ class ConfigFile(object):
 
     def get(self, key, return_value=None):
 
-        if key in self._file_data_order:
+        if self._file_data_order and key in self._file_data_order:
 
             return self._data[key]
 
