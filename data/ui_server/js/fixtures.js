@@ -11,6 +11,55 @@ var new_fixture_name;
 var context_warning = "";
 var fixture_image = null;
 var markers = null;
+var scale = 1;
+
+function relMouseCoords(event){
+    var totalOffsetX = 0;
+    var totalOffsetY = 0;
+    var canvasX = 0;
+    var canvasY = 0;
+    var currentElement = this;
+
+    do{
+        totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
+        totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
+    }
+    while(currentElement = currentElement.offsetParent)
+
+    canvasX = event.pageX - totalOffsetX;
+    canvasY = event.pageY - totalOffsetY;
+
+    return {x:canvasX, y:canvasY}
+}
+
+function translateToImageCoords(coords) {
+    var imageCoords = JSON.parse(JSON.stringify(coords));
+    imageCoords.x /= scale;
+    imageCoords.y /= scale;
+    return imageCoords;
+}
+
+HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
+
+function set_canvas() {
+
+    var selected_fixture_canvas_jq = $(selected_fixture_canvas_id);
+    var selected_fixture_canvas = selected_fixture_canvas_jq[0];
+
+    selected_fixture_canvas_jq.mousedown(function (event) {
+        console.log(
+        translateToImageCoords(selected_fixture_canvas.relMouseCoords(event)));
+    });
+
+    selected_fixture_canvas_jq.mousemove(function (event) {
+
+    });
+
+    selected_fixture_canvas_jq.mouseup( function(event) {
+
+    });
+
+}
 
 function get_fixture_as_name(fixture) {
     return fixture.replace(/_/g, " ")
@@ -150,7 +199,6 @@ function draw_fixture() {
 
     var canvas =  $(selected_fixture_canvas_id)[0];
     var context = canvas.getContext('2d');
-    var scale = 1.0;
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
