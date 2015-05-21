@@ -20,7 +20,10 @@ __status__ = "Development"
 import sys
 import os
 import time
-import Image
+try:
+    import Image
+except ImportError:
+    from PIL import Image
 import numpy as np
 
 
