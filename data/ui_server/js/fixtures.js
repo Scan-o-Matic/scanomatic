@@ -69,6 +69,7 @@ function set_canvas() {
             areas.splice(creatingArea, 1);
             creatingArea = null;
         }
+        draw_fixture();
         setPlateIndices();
     });
 
@@ -78,6 +79,7 @@ function set_canvas() {
             var imagePos = translateToImageCoords(canvasPos);
             areas[creatingArea].x2 = imagePos.x;
             areas[creatingArea].y2 = imagePos.y;
+            draw_fixture();
         }
     });
 
@@ -94,9 +96,11 @@ function set_canvas() {
                 area.y2 = Math.max(areas[creatingArea].y1, areas[creatingArea].y2);
                 areas[creatingArea] = area;
             }
+            draw_fixture();
+
         }
         creatingArea = null;
-    });
+     });
 
 }
 
@@ -262,7 +266,7 @@ function draw_fixture() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     if (fixture_image) {
-        scale = get_updated_scale(scale, canvas, fixture_image);
+        scale = get_updated_scale(canvas, fixture_image);
         context.drawImage(fixture_image, 0, 0, fixture_image.width * scale, fixture_image.height * scale);
     }
 
@@ -272,6 +276,11 @@ function draw_fixture() {
         for (var len = markers.length, i=0; i<len;i++)
             draw_marker(context, markers[i][0] * scale * marker_scale,
                         markers[i][1] * scale * marker_scale, radius, "blue", 5);
+    }
+
+    if (areas) {
+        for (var i=0; i<areas.length; i++)
+            draw_plate(context, areas[i]);
     }
 
     if (context_warning) {
@@ -284,7 +293,7 @@ function draw_fixture() {
     }
 }
 
-function get_updated_scale(scale, canvas, obj) {
+function get_updated_scale(canvas, obj) {
     var x_scale = canvas.width / obj.width;
     var y_scale = canvas.height / obj.height;
     return Math.min(scale, x_scale, y_scale);
@@ -295,5 +304,15 @@ function draw_marker(context, centerX, centerY, radius, color, lineWidth) {
     context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
     context.lineWidth = lineWidth;
     context.strokeStyle = color;
+    context.stroke();
+}
+
+function draw_plate(context, plate) {
+    context.beginPath();
+    context.rect(plate.x1 * scale, plate.y1 * scale, (plate.x2 - plate.x1) * scale, (plate.y2 - plate.y1) * scale);
+    context.fillStyle = "rgba(0, 255, 0, 0.3)";
+    context.fill();
+    context.strokeStyle = "green";
+    context.lineWidth = 2;
     context.stroke();
 }
