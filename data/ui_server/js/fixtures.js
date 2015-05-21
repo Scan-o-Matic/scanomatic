@@ -15,6 +15,7 @@ var scale = 1;
 var areas = [];
 var creatingArea = false;
 var selected_fixture_canvas_jq;
+var selected_fixture_canvas;
 
 function relMouseCoords(event){
     var totalOffsetX = 0;
@@ -48,37 +49,43 @@ function set_canvas() {
 
     selected_fixture_canvas_jq = $(selected_fixture_canvas_id);
     selected_fixture_canvas_jq.attr("tabindex", "0");
-    var selected_fixture_canvas = selected_fixture_canvas_jq[0];
+    selected_fixture_canvas = selected_fixture_canvas_jq[0];
 
     selected_fixture_canvas_jq.mousedown(function (event) {
         var canvasPos = selected_fixture_canvas.relMouseCoords(event);
         var imagePos = translateToImageCoords(canvasPos);
-        creatingArea = pointInsideOther(imagePos);
-
-        if (creatingArea < 0) {
-            areas.push({
-                x1: imagePos.x,
-                x2: imagePos.x,
-                y1: imagePos.y,
-                y2: imagePos.y,
-                grayscale: false,
-                plate: -1
-            });
-            creatingArea = areas.length - 1;
-        } else if (event.witch == 0) {
-            areas[creatingArea].x2 = imagePos.x;
-            areas[creatingArea].y2 = imagePos.y;
+        creatingArea = null;
+        var nextArea = getAreaByPoint(imagePos);
+        if (event.button == 0) {
+            if (nextArea < 0) {
+                areas.push({
+                    x1: imagePos.x,
+                    x2: imagePos.x,
+                    y1: imagePos.y,
+                    y2: imagePos.y,
+                    grayscale: false,
+                    plate: -1
+                });
+                creatingArea = areas.length - 1;
+            } else {
+                creatingArea = nextArea;
+                areas[creatingArea].x1 = imagePos.x;
+                areas[creatingArea].y1 = imagePos.y;
+                areas[creatingArea].x2 = imagePos.x;
+                areas[creatingArea].y2 = imagePos.y;
+                areas[creatingArea].grayscale = false;
+                areas[creatingArea].plate = -1;
+            }
         } else {
-            areas.splice(creatingArea, 1);
+            areas.splice(nextArea, 1);
             creatingArea = null;
-            event.stopPropagation();
+
         }
         draw_fixture();
-        setPlateIndices();
     });
 
     selected_fixture_canvas_jq.mousemove(function (event) {
-        if (creatingArea && creatingArea >= 0 && creatingArea < areas.length) {
+        if (event.button == 0 && isArea(creatingArea)) {
             var canvasPos = selected_fixture_canvas.relMouseCoords(event);
             var imagePos = translateToImageCoords(canvasPos);
             areas[creatingArea].x2 = imagePos.x;
@@ -89,52 +96,120 @@ function set_canvas() {
 
     selected_fixture_canvas_jq.mouseup( function(event) {
         var minUsableSize = 10000;
-        if (creatingArea && creatingArea >= 0 && creatingArea < areas.length) {
-            if (getAreaSize(creatingArea) < minUsableSize)
-                areas.splice(creatingArea, 1);
-            else {
-                var area = JSON.parse(JSON.stringify(areas[creatingArea]));
-                area.x1 = Math.min(areas[creatingArea].x1, areas[creatingArea].x2);
-                area.x2 = Math.max(areas[creatingArea].x1, areas[creatingArea].x2);
-                area.y1 = Math.min(areas[creatingArea].y1, areas[creatingArea].y2);
-                area.y2 = Math.max(areas[creatingArea].y1, areas[creatingArea].y2);
-                areas[creatingArea] = area;
-            }
-            draw_fixture();
-
-        }
-
-        if (areas.length > 1 && getAreaSize(0) <= 0) {
-            areas.splice(0, 1);
-        }
-
+        var curArea = creatingArea;
         creatingArea = null;
+        if (isArea(curArea)) {
+            var area = JSON.parse(JSON.stringify(areas[curArea]));
+            area.x1 = Math.min(areas[curArea].x1, areas[curArea].x2);
+            area.x2 = Math.max(areas[curArea].x1, areas[curArea].x2);
+            area.y1 = Math.min(areas[curArea].y1, areas[curArea].y2);
+            area.y2 = Math.max(areas[curArea].y1, areas[curArea].y2);
+            areas[curArea] = area;
+        }
+
+        for (var i=0; i<areas.length;i++) {
+            if (getAreaSize(i) < minUsableSize) {
+                areas.splice(i, 1);
+                i--;
+            }
+        }
+
+        setPlateIndices();
+        draw_fixture();
      });
 
 }
 
-function getAreaSize(index) {
-    if (index && index >= 0 && index < areas.length)
-        return Math.abs(areas[index].x1 - areas[index].x2) * Math.abs(areas[index].y1 - areas[index].y2);
+function isArea(index) {
+    return index != null && index >= 0 && index < areas.length;
+}
+
+function getAreaSize(plate) {
+
+    if (isInt(plate)) {
+        if (plate >=0 && plate < areas.length)
+            plate = areas[plate];
+        else
+            plate = null;
+    }
+
+    if (plate)
+        return Math.abs(plate.x2 - plate.x1) * Math.abs(plate.y2 - plate.y1);
     return -1;
 }
 
-function setPlateIndices() {
+function getAreaCenter(plate) {
 
+    if (isInt(plate)) {
+        if (plate >=0 && plate < areas.length)
+            plate = areas[plate];
+        else
+            plate = null;
+    }
+
+    if (plate)
+        return {
+            x: (plate.x1 + plate.x2) / 2,
+            y: (plate.y1 + plate.y2) / 2
+        }
+    else
+        return {x: selected_fixture_canvas.width/2,
+                y: selected_fixture_canvas.height/2};
+}
+
+function isInt(value) {
+  return !isNaN(value) &&
+         parseInt(Number(value)) == value &&
+         !isNaN(parseInt(value, 10));
+}
+
+function setPlateIndices() {
+    areas.sort(function(a, b) {
+        if (a.grayscale)
+            return -1;
+        else if (b.grayscale)
+            return 1;
+
+        if (a.y2 < b.y1)
+            return -1;
+        else if (b.y2 < a.y1)
+            return 1;
+        else if (a.x2 < b.x1)
+            return -1;
+        else if (b.x2 < a.x1)
+            return 1;
+
+        var aCenter = getAreaCenter(a);
+        var bCenter = getAreaCenter(b);
+
+        return aCenter.y < bCenter.y ? -1 : 1;
+    });
+    var len = areas.length;
+    var plateIndex = 1;
+    for (var i=0; i<len; i++) {
+        if (areas[i].grayscale === false && getAreaSize(i) > 0) {
+            areas[i].plate = plateIndex;
+            plateIndex++;
+        }
+    }
 }
 
 function clearAreas() {
     areas = [];
 }
 
-function pointInsideOther(point) {
+function getAreaByPoint(point) {
     for (var len = areas.length, i=0; i<len; i++) {
-        if (areas[i].x1 < point.x  && point.x < areas[i].x2 &&
-            areas[i].y1 < point.y && point.y < areas[i].y2)
-
+        if (isPointInArea(point, areas[i])) {
+            console.log([point, areas[i]]);
             return i;
+        }
     }
     return -1;
+}
+
+function isPointInArea(point, area) {
+    return area.x1 < point.x && area.x2 > point.x && area.y1 < point.y && area.y2 > point.y;
 }
 
 function get_fixture_as_name(fixture) {
@@ -275,7 +350,7 @@ function set_fixture_markers(data) {
 
 function draw_fixture() {
 
-    var canvas =  $(selected_fixture_canvas_id)[0];
+    var canvas =  selected_fixture_canvas;
     var context = canvas.getContext('2d');
 
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -299,12 +374,12 @@ function draw_fixture() {
     }
 
     if (context_warning) {
-        var x = canvas.width / 2;
-        var y = canvas.height / 2;
+        var canvasCenter = getAreaCenter(null);
         context.font = '20pt Calibri';
         context.textAlign = 'center';
+        context.textBaseline = 'middle';
         context.fillStyle = 'red';
-        context.fillText(context_warning, x, y);
+        context.fillText(context_warning, canvasCenter.x, canvasCenter.y);
     }
 }
 
@@ -323,11 +398,21 @@ function draw_marker(context, centerX, centerY, radius, color, lineWidth) {
 }
 
 function draw_plate(context, plate) {
+
+    if (getAreaSize(plate) <= 0)
+        return;
     context.beginPath();
     context.rect(plate.x1 * scale, plate.y1 * scale, (plate.x2 - plate.x1) * scale, (plate.y2 - plate.y1) * scale);
-    context.fillStyle = "rgba(0, 255, 0, 0.3)";
+    context.fillStyle = "rgba(0, 255, 0, 0.1)";
     context.fill();
     context.strokeStyle = "green";
     context.lineWidth = 2;
     context.stroke();
+
+    var plateCenter = getAreaCenter(plate);
+    context.font = Math.min(plate.x2 - plate.x1, plate.y2 - plate.y1) * scale * 0.3 + 'pt Calibri';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillStyle = 'green';
+    context.fillText(plate.plate, plateCenter.x * scale, plateCenter.y * scale);
 }
