@@ -118,6 +118,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         elif request.args.get("grayscale"):
 
+            #TODO check if fixture has image uploaded and do analysis
             x = (request.form.get("x1"), request.form.get("x2"))
             y = (request.form.get("y1"), request.form.get("y2"))
             return abort(500)
