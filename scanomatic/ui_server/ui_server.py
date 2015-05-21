@@ -1,7 +1,7 @@
 __author__ = 'martin'
 
 import time
-from flask import Flask, request, send_from_directory, redirect, jsonify
+from flask import Flask, request, send_from_directory, redirect, jsonify, abort
 import webbrowser
 from threading import Thread
 from socket import error
@@ -116,6 +116,12 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         elif request.args.get("update"):
             return "Not implemented saving/creating fixtures...sorry"
 
+        elif request.args.get("grayscale"):
+
+            x = (request.form.get("x1"), request.form.get("x2"))
+            y = (request.form.get("y1"), request.form.get("y2"))
+            return abort(500)
+
         elif request.args.get("detect"):
 
             markers = request.values.get('markers', default=3, type=int)
@@ -138,7 +144,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 fixture.run_marker_analysis(markings=markers)
 
                 save_image_as_png(path)
-                os.remove(path)
 
                 return jsonify(markers=str(fixture['current'].get_marker_positions()),
                                image=os.path.basename(fixture_file))

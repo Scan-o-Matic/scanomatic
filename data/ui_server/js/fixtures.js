@@ -10,6 +10,7 @@ var new_fixture_name;
 
 var context_warning = "";
 var fixture_image = null;
+var fixture_name = null;
 var markers = null;
 var scale = 1;
 var areas = [];
@@ -52,6 +53,12 @@ function set_canvas() {
     selected_fixture_canvas = selected_fixture_canvas_jq[0];
 
     selected_fixture_canvas_jq.mousedown(function (event) {
+
+        if (context_warning) {
+            context_warning = null;
+            return;
+        }
+
         var canvasPos = selected_fixture_canvas.relMouseCoords(event);
         var imagePos = translateToImageCoords(canvasPos);
         creatingArea = null;
@@ -110,9 +117,17 @@ function set_canvas() {
         for (var i=0; i<areas.length;i++) {
             if (getAreaSize(i) < minUsableSize) {
                 areas.splice(i, 1);
+                if (i < curArea)
+                    curArea--;
+                else if (i == curArea)
+                    curArea = -1;
                 i--;
+
             }
         }
+
+        if (curArea >= 0 && hasGrayScale() == false)
+            testAsGrayScale(curArea);
 
         setPlateIndices();
         draw_fixture();
@@ -187,7 +202,7 @@ function setPlateIndices() {
     var len = areas.length;
     var plateIndex = 1;
     for (var i=0; i<len; i++) {
-        if (areas[i].grayscale === false && getAreaSize(i) > 0) {
+        if (areas[i].grayscale !== true && getAreaSize(i) > 0) {
             areas[i].plate = plateIndex;
             plateIndex++;
         }
@@ -201,7 +216,6 @@ function clearAreas() {
 function getAreaByPoint(point) {
     for (var len = areas.length, i=0; i<len; i++) {
         if (isPointInArea(point, areas[i])) {
-            console.log([point, areas[i]]);
             return i;
         }
     }
@@ -210,6 +224,52 @@ function getAreaByPoint(point) {
 
 function isPointInArea(point, area) {
     return area.x1 < point.x && area.x2 > point.x && area.y1 < point.y && area.y2 > point.y;
+}
+
+function hasGrayScale() {
+    for (var len=areas.length, i=0;i<len;i++) {
+        if (areas[i].grayscale)
+            return true;
+    }
+    return false;
+}
+
+function removeGrayScale() {
+    for (var len=areas.length, i=0;i<len;i++) {
+        if (areas[i].grayscale)
+            areas.grayscale = false;
+            break;
+    }
+}
+
+function testAsGrayScale(plate) {
+    if (isInt(plate)) {
+        if (isArea(plate))
+            plate = areas[plate];
+        else
+            plate = null;
+    }
+
+    if (plate) {
+        $.ajax({
+            url: "?grayscale=1&fixture=" + fixture_name,
+            method: "POST",
+            data: plate,
+            success: function (data) {
+                if (data.source_values && data.source_values.length > 0)
+                    plate.grayscale = true;
+                else
+                    plate.grayscale = false;
+                draw_fixture();
+            },
+            error: function (data) {
+                console.log(data);
+                context_warning = "Error occured detecting grayscale";
+                draw_fixture();
+            }
+
+        });
+    }
 }
 
 function get_fixture_as_name(fixture) {
@@ -314,6 +374,7 @@ function update_fixture_name() {
 }
 
 function load_fixture(name, img_data) {
+    fixture_name = name;
     $(fixture_name_id).text(get_fixture_as_name(name));
     clearAreas();
     selected_fixture_canvas_jq.focus();
@@ -336,7 +397,6 @@ function load_fixture_image(image_name) {
         fixture_image = null;
     }
 }
-
 
 function set_fixture_markers(data) {
     console.log(data);
@@ -410,9 +470,9 @@ function draw_plate(context, plate) {
     context.stroke();
 
     var plateCenter = getAreaCenter(plate);
-    context.font = Math.min(plate.x2 - plate.x1, plate.y2 - plate.y1) * scale * 0.3 + 'pt Calibri';
+    context.font = Math.min(plate.x2 - plate.x1, plate.y2 - plate.y1) * scale * 0.6 + 'pt Calibri';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillStyle = 'green';
-    context.fillText(plate.plate, plateCenter.x * scale, plateCenter.y * scale);
+    context.fillText(plate.grayscale ? "G" : plate.plate, plateCenter.x * scale, plateCenter.y * scale);
 }
