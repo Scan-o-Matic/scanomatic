@@ -47,7 +47,7 @@ function get_fixtures() {
 }
 
 function add_fixture() {
-    var options = $(current_fixture_id)
+    var options = $(current_fixture_id);
     unselect(options);
     unselect($(new_fixture_image_id));
     set_fixture_image();
@@ -86,9 +86,14 @@ function detect_markers() {
         data: formData,
         processData: false,
         success: function (data) {
-            context_warning = ""
-            $(new_fixture_data_id).hide();
-            set_fixture_markers(data);
+            if (data.image && data.markers) {
+                context_warning = ""
+                $(new_fixture_data_id).hide();
+            } else {
+                context_warning = "Name or image refused";
+            }
+             load_fixture_image(data.image);
+             set_fixture_markers(data.markers);
         },
         error: function (data) {
             context_warning = "Marker detection failed";
@@ -97,7 +102,7 @@ function detect_markers() {
         }});
 
     var new_image = $(new_fixture_image_id);
-    load_fixture($(new_fixture_name).val(), new_image[0].files[0], endsWith(new_image.val().toLowerCase(), ".tiff"));
+    load_fixture($(new_fixture_name).val());
 }
 
 function endsWith(str, suffix) {
@@ -108,42 +113,34 @@ function update_fixture_name() {
     $(fixture_name_id).text(get_fixture_as_name($(new_fixture_name).val()));
 }
 
-function load_fixture(name, img_data, is_tiff) {
+function load_fixture(name, img_data) {
     $(fixture_name_id).text(get_fixture_as_name(name));
     $(selected_fixture_div_id).show();
-    if (img_data) {
-        if (is_tiff) {
-            /* Non-working solution
-            var xhr = new XMLHttpRequest();
-            xhr.responseType = 'arraybuffer';
-            xhr.open('GET', URL.createObjectURL(img_data));
-            xhr.onload = function (e) {
-                var tiff = new Tiff({buffer: xhr.response});
-                fixture_image = tiff.toCanvas();
-            };
-            xhr.send();*/
+    draw_fixture();
+}
+
+function load_fixture_image(image_name) {
+
+    if (image_name) {
+
+        var img = new Image;
+        img.onload = function() {
+            fixture_image = img;
             draw_fixture();
-        } else {
-            var img = new Image;
-            img.onload = function() {
-                fixture_image = img;
-                draw_fixture();
-            }
-            img.src = URL.createObjectURL(img_data);
         }
+        img.src = "?image=" + image_name;
 
     } else {
         fixture_image = null;
-        draw_fixture();
     }
 }
+
 
 function set_fixture_markers(data) {
     console.log(data);
     markers = position_string_to_array(data);
     if (markers.length ==0) {
         markers = null;
-        context_warning = "Name or image refused";
         $(new_fixture_data_id).show();
     }
     draw_fixture();

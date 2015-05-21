@@ -42,6 +42,11 @@ _logger = logger.Logger("Resource Analysis Support")
 # FUNCTIONS
 #
 
+def save_image_as_png(from_path, **kwargs):
+
+    file, ext = os.path.splitext(from_path)
+    Image.open(from_path).save(os.path.extsep.join((file, "png")), **kwargs)
+
 def get_first_rotated(A, B):
     """Evaluates if both have the same orientation (lanscape or standing)
     returns the first so it matches the orientation of the second

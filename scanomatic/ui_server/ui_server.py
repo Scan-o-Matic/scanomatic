@@ -1,29 +1,31 @@
 __author__ = 'martin'
 
 import time
-from flask import Flask, request, send_from_directory, redirect
+from flask import Flask, request, send_from_directory, redirect, jsonify
 import webbrowser
 from threading import Thread
 from socket import error
 from subprocess import Popen
+import os
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.io.rpc_client import get_client
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
+from scanomatic.imageAnalysis.support import save_image_as_png
 
 _url = None
 _logger = Logger("UI-server")
-_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'tiff'}
+_ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.tiff'}
 
 
 def _launch_scanomatic_rpc_server():
     Popen(["scan-o-matic_server"])
 
 
-def _allowed_image(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1] in _ALLOWED_EXTENSIONS
+def _allowed_image(ext):
+    return ext.lower() in _ALLOWED_EXTENSIONS
 
 
 def launch_server(is_local=None, port=None, host=None, debug=False):
@@ -118,13 +120,16 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
             markers = request.values.get('markers', default=3, type=int)
             image = request.files.get('image')
-            name = request.values.get("name", '', type=str)
-
+            name = os.path.basename(request.values.get("name", '', type=str))
+            image_name, ext = os.path.splitext(image.filename)
             _logger.info("Working on detecting marker for fixture {0} using image {1} ({2})".format(
-                name, image.filename, _allowed_image(image.name)));
+                name, image.filename, _allowed_image(ext)))
 
-            if name and _allowed_image(image.filename):
-                path = ".".join((Paths().get_fixture_path(name), image.filename.rsplit('.', 1)[1]))
+            if name and _allowed_image(ext):
+
+                fixture_file = Paths().get_fixture_path(name)
+
+                path = os.path.extsep.join((fixture_file, ext.lstrip(os.path.extsep)))
                 image.save(path)
 
                 fixture = FixtureImage()
@@ -132,13 +137,22 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 fixture.set_image(image_path=path)
                 fixture.run_marker_analysis(markings=markers)
 
-                return str(fixture['current'].get_marker_positions())
+                save_image_as_png(path)
+                os.remove(path)
 
-            _logger.info("Detect keys files: {0} values: {1}".format(request.files.keys(), request.values.keys()))
-            _logger.info("Have request image {0}".format(image))
-            _logger.info("Decting on image for {0} markers".format(markers))
+                return jsonify(markers=str(fixture['current'].get_marker_positions()),
+                               image=os.path.basename(fixture_file))
 
-            return "[]"
+            _logger.warning("Refused detection (keys files: {0} values: {1})".format(
+                request.files.keys(), request.values.keys()))
+
+            return jsonify(markers="[]", image="")
+
+        elif request.args.get("image"):
+
+            image = os.path.extsep.join((os.path.basename(request.args.get("image")), "png"))
+            _logger.info("Sending fixture image {0}".format(image))
+            return send_from_directory(Paths().fixtures, image)
 
         return send_from_directory(Paths().ui_root, Paths().fixture_file)
 
