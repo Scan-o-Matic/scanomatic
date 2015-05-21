@@ -47,9 +47,13 @@
 
         <div id="selected-fixture" class="section">
             <h2 id="selected-fixture-name"></h2>
+            <p>You need to click the area below once (and after each button pressed) to activate editing.
+            Left mouse-button click and drag to draw feature area. Click inside area to remove area.</p>
             <canvas id="selected-fixture-canvas"    width="700"  height="600"></canvas>
             <input type="hidden" name="update-type" value="update">
-            <section><button type="submit" id="submit-button">Save</button></section>
+            <section>
+                <button type="button" id="clear-areas" onclick="clearAreas();draw_fixture();selected_fixture_canvas_jq.focus();">Clear All Areas</button>
+                <button type="submit" id="submit-button">Save</button></section>
         </div>
 
         <script>

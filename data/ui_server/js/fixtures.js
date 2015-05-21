@@ -14,6 +14,7 @@ var markers = null;
 var scale = 1;
 var areas = [];
 var creatingArea = false;
+var selected_fixture_canvas_jq;
 
 function relMouseCoords(event){
     var totalOffsetX = 0;
@@ -45,13 +46,15 @@ HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
 function set_canvas() {
 
-    var selected_fixture_canvas_jq = $(selected_fixture_canvas_id);
+    selected_fixture_canvas_jq = $(selected_fixture_canvas_id);
+    selected_fixture_canvas_jq.attr("tabindex", "0");
     var selected_fixture_canvas = selected_fixture_canvas_jq[0];
 
     selected_fixture_canvas_jq.mousedown(function (event) {
         var canvasPos = selected_fixture_canvas.relMouseCoords(event);
         var imagePos = translateToImageCoords(canvasPos);
         creatingArea = pointInsideOther(imagePos);
+
         if (creatingArea < 0) {
             areas.push({
                 x1: imagePos.x,
@@ -62,12 +65,13 @@ function set_canvas() {
                 plate: -1
             });
             creatingArea = areas.length - 1;
-        } else if (event.witch == 1) {
+        } else if (event.witch == 0) {
             areas[creatingArea].x2 = imagePos.x;
             areas[creatingArea].y2 = imagePos.y;
         } else {
             areas.splice(creatingArea, 1);
             creatingArea = null;
+            event.stopPropagation();
         }
         draw_fixture();
         setPlateIndices();
@@ -84,7 +88,7 @@ function set_canvas() {
     });
 
     selected_fixture_canvas_jq.mouseup( function(event) {
-        var minUsableSize = 50;
+        var minUsableSize = 10000;
         if (creatingArea && creatingArea >= 0 && creatingArea < areas.length) {
             if (getAreaSize(creatingArea) < minUsableSize)
                 areas.splice(creatingArea, 1);
@@ -99,6 +103,11 @@ function set_canvas() {
             draw_fixture();
 
         }
+
+        if (areas.length > 1 && getAreaSize(0) <= 0) {
+            areas.splice(0, 1);
+        }
+
         creatingArea = null;
      });
 
@@ -112,6 +121,10 @@ function getAreaSize(index) {
 
 function setPlateIndices() {
 
+}
+
+function clearAreas() {
+    areas = [];
 }
 
 function pointInsideOther(point) {
@@ -227,6 +240,8 @@ function update_fixture_name() {
 
 function load_fixture(name, img_data) {
     $(fixture_name_id).text(get_fixture_as_name(name));
+    clearAreas();
+    selected_fixture_canvas_jq.focus();
     $(selected_fixture_div_id).show();
     draw_fixture();
 }
