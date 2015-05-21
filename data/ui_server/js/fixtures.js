@@ -161,8 +161,10 @@ function draw_fixture() {
 
     if (markers) {
         var radius = 30 * scale;
+        var marker_scale = 4;
         for (var len = markers.length, i=0; i<len;i++)
-            draw_marker(context, markers[i][0] * scale, markers[i][1] * scale, radius, "blue", 5);
+            draw_marker(context, markers[i][0] * scale * marker_scale,
+                        markers[i][1] * scale * marker_scale, radius, "blue", 5);
     }
 
     if (context_warning) {
