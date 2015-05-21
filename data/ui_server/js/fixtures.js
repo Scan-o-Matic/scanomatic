@@ -12,6 +12,8 @@ var context_warning = "";
 var fixture_image = null;
 var markers = null;
 var scale = 1;
+var areas = [];
+var creatingArea = false;
 
 function relMouseCoords(event){
     var totalOffsetX = 0;
@@ -47,18 +49,75 @@ function set_canvas() {
     var selected_fixture_canvas = selected_fixture_canvas_jq[0];
 
     selected_fixture_canvas_jq.mousedown(function (event) {
-        console.log(
-        translateToImageCoords(selected_fixture_canvas.relMouseCoords(event)));
+        var canvasPos = selected_fixture_canvas.relMouseCoords(event);
+        var imagePos = translateToImageCoords(canvasPos);
+        creatingArea = pointInsideOther(imagePos);
+        if (creatingArea < 0) {
+            areas.push({
+                x1: imagePos.x,
+                x2: imagePos.x,
+                y1: imagePos.y,
+                y2: imagePos.y,
+                grayscale: false,
+                plate: -1
+            });
+            creatingArea = areas.length - 1;
+        } else if (event.witch == 1) {
+            areas[creatingArea].x2 = imagePos.x;
+            areas[creatingArea].y2 = imagePos.y;
+        } else {
+            areas.splice(creatingArea, 1);
+            creatingArea = null;
+        }
+        setPlateIndices();
     });
 
     selected_fixture_canvas_jq.mousemove(function (event) {
-
+        if (creatingArea && creatingArea >= 0 && creatingArea < areas.length) {
+            var canvasPos = selected_fixture_canvas.relMouseCoords(event);
+            var imagePos = translateToImageCoords(canvasPos);
+            areas[creatingArea].x2 = imagePos.x;
+            areas[creatingArea].y2 = imagePos.y;
+        }
     });
 
     selected_fixture_canvas_jq.mouseup( function(event) {
-
+        var minUsableSize = 50;
+        if (creatingArea && creatingArea >= 0 && creatingArea < areas.length) {
+            if (getAreaSize(creatingArea) < minUsableSize)
+                areas.splice(creatingArea, 1);
+            else {
+                var area = JSON.parse(JSON.stringify(areas[creatingArea]));
+                area.x1 = Math.min(areas[creatingArea].x1, areas[creatingArea].x2);
+                area.x2 = Math.max(areas[creatingArea].x1, areas[creatingArea].x2);
+                area.y1 = Math.min(areas[creatingArea].y1, areas[creatingArea].y2);
+                area.y2 = Math.max(areas[creatingArea].y1, areas[creatingArea].y2);
+                areas[creatingArea] = area;
+            }
+        }
+        creatingArea = null;
     });
 
+}
+
+function getAreaSize(index) {
+    if (index && index >= 0 && index < areas.length)
+        return Math.abs(areas[index].x1 - areas[index].x2) * Math.abs(areas[index].y1 - areas[index].y2);
+    return -1;
+}
+
+function setPlateIndices() {
+
+}
+
+function pointInsideOther(point) {
+    for (var len = areas.length, i=0; i<len; i++) {
+        if (areas[i].x1 < point.x  && point.x < areas[i].x2 &&
+            areas[i].y1 < point.y && point.y < areas[i].y2)
+
+            return i;
+    }
+    return -1;
 }
 
 function get_fixture_as_name(fixture) {
