@@ -135,7 +135,7 @@ class SaneBase(object):
             sources = tuple(source.strip() for source in sources)
             tpu_sources = tuple(source for source in sources if
                                 any(True for tpu in SaneBase._TRANSPARENCY_WORDS if source.startswith(tpu)))
-            self._SANE_VERSION_NAME_FOR_TRANSPARENCY = tpu_sources[-1]
+            SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY = tpu_sources[-1]
             return True
 
         except (TypeError, IndexError):
@@ -145,7 +145,7 @@ class SaneBase(object):
     def _update_mode_source(self):
 
         if self._scan_mode is SCAN_MODES.TPU and not self._verified_settings:
-            self._scan_settings[SCAN_FLAGS.Mode] = SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY
+            self._scan_settings[SCAN_FLAGS.Source] = SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY
 
     def _get_copy_of_settings(self):
 
