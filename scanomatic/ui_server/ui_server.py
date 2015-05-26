@@ -15,6 +15,7 @@ from scanomatic.io.rpc_client import get_client
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 from scanomatic.imageAnalysis.support import save_image_as_png
 from scanomatic.models.fixture_models import GrayScaleAreaModel
+from scanomatic.imageAnalysis.grayscale import getGrayscales
 
 _url = None
 _logger = Logger("UI-server")
@@ -109,6 +110,15 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return "Not implemented sending fixture data"
         else:
             return ""
+
+    @app.route("/grayscales", methods=['post', 'get'])
+    def _grayscales():
+
+        if request.args.get("names"):
+
+            return jsonify(grayscales=getGrayscales())
+
+        return ""
 
     @app.route("/fixtures", methods=['post', 'get'])
     def _fixtures():
