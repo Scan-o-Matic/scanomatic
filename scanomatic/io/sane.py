@@ -18,106 +18,160 @@ __status__ = "Development"
 from subprocess import Popen, PIPE
 import re
 import copy
+from itertools import chain
+from enum import Enum
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import logger
-import app_config
+from logger import Logger
 
 #
 # CLASSES
 #
 
-class Sane_Base():
 
-    _sane_flags_replace = {
-        (1, 0, 23): [],
-        (1, 0, 24): [(('EPSON V700', 'TPU', '--source'), 'TPU8x10')]
-    }
+class SCAN_MODES(Enum):
 
-    _backend_version = None
+    TPU = 0
+    COLOR = 1
 
-    def __init__(self, owner=None, model=None, scan_mode=None,
-                 scan_settings=None):
 
-        self.owner = owner
+class SCAN_FLAGS(Enum):
 
-        self._logger = logger.Logger("SANE")
+    Source = "--source"
+    Format = "--format"
+    Resolution = "--resolution"
+    Mode = "--mode"
+    Left = "-l"
+    Top = "-t"
+    Width = "-x"
+    Height = "-y"
+    Depth = "--depth"
+    Device = "-d"
+
+
+class SaneBase(object):
+
+    _TRANSPARENCY_WORDS = {"TPU", "Transparency"}
+    _SANE_VERSION_NAME_FOR_TRANSPARENCY = None
+    # _SETTINGS_ORDER = (SCAN_FLAGS.Source, SCAN_FLAGS.Format, SCAN_FLAGS.Resolution, SCAN_FLAGS.Mode, SCAN_FLAGS.Left,
+    #                   SCAN_FLAGS.Top, SCAN_FLAGS.Width, SCAN_FLAGS.Height, SCAN_FLAGS.Depth)
+
+    _SETTINGS_REPOSITORY = {
+        "EPSON V700": {
+            SCAN_MODES.TPU: {
+                SCAN_FLAGS.Source: "Transparency", SCAN_FLAGS.Format: "tiff",
+                SCAN_FLAGS.Resolution: "600", SCAN_FLAGS.Mode: "Gray", SCAN_FLAGS.Left: "0",
+                SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "203.2", SCAN_FLAGS.Height: "254", SCAN_FLAGS.Depth: "8"},
+            SCAN_MODES.COLOR: {
+                SCAN_FLAGS.Source: "Flatbed", SCAN_FLAGS.Format: "tiff",
+                SCAN_FLAGS.Resolution: "300", SCAN_FLAGS.Mode: "Color", SCAN_FLAGS.Left: "0",
+                SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
+                SCAN_FLAGS.Depth: "8"}}}
+
+    _PROGRAM = "scanimage"
+    _HELP_FLAG = "--help"
+    _SOURCE_FLAG = "--source"
+    _SOURCE_SEPARATOR = "|"
+    _SOURCE_PATTERN = re.compile(r'--source ([^\n[]+)')
+
+    def __init__(self, model, scan_mode):
+
+        self._logger = Logger("SANE")
 
         self.next_file_name = None
         self._scanner_name = None
-        self._program_name = "scanimage"
+
         self._scan_settings = None
 
-        if scan_settings is not None:
-            self._scan_settings_repo = scan_settings
-        else:
-            self._scan_settings_repo = {
-                "EPSON V700": {
-                    'TPU': [
-                        "--source", "Transparency", "--format", "tiff",
-                        "--resolution", "600", "--mode", "Gray", "-l", "0",
-                        "-t", "0", "-x", "203.2", "-y", "254", "--depth", "8"],
-                    'COLOR': [
-                        "--source", "Flatbed", "--format", "tiff",
-                        "--resolution", "300", "--mode", "Color", "-l", "0",
-                        "-t", "0", "-x", "215.9", "-y", "297.18",
-                        "--depth", "8"]}}
+        self._model = SaneBase._get_model(model, self._logger)
+        self._scan_mode = SaneBase._get_mode(scan_mode, self._model, self._logger)
+        self._verified_settings = False
+        self._scan_settings = self._get_copy_of_settings()
 
-        if model is not None:
-            model = model.upper()
+    @classmethod
+    def _get_model(cls, model, logger):
 
-        if model not in self._scan_settings_repo.keys():
-            self._model = self._scan_settings_repo.keys()[0]
-        else:
-            self._model = model
-        if scan_mode is not None:
+        model = model.upper()
+
+        if model not in SaneBase._SETTINGS_REPOSITORY:
+            logger.critical("Model {0} unknown, only have settings for {1}".format(
+                model, SaneBase._SETTINGS_REPOSITORY.keys()))
+
+            return None
+
+        return model
+
+    @classmethod
+    def _get_mode(cls, scan_mode, model, logger):
+
+        if not model:
+            return None
+
+        if isinstance(scan_mode, str):
             scan_mode = scan_mode.upper()
             if scan_mode == "COLOUR":
                 scan_mode = "COLOR"
 
-        if scan_mode not in self._scan_settings_repo[self._model].keys():
-            self._mode = self._scan_settings_repo[self._model].keys()[0]
+            try:
+                scan_mode = SCAN_MODES[scan_mode]
+            except KeyError:
+                pass
+
+        if scan_mode not in SaneBase._SETTINGS_REPOSITORY[model]:
+            logger.critical("Unknown scan-mode \"{0}\" for {1}, only knows {2}".format(
+                scan_mode, model, SaneBase._SETTINGS_REPOSITORY[model].keys()))
+
+        return scan_mode
+
+    def _verify_mode_source(self):
+
+        proc = Popen([SaneBase._PROGRAM, SaneBase._HELP_FLAG], stdout=PIPE, stderr=PIPE, shell=False)
+        stdout, _ = proc.communicate()
+        try:
+            sources = SaneBase._SOURCE_PATTERN.findall(stdout)[0].split(SaneBase._SOURCE_SEPARATOR)
+            sources = tuple(source.strip() for source in sources)
+            tpu_sources = tuple(source for source in sources if
+                                any(True for tpu in SaneBase._TRANSPARENCY_WORDS if source.startswith(tpu)))
+            self._SANE_VERSION_NAME_FOR_TRANSPARENCY = tpu_sources[-1]
+            return True
+
+        except (TypeError, IndexError):
+            self._logger.critical("Can't get information about the scanner")
+            return False
+
+    def _update_mode_source(self):
+
+        if self._scan_mode is SCAN_MODES.TPU and not self._verified_settings:
+            self._scan_settings[SCAN_FLAGS.Mode] = SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY
+
+    def _get_copy_of_settings(self):
+
+        if SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY is None and self._scan_mode != "COLOR":
+            self._logger.info("Will verify correct transparency setting for first scan")
+
+        try:
+            return copy.deepcopy(SaneBase._SETTINGS_REPOSITORY[self._model][self._scan_mode])
+        except KeyError:
+            self._logger.critical("Without know settings, no scanning possible")
+            return None
+
+    def _get_scan_instructions(self, prepend=None):
+
+        def _dict_to_tuple(d):
+
+            return tuple(chain(*((key.value, value) for key, value in d.items())))
+
+        program = (SaneBase._PROGRAM,)
+        if prepend:
+            prepend_settings = _dict_to_tuple(prepend)
         else:
-            self._mode = scan_mode
+            prepend_settings = tuple()
 
-        if self._backend_version is None:
-            self._set_sane_version()
-
-        self._scan_settings = self._get_sane_version_safe_settings_copy(
-            self._scan_settings_repo[self._model][self._mode])
-
-    @classmethod
-    def _set_sane_version(cls):
-
-        conf = app_config.Config()
-        p = Popen([
-            conf.scan_program,
-            conf.scan_program_version_flag],
-            shell=False, stdout=PIPE)
-
-        stdout, _ = p.communicate()
-        front_end_version, back_end_version = re.findall(r' ([0-9]+\.[0-9]+\.[0-9]+)', stdout.strip('\n'))
-
-        cls._backend_version = tuple(int(val) for val in back_end_version.split("."))
-
-    def _get_sane_version_safe_settings_copy(self, settings):
-
-        settings = copy.deepcopy(settings)
-
-        if self._backend_version in self._sane_flags_replace:
-
-            for (scan_model, scan_mode, scan_setting), value in self._sane_flags_replace[self._backend_version]:
-                settings_key_index = settings[scan_model][scan_mode].index(scan_setting)
-                settings[scan_model][scan_mode][settings_key_index + 1] = value
-
-        else:
-
-            self._logger.warning("Using untested version of SANE, might or might not work.")
-
-        return settings
+        settings = _dict_to_tuple(self._scan_settings)
+        return program + prepend_settings + settings
 
     def OpenScanner(self, mainWindow=None, ProductName=None, UseCallback=False):
         pass
@@ -125,43 +179,56 @@ class Sane_Base():
     def Terminate(self):
         pass
 
-    def AcquireNatively(self, scanner=None, handle=None, filename=None):
-        return self.AcquireByFile(scanner=None, handle=handle, filename=filename)
+    def AcquireNatively(self, scanner=None, filename=None, **kwargs):
+        return self.AcquireByFile(scanner=None, filename=filename, **kwargs)
 
-    def AcquireByFile(self, scanner=None, handle=None, filename=None):
+    def AcquireByFile(self, scanner=None, filename=None, **kwargs):
+
+        if self._scan_settings is None:
+            self._logger.critical("Without settings no scan possible.")
+            return False
+
+        elif self._verified_settings is False:
+            success = self._verify_mode_source()
+            if success:
+                self._update_mode_source()
+                self._verified_settings = True
+            elif self._scan_mode is SCAN_MODES.TPU:
+                return False
+            else:
+                self._verified_settings = True
 
         if filename is not None:
             self.next_file_name = filename
 
         if self.next_file_name:
             self._logger.info("Scanning {0}".format(self.next_file_name))
-            #os.system(self._scan_settings + self.next_file_name)
 
             try:
                 im = open(self.next_file_name, 'w')
-            except:
-                self._logger.error("Could not write to file: {0}".format(
-                    self.next_file_name))
+            except IOError:
+                self._logger.error("Could not write to file: {0}".format(self.next_file_name))
                 return False
 
-            scan_query = list(self._scan_settings)
-            if scanner is not None:
-                scan_query = ['-d', scanner] + scan_query
+            if scanner:
+                preprend_settings = {SCAN_FLAGS.Device: scanner}
+            else:
+                preprend_settings = None
 
-            scan_query.insert(0, self._program_name)
+            scan_query = self._get_scan_instructions(prepend=preprend_settings)
             self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
 
-            if self.owner is not None and self.owner.USE_CALLBACK:
-                args = ("SANE-CALLBACK", im, Popen(scan_query, stdout=im, shell=False),
-                        self.next_file_name)
-                return args
+            scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
+            _, stderr = scan_proc.communicate()
+
+            im.close()
+
+            if stderr is None:
+                return True
+            elif "invalid argument" in stderr.lower() or "no SANE devices found" in stderr:
+                return False
             else:
-                scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
-                _, stderr = scan_proc.communicate()
-
-                im.close()
-
-                return stderr is None or "invalid argument" not in stderr.lower()
+                return True
 
         else:
             return False

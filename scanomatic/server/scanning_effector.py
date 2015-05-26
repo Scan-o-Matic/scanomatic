@@ -86,7 +86,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._project_directory,
             paths_object.experiment_scan_image_pattern)
 
-        self._scanner = sane.Sane_Base(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
+        self._scanner = sane.SaneBase(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
 
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
             compile_action=COMPILE_ACTION.Initiate,
