@@ -259,7 +259,7 @@ function testAsGrayScale(plate) {
             data: plate,
             success: function (data) {
                 console.log(data);
-                if (data.source_values && data.source_values.length > 0)
+                if (data.grayscale)
                     plate.grayscale = true;
                 else
                     plate.grayscale = false;

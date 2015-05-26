@@ -139,18 +139,21 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
             if name:
                 fixture_file = Paths().get_fixture_path(name)
+                _logger.warning("Grayscale detection (keys and values: {0})".format(request.values.items()))
                 grayscale_area_model = GrayScaleAreaModel(
                     name=request.args.get("grayscale_name", "", type=str),
-                    x1=request.form.get("x1", type=int),
-                    x2=request.form.get("x2", type=int),
-                    y1=request.form.get("y1", type=int),
-                    y2=request.form.get("y2", type=int))
+                    x1=request.values.get("x1", type=float),
+                    x2=request.values.get("x2", type=float),
+                    y1=request.values.get("y1", type=float),
+                    y2=request.values.get("y2", type=float))
+                _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
                 ext = "tiff"
                 image_path = os.path.extsep.join((fixture_file, ext))
                 fixture = get_fixture_image(name, image_path)
                 fixture['current'].model.grayscale = grayscale_area_model
                 fixture.analyse_grayscale()
-                return jsonify(source_values=fixture['current'].model.grayscale.values)
+                return jsonify(source_values=fixture['current'].model.grayscale.values,
+                               grayscale=len(fixture["current"].model.grayscale.values is not None)
             else:
                 return abort(500)
 

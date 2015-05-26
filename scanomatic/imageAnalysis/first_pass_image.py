@@ -338,7 +338,7 @@ class FixtureImage(object):
             try:
 
                 return im[grayscale_model.x1 * scale: grayscale_model.x2 * scale,
-                          grayscale_model.y2 * scale: grayscale_model.y2 * scale]
+                          grayscale_model.y1 * scale: grayscale_model.y2 * scale]
 
             except (IndexError, TypeError):
 
@@ -351,7 +351,9 @@ class FixtureImage(object):
 
         if im is None or 0 in im.shape:
             self._logger.error(
-                "No valid grayscale area (Current area: {0})".format(current_model.grayscale))
+                "No valid grayscale area (Current area: {0} using {1})".format(
+                    self.im is None and "-No image loaded-" or
+                    (im is None and dict(**current_model.grayscale) or im.shape), current_model.grayscale))
             return False
 
         ag = imageGrayscale.Analyse_Grayscale(
