@@ -7,6 +7,7 @@ from threading import Thread
 from socket import error
 from subprocess import Popen
 import os
+import numpy as np
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -15,7 +16,8 @@ from scanomatic.io.rpc_client import get_client
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 from scanomatic.imageAnalysis.support import save_image_as_png
 from scanomatic.models.fixture_models import GrayScaleAreaModel
-from scanomatic.imageAnalysis.grayscale import getGrayscales
+from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
+from scanomatic.imageAnalysis.imageGrayscale import get_ortho_trimmed_slice, get_para_timmed_slice, Analyse_Grayscale
 
 _url = None
 _logger = Logger("UI-server")
@@ -35,6 +37,27 @@ def get_fixture_image(name, image_path):
     fixture.name = name
     fixture.set_image(image_path=image_path)
     return fixture
+
+def get_grayscale(fixture, grayscale_area_model):
+
+    gs = getGrayscale(grayscale_area_model.name)
+    im = fixture.get_grayscale_im_section(grayscale_area_model)
+    im_o = get_ortho_trimmed_slice(im, gs)
+    im_p = get_para_timmed_slice(im_o, gs)
+    ag = Analyse_Grayscale(target_type=grayscale_area_model.name, image=None, scale_factor=1)
+    return ag.get_grayscale(im_p)
+
+
+def get_grayscale_is_valid(values, grayscale_name):
+    if values is None:
+        return False
+    grayscale = getGrayscale(grayscale_name)
+    try:
+        fit = np.polyfit(grayscale['targets'], values, 3)
+        return np.unique(np.sign(fit)).size == 1
+    except:
+        return False
+
 
 def launch_server(is_local=None, port=None, host=None, debug=False):
 
@@ -150,10 +173,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 ext = "tiff"
                 image_path = os.path.extsep.join((fixture_file, ext))
                 fixture = get_fixture_image(name, image_path)
-                fixture['current'].model.grayscale = grayscale_area_model
-                fixture.analyse_grayscale()
-                return jsonify(source_values=fixture['current'].model.grayscale.values,
-                               grayscale=len(fixture["current"].model.grayscale.values is not None)
+                _, values = get_grayscale(fixture, grayscale_area_model)
+                return jsonify(source_values=values,
+                               grayscale=get_grayscale_is_valid(values, grayscale_area_model.name))
             else:
                 return abort(500)
 

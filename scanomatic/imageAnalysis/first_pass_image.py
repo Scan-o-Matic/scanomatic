@@ -337,8 +337,8 @@ class FixtureImage(object):
 
             try:
 
-                return im[grayscale_model.x1 * scale: grayscale_model.x2 * scale,
-                          grayscale_model.y1 * scale: grayscale_model.y2 * scale]
+                return im[grayscale_model.y1 * scale: grayscale_model.y2 * scale,
+                          grayscale_model.x1 * scale: grayscale_model.x2 * scale]
 
             except (IndexError, TypeError):
 

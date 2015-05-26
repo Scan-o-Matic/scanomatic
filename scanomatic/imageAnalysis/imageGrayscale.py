@@ -14,7 +14,8 @@ __status__ = "Development"
 #
 
 import numpy as np
-from scipy.signal import fftconvolve
+from scipy.signal import fftconvolve, convolve2d, convolve
+from scipy.ndimage import gaussian_filter1d
 
 #
 # INTERNAL DEPENDENCIES
@@ -27,6 +28,53 @@ import signal
 #
 # CLASSES
 #
+
+
+def get_ortho_trimmed_slice(im, grayscale):
+    half_width = grayscale['width'] / 2
+    im_scaled = im / float(im.max()) - 0.5
+    kernel = np.array(grayscale['targets']).repeat(grayscale['length'])
+    kernel = kernel.reshape((kernel.size, 1))
+    kernel_scaled = kernel / float(kernel.max()) - 0.5
+    C = np.abs(convolve2d(im_scaled, kernel_scaled, mode="valid"))
+    peak = gaussian_filter1d(np.max(C, axis=0), half_width).argmax()
+    return im[:, peak - half_width: peak + half_width]
+
+
+def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0.75):
+
+    def _extend_edges_if_permissable_at_boundry(guess_edges, permissables):
+
+        if not permissables[(guess_edges,)][0]:
+            shifted_edges = np.zeros(guess_edges.size + 1)
+            shifted_edges[1:] = guess_edges
+            guess_edges = shifted_edges
+
+        if permissables[(guess_edges,)][-1]:
+            appended_edges = np.zeros(guess_edges.size + 1)
+            appended_edges[:-1] = guess_edges
+            guess_edges = appended_edges
+
+        return guess_edges
+
+    def _get_segments_from_edges(edges_vector):
+        return np.vstack((edges_vector[::2], edges_vector[1::2])).T
+
+    length = grayscale['sections'] * grayscale['length']
+    para_signal = convolve(np.var(im_ortho_trimmed, axis=1), np.ones((length, )), mode='valid')
+    permissables = para_signal < (para_signal.max() - para_signal.min()) / stringency + para_signal.min()
+    edges = np.where(convolve(permissables, [-1,1], mode='same') != 0)[0]
+    if not edges.size:
+        return im_ortho_trimmed
+
+    edges = _extend_edges_if_permissable_at_boundry(edges, permissables)
+    segments = _get_segments_from_edges(edges)
+    optimal_segment = np.abs(length/10.0 - np.diff(segments, axis=1).ravel()).argmin()
+    peak = segments[optimal_segment].mean() + (im_ortho_trimmed.shape[0] - para_signal.size) / 2.0
+    bufferd_half_length = length / 2 + buffer * grayscale['length']
+    print(peak, bufferd_half_length)
+    return im_ortho_trimmed[np.max((0, peak - bufferd_half_length)):
+                            np.min((peak + bufferd_half_length, im_ortho_trimmed.shape[0]))]
 
 
 class Analyse_Grayscale(object):
@@ -49,8 +97,8 @@ class Analyse_Grayscale(object):
     def __init__(self, target_type="Kodak", image=None, scale_factor=1.0):
 
         self.grayscale_type = target_type
-
-        for k, v in grayscale.getGrayscale(target_type).items():
+        self._grayscale = grayscale.getGrayscale(target_type)
+        for k, v in self._grayscale.items():
 
             setattr(self, "_grayscale_{0}".format(k),
                     k in grayscale.GRAYSCALE_SCALABLE and
@@ -281,20 +329,17 @@ class Analyse_Grayscale(object):
         if image is not None:
 
             self._img = image
+            im_slice = image
+            rect = ([0,0], image.shape)
+            self._orthMid = (rect[1][1] + rect[0][1]) / 2.0
+            self._mid_orth_strip = rect[0][1] + (rect[1][1] - rect[0][1]) / 2
+        else:
+            im_slice, rect = self._get_clean_im_and_rect()
 
         if self._img is None or sum(self._img.shape) == 0:
 
             self._logger.error("No image loaded or null image")
             return None
-
-        #DEBUG PLOT
-        #plt.imshow(self._img)
-        #plt.show()
-        #DEBUG PLOT END
-
-        self._logger.debug("Image shape {0}".format(self._img.shape))
-
-        im_slice, rect = self._get_clean_im_and_rect()
 
         #THE 1D SIGNAL ALONG THE GS
         strip_values = im_slice.mean(axis=1)
@@ -303,35 +348,14 @@ class Analyse_Grayscale(object):
                                     self._grayscale_sections)
         gs_l_diff = abs(1 - strip_values.size / expected_strip_size)
 
-        #FINDING SPIKES
-        kernel = [-1, 1]  # old [-1,2,-1]
-        up_spikes = np.abs(np.convolve(strip_values, kernel,
-                           "same")) > self.SPIKE_UP_T
-        up_spikes = signal.get_center_of_spikes(up_spikes)
+        up_spikes = signal.get_signal(strip_values, self.SPIKE_UP_T)
+        grayscale_segment_centers = None
 
-        gray_scale_pos = None
+        if gs_l_diff < Analyse_Grayscale.NEW_GS_ALG_L_DIFF_T:
 
-        if gs_l_diff < self.NEW_GS_ALG_L_DIFF_T:
-
-            expected_spikes = (np.arange(1, self._grayscale_sections) *
-                               self._grayscale_length)
-
-            expected_offset = (expected_strip_size - strip_values.size) / 2.0
-
-            expected_spikes += expected_offset
-
-            observed_spikes = np.where(up_spikes)[0]
-
-            pos_diffs = np.abs(np.subtract.outer(
-                observed_spikes,
-                expected_spikes)).argmin(axis=0)
-
-            deltas = []
-            for ei, oi in enumerate(pos_diffs):
-                deltas.append(abs(expected_spikes[ei] - observed_spikes[oi]))
-                if deltas[-1] > self._grayscale_length * self.NEW_GS_ALG_L_DIFF_SPIKE_T:
-                    deltas[-1] = np.nan
-            deltas = np.array(deltas)
+            deltas, observed_spikes, pos_diffs = signal.get_signal_data(
+                strip_values, up_spikes, self._grayscale,
+                self._grayscale["length"] * Analyse_Grayscale.NEW_GS_ALG_L_DIFF_SPIKE_T)
 
             #IF GS-SECTION SEEMS TO BE RIGHT SIZE FOR THE WHOLE GS
             #THEN THE SECTIONING PROBABLY IS A GOOD ESTIMATE FOR THE GS
@@ -340,20 +364,7 @@ class Analyse_Grayscale(object):
                     np.isnan(deltas[-1])) / float(self._grayscale_sections) >
                     self.NEW_GS_ALG_SPIKES_FRACTION):
 
-                edges = []
-                for di, oi in enumerate(pos_diffs):
-                    if np.isfinite(deltas[di]):
-                        edges.append(observed_spikes[oi])
-                    else:
-                        edges.append(np.nan)
-                edges = np.array(edges, dtype=np.float)
-                nan_edges = np.isnan(edges)
-                fin_edges = np.isfinite(edges)
-                X = np.arange(edges.size, dtype=np.float) + 1
-                edges[nan_edges] = np.interp(X[nan_edges], X[fin_edges],
-                                             edges[fin_edges],
-                                             left=np.nan,
-                                             right=np.nan)
+                edges = signal.get_signal_edges(pos_diffs, deltas, observed_spikes)
                 fin_edges = np.isfinite(edges)
                 where_fin_edges = np.where(fin_edges)[0]
 
@@ -361,17 +372,10 @@ class Analyse_Grayscale(object):
                 frequency = np.diff(edges[where_fin_edges[0]: where_fin_edges[-1]], 1)
                 frequency = frequency[np.isfinite(frequency)].mean()
 
-                #EXTENDED TO GET OUTSIDE EDGES
-                edges = np.r_[[np.nan], edges, [np.nan]]
-                fin_edges = np.isfinite(edges)
-                where_fin_edges = np.where(fin_edges)[0]
-                for i in range(where_fin_edges[0] - 1, -1, -1):
-                    edges[i] = edges[i + 1] - frequency
-                for i in range(where_fin_edges[-1] + 1, edges.size):
-                    edges[i] = edges[i - 1] + frequency
+                edges = signal.get_edges_extended(edges, frequency)
 
                 #EXTRACTING SECTION MIDPOINTS
-                gray_scale_pos = np.interp(
+                grayscale_segment_centers = np.interp(
                     np.arange(self._grayscale_sections) + 0.5,
                     np.arange(self._grayscale_sections + 1),
                     edges)
@@ -379,14 +383,14 @@ class Analyse_Grayscale(object):
                 self._logger.info("GRAYSCALE: Got signal with new method")
 
                 #CHECKING OVERFLOWS
-                if gray_scale_pos[0] - frequency * self.NEW_SAFETY_PADDING < 0:
-                    gray_scale_pos += frequency
-                if (gray_scale_pos[-1] + frequency * self.NEW_SAFETY_PADDING >
+                if grayscale_segment_centers[0] - frequency * self.NEW_SAFETY_PADDING < 0:
+                    grayscale_segment_centers += frequency
+                if (grayscale_segment_centers[-1] + frequency * self.NEW_SAFETY_PADDING >
                         strip_values.size):
-                    gray_scale_pos -= frequency
+                    grayscale_segment_centers -= frequency
 
                 #SETTING ABS POS REL TO WHOLE IM-SECTION
-                gray_scale_pos += rect[0][0]
+                grayscale_segment_centers += rect[0][0]
 
                 val_orth = self._grayscale_width * self.NEW_SAFETY_PADDING
                 val_para = frequency * self.NEW_SAFETY_PADDING
@@ -402,7 +406,7 @@ class Analyse_Grayscale(object):
                     bottom = self._img.shape[1] - 1
 
                 gray_scale = []
-                for pos in gray_scale_pos:
+                for pos in grayscale_segment_centers:
 
                     left = pos - val_para
 
@@ -417,7 +421,7 @@ class Analyse_Grayscale(object):
                     self._sectionAreaSlices.append((slice(left, right),
                                                     slice(top, bottom)))
 
-                    gray_scale.append(self._img[left: right, top: bottom].mean())
+                    gray_scale.append(np.median(self._img[left: right, top: bottom]))
 
             else:
 
@@ -425,9 +429,10 @@ class Analyse_Grayscale(object):
 
         else:
 
-            self._logger.warning("Skipped new method, threshold not met")
+            self._logger.warning("Skipped new method, threshold not met ({0} > {1}; slice {2})".format(
+                gs_l_diff, Analyse_Grayscale.NEW_GS_ALG_L_DIFF_T, rect))
 
-        if gray_scale_pos is None:
+        if grayscale_segment_centers is None:
 
             self._logger.warning("Using fallback method")
 
@@ -489,7 +494,7 @@ class Analyse_Grayscale(object):
                 s -= frequency
 
             gray_scale = []
-            gray_scale_pos = []
+            grayscale_segment_centers = []
 
             self.ortho_half_height = self._grayscale_width / \
                 2.0 * self.SAFETY_COEFF
@@ -508,23 +513,23 @@ class Analyse_Grayscale(object):
 
                 mid = s[pos:pos + 2].mean() + rect[0][0]
 
-                gray_scale_pos.append(mid)
+                grayscale_segment_centers.append(mid)
 
-                left = gray_scale_pos[-1] - 0.5 * frequency * self.SAFETY_COEFF
+                left = grayscale_segment_centers[-1] - 0.5 * frequency * self.SAFETY_COEFF
 
                 if left < 0:
                     left = 0
 
-                right = gray_scale_pos[-1] + 0.5 * frequency * self.SAFETY_COEFF
+                right = grayscale_segment_centers[-1] + 0.5 * frequency * self.SAFETY_COEFF
 
                 if right >= self._img.shape[0]:
                     right = self._img.shape[0] - 1
 
-                gray_scale.append(self._img[left: right, top: bottom].mean())
+                gray_scale.append(np.median(self._img[left: right, top: bottom]))
 
-        self._grayscale_pos = gray_scale_pos
+        self._grayscale_pos = grayscale_segment_centers
         self._grayscaleSource = gray_scale
 
         #print "GS", gray_scale
         #print "GS POS", gray_scale_pos
-        return gray_scale_pos, gray_scale
+        return grayscale_segment_centers, gray_scale
