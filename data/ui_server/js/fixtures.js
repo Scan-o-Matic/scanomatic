@@ -471,10 +471,22 @@ function draw_plate(context, plate) {
     context.lineWidth = 2;
     context.stroke();
 
-    var plateCenter = getAreaCenter(plate);
-    context.font = Math.min(plate.x2 - plate.x1, plate.y2 - plate.y1) * scale * 0.6 + 'pt Calibri';
+    shadow_text(context, plate, "green", "white", plate.grayscale ? "G" : plate.plate)
+}
+
+function shadow_text(context, area, text_color, shadow_color, text) {
+    var fontSize = Math.min(area.x2 - area.x1, area.y2 - area.y1) * scale * 0.6;
+    var center = getAreaCenter(area);
+
+    context.font =  fontSize * 1.1 + 'pt Calibri';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.fillStyle = 'green';
-    context.fillText(plate.grayscale ? "G" : plate.plate, plateCenter.x * scale, plateCenter.y * scale);
+    context.fillStyle = shadow_color;
+    context.fillText(text, center.x * scale, center.y * scale);
+
+    context.font =  fontSize + 'pt Calibri';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillStyle = text_color;
+    context.fillText(text, center.x * scale, center.y * scale);
 }
