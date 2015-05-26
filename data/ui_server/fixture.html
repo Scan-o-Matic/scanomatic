@@ -16,6 +16,7 @@
         selected_fixture_div_id = "#selected-fixture";
         selected_fixture_canvas_id = '#selected-fixture-canvas';
         fixture_name_id = "#selected-fixture-name";
+        grayscale_id = "#grayscale";
 
     </script>
 </head>
@@ -53,11 +54,14 @@
             <input type="hidden" name="update-type" value="update">
             <section>
                 <button type="button" id="clear-areas" onclick="clearAreas();draw_fixture();selected_fixture_canvas_jq.focus();">Clear All Areas</button>
+                <label for="grayscale">Grayscale</label>
+                <select name="grayscale" id="grayscale"></select>
                 <button type="submit" id="submit-button">Save</button>
             </section>
         </div>
 
         <script>
+            get_grayscales();
             get_fixtures("#current-fixture", "#new-fixture-name");
             set_canvas();
         </script>
