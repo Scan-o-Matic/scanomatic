@@ -229,12 +229,7 @@ class SaneBase(object):
 
             im.close()
 
-            if stderr is None:
-                return True
-            elif "invalid argument" in stderr.lower() or "no SANE devices found" in stderr:
-                return False
-            else:
-                return True
+            return scan_proc.returncode == 0
 
         else:
             return False
