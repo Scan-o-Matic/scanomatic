@@ -7,6 +7,7 @@ var selected_fixture_div_id;
 var fixture_name_id;
 var selected_fixture_canvas_id;
 var new_fixture_name;
+var grayscale_id;
 
 var context_warning = "";
 var fixture_image = null;
@@ -251,9 +252,9 @@ function testAsGrayScale(plate) {
     }
 
     if (plate) {
-        var grayscale_name = "";
+        var grayscale_name = $(grayscale_id).val();
         $.ajax({
-            url: "?grayscale=1&fixture=" + fixture_name + "&grayscale=" + grayscale_name,
+            url: "?grayscale=1&fixture=" + fixture_name + "&grayscale_name=" + grayscale_name,
             method: "POST",
             data: plate,
             success: function (data) {
