@@ -140,7 +140,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             if name:
                 fixture_file = Paths().get_fixture_path(name)
                 grayscale_area_model = GrayScaleAreaModel(
-                    name=request.args.get("grayscale", "", type=str),
+                    name=request.args.get("grayscale_name", "", type=str),
                     x1=request.form.get("x1", type=int),
                     x2=request.form.get("x2", type=int),
                     y1=request.form.get("y1", type=int),
