@@ -309,6 +309,18 @@ function get_fixtures() {
     $(selected_fixture_div_id).hide();
 }
 
+function get_grayscales() {
+    var options = $(grayscale_id);
+    options.empty();
+    $.get("/grayscales?names=1", function(data, status) {
+        if (data.grayscales) {
+            for (var i=0; i<data.grayscales.length; i++)
+                options.append($("<option />").val(data.grayscales[i]).text(data.grayscales[i]));
+        }
+    });
+
+}
+
 function add_fixture() {
     var options = $(current_fixture_id);
     unselect(options);
