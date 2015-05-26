@@ -14,6 +14,7 @@ from scanomatic.io.logger import Logger
 from scanomatic.io.rpc_client import get_client
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 from scanomatic.imageAnalysis.support import save_image_as_png
+from scanomatic.models.fixture_models import GrayScaleAreaModel
 
 _url = None
 _logger = Logger("UI-server")
@@ -27,6 +28,12 @@ def _launch_scanomatic_rpc_server():
 def _allowed_image(ext):
     return ext.lower() in _ALLOWED_EXTENSIONS
 
+def get_fixture_image(name, image_path):
+
+    fixture = FixtureImage()
+    fixture.name = name
+    fixture.set_image(image_path=image_path)
+    return fixture
 
 def launch_server(is_local=None, port=None, host=None, debug=False):
 
@@ -118,10 +125,24 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         elif request.args.get("grayscale"):
 
-            #TODO check if fixture has image uploaded and do analysis
-            x = (request.form.get("x1"), request.form.get("x2"))
-            y = (request.form.get("y1"), request.form.get("y2"))
-            return abort(500)
+            name = request.args.get("fixture", "", type=str)
+
+            if name:
+                fixture_file = Paths().get_fixture_path(name)
+                grayscale_area_model = GrayScaleAreaModel(
+                    name=request.args.get("grayscale", "", type=str),
+                    x1=request.form.get("x1", type=int),
+                    x2=request.form.get("x2", type=int),
+                    y1=request.form.get("y1", type=int),
+                    y2=request.form.get("y2", type=int))
+                ext = "tiff"
+                image_path = os.path.extsep.join((fixture_file, ext))
+                fixture = get_fixture_image(name, image_path)
+                fixture['current'].model.grayscale = grayscale_area_model
+                fixture.analyse_grayscale()
+                return jsonify(source_values=fixture['current'].model.grayscale.values)
+            else:
+                return abort(500)
 
         elif request.args.get("detect"):
 
@@ -139,9 +160,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 path = os.path.extsep.join((fixture_file, ext.lstrip(os.path.extsep)))
                 image.save(path)
 
-                fixture = FixtureImage()
-                fixture.name = name
-                fixture.set_image(image_path=path)
+                fixture = get_fixture_image(name, path)
                 fixture.run_marker_analysis(markings=markers)
 
                 save_image_as_png(path)
