@@ -100,10 +100,15 @@ class SaneBase(object):
             logger.critical("Model {0} unknown, only have settings for {1}".format(
                 model, SaneBase._SETTINGS_REPOSITORY.keys()))
 
+            return None
+
         return model
 
     @classmethod
     def _get_mode(cls, scan_mode, model, logger):
+
+        if not model:
+            return None
 
         if isinstance(scan_mode, str):
             scan_mode = scan_mode.upper()
@@ -179,7 +184,11 @@ class SaneBase(object):
 
     def AcquireByFile(self, scanner=None, filename=None, **kwargs):
 
-        if self._verified_settings is False:
+        if self._scan_settings is None:
+            self._logger.critical("Without settings no scan possible.")
+            return False
+
+        elif self._verified_settings is False:
             success = self._verify_mode_source()
             if success:
                 self._update_mode_source()
@@ -214,7 +223,12 @@ class SaneBase(object):
 
             im.close()
 
-            return stderr is None or "invalid argument" not in stderr.lower()
+            if stderr is None:
+                return True
+            elif "invalid argument" in stderr.lower() or "no SANE devices found" in stderr:
+                return False
+            else:
+                return True
 
         else:
             return False
