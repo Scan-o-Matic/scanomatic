@@ -75,7 +75,7 @@ class SaneBase(object):
     _HELP_FLAG = "--help"
     _SOURCE_FLAG = "--source"
     _SOURCE_SEPARATOR = "|"
-    _SOURCE_PATTERN = re.compile(r'--source ([^\n]+)')
+    _SOURCE_PATTERN = re.compile(r'--source ([^\n[]+)')
 
     def __init__(self, model, scan_mode):
 
