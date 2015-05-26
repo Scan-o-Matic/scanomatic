@@ -251,11 +251,13 @@ function testAsGrayScale(plate) {
     }
 
     if (plate) {
+        var grayscale_name = "";
         $.ajax({
-            url: "?grayscale=1&fixture=" + fixture_name,
+            url: "?grayscale=1&fixture=" + fixture_name + "&grayscale=" + grayscale_name,
             method: "POST",
             data: plate,
             success: function (data) {
+                console.log(data);
                 if (data.source_values && data.source_values.length > 0)
                     plate.grayscale = true;
                 else
