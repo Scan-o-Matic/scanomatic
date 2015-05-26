@@ -56,8 +56,8 @@ class SaneBase(object):
 
     _TRANSPARENCY_WORDS = {"TPU", "Transparency"}
     _SANE_VERSION_NAME_FOR_TRANSPARENCY = None
-    # _SETTINGS_ORDER = (SCAN_FLAGS.Source, SCAN_FLAGS.Format, SCAN_FLAGS.Resolution, SCAN_FLAGS.Mode, SCAN_FLAGS.Left,
-    #                   SCAN_FLAGS.Top, SCAN_FLAGS.Width, SCAN_FLAGS.Height, SCAN_FLAGS.Depth)
+    _SETTINGS_ORDER = (SCAN_FLAGS.Source, SCAN_FLAGS.Format, SCAN_FLAGS.Resolution, SCAN_FLAGS.Mode, SCAN_FLAGS.Left,
+                       SCAN_FLAGS.Top, SCAN_FLAGS.Width, SCAN_FLAGS.Height, SCAN_FLAGS.Depth)
 
     _SETTINGS_REPOSITORY = {
         "EPSON V700": {
@@ -160,9 +160,15 @@ class SaneBase(object):
 
     def _get_scan_instructions(self, prepend=None):
 
-        def _dict_to_tuple(d):
+        def _dict_to_tuple(d, key_order=None):
 
-            return tuple(chain(*((key.value, value) for key, value in d.items())))
+            if key_order is None:
+                key_order = d.keys()
+            else:
+                key_order = tuple(key for key in key_order if key in d)
+                key_order += tuple(set(d.keys()).difference(key_order))
+
+            return tuple(chain(*((key.value, d[key]) for key in key_order)))
 
         program = (SaneBase._PROGRAM,)
         if prepend:
@@ -170,7 +176,7 @@ class SaneBase(object):
         else:
             prepend_settings = tuple()
 
-        settings = _dict_to_tuple(self._scan_settings)
+        settings = _dict_to_tuple(self._scan_settings, key_order=SaneBase._SETTINGS_ORDER)
         return program + prepend_settings + settings
 
     def OpenScanner(self, mainWindow=None, ProductName=None, UseCallback=False):
