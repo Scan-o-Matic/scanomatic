@@ -35,6 +35,9 @@ def get_ortho_trimmed_slice(im, grayscale):
     im_scaled = im / float(im.max()) - 0.5
     kernel = np.array(grayscale['targets']).repeat(grayscale['length'])
     kernel = kernel.reshape((kernel.size, 1))
+    if kernel.size > im.shape[0]:
+        return np.array([])
+
     kernel_scaled = kernel / float(kernel.max()) - 0.5
     C = np.abs(convolve2d(im_scaled, kernel_scaled, mode="valid"))
     peak = gaussian_filter1d(np.max(C, axis=0), half_width).argmax()
@@ -61,6 +64,8 @@ def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0
         return np.vstack((edges_vector[::2], edges_vector[1::2])).T
 
     length = grayscale['sections'] * grayscale['length']
+    if length < im_ortho_trimmed.shape[0]:
+        return np.array([])
     para_signal = convolve(np.var(im_ortho_trimmed, axis=1), np.ones((length, )), mode='valid')
     permissables = para_signal < (para_signal.max() - para_signal.min()) / stringency + para_signal.min()
     edges = np.where(convolve(permissables, [-1,1], mode='same') != 0)[0]

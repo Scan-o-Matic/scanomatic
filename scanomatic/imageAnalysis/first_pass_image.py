@@ -337,8 +337,8 @@ class FixtureImage(object):
 
             try:
 
-                return im[grayscale_model.y1 * scale: grayscale_model.y2 * scale,
-                          grayscale_model.x1 * scale: grayscale_model.x2 * scale]
+                return im[max(grayscale_model.y1 * scale, 0): min(grayscale_model.y2 * scale, im.shape[0]),
+                          max(grayscale_model.x1 * scale, 0): min(grayscale_model.x2 * scale, im.shape[1])]
 
             except (IndexError, TypeError):
 
