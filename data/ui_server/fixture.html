@@ -5,6 +5,7 @@
     <link rel="stylesheet" type="text/css" href="/style/fixtures.css">
 	<title>Scan-o-Matic</title>
 	<script src="/js/jquery-2.1.4.min.js"></script>
+    <script src="/js/simple_graphs.js"></script>
     <script src="/js/fixtures.js"></script>
     <script>
         current_fixture_id = "#current-fixture";
@@ -36,7 +37,7 @@
             <h2>New Fixture</h2>
             <ol>
                 <li><label for="new-fixture-name">Name:</label>
-                    <input name="new-fixture-name" id="new-fixture-name" onkeyup="OnEnterFixtureName();"></li>
+                    <input name="new-fixture-name" id="new-fixture-name" onchange="OnEnterFixtureName();" onkeyup="OnEnterFixtureName();"></li>
                 <li><label for="new-fixture-image">Reference Image:</label>
                     <input name="new-fixture-image" id="new-fixture-image" type="file"
                            onchange="set_fixture_image();"></li>
@@ -49,16 +50,16 @@
         <div id="selected-fixture" class="section">
             <h2 id="selected-fixture-name"></h2>
             <p>Left mouse-button click and drag to draw feature area. Click inside area to remove area.
-            If there's a message, click image once to remove it.
-            <em>It is highly recommended that you start by marking the grayscale, it will be annoying otherwise!</em></p>
+            If there's a message, click image once to remove it. Running marker detection takes a few seconds so don't
+                worry if nothing seems to be happening.
             <canvas id="selected-fixture-canvas"    width="700"  height="600"></canvas>
             <input type="hidden" name="update-type" value="update">
-            <section>
+            <div>
                 <button type="button" id="clear-areas" onclick="clearAreas();draw_fixture();selected_fixture_canvas_jq.focus();">Clear All Areas</button>
                 <label for="grayscale">Grayscale</label>
                 <select name="grayscale" id="grayscale"></select>
                 <button type="submit" id="submit-button">Save</button>
-            </section>
+            </div>
         </div>
 
         <script>
