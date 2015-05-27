@@ -191,9 +191,9 @@ function setPlateIndices() {
         else if (b.y2 < a.y1)
             return 1;
         else if (a.x2 < b.x1)
-            return -1;
-        else if (b.x2 < a.x1)
             return 1;
+        else if (b.x2 < a.x1)
+            return -1;
 
         var aCenter = getAreaCenter(a);
         var bCenter = getAreaCenter(b);
