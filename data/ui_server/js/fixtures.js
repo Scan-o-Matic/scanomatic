@@ -448,7 +448,6 @@ function load_fixture_image(image_name) {
 }
 
 function set_fixture_markers(data) {
-    console.log(data);
     markers = position_string_to_array(data);
     if (markers.length ==0) {
         markers = null;
