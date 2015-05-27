@@ -64,7 +64,7 @@ def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0
         return np.vstack((edges_vector[::2], edges_vector[1::2])).T
 
     length = grayscale['sections'] * grayscale['length']
-    if length < im_ortho_trimmed.shape[0]:
+    if length > im_ortho_trimmed.shape[0]:
         return np.array([])
     para_signal = convolve(np.var(im_ortho_trimmed, axis=1), np.ones((length, )), mode='valid')
     permissables = para_signal < (para_signal.max() - para_signal.min()) / stringency + para_signal.min()
