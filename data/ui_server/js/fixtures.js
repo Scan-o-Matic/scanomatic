@@ -18,6 +18,7 @@ var areas = [];
 var creatingArea = false;
 var selected_fixture_canvas_jq;
 var selected_fixture_canvas;
+var grayscale_graph = null;
 var img_width = 0;
 var img_height = 0;
 
@@ -79,6 +80,8 @@ function set_canvas() {
                 creatingArea = areas.length - 1;
             } else {
                 creatingArea = nextArea;
+                if (areas[creatingArea].grayscale)
+                    grayscale_graph = null;
                 areas[creatingArea].x1 = imagePos.x;
                 areas[creatingArea].y1 = imagePos.y;
                 areas[creatingArea].x2 = imagePos.x;
@@ -87,6 +90,8 @@ function set_canvas() {
                 areas[creatingArea].plate = -1;
             }
         } else {
+            if (areas[nextArea] && areas[nextArea].grayscale)
+                grayscale_graph = null;
             areas.splice(nextArea, 1);
             creatingArea = null;
 
@@ -121,6 +126,9 @@ function set_canvas() {
 
         for (var i=0; i<areas.length;i++) {
             if (getAreaSize(i) < minUsableSize) {
+                if (area[i] && area[i].grayscale)
+                    grayscale_graph = null;
+
                 areas.splice(i, 1);
                 if (i < curArea)
                     curArea--;
@@ -219,6 +227,8 @@ function setPlateIndices() {
 
 function clearAreas() {
     areas = [];
+    grayscale_graph = null;
+    context_warning = "";
 }
 
 function getAreaByPoint(point) {
@@ -266,11 +276,13 @@ function testAsGrayScale(plate) {
             data: plate,
             success: function (data) {
                 console.log(data);
-                if (data.grayscale && hasGrayScale() === false)
+                if (data.grayscale && hasGrayScale() === false)  {
                     plate.grayscale = true;
-                    //TODO: Graph data.source_values, data.target_values
-                else {
-                    context_warning = data.reason;
+                    grayscale_graph = GetLinePlot(data.target_values, data.source_values,
+                        "Grayscale", "Targets", "Measured values");
+                } else {
+                    if (grayscale_graph == null && data.reason)
+                        grayscale_graph = GetLinePlot([], [], data.reason, "Targets", "Measured values");
                     plate.grayscale = false;
                     plate.plate = 0;
                     setPlateIndices();
@@ -473,6 +485,11 @@ function draw_fixture() {
     if (areas) {
         for (var i=0; i<areas.length; i++)
             draw_plate(context, areas[i]);
+    }
+
+    if (grayscale_graph) {
+        var graph_width = (canvas.width - img_width);
+        context.drawImage(grayscale_graph, img_width, 0, graph_width, graph_width);
     }
 
     if (context_warning) {
