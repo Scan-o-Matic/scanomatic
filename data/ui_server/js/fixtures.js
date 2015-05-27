@@ -127,9 +127,12 @@ function set_canvas() {
             }
         }
 
-        if (curArea >= 0 && hasGrayScale() == false)
-            testAsGrayScale(curArea);
-
+        if (curArea >= 0) {
+            if (hasGrayScale())
+                areas[curArea].plate = 0;
+            else
+                testAsGrayScale(curArea);
+        }
         setPlateIndices();
         draw_fixture();
      });
@@ -203,7 +206,7 @@ function setPlateIndices() {
     var len = areas.length;
     var plateIndex = 1;
     for (var i=0; i<len; i++) {
-        if (areas[i].grayscale !== true && getAreaSize(i) > 0) {
+        if (areas[i].grayscale !== true && areas[i].plate >= 0 && getAreaSize(i) > 0) {
             areas[i].plate = plateIndex;
             plateIndex++;
         }
@@ -261,13 +264,19 @@ function testAsGrayScale(plate) {
                 console.log(data);
                 if (data.grayscale && hasGrayScale() === false)
                     plate.grayscale = true;
-                else
+                    //TODO: Graph data.source_values, data.target_values
+                else {
+                    context_warning = data.reason;
                     plate.grayscale = false;
+                    plate.plate = 0;
+                    setPlateIndices();
+                }
                 draw_fixture();
             },
             error: function (data) {
                 console.log(data);
                 context_warning = "Error occured detecting grayscale";
+                setPlateIndices();
                 draw_fixture();
             }
 
@@ -484,7 +493,7 @@ function draw_plate(context, plate) {
     context.lineWidth = 2;
     context.stroke();
 
-    shadow_text(context, plate, "green", "white", plate.grayscale ? "G" : plate.plate)
+    shadow_text(context, plate, "green", "white", plate.grayscale ? "G" : plate.plate < 0 ? "?" : plate.plate)
 }
 
 function shadow_text(context, area, text_color, shadow_color, text) {
