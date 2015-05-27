@@ -8,6 +8,8 @@ var fixture_name_id;
 var selected_fixture_canvas_id;
 var new_fixture_name;
 var grayscale_id;
+var save_fixture_action_id;
+var save_fixture_button;
 
 var context_warning = "";
 var fixture_image = null;
@@ -322,11 +324,16 @@ function OnEnterFixtureName() {
 function SetAllowDetect() {
 
     var disallow = $(new_fixture_image_id).val() == "" || $(new_fixture_name).val() == "";
-    if (disallow) {
-        $(new_fixture_detect_id).attr("disabled", true);
+    InputEnabled($(new_fixture_detect_id), !disallow);
+}
+
+function InputEnabled(obj, isEnabled) {
+    if (isEnabled) {
+        obj.removeAttr("disabled");
     } else {
-        $(new_fixture_detect_id).removeAttr("disabled");
+        obj.attr("disabled", true);
     }
+
 }
 
 function position_string_to_array(pos_str) {
@@ -367,6 +374,7 @@ function add_fixture() {
     var options = $(current_fixture_id);
     unselect(options);
     unselect($(new_fixture_image_id));
+    $(save_fixture_action_id).val("create");
     set_fixture_image();
     $(new_fixture_detect_id).val("Detect");
     $(new_fixture_data_id).show();
@@ -376,6 +384,7 @@ function add_fixture() {
 function get_fixture() {
     var options = $(current_fixture_id);
     $(new_fixture_data_id).hide();
+    $(save_fixture_action_id).val("update");
     load_fixture(options.val());
 }
 
@@ -389,7 +398,9 @@ function detect_markers() {
     formData.append("markers", $(new_fixture_markers_id).val());
     formData.append("image", $(new_fixture_image_id)[0].files[0]);
     formData.append("name", $(new_fixture_name).val());
-    $(new_fixture_detect_id).attr("disabled", true);
+    InputEnabled($(new_fixture_detect_id), false);
+    var button = $(save_fixture_button);
+    InputEnabled(button, false);
     $(new_fixture_detect_id).val("...");
     $.ajax({
         url: '?detect=1',
@@ -399,6 +410,9 @@ function detect_markers() {
         data: formData,
         processData: false,
         success: function (data) {
+            var new_image = $(new_fixture_image_id);
+            load_fixture($(new_fixture_name).val());
+
             if (data.image && data.markers) {
                 context_warning = ""
                 $(new_fixture_data_id).hide();
@@ -407,15 +421,14 @@ function detect_markers() {
             }
              load_fixture_image(data.image);
              set_fixture_markers(data.markers);
+             InputEnabled(button, true);
         },
         error: function (data) {
             context_warning = "Marker detection failed";
             markers = null;
+            load_fixture($(new_fixture_name).val());
             draw_fixture();
         }});
-
-    var new_image = $(new_fixture_image_id);
-    load_fixture($(new_fixture_name).val());
 }
 
 function endsWith(str, suffix) {
@@ -454,6 +467,35 @@ function set_fixture_markers(data) {
         $(new_fixture_data_id).show();
     }
     draw_fixture();
+}
+
+function SaveFixture() {
+    var action = $(save_fixture_action_id).val();
+    var button = $(save_fixture_button);
+    InputEnabled(button, false);
+    dat = {
+        markers: markers,
+        areas: areas,
+        name: fixture_name};
+    $.ajax({
+        url:"/fixtures?" + action + "=1",
+        data: dat,
+        method: "POST",
+        success: function(data) {
+            if (data.success)
+                context_warning = "Fixture Saved";
+            else {
+                context_warning = "Save refused";
+                InputEnabled(button, true);
+            }
+            draw_fixture();
+        },
+        error: function(data) {
+            context_warning = "Crash while trying to save";
+            draw_fixture();
+            InputEnabled(button, true);
+        }
+    });
 }
 
 function draw_fixture() {

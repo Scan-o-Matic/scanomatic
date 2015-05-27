@@ -18,19 +18,21 @@
         selected_fixture_canvas_id = '#selected-fixture-canvas';
         fixture_name_id = "#selected-fixture-name";
         grayscale_id = "#grayscale";
+        save_fixture_action_id = "#update-type";
+        save_fixture_button = "#submit-button";
 
     </script>
 </head>
 <body>
 <div id="cont">
     <h1>Fixtures</h1>
-    <form action="?update=1" method="post">
+    <form action="" method="post">
         <div id="selecting-fixture" class="section">
             <label for="current-fixture">Select:</label>
             <select name="current-fixtures" id="current-fixture"
                     onchange="javascript:get_fixture();"></select>
             <input name="add-fixture" id="add-fixture"
-                   onclick="add_fixture('#current-fixture', '#new-fixture-name')"  type="button" value="Add new...">
+                   onclick="add_fixture()"  type="button" value="Add new...">
         </div>
 
         <div id="new-fixture-data" class="section">
@@ -53,12 +55,12 @@
             If there's a message, click image once to remove it. Running marker detection takes a few seconds so don't
                 worry if nothing seems to be happening.
             <canvas id="selected-fixture-canvas"    width="700"  height="600"></canvas>
-            <input type="hidden" name="update-type" value="update">
+            <input type="hidden" name="update-type" id='update-type' value="update">
             <div>
                 <button type="button" id="clear-areas" onclick="clearAreas();draw_fixture();selected_fixture_canvas_jq.focus();">Clear All Areas</button>
                 <label for="grayscale">Grayscale</label>
                 <select name="grayscale" id="grayscale"></select>
-                <button type="submit" id="submit-button">Save</button>
+                <button type="button" id="submit-button" onclick="SaveFixture();">Save</button>
             </div>
         </div>
 
