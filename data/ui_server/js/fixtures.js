@@ -281,7 +281,7 @@ function testAsGrayScale(plate) {
                     grayscale_graph = GetLinePlot(data.target_values, data.source_values,
                         "Grayscale", "Targets", "Measured values");
                 } else {
-                    if (grayscale_graph == null && data.reason)
+                    if (!hasGrayScale() && data.reason)
                         grayscale_graph = GetLinePlot([], [], data.reason, "Targets", "Measured values");
                     plate.grayscale = false;
                     plate.plate = 0;
