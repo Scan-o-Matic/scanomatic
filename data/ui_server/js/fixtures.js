@@ -18,6 +18,8 @@ var areas = [];
 var creatingArea = false;
 var selected_fixture_canvas_jq;
 var selected_fixture_canvas;
+var img_width = 0;
+var img_height = 0;
 
 function relMouseCoords(event){
     var totalOffsetX = 0;
@@ -108,10 +110,12 @@ function set_canvas() {
         creatingArea = null;
         if (isArea(curArea)) {
             var area = JSON.parse(JSON.stringify(areas[curArea]));
-            area.x1 = Math.min(areas[curArea].x1, areas[curArea].x2);
-            area.x2 = Math.max(areas[curArea].x1, areas[curArea].x2);
-            area.y1 = Math.min(areas[curArea].y1, areas[curArea].y2);
-            area.y2 = Math.max(areas[curArea].y1, areas[curArea].y2);
+            var imagePos = translateToImageCoords({x: img_width, y: img_height});
+            area.x1 = Math.max(Math.min(areas[curArea].x1, areas[curArea].x2, imagePos.x), 0);
+            area.x2 = Math.min(Math.max(areas[curArea].x1, areas[curArea].x2), imagePos.x);
+
+            area.y1 = Math.max(Math.min(areas[curArea].y1, areas[curArea].y2, imagePos.y), 0);
+            area.y2 = Math.min(Math.max(areas[curArea].y1, areas[curArea].y2), imagePos.y);
             areas[curArea] = area;
         }
 
@@ -450,7 +454,12 @@ function draw_fixture() {
 
     if (fixture_image) {
         scale = get_updated_scale(canvas, fixture_image);
-        context.drawImage(fixture_image, 0, 0, fixture_image.width * scale, fixture_image.height * scale);
+        img_width = fixture_image.width * scale;
+        img_height = fixture_image.height * scale;
+        context.drawImage(fixture_image, 0, 0, img_width, img_height);
+    } else {
+        img_width = 0;
+        img_height = 0;
     }
 
     if (markers) {
