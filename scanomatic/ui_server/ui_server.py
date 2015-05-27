@@ -22,6 +22,7 @@ from scanomatic.imageAnalysis.imageGrayscale import get_ortho_trimmed_slice, get
 _url = None
 _logger = Logger("UI-server")
 _ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.tiff'}
+_TOO_LARGE_GRAYSCALE_AREA = 300000
 
 
 def _launch_scanomatic_rpc_server():
@@ -48,10 +49,10 @@ def get_grayscale(fixture, grayscale_area_model):
     return ag.get_grayscale(im_p)
 
 
-def get_grayscale_is_valid(values, grayscale_name):
+def get_grayscale_is_valid(values, grayscale):
     if values is None:
         return False
-    grayscale = getGrayscale(grayscale_name)
+
     try:
         fit = np.polyfit(grayscale['targets'], values, 3)
         return np.unique(np.sign(fit)).size == 1
@@ -145,7 +146,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/fixtures", methods=['post', 'get'])
     def _fixtures():
-
+        global _TOO_LARGE_GRAYSCALE_AREA
         if request.args.get("names"):
 
             if rpc_client.online:
@@ -161,21 +162,29 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             name = request.args.get("fixture", "", type=str)
 
             if name:
-                fixture_file = Paths().get_fixture_path(name)
-                _logger.warning("Grayscale detection (keys and values: {0})".format(request.values.items()))
                 grayscale_area_model = GrayScaleAreaModel(
                     name=request.args.get("grayscale_name", "", type=str),
                     x1=request.values.get("x1", type=float),
                     x2=request.values.get("x2", type=float),
                     y1=request.values.get("y1", type=float),
                     y2=request.values.get("y2", type=float))
+                area_size = (grayscale_area_model.x2 - grayscale_area_model.x1) * \
+                            (grayscale_area_model.y2 - grayscale_area_model.y1)
+                if area_size > _TOO_LARGE_GRAYSCALE_AREA:
+
+                    return jsonify(source_values=None, target_values=None, grayscale=False,
+                                   reason="Grayscale too large ({0}>{1}px)".format(
+                                        area_size, _TOO_LARGE_GRAYSCALE_AREA))
+
+                fixture_file = Paths().get_fixture_path(name)
                 _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
                 ext = "tiff"
                 image_path = os.path.extsep.join((fixture_file, ext))
                 fixture = get_fixture_image(name, image_path)
                 _, values = get_grayscale(fixture, grayscale_area_model)
-                return jsonify(source_values=values,
-                               grayscale=get_grayscale_is_valid(values, grayscale_area_model.name))
+                grayscale_object = getGrayscale(grayscale_area_model.name)
+                return jsonify(source_values=values, target_values=grayscale_object['targets'],
+                               grayscale=get_grayscale_is_valid(values, grayscale_object))
             else:
                 return abort(500)
 
