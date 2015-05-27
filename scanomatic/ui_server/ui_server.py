@@ -173,7 +173,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 if area_size > _TOO_LARGE_GRAYSCALE_AREA:
 
                     return jsonify(source_values=None, target_values=None, grayscale=False,
-                                   reason="Grayscale too large ({0}>{1}px)".format(
+                                   reason="Area too large to test for grayscale".format(
                                         area_size, _TOO_LARGE_GRAYSCALE_AREA))
 
                 fixture_file = Paths().get_fixture_path(name)
