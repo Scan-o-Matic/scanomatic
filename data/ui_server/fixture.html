@@ -36,7 +36,7 @@
             <h2>New Fixture</h2>
             <ol>
                 <li><label for="new-fixture-name">Name:</label>
-                    <input name="new-fixture-name" id="new-fixture-name" onchange="update_fixture_name();"></li>
+                    <input name="new-fixture-name" id="new-fixture-name" onkeyup="OnEnterFixtureName();"></li>
                 <li><label for="new-fixture-image">Reference Image:</label>
                     <input name="new-fixture-image" id="new-fixture-image" type="file"
                            onchange="set_fixture_image();"></li>

@@ -286,6 +286,7 @@ function testAsGrayScale(plate) {
 
 function get_fixture_as_name(fixture) {
     return fixture.replace(/_/g, " ")
+        .replace(/[^ a-zA-Z0-9]/g, "")
         .replace(/^[a-z]/g,
             function ($1) { return $1.toUpperCase();});
 }
@@ -294,6 +295,22 @@ function get_fixture_from_name(fixture) {
     return fixture.replace(/ /g, "_")
         .replace(/A-Z/g, function ($1) { return $1.toLowerCase();})
         .replace(/[^a-z1-9_]/g,"");
+}
+
+function OnEnterFixtureName() {
+    var fix_name = $(new_fixture_name);
+    fix_name.val(get_fixture_as_name(fix_name.val()));
+    SetAllowDetect();
+}
+
+function SetAllowDetect() {
+
+    var disallow = $(new_fixture_image_id).val() == "" || $(new_fixture_name).val() == "";
+    if (disallow) {
+        $(new_fixture_detect_id).attr("disabled", true);
+    } else {
+        $(new_fixture_detect_id).removeAttr("disabled");
+    }
 }
 
 function position_string_to_array(pos_str) {
@@ -347,11 +364,7 @@ function get_fixture() {
 }
 
 function set_fixture_image() {
-    if ($(new_fixture_image_id).val() == "") {
-        $(new_fixture_detect_id).attr("disabled", true);
-    } else {
-        $(new_fixture_detect_id).removeAttr("disabled");
-    }
+    SetAllowDetect();
 }
 
 function detect_markers() {
@@ -391,10 +404,6 @@ function detect_markers() {
 
 function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
-}
-
-function update_fixture_name() {
-    $(fixture_name_id).text(get_fixture_as_name($(new_fixture_name).val()));
 }
 
 function load_fixture(name, img_data) {
