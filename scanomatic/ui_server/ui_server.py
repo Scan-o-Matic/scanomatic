@@ -8,6 +8,7 @@ from socket import error
 from subprocess import Popen
 import os
 import numpy as np
+from enum import Enum
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -25,12 +26,23 @@ _ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.tiff'}
 _TOO_LARGE_GRAYSCALE_AREA = 300000
 
 
+class SaveActions(Enum):
+    Create = 0
+    Update = 1
+
+
 def _launch_scanomatic_rpc_server():
     Popen(["scan-o-matic_server"])
 
 
 def _allowed_image(ext):
     return ext.lower() in _ALLOWED_EXTENSIONS
+
+def get_fixture_image_by_name(name, ext="tiff"):
+
+    fixture_file = Paths().get_fixture_path(name)
+    image_path = os.path.extsep.join((fixture_file, ext))
+    return get_fixture_image(name, image_path)
 
 def get_fixture_image(name, image_path):
 
@@ -64,6 +76,25 @@ def get_grayscale_is_valid(values, grayscale):
         return np.unique(np.sign(fit)).size == 1
     except:
         return False
+
+def usable_markers(markers, image):
+
+    def marker_inside_image(marker):
+
+        return (marker > 0).all() and marker[0] < image.shape[0] and marker[1] < image.shape[1]
+
+    try:
+        markers_array = np.array(markers, dtype=float)
+    except ValueError:
+        return False
+
+    if markers_array.ndim != 2 or markers_array.shape[0] < 3 or markers_array.shape[1] != 2:
+        return False
+
+    if len(set(map(tuple, markers_array))) != len(markers):
+        return False
+
+    return all(marker_inside_image(marker) for marker in markers_array)
 
 
 def launch_server(is_local=None, port=None, host=None, debug=False):
@@ -160,8 +191,25 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             else:
                 return jsonify(fixtures=[])
 
-        elif request.args.get("update"):
-            return "Not implemented saving/creating fixtures...sorry"
+        elif request.args.get("update") or request.args.get("create"):
+
+            save_action = SaveActions(request.args.get("update", 0, type=int))
+            name = Paths().get_fixture_name(request.values.get("name"))
+            areas = request.values.get("areas")
+            markers = request.values.get("markers")
+            known_fixtures = rpc_client.get_fixtures()
+
+            if save_action is SaveActions.Create and name in known_fixtures:
+                return jsonify(success=False, reason="Fixture name taken")
+            elif save_action is SaveActions.Update and name not in known_fixtures:
+                return  jsonify(success=False, reason="Unknown fixture")
+
+            fixture = get_fixture_image_by_name(name)
+
+            if not usable_markers(markers, fixture.im):
+                return jsonify(success=False, reason="Bad markers")
+
+            return jsonify(success=False)
 
         elif request.args.get("grayscale"):
 
@@ -184,11 +232,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     return jsonify(source_values=None, target_values=None, grayscale=False,
                                    reason="Area too large".format(area_size, _TOO_LARGE_GRAYSCALE_AREA))
 
-                fixture_file = Paths().get_fixture_path(name)
                 _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
-                ext = "tiff"
-                image_path = os.path.extsep.join((fixture_file, ext))
-                fixture = get_fixture_image(name, image_path)
+
+                fixture = get_fixture_image_by_name(name)
                 _, values = get_grayscale(fixture, grayscale_area_model)
                 grayscale_object = getGrayscale(grayscale_area_model.name)
                 valid = get_grayscale_is_valid(values, grayscale_object)

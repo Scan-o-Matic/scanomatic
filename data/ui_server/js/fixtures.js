@@ -485,7 +485,10 @@ function SaveFixture() {
             if (data.success)
                 context_warning = "Fixture Saved";
             else {
-                context_warning = "Save refused";
+                if (data.reason)
+                    context_warning = "Save refused: " + data.reason;
+                else
+                    context_warning = "Save refused";
                 InputEnabled(button, true);
             }
             draw_fixture();
