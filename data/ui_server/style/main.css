@@ -140,3 +140,17 @@ ul {
     margin-top: 6px;
     margin-bottom: 18px;
 }
+
+.ui-dialog-content {
+    background-color: #ddd;
+}
+
+.ui-dialog button {
+    padding: 3px;
+    spacing: 3px;
+}
+
+.ui-dialog-titlebar, .ui-dialog-buttonpane {
+    background-color: #aaa;
+}
+

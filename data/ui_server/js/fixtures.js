@@ -10,6 +10,7 @@ var new_fixture_name;
 var grayscale_id;
 var save_fixture_action_id;
 var save_fixture_button;
+var remove_fixture_id;
 
 var context_warning = "";
 var fixture_image = null;
@@ -486,9 +487,20 @@ function SaveFixture() {
         processData: false,
         method: "POST",
         success: function(data) {
-            if (data.success)
-                context_warning = "Fixture Saved";
-            else {
+            if (data.success) {
+                $(selected_fixture_div_id).hide();
+                $('<div class=\'dialog\'></div>').appendTo("body")
+                        .prop("title", "Save")
+                        .html("<div><h3>Fixture '" + fixture_name + "' has been saved.</h3></div>")
+                        .dialog({modal: true,
+                                 buttons: {
+                                    Ok: function() {
+                                        $(this).dialog("close");
+                                    }
+                                 }
+                        });
+                get_fixtures();
+            } else {
                 if (data.reason)
                     context_warning = "Save refused: " + data.reason;
                 else
@@ -503,6 +515,71 @@ function SaveFixture() {
             InputEnabled(button, true);
         }
     });
+}
+
+function RemoveFixture() {
+
+    $('<div class=\'dialog\'></div>').appendTo("body")
+                    .html('<div><h3>Are you sure you want to remove \'' + fixture_name + '\'?')
+                    .dialog({
+                        modal: true,
+                        title: "Remove",
+                        zIndex: 10000,
+                        autoOpen: true,
+                        width: 'auto',
+                        resizable: false,
+                        buttons: {
+                            Yes: function() {
+
+                                payload = {
+                                    name: fixture_name};
+
+                                $.ajax({
+                                    url: "/fixtures?remove=1",
+                                    data: payload,
+                                    method: "POST",
+                                    success: function(data) {
+                                        if (data.success) {
+                                            $(selected_fixture_div_id).hide();
+                                            $('<div class=\'dialog\'></div>').appendTo("body")
+                                                .prop("title", "Delete")
+                                                .html("<div><h3>Fixture '" + fixture_name + "' has been removed.</h3></div>")
+                                                .dialog({modal: true,
+                                                         buttons: {
+                                                            Ok: function() {
+                                                                $(this).dialog("close");
+                                                            }
+                                                         }});
+                                            get_fixtures();
+
+                                        } else {
+                                            console.log(data);
+                                            if (data.reason)
+                                                context_warning = data.reason;
+                                            else
+                                                context_warning = "Unknown removal issue";
+
+                                            draw_fixture();
+                                        }
+                                    },
+                                    error: function(data) {
+                                        context_warning = "Crash while removing";
+                                        draw_fixture();
+                                    }
+                                });
+
+                                $(this).dialog("close");
+                            },
+                            No: function() {
+                                $(this).dialog("close");
+                            }
+                        },
+                        close: function(event, ui) {
+                            $(this).remove();
+                        }
+                    });
+
+
 }
 
 function draw_fixture() {

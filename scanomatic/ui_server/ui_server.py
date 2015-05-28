@@ -9,6 +9,7 @@ from subprocess import Popen
 import os
 import numpy as np
 from enum import Enum
+import shutil
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -246,6 +247,23 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 return jsonify(fixtures=rpc_client.get_fixtures())
             else:
                 return jsonify(fixtures=[])
+        elif request.args.get("remove"):
+
+            name = Paths().get_fixture_name(request.values.get("name"))
+            known_fixtures = tuple(Paths().get_fixture_name(f) for f in rpc_client.get_fixtures())
+            if (name not in known_fixtures):
+                return jsonify(success=False, reason="Unknown fixture")
+            source = Paths().get_fixture_path(name)
+            path, ext = os.path.splitext(source)
+            i = 0
+            pattern = "{0}.deleted{1}"
+            while os.path.isfile(pattern.format(path, i)):
+                i += 1
+            try:
+                shutil.move(source, pattern.format(path, i))
+            except IOError:
+                return jsonify(success=False, reason="Error while removing")
+            return jsonify(success=True,reason="Happy")
 
         elif request.args.get("update") or request.args.get("create"):
 

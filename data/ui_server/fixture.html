@@ -5,6 +5,7 @@
     <link rel="stylesheet" type="text/css" href="/style/fixtures.css">
 	<title>Scan-o-Matic</title>
 	<script src="/js/jquery-2.1.4.min.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
     <script src="/js/simple_graphs.js"></script>
     <script src="/js/fixtures.js"></script>
     <script>
@@ -20,6 +21,7 @@
         grayscale_id = "#grayscale";
         save_fixture_action_id = "#update-type";
         save_fixture_button = "#submit-button";
+        remove_fixture_id = "#remove-button";
 
     </script>
 </head>
@@ -61,6 +63,7 @@
                 <label for="grayscale">Grayscale</label>
                 <select name="grayscale" id="grayscale"></select>
                 <button type="button" id="submit-button" onclick="SaveFixture();">Save</button>
+                <button type="button" id="remove-button" onclick="RemoveFixture();">Remove</button>
             </div>
         </div>
 
