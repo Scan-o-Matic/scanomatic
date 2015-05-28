@@ -105,15 +105,16 @@ class GridHistoryFactory(AbstractModelFactory):
 class FixtureFactory(AbstractModelFactory):
 
     MODEL = FixtureModel
+    STORE_SECTION_HEAD = ('name',)
     STORE_SECTION_SERIALIZERS = {
-        ('grayscale_indices',): list,
-        ("grayscale_targets",): list,
+        ('grayscale',): fixture_models.GrayScaleAreaModel,
         ("orientation_marks_x",): list,
         ("orientation_marks_y",): list,
         ("shape",): list,
         ("coordinates_scale",): float,
+        ("scale",): float,
         ("path",): str,
-        ("time",): float,
+        ("name",): str,
         ("plates",): list,  # TODO: This won't serialize well
     }
 
