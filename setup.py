@@ -63,7 +63,7 @@ _logger.info("Preparing setup parameters")
 package_dependencies = [
     'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
     'numpy', 'sh', 'nmap', 'configparse', 'scikit-image',
-    'uuid', 'PIL', 'scipy',  'pygtk', 'setproctitle', 'psutil']
+    'uuid', 'PIL', 'scipy', 'setproctitle', 'psutil', 'flask']
 
 data_files = []
 
@@ -117,14 +117,7 @@ setup(
         "scanomatic.server",
         "scanomatic.imageAnalysis", "scanomatic.dataProcessing",
         "scanomatic.dataProcessing.visualization",
-        "scanomatic.gui",
-        "scanomatic.gui.qc",
-        "scanomatic.gui.analysis",
-        "scanomatic.gui.config",
-        "scanomatic.gui.calibration",
-        "scanomatic.gui.generic",
-        "scanomatic.gui.experiment",
-        "scanomatic.gui.server"],
+        "scanomatic.ui_server"],
 
     package_data={"scanomatic": data_files},
     scripts=scripts,
@@ -141,10 +134,7 @@ setup(
     ]
 )
 
-    #packages=['numpy', 'scipy', 'matplotlib', 'gtk+', 'nmap', 'sh', 'scikits-image',
-    #    ])
-
-if (os.name == "nt"):
+if os.name == "nt":
 
     _logger.info(
         "The files in the script folder can be copied to wherever you"
@@ -158,10 +148,10 @@ _logger.info("Scan-o-Matic is setup on system")
 
 import postSetup
 _logger.info("Copying data and configuration files")
-postSetup.InstallDataFiles()
+postSetup.install_data_files()
 _logger.info("Post Setup Complete")
 
-if (sys.argv[-1].upper() == "--USER"):
+if sys.argv[-1].upper() == "--USER":
     print """
 
     INFORMATION ABOUT LOCAL / USER INSTALL
@@ -195,6 +185,6 @@ if (sys.argv[-1].upper() == "--USER"):
 
 """
 
-#postSetup.CheckDependencies(package_dependencies)
+# postSetup.CheckDependencies(package_dependencies)
 
 _logger.info("Install Complete")

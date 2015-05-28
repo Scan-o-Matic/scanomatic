@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="/style/main.css">
+    <link rel="stylesheet" type="text/css" href="/style/fixtures.css">
+	<title>Scan-o-Matic</title>
+	<script src="/js/jquery-2.1.4.min.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/simple_graphs.js"></script>
+    <script src="/js/fixtures.js"></script>
+    <script>
+        current_fixture_id = "#current-fixture";
+        new_fixture_data_id = "#new-fixture-data";
+        new_fixture_detect_id = "#new-fixture-detect";
+        new_fixture_image_id = "#new-fixture-image";
+        new_fixture_markers_id = "#new-fixture-markers";
+        new_fixture_name = "#new-fixture-name";
+        selected_fixture_div_id = "#selected-fixture";
+        selected_fixture_canvas_id = '#selected-fixture-canvas';
+        fixture_name_id = "#selected-fixture-name";
+        grayscale_id = "#grayscale";
+        save_fixture_action_id = "#update-type";
+        save_fixture_button = "#submit-button";
+        remove_fixture_id = "#remove-button";
+
+    </script>
+</head>
+<body>
+<div id="cont">
+    <h1>Fixtures</h1>
+    <form action="" method="post">
+        <div id="selecting-fixture" class="section">
+            <label for="current-fixture">Select:</label>
+            <select name="current-fixtures" id="current-fixture"
+                    onchange="javascript:get_fixture();"></select>
+            <input name="add-fixture" id="add-fixture"
+                   onclick="add_fixture()"  type="button" value="Add new...">
+        </div>
+
+        <div id="new-fixture-data" class="section">
+            <h2>New Fixture</h2>
+            <ol>
+                <li><label for="new-fixture-name">Name:</label>
+                    <input name="new-fixture-name" id="new-fixture-name" onchange="OnEnterFixtureName();" onkeyup="OnEnterFixtureName();"></li>
+                <li><label for="new-fixture-image">Reference Image:</label>
+                    <input name="new-fixture-image" id="new-fixture-image" type="file"
+                           onchange="set_fixture_image();"></li>
+                <li><label for="new-fixture-markers">Orientation Markers:</label>
+                    <input type="number" value="3" name="new-fixture-markers" id="new-fixture-markers" min="3" max="7">
+                    <button onclick="detect_markers()" type="button" id="new-fixture-detect">Detect</button> </li>
+            </ol>
+        </div>
+
+        <div id="selected-fixture" class="section">
+            <h2 id="selected-fixture-name"></h2>
+            <p>Left mouse-button click and drag to draw feature area. Click inside area to remove area.
+            If there's a message, click image once to remove it. Running marker detection takes a few seconds so don't
+                worry if nothing seems to be happening.
+            <canvas id="selected-fixture-canvas"    width="700"  height="600"></canvas>
+            <input type="hidden" name="update-type" id='update-type' value="update">
+            <div>
+                <button type="button" id="clear-areas" onclick="clearAreas();draw_fixture();selected_fixture_canvas_jq.focus();">Clear All Areas</button>
+                <label for="grayscale">Grayscale</label>
+                <select name="grayscale" id="grayscale"></select>
+                <button type="button" id="submit-button" onclick="SaveFixture();">Save</button>
+                <button type="button" id="remove-button" onclick="RemoveFixture();">Remove</button>
+            </div>
+        </div>
+
+        <script>
+            get_grayscales();
+            get_fixtures("#current-fixture", "#new-fixture-name");
+            set_canvas();
+        </script>
+
+    </form>
+</div>
+</body>
+</html>

@@ -72,7 +72,7 @@ class ProjectImage(object):
             fixture_name = paths.get_fixture_path(self._scanning_meta_data.fixture, only_name=True)
             fixture_directory = None
 
-        return first_pass_image.Image(
+        return first_pass_image.FixtureImage(
             fixture_name,
             fixture_directory=fixture_directory)
 

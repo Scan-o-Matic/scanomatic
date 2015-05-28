@@ -5,6 +5,8 @@ import re
 
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 from scanomatic.models import compile_project_model
+from scanomatic.models import fixture_models
+from scanomatic.models.factories import fixture_factories
 from scanomatic.io.paths import Paths
 from scanomatic.io.fixtures import Fixtures
 
@@ -166,3 +168,41 @@ class CompileProjectFactory(AbstractModelFactory):
                 return model.FIELD_TYPES.fixture_name
         else:
             return model.FIELD_TYPES.fixture
+
+
+class CompileImageAnalysisFactory(AbstractModelFactory):
+
+    MODEL = compile_project_model.CompileImageAnalysisModel
+    STORE_SECTION_HEAD = ("image", "index")
+    _SUB_FACTORIES = {
+        compile_project_model.CompileImageModel: CompileImageFactory,
+        fixture_models.FixtureModel: fixture_factories.FixtureFactory
+    }
+
+    STORE_SECTION_SERIALIZERS = {
+        ('image',): compile_project_model.CompileImageModel,
+        ('fixture',): fixture_models.FixtureModel
+    }
+
+    @classmethod
+    def create(cls, **settings):
+        """:rtype : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
+        return super(CompileImageAnalysisFactory, cls).create(**settings)
+
+    @classmethod
+    def _validate_fixture(cls, model):
+        """:type model : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
+
+        if cls._is_valid_submodel(model, "fixture"):
+            return True
+        else:
+            return model.FIELD_TYPES.fixture
+
+    @classmethod
+    def _validate_image(cls, model):
+        """:type model : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
+
+        if cls._is_valid_submodel(model, "image"):
+            return True
+        else:
+            return model.FIELD_TYPES.image

@@ -99,7 +99,7 @@ def make_entries(fs, file_list=None, extra_info=None, verbose=False, quiet=False
                 f_settings.set_areas_positions()
                 dpi_factor = 4.0
                 f_settings.A.load_other_size(im_file, dpi_factor)
-                grayscale = f_settings.A.get_subsection(f_settings.current_analysis_image_config.get("grayscale_area"))
+                grayscale = f_settings.A.get_plate_im_section(f_settings.current_analysis_image_config.get("grayscale_area"))
 
                 write_dictionary['mark_X'] = list(f_settings.mark_X)
                 write_dictionary['mark_Y'] = list(f_settings.mark_Y)

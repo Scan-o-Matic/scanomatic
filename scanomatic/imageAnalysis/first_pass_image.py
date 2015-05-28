@@ -14,475 +14,108 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import os
 import time
 import itertools
 import numpy as np
 from matplotlib.pyplot import imread
-#import weakref
 
 #
 # SCANNOMATIC LIBRARIES
 #
 
-import scanomatic.io.paths as paths
-import scanomatic.io.config_file as config_file
-import scanomatic.io.app_config as app_config
-
-import scanomatic.io.logger as logger
+from scanomatic.io.grid_history import GriddingHistory
+from scanomatic.io.logger import Logger
+from scanomatic.io.fixtures import FixtureSettings
 
 import imageBasics
 import imageFixture
 import imageGrayscale
-import grayscale
-
-#
-# DECORATORS
-#
 
 
-def GH_loaded_decorator(f):
-    """Intended to work with Gridding History class"""
-    def wrap(*args, **kwargs):
-        self = args[0]
-        if self._settings is None:
-            if self._load() is False:
-                return None
-        else:
-            self._settings.reload()
+def _get_coords_sorted(coords):
 
-        return f(*args, **kwargs)
-
-    return wrap
-
-#
-# CLASSES
-#
+    return zip(*map(sorted, zip(*coords)))
 
 
-class Gridding_History(object):
-    """This class keeps track of the gridding-histories of the fixture
-    using the configuration-file in the fixtures-directory"""
+def get_image_scale(im):
 
-    plate_pinning_pattern = "plate_{0}_pinning_{1}"
-    pinning_formats = ((8, 12), (16, 24), (32, 48), (64, 96))
-    plate_area_pattern = "plate_{0}_area"
+    small_error = 0.01
+    invalid_scale = -1.0
 
-    def __init__(self, parent, fixture_name, paths, app_config=None):
+    if im is not None:
 
-        #self._parent = weakref.ref(parent) if parent else None
+        scale_d1, scale_d2 = [im.shape[i] / float(FixtureImage.EXPECTED_IM_SIZE[i]) for i in range(2)]
 
-        self._logger = logger.Logger("Gridding History")
-        self._name = fixture_name
-        self._paths = paths
-        self._app_config = app_config
+        if abs(scale_d1 - scale_d2) < small_error:
 
-        self._settings = None
-        self._compatibility_check()
+            return (scale_d1 + scale_d2) / 2.0
 
-    def __getitem__(self, key):
-        #This is purposly insecure function
-
-        if self._settings is None:
-            return None
-
-        return self._settings.get(key)
-
-    def _get_plate_pinning_str(self, plate, pinning_format):
-
-        return self.plate_pinning_pattern.format(plate, pinning_format)
-
-    def _get_gridding_history(self, plate, pinning_format):
-
-        #self._settings.reload()
-        return self._settings[self._get_plate_pinning_str(plate, pinning_format)]
-
-    def _load(self):
-
-        conf_file = config_file.ConfigFile(self._paths.get_fixture_path(self._name))
-        if conf_file.get_loaded() is False:
-            self._settings = None
-            return False
-        else:
-            self._settings = conf_file
-            return True
-
-    @GH_loaded_decorator
-    def get_gridding_history(self, plate, pinning_format):
-
-        h = self._get_gridding_history(plate, pinning_format)
-
-        if h is None:
-            self._logger.info(
-                "No history in {2} on plate {0} format {1}".format(
-                    plate, pinning_format, self._name))
-            return None
-
-        self._logger.info(
-            "Returning history for {0} plate {1} format {2}".format(
-            self._name, plate, pinning_format))
-        return np.array(h.values())
-
-    @GH_loaded_decorator
-    def get_gridding_history_specific_plate(self, p_uuid, plate,
-                                            pinning_format):
-
-        h = self._get_gridding_history(plate, pinning_format)
-        if h is None or p_uuid not in h:
-            self._logger.info(
-                "No history in {2} on plate {0} format {1}".format(
-                    plate, pinning_format, self._name))
-            return None
-
-        self._logger.info(
-            "Returning history for {0} plate {1} format {2} uuid {3}".format(
-            self._name, plate, pinning_format, p_uuid))
-
-        return h[p_uuid]
-
-    @GH_loaded_decorator
-    def set_gridding_parameters(self, project_id, pinning_format, plate,
-                                center, spacings):
-
-        h = self._get_gridding_history(plate, pinning_format)
-
-        if h is None:
-
-            h = {}
-
-        h[project_id] = center + spacings
-
-        self._logger.info("Setting history {0} on {1} for {2} {3}".format(
-            center + spacings, self._name, project_id, plate))
-
-        f = self._settings
-        f.set(self._get_plate_pinning_str(plate, pinning_format), h)
-        f.save()
-
-    @GH_loaded_decorator
-    def unset_gridding_parameters(self, project_id, pinning_format, plate):
-
-        h = self._get_gridding_history(plate, pinning_format)
-
-        if h is None:
-
-            return None
-
-        try:
-            del h[project_id]
-        except:
-            self._logger.warning((
-                "Gridding history for {0} project {1}"
-                " plate {2} pinning format {3} did not exist, thus"
-                " nothing to delete").format(
-                    self._name, project_id, plate, pinning_format))
-            return False
-
-        f = self._settings
-        f.set(self._get_plate_pinning_str(plate, pinning_format), h)
-        f.save()
-
-        return True
-
-    @GH_loaded_decorator
-    def reset_gridding_history(self, plate):
-
-        f = self._settings
-
-        for pin_format in self.pinning_formats:
-            f.set(self._get_plate_pinning_str(plate, pin_format), {})
-
-        f.save()
-
-    @GH_loaded_decorator
-    def reset_all_gridding_histories(self):
-
-        f = self._settings
-        plate = True
-        i = 0
-
-        while plate is not None:
-
-            plate = f.get(self.plate_area_pattern.format(i))
-            if plate is not None:
-
-                self.reset_gridding_history(i)
-
-            i += 1
-
-    @GH_loaded_decorator
-    def _compatibility_check(self):
-        '''As of version 0.998 a change was made to the structure of pinning
-        history storing, both what is stored and how. Thus older histories must
-        be cleared. When done, version is changed to 0.998'''
-
-        f = self._settings
-        v = f.get('version')
-        if (v < self._app_config.version_fixture_grid_history_change_1):
-
-            self.reset_all_gridding_histories()
-            f.set('version', self._app_config.version_fixture_grid_history_change_1)
-            f.save()
+        return invalid_scale
 
 
-class Image(object):
+class FixtureImage(object):
 
     MARKER_DETECTION_SCALE = 0.25
     EXPECTED_IM_SIZE = (6000, 4800)
 
-    def __init__(self, fixture, image_path=None,
-                 image=None, markings=None, define_reference=False,
-                 fixture_directory=None, markings_path=None,
-                 im_scale=None):
+    def __init__(self, fixture=None):
 
-        self._logger = logger.Logger("Fixture Image")
+        """
 
-        self._paths = paths.Paths()
+        :type fixture: scanomatic.io.fixtures.FixtureSettings
+        """
+        self._logger = Logger("Fixture Image")
 
-        self._config = app_config.Config(self._paths)
+        self._reference_fixture_settings = fixture
+        self._current_fixture_settings = None
+        """:type : scanomatic.io.fixtures.Fixture_Settings"""
+        if (fixture):
+            self._history = GriddingHistory(fixture)
+        else:
+            self._history = None
 
-        self._define_reference = define_reference
-        self.fixture_name = fixture
-        self.im_scale = im_scale
-        self.im_original_scale = im_scale
-
-        self.set_reference_file(
-            fixture,
-            fixture_directory=fixture_directory,
-            image_path=image_path)
-
-        f_name = self.get_name_in_ref()
-        if f_name is None:
-            f_name = fixture
-        self._history = Gridding_History(
-            self, f_name, self._paths,
-            app_config=self._config)
-
-        self._markers_X = None
-        self._markers_Y = None
-        self._gs_values = None
-        self._gs_indices = None
         self.im = None
-
-        self.set_image(image=image, image_path=image_path)
-        self.set_marking_path(markings_path)
-        self.set_number_of_markings(markings)
-
-        #print fixture, self['fixture-path']
+        self.im_original_scale = None
+        self._name = "default"
 
     def __getitem__(self, key):
 
-        if key in ['image']:
+        if key in ['current']:
+            if self._current_fixture_settings is None:
+                self._current_fixture_settings = FixtureSettings(self.name)
+            return self._current_fixture_settings
 
-            return self.im
+        elif key in ['fixture', 'reference']:
+            if self._reference_fixture_settings is None:
+                self._reference_fixture_settings = FixtureSettings(self.name)
+                self._name = self.name
 
-        elif key in ['current']:
-
-            return self.fixture_current
-
-        elif key in ['fixture']:
-
-            return self.fixture_reference
-
-        elif key in ['fixture-path']:
-
-            return self._fixture_reference_path
-
-        elif key in ['name']:
-
-            return self.fixture_name
-
-        elif key in ["grayscaleTarget"]:
-
-            refTarget = self.fixture_reference.get("grayscale_indices")
-
-            if refTarget is not None:
-                return refTarget
-            elif self._gs_indices is not None:
-                return self._gs_indices
-            else:
-                return grayscale.getGrayscaleTargets(self['grayscale_type'])
-
-        elif key in ["grayscaleSource"]:
-
-            return self._gs_values
-
-        elif key in ["markers", "marks"]:
-
-            return self._markers_X, self._markers_Y
-
-        elif key in ["ref-markers"]:
-
-            return self._get_markings(source="fixture")
-
-        elif key in ["plates"]:
-
-            return self.get_plates()
-
-        elif key in ['version', 'Version']:
-
-            return self.fixture_reference.get('version')
-
-        elif key in ['history', 'pinning', 'pinnings', 'gridding']:
-
-            return self._history
-
-        elif key in ['scale']:
-
-            return self.im_original_scale
-
-        elif key in ['grayscale_type', 'grayscaleType', 'grayscaleName']:
-
-            gs_type = self.fixture_reference.get('grayscale_type')
-            if gs_type is None:
-                self._logger.warning("Using default Grayscale")
-                gs_type = grayscale.getDefualtGrayscale()
-            return gs_type
-        else:
-
-            raise Exception("***ERROR: Unknown key {0}".format(key))
-
-    def __setitem__(self, key, val):
-
-        if key in ['grayscale-area', 'grayscale-coords', 'gs-area',
-                   'gs-coords', 'greyscale-area', 'greyscale-coords']:
-
-            self.fixture_current['grayscale_area'] = val
-
-        elif key in ['grayscale_type']:
-
-            if val in grayscale.getGrayscales():
-                self.fixture_current['grayscale_type'] = val
-            else:
-                self.fixture_current['grayscale_type'] = None
-
-            self._setCurrentFixtureHasGrayscale()
-
-        elif key in ['grayscale', 'greyscale', 'gs']:
-
-            self.fixture_current['grayscale_indices'] = val
-            self._setCurrentFixtureHasGrayscale()
-
-        elif key in ['plate-coords']:
-
-            try:
-                plate, coords = val
-                plate = int(plate)
-            except:
-                self._logger.error(
-                    "Plate coordinates must be a tuple/list of " +
-                    "plate index and coords")
-                return
-
-            plate_str = "plate_{0}_area".format(plate)
-            self.fixture_current[plate_str] = coords
+            return self._reference_fixture_settings
 
         else:
 
-            raise("Failed to set {0} to {1}, key unkown".format(key, str(val)))
+            raise KeyError(key)
 
-    def _setCurrentFixtureHasGrayscale(self):
+    def set_current_fixture_settings(self, current_fixture_settings):
 
-        indices = self.fixture_current['grayscale']
-        if ((indices is None or isinstance(indices, bool) or
-                len(indices) == 0) and
-                self.fixture_current['grayscale_type'] in (None, '')):
-            has_gs = False
+        self._current_fixture_settings = current_fixture_settings
+
+    @property
+    def name(self):
+
+        if self._reference_fixture_settings:
+            return self._reference_fixture_settings.model.name
         else:
-            has_gs = True
+            return self._name
 
-        self._logger.info("The grayscale status is set to {0}".format(has_gs))
+    @name.setter
+    def name(self, value):
 
-        self.fixture_current['grayscale'] = has_gs
-
-    def _load_reference(self):
-
-        fixture_path = self._fixture_reference_path
-
-        self._logger.info("Reference fixture loaded from {0}".format(
-            fixture_path))
-
-        self.fixture_reference = config_file.ConfigFile(fixture_path)
-
-        cur_name = self.fixture_reference.get('name')
-        if cur_name is None or cur_name == "":
-            self.fixture_reference.set('name', self._paths.get_fixture_name(self.fixture_name))
-
-        if self._define_reference:
-            self.fixture_current = self.fixture_reference
+        if self._reference_fixture_settings:
+            self._reference_fixture_settings.model.name = value
         else:
-            self.fixture_current = config_file.ConfigFile(fixture_path + "_tmp")
+            self._name = value
 
-    def get_name_in_ref(self):
-
-        name_in_file = self.fixture_reference.get('name')
-        name_from_file = self._paths.get_fixture_name(
-            self._fixture_reference_path)
-
-        if name_in_file != name_from_file:
-            self._logger.warning(
-                "Missmatch in fixture name in file compared to file name! " +
-                "In used file: '{0}', In system reference: '{1}'".format(
-                    name_in_file, name_from_file))
-
-        return name_from_file
-
-    def set_number_of_markings(self, markings):
-
-        self.markings = None
-        if markings is not None:
-
-            try:
-                self.markings = int(markings)
-            except:
-                pass
-
-        if self.markings is None:
-
-            try:
-
-                self.markings = int(self.fixture_reference.get("marker_count"))
-            except:
-                self.markings = 3
-
-        if self._define_reference:
-
-            self['fixture'].set("marker_count", self.markings)
-
-    def set_marking_path(self, marking_path):
-
-        if marking_path is not None and os.path.isfile(marking_path):
-
-            self.marking_path = marking_path
-
-        else:
-
-            self.marking_path = self._paths.marker
-
-        """
-        else:
-
-            self.marking_path = self.fixture_reference.get("marker_path")
-
-        self._logger.info("Marker set to: {0} {1}".format(self.marking_path, type(self.marking_path)))
-        """
-
-        if self._define_reference:
-
-            self['fixture'].set("marker_path", self.marking_path)
-
-    def set_im_scale(self):
-
-        if self.im is not None and self.im_original_scale is None:
-
-            #Check so equally scaled both dimensions
-            scale_d1, scale_d2 = [
-                self.im.shape[i] / float(self.EXPECTED_IM_SIZE[i])
-                for i in range(2)]
-
-            if abs(scale_d1 - scale_d2) < 0.01:
-
-                self.im_original_scale = (scale_d1 + scale_d2) / 2.0
 
     def set_image(self, image=None, image_path=None):
 
@@ -497,67 +130,19 @@ class Image(object):
                 self._logger.error("Could not load image")
 
             else:
-                self._logger.info("Loaded image {0} with shape {1}".format(
-                    image_path, self.im.shape))
+                self._logger.info("Loaded image {0} with shape {1}".format(image_path, self.im.shape))
         else:
 
-            self._logger.warning(
-                "No information supplied about how to load image," +
-                "thuse none loaded")
+            self._logger.warning("No information supplied about how to load image, thus none loaded")
+
             self.im = None
 
-        self.set_im_scale()
+        self.im_original_scale = get_image_scale(self.im)
 
-    def set_reference_file(self, fixture_name, fixture_directory=None,
-                           image_path=None):
-
-        if fixture_directory is not None:
-
-            self._fixture_reference_path = \
-                self._paths.get_fixture_path(
-                    fixture_name,
-                    own_path=fixture_directory)
-
-            self._logger.info(
-                "Refernce set to " +
-                "{0} by using fixture directory: {1} and {2}".format(
-                    self._fixture_reference_path,
-                    fixture_directory,
-                    fixture_name))
-
-            self._fixture_config_root = fixture_directory
-
-        elif image_path is not None:
-
-            self._fixture_config_root = os.path.dirname(image_path)
-
-            self._fixture_reference_path = self._paths.get_fixture_path(
-                fixture_name,
-                own_path=self._fixture_config_root)
-
-            self._logger.info(
-                "Refernce set to {0} by using image path: {1} and {2}".format(
-                    self._fixture_reference_path,
-                    image_path,
-                    fixture_name))
-
-        else:
-
-            self._fixture_config_root = "."
-            self._fixture_reference_path = self._paths.get_fixture_path(
-                fixture_name, own_path="")
-
-            self._logger.info(
-                "Reference set to " +
-                "{0} by using current directory and name {1}".format(
-                    self._fixture_reference_path,
-                    fixture_name))
-
-        self._load_reference()
-
-    def threaded(self):
+    def analyse_current(self):
 
         logger = self._logger
+
         t = time.time()
         logger.debug("Threading invokes marker analysis")
 
@@ -583,467 +168,248 @@ class Image(object):
         logger.debug(
             "Threading done (took: {0} s)".format(time.time() - t))
 
-    def _get_markings(self, source='fixture'):
+    def _get_markings(self, source='reference'):
 
-        X = []
-        Y = []
+        markers = self[source].get_marker_positions()
 
-        if self.markings == 0 or self.markings is None:
+        if markers:
 
-            return None, None
+            return np.array(markers[0]), np.array(markers[1])
 
-        for m in xrange(self.markings):
+        return None, None
 
-            Z = self[source]['marking_{0}'.format(m)]
-
-            if Z is not None:
-
-                X.append(Z[0])
-                Y.append(Z[1])
-
-        if len(X) == 0:
-
-            return None, None
-
-        return np.array(X), np.array(Y)
-
-    def run_marker_analysis(self):
+    def run_marker_analysis(self, markings=None):
 
         _logger = self._logger
 
         t = time.time()
-
-        if self.marking_path is None or self.markings < 1:
-
-            _logger.error(
-                "No marker set ('{0}') or no markings ({1}).".format(
-                    self.marking_path, self.markings))
-
-            return None
-
-        if self._define_reference:
-
-            analysis_im_path = \
-                self._paths.fixture_image_file_pattern.format(
-                    self.fixture_name)
-
-            #analysis_im_path = self._fixture_config_root + os.sep + \
-            #        self.fixture_name + ".tiff"
-
-            target_conf_file = self.fixture_reference
-
-        else:
-
-            analysis_im_path = None
-            target_conf_file = self.fixture_current
-
-        target_conf_file.set("version", __version__)
+        if markings is None:
+            markings = len(self["fixture"].model.orientation_marks_x)
 
         _logger.debug("Scaling image")
 
-        if self.im_scale is not None:
+        analysis_img = self._get_image_in_correct_scale()
 
+        _logger.debug("Setting up Image Analysis (acc {0} s)".format(time.time() - t))
+
+        im_analysis = imageFixture.FixtureImage(
+            image=analysis_img,
+            pattern_image_path=self["reference"].get_marker_path(),
+            scale=self['reference'].model.scale)
+
+        _logger.debug("Finding pattern (acc {0} s)".format(time.time() - t))
+
+        x_positions, y_positions = im_analysis.find_pattern(markings=markings)
+
+        self["current"].model.orientation_marks_x = x_positions
+        self["current"].model.orientation_marks_y = y_positions
+
+        if x_positions is None or y_positions is None:
+
+            _logger.error("No markers found")
+
+        _logger.debug("Marker Detection complete (acc {0} s)".format(time.time() - t))
+
+    def _get_image_in_correct_scale(self):
+
+        scale = self['reference'].model.scale
+        if scale is None or scale == self.im_original_scale:
             analysis_img = self.im
         else:
-
             analysis_img = imageBasics.Quick_Scale_To_im(
                 im=self.im,
                 scale=self.MARKER_DETECTION_SCALE / self.im_original_scale)
 
-            self.im_scale = self.MARKER_DETECTION_SCALE / self.im_original_scale
+        return analysis_img
 
-        _logger.debug(
-            "New scale {0} (acc {1} s)".format(
-                self.MARKER_DETECTION_SCALE / self.im_original_scale,
-                time.time() - t))
+    def _set_current_mark_order(self):
 
-        if analysis_im_path is not None:
+        x_centered, y_centered = self._get_centered_mark_positions("current")
+        x_centered_ref, y_centered_ref = self._get_centered_mark_positions("reference")
 
-            #from matplotlib.image import imsave
-            #imsave(analysis_im_path, analysis_img, format='tiff')
-            np.save(analysis_im_path, analysis_img)
+        if x_centered and y_centered and x_centered_ref and y_centered_ref:
 
-        _logger.debug(
-            "Setting up Image Analysis (acc {0} s)".format(time.time() - t))
+            length = np.sqrt(x_centered ** 2 + y_centered ** 2)
+            length_ref = np.sqrt(x_centered_ref ** 2 + y_centered_ref ** 2)
 
-        im_analysis = imageFixture.FixtureImage(
-            image=analysis_img,
-            pattern_image_path=self.marking_path,
-            scale=self.im_scale,
-            resource_paths=self._paths)
-
-        _logger.debug(
-            "Finding pattern (acc {0} s)".format(time.time() - t))
-
-        Xs, Ys = im_analysis.find_pattern(markings=self.markings)
-
-        self._markers_X = Xs
-        self._markers_Y = Ys
-
-        if Xs is None or Ys is None:
-
-            _logger.error("No markers found")
-
-        elif len(Xs) == self.markings:
-
-            self._set_markings_in_conf(target_conf_file, Xs, Ys)
-            _logger.debug("Setting makers {0}, {1}".format(
-                Xs, Ys))
-
-        _logger.debug(
-            "Marker Detection complete (acc {0} s)".format(time.time() - t))
-
-        return analysis_im_path
-
-    def _set_markings_in_conf(self, conf_file, Xs, Ys):
-
-        if Xs is not None:
-
-            for i in xrange(len(Xs)):
-                conf_file.set("marking_" + str(i), (Xs[i], Ys[i]))
-
-            conf_file.set("marking_center_of_mass", (Xs.mean(), Ys.mean()))
-
-    def _version_check_positions_arr(self, *args):
-        """Note that it only works for NP-ARRAYS and NOT for lists"""
-        version = self['fixture']['version']
-        if version is None or \
-                version < self._config.version_first_pass_change_1:
-
-            args = list(args)
-            for a in args:
-                if a is not None:
-                    a *= 4
-
-    def _get_markings_rotations(self):
-
-        #CURRENT SETTINGS
-        X, Y = self._get_markings(source="current")
-
-        if X is None or Y is None:
-            return None, None
-
-        X = np.array(X)
-        Y = np.array(Y)
-        Mcom = self['current']['marking_center_of_mass']
-        #print "Rotation in", X, Y, Mcom
-        if Mcom is None:
-            Mcom = np.array((X.mean(), Y.mean()))
-        else:
-            Mcom = np.array(Mcom)
-        dX = X - Mcom[0]
-        dY = Y - Mcom[1]
-
-        L = np.sqrt(dX ** 2 + dY ** 2)
-
-        #FIXTURE SETTINGS
-        #version = self['fixture']['version']
-        refX, refY = self._get_markings(source="fixture")
-        refX = np.array(refX) * self.im_original_scale
-        refY = np.array(refY) * self.im_original_scale
-        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        ref_Mcom *= self.im_original_scale
-        self._version_check_positions_arr(ref_Mcom, refX, refY)
-        ref_dX = refX - ref_Mcom[0]
-        ref_dY = refY - ref_Mcom[1]
-
-        ref_L = np.sqrt(ref_dX ** 2 + ref_dY ** 2)
-
-        if Y.shape == refX.shape == refY.shape:
-
-            #Find min diff order
-            #s_reseed = range(len(ref_L))
-            s = range(len(L))
-
-            tmp_dL = []
-            tmp_s = []
-            for i in itertools.permutations(s):
-
-                tmp_dL.append((L[list(i)] - ref_L) ** 2)
-                tmp_s.append(i)
-
-            dLs = np.array(tmp_dL).sum(1)
-            s = list(tmp_s[dLs.argmin()])
+            sort_order, sort_error = self._get_sort_order(length, length_ref)
 
             self._logger.debug(
-                "Found sort order that matches the reference" +
-                "{0} (error {1})".format(s, np.sqrt(dLs.min())))
-            #Quality control of all the markers so that none is bad
-            #Later
+                "Found sort order that matches the reference {0} (error {1})".format(sort_order, sort_error))
 
-            #Rotations
-            A = np.arccos(dX / L)
-            A = A * (dY > 0) + -1 * A * (dY < 0)
-
-            ref_A = np.arccos(ref_dX / ref_L)
-            ref_A = ref_A * (ref_dY > 0) + -1 * ref_A * (ref_dY < 0)
-
-            dA = A[s] - ref_A
-
-            d_alpha = dA.mean()
-            self._logger.debug("Found average rotation {0} from {1}".format(
-                d_alpha, dA))
-
-            #Setting the current marker order so it matches the
-            #Reference one according to the returns variables!
-            self._set_markings_in_conf(self['current'], X[s], Y[s])
-
-            return d_alpha, Mcom
+            self.__set_current_mark_order(sort_order)
 
         else:
 
             self._logger.critical("Missmatch in number of markings!")
-            return None
 
-    def get_subsection(self, section, scale=1.0):
+    def __set_current_mark_order(self, sort_order):
 
-        im = self['image']
+        current_model = self["current"].model
+        current_model.orientation_marks_x = current_model.orientation_marks_x[sort_order]
+        current_model.orientation_marks_y = current_model.orientation_marks_y[sort_order]
 
-        if im is not None and section is not None:
+    def _get_centered_mark_positions(self, source="current"):
 
-            section = zip(*map(sorted, zip(*section)))
+        x_positions = self[source].model.orientation_marks_x
+        y_positions = self[source].model.orientation_marks_y
+
+        if x_positions is None or y_positions is None:
+            return None, None
+
+        x_positions = np.array(x_positions)
+        y_positions = np.array(y_positions)
+
+        marking_center = np.array((x_positions.mean(), y_positions.mean()))
+
+        x_centered = x_positions - marking_center[0]
+        y_centered = y_positions - marking_center[1]
+
+        return x_centered, y_centered
+
+    @staticmethod
+    def _get_sort_order(length, reference_length):
+
+        s = range(len(length))
+
+        length_deltas = []
+        sort_orders = []
+        for sort_order in itertools.permutations(s):
+
+            length_deltas.append((length[list(sort_order)] - reference_length) ** 2)
+            sort_orders.append(sort_order)
+
+        length_deltas = np.array(length_deltas).sum(1)
+        return list(sort_orders[length_deltas.argmin()]), np.sqrt(length_deltas.min())
+
+    def _get_rotation(self):
+
+        x_centered, y_centered = self._get_centered_mark_positions("current")
+        x_centered_ref, y_centered_ref = self._get_centered_mark_positions("reference")
+        length = np.sqrt(x_centered ** 2 + y_centered ** 2)
+        length_ref = np.sqrt(x_centered_ref ** 2 + y_centered_ref ** 2)
+
+        rotations = np.arccos(x_centered / length)
+        rotations = rotations * (y_centered > 0) + -1 * rotations * (y_centered < 0)
+
+        rotations_ref = np.arccos(x_centered_ref / length_ref)
+        rotations_ref = rotations_ref * (y_centered_ref > 0) + -1 * rotations_ref * (y_centered_ref < 0)
+
+        """:type : float"""
+        return (rotations - rotations_ref).mean()
+
+    def _get_offset(self):
+
+        current_model = self['current'].model
+        ref_model = self['reference'].model
+
+        x_delta = current_model.orientation_marks_x - ref_model.orientation_marks_x
+        y_delta = current_model.orientation_marks_y - ref_model.orientation_marks_y
+        return x_delta.mean(), y_delta.mean()
+
+    def get_plate_im_section(self, plate_model, scale=1.0):
+
+        """
+
+        :type plate_model: scanomatic.models.fixture_models.FixturePlateModel
+        """
+        im = self.im
+
+        if im is not None and plate_model is not None:
 
             try:
 
-                subsection = im[
-                    section[0][1] * scale: section[1][1] * scale,
-                    section[0][0] * scale: section[1][0] * scale]
+                return im[plate_model.x1 * scale: plate_model.x2 * scale,
+                          plate_model.y2 * scale: plate_model.y2 * scale]
 
-            except:
+            except (IndexError, TypeError):
 
-                subsection = None
+                return None
 
-            return subsection
+    def get_grayscale_im_section(self, grayscale_model, scale=1.0):
+        """
 
-        return None
+        :type grayscale_model: scanomatic.models.fixture_models.GrayScaleAreaModel
+        """
+        im = self.im
+
+        if im is not None and grayscale_model is not None:
+
+            try:
+
+                return im[max(grayscale_model.y1 * scale, 0): min(grayscale_model.y2 * scale, im.shape[0]),
+                          max(grayscale_model.x1 * scale, 0): min(grayscale_model.x2 * scale, im.shape[1])]
+
+            except (IndexError, TypeError):
+
+                return None
 
     def analyse_grayscale(self):
 
-        im = self.get_subsection(self['current']['grayscale_area'],
-                                 scale=1.0)
-
-        """
-        print id(im), type(im), "For save", self['current']['grayscale_area'], self.im_original_scale
-        """
+        current_model = self["current"].model
+        im = self.get_grayscale_im_section(current_model.grayscale, scale=1.0)
 
         if im is None or 0 in im.shape:
             self._logger.error(
-                "No valid grayscale area (Current area: {0})".format(
-                    self['current']['grayscale_area']))
+                "No valid grayscale area (Current area: {0} using {1})".format(
+                    self.im is None and "-No image loaded-" or
+                    (im is None and dict(**current_model.grayscale) or im.shape), current_model.grayscale))
             return False
 
-        #np.save(".tmp.npy", im)
         ag = imageGrayscale.Analyse_Grayscale(
-            target_type=self['grayscale_type'], image=im,
+            target_type=current_model.grayscale.name, image=im,
             scale_factor=self.im_original_scale)
 
-        gs_indices = ag.get_target_values()
-        self._gs_indices = gs_indices
-        gs_values = ag.get_source_values()
-        self._gs_values = gs_values
+        current_model.grayscale.values = ag.get_source_values()
 
-        """Outdated since default is to just use fixture name
-        if self._define_reference:
+    def _get_rotated_vector(self, x, y, rotation, boundary):
 
-            self['fixture'].set('grayscale_indices', gs_indices)
+        return x, y
+
+    def _set_plate_relative(self, plate, rotation=None, offset=(0, 0)):
+
         """
 
-    def _get_rotated_point(self, point, alpha, offset=(0, 0)):
-        """Returns a rotated and offset point.
-
-        Parameters
-        ==========
-
-        point : array-like
-            A two position array for the source position
-
-        alpha : float
-            Rotation angle 
-
-        offset : arrary-like, optional
-            The offset of the point / how much it will be moved after the
-            rotation.
-            Default is to not move.
+        :type plate: scanomatic.models.fixture_models.FixturePlateModel
         """
 
-        if alpha is None:
-            return (None, None)
+        tmp_l = np.sqrt(plate[0] ** 2 + plate[1] ** 2)
 
-        tmp_l = np.sqrt(point[0] ** 2 + point[1] ** 2)
-        tmp_alpha = np.arccos(point[0] / tmp_l)
+        if rotation:
 
-        tmp_alpha = (tmp_alpha * (point[1] > 0) + -1 * tmp_alpha *
-                     (point[1] < 0))
+            rotation_tmp = np.arccos(plate[0] / tmp_l)
+            rotation_tmp = (rotation_tmp * (plate[1] > 0) + -1 * rotation_tmp * (plate[1] < 0))
 
-        new_alpha = tmp_alpha + alpha
-        new_x = np.cos(new_alpha) * tmp_l + offset[0]
-        new_y = np.sin(new_alpha) * tmp_l + offset[1]
+            rotation_new = rotation_tmp + rotation
+            new_x = np.cos(rotation_new) * tmp_l + offset[0]
+            new_y = np.sin(rotation_new) * tmp_l + offset[1]
+        else:
+            new_x = tmp_l + offset[0]
+            new_y = tmp_l + offset[1]
 
         if new_x > self.EXPECTED_IM_SIZE[0]:
-            self._logger.warning(
-                    "Point X-value ({1}) outside image {0}".format(
-                        self._name, new_x))
+            self._logger.warning("Point X-value ({0}) outside image".format(new_x))
             new_x = self.EXPECTED_IM_SIZE[0]
         elif new_x < 0:
-            self._logger.warning(
-                    "Point X-value ({1}) outside image {0}".format(
-                        self._name, new_x))
+            self._logger.warning("Point X-value ({0}) outside image".format(new_x))
             new_x = 0
 
-
         if new_y > self.EXPECTED_IM_SIZE[1]:
-            self._logger.warning(
-                    "Point Y-value ({1}) outside image {0}".format(
-                        self._name, new_y))
+            self._logger.warning("Point Y-value ({0}) outside image".format(new_y))
             new_y = self.EXPECTED_IM_SIZE[1]
         elif new_y < 0:
-            self._logger.warning(
-                    "Point Y-value ({1}) outside image {0}".format(
-                        self._name, new_y))
+            self._logger.warning("Point Y-value ({0}) outside image".format(new_y))
             new_y = 0
 
-        return (new_x, new_y)
+        return new_x, new_y
 
     def set_current_areas(self):
 
-        alpha, Mcom = self._get_markings_rotations()
-        X, Y = self._get_markings(source='current')
-        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        #print ref_Mcom, self.im_original_scale
-        #ref_Mcom *= self.im_original_scale
+        self._set_current_mark_order()
+        offset = self._get_offset()
+        rotation = self._get_rotation()
+        current_model = self["current"].model
+        for plate in current_model.plates:
+            self._set_plate_relative(plate, rotation, offset)
 
-        dMcom = Mcom - ref_Mcom
-
-        #print "dMcom", dMcom, alpha
-
-        self['current'].flush()
-        self._set_markings_in_conf(self['current'], X, Y)
-
-        version = self['fixture']['version']
-        ref_gs = np.array(self['fixture']["grayscale_area"])
-        ref_gs *= self.im_original_scale
-
-        self._version_check_positions_arr(ref_Mcom)
-
-        if (version is None or
-                version < self._config.version_first_pass_change_1):
-
-            scale_factor = 4.0
-
-        else:
-
-            scale_factor = 1.0
-
-        if ref_gs is not None and bool(self['fixture']["grayscale"]) is True:
-
-            Gs1 = scale_factor * ref_gs[0]
-            Gs2 = scale_factor * ref_gs[1]
-
-            self['current'].set("grayscale_area",
-                [self._get_rotated_point(Gs1, alpha, offset=dMcom),
-                 self._get_rotated_point(Gs2, alpha, offset=dMcom)])
-
-        else:
-
-            if bool(self['fixture']['grayscale']) is not True:
-
-                self._logger.warning("No grayscale enabled in reference")
-
-            if ref_gs is None:
-
-                self._logger.warning("No grayscale area in reference")
-            #print Gs1, self._get_rotated_point(Gs1, alpha, offset=dMcom)
-
-        i = 0
-        #ref_m = True
-        p_str = "plate_{0}_area"
-        f_plates = self['fixture'].get_all("plate_%n_area")
-
-        for i, p in enumerate(f_plates):
-            p = np.array(p)
-            p *= self.im_original_scale
-            M1 = scale_factor * p[0]
-            M2 = scale_factor * p[1]
-
-            self['current'].set(p_str.format(i),
-                [self._get_rotated_point(M1, alpha, offset=dMcom),
-                 self._get_rotated_point(M2, alpha, offset=dMcom)])
-
-            #print M1, self._get_rotated_point(M1, alpha, offset=dMcom)
-
-    def _set_current_areas(self):
-
-        alpha, Mcom = self._get_markings_rotations()
-        X, Y = self._get_markings(source='current')
-        ref_Mcom = np.array(self['fixture']["marking_center_of_mass"])
-        ref_Mcom *= self.im_original_scale
-
-        self['current'].flush()
-        self._set_markings_in_conf(self['current'], X, Y)
-
-        version = self['fixture']['version']
-        ref_gs = np.array(self['fixture']["grayscale_area"])
-        ref_gs *= self.im_original_scale
-
-        self._version_check_positions_arr(ref_Mcom)
-
-        if (version is None or
-                version < self._config.version_first_pass_change_1):
-
-            scale_factor = 4.0
-
-        else:
-
-            scale_factor = 1.0
-
-        if ref_gs is not None and bool(self['fixture']["grayscale"]) is True:
-
-            dGs1 = scale_factor * ref_gs[0] - ref_Mcom
-            dGs2 = scale_factor * ref_gs[1] - ref_Mcom
-
-            self['current'].set("grayscale_area",
-                [self._get_rotated_point(dGs1, alpha, offset=Mcom),
-                 self._get_rotated_point(dGs2, alpha, offset=Mcom)])
-
-        i = 0
-        #ref_m = True
-        p_str = "plate_{0}_area"
-        f_plates = self['fixture'].get_all("plate_%n_area")
-
-        for i, p in enumerate(f_plates):
-            p = np.array(p)
-            p *= self.im_original_scale
-            dM1 = scale_factor * p[0] - ref_Mcom
-            dM2 = scale_factor * p[1] - ref_Mcom
-
-            self['current'].set(p_str.format(i),
-                [self._get_rotated_point(dM1, alpha, offset=Mcom),
-                 self._get_rotated_point(dM2, alpha, offset=Mcom)])
-
-    def _get_coords_sorted(self, coords):
-
-        return zip(*map(sorted, zip(*coords)))
-
-    def get_plates(self, source="current", indices=False):
-
-        plate_list = []
-
-        p = True
-        ps = "plate_{0}_area"
-        i = 0
-
-        while p is not None:
-
-            p = self[source][ps.format(i)]
-
-            if p is not None:
-
-                if indices:
-                    plate_list.append(i)
-                else:
-                    p = self._get_coords_sorted(p)
-                    plate_list.append(p)
-
-            i += 1
-
-        return plate_list
+        self._set_grayscale_area_relative(current_model.grayscale)

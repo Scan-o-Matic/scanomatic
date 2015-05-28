@@ -1,0 +1,674 @@
+var current_fixture_id;
+var new_fixture_data_id;
+var new_fixture_detect_id;
+var new_fixture_image_id;
+var new_fixture_markers_id;
+var selected_fixture_div_id;
+var fixture_name_id;
+var selected_fixture_canvas_id;
+var new_fixture_name;
+var grayscale_id;
+var save_fixture_action_id;
+var save_fixture_button;
+var remove_fixture_id;
+
+var context_warning = "";
+var fixture_image = null;
+var fixture_name = null;
+var markers = null;
+var scale = 1;
+var areas = [];
+var creatingArea = false;
+var selected_fixture_canvas_jq;
+var selected_fixture_canvas;
+var grayscale_graph = null;
+var img_width = 0;
+var img_height = 0;
+
+function relMouseCoords(event){
+    var totalOffsetX = 0;
+    var totalOffsetY = 0;
+    var canvasX = 0;
+    var canvasY = 0;
+    var currentElement = this;
+
+    do{
+        totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
+        totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
+    }
+    while(currentElement = currentElement.offsetParent)
+
+    canvasX = event.pageX - totalOffsetX;
+    canvasY = event.pageY - totalOffsetY;
+
+    return {x:canvasX, y:canvasY}
+}
+
+function translateToImageCoords(coords) {
+    var imageCoords = JSON.parse(JSON.stringify(coords));
+    imageCoords.x /= scale;
+    imageCoords.y /= scale;
+    return imageCoords;
+}
+
+HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
+
+function set_canvas() {
+
+    selected_fixture_canvas_jq = $(selected_fixture_canvas_id);
+    selected_fixture_canvas_jq.attr("tabindex", "0");
+    selected_fixture_canvas = selected_fixture_canvas_jq[0];
+
+    selected_fixture_canvas_jq.mousedown(function (event) {
+
+        if (context_warning) {
+            context_warning = null;
+            return;
+        }
+
+        var canvasPos = selected_fixture_canvas.relMouseCoords(event);
+        var imagePos = translateToImageCoords(canvasPos);
+        creatingArea = null;
+        var nextArea = getAreaByPoint(imagePos);
+        if (event.button == 0) {
+            if (nextArea < 0) {
+                areas.push({
+                    x1: imagePos.x,
+                    x2: imagePos.x,
+                    y1: imagePos.y,
+                    y2: imagePos.y,
+                    grayscale: false,
+                    plate: -1
+                });
+                creatingArea = areas.length - 1;
+            } else {
+                creatingArea = nextArea;
+                if (areas[creatingArea].grayscale)
+                    grayscale_graph = null;
+                areas[creatingArea].x1 = imagePos.x;
+                areas[creatingArea].y1 = imagePos.y;
+                areas[creatingArea].x2 = imagePos.x;
+                areas[creatingArea].y2 = imagePos.y;
+                areas[creatingArea].grayscale = false;
+                areas[creatingArea].plate = -1;
+            }
+        } else {
+            if (areas[nextArea] && areas[nextArea].grayscale)
+                grayscale_graph = null;
+            areas.splice(nextArea, 1);
+            creatingArea = null;
+
+        }
+        draw_fixture();
+    });
+
+    selected_fixture_canvas_jq.mousemove(function (event) {
+        if (event.button == 0 && isArea(creatingArea)) {
+            var canvasPos = selected_fixture_canvas.relMouseCoords(event);
+            var imagePos = translateToImageCoords(canvasPos);
+            areas[creatingArea].x2 = imagePos.x;
+            areas[creatingArea].y2 = imagePos.y;
+            draw_fixture();
+        }
+    });
+
+    selected_fixture_canvas_jq.mouseup( function(event) {
+        var minUsableSize = 10000;
+        var curArea = creatingArea;
+        creatingArea = null;
+        if (isArea(curArea)) {
+            var area = JSON.parse(JSON.stringify(areas[curArea]));
+            var imagePos = translateToImageCoords({x: img_width, y: img_height});
+            area.x1 = Math.max(Math.min(areas[curArea].x1, areas[curArea].x2, imagePos.x), 0);
+            area.x2 = Math.min(Math.max(areas[curArea].x1, areas[curArea].x2), imagePos.x);
+
+            area.y1 = Math.max(Math.min(areas[curArea].y1, areas[curArea].y2, imagePos.y), 0);
+            area.y2 = Math.min(Math.max(areas[curArea].y1, areas[curArea].y2), imagePos.y);
+            areas[curArea] = area;
+        }
+
+        for (var i=0; i<areas.length;i++) {
+            if (getAreaSize(i) < minUsableSize) {
+                if (area[i] && area[i].grayscale)
+                    grayscale_graph = null;
+
+                areas.splice(i, 1);
+                if (i < curArea)
+                    curArea--;
+                else if (i == curArea)
+                    curArea = -1;
+                i--;
+
+            }
+        }
+
+        if (curArea >= 0) {
+            if (hasGrayScale())
+                areas[curArea].plate = 0;
+            else
+                testAsGrayScale(curArea);
+        }
+        setPlateIndices();
+        draw_fixture();
+     });
+
+}
+
+function isArea(index) {
+    return index != null && index >= 0 && index < areas.length;
+}
+
+function getAreaSize(plate) {
+
+    if (isInt(plate)) {
+        if (plate >=0 && plate < areas.length)
+            plate = areas[plate];
+        else
+            plate = null;
+    }
+
+    if (plate)
+        return Math.abs(plate.x2 - plate.x1) * Math.abs(plate.y2 - plate.y1);
+    return -1;
+}
+
+function getAreaCenter(plate) {
+
+    if (isInt(plate)) {
+        if (plate >=0 && plate < areas.length)
+            plate = areas[plate];
+        else
+            plate = null;
+    }
+
+    if (plate)
+        return {
+            x: (plate.x1 + plate.x2) / 2,
+            y: (plate.y1 + plate.y2) / 2
+        }
+    else
+        return {x: selected_fixture_canvas.width/2,
+                y: selected_fixture_canvas.height/2};
+}
+
+function isInt(value) {
+  return !isNaN(value) &&
+         parseInt(Number(value)) == value &&
+         !isNaN(parseInt(value, 10));
+}
+
+function setPlateIndices() {
+    areas.sort(function(a, b) {
+        if (a.grayscale)
+            return -1;
+        else if (b.grayscale)
+            return 1;
+
+        if (a.y2 < b.y1)
+            return -1;
+        else if (b.y2 < a.y1)
+            return 1;
+        else if (a.x2 < b.x1)
+            return 1;
+        else if (b.x2 < a.x1)
+            return -1;
+
+        var aCenter = getAreaCenter(a);
+        var bCenter = getAreaCenter(b);
+
+        return aCenter.y < bCenter.y ? -1 : 1;
+    });
+    var len = areas.length;
+    var plateIndex = 1;
+    for (var i=0; i<len; i++) {
+        if (areas[i].grayscale !== true && areas[i].plate >= 0 && getAreaSize(i) > 0) {
+            areas[i].plate = plateIndex;
+            plateIndex++;
+        }
+    }
+}
+
+function clearAreas() {
+    areas = [];
+    grayscale_graph = null;
+    context_warning = "";
+}
+
+function getAreaByPoint(point) {
+    for (var len = areas.length, i=0; i<len; i++) {
+        if (isPointInArea(point, areas[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function isPointInArea(point, area) {
+    return area.x1 < point.x && area.x2 > point.x && area.y1 < point.y && area.y2 > point.y;
+}
+
+function hasGrayScale() {
+    for (var len=areas.length, i=0;i<len;i++) {
+        if (areas[i].grayscale)
+            return true;
+    }
+    return false;
+}
+
+function removeGrayScale() {
+    for (var len=areas.length, i=0;i<len;i++) {
+        if (areas[i].grayscale)
+            areas.grayscale = false;
+            break;
+    }
+}
+
+function testAsGrayScale(plate) {
+    if (isInt(plate)) {
+        if (isArea(plate))
+            plate = areas[plate];
+        else
+            plate = null;
+    }
+
+    if (plate) {
+        var grayscale_name = $(grayscale_id).val();
+        $.ajax({
+            url: "?grayscale=1&fixture=" + fixture_name + "&grayscale_name=" + grayscale_name,
+            method: "POST",
+            data: plate,
+            success: function (data) {
+                console.log(data);
+                if (data.grayscale && hasGrayScale() === false)  {
+                    plate.grayscale = true;
+                    grayscale_graph = GetLinePlot(data.target_values, data.source_values,
+                        "Grayscale", "Targets", "Measured values");
+                } else {
+                    if (!hasGrayScale() && data.reason)
+                        grayscale_graph = GetLinePlot([], [], data.reason, "Targets", "Measured values");
+                    plate.grayscale = false;
+                    plate.plate = 0;
+                    setPlateIndices();
+                }
+                draw_fixture();
+            },
+            error: function (data) {
+                console.log(data);
+                context_warning = "Error occured detecting grayscale";
+                setPlateIndices();
+                draw_fixture();
+            }
+
+        });
+    }
+}
+
+function get_fixture_as_name(fixture) {
+    return fixture.replace(/_/g, " ")
+        .replace(/[^ a-zA-Z0-9]/g, "")
+        .replace(/^[a-z]/g,
+            function ($1) { return $1.toUpperCase();});
+}
+
+function get_fixture_from_name(fixture) {
+    return fixture.replace(/ /g, "_")
+        .replace(/A-Z/g, function ($1) { return $1.toLowerCase();})
+        .replace(/[^a-z1-9_]/g,"");
+}
+
+function OnEnterFixtureName() {
+    var fix_name = $(new_fixture_name);
+    fix_name.val(get_fixture_as_name(fix_name.val()));
+    SetAllowDetect();
+}
+
+function SetAllowDetect() {
+
+    var disallow = $(new_fixture_image_id).val() == "" || $(new_fixture_name).val() == "";
+    InputEnabled($(new_fixture_detect_id), !disallow);
+}
+
+function InputEnabled(obj, isEnabled) {
+    if (isEnabled) {
+        obj.removeAttr("disabled");
+    } else {
+        obj.attr("disabled", true);
+    }
+
+}
+
+function position_string_to_array(pos_str) {
+    return JSON.parse(pos_str.replace(/\(|\)/g, function ($1) { return $1 == "(" ? "[" : "]";}));
+}
+
+function unselect(target) {
+    target.val("");
+}
+
+function get_fixtures() {
+    var options = $(current_fixture_id);
+    options.empty();
+    $.get("/fixtures?names=1", function(data, status) {
+        $.each(data.fixtures, function() {
+            options.append($("<option />").val(this).text(get_fixture_as_name(this)));
+        })
+        unselect(options);
+    })
+
+    $(new_fixture_data_id).hide();
+    $(selected_fixture_div_id).hide();
+}
+
+function get_grayscales() {
+    var options = $(grayscale_id);
+    options.empty();
+    $.get("/grayscales?names=1", function(data, status) {
+        if (data.grayscales) {
+            for (var i=0; i<data.grayscales.length; i++)
+                options.append($("<option />").val(data.grayscales[i]).text(data.grayscales[i]));
+        }
+    });
+
+}
+
+function add_fixture() {
+    var options = $(current_fixture_id);
+    unselect(options);
+    unselect($(new_fixture_image_id));
+    $(save_fixture_action_id).val("create");
+    set_fixture_image();
+    $(new_fixture_detect_id).val("Detect");
+    $(new_fixture_data_id).show();
+    $(selected_fixture_div_id).hide();
+}
+
+function get_fixture() {
+    var options = $(current_fixture_id);
+    $(new_fixture_data_id).hide();
+    $(save_fixture_action_id).val("update");
+    load_fixture(options.val());
+}
+
+function set_fixture_image() {
+    SetAllowDetect();
+}
+
+function detect_markers() {
+
+    var formData = new FormData();
+    formData.append("markers", $(new_fixture_markers_id).val());
+    formData.append("image", $(new_fixture_image_id)[0].files[0]);
+    formData.append("name", $(new_fixture_name).val());
+    InputEnabled($(new_fixture_detect_id), false);
+    var button = $(save_fixture_button);
+    InputEnabled(button, false);
+    $(new_fixture_detect_id).val("...");
+    $.ajax({
+        url: '?detect=1',
+        type: 'POST',
+        contentType: false,
+        enctype: 'multipart/form-data',
+        data: formData,
+        processData: false,
+        success: function (data) {
+            var new_image = $(new_fixture_image_id);
+            load_fixture($(new_fixture_name).val());
+
+            if (data.image && data.markers) {
+                context_warning = ""
+                $(new_fixture_data_id).hide();
+            } else {
+                context_warning = "Name or image refused";
+            }
+             load_fixture_image(data.image);
+             set_fixture_markers(data);
+             InputEnabled(button, true);
+        },
+        error: function (data) {
+            context_warning = "Marker detection failed";
+            markers = null;
+            load_fixture($(new_fixture_name).val());
+            draw_fixture();
+        }});
+}
+
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+function load_fixture(name, img_data) {
+    fixture_name = name;
+    $(fixture_name_id).text(get_fixture_as_name(name));
+    clearAreas();
+    selected_fixture_canvas_jq.focus();
+    $(selected_fixture_div_id).show();
+    draw_fixture();
+}
+
+function load_fixture_image(image_name) {
+
+    if (image_name) {
+
+        var img = new Image;
+        img.onload = function() {
+            fixture_image = img;
+            draw_fixture();
+        }
+        img.src = "?image=" + image_name;
+
+    } else {
+        fixture_image = null;
+    }
+}
+
+function set_fixture_markers(data) {
+    markers = data.markers;
+    if (markers.length ==0) {
+        markers = null;
+        $(new_fixture_data_id).show();
+    }
+    draw_fixture();
+}
+
+function SaveFixture() {
+    var action = $(save_fixture_action_id).val();
+    var button = $(save_fixture_button);
+    InputEnabled(button, false);
+    payload = {
+        markers: markers,
+        grayscale_name: $(grayscale_id).val(),
+        areas: areas,
+        name: fixture_name};
+    $.ajax({
+        url:"/fixtures?" + action + "=1",
+        data: JSON.stringify(payload, null, '\t'),
+        contentType: 'application/json;charset=UTF-8',
+        dataType: "json",
+        processData: false,
+        method: "POST",
+        success: function(data) {
+            if (data.success) {
+                $(selected_fixture_div_id).hide();
+                $('<div class=\'dialog\'></div>').appendTo("body")
+                        .prop("title", "Save")
+                        .html("<div><h3>Fixture '" + fixture_name + "' has been saved.</h3></div>")
+                        .dialog({modal: true,
+                                 buttons: {
+                                    Ok: function() {
+                                        $(this).dialog("close");
+                                    }
+                                 }
+                        });
+                get_fixtures();
+            } else {
+                if (data.reason)
+                    context_warning = "Save refused: " + data.reason;
+                else
+                    context_warning = "Save refused";
+                InputEnabled(button, true);
+            }
+            draw_fixture();
+        },
+        error: function(data) {
+            context_warning = "Crash while trying to save";
+            draw_fixture();
+            InputEnabled(button, true);
+        }
+    });
+}
+
+function RemoveFixture() {
+
+    $('<div class=\'dialog\'></div>').appendTo("body")
+                    .html('<div><h3>Are you sure you want to remove \'' + fixture_name + '\'?')
+                    .dialog({
+                        modal: true,
+                        title: "Remove",
+                        zIndex: 10000,
+                        autoOpen: true,
+                        width: 'auto',
+                        resizable: false,
+                        buttons: {
+                            Yes: function() {
+
+                                payload = {
+                                    name: fixture_name};
+
+                                $.ajax({
+                                    url: "/fixtures?remove=1",
+                                    data: payload,
+                                    method: "POST",
+                                    success: function(data) {
+                                        if (data.success) {
+                                            $(selected_fixture_div_id).hide();
+                                            $('<div class=\'dialog\'></div>').appendTo("body")
+                                                .prop("title", "Delete")
+                                                .html("<div><h3>Fixture '" + fixture_name + "' has been removed.</h3></div>")
+                                                .dialog({modal: true,
+                                                         buttons: {
+                                                            Ok: function() {
+                                                                $(this).dialog("close");
+                                                            }
+                                                         }});
+                                            get_fixtures();
+
+                                        } else {
+                                            console.log(data);
+                                            if (data.reason)
+                                                context_warning = data.reason;
+                                            else
+                                                context_warning = "Unknown removal issue";
+
+                                            draw_fixture();
+                                        }
+                                    },
+                                    error: function(data) {
+                                        context_warning = "Crash while removing";
+                                        draw_fixture();
+                                    }
+                                });
+
+                                $(this).dialog("close");
+                            },
+                            No: function() {
+                                $(this).dialog("close");
+                            }
+                        },
+                        close: function(event, ui) {
+                            $(this).remove();
+                        }
+                    });
+
+
+}
+
+function draw_fixture() {
+
+    var canvas =  selected_fixture_canvas;
+    var context = canvas.getContext('2d');
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (fixture_image) {
+        scale = get_updated_scale(canvas, fixture_image);
+        img_width = fixture_image.width * scale;
+        img_height = fixture_image.height * scale;
+        context.drawImage(fixture_image, 0, 0, img_width, img_height);
+    } else {
+        img_width = 0;
+        img_height = 0;
+    }
+
+    if (markers) {
+        var radius = 30 * scale;
+        var marker_scale = 4;
+        for (var len = markers.length, i=0; i<len;i++)
+            draw_marker(context, markers[i][0] * scale * marker_scale,
+                        markers[i][1] * scale * marker_scale, radius, "blue", 5);
+    }
+
+    if (areas) {
+        for (var i=0; i<areas.length; i++)
+            draw_plate(context, areas[i]);
+    }
+
+    if (grayscale_graph) {
+        var graph_width = (canvas.width - img_width);
+        context.drawImage(grayscale_graph, img_width, 0, graph_width, graph_width);
+    }
+
+    if (context_warning) {
+        var canvasCenter = getAreaCenter(null);
+        context.font = '20pt Calibri';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillStyle = 'red';
+        context.fillText(context_warning, canvasCenter.x, canvasCenter.y);
+    }
+}
+
+function get_updated_scale(canvas, obj) {
+    var x_scale = canvas.width / obj.width;
+    var y_scale = canvas.height / obj.height;
+    return Math.min(scale, x_scale, y_scale);
+}
+
+function draw_marker(context, centerX, centerY, radius, color, lineWidth) {
+    context.beginPath();
+    context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+    context.lineWidth = lineWidth;
+    context.strokeStyle = color;
+    context.stroke();
+}
+
+function draw_plate(context, plate) {
+
+    if (getAreaSize(plate) <= 0)
+        return;
+    context.beginPath();
+    context.rect(plate.x1 * scale, plate.y1 * scale, (plate.x2 - plate.x1) * scale, (plate.y2 - plate.y1) * scale);
+    context.fillStyle = "rgba(0, 255, 0, 0.1)";
+    context.fill();
+    context.strokeStyle = "green";
+    context.lineWidth = 2;
+    context.stroke();
+
+    shadow_text(context, plate, "green", "white", plate.grayscale ? "G" : plate.plate < 0 ? "?" : plate.plate)
+}
+
+function shadow_text(context, area, text_color, shadow_color, text) {
+    var fontSize = Math.min(area.x2 - area.x1, area.y2 - area.y1) * scale * 0.6;
+    var center = getAreaCenter(area);
+
+    context.font =  fontSize * 1.1 + 'pt Calibri';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillStyle = shadow_color;
+    context.fillText(text, center.x * scale, center.y * scale);
+
+    context.font =  fontSize + 'pt Calibri';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillStyle = text_color;
+    context.fillText(text, center.x * scale, center.y * scale);
+}

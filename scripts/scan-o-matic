@@ -14,20 +14,8 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import pygtk
-pygtk.require('2.0')
-import gtk
-import gobject
-import os
+from scanomatic.ui_server import ui_server
 from argparse import ArgumentParser
-import matplotlib as mpl
-mpl.rcParams['text.usetex'] = False
-
-#
-# INTERNAL DEPENDENCIES
-#
-
-import scanomatic.gui.controller_main as controller
 
 #
 # EXECUTION BEHAVIOUR
@@ -35,19 +23,29 @@ import scanomatic.gui.controller_main as controller
 
 if __name__ == "__main__":
 
-    program_path = os.path.dirname(os.path.abspath(__file__))
-    if os.getcwd() != program_path:
-        os.chdir(program_path)
+    parser = ArgumentParser(description="""Scan-o-Matic""")
 
-    gobject.threads_init()
+    parser.add_argument(
+        "--port", type=int, dest="port", help="Manual override of default port")
 
-    parser = ArgumentParser(description="""The Scan-o-Matic GUI""")
+    parser.add_argument(
+        '--local', type=bool, dest="local", help="Manual override if only to serve locally")
 
-    parser.add_argument("-d", "--debug", dest="debug", type=bool,
-                        default=False, help="Run in debug mode")
+    parser.add_argument(
+        '--host', type=str, dest="host", help="Manually setting host address of server")
+
+    parser.add_argument(
+        "--browser", type=str, dest="browser", default="Y", help="Open url to Scan-o-Matic in new tab (default True)"
+    )
+
+    parser.add_argument(
+        "--debug", type=str, dest="debug", default="N", help="Run debug server (will crash and stuff on exceptions)" +
+        " (default False)"
+    )
 
     args = parser.parse_args()
 
-    controller.Controller(program_path, debug_mode=args.debug)
-
-    gtk.main()
+    true_strings = ['Y', 'YES', 'TRUE', 'T']
+    ui_server.launch(open_browser_url=args.browser.upper() in true_strings,
+                     debug=args.debug.upper() in true_strings,
+                     is_local=args.local, port=args.port, host=args.host)

@@ -2,7 +2,8 @@ __author__ = 'martin'
 
 import scanomatic.io.project_log as project_log
 from enum import Enum
-from scanomatic.models.factories.analysis_factories import AnalysisImageFactory, MetaDataFactory, AnalysisModelFactory
+from scanomatic.models.factories.analysis_factories import MetaDataFactory, AnalysisModelFactory
+from scanomatic.models.factories.fixture_factories import FixtureFactory
 
 FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
 
@@ -30,8 +31,8 @@ class FirstPassResults(object):
         new = cls()
         new._file_path = path
         new._meta_data = MetaDataFactory.copy(meta_data)
-        new._image_models = [AnalysisImageFactory.copy(model) for model in image_models]
-        new._used_models = [AnalysisImageFactory.copy(model) for model in used_models]
+        new._image_models = [FixtureFactory.copy(model) for model in image_models]
+        new._used_models = [FixtureFactory.copy(model) for model in used_models]
         new._loading_length = len(new._image_models)
         return new
 
@@ -40,11 +41,11 @@ class FirstPassResults(object):
         self._meta_data = MetaDataFactory.create(**project_log.get_meta_data(path))
         if sort_mode is FIRST_PASS_SORTING.Time:
             self._image_models = list(
-                AnalysisImageFactory.create_many_update_indices(project_log.get_image_entries(path))
+                FixtureFactory.create_many_update_indices(project_log.get_image_entries(path))
             )
         else:
             self._image_models = list(
-                AnalysisImageFactory.create_many_update_times(project_log.get_image_entries(path))
+                FixtureFactory.create_many_update_times(project_log.get_image_entries(path))
             )
 
         self._loading_length = len(self._image_models)
@@ -65,7 +66,7 @@ class FirstPassResults(object):
         other_start_index = len(self)
         other_image_models = []
         for index in range(len(other)):
-            model = AnalysisImageFactory.copy(other[index])
+            model = FixtureFactory.copy(other[index])
             model.time += start_time_difference
             model.index += other_start_index
             other_image_models.append(model)

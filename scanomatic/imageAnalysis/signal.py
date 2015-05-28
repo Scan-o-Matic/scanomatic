@@ -38,6 +38,66 @@ _logger = logger.Logger("Resource Signal")
 #
 
 
+def get_signal(data, detection_threshold, kernel=(-1, 1)):
+
+    up_spikes = np.abs(np.convolve(data, kernel, "same")) > detection_threshold
+    return get_center_of_spikes(up_spikes)
+
+
+def get_signal_data(strip_values, up_spikes, grayscale, delta_threshold):
+
+    expected_slice_size = grayscale['sections'] * grayscale['length']
+    expected_spikes = np.arange(1, expected_slice_size)
+
+    offset = (expected_slice_size - strip_values.size) / 2.0
+    expected_spikes += offset
+
+    observed_spikes = np.where(up_spikes)[0]
+
+    pos_diffs = np.abs(np.subtract.outer(
+        observed_spikes,
+        expected_spikes)).argmin(axis=0)
+
+    deltas = []
+    for ei, oi in enumerate(pos_diffs):
+        deltas.append(abs(expected_spikes[ei] - observed_spikes[oi]))
+        if deltas[-1] > delta_threshold:
+            deltas[-1] = np.nan
+
+    return np.array(deltas), observed_spikes, pos_diffs
+
+
+def get_signal_edges(pos_diffs, deltas, observed_spikes):
+
+    edges = []
+    for di, oi in enumerate(pos_diffs):
+        if np.isfinite(deltas[di]):
+            edges.append(observed_spikes[oi])
+        else:
+            edges.append(np.nan)
+    edges = np.array(edges, dtype=np.float)
+    nan_edges = np.isnan(edges)
+    fin_edges = np.isfinite(edges)
+    edge_ordinals = np.arange(edges.size, dtype=np.float) + 1
+    edges[nan_edges] = np.interp(edge_ordinals[nan_edges], edge_ordinals[fin_edges],
+                                 edges[fin_edges],
+                                 left=np.nan,
+                                 right=np.nan)
+    return edges
+
+def get_edges_extended(edges, frequency):
+
+    edges = np.r_[[np.nan], edges, [np.nan]]
+    fin_edges = np.isfinite(edges)
+    where_fin_edges = np.where(fin_edges)[0]
+
+    for i in range(where_fin_edges[0] - 1, -1, -1):
+        edges[i] = edges[i + 1] - frequency
+    for i in range(where_fin_edges[-1] + 1, edges.size):
+        edges[i] = edges[i - 1] + frequency
+
+    return edges
+
 def get_perfect_frequency(best_measures, guess_frequency, tollerance=0.15):
 
     dists = get_spike_distances(best_measures)

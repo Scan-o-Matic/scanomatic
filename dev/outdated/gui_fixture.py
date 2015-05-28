@@ -803,12 +803,12 @@ class Fixture_GUI(gtk.Frame):
 
             try:
 
-                self.f_settings.set_number_of_markings(
+                self.f_settings.set_number_of_marks_in_reference(
                     int(self.fixture_markings_count.get_text()))
 
             except ValueError:
 
-                self.f_settings.set_number_of_markings(0)
+                self.f_settings.set_number_of_marks_in_reference(0)
  
         newimg.destroy()
 
@@ -821,7 +821,7 @@ class Fixture_GUI(gtk.Frame):
                 except ValueError:
                     widget.set_text("")
 
-            self.f_settings.set_number_of_markings(
+            self.f_settings.set_number_of_marks_in_reference(
                 int(self.fixture_markings_count.get_text()))
 
     def reset_drop_down(self, widget=None, event=None, data=None):

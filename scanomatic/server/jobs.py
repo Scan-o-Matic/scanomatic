@@ -25,6 +25,7 @@ import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.server.phenotype_effector as phenotype_effector
 import scanomatic.server.analysis_effector as analysis_effector
 import scanomatic.server.scanning_effector as scanning_effector
+import scanomatic.server.compile_effector as compile_effector
 import scanomatic.server.rpcjob as rpc_job
 from scanomatic.generics.singleton import SingeltonOneInit
 from scanomatic.io import scanner_manager
@@ -150,11 +151,11 @@ class Jobs(SingeltonOneInit):
 
         job_effector = self._get_job_effector(job)
 
-        # CONSTRUCTS PIPE PAIR
-        parent_pipe, child_pipe = Pipe()
+        if not job_effector:
+            self._logger.error("Job {0} can't be exectued, will drop request".format(job.id))
+            return True
 
-        # INITIATES JOB EFFECTOR IN TWO STEPS, DON'T REMEMBER WHY
-        # identifier, label, target, parent_pipe, child_pipe
+        parent_pipe, child_pipe = Pipe()
 
         job_process = rpc_job.RpcJob(
             job,
@@ -175,7 +176,6 @@ class Jobs(SingeltonOneInit):
         self._jobs[job] = job_process
         job.status = rpc_job_models.JOB_STATUS.Running
         RPC_Job_Model_Factory.serializer.dump(job, self._paths.rpc_jobs)
-
 
     def _initialize_job_process(self, job_process, job):
 
@@ -204,6 +204,10 @@ class Jobs(SingeltonOneInit):
     def _get_job_effector(self, job):
 
         # SELECTS EFFECTOR BASED ON TYPE
+        """
+
+        :type job: scanomatic.models.rpc_job_models.RPCjobModel
+        """
         if job.type is rpc_job_models.JOB_TYPE.Features:
 
             return phenotype_effector.PhenotypeExtractionEffector
@@ -215,6 +219,10 @@ class Jobs(SingeltonOneInit):
         elif job.type is rpc_job_models.JOB_TYPE.Scan:
 
             return scanning_effector.ScannerEffector
+
+        elif job.type is rpc_job_models.JOB_TYPE.Compile:
+
+            return compile_effector.CompileProjectEffector
 
         else:
 

@@ -14,159 +14,98 @@ __status__ = "Development"
 #
 
 import os
-import copy
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import config_file
-import paths
+from paths import Paths
 import app_config
+import grid_history
+from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.io.logger import Logger
+import ConfigParser
+
 
 #
 # CLASSES
 #
 
 
-class Fixture_Settings(object):
+class FixtureSettings(object):
 
-    def __init__(self, dir_path, name):
+    def __init__(self, name, dir_path=None):
 
-        self._paths = paths.Paths()
-        name = self._paths.get_fixture_path(name, only_name=True)
-        self.dir_path = dir_path
-        self.conf_rel_path = self._paths.fixture_conf_file_rel_pattern.format(name)
-        self.conf_path = os.sep.join((dir_path, self.conf_rel_path))
-        self.im_path = os.sep.join(
-            (dir_path, self._paths.fixture_image_file_rel_pattern.format(name)))
-        self.scale = 0.25
+        self._logger = Logger("Fixture {0}".format(name))
 
-        #THIS SHOULD BE DONE ELSEWHERE
-        self.name = name.replace("_", " ").capitalize()
+        path_name = Paths().get_fixture_path(name, only_name=True)
 
-        self.marker_name = None
-
-        for attrib in ('marker_path', 'marker_count', 'grayscale',
-                       'marker_positions', 'plate_areas', 'grayscale_area'):
-
-            self.__setattr__(attrib, None)
-
-        self.load_from_file()
-
-    def get_location(self):
-
-        return self.cont_path
-
-    def load_from_file(self):
-
-        f = config_file.ConfigFile(self.conf_path)
-
-        #Version
-        self.version = f['version']
-        if self.version is None:
-            self.version = 0
-
-        #Marker path and name
-        self.marker_path = f['marker_path']
-        if self.marker_path is not None:
-            self.marker_name = self.marker_path.split(os.sep)[-1]
+        if dir_path:
+            conf_rel_path = Paths().fixture_conf_file_rel_pattern.format(path_name)
+            self._conf_path = os.path.join(dir_path, conf_rel_path)
         else:
-            self.marker_name = None
+            self._conf_path = Paths().get_fixture_path(name)
 
-        #Marker count
+        self.model = self._load_model(name)
+        self.history = grid_history.GriddingHistory(self)
+
+    def _load_model(self, name):
+        """:rtype : scanomatic.models.fixture_models.FixtureModel"""
+
         try:
-            self.marker_count = int(f['marker_count'])
-        except:
-            self.marker_count = 0
+            return tuple(FixtureFactory.serializer.load(self._conf_path))[0]
+        except (IndexError, ConfigParser.Error), e:
+            if isinstance(e, ConfigParser.Error):
+                self._logger.error("Trying to load an outdated fixture at {0}, this won't work".format(self._conf_path))
+            return FixtureFactory.create(path=self._conf_path, name=name)
 
-        #Marker positions
-        if self.marker_count is None:
-            self.marker_positions = None
-        else:
-            m_str = 'marking_{0}'
-            markings = list()
-            for m in range(self.marker_count):
-                markings.append(f[m_str.format(m)])
-            self.marker_positions = markings
+    def get_marker_position(self, index):
 
-        #Plate areas
-        p_str = 'plate_{0}_area'
-        p = 0
-        plates = list()
-        while f[p_str.format(p)] is not None:
-            plates.append(f[p_str.format(p)])
-            p += 1
-        self.plate_areas = plates
+        try:
+            return self.get_marker_positions()[index]
+        except (IndexError, TypeError):
+            return None
 
-        #Grayscale
-        self.grayscale = f['grayscale']
-        self.grayscale_area = f['grayscale_area']
+    def get_marker_positions(self):
+
+        return zip(self.model.orientation_marks_x, self.model.orientation_marks_y)
+
+    @property
+    def path(self):
+
+        return self._conf_path
 
     def get_marker_path(self):
 
-        #Evaluate math from settings-file
-        good_path = True
-        try:
+        paths = Paths()
 
-            fs = open(self.marker_path, 'rb')
-            fs.close()
-        except:
-            good_path = False
+        for path in (self.model.orentation_mark_path,
+                     os.path.join(paths.images, os.path.basename(self.model.orentation_mark_path)),
+                     paths.marker):
+            try:
 
-        if good_path:
-            return self.marker_path
-
-        #Evaluate name of file from settings-file with default path
-        good_name = True
-        try:
-            fs = open(self._paths.images + os.sep + self.marker_name, 'rb')
-            fs.close()
-        except:
-            good_name = False
-
-        if good_name:
-            return self._paths.images + os.sep + self.marker_name
-
-        #Evalutate default marker path
-        good_default = True
-        try:
-
-            fs = open(self._paths.marker, 'rb')
-            fs.close()
-
-        except:
-            good_default = False
-
-        if good_default:
-
-            return self._paths.marker
+                with open(path, 'rb') as _:
+                    return path
+            except IOError:
+                self._logger.error("The designated orientation marker file does not exist ({0})".format(path))
 
         return None
 
-    def set_experiment_model(self, model, default_pinning=None):
+    def save(self):
 
-        model['fixture'] = self.name
-        model['plate-areas'] = copy.copy(self.plate_areas)
-        model['pinnings-list'] = [default_pinning] * len(self.plate_areas)
-        model['marker-count'] = self.marker_count
-        model['grayscale'] = self.grayscale
-        model['grayscale-area'] = copy.copy(self.grayscale_area)
-        model['ref-marker-positions'] = copy.copy(self.marker_positions)
-        model['marker-path'] = self.get_marker_path()
+        FixtureFactory.serializer.dump(self.model, self.path)
 
 
 class Fixtures(object):
 
     def __init__(self):
 
-        self._paths = paths.Paths()
         self._app_config = app_config.Config()
         self._fixtures = None
         self.update()
 
     def __getitem__(self, fixture):
-
+        """:rtype : FixtureSettings"""
         if fixture in self:
             return self._fixtures[fixture]
 
@@ -178,23 +117,19 @@ class Fixtures(object):
 
     def update(self):
 
-        directory = self._paths.fixtures
+        directory = Paths().fixtures
         extension = ".config"
 
         list_fixtures = map(lambda x: x.split(extension, 1)[0],
-                            [file for file in os.listdir(directory)
-                                if file.lower().endswith(extension)])
+                            [fixture for fixture in os.listdir(directory)
+                                if fixture.lower().endswith(extension)])
 
         self._fixtures = dict()
 
         for f in list_fixtures:
             if f.lower() != "fixture":
-                fixture = Fixture_Settings(directory, f)
-
-                if (float(fixture.version) >=
-                        self._app_config.version_oldest_allow_fixture):
-
-                    self._fixtures[fixture.name] = fixture
+                fixture = FixtureSettings(f, directory)
+                self._fixtures[fixture.model.name] = fixture
 
     def get_names(self):
 
@@ -205,17 +140,14 @@ class Fixtures(object):
 
     def fill_model(self, model):
 
-        fixture = model['fixture']
-        if fixture in self._fixtures.keys():
-
-            model['im-original-scale'] = self._fixtures[fixture].scale
-            model['im-scale'] = self._fixtures[fixture].scale
-            model['im-path'] = self._fixtures[fixture].im_path
-            model['fixture-file'] = self._fixtures[fixture].conf_rel_path
+        fixture_name = model['fixture']
+        if fixture_name in self:
+            fixture = self[fixture_name]
+            model['im-original-scale'] = fixture.model.scale
+            model['fixture-file'] = fixture.path
 
         else:
 
             model['im-original-scale'] = 1.0
             model['im-scale'] = 1.0
-            model['im-path'] = None
-            model['fixture-file'] = self._paths.get_fixture_path(model['fixture'], only_name=True)
+            model['fixture-file'] = Paths().get_fixture_path(model['fixture'], only_name=True)

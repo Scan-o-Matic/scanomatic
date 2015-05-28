@@ -251,6 +251,17 @@ class Serializer(object):
 
         return False
 
+    def dump_to_filehandle(self, model, filehandle):
+
+        if self._can_dump_to_file(model):
+
+            serialized_model = self.serialize(model)
+            section = self.get_section_name(model)
+            conf = ConfigParser(allow_no_value=True)
+            SerializationHelper.update_config(conf, section, serialized_model)
+            conf.write(filehandle)
+            return True
+
     def _can_dump_to_file(self, model):
 
         factory = self._factory
@@ -283,6 +294,11 @@ class Serializer(object):
                     conf.remove_section(section)
                     return SerializationHelper.save_config(conf, path)
         return False
+
+    def purge_all(self, path):
+
+        conf = SerializationHelper.get_config(None)
+        return SerializationHelper.save_config(conf, path)
 
     def load(self, path):
 
@@ -386,7 +402,11 @@ class Serializer(object):
 
     def get_section_name(self, model):
 
-        return str(SerializationHelper.get_value_by_path(model, self._factory.STORE_SECTION_HEAD))
+        if isinstance(self._factory.STORE_SECTION_HEAD, list):
+            return ", ".join(
+                [str(SerializationHelper.get_value_by_path(model, head)) for head in self._factory.STORE_SECTION_HEAD])
+        else:
+            return str(SerializationHelper.get_value_by_path(model, self._factory.STORE_SECTION_HEAD))
 
 
 class SerializationHelper(object):
@@ -498,3 +518,23 @@ class SerializationHelper(object):
         except IOError:
             return False
         return True
+
+
+def rename_setting(settings, old_name, new_name):
+
+    if old_name in settings:
+        if new_name not in settings:
+            settings[new_name] = settings[old_name]
+        del settings[old_name]
+
+
+def split_and_replace(settings, key, new_key_pattern, new_key_index_names):
+    if key in settings:
+
+        for index, new_key_index_name in enumerate(new_key_index_names):
+            try:
+                settings[new_key_pattern.format(new_key_index_name)] = settings[key][index]
+            except (IndexError, TypeError):
+                pass
+
+        del settings[key]

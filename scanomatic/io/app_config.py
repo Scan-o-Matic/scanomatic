@@ -109,6 +109,10 @@ class Config(SingeltonOneInit):
         self._config_rpc_admin = None
         self._server_config = None
 
+        # UI SERVER
+        self.ui_port = 5000
+        self.ui_local = True
+
         # HARDWARE RESOURCES
         self.resources_min_checks = 3
         self.resources_mem_min = 30

@@ -78,8 +78,11 @@ class Paths(SingeltonOneInit):
         self.rpc_jobs = os.path.join(self.root, 'jobs.cfg')
         self.rpc_scanner_status = os.path.join(self.root, 'scanner_status.cfg')
 
-        self.help = "file://{0}".format(
-            os.path.join(os.path.abspath(self.root), 'help.html'))
+        self.ui_root = os.path.join(self.root, "ui_server")
+        self.ui_css = os.path.join(self.ui_root, "style")
+        self.ui_js = os.path.join(self.ui_root, "js")
+        self.help_file = "help.html"
+        self.fixture_file = "fixture.html"
 
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
         self.martin = os.path.join(self.images, "martin3.png")
@@ -95,6 +98,7 @@ class Paths(SingeltonOneInit):
             self.fixtures, self.fixture_image_file_rel_pattern)
         self.fixture_tmp_scan_image = \
             self.fixture_image_file_pattern.format(".tmp")
+        self.fixture_grid_history_pattern = "{0}.grid.history"
 
         self.log = os.path.join(self.root, "logs")
         self.log_scanner_out = os.path.join(self.log, "scanner_{0}.stdout")
@@ -120,7 +124,6 @@ class Paths(SingeltonOneInit):
 
         self.analysis_run_log = 'analysis.run'
 
-
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
         self.experiment_first_pass_log_relative = ".1_pass.log"
         self.experiment_local_fixturename = \
@@ -139,7 +142,8 @@ class Paths(SingeltonOneInit):
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"
 
-        self.compile_project_file_pattern = "{0}.project.compilation"
+        self.project_settings_file_pattern = "{0}.project.settings"
+        self.project_compilation_pattern = "{0}.project.compilation"
         self.scan_project_file_pattern = "{0}.scan.instructions"
 
     def join(self, attr, *other):
@@ -178,10 +182,24 @@ class Paths(SingeltonOneInit):
 
         return fixture.capitalize().replace("_", " ")
 
-    def get_compile_project_name(self, scan_model):
+    def get_project_settings_path_from_scan_model(self, scan_model):
 
-        return self.compile_project_file_pattern.format(
+        return self.project_settings_file_pattern.format(
             os.path.join(scan_model.directory_containing_project, scan_model.project_name, scan_model.project_name))
+
+    def get_project_compile_path_from_compile_model(self, compile_model):
+        """
+
+        :type compile_model: scanomatic.models.compile_project_model.CompileInstructionsModel
+        :rtype : str
+        """
+
+        if os.path.isdir(compile_model.path):
+
+            project_name = compile_model.path.rstrip(os.sep).split(os.sep)[-1]
+            return self.project_compilation_pattern.format(os.path.join(compile_model.path, project_name))
+
+        return compile_model.path
 
     @staticmethod
     def get_scanner_path_name(scanner):
