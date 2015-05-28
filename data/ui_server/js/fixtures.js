@@ -420,7 +420,7 @@ function detect_markers() {
                 context_warning = "Name or image refused";
             }
              load_fixture_image(data.image);
-             set_fixture_markers(data.markers);
+             set_fixture_markers(data);
              InputEnabled(button, true);
         },
         error: function (data) {
@@ -461,7 +461,7 @@ function load_fixture_image(image_name) {
 }
 
 function set_fixture_markers(data) {
-    markers = position_string_to_array(data);
+    markers = data.markers;
     if (markers.length ==0) {
         markers = null;
         $(new_fixture_data_id).show();
@@ -473,14 +473,17 @@ function SaveFixture() {
     var action = $(save_fixture_action_id).val();
     var button = $(save_fixture_button);
     InputEnabled(button, false);
-    dat = {
+    payload = {
         markers: markers,
-        grascale_name: $(grayscale_id).val(),
+        grayscale_name: $(grayscale_id).val(),
         areas: areas,
         name: fixture_name};
     $.ajax({
         url:"/fixtures?" + action + "=1",
-        data: dat,
+        data: JSON.stringify(payload, null, '\t'),
+        contentType: 'application/json;charset=UTF-8',
+        dataType: "json",
+        processData: false,
         method: "POST",
         success: function(data) {
             if (data.success)

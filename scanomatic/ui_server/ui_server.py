@@ -120,7 +120,16 @@ def usable_plates(plates):
 
         return tuple(sorted(plate.index - 1 for plate in plates)) == tuple(range(len(plates)))
 
-    return all(usable_plate(plate) for plate in plates) and unique_valid_indices() and len(plates) > 0
+    if not all(usable_plate(plate) for plate in plates):
+        _logger.warning("Some plate coordinates are wrong")
+        return False
+    elif not unique_valid_indices():
+        _logger.warning("Plate indices are bad")
+        return False
+    elif len(plates) == 0:
+        _logger.warning("No plates")
+        return False
+    return True
         
     
 def split_areas_into_grayscale_and_plates(areas):
@@ -131,12 +140,13 @@ def split_areas_into_grayscale_and_plates(areas):
     for area in areas:
 
         try:
-            if area.grayscale:
-                gs = GrayScaleAreaModel(x1=area.x1, x2=area.x2, y1=area.y1, y2=area.y2)
+            if area['grayscale']:
+                gs = GrayScaleAreaModel(x1=area['x1'], x2=area['x2'], y1=area['y1'], y2=area['y2'])
             else:
-                plates.append(FixturePlateModel(x1=area.x1, x2=area.x2, y1=area.y1, y2=area.y2, index=area.plate))
+                plates.append(FixturePlateModel(x1=area['x1'], x2=area['x2'], y1=area['y1'], y2=area['y2'],
+                                                index=area['plate']))
 
-        except AttributeError:
+        except (AttributeError, KeyError, TypeError):
 
             _logger.warning("Bad data: '{0}' does not have the expected area attributes".format(area))
 
@@ -239,15 +249,18 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         elif request.args.get("update") or request.args.get("create"):
 
-            save_action = SaveActions(request.args.get("update", 0, type=int))
-            name = Paths().get_fixture_name(request.values.get("name"))
-            areas = request.values.get("areas")
-            markers = request.values.get("markers")
-            grayscale_name = request.values.get("grayscale_name")
+            save_action = SaveActions(int(bool(request.args.get("update", 0, type=int))))
 
+            name = Paths().get_fixture_name(request.json.get("name", ''))
+            areas = request.json.get("areas")
+            markers = request.json.get("markers")
+            grayscale_name = request.json.get("grayscale_name")
             known_fixtures = tuple(Paths().get_fixture_name(f) for f in rpc_client.get_fixtures())
             _logger.info("Attempting to save {0} with areas {1} and markers {2}".format(name, areas, markers))
-            if save_action is SaveActions.Create and name in known_fixtures:
+
+            if not name:
+                return jsonify(success=False, reason="Fixtures need a name")
+            elif save_action is SaveActions.Create and name in known_fixtures:
                 return jsonify(success=False, reason="Fixture name taken")
             elif save_action is SaveActions.Update and name not in known_fixtures:
                 return jsonify(success=False, reason="Unknown fixture")
@@ -261,6 +274,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 return jsonify(success=False, reason="Bad markers")
 
             grayscale_area_model, plates = split_areas_into_grayscale_and_plates(areas)
+            _logger.info("Grayscale {0}".format(grayscale_area_model))
+            _logger.info("Plates".format(plates))
 
             if grayscale_area_model:
                 
@@ -279,7 +294,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 
                 grayscale_area_model.values = values
 
-            if not usable_plates():
+            if not usable_plates(plates):
                 return jsonify(success=False, reason="Bad plate selections")
 
             fixture_model = FixtureFactory.create(
@@ -349,7 +364,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
                 save_image_as_png(path)
 
-                return jsonify(markers=str(fixture['current'].get_marker_positions()),
+                return jsonify(markers=fixture['current'].get_marker_positions(),
                                image=os.path.basename(fixture_file))
 
             _logger.warning("Refused detection (keys files: {0} values: {1})".format(
