@@ -16,9 +16,10 @@ from scanomatic.io.logger import Logger
 from scanomatic.io.rpc_client import get_client
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 from scanomatic.imageAnalysis.support import save_image_as_png
-from scanomatic.models.fixture_models import GrayScaleAreaModel
+from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.imageAnalysis.imageGrayscale import get_ortho_trimmed_slice, get_para_timmed_slice, Analyse_Grayscale
+from scanomatic.models.factories.fixture_factories import FixtureFactory
 
 _url = None
 _logger = Logger("UI-server")
@@ -67,6 +68,14 @@ def get_grayscale(fixture, grayscale_area_model):
     return ag.get_grayscale(im_p)
 
 
+def get_area_too_large_for_grayscale(grayscale_area_model):
+    global _TOO_LARGE_GRAYSCALE_AREA
+    area_size = (grayscale_area_model.x2 - grayscale_area_model.x1) * \
+                (grayscale_area_model.y2 - grayscale_area_model.y1)
+
+    return area_size > _TOO_LARGE_GRAYSCALE_AREA
+
+    
 def get_grayscale_is_valid(values, grayscale):
     if values is None:
         return False
@@ -76,6 +85,7 @@ def get_grayscale_is_valid(values, grayscale):
         return np.unique(np.sign(fit)).size == 1
     except:
         return False
+
 
 def usable_markers(markers, image):
 
@@ -95,6 +105,42 @@ def usable_markers(markers, image):
         return False
 
     return all(marker_inside_image(marker) for marker in markers_array)
+
+
+def usable_plates(plates):
+    
+    def usable_plate(plate):
+        """
+
+        :type plate: scanomatic.models.fixture_models.FixturePlateModel
+        """
+        return plate.x2 > plate.x1 and plate.y2 > plate.y1
+
+    def unique_valid_indices():
+
+        return tuple(sorted(plate.index - 1 for plate in plates)) == tuple(range(len(plates)))
+
+    return all(usable_plate(plate) for plate in plates) and unique_valid_indices() and len(plates) > 0
+        
+    
+def split_areas_into_grayscale_and_plates(areas):
+
+    gs = None
+    plates = []
+
+    for area in areas:
+
+        try:
+            if area.grayscale:
+                gs = GrayScaleAreaModel(x1=area.x1, x2=area.x2, y1=area.y1, y2=area.y2)
+            else:
+                plates.append(FixturePlateModel(x1=area.x1, x2=area.x2, y1=area.y1, y2=area.y2, index=area.plate))
+
+        except AttributeError:
+
+            _logger.warning("Bad data: '{0}' does not have the expected area attributes".format(area))
+
+    return gs, plates
 
 
 def launch_server(is_local=None, port=None, host=None, debug=False):
@@ -197,19 +243,61 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             name = Paths().get_fixture_name(request.values.get("name"))
             areas = request.values.get("areas")
             markers = request.values.get("markers")
-            known_fixtures = rpc_client.get_fixtures()
+            grayscale_name = request.values.get("grayscale_name")
 
+            known_fixtures = tuple(Paths().get_fixture_name(f) for f in rpc_client.get_fixtures())
+            _logger.info("Attempting to save {0} with areas {1} and markers {2}".format(name, areas, markers))
             if save_action is SaveActions.Create and name in known_fixtures:
                 return jsonify(success=False, reason="Fixture name taken")
             elif save_action is SaveActions.Update and name not in known_fixtures:
-                return  jsonify(success=False, reason="Unknown fixture")
+                return jsonify(success=False, reason="Unknown fixture")
 
-            fixture = get_fixture_image_by_name(name)
+            try:
+                fixture = get_fixture_image_by_name(name)
+            except IOError:
+                return jsonify(success=False, reason="Fixture image not on server")
 
             if not usable_markers(markers, fixture.im):
                 return jsonify(success=False, reason="Bad markers")
 
-            return jsonify(success=False)
+            grayscale_area_model, plates = split_areas_into_grayscale_and_plates(areas)
+
+            if grayscale_area_model:
+                
+                if grayscale_name not in getGrayscales():
+                    return jsonify(success=False, reason="Unknown grayscale type")
+                if get_area_too_large_for_grayscale(grayscale_area_model):
+                    return jsonify(success=False, reason="Area too large for grayscale")
+                
+                grayscale_area_model.name = grayscale_name
+                _, values = get_grayscale(fixture, grayscale_area_model)
+                grayscale_object = getGrayscale(grayscale_area_model.name)
+                valid = get_grayscale_is_valid(values, grayscale_object)
+                
+                if not valid:
+                    return jsonify(success=False, reason="Could not detect grayscale")
+                
+                grayscale_area_model.values = values
+
+            if not usable_plates():
+                return jsonify(success=False, reason="Bad plate selections")
+
+            fixture_model = FixtureFactory.create(
+                path=Paths().get_fixture_path(name),
+                grayscale=grayscale_area_model,
+                orientation_marks_x = tuple(mark[0] for mark in markers),
+                orientation_marks_y = tuple(mark[1] for mark in markers),
+                shape=fixture.im.shape,
+                coordinates_scale=1.0,
+                plates = plates,
+                name=name,
+                scale=1.0)
+
+            if not FixtureFactory.validate(fixture_model):
+                return jsonify(success=False, reason="Final compilation doesn't validate")
+
+            FixtureFactory.serializer.dump(fixture_model, fixture_model.path)
+            return jsonify(success=True)
 
         elif request.args.get("grayscale"):
 
@@ -224,13 +312,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     y1=request.values.get("y1", type=float),
                     y2=request.values.get("y2", type=float))
 
-                area_size = (grayscale_area_model.x2 - grayscale_area_model.x1) * \
-                            (grayscale_area_model.y2 - grayscale_area_model.y1)
-
-                if area_size > _TOO_LARGE_GRAYSCALE_AREA:
+                if get_area_too_large_for_grayscale(grayscale_area_model):
 
                     return jsonify(source_values=None, target_values=None, grayscale=False,
-                                   reason="Area too large".format(area_size, _TOO_LARGE_GRAYSCALE_AREA))
+                                   reason="Area too large")
 
                 _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
 

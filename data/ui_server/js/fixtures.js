@@ -475,6 +475,7 @@ function SaveFixture() {
     InputEnabled(button, false);
     dat = {
         markers: markers,
+        grascale_name: $(grayscale_id).val(),
         areas: areas,
         name: fixture_name};
     $.ajax({
