@@ -156,9 +156,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if request.args.get("names"):
 
             if rpc_client.online:
-                return ",".join(rpc_client.get_fixtures())
+                return jsonify(fixtures=rpc_client.get_fixtures())
             else:
-                return ""
+                return jsonify(fixtures=[])
 
         elif request.args.get("update"):
             return "Not implemented saving/creating fixtures...sorry"
