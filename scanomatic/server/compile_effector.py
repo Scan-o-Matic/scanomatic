@@ -6,7 +6,7 @@ from scanomatic.models.compile_project_model import FIXTURE, COMPILE_ACTION
 from scanomatic.io.fixtures import Fixtures, FixtureSettings
 from scanomatic.io.paths import Paths
 from scanomatic.imageAnalysis import first_pass
-from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
 from scanomatic.models.rpc_job_models import JOB_TYPE
 
 
@@ -101,7 +101,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
                 try:
                     image_model = first_pass.analyse(compile_image_model, self._fixture_settings)
-                    FixtureFactory.serializer.dump_to_filehandle(image_model, fh)
+                    CompileImageAnalysisFactory.serializer.dump_to_filehandle(image_model, fh)
 
                 except first_pass.MarkerDetectionFailed:
 
