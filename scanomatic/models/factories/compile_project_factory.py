@@ -90,7 +90,7 @@ class CompileImageFactory(AbstractModelFactory):
 class CompileProjectFactory(AbstractModelFactory):
 
     MODEL = compile_project_model.CompileInstructionsModel
-    STORE_SECTION_HEAD = ("scan_model", "project_name")
+    STORE_SECTION_HEAD = ("path",)
     _SUB_FACTORIES = {
         compile_project_model.CompileImageModel: CompileImageFactory,
     }
