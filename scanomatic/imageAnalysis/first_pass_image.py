@@ -374,7 +374,7 @@ class FixtureImage(object):
             area.x1, area.y1 = _get_rotated_vector(area.x1, area.y1, rotation)
             area.x2, area.y2 = _get_rotated_vector(area.x2, area.y2, rotation)
 
-        for dim, keys in {0: ('x1', 'x2'), 1:('y1', 'y2')}:
+        for dim, keys in {0: ('x1', 'x2'), 1:('y1', 'y2')}.items():
             for key in keys:
                 area[key] += offset[dim]
                 if area[key] > self.EXPECTED_IM_SIZE[dim]:
