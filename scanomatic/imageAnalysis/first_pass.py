@@ -50,7 +50,7 @@ def analyse(compile_image_model, fixture_settings):
     compile_analysis_model = CompileImageAnalysisFactory.create(
         image=compile_image_model, fixture=FixtureFactory.copy(fixture_settings.model))
 
-    fixture_image = FixtureImage(fixture=fixture_settings.model)
+    fixture_image = FixtureImage(fixture=fixture_settings)
 
     _do_image_preparation(compile_analysis_model, fixture_image)
 
