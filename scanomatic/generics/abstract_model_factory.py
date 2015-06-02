@@ -41,7 +41,7 @@ class AbstractModelFactory(object):
     def _verify_correct_model(cls, model):
 
         if not isinstance(model, cls.MODEL):
-            raise TypeError("Wrong model for factory {0}!={1}".format(
+            raise TypeError("Wrong model for factory {1} is not a {0}".format(
                 cls.MODEL, model))
 
         return True
