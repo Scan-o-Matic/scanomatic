@@ -105,5 +105,4 @@ def _do_grayscale(compile_analysis_model, image):
     _logger.info("Grayscale analysed for {0}".format(compile_analysis_model))
 
     if compile_analysis_model.fixture.grayscale.values is None:
-        _logger.error("Grayscale not properly set up (used {0})".format(
-            image['grayscale_type']))
+        _logger.error("Grayscale not properly set up (used {0})".format(compile_analysis_model.fixture.grayscale.name))
