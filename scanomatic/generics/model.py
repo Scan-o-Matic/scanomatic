@@ -53,6 +53,10 @@ class Model(object):
 
         return getattr(self, item)
 
+    def __setitem__(self, key, value):
+
+        setattr(self, key, value)
+
     def __eq__(self, other):
 
         for key in self.keys():
