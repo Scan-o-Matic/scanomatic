@@ -76,6 +76,7 @@ class FixtureImage(object):
 
         self.im = None
         self.im_original_scale = None
+        self.im_path = None
         self._name = "default"
 
     def __getitem__(self, key):
@@ -118,6 +119,8 @@ class FixtureImage(object):
 
 
     def set_image(self, image=None, image_path=None):
+
+        self.im_path = image_path
 
         if image is not None:
 
@@ -186,11 +189,9 @@ class FixtureImage(object):
         if markings is None:
             markings = len(self["fixture"].model.orientation_marks_x)
 
-        _logger.debug("Scaling image")
+        _logger.debug("Running marker detection ({0} markers on {1})".format(markings, self.im_path))
 
         analysis_img = self._get_image_in_correct_scale()
-
-        _logger.debug("Setting up Image Analysis (acc {0} s)".format(time.time() - t))
 
         im_analysis = imageFixture.FixtureImage(
             image=analysis_img,
