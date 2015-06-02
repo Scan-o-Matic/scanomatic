@@ -88,60 +88,45 @@ class _PipeEffector(object):
             self._logger.debug("Pipe recieved {0}".format(dataRecvd))
 
             try:
-                if dataRecvd[0] == self.REQUEST_ALLOWED:
-                    self._logger.info(
-                        "Got information about other side's allowed " +
-                        "calls '{0}'".format(
-                            dataRecvd[1]))
-                    if self._allowedRemoteCalls is None:
-                        self._sendOwnAllowedKeys()
-                    self._allowedRemoteCalls = dataRecvd[1]
-                    response = None
-                else:
-                    if self._allowedRemoteCalls is None:
-                        self._logger.info(
-                            "No allowed calls")
-                        self._sendOwnAllowedKeys()
-
-                    response = self._allowedCalls[dataRecvd[0]](*dataRecvd[1],
-                                                                **dataRecvd[2])
+                request, args, kwargs = dataRecvd
             except (IndexError, TypeError):
 
                 self._logger.error(
                     "Recieved a malformed data package '{0}'".format(dataRecvd))
 
-            except KeyError:
 
-                self._logger.error("Call to '{0}' not known/allowed".format(
-                    dataRecvd[0]))
-                self._logger.info("Allowed calls are '{0}'".format(
-                    self._allowedCalls.keys()))
-
+            if request == self.REQUEST_ALLOWED:
+                self._logger.info("Got information about other side's allowed calls '{0}'".format(args))
+                if self._allowedRemoteCalls is None:
+                    self._sendOwnAllowedKeys()
+                    self._allowedRemoteCalls = args
             else:
+                if self._allowedCalls is None:
+                    self._logger.info("No allowed calls")
+                    self._sendOwnAllowedKeys()
+                elif request in self._allowedCalls:
+                    response = self._allowedCalls[request](*args, **kwargs)
+                else:
+                    self._logger.warning("Request {0} not an allowed call".format(request))
+                    self._logger.info("Allowed calls are '{0}'".format(self._allowedCalls.keys()))
 
-                """
-                self._logger.critical("Unforseen error calling '{0}'".format(
-                    dataRecvd))
-                """
-                try:
-                    if response not in (None, True, False):
-                        if (isinstance(response, dict) and
-                                dataRecvd[0] == "status"):
-                            self.send(dataRecvd[0], **response)
-                            self._logger.info("Sent status response {0}".format(
-                                response))
-                        else:
-                            self.send(response[0], *response[1], **response[2])
-                            self._logger.info("Sent response {0}".format(
-                                response))
-
+            try:
+                if response not in (None, True, False):
+                    if (isinstance(response, dict) and
+                            request == "status"):
+                        self.send(request, **response)
+                        self._logger.info("Sent status response {0}".format(response))
                     else:
-                        self._logger.debug("No response to request")
+                        self.send(response[0], *response[1], **response[2])
+                        self._logger.info("Sent response {0}".format(response))
 
-                except Exception, e:
+                else:
+                    self._logger.debug("No response to request")
 
-                    self._logger.error("Could not send response '{0}' ({1})".format(
-                        response, (e, e.message)))
+            except Exception, e:
+
+                self._logger.error("Could not send response '{0}' ({1})".format(
+                    response, (e, e.message)))
 
     def _failSend(self, callName, *args, **kwargs):
         """Stores send request in buffer to be sent upon new connection
