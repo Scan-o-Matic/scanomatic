@@ -43,9 +43,11 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         if self._compile_job.fixture_type is FIXTURE.Global:
             self._fixture_settings = Fixtures[self._compile_job.fixture_name]
         else:
+            dir_path = os.path.dirname(self._compile_job.path)
+            self._logger.info("Attempting to load local fixture copy in directory {0}".format(dir_path))
             self._fixture_settings = FixtureSettings(
                 Paths().experiment_local_fixturename,
-                dir_path=os.path.dirname(self._compile_job.path))
+                dir_path=dir_path)
 
     def _tweak_path(self):
 

@@ -75,7 +75,7 @@ class FixtureImage(object):
         self._reference_fixture_settings = fixture
         self._current_fixture_settings = None
         """:type : scanomatic.io.fixtures.Fixture_Settings"""
-        if (fixture):
+        if fixture:
             self._history = GriddingHistory(fixture)
         else:
             self._history = None
@@ -191,7 +191,7 @@ class FixtureImage(object):
         if markings is None:
             markings = len(self["fixture"].model.orientation_marks_x)
 
-        _logger.debug("Running marker detection ({0} markers on {1})".format(markings, self.im_path))
+        _logger.info("Running marker detection ({0} markers on {1})".format(markings, self.im_path))
 
         analysis_img = self._get_image_in_correct_scale()
 
@@ -199,8 +199,6 @@ class FixtureImage(object):
             image=analysis_img,
             pattern_image_path=self["reference"].get_marker_path(),
             scale=self['reference'].model.scale)
-
-        _logger.debug("Finding pattern (acc {0} s)".format(time.time() - t))
 
         x_positions, y_positions = im_analysis.find_pattern(markings=markings)
 
