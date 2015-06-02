@@ -6,7 +6,9 @@
 	<title>Scan-o-Matic</title>
 	<script src="/js/jquery-2.1.4.min.js"></script>
     <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/helpers.js"></script>
     <script src="/js/simple_graphs.js"></script>
+    <script src="/js/grayscales.js"></script>
     <script src="/js/fixtures.js"></script>
     <script>
         current_fixture_id = "#current-fixture";
@@ -18,7 +20,6 @@
         selected_fixture_div_id = "#selected-fixture";
         selected_fixture_canvas_id = '#selected-fixture-canvas';
         fixture_name_id = "#selected-fixture-name";
-        grayscale_id = "#grayscale";
         save_fixture_action_id = "#update-type";
         save_fixture_button = "#submit-button";
         remove_fixture_id = "#remove-button";
@@ -32,7 +33,7 @@
         <div id="selecting-fixture" class="section">
             <label for="current-fixture">Select:</label>
             <select name="current-fixtures" id="current-fixture"
-                    onchange="javascript:get_fixture();"></select>
+                    onchange="get_fixture();"></select>
             <input name="add-fixture" id="add-fixture"
                    onclick="add_fixture()"  type="button" value="Add new...">
         </div>
@@ -61,15 +62,14 @@
             <div>
                 <button type="button" id="clear-areas" onclick="clearAreas();draw_fixture();selected_fixture_canvas_jq.focus();">Clear All Areas</button>
                 <label for="grayscale">Grayscale</label>
-                <select name="grayscale" id="grayscale"></select>
+                <select name="grayscale" id="grayscale" class="grayscale-selector"></select>
                 <button type="button" id="submit-button" onclick="SaveFixture();">Save</button>
                 <button type="button" id="remove-button" onclick="RemoveFixture();">Remove</button>
             </div>
         </div>
 
         <script>
-            get_grayscales();
-            get_fixtures("#current-fixture", "#new-fixture-name");
+            LoadGrayscales();
             set_canvas();
         </script>
 

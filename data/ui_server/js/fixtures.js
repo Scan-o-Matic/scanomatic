@@ -7,7 +7,6 @@ var selected_fixture_div_id;
 var fixture_name_id;
 var selected_fixture_canvas_id;
 var new_fixture_name;
-var grayscale_id;
 var save_fixture_action_id;
 var save_fixture_button;
 var remove_fixture_id;
@@ -25,33 +24,12 @@ var grayscale_graph = null;
 var img_width = 0;
 var img_height = 0;
 
-function relMouseCoords(event){
-    var totalOffsetX = 0;
-    var totalOffsetY = 0;
-    var canvasX = 0;
-    var canvasY = 0;
-    var currentElement = this;
-
-    do{
-        totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
-        totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
-    }
-    while(currentElement = currentElement.offsetParent)
-
-    canvasX = event.pageX - totalOffsetX;
-    canvasY = event.pageY - totalOffsetY;
-
-    return {x:canvasX, y:canvasY}
-}
-
 function translateToImageCoords(coords) {
     var imageCoords = JSON.parse(JSON.stringify(coords));
     imageCoords.x /= scale;
     imageCoords.y /= scale;
     return imageCoords;
 }
-
-HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
 function set_canvas() {
 
@@ -66,7 +44,7 @@ function set_canvas() {
             return;
         }
 
-        var canvasPos = selected_fixture_canvas.relMouseCoords(event);
+        var canvasPos = GetMousePosRelative(event, selected_fixture_canvas_jq);
         var imagePos = translateToImageCoords(canvasPos);
         creatingArea = null;
         var nextArea = getAreaByPoint(imagePos);
@@ -104,7 +82,8 @@ function set_canvas() {
 
     selected_fixture_canvas_jq.mousemove(function (event) {
         if (event.button == 0 && isArea(creatingArea)) {
-            var canvasPos = selected_fixture_canvas.relMouseCoords(event);
+
+            var canvasPos = GetMousePosRelative(event, selected_fixture_canvas_jq);
             var imagePos = translateToImageCoords(canvasPos);
             areas[creatingArea].x2 = imagePos.x;
             areas[creatingArea].y2 = imagePos.y;
@@ -191,12 +170,6 @@ function getAreaCenter(plate) {
                 y: selected_fixture_canvas.height/2};
 }
 
-function isInt(value) {
-  return !isNaN(value) &&
-         parseInt(Number(value)) == value &&
-         !isNaN(parseInt(value, 10));
-}
-
 function setPlateIndices() {
     areas.sort(function(a, b) {
         if (a.grayscale)
@@ -272,7 +245,7 @@ function testAsGrayScale(plate) {
     }
 
     if (plate) {
-        var grayscale_name = $(grayscale_id).val();
+        var grayscale_name = GetSelectedGrayscale();
         $.ajax({
             url: "?grayscale=1&fixture=" + fixture_name + "&grayscale_name=" + grayscale_name,
             method: "POST",
@@ -303,19 +276,6 @@ function testAsGrayScale(plate) {
     }
 }
 
-function get_fixture_as_name(fixture) {
-    return fixture.replace(/_/g, " ")
-        .replace(/[^ a-zA-Z0-9]/g, "")
-        .replace(/^[a-z]/g,
-            function ($1) { return $1.toUpperCase();});
-}
-
-function get_fixture_from_name(fixture) {
-    return fixture.replace(/ /g, "_")
-        .replace(/A-Z/g, function ($1) { return $1.toLowerCase();})
-        .replace(/[^a-z1-9_]/g,"");
-}
-
 function OnEnterFixtureName() {
     var fix_name = $(new_fixture_name);
     fix_name.val(get_fixture_as_name(fix_name.val()));
@@ -326,23 +286,6 @@ function SetAllowDetect() {
 
     var disallow = $(new_fixture_image_id).val() == "" || $(new_fixture_name).val() == "";
     InputEnabled($(new_fixture_detect_id), !disallow);
-}
-
-function InputEnabled(obj, isEnabled) {
-    if (isEnabled) {
-        obj.removeAttr("disabled");
-    } else {
-        obj.attr("disabled", true);
-    }
-
-}
-
-function position_string_to_array(pos_str) {
-    return JSON.parse(pos_str.replace(/\(|\)/g, function ($1) { return $1 == "(" ? "[" : "]";}));
-}
-
-function unselect(target) {
-    target.val("");
 }
 
 function get_fixtures() {
@@ -357,18 +300,6 @@ function get_fixtures() {
 
     $(new_fixture_data_id).hide();
     $(selected_fixture_div_id).hide();
-}
-
-function get_grayscales() {
-    var options = $(grayscale_id);
-    options.empty();
-    $.get("/grayscales?names=1", function(data, status) {
-        if (data.grayscales) {
-            for (var i=0; i<data.grayscales.length; i++)
-                options.append($("<option />").val(data.grayscales[i]).text(data.grayscales[i]));
-        }
-    });
-
 }
 
 function add_fixture() {
@@ -476,7 +407,7 @@ function SaveFixture() {
     InputEnabled(button, false);
     payload = {
         markers: markers,
-        grayscale_name: $(grayscale_id).val(),
+        grayscale_name: GetSelectedGrayscale(),
         areas: areas,
         name: fixture_name};
     $.ajax({
