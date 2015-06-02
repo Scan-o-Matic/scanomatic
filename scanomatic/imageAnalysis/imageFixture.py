@@ -236,7 +236,11 @@ class FixtureImage(object):
                 c1, self._pattern_img.shape,
                 markings, refine_hit=False)) * self._conversion_factor
 
-            return m1[:, 1], m1[:, 0]
+            try:
+                return m1[:, 1], m1[:, 0]
+            except (IndexError, TypeError):
+                self._logger.error("Detecting markings failed, location object:\n{0}".format(m1))
+                return None, None
 
         else:
 
