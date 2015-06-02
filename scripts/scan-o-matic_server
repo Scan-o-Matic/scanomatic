@@ -17,6 +17,7 @@ __status__ = "Development"
 import psutil
 import sys
 import os
+import setproctitle
 #
 # INTERNAL DEPENDENCIES
 #
@@ -26,6 +27,7 @@ import scanomatic.server.interface_builder as interface_builder
 
 if __name__ == "__main__":
 
+    setproctitle.setproctitle("SoM {0}".format("Server"))
     basename = os.path.basename(sys.argv[0])[:15]
 
     for p in psutil.get_process_list():
