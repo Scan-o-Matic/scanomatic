@@ -27,7 +27,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
         self._image_to_analyse = 0
         self._fixture_settings = None
-
+        self._compile_instructions_path = None
         self._allowed_calls['progress'] = self.progress
 
     @property
@@ -37,12 +37,16 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
     def setup(self, compile_job):
 
+        self._compile_instructions_path = Paths().get_project_compile_instructions_path_from_compile_model(
+            self._compile_job)
         self._tweak_path()
         self._load_fixture()
         self._allow_start = True
         if self._fixture_settings is None:
             self._logger.critical("No fixture loaded, name probably not recognized or old fixture settings file")
             self._stopping = True
+        else:
+            CompileProjectFactory.serializer.dump(self._compile_job, self._compile_instructions_path)
 
     def _load_fixture(self):
 
