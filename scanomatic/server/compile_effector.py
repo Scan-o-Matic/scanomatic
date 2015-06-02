@@ -23,7 +23,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         """:type : scanomatic.models.compile_project_model.CompileInstructionsModel"""
 
         self._image_to_analyse = 0
-        self._fixture = None
+        self._fixture_settings = None
 
         self._allowed_calls['progress'] = self.progress
 
@@ -43,7 +43,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         if self._compile_job.fixture_type is FIXTURE.Global:
             self._fixture_settings = Fixtures[self._compile_job.fixture_name]
         else:
-            self._fixture = FixtureSettings(
+            self._fixture_settings = FixtureSettings(
                 Paths().experiment_local_fixturename,
                 dir_path=os.path.dirname(self._compile_job.path))
 
@@ -88,13 +88,13 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
                     compile_image_model))
 
                 try:
-                    image_model = first_pass.analyse(compile_image_model, self._fixture)
+                    image_model = first_pass.analyse(compile_image_model, self._fixture_settings)
                     FixtureFactory.serializer.dump_to_filehandle(image_model, fh)
 
                 except first_pass.MarkerDetectionFailed:
 
                     self._logger.error("Failed to detect the markers on {0} using fixture {1}".format(
-                        compile_image_model.path, self._fixture['path']))
+                        compile_image_model.path, self._fixture_settings.model.path))
                 except IOError:
 
                     self._logger.error("Could not output analysis to file {0}".format(

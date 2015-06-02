@@ -38,19 +38,19 @@ class MarkerDetectionFailed(Exception):
 #
 
 
-def analyse(compile_image_model, fixture):
+def analyse(compile_image_model, fixture_settings):
     """
 
 
-    :type fixture: scanomatic.io.fixtures.FixtureSettings
+    :type fixture_settings: scanomatic.io.fixtures.FixtureSettings
     :type compile_image_model: scanomatic.models.compile_project_model.CompileImageModel
     :rtype : scanomatic.models.compile_project_model.CompileImageAnalysisModel
     """
 
     compile_analysis_model = CompileImageAnalysisFactory.create(
-        image=compile_image_model, fixture=FixtureFactory.copy(fixture))
+        image=compile_image_model, fixture=FixtureFactory.copy(fixture_settings.model))
 
-    fixture_image = FixtureImage(fixture=fixture)
+    fixture_image = FixtureImage(fixture=fixture_settings.model)
 
     _do_image_preparation(compile_analysis_model, fixture_image)
 
