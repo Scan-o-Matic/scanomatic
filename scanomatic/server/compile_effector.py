@@ -7,9 +7,12 @@ from scanomatic.io.fixtures import Fixtures, FixtureSettings
 from scanomatic.io.paths import Paths
 from scanomatic.imageAnalysis import first_pass
 from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.models.rpc_job_models import JOB_TYPE
 
 
 class CompileProjectEffector(proc_effector.ProcessEffector):
+
+    TYPE = JOB_TYPE.Compile
 
     def __init__(self, job):
 
