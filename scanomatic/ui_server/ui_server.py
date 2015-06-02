@@ -225,9 +225,16 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     @app.route("/fixtures/<name>")
     def _fixture_data(name=None):
         if rpc_client.online and name in rpc_client.get_fixtures():
-            return "Not implemented sending fixture data"
+            path = Paths().get_fixture_path(name)
+            try:
+                fixture = tuple(FixtureFactory.serializer.load(path))[0]
+                return jsonify(success=True, grayscale=dict(**fixture.grayscale),
+                        plates=[dict(**plate) for plate in fixture.plates],
+                        markers=zip(fixture.orientation_marks_x, fixture.orientation_marks_y))
+            except IndexError:
+                return jsonify(success=False, reason="Fixture without data")
         else:
-            return ""
+            return jsonify(success=False, reason="Unknown fixture")
 
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():
@@ -388,7 +395,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             _logger.warning("Refused detection (keys files: {0} values: {1})".format(
                 request.files.keys(), request.values.keys()))
 
-            return jsonify(markers="[]", image="")
+            return jsonify(markers=[], image="")
 
         elif request.args.get("image"):
 

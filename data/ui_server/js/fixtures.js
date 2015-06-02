@@ -17,7 +17,7 @@ var fixture_name = null;
 var markers = null;
 var scale = 1;
 var areas = [];
-var creatingArea = false;
+var creatingArea = null;
 var selected_fixture_canvas_jq;
 var selected_fixture_canvas;
 var grayscale_graph = null;
@@ -134,7 +134,7 @@ function set_canvas() {
 }
 
 function isArea(index) {
-    return index != null && index >= 0 && index < areas.length;
+    return index != null &&  index != undefined && index >= 0 && index < areas.length;
 }
 
 function getAreaSize(plate) {
@@ -318,6 +318,31 @@ function get_fixture() {
     $(new_fixture_data_id).hide();
     $(save_fixture_action_id).val("update");
     load_fixture(options.val());
+    load_fixture_image(get_fixture_from_name(options.val()));
+    $.ajax({
+        url: '/fixtures/' + options.val(),
+        type: "GET",
+        success: function(data) {
+            if (data.success) {
+                areas.splice(0);
+                for (var i=0, l=data.plates.length;i<l;i++) {
+                    data.plates[i].grayscale = false;
+                    data.plates[i].plate = data.plates[i].index;
+                    areas.push(data.plates[i]);
+                }
+                data.grayscale.grayscale = true;
+                data.grayscale.plate = -1;
+                SetSelectedGrayscale(data.grayscale.name);
+                areas.push(data.grayscale)
+                markers = data.markers;
+
+            } else if (data.reason)
+                context_warning = data.reason;
+            else
+                context_warning = "Unknown error retrieving fixture";
+            draw_fixture();
+        }
+        });
 }
 
 function set_fixture_image() {

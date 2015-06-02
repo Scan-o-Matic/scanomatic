@@ -2,7 +2,6 @@
 var grayscale_selector_class = ".grayscale-selector";
 
 function get_grayscales(options) {
-    console.log(options);
     options.empty();
     $.get("/grayscales?names=1", function(data, status) {
         if (data.grayscales) {
@@ -26,4 +25,11 @@ function GetSelectedGrayscale(identifier) {
     });
 
     return vals[0];
+}
+
+function SetSelectedGrayscale(name) {
+    Execute(grayscale_selector_class, function (obj) {
+        $(obj).val(name);
+    });
+
 }
