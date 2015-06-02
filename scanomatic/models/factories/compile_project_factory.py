@@ -100,7 +100,7 @@ class CompileProjectFactory(AbstractModelFactory):
         ('images',): list,
         ('path',): str,
         ('start_condition',): str,
-        ('fixture',): compile_project_model.FIXTURE,
+        ('fixture_type',): compile_project_model.FIXTURE,
         ('fixture_name',): str
     }
 

@@ -40,8 +40,8 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
     def _load_fixture(self):
 
-        if self._compile_job.fixture is FIXTURE.Global:
-            self._fixture = Fixtures[self._compile_job.fixture_name]
+        if self._compile_job.fixture_type is FIXTURE.Global:
+            self._fixture_settings = Fixtures[self._compile_job.fixture_name]
         else:
             self._fixture = FixtureSettings(
                 Paths().experiment_local_fixturename,

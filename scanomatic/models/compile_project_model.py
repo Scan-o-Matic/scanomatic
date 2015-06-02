@@ -21,13 +21,13 @@ class FIXTURE(Enum):
 class CompileInstructionsModel(Model):
 
     def __init__(self, compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis, images=tuple(), path="",
-                 start_condition="", fixture=FIXTURE.Local, fixture_name=None):
+                 start_condition="", fixture_type=FIXTURE.Local, fixture_name=None):
 
         self.compile_action = compile_action
         self.images = images
         self.path = path
         self.start_condition = start_condition
-        self.fixture = fixture
+        self.fixture_type = fixture_type
         self.fixture_name = fixture_name
 
         super(CompileInstructionsModel, self).__init__()
