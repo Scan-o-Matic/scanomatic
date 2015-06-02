@@ -97,10 +97,6 @@ class FixtureImage(object):
 
             raise KeyError(key)
 
-    def set_current_fixture_settings(self, current_fixture_settings):
-
-        self._current_fixture_settings = current_fixture_settings
-
     @property
     def name(self):
 

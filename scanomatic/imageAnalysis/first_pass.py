@@ -79,7 +79,7 @@ def _do_image_preparation(compile_analysis_model, image):
     :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
     """
 
-    image.set_current_fixture_settings(compile_analysis_model.fixture)
+    image['current'].model = compile_analysis_model.fixture
     image.set_image(image_path=compile_analysis_model.image.path)
 
 
