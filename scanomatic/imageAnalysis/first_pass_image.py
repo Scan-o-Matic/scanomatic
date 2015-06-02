@@ -26,6 +26,7 @@ from matplotlib.pyplot import imread
 from scanomatic.io.grid_history import GriddingHistory
 from scanomatic.io.logger import Logger
 from scanomatic.io.fixtures import FixtureSettings
+from scanomatic.models.factories.fixture_factories import FixturePlateFactory
 
 import imageBasics
 import imageFixture
@@ -51,6 +52,11 @@ def get_image_scale(im):
             return (scale_d1 + scale_d2) / 2.0
 
         return invalid_scale
+
+
+def _get_rotated_vector(x, y, rotation):
+
+    return x * np.cos(rotation), y * np.sin(rotation)
 
 
 class FixtureImage(object):
@@ -359,46 +365,26 @@ class FixtureImage(object):
 
         current_model.grayscale.values = ag.get_source_values()
 
-    def _get_rotated_vector(self, x, y, rotation, boundary):
-
-        return x, y
-
-    def _set_plate_relative(self, plate, rotation=None, offset=(0, 0)):
+    def _set_area_relative(self, area, rotation=None, offset=(0, 0)):
 
         """
 
-        :type plate: scanomatic.models.fixture_models.FixturePlateModel
+        :type area: scanomatic.models.fixture_models.FixturePlateModel
         """
-
-        tmp_l = np.sqrt(plate[0] ** 2 + plate[1] ** 2)
 
         if rotation:
+            area.x1, area.y1 = _get_rotated_vector(area.x1, area.y1, rotation)
+            area.x2, area.y2 = _get_rotated_vector(area.x2, area.y2, rotation)
 
-            rotation_tmp = np.arccos(plate[0] / tmp_l)
-            rotation_tmp = (rotation_tmp * (plate[1] > 0) + -1 * rotation_tmp * (plate[1] < 0))
-
-            rotation_new = rotation_tmp + rotation
-            new_x = np.cos(rotation_new) * tmp_l + offset[0]
-            new_y = np.sin(rotation_new) * tmp_l + offset[1]
-        else:
-            new_x = tmp_l + offset[0]
-            new_y = tmp_l + offset[1]
-
-        if new_x > self.EXPECTED_IM_SIZE[0]:
-            self._logger.warning("Point X-value ({0}) outside image".format(new_x))
-            new_x = self.EXPECTED_IM_SIZE[0]
-        elif new_x < 0:
-            self._logger.warning("Point X-value ({0}) outside image".format(new_x))
-            new_x = 0
-
-        if new_y > self.EXPECTED_IM_SIZE[1]:
-            self._logger.warning("Point Y-value ({0}) outside image".format(new_y))
-            new_y = self.EXPECTED_IM_SIZE[1]
-        elif new_y < 0:
-            self._logger.warning("Point Y-value ({0}) outside image".format(new_y))
-            new_y = 0
-
-        return new_x, new_y
+        for dim, keys in {0: ('x1', 'x2'), 1:('y1', 'y2')}:
+            for key in keys:
+                area[key] += offset[dim]
+                if area[key] > self.EXPECTED_IM_SIZE[dim]:
+                    self._logger.warning("{0} value ({1}) outside image, setting to img border".format(key, area[key]))
+                    area[key] = self.EXPECTED_IM_SIZE[dim]
+                elif area[key] < 0:
+                    self._logger.warning("{0} value ({1}) outside image, setting to img border".format(key, area[key]))
+                    area[key] = 0
 
     def set_current_areas(self):
 
@@ -406,7 +392,14 @@ class FixtureImage(object):
         offset = self._get_offset()
         rotation = self._get_rotation()
         current_model = self["current"].model
-        for plate in current_model.plates:
-            self._set_plate_relative(plate, rotation, offset)
+        ref_model = self["fixture"].model
 
-        self._set_grayscale_area_relative(current_model.grayscale)
+        while current_model.plates:
+            current_model.plates.pop()
+
+        for plate in ref_model.plates:
+            cur_plate = FixturePlateFactory.copy(plate)
+            current_model.plates.append(cur_plate)
+            self._set_area_relative(cur_plate, rotation, offset)
+
+        self._set_area_relative(current_model.grayscale, rotation, offset)
