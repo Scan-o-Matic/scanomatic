@@ -31,8 +31,8 @@ function get_fixture_as_name(fixture) {
 
 function get_fixture_from_name(fixture) {
     return fixture.replace(/ /g, "_")
-        .replace(/A-Z/g, function ($1) { return $1.toLowerCase();})
-        .replace(/[^a-z1-9_]/g,"");
+        .replace(/[A-Z]/g, function ($1) { return $1.toLowerCase();})
+        .replace(/[^a-z1-9_]/g,"") + ".config";
 }
 
 function Execute(idOrClass, methodName) {
