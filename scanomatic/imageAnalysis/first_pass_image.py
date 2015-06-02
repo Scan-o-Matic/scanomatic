@@ -228,7 +228,7 @@ class FixtureImage(object):
         x_centered, y_centered = self._get_centered_mark_positions("current")
         x_centered_ref, y_centered_ref = self._get_centered_mark_positions("reference")
 
-        if x_centered and y_centered and x_centered_ref and y_centered_ref:
+        if all(o is not None and o.size > 0 for o in (x_centered, y_centered, x_centered_ref, y_centered_ref)):
 
             length = np.sqrt(x_centered ** 2 + y_centered ** 2)
             length_ref = np.sqrt(x_centered_ref ** 2 + y_centered_ref ** 2)
