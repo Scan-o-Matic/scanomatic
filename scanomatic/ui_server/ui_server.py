@@ -178,30 +178,11 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/")
     def _root():
-        return """<!DOCTYPE: html>
-        <html>
-        <head>
-            <link rel="stylesheet" type="text/css" href="style/main.css">
-            <title>Scan-o-Matic</title>
-            <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-        </head>
-        <body>
-        <img id='logo' src='images/help_logo.png'>
-        <script>
-        $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
-        </script>
-        <ul>
-        <li><a href="/help">Help</a></li>
-        <li><a href="/wiki">Wiki</a></li>
-        <li><a href="/fixtures">Fixtures</a></li>
-        </ul>
-        </body>
-        </html>
-        """
+        return send_from_directory(Paths().ui_root, Paths().ui_root_file)
 
     @app.route("/help")
     def _help():
-        return send_from_directory(Paths().ui_root, Paths().help_file)
+        return send_from_directory(Paths().ui_root, Paths().ui_help_file)
 
     @app.route("/wiki")
     def _wiki():
@@ -222,6 +203,20 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if js:
             return send_from_directory(Paths().ui_js, js)
 
+    @app.route("/compile", methods=['get', 'post'])
+    def _compile():
+
+        return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
+
+    @app.route("/grayscales", methods=['post', 'get'])
+    def _grayscales():
+
+        if request.args.get("names"):
+
+            return jsonify(grayscales=getGrayscales())
+
+        return ""
+
     @app.route("/fixtures/<name>")
     def _fixture_data(name=None):
         if rpc_client.online and name in rpc_client.get_fixtures():
@@ -235,15 +230,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 return jsonify(success=False, reason="Fixture without data")
         else:
             return jsonify(success=False, reason="Unknown fixture")
-
-    @app.route("/grayscales", methods=['post', 'get'])
-    def _grayscales():
-
-        if request.args.get("names"):
-
-            return jsonify(grayscales=getGrayscales())
-
-        return ""
 
     @app.route("/fixtures", methods=['post', 'get'])
     def _fixtures():
@@ -403,7 +389,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             _logger.info("Sending fixture image {0}".format(image))
             return send_from_directory(Paths().fixtures, image)
 
-        return send_from_directory(Paths().ui_root, Paths().fixture_file)
+        return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)
 
     try:
         if is_local:
