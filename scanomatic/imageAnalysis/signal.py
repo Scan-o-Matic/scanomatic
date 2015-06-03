@@ -41,7 +41,7 @@ _logger = logger.Logger("Resource Signal")
 def get_signal(data, detection_threshold, kernel=(-1, 1)):
 
     up_spikes = np.abs(np.convolve(data, kernel, "same")) > detection_threshold
-    return get_center_of_spikes(up_spikes)
+    return np.array(get_center_of_spikes(up_spikes))
 
 
 def get_signal_data(strip_values, up_spikes, grayscale, delta_threshold):
@@ -414,7 +414,7 @@ def get_spike_distances(spikes):
 
     spikes_where = np.where(spikes == True)[0]
     if spikes_where.size == 0:
-        return ()
+        return np.array([])
 
     return np.append(spikes_where[0], spikes_where[1:] - spikes_where[:-1])
 
