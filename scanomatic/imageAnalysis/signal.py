@@ -38,6 +38,16 @@ _logger = logger.Logger("Resource Signal")
 #
 
 
+def get_higher_second_half_order_according_to_first(first, *others):
+
+    if len(first) and np.mean(first[:len(first)/2]) > np.mean(first[len(first)/2:]):
+
+        first = first[::-1]
+        others = tuple(other[::-1] for other in others)
+
+    return (first,) + others
+
+
 def get_signal(data, detection_threshold, kernel=(-1, 1)):
 
     up_spikes = np.abs(np.convolve(data, kernel, "same")) > detection_threshold
