@@ -539,5 +539,5 @@ class Analyse_Grayscale(object):
         #print "GS POS", gray_scale_pos
         gray_scale, grayscale_segment_centers = signal.get_higher_second_half_order_according_to_first(
             gray_scale, grayscale_segment_centers)
-        
+
         return grayscale_segment_centers, gray_scale
