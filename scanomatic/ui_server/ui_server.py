@@ -21,6 +21,7 @@ from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateMod
 from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 
 _url = None
 _logger = Logger("UI-server")
@@ -190,6 +191,17 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/compile", methods=['get', 'post'])
     def _compile():
+
+        if request.args.get("run"):
+
+            path = request.values.get('path')
+            is_local = bool(int(request.values.get('local')))
+            fixture=request.values.get("fixture")
+            _logger.info("Attempting to compile on path {0}, as {1} fixture{2}".format(
+                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture)))
+            return jsonify(success=rpc_client.create_compile_project_job(
+                CompileProjectFactory.dict_from_path_and_fixture(
+                    path, fixture=fixture , is_local=is_local)))
 
         return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
 
