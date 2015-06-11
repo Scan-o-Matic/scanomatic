@@ -30,3 +30,5 @@ if __name__ == "__main__":
             print "Not enough privileges or server not running"
         else:
             print "Job requested."
+    else:
+        print "Invalid arguments"

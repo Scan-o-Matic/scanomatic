@@ -4,11 +4,14 @@ from scanomatic.generics.model import Model
 from scanomatic.models.factories.scanning_factory import ScanningModel, ScanningModelFactory
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import AnalysisModel
+from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.models.compile_project_model import CompileInstructionsModel
 
 class RPC_Job_Model_Factory(AbstractModelFactory):
 
     MODEL = rpc_job_models.RPCjobModel
-    _SUB_FACTORIES = {ScanningModel: ScanningModelFactory, AnalysisModel: AnalysisModelFactory }
+    _SUB_FACTORIES = {ScanningModel: ScanningModelFactory, AnalysisModel: AnalysisModelFactory,
+                      CompileInstructionsModel: CompileProjectFactory}
     STORE_SECTION_HEAD = ('id',)
     STORE_SECTION_SERIALIZERS = {
         ('id',): int,

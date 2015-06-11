@@ -19,7 +19,7 @@ from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 from scanomatic.imageAnalysis.support import save_image_as_png
 from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
-from scanomatic.imageAnalysis.imageGrayscale import get_ortho_trimmed_slice, get_para_timmed_slice, Analyse_Grayscale
+from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 
 _url = None
@@ -52,21 +52,6 @@ def get_fixture_image(name, image_path):
     fixture.name = name
     fixture.set_image(image_path=image_path)
     return fixture
-
-def get_grayscale(fixture, grayscale_area_model):
-
-    gs = getGrayscale(grayscale_area_model.name)
-    im = fixture.get_grayscale_im_section(grayscale_area_model)
-    if not im.size:
-        return None, None
-    im_o = get_ortho_trimmed_slice(im, gs)
-    if not im_o.size:
-        return None, None
-    im_p = get_para_timmed_slice(im_o, gs)
-    if not im_p.size:
-        return None, None
-    ag = Analyse_Grayscale(target_type=grayscale_area_model.name, image=None, scale_factor=1)
-    return ag.get_grayscale(im_p)
 
 
 def get_area_too_large_for_grayscale(grayscale_area_model):

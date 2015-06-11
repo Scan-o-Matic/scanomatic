@@ -14,7 +14,7 @@ __status__ = "Development"
 #
 
 import scanomatic.io.logger as logger
-from scanomatic.models.factories.fixture_factories import FixtureFactory, FixturePlateFactory
+from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 
@@ -38,19 +38,19 @@ class MarkerDetectionFailed(Exception):
 #
 
 
-def analyse(compile_image_model, fixture):
+def analyse(compile_image_model, fixture_settings):
     """
 
 
-    :type fixture: scanomatic.io.fixtures.FixtureSettings
+    :type fixture_settings: scanomatic.io.fixtures.FixtureSettings
     :type compile_image_model: scanomatic.models.compile_project_model.CompileImageModel
     :rtype : scanomatic.models.compile_project_model.CompileImageAnalysisModel
     """
 
     compile_analysis_model = CompileImageAnalysisFactory.create(
-        image=compile_image_model, fixture=FixtureFactory.copy(fixture))
+        image=compile_image_model, fixture=FixtureFactory.copy(fixture_settings.model))
 
-    fixture_image = FixtureImage(fixture=fixture)
+    fixture_image = FixtureImage(fixture=fixture_settings)
 
     _do_image_preparation(compile_analysis_model, fixture_image)
 
@@ -61,11 +61,6 @@ def analyse(compile_image_model, fixture):
     fixture_image.set_current_areas()
 
     _do_grayscale(compile_analysis_model, fixture_image)
-
-    _do_plates(compile_analysis_model, fixture_image)
-
-    compile_analysis_model.coordinates_scale = fixture_image['scale']
-    compile_analysis_model.shape = fixture_image['shape']
 
     _logger.info("First pass analysis done for {0}".format(compile_analysis_model))
 
@@ -79,7 +74,7 @@ def _do_image_preparation(compile_analysis_model, image):
     :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
     """
 
-    image.set_current_fixture_settings(compile_analysis_model.fixture)
+    image['current'].model = compile_analysis_model.fixture
     image.set_image(image_path=compile_analysis_model.image.path)
 
 
@@ -95,9 +90,6 @@ def _do_markers(compile_analysis_model, image):
 
     _logger.info("Marker analysis run".format(compile_analysis_model))
 
-    compile_analysis_model.fixture.orientation_marks_x, \
-        compile_analysis_model.fixture.orientation_marks_y = image['markers']
-
     if compile_analysis_model.fixture.orientation_marks_x is None:
         raise MarkerDetectionFailed()
 
@@ -112,25 +104,5 @@ def _do_grayscale(compile_analysis_model, image):
 
     _logger.info("Grayscale analysed for {0}".format(compile_analysis_model))
 
-    compile_analysis_model.fixture.grayscale_targets = image['grayscaleTarget']
-    compile_analysis_model.fixture.grayscale_values = image['grayscaleSource']
-
-    if compile_analysis_model.fixture.grayscale_targets is None:
-        _logger.error("Grayscale not properly set up (used {0})".format(
-            image['grayscale_type']))
-    if compile_analysis_model.fixture.grayscale_values is None:
-        _logger.error("Grayscale analysis failed (used {0})".format(
-            image['grayscale_type']))
-
-
-def _do_plates(compile_analysis_model, image):
-
-    """
-
-    :type image: scanomatic.imageAnalysis.first_pass_image.FixtureImage
-    :type compile_analysis_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
-    """
-    sections_areas = image['plates']
-
-    for i, a in enumerate(sections_areas):
-        compile_analysis_model.fixture.plates.append(FixturePlateFactory.create(index=i, **a))
+    if compile_analysis_model.fixture.grayscale.values is None:
+        _logger.error("Grayscale not properly set up (used {0})".format(compile_analysis_model.fixture.grayscale.name))

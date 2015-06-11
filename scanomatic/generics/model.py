@@ -53,6 +53,10 @@ class Model(object):
 
         return getattr(self, item)
 
+    def __setitem__(self, key, value):
+
+        setattr(self, key, value)
+
     def __eq__(self, other):
 
         for key in self.keys():
@@ -67,22 +71,23 @@ class Model(object):
 
         classname = str(type(self)).split(".")[-1].rstrip("'>")
         value = None
-        for key in ("name", "id"):
-            if key in self:
+        for key in ("name", "id", "path"):
+            if key in self and self[key]:
                 value = self[key]
                 break
 
         if value is None:
 
-            keys = [key for key in self.keys() if key.endswith("id") or key.endswith("name")]
-            if keys:
-                key = keys[0]
-                value = self[key]
+            for key in [key for key in self.keys() if key.endswith("id") or key.endswith("name")]:
+                if self[key]:
+                    value = self[key]
+                    break
 
         if value is None:
-
-            key = tuple(self.keys())[0]
-            value = self[key]
+            for keu in self.keys():
+                if self[key]:
+                    value = self[key]
+                    break
 
         return Model._STR_PATTERN.format(classname, key, value)
 

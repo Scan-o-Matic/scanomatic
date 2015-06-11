@@ -82,6 +82,22 @@ def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0
                             np.min((peak + bufferd_half_length, im_ortho_trimmed.shape[0]))]
 
 
+def get_grayscale(fixture, grayscale_area_model):
+
+    gs = grayscale.getGrayscale(grayscale_area_model.name)
+    im = fixture.get_grayscale_im_section(grayscale_area_model)
+    if not im.size:
+        return None, None
+    im_o = get_ortho_trimmed_slice(im, gs)
+    if not im_o.size:
+        return None, None
+    im_p = get_para_timmed_slice(im_o, gs)
+    if not im_p.size:
+        return None, None
+    ag = Analyse_Grayscale(target_type=grayscale_area_model.name, image=None, scale_factor=1)
+    return ag.get_grayscale(im_p)
+
+
 class Analyse_Grayscale(object):
 
     ORTH_EDGE_T = 0.2
@@ -537,4 +553,7 @@ class Analyse_Grayscale(object):
 
         #print "GS", gray_scale
         #print "GS POS", gray_scale_pos
+        gray_scale, grayscale_segment_centers = signal.get_higher_second_half_order_according_to_first(
+            gray_scale, grayscale_segment_centers)
+
         return grayscale_segment_centers, gray_scale

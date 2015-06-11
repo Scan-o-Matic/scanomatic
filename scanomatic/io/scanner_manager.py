@@ -350,7 +350,7 @@ class ScannerPowerManager(SingeltonOneInit):
             self._save(claimer)
 
     def has_fixture(self, fixture_name):
-
+        self._fixtures.update()
         return fixture_name in self._fixtures
 
     @property
@@ -359,6 +359,7 @@ class ScannerPowerManager(SingeltonOneInit):
 
     @property
     def fixtures(self):
+        self._fixtures.update()
         return self._fixtures.get_names()
 
     @property

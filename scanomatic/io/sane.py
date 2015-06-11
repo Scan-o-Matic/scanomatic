@@ -56,8 +56,8 @@ class SaneBase(object):
 
     _TRANSPARENCY_WORDS = {"TPU", "Transparency"}
     _SANE_VERSION_NAME_FOR_TRANSPARENCY = None
-    # _SETTINGS_ORDER = (SCAN_FLAGS.Source, SCAN_FLAGS.Format, SCAN_FLAGS.Resolution, SCAN_FLAGS.Mode, SCAN_FLAGS.Left,
-    #                   SCAN_FLAGS.Top, SCAN_FLAGS.Width, SCAN_FLAGS.Height, SCAN_FLAGS.Depth)
+    _SETTINGS_ORDER = (SCAN_FLAGS.Source, SCAN_FLAGS.Format, SCAN_FLAGS.Resolution, SCAN_FLAGS.Mode, SCAN_FLAGS.Left,
+                       SCAN_FLAGS.Top, SCAN_FLAGS.Width, SCAN_FLAGS.Height, SCAN_FLAGS.Depth)
 
     _SETTINGS_REPOSITORY = {
         "EPSON V700": {
@@ -135,7 +135,7 @@ class SaneBase(object):
             sources = tuple(source.strip() for source in sources)
             tpu_sources = tuple(source for source in sources if
                                 any(True for tpu in SaneBase._TRANSPARENCY_WORDS if source.startswith(tpu)))
-            self._SANE_VERSION_NAME_FOR_TRANSPARENCY = tpu_sources[-1]
+            SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY = tpu_sources[-1]
             return True
 
         except (TypeError, IndexError):
@@ -145,7 +145,7 @@ class SaneBase(object):
     def _update_mode_source(self):
 
         if self._scan_mode is SCAN_MODES.TPU and not self._verified_settings:
-            self._scan_settings[SCAN_FLAGS.Mode] = SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY
+            self._scan_settings[SCAN_FLAGS.Source] = SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY
 
     def _get_copy_of_settings(self):
 
@@ -160,9 +160,15 @@ class SaneBase(object):
 
     def _get_scan_instructions(self, prepend=None):
 
-        def _dict_to_tuple(d):
+        def _dict_to_tuple(d, key_order=None):
 
-            return tuple(chain(*((key.value, value) for key, value in d.items())))
+            if key_order is None:
+                key_order = d.keys()
+            else:
+                key_order = tuple(key for key in key_order if key in d)
+                key_order += tuple(set(d.keys()).difference(key_order))
+
+            return tuple(chain(*((key.value, d[key]) for key in key_order)))
 
         program = (SaneBase._PROGRAM,)
         if prepend:
@@ -170,7 +176,7 @@ class SaneBase(object):
         else:
             prepend_settings = tuple()
 
-        settings = _dict_to_tuple(self._scan_settings)
+        settings = _dict_to_tuple(self._scan_settings, key_order=SaneBase._SETTINGS_ORDER)
         return program + prepend_settings + settings
 
     def OpenScanner(self, mainWindow=None, ProductName=None, UseCallback=False):
@@ -223,12 +229,7 @@ class SaneBase(object):
 
             im.close()
 
-            if stderr is None:
-                return True
-            elif "invalid argument" in stderr.lower() or "no SANE devices found" in stderr:
-                return False
-            else:
-                return True
+            return scan_proc.returncode == 0
 
         else:
             return False

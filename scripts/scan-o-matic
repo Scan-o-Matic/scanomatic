@@ -16,6 +16,7 @@ __status__ = "Development"
 
 from scanomatic.ui_server import ui_server
 from argparse import ArgumentParser
+import setproctitle
 
 #
 # EXECUTION BEHAVIOUR
@@ -44,7 +45,8 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
+    
+    setproctitle.setproctitle("SoM {0}".format("UI Server"))
     true_strings = ['Y', 'YES', 'TRUE', 'T']
     ui_server.launch(open_browser_url=args.browser.upper() in true_strings,
                      debug=args.debug.upper() in true_strings,

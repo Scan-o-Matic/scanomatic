@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+from argparse import ArgumentParser
+import os
+import glob
+from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.models.compile_project_model import COMPILE_ACTION, FIXTURE
+import scanomatic.io.rpc_client as rpc_client
+
+__author__ = 'martin'
+
+if __name__ == "__main__":
+
+    parser = ArgumentParser(
+        description="""Runs Scan-o-Matic compile project\n\nNote: Will use all tiff images in path""")
+
+    parser.add_argument(
+        '-p', '--path', type=str, dest="path",
+        help='Path to directory with files')
+
+    parser.add_argument(
+        '-f', '--fixture', type=str, dest='fixture',
+        help="Fixture to use, it not supplied will use local fixture")
+
+    args = parser.parse_args()
+    if args.path:
+        args.path = os.path.abspath(args.path)
+    image_path = os.path.join(args.path, "*.tiff")
+
+    images = [{'path': path} for path in sorted(glob.glob(image_path))]
+
+    compile_job_model = {
+        'compile_action': COMPILE_ACTION.Initiate.name,
+        'images': images,
+        'fixture_type': args.fixture and FIXTURE.Global.name or FIXTURE.Local.name,
+        'fixture_name': args.fixture,
+        'path': args.path}
+
+    client = rpc_client.get_client(admin=True)
+
+    try:
+        if client.create_compile_project_job(compile_job_model):
+            print "Job requested"
+        else:
+            print "Job refused"
+    except AttributeError:
+        print "Not enough privileges or server not running or bad arguments"
