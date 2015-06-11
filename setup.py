@@ -77,7 +77,7 @@ scripts = [
         "scan-o-matic_analysis",
         "scan-o-matic_analysis_move_plate",
         "scan-o-matic_analysis_patch_times",
-        "scan-o-matic_make_project",
+        "scan-o-matic_compile_project",
         "scan-o-matic_analysis_skip_gs_norm",
         "scan-o-matic_analysis_xml_upgrade",
         "scan-o-matic_xml2image_data",

@@ -64,7 +64,7 @@ class Paths(SingeltonOneInit):
         self.scanomatic = "scan_o_matic"
         self.analysis = "scan-o-matic_analysis"
         self.experiment = "scan-o-matic_experiment"
-        self.make_project = "scan-o-matic_make_project"
+        self.make_project = "scan-o-matic_compile_project"
         self.revive = "scan-o-matic_relauncher"
         self.install_autostart = "scan-o-matic_autostart"
 
