@@ -41,6 +41,10 @@ if __name__ == "__main__":
             ax.plot(np.array(getGrayscale(p.name)['targets'])*10, -np.array(p.values), lw=2)
 
         plt.legend(loc="lower left")
+
+        ax.plot(compile_image.fixture.orientation_marks_x*4,
+                compile_image.fixture.orientation_marks_y*4, 'o', ms=15, mec='k', mfc="None", mew=2)
+
         plt.show()
         plt.draw()
         index += 1
