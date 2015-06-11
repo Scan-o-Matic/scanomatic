@@ -375,8 +375,9 @@ class FixtureImage(object):
         """
 
         if rotation:
-            area.x1, area.y1 = _get_rotated_vector(area.x1, area.y1, rotation)
-            area.x2, area.y2 = _get_rotated_vector(area.x2, area.y2, rotation)
+            self._logger.warning("Not supporting rotations yet (got {0})".format(rotation))
+            # area.x1, area.y1 = _get_rotated_vector(area.x1, area.y1, rotation)
+            # area.x2, area.y2 = _get_rotated_vector(area.x2, area.y2, rotation)
 
         for dim, keys in {1: ('x1', 'x2'), 0: ('y1', 'y2')}.items():
             for key in keys:
