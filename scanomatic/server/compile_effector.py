@@ -6,10 +6,13 @@ from scanomatic.models.compile_project_model import FIXTURE, COMPILE_ACTION
 from scanomatic.io.fixtures import Fixtures, FixtureSettings
 from scanomatic.io.paths import Paths
 from scanomatic.imageAnalysis import first_pass
-from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
+from scanomatic.models.rpc_job_models import JOB_TYPE
 
 
 class CompileProjectEffector(proc_effector.ProcessEffector):
+
+    TYPE = JOB_TYPE.Compile
 
     def __init__(self, job):
 
@@ -23,8 +26,8 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         """:type : scanomatic.models.compile_project_model.CompileInstructionsModel"""
 
         self._image_to_analyse = 0
-        self._fixture = None
-
+        self._fixture_settings = None
+        self._compile_instructions_path = None
         self._allowed_calls['progress'] = self.progress
 
     @property
@@ -34,18 +37,27 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
     def setup(self, compile_job):
 
+        self._compile_instructions_path = Paths().get_project_compile_instructions_path_from_compile_model(
+            self._compile_job)
         self._tweak_path()
         self._load_fixture()
         self._allow_start = True
+        if self._fixture_settings is None:
+            self._logger.critical("No fixture loaded, name probably not recognized or old fixture settings file")
+            self._stopping = True
+        else:
+            CompileProjectFactory.serializer.dump(self._compile_job, self._compile_instructions_path)
 
     def _load_fixture(self):
 
-        if self._compile_job.fixture is FIXTURE.Global:
-            self._fixture = Fixtures[self._compile_job.fixture_name]
+        if self._compile_job.fixture_type is FIXTURE.Global:
+            self._fixture_settings = Fixtures()[self._compile_job.fixture_name]
         else:
-            self._fixture = FixtureSettings(
+            dir_path = os.path.dirname(self._compile_job.path)
+            self._logger.info("Attempting to load local fixture copy in directory {0}".format(dir_path))
+            self._fixture_settings = FixtureSettings(
                 Paths().experiment_local_fixturename,
-                dir_path=os.path.dirname(self._compile_job.path))
+                dir_path=dir_path)
 
     def _tweak_path(self):
 
@@ -84,17 +96,14 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
             with self._compile_output_filehandle as fh:
 
-                self._logger.warning("Not yet implemented first pass analysis, skipping {0}".format(
-                    compile_image_model))
-
                 try:
-                    image_model = first_pass.analyse(compile_image_model, self._fixture)
-                    FixtureFactory.serializer.dump_to_filehandle(image_model, fh)
+                    image_model = first_pass.analyse(compile_image_model, self._fixture_settings)
+                    CompileImageAnalysisFactory.serializer.dump_to_filehandle(image_model, fh)
 
                 except first_pass.MarkerDetectionFailed:
 
                     self._logger.error("Failed to detect the markers on {0} using fixture {1}".format(
-                        compile_image_model.path, self._fixture['path']))
+                        compile_image_model.path, self._fixture_settings.model.path))
                 except IOError:
 
                     self._logger.error("Could not output analysis to file {0}".format(

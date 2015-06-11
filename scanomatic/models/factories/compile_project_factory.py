@@ -90,7 +90,7 @@ class CompileImageFactory(AbstractModelFactory):
 class CompileProjectFactory(AbstractModelFactory):
 
     MODEL = compile_project_model.CompileInstructionsModel
-    STORE_SECTION_HEAD = ("scan_model", "project_name")
+    STORE_SECTION_HEAD = ("path",)
     _SUB_FACTORIES = {
         compile_project_model.CompileImageModel: CompileImageFactory,
     }
@@ -100,7 +100,7 @@ class CompileProjectFactory(AbstractModelFactory):
         ('images',): list,
         ('path',): str,
         ('start_condition',): str,
-        ('fixture',): compile_project_model.FIXTURE,
+        ('fixture_type',): compile_project_model.FIXTURE,
         ('fixture_name',): str
     }
 
@@ -109,6 +109,8 @@ class CompileProjectFactory(AbstractModelFactory):
         """
         :rtype : scanomatic.models.compile_project_model.CompileInstructionsModel
         """
+        cls.enforce_serializer_type(settings, ('fixture_type', 'compile_action'))
+
         model = super(CompileProjectFactory, cls).create(**settings)
         cls.enforce_subfactory_list(model)
         return model
@@ -156,18 +158,18 @@ class CompileProjectFactory(AbstractModelFactory):
         """
         :type model: scanomatic.models.compile_project_model.CompileInstructionsModel
         """
-        if model.fixture is compile_project_model.FIXTURE.Local:
+        if model.fixture_type is compile_project_model.FIXTURE.Local:
             if os.path.isfile(os.path.join(model.path, Paths().experiment_local_fixturename)):
                 return True
             else:
-                return model.FIELD_TYPES.fixture
-        elif model.fixture is compile_project_model.FIXTURE.Global:
+                return model.FIELD_TYPES.fixture_type
+        elif model.fixture_type is compile_project_model.FIXTURE.Global:
             if model.fixture_name in Fixtures():
                 return True
             else:
                 return model.FIELD_TYPES.fixture_name
         else:
-            return model.FIELD_TYPES.fixture
+            return model.FIELD_TYPES.fixture_type
 
 
 class CompileImageAnalysisFactory(AbstractModelFactory):

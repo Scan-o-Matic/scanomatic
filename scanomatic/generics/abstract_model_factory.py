@@ -41,7 +41,7 @@ class AbstractModelFactory(object):
     def _verify_correct_model(cls, model):
 
         if not isinstance(model, cls.MODEL):
-            raise TypeError("Wrong model for factory {0}!={1}".format(
+            raise TypeError("Wrong model for factory {1} is not a {0}".format(
                 cls.MODEL, model))
 
         return True
@@ -63,6 +63,24 @@ class AbstractModelFactory(object):
                 settings[key] = cls.STORE_SECTION_SERIALIZERS[tuple_key].create(**settings[key])
 
         return cls.MODEL(**settings)
+
+    @classmethod
+    def enforce_serializer_type(cls, settings, keys):
+        """Especially good for enums
+
+        :param settings:
+        :param keys:
+        :return:
+        """
+        for key in keys:
+            if key in settings and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[(key,)]):
+                try:
+                    settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)](settings[key])
+                except (AttributeError, ValueError):
+                    try:
+                        settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)][settings[key]]
+                    except (AttributeError, KeyError, IndexError):
+                        pass
 
     @classmethod
     def update(cls, model, **settings):

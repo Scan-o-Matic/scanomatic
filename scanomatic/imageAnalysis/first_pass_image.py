@@ -26,6 +26,7 @@ from matplotlib.pyplot import imread
 from scanomatic.io.grid_history import GriddingHistory
 from scanomatic.io.logger import Logger
 from scanomatic.io.fixtures import FixtureSettings
+from scanomatic.models.factories.fixture_factories import FixturePlateFactory
 
 import imageBasics
 import imageFixture
@@ -53,6 +54,11 @@ def get_image_scale(im):
         return invalid_scale
 
 
+def _get_rotated_vector(x, y, rotation):
+
+    return x * np.cos(rotation), y * np.sin(rotation)
+
+
 class FixtureImage(object):
 
     MARKER_DETECTION_SCALE = 0.25
@@ -69,13 +75,14 @@ class FixtureImage(object):
         self._reference_fixture_settings = fixture
         self._current_fixture_settings = None
         """:type : scanomatic.io.fixtures.Fixture_Settings"""
-        if (fixture):
+        if fixture:
             self._history = GriddingHistory(fixture)
         else:
             self._history = None
 
         self.im = None
         self.im_original_scale = None
+        self.im_path = None
         self._name = "default"
 
     def __getitem__(self, key):
@@ -96,10 +103,6 @@ class FixtureImage(object):
 
             raise KeyError(key)
 
-    def set_current_fixture_settings(self, current_fixture_settings):
-
-        self._current_fixture_settings = current_fixture_settings
-
     @property
     def name(self):
 
@@ -118,6 +121,8 @@ class FixtureImage(object):
 
 
     def set_image(self, image=None, image_path=None):
+
+        self.im_path = image_path
 
         if image is not None:
 
@@ -186,18 +191,14 @@ class FixtureImage(object):
         if markings is None:
             markings = len(self["fixture"].model.orientation_marks_x)
 
-        _logger.debug("Scaling image")
+        _logger.info("Running marker detection ({0} markers on {1})".format(markings, self.im_path))
 
         analysis_img = self._get_image_in_correct_scale()
-
-        _logger.debug("Setting up Image Analysis (acc {0} s)".format(time.time() - t))
 
         im_analysis = imageFixture.FixtureImage(
             image=analysis_img,
             pattern_image_path=self["reference"].get_marker_path(),
             scale=self['reference'].model.scale)
-
-        _logger.debug("Finding pattern (acc {0} s)".format(time.time() - t))
 
         x_positions, y_positions = im_analysis.find_pattern(markings=markings)
 
@@ -227,7 +228,7 @@ class FixtureImage(object):
         x_centered, y_centered = self._get_centered_mark_positions("current")
         x_centered_ref, y_centered_ref = self._get_centered_mark_positions("reference")
 
-        if x_centered and y_centered and x_centered_ref and y_centered_ref:
+        if all(o is not None and o.size > 0 for o in (x_centered, y_centered, x_centered_ref, y_centered_ref)):
 
             length = np.sqrt(x_centered ** 2 + y_centered ** 2)
             length_ref = np.sqrt(x_centered_ref ** 2 + y_centered_ref ** 2)
@@ -319,8 +320,8 @@ class FixtureImage(object):
 
             try:
 
-                return im[plate_model.x1 * scale: plate_model.x2 * scale,
-                          plate_model.y2 * scale: plate_model.y2 * scale]
+                return im[max(plate_model.y1 * scale, 0): min(plate_model.y2 * scale, im.shape[0]),
+                          max(plate_model.x2 * scale, 0): min(plate_model.x2 * scale, im.shape[1])]
 
             except (IndexError, TypeError):
 
@@ -349,59 +350,44 @@ class FixtureImage(object):
         current_model = self["current"].model
         im = self.get_grayscale_im_section(current_model.grayscale, scale=1.0)
 
+
         if im is None or 0 in im.shape:
-            self._logger.error(
-                "No valid grayscale area (Current area: {0} using {1})".format(
-                    self.im is None and "-No image loaded-" or
-                    (im is None and dict(**current_model.grayscale) or im.shape), current_model.grayscale))
+            err = "No valid grayscale area. "
+            if self.im is None:
+                self._logger.error(err + "No image loaded")
+            elif current_model.grayscale is None:
+                self._logger.error(err + "Grayscale area model not set")
+            elif im is None:
+                self._logger.error(err + "Image (shape {0}) could not be sliced according to {1}".format(
+                    self.im.shape, dict(**current_model.grayscale)))
+            elif 0 in im.shape:
+                self._logger.error(err + "Grayscale area has bad shape ({0})".format(im.shape))
+
             return False
 
-        ag = imageGrayscale.Analyse_Grayscale(
-            target_type=current_model.grayscale.name, image=im,
-            scale_factor=self.im_original_scale)
+        current_model.grayscale.values = imageGrayscale.get_grayscale(self, current_model.grayscale)[1]
 
-        current_model.grayscale.values = ag.get_source_values()
-
-    def _get_rotated_vector(self, x, y, rotation, boundary):
-
-        return x, y
-
-    def _set_plate_relative(self, plate, rotation=None, offset=(0, 0)):
+    def _set_area_relative(self, area, rotation=None, offset=(0, 0)):
 
         """
 
-        :type plate: scanomatic.models.fixture_models.FixturePlateModel
+        :type area: scanomatic.models.fixture_models.FixturePlateModel |  scanomatic.models.fixture_models.GrayScaleAreaModel
         """
-
-        tmp_l = np.sqrt(plate[0] ** 2 + plate[1] ** 2)
 
         if rotation:
+            self._logger.warning("Not supporting rotations yet (got {0})".format(rotation))
+            # area.x1, area.y1 = _get_rotated_vector(area.x1, area.y1, rotation)
+            # area.x2, area.y2 = _get_rotated_vector(area.x2, area.y2, rotation)
 
-            rotation_tmp = np.arccos(plate[0] / tmp_l)
-            rotation_tmp = (rotation_tmp * (plate[1] > 0) + -1 * rotation_tmp * (plate[1] < 0))
-
-            rotation_new = rotation_tmp + rotation
-            new_x = np.cos(rotation_new) * tmp_l + offset[0]
-            new_y = np.sin(rotation_new) * tmp_l + offset[1]
-        else:
-            new_x = tmp_l + offset[0]
-            new_y = tmp_l + offset[1]
-
-        if new_x > self.EXPECTED_IM_SIZE[0]:
-            self._logger.warning("Point X-value ({0}) outside image".format(new_x))
-            new_x = self.EXPECTED_IM_SIZE[0]
-        elif new_x < 0:
-            self._logger.warning("Point X-value ({0}) outside image".format(new_x))
-            new_x = 0
-
-        if new_y > self.EXPECTED_IM_SIZE[1]:
-            self._logger.warning("Point Y-value ({0}) outside image".format(new_y))
-            new_y = self.EXPECTED_IM_SIZE[1]
-        elif new_y < 0:
-            self._logger.warning("Point Y-value ({0}) outside image".format(new_y))
-            new_y = 0
-
-        return new_x, new_y
+        for dim, keys in {1: ('x1', 'x2'), 0: ('y1', 'y2')}.items():
+            for key in keys:
+                area[key] += offset[dim]
+                if area[key] > self.EXPECTED_IM_SIZE[dim]:
+                    self._logger.warning("{0} value ({1}) outside image, setting to img border".format(key, area[key]))
+                    area[key] = self.EXPECTED_IM_SIZE[dim]
+                elif area[key] < 0:
+                    self._logger.warning("{0} value ({1}) outside image, setting to img border".format(key, area[key]))
+                    area[key] = 0
 
     def set_current_areas(self):
 
@@ -409,7 +395,18 @@ class FixtureImage(object):
         offset = self._get_offset()
         rotation = self._get_rotation()
         current_model = self["current"].model
-        for plate in current_model.plates:
-            self._set_plate_relative(plate, rotation, offset)
+        ref_model = self["fixture"].model
 
-        self._set_grayscale_area_relative(current_model.grayscale)
+        self._logger.info(
+            "Positions on current '{0}' will be moved {1} and rotated {2} due to diff to reference {3}".format(
+                current_model.name, offset, rotation, ref_model.name))
+
+        while current_model.plates:
+            current_model.plates.pop()
+
+        for plate in ref_model.plates:
+            cur_plate = FixturePlateFactory.copy(plate)
+            current_model.plates.append(cur_plate)
+            self._set_area_relative(cur_plate, rotation, offset)
+
+        self._set_area_relative(current_model.grayscale, rotation, offset)

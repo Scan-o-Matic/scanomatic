@@ -79,15 +79,22 @@ class FixtureSettings(object):
 
         paths = Paths()
 
-        for path in (self.model.orentation_mark_path,
-                     os.path.join(paths.images, os.path.basename(self.model.orentation_mark_path)),
-                     paths.marker):
+        if self.model.orentation_mark_path:
+            marker_paths = (self.model.orentation_mark_path,
+                         os.path.join(paths.images, os.path.basename(self.model.orentation_mark_path)),
+                         paths.marker)
+        else:
+            marker_paths = (paths.marker,)
+
+        for path in marker_paths:
+
             try:
 
                 with open(path, 'rb') as _:
+                    self._logger.info("Using marker at '{0}'".format(path))
                     return path
             except IOError:
-                self._logger.error("The designated orientation marker file does not exist ({0})".format(path))
+                self._logger.warning("The designated orientation marker file does not exist ({0})".format(path))
 
         return None
 
