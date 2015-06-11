@@ -96,9 +96,6 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
             with self._compile_output_filehandle as fh:
 
-                self._logger.warning("Not yet implemented first pass analysis, skipping {0}".format(
-                    compile_image_model))
-
                 try:
                     image_model = first_pass.analyse(compile_image_model, self._fixture_settings)
                     CompileImageAnalysisFactory.serializer.dump_to_filehandle(image_model, fh)

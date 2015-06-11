@@ -350,11 +350,19 @@ class FixtureImage(object):
         current_model = self["current"].model
         im = self.get_grayscale_im_section(current_model.grayscale, scale=1.0)
 
+
         if im is None or 0 in im.shape:
-            self._logger.error(
-                "No valid grayscale area (Current area: {0} using {1})".format(
-                    self.im is None and "-No image loaded-" or
-                    (im is None and dict(**current_model.grayscale) or im.shape), current_model.grayscale))
+            err = "No valid grayscale area. "
+            if self.im is None:
+                self._logger.error(err + "No image loaded")
+            elif current_model.grayscale is None:
+                self._logger.error(err + "Grayscale area model not set")
+            elif im is None:
+                self._logger.error(err + "Image (shape {0}) could not be sliced according to {1}".format(
+                    self.im.shape, dict(**current_model.grayscale)))
+            elif 0 in im.shape:
+                self._logger.error(err + "Grayscale area has bad shape ({0})".format(im.shape))
+
             return False
 
         current_model.grayscale.values = imageGrayscale.get_grayscale(self, current_model.grayscale)[1]
@@ -363,14 +371,14 @@ class FixtureImage(object):
 
         """
 
-        :type area: scanomatic.models.fixture_models.FixturePlateModel
+        :type area: scanomatic.models.fixture_models.FixturePlateModel |  scanomatic.models.fixture_models.GrayScaleAreaModel
         """
 
         if rotation:
             area.x1, area.y1 = _get_rotated_vector(area.x1, area.y1, rotation)
             area.x2, area.y2 = _get_rotated_vector(area.x2, area.y2, rotation)
 
-        for dim, keys in {1: ('x1', 'x2'), 0:('y1', 'y2')}.items():
+        for dim, keys in {1: ('x1', 'x2'), 0: ('y1', 'y2')}.items():
             for key in keys:
                 area[key] += offset[dim]
                 if area[key] > self.EXPECTED_IM_SIZE[dim]:
@@ -387,6 +395,10 @@ class FixtureImage(object):
         rotation = self._get_rotation()
         current_model = self["current"].model
         ref_model = self["fixture"].model
+
+        self._logger.info(
+            "Positions on current '{0}' will be moved {1} and rotated {2} due to diff to reference {3}".format(
+                current_model.name, offset, rotation, ref_model.name))
 
         while current_model.plates:
             current_model.plates.pop()
