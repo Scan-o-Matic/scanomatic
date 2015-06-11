@@ -109,6 +109,8 @@ class CompileProjectFactory(AbstractModelFactory):
         """
         :rtype : scanomatic.models.compile_project_model.CompileInstructionsModel
         """
+        cls.enforce_serializer_type(settings, ('fixture_type', 'compile_action'))
+
         model = super(CompileProjectFactory, cls).create(**settings)
         cls.enforce_subfactory_list(model)
         return model

@@ -65,6 +65,24 @@ class AbstractModelFactory(object):
         return cls.MODEL(**settings)
 
     @classmethod
+    def enforce_serializer_type(cls, settings, keys):
+        """Especially good for enums
+
+        :param settings:
+        :param keys:
+        :return:
+        """
+        for key in keys:
+            if key in settings and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[(key,)]):
+                try:
+                    settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)](settings[key])
+                except (AttributeError, ValueError):
+                    try:
+                        settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)][settings[key]]
+                    except (AttributeError, KeyError, IndexError):
+                        pass
+
+    @classmethod
     def update(cls, model, **settings):
 
         for parameter, value in settings.items():

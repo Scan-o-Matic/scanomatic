@@ -29,22 +29,19 @@ if __name__ == "__main__":
 
     images = [{'path': path} for path in sorted(glob.glob(image_path))]
 
-    compile_job_model = CompileProjectFactory.create(**{
-        'compile_action': COMPILE_ACTION.Initiate,
+    compile_job_model = {
+        'compile_action': COMPILE_ACTION.Initiate.name,
         'images': images,
-        'fixture_type': args.fixture and FIXTURE.Local or FIXTURE.Global,
+        'fixture_type': args.fixture and FIXTURE.Global.name or FIXTURE.Local.name,
         'fixture_name': args.fixture,
-        'path': args.path})
-    if CompileProjectFactory.validate(compile_job_model):
+        'path': args.path}
 
-        client = rpc_client.get_client(admin=True)
+    client = rpc_client.get_client(admin=True)
 
-        try:
-            if client.create_compile_project_job(dict(**compile_job_model)):
-                print "Job requested"
-            else:
-                print "Job refused"
-        except AttributeError:
-            print "Not enough privileges or server not running"
-    else:
-        print "Invalid arguments"
+    try:
+        if client.create_compile_project_job(compile_job_model):
+            print "Job requested"
+        else:
+            print "Job refused"
+    except AttributeError:
+        print "Not enough privileges or server not running or bad arguments"
