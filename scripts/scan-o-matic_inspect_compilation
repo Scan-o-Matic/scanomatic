@@ -42,6 +42,7 @@ if __name__ == "__main__":
 
         plt.legend(loc="lower left")
         plt.show()
+        plt.draw()
         index += 1
         val = raw_input("Number to go to index / [q]uit / All else next index: ").lower()
         if val == 'q':
