@@ -357,11 +357,7 @@ class FixtureImage(object):
                     (im is None and dict(**current_model.grayscale) or im.shape), current_model.grayscale))
             return False
 
-        ag = imageGrayscale.Analyse_Grayscale(
-            target_type=current_model.grayscale.name, image=im,
-            scale_factor=self.im_original_scale)
-
-        current_model.grayscale.values = ag.get_source_values()
+        current_model.grayscale.values = imageGrayscale.get_grayscale(self, current_model.grayscale)[1]
 
     def _set_area_relative(self, area, rotation=None, offset=(0, 0)):
 
