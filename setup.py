@@ -81,6 +81,7 @@ scripts = [
         "scan-o-matic_analysis_skip_gs_norm",
         "scan-o-matic_analysis_xml_upgrade",
         "scan-o-matic_xml2image_data",
+        "scan-o-matic_inspect_compilation"
     ]
 ]
 

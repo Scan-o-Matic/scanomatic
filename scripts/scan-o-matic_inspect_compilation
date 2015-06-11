@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+__author__ = 'martin'
+
+
+from argparse import ArgumentParser
+from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
+from matplotlib import  pyplot as plt
+import matplotlib as mpl
+import numpy as np
+from scanomatic.imageAnalysis.grayscale import getGrayscale
+import os
+
+if __name__ == "__main__":
+
+    parser = ArgumentParser(description="""Runs Scan-o-Matic compilation inspection""")
+
+    parser.add_argument(
+        '-p', '--p', type=str, dest="path",
+        help='Path to compilation file')
+
+    args = parser.parse_args()
+
+    mpl.rcParams['text.usetex'] = False
+    plt.ion()
+    compile_images = tuple( CompileImageAnalysisFactory.serializer.load(args.path))
+    index = 0
+    while index < len(compile_images):
+
+        compile_image = compile_images[index]
+        plt.clf()
+        ax = plt.gca()
+        ax.set_title("{0}: {1}".format(compile_image.image.index, os.path.basename(compile_image.image.path)))
+        ax.imshow(plt.imread(compile_image.image.path))
+
+        for p in compile_image.fixture.plates:
+            ax.plot([p.x1, p.x2, p.x2, p.x1, p.x1], [p.y1, p.y1, p.y2, p.y2, p.y1], lw=5, label=p.index)
+
+        p = compile_image.fixture.grayscale
+        ax.plot([p.x1, p.x2, p.x2, p.x1, p.x1], [p.y1, p.y1, p.y2, p.y2, p.y1], lw=5, label='gs')
+        if (p.values):
+            ax.plot(np.array(getGrayscale(p.name)['targets'])*10, -np.array(p.values), lw=2)
+
+        plt.legend(loc="lower left")
+        plt.show()
+        index += 1
+        val = raw_input("Number to go to index / [q]uit / All else next index: ").lower()
+        if val == 'q':
+            break
+        try:
+            index = int(val)
+        except ValueError:
+            pass
