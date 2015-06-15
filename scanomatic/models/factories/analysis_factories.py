@@ -104,8 +104,8 @@ class AnalysisModelFactory(AbstractModelFactory):
     }
 
     STORE_SECTION_SERIALIZERS = {
-        ('first_pass_file',): str,
-        ('analysis_config_file',): str,
+        ('compilation',): str,
+        ('compile_instructions',): str,
         ('pinning_matrices',): list,
         ('use_local_fixture',): bool,
         ('stop_at_image',): int,

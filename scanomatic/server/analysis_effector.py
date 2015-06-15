@@ -54,6 +54,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._allowed_calls['setup'] = self.setup
 
+        #TODO: Update to new compile instructions
         if job.content_model:
             self._analysis_job = AnalysisModelFactory.create(**job.content_model)
         else:

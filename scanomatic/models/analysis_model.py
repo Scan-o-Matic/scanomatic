@@ -19,7 +19,7 @@ ITEMS = Enum("ITEMS", names=("Cell", "Blob", "Background"))
 
 class AnalysisModel(model.Model):
 
-    def __init__(self, first_pass_file="", analysis_config_file="",
+    def __init__(self, compilation="", compilation_instructions="",
                  pinning_matrices=((32, 48), (32, 48), (32, 48), (32, 48)),
                  use_local_fixture=False,
                  stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
@@ -32,19 +32,19 @@ class AnalysisModel(model.Model):
         if xml_model is None:
             xml_model = XMLModel()
 
-        self.first_pass_file = first_pass_file,
-        self.analysis_config_file = analysis_config_file,
-        self.pinning_matrices = pinning_matrices,
-        self.use_local_fixture = use_local_fixture,
-        self.stop_at_image = stop_at_image,
-        self.output_directory = output_directory,
-        self.focus_position = focus_position,
-        self.suppress_non_focal = suppress_non_focal,
-        self.animate_focal = animate_focal,
-        self.grid_images = grid_images,
-        self.grid_model = grid_model,
-        self.xml_model = xml_model,
-        self.image_data_output_item = image_data_output_item,
+        self.compilation = compilation
+        self.compilation_instructions = compilation_instructions
+        self.pinning_matrices = pinning_matrices
+        self.use_local_fixture = use_local_fixture
+        self.stop_at_image = stop_at_image
+        self.output_directory = output_directory
+        self.focus_position = focus_position
+        self.suppress_non_focal = suppress_non_focal
+        self.animate_focal = animate_focal
+        self.grid_images = grid_images
+        self.grid_model = grid_model
+        self.xml_model = xml_model
+        self.image_data_output_item = image_data_output_item
         self.image_data_output_measure = image_data_output_measure
 
         super(AnalysisModel, self).__init__()

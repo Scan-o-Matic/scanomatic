@@ -83,13 +83,6 @@ class FirstPassResults(object):
         return self._meta_data
 
     @property
-    def analysis_model(self):
-
-        return AnalysisModelFactory.create(
-            first_pass_file=self._file_path
-        )
-
-    @property
     def plates(self):
 
         return self[-1].plates
