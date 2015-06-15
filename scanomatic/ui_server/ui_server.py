@@ -194,6 +194,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         if request.args.get("run"):
 
+            if not rpc_client.online:
+                return jsonify(success=False, reason="Scan-o-Matic server offline")
+
             path = request.values.get('path')
             is_local = bool(int(request.values.get('local')))
             fixture=request.values.get("fixture")
@@ -216,7 +219,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/fixtures/<name>")
     def _fixture_data(name=None):
-        if rpc_client.online and name in rpc_client.get_fixtures():
+        if not rpc_client.online:
+            return jsonify(success=False, reason="Scan-o-Matic server offline")
+        elif name in rpc_client.get_fixtures():
             path = Paths().get_fixture_path(name)
             try:
                 fixture = tuple(FixtureFactory.serializer.load(path))[0]
@@ -234,9 +239,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if request.args.get("names"):
 
             if rpc_client.online:
-                return jsonify(fixtures=rpc_client.get_fixtures())
+                return jsonify(fixtures=rpc_client.get_fixtures(), success=True)
             else:
-                return jsonify(fixtures=[])
+                return jsonify(fixtures=[], success=False, reason="Scan-o-Matic server offline")
         elif request.args.get("remove"):
 
             name = Paths().get_fixture_name(request.values.get("name"))
@@ -256,6 +261,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return jsonify(success=True,reason="Happy")
 
         elif request.args.get("update") or request.args.get("create"):
+
+            if not rpc_client.online:
+                return jsonify(success=False, reason="Scan-o-Matic server offline")
 
             save_action = SaveActions(int(bool(request.args.get("update", 0, type=int))))
 
