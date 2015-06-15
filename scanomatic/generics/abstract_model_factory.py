@@ -10,7 +10,10 @@ import cPickle
 
 
 class AbstractModelFactory(object):
+
     MODEL = Model
+
+    _LOGGER = None
     _SUB_FACTORIES = dict()
     STORE_SECTION_HEAD = tuple()
     STORE_SECTION_SERIALIZERS = dict()
@@ -18,6 +21,16 @@ class AbstractModelFactory(object):
     def __new__(cls, *args):
 
         raise Exception("This class is static, can't be instantiated")
+
+    @decorators.class_property
+    def logger(cls):
+        """
+        :rtype: scanomatic.io.logger.Logger
+        """
+        if cls._LOGGER is None:
+            cls._LOGGER = Logger(cls.__name__)
+
+        return cls._LOGGER
 
     # noinspection PyMethodParameters
     @decorators.class_property
@@ -53,25 +66,40 @@ class AbstractModelFactory(object):
 
         :rtype : scanomatic.genercs.model.Model
         """
-        for key in settings:
-            tuple_key = (key,)
-            if (settings[key] is not None and
-                    tuple_key in cls.STORE_SECTION_SERIALIZERS and
-                    isinstance(cls.STORE_SECTION_SERIALIZERS[tuple_key], AbstractModelFactory) and
-                    not isinstance(settings[key], AbstractModelFactory)):
+        valid_keys = cls.default_model.keys()
 
-                settings[key] = cls.STORE_SECTION_SERIALIZERS[tuple_key].create(**settings[key])
+        cls.drop_keys(settings, valid_keys)
+        cls.enforce_serializer_type(settings, set(valid_keys).union(cls.STORE_SECTION_SERIALIZERS.keys()))
 
         return cls.MODEL(**settings)
 
+    @decorators.class_property
+    def default_model(cls):
+        """
+        :param cls:
+        :rtype: scanomatic.genercs.model.Model
+        """
+        return  cls.MODEL()
+
     @classmethod
-    def enforce_serializer_type(cls, settings, keys):
+    def drop_keys(cls, settings, valid_keys):
+
+        keys = settings.keys()
+        for key in keys:
+            if key not in valid_keys:
+                cls.logger.warning("Removing key \"{0}\" from {1} creation, since not recognized".format(
+                    key, cls.MODEL))
+                del settings[key]
+
+    @classmethod
+    def enforce_serializer_type(cls, settings, keys=None):
         """Especially good for enums
 
         :param settings:
         :param keys:
         :return:
         """
+
         for key in keys:
             if key in settings and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[(key,)]):
                 try:
