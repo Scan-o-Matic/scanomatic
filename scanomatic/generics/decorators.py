@@ -75,10 +75,8 @@ def class_property(func):
 
     if not isinstance(func, (classmethod, staticmethod)):
 
-        @wraps(func)
-        def wrapper():
-                return _ClassPropertyDescriptor(classmethod(func))
-        return wrapper
+        return _ClassPropertyDescriptor(classmethod(func))
+
     else:
         return _ClassPropertyDescriptor(func)
 

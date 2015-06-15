@@ -66,10 +66,10 @@ class AbstractModelFactory(object):
 
         :rtype : scanomatic.genercs.model.Model
         """
-        valid_keys = cls.default_model.keys()
+        valid_keys = tuple(cls.default_model.keys())
 
         cls.drop_keys(settings, valid_keys)
-        cls.enforce_serializer_type(settings, set(valid_keys).union(cls.STORE_SECTION_SERIALIZERS.keys()))
+        cls.enforce_serializer_type(settings, set(valid_keys).intersection(cls.STORE_SECTION_SERIALIZERS.keys()))
 
         return cls.MODEL(**settings)
 
@@ -87,8 +87,8 @@ class AbstractModelFactory(object):
         keys = settings.keys()
         for key in keys:
             if key not in valid_keys:
-                cls.logger.warning("Removing key \"{0}\" from {1} creation, since not recognized".format(
-                    key, cls.MODEL))
+                cls.logger.warning("Removing key \"{0}\" from {1} creation, since not among {2}".format(
+                    key, cls.MODEL, tuple(valid_keys)))
                 del settings[key]
 
     @classmethod

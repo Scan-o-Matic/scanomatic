@@ -19,7 +19,7 @@ ITEMS = Enum("ITEMS", names=("Cell", "Blob", "Background"))
 
 class AnalysisModel(model.Model):
 
-    def __init__(self, compilation="", compilation_instructions="",
+    def __init__(self, compilation="", compile_instructions="",
                  pinning_matrices=((32, 48), (32, 48), (32, 48), (32, 48)),
                  use_local_fixture=False,
                  stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
@@ -33,7 +33,7 @@ class AnalysisModel(model.Model):
             xml_model = XMLModel()
 
         self.compilation = compilation
-        self.compilation_instructions = compilation_instructions
+        self.compile_instructions = compile_instructions
         self.pinning_matrices = pinning_matrices
         self.use_local_fixture = use_local_fixture
         self.stop_at_image = stop_at_image
