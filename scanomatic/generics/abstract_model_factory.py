@@ -51,156 +51,173 @@ class AbstractModelFactory(object):
             """
             return  cls.MODEL()
 
-        def get_sub_factory(cls, model):
+    @classmethod
+    def get_sub_factory(cls, model):
 
-            model_type = type(model)
-            if model_type not in cls._SUB_FACTORIES:
-                return AbstractModelFactory
-            return cls._SUB_FACTORIES[model_type]
+        model_type = type(model)
+        if model_type not in cls._SUB_FACTORIES:
+            return AbstractModelFactory
+        return cls._SUB_FACTORIES[model_type]
 
-        def _verify_correct_model(cls, model):
+    @classmethod
+    def _verify_correct_model(cls, model):
 
-            if not isinstance(model, cls.MODEL):
-                raise TypeError("Wrong model for factory {1} is not a {0}".format(
-                    cls.MODEL, model))
+        if not isinstance(model, cls.MODEL):
+            raise TypeError("Wrong model for factory {1} is not a {0}".format(
+                cls.MODEL, model))
+
+        return True
+
+    @classmethod
+    def create(cls, **settings):
+
+        """
+
+        :rtype : scanomatic.genercs.model.Model
+        """
+        valid_keys = tuple(cls.default_model.keys())
+
+        cls.drop_keys(settings, valid_keys)
+        cls.enforce_serializer_type(settings, set(valid_keys).intersection(cls.STORE_SECTION_SERIALIZERS.keys()))
+
+        return cls.MODEL(**settings)
+
+    @classmethod
+    def drop_keys(cls, settings, valid_keys):
+
+        keys = settings.keys()
+        for key in keys:
+            if key not in valid_keys:
+                cls.logger.warning("Removing key \"{0}\" from {1} creation, since not among {2}".format(
+                    key, cls.MODEL, tuple(valid_keys)))
+                del settings[key]
+
+    @classmethod
+    def enforce_serializer_type(cls, settings, keys=None):
+        """Especially good for enums
+
+        :param settings:
+        :param keys:
+        :return:
+        """
+
+        for key in keys:
+            if key in settings and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[(key,)]):
+                try:
+                    settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)](settings[key])
+                except (AttributeError, ValueError):
+                    try:
+                        settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)][settings[key]]
+                    except (AttributeError, KeyError, IndexError):
+                        pass
+
+    @classmethod
+    def update(cls, model, **settings):
+
+        for parameter, value in settings.items():
+
+            if parameter in model:
+
+                setattr(model, parameter, value)
+
+    @classmethod
+    def copy(cls, model):
+
+        if cls._verify_correct_model(model):
+            return cls.serializer.load_serialized_object(
+                copy.deepcopy(
+                    cls.serializer.serialize(model)))
+
+    @classmethod
+    def validate(cls, model):
+
+        if cls._verify_correct_model(model):
+            return all(v is True for v in cls._get_validation_results(model))
+
+        return False
+
+    @classmethod
+    def get_invalid(cls, model):
+
+        return (v for v in set(cls._get_validation_results(model))
+                if v is not True)
+
+    @classmethod
+    def get_invalid_names(cls, model):
+
+        return (v.name for v in cls.get_invalid(model))
+
+    @classmethod
+    def _get_validation_results(cls, model):
+
+        return (getattr(cls, attr)(model) for attr in dir(cls) if attr.startswith("_validate"))
+
+    @classmethod
+    def set_invalid_to_default(cls, model):
+
+        if cls._verify_correct_model(model):
+            cls.set_default(model, fields=tuple(cls.get_invalid(model)))
+
+    @classmethod
+    def set_default(cls, model, fields=None):
+
+        if cls._verify_correct_model(model):
+
+            default_model = cls.MODEL()
+
+            for attr, val in default_model:
+                if fields is None or getattr(default_model.FIELD_TYPES, attr) in fields:
+                    setattr(model, attr, val)
+
+    @classmethod
+    def clamp(cls, model):
+
+        pass
+
+    @classmethod
+    def _clamp(cls, model, min_model, max_model):
+
+        if (cls._verify_correct_model(model) and
+                cls._verify_correct_model(min_model) and
+                cls._verify_correct_model(max_model)):
+
+            for attr, val in model:
+                min_val = getattr(min_model, attr)
+                max_val = getattr(max_model, attr)
+
+                if min_val is not None and val < min_val:
+                    setattr(model, attr, min_val)
+                elif max_val is not None and val > max_val:
+                    setattr(model, attr, max_val)
+
+    @classmethod
+    def _correct_type_and_in_bounds(cls, model, attr, dtype, min_model_caller,
+                                    max_model_caller):
+
+        if not isinstance(getattr(model, attr), dtype):
+
+            return getattr(model.FIELD_TYPES, attr)
+
+        elif not AbstractModelFactory._in_bounds(
+                model,
+                min_model_caller(model, factory=cls),
+                max_model_caller(model, factory=cls),
+                attr):
+
+            return getattr(model.FIELD_TYPES, attr)
+
+        else:
 
             return True
 
-        def create(cls, **settings):
+    @classmethod
+    def _is_valid_submodel(cls, model, key):
 
-            """
-
-            :rtype : scanomatic.genercs.model.Model
-            """
-            valid_keys = tuple(cls.default_model.keys())
-
-            cls.drop_keys(settings, valid_keys)
-            cls.enforce_serializer_type(settings, set(valid_keys).intersection(cls.STORE_SECTION_SERIALIZERS.keys()))
-
-            return cls.MODEL(**settings)
-
-        def drop_keys(cls, settings, valid_keys):
-
-            keys = settings.keys()
-            for key in keys:
-                if key not in valid_keys:
-                    cls.logger.warning("Removing key \"{0}\" from {1} creation, since not among {2}".format(
-                        key, cls.MODEL, tuple(valid_keys)))
-                    del settings[key]
-
-        def enforce_serializer_type(cls, settings, keys=None):
-            """Especially good for enums
-
-            :param settings:
-            :param keys:
-            :return:
-            """
-
-            for key in keys:
-                if key in settings and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[(key,)]):
-                    try:
-                        settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)](settings[key])
-                    except (AttributeError, ValueError):
-                        try:
-                            settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)][settings[key]]
-                        except (AttributeError, KeyError, IndexError):
-                            pass
-
-        def update(cls, model, **settings):
-
-            for parameter, value in settings.items():
-
-                if parameter in model:
-
-                    setattr(model, parameter, value)
-
-        def copy(cls, model):
-
-            if cls._verify_correct_model(model):
-                return cls.serializer.load_serialized_object(
-                    copy.deepcopy(
-                        cls.serializer.serialize(model)))
-
-        def validate(cls, model):
-
-            if cls._verify_correct_model(model):
-                return all(v is True for v in cls._get_validation_results(model))
-
-            return False
-
-        def get_invalid(cls, model):
-
-            return (v for v in set(cls._get_validation_results(model))
-                    if v is not True)
-
-        def get_invalid_names(cls, model):
-
-            return (v.name for v in cls.get_invalid(model))
-
-        def _get_validation_results(cls, model):
-
-            return (getattr(cls, attr)(model) for attr in dir(cls) if attr.startswith("_validate"))
-
-        def set_invalid_to_default(cls, model):
-
-            if cls._verify_correct_model(model):
-                cls.set_default(model, fields=tuple(cls.get_invalid(model)))
-
-        def set_default(cls, model, fields=None):
-
-            if cls._verify_correct_model(model):
-
-                default_model = cls.MODEL()
-
-                for attr, val in default_model:
-                    if fields is None or getattr(default_model.FIELD_TYPES, attr) in fields:
-                        setattr(model, attr, val)
-
-        def clamp(cls, model):
-
-            pass
-
-        def _clamp(cls, model, min_model, max_model):
-
-            if (cls._verify_correct_model(model) and
-                    cls._verify_correct_model(min_model) and
-                    cls._verify_correct_model(max_model)):
-
-                for attr, val in model:
-                    min_val = getattr(min_model, attr)
-                    max_val = getattr(max_model, attr)
-
-                    if min_val is not None and val < min_val:
-                        setattr(model, attr, min_val)
-                    elif max_val is not None and val > max_val:
-                        setattr(model, attr, max_val)
-
-        def _correct_type_and_in_bounds(cls, model, attr, dtype, min_model_caller,
-                                        max_model_caller):
-
-            if not isinstance(getattr(model, attr), dtype):
-
-                return getattr(model.FIELD_TYPES, attr)
-
-            elif not AbstractModelFactory._in_bounds(
-                    model,
-                    min_model_caller(model, factory=cls),
-                    max_model_caller(model, factory=cls),
-                    attr):
-
-                return getattr(model.FIELD_TYPES, attr)
-
-            else:
-
-                return True
-
-        def _is_valid_submodel(cls, model, key):
-
-            sub_model = getattr(model, key)
-            sub_model_type = type(sub_model)
-            if isinstance(sub_model, Model) and sub_model_type in cls._SUB_FACTORIES:
-                return cls._SUB_FACTORIES[sub_model_type].validate(sub_model)
-            return False
+        sub_model = getattr(model, key)
+        sub_model_type = type(sub_model)
+        if isinstance(sub_model, Model) and sub_model_type in cls._SUB_FACTORIES:
+            return cls._SUB_FACTORIES[sub_model_type].validate(sub_model)
+        return False
 
     @staticmethod
     def _in_bounds(model, lower_bounds, upper_bounds, attr):
