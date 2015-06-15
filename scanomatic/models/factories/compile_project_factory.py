@@ -2,6 +2,7 @@ __author__ = 'martin'
 
 import os
 import re
+import glob
 
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 from scanomatic.models import compile_project_model
@@ -114,6 +115,29 @@ class CompileProjectFactory(AbstractModelFactory):
         model = super(CompileProjectFactory, cls).create(**settings)
         cls.enforce_subfactory_list(model)
         return model
+
+    @classmethod
+    def dict_from_path_and_fixture(cls, path, fixture=None, is_local=None):
+
+        if path:
+            path = os.path.abspath(path)
+        else:
+            return {}
+
+        if is_local is None:
+            is_local = not fixture
+
+        image_path = os.path.join(path, "*.tiff")
+
+        images = [{'path': path} for path in sorted(glob.glob(image_path))]
+
+        return {
+            'compile_action': compile_project_model.COMPILE_ACTION.Initiate.name,
+            'images': images,
+            'fixture_type': is_local and compile_project_model.FIXTURE.Local.name or compile_project_model.FIXTURE.Global.name,
+            'fixture_name': fixture,
+            'path': path}
+
 
     @classmethod
     def enforce_subfactory_list(cls, model):

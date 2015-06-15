@@ -21,6 +21,7 @@ from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateMod
 from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 
 _url = None
 _logger = Logger("UI-server")
@@ -163,30 +164,11 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/")
     def _root():
-        return """<!DOCTYPE: html>
-        <html>
-        <head>
-            <link rel="stylesheet" type="text/css" href="style/main.css">
-            <title>Scan-o-Matic</title>
-            <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-        </head>
-        <body>
-        <img id='logo' src='images/help_logo.png'>
-        <script>
-        $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
-        </script>
-        <ul>
-        <li><a href="/help">Help</a></li>
-        <li><a href="/wiki">Wiki</a></li>
-        <li><a href="/fixtures">Fixtures</a></li>
-        </ul>
-        </body>
-        </html>
-        """
+        return send_from_directory(Paths().ui_root, Paths().ui_root_file)
 
     @app.route("/help")
     def _help():
-        return send_from_directory(Paths().ui_root, Paths().help_file)
+        return send_from_directory(Paths().ui_root, Paths().ui_help_file)
 
     @app.route("/wiki")
     def _wiki():
@@ -207,9 +189,39 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if js:
             return send_from_directory(Paths().ui_js, js)
 
+    @app.route("/compile", methods=['get', 'post'])
+    def _compile():
+
+        if request.args.get("run"):
+
+            if not rpc_client.online:
+                return jsonify(success=False, reason="Scan-o-Matic server offline")
+
+            path = request.values.get('path')
+            is_local = bool(int(request.values.get('local')))
+            fixture=request.values.get("fixture")
+            _logger.info("Attempting to compile on path {0}, as {1} fixture{2}".format(
+                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture)))
+            return jsonify(success=rpc_client.create_compile_project_job(
+                CompileProjectFactory.dict_from_path_and_fixture(
+                    path, fixture=fixture , is_local=is_local)))
+
+        return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
+
+    @app.route("/grayscales", methods=['post', 'get'])
+    def _grayscales():
+
+        if request.args.get("names"):
+
+            return jsonify(grayscales=getGrayscales())
+
+        return ""
+
     @app.route("/fixtures/<name>")
     def _fixture_data(name=None):
-        if rpc_client.online and name in rpc_client.get_fixtures():
+        if not rpc_client.online:
+            return jsonify(success=False, reason="Scan-o-Matic server offline")
+        elif name in rpc_client.get_fixtures():
             path = Paths().get_fixture_path(name)
             try:
                 fixture = tuple(FixtureFactory.serializer.load(path))[0]
@@ -221,24 +233,15 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         else:
             return jsonify(success=False, reason="Unknown fixture")
 
-    @app.route("/grayscales", methods=['post', 'get'])
-    def _grayscales():
-
-        if request.args.get("names"):
-
-            return jsonify(grayscales=getGrayscales())
-
-        return ""
-
     @app.route("/fixtures", methods=['post', 'get'])
     def _fixtures():
         global _TOO_LARGE_GRAYSCALE_AREA
         if request.args.get("names"):
 
             if rpc_client.online:
-                return jsonify(fixtures=rpc_client.get_fixtures())
+                return jsonify(fixtures=rpc_client.get_fixtures(), success=True)
             else:
-                return jsonify(fixtures=[])
+                return jsonify(fixtures=[], success=False, reason="Scan-o-Matic server offline")
         elif request.args.get("remove"):
 
             name = Paths().get_fixture_name(request.values.get("name"))
@@ -258,6 +261,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return jsonify(success=True,reason="Happy")
 
         elif request.args.get("update") or request.args.get("create"):
+
+            if not rpc_client.online:
+                return jsonify(success=False, reason="Scan-o-Matic server offline")
 
             save_action = SaveActions(int(bool(request.args.get("update", 0, type=int))))
 
@@ -388,7 +394,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             _logger.info("Sending fixture image {0}".format(image))
             return send_from_directory(Paths().fixtures, image)
 
-        return send_from_directory(Paths().ui_root, Paths().fixture_file)
+        return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)
 
     try:
         if is_local:

@@ -81,8 +81,10 @@ class Paths(SingeltonOneInit):
         self.ui_root = os.path.join(self.root, "ui_server")
         self.ui_css = os.path.join(self.ui_root, "style")
         self.ui_js = os.path.join(self.ui_root, "js")
-        self.help_file = "help.html"
-        self.fixture_file = "fixture.html"
+        self.ui_help_file = "help.html"
+        self.ui_fixture_file = "fixture.html"
+        self.ui_root_file = 'root.html'
+        self.ui_compile_file = 'compile.html'
 
         self.marker = os.path.join(self.images, "orientation_marker_150dpi.png")
         self.martin = os.path.join(self.images, "martin3.png")
