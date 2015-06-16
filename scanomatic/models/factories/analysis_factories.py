@@ -119,6 +119,16 @@ class AnalysisModelFactory(AbstractModelFactory):
     }
 
     @classmethod
+    def create(cls, **settings):
+        """
+
+
+        :rtype : scanomatic.models.analysis_model.AnalysisModel
+        """
+        return super(cls, AnalysisModelFactory).create()
+
+
+    @classmethod
     def set_absolute_paths(cls, model):
         """
 

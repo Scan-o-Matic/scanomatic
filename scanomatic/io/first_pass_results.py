@@ -8,9 +8,9 @@ from scanomatic.models.factories.fixture_factories import FixtureFactory
 FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
 
 
-class FirstPassResults(object):
+class CompilationResults(object):
 
-    def __init__(self, path="", sort_mode=FIRST_PASS_SORTING.Time):
+    def __init__(self, compilation_path, compile_instructions_path, sort_mode=FIRST_PASS_SORTING.Time):
 
         self._file_path = path
         self._meta_data = None
@@ -74,7 +74,7 @@ class FirstPassResults(object):
         other_image_models += self._image_models
         other_image_models = sorted(other_image_models, key=lambda x: x.time)
 
-        return FirstPassResults.create_from_data(self._file_path, self._meta_data, other_image_models,
+        return CompilationResults.create_from_data(self._file_path, self._meta_data, other_image_models,
                                                  self._used_models)
 
     @property

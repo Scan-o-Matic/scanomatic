@@ -15,7 +15,6 @@ __status__ = "Development"
 #
 
 import os
-from ConfigParser import ConfigParser
 import time
 
 #
@@ -29,6 +28,7 @@ import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 import scanomatic.io.first_pass_results as first_pass_results
 
 
@@ -54,7 +54,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._allowed_calls['setup'] = self.setup
 
-        #TODO: Update to new compile instructions
+        # TODO: Update to new compile instructions
         if job.content_model:
             self._analysis_job = AnalysisModelFactory.create(**job.content_model)
         else:
@@ -157,7 +157,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
 
-        self._first_pass_results = first_pass_results.FirstPassResults(self._analysis_job.first_pass_file)
+        self._first_pass_results = first_pass_results.CompilationResults(
+            self._analysis_job.compilation, self._analysis_job.compile_instructions)
 
         self._remove_files_from_previous_analysis()
 
@@ -224,7 +225,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._logger.info("Setup got {0} {1}".format(args, kwargs))
 
-        if self._analysis_job.analysis_config_file:
+        if self._analysis_job.compile_instructions:
             self._update_job_from_config_file()
 
         self._allow_start = AnalysisModelFactory.validate(self._analysis_job)
@@ -239,15 +240,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def _update_job_from_config_file(self):
 
-        config = ConfigParser(allow_no_value=True)
-
         try:
-            config.readfp(open(self._analysis_job.analysis_config_file))
-        except IOError:
-            self._logger.warning("There was no config file at {0}".format(self._analysis_job.analysis_config_file) +
-                                 "(if use of analysis config file wasn't intended, please disregard this warning)")
-            self._analysis_job.analysis_config_file = None
-            return
-
-        AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Analysis")))
-        AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Output")))
+            instructions_model = tuple(CompileProjectFactory.serializer.load(self._analysis_job.compile_instructions))[0]
+        except (IOError, IndexError, ValueError):
+            self._logger.warning("There was no compile instructions at {0}.".format(
+                self._analysis_job.compile_instructions) +
+                " (Everything will run assuming defaults)")
+            self._analysis_job.compile_instructions = None
+        else:
+            # TODO: Update info where needed and also allow for reading other conf file?
+            pass
