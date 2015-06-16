@@ -232,3 +232,24 @@ class CompileImageAnalysisFactory(AbstractModelFactory):
             return True
         else:
             return model.FIELD_TYPES.image
+
+    @classmethod
+    def copy_iterable_of_model_update_indices(cls, iterable):
+
+        models = cls.copy_iterable_of_model(iterable)
+        for (index, m) in enumerate(sorted(models, key=lambda x: x.time)):
+            m.index = index
+            yield m
+
+    @classmethod
+    def copy_iterable_of_model_update_time(cls, iterable):
+
+        models = cls.copy_iterable_of_model(iterable)
+        inject_time = 0
+        previous_time = 0
+        for (index, m) in enumerate(models):
+            m.index = index
+            if m.time < previous_time:
+                inject_time += previous_time - m.time
+            m.time += inject_time
+            yield m

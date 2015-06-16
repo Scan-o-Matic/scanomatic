@@ -7,6 +7,7 @@ import os
 from enum import Enum
 from ConfigParser import ConfigParser
 import cPickle
+from types import GeneratorType
 
 
 class AbstractModelFactory(object):
@@ -127,6 +128,15 @@ class AbstractModelFactory(object):
             return cls.serializer.load_serialized_object(
                 copy.deepcopy(
                     cls.serializer.serialize(model)))
+
+    @classmethod
+    def copy_iterable_of_model(cls, models):
+
+        gen = (cls.copy(model) for model in models)
+        if isinstance(models, GeneratorType):
+            return gen
+        else:
+            return type(models)(gen)
 
     @classmethod
     def validate(cls, model):

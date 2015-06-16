@@ -74,7 +74,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
     @property
     def total(self):
         if self._get_is_analysing_images():
-            return self._first_pass_results.meta_data.number_of_scans
+            return self._first_pass_results.compile_instructions.number_of_scans
         return -1
 
     def _get_is_analysing_images(self):
@@ -187,9 +187,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             raise StopIteration
 
-        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.meta_data)
+        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.compile_instructions)
 
-        self._xmlWriter.write_header(self._first_pass_results.meta_data, self._first_pass_results.plates)
+        self._xmlWriter.write_header(self._first_pass_results.compile_instructions, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
 
         index_for_gridding = self._get_index_for_gridding()
