@@ -104,8 +104,8 @@ class AnalysisModelFactory(AbstractModelFactory):
     }
 
     STORE_SECTION_SERIALIZERS = {
-        ('first_pass_file',): str,
-        ('analysis_config_file',): str,
+        ('compilation',): str,
+        ('compile_instructions',): str,
         ('pinning_matrices',): list,
         ('use_local_fixture',): bool,
         ('stop_at_image',): int,
@@ -119,10 +119,24 @@ class AnalysisModelFactory(AbstractModelFactory):
     }
 
     @classmethod
-    def set_absolute_paths(cls, model):
+    def create(cls, **settings):
+        """
 
-        base_path = os.path.dirname(model.first_pass_file)
-        model.analysis_config_file = cls._get_absolute_path(model.analysis_config_file, base_path)
+
+        :rtype : scanomatic.models.analysis_model.AnalysisModel
+        """
+        return super(cls, AnalysisModelFactory).create(**settings)
+
+
+    @classmethod
+    def set_absolute_paths(cls, model):
+        """
+
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
+
+        base_path = os.path.dirname(model.compilation)
+        model.compile_instructions = cls._get_absolute_path(model.compile_instructions, base_path)
         model.output_directory = cls._get_absolute_path(model.output_directory, base_path)
 
     @classmethod
@@ -133,43 +147,61 @@ class AnalysisModelFactory(AbstractModelFactory):
         return path
 
     @classmethod
-    def _validate_first_pass_file(cls, model):
+    def _validate_compilation_file(cls, model):
+        """
 
-        if cls._is_file(model.first_pass_file) and os.path.abspath(model.first_pass_file) == model.first_pass_file:
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
+        if cls._is_file(model.compilation) and os.path.abspath(model.compilation) == model.compilation:
             return True
-        return model.FIELD_TYPES.first_pass_file
+        return model.FIELD_TYPES.compilation
 
     @classmethod
-    def _validate_analysis_config_file(cls, model):
+    def _validate_compilation_instructions_file(cls, model):
+        """
 
-        if model.analysis_config_file in (None, "") or AbstractModelFactory._is_file(model.analysis_config_file):
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
+        if model.compile_instructions in (None, "") or AbstractModelFactory._is_file(model.compile_instructions):
             return True
-        return model.FIELD_TYPES.analysis_config_file
+        return model.FIELD_TYPES.compile_instructions
 
     @classmethod
     def _validate_pinning_matrices(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if AbstractModelFactory._is_pinning_formats(model.pinning_matrices):
             return True
         return model.FIELD_TYPES.pinning_matrices
 
     @classmethod
     def _validate_use_local_fixture(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if isinstance(model.use_local_fixture, bool):
             return True
         return model.FIELD_TYPES.use_local_fixture
 
     @classmethod
     def _validate_stop_at_image(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if isinstance(model.stop_at_image, int):
             return True
         return model.FIELD_TYPES.stop_at_image
 
     @classmethod
     def _validate_output_directory(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if (model.output_directory is None or isinstance(model.output_directory, str) and
                 os.sep not in model.output_directory):
             return True
@@ -177,7 +209,10 @@ class AnalysisModelFactory(AbstractModelFactory):
 
     @classmethod
     def _validate_focus_position(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if model.focus_position is None:
             return True
 
@@ -197,21 +232,30 @@ class AnalysisModelFactory(AbstractModelFactory):
 
     @classmethod
     def _validate_suppress_non_focal(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if isinstance(model.suppress_non_focal, bool):
             return True
         return model.FIELD_TYPES.suppress_non_focal
 
     @classmethod
     def _validate_animate_focal(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if isinstance(model.animate_focal, bool):
             return True
         return model.FIELD_TYPES.animate_focal
 
     @classmethod
     def _validate_grid_images(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if model.grid_images is None or (
                 cls._is_tuple_or_list(model.grid_images) and
                 all(isinstance(val, int) and 0 <= val for val in model.grid_images)):
@@ -220,14 +264,20 @@ class AnalysisModelFactory(AbstractModelFactory):
 
     @classmethod
     def _validate_grid_model(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if cls._is_valid_submodel(model, "grid_model"):
             return True
         return model.FIELD_TYPES.grid_model
 
     @classmethod
     def _validate_xml_model(cls, model):
+        """
 
+        :type model: scanomatic.models.analysis_model.AnalysisModel
+        """
         if cls._is_valid_submodel(model, "xml_model"):
             return True
         return model.FIELD_TYPES.xml_model

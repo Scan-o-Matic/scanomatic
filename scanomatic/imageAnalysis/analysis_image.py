@@ -20,8 +20,6 @@ import numpy as np
 #
 
 import grid_array
-import first_pass_image
-from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 
@@ -32,6 +30,18 @@ from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 
 
 # noinspection PyTypeChecker
+def _get_init_features(grid_arrays):
+
+    def length_needed(keys):
+
+        return max(keys) + 1
+
+    if grid_arrays:
+        return [None] * length_needed(grid_arrays.keys())
+    else:
+        return []
+
+
 class ProjectImage(object):
 
     def __init__(self, analysis_model, scanning_meta_data):
@@ -39,42 +49,16 @@ class ProjectImage(object):
         self._analysis_model = analysis_model
         self._scanning_meta_data = scanning_meta_data
         self._logger = Logger("Analysis Image")
-        self.fixture = self._load_fixture()
 
         self._im_loaded = False
         self.im = None
 
         self._grid_arrays = self._get_grid_arrays()
-        self.features = self._get_init_features(self._grid_arrays)
-
-    def _get_init_features(self, grid_arrays):
-
-        def length_needed(keys):
-
-            return max(keys) + 1
-
-        if grid_arrays:
-            return [None] * length_needed(grid_arrays.keys())
-        else:
-            return []
+        self.features = _get_init_features(self._grid_arrays)
 
     @property
     def active_plates(self):
         return len(self._grid_arrays)
-
-    def _load_fixture(self):
-
-        paths = Paths()
-        if self._analysis_model.use_local_fixture or not self._scanning_meta_data.fixture:
-            fixture_name = paths.experiment_local_fixturename
-            fixture_directory = os.path.dirname(self._analysis_model.first_pass_file)
-        else:
-            fixture_name = paths.get_fixture_path(self._scanning_meta_data.fixture, only_name=True)
-            fixture_directory = None
-
-        return first_pass_image.FixtureImage(
-            fixture_name,
-            fixture_directory=fixture_directory)
 
     def __getitem__(self, key):
 
@@ -88,7 +72,7 @@ class ProjectImage(object):
 
             if pinning and self._plate_is_analysed(index):
 
-                grid_arrays[index] = grid_array.GridArray(index, pinning, self.fixture, self._analysis_model)
+                grid_arrays[index] = grid_array.GridArray(index, pinning, self._analysis_model)
 
             else:
 
@@ -108,21 +92,25 @@ class ProjectImage(object):
 
     def set_grid(self, image_model, save_name=None):
 
+        """
+
+        :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
         if save_name is None:
             save_name = os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
 
-        self.load_image(image_model.path)
+        self.load_image(image_model.image.path)
 
         if self._im_loaded:
 
             for index in self._grid_arrays:
 
-                plate_models = [plate_model for plate_model in image_model.plates if plate_model.index == index]
+                plate_models = [plate_model for plate_model in image_model.fixture.plates if plate_model.index == index]
                 if plate_models:
                     plate_model = plate_models[0]
                 else:
                     self._logger.error("Expected to find a plate model with index {0}, but only have {1}".format(
-                        index, [plate_model.index for plate_model in image_model.plates]))
+                        index, [plate_model.index for plate_model in image_model.fixture.plates]))
                     continue
 
                 im = self.get_im_section(plate_model)
@@ -252,20 +240,19 @@ class ProjectImage(object):
 
     def get_analysis(self, image_model):
 
-        self.load_image(image_model.path)
+        """
+
+        :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
+        self.load_image(image_model.image.path)
 
         if self._im_loaded is False:
             return None
 
-        if not image_model.grayscale_values:
+        if not image_model.fixture.grayscale.values:
             return None
 
-        if not image_model.grayscale_targets:
-            image_model.grayscale_targets = self.fixture['grayscaleTarget']
-            if not image_model.grayscale_targets:
-                return None
-
-        for plate in image_model.plates:
+        for plate in image_model.fixture.plates:
 
             if plate.index in self._grid_arrays:
 

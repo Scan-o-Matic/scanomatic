@@ -4,6 +4,7 @@ import socket
 import sys
 import os
 from time import sleep
+from functools import  wraps
 
 from scanomatic.io.app_config import Config
 from scanomatic.generics.singleton import SingeltonOneInit
@@ -22,6 +23,8 @@ _RPC_SERVER = None
 
 
 def _verify_admin(f):
+
+    @wraps(f)
     def _verify_global_admin(interface_builder, user_id, *args, **kwargs):
 
         global _SOM_SERVER
@@ -551,6 +554,8 @@ class Interface_Builder(SingeltonOneInit):
         analysis_model = AnalysisModelFactory.create(**analysis_model)
         if not AnalysisModelFactory.validate(analysis_model):
             _SOM_SERVER.logger.warning("Attempted to create analysis with invalid parameters")
+            _SOM_SERVER.logger.warning("Invalid settings: {0}".format(
+                tuple(AnalysisModelFactory.get_invalid_names(analysis_model))))
             return False
 
         return _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)

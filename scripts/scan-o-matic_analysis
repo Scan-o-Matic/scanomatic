@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from argparse import ArgumentParser
-from scanomatic.io.first_pass_results import FirstPassResults
+from scanomatic.io.first_pass_results import CompilationResults
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 import scanomatic.io.rpc_client as rpc_client
 
@@ -12,14 +12,18 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="""Runs Scan-o-Matic image analyses""")
 
     parser.add_argument(
-        '-p', '--p', type=str, dest="path",
-        help='Path to first pass file')
+        '-p', '--path', type=str, dest="path",
+        help='Path to compilation file')
+
+    parser.add_argument(
+        '-i', '--instructions', type=str, dest='instructions',
+        help='Path to compilation instructions if non-default'
+    )
 
     args = parser.parse_args()
 
-    first_pass_file = FirstPassResults(args.path)
-
-    analysis_model = first_pass_file.analysis_model
+    analysis_model = AnalysisModelFactory.create(compilation=args.path,
+                                                 compilation_instructions=args.instructions)
 
     if AnalysisModelFactory.validate(analysis_model):
 

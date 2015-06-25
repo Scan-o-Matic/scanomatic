@@ -15,7 +15,6 @@ __status__ = "Development"
 #
 
 import os
-from ConfigParser import ConfigParser
 import time
 
 #
@@ -29,6 +28,7 @@ import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 import scanomatic.io.first_pass_results as first_pass_results
 
 
@@ -54,6 +54,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._allowed_calls['setup'] = self.setup
 
+        # TODO: Update to new compile instructions
         if job.content_model:
             self._analysis_job = AnalysisModelFactory.create(**job.content_model)
         else:
@@ -62,18 +63,19 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._focus_graph = None
         self._current_image_model = None
+        """:type : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
         self._analysis_needs_init = True
 
     @property
     def current_image_index(self):
         if self._current_image_model:
-            return self._current_image_model.index
+            return self._current_image_model.image.index
         return -1
 
     @property
     def total(self):
         if self._get_is_analysing_images():
-            return self._first_pass_results.meta_data.number_of_scans
+            return self._first_pass_results.total_number_of_images
         return -1
 
     def _get_is_analysing_images(self):
@@ -87,7 +89,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         # TODO: Verify this is correct, may underestimate progress
         if total and self._current_image_model:
-            return (total - self._current_image_model.index) / float(total + initiation_weight)
+            return (total - self.current_image_index) / float(total + initiation_weight)
 
         return 0.0
 
@@ -130,7 +132,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._stopping = True
             return True
 
-        self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.path))
+        self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.image.path))
 
         features = self._image.get_analysis(image_model)
 
@@ -156,7 +158,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
 
-        self._first_pass_results = first_pass_results.FirstPassResults(self._analysis_job.first_pass_file)
+        self._first_pass_results = first_pass_results.CompilationResults(
+            self._analysis_job.compilation, self._analysis_job.compile_instructions)
 
         self._remove_files_from_previous_analysis()
 
@@ -185,9 +188,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             raise StopIteration
 
-        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.meta_data)
+        self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.compile_instructions)
 
-        self._xmlWriter.write_header(self._first_pass_results.meta_data, self._first_pass_results.plates)
+        self._xmlWriter.write_header(self._first_pass_results.compile_instructions, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
 
         index_for_gridding = self._get_index_for_gridding()
@@ -223,7 +226,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._logger.info("Setup got {0} {1}".format(args, kwargs))
 
-        if self._analysis_job.analysis_config_file:
+        if self._analysis_job.compile_instructions:
             self._update_job_from_config_file()
 
         self._allow_start = AnalysisModelFactory.validate(self._analysis_job)
@@ -238,15 +241,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def _update_job_from_config_file(self):
 
-        config = ConfigParser(allow_no_value=True)
-
         try:
-            config.readfp(open(self._analysis_job.analysis_config_file))
-        except IOError:
-            self._logger.warning("There was no config file at {0}".format(self._analysis_job.analysis_config_file) +
-                                 "(if use of analysis config file wasn't intended, please disregard this warning)")
-            self._analysis_job.analysis_config_file = None
-            return
-
-        AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Analysis")))
-        AnalysisModelFactory.update(self._analysis_job, **dict(config.items("Output")))
+            instructions_model = tuple(CompileProjectFactory.serializer.load(self._analysis_job.compile_instructions))[0]
+        except (IOError, IndexError, ValueError):
+            self._logger.warning("There was no compile instructions at {0}.".format(
+                self._analysis_job.compile_instructions) +
+                " (Everything will run assuming defaults)")
+            self._analysis_job.compile_instructions = None
+        else:
+            # TODO: Update info where needed and also allow for reading other conf file?
+            pass

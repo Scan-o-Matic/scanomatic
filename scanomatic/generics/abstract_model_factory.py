@@ -7,10 +7,14 @@ import os
 from enum import Enum
 from ConfigParser import ConfigParser
 import cPickle
+from types import GeneratorType
 
 
 class AbstractModelFactory(object):
+
     MODEL = Model
+
+    _LOGGER = None
     _SUB_FACTORIES = dict()
     STORE_SECTION_HEAD = tuple()
     STORE_SECTION_SERIALIZERS = dict()
@@ -19,15 +23,34 @@ class AbstractModelFactory(object):
 
         raise Exception("This class is static, can't be instantiated")
 
-    # noinspection PyMethodParameters
-    @decorators.class_property
-    def serializer(cls):
+    class __metaclass__(type):
 
-        """
+        @property
+        def logger(cls):
+            """
+            :rtype: scanomatic.io.logger.Logger
+            """
+            if cls._LOGGER is None:
+                cls._LOGGER = Logger(cls.__name__)
 
-        :rtype : Serializer
-        """
-        return Serializer(cls)
+            return cls._LOGGER
+
+        @property
+        def serializer(cls):
+
+            """
+
+            :rtype : Serializer
+            """
+            return Serializer(cls)
+
+        @property
+        def default_model(cls):
+            """
+            :param cls:
+            :rtype: scanomatic.genercs.model.Model
+            """
+            return  cls.MODEL()
 
     @classmethod
     def get_sub_factory(cls, model):
@@ -53,25 +76,32 @@ class AbstractModelFactory(object):
 
         :rtype : scanomatic.genercs.model.Model
         """
-        for key in settings:
-            tuple_key = (key,)
-            if (settings[key] is not None and
-                    tuple_key in cls.STORE_SECTION_SERIALIZERS and
-                    isinstance(cls.STORE_SECTION_SERIALIZERS[tuple_key], AbstractModelFactory) and
-                    not isinstance(settings[key], AbstractModelFactory)):
+        valid_keys = tuple(cls.default_model.keys())
 
-                settings[key] = cls.STORE_SECTION_SERIALIZERS[tuple_key].create(**settings[key])
+        cls.drop_keys(settings, valid_keys)
+        cls.enforce_serializer_type(settings, set(valid_keys).intersection(cls.STORE_SECTION_SERIALIZERS.keys()))
 
         return cls.MODEL(**settings)
 
     @classmethod
-    def enforce_serializer_type(cls, settings, keys):
+    def drop_keys(cls, settings, valid_keys):
+
+        keys = tuple(settings.keys())
+        for key in keys:
+            if key not in valid_keys:
+                cls.logger.warning("Removing key \"{0}\" from {1} creation, since not among {2}".format(
+                    key, cls.MODEL, tuple(valid_keys)))
+                del settings[key]
+
+    @classmethod
+    def enforce_serializer_type(cls, settings, keys=None):
         """Especially good for enums
 
         :param settings:
         :param keys:
         :return:
         """
+
         for key in keys:
             if key in settings and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[(key,)]):
                 try:
@@ -98,6 +128,15 @@ class AbstractModelFactory(object):
             return cls.serializer.load_serialized_object(
                 copy.deepcopy(
                     cls.serializer.serialize(model)))
+
+    @classmethod
+    def copy_iterable_of_model(cls, models):
+
+        gen = (cls.copy(model) for model in models)
+        if isinstance(models, GeneratorType):
+            return gen
+        else:
+            return type(models)(gen)
 
     @classmethod
     def validate(cls, model):

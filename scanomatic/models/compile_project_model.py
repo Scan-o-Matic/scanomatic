@@ -20,12 +20,13 @@ class FIXTURE(Enum):
 
 class CompileInstructionsModel(Model):
 
-    def __init__(self, compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis, images=tuple(), path="",
+    def __init__(self, compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis, start_time=0.0, images=tuple(), path="",
                  start_condition="", fixture_type=FIXTURE.Local, fixture_name=None):
 
         self.compile_action = compile_action
         self.images = images
         self.path = path
+        self.start_time = start_time
         self.start_condition = start_condition
         self.fixture_type = fixture_type
         self.fixture_name = fixture_name
