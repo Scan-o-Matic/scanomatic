@@ -86,7 +86,7 @@ class AbstractModelFactory(object):
     @classmethod
     def drop_keys(cls, settings, valid_keys):
 
-        keys = settings.keys()
+        keys = tuple(settings.keys())
         for key in keys:
             if key not in valid_keys:
                 cls.logger.warning("Removing key \"{0}\" from {1} creation, since not among {2}".format(
