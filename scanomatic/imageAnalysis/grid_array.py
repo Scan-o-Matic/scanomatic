@@ -28,6 +28,7 @@ import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 import imageBasics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
+from scanomatic.imageAnalysis.grayscale import getGrayscale
 
 #
 # EXCEPTIONS
@@ -224,11 +225,10 @@ class GridCellSizes(object):
 
 class GridArray():
 
-    def __init__(self, image_identifier, pinning, fixture, analysis_model):
+    def __init__(self, image_identifier, pinning, analysis_model):
 
         self._paths = paths.Paths()
 
-        self.fixture = fixture
         self._identifier = _create_grid_array_identifier(image_identifier)
         self._analysis_model = analysis_model
         self._pinning_matrix = pinning
@@ -353,17 +353,21 @@ class GridArray():
 
     def analyse(self, im, image_model, save_grid_name=None):
 
+        """
+
+        :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
         self.watch_source = None
         self.watch_blob = None
         self.watch_results = None
 
-        self._identifier[0] = image_model.index
+        self._identifier[0] = image_model.image.index
 
         # noinspection PyBroadException
         try:
             transpose_polynomial = imageBasics.Image_Transpose(
-                sourceValues=image_model.grayscale_values,
-                targetValues=image_model.grayscale_targets)
+                sourceValues=image_model.fixture.grayscale.values,
+                targetValues=getGrayscale(image_model.fixture.grayscale.name))
 
         except Exception:
 
