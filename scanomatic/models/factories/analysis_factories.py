@@ -136,7 +136,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         """
 
         base_path = os.path.dirname(model.compilation)
-        model.analysis_config_file = cls._get_absolute_path(model.analysis_config_file, base_path)
+        model.compile_instructions = cls._get_absolute_path(model.compile_instructions, base_path)
         model.output_directory = cls._get_absolute_path(model.output_directory, base_path)
 
     @classmethod
@@ -164,7 +164,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         """
         if model.compile_instructions in (None, "") or AbstractModelFactory._is_file(model.compile_instructions):
             return True
-        return model.FIELD_TYPES.analysis_config_file
+        return model.FIELD_TYPES.compile_instructions
 
     @classmethod
     def _validate_pinning_matrices(cls, model):
