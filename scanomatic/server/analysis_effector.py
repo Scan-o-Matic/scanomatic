@@ -63,18 +63,19 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._focus_graph = None
         self._current_image_model = None
+        """:type : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
         self._analysis_needs_init = True
 
     @property
     def current_image_index(self):
         if self._current_image_model:
-            return self._current_image_model.index
+            return self._current_image_model.image.index
         return -1
 
     @property
     def total(self):
         if self._get_is_analysing_images():
-            return self._first_pass_results.compile_instructions.number_of_scans
+            return self._first_pass_results.total_number_of_images
         return -1
 
     def _get_is_analysing_images(self):
@@ -88,7 +89,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         # TODO: Verify this is correct, may underestimate progress
         if total and self._current_image_model:
-            return (total - self._current_image_model.index) / float(total + initiation_weight)
+            return (total - self.current_image_index) / float(total + initiation_weight)
 
         return 0.0
 
@@ -131,7 +132,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._stopping = True
             return True
 
-        self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.path))
+        self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.image.path))
 
         features = self._image.get_analysis(image_model)
 
