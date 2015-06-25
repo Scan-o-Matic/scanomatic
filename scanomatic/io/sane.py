@@ -17,6 +17,7 @@ __status__ = "Development"
 
 from subprocess import Popen, PIPE
 import re
+import os
 import copy
 from itertools import chain
 from enum import Enum
@@ -206,30 +207,37 @@ class SaneBase(object):
 
         if filename is not None:
             self.next_file_name = filename
+        else:
+            filename = self.next_file_name
 
-        if self.next_file_name:
+        if filename:
             self._logger.info("Scanning {0}".format(self.next_file_name))
 
+            returncode = -1
+
             try:
-                im = open(self.next_file_name, 'w')
+                with open(self.next_file_name, 'w') as im:
+                    if scanner:
+                        preprend_settings = {SCAN_FLAGS.Device: scanner}
+                    else:
+                        preprend_settings = None
+
+                    scan_query = self._get_scan_instructions(prepend=preprend_settings)
+                    self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
+
+                    scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
+                    _, stderr = scan_proc.communicate()
+
+                    returncode = scan_proc.returncode
+
             except IOError:
                 self._logger.error("Could not write to file: {0}".format(self.next_file_name))
-                return False
 
-            if scanner:
-                preprend_settings = {SCAN_FLAGS.Device: scanner}
             else:
-                preprend_settings = None
+                if returncode:
+                    os.remove(filename)
 
-            scan_query = self._get_scan_instructions(prepend=preprend_settings)
-            self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
-
-            scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
-            _, stderr = scan_proc.communicate()
-
-            im.close()
-
-            return scan_proc.returncode == 0
+            return returncode == 0
 
         else:
             return False
