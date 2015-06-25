@@ -125,7 +125,7 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :rtype : scanomatic.models.analysis_model.AnalysisModel
         """
-        return super(cls, AnalysisModelFactory).create()
+        return super(cls, AnalysisModelFactory).create(**settings)
 
 
     @classmethod
