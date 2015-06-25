@@ -211,12 +211,12 @@ class SaneBase(object):
             filename = self.next_file_name
 
         if filename:
-            self._logger.info("Scanning {0}".format(self.next_file_name))
+            self._logger.info("Scanning {0}".format(filename))
 
             returncode = -1
 
             try:
-                with open(self.next_file_name, 'w') as im:
+                with open(filename, 'w') as im:
                     if scanner:
                         preprend_settings = {SCAN_FLAGS.Device: scanner}
                     else:
@@ -231,7 +231,7 @@ class SaneBase(object):
                     returncode = scan_proc.returncode
 
             except IOError:
-                self._logger.error("Could not write to file: {0}".format(self.next_file_name))
+                self._logger.error("Could not write to file: {0}".format(filename))
 
             else:
                 if returncode:
