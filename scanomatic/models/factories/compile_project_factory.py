@@ -238,8 +238,8 @@ class CompileImageAnalysisFactory(AbstractModelFactory):
     def copy_iterable_of_model_update_indices(cls, iterable):
 
         models = cls.copy_iterable_of_model(iterable)
-        for (index, m) in enumerate(sorted(models, key=lambda x: x.time)):
-            m.index = index
+        for (index, m) in enumerate(sorted(models, key=lambda x: x.image.time_stamp)):
+            m.image.index = index
             yield m
 
     @classmethod

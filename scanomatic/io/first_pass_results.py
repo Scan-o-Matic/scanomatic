@@ -69,7 +69,7 @@ class CompilationResults(object):
             item %= len(self._image_models)
 
         try:
-            return sorted(self._image_models, key=lambda x: x.time)[item]
+            return sorted(self._image_models, key=lambda x: x.image.time_stamp)[item]
         except (ValueError, IndexError):
             return None
 
@@ -92,7 +92,7 @@ class CompilationResults(object):
             other_image_models.append(model)
 
         other_image_models += self._image_models
-        other_image_models = sorted(other_image_models, key=lambda x: x.time)
+        other_image_models = sorted(other_image_models, key=lambda x: x.image.time_stamp)
 
         return CompilationResults.create_from_data(self._compilation_path, self._compile_instructions,
                                                    other_image_models, self._used_models)
