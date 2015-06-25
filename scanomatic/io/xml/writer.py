@@ -299,6 +299,10 @@ class XML_Writer(object):
 
     def write_image_features(self, image_model, features):
 
+        """
+
+        :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
         self._write_image_head(image_model, features)
 
         tag_format = self._formatting.make_short_tag_version
@@ -309,14 +313,14 @@ class XML_Writer(object):
 
         if features is not None:
 
-            #OPEN PLATES-tag
+            # OPEN PLATES-tag
             for f in self._file_handles.values():
 
                 f.write(self.XML_OPEN.format(
                     ['plates', 'pls'][tag_format]))
 
-            #FOR EACH PLATE
-            for plate in image_model.plates:
+            # FOR EACH PLATE
+            for plate in image_model.fixture.plates:
 
                 index = plate.index
                 for f in self._file_handles.values():
@@ -407,7 +411,7 @@ class XML_Writer(object):
                 f.write(self.XML_CLOSE.format(
                     ['plates', 'pls'][tag_format]))
 
-        #CLOSING THE SCAN
+        # CLOSING THE SCAN
         for f in self._file_handles.values():
             f.write(self.XML_CLOSE.format(
                     ['scan', 's'][tag_format]))
