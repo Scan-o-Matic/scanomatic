@@ -16,6 +16,7 @@ class CompilationResults(object):
         self._plate_position_keys = None
         self._image_models = []
         self._used_models = []
+        self._current_model = None
         self._loading_length = 0
         if compile_instructions_path:
             self._load_compile_instructions(compile_instructions_path)
@@ -59,10 +60,18 @@ class CompilationResults(object):
         return self._loading_length
 
     def __getitem__(self, item):
+        """
 
+
+        :rtype: scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
         if item < 0:
             item %= len(self._image_models)
-        return sorted(self._image_models, key=lambda x: x.time)[item]
+
+        try:
+            return sorted(self._image_models, key=lambda x: x.time)[item]
+        except (ValueError, IndexError):
+            return None
 
     def __add__(self, other):
 
@@ -102,21 +111,44 @@ class CompilationResults(object):
     @property
     def plates(self):
 
-        return self[-1].plates
+        return self[-1].fixture.plates
 
     @property
     def last_index(self):
 
         return len(self._image_models) - 1
 
+    @property
+    def total_number_of_images(self):
+
+        return len(self._image_models) + len(self._used_models)
+
+    @property
+    def current_image(self):
+        """
+
+        :rtype : scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
+        return self._current_model
+
+    @property
+    def current_absolute_time(self):
+
+        return self.current_image.image.time_stamp + self.compile_instructions.start_time
+
     def recycle(self):
 
         self._image_models += self._used_models
         self._used_models = []
+        self._current_model = None
 
     def get_next_image_model(self):
+        """
 
+        :rtype : scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
         model = self[-1]
+        self._current_model = model
         self._image_models.remove(model)
         self._used_models.append(model)
         return model
