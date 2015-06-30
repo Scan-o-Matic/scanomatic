@@ -41,11 +41,13 @@ def _launch_scanomatic_rpc_server():
 def _allowed_image(ext):
     return ext.lower() in _ALLOWED_EXTENSIONS
 
+
 def get_fixture_image_by_name(name, ext="tiff"):
 
     fixture_file = Paths().get_fixture_path(name)
     image_path = os.path.extsep.join((fixture_file, ext))
     return get_fixture_image(name, image_path)
+
 
 def get_fixture_image(name, image_path):
 
