@@ -189,6 +189,11 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if js:
             return send_from_directory(Paths().ui_js, js)
 
+    @app.route("/experiment", methods=['get', 'post'])
+    def _experiment():
+
+        return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
+
     @app.route("/compile", methods=['get', 'post'])
     def _compile():
 
