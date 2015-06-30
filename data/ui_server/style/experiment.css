@@ -1,0 +1,56 @@
+/* colors
+#541f0f
+#f8e03e
+#cd8b34
+#a45e60
+#e7d2b7
+
+*/
+
+
+.long {
+    width: 80%;
+}
+
+.eventable td {
+ width: 16%;
+}
+
+option {
+    padding: 3px;
+    margin-right: 3px;
+}
+
+#cont h2 {
+	text-transform: uppercase;
+	letter-spacing: 100%;
+	font-size: 105%;
+	display: block;
+	width: 100%;
+	text-align: center;
+	margin-top: 24px;
+	margin-bottom: 12px;
+}
+
+label {
+	text-transform: uppercase;
+	letter-spacing: 100%;
+	font-size: 105%;
+	margin-right: 20px;
+}
+
+textarea {
+    width: 80%;
+}
+
+.section-frame {
+    background: #802F17;
+    border: 1px solid #541f0f;
+    padding: 6px;
+    margin-bottom: 20px;
+}
+
+#pinnings div {
+    display: inline-block;
+    padding: 6px;
+}
