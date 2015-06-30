@@ -7,6 +7,8 @@
     <script src="/js/jquery-ui.min.js"></script>
     <script src="/js/helpers.js"></script>
     <script src="/js/fixtures.js"></script>
+    <script src="/js/scanners.js"></script>
+    <script src="'/js/experiment.js"></script>
     <script>
         current_fixture_id = "#current-fixture";
         current_scanner_id = "#current-scanner";
@@ -47,7 +49,7 @@
 
             <div class="section">
                 <label for="project-tag">Project tag</label>
-                <input size="4" id="project-tag" name="project-tag" onchange="format_tag(this); validate_experiment();>
+                <input size="4" id="project-tag" name="project-tag" onchange="format_tag(this); validate_experiment();">
                 <label for="layout-tag">Layout tag</label>
                 <input size="4" id="layout-tag" name="layout-tag" onchange="format_tag(this); validate_experiment();">
                 <label for="control-number">Control number</label>
@@ -58,12 +60,12 @@
 
             <div id="selecting-scanner" class="section">
                 <label for="current-scanner">Scanner:</label>
-                <select name="current-scanner" id="current-scanner"></select>
+                <select name="current-scanner" id="current-scanner" onchange="validate_experiment();"></select>
             </div>
 
             <div id="selecting-fixture" class="section">
                 <label for="current-fixture">Fixture:</label>
-                <select name="current-fixtures" id="current-fixture"></select>
+                <select name="current-fixtures" id="current-fixture" onchange="update_fixture(this); validate_experiment();"></select>
             </div>
 
             <h2>Time settings</h2>
@@ -91,7 +93,7 @@
         </form>
     </div>
     <script>
-        get_scanners();
+        get_free_scanners(current_scanner_id);
         get_fixtures();
     </script>
 </body>
