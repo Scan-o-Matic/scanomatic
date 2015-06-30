@@ -21,6 +21,14 @@ option {
     margin-right: 3px;
 }
 
+#cont h1 {
+    font-family: sans;
+}
+
+#cont em {
+    font-family: sans;
+}
+
 #cont h2 {
 	text-transform: uppercase;
 	letter-spacing: 100%;
@@ -43,6 +51,10 @@ textarea {
     width: 80%;
 }
 
+.section {
+    margin-bottom: 6px;
+}
+
 .section-frame {
     background: #802F17;
     border: 1px solid #541f0f;
@@ -53,4 +65,8 @@ textarea {
 #pinnings div {
     display: inline-block;
     padding: 6px;
+}
+
+.plate-description {
+    margin-bottom: 3px;
 }
