@@ -3,6 +3,7 @@
 <head lang="en">
     <meta charset="UTF-8">
 	<link rel="stylesheet" type="text/css" href="style/main.css">
+    <link rel="stylesheet" type="text/css" href="style/experiment.css">
     <script src="/js/jquery-2.1.4.min.js"></script>
     <script src="/js/jquery-ui.min.js"></script>
     <script src="/js/helpers.js"></script>
@@ -22,68 +23,84 @@
         <form action="" method="post">
 
             <h2>Metadata</h2>
+            <div class="section-frame">
+                <table class="eventable">
+                    <tr>
+                        <td><label for="project-root">Projects Root</label></td>
+                        <td colspan="5"><input class='long' id="project-root" name="project-root" onchange="validate_experiment();"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6"><div class="indented"><em>Unfortunately, at present, you have to type it yourself and needs to be absolute path</em></div></td>
+                    </tr>
 
-            <div class="section">
-                <label for="project-directory">Project Directory</label>
-                <input id="project-directory" name="project-directory" onchange="validate_experiment();">
-                <div class="indented"><em>Unfortunately you have to type it yourself and needs to be absolute path</em></div>
-            </div>
+                    <tr>
+                        <td><label for="project-prefix">Project Prefix</label></td>
+                        <td colspan="3"><input id="project-prefix" name="project-prefix" onchange="validate_experiment();"></td>
+                    </tr>
 
-            <div class="section">
-                <label for="project-prefix">Project Prefix</label>
-                <input id="project-prefix" name="project-prefix" onchange="validate_experiment();">
-            </div>
+                    <tr>
+                        <td><label for="project-description">Description</label></td>
+                        <td colspan="5"><textarea id="project-description" name="project-description" onchange="validate_experiment();"></textarea></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6"><div id="plate-descriptions" class="indented">
+                            <em>Please select a fixture and plate pinnings first if you wish to write descriptions for individual plates.</em>
+                        </div></td>
+                    </tr>
 
-            <div class="section">
-                <label for="project-description">Description</label>
-                <input id="project-description" name="project-description" onchange="validate_experiment();">
-                <div id="plate-descriptions" class="indented">
-                    <em>Please select a fixture and plate pinnings first if you wish to write descriptions for individual plates.</em>
-                </div>
-            </div>
+                    <tr>
+                        <td><label for="project-email">Contact email</label></td>
+                        <td colspan="5"><input class='long' id="project-email" name="project-email" type="email"></td>
+                    </tr>
 
-            <div class="section">
-                <label for="project-email">Contact email</label>
-                <input id="project-email" name="project-email" type="email">
-            </div>
-
-            <div class="section">
-                <label for="project-tag">Project tag</label>
-                <input size="4" id="project-tag" name="project-tag" onchange="format_tag(this); validate_experiment();">
-                <label for="layout-tag">Layout tag</label>
-                <input size="4" id="layout-tag" name="layout-tag" onchange="format_tag(this); validate_experiment();">
-                <label for="control-number">Control number</label>
-                <input size="3" id="control-number" name="control-number">
+                    <tr>
+                        <td><label for="project-tag">Project tag</label></td>
+                        <td><input size="4" id="project-tag" name="project-tag" onchange="format_tag(this); validate_experiment();"></td>
+                        <td><label for="layout-tag">Layout tag</label></td>
+                        <td><input size="4" id="layout-tag" name="layout-tag" onchange="format_tag(this); validate_experiment();"></td>
+                        <td><label for="control-number">Verification number</label></td>
+                        <td><input size="3" id="control-number" name="control-number"></td>
+                    </tr>
+                </table>
             </div>
 
             <h2>Scanner & Fixture</h2>
 
-            <div id="selecting-scanner" class="section">
-                <label for="current-scanner">Scanner:</label>
-                <select name="current-scanner" id="current-scanner" onchange="validate_experiment();"></select>
-            </div>
+            <div class="section-frame">
+                <table>
+                    <tr>
+                        <td><label for="current-scanner">Scanner:</label></td>
+                        <td><select name="current-scanner" id="current-scanner" onchange="validate_experiment();"></select></td>
+                    </tr>
 
-            <div id="selecting-fixture" class="section">
-                <label for="current-fixture">Fixture:</label>
-                <select name="current-fixtures" id="current-fixture" onchange="update_fixture(this); validate_experiment();"></select>
+                    <tr>
+                        <td><label for="current-fixture">Fixture:</label></td>
+                        <td><select name="current-fixtures" id="current-fixture" onchange="update_fixture(this); validate_experiment();"></select></td>
+                    </tr>
+                </table>
             </div>
 
             <h2>Time settings</h2>
 
-            <div class="section">
-                <label for="project-duration">Duration</label>
-                <input id="project-duration" name="project-duration" onchange="format_time(this); validate_experiment();">
-            </div>
+            <div class="section-frame">
+                <table>
+                    <tr>
+                        <td><label for="project-duration">Duration</label></td>
+                        <td><input id="project-duration" name="project-duration" onchange="format_time(this); validate_experiment();"></td>
+                    </tr>
 
-            <div class="seciton">
-                <label for="project-interval">Interval</label>
-                <input id="project-interval" name="project-interval" onchange="">
+                    <tr>
+                        <td><label for="project-interval">Interval</label></td>
+                        <td><input id="project-interval" name="project-interval" onchange=""></td>
+                    </tr>
+                </table>
             </div>
 
             <h2>Plate formats / pinning</h2>
+            <div class="section-frame">
             <div id="pinnings" class="section">
                    <em>Please select a fixture first.</em>
-
+            </div>
             </div>
 
             <div class="section">
