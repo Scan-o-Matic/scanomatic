@@ -18,6 +18,7 @@ from scanomatic.models.factories.compile_project_factory import CompileProjectFa
 import scanomatic.models.rpc_job_models as rpc_job_models
 
 _SOM_SERVER = None
+""":type: scanomatic.server.server.Server"""
 _RPC_SERVER = None
 
 
