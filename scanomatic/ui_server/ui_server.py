@@ -213,6 +213,21 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
 
+    @app.route("/scanners/<scanner_query>")
+    def _scanners(scanner_query=None):
+        if scanner_query is None or scanner_query.lower() == 'all':
+            return  jsonify(scanners=rpc_client.get_scanner_status(), success=True)
+        elif scanner_query.lower() == 'free':
+            return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()},
+                           success=True)
+        else:
+            try:
+                return jsonify(scanner=(s for s in rpc_client.get_scanner_status() if scanner_query
+                                        in s['scanner_name']).next(), success=True)
+            except StopIteration:
+                return jsonify(scanner=None, success=False, reason="Unknown scanner or query '{0}'".format(
+                    scanner_query))
+
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():
 
