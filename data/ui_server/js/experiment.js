@@ -8,6 +8,21 @@ var fixture_plates = [];
 var description_cache = {};
 var duration;
 var interval;
+var project_path;
+
+
+function set_experiment_root(input) {
+
+    $.get("/experiment/" + $(input).val(), function(data, status) {
+        console.log(data);
+        var val = $(input).val();
+        $(input).autocomplete({source: data.suggestions});
+        if (val == "" || (data.path == "root/" && val.length < data.path.length))
+            $(input).val(data.path);
+
+        project_path = $(input).val();
+    });
+}
 
 function update_fixture(options) {
     var fixture = $(options).val();

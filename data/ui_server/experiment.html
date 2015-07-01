@@ -26,16 +26,15 @@
             <div class="section-frame">
                 <table class="eventable">
                     <tr>
-                        <td><label for="project-root">Projects Root</label></td>
-                        <td colspan="5"><input class='long' id="project-root" name="project-root" onchange="validate_experiment();"></td>
+                        <td><label for="project-path">Project Path</label></td>
+                        <td colspan="5"><input class='long' id="project-path" name="project-path" onchange="validate_experiment();" onfocus="set_experiment_root(this);"
+                                onkeypress="set_experiment_root(this);"></td>
                     </tr>
                     <tr>
-                        <td colspan="6"><div class="indented"><em>Unfortunately, at present, you have to type it yourself and needs to be absolute path</em></div></td>
-                    </tr>
-
-                    <tr>
-                        <td><label for="project-prefix">Project Prefix</label></td>
-                        <td colspan="3"><input id="project-prefix" name="project-prefix" onchange="validate_experiment();"></td>
+                        <td colspan="6"><div class="indented">
+                            <em>The path is expressed relative to the experiments root.
+                                The parent directory of the project directory must exist and
+                                the project directory may not exist before experiment is launched.</em></div></td>
                     </tr>
 
                     <tr>
@@ -112,6 +111,7 @@
     <script>
         format_time("#project-duration");
         format_minutes("#project-interval");
+        set_experiment_root("#project-path");
         get_free_scanners(current_scanner_id);
         get_fixtures();
     </script>
