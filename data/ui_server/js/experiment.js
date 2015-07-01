@@ -6,6 +6,7 @@ var current_fixture_id;
 var fixture_selected = false;
 var fixture_plates = [];
 var description_cache = {};
+var duration;
 
 function update_fixture(options) {
     var fixture = $(options).val();
@@ -94,6 +95,53 @@ function set_pining_options_from_plates(plates) {
         pinnings.append(get_plate_selector(plates[i]));
         fixture_plates[get_fixture_plate_index_ordinal(plates[i].index)].active = true;
     }
+}
+
+function format_time(input) {
+    var s = $(input).val();
+
+    try {
+        var days = parseInt(s.match(/(\d+) ?(days|d)/i)[1]);
+    } catch(err) {
+        var days = 0;
+    }
+
+    try {
+        var minutes = parseInt(s.match(/(\d+) ?(min|minutes?|m)/i)[1]);
+    } catch(err) {
+        var minutes = 0;
+    }
+
+    try {
+        var hours = parseInt(s.match(/(\d+) ?(hours?|h)/i)[1]);
+    } catch(arr) {
+
+        if (minutes == 0 && days == 0) {
+
+            var hours = parseFloat(s);
+            if (isNaN(hours))
+                hours = 0;
+
+
+            minutes = Math.round((hours - Math.floor(hours)) * 60);
+            hours = Math.floor(hours);
+        } else
+            var hours = 0;
+    }
+    if (minutes > 59) {
+        hours += Math.floor(minutes / 60);
+        minutes = minutes % 60;
+    }
+    if (hours > 23) {
+        days += Math.floor(hours / 24);
+        hours %= 24;
+    }
+
+    if (days == 0 && hours == 0 && minutes == 0)
+        days = 3;
+
+    duration = [days, hours, minutes];
+    $(input).val(days + " days, " + hours + " hours, " + minutes + " minutes");
 }
 
 function get_plate_selector(plate) {
