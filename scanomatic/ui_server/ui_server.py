@@ -10,6 +10,9 @@ import os
 import numpy as np
 from enum import Enum
 import shutil
+import re
+from itertools import chain
+import glob
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -100,6 +103,10 @@ def usable_markers(markers, image):
         return False
 
     return all(marker_inside_image(marker) for marker in markers_array)
+
+
+def safe_directory_name(name):
+    return re.match("^[A-Za-z_0-9]*$", name) is not None
 
 
 def usable_plates(plates):
@@ -201,6 +208,41 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _experiment():
 
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
+
+    @app.route("/experiment/")
+    @app.route("/experiment/<command>", methods=['get', 'post'])
+    @app.route("/experiment/<command>/", methods=['get', 'post'])
+    @app.route("/experiment/<command>/<path:sub_path>", methods=['get', 'post'])
+    def _experiment_commands(command=None, sub_path=""):
+
+        if command is None:
+            command = 'root'
+
+        sub_path = sub_path.split("/")
+
+        if not all(safe_directory_name(name) for name in sub_path):
+
+            return jsonify(path=Paths().experiment_root, valid_experiment=False,
+                           reason="Only letter, numbers and underscore allowed")
+
+        if command == 'root':
+
+            root = Paths().experiment_root
+            path = os.path.join(*chain([root], sub_path))
+            valid_root = os.path.isdir(os.path.dirname(path))
+            duplicate_experiment = os.path.isdir(path) or os.path.isfile(path)
+            reason = "Root directory does not exist" if not valid_root else "Duplicate experiment" if duplicate_experiment else ""
+            if valid_root:
+                suggestions = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
+                                    for p in glob.glob(path + "*")
+                                    if os.path.isdir(p) and safe_directory_name(os.path.basename(p)))
+            else:
+                suggestions = tuple()
+
+            return jsonify(path="/".join(chain([command], sub_path)), valid_experiment=valid_root and not duplicate_experiment,
+                           reason=reason, suggestions=suggestions)
+
+        return jsonify()
 
     @app.route("/compile", methods=['get', 'post'])
     def _compile():
