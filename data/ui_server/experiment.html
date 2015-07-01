@@ -91,7 +91,7 @@
 
                     <tr>
                         <td><label for="project-interval">Interval</label></td>
-                        <td><input id="project-interval" name="project-interval" onchange=""></td>
+                        <td><input id="project-interval" name="project-interval" onchange="format_minutes(this);"></td>
                     </tr>
                 </table>
             </div>
@@ -110,6 +110,8 @@
         </form>
     </div>
     <script>
+        format_time("#project-duration");
+        format_minutes("#project-interval");
         get_free_scanners(current_scanner_id);
         get_fixtures();
     </script>
