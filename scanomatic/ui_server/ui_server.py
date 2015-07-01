@@ -39,6 +39,12 @@ def _launch_scanomatic_rpc_server():
 
 
 def _allowed_image(ext):
+    """Validates that the image extension is allowed
+
+    :param ext: The image file's extension
+    :type ext: str
+    :returns bool
+    """
     return ext.lower() in _ALLOWED_EXTENSIONS
 
 
