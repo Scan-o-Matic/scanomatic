@@ -7,6 +7,7 @@ var fixture_selected = false;
 var fixture_plates = [];
 var description_cache = {};
 var duration;
+var interval;
 
 function update_fixture(options) {
     var fixture = $(options).val();
@@ -142,6 +143,14 @@ function format_time(input) {
 
     duration = [days, hours, minutes];
     $(input).val(days + " days, " + hours + " hours, " + minutes + " minutes");
+}
+
+function format_minutes(input) {
+    interval = parseFloat($(input).val());
+    if (isNaN(interval) || interval == 0)
+        interval = 20.0;
+
+    $(input).val(interval + " minutes");
 }
 
 function get_plate_selector(plate) {
