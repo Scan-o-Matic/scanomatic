@@ -4,6 +4,10 @@
 	border: 0px;
 }
 
+input {
+    padding: 3px;
+}
+
 body {
 	background: #cd8b34;
 	background-image: url('/images/help_bg.png');
