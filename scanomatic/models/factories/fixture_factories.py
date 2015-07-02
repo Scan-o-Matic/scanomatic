@@ -152,27 +152,6 @@ class FixtureFactory(AbstractModelFactory):
 
         return super(FixtureFactory, cls).create(**settings)
 
-    @classmethod
-    def create_many_update_indices(cls, iterable):
-
-        models = [cls.create(**data) for data in iterable]
-        for (index, m) in enumerate(sorted(models, key=lambda x: x.time)):
-            m.index = index
-            yield m
-
-    @classmethod
-    def create_many_update_times(cls, iterable):
-
-        models = [cls.create(**data) for data in iterable]
-        inject_time = 0
-        previous_time = 0
-        for (index, m) in enumerate(models):
-            m.index = index
-            if m.time < previous_time:
-                inject_time += previous_time - m.time
-            m.time += inject_time
-            yield m
-
 
 class FixturePlateFactory(AbstractModelFactory):
     MODEL = FixturePlateModel

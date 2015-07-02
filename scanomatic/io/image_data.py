@@ -38,7 +38,11 @@ class ImageData(object):
     @staticmethod
     def write_image(analysis_model, image_model, features):
 
-        return ImageData._write_image(analysis_model.output_directory, image_model.index, features,
+        """
+
+        :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
+        return ImageData._write_image(analysis_model.output_directory, image_model.image.index, features,
                                       analysis_model.image_data_output_item,
                                       analysis_model.image_data_output_measure)
 
@@ -97,17 +101,21 @@ class ImageData(object):
     @staticmethod
     def write_times(analysis_model, image_model, overwrite):
 
+        """
+
+        :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
         if not overwrite:
             current_data = ImageData.read_times(analysis_model.output_directory)
         else:
             current_data = np.array([], dtype=np.float)
 
-        if not (image_model.index < current_data.size):
+        if not (image_model.image.index < current_data.size):
             current_data = np.r_[
                 current_data,
-                [None] * (1 + image_model.index - current_data.size)].astype(np.float)
+                [None] * (1 + image_model.image.index - current_data.size)].astype(np.float)
 
-        current_data[image_model.index] = image_model.time
+        current_data[image_model.image.index] = image_model.image.time_stamp
         np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(analysis_model.output_directory, times=True)),
                 current_data)
 
