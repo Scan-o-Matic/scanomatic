@@ -240,7 +240,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 suggestions = tuple()
 
             return jsonify(path="/".join(chain([command], sub_path)), valid_experiment=valid_root and not duplicate_experiment,
-                           reason=reason, suggestions=suggestions)
+                           reason=reason, suggestions=suggestions, prefix=sub_path[-1] if sub_path else "")
 
         return jsonify()
 
