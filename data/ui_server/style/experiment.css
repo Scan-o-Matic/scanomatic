@@ -12,6 +12,10 @@
     width: 80%;
 }
 
+.medium-long {
+    width: 200px;
+}
+
 .eventable td {
  width: 16%;
 }
@@ -49,6 +53,7 @@ label {
 
 textarea {
     width: 80%;
+    min-height: 75px;
 }
 
 .section {
