@@ -6,21 +6,42 @@ var current_fixture_id;
 var fixture_selected = false;
 var fixture_plates = [];
 var description_cache = {};
-var duration;
-var interval;
+var duration = [0,0,0];
+var interval = 20.0;
 var project_path;
+var poetry = "If with science, you let your life deteriorate,\nat least do it right.\nDo it with plight\nand fill out this field before it's too late";
 
+function set_poetry(input) {
+
+    $(input).html(poetry).css('font-style', 'italic');
+
+    $(input).focus(function() {
+
+        if ($(this).html() === poetry)
+            $(this).html('').css('font-style', 'normal');
+    });
+
+    $(input).blur(function() {
+        if ($(this).html() === '') {
+            $(this).html(poetry).css('font-style', 'italic');
+        }
+    });
+}
 
 function set_experiment_root(input) {
 
     $.get("/experiment/" + $(input).val(), function(data, status) {
-        console.log(data);
         var val = $(input).val();
         $(input).autocomplete({source: data.suggestions});
         if (val == "" || (data.path == "root/" && val.length < data.path.length))
             $(input).val(data.path);
 
         project_path = $(input).val();
+        console.log(data);
+        if (data.valid_experiment)
+            $("#experiment-title").html("Start Experiment '" + data.prefix + "'");
+        else
+            $("#experiment-title").html("Start Experiment");
     });
 }
 
@@ -162,10 +183,14 @@ function format_time(input) {
 
 function format_minutes(input) {
     interval = parseFloat($(input).val());
-    if (isNaN(interval) || interval == 0)
+    if (isNaN(interval) || interval < 7)
         interval = 20.0;
 
     $(input).val(interval + " minutes");
+}
+
+function update_scans(paragraph) {
+    $(paragraph).html(Math.floor(((duration[0] * 24 + duration[1]) * 60 + duration[2]) / interval) + 1);
 }
 
 function get_plate_selector(plate) {
@@ -185,5 +210,6 @@ function get_description(index, description) {
     return "<div class='plate-description'>" +
         "<input type='hidden' value='" + index + "'>" +
         "<label for='plate-description-" + index + "'>Plate " + index + "</label>" +
-        "<input class='long' id='plate-description-" + index + "' value='" + description + "' onchange='cache_description(this);'></div>";
+        "<input class='long' id='plate-description-" + index + "' value='" + description +
+        "' placeholder='Enter medium and, if relevant, what experiment this plate is.' onchange='cache_description(this);'></div>";
 }

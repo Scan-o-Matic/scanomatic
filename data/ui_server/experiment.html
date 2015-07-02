@@ -19,7 +19,7 @@
 </head>
 <body>
     <div id="cont">
-        <h1>Start Experiment</h1>
+        <h1 id="experiment-title">Start Experiment</h1>
         <form action="" method="post">
 
             <h2>Metadata</h2>
@@ -28,7 +28,7 @@
                     <tr>
                         <td><label for="project-path">Project Path</label></td>
                         <td colspan="5"><input class='long' id="project-path" name="project-path" onchange="validate_experiment();" onfocus="set_experiment_root(this);"
-                                onkeypress="set_experiment_root(this);"></td>
+                                onkeyup="set_experiment_root(this);"></td>
                     </tr>
                     <tr>
                         <td colspan="6"><div class="indented">
@@ -39,7 +39,9 @@
 
                     <tr>
                         <td><label for="project-description">Description</label></td>
-                        <td colspan="5"><textarea id="project-description" name="project-description" onchange="validate_experiment();"></textarea></td>
+                        <td colspan="5">
+                            <textarea id="project-description" name="project-description"
+                                      onchange="validate_experiment();"></textarea></td>
                     </tr>
                     <tr>
                         <td colspan="6"><div id="plate-descriptions" class="indented">
@@ -49,7 +51,8 @@
 
                     <tr>
                         <td><label for="project-email">Contact email</label></td>
-                        <td colspan="5"><input class='long' id="project-email" name="project-email" type="email"></td>
+                        <td colspan="5"><input class='long' id="project-email" name="project-email" type="email"
+                                               placeholder="Used to inform about progress & help others identify who's using a scanner."></td>
                     </tr>
 
                     <tr>
@@ -85,12 +88,16 @@
                 <table>
                     <tr>
                         <td><label for="project-duration">Duration</label></td>
-                        <td><input id="project-duration" name="project-duration" onchange="format_time(this); validate_experiment();"></td>
+                        <td><input id="project-duration" name="project-duration" class="medium-long" onchange="format_time(this); update_scans('#project-scans'); validate_experiment();"></td>
                     </tr>
 
                     <tr>
                         <td><label for="project-interval">Interval</label></td>
-                        <td><input id="project-interval" name="project-interval" onchange="format_minutes(this);"></td>
+                        <td><input id="project-interval" name="project-interval" class="medium-long" onchange="format_minutes(this); update_scans('#project-scans'); validate_experiment();"></td>
+                    </tr>
+                    <tr>
+                        <td><label for="project-scans">Scans</label></td>
+                        <td id="project-scans"></td>
                     </tr>
                 </table>
             </div>
@@ -109,8 +116,10 @@
         </form>
     </div>
     <script>
+        set_poetry("#project-description");
         format_time("#project-duration");
         format_minutes("#project-interval");
+        update_scans("#project-scans");
         set_experiment_root("#project-path");
         get_free_scanners(current_scanner_id);
         get_fixtures();
