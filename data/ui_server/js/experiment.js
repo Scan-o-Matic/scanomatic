@@ -1,7 +1,3 @@
-function validate_experiment() {
-
-}
-
 var current_fixture_id;
 var fixture_selected = false;
 var fixture_plates = [];
@@ -9,7 +5,36 @@ var description_cache = {};
 var duration = [0,0,0];
 var interval = 20.0;
 var project_path;
+var project_path_valid = false;
+var project_path_invalid_reason = '';
 var poetry = "If with science, you let your life deteriorate,\nat least do it right.\nDo it with plight\nand fill out this field before it's too late";
+
+function validate_experiment() {
+    set_validation_status("#project-path", project_path_valid, project_path_valid ? 'Everything is cool' : project_path_invalid_reason);
+    var scanner = $("#current-scanner");
+    var scanner_ok = scanner.val() != '' && scanner.val() != undefined && scanner.val() != null;
+    set_validation_status(scanner, scanner_ok, scanner_ok ? 'The scanner is yours' :
+        'It would seem likely that you need a scanner... to scan');
+    var active_plates = fixture_plates.filter(function(e, i) { return e.active;}).length > 0;
+    set_validation_status("#current-fixture", fixture_selected && active_plates,
+        !fixture_selected ? "Select fixture" : (active_plates ? "No plates active would mean doing very little" : "All good!"));
+    var time_makes_sense = get_duration_as_minutes() >= interval;
+    set_validation_status("#project-duration", time_makes_sense, time_makes_sense ? "That's a splendid project duration" : "Nope, you need at least one interval's worth of duration");
+
+    InputEnabled($("#submit-button"), project_path_valid && scanner_ok && fixture_selected && active_plates && time_makes_sense);
+}
+
+function set_validation_status(dom_object, is_valid, tooltip) {
+    var input = $(dom_object);
+    var sib = input.next();
+    if (sib.attr("class") !== 'validation-icon')
+        sib = $(get_validation_image()).insertAfter(input);
+
+    if (is_valid)
+        sib.attr('src', '/images/yeastOK.png').attr('alt',tooltip).attr('title', tooltip);
+    else
+        sib.attr('src', '/images/yeastNOK.png').attr('alt', tooltip).attr('title', tooltip);
+}
 
 function set_poetry(input) {
 
@@ -37,7 +62,10 @@ function set_experiment_root(input) {
             $(input).val(data.path);
 
         project_path = $(input).val();
+        project_path_valid = data.valid_experiment;
+        project_path_invalid_reason = data.reason;
         console.log(data);
+        set_validation_status("#project-path", project_path_valid, project_path_valid ? 'Everything is cool' : project_path_invalid_reason);
         if (data.valid_experiment)
             $("#experiment-title").html("Start Experiment '" + data.prefix + "'");
         else
@@ -59,6 +87,7 @@ function update_fixture(options) {
         fixture_plates = data.plates.slice();
         set_pining_options_from_plates(data.plates);
         set_visible_plate_descriptions();
+        validate_experiment();
     });
 }
 
@@ -190,7 +219,11 @@ function format_minutes(input) {
 }
 
 function update_scans(paragraph) {
-    $(paragraph).html(Math.floor(((duration[0] * 24 + duration[1]) * 60 + duration[2]) / interval) + 1);
+    $(paragraph).html(Math.floor(get_duration_as_minutes() / interval) + 1);
+}
+
+function get_duration_as_minutes() {
+    return (duration[0] * 24 + duration[1]) * 60 + duration[2];
 }
 
 function get_plate_selector(plate) {
@@ -212,4 +245,8 @@ function get_description(index, description) {
         "<label for='plate-description-" + index + "'>Plate " + index + "</label>" +
         "<input class='long' id='plate-description-" + index + "' value='" + description +
         "' placeholder='Enter medium and, if relevant, what experiment this plate is.' onchange='cache_description(this);'></div>";
+}
+
+function get_validation_image() {
+    return "<img src='' class='validation-icon'>";
 }

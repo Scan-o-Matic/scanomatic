@@ -27,8 +27,11 @@
                 <table class="eventable">
                     <tr>
                         <td><label for="project-path">Project Path</label></td>
-                        <td colspan="5"><input class='long' id="project-path" name="project-path" onchange="validate_experiment();" onfocus="set_experiment_root(this);"
-                                onkeyup="set_experiment_root(this);"></td>
+                        <td colspan="5">
+                            <input class='long' id="project-path" name="project-path"
+                                   onchange="set_experiment_root(this); validate_experiment();"
+                                   onfocus="set_experiment_root(this);"
+                                   onkeyup="set_experiment_root(this);"></td>
                     </tr>
                     <tr>
                         <td colspan="6"><div class="indented">
@@ -77,7 +80,7 @@
 
                     <tr>
                         <td><label for="current-fixture">Fixture:</label></td>
-                        <td><select name="current-fixtures" id="current-fixture" onchange="update_fixture(this); validate_experiment();"></select></td>
+                        <td><select name="current-fixtures" id="current-fixture" onchange="update_fixture(this);"></select></td>
                     </tr>
                 </table>
             </div>
@@ -123,6 +126,7 @@
         set_experiment_root("#project-path");
         get_free_scanners(current_scanner_id);
         get_fixtures();
+        InputEnabled($("#submit-button"), false);
     </script>
 </body>
 </html>

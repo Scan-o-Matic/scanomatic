@@ -16,6 +16,12 @@
     width: 200px;
 }
 
+.validation-icon {
+    max-height: 30px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 .eventable td {
  width: 16%;
 }
