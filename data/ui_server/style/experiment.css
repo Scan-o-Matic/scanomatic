@@ -16,14 +16,31 @@
     width: 200px;
 }
 
+.short {
+    width: 50px;
+}
+
 .validation-icon {
     max-height: 30px;
     display: inline-block;
     vertical-align: middle;
 }
 
+tr {
+    margin-bottom: 6px;
+}
+
 .eventable td {
  width: 16%;
+}
+
+.head-col {
+    vertical-align: top;
+}
+
+.block {
+    display: inline-block;
+    vertical-align: center;
 }
 
 .ui-helper-hidden-accessible {
@@ -36,12 +53,15 @@ option {
     margin-right: 3px;
 }
 
-#cont h1 {
+#cont {
     font-family: sans;
+
+}
+
+#cont h1 {
 }
 
 #cont em {
-    font-family: sans;
 }
 
 #cont h2 {
@@ -53,6 +73,11 @@ option {
 	text-align: center;
 	margin-top: 24px;
 	margin-bottom: 12px;
+}
+
+#cont h3 {
+    font-family: sans;
+    margin-top: 10px;
 }
 
 label {
