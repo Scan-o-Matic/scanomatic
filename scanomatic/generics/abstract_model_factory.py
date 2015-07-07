@@ -418,6 +418,26 @@ class Serializer(object):
         return dtype is not None and len(key_path) == 1 and issubclass(dtype, AbstractModelFactory)
 
     @staticmethod
+    def _get_is_enum(obj, enum):
+
+        if obj in enum:
+            return True
+
+        try:
+            enum(obj)
+        except ValueError:
+            pass
+        else:
+            return True
+
+        try:
+            enum[obj]
+        except KeyError:
+            return False
+        else:
+            return True
+
+    @staticmethod
     def _get_belongs_to_sub_model(key_path):
 
         return len(key_path) > 1
