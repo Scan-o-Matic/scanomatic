@@ -50,7 +50,7 @@ class AbstractModelFactory(object):
             :param cls:
             :rtype: scanomatic.genercs.model.Model
             """
-            return  cls.MODEL()
+            return cls.MODEL()
 
     @classmethod
     def get_sub_factory(cls, model):
@@ -70,6 +70,16 @@ class AbstractModelFactory(object):
         return True
 
     @classmethod
+    def serializable_model_attributes(cls):
+
+        for dtype in cls.STORE_SECTION_SERIALIZERS:
+
+            if isinstance(dtype, tuple):
+                yield dtype[0]
+            yield dtype
+
+
+    @classmethod
     def create(cls, **settings):
 
         """
@@ -79,7 +89,7 @@ class AbstractModelFactory(object):
         valid_keys = tuple(cls.default_model.keys())
 
         cls.drop_keys(settings, valid_keys)
-        cls.enforce_serializer_type(settings, set(valid_keys).intersection(cls.STORE_SECTION_SERIALIZERS.keys()))
+        cls.enforce_serializer_type(settings, set(valid_keys).intersection(cls.serializable_model_attributes()))
 
         return cls.MODEL(**settings)
 
@@ -95,7 +105,7 @@ class AbstractModelFactory(object):
 
     @classmethod
     def enforce_serializer_type(cls, settings, keys=None):
-        """Especially good for enums
+        """Especially good for enums and Models
 
         :param settings:
         :param keys:
@@ -104,13 +114,34 @@ class AbstractModelFactory(object):
 
         for key in keys:
             if key in settings and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[(key,)]):
-                try:
-                    settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)](settings[key])
-                except (AttributeError, ValueError):
+                dtype = cls.STORE_SECTION_SERIALIZERS[(key,)]
+                if issubclass(dtype, Model) and isinstance(settings[key], dict):
+                    dtypes = tuple(k for k in cls._SUB_FACTORIES if k != dtype)
+                    index = 0
+                    while True:
+                        if dtype in cls._SUB_FACTORIES:
+                            try:
+                                settings[key] = cls._SUB_FACTORIES[dtype].MODEL(**settings[key])
+                            except TypeError:
+                                cls.logger.warning("Could not use {0} on key {1} to create sub-class".format(
+                                    dtype, key
+                                ))
+                            else:
+                                break
+
+                        if index < len(dtypes):
+                            dtype = dtypes[index]
+                            index += 1
+                        else:
+                            break
+                else:
                     try:
-                        settings[key] = cls.STORE_SECTION_SERIALIZERS[(key,)][settings[key]]
-                    except (AttributeError, KeyError, IndexError):
-                        pass
+                        settings[key] = dtype(settings[key])
+                    except (AttributeError, ValueError):
+                        try:
+                            settings[key] = dtype[settings[key]]
+                        except (AttributeError, KeyError, IndexError):
+                            pass
 
     @classmethod
     def update(cls, model, **settings):
@@ -228,6 +259,15 @@ class AbstractModelFactory(object):
         if isinstance(sub_model, Model) and sub_model_type in cls._SUB_FACTORIES:
             return cls._SUB_FACTORIES[sub_model_type].validate(sub_model)
         return False
+
+    @staticmethod
+    def to_dict(model):
+
+        D = dict(**model)
+        for k in D:
+            if isinstance(D[k], Model):
+                D[k] = AbstractModelFactory.to_dict(D[k])
+        return D
 
     @staticmethod
     def _in_bounds(model, lower_bounds, upper_bounds, attr):
@@ -468,6 +508,7 @@ class Serializer(object):
 
             if isinstance(dtype, tuple):
 
+                continue
 
             elif issubclass(dtype, AbstractModelFactory):
 
