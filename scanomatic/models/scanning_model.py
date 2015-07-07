@@ -43,37 +43,6 @@ class CULTURE_SOURCE(Enum):
     Novel = 4
 
 
-class ScanningModel(model.Model):
-
-    def __init__(self, number_of_scans=217, time_between_scans=20,
-                 project_name="", directory_containing_project="",
-                 project_tag="", scanner_tag="", id="", start_time=0.0,
-                 description="", email="", pinning_formats=tuple(),
-                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",
-                 auxillary_info=ScanningAuxInfoModel(),
-                 version=__version__):
-
-        self.number_of_scans = number_of_scans
-        self.time_between_scans = time_between_scans
-        self.project_name = project_name
-        self.directory_containing_project = directory_containing_project
-        self.project_tag = project_tag
-        self.scanner_tag = scanner_tag
-        self.id = id
-        self.description = description
-        self.email = email
-        self.pinning_formats = pinning_formats
-        self.fixture = fixture
-        self.scanner = scanner
-        self.scanner_hardware = scanner_hardware
-        self.mode = mode
-        self.start_time = start_time
-        self.auxillary_info = auxillary_info
-        self.version = version
-
-        super(ScanningModel, self).__init__()
-
-
 class ScanningAuxInfoModel(model.Model):
 
     def __init__(self, stress_level=-1, plate_storage=PLATE_STORAGE.Unknown, plate_age = -1.0,
@@ -89,6 +58,47 @@ class ScanningAuxInfoModel(model.Model):
         self.culture_source = culture_source
 
         super(ScanningAuxInfoModel, self).__init__()
+
+
+class ScanningModel(model.Model):
+
+    def __init__(self, number_of_scans=217, time_between_scans=20,
+                 project_name="", directory_containing_project="",
+                 project_tag="", scanner_tag="", id="", start_time=0.0,
+                 description="", email="", pinning_formats=tuple(),
+                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",
+                 auxillary_info=ScanningAuxInfoModel(),
+                 plate_descriptions=tuple(),
+                 version=__version__):
+
+        self.number_of_scans = number_of_scans
+        self.time_between_scans = time_between_scans
+        self.project_name = project_name
+        self.directory_containing_project = directory_containing_project
+        self.project_tag = project_tag
+        self.scanner_tag = scanner_tag
+        self.id = id
+        self.description = description
+        self.plate_descriptions = plate_descriptions
+        self.email = email
+        self.pinning_formats = pinning_formats
+        self.fixture = fixture
+        self.scanner = scanner
+        self.scanner_hardware = scanner_hardware
+        self.mode = mode
+        self.start_time = start_time
+        self.auxillary_info = auxillary_info
+        self.version = version
+
+        super(ScanningModel, self).__init__()
+
+
+class PlateDescription(model.Model):
+
+    def __init__(self, index, description):
+
+        self.index = index
+        self.description = description
 
 
 class ScannerOwnerModel(model.Model):
