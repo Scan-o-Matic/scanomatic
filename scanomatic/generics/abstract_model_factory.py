@@ -269,6 +269,27 @@ class AbstractModelFactory(object):
         return isinstance(obj, tuple) or isinstance(obj, list)
 
 
+    @staticmethod
+    def _is_enum_value(obj, enum):
+
+        if obj in enum:
+            return True
+
+        try:
+            enum(obj)
+        except ValueError:
+            pass
+        else:
+            return True
+
+        try:
+            enum[obj]
+        except KeyError:
+            return False
+        else:
+            return True
+
+
 def _is_pinning_format(pinning_format):
     # noinspection PyBroadException
     try:
@@ -418,26 +439,6 @@ class Serializer(object):
         return dtype is not None and len(key_path) == 1 and issubclass(dtype, AbstractModelFactory)
 
     @staticmethod
-    def _get_is_enum(obj, enum):
-
-        if obj in enum:
-            return True
-
-        try:
-            enum(obj)
-        except ValueError:
-            pass
-        else:
-            return True
-
-        try:
-            enum[obj]
-        except KeyError:
-            return False
-        else:
-            return True
-
-    @staticmethod
     def _get_belongs_to_sub_model(key_path):
 
         return len(key_path) > 1
@@ -465,7 +466,10 @@ class Serializer(object):
         factory = self._factory
         for key_path, dtype in factory.STORE_SECTION_SERIALIZERS.items():
 
-            if issubclass(dtype, AbstractModelFactory):
+            if isinstance(dtype, tuple):
+
+
+            elif issubclass(dtype, AbstractModelFactory):
 
                 sub_model = getattr(model, SerializationHelper.get_str_from_path(key_path))
                 if dtype is AbstractModelFactory:
@@ -480,7 +484,9 @@ class Serializer(object):
 
     def get_section_name(self, model):
 
-        if isinstance(self._factory.STORE_SECTION_HEAD, list):
+        if isinstance(self._factory.STORE_SECTION_HEAD, str):
+            return self._factory.STORE_SECTION_HEAD
+        elif isinstance(self._factory.STORE_SECTION_HEAD, list):
             return ", ".join(
                 [str(SerializationHelper.get_value_by_path(model, head)) for head in self._factory.STORE_SECTION_HEAD])
         else:
