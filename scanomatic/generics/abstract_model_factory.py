@@ -412,7 +412,8 @@ class Serializer(object):
 
         return SerializationHelper.unserialize(serialized_value, dtype)
 
-    def _get_is_sub_model(self, dtype, key_path):
+    @staticmethod
+    def _get_is_sub_model(dtype, key_path):
 
         return dtype is not None and len(key_path) == 1 and issubclass(dtype, AbstractModelFactory)
 
