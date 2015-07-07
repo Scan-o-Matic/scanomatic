@@ -25,13 +25,33 @@ class SCAN_STEP(Enum):
     NextMajor = 2
 
 
+class PLATE_STORAGE(Enum):
+
+    Unknown = -1
+    Fresh = 0
+    Cold = 1
+    RoomTemperature = 2
+
+
+class CULTURE_SOURCE(Enum):
+
+    Unknown = -1
+    Freezer80 = 0
+    Freezer20 = 1
+    Fridge = 2
+    Shipped = 3
+    Novel = 4
+
+
 class ScanningModel(model.Model):
 
     def __init__(self, number_of_scans=217, time_between_scans=20,
                  project_name="", directory_containing_project="",
-                 project_tag="", scanner_tag="", id="",
+                 project_tag="", scanner_tag="", id="", start_time=0.0,
                  description="", email="", pinning_formats=tuple(),
-                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",  version=__version__):
+                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",
+                 auxillary_info=ScanningAuxInfoModel(),
+                 version=__version__):
 
         self.number_of_scans = number_of_scans
         self.time_between_scans = time_between_scans
@@ -47,9 +67,28 @@ class ScanningModel(model.Model):
         self.scanner = scanner
         self.scanner_hardware = scanner_hardware
         self.mode = mode
+        self.start_time = start_time
+        self.auxillary_info = auxillary_info
         self.version = version
 
         super(ScanningModel, self).__init__()
+
+
+class ScanningAuxInfoModel(model.Model):
+
+    def __init__(self, stress_level=-1, plate_storage=PLATE_STORAGE.Unknown, plate_age = -1.0,
+                 pinning_project_start_delay=-1, precultures=-1, culture_freshness=-1,
+                 culture_source=CULTURE_SOURCE.Unknown):
+
+        self.stress_level = stress_level
+        self.plate_storage=plate_storage
+        self.plate_age = plate_age
+        self.pinning_project_start_delay = pinning_project_start_delay
+        self.precultures = precultures
+        self.culture_freshness = culture_freshness
+        self.culture_source = culture_source
+
+        super(ScanningAuxInfoModel, self).__init__()
 
 
 class ScannerOwnerModel(model.Model):
