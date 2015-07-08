@@ -8,6 +8,7 @@ from enum import Enum
 from ConfigParser import ConfigParser
 import cPickle
 from types import GeneratorType
+from collections import defaultdict
 
 
 class AbstractModelFactory(object):
@@ -342,6 +343,86 @@ def _is_pinning_format(pinning_format):
         pass
 
     return False
+
+
+class _SectionsLink(object):
+
+    __CONFIGS = defaultdict(set)
+    __LINKS = {}
+
+    def __init__(self, factory, model, key):
+
+        """
+        :type key: str
+        :type model: scanomatic.generics.model.Model
+        :type factory: AbstractModelFactory
+        """
+        submodel = model[key]
+        subfactory = factory._SUB_FACTORIES[type(submodel)]
+        self._section_name = subfactory.serializer.get_section_name(submodel)
+        self._locked_name = False
+        _SectionsLink.__LINKS[submodel] = self
+
+    @staticmethod
+    def get_link(model):
+
+        return _SectionsLink.__LINKS[model]
+
+    @property
+    def config_parser(self):
+        """
+        :return: ConfigParser.ConfigParser
+        """
+        try:
+            return (k for k,v in _SectionsLink.__CONFIGS.items() if self in v).next()
+        except StopIteration:
+            return None
+
+    @config_parser.setter
+    def config_parser(self, value):
+
+        if not isinstance(value, ConfigParser):
+            raise ValueError("not a ConfigParser")
+
+        self.section()
+        _SectionsLink.__CONFIGS[value].add(self)
+
+    @property
+    def section(self):
+
+        if self._locked_name:
+            return self._section_name
+
+        parser = self.config_parser
+        if parser is None:
+            raise AttributeError("config_parser not set")
+
+        section = "{0}{1}"
+        enumerator = ''
+        for other in _SectionsLink.__CONFIGS[parser]:
+            my_section = section.format(self._section_name, enumerator)
+            if other.section == my_section:
+                if enumerator:
+                    enumerator += 1
+                else:
+                    enumerator = 2
+
+        self._locked_name = True
+        self._section_name = section.format(self._section_name, enumerator)
+        return self._section_name
+
+    def retrieve_items(self, config_parser):
+
+        return config_parser.items(self._section_name)
+
+    def __getstate__(self):
+
+        return {'_section_name': self.section}
+
+    def __setstate(self, state):
+
+        self._section_name = state['_section_name']
+        self._locked_name = True
 
 
 @decorators.memoize
