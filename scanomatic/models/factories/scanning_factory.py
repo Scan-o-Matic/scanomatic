@@ -16,13 +16,13 @@ class ScanningAuxInfoFactory(AbstractModelFactory):
 
     }
     STORE_SECTION_SERIALIZERS = {
-        ('stress_level',): int,
-        ('plate_storage',): PLATE_STORAGE,
-        ('plate_age',): float,
-        ('pinning_project_start_delay',): float,
-        ('precultures',): int,
-        ('culture_freshness',): int,
-        ('culture_source',): CULTURE_SOURCE
+        'stress_level': int,
+        'plate_storage': PLATE_STORAGE,
+        'plate_age': float,
+        'pinning_project_start_delay': float,
+        'precultures': int,
+        'culture_freshness': int,
+        'culture_source': CULTURE_SOURCE
     }
 
 
@@ -134,20 +134,20 @@ class ScanningModelFactory(AbstractModelFactory):
         ScanningAuxInfoModel: ScanningAuxInfoFactory
     }
     STORE_SECTION_SERIALIZERS = {
-        ('number_of_scans',): int,
-        ('time_between_scans',): float,
-        ('project_name',): str,
-        ('directory_containing_project',): str,
-        ('project_tag',): str,
-        ('scanner_tag',): str,
-        ('description',): str,
-        ('plate_descriptions',): (tuple, PlateDescription),
-        ('email',): str,
-        ('pinning_formats',): tuple,
-        ('fixture',): str,
-        ('scanner',): int,
-        ('auxillary_info',): ScanningAuxInfoModel,
-        ('mode',): str
+        'number_of_scans': int,
+        'time_between_scans': float,
+        'project_name': str,
+        'directory_containing_project': str,
+        'project_tag': str,
+        'scanner_tag': str,
+        'description': str,
+        'plate_descriptions': (tuple, PlateDescription),
+        'email': str,
+        'pinning_formats': tuple,
+        'fixture': str,
+        'scanner': int,
+        'auxillary_info': ScanningAuxInfoModel,
+        'mode': str
     }
 
     @classmethod
@@ -317,14 +317,14 @@ class ScannerOwnerFactory(AbstractModelFactory):
     MODEL = ScannerOwnerModel
     STORE_SECTION_HEAD = ("scanner_name",)
     STORE_SECTION_SERIALIZERS = {
-        ('socket',): int,
-        ('scanner_name',): str,
-        ('usb',): str,
-        ('power',): bool,
-        ("expected_interval",): float,
-        ("email",): str,
-        ("warned",): bool,
-        ("owner",): int,
-        ("claiming",): bool
+        'socket': int,
+        'scanner_name': str,
+        'usb': str,
+        'power': bool,
+        "expected_interval": float,
+        "email": str,
+        "warned": bool,
+        "owner": int,
+        "claiming": bool
 
     }
