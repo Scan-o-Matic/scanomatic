@@ -384,7 +384,7 @@ class _SectionsLink(object):
         if not isinstance(value, ConfigParser):
             raise ValueError("not a ConfigParser")
 
-        self.section()
+        self._get_section(value)
         _SectionsLink.__CONFIGS[value].add(self)
 
     @property
@@ -396,6 +396,14 @@ class _SectionsLink(object):
         parser = self.config_parser
         if parser is None:
             raise AttributeError("config_parser not set")
+
+        return self._get_section(parser)
+
+
+    def _get_section(self, parser):
+
+        if self._locked_name:
+            return self._section_name
 
         section = "{0}{1}"
         enumerator = ''
@@ -419,7 +427,7 @@ class _SectionsLink(object):
 
         return {'_section_name': self.section}
 
-    def __setstate(self, state):
+    def __setstate__(self, state):
 
         self._section_name = state['_section_name']
         self._locked_name = True
