@@ -17,7 +17,7 @@ class AbstractModelFactory(object):
 
     _LOGGER = None
     _SUB_FACTORIES = dict()
-    STORE_SECTION_HEAD = tuple()
+    STORE_SECTION_HEAD = ""
     STORE_SECTION_SERIALIZERS = dict()
 
     def __new__(cls, *args):
@@ -109,7 +109,7 @@ class AbstractModelFactory(object):
         """
 
         for key in keys:
-            if key in settings and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
+            if key in settings and key is not None and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
                 dtype = cls.STORE_SECTION_SERIALIZERS[key]
                 if issubclass(dtype, Model) and isinstance(settings[key], dict):
                     dtypes = tuple(k for k in cls._SUB_FACTORIES if k != dtype)
@@ -133,11 +133,13 @@ class AbstractModelFactory(object):
                 else:
                     try:
                         settings[key] = dtype(settings[key])
-                    except (AttributeError, ValueError):
+                    except (AttributeError, ValueError, TypeError):
                         try:
                             settings[key] = dtype[settings[key]]
-                        except (AttributeError, KeyError, IndexError):
-                            pass
+                        except (AttributeError, KeyError, IndexError, TypeError):
+                            cls.logger.error(
+                                "Having problems enforcing '{0}' to be type '{1}' in supplied settings '{2}'.".format(
+                                    key, dtype, settings))
 
     @classmethod
     def update(cls, model, **settings):
@@ -476,13 +478,13 @@ class LinkerConfigParser(object, ConfigParser):
 
     def _read(self, fp, fpname):
 
-        val = LinkerConfigParser._read(self, fp, fpname)
+        val = ConfigParser._read(self, fp, fpname)
         self._nonzero = True
         return val
 
     def __nonzero__(self):
 
-        return self._nonzero if hasattr(self._nonzero) else len(self.sections())
+        return self._nonzero if hasattr(self, '_nonzero') else len(self.sections())
 
 
 class MockConfigParser(object):
@@ -522,12 +524,13 @@ class Serializer(object):
 
         if self._has_section_head_and_is_valid(model):
 
-            with SerializationHelper.get_config(path) as old_conf:
-                with self._serialize(model) as new_conf:
+            with SerializationHelper.get_config(path) as conf:
 
-                    if old_conf and new_conf:
-                        SerializationHelper.update_config(old_conf, new_conf)
-                        return SerializationHelper.save_config(old_conf, path)
+                self._purge_tree(conf, model)
+                section = self.get_section_name(model)
+                self._serialize(model, conf, section)
+
+                return SerializationHelper.save_config(conf, path)
 
         return False
 
@@ -539,13 +542,13 @@ class Serializer(object):
 
         if self._has_section_head_and_is_valid(model):
 
-            with self._serialize(model) as serialized_model:
-                section = self.get_section_name(model)
-                # TODO: Check if this works
-                conf = ConfigParser(allow_no_value=True)
-                SerializationHelper.update_config(conf, section, serialized_model)
-                conf.write(filehandle)
-                return True
+            section = self.get_section_name(model)
+            conf = ConfigParser(allow_no_value=True)
+
+            self._serialize(model, conf, section)
+            conf.write(filehandle)
+            return True
+        return  False
 
     def _has_section_head(self, model):
 
@@ -576,17 +579,21 @@ class Serializer(object):
         with SerializationHelper.get_config(path) as conf:
 
             if conf:
-
-                sections = [self.get_section_name(model)]
-                sections += [_SectionsLink.get_link(k) for k in model.keys() if _SectionsLink.has_link(k)]
-
-                for section in sections:
-
-                    if conf.has_section(section):
-                        conf.remove_section(section)
+                self._purge_tree(conf, model)
                 return SerializationHelper.save_config(conf, path)
 
         return False
+
+    def _purge_tree(self, conf, model):
+
+        sections = [self.get_section_name(model)]
+        sections += [_SectionsLink.set_link(self._factory.get_sub_factory(model[k]),model[k], conf).section
+                     for k in model.keys() if isinstance(model[k], Model)]
+
+        for section in sections:
+
+            if conf.has_section(section):
+                conf.remove_section(section)
 
 
     def purge_all(self, path):
@@ -644,8 +651,12 @@ class Serializer(object):
 
                 elif issubclass(dtype, Model) and value is not None:
 
-                    link = SerializationHelper.unserialize(value, _SectionsLink)
-                    value = link.retrieve_model(conf)
+                    obj = SerializationHelper.unserialize(value, _SectionsLink)
+                    if isinstance(obj, _SectionsLink):
+                        value = obj.retrieve_model(conf)
+                    else:
+                        # This handles backward compatibility when models were pickled
+                        value = obj
 
                 else:
 
@@ -658,18 +669,6 @@ class Serializer(object):
     def load_serialized_object(self, serialized_object):
 
         return self._unserialize(MockConfigParser(serialized_object))
-
-    @staticmethod
-    def _get_belongs_to_sub_model(key_path):
-
-        return len(key_path) > 1
-
-    def _get_data_type(self, key):
-
-        factory = self._factory
-        if key in factory.STORE_SECTION_SERIALIZERS:
-            return factory.STORE_SECTION_SERIALIZERS[key]
-        return None
 
     def serialize(self, model):
 
@@ -684,8 +683,6 @@ class Serializer(object):
     def _serialize(self, model, conf, section):
 
         self._logger.info("Serializing {0} into '{1}' of {2}".format(model, section, conf))
-        if conf.has_section(section):
-            conf.remove_section(section)
 
         conf.add_section(section)
 
@@ -752,26 +749,6 @@ class SerializationHelper(object):
         raise Exception("This class is static, can't be instantiated")
 
     @staticmethod
-    def filter_member_model(key_filter, keys, *args):
-
-        filter_length = len(key_filter)
-        for filteree in zip(keys, *args):
-
-            key = filteree[0]
-            if all(filt == k for filt, k in zip(key_filter, key)) and len(key) > filter_length:
-                yield (key[filter_length:],) + filteree[1:]
-
-    @staticmethod
-    def get_str_from_path(keyPath):
-
-        return ".".join(keyPath)
-
-    @staticmethod
-    def get_path_from_str(key):
-
-        return tuple(key.split("."))
-
-    @staticmethod
     def serialize(obj, dtype):
 
         if obj is None:
@@ -836,6 +813,8 @@ class SerializationHelper(object):
                 conf.readfp(fh)
         except IOError:
             pass
+
+        return conf
 
     @staticmethod
     def save_config(conf, path):
