@@ -350,15 +350,13 @@ class _SectionsLink(object):
     __CONFIGS = defaultdict(set)
     __LINKS = {}
 
-    def __init__(self, factory, model, key):
+    def __init__(self, subfactory, submodel):
 
         """
-        :type key: str
-        :type model: scanomatic.generics.model.Model
-        :type factory: AbstractModelFactory
+        :type submodel: scanomatic.generics.model.Model
+        :type subfactory: () -> AbstractModelFactory
         """
-        submodel = model[key]
-        subfactory = factory._SUB_FACTORIES[type(submodel)]
+        self._subfactory = subfactory
         self._section_name = subfactory.serializer.get_section_name(submodel)
         self._locked_name = False
         _SectionsLink.__LINKS[submodel] = self
@@ -366,15 +364,40 @@ class _SectionsLink(object):
     @staticmethod
     def get_link(model):
 
+        """
+
+        :rtype : _SectionsLink
+        """
         return _SectionsLink.__LINKS[model]
 
+    @staticmethod
+    def clear_links(config_parser):
+        for link in _SectionsLink.__CONFIGS[config_parser]:
+            for m, l in _SectionsLink.__LINKS.items():
+                if link is l:
+                    del _SectionsLink.__LINKS[m]
+                    break
+        del _SectionsLink.__CONFIGS[config_parser]
+
+    @staticmethod
+    def set_link(subfactory, submodel, config_parser):
+
+        link = _SectionsLink(subfactory, submodel)
+        link.config_parser = config_parser
+        return link
+
+    @staticmethod
+    def has_link(model):
+
+        return model in _SectionsLink.__LINKS
+    
     @property
     def config_parser(self):
         """
         :return: ConfigParser.ConfigParser
         """
         try:
-            return (k for k,v in _SectionsLink.__CONFIGS.items() if self in v).next()
+            return (k for k, v in _SectionsLink.__CONFIGS.items() if self in v).next()
         except StopIteration:
             return None
 
@@ -389,7 +412,10 @@ class _SectionsLink(object):
 
     @property
     def section(self):
+        """
 
+        :rtype : str
+        """
         if self._locked_name:
             return self._section_name
 
@@ -423,14 +449,45 @@ class _SectionsLink(object):
 
         return config_parser.items(self._section_name)
 
+    def retrieve_model(self, config_parser):
+
+        return self._subfactory.create(**{k: v for k, v in self.retrieve_items(config_parser)})
+
     def __getstate__(self):
 
-        return {'_section_name': self.section}
+        return {'_section_name': self.section, '_subfactory': self._subfactory}
 
     def __setstate__(self, state):
 
         self._section_name = state['_section_name']
+        self._subfactory = state['_subfactory']
         self._locked_name = True
+
+
+class LinkerConfigParser(object, ConfigParser):
+
+    def __init__(self, *args, **kwargs):
+
+        ConfigParser.__init__(self, *args, **kwargs)
+
+    def __enter__(self):
+
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+
+        _SectionsLink.clear_links(self)
+
+    def _read(self, fp, fpname):
+
+        val = LinkerConfigParser._read(self, fp, fpname)
+        self._nonzero = True
+        return val
+
+    def __nonzero__(self):
+
+        return self._nonzero if hasattr(self._nonzero) else len(self.sections())
 
 
 @decorators.memoize
@@ -446,38 +503,43 @@ class Serializer(object):
 
     def dump(self, model, path):
 
-        if self._can_dump_to_file(model):
+        if self._has_section_head_and_is_valid(model):
 
-            conf = SerializationHelper.get_config(path)
-            serialized_model = self.serialize(model)
-            section = self.get_section_name(model)
+            with SerializationHelper.get_config(path) as old_conf:
+                with self._serialize(model) as new_conf:
 
-            if conf and serialized_model and section:
-                SerializationHelper.update_config(conf, section, serialized_model)
-                return SerializationHelper.save_config(conf, path)
+                    if old_conf and new_conf:
+                        SerializationHelper.update_config(old_conf, new_conf)
+                        return SerializationHelper.save_config(old_conf, path)
 
         return False
 
     def dump_to_filehandle(self, model, filehandle):
 
-        if self._can_dump_to_file(model):
+        if self._has_section_head_and_is_valid(model):
 
-            serialized_model = self.serialize(model)
-            section = self.get_section_name(model)
-            conf = ConfigParser(allow_no_value=True)
-            SerializationHelper.update_config(conf, section, serialized_model)
-            conf.write(filehandle)
-            return True
+            with self._serialize(model) as serialized_model:
+                section = self.get_section_name(model)
+                # TODO: Check if this works
+                conf = ConfigParser(allow_no_value=True)
+                SerializationHelper.update_config(conf, section, serialized_model)
+                conf.write(filehandle)
+                return True
 
-    def _can_dump_to_file(self, model):
+    def _has_section_head(self, model):
+
+        head = self.get_section_name(model)
+        return bool(len(head))
+
+    def _has_section_head_and_is_valid(self, model):
 
         factory = self._factory
         valid = factory.validate(model)
 
-        if factory.STORE_SECTION_HEAD and valid:
+        if self._has_section_head(model) and valid:
             return True
 
-        if not factory.STORE_SECTION_HEAD:
+        if not self._has_section_head(model):
             self._logger.warning("Factory does not know head for sections")
 
         if not valid:
@@ -490,30 +552,33 @@ class Serializer(object):
 
     def purge(self, model, path):
 
-        conf = SerializationHelper.get_config(path)
+        with SerializationHelper.get_config(path) as conf:
 
-        if conf:
+            if conf:
 
-            for section in conf.sections():
+                sections = [self.get_section_name(model)]
+                sections += [_SectionsLink.get_link(k) for k in model.keys() if _SectionsLink.has_link(k)]
 
-                if self.get_section_name(model) == section:
+                for section in sections:
 
-                    conf.remove_section(section)
-                    return SerializationHelper.save_config(conf, path)
+                    if conf.has_section(section):
+                        conf.remove_section(section)
+                return SerializationHelper.save_config(conf, path)
+
         return False
+
 
     def purge_all(self, path):
 
-        conf = SerializationHelper.get_config(None)
-        return SerializationHelper.save_config(conf, path)
+        with SerializationHelper.get_config(None) as conf:
+            return SerializationHelper.save_config(conf, path)
 
     def load(self, path):
 
-        conf = SerializationHelper.get_config(path)
+        with SerializationHelper.get_config(path) as conf:
 
-        if conf:
-            for section in conf.sections():
-                yield self._unserialize_section(conf, section)
+            if conf:
+                return tuple(self._unserialize_section(conf, section) for section in conf.sections())
 
     def _unserialize_section(self, conf, section):
 
@@ -581,46 +646,75 @@ class Serializer(object):
 
     def serialize(self, model):
 
-        serialized_model = dict()
+        if not self._has_section_head(model):
+            raise ValueError("Need a section head for serialization")
 
-        for keyPath, dtype in self._deep_serialize_keys_and_types(model):
-            serializable_val = SerializationHelper.get_value_by_path(model, keyPath)
-            serialized_model[SerializationHelper.get_str_from_path(keyPath)] = \
-                SerializationHelper.serialize(serializable_val, dtype)
+        with LinkerConfigParser() as conf:
 
-        return serialized_model
+            conf = self._serialize(model, conf, self.get_section_name(model))
+            return ((section, {k: v for k, v in conf.items(section)}) for section in conf.sections())
 
-    def _deep_serialize_keys_and_types(self, model):
+    def _serialize(self, model, conf, section):
+
+        self._logger.info("Serializing {0} into '{1}' of {2}".format(model, section, conf))
+        if conf.has_section(section):
+            conf.remove_section(section)
+
+        conf.add_section(section)
 
         factory = self._factory
-        for key_path, dtype in factory.STORE_SECTION_SERIALIZERS.items():
+        for key, dtype in factory.STORE_SECTION_SERIALIZERS.items():
 
-            if isinstance(dtype, tuple):
+            self._serialize_item(model, key, dtype, conf, section, factory)
 
-                continue
+        return conf
 
-            elif issubclass(dtype, AbstractModelFactory):
+    def _serialize_item(self, model, key, dtype, conf, section, factory):
 
-                sub_model = getattr(model, SerializationHelper.get_str_from_path(key_path))
-                if dtype is AbstractModelFactory:
-                    dtype = factory.get_sub_factory(sub_model)
+        value = model[key]
 
-                yield key_path, dtype
+        if isinstance(dtype, tuple):
 
-                for sub_key_path, sub_dtype in dtype.serializer._deep_serialize_keys_and_types(sub_model):
-                    yield key_path + sub_key_path, sub_dtype
-            else:
-                yield key_path, dtype
+            if dtype[0] in (list, tuple):
+
+                if issubclass(dtype[1], Model):
+                    links = []
+                    subfactory = factory.get_sub_factory(dtype[1])
+                    for item in value:
+                        links.append(_SectionsLink.set_link(subfactory, item, conf))
+                        subfactory.serializer._serialize(item, conf, _SectionsLink.get_link(item).section)
+
+                    conf.set(section, key, SerializationHelper.serialize(
+                        (SerializationHelper.serialize(link, _SectionsLink) for link in links), dtype[0]))
+                else:
+                    conf.set(section, key, SerializationHelper.serialize(
+                        (SerializationHelper.serialize(item, dtype[1]) for item in value),
+                        dtype[0]))
+
+        elif issubclass(dtype, Model):
+
+            subfactory = factory.get_sub_factory(value)
+
+            conf.set(section, key, SerializationHelper.serialize(_SectionsLink.set_link(subfactory, value, conf),
+                                                                  _SectionsLink))
+            subfactory.serializer._serialize(
+                value, conf, _SectionsLink.get_link(value).section)
+
+        else:
+            conf.set(section, key, SerializationHelper.serialize(value, dtype))
 
     def get_section_name(self, model):
 
         if isinstance(self._factory.STORE_SECTION_HEAD, str):
             return self._factory.STORE_SECTION_HEAD
         elif isinstance(self._factory.STORE_SECTION_HEAD, list):
-            return ", ".join(
-                [str(SerializationHelper.get_value_by_path(model, head)) for head in self._factory.STORE_SECTION_HEAD])
+            heads = [str(model[head]) for head in self._factory.STORE_SECTION_HEAD]
+            if '' in heads:
+                return ''
+            else:
+                return ", ".join(heads)
         else:
-            return str(SerializationHelper.get_value_by_path(model, self._factory.STORE_SECTION_HEAD))
+            return str(model[self._factory.STORE_SECTION_HEAD[0]])
 
 
 class SerializationHelper(object):
@@ -655,14 +749,16 @@ class SerializationHelper(object):
 
             return obj.name
 
+        elif dtype is _SectionsLink:
+            return cPickle.dumps(obj)
+
         elif dtype in (int, float, str, bool):
 
             return str(obj)
 
-        elif issubclass(dtype, AbstractModelFactory):
-            return cPickle.dumps(dtype)
         else:
-
+            if not isinstance(obj, dtype):
+                obj = dtype(obj)
             return cPickle.dumps(obj)
 
     @staticmethod
@@ -705,7 +801,11 @@ class SerializationHelper(object):
     @staticmethod
     def get_config(path):
 
-        conf = ConfigParser(
+        """
+
+        :rtype : LinkerConfigParser
+        """
+        conf = LinkerConfigParser(
             allow_no_value=True)
         try:
             with open(path, 'r') as fh:
