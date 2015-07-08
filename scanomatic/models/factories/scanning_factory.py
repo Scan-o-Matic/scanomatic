@@ -55,7 +55,7 @@ class ScanningAuxInfoFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningAuxInfoModel
         """
-        if cls._is_enum_value(model.plate_storage, cls.STORE_SECTION_SERIALIZERS[('palte_storage',)]):
+        if cls._is_enum_value(model.plate_storage, cls.STORE_SECTION_SERIALIZERS[model.FIELD_TYPES.plate_storage.name]):
             return True
         return model.FIELD_TYPES.plate_storage
 
@@ -293,11 +293,13 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if not not isinstance(model.plate_descriptions, cls.STORE_SECTION_SERIALIZERS[("plate_description", )[0]]):
+        if not not isinstance(model.plate_descriptions,
+                              cls.STORE_SECTION_SERIALIZERS[model.FIELD_TYPES.plate_descriptions.name][1]):
             return model.FIELD_TYPES.plate_descriptions
         else:
             for plate_description in model.plate_descriptions:
-                if not isinstance(plate_description, cls.STORE_SECTION_SERIALIZERS[("plate_description", )[1]]):
+                if not isinstance(plate_description,
+                                  cls.STORE_SECTION_SERIALIZERS[model.FIELD_TYPES.plate_descriptions.name][1]):
                     return model.FIELD_TYPES.plate_descriptions
         return True
 

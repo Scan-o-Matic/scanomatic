@@ -17,9 +17,9 @@ class CompileImageFactory(AbstractModelFactory):
     MODEL = compile_project_model.CompileImageModel
 
     STORE_SECTION_SERIALIZERS = {
-        ('index',): int,
-        ('time_stamp',): float,
-        ('path',): str
+        'index': int,
+        'time_stamp': float,
+        'path': str
     }
     STORE_SECTION_HEAD = ("index",)
 
@@ -97,13 +97,13 @@ class CompileProjectFactory(AbstractModelFactory):
     }
 
     STORE_SECTION_SERIALIZERS = {
-        ('compile_action',): compile_project_model.COMPILE_ACTION,
-        ('images',): list,
-        ('path',): str,
-        ('start_condition',): str,
-        ('start_time',): float,
-        ('fixture_type',): compile_project_model.FIXTURE,
-        ('fixture_name',): str
+        'compile_action': compile_project_model.COMPILE_ACTION,
+        'images': list,
+        'path': str,
+        'start_condition': str,
+        'start_time': float,
+        'fixture_type': compile_project_model.FIXTURE,
+        'fixture_name': str
     }
 
     @classmethod
@@ -207,8 +207,8 @@ class CompileImageAnalysisFactory(AbstractModelFactory):
     }
 
     STORE_SECTION_SERIALIZERS = {
-        ('image',): compile_project_model.CompileImageModel,
-        ('fixture',): fixture_models.FixtureModel
+        'image': compile_project_model.CompileImageModel,
+        'fixture': fixture_models.FixtureModel
     }
 
     @classmethod

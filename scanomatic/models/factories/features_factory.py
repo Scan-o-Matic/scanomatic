@@ -8,7 +8,7 @@ from scanomatic.generics.abstract_model_factory import AbstractModelFactory
 class FeaturesFactory(AbstractModelFactory):
 
     STORE_SECTION_SERIALIZERS = {
-        ("analysis_directory",): str
+        "analysis_directory": str
     }
 
     @classmethod

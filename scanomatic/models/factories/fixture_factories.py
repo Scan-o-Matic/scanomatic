@@ -12,13 +12,13 @@ class GridHistoryFactory(AbstractModelFactory):
     MODEL = fixture_models.GridHistoryModel
     STORE_SECTION_HEAD = [('project_id',), ('plate',)]
     STORE_SECTION_SERIALIZERS = {
-        ('project_id',): str,
-        ('pinning',): tuple,
-        ('plate',): int,
-        ('center_x',): float,
-        ('center_y',): float,
-        ('delta_x',): float,
-        ('delta_y',): float,
+        'project_id': str,
+        'pinning': tuple,
+        'plate': int,
+        'center_x': float,
+        'center_y': float,
+        'delta_x': float,
+        'delta_y': float,
     }
 
     @classmethod
@@ -107,15 +107,15 @@ class FixtureFactory(AbstractModelFactory):
     MODEL = FixtureModel
     STORE_SECTION_HEAD = ('name',)
     STORE_SECTION_SERIALIZERS = {
-        ('grayscale',): fixture_models.GrayScaleAreaModel,
-        ("orientation_marks_x",): list,
-        ("orientation_marks_y",): list,
-        ("shape",): list,
-        ("coordinates_scale",): float,
-        ("scale",): float,
-        ("path",): str,
-        ("name",): str,
-        ("plates",): list,  # TODO: This won't serialize well
+        'grayscale': fixture_models.GrayScaleAreaModel,
+        "orientation_marks_x": list,
+        "orientation_marks_y": list,
+        "shape": list,
+        "coordinates_scale": float,
+        "scale": float,
+        "path": str,
+        "name": str,
+        "plates": list,  # TODO: This won't serialize well
     }
 
     @classmethod
@@ -156,9 +156,9 @@ class FixtureFactory(AbstractModelFactory):
 class FixturePlateFactory(AbstractModelFactory):
     MODEL = FixturePlateModel
     STORE_SECTION_SERIALIZERS = {
-        ("index",): int,
-        ("x1",): int,
-        ("y1",): int,
-        ("x2",): int,
-        ("y2",): int
+        "index": int,
+        "x1": int,
+        "y1": int,
+        "x2": int,
+        "y2": int
     }
