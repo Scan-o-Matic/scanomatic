@@ -818,11 +818,13 @@ class SerializationHelper(object):
         """
         conf = LinkerConfigParser(
             allow_no_value=True)
-        try:
-            with open(path, 'r') as fh:
-                conf.readfp(fh)
-        except IOError:
-            pass
+
+        if isinstance(path, str):
+            try:
+                with open(path, 'r') as fh:
+                    conf.readfp(fh)
+            except IOError:
+                pass
 
         return conf
 
