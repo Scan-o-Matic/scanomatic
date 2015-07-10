@@ -8,16 +8,26 @@
 	<title>Scan-o-Matic</title>
 </head>
 <body>
-        <img id='logo' src='images/help_logo.png'>
+        <div id="holder">
+            <img id='logo' src='images/help_logo.png'>
+            <nav>
+                <a href="/experiment" target="page">Experiment</a>
+                <a href="/compile" target="page">Compile</a>
+                <span>Analysis</span>
+                <span>QC & Normalization</span>
+                |
+                <span>Status</span>
+                |
+                <a href="/fixtures" target="page">Fixtures</a>
+                |
+                <a href="/help" target="page">Help</a>
+                <a href="/wiki" target="_blank">Wiki</a>
+
+            </nav>
+            <iframe id="page" name="page"></iframe>
+        </div>
         <script>
-        $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
+            $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
         </script>
-        <ul>
-            <li><a href="/help">Help</a></li>
-            <li><a href="/wiki">Wiki</a></li>
-            <li><a href="/fixtures">Fixtures</a></li>
-            <li><a href="/experiment">Experiment</a></li>
-            <li><a href="/compile">Compile</a></li>
-        </ul>
 </body>
 </html>

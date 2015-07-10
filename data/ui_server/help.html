@@ -15,14 +15,10 @@
 	<h2><a href="#quality">Quality Control</a></h2>
 	<h2><a href="#server">The Server</a></h2>
 </div>
-<img id='logo' src='images/help_logo.png'>
-	<script>
-$("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
-	</script>
 <div id='cont'>
 	<div class='section'>
 		<h1><a id="installing">Installation</a></h1>
-		<p><em>Please note that each Scan-o-Matic update downloaded must
+		<p><em>Please note that each update of Scan-o-Matic you download must
 			be installed using the procedure described here.</em></p>
 		<p>Scan-o-Matic can is easiest installed by running
 		<code>python setup.py install --user</code>. If you require it for
@@ -39,8 +35,8 @@ $("#logo").bind("load", function () { $(this).hide().fadeIn(4000); });
 		attempt to install them. If however this fails the following should
 		install the required modules:</p>
 		<blockquote><code>sudo easy_install argparse matplotlib 
-		multiprocessing odfpy numpy sh configparse scikit-image uuid PIL scipy
-		pygtk</code></blockquote>
+		multiprocessing odfpy numpy sh configparse scikit-image uuid PIL scipy enum34
+		</code></blockquote>
 		<p>The module <code>nmap</code> may need special install routines.
 		On Ubuntu systems it is easily done with
 		<code>sudo apt-get install nmap python-nmap</code>,
