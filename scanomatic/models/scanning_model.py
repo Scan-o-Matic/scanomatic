@@ -95,8 +95,12 @@ class ScanningModel(model.Model):
 
 class PlateDescription(model.Model):
 
-    def __init__(self, index, description):
+    def __init__(self, name='', index=-1, description=''):
 
+        if name is '':
+            name = "Plate {0}".format(index + 1)
+
+        self.name = name
         self.index = index
         self.description = description
 

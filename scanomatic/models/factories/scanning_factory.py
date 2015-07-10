@@ -9,6 +9,57 @@ import re
 import string
 
 
+
+
+class PlateDescriptionFactory(AbstractModelFactory):
+
+    MODEL = PlateDescription
+    STORE_SECTION_HEAD = ("name",)
+    STORE_SECTION_SERIALIZERS = {
+        'name': str,
+        'index': int,
+        'description': str
+    }
+
+    @classmethod
+    def create(cls, **settings):
+        """
+        :rtype : scanomatic.models.scanning_model.PlateDescription
+        """
+        return super(cls, PlateDescription).create(**settings)
+
+    @classmethod
+    def _validate_index(cls, model):
+        """
+        :type model: scanomatic.models.scanning_model.PlateDescription
+        """
+
+        if not isinstance(model.index, int):
+            return model.FIELD_TYPES.index
+        elif model.index >= 0:
+            return True
+        else:
+            return model.FIELD_TYPES.index
+
+    @classmethod
+    def _validate_name(cls, model):
+        """
+        :type model: scanomatic.models.scanning_model.PlateDescription
+        """
+        if isinstance(model.name, str) and model.str:
+            return True
+        return model.FIELD_TYPES.name
+
+    @classmethod
+    def _validate_name(cls, model):
+        """
+        :type model: scanomatic.models.scanning_model.PlateDescription
+        """
+        if isinstance(model.description, str) and model.str:
+            return True
+        return model.FIELD_TYPES.description
+
+
 class ScanningAuxInfoFactory(AbstractModelFactory):
     MODEL = ScanningAuxInfoModel
     STORE_SECTION_HEAD = "Auxillary Information"
@@ -24,7 +75,6 @@ class ScanningAuxInfoFactory(AbstractModelFactory):
         'culture_freshness': int,
         'culture_source': CULTURE_SOURCE
     }
-
 
     @classmethod
     def create(cls, **settings):
@@ -131,7 +181,8 @@ class ScanningModelFactory(AbstractModelFactory):
     _GET_MAX_MODEL = app_config.Config().get_max_model
     STORE_SECTION_HEAD = ("project_name",)
     _SUB_FACTORIES = {
-        ScanningAuxInfoModel: ScanningAuxInfoFactory
+        ScanningAuxInfoModel: ScanningAuxInfoFactory,
+        PlateDescription: PlateDescriptionFactory
     }
     STORE_SECTION_SERIALIZERS = {
         'number_of_scans': int,
@@ -301,6 +352,13 @@ class ScanningModelFactory(AbstractModelFactory):
                 if not isinstance(plate_description,
                                   cls.STORE_SECTION_SERIALIZERS[model.FIELD_TYPES.plate_descriptions.name][1]):
                     return model.FIELD_TYPES.plate_descriptions
+
+
+            if (len(set(plate_description.name for plate_description in model.plate_descriptions)) !=
+                    len(model.plate_descriptions)):
+
+                return model.FIELD_TYPES.plate_descriptions
+
         return True
 
     @classmethod
