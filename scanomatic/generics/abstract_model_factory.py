@@ -58,6 +58,7 @@ class AbstractModelFactory(object):
 
         model_type = type(model)
         if model_type not in cls._SUB_FACTORIES:
+            cls.logger.warning("Unknown subfactory for model-type {0}".format(model_type))
             return AbstractModelFactory
         return cls._SUB_FACTORIES[model_type]
 
@@ -743,23 +744,26 @@ class Serializer(object):
 
         if isinstance(dtype, tuple):
 
-            if dtype[0] in (list, tuple):
+            dtype_outer, dtype_inner = dtype
+            if dtype_outer in (list, tuple, set):
 
-                if issubclass(dtype[1], Model):
+                if issubclass(dtype_inner, Model):
                     links = []
-                    subfactory = factory.get_sub_factory(dtype[1])
+
                     for item in value:
                         if item is not None:
+                            subfactory = factory.get_sub_factory(item)
                             links.append(_SectionsLink.set_link(subfactory, item, conf))
                             subfactory.serializer._serialize(item, conf, _SectionsLink.get_link(item).section)
                         else:
                             links.append(item)
+
                     conf.set(section, key, SerializationHelper.serialize(
-                        (SerializationHelper.serialize(link, _SectionsLink) for link in links), dtype[0]))
+                        (SerializationHelper.serialize(link, _SectionsLink) for link in links), dtype_outer))
                 else:
                     conf.set(section, key, SerializationHelper.serialize(
-                        (SerializationHelper.serialize(item, dtype[1]) if item is not None else None for item in value),
-                        dtype[0]))
+                        (SerializationHelper.serialize(item, dtype_inner) if item is not None else None for item in value),
+                        dtype_outer))
 
         elif issubclass(dtype, Model) and value is not None:
 
