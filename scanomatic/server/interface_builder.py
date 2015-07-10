@@ -19,6 +19,7 @@ from scanomatic.models.factories.compile_project_factory import CompileProjectFa
 import scanomatic.models.rpc_job_models as rpc_job_models
 
 _SOM_SERVER = None
+""":type: scanomatic.server.server.Server"""
 _RPC_SERVER = None
 
 
@@ -178,7 +179,8 @@ class Interface_Builder(SingeltonOneInit):
     def _server_get_scanner_status(self, user_id=None):
 
         global _SOM_SERVER
-        return _SOM_SERVER.scanner_manager.status
+        return [{k:(scanner_owner_model[k] if scanner_owner_model[k] is not None else False)
+                 for k in scanner_owner_model.keys()} for scanner_owner_model in _SOM_SERVER.scanner_manager.status]
 
     def _server_get_queue_status(self, user_id=None):
 
