@@ -2,6 +2,14 @@
 ##### COMPUTER REQUIREMENTS #####
    ############################
 
+To list all modules used (some may be internal to scanomatic, many will be
+in the standard lib use:
+
+grep -r scanomatic -e"import" | grep -o ":.*" | grep -v "scanomatic" | sed -e "s/^: *\(from\|import\) *\([A-Za-z0-9]*\).*/\2/g" | sort | uniq
+
+also change the first scanomatic to scripts!
+
+*** OUTDATED ***
 1. HARDWARE
 
 1.1 USB
