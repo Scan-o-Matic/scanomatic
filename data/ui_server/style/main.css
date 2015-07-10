@@ -72,6 +72,16 @@ nav {
 	color: #cd8b34;
 }
 
+nav span {
+	background: #cd8b34;
+	color: #541f0f;
+    padding-left: 6px;
+    padding-right: 6px;
+    margin-left: 6px;
+    margin-right: 6px;
+
+}
+
 ul {
 	padding:12px;
 	background: #e7d2b7;
