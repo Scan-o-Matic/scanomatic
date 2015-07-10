@@ -26,7 +26,7 @@ class PlateDescriptionFactory(AbstractModelFactory):
         """
         :rtype : scanomatic.models.scanning_model.PlateDescription
         """
-        return super(cls, PlateDescription).create(**settings)
+        return super(cls, PlateDescriptionFactory).create(**settings)
 
     @classmethod
     def _validate_index(cls, model):
