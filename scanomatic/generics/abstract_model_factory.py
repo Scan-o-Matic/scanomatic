@@ -588,6 +588,9 @@ class Serializer(object):
 
         sections = [self.get_section_name(model)]
 
+        if not conf.has_section(sections[0]):
+            return
+
         for key in model.keys():
 
             if isinstance(model[key], Model):
