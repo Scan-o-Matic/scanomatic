@@ -587,8 +587,18 @@ class Serializer(object):
     def _purge_tree(self, conf, model):
 
         sections = [self.get_section_name(model)]
-        sections += [_SectionsLink.set_link(self._factory.get_sub_factory(model[k]),model[k], conf).section
-                     for k in model.keys() if isinstance(model[k], Model)]
+
+        for key in model.keys():
+
+            if isinstance(model[key], Model):
+
+                try:
+
+                    sections.append(SerializationHelper.unserialize(conf.get(sections[0], key), _SectionsLink).section)
+
+                except AttributeError:
+
+                    sections.append(_SectionsLink.set_link(self._factory.get_sub_factory(model[k]), model[k], conf).section)
 
         for section in sections:
 
