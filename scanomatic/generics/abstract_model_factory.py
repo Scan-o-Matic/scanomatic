@@ -108,38 +108,58 @@ class AbstractModelFactory(object):
         :return:
         """
 
+        def _enforce_model(factory, obj):
+            factories = tuple(f for f in cls._SUB_FACTORIES.values() if f != factory)
+            index = 0
+            while True:
+                if factory in cls._SUB_FACTORIES.values():
+                    try:
+                        return factory.MODEL(**obj)
+                    except TypeError:
+                        cls.logger.warning("Could not use {0} on key {1} to create sub-class".format(
+                            factory, obj
+                        ))
+
+                if index < len(factories):
+                    factory = factories[index]
+                    index += 1
+                else:
+                    break
+
+        def _enforce_other(dtype, obj):
+            if obj is None:
+                return
+            try:
+                return dtype(obj)
+            except (AttributeError, ValueError, TypeError):
+                try:
+                    return dtype[obj]
+                except (AttributeError, KeyError, IndexError, TypeError):
+                    cls.logger.error(
+                        "Having problems enforcing '{0}' to be type '{1}' in supplied settings '{2}'.".format(
+                            obj, dtype, settings))
+                    return obj
+
         for key in keys:
-            if key in settings and key is not None and not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
+            if key in settings and settings[key] is None or key not in settings:
+                continue
+            if (isinstance(cls.STORE_SECTION_SERIALIZERS[key], tuple)):
+                dtype_outer, dtype_inner = cls.STORE_SECTION_SERIALIZERS[key]
+                if dtype_outer in (tuple, list, set):
+                    if issubclass(dtype_inner, Model):
+                        settings[key] = dtype_outer(_enforce_model(cls._SUB_FACTORIES[dtype_inner], item)
+                                                    if isinstance(item, dict) else item for item in settings[key])
+                    else:
+
+                        settings[key] = dtype_outer(_enforce_other(dtype_inner, item) for item in settings[key])
+
+            elif isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
                 dtype = cls.STORE_SECTION_SERIALIZERS[key]
                 if issubclass(dtype, Model) and isinstance(settings[key], dict):
-                    dtypes = tuple(k for k in cls._SUB_FACTORIES if k != dtype)
-                    index = 0
-                    while True:
-                        if dtype in cls._SUB_FACTORIES:
-                            try:
-                                settings[key] = cls._SUB_FACTORIES[dtype].MODEL(**settings[key])
-                            except TypeError:
-                                cls.logger.warning("Could not use {0} on key {1} to create sub-class".format(
-                                    dtype, key
-                                ))
-                            else:
-                                break
-
-                        if index < len(dtypes):
-                            dtype = dtypes[index]
-                            index += 1
-                        else:
-                            break
+                    settings[key] = _enforce_model(cls._SUB_FACTORIES[dtype], settings[key])
                 else:
-                    try:
-                        settings[key] = dtype(settings[key])
-                    except (AttributeError, ValueError, TypeError):
-                        try:
-                            settings[key] = dtype[settings[key]]
-                        except (AttributeError, KeyError, IndexError, TypeError):
-                            cls.logger.error(
-                                "Having problems enforcing '{0}' to be type '{1}' in supplied settings '{2}'.".format(
-                                    key, dtype, settings))
+                    settings[key] = _enforce_other(dtype, settings[key])
+
 
     @classmethod
     def update(cls, model, **settings):
@@ -601,7 +621,8 @@ class Serializer(object):
 
                 except AttributeError:
 
-                    sections.append(_SectionsLink.set_link(self._factory.get_sub_factory(model[k]), model[k], conf).section)
+                    sections.append(_SectionsLink.set_link(
+                        self._factory.get_sub_factory(model[key]), model[key], conf).section)
 
         for section in sections:
 
