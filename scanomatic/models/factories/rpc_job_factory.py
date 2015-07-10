@@ -14,11 +14,11 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
                       CompileInstructionsModel: CompileProjectFactory}
     STORE_SECTION_HEAD = ('id',)
     STORE_SECTION_SERIALIZERS = {
-        ('id',): int,
-        ('type',): rpc_job_models.JOB_TYPE,
-        ('status',): rpc_job_models.JOB_STATUS,
-        ('content_model',): AbstractModelFactory,
-        ('pid',): int}
+        'id': int,
+        'type': rpc_job_models.JOB_TYPE,
+        'status': rpc_job_models.JOB_STATUS,
+        'content_model': AbstractModelFactory,
+        'pid': int}
 
     @classmethod
     def _validate_pid(cls, model):
