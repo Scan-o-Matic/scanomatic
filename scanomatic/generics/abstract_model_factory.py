@@ -141,7 +141,7 @@ class AbstractModelFactory(object):
                     return obj
 
         for key in keys:
-            if key in settings and settings[key] is None or key not in settings:
+            if key not in settings or settings[key] is None:
                 continue
             if (isinstance(cls.STORE_SECTION_SERIALIZERS[key], tuple)):
                 dtype_outer, dtype_inner = cls.STORE_SECTION_SERIALIZERS[key]
@@ -153,7 +153,7 @@ class AbstractModelFactory(object):
 
                         settings[key] = dtype_outer(_enforce_other(dtype_inner, item) for item in settings[key])
 
-            elif isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
+            elif not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
                 dtype = cls.STORE_SECTION_SERIALIZERS[key]
                 if issubclass(dtype, Model) and isinstance(settings[key], dict):
                     settings[key] = _enforce_model(cls._SUB_FACTORIES[dtype], settings[key])
@@ -186,6 +186,25 @@ class AbstractModelFactory(object):
             return gen
         else:
             return type(models)(gen)
+
+
+    @classmethod
+    def to_dict(cls, model):
+
+        D = dict(**model)
+        for k in D:
+            if isinstance(D[k], Model):
+                if type(D[k]) in cls._SUB_FACTORIES:
+                    D[k] = cls._SUB_FACTORIES[type(D[k])].to_dict(D[k])
+                else:
+                    D[k] = AbstractModelFactory.to_dict(D[k])
+            elif isinstance(cls.STORE_SECTION_SERIALIZERS[k], tuple):
+                dtype_outer, dtype_inner = cls.STORE_SECTION_SERIALIZERS[k]
+                if dtype_outer in (tuple, list, set) and issubclass(dtype_inner, Model):
+                    D[k] = dtype_outer(cls._SUB_FACTORIES[dtype_inner].to_dict(item)
+                                       if isinstance(item, Model) and dtype_inner in cls._SUB_FACTORIES else item
+                                       for item in D[k])
+        return D
 
     @classmethod
     def validate(cls, model):
@@ -277,15 +296,6 @@ class AbstractModelFactory(object):
         if isinstance(sub_model, Model) and sub_model_type in cls._SUB_FACTORIES:
             return cls._SUB_FACTORIES[sub_model_type].validate(sub_model)
         return False
-
-    @staticmethod
-    def to_dict(model):
-
-        D = dict(**model)
-        for k in D:
-            if isinstance(D[k], Model):
-                D[k] = AbstractModelFactory.to_dict(D[k])
-        return D
 
     @staticmethod
     def _in_bounds(model, lower_bounds, upper_bounds, attr):
