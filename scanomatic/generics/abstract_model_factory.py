@@ -550,6 +550,7 @@ class MockConfigParser(object):
 
         return (contents[item] for name, contents in self._so if section == name).next()
 
+
 @decorators.memoize
 class Serializer(object):
     def __init__(self, factory):
@@ -675,7 +676,7 @@ class Serializer(object):
         factory = self._factory
 
         if not factory.all_keys_valid(conf.options(section)):
-            self._logger.info("{1} Refused section {0} because keys {2}".format(
+            self._logger.warning("{1} Refused section {0} because keys {2}".format(
                 section, factory, conf.options(section)))
             return None
 
@@ -737,7 +738,7 @@ class Serializer(object):
 
     def _serialize(self, model, conf, section):
 
-        self._logger.info("Serializing {0} into '{1}' of {2}".format(model, section, conf))
+        # self._logger.info("Serializing {0} into '{1}' of {2}".format(model, section, conf))
 
         conf.add_section(section)
 
