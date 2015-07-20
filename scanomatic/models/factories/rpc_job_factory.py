@@ -15,7 +15,7 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
                       CompileInstructionsModel: CompileProjectFactory}
     STORE_SECTION_HEAD = ('id',)
     STORE_SECTION_SERIALIZERS = {
-        'id': int,
+        'id': str,
         'type': rpc_job_models.JOB_TYPE,
         'status': rpc_job_models.JOB_STATUS,
         'content_model': Model,
