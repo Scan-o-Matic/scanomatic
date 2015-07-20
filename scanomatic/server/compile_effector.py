@@ -7,6 +7,7 @@ from scanomatic.io.fixtures import Fixtures, FixtureSettings
 from scanomatic.io.paths import Paths
 from scanomatic.imageAnalysis import first_pass
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.rpc_job_models import JOB_TYPE
 
 
@@ -35,7 +36,11 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         """:rtype : float"""
         return self._image_to_analyse / float(len(self._compile_job.images))
 
-    def setup(self, compile_job):
+    def setup(self, job):
+
+        self._compile_job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0].content_model
+
+        self._logger.info("Setup called")
 
         self._compile_instructions_path = Paths().get_project_compile_instructions_path_from_compile_model(
             self._compile_job)
