@@ -29,6 +29,7 @@ import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 import scanomatic.io.first_pass_results as first_pass_results
 
 
@@ -218,13 +219,15 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         return pos
 
-    def setup(self, *args, **kwargs):
+    def setup(self, job):
+
+        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
 
         if self._running:
             self.add_message("Cannot change settings while running")
             return
 
-        self._logger.info("Setup got {0} {1}".format(args, kwargs))
+        self._logger.info("Setup got {0}".format(job))
 
         if self._analysis_job.compile_instructions:
             self._update_job_from_config_file()
