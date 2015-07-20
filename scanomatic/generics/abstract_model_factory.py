@@ -130,6 +130,16 @@ class AbstractModelFactory(object):
         def _enforce_other(dtype, obj):
             if obj is None:
                 return
+            elif issubclass(dtype, AbstractModelFactory):
+                if isinstance(dtype, dtype.MODEL):
+                    return obj
+                else:
+                    try:
+                        return dtype.create(**obj)
+                    except (AttributeError):
+                        cls.logger.error(
+                            "Contents mismatch between factory {0} and model data '{1}'".format(dtype, obj))
+                        return obj
             try:
                 return dtype(obj)
             except (AttributeError, ValueError, TypeError):
