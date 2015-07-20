@@ -108,7 +108,7 @@ class RpcJob(Process, Fake):
 
         effector_iterator = pipe_effector.procEffector
 
-        _l.info("Starting main loop using")
+        _l.info("Starting main loop")
 
         while t.is_alive() and job_running:
 
