@@ -11,7 +11,11 @@ class Model(object):
     def __init__(self):
 
         content = [attribute for attribute in self]
-        fields, _ = zip(*content)
+        if content:
+            fields, _ = zip(*content)
+        else:
+            fields = []
+
         if not self._has_set_field_types():
             self._set_field_types(fields)
 
@@ -102,8 +106,10 @@ class Model(object):
 
         if cls._has_set_field_types():
             raise AttributeError("Can't change field types")
-        else:
+        elif names:
             cls.FIELD_TYPES = Enum(cls.__name__, {n: hash(n) for n in names})
+        else:
+            cls.FIELD_TYPES = None
 
     def _set_initialized(self):
 
