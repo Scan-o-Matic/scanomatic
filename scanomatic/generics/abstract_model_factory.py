@@ -805,13 +805,24 @@ class Serializer(object):
         if isinstance(self._factory.STORE_SECTION_HEAD, str):
             return self._factory.STORE_SECTION_HEAD
         elif isinstance(self._factory.STORE_SECTION_HEAD, list):
-            heads = [str(model[head]) for head in self._factory.STORE_SECTION_HEAD]
+            heads = [(str(model[head]) if model[head] is not None else '') for head in self._factory.STORE_SECTION_HEAD]
             if '' in heads:
                 return ''
             else:
                 return ", ".join(heads)
+        elif isinstance(self._factory.STORE_SECTION_HEAD, tuple):
+            for key in self._factory.STORE_SECTION_HEAD:
+                try:
+                    if key in model:
+                        model = model[key]
+                    else:
+                        return ''
+                except TypeError:
+                    return ''
+
+            return str(model) if model is not None else ''
         else:
-            return str(model[self._factory.STORE_SECTION_HEAD[0]])
+            return ''
 
 
 class SerializationHelper(object):
