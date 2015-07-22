@@ -187,7 +187,7 @@ class AbstractModelFactory(object):
         if cls._verify_correct_model(model):
             return cls.serializer.load_serialized_object(
                 copy.deepcopy(
-                    cls.serializer.serialize(model)))
+                    tuple(cls.serializer.serialize(model))))[0]
 
     @classmethod
     def copy_iterable_of_model(cls, models):
