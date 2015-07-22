@@ -371,7 +371,8 @@ class FixtureImage(object):
 
         """
 
-        :type area: scanomatic.models.fixture_models.FixturePlateModel |  scanomatic.models.fixture_models.GrayScaleAreaModel
+        :type area: scanomatic.models.fixture_models.FixturePlateModel |
+        scanomatic.models.fixture_models.GrayScaleAreaModel
         """
 
         if rotation:
