@@ -41,7 +41,11 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         self._compile_job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0].content_model
 
         self._logger.info("Setup called")
+        self._logger.set_output_target(Paths().get_project_compile_log_path_from_compile_model(self._compile_job),
+                                       catch_stdout=True, catch_stderr=True)
+        self._logger.surpress_prints = True
 
+        self._logger.info("Doing setup")
         self._compile_instructions_path = Paths().get_project_compile_instructions_path_from_compile_model(
             self._compile_job)
         self._tweak_path()

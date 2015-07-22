@@ -148,6 +148,7 @@ class Paths(SingeltonOneInit):
         self.project_settings_file_pattern = "{0}.project.settings"
         self.project_compilation_pattern = "{0}.project.compilation"
         self.project_compilation_instructions_pattern = "{0}.project.compilation.instructions"
+        self.project_compilation_log_pattern = "{0}.project.compilation.log"
         self.scan_project_file_pattern = "{0}.scan.instructions"
 
     def join(self, attr, *other):
@@ -205,7 +206,8 @@ class Paths(SingeltonOneInit):
 
         return compile_model.path
 
-    def get_project_directory_name_from_path(self, path):
+    @staticmethod
+    def get_project_directory_name_from_path(path):
 
         return path.rstrip(os.sep).split(os.sep)[-1]
 
@@ -213,6 +215,11 @@ class Paths(SingeltonOneInit):
 
         project_name = self.get_project_directory_name_from_path(compile_model.path)
         return self.project_compilation_instructions_pattern.format(os.path.join(compile_model.path, project_name))
+
+    def get_project_compile_log_path_from_compile_model(self, compile_model):
+
+        project_name = self.get_project_directory_name_from_path(compile_model.path)
+        return self.project_compilation_log_pattern.format(os.path.join(compile_model.path, project_name))
 
     @staticmethod
     def get_scanner_path_name(scanner):
