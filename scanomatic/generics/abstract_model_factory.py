@@ -385,8 +385,8 @@ def _is_pinning_format(pinning_format):
 
 class _SectionsLink(object):
 
-    __CONFIGS = defaultdict(set)
-    __LINKS = {}
+    _CONFIGS = defaultdict(set)
+    _LINKS = {}
 
     def __init__(self, subfactory, submodel):
 
@@ -397,7 +397,7 @@ class _SectionsLink(object):
         self._subfactory = subfactory
         self._section_name = subfactory.serializer.get_section_name(submodel)
         self._locked_name = False
-        _SectionsLink.__LINKS[submodel] = self
+        _SectionsLink._LINKS[submodel] = self
 
     @staticmethod
     def get_link(model):
@@ -406,20 +406,28 @@ class _SectionsLink(object):
 
         :rtype : _SectionsLink
         """
-        return _SectionsLink.__LINKS[model]
+        return _SectionsLink._LINKS[model]
 
     @staticmethod
     def clear_links(config_parser):
-        for link in _SectionsLink.__CONFIGS[config_parser]:
-            for m, l in _SectionsLink.__LINKS.items():
+        """
+
+        :type config_parser: LinkerConfigParser
+        """
+        for link in _SectionsLink._CONFIGS[config_parser.id]:
+            for m, l in _SectionsLink._LINKS.items():
                 if link is l:
-                    del _SectionsLink.__LINKS[m]
+                    del _SectionsLink._LINKS[m]
                     break
-        del _SectionsLink.__CONFIGS[config_parser]
+        del _SectionsLink._CONFIGS[config_parser.id]
 
     @staticmethod
     def set_link(subfactory, submodel, config_parser):
 
+        """
+
+        :type config_parser: LinkerConfigParser
+        """
         link = _SectionsLink(subfactory, submodel)
         link.config_parser = config_parser
         return link
@@ -427,7 +435,7 @@ class _SectionsLink(object):
     @staticmethod
     def has_link(model):
 
-        return model in _SectionsLink.__LINKS
+        return model in _SectionsLink._LINKS
     
     @property
     def config_parser(self):
@@ -435,18 +443,22 @@ class _SectionsLink(object):
         :return: ConfigParser.ConfigParser
         """
         try:
-            return (k for k, v in _SectionsLink.__CONFIGS.items() if self in v).next()
+            return (k for k, v in _SectionsLink._CONFIGS.items() if self in v).next()
         except StopIteration:
             return None
 
     @config_parser.setter
     def config_parser(self, value):
 
-        if not isinstance(value, ConfigParser):
-            raise ValueError("not a ConfigParser")
+        """
+
+        :type value: LinkerConfigParser
+        """
+        if not isinstance(value, LinkerConfigParser):
+            raise ValueError("not a LinkerConfigParser")
 
         self._get_section(value)
-        _SectionsLink.__CONFIGS[value].add(self)
+        _SectionsLink._CONFIGS[value.id].add(self)
 
     @property
     def section(self):
@@ -471,8 +483,9 @@ class _SectionsLink(object):
 
         section = "{0}{1}"
         enumerator = ''
-        for other in _SectionsLink.__CONFIGS[parser]:
-            my_section = section.format(self._section_name, enumerator)
+        for other in _SectionsLink._CONFIGS[parser.id]:
+
+            my_section = section.format(self._section_name, " #{0}".format(enumerator) if enumerator else enumerator)
             if other.section == my_section:
                 if enumerator:
                     enumerator += 1
@@ -480,7 +493,8 @@ class _SectionsLink(object):
                     enumerator = 2
 
         self._locked_name = True
-        self._section_name = section.format(self._section_name, enumerator)
+        self._section_name = section.format(self._section_name, " #{0}".format(enumerator)
+                                            if enumerator else enumerator)
         return self._section_name
 
     def retrieve_items(self, config_parser):
@@ -504,18 +518,20 @@ class _SectionsLink(object):
 
 class LinkerConfigParser(object, ConfigParser):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, id, clear_links=True, *args, **kwargs):
 
         ConfigParser.__init__(self, *args, **kwargs)
+        self.id = id
+        self._clear_links = clear_links
 
     def __enter__(self):
-
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
 
-        _SectionsLink.clear_links(self)
+        if self._clear_links:
+            _SectionsLink.clear_links(self)
 
     def _read(self, fp, fpname):
 
@@ -581,12 +597,12 @@ class Serializer(object):
         if self._has_section_head_and_is_valid(model):
 
             section = self.get_section_name(model)
-            conf = ConfigParser(allow_no_value=True)
+            with LinkerConfigParser(id=id(filehandle), clear_links=False, allow_no_value=True) as conf:
 
-            self._serialize(model, conf, section)
-            conf.write(filehandle)
+                self._serialize(model, conf, section)
+                conf.write(filehandle)
             return True
-        return  False
+        return False
 
     def _has_section_head(self, model):
 
@@ -740,7 +756,7 @@ class Serializer(object):
         if not self._has_section_head(model):
             raise ValueError("Need a section head for serialization")
 
-        with LinkerConfigParser() as conf:
+        with LinkerConfigParser(id=id(model)) as conf:
 
             conf = self._serialize(model, conf, self.get_section_name(model))
             return ((section, {k: v for k, v in conf.items(section)}) for section in conf.sections())
@@ -888,8 +904,7 @@ class SerializationHelper(object):
 
         :rtype : LinkerConfigParser
         """
-        conf = LinkerConfigParser(
-            allow_no_value=True)
+        conf = LinkerConfigParser(id=path, allow_no_value=True)
 
         if isinstance(path, str):
             try:
