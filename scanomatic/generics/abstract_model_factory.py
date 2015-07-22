@@ -744,6 +744,9 @@ class Serializer(object):
 
         # self._logger.info("Serializing {0} into '{1}' of {2}".format(model, section, conf))
 
+        if conf.has_section(section):
+            conf.remove_section(section)
+
         conf.add_section(section)
 
         factory = self._factory
