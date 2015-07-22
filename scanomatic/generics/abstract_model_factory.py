@@ -624,28 +624,36 @@ class Serializer(object):
 
     def _purge_tree(self, conf, model):
 
-        sections = [self.get_section_name(model)]
+        def add_if_points_to_subsection():
 
-        if not conf.has_section(sections[0]):
-            return
+            obj = SerializationHelper.unserialize(conf.get(section, key), object)
 
-        for key in model.keys():
+            try:
 
-            if isinstance(model[key], Model):
+                sections.append(obj.section)
+
+            except AttributeError:
 
                 try:
 
-                    sections.append(SerializationHelper.unserialize(conf.get(sections[0], key), _SectionsLink).section)
+                    for item in obj:
+                        sections.append(SerializationHelper.unserialize(item, object).section)
+                except (AttributeError, TypeError):
+                    pass
 
-                except AttributeError:
+        serializers = self._factory.STORE_SECTION_SERIALIZERS
+        sections = [self.get_section_name(model)]
+        index = 0
+        while index < len(sections):
+            section = sections[index]
+            if not conf.has_section(section):
+                index += 1
+                continue
 
-                    sections.append(_SectionsLink.set_link(
-                        self._factory.get_sub_factory(model[key]), model[key], conf).section)
+            for key in conf.options(section):
+                add_if_points_to_subsection()
 
-        for section in sections:
-
-            if conf.has_section(section):
-                conf.remove_section(section)
+            conf.remove_section(section)
 
 
     def purge_all(self, path):
