@@ -5,7 +5,7 @@ from scanomatic.io.logger import Logger
 import copy
 import os
 from enum import Enum
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoSectionError
 import cPickle
 from types import GeneratorType
 from collections import defaultdict
@@ -679,11 +679,16 @@ class Serializer(object):
 
         factory = self._factory
 
-        if not factory.all_keys_valid(conf.options(section)):
-            self._logger.warning("{1} Refused section {0} because keys {2}".format(
-                section, factory, conf.options(section)))
-            return None
+        try:
+            if not factory.all_keys_valid(conf.options(section)):
+                self._logger.warning("{1} Refused section {0} because keys {2}".format(
+                    section, factory, conf.options(section)))
+                return None
 
+        except NoSectionError:
+            self._logger.warning("Refused section {0} because missing in file, though claimed to be there".format(
+                section))
+            return None
         model = {}
 
         for key, dtype in factory.STORE_SECTION_SERIALIZERS.items():
