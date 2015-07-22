@@ -13,17 +13,19 @@ __status__ = "Development"
 # DEPENDENICES
 #
 
-#import traceback
+# import traceback
 import datetime
 import sys
 import threading
 import time
 from functools import partial
+import warnings
 
 
 #
 # CLASSES
 #
+
 
 class Logger(object):
 
@@ -50,18 +52,18 @@ class Logger(object):
 
     _LOGLEVELS_TO_TEXT = {}
 
-    def __init__(self, loggerName, active=True):
+    def __init__(self, name, active=True):
 
         self._level = self.INFO
-        self._logFile = None
-        self._loggerName = loggerName
+        self._log_file = None
+        self._loggerName = name
         self._logLevelToMethod = {}
         self._usePrivateOutput = False
         self._suppressPrints = False
         self._active = active
 
-        if (len(self._LOGLEVELS_TO_TEXT) != len(self._LOGLEVELS)):
-            Logger.SetLogLevels()
+        if len(self._LOGLEVELS_TO_TEXT) != len(self._LOGLEVELS):
+            Logger.set_global_log_levels()
 
         for lvl, lvlMethodName, lvlName in self._LOGLEVELS:
 
@@ -78,10 +80,10 @@ class Logger(object):
                 self._logLevelToMethod[lvl] = getattr(self, lvlMethodName)
 
     @classmethod
-    def SetLogLevels(cls, logLevels=None):
+    def set_global_log_levels(cls, log_levels=None):
 
-        if logLevels is not None:
-            cls._LOGLEVELS = logLevels
+        if log_levels is not None:
+            cls._LOGLEVELS = log_levels
 
         cls._LOGLEVELS_TO_TEXT = {}
 
@@ -98,53 +100,53 @@ class Logger(object):
                 setattr(cls, lvlName, lvl)
 
     @classmethod
-    def SetDefaultOutputTarget(
-            cls,  target, catchStdOut=False, catchStdErr=False,
-            writeMode='w'):
+    def set_global_output_target(
+            cls,  target, catch_stdout=False, catch_stderr=False,
+            mode='w'):
 
-        if (cls._DEFAULT_LOGFILE is not None):
+        if cls._DEFAULT_LOGFILE is not None:
             cls._DEFAULT_LOGFILE.close()
 
-        if (target is not None):
-            cls._DEFAULT_LOGFILE = _ExtendedFileObject(target, writeMode)
+        if target is not None:
+            cls._DEFAULT_LOGFILE = _ExtendedFileObject(target, mode)
         else:
             if cls._DEFAULT_LOGFILE is not None:
                 cls._DEFAULT_LOGFILE.close()
             cls._DEFAULT_LOGFILE = None
 
-        cls._DEFAULT_CATCH_OUT = catchStdOut
-        cls._DEFAULT_CATCH_ERR = catchStdErr
+        cls._DEFAULT_CATCH_OUT = catch_stdout
+        cls._DEFAULT_CATCH_ERR = catch_stderr
 
-        cls.UseDefaultCatching()
+        cls.use_global_logging_settings()
 
     @classmethod
-    def UseDefaultCatching(cls):
-        if (cls._DEFAULT_CATCH_ERR and cls._DEFAULT_LOGFILE is not None):
+    def use_global_logging_settings(cls):
+        if cls._DEFAULT_CATCH_ERR and cls._DEFAULT_LOGFILE is not None:
             sys.stderr = cls._DEFAULT_LOGFILE
         else:
             sys.stderr = sys.__stderr__
 
-        if (cls._DEFAULT_CATCH_OUT and cls._DEFAULT_LOGFILE is not None):
+        if cls._DEFAULT_CATCH_OUT and cls._DEFAULT_LOGFILE is not None:
             sys.stdout = cls._DEFAULT_LOGFILE
         else:
             sys.stdout = sys.__stdout__
 
     @classmethod
-    def GetLevels(cls):
+    def get_logging_levels(cls):
 
         return [cls._LOGLEVELS_TO_TEXT[k] for k in
                 sorted(cls._LOGLEVELS_TO_TEXT.keys())]
 
     @property
-    def usePrivateOutput(self):
+    def use_private_output(self):
         return self._usePrivateOutput
 
-    @usePrivateOutput.setter
-    def usePrivateOutput(self, value):
+    @use_private_output.setter
+    def use_private_output(self, value):
 
-        if (not value):
-            self.catchStdOut = False
-            self.catchStdErr = False
+        if not value:
+            self.catch_stdout = False
+            self.catch_stderr = False
 
         self._usePrivateOutput = value
 
@@ -155,7 +157,7 @@ class Logger(object):
     @level.setter
     def level(self, value):
 
-        if (isinstance(value, int)):
+        if isinstance(value, int):
             assert value in self._LOGLEVELS_TO_TEXT.keys(), "Level unknown"
             self._level = value
             return
@@ -172,36 +174,40 @@ class Logger(object):
         raise Exception("Level unknown")
 
     @property
-    def catchStdOut(self):
+    def catch_stdout(self):
 
-        return (sys.stdout == self._logFile or
+        return (sys.stdout == self._log_file or
                 not self._usePrivateOutput and
                 sys.stdout == self._DEFAULT_LOGFILE)
 
-    @catchStdOut.setter
-    def catchStdOut(self, value):
-        if value and self._logFile is not None:
-            sys.stdout = self._logFile
+    @catch_stdout.setter
+    def catch_stdout(self, value):
+        if not value:
+            sys.stdout = sys.__stdout__
+        elif self._log_file is not None:
+            sys.stdout = self._log_file
         elif self._DEFAULT_CATCH_OUT and self._DEFAULT_LOGFILE is not None:
             sys.stdout = self._DEFAULT_LOGFILE
         else:
-            sys.stdout = self.__stdout__
+            warnings.warn("No log file to redirect output into")
 
     @property
-    def catchStdErr(self):
+    def catch_stderr(self):
 
-        return (sys.stderr == self._logFile or
+        return (sys.stderr == self._log_file or
                 not self._usePrivateOutput and
-                sys.stderr == self.__stderr__)
+                sys.stderr == self._DEFAULT_LOGFILE)
 
-    @catchStdErr.setter
-    def catchStdErr(self, value):
-        if value and self._logFile is not None:
-            sys.stderr = self._logFile
-        elif (self._DEFAULT_CATCH_ERR and self._DEFAULT_LOGFILE is not None):
+    @catch_stderr.setter
+    def catch_stderr(self, value):
+        if not value:
+            sys.stderr = sys.__stderr__
+        if value and self._log_file is not None:
+            sys.stderr = self._log_file
+        elif self._DEFAULT_CATCH_ERR and self._DEFAULT_LOGFILE is not None:
             sys.stderr = self._DEFAULT_LOGFILE
         else:
-            sys.stderr = self.__stderr__
+            warnings.warn("No log file to redirect errors into")
 
     @property
     def active(self):
@@ -212,12 +218,12 @@ class Logger(object):
         self._active = value
 
     @property
-    def supressPrints(self):
+    def surpress_prints(self):
 
         return self._suppressPrints
 
-    @supressPrints.setter
-    def supressPrints(self, value):
+    @surpress_prints.setter
+    def surpress_prints(self, value):
 
         self._suppressPrints = value
 
@@ -232,38 +238,38 @@ class Logger(object):
         if (self._active and lvl <= self._level and
                 lvl in self._LOGLEVELS_TO_TEXT):
 
-            output = (self._usePrivateOutput and self._logFile or
+            output = (self._usePrivateOutput and self._log_file or
                       self._DEFAULT_LOGFILE)
 
-            if (output is not None):
+            if output is not None:
                 if isinstance(msg, list) or isinstance(msg, tuple):
                     msg = list(msg)
                     msg[0] = self._decorate(lvl) + msg[0]
                 else:
                     msg = self._decorate(lvl) + msg
 
-                self._logFile.writelines(msg)
+                self._log_file.writelines(msg)
 
-            elif (not self._suppressPrints):
+            elif not self._suppressPrints:
 
                 print self._decorate(lvl) + str(msg)
 
-    def setOutputTarget(
-            self, target, catchStdOut=False, catchStdErr=False,
-            writeMode='w'):
+    def set_output_target(
+            self, target, catch_stdout=False, catch_stderr=False,
+            mode='w'):
 
-        if (self._logFile is not None):
-            self._logFile.close()
+        if self._log_file is not None:
+            self._log_file.close()
 
-        if (target is not None):
-            self._logFile = _ExtendedFileObject(target, writeMode)
+        if target is not None:
+            self._log_file = _ExtendedFileObject(target, mode)
         else:
-            if (self._logFile is not None):
-                self._logFile.close()
-            self._logFile = None
+            if self._log_file is not None:
+                self._log_file.close()
+            self._log_file = None
 
-        self.catchStdOut = catchStdOut
-        self.catchStdErr = catchStdErr
+        self.catch_stdout = catch_stdout
+        self.catch_stderr = catch_stderr
 
     def traceback(self, lvl=None):
 
@@ -295,15 +301,15 @@ class Logger(object):
 
 class _ExtendedFileObject(file):
 
-    def __init__(self, filePath, writeMode):
+    def __init__(self, path, mode):
 
-        super(_ExtendedFileObject, self).__init__(filePath, writeMode)
+        super(_ExtendedFileObject, self).__init__(path, mode)
         self._semaphor = False
         self._buffer = []
 
     def write(self, s):
 
-        self._buffer.append()
+        self._buffer.append(s)
         self._write()
 
     def writelines(self, *lines):
@@ -317,17 +323,17 @@ class _ExtendedFileObject(file):
 
     def _write(self):
 
-        t = threading.Thread(target=self._writeToFile)
+        t = threading.Thread(target=self._write_to_file)
         t.start()
 
-    def _writeToFile(self):
+    def _write_to_file(self):
 
         while self._semaphor:
             time.sleep(0.01)
 
         self._semaphor = True
-        curLength = len(self._buffer)
-        super(_ExtendedFileObject, self).writelines(self._buffer[:curLength])
-        for i in range(curLength):
+        length = len(self._buffer)
+        super(_ExtendedFileObject, self).writelines(self._buffer[:length])
+        for i in range(length):
             self._buffer.pop(0)
         self._semaphor = False
