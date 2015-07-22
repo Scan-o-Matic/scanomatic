@@ -122,6 +122,7 @@ class Jobs(SingeltonOneInit):
                 if not job.pid:
                     job_process.update_pid()
                 if not job_process.is_alive():
+                    self._logger.info("Job '{0}' no longer active".format(job))
                     del self._jobs[job]
                     RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_jobs)
             statuses.append(job_process.status)
