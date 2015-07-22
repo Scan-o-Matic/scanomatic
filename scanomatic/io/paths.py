@@ -149,7 +149,9 @@ class Paths(SingeltonOneInit):
         self.project_compilation_pattern = "{0}.project.compilation"
         self.project_compilation_instructions_pattern = "{0}.project.compilation.instructions"
         self.project_compilation_log_pattern = "{0}.project.compilation.log"
+
         self.scan_project_file_pattern = "{0}.scan.instructions"
+        self.scan_log_file_pattern = "{0}.scan.log"
 
     def join(self, attr, *other):
         
