@@ -576,10 +576,6 @@ class Serializer(object):
 
         return False
 
-    def _load_existing_conf(self, path):
-
-        conf = SerializationHelper.get_config(path)
-
     def dump_to_filehandle(self, model, filehandle):
 
         if self._has_section_head_and_is_valid(model):
