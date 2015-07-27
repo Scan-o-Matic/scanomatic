@@ -40,8 +40,8 @@ class CompilationResults(object):
     def _load_compile_instructions(self, path):
 
         try:
-            self._compile_instructions = CompileProjectFactory.serializer.load(path).next()
-        except StopIteration:
+            self._compile_instructions = CompileProjectFactory.serializer.load(path)[0]
+        except IndexError:
             self._compile_instructions = None
 
     def _load_compilation(self, path, sort_mode=FIRST_PASS_SORTING.Time):
@@ -65,6 +65,9 @@ class CompilationResults(object):
 
         :rtype: scanomatic.models.compile_project_model.CompileImageAnalysisModel
         """
+        if not self._image_models:
+            return None
+
         if item < 0:
             item %= len(self._image_models)
 
@@ -111,7 +114,10 @@ class CompilationResults(object):
     @property
     def plates(self):
 
-        return self[-1].fixture.plates
+        res = self[-1]
+        if res:
+            return res.fixture.plates
+        return None
 
     @property
     def last_index(self):
@@ -149,6 +155,7 @@ class CompilationResults(object):
         """
         model = self[-1]
         self._current_model = model
-        self._image_models.remove(model)
-        self._used_models.append(model)
+        if model:
+            self._image_models.remove(model)
+            self._used_models.append(model)
         return model
