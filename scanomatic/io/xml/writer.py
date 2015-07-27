@@ -169,6 +169,11 @@ class XML_Writer(object):
 
     def write_header(self, meta_data, plates):
 
+
+        """
+
+        :type meta_data: scanomatic.models.scanning_model.ScanningModel
+        """
         formatting = self._formatting
         use_short_tags = formatting.make_short_tag_version
         self._open_tags.insert(0, 'project')
@@ -193,37 +198,114 @@ class XML_Writer(object):
                     meta_data.start_time))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['prefix', 'pref'][use_short_tags], meta_data.name))
+                    ['prefix', 'pref'][use_short_tags], meta_data.project_name))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
-                    ['project_tag', 'ptag'][use_short_tags], meta_data.project_id))
+                    ['project_tag', 'ptag'][use_short_tags], meta_data.project_tag))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['scanner_layout_tag', 'sltag'][use_short_tags],
-                    meta_data.scanner_layout_id))
+                    meta_data.scanner_tag))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['description', 'desc'][use_short_tags],
                     meta_data.description))
 
+                if meta_data.plate_descriptions:
+
+                    for plate_desc in meta_data.plate_descriptions:
+
+                        f.write(self.XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(
+                            'plate-description',
+                            'index',
+                            plate_desc.index,
+                            plate_desc.description
+                        ))
+
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['number-of-scans', 'n-scans'][use_short_tags],
-                    meta_data.images))
+                    meta_data.number_of_scans))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['interval-time', 'int-t'][use_short_tags],
-                    meta_data.interval))
+                    meta_data.time_between_scans))
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['plates-per-scan', 'n-plates'][use_short_tags],
-                    len(plates)))
+                    len(plates) if plates is not None else 0))
 
                 f.write(self.XML_OPEN.format(
                     ['pinning-matrices', 'matrices'][use_short_tags]))
 
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'email',
+                    meta_data.email
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'fixture',
+                    meta_data.fixture
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'scanner-id',
+                    meta_data.scanner
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'scanner-model',
+                    meta_data.scanner_hardware
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'scanning-mode',
+                    meta_data.mode
+                ))
+
+                auxiliary_info = meta_data.auxillary_info
+                """:type: scanomatic.model.scanning_model.ScanningAuxInfoModel"""
+
+                f.write(self.XML_OPEN.format('auxiliary-info'))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'culture-freshness',
+                    auxiliary_info.culture_freshness
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'culture-source-type',
+                    auxiliary_info.culture_source.name
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'delay-start-since-pinning',
+                    auxiliary_info.pinning_project_start_delay
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'plate-age',
+                    auxiliary_info.plate_age
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'plate-storage-type',
+                    auxiliary_info.plate_storage.name
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'precultures',
+                    auxiliary_info.precultures
+                ))
+
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'experimenter-stress',
+                    auxiliary_info.stress_level
+                ))
+
+                f.write(self.XML_CLOSE.format('auxiliary-info'))
                 p_string = ""
 
-                for pos, pinning in enumerate(meta_data.pinnings):
+                for pos, pinning in enumerate(meta_data.pinning_formats):
                     if pinning is not None:
 
                         f.write(self.XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(
