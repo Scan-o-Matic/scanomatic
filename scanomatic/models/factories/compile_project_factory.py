@@ -188,7 +188,7 @@ class CompileProjectFactory(AbstractModelFactory):
 class CompileImageAnalysisFactory(AbstractModelFactory):
 
     MODEL = compile_project_model.CompileImageAnalysisModel
-    STORE_SECTION_HEAD = ("image", "index")
+    STORE_SECTION_HEAD = "Image"
     _SUB_FACTORIES = {
         compile_project_model.CompileImageModel: CompileImageFactory,
         fixture_models.FixtureModel: fixture_factories.FixtureFactory
