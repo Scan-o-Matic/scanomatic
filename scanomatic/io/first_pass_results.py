@@ -2,6 +2,7 @@ __author__ = 'martin'
 
 from enum import Enum
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
+from scanomatic.io.logger import Logger
 
 FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
 
@@ -10,6 +11,7 @@ class CompilationResults(object):
 
     def __init__(self, compilation_path=None, compile_instructions_path=None, sort_mode=FIRST_PASS_SORTING.Time):
 
+        self._logger = Logger("Compilation results")
         self._compilation_path = compilation_path
         self._compile_instructions = None
         self._plates = None
@@ -42,11 +44,13 @@ class CompilationResults(object):
         try:
             self._compile_instructions = CompileProjectFactory.serializer.load(path)[0]
         except IndexError:
+            self._logger.error("Could not load path {0}".format(path))
             self._compile_instructions = None
 
     def _load_compilation(self, path, sort_mode=FIRST_PASS_SORTING.Time):
 
         images = CompileImageAnalysisFactory.serializer.load(path)
+        self._logger.info("Loaded {0} compiled images".format(len(images)))
 
         if sort_mode is FIRST_PASS_SORTING.Time:
             self._image_models = list(CompileImageAnalysisFactory.copy_iterable_of_model_update_indices(images))
