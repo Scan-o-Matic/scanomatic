@@ -52,12 +52,24 @@ class CompilationResults(object):
         images = CompileImageAnalysisFactory.serializer.load(path)
         self._logger.info("Loaded {0} compiled images".format(len(images)))
 
+        self._reindex_plates(images)
+
         if sort_mode is FIRST_PASS_SORTING.Time:
             self._image_models = list(CompileImageAnalysisFactory.copy_iterable_of_model_update_indices(images))
         else:
             self._image_models = list(CompileImageAnalysisFactory.copy_iterable_of_model_update_time(images))
 
         self._loading_length = len(self._image_models)
+
+    @staticmethod
+    def _reindex_plates(images):
+
+        for image in images:
+
+            if image and image.fixture and image.fixture.plates:
+
+                for plate in image.fixture.plates:
+                    plate.index -= 1
 
     def __len__(self):
 
