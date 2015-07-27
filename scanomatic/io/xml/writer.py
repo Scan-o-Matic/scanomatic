@@ -237,6 +237,23 @@ class XML_Writer(object):
                 f.write(self.XML_OPEN.format(
                     ['pinning-matrices', 'matrices'][use_short_tags]))
 
+                p_string = ""
+
+                for pos, pinning in enumerate(meta_data.pinning_formats):
+                    if pinning is not None:
+
+                        f.write(self.XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(
+                                ['pinning-matrix', 'p-m'][use_short_tags],
+                                ['index', 'i'][use_short_tags], pos,
+                                pinning))
+
+                        p_string += "Plate {0}: {1}\t".format(pos, pinning)
+
+                self._logger.debug(p_string)
+
+                f.write(self.XML_CLOSE.format(
+                        ['pinning-matrices', 'matrices'][use_short_tags]))
+
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     'email',
                     meta_data.email
@@ -303,22 +320,6 @@ class XML_Writer(object):
                 ))
 
                 f.write(self.XML_CLOSE.format('auxiliary-info'))
-                p_string = ""
-
-                for pos, pinning in enumerate(meta_data.pinning_formats):
-                    if pinning is not None:
-
-                        f.write(self.XML_OPEN_W_ONE_PARAM_CONT_CLOSE.format(
-                                ['pinning-matrix', 'p-m'][use_short_tags],
-                                ['index', 'i'][use_short_tags], pos,
-                                pinning))
-
-                        p_string += "Plate {0}: {1}\t".format(pos, pinning)
-
-                self._logger.debug(p_string)
-
-                f.write(self.XML_CLOSE.format(
-                        ['pinning-matrices', 'matrices'][use_short_tags]))
 
                 f.write(self.XML_OPEN.format('d-types'))
 
