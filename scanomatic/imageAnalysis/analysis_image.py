@@ -32,6 +32,11 @@ from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 # noinspection PyTypeChecker
 def _get_init_features(grid_arrays):
 
+    """
+
+    :rtype : list[None|dict[str|object]]
+    """
+
     def length_needed(keys):
 
         return max(keys) + 1
@@ -53,7 +58,8 @@ class ProjectImage(object):
         self._im_loaded = False
         self.im = None
 
-        self._grid_arrays = self._get_grid_arrays()
+        self._grid_arrays = self._new_grid_arrays
+
         self.features = _get_init_features(self._grid_arrays)
 
     @property
@@ -64,8 +70,13 @@ class ProjectImage(object):
 
         return self._grid_arrays[key]
 
-    def _get_grid_arrays(self):
+    @property
+    def _new_grid_arrays(self):
 
+        """
+
+        :rtype : dict[int|scanomatic.imageAnalysis.grid_array.GridArray]
+        """
         grid_arrays = {}
 
         for index, pinning in enumerate(self._analysis_model.pinning_matrices):
@@ -233,6 +244,7 @@ class ProjectImage(object):
 
         def get_slicer(idx):
             if idx == short_dim:
+                # noinspection PyTypeChecker
                 return slice(None, None, -1)
             else:
                 # noinspection PyTypeChecker
