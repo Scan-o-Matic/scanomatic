@@ -211,7 +211,10 @@ class Paths(SingeltonOneInit):
     @staticmethod
     def get_project_directory_name_with_file_prefix_from_path(path):
 
-        dir_name = os.path.dirname(path)
+        if os.path.isdir(path):
+            dir_name = path
+        else:
+            dir_name = os.path.dirname(path)
         return os.path.join(dir_name, dir_name.rstrip(os.sep).split(os.sep)[-1])
 
     def get_project_compile_instructions_path_from_compile_model(self, compile_model):
