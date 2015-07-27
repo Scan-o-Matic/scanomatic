@@ -24,12 +24,14 @@ import time
 import proc_effector
 import scanomatic.io.xml.writer as xml_writer
 import scanomatic.io.image_data as image_data
+from scanomatic.io.paths import Paths
 import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
 
 
@@ -55,12 +57,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._allowed_calls['setup'] = self.setup
 
-        # TODO: Update to new compile instructions
         if job.content_model:
             self._analysis_job = AnalysisModelFactory.create(**job.content_model)
         else:
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
+
+        self._scanning_instructions = None
 
         self._focus_graph = None
         self._current_image_model = None
@@ -191,7 +194,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._image = analysis_image.ProjectImage(self._analysis_job, self._first_pass_results.compile_instructions)
 
-        self._xmlWriter.write_header(self._first_pass_results.compile_instructions, self._first_pass_results.plates)
+        self._xmlWriter.write_header(self._scanning_instructions, self._first_pass_results.plates)
         self._xmlWriter.write_segment_start_scans()
 
         index_for_gridding = self._get_index_for_gridding()
@@ -231,6 +234,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         if self._analysis_job.compile_instructions:
             self._update_job_from_config_file()
+
+        try:
+            self._scanning_instructions = ScanningModelFactory.serializer.load(
+                Paths().get_scan_instructions_path_from_compile_instructions_path(
+                    self._analysis_job.compile_instructions))[0]
+        except IndexError:
+            self._logger.warning("No information found about how the scanning was done")
 
         self._allow_start = AnalysisModelFactory.validate(self._analysis_job)
 
