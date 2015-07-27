@@ -96,6 +96,10 @@ class ProjectImage(object):
 
         :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
         """
+        if image_model is None:
+            self._logger.critical("No image model to grid on")
+            return False
+
         if save_name is None:
             save_name = os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
 
@@ -116,7 +120,8 @@ class ProjectImage(object):
                 im = self.get_im_section(plate_model)
 
                 if im is None:
-                    return None
+                    self._logger.error("Plate model {0} could not be used to slice image".format(plate_model))
+                    continue
                 if self._analysis_model.grid_model.gridding_offsets is None:
                     self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
@@ -125,6 +130,7 @@ class ProjectImage(object):
                     self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
                         grid_correction=self._analysis_model.grid_model.gridding_offset[index])
+        return True
 
     def load_image(self, path):
 
