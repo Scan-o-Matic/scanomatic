@@ -199,7 +199,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         index_for_gridding = self._get_index_for_gridding()
 
-        self._image.set_grid(self._first_pass_results[index_for_gridding])
+        if not self._image.set_grid(self._first_pass_results[index_for_gridding]):
+            self._stopping = True
+
         self._analysis_needs_init = False
 
         return True
