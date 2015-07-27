@@ -481,21 +481,42 @@ class _SectionsLink(object):
         if self._locked_name:
             return self._section_name
 
+        self._locked_name = True
+        self._section_name = _SectionsLink.get_next_free_section(parser, self._section_name)
+
+        return self._section_name
+
+    @staticmethod
+    def get_next_free_section(parser, section_name):
+        """
+
+        :type section_name: str
+        :type parser: LinkerConfigParser
+        """
         section = "{0}{1}"
         enumerator = ''
-        for other in _SectionsLink._CONFIGS[parser.id]:
+        my_section = section_name
+        sections = set(s.section if hasattr(s, 'section') else s for s in _SectionsLink._CONFIGS[parser.id])
 
-            my_section = section.format(self._section_name, " #{0}".format(enumerator) if enumerator else enumerator)
-            if other.section == my_section:
+        while my_section in sections:
+            my_section = section.format(section_name, " #{0}".format(enumerator) if enumerator else enumerator)
+            if my_section in sections:
                 if enumerator:
                     enumerator += 1
                 else:
                     enumerator = 2
 
-        self._locked_name = True
-        self._section_name = section.format(self._section_name, " #{0}".format(enumerator)
-                                            if enumerator else enumerator)
-        return self._section_name
+        return my_section
+
+    @staticmethod
+    def add_section_for_non_link(parser, section):
+
+        """
+
+        :type section: str
+        :type parser: LinkerConfigParser
+        """
+        _SectionsLink._CONFIGS[parser.id].add(section)
 
     def retrieve_items(self, config_parser):
 
@@ -599,6 +620,8 @@ class Serializer(object):
             section = self.get_section_name(model)
             with LinkerConfigParser(id=id(filehandle), clear_links=False, allow_no_value=True) as conf:
 
+                section = _SectionsLink.get_next_free_section(conf, section)
+                _SectionsLink.add_section_for_non_link(conf, section)
                 self.serialize_into_conf(model, conf, section)
                 conf.write(filehandle)
             return True
@@ -844,6 +867,7 @@ class Serializer(object):
 
 
 class SerializationHelper(object):
+
     def __new__(cls, *args):
 
         raise Exception("This class is static, can't be instantiated")
