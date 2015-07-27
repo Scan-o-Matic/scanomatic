@@ -174,7 +174,9 @@ class ProjectImage(object):
 
     @property
     def orientation(self):
-
+        """The currently loaded image's rotation considered as first dimension of image array being image rows
+        :return:
+        """
         if not self._im_loaded:
             return IMAGE_ROTATIONS.None
         elif self.im.shape[0] > self.im.shape[1]:
@@ -216,8 +218,10 @@ class ProjectImage(object):
         if self.orientation == IMAGE_ROTATIONS.Landscape:
             x, y = _flip_axis(x, y)
 
-        x, y = _bound(im.shape, x, y)
-        section = im[x[0]: x[1], y[0]: y[1]]
+        y, x = _bound(im.shape, y, x)
+
+        # In images, the first dimension is typically the y-axis
+        section = im[y[0]: y[1], x[0]: x[1]]
 
         return self._flip_short_dimension(section, im.shape)
 
