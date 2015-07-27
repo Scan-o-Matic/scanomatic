@@ -32,6 +32,10 @@
           <option value="bool.astype" />
           <option value="bool.*" />
           <option value="tuple.sort" />
+          <option value="scanomatic.generics.abstract_model_factory.AbstractModelFactory.serializer" />
+          <option value="scanomatic.generics.abstract_model_factory.AbstractModelFactory.logger" />
+          <option value="scanomatic.generics.abstract_model_factory.AbstractModelFactory.default_model" />
+          <option value="scanomatic.generics.abstract_model_factory.AbstractModelFactory.__metaclass__.MODEL" />
         </list>
       </option>
     </inspection_tool>
