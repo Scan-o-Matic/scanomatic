@@ -92,7 +92,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         initiation_weight = 1
 
         # TODO: Verify this is correct, may underestimate progress
-        if total and self._current_image_model:
+        if total > 0 and self._current_image_model:
             return (total - self.current_image_index) / float(total + initiation_weight)
 
         return 0.0
@@ -138,13 +138,18 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.image.path))
 
-        features = self._image.get_analysis(image_model)
+        self._image.analyse(image_model)
+
+        features = self._image.features
 
         if features is None:
-            self._logger.warning("No analysis produced for image")
+            self._logger.warning("Analysis features not set up correctly")
 
         image_data.ImageData.write_times(self._analysis_job, image_model, overwrite=first_image_analysed)
-        image_data.ImageData.write_image(self._analysis_job, image_model, features)
+        if not image_data.ImageData.write_image(self._analysis_job, image_model, features):
+            self._stopping = True
+            self._logger.critical("Terminating analysis since output can't be stored")
+            return False
 
         self._xmlWriter.write_image_features(image_model, features)
 

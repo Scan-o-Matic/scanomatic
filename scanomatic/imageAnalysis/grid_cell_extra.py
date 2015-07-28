@@ -29,6 +29,8 @@ from scipy.ndimage import binary_erosion, \
 
 import histogram
 import blob
+from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+from scanomatic.models.analysis_model import COMPARTMENTS, MEASURES
 
 #
 # FUNCTIONS
@@ -195,14 +197,20 @@ class CellItem():
         self.filter_array = np.zeros(grid_array.shape, dtype=grid_array.dtype)
 
         self._identifier = identifier
+        self._compartment_type = identifier[-1]
+        self.features = AnalysisFeaturesFactory.create(index=self._compartment_type, data={})
 
-        self.features = {}
-        self._features_key_list = ['area', 'mean', 'median', 'IQR',
-                                   'IQR_mean', 'pixelsum']
+        self._features_key_list = [
+            MEASURES.Count,
+            MEASURES.Mean,
+            MEASURES.Median,
+            MEASURES.IQR,
+            MEASURES.IQR_Mean,
+            MEASURES.Sum]
 
-        self.CELLITEM_TYPE = 0
+        self.features.shape = (len(self._features_key_list),)
+
         self.old_filter = None
-        self.set_type()
 
     #
     # SET functions
@@ -216,26 +224,6 @@ class CellItem():
 
             self.filter_array = np.zeros(self.grid_array.shape,
                                          dtype=self.grid_array.dtype)
-
-    def set_type(self):
-        """Empties the features-dictionary (as a precausion)
-        and sets the cell item type.
-
-        The function takes no argument"""
-
-        self.features = {}
-
-        if isinstance(self, Blob):
-
-            self.CELLITEM_TYPE = 1
-
-        elif isinstance(self, Background):
-
-            self.CELLITEM_TYPE = 2
-
-        elif isinstance(self, Cell):
-
-            self.CELLITEM_TYPE = 3
 
     #
     # DO functions
@@ -255,83 +243,70 @@ class CellItem():
 
         The function takes no arguments
 
-
-        CELLITEM_TYPEs:
-
-        Blob            1
-        Background      2
-        Cell            3
         """
 
-        if self.CELLITEM_TYPE == 0 or self.filter_array is None:
+        feature_data = self.features.data
+        """:type : dict[scanomatic.models.analysis_model.MEASUERS|object]"""
 
-            self.features = dict()
-            return None
+        if self.filter_array is None or len(self._features_key_list) == 0:
 
-        self.features = {k: None for k in self._features_key_list}
+            return
 
-        self.features['area'] = self.filter_array.sum()
+        feature_array = None
+        feature_data[MEASURES.Count] = self.filter_array.sum()
 
-        self.features['pixelsum'] = \
-            self.grid_array[np.where(self.filter_array)].sum()
+        feature_data[MEASURES.Sum] = self.grid_array[np.where(self.filter_array)].sum()
 
-        if (self.features['area'] == self.features['pixelsum'] or
-                self.features['area'] == 0):
+        if feature_data[MEASURES.Count] == feature_data[MEASURES.Sum] or feature_data[MEASURES.Count] == 0:
 
-            if self.features['area'] != 0:
-
-                print "GCdissect", self._identifier, "No background"
-
-            else:
+            if self.features[MEASURES.Count] == 0:
 
                 print "GCdissect", self._identifier, "No blob"
 
-            return None
+            else:
 
-        if self.features['area'] != 0:
+                print "GCdissect", self._identifier, "No background"
 
-            self.features['mean'] = self.features['pixelsum'] / \
-                self.features['area']
-
-            feature_array = self.grid_array[np.where(self.filter_array)]
-            self.features['median'] = np.median(feature_array)
-            self.features['IQR'] = mquantiles(feature_array, prob=[0.25, 0.75])
-
-            try:
-
-                self.features['IQR_mean'] = tmean(feature_array,
-                                                  self.features['IQR'])
-
-            except:
-
-                self.features['IQR_mean'] = None
-                self.features['IQR'] = None
-
-                """
-                self.logger.warning(
-                    "Failed to calculate IQR_mean," +
-                    " probably because IQR '{0}' is empty.".format(
-                    str(self.features['IQR'])))
-                """
+            feature_data.clear()
 
         else:
 
-            self.features['mean'] = None
-            self.features['median'] = None
-            self.features['IQR'] = None
-            self.features['IQR_mean'] = None
+            feature_data[MEASURES.Mean] = feature_data[MEASURES.Sum] / \
+                feature_data[MEASURES.Count]
 
-        if self.CELLITEM_TYPE == 1:
+            if (MEASURES.Median in self._features_key_list or
+                        MEASURES.IQR in self._features_key_list or
+                        MEASURES.IQR_Mean in self._features_key_list):
 
-            try:
+                feature_array = self.grid_array[np.where(self.filter_array)]
 
-                self.features['centroid'] = center_of_mass(self.filter_array)
+            if MEASURES.Median in self._features_key_list:
+                feature_data[MEASURES.Median] = np.median(feature_array)
 
-            except:
+            if MEASURES.IQR in self._features_key_list or MEASURES.IQR_Mean in self._features_key_list:
+                feature_data[MEASURES.IQR] = mquantiles(feature_array, prob=[0.25, 0.75])
 
-                self.features['centroid'] = None
+                try:
 
-            self.features['perimeter'] = None
+                    feature_data[MEASURES.IQR_Mean] = tmean(feature_array, feature_data['IQR'])
+
+                except:
+
+                    feature_data[MEASURES.IQR_Mean] = None
+                    feature_data[MEASURES.IQR] = None
+
+            if MEASURES.Centroid in self._features_key_list:
+
+                try:
+
+                    feature_data[MEASURES.Centroid] = center_of_mass(self.filter_array)
+
+                except:
+
+                    feature_data[MEASURES.Centroid] = None
+
+            if MEASURES.Perimeter in self._features_key_list:
+                feature_data[MEASURES.Perimeter] = None
 
 #
 # CLASS Blob
@@ -402,7 +377,8 @@ class Blob(CellItem):
         self.old_trash = None
         self.trash_array = None
         self.image_color_logic = image_color_logic
-        self._features_key_list += ['centroid', 'perimeter']
+        self._features_key_list += [MEASURES.Centroid, MEASURES.Perimeter]
+        self.features.shape = (len(self._features_key_list),)
 
         self.histogram = histogram.Histogram(self.grid_array, run_at_init=False)
 

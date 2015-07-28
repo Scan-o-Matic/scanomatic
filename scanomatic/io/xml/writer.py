@@ -24,6 +24,7 @@ import re
 
 import scanomatic.io.logger as logger
 from scanomatic.io.paths import Paths
+from scanomatic.models.analysis_model import COMPARTMENTS, MEASURES
 #
 # CLASSES
 #
@@ -61,6 +62,10 @@ class XML_Writer(object):
 
     def __init__(self, output_directory, xml_model):
 
+        """
+
+        :type xml_model: scanomatic.models.analysis_model.XMLModel
+        """
         self._directory = output_directory
         self._formatting = xml_model
         self._logger = logger.Logger("XML writer")
@@ -118,13 +123,14 @@ class XML_Writer(object):
             p = Popen(["arp", '-n', IP], stdout=PIPE)
             s = p.communicate()[0]
             try:
-                mac = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", s).groups()[0]
+                mac = re.search(r"(([a-f\d]{1,2}\:){3,8}[a-f\d]{1,2})", s).groups()[0]
             except AttributeError:
+                # Ensures reuse of random mac further down
                 mac = None
 
         else:
             """Convert mac-long to human readable hex format"""
-            mac = ":".join(re.findall(r'([a-f\d]{2,2})', hex(mac)))
+            mac = self._get_mac_str_from_long(mac)
 
         if mac is None:
 
@@ -143,33 +149,35 @@ class XML_Writer(object):
     def _get_saved_mac(self):
 
         try:
-            fh = open(self._paths.config_mac, 'r')
-            lines = fh.read()
-            fh.close()
-            mac = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", lines).groups()[0]
-        except:
+            with open(self._paths.config_mac, 'r') as fh:
+                lines = fh.read()
+                mac = re.search(r"(([a-f\d]{1,2}\:){3,8}[a-f\d]{1,2})", lines).groups()[0]
+        except (IOError, TypeError):
             mac = self._set_saved_mac()
 
         return mac
 
+    def _get_mac_str_from_long(self, mac):
+        mac = re.findall(r'([a-f\d]{1,2})', hex(mac)[2:][::-1])
+        if len(mac[-1]) == 1:
+            mac[-1] += '0'
+        return ":".join(mac)[::-1]
+
     def _set_saved_mac(self, mac=None):
 
         if mac is None:
-            mac = uuid.getnode()
-            mac = ":".join(re.findall(r'([a-f\d]{2,2})', hex(mac)))
+            mac = self._get_mac_str_from_long(uuid.getnode())
+
 
         try:
-            fh = open(self._paths.config_mac, 'w')
-            fh.write("{0}\n".format(mac))
-            fh.close()
-        except:
+            with  open(self._paths.config_mac, 'w') as fh:
+                fh.write("{0}\n".format(mac))
+        except IOError:
             mac = None
 
         return mac
 
     def write_header(self, meta_data, plates):
-
-
         """
 
         :type meta_data: scanomatic.models.scanning_model.ScanningModel
@@ -361,6 +369,10 @@ class XML_Writer(object):
 
     def _write_image_head(self, image_model, features):
 
+        """
+
+        :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
+        """
         tag_format = self._formatting.make_short_tag_version
 
         for f in self._file_handles.values():
@@ -368,7 +380,7 @@ class XML_Writer(object):
             f.write(self.XML_OPEN_W_ONE_PARAM.format(
                 ['scan', 's'][tag_format],
                 ['index', 'i'][tag_format],
-                image_model.index))
+                image_model.image.index))
 
             f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['scan-valid', 'ok'][tag_format],
@@ -378,7 +390,7 @@ class XML_Writer(object):
 
                 f.write(self.XML_OPEN_CONT_CLOSE.format(
                     ['time', 't'][tag_format],
-                    image_model.time))
+                    image_model.image.time_stamp))
 
     def write_image_features(self, image_model, features):
 
@@ -389,10 +401,27 @@ class XML_Writer(object):
         self._write_image_head(image_model, features)
 
         tag_format = self._formatting.make_short_tag_version
-        omit_compartments = self._formatting.exclue_compartments
+        omit_compartments = self._formatting.exclude_compartments
         omit_measures = self._formatting.exclude_measures
         fh = self._file_handles['full']
         fhs = self._file_handles['slim']
+        tag_gc = ('grid-cell', 'gc')[tag_format]
+        tag_compartments = {
+            COMPARTMENTS.Background: ('background', 'bg')[tag_format],
+            COMPARTMENTS.Blob: ('blob', 'bl')[tag_format],
+            COMPARTMENTS.Total: ('cell', 'cl')[tag_format]
+        }
+
+        tag_measures = {
+            MEASURES.Count: ('area', 'a')[tag_format],
+            MEASURES.Sum: ('pixelsum', 'ps')[tag_format],
+            MEASURES.Mean: ('mean', 'm')[tag_format],
+            MEASURES.Median: ('median', 'md')[tag_format],
+            MEASURES.Centroid: ('centroid', 'cent')[tag_format],
+            MEASURES.Perimeter: ('perimeter', 'per'),
+            MEASURES.IQR: 'IRQ',
+            MEASURES.IQR_Mean: ("IQR-mean", 'IQR-m')[tag_format]
+        }
 
         if features is not None:
 
@@ -416,88 +445,64 @@ class XML_Writer(object):
                     f.write(self.XML_OPEN.format(
                         ['grid-cells', 'gcs'][tag_format]))
 
-                for x, rows in enumerate(features[index]):
+                if index < features.shape[0]:
 
-                    for y, cell in enumerate(rows):
+                    plate_features = features.data[index]
 
+                    for cell_features in plate_features.data.itervalues():
                         for f in self._file_handles.values():
 
                             f.write(self.XML_OPEN_W_TWO_PARAM.format(
-                                ['grid-cell', 'gc'][tag_format],
-                                'x', x,
-                                'y', y))
+                                tag_gc,
+                                'x', cell_features.index[0],
+                                'y', cell_features.index[1]))
 
-                        if cell is not None:
+                        for compartment_features in cell_features.data.itervalues():
 
-                            for item in cell.keys():
+                            compartment_name = tag_compartments[compartment_features.index]
 
-                                i_string = item
+                            compartment_in_short = compartment_features.index not in omit_compartments
 
-                                if tag_format:
+                            if compartment_in_short:
 
-                                    i_string = i_string\
-                                        .replace('background', 'bg')\
-                                        .replace('blob', 'bl')\
-                                        .replace('cell', 'cl')
+                                fhs.write(self.XML_OPEN.format(compartment_name))
 
-                                if item not in omit_compartments:
+                            fh.write(self.XML_OPEN.format(compartment_name))
 
-                                    fhs.write(self.XML_OPEN.format(i_string))
+                            for measure, value in compartment_features.data.iteritems():
 
-                                fh.write(self.XML_OPEN.format(i_string))
+                                m_string = self.XML_OPEN_CONT_CLOSE.format(
+                                    tag_measures[measure],
+                                    value)
 
-                                for measure in cell[item].keys():
+                                if compartment_in_short and measure not in omit_measures:
 
-                                    m_string = self.XML_OPEN_CONT_CLOSE.format(
-                                        measure,
-                                        cell[item][measure])
+                                    fhs.write(m_string)
 
-                                    if tag_format:
+                                fh.write(m_string)
 
-                                        m_string = m_string\
-                                            .replace('area', 'a')\
-                                            .replace('pixel', 'p')\
-                                            .replace('mean', 'm')\
-                                            .replace('median', 'md')\
-                                            .replace('sum', 's')\
-                                            .replace('centroid', 'cent')\
-                                            .replace('perimeter', 'per')
+                            if compartment_in_short:
 
-                                    if item not in omit_compartments and \
-                                            measure not in omit_measures:
+                                fhs.write(self.XML_CLOSE.format(compartment_name))
 
-                                        fhs.write(m_string)
-
-                                    fh.write(m_string)
-
-                                if item not in omit_compartments:
-
-                                    fhs.write(self.XML_CLOSE.format(i_string))
-
-                                fh.write(self.XML_CLOSE.format(i_string))
+                            fh.write(self.XML_CLOSE.format(compartment_name))
 
                         for f in (fh, fhs):
 
-                            f.write(self.XML_CLOSE.format(
-                                ['grid-cell', 'gc'][tag_format]))
+                            f.write(self.XML_CLOSE.format(tag_gc))
 
-                for f in (fh, fhs):
+                for f in self._file_handles.values():
 
-                    f.write(self.XML_CLOSE.format(
-                        ['grid-cells', 'gcs'][tag_format]))
+                    f.write(self.XML_CLOSE.format(['grid-cells', 'gcs'][tag_format]))
+                    f.write(self.XML_CLOSE.format(['plate', 'p'][tag_format]))
 
-                    f.write(self.XML_CLOSE.format(
-                        ['plate', 'p'][tag_format]))
+            for f in self._file_handles.values():
 
-            for f in (fh, fhs):
-
-                f.write(self.XML_CLOSE.format(
-                    ['plates', 'pls'][tag_format]))
+                f.write(self.XML_CLOSE.format(['plates', 'pls'][tag_format]))
 
         # CLOSING THE SCAN
         for f in self._file_handles.values():
-            f.write(self.XML_CLOSE.format(
-                    ['scan', 's'][tag_format]))
+            f.write(self.XML_CLOSE.format(['scan', 's'][tag_format]))
 
     def get_initialized(self):
 

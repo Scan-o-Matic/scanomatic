@@ -22,6 +22,7 @@ import numpy as np
 import grid_array
 from scanomatic.io.logger import Logger
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
+from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 
 #
@@ -34,6 +35,7 @@ def _get_init_features(grid_arrays):
 
     """
 
+    :type grid_arrays: dict[int|scanomatic.imageAnalysis.grid_array.GridArray]
     :rtype : list[None|dict[str|object]]
     """
 
@@ -41,10 +43,15 @@ def _get_init_features(grid_arrays):
 
         return max(keys) + 1
 
-    if grid_arrays:
-        return [None] * length_needed(grid_arrays.keys())
-    else:
-        return []
+    size = length_needed(grid_arrays.keys()) if grid_arrays else 0
+
+    features = AnalysisFeaturesFactory.create(
+        shape=(size,),
+        data=tuple(grid_arrays[i].features if grid_arrays[i] else None for i in range(size)),
+        index=0)
+
+    return features
+
 
 
 class ProjectImage(object):
@@ -59,7 +66,7 @@ class ProjectImage(object):
         self.im = None
 
         self._grid_arrays = self._new_grid_arrays
-
+        """:type : dict[int|scanomatic.imageAnalysis.grid_array.GridArray]"""
         self.features = _get_init_features(self._grid_arrays)
 
     @property
@@ -133,14 +140,13 @@ class ProjectImage(object):
                 if im is None:
                     self._logger.error("Plate model {0} could not be used to slice image".format(plate_model))
                     continue
-                if self._analysis_model.grid_model.gridding_offsets is None:
-                    self._grid_arrays[index].set_grid(
+                if not self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
-                        grid_correction=None)
-                else:
-                    self._grid_arrays[index].set_grid(
-                        im, save_name=save_name,
-                        grid_correction=self._analysis_model.grid_model.gridding_offset[index])
+                        grid_correction=self._analysis_model.grid_model.gridding_offset[index]
+                        if self._analysis_model.grid_model.gridding_offsets is not None else None):
+
+                    self._logger.warning("Failed to grid plate {0}".format(plate_model))
+
         return True
 
     def load_image(self, path):
@@ -189,7 +195,7 @@ class ProjectImage(object):
         :return:
         """
         if not self._im_loaded:
-            return IMAGE_ROTATIONS.None
+            return IMAGE_ROTATIONS.Unknown
         elif self.im.shape[0] > self.im.shape[1]:
             return IMAGE_ROTATIONS.Portrait
         else:
@@ -260,7 +266,11 @@ class ProjectImage(object):
 
         self._grid_corrections = np.array((d1, d2))
 
-    def get_analysis(self, image_model):
+    def clear_features(self):
+        for grid_array in self._grid_arrays.itervalues():
+            grid_array.clear_features()
+
+    def analyse(self, image_model):
 
         """
 
@@ -269,25 +279,30 @@ class ProjectImage(object):
         self.load_image(image_model.image.path)
 
         if self._im_loaded is False:
-            return None
+            self.clear_features()
+            return
 
         if not image_model.fixture.grayscale.values:
-            return None
+            self.clear_features()
+            return
 
+        self.features.index = image_model.image.index
+        grid_arrays_processed = set()
         for plate in image_model.fixture.plates:
 
             if plate.index in self._grid_arrays:
-
+                grid_arrays_processed.add(plate.index)
                 im = self.get_im_section(plate)
                 grid_arr = self._grid_arrays[plate.index]
+                """:type: scanomatic.imageAnalysis.grid_array.GridArray"""
                 grid_arr.analyse(im, image_model)
 
-                self.features[plate.index] = grid_arr.features
+        for index, grid_array in self._grid_arrays.iteritems():
+            if index not in grid_arrays_processed:
+                grid_array.clear_features()
 
         if self._analysis_model.focus_position:
             self._record_focus_colony_data()
-
-        return self.features
 
     def _record_focus_colony_data(self):
 

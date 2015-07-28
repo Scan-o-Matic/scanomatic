@@ -29,6 +29,7 @@ import scanomatic.io.logger as logger
 import imageBasics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.imageAnalysis.grayscale import getGrayscale
+from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 #
 # EXCEPTIONS
@@ -38,8 +39,12 @@ class InvalidGridException(Exception):
     pass
 
 
-def _analyse_grid_cell(grid_cell, im, transpose_polynomial, features):
+def _analyse_grid_cell(grid_cell, im, transpose_polynomial):
 
+    """
+
+    :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell
+    """
     grid_cell.source = _get_image_slice(im, grid_cell)
 
     if transpose_polynomial is not None:
@@ -50,7 +55,7 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, features):
             blob=True, background=True, cell=True,
             run_detect=False)
 
-    features[grid_cell.position] = grid_cell.get_analysis(remember_filter=True)
+    grid_cell.analyse(remember_filter=True)
 
 
 def _set_image_transposition(grid_cell, transpose_polynomial):
@@ -171,8 +176,10 @@ def _get_grid_to_im_axis_mapping(pm, im):
     pm_max_pos = int(max(pm) == pm[1])
     im_max_pos = int(max(im.shape) == im.shape[1])
 
-    shuffle = pm_max_pos != im_max_pos
-    return [int(shuffle), int(not shuffle)]
+    if pm_max_pos == im_max_pos:
+        return (0, 1)
+    else:
+        return (1, 0)
 
 #
 # CLASS: Grid_Array
@@ -206,7 +213,7 @@ class GridCellSizes(object):
 
         for rotation in IMAGE_ROTATIONS:
 
-            if rotation is IMAGE_ROTATIONS.None:
+            if rotation is IMAGE_ROTATIONS.Unknown:
                 continue
 
             elif item in GridCellSizes._APPROXIMATE_GRID_CELL_SIZES:
@@ -240,11 +247,16 @@ class GridArray():
         self._guess_grid_cell_size = None
         self._grid_cell_size = None
         self._grid_cells = {}
+        """:type:dict[tuple|scanomatic.imageAnalysis.grid_cell.GridCell]"""
         self._grid = None
         self._grid_cell_corners = None
 
-        self.features = {}
+        self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data={})
         self._first_analysis = True
+
+    @property
+    def features(self):
+        return self._features
 
     @property
     def grid_cell_size(self):
@@ -253,6 +265,14 @@ class GridArray():
     @property
     def index(self):
         return self._identifier[-1]
+
+    @property
+    def image_index(self):
+        return self._identifier[0]
+
+    @image_index.setter
+    def image_index(self, value):
+        self._identifier[0] = value
 
     def set_grid(self, im, save_name=None, grid_correction=None):
 
@@ -264,7 +284,7 @@ class GridArray():
 
             error_file = os.path.join(
                 self._analysis_model.output_directory,
-                self._paths.experiment_grid_error_image.format(self._identifier[1]))
+                self._paths.experiment_grid_error_image.format(self.index))
 
             np.save(error_file, im)
             save_name = error_file + ".png"
@@ -280,6 +300,7 @@ class GridArray():
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
 
         if save_name is not None:
+            save_name += "{0}.png".format(self.index)
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name)
 
         self._set_grid_cell_corners()
@@ -338,7 +359,8 @@ class GridArray():
         self._grid = None
         self._grid_cell_size = None
         self._grid_cells.clear()
-        self.features.clear()
+        self._features.data.clear()
+
         polynomial_coeffs = get_calibration_polynomial_coeffs()
 
         for row in xrange(pinning_matrix[0]):
@@ -346,10 +368,15 @@ class GridArray():
             for column in xrange(pinning_matrix[1]):
 
                 if (not self._analysis_model.suppress_non_focal or
-                        self._analysis_model.focus_position == (self._identifier[1], row, column)):
+                        self._analysis_model.focus_position == (self.index, row, column)):
 
-                    grid_cell = GridCell([self._identifier, [row, column]], polynomial_coeffs)
+                    grid_cell = GridCell([self._identifier, (row, column)], polynomial_coeffs)
+                    self._features.data[grid_cell.position] = grid_cell.features
                     self._grid_cells[grid_cell.position] = grid_cell
+
+    def clear_features(self):
+        for grid_cell in self._grid_cells:
+            grid_cell.clear_features()
 
     def analyse(self, im, image_model, save_grid_name=None):
 
@@ -361,7 +388,7 @@ class GridArray():
         self.watch_blob = None
         self.watch_results = None
 
-        self._identifier[0] = image_model.image.index
+        self.image_index = image_model.image.index
 
         # noinspection PyBroadException
         try:
@@ -375,17 +402,17 @@ class GridArray():
 
         if self._grid is None:
             if not self.set_grid(im):
-                return None
+                self.clear_features()
+                return
 
         if save_grid_name:
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_grid_name)
 
         for grid_cell in self._grid_cells.values():
-            _analyse_grid_cell(grid_cell, im, transpose_polynomial, self.features)
+            _analyse_grid_cell(grid_cell, im, transpose_polynomial)
 
         self._set_focus_colony_results()
 
-        return self.features
 
     def _set_focus_colony_results(self):
 
