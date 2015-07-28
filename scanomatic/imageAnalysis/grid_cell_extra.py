@@ -259,7 +259,7 @@ class CellItem():
 
         if feature_data[MEASURES.Count] == feature_data[MEASURES.Sum] or feature_data[MEASURES.Count] == 0:
 
-            if self.features[MEASURES.Count] == 0:
+            if feature_data[MEASURES.Count] == 0:
 
                 print "GCdissect", self._identifier, "No blob"
 
