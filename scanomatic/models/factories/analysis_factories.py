@@ -60,8 +60,8 @@ class XMLModelFactory(AbstractModelFactory):
     MODEL = analysis_model.XMLModel
     STORE_SECTION_HEAD = "XML"
     STORE_SECTION_SERIALIZERS = {
-        "exclude_compartments": tuple,
-        "exclude_measures": tuple,
+        "exclude_compartments": (tuple, analysis_model.COMPARTMENTS),
+        "exclude_measures": (tuple, analysis_model.MEASURES),
         "make_short_tag_version": bool,
         "short_tag_measure": analysis_model.MEASURES
     }
@@ -318,3 +318,28 @@ class MetaDataFactory(AbstractModelFactory):
             del settings["Manual Gridding"]
 
         return super(MetaDataFactory, cls).create(**settings)
+
+
+class AnalysisFeaturesFactory(AbstractModelFactory):
+
+    MODEL = analysis_model.AnalysisFeatures
+    STORE_SECTION_HEAD = "FEATURES"
+    STORE_SECTION_SERIALIZERS = {
+        "index": object,
+        "data": object,
+        "shape": (tuple, int)
+    }
+
+    @classmethod
+    def create(cls, children=None, data_type=None, **settings):
+        """
+
+        :param settings:
+        :return: scanomatic.models.analysis_model.AnalysisFeatures
+        """
+        """
+        :param settings:
+        :return:
+        """
+
+        return super(AnalysisFeaturesFactory, cls).create(**settings)
