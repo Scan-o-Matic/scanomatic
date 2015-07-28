@@ -394,7 +394,7 @@ class GridArray():
         try:
             transpose_polynomial = imageBasics.Image_Transpose(
                 sourceValues=image_model.fixture.grayscale.values,
-                targetValues=getGrayscale(image_model.fixture.grayscale.name))
+                targetValues=getGrayscale(image_model.fixture.grayscale.name)['targets'])
 
         except Exception:
 
