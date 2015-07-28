@@ -36,7 +36,7 @@ class Logger(object):
     INFO = 4
     DEBUG = 5
 
-    _LOGFORMAT = "%Y-%m-%d %H:%M:%S -- {name} -- {lvl}: "
+    _LOGFORMAT = "%Y-%m-%d %H:%M:%S -- {lvl}\t**{name}** "
 
     _DEFAULT_LOGFILE = None
     _DEFAULT_CATCH_OUT = False
