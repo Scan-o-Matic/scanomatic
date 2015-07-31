@@ -165,8 +165,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._startTime = time.time()
 
-        AnalysisModelFactory.set_absolute_paths(self._analysis_job)
-
         self._first_pass_results = first_pass_results.CompilationResults(
             self._analysis_job.compilation, self._analysis_job.compile_instructions)
 
@@ -231,13 +229,22 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def setup(self, job):
 
-        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
-
         if self._running:
             self.add_message("Cannot change settings while running")
             return
 
-        self._logger.info("Setup got {0}".format(job))
+        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
+
+        allow_start = AnalysisModelFactory.validate(self._analysis_job)
+
+        AnalysisModelFactory.set_absolute_paths(self._analysis_job)
+
+        self._logger.info("{0} is setting up, output will be directed to {1}".format(job, Paths().analysis_run_log))
+        self._logger.set_output_target(
+            os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
+            catch_stdout=True, catch_stderr=True)
+
+        self._logger.surpress_prints = True
 
         if self._analysis_job.compile_instructions:
             self._update_job_from_config_file()
@@ -249,8 +256,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         except IndexError:
             self._logger.warning("No information found about how the scanning was done")
 
-        self._allow_start = AnalysisModelFactory.validate(self._analysis_job)
-
+        self._allow_start = allow_start
         if not self._allow_start:
             self._logger.error("Can't perform analysis; instructions don't validate.")
             for bad_instruction in AnalysisModelFactory.get_invalid(self._analysis_job):
