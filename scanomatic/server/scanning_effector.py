@@ -83,7 +83,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         paths_object = paths.Paths()
         self._scanning_job.id = job.id
         self._setup_directory()
-        self._logger.info("Setup called")
+        self._logger.info("{0} is setting up; logging will be directed to file".format(job))
         self._logger.set_output_target(
             os.path.join(self._project_directory,
                          paths_object.scan_log_file_pattern.format(self._scanning_job.project_name)),
