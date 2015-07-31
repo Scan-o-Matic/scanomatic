@@ -125,7 +125,7 @@ class Paths(SingeltonOneInit):
         self.analysis_graycsales = os.path.join(
             self.config, "grayscales.cfg")
 
-        self.analysis_run_log = 'analysis.run'
+        self.analysis_run_log = 'analysis.log'
 
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
         self.experiment_first_pass_log_relative = ".1_pass.log"
