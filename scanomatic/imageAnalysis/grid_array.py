@@ -93,36 +93,37 @@ def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=
 
     grid_image = plt.figure()
     grid_plot = grid_image.add_subplot(111)
-    grid_plot.imshow(im, cmap=plt.cm.gray)
-
+    grid_plot.imshow(im.T, cmap=plt.cm.gray)
+    x = 0
+    y = 1
     if grid_corners is not None:
 
         for row in range(grid_corners.shape[1]):
 
             grid_plot.plot(
-                grid[1, row, :],
-                grid[0, row, :],
+                grid_corners[x, row, :],
+                grid_corners[y, row, :],
                 'r-')
 
         for col in range(grid_corners.shape[2]):
 
             grid_plot.plot(
-                grid[1, :, col],
-                grid[0, :, col],
+                grid_corners[x, :, col],
+                grid_corners[y, :, col],
                 'r-')
 
-        grid_plot.plot(grid_corners[1, 0, 0],
-                       grid_corners[0, 0, 0],
+        grid_plot.plot(grid_corners[x, 0, 0],
+                       grid_corners[y, 0, 0],
                        'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
     if x_values is not None and y_values is not None:
 
-        grid_plot.plot(y_values, x_values, 'o', alpha=0.75,
+        grid_plot.plot(x_values, y_values, 'o', alpha=0.75,
                        ms=5, mfc='none', mec='red', mew=1)
 
     ax = grid_image.gca()
-    ax.set_xlim(0, im.shape[1])
-    ax.set_ylim(0, im.shape[0])
+    ax.set_xlim(0, im.shape[x])
+    ax.set_ylim(0, im.shape[y])
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
@@ -273,6 +274,7 @@ class GridArray():
     @image_index.setter
     def image_index(self, value):
         self._identifier[0] = value
+        self._features.index[0] = value
 
     def set_grid(self, im, save_name=None, grid_correction=None):
 
@@ -287,7 +289,7 @@ class GridArray():
                 self._paths.experiment_grid_error_image.format(self.index))
 
             np.save(error_file, im)
-            save_name = error_file + ".png"
+            save_name = error_file + ".svg"
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name.format(self.index))
 
             return False
@@ -298,13 +300,12 @@ class GridArray():
                 "Grid shape {0} missmatch with pinning matrix {1}".format(self._grid.shape, self._pinning_matrix))
 
         self._grid_cell_size = map(lambda x: int(round(x)), spacings)
+        self._set_grid_cell_corners()
+        self._update_grid_cells()
 
         if save_name is not None:
             save_name += "{0}.png".format(self.index)
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name)
-
-        self._set_grid_cell_corners()
-        self._update_grid_cells()
 
         return True
 
