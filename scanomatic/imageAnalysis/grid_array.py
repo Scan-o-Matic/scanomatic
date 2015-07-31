@@ -96,6 +96,9 @@ def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=
     grid_plot.imshow(im.T, cmap=plt.cm.gray)
     x = 0
     y = 1
+    print grid_corners[:, 0, -1]
+    print grid_corners[:, -1, 0]
+
     if grid_corners is not None:
 
         for row in range(grid_corners.shape[1]):
@@ -123,7 +126,7 @@ def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=
 
     ax = grid_image.gca()
     ax.set_xlim(0, im.shape[x])
-    ax.set_ylim(0, im.shape[y])
+    ax.set_ylim(im.shape[y], 0)
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
@@ -304,7 +307,7 @@ class GridArray():
         self._update_grid_cells()
 
         if save_name is not None:
-            save_name += "{0}.png".format(self.index)
+            save_name += "{0}.svg".format(self.index)
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name)
 
         return True
