@@ -83,7 +83,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         return -1
 
     def _get_is_analysing_images(self):
-        return self._allow_start and hasattr(self, "first_pass_results") and self._first_pass_results
+        return self._allow_start and hasattr(self, "_first_pass_results") and self._first_pass_results
 
     @property
     def progress(self):
