@@ -130,6 +130,10 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         scan_start_time = time.time()
         image_model = self._first_pass_results.get_next_image_model()
+
+        # TODO: Hack to patch flipped calibration X axis
+        image_model.fixture.grayscale.values = image_model.fixture.grayscale.values[::-1]
+
         first_image_analysed = self._current_image_model is None
         self._current_image_model = image_model
         if not image_model:
