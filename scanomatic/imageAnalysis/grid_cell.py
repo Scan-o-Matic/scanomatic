@@ -30,6 +30,8 @@ from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFacto
 # CLASS: Grid_Cell
 #
 
+_DEBUG_IMAGE = False
+
 
 class GridCell():
 
@@ -108,6 +110,17 @@ class GridCell():
                 self.source = np.polyval(polynomial_coeffs, self.source)
 
             self._set_max_value_filter()
+
+            global _DEBUG_IMAGE
+            if _DEBUG_IMAGE:
+
+                from matplotlib import pyplot as plt
+                from scanomatic.io.paths import Paths
+                import os
+                plt.clf()
+                plt.imshow(self.source)
+                plt.savefig(os.path.join(Paths().scanomatic, "scanomatic_debug_grid_cell_image.png"))
+                _DEBUG_IMAGE = False
 
         self.push_source_data_to_cell_items()
 
