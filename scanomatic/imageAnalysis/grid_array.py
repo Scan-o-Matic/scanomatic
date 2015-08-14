@@ -341,14 +341,15 @@ class GridArray():
 
     def _set_grid_cell_corners(self):
 
-        self._grid_cell_corners = np.zeros((2, self._grid.shape[1] + 1, self._grid.shape[2] + 1))
+        self._grid_cell_corners = np.zeros((2, 2, self._grid.shape[1], self._grid.shape[2]))
+
+        # For all sets lower values boundaries
+        self._grid_cell_corners[0, 0, :, :] = self._grid[0] - self._grid_cell_size[0] / 2.0
+        self._grid_cell_corners[1, 0, :, :] = self._grid[1] - self._grid_cell_size[1] / 2.0
 
         # For both dimensions sets higher value boundaries
-        self._grid_cell_corners[0, 1:, 1:] = self._grid[0] + self._grid_cell_size[0] / 2.0
-        self._grid_cell_corners[1, 1:, 1:] = self._grid[1] + self._grid_cell_size[1] / 2.0
-        # For all but the far right and bottom over-writes and sets lower values boundaries
-        self._grid_cell_corners[0, :-1, :-1] = self._grid[0] - self._grid_cell_size[0] / 2.0
-        self._grid_cell_corners[1, :-1, :-1] = self._grid[1] - self._grid_cell_size[1] / 2.0
+        self._grid_cell_corners[0, 1, :, :] = self._grid[0] + self._grid_cell_size[0] / 2.0
+        self._grid_cell_corners[1, 1, :, :] = self._grid[1] + self._grid_cell_size[1] / 2.0
 
     def _update_grid_cells(self):
 
