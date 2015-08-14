@@ -418,7 +418,7 @@ class XML_Writer(object):
             MEASURES.Mean: ('mean', 'm')[tag_format],
             MEASURES.Median: ('median', 'md')[tag_format],
             MEASURES.Centroid: ('centroid', 'cent')[tag_format],
-            MEASURES.Perimeter: ('perimeter', 'per'),
+            MEASURES.Perimeter: ('perimeter', 'per')[tag_format],
             MEASURES.IQR: 'IRQ',
             MEASURES.IQR_Mean: ("IQR-mean", 'IQR-m')[tag_format]
         }
