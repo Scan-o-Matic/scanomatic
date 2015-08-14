@@ -100,27 +100,25 @@ def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=
     grid_plot.imshow(im.T, cmap=plt.cm.gray)
     x = 0
     y = 1
-    print grid_corners[:, 0, -1]
-    print grid_corners[:, -1, 0]
 
     if grid_corners is not None:
 
-        for row in range(grid_corners.shape[1]):
+        for row in range(grid_corners.shape[2]):
 
             grid_plot.plot(
-                grid_corners[x, row, :],
-                grid_corners[y, row, :],
+                grid_corners[x, :, row, :].mean(axis=0),
+                grid_corners[y, :, row, :].mean(axis=0),
                 'r-')
 
-        for col in range(grid_corners.shape[2]):
+        for col in range(grid_corners.shape[3]):
 
             grid_plot.plot(
-                grid_corners[x, :, col],
-                grid_corners[y, :, col],
+                grid_corners[x, :, :, col].mean(axis=0),
+                grid_corners[y, :, :, col].mean(axis=0),
                 'r-')
 
-        grid_plot.plot(grid_corners[x, 0, 0],
-                       grid_corners[y, 0, 0],
+        grid_plot.plot(grid_corners[x, :, 0, 0].mean(axis=0),
+                       grid_corners[y, :, 0, 0].mean(axis=0),
                        'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
     if x_values is not None and y_values is not None:
