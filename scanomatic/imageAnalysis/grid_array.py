@@ -65,6 +65,10 @@ def _set_image_transposition(grid_cell, transpose_polynomial):
 
 def _get_image_slice(im, grid_cell):
 
+    """
+
+    :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell
+    """
     xy1 = grid_cell.xy1
     xy2 = grid_cell.xy2
 
