@@ -187,7 +187,7 @@ class Interface_Builder(SingeltonOneInit):
         global _SOM_SERVER
         return _SOM_SERVER.queue.status
 
-    def _server_get_job_status(self, user_id):
+    def _server_get_job_status(self, user_id=None):
         """Gives a list or statuses.
 
         First entry is always the status of the server followed by
