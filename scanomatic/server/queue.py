@@ -73,7 +73,7 @@ class Queue(SingeltonOneInit):
     @property
     @decorators.type_lock
     def status(self):
-        return [RPC_Job_Model_Factory.serializer.dumps(m) for m in self._queue]
+        return [RPC_Job_Model_Factory.to_dict(m) for m in self._queue]
 
     @decorators.type_lock
     def set_priority(self, job_id, priority):

@@ -18,8 +18,15 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
         'id': str,
         'type': rpc_job_models.JOB_TYPE,
         'status': rpc_job_models.JOB_STATUS,
+        'priority': int,
         'content_model': Model,
         'pid': int}
+
+    @classmethod
+    def create(cls, **settings):
+        """:rtype : scanomatic.models.rpc_job_models.RPCjobModel"""
+
+        return super(RPC_Job_Model_Factory, cls).create(**settings)
 
     @classmethod
     def _validate_pid(cls, model):
