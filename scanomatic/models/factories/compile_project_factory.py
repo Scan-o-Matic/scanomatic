@@ -119,9 +119,14 @@ class CompileProjectFactory(AbstractModelFactory):
     @classmethod
     def dict_from_path_and_fixture(cls, path, fixture=None, is_local=None):
 
-        if path:
-            path = os.path.abspath(path)
-        else:
+        """
+
+        :type path: str
+        """
+        path = path.rstrip("/")
+
+        if path != os.path.abspath(path):
+            cls._LOGGER.error("Not an absolute path, aborting")
             return {}
 
         if is_local is None:
@@ -129,7 +134,7 @@ class CompileProjectFactory(AbstractModelFactory):
 
         image_path = os.path.join(path, "*.tiff")
 
-        images = [{'path': path} for path in sorted(glob.glob(image_path))]
+        images = [{'path': p, 'index': i} for i, p in enumerate(sorted(glob.glob(image_path)))]
 
         return {
             'compile_action': compile_project_model.COMPILE_ACTION.Initiate.name,

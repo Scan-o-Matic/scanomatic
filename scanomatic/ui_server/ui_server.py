@@ -257,9 +257,12 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             fixture=request.values.get("fixture")
             _logger.info("Attempting to compile on path {0}, as {1} fixture{2}".format(
                 path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture)))
-            return jsonify(success=rpc_client.create_compile_project_job(
+
+            job_id = rpc_client.create_compile_project_job(
                 CompileProjectFactory.dict_from_path_and_fixture(
-                    path, fixture=fixture , is_local=is_local)))
+                    path, fixture=fixture, is_local=is_local))
+
+            return jsonify(success=True if job_id else False, reason="" if job_id else "Invalid parameters")
 
         return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
 

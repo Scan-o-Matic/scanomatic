@@ -21,7 +21,7 @@ function Compile(button) {
         data: {'local': localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
                'path': path},
         success: function (data) {
-            if (data.success) {}
+            if (data.success) {
                 $('<div class=\'dialog\'></div>').appendTo("body")
                             .prop("title", "Compile")
                             .html("<div><h3>Compilation has started.</h3></div>")
@@ -29,11 +29,12 @@ function Compile(button) {
                                      buttons: {
                                         Ok: function() {
                                             $(this).dialog("close");
+                                            window.location ='/';
                                         }
                                      }
                             });
                 $(button).closest("form")[0].reset();
-            } else
+            } else {
                 $('<div class=\'dialog\'></div>').appendTo("body")
                         .prop("title", "Compile")
                         .html("<div><h3>Compilation refused</h3>Reason:\n<div class='indented'><em>" +
@@ -45,7 +46,9 @@ function Compile(button) {
                                     }
                                  }
                         });
+            }
             InputEnabled($(button), true);
+
         },
         error: function(data) {
             $('<div class=\'dialog\'></div>').appendTo("body")
