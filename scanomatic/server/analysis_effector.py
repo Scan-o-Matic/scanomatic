@@ -50,8 +50,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         super(AnalysisEffector, self).__init__(job, logger_name="Analysis Effector")
         self._config = None
+        self._job_label = job.content_model.compilation
 
-        self._specific_statuses['progress'] = 'progress'
         self._specific_statuses['total'] = 'total'
         self._specific_statuses['current_image_index'] = 'current_image_index'
 

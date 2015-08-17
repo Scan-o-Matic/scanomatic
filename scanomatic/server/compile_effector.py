@@ -25,7 +25,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         super(CompileProjectEffector, self).__init__(job, logger_name="Compile Effector")
         self._compile_job = job.content_model
         """:type : scanomatic.models.compile_project_model.CompileInstructionsModel"""
-
+        self._job_label = self._compile_job.path
         self._image_to_analyse = 0
         self._fixture_settings = None
         self._compile_instructions_path = None

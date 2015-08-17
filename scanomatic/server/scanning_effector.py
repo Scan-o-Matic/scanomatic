@@ -51,7 +51,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         super(ScannerEffector, self).__init__(job, logger_name="Scanner Effector")
 
-        self._specific_statuses['progress'] = 'progress'
         self._specific_statuses['total'] = 'total_images'
         self._specific_statuses['currentImage'] = 'current_image'
 
@@ -60,6 +59,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._scanning_job = job.content_model
         """:type : scanomatic.models.scanning_model.ScanningModel"""
+        self._job_label = "'{0}' on scanner {1}".format(self._scanning_job.project_name, self._scanning_job.scanner)
         self._scanning_effector_data = ScanningModelEffectorData()
         self._rpc_client = rpc_client.get_client(admin=True)
         self._scanner = None

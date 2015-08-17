@@ -37,6 +37,7 @@ class ProcessEffector(object):
     def __init__(self, job, logger_name="Process Effector"):
 
         self._job = job
+        self._job_label = job.id
         self._logger = logger.Logger(logger_name)
 
         self._fail_vunerable_calls = tuple()
@@ -97,6 +98,11 @@ class ProcessEffector(object):
             return time.time() - self._start_time
 
     @property
+    def progress(self):
+
+        return -1
+
+    @property
     def fail_vunerable_calls(self):
 
         return self._fail_vunerable_calls
@@ -127,11 +133,13 @@ class ProcessEffector(object):
     def status(self, *args, **kwargs):
 
         return dict([('id', self._job.id),
+                     ('label', self._job_label),
                      ('pid', self._pid),
                      ('type', self.TYPE.text),
                      ('running', self._running),
                      ('paused', self._paused),
                      ('runTime', self.run_time),
+                     ('progress', self.progress),
                      ('stopping', self._stopping),
                      ('messages', self.get_messages())] +
                     [(k, getattr(self, v)) for k, v in
