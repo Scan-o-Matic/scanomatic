@@ -64,22 +64,6 @@ option {
 #cont em {
 }
 
-#cont h2 {
-	text-transform: uppercase;
-	letter-spacing: 100%;
-	font-size: 105%;
-	display: block;
-	width: 100%;
-	text-align: center;
-	margin-top: 24px;
-	margin-bottom: 12px;
-}
-
-#cont h3 {
-    font-family: sans;
-    margin-top: 10px;
-}
-
 label {
 	text-transform: uppercase;
 	letter-spacing: 100%;
@@ -94,13 +78,6 @@ textarea {
 
 .section {
     margin-bottom: 6px;
-}
-
-.section-frame {
-    background: #802F17;
-    border: 1px solid #541f0f;
-    padding: 6px;
-    margin-bottom: 20px;
 }
 
 #pinnings div {

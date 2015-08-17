@@ -102,6 +102,23 @@ ul {
 	padding-bottom: 64px;
 	box-shadow: 5px 5px 15px #541f0f;
 }
+
+#cont h2 {
+	text-transform: uppercase;
+	letter-spacing: 100%;
+	font-size: 105%;
+	display: block;
+	width: 100%;
+	text-align: center;
+	margin-top: 24px;
+	margin-bottom: 12px;
+}
+
+#cont h3 {
+    font-family: sans;
+    margin-top: 10px;
+}
+
 .section {
     margin-bottom: 0.5em;
 }
@@ -139,6 +156,13 @@ ul {
 	font-size: 90%;
 	margin-top:12px;
 	margin-bottom: 6px;
+}
+
+.section-frame {
+    background: #802F17;
+    border: 1px solid #541f0f;
+    padding: 6px;
+    margin-bottom: 20px;
 }
 
 #toc {
