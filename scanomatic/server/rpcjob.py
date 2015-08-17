@@ -57,6 +57,8 @@ class Fake(object):
             s['label'] = self._job.id
         if 'running' not in s:
             s['running'] = True
+        if 'progress' not in s:
+            s['progress'] = -1
         if 'pid' not in s:
             s['pid'] = os.getpid()
 
