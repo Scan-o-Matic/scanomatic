@@ -40,8 +40,9 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._paths = paths.Paths()
 
         super(PhenotypeExtractionEffector, self).__init__(job, logger_name="Phenotype Extractor '{0}'".format(job.id))
-        self._specific_statuses['progress'] = 'progress'
+
         self._feature_job = job.content_model
+        self._job_label = self._feature_job.analysis_directory
         self._progress = 0
         self._times = None
         self._data = None
