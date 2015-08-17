@@ -24,11 +24,13 @@ from scipy.stats.mstats import tmean, mquantiles
 #
 
 import grid_cell_extra as grid_cell_extra
-from scanomatic.models.analysis_model import VALUES, ITEMS
-
+from scanomatic.models.analysis_model import VALUES, COMPARTMENTS
+from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 #
 # CLASS: Grid_Cell
 #
+
+_DEBUG_IMAGE = False
 
 
 class GridCell():
@@ -47,13 +49,14 @@ class GridCell():
         self.source = None
         self.ready = False
         self._previous_image = None
-
+        self.features = AnalysisFeaturesFactory.create(index=tuple(self.position), data={})
         self._analysis_items = {}
+        """:type: dict[scanomatic.models.analysis_model.ITEMS|scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
         self._set_empty_analysis_items()
 
     def _set_empty_analysis_items(self):
 
-        for item_name in ITEMS:
+        for item_name in COMPARTMENTS:
 
             self._analysis_items[item_name] = None
 
@@ -79,8 +82,8 @@ class GridCell():
 
     def set_grid_coordinates(self, grid_cell_corners):
 
-        self.xy1 = grid_cell_corners[:, self.position[0], self.position[1]]
-        self.xy2 = grid_cell_corners[:, self.position[0] + 1, self.position[1] + 1]
+        self.xy1 = grid_cell_corners[:, 0, self.position[0], self.position[1]]
+        self.xy2 = grid_cell_corners[:, 1, self.position[0], self.position[1]]
 
     def get_overshoot_warning(self):
 
@@ -108,6 +111,17 @@ class GridCell():
 
             self._set_max_value_filter()
 
+            global _DEBUG_IMAGE
+            if _DEBUG_IMAGE:
+
+                from matplotlib import pyplot as plt
+                from scanomatic.io.paths import Paths
+                import os
+                plt.clf()
+                plt.imshow(self.source)
+                plt.savefig(os.path.join(Paths().scanomatic, "scanomatic_debug_grid_cell_image.png"))
+                _DEBUG_IMAGE = False
+
         self.push_source_data_to_cell_items()
 
     def _set_max_value_filter(self):
@@ -130,7 +144,7 @@ class GridCell():
 
             return None
 
-    def get_analysis(self, detect=True, remember_filter=False):
+    def analyse(self, detect=True, remember_filter=False):
         """get_analysis iterates through all possible cell items
         and runs their detect and do_analysis if they are attached.
 
@@ -141,43 +155,42 @@ class GridCell():
         dictionary to avoid key errors..
         """
 
-        background = self._analysis_items[ITEMS.Background]
+        background = self._analysis_items[COMPARTMENTS.Background]
 
         if detect:
             self.detect(remember_filter=remember_filter)
 
         if background.filter_array.sum() == 0:
-            return None
+            self.clear_features()
+        else:
+            self._analyse()
 
-        return self._get_features()
+    def clear_features(self):
 
-    def _get_features(self):
+        for item in self._analysis_items.itervalues():
 
-        features = {}
-        background = self._analysis_items[ITEMS.Background]
+            if item:
+
+                item.features.data.clear()
+
+    def _analyse(self):
+
+        background = self._analysis_items[COMPARTMENTS.Background]
 
         self.set_new_data_source_space(space=VALUES.Cell_Estimates, bg_sub_source=background.filter_array,
                                        polynomial_coeffs=self._polynomial_coeffs)
 
-        for item_name, item in self._analysis_items.items():
+        for item in self._analysis_items.itervalues():
 
             if item:
 
                 item.set_data_source(self.source)
                 item.do_analysis()
 
-                features[item_name] = item.features
-
-            else:
-
-                features[item_name] = None
-
-        return features
-
     def detect(self, remember_filter=False):
 
-        blob = self._analysis_items[ITEMS.Blob]
-        background = self._analysis_items[ITEMS.Background]
+        blob = self._analysis_items[COMPARTMENTS.Blob]
+        background = self._analysis_items[COMPARTMENTS.Background]
 
         blob.detect(remember_filter=remember_filter)
         background.detect()
@@ -213,23 +226,32 @@ class GridCell():
                         automatically)"""
 
         if cell:
-            self._analysis_items[ITEMS.Cell] = grid_cell_extra.Cell(
-                [self._identifier, ['cell']], self.source,
+            item = grid_cell_extra.Cell(
+                (self._identifier, COMPARTMENTS.Total), self.source,
                 run_detect=run_detect)
+            self.features.data[item.features.index] = item.features
+            self._analysis_items[item.features.index] = item
 
         if blob:
 
-            self._analysis_items[ITEMS.Blob] = grid_cell_extra.Blob(
-                [self._identifier, ['blob']], self.source,
+            item = grid_cell_extra.Blob(
+                (self._identifier, COMPARTMENTS.Blob), self.source,
                 blob_detect=blob_detect, run_detect=run_detect,
                 center=center, radius=radius)
 
-        if background and self._analysis_items[ITEMS.Blob]:
+            self.features.data[item.features.index] = item.features
+            self._analysis_items[item.features.index] = item
 
-            self._analysis_items[ITEMS.Background] = grid_cell_extra.Background(
-                [self._identifier, ['background']], self.source,
-                self._analysis_items[ITEMS.Blob], run_detect=run_detect)
+        if background and self._analysis_items[COMPARTMENTS.Blob]:
 
+            item = grid_cell_extra.Background(
+                (self._identifier, COMPARTMENTS.Background), self.source,
+                self._analysis_items[COMPARTMENTS.Blob], run_detect=run_detect)
+
+            self.features.data[item.features.index] = item.features
+            self._analysis_items[item.features.index] = item
+
+        self.features.shape = (len(self.features.data),)
         self.set_ready_state()
 
     def set_ready_state(self):

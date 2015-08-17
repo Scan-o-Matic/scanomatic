@@ -125,7 +125,7 @@ class Paths(SingeltonOneInit):
         self.analysis_graycsales = os.path.join(
             self.config, "grayscales.cfg")
 
-        self.analysis_run_log = 'analysis.run'
+        self.analysis_run_log = 'analysis.log'
 
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
         self.experiment_first_pass_log_relative = ".1_pass.log"
@@ -148,7 +148,10 @@ class Paths(SingeltonOneInit):
         self.project_settings_file_pattern = "{0}.project.settings"
         self.project_compilation_pattern = "{0}.project.compilation"
         self.project_compilation_instructions_pattern = "{0}.project.compilation.instructions"
+        self.project_compilation_log_pattern = "{0}.project.compilation.log"
+
         self.scan_project_file_pattern = "{0}.scan.instructions"
+        self.scan_log_file_pattern = "{0}.scan.log"
 
     def join(self, attr, *other):
         
@@ -200,19 +203,34 @@ class Paths(SingeltonOneInit):
 
         if os.path.isdir(compile_model.path):
 
-            project_name = self.get_project_directory_name_from_path(compile_model.path)
-            return self.project_compilation_pattern.format(os.path.join(compile_model.path, project_name))
+            return self.project_compilation_pattern.format(
+                self.get_project_directory_name_with_file_prefix_from_path(compile_model.path))
 
         return compile_model.path
 
-    def get_project_directory_name_from_path(self, path):
+    @staticmethod
+    def get_project_directory_name_with_file_prefix_from_path(path):
 
-        return path.rstrip(os.sep).split(os.sep)[-1]
+        if os.path.isdir(path):
+            dir_name = path
+        else:
+            dir_name = os.path.dirname(path)
+        return os.path.join(dir_name, dir_name.rstrip(os.sep).split(os.sep)[-1])
 
     def get_project_compile_instructions_path_from_compile_model(self, compile_model):
 
-        project_name = self.get_project_directory_name_from_path(compile_model.path)
-        return self.project_compilation_instructions_pattern.format(os.path.join(compile_model.path, project_name))
+
+        return self.project_compilation_instructions_pattern.format(
+            self.get_project_directory_name_with_file_prefix_from_path(compile_model.path))
+
+    def get_project_compile_log_path_from_compile_model(self, compile_model):
+
+        return self.project_compilation_log_pattern.format(
+            self.get_project_directory_name_with_file_prefix_from_path(compile_model.path))
+
+    def get_scan_instructions_path_from_compile_instructions_path(self, path):
+
+        return self.scan_project_file_pattern.format(self.get_project_directory_name_with_file_prefix_from_path(path))
 
     @staticmethod
     def get_scanner_path_name(scanner):

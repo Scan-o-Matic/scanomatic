@@ -57,32 +57,37 @@ class ImageData(object):
                 "Image {0} had no data".format(image_index))
             return
 
-        number_of_plates = len(features)
+        number_of_plates = features.shape[0]
         plates = [None] * number_of_plates
-        for plate_id in xrange(number_of_plates):
-            if features[plate_id] is not None:
+        for plate_features in features.data:
 
-                len_dim1 = len(features[plate_id])
-                len_dim2 = len(features[plate_id][0])
-                plates[plate_id] = np.zeros((len_dim1, len_dim2)) * np.nan
-                feature_plate = features[plate_id]
+            plate  = np.zeros(plate_features.shape).T * np.nan
+            plates[plate_features.index] = plate
 
-                for id1 in xrange(len_dim1):
-                    features_dim1 = feature_plate[id1]
-                    for id2 in xrange(len_dim2):
-                        cell = features_dim1[id2]
-                        if cell is not None:
-                            try:
-                                plates[plate_id][id1, id2] = cell[output_item][output_value]
-                            except KeyError:
-                                ImageData._LOGGER.error(
-                                    "{0} does not have {1} data".format(
-                                        cell, (output_item.name, output_value.name)))
+            for cell_features in plate_features.data.itervalues():
+
+                if output_item in cell_features.data:
+
+                    compartment_features = cell_features.data[output_item]
+
+                    if output_value in compartment_features.data:
+
+                        try:
+                            plate[cell_features.index] = compartment_features.data[output_value]
+                        except IndexError:
+
+                            ImageData._LOGGER.critical(
+                                "Shape mismatch between plate {0} and colony position {1}".format(
+                                    plate_features.shape, cell_features.index))
+
+                            return False
+
 
         ImageData._LOGGER.info("Saved Image Data '{0}' with {1} plates".format(
             path, len(plates)))
 
         np.save(path, plates)
+        return True
 
     @staticmethod
     def iter_write_image_from_xml(path, xml_object, output_item, output_value):

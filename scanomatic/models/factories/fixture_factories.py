@@ -102,10 +102,61 @@ class GridHistoryFactory(AbstractModelFactory):
             return model.FIELD_TYPES.center_y
 
 
+class FixturePlateFactory(AbstractModelFactory):
+    MODEL = FixturePlateModel
+    STORE_SECTION_HEAD = "Plate Area"
+    STORE_SECTION_SERIALIZERS = {
+        "index": int,
+        "x1": int,
+        "y1": int,
+        "x2": int,
+        "y2": int
+    }
+
+    @classmethod
+    def create(cls, **settings):
+
+        """
+
+        :rtype : scanomatic.models.fixture_models.FixturePlateModel
+        """
+        return super(FixturePlateFactory, cls).create(**settings)
+
+
+class GrayScaleAreaModelFactory(AbstractModelFactory):
+
+    MODEL = fixture_models.GrayScaleAreaModel
+    STORE_SECTION_HEAD = "Grayscale"
+    STORE_SECTION_SERIALIZERS = {
+        'name': str,
+        'values': (tuple, float),
+        'width': float,
+        'section_length': float,
+        'x1': int,
+        'x2': int,
+        'y1': int,
+        'y2': int,
+    }
+
+    @classmethod
+    def create(cls, **settings):
+
+        """
+
+        :rtype : scanomatic.models.fixture_models.FixturePlateModel
+        """
+        return super(GrayScaleAreaModelFactory, cls).create(**settings)
+
+
 class FixtureFactory(AbstractModelFactory):
 
     MODEL = FixtureModel
     STORE_SECTION_HEAD = ('name',)
+    _SUB_FACTORIES = {
+        fixture_models.FixturePlateModel: FixturePlateFactory,
+        fixture_models.GrayScaleAreaModel: GrayScaleAreaModelFactory
+    }
+
     STORE_SECTION_SERIALIZERS = {
         'grayscale': fixture_models.GrayScaleAreaModel,
         "orientation_marks_x": list,
@@ -115,7 +166,7 @@ class FixtureFactory(AbstractModelFactory):
         "scale": float,
         "path": str,
         "name": str,
-        "plates": list,  # TODO: This won't serialize well
+        "plates": (tuple, fixture_models.FixturePlateModel)
     }
 
     @classmethod
@@ -151,14 +202,3 @@ class FixtureFactory(AbstractModelFactory):
                 del settings[plate_name]
 
         return super(FixtureFactory, cls).create(**settings)
-
-
-class FixturePlateFactory(AbstractModelFactory):
-    MODEL = FixturePlateModel
-    STORE_SECTION_SERIALIZERS = {
-        "index": int,
-        "x1": int,
-        "y1": int,
-        "x2": int,
-        "y2": int
-    }

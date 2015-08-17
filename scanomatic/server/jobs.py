@@ -122,6 +122,7 @@ class Jobs(SingeltonOneInit):
                 if not job.pid:
                     job_process.update_pid()
                 if not job_process.is_alive():
+                    self._logger.info("Job '{0}' no longer active".format(job))
                     del self._jobs[job]
                     RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_jobs)
             statuses.append(job_process.status)
@@ -189,7 +190,7 @@ class Jobs(SingeltonOneInit):
             self._add_scanner_operations_to_job(job_process)
             job.content_model.id = job.id
 
-        job_process.pipe.send('setup', RPC_Job_Model_Factory.serializer.serialize(job))
+        job_process.pipe.send('setup', tuple(RPC_Job_Model_Factory.serializer.serialize(job)))
         job_process.pipe.send('start')
 
     def _add_scanner_operations_to_job(self, job_process):

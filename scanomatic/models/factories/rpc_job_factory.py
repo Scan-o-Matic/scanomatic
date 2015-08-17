@@ -10,14 +10,15 @@ from scanomatic.models.compile_project_model import CompileInstructionsModel
 class RPC_Job_Model_Factory(AbstractModelFactory):
 
     MODEL = rpc_job_models.RPCjobModel
-    _SUB_FACTORIES = {ScanningModel: ScanningModelFactory, AnalysisModel: AnalysisModelFactory,
+    _SUB_FACTORIES = {ScanningModel: ScanningModelFactory,
+                      AnalysisModel: AnalysisModelFactory,
                       CompileInstructionsModel: CompileProjectFactory}
     STORE_SECTION_HEAD = ('id',)
     STORE_SECTION_SERIALIZERS = {
-        'id': int,
+        'id': str,
         'type': rpc_job_models.JOB_TYPE,
         'status': rpc_job_models.JOB_STATUS,
-        'content_model': AbstractModelFactory,
+        'content_model': Model,
         'pid': int}
 
     @classmethod

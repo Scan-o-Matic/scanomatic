@@ -2,19 +2,36 @@ __author__ = 'martin'
 __version__ = 0.998
 
 from enum import Enum
-
 import scanomatic.generics.model as model
 
 
-IMAGE_ROTATIONS = Enum("IMAGE_ROTATIONS", names=("Landscape", "Portrait", "None"))
+class IMAGE_ROTATIONS(Enum):
+    Landscape = 0
+    Portrait = 1
+    Unknown = 2
 
-COMPARTMENTS = Enum("COMPARTMENTS", names=("Total", "Background", "Blob"))
 
-MEASURES = Enum("MEASURES", names=("Count", "Sum", "Mean", "Median", "Perimeter", "IQR", "IQR_Mean", "Centroid"))
+class COMPARTMENTS(Enum):
+    Total = 0
+    Background = 1
+    Blob = 2
 
-VALUES = Enum("Values", names=("Pixels", "Grayscale_Targets", "Cell_Estimates"))
 
-ITEMS = Enum("ITEMS", names=("Cell", "Blob", "Background"))
+class MEASURES(Enum):
+    Count = 0
+    Sum = 1
+    Mean = 2
+    Median = 3
+    Perimeter = 4
+    IQR = 5
+    IQR_Mean = 6
+    Centroid = 7
+
+
+class VALUES(Enum):
+    Pixels = 0
+    Grayscale_Targets = 1
+    Cell_Estimates = 2
 
 
 class AnalysisModel(model.Model):
@@ -24,7 +41,7 @@ class AnalysisModel(model.Model):
                  use_local_fixture=False,
                  stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
                  animate_focal=False, grid_images=None, grid_model=None, xml_model=None,
-                 image_data_output_item=ITEMS.Blob, image_data_output_measure=MEASURES.Sum):
+                 image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -80,7 +97,7 @@ class AnalysisMetaData(model.Model):
 
     def __init__(self, start_time=0, name="", description="", interval=20.0, images=0,
                  uuid="", fixture="", scanner="", project_id="", scanner_layout_id="", version=__version__,
-                 pinnings=[]):
+                 pinnings=()):
 
         self.start_time = start_time
         self.name = name
@@ -96,3 +113,14 @@ class AnalysisMetaData(model.Model):
         self.pinnings = pinnings
 
         super(AnalysisMetaData, self).__init__()
+
+
+class AnalysisFeatures(model.Model):
+
+    def __init__(self, index=-1, data=None, shape=tuple()):
+
+        self.data = data
+        self.shape = shape
+        self.index = index
+
+        super(AnalysisFeatures, self).__init__()

@@ -2,6 +2,7 @@ __author__ = 'martin'
 
 from enum import Enum
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
+from scanomatic.io.logger import Logger
 
 FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
 
@@ -10,6 +11,7 @@ class CompilationResults(object):
 
     def __init__(self, compilation_path=None, compile_instructions_path=None, sort_mode=FIRST_PASS_SORTING.Time):
 
+        self._logger = Logger("Compilation results")
         self._compilation_path = compilation_path
         self._compile_instructions = None
         self._plates = None
@@ -40,13 +42,17 @@ class CompilationResults(object):
     def _load_compile_instructions(self, path):
 
         try:
-            self._compile_instructions = CompileProjectFactory.serializer.load(path).next()
-        except StopIteration:
+            self._compile_instructions = CompileProjectFactory.serializer.load(path)[0]
+        except IndexError:
+            self._logger.error("Could not load path {0}".format(path))
             self._compile_instructions = None
 
     def _load_compilation(self, path, sort_mode=FIRST_PASS_SORTING.Time):
 
         images = CompileImageAnalysisFactory.serializer.load(path)
+        self._logger.info("Loaded {0} compiled images".format(len(images)))
+
+        self._reindex_plates(images)
 
         if sort_mode is FIRST_PASS_SORTING.Time:
             self._image_models = list(CompileImageAnalysisFactory.copy_iterable_of_model_update_indices(images))
@@ -54,6 +60,16 @@ class CompilationResults(object):
             self._image_models = list(CompileImageAnalysisFactory.copy_iterable_of_model_update_time(images))
 
         self._loading_length = len(self._image_models)
+
+    @staticmethod
+    def _reindex_plates(images):
+
+        for image in images:
+
+            if image and image.fixture and image.fixture.plates:
+
+                for plate in image.fixture.plates:
+                    plate.index -= 1
 
     def __len__(self):
 
@@ -65,6 +81,9 @@ class CompilationResults(object):
 
         :rtype: scanomatic.models.compile_project_model.CompileImageAnalysisModel
         """
+        if not self._image_models:
+            return None
+
         if item < 0:
             item %= len(self._image_models)
 
@@ -111,7 +130,10 @@ class CompilationResults(object):
     @property
     def plates(self):
 
-        return self[-1].fixture.plates
+        res = self[-1]
+        if res:
+            return res.fixture.plates
+        return None
 
     @property
     def last_index(self):
@@ -149,6 +171,7 @@ class CompilationResults(object):
         """
         model = self[-1]
         self._current_model = model
-        self._image_models.remove(model)
-        self._used_models.append(model)
+        if model:
+            self._image_models.remove(model)
+            self._used_models.append(model)
         return model

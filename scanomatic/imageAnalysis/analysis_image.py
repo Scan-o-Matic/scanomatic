@@ -22,6 +22,7 @@ import numpy as np
 import grid_array
 from scanomatic.io.logger import Logger
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
+from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 
 #
@@ -32,14 +33,25 @@ from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 # noinspection PyTypeChecker
 def _get_init_features(grid_arrays):
 
+    """
+
+    :type grid_arrays: dict[int|scanomatic.imageAnalysis.grid_array.GridArray]
+    :rtype : list[None|dict[str|object]]
+    """
+
     def length_needed(keys):
 
         return max(keys) + 1
 
-    if grid_arrays:
-        return [None] * length_needed(grid_arrays.keys())
-    else:
-        return []
+    size = length_needed(grid_arrays.keys()) if grid_arrays else 0
+
+    features = AnalysisFeaturesFactory.create(
+        shape=(size,),
+        data=tuple(grid_arrays[i].features if grid_arrays[i] else None for i in range(size)),
+        index=0)
+
+    return features
+
 
 
 class ProjectImage(object):
@@ -53,7 +65,8 @@ class ProjectImage(object):
         self._im_loaded = False
         self.im = None
 
-        self._grid_arrays = self._get_grid_arrays()
+        self._grid_arrays = self._new_grid_arrays
+        """:type : dict[int|scanomatic.imageAnalysis.grid_array.GridArray]"""
         self.features = _get_init_features(self._grid_arrays)
 
     @property
@@ -64,8 +77,13 @@ class ProjectImage(object):
 
         return self._grid_arrays[key]
 
-    def _get_grid_arrays(self):
+    @property
+    def _new_grid_arrays(self):
 
+        """
+
+        :rtype : dict[int|scanomatic.imageAnalysis.grid_array.GridArray]
+        """
         grid_arrays = {}
 
         for index, pinning in enumerate(self._analysis_model.pinning_matrices):
@@ -96,6 +114,10 @@ class ProjectImage(object):
 
         :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
         """
+        if image_model is None:
+            self._logger.critical("No image model to grid on")
+            return False
+
         if save_name is None:
             save_name = os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
 
@@ -116,15 +138,16 @@ class ProjectImage(object):
                 im = self.get_im_section(plate_model)
 
                 if im is None:
-                    return None
-                if self._analysis_model.grid_model.gridding_offsets is None:
-                    self._grid_arrays[index].set_grid(
+                    self._logger.error("Plate model {0} could not be used to slice image".format(plate_model))
+                    continue
+                if not self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
-                        grid_correction=None)
-                else:
-                    self._grid_arrays[index].set_grid(
-                        im, save_name=save_name,
-                        grid_correction=self._analysis_model.grid_model.gridding_offset[index])
+                        grid_correction=self._analysis_model.grid_model.gridding_offset[index]
+                        if self._analysis_model.grid_model.gridding_offsets is not None else None):
+
+                    self._logger.warning("Failed to grid plate {0}".format(plate_model))
+
+        return True
 
     def load_image(self, path):
 
@@ -168,9 +191,11 @@ class ProjectImage(object):
 
     @property
     def orientation(self):
-
+        """The currently loaded image's rotation considered as first dimension of image array being image rows
+        :return:
+        """
         if not self._im_loaded:
-            return IMAGE_ROTATIONS.None
+            return IMAGE_ROTATIONS.Unknown
         elif self.im.shape[0] > self.im.shape[1]:
             return IMAGE_ROTATIONS.Portrait
         else:
@@ -210,8 +235,10 @@ class ProjectImage(object):
         if self.orientation == IMAGE_ROTATIONS.Landscape:
             x, y = _flip_axis(x, y)
 
-        x, y = _bound(im.shape, x, y)
-        section = im[x[0]: x[1], y[0]: y[1]]
+        y, x = _bound(im.shape, y, x)
+
+        # In images, the first dimension is typically the y-axis
+        section = im[y[0]: y[1], x[0]: x[1]]
 
         return self._flip_short_dimension(section, im.shape)
 
@@ -223,6 +250,7 @@ class ProjectImage(object):
 
         def get_slicer(idx):
             if idx == short_dim:
+                # noinspection PyTypeChecker
                 return slice(None, None, -1)
             else:
                 # noinspection PyTypeChecker
@@ -238,7 +266,11 @@ class ProjectImage(object):
 
         self._grid_corrections = np.array((d1, d2))
 
-    def get_analysis(self, image_model):
+    def clear_features(self):
+        for grid_array in self._grid_arrays.itervalues():
+            grid_array.clear_features()
+
+    def analyse(self, image_model):
 
         """
 
@@ -247,25 +279,30 @@ class ProjectImage(object):
         self.load_image(image_model.image.path)
 
         if self._im_loaded is False:
-            return None
+            self.clear_features()
+            return
 
         if not image_model.fixture.grayscale.values:
-            return None
+            self.clear_features()
+            return
 
+        self.features.index = image_model.image.index
+        grid_arrays_processed = set()
         for plate in image_model.fixture.plates:
 
             if plate.index in self._grid_arrays:
-
+                grid_arrays_processed.add(plate.index)
                 im = self.get_im_section(plate)
                 grid_arr = self._grid_arrays[plate.index]
+                """:type: scanomatic.imageAnalysis.grid_array.GridArray"""
                 grid_arr.analyse(im, image_model)
 
-                self.features[plate.index] = grid_arr.features
+        for index, grid_array in self._grid_arrays.iteritems():
+            if index not in grid_arrays_processed:
+                grid_array.clear_features()
 
         if self._analysis_model.focus_position:
             self._record_focus_colony_data()
-
-        return self.features
 
     def _record_focus_colony_data(self):
 

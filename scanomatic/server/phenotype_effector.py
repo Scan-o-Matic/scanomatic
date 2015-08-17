@@ -25,6 +25,7 @@ import scanomatic.io.image_data as image_data
 import scanomatic.dataProcessing.phenotyper as phenotyper
 from scanomatic.models.rpc_job_models import JOB_TYPE
 import scanomatic.models.factories.features_factory as feature_factory
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 
 #
 # CLASSES
@@ -52,8 +53,9 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         return self._progress is None and 1 or self._progress
 
-    def setup(self, *args, **kwargs):
+    def setup(self, job):
 
+        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
         if self._started:
             self._logger.warning("Can't setup when started")
             return False
