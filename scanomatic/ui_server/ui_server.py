@@ -225,6 +225,11 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         else:
             return jsonify(succes=False, reason='Unknown status request')
 
+    @app.route("/analysis", methods=['get', 'post'])
+    def _analysis():
+
+        return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)
+
     @app.route("/experiment", methods=['get', 'post'])
     def _experiment():
 
