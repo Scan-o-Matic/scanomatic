@@ -60,7 +60,7 @@ class Server(object):
     def scanner_manager(self):
         """
 
-        :rtype : scanner_admin.ScannerPowerManager
+        :type : scanomatic.io.scanner_manager.ScannerPowerManager
         """
         return self._scanner_manager
 

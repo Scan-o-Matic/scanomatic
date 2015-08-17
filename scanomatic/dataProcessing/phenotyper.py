@@ -33,6 +33,7 @@ import _mockNumpyInterface
 import scanomatic.io.xml.reader as xmlReader
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
+import scanomatic.io.image_data as image_data
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
@@ -230,6 +231,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return phenotyper
 
     @classmethod
+    def LoadFromImageData(cls, path='.'):
+
+        times, data = image_data.ImageData.read_image_data_and_time(path)
+        return cls(data, times)
+
+    @classmethod
     def LoadFromNumPy(cls, path, timesPath=None, **kwargs):
         """Class Method used to create a Phenotype Strider from
         a saved numpy data array and a saved numpy times array.
@@ -256,7 +263,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         dataPath = path
         if (path.lower().endswith(".npy")):
             path = path[:-4]
-            if (path.endswith(".data")):
+            if path.endswith(".data"):
                 path = path[:-5]
 
         if (timesPath is None):

@@ -17,9 +17,9 @@ class CompileImageFactory(AbstractModelFactory):
     MODEL = compile_project_model.CompileImageModel
 
     STORE_SECTION_SERIALIZERS = {
-        ('index',): int,
-        ('time_stamp',): float,
-        ('path',): str
+        'index': int,
+        'time_stamp': float,
+        'path': str
     }
     STORE_SECTION_HEAD = ("index",)
 
@@ -97,13 +97,13 @@ class CompileProjectFactory(AbstractModelFactory):
     }
 
     STORE_SECTION_SERIALIZERS = {
-        ('compile_action',): compile_project_model.COMPILE_ACTION,
-        ('images',): list,
-        ('path',): str,
-        ('start_condition',): str,
-        ('start_time',): float,
-        ('fixture_type',): compile_project_model.FIXTURE,
-        ('fixture_name',): str
+        'compile_action': compile_project_model.COMPILE_ACTION,
+        'images': (tuple, compile_project_model.CompileImageModel),
+        'path': str,
+        'start_condition': str,
+        'start_time': float,
+        'fixture_type': compile_project_model.FIXTURE,
+        'fixture_name': str
     }
 
     @classmethod
@@ -114,7 +114,6 @@ class CompileProjectFactory(AbstractModelFactory):
         cls.enforce_serializer_type(settings, ('fixture_type', 'compile_action'))
 
         model = super(CompileProjectFactory, cls).create(**settings)
-        cls.enforce_subfactory_list(model)
         return model
 
     @classmethod
@@ -138,17 +137,6 @@ class CompileProjectFactory(AbstractModelFactory):
             'fixture_type': is_local and compile_project_model.FIXTURE.Local.name or compile_project_model.FIXTURE.Global.name,
             'fixture_name': fixture,
             'path': path}
-
-
-    @classmethod
-    def enforce_subfactory_list(cls, model):
-        """
-        :type model: scanomatic.models.compile_project_model.CompileInstructionsModel
-        """
-        for i in range(len(model.images)):
-
-            if not isinstance(model.images[i], compile_project_model.CompileImageModel):
-                model.images[i] = CompileImageFactory.create(**model.images[i])
 
     @classmethod
     def _validate_images(cls, model):
@@ -200,15 +188,15 @@ class CompileProjectFactory(AbstractModelFactory):
 class CompileImageAnalysisFactory(AbstractModelFactory):
 
     MODEL = compile_project_model.CompileImageAnalysisModel
-    STORE_SECTION_HEAD = ("image", "index")
+    STORE_SECTION_HEAD = "Image"
     _SUB_FACTORIES = {
         compile_project_model.CompileImageModel: CompileImageFactory,
         fixture_models.FixtureModel: fixture_factories.FixtureFactory
     }
 
     STORE_SECTION_SERIALIZERS = {
-        ('image',): compile_project_model.CompileImageModel,
-        ('fixture',): fixture_models.FixtureModel
+        'image': compile_project_model.CompileImageModel,
+        'fixture': fixture_models.FixtureModel
     }
 
     @classmethod

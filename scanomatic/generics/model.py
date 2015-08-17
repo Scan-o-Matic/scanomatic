@@ -14,8 +14,6 @@ class Model(object):
         content = [attribute for attribute in self]
         if content:
             fields, _ = zip(*content)
-            if not self._has_set_field_types():
-                self._set_field_types(fields)
 
             if not all(key == key.lower() for key in fields):
                 raise AttributeError("Model fields may only be lower case to work with serializers {0}".format(fields()))
@@ -25,6 +23,9 @@ class Model(object):
 
             if any(k for k in fields if k.startswith("_")):
                 raise AttributeError("Model attributes may not be hidden")
+
+            if not self._has_set_field_types():
+                self._set_field_types(fields)
 
         self._set_initialized()
 
@@ -73,6 +74,8 @@ class Model(object):
 
         classname = str(type(self)).split(".")[-1].rstrip("'>")
         value = None
+        key = None
+
         for key in ("name", "id", "path"):
             if key in self and self[key]:
                 value = self[key]
@@ -86,7 +89,8 @@ class Model(object):
                     break
 
         if value is None:
-            for keu in self.keys():
+            key = None
+            for key in self.keys():
                 if self[key]:
                     value = self[key]
                     break
@@ -104,8 +108,10 @@ class Model(object):
 
         if cls._has_set_field_types():
             raise AttributeError("Can't change field types")
-        else:
+        elif names:
             cls.FIELD_TYPES = Enum(cls.__name__, {n: hash(n) for n in names})
+        else:
+            cls.FIELD_TYPES = None
 
     def _set_initialized(self):
 

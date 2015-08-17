@@ -282,6 +282,8 @@ def get_centre_candidates(grid_size, spacings):
 
 def get_grid_spacings(x_data, y_data, expected_dx, expected_dy, leeway=0.1):
 
+    # TODO: Remove expected values and use fourier transform to get the rough frequency
+
     # noinspection PyUnresolvedReferences
     def get_delta(data, expected_delta):
         deltas = np.abs(np.subtract.outer(data, data))

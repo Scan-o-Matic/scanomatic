@@ -114,12 +114,10 @@ class ProcessEffector(object):
 
         self._paused = False
 
-    def setup(self, *args, **kwargs):
+    def setup(self, job):
 
-        if 0 < len(args) or 0 < len(kwargs):
-            self._logger.warning(
-                "Setup is not overwritten, {0} and {1} lost.".format(
-                    args, kwargs))
+        self._logger.warning(
+                "Setup is not overwritten, job info ({0}) lost.".format(job))
 
     def start(self, *args, **kwargs):
 

@@ -371,7 +371,8 @@ class FixtureImage(object):
 
         """
 
-        :type area: scanomatic.models.fixture_models.FixturePlateModel |  scanomatic.models.fixture_models.GrayScaleAreaModel
+        :type area: scanomatic.models.fixture_models.FixturePlateModel |
+        scanomatic.models.fixture_models.GrayScaleAreaModel
         """
 
         if rotation:
@@ -401,12 +402,9 @@ class FixtureImage(object):
             "Positions on current '{0}' will be moved {1} and rotated {2} due to diff to reference {3}".format(
                 current_model.name, offset, rotation, ref_model.name))
 
-        while current_model.plates:
-            current_model.plates.pop()
+        current_model.plates = type(current_model.plates)(FixturePlateFactory.copy(plate) for plate in ref_model.plates)
 
-        for plate in ref_model.plates:
-            cur_plate = FixturePlateFactory.copy(plate)
-            current_model.plates.append(cur_plate)
-            self._set_area_relative(cur_plate, rotation, offset)
+        for plate in current_model.plates:
+            self._set_area_relative(plate, rotation, offset)
 
         self._set_area_relative(current_model.grayscale, rotation, offset)

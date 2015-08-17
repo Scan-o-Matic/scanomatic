@@ -25,6 +25,7 @@ import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningModelEffectorData
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.io import scanner_manager
 from scanomatic.io import sane
@@ -76,11 +77,21 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.WaitForUSB: self._do_wait_for_usb
         }
 
-    def setup(self, scanning_job):
+    def setup(self, job):
 
+        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
         paths_object = paths.Paths()
-        self._scanning_job.id = scanning_job['id']
+        self._scanning_job.id = job.id
         self._setup_directory()
+        self._logger.info("{0} is setting up; logging will be directed to file".format(job))
+        self._logger.set_output_target(
+            os.path.join(self._project_directory,
+                         paths_object.scan_log_file_pattern.format(self._scanning_job.project_name)),
+            catch_stdout=True, catch_stderr=True)
+
+        self._logger.surpress_prints = True
+
+        self._logger.info("Doing setup")
 
         self._scanning_effector_data.current_image_path_pattern = os.path.join(
             self._project_directory,

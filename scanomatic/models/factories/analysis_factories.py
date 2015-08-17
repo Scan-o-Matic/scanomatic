@@ -8,11 +8,12 @@ import scanomatic.models.analysis_model as analysis_model
 
 class GridModelFactory(AbstractModelFactory):
     MODEL = analysis_model.GridModel
+    STORE_SECTION_HEAD = "GRIDDING"
     STORE_SECTION_SERIALIZERS = {
-        ('use_utso',): bool,
-        ("median_coefficient",): float,
-        ("manual_threshold",): float,
-        ("gridding_offsets",): list
+        'use_utso': bool,
+        "median_coefficient": float,
+        "manual_threshold": float,
+        "gridding_offsets": list
     }
 
     @classmethod
@@ -57,11 +58,12 @@ class GridModelFactory(AbstractModelFactory):
 
 class XMLModelFactory(AbstractModelFactory):
     MODEL = analysis_model.XMLModel
+    STORE_SECTION_HEAD = "XML"
     STORE_SECTION_SERIALIZERS = {
-        ("exclude_compartments",): tuple,
-        ("exclude_measures",): tuple,
-        ("make_short_tag_version",): bool,
-        ("short_tag_measure",): analysis_model.MEASURES
+        "exclude_compartments": (tuple, analysis_model.COMPARTMENTS),
+        "exclude_measures": (tuple, analysis_model.MEASURES),
+        "make_short_tag_version": bool,
+        "short_tag_measure": analysis_model.MEASURES
     }
 
     @classmethod
@@ -97,25 +99,25 @@ class XMLModelFactory(AbstractModelFactory):
 
 class AnalysisModelFactory(AbstractModelFactory):
     MODEL = analysis_model.AnalysisModel
-    STORE_SECTION_HEAD = ("first_pass_file",)
+    STORE_SECTION_HEAD = "GENERAL"
     _SUB_FACTORIES = {
         analysis_model.XMLModel: XMLModelFactory,
         analysis_model.GridModel: GridModelFactory
     }
 
     STORE_SECTION_SERIALIZERS = {
-        ('compilation',): str,
-        ('compile_instructions',): str,
-        ('pinning_matrices',): list,
-        ('use_local_fixture',): bool,
-        ('stop_at_image',): int,
-        ('output_directory',): str,
-        ('focus_position',): tuple,
-        ('suppress_non_focal',): bool,
-        ('animate_focal',): bool,
-        ('grid_images',): list,
-        ('grid_model',): GridModelFactory,
-        ('xml_model',): XMLModelFactory
+        'compilation': str,
+        'compile_instructions': str,
+        'pinning_matrices': list,
+        'use_local_fixture': bool,
+        'stop_at_image': int,
+        'output_directory': str,
+        'focus_position': tuple,
+        'suppress_non_focal': bool,
+        'animate_focal': bool,
+        'grid_images': list,
+        'grid_model': analysis_model.GridModel,
+        'xml_model': analysis_model.XMLModel
     }
 
     @classmethod
@@ -286,18 +288,18 @@ class AnalysisModelFactory(AbstractModelFactory):
 class MetaDataFactory(AbstractModelFactory):
     MODEL = analysis_model.AnalysisMetaData
     STORE_SECTION_SERIALIZERS = {
-        ("start_time",): float,
-        ("name",): str,
-        ("description",): str,
-        ("interval",): float,
-        ("images",): int,
-        ("uuid",): str,
-        ("fixture", ): str,
-        ("scanner",): str,
-        ("project_id",): str,
-        ("scanner_layout_id",): str,
-        ("version",): float,
-        ("pinnings",): list
+        "start_time": float,
+        "name": str,
+        "description": str,
+        "interval": float,
+        "images": int,
+        "uuid": str,
+        "fixture": str,
+        "scanner": str,
+        "project_id": str,
+        "scanner_layout_id": str,
+        "version": float,
+        "pinnings": list
     }
 
     @classmethod
@@ -316,3 +318,28 @@ class MetaDataFactory(AbstractModelFactory):
             del settings["Manual Gridding"]
 
         return super(MetaDataFactory, cls).create(**settings)
+
+
+class AnalysisFeaturesFactory(AbstractModelFactory):
+
+    MODEL = analysis_model.AnalysisFeatures
+    STORE_SECTION_HEAD = "FEATURES"
+    STORE_SECTION_SERIALIZERS = {
+        "index": object,
+        "data": object,
+        "shape": (tuple, int)
+    }
+
+    @classmethod
+    def create(cls, children=None, data_type=None, **settings):
+        """
+
+        :param settings:
+        :return: scanomatic.models.analysis_model.AnalysisFeatures
+        """
+        """
+        :param settings:
+        :return:
+        """
+
+        return super(AnalysisFeaturesFactory, cls).create(**settings)

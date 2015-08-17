@@ -99,9 +99,11 @@ class AnalysisThresholdOtsu(AnalysisRecipeAbstraction):
 
     def _do(self, filter_array):
 
-        filter_array[...] = filter_array > ski_filter.threshold_otsu(
-            filter_array) + self._thresholdUnitAdjust
-
+        try:
+            filter_array[...] = filter_array > ski_filter.threshold_otsu(
+                filter_array) + self._thresholdUnitAdjust
+        except ValueError:
+            filter_array[...] = 0
 
 class AnalysisRecipeErode(AnalysisRecipeAbstraction):
 

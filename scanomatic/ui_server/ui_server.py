@@ -10,6 +10,9 @@ import os
 import numpy as np
 from enum import Enum
 import shutil
+import re
+from itertools import chain
+import glob
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -39,13 +42,21 @@ def _launch_scanomatic_rpc_server():
 
 
 def _allowed_image(ext):
+    """Validates that the image extension is allowed
+
+    :param ext: The image file's extension
+    :type ext: str
+    :returns bool
+    """
     return ext.lower() in _ALLOWED_EXTENSIONS
+
 
 def get_fixture_image_by_name(name, ext="tiff"):
 
     fixture_file = Paths().get_fixture_path(name)
     image_path = os.path.extsep.join((fixture_file, ext))
     return get_fixture_image(name, image_path)
+
 
 def get_fixture_image(name, image_path):
 
@@ -92,6 +103,10 @@ def usable_markers(markers, image):
         return False
 
     return all(marker_inside_image(marker) for marker in markers_array)
+
+
+def safe_directory_name(name):
+    return re.match("^[A-Za-z_0-9]*$", name) is not None
 
 
 def usable_plates(plates):
@@ -189,6 +204,46 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if js:
             return send_from_directory(Paths().ui_js, js)
 
+    @app.route("/experiment", methods=['get', 'post'])
+    def _experiment():
+
+        return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
+
+    @app.route("/experiment/")
+    @app.route("/experiment/<command>", methods=['get', 'post'])
+    @app.route("/experiment/<command>/", methods=['get', 'post'])
+    @app.route("/experiment/<command>/<path:sub_path>", methods=['get', 'post'])
+    def _experiment_commands(command=None, sub_path=""):
+
+        if command is None:
+            command = 'root'
+
+        sub_path = sub_path.split("/")
+
+        if not all(safe_directory_name(name) for name in sub_path):
+
+            return jsonify(path=Paths().experiment_root, valid_experiment=False,
+                           reason="Only letter, numbers and underscore allowed")
+
+        if command == 'root':
+
+            root = Paths().experiment_root
+            path = os.path.join(*chain([root], sub_path))
+            valid_root = os.path.isdir(os.path.dirname(path))
+            duplicate_experiment = os.path.isdir(path) or os.path.isfile(path)
+            reason = "Root directory does not exist" if not valid_root else "Duplicate experiment" if duplicate_experiment else ""
+            if valid_root:
+                suggestions = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
+                                    for p in glob.glob(path + "*")
+                                    if os.path.isdir(p) and safe_directory_name(os.path.basename(p)))
+            else:
+                suggestions = tuple()
+
+            return jsonify(path="/".join(chain([command], sub_path)), valid_experiment=valid_root and not duplicate_experiment,
+                           reason=reason, suggestions=suggestions, prefix=sub_path[-1] if sub_path else "")
+
+        return jsonify()
+
     @app.route("/compile", methods=['get', 'post'])
     def _compile():
 
@@ -207,6 +262,21 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     path, fixture=fixture , is_local=is_local)))
 
         return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
+
+    @app.route("/scanners/<scanner_query>")
+    def _scanners(scanner_query=None):
+        if scanner_query is None or scanner_query.lower() == 'all':
+            return  jsonify(scanners=rpc_client.get_scanner_status(), success=True)
+        elif scanner_query.lower() == 'free':
+            return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()},
+                           success=True)
+        else:
+            try:
+                return jsonify(scanner=(s for s in rpc_client.get_scanner_status() if scanner_query
+                                        in s['scanner_name']).next(), success=True)
+            except StopIteration:
+                return jsonify(scanner=None, success=False, reason="Unknown scanner or query '{0}'".format(
+                    scanner_query))
 
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():
