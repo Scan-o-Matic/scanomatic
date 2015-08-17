@@ -28,8 +28,8 @@ function Compile(button) {
                             .dialog({modal: true,
                                      buttons: {
                                         Ok: function() {
+                                            location.href = '/status';
                                             $(this).dialog("close");
-                                            window.location ='/';
                                         }
                                      }
                             });
