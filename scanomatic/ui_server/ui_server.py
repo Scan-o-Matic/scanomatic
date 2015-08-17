@@ -204,6 +204,27 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if js:
             return send_from_directory(Paths().ui_js, js)
 
+    @app.route("/status")
+    @app.route("/status/<status_type>")
+    def _status(status_type=""):
+
+        if status_type != "" and not rpc_client.online:
+            return jsonify(sucess= False, reason= "Server offline")
+
+        if status_type == 'queue':
+            return jsonify(success=True, data=rpc_client.get_queue_status())
+        elif 'scanner' in status_type:
+            return jsonify(success=True, data=rpc_client.get_scanner_status())
+        elif 'job' in status_type:
+            return jsonify(success=True, data=rpc_client.get_job_status())
+        elif status_type == 'server':
+            return jsonify(success=True, data=rpc_client.get_status())
+        elif status_type == "":
+
+            return send_from_directory(Paths().ui_root, Paths().ui_status_file)
+        else:
+            return jsonify(succes=False, reason='Unknown status request')
+
     @app.route("/experiment", methods=['get', 'post'])
     def _experiment():
 
