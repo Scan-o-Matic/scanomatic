@@ -17,6 +17,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 import scanomatic.models.rpc_job_models as rpc_job_models
+from scanomatic.io.rpc_client import santize_communication
 
 _SOM_SERVER = None
 """:type: scanomatic.server.server.Server"""
@@ -185,7 +186,7 @@ class Interface_Builder(SingeltonOneInit):
     def _server_get_queue_status(self, user_id=None):
 
         global _SOM_SERVER
-        return _SOM_SERVER.queue.status
+        return santize_communication(_SOM_SERVER.queue.status)
 
     def _server_get_job_status(self, user_id=None):
         """Gives a list or statuses.
@@ -212,7 +213,7 @@ class Interface_Builder(SingeltonOneInit):
 
         """
         global _SOM_SERVER
-        return _SOM_SERVER.jobs.status
+        return santize_communication(_SOM_SERVER.jobs.status)
 
     @_verify_admin
     def _server_communicate(self, user_id, job_id, communication, **communication_content):
