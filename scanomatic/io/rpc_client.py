@@ -26,6 +26,18 @@ import scanomatic.io.logger as logger
 # METHODS
 #
 
+def santize_communication(obj):
+
+    if isinstance(obj, dict):
+        return {k: santize_communication(v) for k, v in obj.iteritems() if v is not None}
+    elif isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set):
+        return type(obj)(False if v is None else santize_communication(v) for v in obj)
+    elif isinstance(obj, enum.Enum):
+        return obj.name
+    elif obj is None:
+        return False
+    else:
+        return obj
 
 def get_client(host=None, port=None, admin=False):
 
@@ -97,24 +109,13 @@ class _ClientProxy(object):
 
     def _userIDdecorator(self, f):
 
-        def _sanitize(obj):
-
-            if isinstance(obj, dict):
-                return {k: _sanitize(v) for k, v in obj.iteritems() if v is not None}
-            elif isinstance(obj, list) or isinstance(obj, tuple):
-                return type(obj)(False if v is None else _sanitize(v) for v in obj)
-            elif isinstance(obj, enum.Enum):
-                return obj.name
-            else:
-                return obj
-
         def _wrapped(*args, **kwargs):
 
             if self._userID is not None:
                 args = (self._userID,) + args
 
-            args = _sanitize(args)
-            kwargs = _sanitize(kwargs)
+            args = santize_communication(args)
+            kwargs = santize_communication(kwargs)
 
             return f(*args, **kwargs)
 
