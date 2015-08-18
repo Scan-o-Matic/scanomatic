@@ -13,7 +13,7 @@ __status__ = "Development"
 #
 
 import xmlrpclib
-from functools import partial
+import enum
 
 #
 # INTERNAL DEPENDENCIES
@@ -97,9 +97,28 @@ class _ClientProxy(object):
 
     def _userIDdecorator(self, f):
 
-        if self._userID is not None:
-            return partial(f, self._userID)
-        return f
+        def _sanitize(obj):
+
+            if isinstance(obj, dict):
+                return {k: _sanitize(v) for k, v in obj.iteritems() if v is not None}
+            elif isinstance(obj, list) or isinstance(obj, tuple):
+                return type(obj)(False if v is None else _sanitize(v) for v in obj)
+            elif isinstance(obj, enum.Enum):
+                return obj.name
+            else:
+                return obj
+
+        def _wrapped(*args, **kwargs):
+
+            if self._userID is not None:
+                args = (self._userID,) + args
+
+            args = _sanitize(args)
+            kwargs = _sanitize(kwargs)
+
+            return f(*args, **kwargs)
+
+        return _wrapped
 
     def _allowedMethods(self):
 
