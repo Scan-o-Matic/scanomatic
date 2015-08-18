@@ -40,3 +40,22 @@ function Execute(idOrClass, methodName) {
         methodName($(obj));
     });
 }
+
+function Dialogue(title, body_header, body, redirect, reactivate_button ) {
+    $('<div class=\'dialog\'></div>').appendTo("body")
+        .prop("title", title)
+        .html("<div><h3>" + body_header + "</h3>" + body + "</div>")
+        .dialog({modal: true,
+                 buttons: {
+                    Ok: function() {
+                        $(this).dialog("close");
+                    }
+                 }
+        }).on('dialogclose', function(event) {
+            if (redirect)
+                location.href = redirect;
+            if (reactivate_button)
+                InputEnabled($(reactivate_button), true);
+        });
+
+}
