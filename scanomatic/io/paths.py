@@ -221,9 +221,13 @@ class Paths(SingeltonOneInit):
 
     def get_project_compile_instructions_path_from_compile_model(self, compile_model):
 
+        return self.get_project_compile_instructions_path_from_compilation_path(compile_model.path)
+
+    def get_project_compile_instructions_path_from_compilation_path(self, path):
 
         return self.project_compilation_instructions_pattern.format(
-            self.get_project_directory_name_with_file_prefix_from_path(compile_model.path))
+            self.get_project_directory_name_with_file_prefix_from_path(path))
+
 
     def get_project_compile_log_path_from_compile_model(self, compile_model):
 
