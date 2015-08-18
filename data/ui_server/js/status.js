@@ -38,7 +38,7 @@ function scannerStatusFormatter(data) {
 
 function queueStatusFormatter(data) {
     if (data.length == 0)
-        return "<em>No jobs in queue</em>";
+        return "<em>No jobs in queue... if it feels like the job disappeared, it is because it may take a few seconds before it pops up below.</em>";
 
     ret = "";
 
@@ -82,13 +82,15 @@ function jobStatusAsHTML(job) {
 
 function jobAsHTML(job) {
     ret = "<div class='job'><code>" + job.type + "</code>\t<code>" + job.status + "</code>\t";
-    if (job.type == "Scanner Job")
+    if (job.type == "Scan")
         ret += job.content_model.project_name;
-    else if (job.type == "Compile Project")
+    else if (job.type == "Compile")
         ret += job.content_model.project_name;
-    else if (job.type == "Analysis Job")
-            ret += job.content_model.compilation;
-    else if (job.type == "Feature Extraction Job")
+    else if (job.type == "Analysis")
+        ret += job.content_model.compilation;
+    else if (job.type == "Features")
         ret += job.content_model.path;
+    else
+        ret += job.id;
     return ret + "</div>";
 }
