@@ -115,7 +115,7 @@ class AbstractModelFactory(object):
             while True:
                 if factory in cls._SUB_FACTORIES.values():
                     try:
-                        return factory.MODEL(**obj)
+                        return factory.create(**obj)
                     except TypeError:
                         cls.logger.warning("Could not use {0} on key {1} to create sub-class".format(
                             factory, obj
