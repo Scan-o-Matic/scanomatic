@@ -228,6 +228,15 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     @app.route("/analysis", methods=['get', 'post'])
     def _analysis():
 
+        action = request.args.get("action")
+
+        if action:
+            if action == 'analysis':
+                return jsonify(success=False)
+            elif action == 'extract':
+                return jsonify(success=False, reason='Not implemented')
+            else:
+                return jsonify(success=False, reason='Action "{0}" not reconginzed'.format(action))
         return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)
 
     @app.route("/experiment", methods=['get', 'post'])
