@@ -13,7 +13,8 @@ class GridModelFactory(AbstractModelFactory):
         'use_utso': bool,
         "median_coefficient": float,
         "manual_threshold": float,
-        "gridding_offsets": list
+        "gridding_offsets": list,
+        "grid": (tuple, tuple, float)
     }
 
     @classmethod
@@ -117,7 +118,9 @@ class AnalysisModelFactory(AbstractModelFactory):
         'animate_focal': bool,
         'grid_images': list,
         'grid_model': analysis_model.GridModel,
-        'xml_model': analysis_model.XMLModel
+        'xml_model': analysis_model.XMLModel,
+        'image_data_output_measure': analysis_model.MEASURES,
+        'image_data_output_item': analysis_model.COMPARTMENTS
     }
 
     @classmethod
