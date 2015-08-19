@@ -921,6 +921,16 @@ class SerializationHelper(object):
         raise Exception("This class is static, can't be instantiated")
 
     @staticmethod
+    def serialize_structure(obj, structure):
+
+        if len(structure) == 1:
+            return SerializationHelper.serialize(
+                obj, structure[0] if not issubclass(structure[0], Model) else _SectionsLink)
+        else:
+            return SerializationHelper.serialize(
+                (SerializationHelper.serialize_structure(item, structure[1:]) for item in obj), structure[0])
+
+    @staticmethod
     def serialize(obj, dtype):
 
         if obj is None:
@@ -943,32 +953,61 @@ class SerializationHelper(object):
             return cPickle.dumps(obj)
 
     @staticmethod
-    def unserialize(obj, dtype):
+    def unserialize_structure(obj, structure, conf):
 
-        if obj is None:
+        if len(structure) == 1:
+            if issubclass(structure[0], Model):
+                while not isinstance(obj, _SectionsLink) and obj is not None:
+                    obj = SerializationHelper.unserialize(obj, _SectionsLink)
+
+                if obj:
+                    return obj.retrieve_model(conf)
+                return obj
+            else:
+                return SerializationHelper.unserialize(obj, structure[0])
+        else:
+            outer_obj = ''
+            while outer_obj is not None and not isinstance(outer_obj, structure[0]):
+                outer_obj = SerializationHelper.unserialize(obj, structure[0])
+            return SerializationHelper.unserialize(
+                (SerializationHelper.unserialize_structure(item, structure[1:], conf)
+                 for item in outer_obj), structure[0])
+
+    @staticmethod
+    def unserialize(serialized_obj, dtype):
+
+        """
+
+        :type serialized_obj: str | generator
+        """
+        if serialized_obj is None:
             return None
+        elif isinstance(serialized_obj, _SectionsLink if issubclass(dtype, Model) else dtype):
+            return serialized_obj
         elif issubclass(dtype, Enum):
             try:
-                return dtype[obj]
-            except:
+                return dtype[serialized_obj]
+            except (KeyError, SyntaxError):
                 return None
         elif dtype is bool:
             try:
-                return eval(obj)
-            except:
-                return None
+                return bool(eval(serialized_obj))
+            except (NameError, AttributeError, SyntaxError):
+                return False
         elif dtype in (int, float, str):
             try:
-                return dtype(obj)
-            except:
+                return dtype(serialized_obj)
+            except (TypeError, ValueError):
                 try:
-                    return eval(obj)
-                except:
+                    return dtype(eval(serialized_obj))
+                except (SyntaxError, NameError, AttributeError, TypeError, ValueError):
                     return None
+        elif isinstance(serialized_obj, types.GeneratorType):
+            return dtype(serialized_obj)
         else:
             try:
-                return cPickle.loads(obj)
-            except:
+                return cPickle.loads(serialized_obj)
+            except (cPickle.PickleError, TypeError):
                 return None
 
     @staticmethod
