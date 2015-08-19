@@ -85,7 +85,7 @@ function jobAsHTML(job) {
     if (job.type == "Scan")
         ret += job.content_model.project_name;
     else if (job.type == "Compile")
-        ret += job.content_model.project_name;
+        ret += job.content_model.path;
     else if (job.type == "Analysis")
         ret += job.content_model.compilation;
     else if (job.type == "Features")
