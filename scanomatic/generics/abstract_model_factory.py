@@ -11,6 +11,53 @@ from types import GeneratorType
 from collections import defaultdict
 
 
+def _get_coordinates_and_items_to_validate(structure, obj):
+
+    is_next_to_leaf = len(structure) == 2
+    iterator = obj.iteritems() if isinstance(obj, dict) else enumerate(obj)
+
+    try:
+        for pos, item in iterator:
+            if is_next_to_leaf and item is not None:
+                yield  (pos, ), item
+            elif not is_next_to_leaf:
+                for coord, validation_item in _get_coordinates_and_items_to_validate(structure[1:], item):
+                    yield (pos,) + coord, validation_item
+    except TypeError:
+        pass
+
+
+def _update_object_at(obj, coordinate, value):
+
+    if len(coordinate) == 1:
+        obj[coordinate[0]] = value
+    else:
+        _update_object_at(obj[coordinate[0]], coordinate[1:], value)
+
+
+def _toggleTuple(structure, obj, locked):
+
+    is_next_to_leaf = len(structure) == 2
+    if structure[0] is tuple:
+
+        if not locked:
+            obj = list(obj)
+        if not is_next_to_leaf:
+            for idx, item in enumerate(obj):
+                obj[idx] = _toggleTuple(structure[1:], item, locked)
+        if locked:
+            obj = tuple(obj)
+    elif not is_next_to_leaf:
+        try:
+            iterator = obj.iteritems() if isinstance(obj, dict) else enumerate(obj)
+            for pos, item in iterator:
+                obj[pos] = _toggleTuple(structure[1:], item, locked)
+
+        except TypeError:
+            pass
+    return obj
+
+
 class AbstractModelFactory(object):
 
     MODEL = Model
