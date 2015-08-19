@@ -25,6 +25,7 @@ from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
 _url = None
 _logger = Logger("UI-server")
@@ -232,7 +233,20 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         if action:
             if action == 'analysis':
-                return jsonify(success=False)
+
+                model = AnalysisModelFactory.create(
+                    compilation=request.values.get("compilation"),
+                    compile_instructions=request.values.get("compile_instructions"),
+                    output_directory=request.values.get("output_directory"))
+
+                success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(AnalysisModelFactory.to_dict(model))
+
+                if success:
+                    return jsonify(success=True)
+                else:
+                    return jsonify(success=False, reason="The following has bad data: {0}".format(
+                        ", ".join(AnalysisModelFactory.get_invalid_names(model))))
+
             elif action == 'extract':
                 return jsonify(success=False, reason='Not implemented')
             else:
