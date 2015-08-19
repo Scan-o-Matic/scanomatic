@@ -34,13 +34,19 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
     @property
     def progress(self):
         """:rtype : float"""
-        return self._image_to_analyse / float(len(self._compile_job.images))
+        if self._compile_job.images:
+            return self._image_to_analyse / float(len(self._compile_job.images))
+        return 0
 
     def setup(self, job):
 
+        self._logger.info("Setup called")
+
         self._compile_job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0].content_model
 
-        self._logger.info("Setup called")
+        if self._compile_job.images is None:
+            self._compile_job.images = tuple()
+
         self._logger.set_output_target(Paths().get_project_compile_log_path_from_compile_model(self._compile_job),
                                        catch_stdout=True, catch_stderr=True)
         self._logger.surpress_prints = True
