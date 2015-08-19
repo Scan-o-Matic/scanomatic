@@ -172,8 +172,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._first_pass_results = first_pass_results.CompilationResults(
             self._analysis_job.compilation, self._analysis_job.compile_instructions)
 
-        self._remove_files_from_previous_analysis()
-
         try:
             os.makedirs(self._analysis_job.output_directory)
         except OSError, e:
@@ -183,6 +181,16 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 self._running = False
                 self._logger.critical("Can't create output directory '{0}'".format(self._analysis_job.output_directory))
                 raise StopIteration
+
+        self._logger.info("{0} is setting up, output will be directed to {1}".format(self._analysis_job,
+                                                                                     Paths().analysis_run_log))
+        self._logger.set_output_target(
+            os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
+            catch_stdout=True, catch_stderr=True)
+
+        self._remove_files_from_previous_analysis()
+
+        self._logger.surpress_prints = True
 
         if self._analysis_job.focus_position is not None:
             self._focus_graph = support.Watch_Graph(
@@ -239,19 +247,15 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
 
+        if not self._analysis_job.compile_instructions:
+            self._analysis_job.compile_instructions = \
+                Paths().get_project_compile_instructions_path_from_compilation_path(self._analysis_job.compilation)
+            self._logger.info("Setting to default compile instructions path {0}".format(
+                self._analysis_job.compile_instructions))
+
         allow_start = AnalysisModelFactory.validate(self._analysis_job)
 
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
-
-        self._logger.info("{0} is setting up, output will be directed to {1}".format(job, Paths().analysis_run_log))
-        self._logger.set_output_target(
-            os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
-            catch_stdout=True, catch_stderr=True)
-
-        self._logger.surpress_prints = True
-
-        if self._analysis_job.compile_instructions:
-            self._update_job_from_config_file()
 
         try:
             self._scanning_instructions = ScanningModelFactory.serializer.load(
