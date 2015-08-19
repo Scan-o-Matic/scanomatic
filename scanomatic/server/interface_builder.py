@@ -368,6 +368,7 @@ class Interface_Builder(SingeltonOneInit):
 
         return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan)
 
+    @_verify_admin
     def _server_create_compile_project_job(self, user_id, compile_project_model):
 
         global _SOM_SERVER
