@@ -2,6 +2,7 @@ from scanomatic.generics.model import Model
 import scanomatic.generics.decorators as decorators
 from scanomatic.io.logger import Logger
 
+import types
 import copy
 import os
 from enum import Enum
