@@ -111,7 +111,6 @@ class CompileProjectFactory(AbstractModelFactory):
         """
         :rtype : scanomatic.models.compile_project_model.CompileInstructionsModel
         """
-        cls.enforce_serializer_type(settings, ('fixture_type', 'compile_action'))
 
         model = super(CompileProjectFactory, cls).create(**settings)
         return model
@@ -139,7 +138,8 @@ class CompileProjectFactory(AbstractModelFactory):
         return {
             'compile_action': compile_project_model.COMPILE_ACTION.Initiate.name,
             'images': images,
-            'fixture_type': is_local and compile_project_model.FIXTURE.Local.name or compile_project_model.FIXTURE.Global.name,
+            'fixture_type':
+                is_local and compile_project_model.FIXTURE.Local.name or compile_project_model.FIXTURE.Global.name,
             'fixture_name': fixture,
             'path': path}
 
