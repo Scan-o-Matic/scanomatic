@@ -205,16 +205,23 @@ class AbstractModelFactory(object):
             if key not in settings or settings[key] is None:
                 continue
             if isinstance(cls.STORE_SECTION_SERIALIZERS[key], tuple):
-                dtype_outer, dtype_inner = cls.STORE_SECTION_SERIALIZERS[key]
-                if dtype_outer in (tuple, list, set):
-                    if issubclass(dtype_inner, Model):
-                        settings[key] = dtype_outer(_enforce_model(cls._SUB_FACTORIES[dtype_inner], item)
-                                                    if isinstance(item, dict) else item for item in settings[key])
-                    else:
 
-                        settings[key] = dtype_outer(_enforce_other(dtype_inner, item) for item in settings[key])
+                ref_settings = copy.deepcopy(settings[key])
+                settings[key] = _toggleTuple(cls.STORE_SECTION_SERIALIZERS[key], settings[key], False)
+                dtype_leaf = cls.STORE_SECTION_SERIALIZERS[key][-1]
+                for coord, item in _get_coordinates_and_items_to_validate(cls.STORE_SECTION_SERIALIZERS[key],
+                                                                          ref_settings):
+
+                    if issubclass(dtype_leaf, Model):
+                        _update_object_at(settings[key], coord, _enforce_model(cls._SUB_FACTORIES[dtype_leaf], item))
+
+                    else:
+                        _update_object_at(settings[key], coord, _enforce_other(dtype_leaf, item))
+
+                settings[key] = _toggleTuple(cls.STORE_SECTION_SERIALIZERS[key], settings[key], True)
 
             elif not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
+
                 dtype = cls.STORE_SECTION_SERIALIZERS[key]
                 if issubclass(dtype, Model) and isinstance(settings[key], dict):
                     settings[key] = _enforce_model(cls._SUB_FACTORIES[dtype], settings[key])
@@ -258,12 +265,15 @@ class AbstractModelFactory(object):
                 else:
                     model_as_dict[k] = AbstractModelFactory.to_dict(model_as_dict[k])
             elif isinstance(cls.STORE_SECTION_SERIALIZERS[k], tuple):
-                dtype_outer, dtype_inner = cls.STORE_SECTION_SERIALIZERS[k]
-                if dtype_outer in (tuple, list, set) and issubclass(dtype_inner, Model):
-                    model_as_dict[k] = dtype_outer(
-                        cls._SUB_FACTORIES[dtype_inner].to_dict(item)
-                        if isinstance(item, Model) and dtype_inner in cls._SUB_FACTORIES else item
-                        for item in model_as_dict[k])
+                dtype = cls.STORE_SECTION_SERIALIZERS[k]
+                dtype_leaf = dtype[-1]
+                model_as_dict[k] = _toggleTuple(dtype, model_as_dict[k], False)
+                if issubclass(dtype_leaf, Model):
+                    for coord, item in _get_coordinates_and_items_to_validate(dtype,
+                                                                              model_as_dict[k]):
+
+                        _update_object_at(model_as_dict[k], coord, cls._SUB_FACTORIES[dtype_leaf].to_dict(item))
+                model_as_dict[k] = _toggleTuple(dtype, model_as_dict[k], True)
 
         return model_as_dict
 
@@ -723,7 +733,7 @@ class Serializer(object):
             except AttributeError:
 
                 try:
-
+                    # TODO: Should really use datastructure
                     for item in obj:
                         sections.append(SerializationHelper.unserialize(item, object).section)
                 except (AttributeError, TypeError):
@@ -787,20 +797,7 @@ class Serializer(object):
 
                 if isinstance(dtype, tuple):
 
-                    if dtype[0] in (list, tuple):
-
-                        if issubclass(dtype[1], Model):
-
-                            value = dtype[0](
-                                SerializationHelper.unserialize(item, _SectionsLink).retrieve_model(conf)
-                                if item is not None else None for item
-                                in SerializationHelper.unserialize(value, dtype[0]))
-
-                        else:
-
-                            value = dtype[0](SerializationHelper.unserialize(item, dtype[1]) if item is not None else
-                                             None for item in
-                                             SerializationHelper.unserialize(value, dtype[0]))
+                    value = SerializationHelper.unserialize_structure(value, dtype, conf)
 
                 elif issubclass(dtype, Model) and value is not None:
 
@@ -852,43 +849,34 @@ class Serializer(object):
     @staticmethod
     def _serialize_item(model, key, dtype, conf, section, factory):
 
-        value = model[key]
+        obj = copy.deepcopy(model[key])
 
         if isinstance(dtype, tuple):
 
-            dtype_outer, dtype_inner = dtype
-            if dtype_outer in (list, tuple, set):
-
-                if issubclass(dtype_inner, Model):
-                    links = []
-
-                    for item in value:
-                        if item is not None:
-                            subfactory = factory.get_sub_factory(item)
-                            links.append(_SectionsLink.set_link(subfactory, item, conf))
-                            subfactory.serializer.serialize_into_conf(item, conf, _SectionsLink.get_link(item).section)
-                        else:
-                            links.append(item)
-
-                    conf.set(section, key, SerializationHelper.serialize(
-                        (SerializationHelper.serialize(link, _SectionsLink) for link in links), dtype_outer))
+            obj = _toggleTuple(dtype, obj, False)
+            dtype_leaf = dtype[-1]
+            for coord, item in _get_coordinates_and_items_to_validate(dtype, model[key]):
+                if issubclass(dtype_leaf, Model):
+                    subfactory = factory.get_sub_factory(item)
+                    link = _SectionsLink.set_link(subfactory, item, conf)
+                    subfactory.serializer.serialize_into_conf(item, conf, link.section)
+                    _update_object_at(obj, coord, SerializationHelper.serialize(link, _SectionsLink))
                 else:
-                    conf.set(section, key, SerializationHelper.serialize(
-                        (SerializationHelper.serialize(item, dtype_inner) if item is not None else None
-                         for item in value),
-                        dtype_outer))
+                    _update_object_at(obj, coord, SerializationHelper.serialize(item, dtype_leaf))
 
-        elif issubclass(dtype, Model) and value is not None:
+            conf.set(section, key, SerializationHelper.serialize_structure(obj, dtype))
 
-            subfactory = factory.get_sub_factory(value)
+        elif issubclass(dtype, Model) and obj is not None:
 
-            conf.set(section, key, SerializationHelper.serialize(_SectionsLink.set_link(subfactory, value, conf),
+            subfactory = factory.get_sub_factory(obj)
+
+            conf.set(section, key, SerializationHelper.serialize(_SectionsLink.set_link(subfactory, obj, conf),
                                                                  _SectionsLink))
             subfactory.serializer.serialize_into_conf(
-                value, conf, _SectionsLink.get_link(value).section)
+                obj, conf, _SectionsLink.get_link(obj).section)
 
         else:
-            conf.set(section, key, SerializationHelper.serialize(value, dtype))
+            conf.set(section, key, SerializationHelper.serialize(obj, dtype))
 
     def get_section_name(self, model):
 
