@@ -163,10 +163,11 @@ class AbstractModelFactory(object):
                 if factory in cls._SUB_FACTORIES.values():
                     try:
                         return factory.create(**obj)
-                    except TypeError:
+                    except TypeError, e:
                         cls.logger.warning("Could not use {0} on key {1} to create sub-class".format(
                             factory, obj
                         ))
+                        raise e
 
                 if index < len(factories):
                     factory = factories[index]
