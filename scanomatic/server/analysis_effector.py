@@ -29,7 +29,6 @@ import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
@@ -272,16 +271,3 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                                                               ))
             self.add_message("Can't perform analysis; instructions don't validate.")
             self._stopping = True
-
-    def _update_job_from_config_file(self):
-
-        try:
-            instructions_model = tuple(CompileProjectFactory.serializer.load(self._analysis_job.compile_instructions))[0]
-        except (IOError, IndexError, ValueError):
-            self._logger.warning("There was no compile instructions at {0}.".format(
-                self._analysis_job.compile_instructions) +
-                " (Everything will run assuming defaults)")
-            self._analysis_job.compile_instructions = None
-        else:
-            # TODO: Update info where needed and also allow for reading other conf file?
-            pass
