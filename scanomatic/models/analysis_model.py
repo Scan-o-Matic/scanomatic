@@ -69,7 +69,8 @@ class AnalysisModel(model.Model):
 
 class GridModel(model.Model):
 
-    def __init__(self, use_utso=True, median_coefficient=0.99, manual_threshold=0.05, grid=None, gridding_offsets=None):
+    def __init__(self, use_utso=True, median_coefficient=0.99, manual_threshold=0.05, grid=None,
+                 gridding_offsets=None):
 
         self.use_utso = use_utso
         self.median_coefficient = median_coefficient
@@ -83,12 +84,13 @@ class GridModel(model.Model):
 class XMLModel(model.Model):
 
     def __init__(self, exclude_compartments=tuple(), exclude_measures=tuple(), make_short_tag_version=True,
-                 short_tag_measure=MEASURES.Sum):
+                 slim_measure=MEASURES.Sum, slim_compartment=COMPARTMENTS.Blob):
 
         self.exclude_compartments = exclude_compartments
         self.exclude_measures = exclude_measures
         self.make_short_tag_version = make_short_tag_version
-        self.short_tag_measure = short_tag_measure
+        self.slim_measure = slim_measure
+        self.slim_compartment = slim_compartment
 
         super(XMLModel, self).__init__()
 
