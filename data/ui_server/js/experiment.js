@@ -27,7 +27,7 @@ function validate_experiment() {
 function set_validation_status(dom_object, is_valid, tooltip) {
     var input = $(dom_object);
     var sib = input.next();
-    if (sib.attr("class") !== 'validation-icon')
+    if (sib.attr("class") !== 'icon-large')
         sib = $(get_validation_image()).insertAfter(input);
 
     if (is_valid)
@@ -248,5 +248,5 @@ function get_description(index, description) {
 }
 
 function get_validation_image() {
-    return "<img src='' class='validation-icon'>";
+    return "<img src='' class='icon-large'>";
 }

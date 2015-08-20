@@ -19,8 +19,8 @@ function updateStatus(target, status_type, content_formatter) {
 }
 
 function serverStatusFormatter(data) {
-    return "<img src='" + (data.ResourceCPU ? okIMG : nokIMG) + "'> CPU | <img src='" +
-        (data.ResourceMem ? okIMG : nokIMG) + "'> Memory | Uptime: " + data.ServerUpTime;
+    return "<img src='" + (data.ResourceCPU ? okIMG : nokIMG) + "' class='icon'> CPU | <img src='" +
+        (data.ResourceMem ? okIMG : nokIMG) + "' class='icon'> Memory | Uptime: " + data.ServerUpTime;
 }
 
 function scannerStatusFormatter(data) {
@@ -62,18 +62,19 @@ function jobsStatusFormatter(data) {
 }
 
 function jobStatusAsHTML(job) {
-    ret = "<div class=job><code>" + job.type + "</code><img src='" + (job.running ? okIMG : nokIMG) + "'>Running | ";
+    ret = "<div class=job><code>" + job.type + "</code>&nbsp;<code>"
+        + (job.running ? "Running" : "Not running") + "</code>";
 
     if (job.stopping)
-        ret += "<code>Stopping</code> | ";
+        ret += "&nbsp;<code>Stopping</code>";
 
     if (job.paused)
-        ret += "<code>Paused</code> | ";
+        ret += "&nbsp;<code>Paused</code>";
 
     if (job.progress != -1)
-        ret += "<code>" + (job.progress * 100).toFixed(1) + "% progress</code>&nbsp;"
+        ret += " | <code>" + (job.progress * 100).toFixed(1) + "% progress</code>&nbsp;"
     else
-        ret += "<code>Progress unknown</code>&nbsp;";
+        ret += " | <code>Progress unknown</code>&nbsp;";
 
     ret += job.label;
 
@@ -81,7 +82,7 @@ function jobStatusAsHTML(job) {
 }
 
 function jobAsHTML(job) {
-    ret = "<div class='job'><code>" + job.type + "</code>\t<code>" + job.status + "</code>\t";
+    ret = "<div class='job'><code>" + job.type + "</code>&nbsp;<code>" + job.status + "</code>&nbsp;";
     if (job.type == "Scan")
         ret += job.content_model.project_name;
     else if (job.type == "Compile")

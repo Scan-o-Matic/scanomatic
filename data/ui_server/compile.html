@@ -21,7 +21,8 @@
         <form action="" method="post">
             <div id="selecting-fixture" class="section-frame">
                 <div class="section">
-                    <label for="local-fixture">Use Local Fixture</label>
+                    <label for="local-fixture">Fixture</label>
+
                     <div class="onoffswitch">
                         <input type="checkbox" name="local-fixture" class="onoffswitch-checkbox" id="local-fixture"
                                 onclick="toggleLocalFixture(this)">
@@ -29,16 +30,14 @@
                             <span class="onoffswitch-inner"></span>
                             <span class="onoffswitch-switch"></span>
                         </label>
+                    </div>
+                    <label for="current-fixture"></label>
+                    <select name="current-fixtures" id="current-fixture"></select>
 
-                    </div>
-                    <div class="indented">
-                        <label for="current-fixture">Select Global Fixture:</label>
-                        <select name="current-fixtures" id="current-fixture"></select>
-                    </div>
                 </div>
                 <div class="section">
                     <label for="project-directory">Project Directory</label>
-                    <input id="project-directory" name="project-directory" onchange="CompilePath(this);">
+                    <input id="project-directory" name="project-directory" class="long" onchange="CompilePath(this);">
                     <div class="indented"><em>Unfortunately you have to type it yourself and needs to be absolute path</em></div>
                 </div>
                 <div class="section">
