@@ -297,7 +297,7 @@ class Config(SingeltonOneInit):
     def get_scanner_name(self, scanner):
 
         if isinstance(scanner, int) and 0 <= scanner < self.number_of_scanners:
-            scanner = self.SCANNER_PATTERN.format(scanner)
+            scanner = self.SCANNER_PATTERN.format(scanner + 1)
         elif isinstance(scanner, str):
             numbers = map(int, re.findall(r'\d+', scanner))
             if len(numbers) != 1 or numbers[0] < 0 or numbers[0] >= self.number_of_scanners:
