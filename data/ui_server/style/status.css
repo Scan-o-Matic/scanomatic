@@ -1,0 +1,20 @@
+.scanner {
+    display: inline-block;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    box-shadow: 5px 5px 15px #541f0f;
+    padding: 6px;
+    background: url("/images/scanner.png") no-repeat right bottom;
+}
+
+.job {
+    margin-bottom: 12px;
+    box-shadow: 5px 5px 15px #541f0f;
+    padding: 6px;
+}
+
+.queue {
+    margin-bottom: 12px;
+    box-shadow: 5px 5px 15px #541f0f;
+    padding: 6px;
+}
