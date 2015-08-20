@@ -4,6 +4,7 @@ from scanomatic.io.logger import Logger
 
 import types
 import copy
+import warnings
 import os
 from enum import Enum
 from ConfigParser import ConfigParser, NoSectionError
@@ -13,6 +14,9 @@ from collections import defaultdict
 
 
 def _get_coordinates_and_items_to_validate(structure, obj):
+
+    if obj is None:
+        return
 
     is_next_to_leaf = len(structure) == 2
     iterator = obj.iteritems() if isinstance(obj, dict) else enumerate(obj)
@@ -30,6 +34,8 @@ def _get_coordinates_and_items_to_validate(structure, obj):
 
 def _update_object_at(obj, coordinate, value):
 
+    if obj is None:
+        warnings.warn("Can't update None using coordinate {0} and value '{1}'".format(coordinate, value))
     if len(coordinate) == 1:
         obj[coordinate[0]] = value
     else:
@@ -39,7 +45,9 @@ def _update_object_at(obj, coordinate, value):
 def _toggleTuple(structure, obj, locked):
 
     is_next_to_leaf = len(structure) == 2
-    if structure[0] is tuple:
+    if obj is None:
+        return obj
+    elif structure[0] is tuple:
 
         if not locked:
             obj = list(obj)
@@ -912,7 +920,10 @@ class SerializationHelper(object):
     @staticmethod
     def serialize_structure(obj, structure):
 
-        if len(structure) == 1:
+        if obj is None:
+            return None
+
+        elif len(structure) == 1:
             return SerializationHelper.serialize(
                 obj, structure[0] if not issubclass(structure[0], Model) else _SectionsLink)
         else:
@@ -944,7 +955,9 @@ class SerializationHelper(object):
     @staticmethod
     def unserialize_structure(obj, structure, conf):
 
-        if len(structure) == 1:
+        if obj is None:
+            return None
+        elif len(structure) == 1:
             if issubclass(structure[0], Model):
                 while not isinstance(obj, _SectionsLink) and obj is not None:
                     obj = SerializationHelper.unserialize(obj, _SectionsLink)
