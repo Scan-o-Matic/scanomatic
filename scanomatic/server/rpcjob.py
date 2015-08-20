@@ -42,8 +42,14 @@ class Fake(object):
         self._logger.info("Running ({0}) with pid {1}".format(
             self.is_alive(), job.pid))
 
+        self.abandoned = False
+
     @property
     def pipe(self):
+        """
+
+        :rtype : scanomatic.server.pipes._PipeEffector
+        """
         return self._parent_pipe
 
     @property
@@ -65,6 +71,9 @@ class Fake(object):
         return s
 
     def is_alive(self):
+
+        if self._job.pid is None:
+            return False
 
         return psutil.pid_exists(self._job.pid)
 

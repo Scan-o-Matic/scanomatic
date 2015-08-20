@@ -41,7 +41,10 @@ class Jobs(SingeltonOneInit):
         self._logger = logger.Logger("Jobs Handler")
         self._paths = paths.Paths()
         self._scanner_manager = scanner_manager.ScannerPowerManager()
+
         self._jobs = {}
+        """:type : dict[scanomatic.models.rpc_job_models.RPCJobModel, scanomatic.server.rpcjob.RpcJob] """
+
         self._load_from_file()
 
         self._forcingStop = False
@@ -81,8 +84,7 @@ class Jobs(SingeltonOneInit):
     def running(self):
 
         for job in self._jobs:
-
-            if self._jobs[job].is_alive():
+            if self._jobs[job].is_alive() and not self._jobs[job].abandoned:
                 return True
 
         return False
@@ -98,7 +100,9 @@ class Jobs(SingeltonOneInit):
             self._forcingStop = True
             for job in self._jobs:
                 if self._jobs[job].is_alive():
-                    self._jobs[job].pipe.send("stop")
+                    if not self._jobs[job].pipe.send("stop"):
+                        self._logger.error("Can't communicate with job, process will be orphaned")
+                        self._jobs[job].abandoned = True
 
         self._forcingStop = value
 
@@ -145,7 +149,9 @@ class Jobs(SingeltonOneInit):
 
     def add(self, job):
         """Launches and adds a new jobs.
+        :type job: scanomatic.models.rpc_job_models.RPCJobModel
         """
+
         if any(job.id == j.id for j in self._jobs):
             self._logger.error("Job {0} already exists, will drop current request".format(job.id))
             return True
