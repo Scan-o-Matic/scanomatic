@@ -8,6 +8,9 @@ var project_path;
 var project_path_valid = false;
 var project_path_invalid_reason = '';
 var poetry = "If with science, you let your life deteriorate,\nat least do it right.\nDo it with plight\nand fill out this field before it's too late";
+var auxillary_info = {};
+var auxillary_info_time_data = {};
+var number_of_scans = -1;
 
 function validate_experiment() {
     set_validation_status("#project-path", project_path_valid, project_path_valid ? 'Everything is cool' : project_path_invalid_reason);
@@ -110,6 +113,18 @@ function set_visible_plate_descriptions() {
 function cache_description(target) {
     var index = get_fixture_plate_from_obj($(target).parent());
     description_cache[index] = $(target).val();
+}
+
+function get_descriptions() {
+        var maxIndex = Math.max.apply(null,
+            Object.keys(description_cache).map(function (item) { return parseInt(item, 10);}));
+
+        var ret = [];
+
+        for (var i=0; i<=maxIndex; i++)
+            ret[i] = description_cache[i] !== undefined ? description_cache[i] : "";
+
+        return ret;
 }
 
 function set_active_plate(plate) {
@@ -218,12 +233,27 @@ function format_minutes(input) {
     $(input).val(interval + " minutes");
 }
 
+function get_pinnings() {
+    var ret = [];
+    $(".pinning").each(
+        function(i, e) {
+            ret[$(e).find("input[type=hidden]").first().val() - 1] = parseInt($(e).find(".pinning-selector").first().val());
+        });
+
+    return ret;
+}
+
 function update_scans(paragraph) {
-    $(paragraph).html(Math.floor(get_duration_as_minutes() / interval) + 1);
+    number_of_scans = Math.floor(get_duration_as_minutes() / interval) + 1;
+    $(paragraph).html(number_of_scans);
 }
 
 function get_duration_as_minutes() {
     return (duration[0] * 24 + duration[1]) * 60 + duration[2];
+}
+
+function format_tag(input) {
+    //TODO: Do some checking of tags
 }
 
 function get_plate_selector(plate) {
@@ -249,4 +279,62 @@ function get_description(index, description) {
 
 function get_validation_image() {
     return "<img src='' class='icon-large'>";
+}
+
+function setAux(input, key) {
+    auxillary_info[key] = $(input).val();
+}
+
+function setAuxTime(input, key, factor) {
+
+    if (auxillary_info_time_data[key] === undefined)
+        auxillary_info_time_data[key] = {}
+
+    auxillary_info_time_data[key][factor] = parseFloat($(input).val());
+
+    var total = 0;
+    for (var k in auxillary_info_time_data[key])
+        total += parseFloat(k) * auxillary_info_time_data[key][k];
+
+    auxillary_info[key] = total;
+}
+
+
+function StartExperiment(button) {
+    InputEnabled($(button), false);
+
+    $.ajax({
+        url: "/experiment?enqueue=1",
+        method: "POST",
+        data: {
+            number_of_scans: number_of_scans,
+            time_between_scans: interval,
+            project_path: project_path,
+            project_tag: $("#project-tag").val(),
+            scanner_tag:$("#layout-tag").val(),
+            description: $("#project-description").val(),
+            email: $("project-email").val(),
+            pinning_formats: get_pinnings(),
+            fixture: $("#current-fixture").val(),
+            scanner: parseInt($("#current-scanner").val()),
+            plate_descriptions: get_descriptions(),
+            auxillary_info: auxillary_info
+        },
+        success: function(data) {
+            if (data.success) {
+                Dialogue("Experiment",
+                    "Experiment " + $('').val() +
+                        "enqueued, now go " +
+                        (true ?
+                            "get a cup of coffee and pat yourself on the back. Your work here is done." :
+                            "take a stroll outside to relax a bit. It seems you might need it."), "", "/status");
+            } else {
+                Dialogue("Analysis", "Analysis Refused", data.reason ? data.reason : "Unknown reason", false, button);
+            }
+        },
+        error: function(data) {
+            Dialogue("Analysis", "Error", "An error occurred processing request", false, button);
+        }
+    });
+
 }

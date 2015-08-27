@@ -26,6 +26,8 @@ from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.models.scanning_model import CULTURE_SOURCE, PLATE_STORAGE
 
 _url = None
 _logger = Logger("UI-server")
@@ -255,6 +257,50 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     @app.route("/experiment", methods=['get', 'post'])
     def _experiment():
+
+        if request.args.get("enqueue"):
+            project_path = os.path.abspath(request.values.get("project_path", default="", type=str))
+            plate_desciptions = request.values.get("plate_description", default=tuple(), type=tuple)
+            if all(isinstance(str, p) or p is None for p in plate_desciptions):
+                plate_desciptions = tuple({"index": i, "description": p} for i, p in enumerate(plate_desciptions))
+
+            m = ScanningModelFactory.create(
+                 number_of_scans=request.values.get("number_of_scans", default=None, type=int),
+                 time_between_scans=request.values.get("time_between_scans", default=None, type=float),
+                 project_name=os.path.basename(project_path),
+                 directory_containing_project=os.path.dirname(project_path),
+                 project_tag=request.values.get("project_tag", default="", type=str),
+                 scanner_tag=request.values.get("scanner_tag", default="", type=str),
+                 description=request.values.get("description", default="", type=str),
+                 email=request.values.get("email", default="", type=str),
+                 pinning_formats=request.values.get("pinning_formats", default=tuple(), type=tuple),
+                 fixture=request.values.get("fixture", default='', type=str),
+                 scanner=request.values.get("scanner", default=None, type=int),
+                 scanner_hardware=request.values.get("scanner_hardware", default="EPSON V700", type=str),
+                 mode=request.values.get("mode", default="TPU", type=str),
+                 plate_descriptions=plate_desciptions,
+                 auxillary_info=request.values.get("auxillary_info", default={}, type=dict),
+                 #auxillary_info={
+                 #    "stress_level": request.values.get("stress_level", default=-1, type=int),
+                 #    "plate_storage": request.values.get("plate_storage",
+                 #                                        default=PLATE_STORAGE.Unknown, type=PLATE_STORAGE),
+                 #    "plate_age": request.values.get("plate_age", default=-1.0, type=float),
+                 #    "pinning_project_start_delay": request.values.get("pinning_project_start_delay",
+                 #                                                      default=-1.0, type=float),
+                 #    "precultures": request.values.get('precultures', default=-1, type=int),
+                 #    "culture_freshness": request.values.get('culture_freshness', default=-1, type=int),
+                 #    "culture_source": request.values.get("culture_source", default=CULTURE_SOURCE.Unknown,
+                 #                                         type=CULTURE_SOURCE)
+                 #},
+            )
+
+            success = ScanningModelFactory.validate(m) and rpc_client.create_scan_job(ScanningModelFactory.to_dict(m))
+
+            if success:
+                return jsonify(success=True)
+            else:
+                return jsonify(success=False, reason="The following has bad data: {0}".format(
+                    ", ".join(ScanningModelFactory.get_invalid_names(m))))
 
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
 
