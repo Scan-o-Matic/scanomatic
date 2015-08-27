@@ -121,8 +121,8 @@ function get_descriptions() {
 
         var ret = [];
 
-        for (var i=0; i<=maxIndex; i++)
-            ret[i] = description_cache[i] !== undefined ? description_cache[i] : "";
+        for (var i=0; i<maxIndex; i++)
+            ret[i] = description_cache[i + 1] !== undefined ? description_cache[i + 1] : "";
 
         return ret;
 }
@@ -302,11 +302,7 @@ function setAuxTime(input, key, factor) {
 
 function StartExperiment(button) {
     InputEnabled($(button), false);
-
-    $.ajax({
-        url: "/experiment?enqueue=1",
-        method: "POST",
-        data: {
+    var data = {
             number_of_scans: number_of_scans,
             time_between_scans: interval,
             project_path: project_path,
@@ -319,7 +315,14 @@ function StartExperiment(button) {
             scanner: parseInt($("#current-scanner").val()),
             plate_descriptions: get_descriptions(),
             auxillary_info: auxillary_info
-        },
+        }
+
+    $.ajax({
+        url: "/experiment?enqueue=1",
+        method: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
         success: function(data) {
             if (data.success) {
                 Dialogue("Experiment",
