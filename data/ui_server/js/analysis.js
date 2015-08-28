@@ -7,7 +7,8 @@ function Analyse(button) {
         data: {
             compilation: $("#compilation").val(),
             compile_instructions: $("#compile-instructions").val(),
-            output_directory: $("#analysis-directory").val()
+            output_directory: $("#analysis-directory").val(),
+            chain: $("#chain-analysis-request").is(':checked'),
                },
         method: 'POST',
         success: function(data) {

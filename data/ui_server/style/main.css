@@ -303,6 +303,21 @@ label {
     right: 20px;
 }
 
+.onoffswitch.chain {
+    position: relative; width: 350px;
+}
+
+.onoffswitch-inner.chain:after {
+    content: "Chain consecutive steps" !important;
+}
+.onoffswitch-inner.chain:before {
+    content: "Execute only this step" !important;
+}
+
+.onoffswitch-switch.chain {
+    position: absolute; top: 0; bottom: 0; right: 316px;
+}
+
 .indented {
     margin-left: 50px;
 }
