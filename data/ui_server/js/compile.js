@@ -18,8 +18,10 @@ function Compile(button) {
     $.ajax({
         url: "?run=1",
         method: "POST",
-        data: {'local': localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
-               'path': path},
+        data: {local: localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
+               path: path,
+               chain: $("#chain-analysis-request").is(':checked'),
+               },
         success: function (data) {
             if (data.success) {
                 Dialogue("Compile", "Compilation enqueued", "", '/status');
