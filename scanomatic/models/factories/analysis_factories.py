@@ -146,7 +146,8 @@ class AnalysisModelFactory(AbstractModelFactory):
         'grid_model': analysis_model.GridModel,
         'xml_model': analysis_model.XMLModel,
         'image_data_output_measure': analysis_model.MEASURES,
-        'image_data_output_item': analysis_model.COMPARTMENTS
+        'image_data_output_item': analysis_model.COMPARTMENTS,
+        'chain': bool
     }
 
     @classmethod

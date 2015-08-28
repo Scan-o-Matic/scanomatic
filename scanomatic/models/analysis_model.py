@@ -41,7 +41,7 @@ class AnalysisModel(model.Model):
                  use_local_fixture=False,
                  stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
                  animate_focal=False, grid_images=None, grid_model=None, xml_model=None,
-                 image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum):
+                 image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum, chain=True):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -63,6 +63,7 @@ class AnalysisModel(model.Model):
         self.xml_model = xml_model
         self.image_data_output_item = image_data_output_item
         self.image_data_output_measure = image_data_output_measure
+        self.chain = chain
 
         super(AnalysisModel, self).__init__()
 
