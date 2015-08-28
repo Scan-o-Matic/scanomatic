@@ -32,7 +32,7 @@ from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
-
+import scanomatic.io.rpc_client as rpc_client
 
 #
 # CLASSES
@@ -121,6 +121,14 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 ((time.time() - self._startTime) / 60.0)))
 
             self._logger.info('Analysis completed at ' + str(time.time()))
+
+            if self._analysis_job.chain:
+
+                rc = rpc_client.get_client(admin=True)
+                if rc.create_feature_extract_job({"analysis_directory": self._analysis_job.output_directory}):
+                    self._logger.info("Enqueued feature extraction job")
+                else:
+                    self._logger.warning("Enqueing of feature extraction job refused")
 
             self._running = False
             raise StopIteration

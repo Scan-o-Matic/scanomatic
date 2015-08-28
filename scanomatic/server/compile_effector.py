@@ -9,7 +9,8 @@ from scanomatic.imageAnalysis import first_pass
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.rpc_job_models import JOB_TYPE
-
+import scanomatic.io.rpc_client as rpc_client
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
 class CompileProjectEffector(proc_effector.ProcessEffector):
 
@@ -149,5 +150,12 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
     def _spawn_analysis(self):
 
-        self._logger.warning("Analysis spawning not implemented yet.")
-        return False
+        if rpc_client.create_analysis_job(AnalysisModelFactory.to_dict(AnalysisModelFactory.create(
+                chained=True,
+                compile_instructions=self._compile_instructions_path,
+                compilation=self._compile_job.path))):
+            self._logger.info("Enqueued analysis")
+            return True
+        else:
+            self._logger.warning("Enquing analysis was refused")
+            return False
