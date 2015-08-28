@@ -90,7 +90,7 @@ function jobAsHTML(job) {
     else if (job.type == "Analysis")
         ret += job.content_model.compilation;
     else if (job.type == "Features")
-        ret += job.content_model.path;
+        ret += job.content_model.analysis_directory;
     else
         ret += job.id;
     return ret + "</div>";

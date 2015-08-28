@@ -27,7 +27,7 @@ from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
-from scanomatic.models.scanning_model import CULTURE_SOURCE, PLATE_STORAGE
+from scanomatic.models.factories.features_factory import FeaturesFactory
 
 _url = None
 _logger = Logger("UI-server")
@@ -250,7 +250,18 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                         ", ".join(AnalysisModelFactory.get_invalid_names(model))))
 
             elif action == 'extract':
-                return jsonify(success=False, reason='Not implemented')
+
+                model = FeaturesFactory.create(analysis_directory=request.values.get("analysis_directory"))
+
+                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(FeaturesFactory.to_dict(model))
+
+                if success:
+                    return jsonify(success=success)
+                else:
+                    return jsonify(success=success, reason="The follwoing has bad data: {0}".format(", ".join(
+                        FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
+                        "Refused by the server, check logs.")
+
             else:
                 return jsonify(success=False, reason='Action "{0}" not reconginzed'.format(action))
         return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)

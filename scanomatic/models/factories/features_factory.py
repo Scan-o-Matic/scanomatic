@@ -3,9 +3,11 @@ __author__ = 'martin'
 import os
 
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
-
+import scanomatic.models.features_model as features_model
 
 class FeaturesFactory(AbstractModelFactory):
+
+    MODEL = features_model.FeaturesModel
 
     STORE_SECTION_SERIALIZERS = {
         "analysis_directory": str
@@ -23,3 +25,9 @@ class FeaturesFactory(AbstractModelFactory):
 
             return True
         return model.FIELD_TYPES.analysis_directory
+
+    @classmethod
+    def create(cls, **settings):
+        """:rtype : scanomatic.models.features_model.FeaturesModel"""
+
+        return super(FeaturesFactory, cls).create(**settings)

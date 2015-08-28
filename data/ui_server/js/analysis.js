@@ -24,7 +24,25 @@ function Analyse(button) {
     });
 }
 
+function Extract(button) {
+    InputEnabled($(button), false)
 
-function Extract() {
+    $.ajax({
+        url: '?action=extract',
+        data: {
+            analysis_directory: $("#extract").val()
+               },
+        method: 'POST',
+        success: function(data) {
+            if (data.success) {
+                Dialogue("Feature Extraction", "Extraction Enqueued", "", "/status");
+            } else {
+                Dialogue("Feature Extraction", "Extraction refused", data.reason ? data.reason : "Unknown reason", false, button);
+            }
+        },
+        error: function(data) {
+            Dialogue("Feature Extraction", "Error", "An error occurred processing request", false, button);
+        }
 
+    });
 }
