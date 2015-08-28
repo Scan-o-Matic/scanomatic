@@ -8,7 +8,7 @@ import scanomatic.models.features_model as features_model
 class FeaturesFactory(AbstractModelFactory):
 
     MODEL = features_model.FeaturesModel
-
+    STORE_SECTION_HEAD = ("analysis_directory", )
     STORE_SECTION_SERIALIZERS = {
         "analysis_directory": str
     }
