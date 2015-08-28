@@ -345,17 +345,21 @@ class Interface_Builder(SingeltonOneInit):
         """
         global _SOM_SERVER
 
+        _SOM_SERVER.logger.info("Attempting to create scanning job with {0}".format(scanning_model))
         scanning_model = ScanningModelFactory.create(**scanning_model)
-        path_valid = True
 
         try:
             path_valid = not os.path.isdir(os.path.join(scanning_model.directory_containing_project,
                                           scanning_model.project_name))
 
+            _SOM_SERVER.logger.info("Tested path requested and it is {0}valid".format("" if path_valid else "in"))
 
         except:
 
             path_valid = False
+            _SOM_SERVER.logger.warning("Bad data in attempting to check path for scanning job creation")
+
+
 
         if not path_valid or not ScanningModelFactory.validate(scanning_model):
             if not path_valid:

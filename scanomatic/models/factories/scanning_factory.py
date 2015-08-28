@@ -195,7 +195,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'description': str,
         'plate_descriptions': (tuple, PlateDescription),
         'email': str,
-        'pinning_formats': tuple,
+        'pinning_formats': (tuple, tuple, int),
         'fixture': str,
         'scanner': int,
         'scanner_hardware': str,
@@ -318,7 +318,7 @@ class ScanningModelFactory(AbstractModelFactory):
         if AbstractModelFactory._is_pinning_formats(model.pinning_formats):
             return True
 
-        return model.FIELD_TYPES.pinning_formarts
+        return model.FIELD_TYPES.pinning_formats
 
     @classmethod
     def _validate_fixture(cls, model):

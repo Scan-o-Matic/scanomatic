@@ -264,7 +264,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 'root', Paths().experiment_root)
 
             plate_descriptions = request.json.get("plate_descriptions")
-            if all(isinstance(p, str) or p is None for p in plate_descriptions):
+            if all(isinstance(p, str) or isinstance(p, unicode) or p is None for p in plate_descriptions):
                 plate_descriptions = tuple({"index": i, "description": p} for i, p in enumerate(plate_descriptions))
 
             m = ScanningModelFactory.create(
@@ -284,8 +284,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                  plate_descriptions=plate_descriptions,
                  auxillary_info=request.json.get("auxillary_info"),
             )
-
-            print ScanningModelFactory.to_dict(m)
 
             validates = ScanningModelFactory.validate(m)
 

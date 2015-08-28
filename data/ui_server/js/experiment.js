@@ -122,7 +122,7 @@ function get_descriptions() {
         var ret = [];
 
         for (var i=0; i<maxIndex; i++)
-            ret[i] = description_cache[i + 1] !== undefined ? description_cache[i + 1] : "";
+            ret[i] = description_cache[i + 1] !== undefined && fixture_plates[i].active ? description_cache[i + 1] : null;
 
         return ret;
 }
@@ -237,7 +237,13 @@ function get_pinnings() {
     var ret = [];
     $(".pinning").each(
         function(i, e) {
-            ret[$(e).find("input[type=hidden]").first().val() - 1] = parseInt($(e).find(".pinning-selector").first().val());
+            var idx = $(e).find("input[type=hidden]").first().val() - 1;
+            if (fixture_plates[idx].active)
+                ret[idx] = $(e)
+                    .find(".pinning-selector").first().val()
+                    .match(/\d+/g).map(function (elem) {return parseInt(elem, 10);});
+            else
+                ret[idx] = null;
         });
 
     return ret;
@@ -261,10 +267,10 @@ function get_plate_selector(plate) {
                     "<label for='pinning-plate-" + plate.index + "'>Plate " + plate.index + "</label>" +
                     "<select id='pinning-plate-" + plate.index + "' class='pinning-selector' onchange='set_active_plate(this); validate_experiment();'>" +
                         "<option value=''>Not used</option>" +
-                        "<option value='96'>8 x 12 (96)</option>" +
-                        "<option value='384'>16 x 24 (384)</option>" +
-                        "<option value='1536' selected>32 x 48 (1536)</option>" +
-                        "<option value='6144'>64 x 96 (6144)</option>" +
+                        "<option value='(8, 12)'>8 x 12 (96)</option>" +
+                        "<option value='(16, 24)'>16 x 24 (384)</option>" +
+                        "<option value='(32, 48)' selected>32 x 48 (1536)</option>" +
+                        "<option value='(64, 96)'>64 x 96 (6144)</option>" +
 
                     "</select></div>"
 }
@@ -309,7 +315,7 @@ function StartExperiment(button) {
             project_tag: $("#project-tag").val(),
             scanner_tag:$("#layout-tag").val(),
             description: $("#project-description").val(),
-            email: $("project-email").val(),
+            email: $("#project-email").val(),
             pinning_formats: get_pinnings(),
             fixture: $("#current-fixture").val(),
             scanner: parseInt($("#current-scanner").val()),

@@ -39,7 +39,7 @@ def santize_communication(obj):
     else:
         return obj
 
-def get_client(host=None, port=None, admin=False):
+def get_client(host=None, port=None, admin=False, log_level=None):
 
     appCfg = app_config.Config()
     if (port is None):
@@ -47,7 +47,7 @@ def get_client(host=None, port=None, admin=False):
     if (host is None):
         host = appCfg.rpc_host
 
-    cp = _ClientProxy(host, port)
+    cp = _ClientProxy(host, port, log_level=log_level)
     if admin:
 
         cp.userID = appCfg.rpc_admin
@@ -61,9 +61,11 @@ def get_client(host=None, port=None, admin=False):
 
 class _ClientProxy(object):
 
-    def __init__(self, host, port, userID=None):
+    def __init__(self, host, port, userID=None, log_level=None):
 
         self._logger = logger.Logger("Client Proxy")
+        if log_level is not None:
+            self._logger.level = log_level
         self._userID = userID
         self._adminMethods = ('communicateWith',
                               'createFeatureExtractJob',
@@ -116,6 +118,8 @@ class _ClientProxy(object):
 
             args = santize_communication(args)
             kwargs = santize_communication(kwargs)
+
+            self._logger.debug("Sanitized args {0} and kwargs {1}".format(args, kwargs))
 
             return f(*args, **kwargs)
 

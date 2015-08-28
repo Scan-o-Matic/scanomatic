@@ -15,7 +15,7 @@ from collections import defaultdict
 
 def _get_coordinates_and_items_to_validate(structure, obj):
 
-    if obj is None:
+    if obj is None or obj is False and structure[0] is not bool:
         return
 
     is_next_to_leaf = len(structure) == 2
@@ -23,8 +23,8 @@ def _get_coordinates_and_items_to_validate(structure, obj):
 
     try:
         for pos, item in iterator:
-            if is_next_to_leaf and item is not None:
-                yield  (pos, ), item
+            if is_next_to_leaf and not (item is None or item is False and structure[1] is not bool):
+                yield (pos, ), item
             elif not is_next_to_leaf:
                 for coord, validation_item in _get_coordinates_and_items_to_validate(structure[1:], item):
                     yield (pos,) + coord, validation_item
@@ -34,7 +34,7 @@ def _get_coordinates_and_items_to_validate(structure, obj):
 
 def _update_object_at(obj, coordinate, value):
 
-    if obj is None:
+    if obj is None or obj is False:
         warnings.warn("Can't update None using coordinate {0} and value '{1}'".format(coordinate, value))
     if len(coordinate) == 1:
         obj[coordinate[0]] = value
@@ -45,8 +45,8 @@ def _update_object_at(obj, coordinate, value):
 def _toggleTuple(structure, obj, locked):
 
     is_next_to_leaf = len(structure) == 2
-    if obj is None:
-        return obj
+    if obj is None or obj is False and structure[0] is not bool:
+        return None
     elif structure[0] is tuple:
 
         if not locked:
@@ -186,8 +186,8 @@ class AbstractModelFactory(object):
 
         # noinspection PyShadowingNames
         def _enforce_other(dtype, obj):
-            if obj is None:
-                return
+            if obj is None or obj is False and dtype is not bool:
+                return None
             elif issubclass(dtype, AbstractModelFactory):
                 if isinstance(dtype, dtype.MODEL):
                     return obj
@@ -396,7 +396,7 @@ class AbstractModelFactory(object):
         # noinspection PyBroadException
         try:
 
-            return all(pinning_format is None or _is_pinning_format(pinning_format) for
+            return all(pinning_format is None or pinning_format is False or _is_pinning_format(pinning_format) for
                        pinning_format in pinning_formats)
 
         except:
@@ -955,7 +955,7 @@ class SerializationHelper(object):
     @staticmethod
     def unserialize_structure(obj, structure, conf):
 
-        if obj is None:
+        if obj is None or obj is False and structure[0] is not bool:
             return None
         elif len(structure) == 1:
             if issubclass(structure[0], Model):
@@ -982,7 +982,7 @@ class SerializationHelper(object):
 
         :type serialized_obj: str | generator
         """
-        if serialized_obj is None:
+        if serialized_obj is None or serialized_obj is False and dtype is not bool:
             return None
         elif isinstance(serialized_obj, _SectionsLink if issubclass(dtype, Model) else dtype):
             return serialized_obj
