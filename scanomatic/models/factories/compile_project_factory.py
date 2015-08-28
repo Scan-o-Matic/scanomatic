@@ -104,7 +104,6 @@ class CompileProjectFactory(AbstractModelFactory):
         'start_time': float,
         'fixture_type': compile_project_model.FIXTURE,
         'fixture_name': str,
-        'chain': bool
     }
 
     @classmethod
@@ -117,7 +116,8 @@ class CompileProjectFactory(AbstractModelFactory):
         return model
 
     @classmethod
-    def dict_from_path_and_fixture(cls, path, fixture=None, is_local=None):
+    def dict_from_path_and_fixture(cls, path, fixture=None, is_local=None,
+                                   compile_action=compile_project_model.COMPILE_ACTION.Initiate, **kwargs):
 
         """
 
@@ -136,13 +136,14 @@ class CompileProjectFactory(AbstractModelFactory):
 
         images = [{'path': p, 'index': i} for i, p in enumerate(sorted(glob.glob(image_path)))]
 
-        return {
-            'compile_action': compile_project_model.COMPILE_ACTION.Initiate.name,
-            'images': images,
-            'fixture_type':
+        return cls.to_dict(cls.create(
+            compile_action=compile_action,
+            images=images,
+            fixture_type=
                 is_local and compile_project_model.FIXTURE.Local.name or compile_project_model.FIXTURE.Global.name,
-            'fixture_name': fixture,
-            'path': path}
+            fixture_name=fixture,
+            path=path,
+            **kwargs))
 
     @classmethod
     def _validate_images(cls, model):

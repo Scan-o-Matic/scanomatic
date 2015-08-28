@@ -25,6 +25,7 @@ from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
@@ -239,7 +240,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 model = AnalysisModelFactory.create(
                     compilation=request.values.get("compilation"),
                     compile_instructions=request.values.get("compile_instructions"),
-                    output_directory=request.values.get("output_directory"))
+                    output_directory=request.values.get("output_directory"),
+                    chain=request.values.get("chain"))
 
                 success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(AnalysisModelFactory.to_dict(model))
 
@@ -360,7 +362,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
             job_id = rpc_client.create_compile_project_job(
                 CompileProjectFactory.dict_from_path_and_fixture(
-                    path, fixture=fixture, is_local=is_local))
+                    path, fixture=fixture, is_local=is_local,
+                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if request.values.get('chain') else COMPILE_ACTION.Initiate))
 
             return jsonify(success=True if job_id else False, reason="" if job_id else "Invalid parameters")
 
