@@ -95,7 +95,8 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         elif (self._compile_job.compile_action is COMPILE_ACTION.AppendAndSpawnAnalysis or
                 self._compile_job.compile_action is COMPILE_ACTION.InitiateAndSpawnAnalysis):
 
-            return self._spawn_analysis()
+            self._spawn_analysis()
+            raise StopIteration()
 
         else:
 
@@ -150,10 +151,11 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
     def _spawn_analysis(self):
 
-        if rpc_client.create_analysis_job(AnalysisModelFactory.to_dict(AnalysisModelFactory.create(
-                chained=True,
-                compile_instructions=self._compile_instructions_path,
-                compilation=self._compile_job.path))):
+        if rpc_client.get_client(admin=True).create_analysis_job(AnalysisModelFactory.to_dict(
+                AnalysisModelFactory.create(
+                    chain=True,
+                    compile_instructions=self._compile_instructions_path,
+                    compilation=self._compile_job.path))):
             self._logger.info("Enqueued analysis")
             return True
         else:

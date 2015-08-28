@@ -953,6 +953,10 @@ class SerializationHelper(object):
             return cPickle.dumps(obj)
 
     @staticmethod
+    def isvalidtype(o, dtype):
+        return isinstance(o, dtype) or not any({type(o), dtype}.difference((list, tuple)))
+
+    @staticmethod
     def unserialize_structure(obj, structure, conf):
 
         if obj is None or obj is False and structure[0] is not bool:
@@ -968,9 +972,11 @@ class SerializationHelper(object):
             else:
                 return SerializationHelper.unserialize(obj, structure[0])
         else:
-            outer_obj = ''
-            while outer_obj is not None and not isinstance(outer_obj, structure[0]):
+            outer_obj = -1
+            while outer_obj is not None and not SerializationHelper.isvalidtype(outer_obj, structure[0]):
                 outer_obj = SerializationHelper.unserialize(obj, structure[0])
+            if outer_obj is None:
+                return None
             return SerializationHelper.unserialize(
                 (SerializationHelper.unserialize_structure(item, structure[1:], conf)
                  for item in outer_obj), structure[0])
@@ -984,7 +990,9 @@ class SerializationHelper(object):
         """
         if serialized_obj is None or serialized_obj is False and dtype is not bool:
             return None
-        elif isinstance(serialized_obj, _SectionsLink if issubclass(dtype, Model) else dtype):
+        elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
+            return serialized_obj
+        if SerializationHelper.isvalidtype(serialized_obj, dtype):
             return serialized_obj
         elif issubclass(dtype, Enum):
             try:
