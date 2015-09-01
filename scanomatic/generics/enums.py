@@ -10,7 +10,7 @@ class DefaultEnum(Enum):
     @class_property
     def default(cls):
 
-        return None
+        return cls.__members__.values()[0]
 
 
 class IterationEnum(DefaultEnum):
