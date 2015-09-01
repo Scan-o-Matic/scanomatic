@@ -135,7 +135,7 @@ class Interface_Builder(SingeltonOneInit):
         else:
             self.logger.error("Unknown error shutting down Scan-o-Matic server")
 
-        return val
+        return santize_communication(val)
 
     @_verify_admin
     def _server_restart(self, user_id, wait_for_jobs_to_stop=False):
@@ -175,13 +175,14 @@ class Interface_Builder(SingeltonOneInit):
                         server status.
         """
         global _SOM_SERVER
-        return _SOM_SERVER.get_server_status()
+        return santize_communication(_SOM_SERVER.get_server_status())
 
     def _server_get_scanner_status(self, user_id=None):
 
         global _SOM_SERVER
-        return [{k: (scanner_owner_model[k] if scanner_owner_model[k] is not None else False)
-                 for k in scanner_owner_model.keys()} for scanner_owner_model in _SOM_SERVER.scanner_manager.status]
+        return santize_communication(
+            [{k: (scanner_owner_model[k] if scanner_owner_model[k] is not None else False)
+              for k in scanner_owner_model.keys()} for scanner_owner_model in _SOM_SERVER.scanner_manager.status])
 
     def _server_get_queue_status(self, user_id=None):
 
@@ -257,7 +258,7 @@ class Interface_Builder(SingeltonOneInit):
                 ret = job.pipe.send(communication, **communication_content)
                 self.logger.info("The job {0} got message {1}".format(
                     job.identifier, communication))
-                return ret
+                return santize_communication(ret)
             except AttributeError:
                 self.logger.error("The job {0} has no valid call {1}".format(
                     job.identifier, communication))
@@ -350,7 +351,7 @@ class Interface_Builder(SingeltonOneInit):
 
         try:
             path_valid = not os.path.isdir(os.path.join(scanning_model.directory_containing_project,
-                                          scanning_model.project_name))
+                                           scanning_model.project_name))
 
             _SOM_SERVER.logger.info("Tested path requested and it is {0}valid".format("" if path_valid else "in"))
 
@@ -370,7 +371,7 @@ class Interface_Builder(SingeltonOneInit):
                           inval in ScanningModelFactory.get_invalid_names(scanning_model))))
             return False
 
-        return _SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan)
+        return santize_communication(_SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan))
 
     @_verify_admin
     def _server_create_compile_project_job(self, user_id, compile_project_model):
@@ -384,7 +385,7 @@ class Interface_Builder(SingeltonOneInit):
                 tuple(CompileProjectFactory.get_invalid_names(compile_project_model))))
             return False
 
-        return _SOM_SERVER.enqueue(compile_project_model, rpc_job_models.JOB_TYPE.Compile)
+        return santize_communication(_SOM_SERVER.enqueue(compile_project_model, rpc_job_models.JOB_TYPE.Compile))
 
     @_verify_admin
     def _server_remove_from_queue(self, user_id, job_id):
@@ -417,7 +418,7 @@ class Interface_Builder(SingeltonOneInit):
         """
 
         global _SOM_SERVER
-        return _SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job_id)
+        return santize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job_id))
 
     @_verify_admin
     def _server_flush_queue(self, user_id):
@@ -506,15 +507,15 @@ class Interface_Builder(SingeltonOneInit):
 
         if operation == "ON":
 
-            return scanner_manager.request_on(job_id)
+            return santize_communication(scanner_manager.request_on(job_id))
 
         elif operation == "OFF":
 
-            return scanner_manager.request_off(job_id)
+            return santize_communication(scanner_manager.request_off(job_id))
 
         elif operation == "RELEASE":
 
-            return scanner_manager.release_scanner(job_id)
+            return santize_communication(scanner_manager.release_scanner(job_id))
 
         else:
 
@@ -531,7 +532,7 @@ class Interface_Builder(SingeltonOneInit):
         """
 
         global _SOM_SERVER
-        return _SOM_SERVER.scanner_manager.fixtures
+        return santize_communication(_SOM_SERVER.scanner_manager.fixtures)
 
     @_verify_admin
     def _server_create_analysis_job(self, user_id, analysis_model):
@@ -566,7 +567,7 @@ class Interface_Builder(SingeltonOneInit):
                 tuple(AnalysisModelFactory.get_invalid_names(analysis_model))))
             return False
 
-        return _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis)
+        return santize_communication( _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis))
 
     @_verify_admin
     def _server_create_feature_extract_job(self, user_id, feature_extract_model):
@@ -595,4 +596,4 @@ class Interface_Builder(SingeltonOneInit):
         global _SOM_SERVER
 
         feature_extract_model = FeaturesFactory.create(**feature_extract_model)
-        return _SOM_SERVER.enqueue(feature_extract_model, rpc_job_models.JOB_TYPE.Features)
+        return santize_communication(_SOM_SERVER.enqueue(feature_extract_model, rpc_job_models.JOB_TYPE.Features))
