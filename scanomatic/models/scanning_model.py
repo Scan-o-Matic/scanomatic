@@ -2,6 +2,7 @@ __version__ = "0.9991"
 
 import scanomatic.generics.model as model
 from scanomatic.generics.enums import MinorMajorStepEnum
+from scanomatic.generics.decorators import class_property
 from enum import Enum
 
 
@@ -16,6 +17,10 @@ class SCAN_CYCLE(MinorMajorStepEnum):
     ReportScanError = 22
     RequestScannerOff = 30
     RequestFirstPassAnalysis = 40
+
+    @class_property
+    def default(cls):
+        return cls.Wait
 
 
 class SCAN_STEP(Enum):
