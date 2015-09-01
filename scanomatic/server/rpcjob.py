@@ -92,6 +92,7 @@ class RpcJob(Process, Fake):
         self._parent_pipe = pipes.ParentPipeEffector(parent_pipe)
         self._childPipe = child_pipe
         self._logger = logger.Logger("Job {0} Process".format(job.id))
+        self.abandoned = False
 
     def run(self):
 
