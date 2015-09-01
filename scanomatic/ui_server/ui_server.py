@@ -299,7 +299,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             )
 
             validates = ScanningModelFactory.validate(m)
-            print ScanningModelFactory.to_dict((m))
 
             job_id = rpc_client.create_scanning_job(ScanningModelFactory.to_dict(m))
 
