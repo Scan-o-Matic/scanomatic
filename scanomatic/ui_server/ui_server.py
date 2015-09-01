@@ -299,11 +299,12 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             )
 
             validates = ScanningModelFactory.validate(m)
+            print ScanningModelFactory.to_dict((m))
 
             job_id = rpc_client.create_scanning_job(ScanningModelFactory.to_dict(m))
 
             if validates and job_id:
-                return jsonify(success=True)
+                return jsonify(success=True, name=project_name)
             else:
                 return jsonify(success=False, reason="The following has bad data: {0}".format(
                     ", ".join(ScanningModelFactory.get_invalid_names(m))) if not validates else

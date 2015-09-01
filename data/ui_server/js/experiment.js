@@ -227,8 +227,10 @@ function format_time(input) {
 
 function format_minutes(input) {
     interval = parseFloat($(input).val());
-    if (isNaN(interval) || interval < 7)
+    if (isNaN(interval) || interval <= 0)
         interval = 20.0;
+    else if (interval < 7)
+        interval = 7.0;
 
     $(input).val(interval + " minutes");
 }
@@ -332,8 +334,8 @@ function StartExperiment(button) {
         success: function(data) {
             if (data.success) {
                 Dialogue("Experiment",
-                    "Experiment " + $('').val() +
-                        "enqueued, now go " +
+                    "Experiment " + data.name +
+                        " enqueued, now go " +
                         (true ?
                             "get a cup of coffee and pat yourself on the back. Your work here is done." :
                             "take a stroll outside to relax a bit. It seems you might need it."), "", "/status");
