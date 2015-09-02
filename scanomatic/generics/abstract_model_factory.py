@@ -210,8 +210,10 @@ class AbstractModelFactory(object):
                     return obj
 
         for key in keys:
-            if key not in settings or settings[key] is None:
+
+            if key not in settings or settings[key] is None or key not in cls.STORE_SECTION_SERIALIZERS:
                 continue
+
             if isinstance(cls.STORE_SECTION_SERIALIZERS[key], tuple):
 
                 ref_settings = copy.deepcopy(settings[key])
@@ -227,6 +229,10 @@ class AbstractModelFactory(object):
                         _update_object_at(settings[key], coord, _enforce_other(dtype_leaf, item))
 
                 settings[key] = _toggleTuple(cls.STORE_SECTION_SERIALIZERS[key], settings[key], True)
+
+            elif isinstance(cls.STORE_SECTION_SERIALIZERS[key], types.FunctionType):
+
+                settings[key] = cls.STORE_SECTION_SERIALIZERS[key](enforce=settings[key])
 
             elif not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
 
@@ -267,12 +273,20 @@ class AbstractModelFactory(object):
 
         model_as_dict = dict(**model)
         for k in model_as_dict:
-            if isinstance(model_as_dict[k], Model):
+
+            if k in cls.STORE_SECTION_SERIALIZERS and isinstance(cls.STORE_SECTION_SERIALIZERS[k], types.FunctionType):
+
+                model_as_dict[k] = cls.STORE_SECTION_SERIALIZERS[k](serialize=model_as_dict[k])
+
+            elif isinstance(model_as_dict[k], Model):
+
                 if type(model_as_dict[k]) in cls._SUB_FACTORIES:
                     model_as_dict[k] = cls._SUB_FACTORIES[type(model_as_dict[k])].to_dict(model_as_dict[k])
                 else:
                     model_as_dict[k] = AbstractModelFactory.to_dict(model_as_dict[k])
-            elif isinstance(cls.STORE_SECTION_SERIALIZERS[k], tuple):
+
+            elif k in cls.STORE_SECTION_SERIALIZERS and isinstance(cls.STORE_SECTION_SERIALIZERS[k], tuple):
+
                 dtype = cls.STORE_SECTION_SERIALIZERS[k]
                 dtype_leaf = dtype[-1]
                 model_as_dict[k] = _toggleTuple(dtype, model_as_dict[k], False)
@@ -281,6 +295,7 @@ class AbstractModelFactory(object):
                                                                               model_as_dict[k]):
 
                         _update_object_at(model_as_dict[k], coord, cls._SUB_FACTORIES[dtype_leaf].to_dict(item))
+
                 model_as_dict[k] = _toggleTuple(dtype, model_as_dict[k], True)
 
         return model_as_dict
@@ -747,7 +762,6 @@ class Serializer(object):
                 except (AttributeError, TypeError):
                     pass
 
-        # serializers = self._factory.STORE_SECTION_SERIALIZERS
         sections = [self.get_section_name(model)]
         index = 0
         while index < len(sections):
@@ -806,6 +820,10 @@ class Serializer(object):
                 if isinstance(dtype, tuple):
 
                     value = SerializationHelper.unserialize_structure(value, dtype, conf)
+
+                elif isinstance(dtype, types.FunctionType):
+
+                    value = SerializationHelper.unserialize(value, dtype)
 
                 elif issubclass(dtype, Model) and value is not None:
 
@@ -946,7 +964,8 @@ class SerializationHelper(object):
         elif dtype in (int, float, str, bool):
 
             return str(obj)
-
+        elif isinstance(dtype, types.FunctionType):
+            return cPickle.dumps(dtype(serialize=obj))
         else:
             if not isinstance(obj, dtype):
                 obj = dtype(obj)
@@ -1012,6 +1031,12 @@ class SerializationHelper(object):
                     return dtype(eval(serialized_obj))
                 except (SyntaxError, NameError, AttributeError, TypeError, ValueError):
                     return None
+        elif isinstance(dtype, types.FunctionType):
+            try:
+                return dtype(enforce=cPickle.loads(serialized_obj))
+            except cPickle.PickleError:
+                return None
+
         elif isinstance(serialized_obj, types.GeneratorType):
             return dtype(serialized_obj)
         else:
