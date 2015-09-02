@@ -41,10 +41,6 @@ class SaveActions(Enum):
     Update = 1
 
 
-def _launch_scanomatic_rpc_server():
-    Popen(["scan-o-matic_server"])
-
-
 def _allowed_image(ext):
     """Validates that the image extension is allowed
 
@@ -167,7 +163,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     rpc_client = get_client(admin=True)
 
     if rpc_client.local and rpc_client.online is False:
-        _launch_scanomatic_rpc_server()
+        rpc_client.launch_local()
 
     if port is None:
         port = Config().ui_port
@@ -372,7 +368,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     @app.route("/scanners/<scanner_query>")
     def _scanners(scanner_query=None):
         if scanner_query is None or scanner_query.lower() == 'all':
-            return  jsonify(scanners=rpc_client.get_scanner_status(), success=True)
+            return jsonify(scanners=rpc_client.get_scanner_status(), success=True)
         elif scanner_query.lower() == 'free':
             return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()},
                            success=True)
