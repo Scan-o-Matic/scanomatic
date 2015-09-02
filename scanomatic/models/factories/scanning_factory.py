@@ -3,6 +3,7 @@ from scanomatic.models.scanning_model import ScanningModel, ScannerOwnerModel, S
     CULTURE_SOURCE, PLATE_STORAGE
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
+from scanomatic.models.rpc_job_models import RPCjobModel
 
 import os
 import re
@@ -388,7 +389,18 @@ class ScannerOwnerFactory(AbstractModelFactory):
         "expected_interval": float,
         "email": str,
         "warned": bool,
-        "owner": int,
-        "claiming": bool
-
+        "owner": RPCjobModel,
+        "claiming": bool,
+        "power": bool,
+        "reported": bool,
+        "last_on": int,
+        "last_off": int,
     }
+
+    @classmethod
+    def create(cls, **settings):
+        """
+         :rtype : scanomatic.models.scanning_model.ScannerOwnerModel
+        """
+
+        return super(ScannerOwnerFactory, cls).create(**settings)
