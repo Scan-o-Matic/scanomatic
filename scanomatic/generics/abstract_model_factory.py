@@ -342,6 +342,18 @@ class AbstractModelFactory(object):
                     setattr(model, attr, val)
 
     @classmethod
+    def populate_with_default_submodels(cls, obj):
+        """Keys missing models/having None will get default instances of that field if possible
+        :param obj: dict | scanomatic.generics.model.Model
+        """
+
+        for key in cls.STORE_SECTION_SERIALIZERS:
+
+            if (key not in obj or obj[key] is None) and cls.STORE_SECTION_SERIALIZERS[key] in cls._SUB_FACTORIES:
+
+                obj[key] = cls._SUB_FACTORIES[cls.STORE_SECTION_SERIALIZERS[key]].default_model
+
+    @classmethod
     def clamp(cls, model):
 
         pass
