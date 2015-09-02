@@ -14,6 +14,8 @@ __status__ = "Development"
 
 import xmlrpclib
 import enum
+from subprocess import Popen
+import socket
 
 #
 # INTERNAL DEPENDENCIES
@@ -85,7 +87,14 @@ class _ClientProxy(object):
 
     def __getattr__(self, key):
 
-        if key in self._allowedMethods():
+        if key == 'launch_local':
+            if self.online is False and self.local:
+                self._logger.info("Launching new local server")
+                return lambda: Popen(["scan-o-matic_server"])
+            else:
+                return lambda: self._logger.warning("Can't launch because server is {0}".format(['not local', 'online'][self.online]))
+
+        elif key in self._allowedMethods():
             m = self._userIDdecorator(getattr(self._client, key))
             m.__doc__ = (self._client.system.methodHelp(key) +
                          ["", "\n\nNOTE: userID is already supplied"][
@@ -136,16 +145,22 @@ class _ClientProxy(object):
                 retTup = (v for v in self._client.system.listMethods() if
                           not v.startswith("system.") and not (
                           self._userID is None and v in self._adminMethods))
-            except:
+            except socket.error:
                 self._logger.warning("Connection Refused for '{0}:{1}'".format(
                     self.host, self.port))
+                return ("launch_local",)
 
         return retTup
 
     @property
     def online(self):
 
-        return bool(self._allowedMethods())
+        if self._client is not None:
+            try:
+                return bool(dir(self._client.system.listMethods()))
+            except socket.error:
+                return False
+        return False
 
     @property
     def local(self):
