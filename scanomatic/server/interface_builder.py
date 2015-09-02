@@ -45,6 +45,7 @@ def _verify_admin(f):
 
 
 class Interface_Builder(SingeltonOneInit):
+
     def __one_init__(self):
 
         self.logger = logger.Logger("Server Manager")
@@ -181,8 +182,8 @@ class Interface_Builder(SingeltonOneInit):
 
         global _SOM_SERVER
         return santize_communication(
-            [{k: (ScannerOwnerFactory.to_dict(scanner_owner_model[k]) if scanner_owner_model[k] is not None else False)
-              for k in scanner_owner_model.keys()} for scanner_owner_model in _SOM_SERVER.scanner_manager.status])
+            sorted([ScannerOwnerFactory.to_dict(scanner_owner_model)
+             for scanner_owner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
 
     def _server_get_queue_status(self, user_id=None):
 
