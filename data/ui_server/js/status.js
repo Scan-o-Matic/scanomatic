@@ -29,11 +29,21 @@ function scannerStatusFormatter(data) {
     for (var i=0; i<data.length; i++) {
         ret += "<div class='scanner'><h3>" + data[i].scanner_name + "</h3>" +
             "<code>" + (data[i].power ? "Has power" : "Is offline") + "</code>" +
-            "<p class=''>" + (data[i].owner ? (data[i].email != "" ? "Owner: " + data[i].email : "Occupied") :"Free to use") + "</p>" +
+            "<p class=''>" + getOwnerName(data[i].owner) + "</p>" +
             "</div>";
     }
 
     return ret;
+}
+
+function getOwnerName(owner) {
+    if (owner) {
+        if (owner.content_model && owner.content_model.email)
+            return "Owner: " + owner.content_model.email;
+        else
+            return "Owner unknown";
+    }
+    return "Free to use";
 }
 
 function queueStatusFormatter(data) {
