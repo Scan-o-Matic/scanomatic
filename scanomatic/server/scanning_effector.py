@@ -89,7 +89,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
                          paths_object.scan_log_file_pattern.format(self._scanning_job.project_name)),
             catch_stdout=True, catch_stderr=True)
 
-        self._logger.surpress_prints = True
+        # self._logger.surpress_prints = True
 
         self._logger.info("Doing setup")
 
@@ -149,7 +149,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             self._update_scan_cycle_step(step_action)
         else:
-            self._logger.info("Interrupted progress {0} at {1} ({3})".format(
+            self._logger.info("Interrupted progress {0} at {1} ({2})".format(
                 self._scanning_job,
                 self._scanning_effector_data.current_cycle_step,
                 self._scanning_effector_data.previous_scan_cycle_start))
@@ -188,14 +188,19 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self.current_image < 0:
             self._start_time = time.time()
-            self._scanning_effector_data.previous_scan_cycle_start = 0
+            self._scanning_effector_data.previous_scan_cycle_start = self.run_time
             self._scanning_effector_data.current_image = 0
             self._logger.info("Making initial scan")
             return SCAN_STEP.NextMajor
 
         elif not self._should_continue_waiting(self.WAIT_FOR_NEXT_SCAN, delta_time=self.time_since_last_scan):
+            self._logger.info("Scan cycle {0} initiated {1}s after previous scan (sought interval {2} min)".format(
+                self.current_image,
+                self.time_since_last_scan,
+                self._scanning_job.time_between_scans
+            ))
             self._scanning_effector_data.previous_scan_cycle_start = self.run_time
-            self._logger.info("Next scan cycle initiated")
+
             return SCAN_STEP.NextMajor
         else:
             return SCAN_STEP.Wait
@@ -284,9 +289,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
         if self._scanning_job.fixture:
 
             compile_job_id = self._rpc_client.create_compile_project_job(
-                compile_project_factory.CompileProjectFactory.serializer.serialize(
-                    self._scanning_effector_data.compile_project_model
-                ))
+                compile_project_factory.CompileProjectFactory.to_dict(
+                    self._scanning_effector_data.compile_project_model))
 
             if compile_job_id:
                 # TODO: Add check if compile action should be finalize.
@@ -301,7 +305,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
             else:
                 self._logger.warning("Failed to create a compile project job, refused by server")
-
+        else:
+            self._logger.info("Not enqueing any project compilation since no fixture used")
         return SCAN_STEP.NextMajor
 
     def _do_scan(self):
