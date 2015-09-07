@@ -50,7 +50,6 @@ class RPCServerFactory(AbstractModelFactory):
         "port": int,
         "host": str,
         "admin": bool,
-        "config": str  # TODO: Check what this does
     }
 
     @classmethod

@@ -48,7 +48,6 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
     
             return True
 
-        #TODO: Add verification of uniqueness?
         return model.FIELD_TYPES.id
 
     @classmethod

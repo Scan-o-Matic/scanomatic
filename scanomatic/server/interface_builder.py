@@ -251,19 +251,23 @@ class Interface_Builder(SingeltonOneInit):
         """
 
         global _SOM_SERVER
-        # TODO: This is bad... fixit
+
         job = _SOM_SERVER.get_job(job_id)
+        """:type : scanomatic.models.rpc_job_models.RPCjobModel"""
 
         if job is not None:
-            try:
-                ret = job.pipe.send(communication, **communication_content)
-                self.logger.info("The job {0} got message {1}".format(
-                    job.identifier, communication))
-                return santize_communication(ret)
-            except AttributeError:
-                self.logger.error("The job {0} has no valid call {1}".format(
-                    job.identifier, communication))
-                return False
+            if job.status is rpc_job_models.JOB_STATUS.Queued:
+                return santize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job))
+            else:
+                try:
+                    ret = job.pipe.send(communication, **communication_content)
+                    self.logger.info("The job {0} got message {1}".format(
+                        job.identifier, communication))
+                    return santize_communication(ret)
+                except AttributeError:
+                    self.logger.error("The job {0} has no valid call {1}".format(
+                        job.identifier, communication))
+                    return False
 
         else:
             self.logger.error("The job {0} is not running".format(job_id))

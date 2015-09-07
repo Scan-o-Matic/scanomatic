@@ -55,7 +55,6 @@ class Fake(object):
     @property
     def status(self):
 
-        # TODO: Make real status somehow
         s = self.pipe.status
         if 'id' not in s:
             s['id'] = self._job.id
@@ -121,6 +120,8 @@ class RpcJob(Process, Fake):
         effector_iterator = pipe_effector.procEffector
 
         _l.info("Starting main loop")
+
+        # TODO: See if this can be done better so that processes always will terminate
 
         while t.is_alive() and job_running:
 

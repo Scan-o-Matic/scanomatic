@@ -202,13 +202,14 @@ class Server(object):
         return job_id
 
     def get_job(self, job_id):
+        """:rtype : scanomatic.models.rpc_job_models.RPCjobModel"""
 
         if job_id in self._queue:
             return self._queue[job_id]
         elif job_id in self._jobs:
             return self._jobs[job_id]
         else:
-            return False
+            return None
 
     def enqueue(self, model, job_type):
 
