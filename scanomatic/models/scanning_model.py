@@ -8,6 +8,7 @@ from enum import Enum
 
 class SCAN_CYCLE(MinorMajorStepEnum):
 
+    Unknown = -1
     Wait = 0
     RequestScanner = 10
     WaitForUSB = 11
@@ -16,11 +17,11 @@ class SCAN_CYCLE(MinorMajorStepEnum):
     WaitForScanComplete = 21
     ReportScanError = 22
     RequestScannerOff = 30
-    RequestFirstPassAnalysis = 40
+    RequestProjectCompilation = 40
 
     @class_property
     def default(cls):
-        return cls.Wait
+        return cls.Unknown
 
 
 class SCAN_STEP(Enum):
@@ -135,7 +136,7 @@ class ScanningModelEffectorData(model.Model):
 
     def __init__(self, current_cycle_step=SCAN_CYCLE.Wait, current_step_start_time=-1, current_image=-1,
                  current_image_path="", current_image_path_pattern="",
-                 project_time=-1.0, previous_scan_cycle_start=-1.0, current_scan_time=-1.0,
+                 previous_scan_cycle_start=-1.0, current_scan_time=-1.0,
                  images_ready_for_first_pass_analysis=[],
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
                  compile_project_model=None):
@@ -145,7 +146,6 @@ class ScanningModelEffectorData(model.Model):
         self.current_image = current_image
         self.current_image_path = current_image_path
         self.current_image_path_pattern = current_image_path_pattern
-        self.project_time = project_time
         self.previous_scan_cycle_start = previous_scan_cycle_start
         self.current_scan_time = current_scan_time
         self.scanning_thread = scanning_thread

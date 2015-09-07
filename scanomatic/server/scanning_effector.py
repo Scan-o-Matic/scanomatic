@@ -69,7 +69,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.Wait: self._do_wait,
             SCAN_CYCLE.RequestScanner: self._do_request_scanner_on,
             SCAN_CYCLE.RequestScannerOff: self._do_request_scanner_off,
-            SCAN_CYCLE.RequestFirstPassAnalysis: self._do_request_first_pass_analysis,
+            SCAN_CYCLE.RequestProjectCompilation: self._do_request_project_compilation,
             SCAN_CYCLE.Scan: self._do_scan,
             SCAN_CYCLE.ReportNotObtainedUSB: self._do_report_error_obtaining_scanner,
             SCAN_CYCLE.ReportScanError: self._do_report_error_scanning,
@@ -77,19 +77,21 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.WaitForUSB: self._do_wait_for_usb
         }
 
-    def setup(self, job):
+    def setup(self, job, redirect_logging=True):
 
         job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
         paths_object = paths.Paths()
         self._scanning_job.id = job.id
         self._setup_directory()
-        self._logger.info("{0} is setting up; logging will be directed to file".format(job))
-        self._logger.set_output_target(
-            os.path.join(self._project_directory,
-                         paths_object.scan_log_file_pattern.format(self._scanning_job.project_name)),
-            catch_stdout=True, catch_stderr=True)
 
-        # self._logger.surpress_prints = True
+        if redirect_logging:
+            self._logger.info("{0} is setting up; logging will be directed to file".format(job))
+            self._logger.set_output_target(
+                os.path.join(self._project_directory,
+                             paths_object.scan_log_file_pattern.format(self._scanning_job.project_name)),
+                catch_stdout=True, catch_stderr=True)
+
+            self._logger.surpress_prints = True
 
         self._logger.info("Doing setup")
 
@@ -145,6 +147,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
             try:
                 step_action = self._scan_cycle[self._scanning_effector_data.current_cycle_step]()
             except KeyError:
+                self._logger.warning("Error performing step {0}, no known method for that step".format(
+                    self._scanning_effector_data.current_cycle_step))
+
                 step_action = self._get_step_to_next_scan_cycle_step()
 
             self._update_scan_cycle_step(step_action)
@@ -284,17 +289,25 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanning_effector_data.current_image += 1
         return SCAN_STEP.NextMajor
 
-    def _do_request_first_pass_analysis(self):
+    def _do_request_project_compilation(self):
+        """Requests compile project if there was a fixture given.
 
+                If it is the first request of compilation, the COMPILE_ACTION is set to initiate from
+                the setup-method.
+        """
         if self._scanning_job.fixture:
+
 
             compile_job_id = self._rpc_client.create_compile_project_job(
                 compile_project_factory.CompileProjectFactory.to_dict(
                     self._scanning_effector_data.compile_project_model))
 
             if compile_job_id:
-                # TODO: Add check if compile action should be finalize.
-                next_image_is_last = False
+
+                # Images start at 0, next to last has index total - 2
+                next_image_is_last = self._scanning_job.number_of_scans - 2 == \
+                                     self._scanning_effector_data.current_image
+
                 if next_image_is_last:
                     self._scanning_effector_data.compile_project_model.compile_action = \
                         COMPILE_ACTION.AppendAndSpawnAnalysis
