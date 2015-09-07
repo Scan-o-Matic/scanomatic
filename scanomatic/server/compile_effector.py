@@ -115,7 +115,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
                 try:
                     image_model = first_pass.analyse(compile_image_model, self._fixture_settings)
-                    CompileImageAnalysisFactory.serializer.dump_to_filehandle(image_model, fh)
+                    CompileImageAnalysisFactory.serializer.dump_to_filehandle(image_model, fh, as_if_appending=True)
 
                 except first_pass.MarkerDetectionFailed:
 
@@ -132,7 +132,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
     @property
     def _compile_output_filehandle(self):
 
-        fh_mode = 'a'
+        fh_mode = 'r+w'
 
         if ((self._compile_job.compile_action is COMPILE_ACTION.Initiate or
                 self._compile_job.compile_action is COMPILE_ACTION.InitiateAndSpawnAnalysis) and

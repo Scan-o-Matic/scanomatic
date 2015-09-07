@@ -591,7 +591,7 @@ class _SectionsLink(object):
         enumerator = ''
         my_section = section_name
         sections = set(s.section if hasattr(s, 'section') else s for s in _SectionsLink._CONFIGS[parser.id])
-
+        sections = sections.union(parser.sections())
         while my_section in sections:
             my_section = section.format(section_name, " #{0}".format(enumerator) if enumerator else enumerator)
             if my_section in sections:
@@ -659,6 +659,7 @@ class LinkerConfigParser(object, ConfigParser):
         return self._nonzero if hasattr(self, '_nonzero') else len(self.sections())
 
 
+
 class MockConfigParser(object):
 
     def __init__(self, serialized_object):
@@ -707,16 +708,30 @@ class Serializer(object):
 
         return False
 
-    def dump_to_filehandle(self, model, filehandle):
+    def dump_to_filehandle(self, model, filehandle, as_if_appending=False):
 
         if self._has_section_head_and_is_valid(model):
 
             section = self.get_section_name(model)
             with LinkerConfigParser(id=id(filehandle), clear_links=False, allow_no_value=True) as conf:
 
+                if 'r' in filehandle.mode:
+                    fh_pos = filehandle.tell()
+                    filehandle.seek(0)
+                    conf.readfp(filehandle)
+                    if as_if_appending:
+                        filehandle.seek(0, 2)
+                    else:
+                        filehandle.seek(fh_pos)
+
                 section = _SectionsLink.get_next_free_section(conf, section)
                 _SectionsLink.add_section_for_non_link(conf, section)
                 self.serialize_into_conf(model, conf, section)
+
+                if 'r' in filehandle.mode:
+                    filehandle.seek(0)
+                    filehandle.truncate()
+
                 conf.write(filehandle)
             return True
         return False
