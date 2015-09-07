@@ -260,7 +260,7 @@ class Interface_Builder(SingeltonOneInit):
                 return santize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job))
             else:
                 try:
-                    ret = job.pipe.send(communication, **communication_content)
+                    ret = _SOM_SERVER.jobs[job].pipe.send(communication, **communication_content)
                     self.logger.info("The job {0} got message {1}".format(
                         job.identifier, communication))
                     return santize_communication(ret)

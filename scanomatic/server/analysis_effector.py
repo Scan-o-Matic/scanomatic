@@ -124,12 +124,15 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
             if self._analysis_job.chain:
 
-                rc = rpc_client.get_client(admin=True)
-                if rc.create_feature_extract_job({"analysis_directory": self._analysis_job.output_directory}):
-                    self._logger.info("Enqueued feature extraction job")
-                else:
-                    self._logger.warning("Enqueing of feature extraction job refused")
-
+                try:
+                    rc = rpc_client.get_client(admin=True)
+                    if rc.create_feature_extract_job({"analysis_directory": self._analysis_job.output_directory}):
+                        self._logger.info("Enqueued feature extraction job")
+                    else:
+                        self._logger.warning("Enqueing of feature extraction job refused")
+                except:
+                    self._logger.error("Could not spawn analysis at directory {0}".format(
+                        self._analysis_job.output_directory))
             self._running = False
             raise StopIteration
 

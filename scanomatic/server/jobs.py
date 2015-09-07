@@ -59,13 +59,12 @@ class Jobs(SingeltonOneInit):
 
     def __getitem__(self, key):
 
-        if isinstance(key, str):
-            for job in self._jobs:
-                if job.id == key:
-                    key = job
-
         if key in self._jobs:
             return self._jobs[key]
+
+        for job in self._jobs:
+            if job.id == key:
+                return job
 
         self._logger.warning("Unknown job {0} requested".format(key))
         return None
