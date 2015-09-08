@@ -56,6 +56,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._allowed_calls['setup'] = self.setup
 
+        self._redirect_logging = True
+
         if job.content_model:
             self._analysis_job = AnalysisModelFactory.create(**job.content_model)
         else:
@@ -194,15 +196,19 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 self._logger.critical("Can't create output directory '{0}'".format(self._analysis_job.output_directory))
                 raise StopIteration
 
-        self._logger.info("{0} is setting up, output will be directed to {1}".format(self._analysis_job,
-                                                                                     Paths().analysis_run_log))
-        self._logger.set_output_target(
-            os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
-            catch_stdout=True, catch_stderr=True)
+        if self._redirect_logging:
+            self._logger.info("{0} is setting up, output will be directed to {1}".format(self._analysis_job,
+                                                                                         Paths().analysis_run_log))
+            self._logger.set_output_target(
+                os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
+                catch_stdout=True, catch_stderr=True)
+
+            self._logger.surpress_prints = True
+
+        self._logger.info("Will remove previous files")
 
         self._remove_files_from_previous_analysis()
 
-        self._logger.surpress_prints = True
 
         if self._analysis_job.focus_position is not None:
             self._focus_graph = support.Watch_Graph(
@@ -251,11 +257,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         return pos
 
-    def setup(self, job):
+    def setup(self, job, redirect_logging=True):
 
         if self._running:
             self.add_message("Cannot change settings while running")
             return
+
+        self._redirect_logging = redirect_logging
 
         job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
 
