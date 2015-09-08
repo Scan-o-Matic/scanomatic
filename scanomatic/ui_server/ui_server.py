@@ -1,7 +1,7 @@
 __author__ = 'martin'
 
 import time
-from flask import Flask, request, send_from_directory, redirect, jsonify, abort
+from flask import Flask, request, send_from_directory, redirect, jsonify, abort, render_template
 import webbrowser
 from threading import Thread
 from socket import error
@@ -29,6 +29,7 @@ from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
+from scanomatic.models.factories.settings_factories import ApplicationSettingsFactory
 
 _url = None
 _logger = Logger("UI-server")
@@ -159,7 +160,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     global _url
 
-    app = Flask("Scan-o-Matic UI")
+    app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
     rpc_client = get_client(admin=True)
 
     if rpc_client.local and rpc_client.online is False:
@@ -233,6 +234,20 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return send_from_directory(Paths().ui_root, Paths().ui_status_file)
         else:
             return jsonify(succes=False, reason='Unknown status request')
+
+    @app.route("/config", methods=['get', 'post'])
+    def _config():
+
+        action = request.args.get("action")
+        if action:
+            return jsonify(success=False, reason="Not implemented")
+
+        try:
+            settings_model = ApplicationSettingsFactory.serializer.load(Paths().config_main_app)[0]
+        except IndexError:
+            settings_model = ApplicationSettingsFactory.create()
+
+        return render_template(Paths().ui_settings_template, **settings_model)
 
     @app.route("/analysis", methods=['get', 'post'])
     def _analysis():
