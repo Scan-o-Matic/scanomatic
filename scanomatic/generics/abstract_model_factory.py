@@ -188,7 +188,7 @@ class AbstractModelFactory(object):
         def _enforce_other(dtype, obj):
             if obj is None or obj is False and dtype is not bool:
                 return None
-            elif issubclass(dtype, AbstractModelFactory):
+            elif isinstance(dtype, type) and issubclass(dtype, AbstractModelFactory):
                 if isinstance(dtype, dtype.MODEL):
                     return obj
                 else:
@@ -288,7 +288,7 @@ class AbstractModelFactory(object):
                 dtype = cls.STORE_SECTION_SERIALIZERS[k]
                 dtype_leaf = dtype[-1]
                 model_as_dict[k] = _toggleTuple(dtype, model_as_dict[k], False)
-                if isinstance(dtype, type) and issubclass(dtype_leaf, Model):
+                if isinstance(dtype_leaf, type) and issubclass(dtype_leaf, Model):
                     for coord, item in _get_coordinates_and_items_to_validate(dtype,
                                                                               model_as_dict[k]):
 
@@ -907,7 +907,7 @@ class Serializer(object):
             obj = _toggleTuple(dtype, obj, False)
             dtype_leaf = dtype[-1]
             for coord, item in _get_coordinates_and_items_to_validate(dtype, model[key]):
-                if isinstance(dtype, type) and issubclass(dtype_leaf, Model):
+                if isinstance(dtype_leaf, type) and issubclass(dtype_leaf, Model):
                     subfactory = factory.get_sub_factory(item)
                     link = _SectionsLink.set_link(subfactory, item, conf)
                     subfactory.serializer.serialize_into_conf(item, conf, link.section)
