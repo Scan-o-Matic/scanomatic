@@ -97,7 +97,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
     def next(self):
 
-        if not self._allow_start:
+        if self.waiting:
             return super(PhenotypeExtractionEffector, self).next()
 
         if self._stopping:

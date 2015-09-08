@@ -48,7 +48,6 @@ class ProcessEffector(object):
             'pause': self.pause,
             'resume': self.resume,
             'setup': self.setup,
-            'start': self.start,
             'status': self.status,
             'stop': self.stop
         }
@@ -125,10 +124,13 @@ class ProcessEffector(object):
         self._logger.warning(
                 "Setup is not overwritten, job info ({0}) lost.".format(job))
 
-    def start(self, *args, **kwargs):
-
-        if self._allow_start:
-            self._running = True
+    @property
+    def waiting(self):
+        if self._stopping:
+            return False
+        if self._paused or not self._running:
+            return True
+        return False
 
     def status(self, *args, **kwargs):
 
@@ -169,12 +171,13 @@ class ProcessEffector(object):
 
     def next(self):
 
-        while self._running is False and not self._stopping:
-            time.sleep(0.1)
-            self._logger.debug(
-                "Pre-running and waiting run {0} and stop {1}".format(
-                    self._running, self._stopping))
-            return None
-
-        if self._stopping:
+        if not self._stopping and not self._running:
+            if self._allow_start:
+                self._running = True
+                self._logger.info("Setup passed, switching to run-mode")
+                return True
+            else:
+                self._logger.info("Waiting to run...need setup to allow start")
+                return True
+        elif self._stopping:
             raise StopIteration

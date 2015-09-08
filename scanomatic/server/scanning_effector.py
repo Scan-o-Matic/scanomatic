@@ -141,7 +141,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def next(self):
 
-        if not self._allow_start:
+        if self.waiting:
             return super(ScannerEffector, self).next()
         elif not self._stopping:
             try:

@@ -81,7 +81,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
     def next(self):
 
-        if not self._allow_start:
+        if self.waiting:
             return super(CompileProjectEffector, self).next()
 
         if self._stopping:

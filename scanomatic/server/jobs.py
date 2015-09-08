@@ -201,7 +201,6 @@ class Jobs(SingeltonOneInit):
             job.content_model.id = job.id
 
         job_process.pipe.send('setup', tuple(RPC_Job_Model_Factory.serializer.serialize(job)))
-        job_process.pipe.send('start')
 
     def _add_scanner_operations_to_job(self, job_process):
 
