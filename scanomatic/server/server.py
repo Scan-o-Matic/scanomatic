@@ -202,7 +202,10 @@ class Server(object):
         return job_id
 
     def get_job(self, job_id):
-        """:rtype : scanomatic.models.rpc_job_models.RPCjobModel"""
+        """Gets the rpc job model if any corresponding to the id
+        :type job_id: str
+        :rtype : scanomatic.models.rpc_job_models.RPCjobModel
+        """
 
         if job_id in self._queue:
             return self._queue[job_id]
