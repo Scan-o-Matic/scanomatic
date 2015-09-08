@@ -65,6 +65,8 @@ class Jobs(SingeltonOneInit):
         for job in self._jobs:
             if job.id == key:
                 return job
+            else:
+                self._logger.info("{0}!={1}".format(job,id, key))
 
         self._logger.warning("Unknown job {0} requested".format(key))
         return None
