@@ -144,15 +144,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         image_model = self._first_pass_results.get_next_image_model()
 
         if image_model is None:
+            self._stopping = True
             return False
 
         image_model.fixture.grayscale.values = image_model.fixture.grayscale.values[::-1]
 
         first_image_analysed = self._current_image_model is None
         self._current_image_model = image_model
-        if not image_model:
-            self._stopping = True
-            return True
 
         self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.image.path))
 
