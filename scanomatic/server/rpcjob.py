@@ -136,12 +136,14 @@ class RpcJob(Process, Fake):
                     job_running = False
                     # pipe_effector.keepAlive = False
 
-                pipe_effector.sendStatus(pipe_effector.procEffector.status())
+                if t.is_alive():
+                    pipe_effector.sendStatus(pipe_effector.procEffector.status())
                 sleep(0.05)
 
             else:
                 sleep(0.29)
 
-        pipe_effector.sendStatus(pipe_effector.procEffector.status())
+        if t.is_alive():
+            pipe_effector.sendStatus(pipe_effector.procEffector.status())
         t.join(timeout=1)
         _l.info("Job completed")
