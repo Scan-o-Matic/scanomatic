@@ -131,7 +131,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
     def _setup_extraction_iterator(self):
 
-        self._startTime = time.time()
+        self._start_time = time.time()
 
         self._phenotyper = phenotyper.Phenotyper(
             dataObject=self._data,

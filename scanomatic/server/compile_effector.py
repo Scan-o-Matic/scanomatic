@@ -1,6 +1,7 @@
 __author__ = 'martin'
 
 import os
+import time
 import proc_effector
 from scanomatic.models.compile_project_model import FIXTURE, COMPILE_ACTION
 from scanomatic.io.fixtures import Fixtures, FixtureSettings
@@ -63,6 +64,8 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
             self._stopping = True
         else:
             CompileProjectFactory.serializer.dump(self._compile_job, self._compile_instructions_path)
+
+        self._start_time = time.time()
 
     def _load_fixture(self):
 

@@ -120,7 +120,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 self._focus_graph.finalize()
 
             self._logger.info("ANALYSIS, Full analysis took {0} minutes".format(
-                ((time.time() - self._startTime) / 60.0)))
+                ((time.time() - self._start_time) / 60.0)))
 
             self._logger.info('Analysis completed at ' + str(time.time()))
 
@@ -179,7 +179,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def _setup_first_iteration(self):
 
-        self._startTime = time.time()
+        self._start_time = time.time()
 
         self._first_pass_results = first_pass_results.CompilationResults(
             self._analysis_job.compilation, self._analysis_job.compile_instructions)
