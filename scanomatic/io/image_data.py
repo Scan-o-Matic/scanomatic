@@ -61,7 +61,7 @@ class ImageData(object):
         plates = [None] * number_of_plates
         for plate_features in features.data:
 
-            plate  = np.zeros(plate_features.shape).T * np.nan
+            plate = np.zeros(plate_features.shape) * np.nan
             plates[plate_features.index] = plate
 
             for cell_features in plate_features.data.itervalues():
@@ -73,7 +73,7 @@ class ImageData(object):
                     if output_value in compartment_features.data:
 
                         try:
-                            plate[cell_features.index] = compartment_features.data[output_value]
+                            plate[cell_features.index[::-1]] = compartment_features.data[output_value]
                         except IndexError:
 
                             ImageData._LOGGER.critical(
@@ -120,7 +120,7 @@ class ImageData(object):
                 current_data,
                 [None] * (1 + image_model.image.index - current_data.size)].astype(np.float)
 
-        current_data[image_model.image.index] = image_model.image.time_stamp
+        current_data[image_model.image.index] = image_model.image.time_stamp / 60.0
         np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(analysis_model.output_directory, times=True)),
                 current_data)
 
