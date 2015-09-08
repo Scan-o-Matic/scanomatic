@@ -133,6 +133,7 @@ class RpcJob(Process, Fake):
 
                 except StopIteration:
 
+                    _l.info("Next returned stop iteration, job is done.")
                     job_running = False
                     # pipe_effector.keepAlive = False
 
@@ -141,6 +142,7 @@ class RpcJob(Process, Fake):
                 sleep(0.05)
 
             else:
+                _l.info("Job doesn't want to be kept alive")
                 sleep(0.29)
 
         if t.is_alive():
