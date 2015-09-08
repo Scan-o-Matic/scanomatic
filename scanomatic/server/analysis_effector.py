@@ -98,17 +98,17 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         return 0.0
 
-    @property
-    def waiting(self):
-        return not(self._allow_start and self._running)
-
     def next(self):
+
         if self.waiting:
             return super(AnalysisEffector, self).next()
-        elif self._analysis_needs_init:
-            return self._setup_first_iteration()
         elif not self._stopping:
-            return self._analyze_image()
+            if self._analysis_needs_init:
+                return self._setup_first_iteration()
+            elif not self._stopping:
+                return self._analyze_image()
+            else:
+                return self._finalize_analysis()
         else:
             return self._finalize_analysis()
 
