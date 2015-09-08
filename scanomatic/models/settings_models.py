@@ -2,6 +2,7 @@ __author__ = 'martin'
 
 import scanomatic.generics.model as model
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE, POWER_MODES
+import os
 
 
 class VersionChangesModel(model.Model):
@@ -18,7 +19,7 @@ class VersionChangesModel(model.Model):
 class PowerManagerModel(model.Model):
 
     def __init__(self, type=POWER_MANAGER_TYPE.notInstalled, number_of_sockets=4,
-                 host="192.168.0.100", password=None, verify_name=False, mac=None,
+                 host="192.168.0.100", password="", verify_name=False, mac=None,
                  name="Server 1", power_mode=POWER_MODES.Toggle):
 
         self.type = type
@@ -75,7 +76,7 @@ class HardwareResourceLimitsModel(model.Model):
 
 class PathsModel(model.Model):
 
-    def __init__(self, projects_root="Documents"):
+    def __init__(self, projects_root=os.path.join(os.path.expanduser("~"), "Documents")):
 
         self.projects_root = projects_root
 
@@ -118,7 +119,7 @@ class ApplicationSettingsModel(model.Model):
         scanner_models += tuple('EPSON V700' for _ in range(len(self.scanner_names) - len(scanner_models)))
 
         self.scanner_models = {name: scanner_model for name, scanner_model in
-                               zip(self.scanner_names, range(len(scanner_models)))}
+                               zip(self.scanner_names, scanner_models)}
 
         self.scanner_sockets = {name: socket for name, socket in
                                 zip(self.scanner_names, range(len(self.scanner_models)))}
