@@ -26,6 +26,12 @@ import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 
 #
+#
+#
+
+_SECONDS_PER_HOUR = 60.0 * 60.0
+
+#
 # CLASSES
 #
 
@@ -110,6 +116,8 @@ class ImageData(object):
 
         :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
         """
+        global _SECONDS_PER_HOUR
+
         if not overwrite:
             current_data = ImageData.read_times(analysis_model.output_directory)
         else:
@@ -120,7 +128,7 @@ class ImageData(object):
                 current_data,
                 [None] * (1 + image_model.image.index - current_data.size)].astype(np.float)
 
-        current_data[image_model.image.index] = image_model.image.time_stamp / 60.0
+        current_data[image_model.image.index] = image_model.image.time_stamp / _SECONDS_PER_HOUR
         np.save(os.path.join(*ImageData.directory_path_to_data_path_tuple(analysis_model.output_directory, times=True)),
                 current_data)
 
