@@ -122,12 +122,18 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def progress(self):
 
-        if self.current_image < 0:
-            return 0.0
-        elif self.current_image is None:
-            return 1.0
+        global SECONDS_PER_MINUTE
+        run_time = self.run_time
+        if run_time <= 0 or not self._allow_start:
+            return 0
         else:
-            return float(self.current_image + 1.0) / self.total_images
+
+            # Actual duration is expected to be one less than the number of scans plus duration of first and last scan
+            # so 0.5 is a rough estimate
+
+            return run_time / ((self._scanning_job.number_of_scans - 0.5)
+                               * self._scanning_job.time_between_scans * SECONDS_PER_MINUTE)
+
 
     @property
     def total_images(self):
