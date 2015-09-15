@@ -209,10 +209,7 @@ class Server(object):
 
         if job_id in self._queue:
             return self._queue[job_id]
-        elif job_id in self._jobs:
-            return self._jobs[job_id]
-        else:
-            return None
+        return self._jobs[job_id]
 
     def enqueue(self, model, job_type):
 

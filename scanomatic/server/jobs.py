@@ -55,6 +55,9 @@ class Jobs(SingeltonOneInit):
 
     def __contains__(self, key):
 
+        if isinstance(key, str):
+            return any(True for j in self._jobs if j.id == key)
+
         return key in self._jobs
 
     def __getitem__(self, key):
