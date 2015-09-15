@@ -74,6 +74,18 @@ class Jobs(SingeltonOneInit):
         self._logger.warning("Unknown job {0} requested".format(key))
         return None
 
+    def __delitem__(self, job):
+        """:type job : scanomatic.models.rpc_job_models.RPCJobModel"""
+
+        if job in self._jobs:
+            if job.type == rpc_job_models.JOB_TYPE.Scan:
+                self._scanner_manager.release_scanner(job.id)
+            self._jobs[job]
+            self._logger.info("Job '{0}' not active/removed".format(job))
+            if not RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_jobs):
+                self._logger.warning("Failed to remove references to job in config file")
+
+
     @property
     def active_compile_project_jobs(self):
 
@@ -135,9 +147,7 @@ class Jobs(SingeltonOneInit):
                 if not job.pid:
                     job_process.update_pid()
                 if not job_process.is_alive():
-                    self._logger.info("Job '{0}' no longer active".format(job))
-                    del self._jobs[job]
-                    RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_jobs)
+                    del self[job]
             statuses.append(job_process.status)
 
         self.handle_scanners()
