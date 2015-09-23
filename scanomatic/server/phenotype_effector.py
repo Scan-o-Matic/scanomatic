@@ -70,7 +70,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         times, data = image_data.ImageData.read_image_data_and_time(self._feature_job.analysis_directory)
 
-        if None in (times, data):
+        if None in (times, data) or 0 in map(len, (times, data)):
             self._logger.error(
                 "Could not filter image times to match data or no data. " +
                 "Do you have the right directory?")
@@ -94,6 +94,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         """
 
         self._allow_start = True
+
 
     def next(self):
 
