@@ -99,10 +99,11 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
                 self._compile_job.compile_action is COMPILE_ACTION.InitiateAndSpawnAnalysis):
 
             self._spawn_analysis()
+            self._stopping = True
             raise StopIteration()
 
         else:
-
+            self._stopping = True
             raise StopIteration()
 
     def _analyse_image(self, compile_image_model):
