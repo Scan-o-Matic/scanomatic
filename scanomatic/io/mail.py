@@ -17,9 +17,17 @@ def get_server(host=None, smtp_port=0, tls=False, login=None, password=None):
             smtp_port = 587
         elif smtp_port == 0:
             smtp_port = 25
-        server = smtplib.SMTP(host, port=smtp_port)
+
+        try:
+            server = smtplib.SMTP(host, port=smtp_port)
+        except:
+            return None
+
     else:
-        server = smtplib.SMTP()
+        try:
+            server = smtplib.SMTP()
+        except:
+            return None
 
     if tls:
 
@@ -41,6 +49,8 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
     if server is None:
         server = get_server('localhost')
 
+    if server is None:
+        return
     try:
         msg = MIMEMultipart()
     except TypeError:
