@@ -169,7 +169,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             self._do_request_project_compilation()
 
-            self._job_completed = True
+            self._scanning_effector_data.current_image = None
 
         if self._job_completed:
             raise StopIteration
