@@ -262,11 +262,11 @@ class Interface_Builder(SingeltonOneInit):
                 try:
                     ret = _SOM_SERVER.jobs[job].pipe.send(communication, **communication_content)
                     self.logger.info("The job {0} got message {1}".format(
-                        job.identifier, communication))
+                        job.id, communication))
                     return santize_communication(ret)
                 except AttributeError:
                     self.logger.error("The job {0} has no valid call {1}".format(
-                        job.identifier, communication))
+                        job.id, communication))
                     return False
 
         else:
