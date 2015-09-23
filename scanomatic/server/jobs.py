@@ -80,11 +80,13 @@ class Jobs(SingeltonOneInit):
         if job in self._jobs:
             if job.type == rpc_job_models.JOB_TYPE.Scan:
                 self._scanner_manager.release_scanner(job.id)
-            self._jobs[job]
+            del self._jobs[job]
             self._logger.info("Job '{0}' not active/removed".format(job))
             if not RPC_Job_Model_Factory.serializer.purge(job, self._paths.rpc_jobs):
                 self._logger.warning("Failed to remove references to job in config file")
-
+        else:
+            self._logger.warning("Can't delete job {0} as it does not exist, I only know of {2}".format(
+                job, self._jobs.keys()))
 
     @property
     def active_compile_project_jobs(self):
