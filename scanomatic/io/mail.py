@@ -59,7 +59,10 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
     msg['From'] = sender
     msg['To'] = receiver
     msg['Subject'] = subject
-    msg.attach(MIMEText(message))
+    try:
+        msg.attach(MIMEText(message))
+    except TypeError:
+        msg.attach(MIMEText.MIMEText(message))
 
     server.sendmail(sender, [receiver], msg.as_string())
 
