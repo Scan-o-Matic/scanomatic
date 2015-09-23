@@ -67,6 +67,11 @@ class ProcessEffector(object):
         decorators.register_type_lock(self)
 
     @property
+    def identifier(self):
+
+        return self._job_label
+
+    @property
     def pipe_effector(self):
     
         """
