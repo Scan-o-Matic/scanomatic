@@ -33,9 +33,16 @@ from scanomatic.io import paths
 from threading import Thread
 import scanomatic.io.rpc_client as rpc_client
 from scanomatic.models.factories import compile_project_factory
+from scanomatic.io import mail
+from scanomatic.io.app_config import Config as AppConfig
 
 JOBS_CALL_SET_USB = "set_usb"
 SECONDS_PER_MINUTE = 60.0
+
+FILE_SIZE_DEVIATION_ALLOWANCE = 0.2
+TOO_SMALL_SIZE = 1024 * 1024
+DISKSPACE_MARGIN_FACTOR = 5
+
 
 
 class ScannerEffector(proc_effector.ProcessEffector):
@@ -74,7 +81,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.ReportNotObtainedUSB: self._do_report_error_obtaining_scanner,
             SCAN_CYCLE.ReportScanError: self._do_report_error_scanning,
             SCAN_CYCLE.WaitForScanComplete: self._do_wait_for_scan,
-            SCAN_CYCLE.WaitForUSB: self._do_wait_for_usb
+            SCAN_CYCLE.WaitForUSB: self._do_wait_for_usb,
+            SCAN_CYCLE.VerifyImageSize: self._do_verify_image_size,
+            SCAN_CYCLE.VerifyDiskspace: self._do_verify_image_size
         }
 
     def setup(self, job, redirect_logging=True):
@@ -133,7 +142,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             return run_time / ((self._scanning_job.number_of_scans - 0.5)
                                * self._scanning_job.time_between_scans * SECONDS_PER_MINUTE)
-
 
     @property
     def total_images(self):
@@ -194,6 +202,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_major
         elif step_action is SCAN_STEP.NextMinor:
             self._scanning_effector_data.current_cycle_step = self._scanning_effector_data.current_cycle_step.next_minor
+        elif step_action is SCAN_STEP.TruncateIteration:
+            self._scanning_effector_data.current_cycle_step = SCAN_CYCLE.Wait
 
         if step_action is None:
             self._logger.error("Scan step {0} failed to return a valid step action".format((
@@ -226,6 +236,16 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         if self._scanning_effector_data.usb_port:
             self._logger.info("Job {0} knows its USB".format(self._scanning_job.id))
+            if self._scanning_effector_data.warned_scanner_usb:
+                self._scanning_effector_data.warned_scanner_usb = False
+                self._mail("Scan-o-Matic: Resolved project '{project_name}' could not acquire its Scanner",
+                           """This is an automated email, please don't reply!
+
+The project '{project_name}' now manages to power up scanner {scanner} again.
+
+All the best,
+
+Scan-o-Matic""")
             return SCAN_STEP.NextMajor
         elif self._should_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
@@ -242,6 +262,17 @@ class ScannerEffector(proc_effector.ProcessEffector):
                     self.current_image, self._scanning_effector_data.current_image_path))
                 self._add_scanned_image(self.current_image, self._scanning_effector_data.current_scan_time,
                                         self._scanning_effector_data.current_image_path)
+
+                if self._scanning_effector_data.warned_scanner_error:
+                    self._scanning_effector_data.warned_scanner_error = False
+                    self._mail("Scan-o-Matic: Resolved project '{project_name}' error while scanning",
+                               """This is an automated email, please don't reply!
+
+The project '{project_name}' now managed to successfully scan an image again.
+
+All the best,
+
+Scan-o-Matic""")
                 return SCAN_STEP.NextMajor
             else:
                 return SCAN_STEP.NextMinor
@@ -260,12 +291,49 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._logger.info("Job {0} reports scanning error".format(self._scanning_job.id))
         self._logger.error("Could not scan file {0}".format(self._scanning_effector_data.current_image_path))
+
+        if not self._scanning_effector_data.warned_scanner_error:
+            self._scanning_effector_data.warned_scanner_error = True
+            self._mail("Scan-o-Matic: Project '{project_name}' error while scanning",
+                       """This is an automated email, please don't reply!
+
+The project '{project_name}' reports an error while scanning.
+Please hurry to correct this so that the project won't be spoiled.
+
+The scanning project will attempt a new scan in {time_between_scans} minutes,
+but note that you won't be warned again if the error persists.
+
+Instead you will be notified when/if error is resolved.
+
+All the best,
+
+Scan-o-Matic""")
+
         return SCAN_STEP.NextMajor
 
     def _do_report_error_obtaining_scanner(self):
 
         self._logger.error("Server never gave me my scanner.")
-        return SCAN_STEP.NextMajor
+        self._do_request_scanner_off()
+
+        if not self._scanning_effector_data.warned_scanner_usb:
+            self._scanning_effector_data.warned_scanner_usb = True
+            self._mail("Scan-o-Matic: Project '{project_name}' could not acquire its Scanner",
+                       """This is an automated email, please don't reply!
+
+The project '{project_name}' could not get scanner {scanner} powered up.
+Please hurry to correct this so that the project won't be spoiled.
+
+The scanning project will attempt a new scan in {time_between_scans} minutes,
+but note that you won't be warned again if the error persists.
+
+Instead you will be notified when/if error is resolved.
+
+All the best,
+
+Scan-o-Matic""")
+
+        return SCAN_STEP.TruncateIteration
 
     def _should_continue_waiting(self, max_between_scan_fraction, delta_time=None):
 
@@ -286,6 +354,113 @@ class ScannerEffector(proc_effector.ProcessEffector):
     def scan_cycle_step_duration(self):
 
         return time.time() - self._scanning_effector_data.current_step_start_time
+
+    def _do_verify_image_size(self):
+
+        def get_size_of_last_image():
+            try:
+                return os.stat(self._scanning_effector_data.current_image_path).st_size
+            except OSError:
+                return 0
+
+        current_size = get_size_of_last_image()
+        largest_known_size = max(current_size, self._scanning_effector_data.known_file_size)
+
+        if current_size < TOO_SMALL_SIZE:
+
+            if self._scanning_effector_data.warned_file_size is False:
+                self._scanning_effector_data.warned_file_size = True
+                self._mail("Scan-o-Matic: Project '{project_name}' got suspicious image",
+                           """This is an automated email, please don't reply!
+
+The project '{project_name}' got an image of very small size.
+
+""" + "{0}:\t{1} bytes\n".format(self._scanning_effector_data.current_image_path, current_size) + """
+
+Several reasons are probable:
+
+   1) The hard drive is full
+   2) The scanner lost power or crashed while acquiring the image
+
+All the best,
+
+Scan-o-Matic""")
+
+        elif (self._scanning_effector_data.known_file_size and
+                abs(self._scanning_effector_data.known_file_size - current_size) / largest_known_size >
+                FILE_SIZE_DEVIATION_ALLOWANCE):
+
+            if self._scanning_effector_data.warned_file_size is False:
+                self._scanning_effector_data.warned_file_size = True
+                self._mail("Scan-o-Matic: Project '{project_name}' got suspicious image",
+                           """This is an automated email, please don't reply!
+
+The project '{project_name}' got an image of unexpected size.
+
+""" + "{0}:\t{1} bytes\n\n".format(self._scanning_effector_data.current_image_path, current_size) +
+                           "Previously, the largest size was {0}, such deviations aren't expected.".format(
+                               self._scanning_effector_data.known_file_size) + """
+Several reasons are probable:
+
+   1) The hard drive is full
+   2) The scanner lost power or crashed while acquiring the image
+
+All the best,
+
+Scan-o-Matic""")
+
+        elif self._scanning_effector_data.warned_file_size is True:
+
+            self._scanning_effector_data.warned_file_size = False
+            self._mail("Scan-o-Matic: Resolved, project '{project_name}' now got normal image",
+                       """This is an automated email, please don't reply!
+
+The project '{project_name}' got image of expected size again! Yay.
+
+All the best,
+
+Scan-o-Matic""")
+
+        self._scanning_effector_data.known_file_size = largest_known_size
+        return SCAN_STEP.NextMinor
+
+    def _do_verify_discspace(self):
+
+        def get_free_space():
+
+            try:
+                vfs = os.statvfs(self._scanning_job.directory_containing_project)
+                return vfs.f_frsize * vfs.f_bavail
+            except OSError:
+                return 0
+
+        if self._scanning_effector_data.known_file_size and not self._scanning_effector_data.warned_discspace:
+
+            bytes_needed = (self._scanning_job.number_of_scans - self._scanning_effector_data.current_image) * \
+                self._scanning_effector_data.known_file_size
+
+            if bytes_needed * DISKSPACE_MARGIN_FACTOR > get_free_space():
+                self._scanning_effector_data.warned_discspace = True
+                self._mail("Scan-o-Matic: Project '{project_name}' may not have enough disc space",
+                           """This is an automated email, please don't reply!
+
+The project '{project_name}' is reporting that the remaining space the
+drive it is saving its data to may not be enough for the remainder of the project
+to complete.
+
+Note that this is an estimate, as the project is unaware of other projects running
+at the same time, but please verify remaining space.
+
+""" + "Report triggered after acquiring image index {0}".format(
+                               self._scanning_effector_data.current_image) + """ of {number_of_scans}.
+
+No further warnings about disc space will be sent for this project.
+
+All the best,
+
+Scan-o-Matic""")
+
+        return SCAN_STEP.NextMajor
 
     def _do_request_scanner_on(self):
 
@@ -309,7 +484,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
         """
         if self._scanning_job.fixture:
 
-
             compile_job_id = self._rpc_client.create_compile_project_job(
                 compile_project_factory.CompileProjectFactory.to_dict(
                     self._scanning_effector_data.compile_project_model))
@@ -318,7 +492,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
                 # Images start at 0, next to last has index total - 2
                 next_image_is_last = self._scanning_job.number_of_scans - 2 == \
-                                     self._scanning_effector_data.current_image
+                    self._scanning_effector_data.current_image
 
                 if next_image_is_last:
                     self._scanning_effector_data.compile_project_model.compile_action = \
@@ -379,3 +553,24 @@ class ScannerEffector(proc_effector.ProcessEffector):
             index=index, time_stamp=time_stamp, path=path)
 
         self._scanning_effector_data.images_ready_for_first_pass_analysis.append(image_model)
+
+    def _mail(self, title_template, message_template):
+
+        def _do_mail(title_template, message_template, scanning_job_model):
+
+            if not scanning_job_model.email:
+                return
+
+            if AppConfig().mail_server:
+                server = mail.get_server(AppConfig().mail_server, smtp_port=AppConfig().mail_port,
+                                         login=AppConfig().mail_user, password=AppConfig().mail_password)
+            else:
+                server = None
+
+            mail.mail(scanning_job_model.email if AppConfig().mail_user is None else AppConfig().mail_user,
+                      scanning_job_model.email,
+                      title_template.format(**scanning_job_model),
+                      message_template.format(**scanning_job_model),
+                      server=server)
+
+        Thread(target=_do_mail, args=(title_template, message_template, self._scanning_job)).start()

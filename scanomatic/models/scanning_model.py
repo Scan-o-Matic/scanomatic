@@ -17,7 +17,9 @@ class SCAN_CYCLE(MinorMajorStepEnum):
     WaitForScanComplete = 21
     ReportScanError = 22
     RequestScannerOff = 30
-    RequestProjectCompilation = 40
+    VerifyImageSize = 41
+    VerifyDiskspace = 42
+    RequestProjectCompilation = 50
 
     @class_property
     def default(cls):
@@ -29,6 +31,7 @@ class SCAN_STEP(Enum):
     Wait = 0
     NextMinor = 1
     NextMajor = 2
+    TruncateIteration = 3
 
 
 class PLATE_STORAGE(Enum):
@@ -139,7 +142,8 @@ class ScanningModelEffectorData(model.Model):
                  previous_scan_cycle_start=-1.0, current_scan_time=-1.0,
                  images_ready_for_first_pass_analysis=[],
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
-                 compile_project_model=None):
+                 compile_project_model=None, known_file_size=0, warned_file_size=False, warned_scanner_error=False,
+                 warned_scanner_usb=False, warned_discspace=False):
 
         self.current_cycle_step = current_cycle_step
         self.current_step_start_time = current_step_start_time
@@ -154,5 +158,10 @@ class ScanningModelEffectorData(model.Model):
         self.scanning_image_name = scanning_image_name
         self.usb_port = usb_port
         self.compile_project_model = compile_project_model
+        self.known_file_size = known_file_size
+        self.warned_file_size = warned_file_size
+        self.warned_scanner_error = warned_scanner_error
+        self.warned_scanner_usb = warned_scanner_usb
+        self.warned_discspace = warned_discspace
 
         super(ScanningModelEffectorData, self).__init__()

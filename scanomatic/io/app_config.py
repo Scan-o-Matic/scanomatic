@@ -123,6 +123,12 @@ class Config(SingeltonOneInit):
         # LOAD CONFIG FROM FILE
         self._load_config_from_file()
 
+        # MAIL
+        self.mail_server = None
+        self.mail_user = None
+        self.mail_port = 0
+        self.mail_password = None
+
         self._set_pm_extras()
 
     def _load_config_from_file(self):
