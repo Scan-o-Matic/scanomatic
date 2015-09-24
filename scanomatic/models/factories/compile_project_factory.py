@@ -126,7 +126,7 @@ class CompileProjectFactory(AbstractModelFactory):
         path = path.rstrip("/")
 
         if path != os.path.abspath(path):
-            cls._LOGGER.error("Not an absolute path, aborting")
+            cls.logger.error("Not an absolute path, aborting")
             return {}
 
         if is_local is None:
