@@ -52,6 +52,13 @@ class CULTURE_SOURCE(Enum):
     Novel = 4
 
 
+class COMPILE_STATE(Enum):
+
+    NotInitialized = 0
+    Initialized = 1
+    Finalized = 2
+
+
 class ScanningAuxInfoModel(model.Model):
 
     def __init__(self, stress_level=-1, plate_storage=PLATE_STORAGE.Unknown, plate_age = -1.0,
@@ -143,7 +150,7 @@ class ScanningModelEffectorData(model.Model):
                  images_ready_for_first_pass_analysis=[],
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
                  compile_project_model=None, known_file_size=0, warned_file_size=False, warned_scanner_error=False,
-                 warned_scanner_usb=False, warned_discspace=False):
+                 warned_scanner_usb=False, warned_discspace=False, compilation_state=COMPILE_STATE.NotInitialized):
 
         self.current_cycle_step = current_cycle_step
         self.current_step_start_time = current_step_start_time
@@ -158,10 +165,12 @@ class ScanningModelEffectorData(model.Model):
         self.scanning_image_name = scanning_image_name
         self.usb_port = usb_port
         self.compile_project_model = compile_project_model
+        """:type : scanomatic.models.compile_project_model.CompileInstructionsModel"""
         self.known_file_size = known_file_size
         self.warned_file_size = warned_file_size
         self.warned_scanner_error = warned_scanner_error
         self.warned_scanner_usb = warned_scanner_usb
         self.warned_discspace = warned_discspace
+        self.compilation_state = compilation_state
 
         super(ScanningModelEffectorData, self).__init__()

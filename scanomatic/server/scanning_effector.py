@@ -23,7 +23,7 @@ import os
 
 import proc_effector
 from scanomatic.models.rpc_job_models import JOB_TYPE
-from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, ScanningModelEffectorData
+from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, COMPILE_STATE, ScanningModelEffectorData
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.compile_project_model import COMPILE_ACTION
@@ -172,21 +172,21 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_effector_data.current_cycle_step,
                 self._scanning_effector_data.previous_scan_cycle_start))
 
-            self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.AppendAndSpawnAnalysis \
-                if self._scanning_effector_data.current_image > 0 else COMPILE_ACTION.InitiateAndSpawnAnalysis
+            if self.current_image == 0:
+                self._scanning_effector_data.current_image = None
+            else:
+                self._scanning_effector_data.current_image = self._scanning_job.number_of_scans
 
-            self._do_request_project_compilation()
-
-            self._scanning_effector_data.current_image = None
+            self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.Wait
 
         if self._job_completed and self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.Wait:
             self._stopping = True
 
-            if self._scanning_effector_data.images_ready_for_first_pass_analysis:
+            if self._scanning_effector_data.compilation_state is not COMPILE_STATE.Finalized:
 
                 self._scanning_effector_data.compile_project_model.compile_action = \
-                    COMPILE_ACTION.AppendAndSpawnAnalysis if self._scanning_effector_data.current_image > 0 else \
-                        COMPILE_ACTION.InitiateAndSpawnAnalysis
+                    COMPILE_ACTION.AppendAndSpawnAnalysis if self._scanning_effector_data.compilation_state is \
+                    COMPILE_STATE.Initialized else COMPILE_ACTION.InitiateAndSpawnAnalysis
 
                 self._do_request_project_compilation()
 
@@ -379,6 +379,8 @@ Scan-o-Matic""")
 
         if current_size < TOO_SMALL_SIZE:
 
+            self._removed_current_image()
+
             if self._scanning_effector_data.warned_file_size is False:
                 self._scanning_effector_data.warned_file_size = True
                 self._mail("Scan-o-Matic: Project '{project_name}' got suspicious image",
@@ -397,9 +399,14 @@ All the best,
 
 Scan-o-Matic""")
 
+            return SCAN_STEP.TruncateIteration
+
         elif (self._scanning_effector_data.known_file_size and
                 abs(self._scanning_effector_data.known_file_size - current_size) / largest_known_size >
                 FILE_SIZE_DEVIATION_ALLOWANCE):
+
+            if (current_size < self._scanning_effector_data.known_file_size):
+                self._removed_current_image()
 
             if self._scanning_effector_data.warned_file_size is False:
                 self._scanning_effector_data.warned_file_size = True
@@ -420,6 +427,8 @@ All the best,
 
 Scan-o-Matic""")
 
+            return SCAN_STEP.TruncateIteration
+
         elif self._scanning_effector_data.warned_file_size is True:
 
             self._scanning_effector_data.warned_file_size = False
@@ -434,6 +443,14 @@ Scan-o-Matic""")
 
         self._scanning_effector_data.known_file_size = largest_known_size
         return SCAN_STEP.NextMinor
+
+    def _removed_current_image(self):
+
+            del self._scanning_effector_data.images_ready_for_first_pass_analysis[-1]
+            try:
+                os.remove(self._scanning_effector_data.current_image_path)
+            except OSError:
+                pass
 
     def _do_verify_discspace(self):
 
@@ -493,13 +510,20 @@ Scan-o-Matic""")
                 If it is the first request of compilation, the COMPILE_ACTION is set to initiate from
                 the setup-method.
         """
-        if self._scanning_job.fixture:
+        if self._scanning_job.fixture and self._scanning_effector_data.compilation_state is not COMPILE_STATE.Finalized:
 
             compile_job_id = self._rpc_client.create_compile_project_job(
                 compile_project_factory.CompileProjectFactory.to_dict(
                     self._scanning_effector_data.compile_project_model))
 
             if compile_job_id:
+
+                if self._scanning_effector_data.compile_project_model.compile_action in \
+                        (COMPILE_ACTION.AppendAndSpawnAnalysis, COMPILE_ACTION.InitiateAndSpawnAnalysis):
+
+                    self._scanning_effector_data.compilation_state = COMPILE_STATE.Finalized
+                else:
+                    self._scanning_effector_data.compilation_state = COMPILE_STATE.Initialized
 
                 # Images start at 0, next to last has index total - 2
                 next_image_is_last = self._scanning_job.number_of_scans - 2 == \
