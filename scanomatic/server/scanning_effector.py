@@ -70,7 +70,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanning_effector_data = ScanningModelEffectorData()
         self._rpc_client = rpc_client.get_client(admin=True)
         self._scanner = None
-        self._scan_cycle_step = SCAN_CYCLE.Wait
 
         self._scan_cycle = {
             SCAN_CYCLE.Wait: self._do_wait,
@@ -180,7 +179,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             self._scanning_effector_data.current_image = None
 
-        if self._job_completed:
+        if self._job_completed and self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.Wait:
             self._stopping = True
 
             if self._scanning_effector_data.images_ready_for_first_pass_analysis:
@@ -193,7 +192,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             raise StopIteration
         else:
-            return self._scan_cycle_step
+            return self._scanning_effector_data.current_cycle_step
 
     @property
     def _job_completed(self):
@@ -202,7 +201,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
     def _get_step_to_next_scan_cycle_step(self):
 
-        if self._scanning_effector_data.current_cycle_step.next_minor is self._scan_cycle_step:
+        if self._scanning_effector_data.current_cycle_step.next_minor is \
+                self._scanning_effector_data.current_cycle_step:
             return SCAN_STEP.NextMajor
         else:
             return SCAN_STEP.NextMinor
