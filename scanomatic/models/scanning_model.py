@@ -147,7 +147,6 @@ class ScanningModelEffectorData(model.Model):
     def __init__(self, current_cycle_step=SCAN_CYCLE.Wait, current_step_start_time=-1, current_image=-1,
                  current_image_path="", current_image_path_pattern="",
                  previous_scan_cycle_start=-1.0, current_scan_time=-1.0,
-                 images_ready_for_first_pass_analysis=[],
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
                  compile_project_model=None, known_file_size=0, warned_file_size=False, warned_scanner_error=False,
                  warned_scanner_usb=False, warned_discspace=False, compilation_state=COMPILE_STATE.NotInitialized):
@@ -161,7 +160,6 @@ class ScanningModelEffectorData(model.Model):
         self.current_scan_time = current_scan_time
         self.scanning_thread = scanning_thread
         self.scan_success = scan_success
-        self.images_ready_for_first_pass_analysis = images_ready_for_first_pass_analysis
         self.scanning_image_name = scanning_image_name
         self.usb_port = usb_port
         self.compile_project_model = compile_project_model

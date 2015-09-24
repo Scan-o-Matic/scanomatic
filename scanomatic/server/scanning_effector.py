@@ -111,8 +111,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
             compile_action=COMPILE_ACTION.Initiate,
-            images=self._scanning_effector_data.images_ready_for_first_pass_analysis,
             path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job))
+        self._scanning_effector_data.compile_project_model.images = []
 
         scan_project_file_path = os.path.join(
             self._project_directory,
@@ -446,7 +446,7 @@ Scan-o-Matic""")
 
     def _removed_current_image(self):
 
-            del self._scanning_effector_data.images_ready_for_first_pass_analysis[-1]
+            del self._scanning_effector_data.compile_project_model.images[-1]
             try:
                 os.remove(self._scanning_effector_data.current_image_path)
             except OSError:
@@ -535,7 +535,7 @@ Scan-o-Matic""")
                 else:
                     self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
                 self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
-                self._scanning_effector_data.images_ready_for_first_pass_analysis.clear()
+                self._scanning_effector_data.compile_project_model.images.clear()
                 self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
             else:
                 self._logger.warning("Failed to create a compile project job, refused by server")
@@ -587,7 +587,7 @@ Scan-o-Matic""")
         image_model = compile_project_factory.CompileImageFactory.create(
             index=index, time_stamp=time_stamp, path=path)
 
-        self._scanning_effector_data.images_ready_for_first_pass_analysis.append(image_model)
+        self._scanning_effector_data.compile_project_model.images.append(image_model)
 
     def _mail(self, title_template, message_template):
 
