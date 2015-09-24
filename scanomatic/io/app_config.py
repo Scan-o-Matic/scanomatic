@@ -63,7 +63,7 @@ class Config(SingeltonOneInit):
                     scanner=1),
                 "max": dict(
                     time_between_scans=None,
-                    number_of_scans=9999,
+                    number_of_scans=999999,
                     project_name=None,
                     directory_containing_project=None,
                     project_tag=None,
