@@ -180,6 +180,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._scanning_effector_data.current_image = None
 
         if self._job_completed:
+            self._stopping = True
+
+            if self._scanning_effector_data.images_ready_for_first_pass_analysis:
+
+                self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.AppendAndSpawnAnalysis
+                self._do_request_project_compilation()
+
             raise StopIteration
         else:
             return self._scan_cycle_step
