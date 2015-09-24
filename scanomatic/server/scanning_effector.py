@@ -173,7 +173,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_effector_data.current_cycle_step,
                 self._scanning_effector_data.previous_scan_cycle_start))
 
-            self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.AppendAndSpawnAnalysis
+            self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.AppendAndSpawnAnalysis \
+                if self._scanning_effector_data.current_image > 0 else COMPILE_ACTION.InitiateAndSpawnAnalysis
 
             self._do_request_project_compilation()
 
@@ -184,7 +185,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             if self._scanning_effector_data.images_ready_for_first_pass_analysis:
 
-                self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.AppendAndSpawnAnalysis
+                self._scanning_effector_data.compile_project_model.compile_action = \
+                    COMPILE_ACTION.AppendAndSpawnAnalysis if self._scanning_effector_data.current_image > 0 else \
+                        COMPILE_ACTION.InitiateAndSpawnAnalysis
+
                 self._do_request_project_compilation()
 
             raise StopIteration
