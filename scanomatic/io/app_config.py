@@ -63,7 +63,7 @@ class Config(SingeltonOneInit):
                     scanner=1),
                 "max": dict(
                     time_between_scans=None,
-                    number_of_scans=9999,
+                    number_of_scans=999999,
                     project_name=None,
                     directory_containing_project=None,
                     project_tag=None,
@@ -122,6 +122,12 @@ class Config(SingeltonOneInit):
 
         # LOAD CONFIG FROM FILE
         self._load_config_from_file()
+
+        # MAIL
+        self.mail_server = None
+        self.mail_user = None
+        self.mail_port = 0
+        self.mail_password = None
 
         self._set_pm_extras()
 
@@ -297,7 +303,7 @@ class Config(SingeltonOneInit):
     def get_scanner_name(self, scanner):
 
         if isinstance(scanner, int) and 0 <= scanner < self.number_of_scanners:
-            scanner = self.SCANNER_PATTERN.format(scanner)
+            scanner = self.SCANNER_PATTERN.format(scanner + 1)
         elif isinstance(scanner, str):
             numbers = map(int, re.findall(r'\d+', scanner))
             if len(numbers) != 1 or numbers[0] < 0 or numbers[0] >= self.number_of_scanners:

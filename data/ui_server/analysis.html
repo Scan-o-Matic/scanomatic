@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+	<link rel="stylesheet" type="text/css" href="style/main.css">
+    <script src="/js/jquery-2.1.4.min.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/analysis.js"></script>
+    <script>
+
+
+    </script>
+	<title>Scan-o-Matic</title>
+</head>
+<body>
+    <div id="cont">
+        <h1>Analysis</h1>
+        <div class="section-frame">
+            <form>
+                <div class="section">
+                    <label for="compilation">Compilation File</label>
+                    <input name="compilation" id="compilation" class="long">
+                    <div class="indented"><em>Unfortunately you have to type it yourself and needs to be absolute path</em></div>
+                </div>
+                <div class="section">
+                    <label for="compile-instructions">Compile Instructions File <em>(optional)</em></label>
+                    <input name="compile-instructions" id="compile-instructions" class="long">
+                    <div class="indented"><em>If supplied, you have to type it yourself and needs to be absolute path</em></div>
+                </div>
+                <div class="section">
+                    <label for="analysis-directory">Analysis output directory <em>(optional)</em></label>
+                    <input name="analysis-directory" id="analysis-directory" class="long">
+                    <div class="indented"><em>Local directory in folder containing compilation file to put analysis, defaults to 'analysis'</em></div>
+                </div>
+                <div class="section">
+                    <div class="onoffswitch chain">
+                            <input type="checkbox" name="chain" class="onoffswitch-checkbox chain" id="chain-analysis-request">
+                            <label class="onoffswitch-label chain" for="chain-analysis-request">
+                                <span class="onoffswitch-inner chain"></span>
+                                <span class="onoffswitch-switch chain"></span>
+                            </label>
+                    </div>
+                </div>
+                <button type="button" id="submit-button" onclick="Analyse(this);">Run Analysis</button>
+
+            </form>
+        </div>
+        <h2>Feature extraction</h2>
+        <div class="section-frame">
+            <form>
+
+                <label for="extract">Analysis folder</label>
+                <input name="extract" id="extract" class="long">
+                <div class="indented"><em>Unfortunately you have to type it yourself and needs to be absolute path</em></div>
+
+                <button type="button" id="submit-button2" onclick="Extract(this);">Run Feature Extraction</button>
+            </form>
+        </div>
+
+    </div>
+    <script>
+
+    </script>
+</body>
+</html>

@@ -9,10 +9,3 @@ canvas {
     width: 50px;
     padding: 2px;
 }
-
-label {
-	text-transform: uppercase;
-	letter-spacing: 100%;
-	font-size: 105%;
-	margin-right: 20px;
-}

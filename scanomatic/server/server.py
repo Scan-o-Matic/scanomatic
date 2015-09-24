@@ -174,13 +174,21 @@ class Server(object):
 
     def _wait_on_jobs(self):
         i = 0
-        while self._jobs.running:
+        max_wait_time = 180
+        start_time = time.time()
+        while self._jobs.running and time.time() - start_time < max_wait_time:
 
             if i == 0:
-                self.logger.info("Waiting for jobs to terminate")
+                self.logger.info("Waiting for jobs to terminate ({0:.2f}s waiting left)".format(max(
+                    0, max_wait_time - (time.time() - start_time))))
             i += 1
             i %= 30
             time.sleep(0.1)
+
+        if self._jobs.running:
+
+            self.logger.warning("Jobs will be abandoned, can't wait for ever..")
+
 
     def _get_job_id(self):
 
@@ -194,13 +202,14 @@ class Server(object):
         return job_id
 
     def get_job(self, job_id):
+        """Gets the rpc job model if any corresponding to the id
+        :type job_id: str
+        :rtype : scanomatic.models.rpc_job_models.RPCjobModel
+        """
 
         if job_id in self._queue:
             return self._queue[job_id]
-        elif job_id in self._jobs:
-            return self._jobs[job_id]
-        else:
-            return False
+        return self._jobs[job_id]
 
     def enqueue(self, model, job_type):
 

@@ -6,20 +6,31 @@ from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import AnalysisModel
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.compile_project_model import CompileInstructionsModel
+from scanomatic.models.features_model import FeaturesModel
+from scanomatic.models.factories.features_factory import FeaturesFactory
 
 class RPC_Job_Model_Factory(AbstractModelFactory):
 
     MODEL = rpc_job_models.RPCjobModel
     _SUB_FACTORIES = {ScanningModel: ScanningModelFactory,
                       AnalysisModel: AnalysisModelFactory,
-                      CompileInstructionsModel: CompileProjectFactory}
+                      CompileInstructionsModel: CompileProjectFactory,
+                      FeaturesModel: FeaturesFactory
+                      }
     STORE_SECTION_HEAD = ('id',)
     STORE_SECTION_SERIALIZERS = {
         'id': str,
         'type': rpc_job_models.JOB_TYPE,
         'status': rpc_job_models.JOB_STATUS,
+        'priority': int,
         'content_model': Model,
         'pid': int}
+
+    @classmethod
+    def create(cls, **settings):
+        """:rtype : scanomatic.models.rpc_job_models.RPCjobModel"""
+
+        return super(RPC_Job_Model_Factory, cls).create(**settings)
 
     @classmethod
     def _validate_pid(cls, model):
@@ -37,7 +48,6 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
     
             return True
 
-        #TODO: Add verification of uniqueness?
         return model.FIELD_TYPES.id
 
     @classmethod

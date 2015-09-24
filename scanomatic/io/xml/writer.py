@@ -403,6 +403,9 @@ class XML_Writer(object):
         tag_format = self._formatting.make_short_tag_version
         omit_compartments = self._formatting.exclude_compartments
         omit_measures = self._formatting.exclude_measures
+        slimmed_compartment = self._formatting.slim_compartment
+        slimmed_measure = self._formatting.slim_measure
+
         fh = self._file_handles['full']
         fhs = self._file_handles['slim']
         tag_gc = ('grid-cell', 'gc')[tag_format]
@@ -459,11 +462,14 @@ class XML_Writer(object):
 
                         for compartment_features in cell_features.data.itervalues():
 
+                            if compartment_features.index in omit_compartments:
+                                continue
+
                             compartment_name = tag_compartments[compartment_features.index]
 
-                            compartment_in_short = compartment_features.index not in omit_compartments
+                            compartment_in_slimmed = compartment_features.index is slimmed_compartment
 
-                            if compartment_in_short:
+                            if compartment_in_slimmed:
 
                                 fhs.write(self.XML_OPEN.format(compartment_name))
 
@@ -471,17 +477,20 @@ class XML_Writer(object):
 
                             for measure, value in compartment_features.data.iteritems():
 
+                                if measure in omit_measures:
+                                    continue
+
                                 m_string = self.XML_OPEN_CONT_CLOSE.format(
                                     tag_measures[measure],
                                     value)
 
-                                if compartment_in_short and measure not in omit_measures:
+                                if compartment_in_slimmed and measure is slimmed_measure:
 
                                     fhs.write(m_string)
 
                                 fh.write(m_string)
 
-                            if compartment_in_short:
+                            if compartment_in_slimmed:
 
                                 fhs.write(self.XML_CLOSE.format(compartment_name))
 

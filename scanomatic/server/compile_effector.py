@@ -1,6 +1,7 @@
 __author__ = 'martin'
 
 import os
+import time
 import proc_effector
 from scanomatic.models.compile_project_model import FIXTURE, COMPILE_ACTION
 from scanomatic.io.fixtures import Fixtures, FixtureSettings
@@ -9,7 +10,8 @@ from scanomatic.imageAnalysis import first_pass
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.rpc_job_models import JOB_TYPE
-
+import scanomatic.io.rpc_client as rpc_client
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 
 class CompileProjectEffector(proc_effector.ProcessEffector):
 
@@ -25,7 +27,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         super(CompileProjectEffector, self).__init__(job, logger_name="Compile Effector")
         self._compile_job = job.content_model
         """:type : scanomatic.models.compile_project_model.CompileInstructionsModel"""
-
+        self._job_label = self._compile_job.path
         self._image_to_analyse = 0
         self._fixture_settings = None
         self._compile_instructions_path = None
@@ -34,13 +36,19 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
     @property
     def progress(self):
         """:rtype : float"""
-        return self._image_to_analyse / float(len(self._compile_job.images))
+        if self._compile_job.images:
+            return self._image_to_analyse / float(len(self._compile_job.images))
+        return 0
 
     def setup(self, job):
 
+        self._logger.info("Setup called")
+
         self._compile_job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0].content_model
 
-        self._logger.info("Setup called")
+        if self._compile_job.images is None:
+            self._compile_job.images = tuple()
+
         self._logger.set_output_target(Paths().get_project_compile_log_path_from_compile_model(self._compile_job),
                                        catch_stdout=True, catch_stderr=True)
         self._logger.surpress_prints = True
@@ -56,6 +64,8 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
             self._stopping = True
         else:
             CompileProjectFactory.serializer.dump(self._compile_job, self._compile_instructions_path)
+
+        self._start_time = time.time()
 
     def _load_fixture(self):
 
@@ -74,7 +84,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
     def next(self):
 
-        if not self._allow_start:
+        if self.waiting:
             return super(CompileProjectEffector, self).next()
 
         if self._stopping:
@@ -88,10 +98,12 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         elif (self._compile_job.compile_action is COMPILE_ACTION.AppendAndSpawnAnalysis or
                 self._compile_job.compile_action is COMPILE_ACTION.InitiateAndSpawnAnalysis):
 
-            return self._spawn_analysis()
+            self._spawn_analysis()
+            self._stopping = True
+            raise StopIteration()
 
         else:
-
+            self._stopping = True
             raise StopIteration()
 
     def _analyse_image(self, compile_image_model):
@@ -107,7 +119,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
                 try:
                     image_model = first_pass.analyse(compile_image_model, self._fixture_settings)
-                    CompileImageAnalysisFactory.serializer.dump_to_filehandle(image_model, fh)
+                    CompileImageAnalysisFactory.serializer.dump_to_filehandle(image_model, fh, as_if_appending=True)
 
                 except first_pass.MarkerDetectionFailed:
 
@@ -124,7 +136,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
     @property
     def _compile_output_filehandle(self):
 
-        fh_mode = 'a'
+        fh_mode = 'r+w'
 
         if ((self._compile_job.compile_action is COMPILE_ACTION.Initiate or
                 self._compile_job.compile_action is COMPILE_ACTION.InitiateAndSpawnAnalysis) and
@@ -143,5 +155,13 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
     def _spawn_analysis(self):
 
-        self._logger.warning("Analysis spawning not implemented yet.")
-        return False
+        if rpc_client.get_client(admin=True).create_analysis_job(AnalysisModelFactory.to_dict(
+                AnalysisModelFactory.create(
+                    chain=True,
+                    compile_instructions=self._compile_instructions_path,
+                    compilation=self._compile_job.path))):
+            self._logger.info("Enqueued analysis")
+            return True
+        else:
+            self._logger.warning("Enquing analysis was refused")
+            return False

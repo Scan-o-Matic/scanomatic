@@ -41,7 +41,7 @@ class AnalysisModel(model.Model):
                  use_local_fixture=False,
                  stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
                  animate_focal=False, grid_images=None, grid_model=None, xml_model=None,
-                 image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum):
+                 image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum, chain=True):
 
         if grid_model is None:
             grid_model = GridModel()
@@ -63,13 +63,15 @@ class AnalysisModel(model.Model):
         self.xml_model = xml_model
         self.image_data_output_item = image_data_output_item
         self.image_data_output_measure = image_data_output_measure
+        self.chain = chain
 
         super(AnalysisModel, self).__init__()
 
 
 class GridModel(model.Model):
 
-    def __init__(self, use_utso=True, median_coefficient=0.99, manual_threshold=0.05, grid=None, gridding_offsets=None):
+    def __init__(self, use_utso=True, median_coefficient=0.99, manual_threshold=0.05, grid=None,
+                 gridding_offsets=None):
 
         self.use_utso = use_utso
         self.median_coefficient = median_coefficient
@@ -83,12 +85,13 @@ class GridModel(model.Model):
 class XMLModel(model.Model):
 
     def __init__(self, exclude_compartments=tuple(), exclude_measures=tuple(), make_short_tag_version=True,
-                 short_tag_measure=MEASURES.Sum):
+                 slim_measure=MEASURES.Sum, slim_compartment=COMPARTMENTS.Blob):
 
         self.exclude_compartments = exclude_compartments
         self.exclude_measures = exclude_measures
         self.make_short_tag_version = make_short_tag_version
-        self.short_tag_measure = short_tag_measure
+        self.slim_measure = slim_measure
+        self.slim_compartment = slim_compartment
 
         super(XMLModel, self).__init__()
 

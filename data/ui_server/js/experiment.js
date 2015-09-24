@@ -8,6 +8,9 @@ var project_path;
 var project_path_valid = false;
 var project_path_invalid_reason = '';
 var poetry = "If with science, you let your life deteriorate,\nat least do it right.\nDo it with plight\nand fill out this field before it's too late";
+var auxillary_info = {};
+var auxillary_info_time_data = {};
+var number_of_scans = -1;
 
 function validate_experiment() {
     set_validation_status("#project-path", project_path_valid, project_path_valid ? 'Everything is cool' : project_path_invalid_reason);
@@ -27,7 +30,7 @@ function validate_experiment() {
 function set_validation_status(dom_object, is_valid, tooltip) {
     var input = $(dom_object);
     var sib = input.next();
-    if (sib.attr("class") !== 'validation-icon')
+    if (sib.attr("class") !== 'icon-large')
         sib = $(get_validation_image()).insertAfter(input);
 
     if (is_valid)
@@ -110,6 +113,18 @@ function set_visible_plate_descriptions() {
 function cache_description(target) {
     var index = get_fixture_plate_from_obj($(target).parent());
     description_cache[index] = $(target).val();
+}
+
+function get_descriptions() {
+        var maxIndex = Math.max.apply(null,
+            Object.keys(description_cache).map(function (item) { return parseInt(item, 10);}));
+
+        var ret = [];
+
+        for (var i=0; i<maxIndex; i++)
+            ret[i] = description_cache[i + 1] !== undefined && fixture_plates[i].active ? description_cache[i + 1] : null;
+
+        return ret;
 }
 
 function set_active_plate(plate) {
@@ -212,18 +227,41 @@ function format_time(input) {
 
 function format_minutes(input) {
     interval = parseFloat($(input).val());
-    if (isNaN(interval) || interval < 7)
+    if (isNaN(interval) || interval <= 0)
         interval = 20.0;
+    else if (interval < 7)
+        interval = 7.0;
 
     $(input).val(interval + " minutes");
 }
 
+function get_pinnings() {
+    var ret = [];
+    $(".pinning").each(
+        function(i, e) {
+            var idx = $(e).find("input[type=hidden]").first().val() - 1;
+            if (fixture_plates[idx].active)
+                ret[idx] = $(e)
+                    .find(".pinning-selector").first().val()
+                    .match(/\d+/g).map(function (elem) {return parseInt(elem, 10);});
+            else
+                ret[idx] = null;
+        });
+
+    return ret;
+}
+
 function update_scans(paragraph) {
-    $(paragraph).html(Math.floor(get_duration_as_minutes() / interval) + 1);
+    number_of_scans = Math.floor(get_duration_as_minutes() / interval) + 1;
+    $(paragraph).html(number_of_scans);
 }
 
 function get_duration_as_minutes() {
     return (duration[0] * 24 + duration[1]) * 60 + duration[2];
+}
+
+function format_tag(input) {
+    //TODO: Do some checking of tags
 }
 
 function get_plate_selector(plate) {
@@ -231,10 +269,10 @@ function get_plate_selector(plate) {
                     "<label for='pinning-plate-" + plate.index + "'>Plate " + plate.index + "</label>" +
                     "<select id='pinning-plate-" + plate.index + "' class='pinning-selector' onchange='set_active_plate(this); validate_experiment();'>" +
                         "<option value=''>Not used</option>" +
-                        "<option value='96'>8 x 12 (96)</option>" +
-                        "<option value='384'>16 x 24 (384)</option>" +
-                        "<option value='1536' selected>32 x 48 (1536)</option>" +
-                        "<option value='6144'>64 x 96 (6144)</option>" +
+                        "<option value='(8, 12)'>8 x 12 (96)</option>" +
+                        "<option value='(16, 24)'>16 x 24 (384)</option>" +
+                        "<option value='(32, 48)' selected>32 x 48 (1536)</option>" +
+                        "<option value='(64, 96)'>64 x 96 (6144)</option>" +
 
                     "</select></div>"
 }
@@ -248,5 +286,66 @@ function get_description(index, description) {
 }
 
 function get_validation_image() {
-    return "<img src='' class='validation-icon'>";
+    return "<img src='' class='icon-large'>";
+}
+
+function setAux(input, key) {
+    auxillary_info[key] = $(input).val();
+}
+
+function setAuxTime(input, key, factor) {
+
+    if (auxillary_info_time_data[key] === undefined)
+        auxillary_info_time_data[key] = {}
+
+    auxillary_info_time_data[key][factor] = parseFloat($(input).val());
+
+    var total = 0;
+    for (var k in auxillary_info_time_data[key])
+        total += parseFloat(k) * auxillary_info_time_data[key][k];
+
+    auxillary_info[key] = total;
+}
+
+
+function StartExperiment(button) {
+    InputEnabled($(button), false);
+    var data = {
+            number_of_scans: number_of_scans,
+            time_between_scans: interval,
+            project_path: project_path,
+            project_tag: $("#project-tag").val(),
+            scanner_tag:$("#layout-tag").val(),
+            description: $("#project-description").val(),
+            email: $("#project-email").val(),
+            pinning_formats: get_pinnings(),
+            fixture: $("#current-fixture").val(),
+            scanner: parseInt($("#current-scanner").val()),
+            plate_descriptions: get_descriptions(),
+            auxillary_info: auxillary_info
+        }
+
+    $.ajax({
+        url: "/experiment?enqueue=1",
+        method: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(data) {
+            if (data.success) {
+                Dialogue("Experiment",
+                    "Experiment " + data.name +
+                        " enqueued, now go " +
+                        (true ?
+                            "get a cup of coffee and pat yourself on the back. Your work here is done." :
+                            "take a stroll outside to relax a bit. It seems you might need it."), "", "/status");
+            } else {
+                Dialogue("Analysis", "Analysis Refused", data.reason ? data.reason : "Unknown reason", false, button);
+            }
+        },
+        error: function(data) {
+            Dialogue("Analysis", "Error", "An error occurred processing request", false, button);
+        }
+    });
+
 }

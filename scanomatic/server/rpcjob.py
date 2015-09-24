@@ -42,14 +42,19 @@ class Fake(object):
         self._logger.info("Running ({0}) with pid {1}".format(
             self.is_alive(), job.pid))
 
+        self.abandoned = False
+
     @property
     def pipe(self):
+        """
+
+        :rtype : scanomatic.server.pipes._PipeEffector
+        """
         return self._parent_pipe
 
     @property
     def status(self):
 
-        # TODO: Make real status somehow
         s = self.pipe.status
         if 'id' not in s:
             s['id'] = self._job.id
@@ -57,12 +62,17 @@ class Fake(object):
             s['label'] = self._job.id
         if 'running' not in s:
             s['running'] = True
+        if 'progress' not in s:
+            s['progress'] = -1
         if 'pid' not in s:
             s['pid'] = os.getpid()
 
         return s
 
     def is_alive(self):
+
+        if self._job.pid is None:
+            return False
 
         return psutil.pid_exists(self._job.pid)
 
@@ -81,6 +91,7 @@ class RpcJob(Process, Fake):
         self._parent_pipe = pipes.ParentPipeEffector(parent_pipe)
         self._childPipe = child_pipe
         self._logger = logger.Logger("Job {0} Process".format(job.id))
+        self.abandoned = False
 
     def run(self):
 
@@ -110,6 +121,8 @@ class RpcJob(Process, Fake):
 
         _l.info("Starting main loop")
 
+        # TODO: See if this can be done better so that processes always will terminate
+
         while t.is_alive() and job_running:
 
             if pipe_effector.keepAlive:
@@ -120,15 +133,19 @@ class RpcJob(Process, Fake):
 
                 except StopIteration:
 
+                    _l.info("Next returned stop iteration, job is done.")
                     job_running = False
                     # pipe_effector.keepAlive = False
 
-                pipe_effector.sendStatus(pipe_effector.procEffector.status())
+                if t.is_alive():
+                    pipe_effector.sendStatus(pipe_effector.procEffector.status())
                 sleep(0.05)
 
             else:
+                _l.info("Job doesn't want to be kept alive")
                 sleep(0.29)
 
-        pipe_effector.sendStatus(pipe_effector.procEffector.status())
+        if t.is_alive():
+            pipe_effector.sendStatus(pipe_effector.procEffector.status())
         t.join(timeout=1)
         _l.info("Job completed")

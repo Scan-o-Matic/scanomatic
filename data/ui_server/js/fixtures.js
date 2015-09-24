@@ -445,17 +445,7 @@ function SaveFixture() {
         success: function(data) {
             if (data.success) {
                 $(selected_fixture_div_id).hide();
-                $('<div class=\'dialog\'></div>').appendTo("body")
-                        .prop("title", "Save")
-                        .html("<div><h3>Fixture '" + fixture_name + "' has been saved.</h3></div>")
-                        .dialog({modal: true,
-                                 buttons: {
-                                    Ok: function() {
-                                        $(this).dialog("close");
-                                    }
-                                 }
-                        });
-                get_fixtures();
+                Dialog('Fixture', 'Fixture "' + fixture_name + '" saved', '','?');
             } else {
                 if (data.reason)
                     context_warning = "Save refused: " + data.reason;
@@ -497,16 +487,8 @@ function RemoveFixture() {
                                     success: function(data) {
                                         if (data.success) {
                                             $(selected_fixture_div_id).hide();
-                                            $('<div class=\'dialog\'></div>').appendTo("body")
-                                                .prop("title", "Delete")
-                                                .html("<div><h3>Fixture '" + fixture_name + "' has been removed.</h3></div>")
-                                                .dialog({modal: true,
-                                                         buttons: {
-                                                            Ok: function() {
-                                                                $(this).dialog("close");
-                                                            }
-                                                         }});
-                                            get_fixtures();
+                                            Dialog('Fixture', 'Fixture "' + fixture_name + '" has been removed',
+                                                '(A backup is always stored in the fixture config folder)', '?');
 
                                         } else {
                                             console.log(data);

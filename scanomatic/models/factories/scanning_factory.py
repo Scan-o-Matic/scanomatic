@@ -3,6 +3,7 @@ from scanomatic.models.scanning_model import ScanningModel, ScannerOwnerModel, S
     CULTURE_SOURCE, PLATE_STORAGE
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
+from scanomatic.models.rpc_job_models import RPCjobModel
 
 import os
 import re
@@ -195,7 +196,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'description': str,
         'plate_descriptions': (tuple, PlateDescription),
         'email': str,
-        'pinning_formats': tuple,
+        'pinning_formats': (tuple, tuple, int),
         'fixture': str,
         'scanner': int,
         'scanner_hardware': str,
@@ -318,7 +319,7 @@ class ScanningModelFactory(AbstractModelFactory):
         if AbstractModelFactory._is_pinning_formats(model.pinning_formats):
             return True
 
-        return model.FIELD_TYPES.pinning_formarts
+        return model.FIELD_TYPES.pinning_formats
 
     @classmethod
     def _validate_fixture(cls, model):
@@ -388,7 +389,18 @@ class ScannerOwnerFactory(AbstractModelFactory):
         "expected_interval": float,
         "email": str,
         "warned": bool,
-        "owner": int,
-        "claiming": bool
-
+        "owner": RPCjobModel,
+        "claiming": bool,
+        "power": bool,
+        "reported": bool,
+        "last_on": int,
+        "last_off": int,
     }
+
+    @classmethod
+    def create(cls, **settings):
+        """
+         :rtype : scanomatic.models.scanning_model.ScannerOwnerModel
+        """
+
+        return super(ScannerOwnerFactory, cls).create(**settings)

@@ -2,13 +2,69 @@ from scanomatic.generics.model import Model
 import scanomatic.generics.decorators as decorators
 from scanomatic.io.logger import Logger
 
+import types
 import copy
+import warnings
 import os
 from enum import Enum
 from ConfigParser import ConfigParser, NoSectionError
 import cPickle
 from types import GeneratorType
 from collections import defaultdict
+
+
+def _get_coordinates_and_items_to_validate(structure, obj):
+
+    if obj is None or obj is False and structure[0] is not bool:
+        return
+
+    is_next_to_leaf = len(structure) == 2
+    iterator = obj.iteritems() if isinstance(obj, dict) else enumerate(obj)
+
+    try:
+        for pos, item in iterator:
+            if is_next_to_leaf and not (item is None or item is False and structure[1] is not bool):
+                yield (pos, ), item
+            elif not is_next_to_leaf:
+                for coord, validation_item in _get_coordinates_and_items_to_validate(structure[1:], item):
+                    yield (pos,) + coord, validation_item
+    except TypeError:
+        pass
+
+
+def _update_object_at(obj, coordinate, value):
+
+    if obj is None or obj is False:
+        warnings.warn("Can't update None using coordinate {0} and value '{1}'".format(coordinate, value))
+    if len(coordinate) == 1:
+        obj[coordinate[0]] = value
+    else:
+        _update_object_at(obj[coordinate[0]], coordinate[1:], value)
+
+
+def _toggleTuple(structure, obj, locked):
+
+    is_next_to_leaf = len(structure) == 2
+    if obj is None or obj is False and structure[0] is not bool:
+        return None
+    elif structure[0] is tuple:
+
+        if not locked:
+            obj = list(obj)
+        if not is_next_to_leaf:
+            for idx, item in enumerate(obj):
+                obj[idx] = _toggleTuple(structure[1:], item, locked)
+        if locked:
+            obj = tuple(obj)
+    elif not is_next_to_leaf:
+        try:
+            iterator = obj.iteritems() if isinstance(obj, dict) else enumerate(obj)
+            for pos, item in iterator:
+                obj[pos] = _toggleTuple(structure[1:], item, locked)
+
+        except TypeError:
+            pass
+    return obj
 
 
 class AbstractModelFactory(object):
@@ -115,11 +171,12 @@ class AbstractModelFactory(object):
             while True:
                 if factory in cls._SUB_FACTORIES.values():
                     try:
-                        return factory.MODEL(**obj)
-                    except TypeError:
+                        return factory.create(**obj)
+                    except TypeError, e:
                         cls.logger.warning("Could not use {0} on key {1} to create sub-class".format(
                             factory, obj
                         ))
+                        raise e
 
                 if index < len(factories):
                     factory = factories[index]
@@ -129,9 +186,9 @@ class AbstractModelFactory(object):
 
         # noinspection PyShadowingNames
         def _enforce_other(dtype, obj):
-            if obj is None:
-                return
-            elif issubclass(dtype, AbstractModelFactory):
+            if obj is None or obj is False and dtype is not bool:
+                return None
+            elif isinstance(dtype, type) and issubclass(dtype, AbstractModelFactory):
                 if isinstance(dtype, dtype.MODEL):
                     return obj
                 else:
@@ -153,21 +210,34 @@ class AbstractModelFactory(object):
                     return obj
 
         for key in keys:
-            if key not in settings or settings[key] is None:
-                continue
-            if isinstance(cls.STORE_SECTION_SERIALIZERS[key], tuple):
-                dtype_outer, dtype_inner = cls.STORE_SECTION_SERIALIZERS[key]
-                if dtype_outer in (tuple, list, set):
-                    if issubclass(dtype_inner, Model):
-                        settings[key] = dtype_outer(_enforce_model(cls._SUB_FACTORIES[dtype_inner], item)
-                                                    if isinstance(item, dict) else item for item in settings[key])
-                    else:
 
-                        settings[key] = dtype_outer(_enforce_other(dtype_inner, item) for item in settings[key])
+            if key not in settings or settings[key] is None or key not in cls.STORE_SECTION_SERIALIZERS:
+                continue
+
+            if isinstance(cls.STORE_SECTION_SERIALIZERS[key], tuple):
+
+                ref_settings = copy.deepcopy(settings[key])
+                settings[key] = _toggleTuple(cls.STORE_SECTION_SERIALIZERS[key], settings[key], False)
+                dtype_leaf = cls.STORE_SECTION_SERIALIZERS[key][-1]
+                for coord, item in _get_coordinates_and_items_to_validate(cls.STORE_SECTION_SERIALIZERS[key],
+                                                                          ref_settings):
+
+                    if isinstance(dtype_leaf, type) and issubclass(dtype_leaf, Model):
+                        _update_object_at(settings[key], coord, _enforce_model(cls._SUB_FACTORIES[dtype_leaf], item))
+
+                    else:
+                        _update_object_at(settings[key], coord, _enforce_other(dtype_leaf, item))
+
+                settings[key] = _toggleTuple(cls.STORE_SECTION_SERIALIZERS[key], settings[key], True)
+
+            elif isinstance(cls.STORE_SECTION_SERIALIZERS[key], types.FunctionType):
+
+                settings[key] = cls.STORE_SECTION_SERIALIZERS[key](enforce=settings[key])
 
             elif not isinstance(settings[key], cls.STORE_SECTION_SERIALIZERS[key]):
+
                 dtype = cls.STORE_SECTION_SERIALIZERS[key]
-                if issubclass(dtype, Model) and isinstance(settings[key], dict):
+                if isinstance(dtype, type) and issubclass(dtype, Model) and isinstance(settings[key], dict):
                     settings[key] = _enforce_model(cls._SUB_FACTORIES[dtype], settings[key])
                 else:
                     settings[key] = _enforce_other(dtype, settings[key])
@@ -185,9 +255,7 @@ class AbstractModelFactory(object):
     def copy(cls, model):
 
         if cls._verify_correct_model(model):
-            return cls.serializer.load_serialized_object(
-                copy.deepcopy(
-                    tuple(cls.serializer.serialize(model))))[0]
+            return cls.serializer.load_serialized_object(copy.deepcopy(cls.serializer.serialize(model)))[0]
 
     @classmethod
     def copy_iterable_of_model(cls, models):
@@ -203,18 +271,30 @@ class AbstractModelFactory(object):
 
         model_as_dict = dict(**model)
         for k in model_as_dict:
-            if isinstance(model_as_dict[k], Model):
+
+            if k in cls.STORE_SECTION_SERIALIZERS and isinstance(cls.STORE_SECTION_SERIALIZERS[k], types.FunctionType):
+
+                model_as_dict[k] = cls.STORE_SECTION_SERIALIZERS[k](serialize=model_as_dict[k])
+
+            elif isinstance(model_as_dict[k], Model):
+
                 if type(model_as_dict[k]) in cls._SUB_FACTORIES:
                     model_as_dict[k] = cls._SUB_FACTORIES[type(model_as_dict[k])].to_dict(model_as_dict[k])
                 else:
                     model_as_dict[k] = AbstractModelFactory.to_dict(model_as_dict[k])
-            elif isinstance(cls.STORE_SECTION_SERIALIZERS[k], tuple):
-                dtype_outer, dtype_inner = cls.STORE_SECTION_SERIALIZERS[k]
-                if dtype_outer in (tuple, list, set) and issubclass(dtype_inner, Model):
-                    model_as_dict[k] = dtype_outer(
-                        cls._SUB_FACTORIES[dtype_inner].to_dict(item)
-                        if isinstance(item, Model) and dtype_inner in cls._SUB_FACTORIES else item
-                        for item in model_as_dict[k])
+
+            elif k in cls.STORE_SECTION_SERIALIZERS and isinstance(cls.STORE_SECTION_SERIALIZERS[k], tuple):
+
+                dtype = cls.STORE_SECTION_SERIALIZERS[k]
+                dtype_leaf = dtype[-1]
+                model_as_dict[k] = _toggleTuple(dtype, model_as_dict[k], False)
+                if isinstance(dtype_leaf, type) and issubclass(dtype_leaf, Model):
+                    for coord, item in _get_coordinates_and_items_to_validate(dtype,
+                                                                              model_as_dict[k]):
+
+                        _update_object_at(model_as_dict[k], coord, cls._SUB_FACTORIES[dtype_leaf].to_dict(item))
+
+                model_as_dict[k] = _toggleTuple(dtype, model_as_dict[k], True)
 
         return model_as_dict
 
@@ -258,6 +338,18 @@ class AbstractModelFactory(object):
             for attr, val in default_model:
                 if fields is None or getattr(default_model.FIELD_TYPES, attr) in fields:
                     setattr(model, attr, val)
+
+    @classmethod
+    def populate_with_default_submodels(cls, obj):
+        """Keys missing models/having None will get default instances of that field if possible
+        :param obj: dict | scanomatic.generics.model.Model
+        """
+
+        for key in cls.STORE_SECTION_SERIALIZERS:
+
+            if (key not in obj or obj[key] is None) and cls.STORE_SECTION_SERIALIZERS[key] in cls._SUB_FACTORIES:
+
+                obj[key] = cls._SUB_FACTORIES[cls.STORE_SECTION_SERIALIZERS[key]].default_model
 
     @classmethod
     def clamp(cls, model):
@@ -329,7 +421,7 @@ class AbstractModelFactory(object):
         # noinspection PyBroadException
         try:
 
-            return all(pinning_format is None or _is_pinning_format(pinning_format) for
+            return all(pinning_format is None or pinning_format is False or _is_pinning_format(pinning_format) for
                        pinning_format in pinning_formats)
 
         except:
@@ -497,7 +589,7 @@ class _SectionsLink(object):
         enumerator = ''
         my_section = section_name
         sections = set(s.section if hasattr(s, 'section') else s for s in _SectionsLink._CONFIGS[parser.id])
-
+        sections = sections.union(parser.sections())
         while my_section in sections:
             my_section = section.format(section_name, " #{0}".format(enumerator) if enumerator else enumerator)
             if my_section in sections:
@@ -565,6 +657,7 @@ class LinkerConfigParser(object, ConfigParser):
         return self._nonzero if hasattr(self, '_nonzero') else len(self.sections())
 
 
+
 class MockConfigParser(object):
 
     def __init__(self, serialized_object):
@@ -613,16 +706,30 @@ class Serializer(object):
 
         return False
 
-    def dump_to_filehandle(self, model, filehandle):
+    def dump_to_filehandle(self, model, filehandle, as_if_appending=False):
 
         if self._has_section_head_and_is_valid(model):
 
             section = self.get_section_name(model)
             with LinkerConfigParser(id=id(filehandle), clear_links=False, allow_no_value=True) as conf:
 
+                if 'r' in filehandle.mode:
+                    fh_pos = filehandle.tell()
+                    filehandle.seek(0)
+                    conf.readfp(filehandle)
+                    if as_if_appending:
+                        filehandle.seek(0, 2)
+                    else:
+                        filehandle.seek(fh_pos)
+
                 section = _SectionsLink.get_next_free_section(conf, section)
                 _SectionsLink.add_section_for_non_link(conf, section)
                 self.serialize_into_conf(model, conf, section)
+
+                if 'r' in filehandle.mode:
+                    filehandle.seek(0)
+                    filehandle.truncate()
+
                 conf.write(filehandle)
             return True
         return False
@@ -674,13 +781,12 @@ class Serializer(object):
             except AttributeError:
 
                 try:
-
+                    # TODO: Should really use datastructure
                     for item in obj:
                         sections.append(SerializationHelper.unserialize(item, object).section)
                 except (AttributeError, TypeError):
                     pass
 
-        # serializers = self._factory.STORE_SECTION_SERIALIZERS
         sections = [self.get_section_name(model)]
         index = 0
         while index < len(sections):
@@ -738,22 +844,13 @@ class Serializer(object):
 
                 if isinstance(dtype, tuple):
 
-                    if dtype[0] in (list, tuple):
+                    value = SerializationHelper.unserialize_structure(value, dtype, conf)
 
-                        if issubclass(dtype[1], Model):
+                elif isinstance(dtype, types.FunctionType):
 
-                            value = dtype[0](
-                                SerializationHelper.unserialize(item, _SectionsLink).retrieve_model(conf)
-                                if item is not None else None for item
-                                in SerializationHelper.unserialize(value, dtype[0]))
+                    value = SerializationHelper.unserialize(value, dtype)
 
-                        else:
-
-                            value = dtype[0](SerializationHelper.unserialize(item, dtype[1]) if item is not None else
-                                             None for item in
-                                             SerializationHelper.unserialize(value, dtype[0]))
-
-                elif issubclass(dtype, Model) and value is not None:
+                elif isinstance(dtype, type) and issubclass(dtype, Model) and value is not None:
 
                     obj = SerializationHelper.unserialize(value, _SectionsLink)
                     if isinstance(obj, _SectionsLink):
@@ -782,7 +879,7 @@ class Serializer(object):
         with LinkerConfigParser(id=id(model)) as conf:
 
             conf = self.serialize_into_conf(model, conf, self.get_section_name(model))
-            return ((section, {k: v for k, v in conf.items(section)}) for section in conf.sections())
+            return tuple((section, {k: v for k, v in conf.items(section)}) for section in conf.sections())
 
     def serialize_into_conf(self, model, conf, section):
 
@@ -803,43 +900,34 @@ class Serializer(object):
     @staticmethod
     def _serialize_item(model, key, dtype, conf, section, factory):
 
-        value = model[key]
+        obj = copy.deepcopy(model[key])
 
         if isinstance(dtype, tuple):
 
-            dtype_outer, dtype_inner = dtype
-            if dtype_outer in (list, tuple, set):
-
-                if issubclass(dtype_inner, Model):
-                    links = []
-
-                    for item in value:
-                        if item is not None:
-                            subfactory = factory.get_sub_factory(item)
-                            links.append(_SectionsLink.set_link(subfactory, item, conf))
-                            subfactory.serializer.serialize_into_conf(item, conf, _SectionsLink.get_link(item).section)
-                        else:
-                            links.append(item)
-
-                    conf.set(section, key, SerializationHelper.serialize(
-                        (SerializationHelper.serialize(link, _SectionsLink) for link in links), dtype_outer))
+            obj = _toggleTuple(dtype, obj, False)
+            dtype_leaf = dtype[-1]
+            for coord, item in _get_coordinates_and_items_to_validate(dtype, model[key]):
+                if isinstance(dtype_leaf, type) and issubclass(dtype_leaf, Model):
+                    subfactory = factory.get_sub_factory(item)
+                    link = _SectionsLink.set_link(subfactory, item, conf)
+                    subfactory.serializer.serialize_into_conf(item, conf, link.section)
+                    _update_object_at(obj, coord, SerializationHelper.serialize(link, _SectionsLink))
                 else:
-                    conf.set(section, key, SerializationHelper.serialize(
-                        (SerializationHelper.serialize(item, dtype_inner) if item is not None else None
-                         for item in value),
-                        dtype_outer))
+                    _update_object_at(obj, coord, SerializationHelper.serialize(item, dtype_leaf))
 
-        elif issubclass(dtype, Model) and value is not None:
+            conf.set(section, key, SerializationHelper.serialize_structure(obj, dtype))
 
-            subfactory = factory.get_sub_factory(value)
+        elif isinstance(dtype, type) and issubclass(dtype, Model) and obj is not None:
 
-            conf.set(section, key, SerializationHelper.serialize(_SectionsLink.set_link(subfactory, value, conf),
+            subfactory = factory.get_sub_factory(obj)
+
+            conf.set(section, key, SerializationHelper.serialize(_SectionsLink.set_link(subfactory, obj, conf),
                                                                  _SectionsLink))
             subfactory.serializer.serialize_into_conf(
-                value, conf, _SectionsLink.get_link(value).section)
+                obj, conf, _SectionsLink.get_link(obj).section)
 
         else:
-            conf.set(section, key, SerializationHelper.serialize(value, dtype))
+            conf.set(section, key, SerializationHelper.serialize(obj, dtype))
 
     def get_section_name(self, model):
 
@@ -873,12 +961,26 @@ class SerializationHelper(object):
         raise Exception("This class is static, can't be instantiated")
 
     @staticmethod
+    def serialize_structure(obj, structure):
+
+        if obj is None:
+            return None
+
+        elif len(structure) == 1:
+            return SerializationHelper.serialize(
+                obj, structure[0] if not isinstance(structure[0], type) or not issubclass(structure[0], Model)
+                else _SectionsLink)
+        else:
+            return SerializationHelper.serialize(
+                (SerializationHelper.serialize_structure(item, structure[1:]) for item in obj), structure[0])
+
+    @staticmethod
     def serialize(obj, dtype):
 
         if obj is None:
             return None
 
-        elif issubclass(dtype, Enum):
+        elif isinstance(dtype, type) and issubclass(dtype, Enum):
 
             return obj.name
 
@@ -888,39 +990,85 @@ class SerializationHelper(object):
         elif dtype in (int, float, str, bool):
 
             return str(obj)
-
+        elif isinstance(dtype, types.FunctionType):
+            return cPickle.dumps(dtype(serialize=obj))
         else:
             if not isinstance(obj, dtype):
                 obj = dtype(obj)
             return cPickle.dumps(obj)
 
     @staticmethod
-    def unserialize(obj, dtype):
+    def isvalidtype(o, dtype):
+        return isinstance(o, dtype) or not any({type(o), dtype}.difference((list, tuple)))
 
-        if obj is None:
+    @staticmethod
+    def unserialize_structure(obj, structure, conf):
+
+        if obj is None or obj is False and structure[0] is not bool:
             return None
-        elif issubclass(dtype, Enum):
+        elif len(structure) == 1:
+            if isinstance(structure[0], type) and issubclass(structure[0], Model):
+                while not isinstance(obj, _SectionsLink) and obj is not None:
+                    obj = SerializationHelper.unserialize(obj, _SectionsLink)
+
+                if obj:
+                    return obj.retrieve_model(conf)
+                return obj
+            else:
+                return SerializationHelper.unserialize(obj, structure[0])
+        else:
+            outer_obj = -1
+            while outer_obj is not None and not SerializationHelper.isvalidtype(outer_obj, structure[0]):
+                outer_obj = SerializationHelper.unserialize(obj, structure[0])
+            if outer_obj is None:
+                return None
+            return SerializationHelper.unserialize(
+                (SerializationHelper.unserialize_structure(item, structure[1:], conf)
+                 for item in outer_obj), structure[0])
+
+    @staticmethod
+    def unserialize(serialized_obj, dtype):
+
+        """
+
+        :type serialized_obj: str | generator
+        """
+        if serialized_obj is None or serialized_obj is False and dtype is not bool:
+            return None
+        elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
+            return serialized_obj
+        if SerializationHelper.isvalidtype(serialized_obj, dtype):
+            return serialized_obj
+        elif isinstance(dtype, type) and issubclass(dtype, Enum):
             try:
-                return dtype[obj]
-            except:
+                return dtype[serialized_obj]
+            except (KeyError, SyntaxError):
                 return None
         elif dtype is bool:
             try:
-                return eval(obj)
-            except:
-                return None
+                return bool(eval(serialized_obj))
+            except (NameError, AttributeError, SyntaxError):
+                return False
         elif dtype in (int, float, str):
             try:
-                return dtype(obj)
-            except:
+                return dtype(serialized_obj)
+            except (TypeError, ValueError):
                 try:
-                    return eval(obj)
-                except:
+                    return dtype(eval(serialized_obj))
+                except (SyntaxError, NameError, AttributeError, TypeError, ValueError):
                     return None
+        elif isinstance(dtype, types.FunctionType):
+            try:
+                return dtype(enforce=cPickle.loads(serialized_obj))
+            except cPickle.PickleError:
+                return None
+
+        elif isinstance(serialized_obj, types.GeneratorType):
+            return dtype(serialized_obj)
         else:
             try:
-                return cPickle.loads(obj)
-            except:
+                return cPickle.loads(serialized_obj)
+            except (cPickle.PickleError, TypeError):
                 return None
 
     @staticmethod

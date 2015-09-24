@@ -2,11 +2,13 @@ __version__ = "0.9991"
 
 import scanomatic.generics.model as model
 from scanomatic.generics.enums import MinorMajorStepEnum
+from scanomatic.generics.decorators import class_property
 from enum import Enum
 
 
 class SCAN_CYCLE(MinorMajorStepEnum):
 
+    Unknown = -1
     Wait = 0
     RequestScanner = 10
     WaitForUSB = 11
@@ -15,7 +17,13 @@ class SCAN_CYCLE(MinorMajorStepEnum):
     WaitForScanComplete = 21
     ReportScanError = 22
     RequestScannerOff = 30
-    RequestFirstPassAnalysis = 40
+    VerifyImageSize = 41
+    VerifyDiskspace = 42
+    RequestProjectCompilation = 50
+
+    @class_property
+    def default(cls):
+        return cls.Unknown
 
 
 class SCAN_STEP(Enum):
@@ -23,6 +31,7 @@ class SCAN_STEP(Enum):
     Wait = 0
     NextMinor = 1
     NextMajor = 2
+    TruncateIteration = 3
 
 
 class PLATE_STORAGE(Enum):
@@ -41,6 +50,13 @@ class CULTURE_SOURCE(Enum):
     Fridge = 2
     Shipped = 3
     Novel = 4
+
+
+class COMPILE_STATE(Enum):
+
+    NotInitialized = 0
+    Initialized = 1
+    Finalized = 2
 
 
 class ScanningAuxInfoModel(model.Model):
@@ -130,24 +146,29 @@ class ScanningModelEffectorData(model.Model):
 
     def __init__(self, current_cycle_step=SCAN_CYCLE.Wait, current_step_start_time=-1, current_image=-1,
                  current_image_path="", current_image_path_pattern="",
-                 project_time=-1.0, previous_scan_cycle_start=-1.0, current_scan_time=-1.0,
-                 images_ready_for_first_pass_analysis=[],
+                 previous_scan_cycle_start=-1.0, current_scan_time=-1.0,
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
-                 compile_project_model=None):
+                 compile_project_model=None, known_file_size=0, warned_file_size=False, warned_scanner_error=False,
+                 warned_scanner_usb=False, warned_discspace=False, compilation_state=COMPILE_STATE.NotInitialized):
 
         self.current_cycle_step = current_cycle_step
         self.current_step_start_time = current_step_start_time
         self.current_image = current_image
         self.current_image_path = current_image_path
         self.current_image_path_pattern = current_image_path_pattern
-        self.project_time = project_time
         self.previous_scan_cycle_start = previous_scan_cycle_start
         self.current_scan_time = current_scan_time
         self.scanning_thread = scanning_thread
         self.scan_success = scan_success
-        self.images_ready_for_first_pass_analysis = images_ready_for_first_pass_analysis
         self.scanning_image_name = scanning_image_name
         self.usb_port = usb_port
         self.compile_project_model = compile_project_model
+        """:type : scanomatic.models.compile_project_model.CompileInstructionsModel"""
+        self.known_file_size = known_file_size
+        self.warned_file_size = warned_file_size
+        self.warned_scanner_error = warned_scanner_error
+        self.warned_scanner_usb = warned_scanner_usb
+        self.warned_discspace = warned_discspace
+        self.compilation_state = compilation_state
 
         super(ScanningModelEffectorData, self).__init__()

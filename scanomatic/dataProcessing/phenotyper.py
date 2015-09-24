@@ -440,6 +440,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         def _linReg2(*args):
             return linregress(args[:linRegSize], args[linRegSize:])[0::4]
 
+        if self._timeObject.shape[0] - (self._linRegSize - 1) <= 0:
+            self._logger.error(
+                "Refusing phenotype extractions since number of scans are less than used in the linear regression")
+            return
+
         timesStrided = np.lib.stride_tricks.as_strided(
             self._timeObject,
             shape=(self._timeObject.shape[0] - (self._linRegSize - 1),

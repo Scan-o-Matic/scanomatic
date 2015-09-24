@@ -1,7 +1,7 @@
 __author__ = 'martin'
 
 import time
-from flask import Flask, request, send_from_directory, redirect, jsonify, abort
+from flask import Flask, request, send_from_directory, redirect, jsonify, abort, render_template
 import webbrowser
 from threading import Thread
 from socket import error
@@ -25,6 +25,11 @@ from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.models.compile_project_model import COMPILE_ACTION
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.models.factories.features_factory import FeaturesFactory
+from scanomatic.models.factories.settings_factories import ApplicationSettingsFactory
 
 _url = None
 _logger = Logger("UI-server")
@@ -35,10 +40,6 @@ _TOO_LARGE_GRAYSCALE_AREA = 300000
 class SaveActions(Enum):
     Create = 0
     Update = 1
-
-
-def _launch_scanomatic_rpc_server():
-    Popen(["scan-o-matic_server"])
 
 
 def _allowed_image(ext):
@@ -159,11 +160,11 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     global _url
 
-    app = Flask("Scan-o-Matic UI")
+    app = Flask("Scan-o-Matic UI", template_folder=Paths().ui_templates)
     rpc_client = get_client(admin=True)
 
     if rpc_client.local and rpc_client.online is False:
-        _launch_scanomatic_rpc_server()
+        rpc_client.launch_local()
 
     if port is None:
         port = Config().ui_port
@@ -204,8 +205,129 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if js:
             return send_from_directory(Paths().ui_js, js)
 
+    @app.route("/job/<job_id>/<job_command>")
+    def _communicate_with_job(job_id="", job_command=""):
+
+        if rpc_client.online:
+            val = rpc_client.communicate(job_id, job_command)
+            return jsonify(success=val, reason=None if val else "Refused by server")
+
+        return jsonify(success=False, reason="Server offline")
+
+    @app.route("/status")
+    @app.route("/status/<status_type>")
+    def _status(status_type=""):
+
+        if status_type != "" and not rpc_client.online:
+            return jsonify(sucess= False, reason= "Server offline")
+
+        if status_type == 'queue':
+            return jsonify(success=True, data=rpc_client.get_queue_status())
+        elif 'scanner' in status_type:
+            return jsonify(success=True, data=rpc_client.get_scanner_status())
+        elif 'job' in status_type:
+            return jsonify(success=True, data=rpc_client.get_job_status())
+        elif status_type == 'server':
+            return jsonify(success=True, data=rpc_client.get_status())
+        elif status_type == "":
+
+            return send_from_directory(Paths().ui_root, Paths().ui_status_file)
+        else:
+            return jsonify(succes=False, reason='Unknown status request')
+
+    @app.route("/config", methods=['get', 'post'])
+    def _config():
+
+        action = request.args.get("action")
+        if action:
+            return jsonify(success=False, reason="Not implemented")
+
+        try:
+            settings_model = ApplicationSettingsFactory.serializer.load(Paths().config_main_app)[0]
+        except IndexError:
+            settings_model = ApplicationSettingsFactory.create()
+
+        return render_template(Paths().ui_settings_template, **settings_model)
+
+    @app.route("/analysis", methods=['get', 'post'])
+    def _analysis():
+
+        action = request.args.get("action")
+
+        if action:
+            if action == 'analysis':
+
+                model = AnalysisModelFactory.create(
+                    compilation=request.values.get("compilation"),
+                    compile_instructions=request.values.get("compile_instructions"),
+                    output_directory=request.values.get("output_directory"),
+                    chain=request.values.get("chain"))
+
+                success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(AnalysisModelFactory.to_dict(model))
+
+                if success:
+                    return jsonify(success=True)
+                else:
+                    return jsonify(success=False, reason="The following has bad data: {0}".format(
+                        ", ".join(AnalysisModelFactory.get_invalid_names(model))))
+
+            elif action == 'extract':
+
+                model = FeaturesFactory.create(analysis_directory=request.values.get("analysis_directory"))
+
+                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(FeaturesFactory.to_dict(model))
+
+                if success:
+                    return jsonify(success=success)
+                else:
+                    return jsonify(success=success, reason="The follwoing has bad data: {0}".format(", ".join(
+                        FeaturesFactory.get_invalid_names(model))) if not FeaturesFactory.validate(model) else
+                        "Refused by the server, check logs.")
+
+            else:
+                return jsonify(success=False, reason='Action "{0}" not reconginzed'.format(action))
+        return send_from_directory(Paths().ui_root, Paths().ui_analysis_file)
+
     @app.route("/experiment", methods=['get', 'post'])
     def _experiment():
+
+        if request.args.get("enqueue"):
+            project_name = os.path.basename(os.path.abspath(request.json.get("project_path")))
+            project_root = os.path.dirname(request.json.get("project_path")).replace(
+                'root', Paths().experiment_root)
+
+            plate_descriptions = request.json.get("plate_descriptions")
+            if all(isinstance(p, str) or isinstance(p, unicode) or p is None for p in plate_descriptions):
+                plate_descriptions = tuple({"index": i, "description": p} for i, p in enumerate(plate_descriptions))
+
+            m = ScanningModelFactory.create(
+                 number_of_scans=request.json.get("number_of_scans"),
+                 time_between_scans=request.json.get("time_between_scans"),
+                 project_name=project_name,
+                 directory_containing_project=project_root,
+                 project_tag=request.json.get("project_tag"),
+                 scanner_tag=request.json.get("scanner_tag"),
+                 description=request.json.get("description"),
+                 email=request.json.get("email"),
+                 pinning_formats=request.json.get("pinning_formats"),
+                 fixture=request.json.get("fixture"),
+                 scanner=request.json.get("scanner"),
+                 scanner_hardware=request.json.get("scanner_hardware") if "scanner_hardware" in request.json else "EPSON V700",
+                 mode=request.json.get("mode") if "mode" in request.json else "TPU",
+                 plate_descriptions=plate_descriptions,
+                 auxillary_info=request.json.get("auxillary_info"),
+            )
+
+            validates = ScanningModelFactory.validate(m)
+
+            job_id = rpc_client.create_scanning_job(ScanningModelFactory.to_dict(m))
+
+            if validates and job_id:
+                return jsonify(success=True, name=project_name)
+            else:
+                return jsonify(success=False, reason="The following has bad data: {0}".format(
+                    ", ".join(ScanningModelFactory.get_invalid_names(m))) if not validates else
+                    "Job refused, probably scanner can't be reached, check connection.")
 
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
 
@@ -257,16 +379,20 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             fixture=request.values.get("fixture")
             _logger.info("Attempting to compile on path {0}, as {1} fixture{2}".format(
                 path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture)))
-            return jsonify(success=rpc_client.create_compile_project_job(
+
+            job_id = rpc_client.create_compile_project_job(
                 CompileProjectFactory.dict_from_path_and_fixture(
-                    path, fixture=fixture , is_local=is_local)))
+                    path, fixture=fixture, is_local=is_local,
+                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if request.values.get('chain') else COMPILE_ACTION.Initiate))
+
+            return jsonify(success=True if job_id else False, reason="" if job_id else "Invalid parameters")
 
         return send_from_directory(Paths().ui_root, Paths().ui_compile_file)
 
     @app.route("/scanners/<scanner_query>")
     def _scanners(scanner_query=None):
         if scanner_query is None or scanner_query.lower() == 'all':
-            return  jsonify(scanners=rpc_client.get_scanner_status(), success=True)
+            return jsonify(scanners=rpc_client.get_scanner_status(), success=True)
         elif scanner_query.lower() == 'free':
             return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()},
                            success=True)

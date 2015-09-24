@@ -13,7 +13,8 @@ class GridModelFactory(AbstractModelFactory):
         'use_utso': bool,
         "median_coefficient": float,
         "manual_threshold": float,
-        "gridding_offsets": list
+        "gridding_offsets": list,
+        "grid": (tuple, tuple, float)
     }
 
     @classmethod
@@ -63,11 +64,16 @@ class XMLModelFactory(AbstractModelFactory):
         "exclude_compartments": (tuple, analysis_model.COMPARTMENTS),
         "exclude_measures": (tuple, analysis_model.MEASURES),
         "make_short_tag_version": bool,
-        "short_tag_measure": analysis_model.MEASURES
+        "slim_measure": analysis_model.MEASURES,
+        "slim_compartment": analysis_model.COMPARTMENTS
     }
 
     @classmethod
     def _validate_exclude_compartments(cls, model):
+        """
+
+        :type model: scanomatic.models.analysis_model.XMLModel
+        """
 
         if (cls._is_tuple_or_list(model.exclude_compartments) and
                 all(compartment in analysis_model.COMPARTMENTS for compartment in model.exclude_compartments)):
@@ -76,6 +82,10 @@ class XMLModelFactory(AbstractModelFactory):
 
     @classmethod
     def _validate_exclude_measures(cls, model):
+        """
+
+        :type model: scanomatic.models.analysis_model.XMLModel
+        """
 
         if (cls._is_tuple_or_list(model.exclude_measures) and
                 all(measure in analysis_model.MEASURES for measure in model.exclude_measures)):
@@ -84,17 +94,34 @@ class XMLModelFactory(AbstractModelFactory):
 
     @classmethod
     def _validate_make_short_tag_version(cls, model):
+        """
+
+        :type model: scanomatic.models.analysis_model.XMLModel
+        """
 
         if isinstance(model.make_short_tag_version, bool):
             return True
         return model.FIELD_TYPES.make_short_tag_version
 
     @classmethod
-    def _validate_short_tag_measure(cls, model):
+    def _validate_slim_measure(cls, model):
+        """
 
-        if model.short_tag_measure in analysis_model.MEASURES:
+        :type model: scanomatic.models.analysis_model.XMLModel
+        """
+        if model.slim_measure in analysis_model.MEASURES:
             return True
-        return model.FIELD_TYPES.short_tag_measure
+        return model.FIELD_TYPES.slim_measure
+
+    @classmethod
+    def _validate_slim_compartmente(cls, model):
+        """
+
+        :type model: scanomatic.models.analysis_model.XMLModel
+        """
+        if model.slim_compartment in analysis_model.COMPARTMENTS:
+            return True
+        return model.FIELD_TYPES.slim_compartment
 
 
 class AnalysisModelFactory(AbstractModelFactory):
@@ -117,7 +144,10 @@ class AnalysisModelFactory(AbstractModelFactory):
         'animate_focal': bool,
         'grid_images': list,
         'grid_model': analysis_model.GridModel,
-        'xml_model': analysis_model.XMLModel
+        'xml_model': analysis_model.XMLModel,
+        'image_data_output_measure': analysis_model.MEASURES,
+        'image_data_output_item': analysis_model.COMPARTMENTS,
+        'chain': bool
     }
 
     @classmethod

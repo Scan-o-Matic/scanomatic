@@ -40,8 +40,9 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._paths = paths.Paths()
 
         super(PhenotypeExtractionEffector, self).__init__(job, logger_name="Phenotype Extractor '{0}'".format(job.id))
-        self._specific_statuses['progress'] = 'progress'
+
         self._feature_job = job.content_model
+        self._job_label = self._feature_job.analysis_directory
         self._progress = 0
         self._times = None
         self._data = None
@@ -69,7 +70,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         times, data = image_data.ImageData.read_image_data_and_time(self._feature_job.analysis_directory)
 
-        if None in (times, data):
+        if None in (times, data) or 0 in map(len, (times, data)):
             self._logger.error(
                 "Could not filter image times to match data or no data. " +
                 "Do you have the right directory?")
@@ -94,9 +95,10 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         self._allow_start = True
 
+
     def next(self):
 
-        if not self._allow_start:
+        if self.waiting:
             return super(PhenotypeExtractionEffector, self).next()
 
         if self._stopping:
@@ -130,7 +132,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
     def _setup_extraction_iterator(self):
 
-        self._startTime = time.time()
+        self._start_time = time.time()
 
         self._phenotyper = phenotyper.Phenotyper(
             dataObject=self._data,

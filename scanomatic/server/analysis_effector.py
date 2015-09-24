@@ -29,11 +29,10 @@ import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
-
+import scanomatic.io.rpc_client as rpc_client
 
 #
 # CLASSES
@@ -50,12 +49,14 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         super(AnalysisEffector, self).__init__(job, logger_name="Analysis Effector")
         self._config = None
+        self._job_label = job.content_model.compilation
 
-        self._specific_statuses['progress'] = 'progress'
         self._specific_statuses['total'] = 'total'
         self._specific_statuses['current_image_index'] = 'current_image_index'
 
         self._allowed_calls['setup'] = self.setup
+
+        self._redirect_logging = True
 
         if job.content_model:
             self._analysis_job = AnalysisModelFactory.create(**job.content_model)
@@ -97,17 +98,17 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         return 0.0
 
-    @property
-    def waiting(self):
-        return not(self._allow_start and self._running)
-
     def next(self):
+
         if self.waiting:
             return super(AnalysisEffector, self).next()
-        elif self._analysis_needs_init:
-            return self._setup_first_iteration()
         elif not self._stopping:
-            return self._analyze_image()
+            if self._analysis_needs_init:
+                return self._setup_first_iteration()
+            elif not self._stopping:
+                return self._analyze_image()
+            else:
+                return self._finalize_analysis()
         else:
             return self._finalize_analysis()
 
@@ -119,10 +120,21 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 self._focus_graph.finalize()
 
             self._logger.info("ANALYSIS, Full analysis took {0} minutes".format(
-                ((time.time() - self._startTime) / 60.0)))
+                ((time.time() - self._start_time) / 60.0)))
 
             self._logger.info('Analysis completed at ' + str(time.time()))
 
+            if self._analysis_job.chain:
+
+                try:
+                    rc = rpc_client.get_client(admin=True)
+                    if rc.create_feature_extract_job({"analysis_directory": self._analysis_job.output_directory}):
+                        self._logger.info("Enqueued feature extraction job")
+                    else:
+                        self._logger.warning("Enqueing of feature extraction job refused")
+                except:
+                    self._logger.error("Could not spawn analysis at directory {0}".format(
+                        self._analysis_job.output_directory))
             self._running = False
             raise StopIteration
 
@@ -131,14 +143,14 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         scan_start_time = time.time()
         image_model = self._first_pass_results.get_next_image_model()
 
-        # TODO: Hack to patch flipped calibration X axis
+        if image_model is None:
+            self._stopping = True
+            return False
+
         image_model.fixture.grayscale.values = image_model.fixture.grayscale.values[::-1]
 
         first_image_analysed = self._current_image_model is None
         self._current_image_model = image_model
-        if not image_model:
-            self._stopping = True
-            return True
 
         self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.image.path))
 
@@ -167,12 +179,10 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
     def _setup_first_iteration(self):
 
-        self._startTime = time.time()
+        self._start_time = time.time()
 
         self._first_pass_results = first_pass_results.CompilationResults(
             self._analysis_job.compilation, self._analysis_job.compile_instructions)
-
-        self._remove_files_from_previous_analysis()
 
         try:
             os.makedirs(self._analysis_job.output_directory)
@@ -183,6 +193,20 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 self._running = False
                 self._logger.critical("Can't create output directory '{0}'".format(self._analysis_job.output_directory))
                 raise StopIteration
+
+        if self._redirect_logging:
+            self._logger.info("{0} is setting up, output will be directed to {1}".format(self._analysis_job,
+                                                                                         Paths().analysis_run_log))
+            self._logger.set_output_target(
+                os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
+                catch_stdout=True, catch_stderr=True)
+
+            self._logger.surpress_prints = True
+
+        self._logger.info("Will remove previous files")
+
+        self._remove_files_from_previous_analysis()
+
 
         if self._analysis_job.focus_position is not None:
             self._focus_graph = support.Watch_Graph(
@@ -231,27 +255,25 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         return pos
 
-    def setup(self, job):
+    def setup(self, job, redirect_logging=True):
 
         if self._running:
             self.add_message("Cannot change settings while running")
             return
 
+        self._redirect_logging = redirect_logging
+
         job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
+
+        if not self._analysis_job.compile_instructions:
+            self._analysis_job.compile_instructions = \
+                Paths().get_project_compile_instructions_path_from_compilation_path(self._analysis_job.compilation)
+            self._logger.info("Setting to default compile instructions path {0}".format(
+                self._analysis_job.compile_instructions))
 
         allow_start = AnalysisModelFactory.validate(self._analysis_job)
 
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
-
-        self._logger.info("{0} is setting up, output will be directed to {1}".format(job, Paths().analysis_run_log))
-        self._logger.set_output_target(
-            os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
-            catch_stdout=True, catch_stderr=True)
-
-        self._logger.surpress_prints = True
-
-        if self._analysis_job.compile_instructions:
-            self._update_job_from_config_file()
 
         try:
             self._scanning_instructions = ScanningModelFactory.serializer.load(
@@ -268,16 +290,3 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                                                               ))
             self.add_message("Can't perform analysis; instructions don't validate.")
             self._stopping = True
-
-    def _update_job_from_config_file(self):
-
-        try:
-            instructions_model = tuple(CompileProjectFactory.serializer.load(self._analysis_job.compile_instructions))[0]
-        except (IOError, IndexError, ValueError):
-            self._logger.warning("There was no compile instructions at {0}.".format(
-                self._analysis_job.compile_instructions) +
-                " (Everything will run assuming defaults)")
-            self._analysis_job.compile_instructions = None
-        else:
-            # TODO: Update info where needed and also allow for reading other conf file?
-            pass

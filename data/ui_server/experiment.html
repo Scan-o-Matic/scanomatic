@@ -120,20 +120,21 @@
                 <table>
                     <tr>
                         <td class="head-col"><label for="aux-stress">How much stress do you feel now?</label></td>
-                        <td><p class="block">No stress</p>
-                            <input id='aux-stress' type="range" min="1" max="100" step="1" value="50" class="block">
-                            <p class="block">Overwhelmed</p></td>
+                        <td><img src="/images/calm.png" class="icon-large"><p class="block">No stress</p>
+                            <input id='aux-stress' type="range" min="1" max="100" step="1" value="50" class="block"
+                                   onchange="setAux(this, 'stress_level');")>
+                            <p class="block">Overwhelmed</p><img src="/images/stressed.png" class="icon-large"></td>
                     </tr>
                     <tr>
                         <td class="head-col"><label for="aux-plate-condition">Condition of the plates</label></td>
                         <td id="aux-plate-condition">
                             <h3>Storage</h3>
-                            <div><input type="radio" name="aux-plate-stored" value="fresh" id="aux-plates-fresh" class="block"><p class="block">Fresh / No storage</p></div>
-                            <div><input type="radio" name="aux-plate-stored" value="cold" id="aux-plates-cold" class="block"><p class="block">Cold / Fridge</p></div>
-                            <div><input type="radio" name="aux-plate-stored" value="room" id="aux-plates-room" class="block"><p class="block">Room Temperature</p></div>
+                            <div><input type="radio" name="aux-plate-stored" value="Fresh" id="aux-plates-fresh" class="block" onchange="setAux(this, 'plate_storage');"><p class="block">Fresh / No storage</p></div>
+                            <div><input type="radio" name="aux-plate-stored" value="Cold" id="aux-plates-cold" class="block" onchange="setAux(this, 'plate_storage');"><p class="block">Cold / Fridge</p></div>
+                            <div><input type="radio" name="aux-plate-stored" value="RoomTemperature" id="aux-plates-room" class="block" onchange="setAux(this, 'plate_storage');"><p class="block">Room Temperature</p></div>
                             <h3>Age</h3>
-                            <div><input type="number" class="short" id="'aux-plate-age-days"><p class="block">days</p>
-                                <input type="number" class='short' id="'aux-plate-age-hours"><p class="block">hours old</p>
+                            <div><input type="number" class="short" id="'aux-plate-age-days" onchange="setAuxTime(this, 'plate_age', 60*24);"><p class="block">days</p>
+                                <input type="number" class='short' id="'aux-plate-age-hours" onchange="setAuxTime(this, 'plate_age', 60);"><p class="block">hours old</p>
                             </div>
                         </td>
                     </tr>
@@ -141,28 +142,28 @@
                         <td class="head-col"><label for="aux-pinning">Pinning & Pre-culture</label></td>
                         <td id="aux-pinning">
                             <h3>Time from pinning to experiment start</h3>
-                            <div><input type="number" id="'aux-pinning-delay-days" class="short"><p class="block">days</p>
-                                <input type="number" id="'aux-pinning-delay-h" class="short"><p class="block">h</p>
-                                <input type="number" id="'aux-pinning-delay-minutes" class="short"><p class="block">minutes</p></div>
+                            <div><input type="number" id="'aux-pinning-delay-days" class="short" onchange="setAuxTime(this, 'pinning_project_start_delay', 24*60);"><p class="block">days</p>
+                                <input type="number" id="'aux-pinning-delay-h" class="short" onchange="setAuxTime(this, 'pinning_project_start_delay', 60);"><p class="block">h</p>
+                                <input type="number" id="'aux-pinning-delay-minutes" class="short" onchange="setAuxTime(this, 'pinning_project_start_delay', 1);"><p class="block">minutes</p></div>
                             <h3>Number of pre-cultures at final pinning density</h3>
-                            <div><input type="number" id="'aux-pinning-precultures" class="short"><p class="block">iterations</p></div>
+                            <div><input type="number" id="'aux-pinning-precultures" class="short" onchange="setAux(this, 'precultures');"><p class="block">iterations</p></div>
                             <h3>Freshness of cultures before pre-culturing</h3>
                             <div><p class="block">Fresh</p>
-                            <input id='aux-culture-freshness' type="range" min="1" max="100" step="1" value="50" class="block">
+                            <input id='aux-culture-freshness' type="range" min="1" max="100" step="1" value="50" class="block" onchange="setAux(this, 'culture_freshness');">
                             <p class="block">Old</p></div>
                             <h3>Source of culture (before pre-culturing and scaling up pinning densities)</h3>
-                            <div><input type="radio" name="aux-culture-source" value="freezer-80" id="aux-culture-source-freezer-80" class="block"><p class="block">Freezer(-80C) / Long-term storage</p></div>
-                            <div><input type="radio" name="aux-culture-source" value="freezer-20" id="aux-culture-source-freezer-20" class="block"><p class="block">Freezer (-20C) / Short-term storage</p></div>
-                            <div><input type="radio" name="aux-culture-source" value="freezer-20" id="aux-culture-source-fridge" class="block"><p class="block">Fridge / Short-term storage</p></div>
-                            <div><input type="radio" name="aux-culture-source" value="freezer-20" id="aux-culture-source-shipped" class="block"><p class="block">Shipped from other lab / no storage</p></div>
-                            <div><input type="radio" name="aux-culture-source" value="freezer-20" id="aux-culture-source-novel" class="block"><p class="block">Novel / just created</p></div>
+                            <div><input type="radio" name="aux-culture-source" value="Freezer80" id="aux-culture-source-freezer-80" class="block" onchange="setAux(this, 'culture_source');"><p class="block">Freezer(-80C) / Long-term storage</p></div>
+                            <div><input type="radio" name="aux-culture-source" value="Freezer20" id="aux-culture-source-freezer-20" class="block" onchange="setAux(this, 'culture_source');"><p class="block">Freezer (-20C) / Short-term storage</p></div>
+                            <div><input type="radio" name="aux-culture-source" value="Fridge" id="aux-culture-source-fridge" class="block" onchange="setAux(this, 'culture_source');"><p class="block">Fridge / Short-term storage</p></div>
+                            <div><input type="radio" name="aux-culture-source" value="shipped" id="aux-culture-source-shipped" class="block" onchange="setAux(this, 'culture_source');"><p class="block">Shipped from other lab / no storage</p></div>
+                            <div><input type="radio" name="aux-culture-source" value="Novel" id="aux-culture-source-novel" class="block" onchange="setAux(this, 'culture_source');"><p class="block">Novel / just created</p></div>
                         </td>
                     </tr>
                 </table>
             </div>
 
             <div class="section">
-                <button type="button" id="submit-button" onclick="">Start Scanning</button>
+                <button type="button" id="submit-button" onclick="StartExperiment(this)">Start Scanning</button>
             </div>
         </form>
     </div>

@@ -142,8 +142,9 @@ class ProjectImage(object):
                     continue
                 if not self._grid_arrays[index].set_grid(
                         im, save_name=save_name,
-                        grid_correction=self._analysis_model.grid_model.gridding_offset[index]
-                        if self._analysis_model.grid_model.gridding_offsets is not None else None):
+                        grid_correction=self._analysis_model.grid_model.gridding_offsets[index]
+                        if self._analysis_model.grid_model.gridding_offsets is not None and
+                        index < len(self._analysis_model.grid_model.gridding_offsets) else None):
 
                     self._logger.warning("Failed to grid plate {0}".format(plate_model))
 

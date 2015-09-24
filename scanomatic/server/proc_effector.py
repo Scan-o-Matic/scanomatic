@@ -37,6 +37,7 @@ class ProcessEffector(object):
     def __init__(self, job, logger_name="Process Effector"):
 
         self._job = job
+        self._job_label = job.id
         self._logger = logger.Logger(logger_name)
 
         self._fail_vunerable_calls = tuple()
@@ -47,7 +48,6 @@ class ProcessEffector(object):
             'pause': self.pause,
             'resume': self.resume,
             'setup': self.setup,
-            'start': self.start,
             'status': self.status,
             'stop': self.stop
         }
@@ -65,6 +65,11 @@ class ProcessEffector(object):
         self._pipe_effector = None
         self._start_time = None
         decorators.register_type_lock(self)
+
+    @property
+    def identifier(self):
+
+        return self._job_label
 
     @property
     def pipe_effector(self):
@@ -97,6 +102,11 @@ class ProcessEffector(object):
             return time.time() - self._start_time
 
     @property
+    def progress(self):
+
+        return -1
+
+    @property
     def fail_vunerable_calls(self):
 
         return self._fail_vunerable_calls
@@ -119,19 +129,24 @@ class ProcessEffector(object):
         self._logger.warning(
                 "Setup is not overwritten, job info ({0}) lost.".format(job))
 
-    def start(self, *args, **kwargs):
-
-        if self._allow_start:
-            self._running = True
+    @property
+    def waiting(self):
+        if self._stopping:
+            return False
+        if self._paused or not self._running:
+            return True
+        return False
 
     def status(self, *args, **kwargs):
 
         return dict([('id', self._job.id),
+                     ('label', self._job_label),
                      ('pid', self._pid),
                      ('type', self.TYPE.text),
                      ('running', self._running),
                      ('paused', self._paused),
                      ('runTime', self.run_time),
+                     ('progress', self.progress),
                      ('stopping', self._stopping),
                      ('messages', self.get_messages())] +
                     [(k, getattr(self, v)) for k, v in
@@ -161,12 +176,13 @@ class ProcessEffector(object):
 
     def next(self):
 
-        while self._running is False and not self._stopping:
-            time.sleep(0.1)
-            self._logger.debug(
-                "Pre-running and waiting run {0} and stop {1}".format(
-                    self._running, self._stopping))
-            return None
-
-        if self._stopping:
+        if not self._stopping and not self._running:
+            if self._allow_start:
+                self._running = True
+                self._logger.info("Setup passed, switching to run-mode")
+                return True
+            else:
+                self._logger.info("Waiting to run...need setup to allow start")
+                return True
+        elif self._stopping:
             raise StopIteration

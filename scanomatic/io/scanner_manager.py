@@ -355,7 +355,10 @@ class ScannerPowerManager(SingeltonOneInit):
 
     @property
     def status(self):
-        return self._scanners.values()
+        if self.has_scanners:
+            return self._scanners.values()
+        else:
+            return []
 
     @property
     def fixtures(self):

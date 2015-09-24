@@ -103,7 +103,7 @@ class CompileProjectFactory(AbstractModelFactory):
         'start_condition': str,
         'start_time': float,
         'fixture_type': compile_project_model.FIXTURE,
-        'fixture_name': str
+        'fixture_name': str,
     }
 
     @classmethod
@@ -111,17 +111,22 @@ class CompileProjectFactory(AbstractModelFactory):
         """
         :rtype : scanomatic.models.compile_project_model.CompileInstructionsModel
         """
-        cls.enforce_serializer_type(settings, ('fixture_type', 'compile_action'))
 
         model = super(CompileProjectFactory, cls).create(**settings)
         return model
 
     @classmethod
-    def dict_from_path_and_fixture(cls, path, fixture=None, is_local=None):
+    def dict_from_path_and_fixture(cls, path, fixture=None, is_local=None,
+                                   compile_action=compile_project_model.COMPILE_ACTION.Initiate, **kwargs):
 
-        if path:
-            path = os.path.abspath(path)
-        else:
+        """
+
+        :type path: str
+        """
+        path = path.rstrip("/")
+
+        if path != os.path.abspath(path):
+            cls.logger.error("Not an absolute path, aborting")
             return {}
 
         if is_local is None:
@@ -129,14 +134,16 @@ class CompileProjectFactory(AbstractModelFactory):
 
         image_path = os.path.join(path, "*.tiff")
 
-        images = [{'path': path} for path in sorted(glob.glob(image_path))]
+        images = [{'path': p, 'index': i} for i, p in enumerate(sorted(glob.glob(image_path)))]
 
-        return {
-            'compile_action': compile_project_model.COMPILE_ACTION.Initiate.name,
-            'images': images,
-            'fixture_type': is_local and compile_project_model.FIXTURE.Local.name or compile_project_model.FIXTURE.Global.name,
-            'fixture_name': fixture,
-            'path': path}
+        return cls.to_dict(cls.create(
+            compile_action=compile_action,
+            images=images,
+            fixture_type=
+                is_local and compile_project_model.FIXTURE.Local.name or compile_project_model.FIXTURE.Global.name,
+            fixture_name=fixture,
+            path=path,
+            **kwargs))
 
     @classmethod
     def _validate_images(cls, model):

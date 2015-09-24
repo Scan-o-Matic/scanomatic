@@ -226,6 +226,10 @@ class ChildPipeEffector(_PipeEffector):
 
     def __init__(self, pipe, procEffector=None):
 
+        """
+
+        :type procEffector: scanomatic.server.proc_effector.ProcessEffector
+        """
         super(ChildPipeEffector, self).__init__(
             pipe, loggerName="Child Pipe Effector")
 
@@ -238,8 +242,7 @@ class ChildPipeEffector(_PipeEffector):
     @property
     def keepAlive(self):
 
-        return (self._procEffector is None and True or
-                self._procEffector.keep_alive)
+        return True if self._procEffector is None else self._procEffector.keep_alive
 
     def _failSend(self, callName, *args, **kwargs):
 

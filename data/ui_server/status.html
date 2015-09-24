@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+	<link rel="stylesheet" type="text/css" href="/style/main.css">
+    <link rel="stylesheet" type="text/css" href="/style/status.css">
+    <script src="/js/jquery-2.1.4.min.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/status.js"></script>
+    <script>
+    </script>
+	<title>Scan-o-Matic</title>
+</head>
+<body>
+    <div id="cont">
+        <h1>Status</h1>
+        <div class="section-frame" id="status-general"></div>
+        <h2>Scanners</h2>
+        <div class="section-frame" id="status-scanners"></div>
+        <h2>Jobs Queue</h2>
+        <div class="section-frame" id="status-queue"></div>
+        <h2>Jobs</h2>
+        <div class="section-frame" id="status-jobs"></div>
+    </div>
+    <script>
+        updateStatus('#status-general', 'server', serverStatusFormatter);
+        updateStatus('#status-scanners', 'scanners', scannerStatusFormatter);
+        updateStatus('#status-queue', 'queue', queueStatusFormatter);
+        updateStatus('#status-jobs', 'jobs', jobsStatusFormatter);
+
+        $(document).ready(function() {
+            setInterval("updateStatus('#status-general', 'server', serverStatusFormatter)", 61000);
+            setInterval("updateStatus('#status-scanners', 'scanners', scannerStatusFormatter)", 13000);
+            setInterval("updateStatus('#status-queue', 'queue', queueStatusFormatter)", 17000);
+            setInterval("updateStatus('#status-jobs', 'jobs', jobsStatusFormatter)", 19000);
+        });
+
+    </script>
+</body>
+</html>
