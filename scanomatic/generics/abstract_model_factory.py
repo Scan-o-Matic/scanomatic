@@ -198,16 +198,18 @@ class AbstractModelFactory(object):
                         cls.logger.error(
                             "Contents mismatch between factory {0} and model data '{1}'".format(dtype, obj))
                         return obj
-            try:
-                return dtype(obj)
-            except (AttributeError, ValueError, TypeError):
+
+            else:
                 try:
-                    return dtype[obj]
-                except (AttributeError, KeyError, IndexError, TypeError):
-                    cls.logger.error(
-                        "Having problems enforcing '{0}' to be type '{1}' in supplied settings '{2}'.".format(
-                            obj, dtype, settings))
-                    return obj
+                    return dtype(obj)
+                except (AttributeError, ValueError, TypeError):
+                    try:
+                        return dtype[obj]
+                    except (AttributeError, KeyError, IndexError, TypeError):
+                        cls.logger.error(
+                            "Having problems enforcing '{0}' to be type '{1}' in supplied settings '{2}'.".format(
+                                obj, dtype, settings))
+                        return obj
 
         for key in keys:
 
@@ -657,7 +659,6 @@ class LinkerConfigParser(object, ConfigParser):
         return self._nonzero if hasattr(self, '_nonzero') else len(self.sections())
 
 
-
 class MockConfigParser(object):
 
     def __init__(self, serialized_object):
@@ -1035,9 +1036,14 @@ class SerializationHelper(object):
         """
         if serialized_obj is None or serialized_obj is False and dtype is not bool:
             return None
+        elif isinstance(dtype, types.FunctionType):
+            try:
+                return dtype(unserialize=cPickle.loads(serialized_obj))
+            except cPickle.PickleError:
+                return None
         elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
             return serialized_obj
-        if SerializationHelper.isvalidtype(serialized_obj, dtype):
+        elif SerializationHelper.isvalidtype(serialized_obj, dtype):
             return serialized_obj
         elif isinstance(dtype, type) and issubclass(dtype, Enum):
             try:
@@ -1057,12 +1063,6 @@ class SerializationHelper(object):
                     return dtype(eval(serialized_obj))
                 except (SyntaxError, NameError, AttributeError, TypeError, ValueError):
                     return None
-        elif isinstance(dtype, types.FunctionType):
-            try:
-                return dtype(enforce=cPickle.loads(serialized_obj))
-            except cPickle.PickleError:
-                return None
-
         elif isinstance(serialized_obj, types.GeneratorType):
             return dtype(serialized_obj)
         else:
