@@ -144,8 +144,9 @@ class Config(SingeltonOneInit):
         else:
             _user_defined_settings = _user_defined_settings[0]
 
-        self._user_defined_settings = change_dumping_wrapper(_user_defined_settings, ApplicationSettingsFactory,
-                                                             self._paths.config_main_app, _user_defined_settings)
+        if ApplicationSettingsFactory.validate(_user_defined_settings):
+            self._user_defined_settings = change_dumping_wrapper(_user_defined_settings, ApplicationSettingsFactory,
+                                                                 self._paths.config_main_app, _user_defined_settings)
 
 
     def _set_pm_extras(self):
