@@ -57,7 +57,7 @@ def change_dumping_wrapper(m, factory, save_path, root):
 
         def __dir__(self):
 
-            return m.keys()
+            return list(m.keys())
 
     return Wrapper()
 
