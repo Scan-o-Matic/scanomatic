@@ -56,14 +56,22 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
     def setup(self, job):
 
-        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
         if self._started:
             self._logger.warning("Can't setup when started")
             return False
 
+        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
+        self._feature_job = job.content_model
+
         if feature_factory.FeaturesFactory.validate(self._feature_job) is not True:
             self._logger.warning("Can't setup, instructions don't validate")
             return False
+
+        self._logger.set_output_target(
+            os.path.join(self._feature_job.analysis_directory, paths.Paths().phenotypes_extraction_log),
+            catch_stdout=True, catch_stderr=True)
+
+        self._logger.surpress_prints = True
 
         self._logger.info("Loading files image data from '{0}'".format(
             self._feature_job.analysis_directory))
@@ -84,17 +92,10 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         self._times = times
         self._data = data
-        self._analysis_base_path = image_data.ImageData.directory_path_to_data_path_tuple(self._feature_job.analysis_directory)[0]
-
-        """
-        # DEBUG CODE
-        import numpy as np
-        np.save(os.path.join(self._analysisBase, "debug.npy"), self._data)
-        np.save(os.path.join(self._analysisBase, "debugTimes.npy"), self._times)
-        """
+        self._analysis_base_path = image_data.ImageData.directory_path_to_data_path_tuple(
+            self._feature_job.analysis_directory)[0]
 
         self._allow_start = True
-
 
     def next(self):
 

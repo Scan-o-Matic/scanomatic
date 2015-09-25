@@ -145,6 +145,7 @@ class Paths(SingeltonOneInit):
         self.phenotypes_input_smooth = "curves_smooth.npy"
         self.phenotypes_extraction_params = "phenotype_params.npy"
         self.phenotype_times = "phenotype_times.npy"
+        self.phenotypes_extraction_log = "phenotypes.extraction.log"
 
         self.image_analysis_img_data = "image_{0}_data.npy"
         self.image_analysis_time_series = "time_data.npy"

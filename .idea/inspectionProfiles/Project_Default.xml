@@ -36,6 +36,8 @@
           <option value="scanomatic.generics.abstract_model_factory.AbstractModelFactory.logger" />
           <option value="scanomatic.generics.abstract_model_factory.AbstractModelFactory.default_model" />
           <option value="scanomatic.generics.abstract_model_factory.AbstractModelFactory.__metaclass__.MODEL" />
+          <option value="scanomatic.models.factories.scanning_factory.ScanningModelFactory.serializer" />
+          <option value="scanomatic.models.factories.rpc_job_factory.RPC_Job_Model_Factory.serializer" />
         </list>
       </option>
     </inspection_tool>

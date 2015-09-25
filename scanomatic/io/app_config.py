@@ -128,6 +128,7 @@ class Config(SingeltonOneInit):
         self.mail_user = None
         self.mail_port = 0
         self.mail_password = None
+        self.mail_scanning_done_minutes_before = 30
 
         self._set_pm_extras()
 
