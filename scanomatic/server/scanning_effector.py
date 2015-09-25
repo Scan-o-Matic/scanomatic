@@ -44,7 +44,6 @@ TOO_SMALL_SIZE = 1024 * 1024
 DISKSPACE_MARGIN_FACTOR = 5
 
 
-
 class ScannerEffector(proc_effector.ProcessEffector):
 
     TYPE = JOB_TYPE.Scan
@@ -143,6 +142,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
                                * self._scanning_job.time_between_scans * SECONDS_PER_MINUTE)
 
     @property
+    def time_left(self):
+
+        return ((self._scanning_job.number_of_scans - self._scanning_effector_data.current_image) *
+                self._scanning_job.time_between_scans - self.time_since_last_scan)
+
+    @property
     def total_images(self):
 
         return self._scanning_job.number_of_scans
@@ -178,6 +183,11 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_effector_data.current_image = self._scanning_job.number_of_scans
 
             self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.Wait
+
+        if (not self._scanning_effector_data.informed_close_to_end and self.time_left / 60.0 <
+                AppConfig().mail_scanning_done_minutes_before):
+
+            self._do_report_scanning_soon_done()
 
         if self._job_completed and self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.Wait:
             self._stopping = True
@@ -359,6 +369,9 @@ Scan-o-Matic""")
     @property
     def time_since_last_scan(self):
 
+        if not self._scanning_effector_data.previous_scan_cycle_start:
+            return 0
+
         return self.run_time - self._scanning_effector_data.previous_scan_cycle_start
 
     @property
@@ -405,7 +418,7 @@ Scan-o-Matic""")
                 abs(self._scanning_effector_data.known_file_size - current_size) / largest_known_size >
                 FILE_SIZE_DEVIATION_ALLOWANCE):
 
-            if (current_size < self._scanning_effector_data.known_file_size):
+            if current_size < self._scanning_effector_data.known_file_size:
                 self._removed_current_image()
 
             if self._scanning_effector_data.warned_file_size is False:
@@ -489,6 +502,23 @@ All the best,
 Scan-o-Matic""")
 
         return SCAN_STEP.NextMajor
+
+    def _do_report_scanning_soon_done(self):
+
+        self._scanning_effector_data.informed_close_to_end = True
+        self._mail("Scan-o-Matic: Project '{project_name}' scanning is soon done.",
+                   """This is an automated email, please don't reply!
+
+The project '{project_name}' is reporting that it will soon stop using scanner {scanner} and launch
+the automatic analysis.
+
+""" + "Scanning estimated to end in {0:0.f} minutes".format(self.time_left / 60.) + """
+
+It's a great time to start preparing the next experiment.
+
+All the best,
+
+Scan-o-Matic""")
 
     def _do_request_scanner_on(self):
 
@@ -591,7 +621,7 @@ Scan-o-Matic""")
 
     def _mail(self, title_template, message_template):
 
-        def _do_mail(title_template, message_template, scanning_job_model):
+        def _do_mail(title, message, scanning_job_model):
 
             if not scanning_job_model.email:
                 return
@@ -604,8 +634,8 @@ Scan-o-Matic""")
 
             mail.mail(scanning_job_model.email if AppConfig().mail_user is None else AppConfig().mail_user,
                       scanning_job_model.email,
-                      title_template.format(**scanning_job_model),
-                      message_template.format(**scanning_job_model),
+                      title.format(**scanning_job_model),
+                      message.format(**scanning_job_model),
                       server=server)
 
         Thread(target=_do_mail, args=(title_template, message_template, self._scanning_job)).start()
