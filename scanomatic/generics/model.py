@@ -2,6 +2,67 @@ from enum import Enum
 from itertools import chain
 
 
+def change_dumping_wrapper(m, factory, save_path, root):
+    """
+
+    :type m: Model
+    :type factory: scanomatic.generics.abstract_model_factory.AbstractModelFactory
+    :type save_path: str
+    :type root : Model
+    :rtype: Wrapper
+    """
+
+    class Wrapper(object):
+
+        def __getattr__(self, item):
+
+            if isinstance(m[item], Model):
+                return change_dumping_wrapper(m[item], factory, save_path, root)
+            else:
+
+                return m[item]
+
+        def __getitem__(self, item):
+
+            return self.__getattr__(item)
+
+        def __iter__(self):
+
+            return m.__iter__()
+
+        def __contains__(self, item):
+
+            return m.__contains__(item)
+
+        def __setattr__(self, key, value):
+
+            m[key] = value
+            if factory.validate(root):
+                factory.serializer.dump(root, save_path)
+
+        def __setitem__(self, key, value):
+
+            self.__setattr__(key, value)
+
+        def __eq__(self, other):
+
+            return m.__eq__(other)
+
+        def __str__(self):
+
+            return m.__str__()
+
+        def keys(self):
+
+            return m.keys()
+
+        def __dir__(self):
+
+            return m.keys()
+
+    return Wrapper()
+
+
 class Model(object):
 
     _INITIALIZED = "_initialized"
