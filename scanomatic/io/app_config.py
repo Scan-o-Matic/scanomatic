@@ -30,6 +30,9 @@ import config_file
 import logger
 from scanomatic.generics.singleton import SingeltonOneInit
 import scanomatic.models.scanning_model as scanning_model
+from scanomatic.models.factories.settings_factories import ApplicationSettingsFactory
+from scanomatic.generics.model import change_dumping_wrapper
+
 
 #
 # CLASSES
@@ -46,6 +49,14 @@ class Config(SingeltonOneInit):
         self._paths = paths.Paths()
 
         self._logger = logger.Logger("Application Config")
+
+        self._user_defined_settings = ApplicationSettingsFactory.serializer.load(self._paths.config_main_app)
+        if not self._user_defined_settings:
+            self._user_defined_settings = ApplicationSettingsFactory.create()
+        else:
+            self._user_defined_settings = self._user_defined_settings[0]
+        self._user_defined_settings = change_dumping_wrapper(self._user_defined_settings, ApplicationSettingsFactory,
+                                                             self._paths.config_main_app, self._user_defined_settings)
 
         self._minMaxModels = {
             scanning_model.ScanningModel: {
