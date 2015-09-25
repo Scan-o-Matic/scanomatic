@@ -19,7 +19,6 @@ def change_dumping_wrapper(m, factory, save_path, root):
             if isinstance(m[item], Model):
                 return change_dumping_wrapper(m[item], factory, save_path, root)
             else:
-
                 return m[item]
 
         def __getitem__(self, item):

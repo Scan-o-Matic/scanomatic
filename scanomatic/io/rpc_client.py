@@ -28,6 +28,7 @@ import scanomatic.io.logger as logger
 # METHODS
 #
 
+
 def santize_communication(obj):
 
     if isinstance(obj, dict):
@@ -40,6 +41,7 @@ def santize_communication(obj):
         return False
     else:
         return obj
+
 
 def get_client(host=None, port=None, admin=False, log_level=None):
 
