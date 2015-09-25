@@ -21,8 +21,8 @@ function validate_experiment() {
     var active_plates = fixture_plates.filter(function(e, i) { return e.active;}).length > 0;
     set_validation_status("#current-fixture", fixture_selected && active_plates,
         !fixture_selected ? "Select fixture" : (active_plates ? "No plates active would mean doing very little" : "All good!"));
-    var time_makes_sense = get_duration_as_minutes() >= interval;
-    set_validation_status("#project-duration", time_makes_sense, time_makes_sense ? "That's a splendid project duration" : "Nope, you need at least one interval's worth of duration");
+    var time_makes_sense = get_duration_as_minutes() >= 0;
+    set_validation_status("#project-duration", time_makes_sense, time_makes_sense ? "That's a splendid project duration" : "Nope, you can't reverse time");
 
     InputEnabled($("#submit-button"), project_path_valid && scanner_ok && fixture_selected && active_plates && time_makes_sense);
 }
