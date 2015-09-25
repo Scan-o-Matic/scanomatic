@@ -50,13 +50,8 @@ class Config(SingeltonOneInit):
 
         self._logger = logger.Logger("Application Config")
 
-        self._user_defined_settings = ApplicationSettingsFactory.serializer.load(self._paths.config_main_app)
-        if not self._user_defined_settings:
-            self._user_defined_settings = ApplicationSettingsFactory.create()
-        else:
-            self._user_defined_settings = self._user_defined_settings[0]
-        self._user_defined_settings = change_dumping_wrapper(self._user_defined_settings, ApplicationSettingsFactory,
-                                                             self._paths.config_main_app, self._user_defined_settings)
+        self._user_defined_settings = None
+        self.reload_user_config()
 
         self._minMaxModels = {
             scanning_model.ScanningModel: {
@@ -131,9 +126,6 @@ class Config(SingeltonOneInit):
         self.resources_cpu_single = 75
         self.resources_cpu_n = 1
 
-        # LOAD CONFIG FROM FILE
-        self._load_config_from_file()
-
         # MAIL
         self.mail_server = None
         self.mail_user = None
@@ -143,57 +135,18 @@ class Config(SingeltonOneInit):
 
         self._set_pm_extras()
 
-    def _load_config_from_file(self):
+    def reload_user_config(self):
 
-        self._config_file = config_file.ConfigFile(
-            self._paths.config_main_app)
+        _user_defined_settings = ApplicationSettingsFactory.serializer.load(self._paths.config_main_app)
 
-        scanners = self._config_file['number-of-scanners']
-        if scanners is not None:
-            self.number_of_scanners = scanners
-            self._logger.info("Updating number of scanners to {0}".format(scanners))
+        if not _user_defined_settings:
+            _user_defined_settings = ApplicationSettingsFactory.create()
+        else:
+            _user_defined_settings = _user_defined_settings[0]
 
-        pm = self._config_file['pm-type']
-        if pm is not None:
-            try:
-                self.pm_type = loads(pm)
-                self._logger.info("Updating Power Manager to: {0}".format(self.pm_type))
+        self._user_defined_settings = change_dumping_wrapper(_user_defined_settings, ApplicationSettingsFactory,
+                                                             self._paths.config_main_app, _user_defined_settings)
 
-            except (ValueError, UnpicklingError):
-                mode_by_name = tuple(mode.name.lower() == pm.lower() for mode in power_manager.POWER_MANAGER_TYPE)
-                if any(mode_by_name):
-                    for mode, pm_type in zip(mode_by_name, power_manager.POWER_MANAGER_TYPE):
-                        if mode:
-                            self.pm_type = pm_type
-                            self._logger.info("Updating Power Manager by value to: {0}".format(self.pm_type))
-                            break
-                else:
-                    self._logger.error("Power Manager Mode '{0}' not recognized only valid: {1}".format(
-                        pm, power_manager.POWER_MANAGER_TYPE.__members__.keys()))
-
-            except UnpickleableError:
-                self._logger.warning("Power Manager Type {0} not valid".format(
-                    pm))
-
-        experiments_root = self._config_file['experiments-root']
-        if experiments_root is not None:
-            self._paths.experiment_root = experiments_root
-
-        pm_name = self._config_file['pm-name']
-        if pm_name is not None:
-            self._pm_name = pm_name
-
-        pm_host = self._config_file['pm-host']
-        if pm_host is not None:
-            self._pm_host = pm_host
-
-        pm_pwd = self._config_file['pm-pwd']
-        if pm_pwd is not None:
-            self._pm_pwd = pm_pwd
-
-        pm_mac = self._config_file['pm-MAC']
-        if pm_mac is not None:
-            self._pm_mac = pm_mac
 
     def _set_pm_extras(self):
 
