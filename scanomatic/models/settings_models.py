@@ -60,6 +60,18 @@ class UIServerModel(model.Model):
         super(UIServerModel, self).__init__()
 
 
+class SMTPModel(model.Model):
+
+    def __init__(self, host=None, port=0, user=None, password=""):
+
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+
+        super(SMTPModel, self).__init__()
+
+
 class HardwareResourceLimitsModel(model.Model):
 
     def __init__(self, memory_minimum_percent=30, cpu_total_percent_free=30, cpu_single_free=75, cpu_free_count=1,
@@ -83,6 +95,15 @@ class PathsModel(model.Model):
         super(PathsModel, self).__init__()
 
 
+class PipelineModel(model.Model):
+
+    def __init__(self, mail_scanning_done_minutes_before=30):
+
+        self.mail_scanning_done_minutes_before = mail_scanning_done_minutes_before
+
+        super(PipelineModel, self).__init__()
+
+
 class ApplicationSettingsModel(model.Model):
 
     def __init__(self,
@@ -94,14 +115,19 @@ class ApplicationSettingsModel(model.Model):
                  power_manager=None,
                  rpc_server=None,
                  ui_server=None,
+                 smtp_model=None,
                  hardware_resource_limits=None,
+                 pipeline=None,
                  paths=None):
 
         self.versions = VersionChangesModel()
-        self.power_manager = power_manager
-        self.rpc_server = rpc_server
-        self.ui_server = ui_server
-        self.hardware_resource_limits = hardware_resource_limits
+        self.power_manager = power_manager if power_manager is not None else PowerManagerModel()
+        self.rpc_server = rpc_server if rpc_server is not None else RPCServerModel()
+        self.ui_server = ui_server if ui_server is not None else UIServerModel()
+        self.smtp_model = smtp_model if smtp_model is not None else SMTPModel()
+        self.hardware_resource_limits = hardware_resource_limits if hardware_resource_limits is not None else \
+            HardwareResourceLimitsModel()
+        self.pipeline = pipeline if pipeline is not None else PipelineModel()
         self.paths = paths
 
         self.number_of_scanners = number_of_scanners

@@ -115,6 +115,45 @@ class PathsFactory(AbstractModelFactory):
         return super(PathsFactory, cls).create(**settings)
 
 
+class SMPTFactory(AbstractModelFactory):
+
+    MODEL = settings_models.SMTPModel
+    STORE_SECTION_HEAD = "SMTP"
+    STORE_SECTION_SERIALIZERS = {
+        "host": str,
+        "port": int,
+        "user": str,
+        "password": lambda enforce=None, serialize=None, unserialize=None:
+        str(serialize).encode('rot13') if serialize is not None else
+        (str(unserialize.decode('rot13')) if unserialize is not None else
+         (str(enforce) if enforce else "")),
+    }
+
+    @classmethod
+    def create(cls, **settings):
+        """
+        :rtype : scanomatic.models.settings_model.SMPTModel
+        """
+
+        return super(SMPTFactory, cls).create(**settings)
+
+
+class PipelineFactory(AbstractModelFactory):
+
+    MODEL = settings_models.PipelineModel
+    STORE_SECTION_HEAD = "Pipeline"
+    STORE_SECTION_SERIALIZERS = {
+        "mail_scanning_done_minutes_before": float
+    }
+
+    @classmethod
+    def create(cls, **settings):
+        """
+        :rtype : scanomatic.models.settings_model.PipelineModel
+        """
+        return super(PipelineFactory, cls).create(**settings)
+
+
 class ApplicationSettingsFactory(AbstractModelFactory):
 
     MODEL = settings_models.ApplicationSettingsModel
@@ -125,7 +164,9 @@ class ApplicationSettingsFactory(AbstractModelFactory):
         settings_models.HardwareResourceLimitsModel: HardwareResourceLimitsFactory,
         settings_models.PowerManagerModel: PowerManagerFactory,
         settings_models.RPCServerModel: RPCServerFactory,
-        settings_models.UIServerModel: UIServerFactory
+        settings_models.UIServerModel: UIServerFactory,
+        settings_models.SMTPModel: SMPTFactory,
+        settings_models.PipelineModel: PipelineFactory
     }
 
     STORE_SECTION_SERIALIZERS = {
@@ -134,14 +175,18 @@ class ApplicationSettingsFactory(AbstractModelFactory):
         "ui_server": settings_models.UIServerModel,
         "hardware_resource_limits": settings_models.HardwareResourceLimitsModel,
         "paths": settings_models.PathsModel,
+        "smtp_model": settings_models.SMTPModel,
+        "pipeline": settings_models.PipelineModel,
         "number_of_scanners": int,
         "scanner_name_pattern": str,
         "scan_program": str,
         "scan_program_version_flag": str,
         "scanner_models":
-            lambda enforce=None, serialize=None:
+            lambda enforce=None, serialize=None, unserialize=None:
             ([serialize[name] for name in sorted(serialize.keys())] if isinstance(serialize, dict) else None)
-            if serialize is not None else (enforce if not isinstance(enforce, tuple) else list(enforce)),
+            if serialize is not None else
+            ((enforce if not isinstance(enforce, tuple) else list(enforce)) if enforce is not None else
+             (unserialize if not isinstance(unserialize, tuple) else list(unserialize))),
     }
 
     @classmethod
