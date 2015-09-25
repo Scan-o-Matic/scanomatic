@@ -1039,7 +1039,7 @@ class SerializationHelper(object):
         elif isinstance(dtype, types.FunctionType):
             try:
                 return dtype(unserialize=cPickle.loads(serialized_obj))
-            except cPickle.PickleError:
+            except (cPickle.PickleError, TypeError, ValueError):
                 return None
         elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
             return serialized_obj
@@ -1068,7 +1068,7 @@ class SerializationHelper(object):
         else:
             try:
                 return cPickle.loads(serialized_obj)
-            except (cPickle.PickleError, TypeError):
+            except (cPickle.PickleError, TypeError, ValueError):
                 return None
 
     @staticmethod
