@@ -632,7 +632,7 @@ Scan-o-Matic""")
             else:
                 server = None
 
-            mail.mail(scanning_job_model.email if AppConfig().mail_user is None else AppConfig().mail_user,
+            mail.mail(AppConfig().mail_user,
                       scanning_job_model.email,
                       title.format(**scanning_job_model),
                       message.format(**scanning_job_model),
