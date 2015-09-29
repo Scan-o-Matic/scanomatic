@@ -511,7 +511,7 @@ Scan-o-Matic""", self._scanning_job)
 The project '{project_name}' is reporting that it will soon stop using scanner {scanner} and launch
 the automatic analysis.
 
-""" + "Scanning estimated to end in {0:0.f} minutes".format(self.time_left / 60.) + """
+""" + "Scanning estimated to end in {0:0.0f} minutes".format(self.time_left / 60.) + """
 
 It's a great time to start preparing the next experiment.
 
