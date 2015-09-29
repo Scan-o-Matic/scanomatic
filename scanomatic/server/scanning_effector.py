@@ -116,7 +116,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanner = sane.SaneBase(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
 
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
-            compile_action=COMPILE_ACTION.Initiate,
+            compile_action=COMPILE_ACTION.Initiate if self._scanning_job.number_of_scans > 1
+            else COMPILE_ACTION.InitiateAndSpawnAnalysis,
             path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job))
         self._scanning_effector_data.compile_project_model.images = []
 
