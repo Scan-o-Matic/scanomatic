@@ -26,7 +26,7 @@ from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, COMPILE_STATE, ScanningModelEffectorData
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
-from scanomatic.models.compile_project_model import COMPILE_ACTION
+from scanomatic.models.compile_project_model import COMPILE_ACTION, FIXTURE
 from scanomatic.io import scanner_manager
 from scanomatic.io import sane
 from scanomatic.io import paths
@@ -118,7 +118,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
             compile_action=COMPILE_ACTION.Initiate if self._scanning_job.number_of_scans > 1
             else COMPILE_ACTION.InitiateAndSpawnAnalysis,
-            path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job))
+            path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job),
+            fixture_type=FIXTURE.Global,
+            fixture_name=self._scanning_job.fixture)
+
         self._scanning_effector_data.compile_project_model.images = []
 
         scan_project_file_path = os.path.join(
