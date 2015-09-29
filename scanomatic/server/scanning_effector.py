@@ -64,7 +64,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._scanning_job = job.content_model
         """:type : scanomatic.models.scanning_model.ScanningModel"""
-        self._job_label = "'{0}' on scanner {1}".format(self._scanning_job.project_name, self._scanning_job.scanner)
+
         self._scanning_effector_data = ScanningModelEffectorData()
         self._rpc_client = rpc_client.get_client(admin=True)
         self._scanner = None
@@ -82,6 +82,14 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.VerifyImageSize: self._do_verify_image_size,
             SCAN_CYCLE.VerifyDiskspace: self._do_verify_image_size
         }
+
+    @property
+    def identifier(self):
+
+        return "'{0}' on scanner {1} (ETA: {0:0.0f} min)".format(
+            self._scanning_job.project_name,
+            self._scanning_job.scanner + 1,
+            self.time_left / 60.0)
 
     def setup(self, job, redirect_logging=True):
 
