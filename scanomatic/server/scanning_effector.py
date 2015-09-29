@@ -33,7 +33,6 @@ from scanomatic.io import paths
 from threading import Thread
 import scanomatic.io.rpc_client as rpc_client
 from scanomatic.models.factories import compile_project_factory
-from scanomatic.io import mail
 from scanomatic.io.app_config import Config as AppConfig
 
 JOBS_CALL_SET_USB = "set_usb"
@@ -266,7 +265,7 @@ The project '{project_name}' now manages to power up scanner {scanner} again.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
             return SCAN_STEP.NextMajor
         elif self._should_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
@@ -293,7 +292,7 @@ The project '{project_name}' now managed to successfully scan an image again.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
                 return SCAN_STEP.NextMajor
             else:
                 return SCAN_STEP.NextMinor
@@ -328,7 +327,7 @@ Instead you will be notified when/if error is resolved.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.NextMajor
 
@@ -352,7 +351,7 @@ Instead you will be notified when/if error is resolved.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.TruncateIteration
 
@@ -410,7 +409,7 @@ Several reasons are probable:
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
             return SCAN_STEP.TruncateIteration
 
@@ -438,7 +437,7 @@ Several reasons are probable:
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
             return SCAN_STEP.TruncateIteration
 
@@ -452,7 +451,7 @@ The project '{project_name}' got image of expected size again! Yay.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         self._scanning_effector_data.known_file_size = largest_known_size
         return SCAN_STEP.NextMinor
@@ -499,7 +498,7 @@ No further warnings about disc space will be sent for this project.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.NextMajor
 
@@ -518,7 +517,7 @@ It's a great time to start preparing the next experiment.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
     def _do_request_scanner_on(self):
 
@@ -618,24 +617,3 @@ Scan-o-Matic""")
             index=index, time_stamp=time_stamp, path=path)
 
         self._scanning_effector_data.compile_project_model.images.append(image_model)
-
-    def _mail(self, title_template, message_template):
-
-        def _do_mail(title, message, scanning_job_model):
-
-            if not scanning_job_model.email:
-                return
-
-            if AppConfig().mail_server:
-                server = mail.get_server(AppConfig().mail_server, smtp_port=AppConfig().mail_port,
-                                         login=AppConfig().mail_user, password=AppConfig().mail_password)
-            else:
-                server = None
-
-            mail.mail(AppConfig().mail_user,
-                      scanning_job_model.email,
-                      title.format(**scanning_job_model),
-                      message.format(**scanning_job_model),
-                      server=server)
-
-        Thread(target=_do_mail, args=(title_template, message_template, self._scanning_job)).start()

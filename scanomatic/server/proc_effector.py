@@ -24,6 +24,9 @@ import scanomatic.io.logger as logger
 import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.generics.decorators as decorators
 from pipes import ChildPipeEffector
+from scanomatic.io import mail
+from scanomatic.io.app_config import Config as AppConfig
+from threading import Thread
 
 #
 # CLASSES
@@ -186,3 +189,24 @@ class ProcessEffector(object):
                 return True
         elif self._stopping:
             raise StopIteration
+
+    def _mail(self, title_template, message_template, data_model):
+
+        def _do_mail(title, message, model):
+
+            if not model.email:
+                return
+
+            if AppConfig().mail_server:
+                server = mail.get_server(AppConfig().mail_server, smtp_port=AppConfig().mail_port,
+                                         login=AppConfig().mail_user, password=AppConfig().mail_password)
+            else:
+                server = None
+
+            mail.mail(AppConfig().mail_user,
+                      model.email,
+                      title.format(**model),
+                      message.format(**model),
+                      server=server)
+
+        Thread(target=_do_mail, args=(title_template, message_template, data_model)).start()
