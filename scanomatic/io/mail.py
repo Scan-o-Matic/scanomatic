@@ -48,7 +48,7 @@ def get_server(host=None, smtp_port=0, tls=False, login=None, password=None):
 def mail(sender, receiver, subject, message, final_message=True, server=None):
 
     if server is None:
-        server = get_server('localhost')
+        server = get_server()
 
     if server is None:
         return
@@ -89,10 +89,10 @@ def get_host_name():
     return socket.gethostbyaddr(ip)[0]
 
 
-def get_default_email():
+def get_default_email(username="no-reply---scan-o-matic"):
 
     hostname = get_host_name()
     if not hostname:
         hostname = "scanomatic.somewhere"
 
-    return "{0}@{1}".format("no-reply---scan-o-matic", hostname)
+    return "{0}@{1}".format(username, hostname)
