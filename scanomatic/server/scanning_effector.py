@@ -153,6 +153,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         global SECONDS_PER_MINUTE
 
+        if self._scanning_effector_data.current_image is None:
+            return 0
+
         return ((self._scanning_job.number_of_scans - self._scanning_effector_data.current_image) *
                 self._scanning_job.time_between_scans * SECONDS_PER_MINUTE - self.time_since_last_scan)
 
