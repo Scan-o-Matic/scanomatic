@@ -70,7 +70,7 @@ class ProcessEffector(object):
         decorators.register_type_lock(self)
 
     @property
-    def identifier(self):
+    def label(self):
 
         return self._job_label
 
@@ -143,7 +143,7 @@ class ProcessEffector(object):
     def status(self, *args, **kwargs):
 
         return dict([('id', self._job.id),
-                     ('label', self._job_label),
+                     ('label', self.label),
                      ('pid', self._pid),
                      ('type', self.TYPE.text),
                      ('running', self._running),

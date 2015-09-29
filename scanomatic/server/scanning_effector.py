@@ -84,9 +84,9 @@ class ScannerEffector(proc_effector.ProcessEffector):
         }
 
     @property
-    def identifier(self):
+    def label(self):
 
-        return "'{0}' on scanner {1} (ETA: {0:0.0f} min)".format(
+        return "'{0}' on scanner {1} (ETA: {2:0.0f} min)".format(
             self._scanning_job.project_name,
             self._scanning_job.scanner + 1,
             self.time_left / 60.0)
