@@ -143,8 +143,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def time_left(self):
 
+        global SECONDS_PER_MINUTE
+
         return ((self._scanning_job.number_of_scans - self._scanning_effector_data.current_image) *
-                self._scanning_job.time_between_scans - self.time_since_last_scan)
+                self._scanning_job.time_between_scans * SECONDS_PER_MINUTE - self.time_since_last_scan)
 
     @property
     def total_images(self):
