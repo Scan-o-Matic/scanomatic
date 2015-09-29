@@ -189,6 +189,11 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_effector_data.current_cycle_step,
                 self._scanning_effector_data.previous_scan_cycle_start))
 
+            if (SCAN_CYCLE.RequestScanner.value > self._scanning_effector_data.current_cycle_step.value
+                    <= SCAN_CYCLE.RequestScannerOff.value):
+
+                self._do_request_scanner_off()
+
             if self.current_image == 0:
                 self._scanning_effector_data.current_image = None
             else:
