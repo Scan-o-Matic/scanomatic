@@ -2,6 +2,7 @@ __author__ = 'martin'
 
 
 import smtplib
+import socket
 
 try:
     from email import MIMEText, MIMEMultipart
@@ -47,10 +48,14 @@ def get_server(host=None, smtp_port=0, tls=False, login=None, password=None):
 def mail(sender, receiver, subject, message, final_message=True, server=None):
 
     if server is None:
-        server = get_server('localhost')
+        server = get_server()
 
     if server is None:
         return
+
+    if not sender:
+        sender = get_default_email()
+
     try:
         msg = MIMEMultipart()
     except TypeError:
@@ -71,3 +76,23 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
             server.quit()
         except:
             pass
+
+
+def get_host_name():
+
+    try:
+        ip = [(s.connect(('8.8.8.8', 80)), s.getsockname()[0], s.close())
+              for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
+    except IndexError:
+        return None
+
+    return socket.gethostbyaddr(ip)[0]
+
+
+def get_default_email(username="no-reply---scan-o-matic"):
+
+    hostname = get_host_name()
+    if not hostname:
+        hostname = "scanomatic.somewhere"
+
+    return "{0}@{1}".format(username, hostname)

@@ -26,14 +26,13 @@ from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, COMPILE_STATE, ScanningModelEffectorData
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
-from scanomatic.models.compile_project_model import COMPILE_ACTION
+from scanomatic.models.compile_project_model import COMPILE_ACTION, FIXTURE
 from scanomatic.io import scanner_manager
 from scanomatic.io import sane
 from scanomatic.io import paths
 from threading import Thread
 import scanomatic.io.rpc_client as rpc_client
 from scanomatic.models.factories import compile_project_factory
-from scanomatic.io import mail
 from scanomatic.io.app_config import Config as AppConfig
 
 JOBS_CALL_SET_USB = "set_usb"
@@ -65,7 +64,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._scanning_job = job.content_model
         """:type : scanomatic.models.scanning_model.ScanningModel"""
-        self._job_label = "'{0}' on scanner {1}".format(self._scanning_job.project_name, self._scanning_job.scanner)
+
         self._scanning_effector_data = ScanningModelEffectorData()
         self._rpc_client = rpc_client.get_client(admin=True)
         self._scanner = None
@@ -83,6 +82,14 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.VerifyImageSize: self._do_verify_image_size,
             SCAN_CYCLE.VerifyDiskspace: self._do_verify_image_size
         }
+
+    @property
+    def label(self):
+
+        return "'{0}' on scanner {1} (ETA: {2:0.0f} min)".format(
+            self._scanning_job.project_name,
+            self._scanning_job.scanner + 1,
+            self.time_left / 60.0)
 
     def setup(self, job, redirect_logging=True):
 
@@ -109,8 +116,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanner = sane.SaneBase(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
 
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
-            compile_action=COMPILE_ACTION.Initiate,
-            path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job))
+            compile_action=COMPILE_ACTION.Initiate if self._scanning_job.number_of_scans > 1
+            else COMPILE_ACTION.InitiateAndSpawnAnalysis,
+            path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job),
+            fixture_type=FIXTURE.Global,
+            fixture_name=self._scanning_job.fixture)
+
         self._scanning_effector_data.compile_project_model.images = []
 
         scan_project_file_path = os.path.join(
@@ -144,8 +155,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def time_left(self):
 
+        global SECONDS_PER_MINUTE
+
+        if self._scanning_effector_data.current_image is None:
+            return 0
+
         return ((self._scanning_job.number_of_scans - self._scanning_effector_data.current_image) *
-                self._scanning_job.time_between_scans - self.time_since_last_scan)
+                self._scanning_job.time_between_scans * SECONDS_PER_MINUTE - self.time_since_last_scan)
 
     @property
     def total_images(self):
@@ -176,6 +192,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_job,
                 self._scanning_effector_data.current_cycle_step,
                 self._scanning_effector_data.previous_scan_cycle_start))
+
+            if (self._scanning_effector_data.current_cycle_step.value in
+                    (SCAN_CYCLE.RequestScanner, SCAN_CYCLE.RequestScannerOff, SCAN_CYCLE.ReportNotObtainedUSB,
+                    SCAN_CYCLE.ReportScanError, SCAN_CYCLE.Scan, SCAN_CYCLE.WaitForScanComplete, SCAN_CYCLE.WaitForUSB
+                    )):
+
+                self._do_request_scanner_off()
 
             if self.current_image == 0:
                 self._scanning_effector_data.current_image = None
@@ -266,7 +289,7 @@ The project '{project_name}' now manages to power up scanner {scanner} again.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
             return SCAN_STEP.NextMajor
         elif self._should_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
@@ -293,7 +316,7 @@ The project '{project_name}' now managed to successfully scan an image again.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
                 return SCAN_STEP.NextMajor
             else:
                 return SCAN_STEP.NextMinor
@@ -328,7 +351,7 @@ Instead you will be notified when/if error is resolved.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.NextMajor
 
@@ -352,7 +375,7 @@ Instead you will be notified when/if error is resolved.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.TruncateIteration
 
@@ -410,7 +433,7 @@ Several reasons are probable:
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
             return SCAN_STEP.TruncateIteration
 
@@ -438,7 +461,7 @@ Several reasons are probable:
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
             return SCAN_STEP.TruncateIteration
 
@@ -452,7 +475,7 @@ The project '{project_name}' got image of expected size again! Yay.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         self._scanning_effector_data.known_file_size = largest_known_size
         return SCAN_STEP.NextMinor
@@ -499,7 +522,7 @@ No further warnings about disc space will be sent for this project.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.NextMajor
 
@@ -512,13 +535,13 @@ Scan-o-Matic""")
 The project '{project_name}' is reporting that it will soon stop using scanner {scanner} and launch
 the automatic analysis.
 
-""" + "Scanning estimated to end in {0:0.f} minutes".format(self.time_left / 60.) + """
+""" + "Scanning estimated to end in {0:0.0f} minutes".format(self.time_left / 60.) + """
 
 It's a great time to start preparing the next experiment.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
     def _do_request_scanner_on(self):
 
@@ -618,24 +641,3 @@ Scan-o-Matic""")
             index=index, time_stamp=time_stamp, path=path)
 
         self._scanning_effector_data.compile_project_model.images.append(image_model)
-
-    def _mail(self, title_template, message_template):
-
-        def _do_mail(title, message, scanning_job_model):
-
-            if not scanning_job_model.email:
-                return
-
-            if AppConfig().mail_server:
-                server = mail.get_server(AppConfig().mail_server, smtp_port=AppConfig().mail_port,
-                                         login=AppConfig().mail_user, password=AppConfig().mail_password)
-            else:
-                server = None
-
-            mail.mail(scanning_job_model.email if AppConfig().mail_user is None else AppConfig().mail_user,
-                      scanning_job_model.email,
-                      title.format(**scanning_job_model),
-                      message.format(**scanning_job_model),
-                      server=server)
-
-        Thread(target=_do_mail, args=(title_template, message_template, self._scanning_job)).start()

@@ -262,7 +262,7 @@ class ChildPipeEffector(_PipeEffector):
             if rC.online:
 
                 pipe = rC.reestablishMe(
-                    self.procEffector.identifier,
+                    self.procEffector.label,
                     self.procEffector.label,
                     self.procEffector.TYPE,
                     os.getpid())

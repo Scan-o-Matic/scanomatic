@@ -53,7 +53,7 @@ function queueStatusFormatter(data) {
     ret = "";
 
     for (var i=0;i<data.length;i++)
-        ret += jobAsHTML(data[i]);
+        ret += queueItemAsHTML(data[i]);
 
     return ret;
 }
@@ -72,7 +72,8 @@ function jobsStatusFormatter(data) {
 }
 
 function jobStatusAsHTML(job) {
-    ret = "<div class=job><code>" + job.type + "</code>&nbsp;<code>"
+    ret = "<div class=job><input type='hidden' class='id' value='" + job.id + "'><code>"
+        + job.type + "</code>&nbsp;<code>"
         + (job.running ? "Running" : "Not running") + "</code>";
 
     if (job.stopping)
@@ -88,11 +89,15 @@ function jobStatusAsHTML(job) {
 
     ret += job.label;
 
+    ret += "<button type='button' class='stop-button' onclick='stopDialogue(this);'></button>";
     return ret + "</div>";
 }
 
-function jobAsHTML(job) {
-    ret = "<div class='job'><code>" + job.type + "</code>&nbsp;<code>" + job.status + "</code>&nbsp;";
+function queueItemAsHTML(job) {
+
+    ret = "<div class='job'><input type='hidden' class='id' value='" + job.id + "'><code>"
+        + job.type + "</code>&nbsp;<code>" + job.status + "</code>&nbsp;";
+
     if (job.type == "Scan")
         ret += job.content_model.project_name;
     else if (job.type == "Compile")
@@ -103,5 +108,52 @@ function jobAsHTML(job) {
         ret += job.content_model.analysis_directory;
     else
         ret += job.id;
+
+    ret += "<button type='button' class='stop-button' onclick='stopDialogue(this);'></button>";
     return ret + "</div>";
+}
+
+function stopDialogue(button) {
+
+    button = $(button);
+    var title = "Terminate job";
+    var job_id = button.siblings(".id").first().val();
+    var body_header = "Are you sure?";
+    var body = "This will terminate the job '', click 'Yes' to proceed.";
+
+    InputEnabled(button, false);
+
+    $('<div class=\'dialog\'></div>').appendTo("body")
+        .prop("title", title)
+        .html("<div><h3>" + body_header + "</h3>" + body + "</div>")
+        .dialog({modal: true,
+                 buttons: {
+                    Yes: function() {
+
+                        button = null;
+
+                        $.ajax({
+                        url: "/job/" + job_id + "/stop",
+                        method: "GET",
+                        success: function (data) {
+                            if (data.success) {
+                                Dialogue("Accepted", "It may take a little while before stop is executed, so please be patient");
+                            } else {
+                                Dialogue("Not allowed", data.reason);
+                            }
+                        },
+                        error: function (data) {
+                            Dialogue("Error", data.reason);
+                        }});
+                        $(this).dialog("close");
+                    },
+                    No: function() {
+                        $(this).dialog("close");
+                    }
+                 }
+        }).on('dialogclose', function(event) {
+            if (button)
+                InputEnabled(button, true);
+        });
+
 }
