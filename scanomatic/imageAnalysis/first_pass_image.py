@@ -61,8 +61,9 @@ def _get_rotated_vector(x, y, rotation):
 
 class FixtureImage(object):
 
-    MARKER_DETECTION_SCALE = 0.25
+    MARKER_DETECTION_DPI = 150
     EXPECTED_IM_SIZE = (6000, 4800)
+    EXPECTED_IM_DPI = 600
 
     def __init__(self, fixture=None):
 
@@ -81,8 +82,9 @@ class FixtureImage(object):
             self._history = None
 
         self.im = None
-        self.im_original_scale = None
         self.im_path = None
+        self._original_dpi = None
+
         self._name = "default"
 
     def __getitem__(self, key):
@@ -119,8 +121,31 @@ class FixtureImage(object):
         else:
             self._name = value
 
+    def get_dpi_factor_to_target(self, target_scale):
 
-    def set_image(self, image=None, image_path=None):
+        return target_scale / float(self._original_dpi)
+
+    @staticmethod
+    def coordinate_to_original_dpi(coordinate, as_ints=False, scale=1.0):
+
+        rtype = type(coordinate)
+
+        if as_ints:
+            return rtype(int(round(val / scale)) for val in coordinate)
+
+        return rtype(val / scale for val in coordinate)
+
+    @staticmethod
+    def coordinate_to_local_dpi(coordinate, as_ints=False, scale=1.0):
+
+        rtype = type(coordinate)
+
+        if as_ints:
+            return rtype(int(round(val * scale)) for val in coordinate)
+
+        return rtype(val * scale for val in coordinate)
+
+    def set_image(self, image=None, image_path=None, dpi=None):
 
         self.im_path = image_path
 
@@ -142,7 +167,32 @@ class FixtureImage(object):
 
             self.im = None
 
-        self.im_original_scale = get_image_scale(self.im)
+        if self.im is None:
+            self._original_dpi = None
+        else:
+            self._original_dpi = dpi if dpi else self.guess_dpi()
+
+    def guess_dpi(self):
+
+        dpi = ((a / float(b)) * self.EXPECTED_IM_DPI for a, b in zip(self.im.shape, self.EXPECTED_IM_SIZE))
+        if dpi:
+            guess = 0
+            for val in dpi:
+                if guess > 0 and guess != val:
+
+                    self._logger.warning(
+                        "Image dimensions don't agree with expected size " +
+                        "X {1} != Y {2} on image '{3}', can't guess DPI, using {0}".format(
+                            self.EXPECTED_IM_DPI, guess, val, self.im_path))
+
+                    return self.EXPECTED_IM_DPI
+
+                guess = val
+
+            if guess > 0:
+                return guess
+
+        return self.EXPECTED_IM_DPI
 
     def analyse_current(self):
 
@@ -193,35 +243,34 @@ class FixtureImage(object):
 
         _logger.info("Running marker detection ({0} markers on {1})".format(markings, self.im_path))
 
-        analysis_img = self._get_image_in_correct_scale()
+        analysis_img = self._get_image_in_correct_scale(self.MARKER_DETECTION_DPI)
+        scale_factor = self.get_dpi_factor_to_target(self.MARKER_DETECTION_DPI)
 
         im_analysis = imageFixture.FixtureImage(
             image=analysis_img,
             pattern_image_path=self["reference"].get_marker_path(),
-            scale=self['reference'].model.scale)
+            scale=scale_factor)
 
-        x_positions, y_positions = im_analysis.find_pattern(markings=markings)
+        x_positions_correct_scale, y_positions_correct_scale = im_analysis.find_pattern(markings=markings)
 
-        self["current"].model.orientation_marks_x = x_positions
-        self["current"].model.orientation_marks_y = y_positions
+        self["current"].model.orientation_marks_x = x_positions_correct_scale
+        self["current"].model.orientation_marks_y = y_positions_correct_scale
 
-        if x_positions is None or y_positions is None:
+        if x_positions_correct_scale is None or y_positions_correct_scale is None:
 
             _logger.error("No markers found")
 
         _logger.debug("Marker Detection complete (acc {0} s)".format(time.time() - t))
 
-    def _get_image_in_correct_scale(self):
+    def _get_image_in_correct_scale(self, target_dpi):
 
-        scale = self['reference'].model.scale
-        if scale is None or scale == self.im_original_scale:
-            analysis_img = self.im
-        else:
-            analysis_img = imageBasics.Quick_Scale_To_im(
+        if self._original_dpi != target_dpi:
+
+            return imageBasics.Quick_Scale_To_im(
                 im=self.im,
-                scale=self.MARKER_DETECTION_SCALE / self.im_original_scale)
+                scale=self.get_dpi_factor_to_target(target_dpi))
 
-        return analysis_img
+        return self.im
 
     def _set_current_mark_order(self):
 
@@ -349,7 +398,6 @@ class FixtureImage(object):
 
         current_model = self["current"].model
         im = self.get_grayscale_im_section(current_model.grayscale, scale=1.0)
-
 
         if im is None or 0 in im.shape:
             err = "No valid grayscale area. "

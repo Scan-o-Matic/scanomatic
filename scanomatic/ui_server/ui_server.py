@@ -89,8 +89,15 @@ def get_grayscale_is_valid(values, grayscale):
 def usable_markers(markers, image):
 
     def marker_inside_image(marker):
+        """Compares marker to image shape
 
-        return (marker > 0).all() and marker[0] < image.shape[0] and marker[1] < image.shape[1]
+        Note that image shape comes in y, x order while markers come in x, y order
+
+        """
+        val = (marker > 0).all() and marker[0] < image.shape[1] and marker[1] < image.shape[0]
+        if not val:
+            _logger.error("Marker {marker} is outside image {shape}".format(marker=marker, shape=image.shape))
+        return val
 
     try:
         markers_array = np.array(markers, dtype=float)
@@ -98,9 +105,11 @@ def usable_markers(markers, image):
         return False
 
     if markers_array.ndim != 2 or markers_array.shape[0] < 3 or markers_array.shape[1] != 2:
+        _logger.error("Markers have bad shape {markers}".format(markers=markers))
         return False
 
     if len(set(map(tuple, markers_array))) != len(markers):
+        _logger.error("Some makerer is duplicated {markers}".format(markers=markers))
         return False
 
     return all(marker_inside_image(marker) for marker in markers_array)
