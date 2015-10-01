@@ -309,7 +309,7 @@ class GridArray():
         self._update_grid_cells()
 
         if save_name is not None:
-            save_name += "{0}.svg".format(self.index)
+            save_name += "{0}.svg".format(self.index + 1)
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name)
 
         return True
