@@ -16,6 +16,7 @@ __status__ = "Development"
 from subprocess import Popen, PIPE
 import re
 import psutil
+from enum import Enum
 
 #
 # INTERNAL DEPENDENCIES
@@ -42,6 +43,13 @@ JOB_CALL_SCANNER_REQUEST_ON = "request_scanner_on"
 JOB_CALL_SCANNER_REQUEST_OFF = "request_scanner_off"
 
 
+class STATE(Enum):
+
+    Unknown = 0
+    Reported = 1
+    Resolved = 2
+
+
 class ScannerPowerManager(SingeltonOneInit):
 
     def __one_init__(self):
@@ -55,6 +63,9 @@ class ScannerPowerManager(SingeltonOneInit):
         self._scanners = self._get_scanner_owners_from_file()
         self._pm = self._get_power_manager(self._scanners)
         self._scanner_queue = []
+
+        self._reported_sane_missing = STATE.Unknown
+
         decorators.register_type_lock(self)
 
     def __getitem__(self, item):
@@ -326,10 +337,16 @@ class ScannerPowerManager(SingeltonOneInit):
         self._manage_claimer()
         try:
             alive_scanners = get_alive_scanners()
+            if self._reported_sane_missing is STATE.Reported:
+                self._logger.info("SANE is now accessible but need restart to detect scanners")
+                self._reported_sane_missing = STATE.Resolved
+
         except OSError:
             self._pm.clear()
             self._scanners.clear()
-            self._logger.warning("SANE is not installed, server can't scan")
+            if self._reported_sane_missing is not STATE.Reported:
+                self._logger.warning("SANE is not installed, server can't scan")
+            self._reported_sane_missing = STATE.Reported
         else:
             return self._match_scanners(alive_scanners)
 
