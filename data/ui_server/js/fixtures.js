@@ -540,7 +540,7 @@ function draw_fixture() {
 
     if (markers) {
         var radius = 140 * scale;
-        var marker_scale = 4;
+        var marker_scale = 1;
         for (var len = markers.length, i=0; i<len;i++)
             draw_marker(context, markers[i][0] * scale * marker_scale,
                         markers[i][1] * scale * marker_scale, radius, "cyan", 3);
