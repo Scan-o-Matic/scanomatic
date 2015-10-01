@@ -44,6 +44,21 @@ def _verify_admin(f):
     return _verify_global_admin
 
 
+def _report_invalid(logger, factory, model, title):
+   """
+
+   :type logger: scanomatic.io.logger.Logger
+   :type factory: scanomatic.generics.abstract_model_factory.AbstractModelFactory
+   :type model: scanomstic.generics.model.Model
+   :return: None
+   """
+
+   for param in factory.get_invalid_names(model):
+
+       logger.warning("{title} got invalid parameter {param} value '{value}'".format(
+           title=title, param=param, value=model[param]))
+
+
 class Interface_Builder(SingeltonOneInit):
 
     def __one_init__(self):
@@ -370,10 +385,13 @@ class Interface_Builder(SingeltonOneInit):
         if not path_valid or not ScanningModelFactory.validate(scanning_model):
             if not path_valid:
                 _SOM_SERVER.logger.error("Project name duplicate in containing directory")
-            else:
-                _SOM_SERVER.logger.error("Invalid settings: {0}".format(
-                    tuple("{0}={1}".format(inval, scanning_model[inval]) for
-                          inval in ScanningModelFactory.get_invalid_names(scanning_model))))
+
+            if not ScanningModelFactory.validate(scanning_model):
+                _report_invalid(
+                    _SOM_SERVER.logger,
+                    ScanningModelFactory,
+                    scanning_model,
+                    "Request scanning job")
             return False
 
         return santize_communication(_SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan))
@@ -386,8 +404,12 @@ class Interface_Builder(SingeltonOneInit):
         compile_project_model = CompileProjectFactory.create(**compile_project_model)
 
         if not CompileProjectFactory.validate(compile_project_model):
-            _SOM_SERVER.logger.error("Invalid settings: {0}".format(
-                tuple(CompileProjectFactory.get_invalid_names(compile_project_model))))
+
+            _report_invalid(
+                _SOM_SERVER.logger,
+                CompileProjectFactory,
+                compile_project_model,
+                "Request compile project")
             return False
 
         return santize_communication(_SOM_SERVER.enqueue(compile_project_model, rpc_job_models.JOB_TYPE.Compile))
@@ -567,9 +589,7 @@ class Interface_Builder(SingeltonOneInit):
 
         analysis_model = AnalysisModelFactory.create(**analysis_model)
         if not AnalysisModelFactory.validate(analysis_model):
-            _SOM_SERVER.logger.warning("Attempted to create analysis with invalid parameters")
-            _SOM_SERVER.logger.warning("Invalid settings: {0}".format(
-                tuple(AnalysisModelFactory.get_invalid_names(analysis_model))))
+            _report_invalid(_SOM_SERVER.logger, AnalysisModelFactory, analysis_model, "Request analysis")
             return False
 
         return santize_communication( _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis))
@@ -601,4 +621,8 @@ class Interface_Builder(SingeltonOneInit):
         global _SOM_SERVER
 
         feature_extract_model = FeaturesFactory.create(**feature_extract_model)
+        if not FeaturesFactory.validate(feature_extract_model):
+            _report_invalid(_SOM_SERVER.logger, FeaturesFactory, feature_extract_model, "Request feature extraction")
+            return False
+
         return santize_communication(_SOM_SERVER.enqueue(feature_extract_model, rpc_job_models.JOB_TYPE.Features))

@@ -263,7 +263,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     output_directory=request.values.get("output_directory"),
                     chain=request.values.get("chain"))
 
-                success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(AnalysisModelFactory.to_dict(model))
+                success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
+                    AnalysisModelFactory.to_dict(model))
 
                 if success:
                     return jsonify(success=True)
@@ -275,7 +276,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
                 model = FeaturesFactory.create(analysis_directory=request.values.get("analysis_directory"))
 
-                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(FeaturesFactory.to_dict(model))
+                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
+                    FeaturesFactory.to_dict(model))
 
                 if success:
                     return jsonify(success=success)
