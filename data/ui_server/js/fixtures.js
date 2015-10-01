@@ -421,6 +421,7 @@ function set_fixture_markers(data) {
     markers = data.markers;
     if (markers.length ==0) {
         markers = null;
+        context_warning = "No markers were detected!";
         $(new_fixture_data_id).show();
     }
     draw_fixture();
@@ -538,11 +539,11 @@ function draw_fixture() {
     }
 
     if (markers) {
-        var radius = 30 * scale;
+        var radius = 140 * scale;
         var marker_scale = 4;
         for (var len = markers.length, i=0; i<len;i++)
             draw_marker(context, markers[i][0] * scale * marker_scale,
-                        markers[i][1] * scale * marker_scale, radius, "blue", 5);
+                        markers[i][1] * scale * marker_scale, radius, "cyan", 3);
     }
 
     if (areas) {
@@ -575,6 +576,15 @@ function draw_marker(context, centerX, centerY, radius, color, lineWidth) {
     context.beginPath();
     context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
     context.lineWidth = lineWidth;
+    context.strokeStyle = color;
+    context.stroke();
+
+    context.beginPath();
+    context.moveTo(centerX - 0.5 * radius, centerY - 0.5 * radius);
+    context.lineTo(centerX + 0.5 * radius, centerY + 0.5 * radius);
+    context.moveTo(centerX + 0.5 * radius, centerY - 0.5 * radius);
+    context.lineTo(centerX - 0.5 * radius, centerY + 0.5 * radius);
+    context.lineWidth = 0.5 * lineWidth;
     context.strokeStyle = color;
     context.stroke();
 }
