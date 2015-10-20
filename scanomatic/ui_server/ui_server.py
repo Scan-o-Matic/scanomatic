@@ -558,7 +558,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
 
                 fixture = get_fixture_image_by_name(name)
-                _, values = get_grayscale(fixture, grayscale_area_model)
+                _, values = get_grayscale(fixture, grayscale_area_model, debug=debug)
                 grayscale_object = getGrayscale(grayscale_area_model.name)
                 valid = get_grayscale_is_valid(values, grayscale_object)
                 return jsonify(source_values=values, target_values=grayscale_object['targets'],
