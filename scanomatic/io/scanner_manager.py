@@ -30,13 +30,7 @@ from scanomatic.models.factories.scanning_factory import ScannerOwnerFactory
 from scanomatic.io.power_manager import InvalidInit, PowerManagerNull
 import scanomatic.generics.decorators as decorators
 from scanomatic.generics.singleton import SingeltonOneInit
-
-
-def get_alive_scanners():
-
-    p = Popen(["scanimage", "-L"], shell=False, stdout=PIPE, stderr=PIPE)
-    stdout, _ = p.communicate()
-    return re.findall(r'device[^\`]*.(.*libusb[^\`\']*)', stdout)
+from scanomatic.io.sane import get_alive_scanners
 
 
 JOB_CALL_SCANNER_REQUEST_ON = "request_scanner_on"
@@ -336,7 +330,7 @@ class ScannerPowerManager(SingeltonOneInit):
 
         self._manage_claimer()
         try:
-            alive_scanners = get_alive_scanners()
+            alive_scanners, alive_scanner_models = zip(*get_alive_scanners())
             if self._reported_sane_missing is STATE.Reported:
                 self._logger.info("SANE is now accessible but need restart to detect scanners")
                 self._reported_sane_missing = STATE.Resolved

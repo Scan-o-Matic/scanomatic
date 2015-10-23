@@ -29,6 +29,17 @@ from enum import Enum
 from logger import Logger
 
 #
+# Functions
+#
+
+
+def get_alive_scanners():
+
+    p = Popen(["scanimage", "-L"], shell=False, stdout=PIPE, stderr=PIPE)
+    stdout, _ = p.communicate()
+    return re.findall(r'device[^\`]*.(.*libusb[^\`\']*)\' is a (.*) scanner', stdout)
+
+#
 # CLASSES
 #
 
