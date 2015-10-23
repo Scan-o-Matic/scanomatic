@@ -70,6 +70,16 @@ class SaneBase(object):
                 SCAN_FLAGS.Source: "Flatbed", SCAN_FLAGS.Format: "tiff",
                 SCAN_FLAGS.Resolution: "300", SCAN_FLAGS.Mode: "Color", SCAN_FLAGS.Left: "0",
                 SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
+                SCAN_FLAGS.Depth: "8"}},
+        "EPSON V800": {
+            SCAN_MODES.TPU: {
+                SCAN_FLAGS.Source: "Transparency", SCAN_FLAGS.Format: "tiff",
+                SCAN_FLAGS.Resolution: "600", SCAN_FLAGS.Mode: "Gray", SCAN_FLAGS.Left: "0",
+                SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "203.2", SCAN_FLAGS.Height: "254", SCAN_FLAGS.Depth: "8"},
+            SCAN_MODES.COLOR: {
+                SCAN_FLAGS.Source: "Flatbed", SCAN_FLAGS.Format: "tiff",
+                SCAN_FLAGS.Resolution: "300", SCAN_FLAGS.Mode: "Color", SCAN_FLAGS.Left: "0",
+                SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
                 SCAN_FLAGS.Depth: "8"}}}
 
     _PROGRAM = "scanimage"
