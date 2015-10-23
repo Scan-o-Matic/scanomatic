@@ -588,7 +588,8 @@ Scan-o-Matic""", self._scanning_job)
                 else:
                     self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
                 self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
-                self._scanning_effector_data.compile_project_model.images.clear()
+                while self._scanning_effector_data.compile_project_model.images:
+                    self._scanning_effector_data.compile_project_model.images.pop()
                 self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
             else:
                 self._logger.warning("Failed to create a compile project job, refused by server")
