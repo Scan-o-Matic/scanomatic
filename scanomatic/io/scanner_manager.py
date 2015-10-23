@@ -330,7 +330,7 @@ class ScannerPowerManager(SingeltonOneInit):
 
         self._manage_claimer()
         try:
-            alive_scanners, alive_scanner_models = zip(*get_alive_scanners())
+            alive_scanners = get_alive_scanners()
             if self._reported_sane_missing is STATE.Reported:
                 self._logger.info("SANE is now accessible but need restart to detect scanners")
                 self._reported_sane_missing = STATE.Resolved
@@ -342,7 +342,11 @@ class ScannerPowerManager(SingeltonOneInit):
                 self._logger.warning("SANE is not installed, server can't scan")
             self._reported_sane_missing = STATE.Reported
         else:
-            return self._match_scanners(alive_scanners)
+            if alive_scanners:
+                active_usb, _ = zip(*alive_scanners)
+            else:
+                active_usb = tuple()
+            return self._match_scanners(active_usb)
 
     @decorators.type_lock
     def _manage_claimer(self):
