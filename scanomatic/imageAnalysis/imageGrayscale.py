@@ -26,6 +26,7 @@ import os
 import scanomatic.io.logger as logger
 import grayscale
 import signal
+from scanomatic.generics.maths import iqr_mean
 from scanomatic.io.paths import Paths
 
 #
@@ -478,7 +479,7 @@ class Analyse_Grayscale(object):
             np.save(os.path.join(Paths().log, 'gs_section_used_in_detection.npy'), im_trimmed)
 
         # THE 1D SIGNAL ALONG THE GS
-        para_signal_trimmed_im = np.median(im_trimmed, axis=1)
+        para_signal_trimmed_im = np.mean(im_trimmed, axis=1)
 
         if self.DEBUG_DETECTION:
             np.save(os.path.join(Paths().log, 'gs_para_signal_trimmed_im.npy'), para_signal_trimmed_im)
@@ -583,7 +584,7 @@ class Analyse_Grayscale(object):
                     self._sectionAreaSlices.append((slice(left, right),
                                                     slice(top, bottom)))
 
-                    gray_scale.append(np.median(self._img[left: right, top: bottom]))
+                    gray_scale.append(iqr_mean(self._img[left: right, top: bottom]))
 
                     if self.DEBUG_DETECTION:
                         np.save(os.path.join(Paths().log, "gs_segment_{0}.npy".format(i)),
@@ -691,7 +692,7 @@ class Analyse_Grayscale(object):
                 if right >= self._img.shape[0]:
                     right = self._img.shape[0] - 1
 
-                gray_scale.append(np.median(self._img[left: right, top: bottom]))
+                gray_scale.append(iqr_mean(self._img[left: right, top: bottom]))
 
         self._grayscale_pos = grayscale_segment_centers
         self._grayscaleSource = gray_scale
