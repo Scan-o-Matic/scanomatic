@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import numpy as np
+from numpy.lib.stride_tricks import as_strided
 from scipy.signal import fftconvolve, convolve2d, convolve
 from scipy.ndimage import gaussian_filter1d
 import os
@@ -45,6 +46,70 @@ def get_ortho_trimmed_slice(im, grayscale):
     peak = gaussian_filter1d(np.max(C, axis=0), half_width).argmax()
 
     return im[:, peak - half_width: peak + half_width]
+
+
+def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0.7, permissibility_threshold=0.03,
+                           acceptability_threshold = 0.9, buffer=0.5):
+
+    # Restructures the image so that local variances can be measured using a kernel the scaled (default 0.7) size
+    # of the segment size
+
+    kernel_size = tuple(int(kernel_part_of_segment * v) for v in (grayscale['length'], grayscale['width']))
+    strided_im = as_strided(im_ortho_trimmed,
+                            shape=(im_ortho_trimmed.shape[0] - kernel_size[0] + 1,
+                                   im_ortho_trimmed.shape[1] - kernel_size[1] + 1,
+                                   kernel_size[0], kernel_size[1]),
+                            strides=im_ortho_trimmed.strides * 2)
+
+    # Note: ortho_signal has indices half kernel_size offset with regards to im_ortho_trimmed
+
+    ortho_signal = np.median(np.var(strided_im, axis=(-1, -2)), axis=1)
+
+    # Possibly more sophisticated method may be needed looking at establishing the drifting baseline and convolving
+    # segment-lengths with one-kernels to ensure no peak is there.
+
+    permissible_positions = ortho_signal < permissibility_threshold * (ortho_signal.max() - ortho_signal.min()) + \
+                                           ortho_signal.min()
+
+
+    # Selects the best stretch of permissible signal (True) compared to the expected length of the grayscale
+    acceptable_placement = None
+    placement_accuracy = 0
+    in_section = False
+    section_start = 0
+    length = float(grayscale['sections'] * grayscale['length'])
+
+    for i, val in enumerate(permissible_positions):
+
+        if in_section and not val:
+
+            in_section = False
+            accuracy = 1 - abs(i - section_start - length) / length
+            if accuracy > placement_accuracy:
+                placement_accuracy = accuracy
+                acceptable_placement = int((i - 1 - section_start) / 2) + section_start
+        elif not in_section and val:
+            in_section = True
+            section_start = i
+
+    if in_section:
+        accuracy = 1 - abs(i - section_start - length) / length
+        if accuracy > placement_accuracy:
+            placement_accuracy = accuracy
+            acceptable_placement = int((permissible_positions.size - 1 - section_start) / 2) + section_start
+
+    print (placement_accuracy)
+    if placement_accuracy > acceptability_threshold:
+
+        buffered_half_length = int(round(length / 2 + grayscale['length'] * buffer))
+
+        # Correct offset in the permissible signa to the image
+        acceptable_placement += kernel_size[0] / 2
+
+        return im_ortho_trimmed[max(0, acceptable_placement - buffered_half_length):
+                                min(im_ortho_trimmed.shape[0], acceptable_placement + buffered_half_length)]
+
+    return im_ortho_trimmed
 
 
 def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0.75, debug=True):
@@ -98,7 +163,7 @@ def get_grayscale(fixture, grayscale_area_model, debug=False):
     im_o = get_ortho_trimmed_slice(im, gs)
     if not im_o.size:
         return None, None
-    im_p = get_para_timmed_slice(im_o, gs)
+    im_p = get_para_trimmed_slice(im_o, gs)
     if not im_p.size:
         return None, None
     Analyse_Grayscale.DEBUG_DETECTION = debug
