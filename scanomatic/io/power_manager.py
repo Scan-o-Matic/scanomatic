@@ -345,7 +345,7 @@ class PowerManagerLan(PowerManagerNull):
 
         if self._host is None or self._host == "":
 
-            self._logger.error("LAN PM, Loging in failed, no host")
+            self._logger.error("LAN PM, Logging in failed, no host")
             return None
 
         else:
