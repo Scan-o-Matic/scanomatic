@@ -96,6 +96,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
         paths_object = paths.Paths()
         self._scanning_job.id = job.id
+        self._scanning_job.computer = AppConfig().computer_human_name
         self._setup_directory()
 
         if redirect_logging:

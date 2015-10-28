@@ -82,7 +82,7 @@ class ScanningModel(model.Model):
                  project_name="", directory_containing_project="",
                  project_tag="", scanner_tag="", id="", start_time=0.0,
                  description="", email="", pinning_formats=tuple(),
-                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",
+                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU", computer="",
                  auxillary_info=ScanningAuxInfoModel(),
                  plate_descriptions=tuple(),
                  version=__version__):
@@ -102,6 +102,7 @@ class ScanningModel(model.Model):
         self.scanner = scanner
         self.scanner_hardware = scanner_hardware
         self.mode = mode
+        self.computer = computer
         self.start_time = start_time
         self.auxillary_info = auxillary_info
         self.version = version

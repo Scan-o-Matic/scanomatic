@@ -287,6 +287,12 @@ class XML_Writer(object):
                     meta_data.mode
                 ))
 
+                f.write(self.XML_OPEN_CONT_CLOSE.format(
+                    'scanner-computer',
+                    meta_data.computer
+                ))
+
+
                 auxiliary_info = meta_data.auxillary_info
                 """:type: scanomatic.model.scanning_model.ScanningAuxInfoModel"""
 

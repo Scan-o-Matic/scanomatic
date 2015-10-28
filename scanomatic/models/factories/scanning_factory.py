@@ -201,6 +201,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'scanner': int,
         'scanner_hardware': str,
         'mode': str,
+        'computer': str,
         'version': str,
         'id': str,
         'auxillary_info': ScanningAuxInfoModel,
