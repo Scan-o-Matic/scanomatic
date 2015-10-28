@@ -33,6 +33,11 @@ function scannerStatusFormatter(data) {
             "</div>";
     }
 
+    if (data.length == 0) {
+        ret = "<em>No scanners are connected according to Scan-o-Matic. " +
+            "If this feels wrong, verify your power-manager settings and that the power-manager is reachable.</em>";
+    }
+
     return ret;
 }
 
