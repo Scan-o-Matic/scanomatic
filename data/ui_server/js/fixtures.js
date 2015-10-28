@@ -26,6 +26,11 @@ var grayscale_graph = null;
 var img_width = 0;
 var img_height = 0;
 
+$(document.documentElement).mouseup(function(event) {
+    if (creatingArea != null && selected_fixture_canvas_jq != null)
+        mouseUpFunction(event);
+});
+
 function translateToImageCoords(coords) {
     var imageCoords = JSON.parse(JSON.stringify(coords));
     imageCoords.x /= scale;
@@ -96,7 +101,11 @@ function set_canvas() {
         }
     });
 
-    selected_fixture_canvas_jq.mouseup( function(event) {
+    selected_fixture_canvas_jq.mouseup(mouseUpFunction );
+
+}
+
+function mouseUpFunction(event) {
         var minUsableSize = 10000;
         var curArea = creatingArea;
         creatingArea = null;
@@ -134,8 +143,6 @@ function set_canvas() {
         }
         setPlateIndices();
         draw_fixture();
-     });
-
 }
 
 function isArea(index) {
@@ -307,7 +314,6 @@ function get_fixtures() {
         })
         unselect(options);
     })
-
     $(new_fixture_data_id).hide();
     $(selected_fixture_div_id).hide();
 }
