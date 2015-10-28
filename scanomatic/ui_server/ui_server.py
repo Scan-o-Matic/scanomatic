@@ -22,7 +22,7 @@ from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 from scanomatic.imageAnalysis.support import save_image_as_png
 from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
-from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
+from scanomatic.imageAnalysis.imageGrayscale import get_grayscale, is_valid_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.compile_project_model import COMPILE_ACTION
@@ -76,14 +76,11 @@ def get_area_too_large_for_grayscale(grayscale_area_model):
 
     
 def get_grayscale_is_valid(values, grayscale):
+
     if values is None:
         return False
 
-    try:
-        fit = np.polyfit(grayscale['targets'], values, 3)
-        return np.unique(np.sign(fit)).size == 1
-    except:
-        return False
+    return is_valid_grayscale(grayscale['targets'], values)
 
 
 def usable_markers(markers, image):

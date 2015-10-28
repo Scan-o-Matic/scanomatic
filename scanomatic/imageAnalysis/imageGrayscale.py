@@ -171,6 +171,27 @@ def get_grayscale(fixture, grayscale_area_model, debug=False):
     return ag.get_grayscale(im_p, pre_trimmed=True)
 
 
+def is_valid_grayscale(calibration_target_values, image_values, pixel_depth=8) :
+
+    try:
+        fit = np.polyfit(image_values, calibration_target_values, 3)
+    except TypeError:
+        # Probably vectors were of unequal size
+        return False
+
+    poly = np.poly1d(fit)
+    data = poly(np.arange(2*pixel_depth))
+
+    # Analytical derivative over the value span ensuring that the curve is continuously increasing or decreasing
+    poly_is_ok = np.unique(np.sign(data[1:] - data[:-1])).size == 1
+
+    # Verify that the same sign correlation is intact for the difference of two consequtive elements in each series
+    measures_are_ok = np.unique(tuple(np.sign(a) - np.sign(b) for a, b in
+                                      zip(np.diff(calibration_target_values), np.diff(image_values)))).size == 1
+
+    return poly_is_ok and measures_are_ok
+
+
 class Analyse_Grayscale(object):
 
     ORTH_EDGE_T = 0.2
@@ -452,6 +473,9 @@ class Analyse_Grayscale(object):
 
             self._logger.error("No image loaded or null image")
             return None
+
+        if self.DEBUG_DETECTION:
+            np.save(os.path.join(Paths().log, 'gs_section_used_in_detection.npy'), im_trimmed)
 
         # THE 1D SIGNAL ALONG THE GS
         para_signal_trimmed_im = np.median(im_trimmed, axis=1)
