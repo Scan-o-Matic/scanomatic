@@ -275,7 +275,12 @@ class PowerManagerLan(PowerManagerNull):
         """Looks up the MAC-address supplied on the local router"""
 
         # SEARCHING FOR IP SPECIFIC DEPENDENCIES
-        import nmap
+        try:
+            import nmap
+        except ImportError:
+            self._logger.error("Can't scan for Power Manager without nmap installed")
+            self._host = None
+            return self._host
 
         # PINGSCAN ALL IP:S
         self._logger.info("LAN PM, Scanning hosts (may take a while...)")
