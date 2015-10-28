@@ -10,6 +10,8 @@ var new_fixture_name;
 var save_fixture_action_id;
 var save_fixture_button;
 var remove_fixture_id;
+var grayscale_type_id;
+
 
 var context_warning = "";
 var fixture_image = null;
@@ -69,10 +71,13 @@ function set_canvas() {
                 areas[creatingArea].y2 = imagePos.y;
                 areas[creatingArea].grayscale = false;
                 areas[creatingArea].plate = -1;
+                InputEnabled($(grayscale_type_id), true);
             }
         } else {
-            if (areas[nextArea] && areas[nextArea].grayscale)
+            if (areas[nextArea] && areas[nextArea].grayscale) {
                 grayscale_graph = null;
+                InputEnabled($(grayscale_type_id), true);
+            }
             areas.splice(nextArea, 1);
             creatingArea = null;
 
@@ -108,9 +113,9 @@ function set_canvas() {
 
         for (var i=0; i<areas.length;i++) {
             if (getAreaSize(i) < minUsableSize) {
-                if (area[i] && area[i].grayscale)
+                if (area[i] && area[i].grayscale) {
                     grayscale_graph = null;
-
+                }
                 areas.splice(i, 1);
                 if (i < curArea)
                     curArea--;
@@ -205,6 +210,7 @@ function clearAreas() {
     areas = [];
     grayscale_graph = null;
     context_warning = "";
+    InputEnabled($(grayscale_type_id), true);
 }
 
 function getAreaByPoint(point) {
@@ -234,6 +240,7 @@ function removeGrayScale() {
             areas.grayscale = false;
             break;
     }
+    InputEnabled($(grayscale_type_id), true);
 }
 
 function testAsGrayScale(plate) {
@@ -256,11 +263,13 @@ function testAsGrayScale(plate) {
                     plate.grayscale = true;
                     grayscale_graph = GetLinePlot(data.target_values, data.source_values,
                         "Grayscale", "Targets", "Measured values");
+                    InputEnabled($(grayscale_type_id), false);
                 } else {
                     if (!hasGrayScale() && data.reason)
                         grayscale_graph = GetLinePlot([], [], data.reason, "Targets", "Measured values");
                     plate.grayscale = false;
                     plate.plate = 0;
+                    InputEnabled($(grayscale_type_id), true);
                     setPlateIndices();
                 }
                 draw_fixture();
@@ -270,6 +279,7 @@ function testAsGrayScale(plate) {
                 context_warning = "Error occured detecting grayscale";
                 setPlateIndices();
                 draw_fixture();
+                InputEnabled($(grayscale_type_id), true);
             }
 
         });
@@ -333,6 +343,8 @@ function get_fixture() {
                 data.grayscale.grayscale = true;
                 data.grayscale.plate = -1;
                 SetSelectedGrayscale(data.grayscale.name);
+                InputEnabled($(grayscale_type_id), false);
+
                 areas.push(data.grayscale)
                 markers = data.markers;
 
