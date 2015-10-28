@@ -13,8 +13,6 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from subprocess import Popen, PIPE
-import re
 import psutil
 from enum import Enum
 
@@ -78,10 +76,10 @@ class ScannerPowerManager(SingeltonOneInit):
 
         :rtype : bool
         """
-        try:
-            return self[item] is not None
-        except IndexError:
-            return False
+        if isinstance(item, int):
+            return any(scanner_id == item for scanner_id in self._scanners)
+        else:
+            return any(scanner.name == item if scanner else False for scanner in self._scanners.itervalues())
 
     def _get_scanner_owners_from_file(self):
 
