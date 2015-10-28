@@ -33,8 +33,8 @@ $(document.documentElement).mouseup(function(event) {
 
 function translateToImageCoords(coords) {
     var imageCoords = JSON.parse(JSON.stringify(coords));
-    imageCoords.x /= scale;
-    imageCoords.y /= scale;
+    imageCoords.x = clamp(imageCoords.x, 0, img_width) / scale;
+    imageCoords.y = clamp(imageCoords.y, 0, img_height) / scale;
     return imageCoords;
 }
 

@@ -1,4 +1,8 @@
 
+function clamp(value, min, max) {
+    return value == null ? min : (isNaN(value) ? max : Math.max(Math.min(value, max), min));
+}
+
 function GetMousePosRelative(event, obj) {
     return {x: event.pageX - obj.offset().left, y: event.pageY - obj.offset().top};
 }
