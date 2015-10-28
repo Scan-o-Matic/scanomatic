@@ -52,7 +52,7 @@ class ScannerPowerManager(SingeltonOneInit):
         self._fixtures = fixtures.Fixtures()
         self._orphan_usbs = set()
 
-        self._scanners = self._get_scanner_owners_from_file()
+        self._scanners = self._initiate_scanners()
         self._pm = self._get_power_manager(self._scanners)
         self._scanner_queue = []
 
@@ -81,14 +81,17 @@ class ScannerPowerManager(SingeltonOneInit):
         else:
             return any(scanner.name == item if scanner else False for scanner in self._scanners.itervalues())
 
-    def _get_scanner_owners_from_file(self):
+    def _initiate_scanners(self):
 
         scanners = {}
 
+        # Load saved scanner data
         for scanner in ScannerOwnerFactory.serializer.load(self._paths.config_scanners):
 
-            scanners[scanner.socket] = scanner
+            if scanner.socket > 0 and scanner.socket <= self._conf.number_of_scanners:
+                scanners[scanner.socket] = scanner
 
+        # Create free scanners for those missing previous data
         for socket in self._enumerate_scanner_sockets():
             if socket not in scanners:
                 scanner = ScannerOwnerFactory.create(socket=socket, scanner_name=self._conf.get_scanner_name(socket))
@@ -101,20 +104,20 @@ class ScannerPowerManager(SingeltonOneInit):
     def _enumerate_scanner_sockets(self):
 
         for power_socket in range(self._conf.number_of_scanners):
-            yield power_socket
+            yield power_socket + 1
 
     def _get_power_manager(self, scanners):
 
         pm = {}
-        for power_socket in scanners:
+        for scanner in scanners.itervalues():
 
             try:
-                pm[power_socket] = self._conf.get_pm(power_socket)
+                pm[scanner.socket] = self._conf.get_pm(scanner.socket)
             except InvalidInit:
-                self._logger.error("Failed to init socket {0}".format(power_socket))
-                pm[power_socket] = PowerManagerNull(power_socket)
+                self._logger.error("Failed to init socket {0}".format(scanner.socket))
+                pm[scanner.socket] = PowerManagerNull(scanner.socket)
 
-        self._logger.info("Power Managers inited {0}".format(pm))
+        self._logger.info("Power Manager {0} inited for scanner {1}".format(pm[scanner.socket], scanner))
         return pm
 
     def _save(self, scanner_owner_model):
@@ -227,7 +230,7 @@ class ScannerPowerManager(SingeltonOneInit):
             if scanner.usb:
                 return scanner.usb
             else:
-                self._logger.info("Scanner {0} requested to be turned on by {1}.".format(scanner.socket, job_id))
+                self._logger.info("Requested socket {0} to be turned on (By {1}).".format(scanner.socket, job_id))
                 return self._add_to_claim_queue(scanner)
 
         else:
@@ -251,7 +254,7 @@ class ScannerPowerManager(SingeltonOneInit):
                 "Can't turn off scanner for unknown job {1}".format(job_id))
             return False
 
-        self._logger.info("Scanner {0} requested to be turned on by {1}.".format(scanner.socket, job_id))
+        self._logger.info("Requested socket {0} to be turned off (By {1}).".format(scanner.socket, job_id))
         if self._power_down(scanner):
             self._save(scanner)
             return True

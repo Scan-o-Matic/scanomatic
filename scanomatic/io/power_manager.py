@@ -43,7 +43,7 @@ class InvalidInit(Exception):
 # GLOBALS
 #
 
-PEOPLES_INDEX_OFFSET = 1
+
 URL_TIMEOUT = 2
 MAX_CONNECTION_TRIES = 10
 POWER_MANAGER_TYPE = Enum("POWER_MANAGER_TYPE",
@@ -142,17 +142,17 @@ class PowerManagerUsb(PowerManagerNull):
         self._fail_error = "No GEMBIRD SiS-PM found"
 
     def _on(self):
-        global PEOPLES_INDEX_OFFSET
+
         on_success = self._exec(self._on_cmd)
         self._logger.info('USB PM, Turning on socket {0} ({1})'.format(
-            self._socket + PEOPLES_INDEX_OFFSET, on_success))
+            self._socket, on_success))
         return on_success
 
     def _off(self):
-        global PEOPLES_INDEX_OFFSET
+
         off_success = self._exec(self._off_cmd)
         self._logger.info('USB PM, Turning off socket {0} ({1})'.format(
-            self._socket + PEOPLES_INDEX_OFFSET, off_success))
+            self._socket, off_success))
         return off_success
 
     def _exec(self, cmd):
@@ -179,19 +179,18 @@ class PowerManagerUsbLinux(PowerManagerUsb):
     def __init__(self, socket, path="sispmctl",
                  power_mode=POWER_MODES.Impulse):
 
-        global PEOPLES_INDEX_OFFSET
         super(PowerManagerUsbLinux, self).__init__(
             socket,
             path,
-            on_args=["-o", "{0}".format(socket + PEOPLES_INDEX_OFFSET)],
-            off_args=["-f", "{0}".format(socket + PEOPLES_INDEX_OFFSET)],
+            on_args=["-o", "{0}".format(socket)],
+            off_args=["-f", "{0}".format(socket)],
             power_mode=power_mode,
             name="USB(Linux)")
 
     def status(self):
-        global PEOPLES_INDEX_OFFSET
+
         self._logger.info('USB PM, trying to connect')
-        proc = Popen('sispmctl -g {0}'.format(self._socket + PEOPLES_INDEX_OFFSET),
+        proc = Popen('sispmctl -g {0}'.format(self._socket),
                      stdout=PIPE, stderr=PIPE, shell=True)
 
         stdout, stderr = proc.communicate()
@@ -214,16 +213,16 @@ class PowerManagerUsbWin(PowerManagerUsb):
                  path=r"C:\Program Files\Gembird\Power Manager\pm.exe",
                  power_mode=POWER_MODES.Impulse):
 
-        global PEOPLES_INDEX_OFFSET
         super(PowerManagerUsbWin, self).__init__(
             socket,
             path,
-            on_args=["-on", "-PW1", "-Scanner{0}".format(socket + PEOPLES_INDEX_OFFSET)],
-            off_args=["-off", "-PW1", "-Scanner{0}".format(socket + PEOPLES_INDEX_OFFSET)],
+            on_args=["-on", "-PW1", "-Scanner{0}".format(socket)],
+            off_args=["-off", "-PW1", "-Scanner{0}".format(socket)],
             power_mode=power_mode,
             name="USB(Windows)")
 
 
+# noinspection PyUnresolvedReferences
 class PowerManagerLan(PowerManagerNull):
     """Class for handling LAN-connected PM:s.
 
@@ -246,8 +245,8 @@ class PowerManagerLan(PowerManagerNull):
         self._verify_name = verify_name
 
         self._pwd_params = urlencode((("pw", password),))
-        self._on_params = urlencode((("cte{0}".format(socket), 1),))
-        self._off_params = urlencode((("cte{0}".format(socket), 0),))
+        self._on_params = urlencode((("cte{0}".format(socket - 1), 1),))
+        self._off_params = urlencode((("cte{0}".format(socket - 1), 0),))
 
         self._set_urls()
         self.test_ip()
@@ -449,8 +448,8 @@ class PowerManagerLan(PowerManagerNull):
             states = re.findall(r'sockstates = ([^;]*)', page)[0].strip()
             try:
                 states = eval(states)
-                if len(states) >= self._socket + PEOPLES_INDEX_OFFSET:
-                    return states[self._socket] == 1
+                if len(states) >= self._socket:
+                    return states[self._socket - 1] == 1
             except:
                 pass
 
