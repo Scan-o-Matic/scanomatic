@@ -78,6 +78,8 @@ class Config(SingeltonOneInit):
             }
         # TMP SOLUTION TO BIGGER PROBLEMS
 
+        self.computer_human_name = 'Unnamed Computer'
+
         # VERSION HANDLING
         self.version_first_pass_change_1 = 0.997
         self.version_fixture_grid_history_change_1 = 0.998

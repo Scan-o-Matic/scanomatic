@@ -347,7 +347,8 @@ Scan-o-Matic""", self._scanning_job)
             self._mail("Scan-o-Matic: Project '{project_name}' error while scanning",
                        """This is an automated email, please don't reply!
 
-The project '{project_name}' reports an error while scanning.
+The project '{project_name}' on ''""" + AppConfig().computer_human_name +
+                       """' reports an error while scanning.
 Please hurry to correct this so that the project won't be spoiled.
 
 The scanning project will attempt a new scan in {time_between_scans} minutes,
@@ -371,7 +372,8 @@ Scan-o-Matic""", self._scanning_job)
             self._mail("Scan-o-Matic: Project '{project_name}' could not acquire its Scanner",
                        """This is an automated email, please don't reply!
 
-The project '{project_name}' could not get scanner {scanner} powered up.
+The project '{project_name}' on ''""" + AppConfig().computer_human_name +
+                       """' could not get scanner {scanner} powered up.
 Please hurry to correct this so that the project won't be spoiled.
 
 The scanning project will attempt a new scan in {time_between_scans} minutes,
@@ -428,7 +430,7 @@ Scan-o-Matic""", self._scanning_job)
                 self._mail("Scan-o-Matic: Project '{project_name}' got suspicious image",
                            """This is an automated email, please don't reply!
 
-The project '{project_name}' got an image of very small size.
+The project '{project_name}' on ''""" + AppConfig().computer_human_name + """' got an image of very small size.
 
 """ + "{0}:\t{1} bytes\n".format(self._scanning_effector_data.current_image_path, current_size) + """
 
@@ -455,7 +457,7 @@ Scan-o-Matic""", self._scanning_job)
                 self._mail("Scan-o-Matic: Project '{project_name}' got suspicious image",
                            """This is an automated email, please don't reply!
 
-The project '{project_name}' got an image of unexpected size.
+The project '{project_name}' on ''""" + AppConfig().computer_human_name + """' got an image of unexpected size.
 
 """ + "{0}:\t{1} bytes\n\n".format(self._scanning_effector_data.current_image_path, current_size) +
                            "Previously, the largest size was {0}, such deviations aren't expected.".format(
@@ -514,7 +516,8 @@ Scan-o-Matic""", self._scanning_job)
                 self._mail("Scan-o-Matic: Project '{project_name}' may not have enough disc space",
                            """This is an automated email, please don't reply!
 
-The project '{project_name}' is reporting that the remaining space the
+The project '{project_name}' on ''""" + AppConfig().computer_human_name +
+                           """' is reporting that the remaining space the
 drive it is saving its data to may not be enough for the remainder of the project
 to complete.
 
@@ -535,10 +538,11 @@ Scan-o-Matic""", self._scanning_job)
     def _do_report_scanning_soon_done(self):
 
         self._scanning_effector_data.informed_close_to_end = True
-        self._mail("Scan-o-Matic: Project '{project_name}' scanning is soon done.",
+        self._mail("Scan-o-Matic: Project '{project_name}' on scanning is soon done.",
                    """This is an automated email, please don't reply!
 
-The project '{project_name}' is reporting that it will soon stop using scanner {scanner} and launch
+The project '{project_name} on ''""" + AppConfig().computer_human_name +
+                   """' is reporting that it will soon stop using scanner {scanner} and launch
 the automatic analysis.
 
 """ + "Scanning estimated to end in {0:0.0f} minutes".format(self.time_left / 60.) + """
