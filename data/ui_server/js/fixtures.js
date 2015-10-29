@@ -428,7 +428,7 @@ function load_fixture_image(image_name) {
             fixture_image = img;
             draw_fixture();
         }
-        img.src = "?image=" + image_name;
+        img.src = "?rnd=" + Math.random() + "&image=" + image_name;
 
     } else {
         fixture_image = null;
