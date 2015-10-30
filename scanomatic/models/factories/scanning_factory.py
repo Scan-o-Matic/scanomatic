@@ -382,6 +382,7 @@ class ScannerOwnerFactory(AbstractModelFactory):
 
     MODEL = ScannerOwnerModel
     STORE_SECTION_HEAD = ("scanner_name",)
+
     STORE_SECTION_SERIALIZERS = {
         'socket': int,
         'scanner_name': str,
@@ -390,7 +391,9 @@ class ScannerOwnerFactory(AbstractModelFactory):
         "expected_interval": float,
         "email": str,
         "warned": bool,
-        "owner": RPCjobModel,
+        "owner": lambda enforce=None, serialize=None:
+            (serialize.id if isinstance(serialize, RPCjobModel) else False)
+            if serialize is not None else (enforce if isinstance(enforce, str) else False),
         "claiming": bool,
         "power": bool,
         "reported": bool,
