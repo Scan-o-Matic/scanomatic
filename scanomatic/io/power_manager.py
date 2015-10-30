@@ -101,6 +101,10 @@ class PowerManagerNull(object):
         self._logger = logger.Logger("Power Manager {0}".format(name))
 
     @property
+    def socket(self):
+        return self._socket
+
+    @property
     def power_mode(self):
         return str(self._power_mode)
 
