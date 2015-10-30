@@ -85,7 +85,7 @@ def get_enum_name_from_value(enum, value):
 class PowerManagerNull(object):
 
     def __init__(self, socket, 
-                 power_mode=POWER_MODES.Impulse, name="not installed"):
+                 power_mode=POWER_MODES.Toggle, name="not installed"):
 
         if power_mode is POWER_MODES.Impulse:
             self.powerUpScanner = types.MethodType(_impulse_scanner, self)
@@ -128,7 +128,7 @@ class PowerManagerNull(object):
 
 class PowerManagerUsb(PowerManagerNull):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
-    def __init__(self, socket, path, on_args=None, off_args=None, power_mode=POWER_MODES.Impulse, name="USB"):
+    def __init__(self, socket, path, on_args=None, off_args=None, power_mode=POWER_MODES.Toggle, name="USB"):
 
         if not off_args:
             off_args = []
@@ -211,7 +211,7 @@ class PowerManagerUsbWin(PowerManagerUsb):
 
     def __init__(self, socket,
                  path=r"C:\Program Files\Gembird\Power Manager\pm.exe",
-                 power_mode=POWER_MODES.Impulse):
+                 power_mode=POWER_MODES.Toggle):
 
         super(PowerManagerUsbWin, self).__init__(
             socket,
@@ -231,7 +231,7 @@ class PowerManagerLan(PowerManagerNull):
 
     def __init__(self, socket, host=None, password="1", verify_name=False,
                  pm_name="Server 1", mac=None,
-                 power_mode=POWER_MODES.Impulse):
+                 power_mode=POWER_MODES.Toggle):
 
         super(PowerManagerLan, self).__init__(socket, name="LAN", power_mode=power_mode)
         self._host = host
