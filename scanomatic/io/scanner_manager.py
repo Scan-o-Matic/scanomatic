@@ -107,7 +107,9 @@ class ScannerPowerManager(SingeltonOneInit):
             yield power_socket + 1
 
     def _get_power_manager(self, scanners):
-
+        """
+        :rtype : {int : scanomatic.io.power_manager.PowerManagerNull}
+        """
         pm = {}
         for scanner in scanners.itervalues():
 
@@ -387,9 +389,14 @@ class ScannerPowerManager(SingeltonOneInit):
                 for scanner_socket in self._pm}
 
     @property
+    def pm_types(self):
+
+        return {pm.socket: {'mode': pm.power_mode, 'type': type(pm)} for pm in self._pm.itervalues()}
+
+    @property
     def has_scanners(self):
         reachable_pms = any(type(pm) is not PowerManagerNull for pm in self._pm.values())
-        self._logger.info("Power Manager {0} is reachable? {1}".format(self._pm, reachable_pms))
+        self._logger.info("Power Manager {0} is reachable? {1}".format(self.pm_types, reachable_pms))
         return self._pm and reachable_pms
 
     @property
