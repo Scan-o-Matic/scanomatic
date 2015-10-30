@@ -88,7 +88,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         return "'{0}' on scanner {1} (ETA: {2:0.0f} min)".format(
             self._scanning_job.project_name,
-            self._scanning_job.scanner + 1,
+            self._scanning_job.scanner,
             self.time_left / 60.0)
 
     def setup(self, job, redirect_logging=True):
