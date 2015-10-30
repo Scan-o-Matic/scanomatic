@@ -24,7 +24,7 @@ import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 import scanomatic.io.fixtures as fixtures
-from scanomatic.models.factories.scanning_factory import ScannerOwnerFactory
+from scanomatic.models.factories.scanning_factory import ScannerFactory
 from scanomatic.io.power_manager import InvalidInit, PowerManagerNull
 import scanomatic.generics.decorators as decorators
 from scanomatic.generics.singleton import SingeltonOneInit
@@ -64,7 +64,7 @@ class ScannerPowerManager(SingeltonOneInit):
 
         """
 
-        :rtype : scanomatic.models.scanning_model.ScannerOwnerModel
+        :rtype : scanomatic.models.scanning_model.ScannerModel
         """
         if isinstance(item, int):
             return self._scanners[item]
@@ -86,7 +86,7 @@ class ScannerPowerManager(SingeltonOneInit):
         scanners = {}
 
         # Load saved scanner data
-        for scanner in ScannerOwnerFactory.serializer.load(self._paths.config_scanners):
+        for scanner in ScannerFactory.serializer.load(self._paths.config_scanners):
 
             if scanner.socket > 0 and scanner.socket <= self._conf.number_of_scanners:
                 scanners[scanner.socket] = scanner
@@ -94,7 +94,7 @@ class ScannerPowerManager(SingeltonOneInit):
         # Create free scanners for those missing previous data
         for socket in self._enumerate_scanner_sockets():
             if socket not in scanners:
-                scanner = ScannerOwnerFactory.create(socket=socket, scanner_name=self._conf.get_scanner_name(socket))
+                scanner = ScannerFactory.create(socket=socket, scanner_name=self._conf.get_scanner_name(socket))
                 scanners[scanner.socket] = scanner
 
         self._logger.info("Scanners inited: {0}".format(scanners))
@@ -122,7 +122,7 @@ class ScannerPowerManager(SingeltonOneInit):
 
     def _save(self, scanner_owner_model):
 
-        ScannerOwnerFactory.serializer.dump(scanner_owner_model, self._paths.config_scanners)
+        ScannerFactory.serializer.dump(scanner_owner_model, self._paths.config_scanners)
 
     def _rescue(self, available_usbs, active_usbs):
 

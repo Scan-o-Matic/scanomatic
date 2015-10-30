@@ -12,7 +12,7 @@ import scanomatic.io.logger as logger
 from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
 import scanomatic.generics.decorators as decorators
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory, ScannerOwnerFactory
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory, ScannerFactory
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
@@ -197,7 +197,7 @@ class Interface_Builder(SingeltonOneInit):
 
         global _SOM_SERVER
         return santize_communication(
-            sorted([ScannerOwnerFactory.to_dict(scanner_owner_model)
+            sorted([ScannerFactory.to_dict(scanner_owner_model)
              for scanner_owner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
 
     def _server_get_queue_status(self, user_id=None):

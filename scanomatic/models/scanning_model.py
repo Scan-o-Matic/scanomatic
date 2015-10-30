@@ -124,6 +124,15 @@ class PlateDescription(model.Model):
 
 class ScannerOwnerModel(model.Model):
 
+    def __init__(self, id=None, pid=0):
+
+        self.id = id
+        self.pid = pid
+        super(ScannerOwnerModel, self).__init__()
+
+
+class ScannerModel(model.Model):
+
     def __init__(self, socket=-1, scanner_name="", owner=None, usb="", power=False, last_on=-1, last_off=-1,
                  expected_interval=0, email="", warned=False, claiming=False, reported=False):
 
@@ -140,7 +149,7 @@ class ScannerOwnerModel(model.Model):
         self.claiming = claiming
         self.reported = reported
 
-        super(ScannerOwnerModel, self).__init__()
+        super(ScannerModel, self).__init__()
 
 
 class ScanningModelEffectorData(model.Model):
