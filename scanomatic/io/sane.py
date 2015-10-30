@@ -35,7 +35,7 @@ from logger import Logger
 
 def get_alive_scanners():
 
-    p = Popen(["scanimage", "-L"], shell=False, stdout=PIPE, stderr=PIPE)
+    p = Popen(["scanimage", SCAN_FLAGS.ListScanners.value], shell=False, stdout=PIPE, stderr=PIPE)
     stdout, _ = p.communicate()
     return re.findall(r'device[^\`]*.(.*libusb[^\`\']*)\' is a (.*) scanner', stdout)
 
@@ -55,6 +55,7 @@ class SCANNER_DATA(Enum):
     SANEBackend = 0
     Aliases = 1
 
+
 class SCAN_FLAGS(Enum):
 
     Source = "--source"
@@ -67,6 +68,8 @@ class SCAN_FLAGS(Enum):
     Height = "-y"
     Depth = "--depth"
     Device = "-d"
+    Help = '--help'
+    ListScanners = '-L'
 
 
 class SaneBase(object):
@@ -103,8 +106,6 @@ class SaneBase(object):
                 SCAN_FLAGS.Depth: "8"}}}
 
     _PROGRAM = "scanimage"
-    _HELP_FLAG = "--help"
-    _SOURCE_FLAG = "--source"
     _SOURCE_SEPARATOR = "|"
     _SOURCE_PATTERN = re.compile(r'--source ([^\n[]+)')
 
@@ -157,9 +158,10 @@ class SaneBase(object):
 
         return scan_mode
 
-    def _verify_mode_source(self):
+    def _verify_mode_source(self, device):
 
-        proc = Popen([SaneBase._PROGRAM, SaneBase._HELP_FLAG], stdout=PIPE, stderr=PIPE, shell=False)
+        proc = Popen([SaneBase._PROGRAM, SCAN_FLAGS.Device.value, device, SCAN_FLAGS.Help.value],
+                     stdout=PIPE, stderr=PIPE, shell=False)
         stdout, _ = proc.communicate()
         try:
             sources = SaneBase._SOURCE_PATTERN.findall(stdout)[0].split(SaneBase._SOURCE_SEPARATOR)
@@ -170,7 +172,8 @@ class SaneBase(object):
             return True
 
         except (TypeError, IndexError):
-            self._logger.critical("Can't get information about the scanner")
+            self._logger.critical("Can't get information about the scanner {0} ({1}, {2})".format(
+                device, self._model, self._scan_mode))
             return False
 
     def _update_mode_source(self):
@@ -226,7 +229,7 @@ class SaneBase(object):
             return False
 
         elif self._verified_settings is False:
-            success = self._verify_mode_source()
+            success = self._verify_mode_source(scanner)
             if success:
                 self._update_mode_source()
                 self._verified_settings = True
