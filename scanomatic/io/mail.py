@@ -1,6 +1,8 @@
 __author__ = 'martin'
 
 
+import scanomatic.io.logger as logger
+
 import smtplib
 import socket
 
@@ -10,6 +12,9 @@ except ImportError:
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMEText import MIMEText
 
+
+
+_logger = logger.Logger("Mailer")
 
 def get_server(host=None, smtp_port=0, tls=False, login=None, password=None):
 
@@ -69,7 +74,10 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
     except TypeError:
         msg.attach(MIMEText.MIMEText(message))
 
-    server.sendmail(sender, [receiver], msg.as_string())
+    try:
+        server.sendmail(sender, [receiver], msg.as_string())
+    except smtplib.SMTPException:
+        _logger.error("Could not mail, either no network connection or missing mailing functionality.")
 
     if final_message:
         try:
