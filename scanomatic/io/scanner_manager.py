@@ -120,9 +120,9 @@ class ScannerPowerManager(SingeltonOneInit):
         self._logger.info("Power Manager {0} inited for scanner {1}".format(pm[scanner.socket], scanner))
         return pm
 
-    def _save(self, scanner_owner_model):
+    def _save(self, scanner_model):
 
-        ScannerFactory.serializer.dump(scanner_owner_model, self._paths.config_scanners)
+        ScannerFactory.serializer.dump(scanner_model, self._paths.config_scanners)
 
     def _rescue(self, available_usbs, active_usbs):
 
@@ -282,11 +282,11 @@ class ScannerPowerManager(SingeltonOneInit):
                 scanner_name))
             return False
 
-        scanner_owner_model = self._scanners[scanner]
+        scanner_model = self._scanners[scanner]
 
-        if scanner_owner_model.owner and scanner_owner_model.owner.id != rpc_job_model.id:
+        if scanner_model.owner and scanner_model.owner.id != rpc_job_model.id:
 
-            if psutil.pid_exists(scanner_owner_model.owner.pid):
+            if psutil.pid_exists(scanner_model.owner.pid):
 
                 self._logger.warning("Trying to claim {0} when claimed".format(
                     scanner_name))
@@ -297,12 +297,12 @@ class ScannerPowerManager(SingeltonOneInit):
                     "Releasing {0} since owner process is dead".format(
                         scanner_name))
 
-                self._power_down(scanner_owner_model)
+                self._power_down(scanner_model)
 
-        scanner_owner_model.owner = rpc_job_model
-        self._logger.info("Acquire scanner successful, owner set to {0}".format(scanner_owner_model.owner))
+        scanner_model.owner = rpc_job_model
+        self._logger.info("Acquire scanner successful, owner set to {0}".format(scanner_model.owner))
 
-        self._save(scanner_owner_model)
+        self._save(scanner_model)
 
         return True
 

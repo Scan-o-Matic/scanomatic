@@ -197,8 +197,8 @@ class Interface_Builder(SingeltonOneInit):
 
         global _SOM_SERVER
         return santize_communication(
-            sorted([ScannerFactory.to_dict(scanner_owner_model)
-             for scanner_owner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
+            sorted([ScannerFactory.to_dict(scanner_model)
+                    for scanner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
 
     def _server_get_queue_status(self, user_id=None):
 
