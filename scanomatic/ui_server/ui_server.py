@@ -403,7 +403,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return jsonify(scanners=rpc_client.get_scanner_status(), success=True)
         elif scanner_query.lower() == 'free':
             return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()
-                                     if not s['owner']},
+                                     if 'owner' not in s or not s['owner']},
                            success=True)
         else:
             try:
