@@ -14,6 +14,7 @@ __status__ = "Development"
 #
 
 import psutil
+import time
 from enum import Enum
 
 #
@@ -282,6 +283,7 @@ class ScannerPowerManager(SingeltonOneInit):
             scanner.power = False
             scanner.claiming = False
             scanner.reported = True
+            scanner.last_off = time.time()
 
         return success
 
@@ -313,6 +315,7 @@ class ScannerPowerManager(SingeltonOneInit):
                 self._power_down(scanner_model)
 
         scanner_model.owner = rpc_job_model
+        scanner_model.expected_interval = rpc_job_model.content_model.time_between_scans
         self._logger.info("Acquire scanner successful, owner set to {0}".format(scanner_model.owner))
 
         self._save(scanner_model)
@@ -379,6 +382,7 @@ class ScannerPowerManager(SingeltonOneInit):
         if claimer and not claimer.power:
 
             claimer.power = self._pm[self._claimer.socket].powerUpScanner()
+            claimer.last_on = time.time()
             self._save(claimer)
 
     def has_fixture(self, fixture_name):
