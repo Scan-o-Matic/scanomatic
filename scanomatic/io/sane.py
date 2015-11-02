@@ -19,6 +19,7 @@ from subprocess import Popen, PIPE
 import re
 import os
 import copy
+import time
 from itertools import chain
 from enum import Enum
 
@@ -54,6 +55,7 @@ class SCANNER_DATA(Enum):
 
     SANEBackend = 0
     Aliases = 1
+    DefaultTransparencyWord = 2
 
 
 class SCAN_FLAGS(Enum):
@@ -75,7 +77,6 @@ class SCAN_FLAGS(Enum):
 class SaneBase(object):
 
     _TRANSPARENCY_WORDS = {"TPU", "Transparency"}
-    _SANE_VERSION_NAME_FOR_TRANSPARENCY = None
     _SETTINGS_ORDER = (SCAN_FLAGS.Source, SCAN_FLAGS.Format, SCAN_FLAGS.Resolution, SCAN_FLAGS.Mode, SCAN_FLAGS.Left,
                        SCAN_FLAGS.Top, SCAN_FLAGS.Width, SCAN_FLAGS.Height, SCAN_FLAGS.Depth)
 
@@ -83,6 +84,7 @@ class SaneBase(object):
         "EPSON V700": {
             SCANNER_DATA.SANEBackend: 'epson2',
             SCANNER_DATA.Aliases: ('GT-X900', 'V700'),
+            SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
             SCAN_MODES.TPU: {
                 SCAN_FLAGS.Source: "Transparency", SCAN_FLAGS.Format: "tiff",
                 SCAN_FLAGS.Resolution: "600", SCAN_FLAGS.Mode: "Gray", SCAN_FLAGS.Left: "0",
@@ -95,6 +97,7 @@ class SaneBase(object):
         "EPSON V800": {
             SCANNER_DATA.SANEBackend: 'epson2',
             SCANNER_DATA.Aliases: ('GT-X980', 'V800'),
+            SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
             SCAN_MODES.TPU: {
                 SCAN_FLAGS.Source: "Transparency", SCAN_FLAGS.Format: "tiff",
                 SCAN_FLAGS.Resolution: "600", SCAN_FLAGS.Mode: "Gray", SCAN_FLAGS.Left: "0",
@@ -121,6 +124,7 @@ class SaneBase(object):
         self._model = SaneBase._get_model(model, self._logger)
         self._scan_mode = SaneBase._get_mode(scan_mode, self._model, self._logger)
         self._verified_settings = False
+        self._name_for_transparency_mode = None
         self._scan_settings = self._get_copy_of_settings()
 
     @classmethod
@@ -160,15 +164,31 @@ class SaneBase(object):
 
     def _verify_mode_source(self, device):
 
+        def _transparency_word(word):
+            return any(True for tpu in SaneBase._TRANSPARENCY_WORDS if word.upper().startswith(tpu.upper()))
+
+        def _select_preferred(words):
+
+            default_word = SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.DefaultTransparencyWord]
+            if self._scan_settings and default_word.upper() in (w.upper() for w in words):
+
+                return tuple(w for w in words if w.upper() ==
+                             default_word.upper())[0]
+
+            return words[-1]
+
         proc = Popen([SaneBase._PROGRAM, SCAN_FLAGS.Device.value, device, SCAN_FLAGS.Help.value],
                      stdout=PIPE, stderr=PIPE, shell=False)
         stdout, _ = proc.communicate()
         try:
-            sources = SaneBase._SOURCE_PATTERN.findall(stdout)[0].split(SaneBase._SOURCE_SEPARATOR)
+            sources = SaneBase._SOURCE_PATTERN.findall(stdout)
+            self._logger.info("Sources matches are {0} for device {1}".format(sources, device))
+            sources = sources[0].split(SaneBase._SOURCE_SEPARATOR)
             sources = tuple(source.strip() for source in sources)
-            tpu_sources = tuple(source for source in sources if
-                                any(True for tpu in SaneBase._TRANSPARENCY_WORDS if source.startswith(tpu)))
-            SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY = tpu_sources[-1]
+            self._logger.info("Possible modes reported for scanner {0} are {1}".format(device, sources))
+            tpu_sources = tuple(source for source in sources if _transparency_word(source))
+
+            self._name_for_transparency_mode = _select_preferred(tpu_sources)
             return True
 
         except (TypeError, IndexError):
@@ -178,12 +198,14 @@ class SaneBase(object):
 
     def _update_mode_source(self):
 
+        default_word = SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.DefaultTransparencyWord]
         if self._scan_mode is SCAN_MODES.TPU and not self._verified_settings:
-            self._scan_settings[SCAN_FLAGS.Source] = SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY
+            self._scan_settings[SCAN_FLAGS.Source] = self._name_for_transparency_mode if \
+                self._name_for_transparency_mode else default_word
 
     def _get_copy_of_settings(self):
 
-        if SaneBase._SANE_VERSION_NAME_FOR_TRANSPARENCY is None and self._scan_mode != "COLOR":
+        if self._name_for_transparency_mode is None and self._scan_mode is not SCAN_MODES.COLOR:
             self._logger.info("Will verify correct transparency setting for first scan")
 
         try:
@@ -222,6 +244,24 @@ class SaneBase(object):
     def AcquireNatively(self, scanner=None, filename=None, **kwargs):
         return self.AcquireByFile(scanner=None, filename=filename, **kwargs)
 
+    def _setup_settings(self, scanner, max_wait=10):
+
+        start_time = time.time()
+
+        while time.time() - start_time < max_wait:
+            success = self._verify_mode_source(scanner)
+            if success:
+                self._update_mode_source()
+                self._verified_settings = True
+                return True
+            elif self._scan_mode is SCAN_MODES.TPU:
+                time.sleep(0.5)
+            else:
+                self._verified_settings = True
+                return True
+
+        return False
+
     def AcquireByFile(self, scanner=None, filename=None, **kwargs):
 
         if self._scan_settings is None:
@@ -229,14 +269,7 @@ class SaneBase(object):
             return False
 
         elif self._verified_settings is False:
-            success = self._verify_mode_source(scanner)
-            if success:
-                self._update_mode_source()
-                self._verified_settings = True
-            elif self._scan_mode is SCAN_MODES.TPU:
-                return False
-            else:
-                self._verified_settings = True
+            self._setup_settings(scanner)
 
         if filename is not None:
             self.next_file_name = filename
