@@ -180,10 +180,12 @@ class ScannerPowerManager(SingeltonOneInit):
     def _assign_usb_to_claim(self, unknown_usbs):
 
         scanner = self._claimer
-        scanner.usb = unknown_usbs.pop()
-        scanner.claiming = False
-        scanner.reported = False
-        self._save(scanner)
+        usb = unknown_usbs.pop()
+        if usb:
+            scanner.usb = usb
+            scanner.claiming = False
+            scanner.reported = False
+            self._save(scanner)
 
     def _set_usb_to_scanner_that_could_be_on(self, usb):
 
@@ -413,4 +415,5 @@ class ScannerPowerManager(SingeltonOneInit):
     @property
     def non_reported_usbs(self):
 
-        return (scanner for scanner in self._scanners.values() if scanner.usb and not scanner.reported)
+        return (scanner for scanner in self._scanners.itervalues()
+                if scanner.owner and scanner.usb and not scanner.reported)

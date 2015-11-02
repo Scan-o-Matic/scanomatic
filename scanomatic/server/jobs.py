@@ -161,12 +161,16 @@ class Jobs(SingeltonOneInit):
         self._scanner_manager.update()
 
         for scanner in self._scanner_manager.non_reported_usbs:
-            if scanner.owner in self:
+            if scanner.owner in self and scanner.usb:
                 self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb)
                 scanner.reported = True
-                self._logger.info("Reported USB for scanner {0} to {1}".format(scanner.socket, scanner.owner))
+                self._logger.info("Reported USB {2} for scanner {0} to {1}".format(scanner.socket, scanner.owner.id,
+                                                                                   scanner.usb))
             else:
-                self._logger.warning("Unknown scanner claiming process {0}".format(scanner.owner))
+                if scanner.usb:
+                    self._logger.warning("Unknown scanner claiming process {0}".format(scanner.owner))
+                else:
+                    self._logger.info("Waiting for actual USB assignment on request from {0}".format(scanner.owner.id))
 
     def add(self, job):
         """Launches and adds a new jobs.
