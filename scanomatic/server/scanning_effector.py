@@ -100,13 +100,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._setup_directory()
 
         if redirect_logging:
-            self._logger.info("{0} is setting up; logging will be directed to file".format(job))
-            self._logger.set_output_target(
-                os.path.join(self._project_directory,
-                             paths_object.scan_log_file_pattern.format(self._scanning_job.project_name)),
-                catch_stdout=True, catch_stderr=True)
+            file_path = os.path.join(
+                self._project_directory, paths_object.scan_log_file_pattern.format(self._scanning_job.project_name))
+            self._logger.info("{0} is setting up; logging will be directed to file {1}".format(job, file_path))
+            self._logger.set_output_target(file_path, catch_stdout=True, catch_stderr=True)
 
-            self._logger.surpress_prints = True
+            self._logger.surpress_prints = False
 
         self._logger.info("Doing setup")
 
@@ -331,11 +330,15 @@ All the best,
 Scan-o-Matic""", self._scanning_job)
                 return SCAN_STEP.NextMajor
             else:
+                self._logger.warning("Scan completed, but not successfully.")
                 return SCAN_STEP.NextMinor
 
         elif self._should_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
         else:
+            self._logger.warning("Giving up waiting for scan (taking too long, {0} min)".format(
+                self.scan_cycle_step_duration / 60.0))
+
             return SCAN_STEP.NextMinor
 
     @property
