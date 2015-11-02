@@ -343,7 +343,10 @@ class ScannerPowerManager(SingeltonOneInit):
             job_id, [scanner.owner.id for scanner in self._scanners.values() if scanner.owner]))
         return None
 
-    def update(self):
+    def update(self, synch_from_file=False):
+
+        if synch_from_file:
+            self._scanners = self._initiate_scanners()
 
         self._manage_claimer()
         try:
