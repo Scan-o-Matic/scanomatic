@@ -88,7 +88,7 @@ class ScannerPowerManager(SingeltonOneInit):
         # Load saved scanner data
         for scanner in ScannerFactory.serializer.load(self._paths.config_scanners):
 
-            if scanner.socket > 0 and scanner.socket <= self._conf.number_of_scanners:
+            if 0 < scanner.socket <= self._conf.number_of_scanners:
                 scanners[scanner.socket] = scanner
 
         # Create free scanners for those missing previous data
@@ -119,7 +119,8 @@ class ScannerPowerManager(SingeltonOneInit):
                 self._logger.error("Failed to init socket {0}".format(scanner.socket))
                 pm[scanner.socket] = PowerManagerNull(scanner.socket)
 
-        self._logger.info("Power Manager {0} inited for scanner {1}".format(pm[scanner.socket], scanner))
+            self._logger.info("Power Manager {0} inited for scanner {1}".format(pm[scanner.socket], scanner))
+
         return pm
 
     def _save(self, scanner_model):
@@ -311,6 +312,9 @@ class ScannerPowerManager(SingeltonOneInit):
     def release_scanner(self, job_id):
 
         scanner = self._get_scanner_by_owner_id(job_id)
+        if not scanner:
+            return False
+
         if scanner.power or scanner.usb:
             self._power_down(scanner)
 
@@ -325,7 +329,7 @@ class ScannerPowerManager(SingeltonOneInit):
         scanners = [scanner for scanner in self._scanners.values() if scanner.owner and scanner.owner.id == job_id]
         if scanners:
             return scanners[0]
-        self._logger.warning("Job id '{0}' unknown known claims on scanners are {1}".format(
+        self._logger.warning("Job id '{0}' has no registered claim on any scanner. Known claims are {1}".format(
             job_id, [scanner.owner.id for scanner in self._scanners.values() if scanner.owner]))
         return None
 
@@ -347,9 +351,7 @@ class ScannerPowerManager(SingeltonOneInit):
         else:
             if alive_scanners:
                 active_usb, _ = zip(*alive_scanners)
-            else:
-                active_usb = tuple()
-            return self._match_scanners(active_usb)
+                return self._match_scanners(active_usb)
 
     @decorators.type_lock
     def _manage_claimer(self):
