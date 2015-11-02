@@ -213,8 +213,8 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             if (self._scanning_effector_data.current_cycle_step.value in
                     (SCAN_CYCLE.RequestScanner, SCAN_CYCLE.RequestScannerOff, SCAN_CYCLE.ReportNotObtainedUSB,
-                    SCAN_CYCLE.ReportScanError, SCAN_CYCLE.Scan, SCAN_CYCLE.WaitForScanComplete, SCAN_CYCLE.WaitForUSB
-                    )):
+                     SCAN_CYCLE.ReportScanError, SCAN_CYCLE.Scan, SCAN_CYCLE.WaitForScanComplete, SCAN_CYCLE.WaitForUSB
+                     )):
 
                 self._do_request_scanner_off()
 
