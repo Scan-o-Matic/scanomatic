@@ -89,7 +89,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
         return "'{0}' on scanner {1} (ETA: {2:0.0f} min)".format(
             self._scanning_job.project_name,
             self._scanning_job.scanner,
-            self.time_left / 60.0)
+            self.seconds_left / 60.0)
 
     def setup(self, job, redirect_logging=True):
 
@@ -148,13 +148,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
         else:
 
             # Actual duration is expected to be one less than the number of scans plus duration of first and last scan
-            # so 0.5 is a rough estimate
+            # so adding 30 seconds to expected runtime
 
-            return run_time / ((self._scanning_job.number_of_scans - 0.5)
-                               * self._scanning_job.time_between_scans * SECONDS_PER_MINUTE)
+            return run_time / ((self._scanning_job.number_of_scans - 1)
+                               * self._scanning_job.time_between_scans * SECONDS_PER_MINUTE - 30)
 
     @property
-    def time_left(self):
+    def seconds_left(self):
         """Calculates the remaining time
 
         Note that the -1 is because it is the interval that should be calculated rather than the actual time.
@@ -167,8 +167,13 @@ class ScannerEffector(proc_effector.ProcessEffector):
         if self._scanning_effector_data.current_image is None:
             return 0
 
-        return max(((self._scanning_job.number_of_scans - self._scanning_effector_data.current_image - 1) *
-                self._scanning_job.time_between_scans * SECONDS_PER_MINUTE - self.time_since_last_scan), 0)
+        progress = self.progress
+        if not progress:
+            return 0
+
+        run_time = self.run_time
+
+        return max(run_time / progress - progress - self.time_since_last_scan, 0)
 
     @property
     def total_images(self):
@@ -214,7 +219,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.Wait
 
-        if (not self._scanning_effector_data.informed_close_to_end and self.time_left / 60.0 <
+        if (not self._scanning_effector_data.informed_close_to_end and self.seconds_left / 60.0 <
                 AppConfig().mail_scanning_done_minutes_before):
 
             self._do_report_scanning_soon_done()
@@ -546,7 +551,7 @@ The project '{project_name} on ''""" + AppConfig().computer_human_name +
                    """' is reporting that it will soon stop using scanner {scanner} and launch
 the automatic analysis.
 
-""" + "Scanning estimated to end in {0:0.0f} minutes".format(self.time_left / 60.) + """
+""" + "Scanning estimated to end in {0:0.0f} minutes".format(self.seconds_left / 60.) + """
 
 It's a great time to start preparing the next experiment.
 
