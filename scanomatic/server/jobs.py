@@ -162,7 +162,7 @@ class Jobs(SingeltonOneInit):
 
         for scanner in self._scanner_manager.non_reported_usbs:
             if scanner.owner in self and scanner.usb:
-                self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb)
+                self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb, scanner.model)
                 scanner.reported = True
                 self._logger.info("Reported USB {2} for scanner {0} to {1}".format(scanner.socket, scanner.owner.id,
                                                                                    scanner.usb))

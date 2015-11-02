@@ -144,8 +144,9 @@ class ScannerPowerManager(SingeltonOneInit):
 
                     self._save(scanner)
 
-    def _match_scanners(self, active_usbs):
+    def _match_scanners(self, alive_scanners):
 
+        active_usbs, active_models = zip(*alive_scanners)
         self._trim_no_longer_active_orphan_uabs(active_usbs)
         available_usbs = self._get_non_orphan_usbs(active_usbs)
         unknown_usbs = self._remove_known_usbs(available_usbs)
@@ -157,13 +158,19 @@ class ScannerPowerManager(SingeltonOneInit):
             self._rescue(unknown_usbs, active_usbs)
             return False
 
-        self._assign_usb_to_claim(unknown_usbs)
+        usb = unknown_usbs.pop()
+        scanner_model = tuple(name for u, name in alive_scanners if u == usb)[0]
+
+        self._assign_usb_to_claim(usb, scanner_model)
 
         return True
 
     @property
     def _claimer(self):
+        """
 
+        :return: scanomatic.models.scanning_model.ScannerModel
+        """
         for scanner in self._scanners.values():
             if scanner.claiming:
                 return scanner
@@ -177,11 +184,11 @@ class ScannerPowerManager(SingeltonOneInit):
             return False
         return True
 
-    def _assign_usb_to_claim(self, unknown_usbs):
+    def _assign_usb_to_claim(self, usb, model_name):
 
         scanner = self._claimer
-        usb = unknown_usbs.pop()
         if usb:
+            scanner.model = model_name
             scanner.usb = usb
             scanner.claiming = False
             scanner.reported = False
@@ -353,8 +360,7 @@ class ScannerPowerManager(SingeltonOneInit):
             self._reported_sane_missing = STATE.Reported
         else:
             if alive_scanners:
-                active_usb, _ = zip(*alive_scanners)
-                return self._match_scanners(active_usb)
+                return self._match_scanners(alive_scanners)
 
     @decorators.type_lock
     def _manage_claimer(self):

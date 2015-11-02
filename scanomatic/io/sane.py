@@ -127,12 +127,38 @@ class SaneBase(object):
         self._name_for_transparency_mode = None
         self._scan_settings = self._get_copy_of_settings()
 
+    @property
+    def model(self):
+
+        return self._model
+
+    @model.setter
+    def model(self, model_name):
+
+        model = SaneBase._get_model(model_name, self._logger)
+
+        if not model:
+            self._logger.error("'{0}' is not a recognized scanner model".format(model_name))
+
+        elif model != self._model:
+
+            self._model = model
+            self._name_for_transparency_mode = None
+            self._scan_settings = self._get_copy_of_settings()
+            self._logger.info("Updated scanner model to {0}".format(model))
+
     @classmethod
     def _get_model(cls, model, logger):
 
         model = model.upper()
 
         if model not in SaneBase._SETTINGS_REPOSITORY:
+
+            for m, settings in SaneBase._SETTINGS_REPOSITORY.iteritems():
+
+                if any(alias.upper() in model for alias in settings[SCANNER_DATA.Aliases]):
+                    return m
+
             logger.critical("Model {0} unknown, only have settings for {1}".format(
                 model, SaneBase._SETTINGS_REPOSITORY.keys()))
 
