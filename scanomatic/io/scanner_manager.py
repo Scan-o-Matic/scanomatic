@@ -250,6 +250,7 @@ class ScannerPowerManager(SingeltonOneInit):
             self._scanner_queue.append(scanner)
         return True
 
+    @decorators.type_lock
     def request_off(self, job_id):
 
         scanner = self._get_scanner_by_owner_id(job_id)
