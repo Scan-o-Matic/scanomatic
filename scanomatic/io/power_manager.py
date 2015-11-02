@@ -43,7 +43,7 @@ class InvalidInit(Exception):
 # GLOBALS
 #
 
-PEOPLES_INDEX_OFFSET = 1
+
 URL_TIMEOUT = 2
 MAX_CONNECTION_TRIES = 10
 POWER_MANAGER_TYPE = Enum("POWER_MANAGER_TYPE",
@@ -85,7 +85,7 @@ def get_enum_name_from_value(enum, value):
 class PowerManagerNull(object):
 
     def __init__(self, socket, 
-                 power_mode=POWER_MODES.Impulse, name="not installed"):
+                 power_mode=POWER_MODES.Toggle, name="not installed"):
 
         if power_mode is POWER_MODES.Impulse:
             self.powerUpScanner = types.MethodType(_impulse_scanner, self)
@@ -99,6 +99,10 @@ class PowerManagerNull(object):
         self._socket = socket
         self.name = name
         self._logger = logger.Logger("Power Manager {0}".format(name))
+
+    @property
+    def socket(self):
+        return self._socket
 
     @property
     def power_mode(self):
@@ -128,7 +132,7 @@ class PowerManagerNull(object):
 
 class PowerManagerUsb(PowerManagerNull):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
-    def __init__(self, socket, path, on_args=None, off_args=None, power_mode=POWER_MODES.Impulse, name="USB"):
+    def __init__(self, socket, path, on_args=None, off_args=None, power_mode=POWER_MODES.Toggle, name="USB"):
 
         if not off_args:
             off_args = []
@@ -142,17 +146,17 @@ class PowerManagerUsb(PowerManagerNull):
         self._fail_error = "No GEMBIRD SiS-PM found"
 
     def _on(self):
-        global PEOPLES_INDEX_OFFSET
+
         on_success = self._exec(self._on_cmd)
         self._logger.info('USB PM, Turning on socket {0} ({1})'.format(
-            self._socket + PEOPLES_INDEX_OFFSET, on_success))
+            self._socket, on_success))
         return on_success
 
     def _off(self):
-        global PEOPLES_INDEX_OFFSET
+
         off_success = self._exec(self._off_cmd)
         self._logger.info('USB PM, Turning off socket {0} ({1})'.format(
-            self._socket + PEOPLES_INDEX_OFFSET, off_success))
+            self._socket, off_success))
         return off_success
 
     def _exec(self, cmd):
@@ -179,19 +183,18 @@ class PowerManagerUsbLinux(PowerManagerUsb):
     def __init__(self, socket, path="sispmctl",
                  power_mode=POWER_MODES.Impulse):
 
-        global PEOPLES_INDEX_OFFSET
         super(PowerManagerUsbLinux, self).__init__(
             socket,
             path,
-            on_args=["-o", "{0}".format(socket + PEOPLES_INDEX_OFFSET)],
-            off_args=["-f", "{0}".format(socket + PEOPLES_INDEX_OFFSET)],
+            on_args=["-o", "{0}".format(socket)],
+            off_args=["-f", "{0}".format(socket)],
             power_mode=power_mode,
             name="USB(Linux)")
 
     def status(self):
-        global PEOPLES_INDEX_OFFSET
+
         self._logger.info('USB PM, trying to connect')
-        proc = Popen('sispmctl -g {0}'.format(self._socket + PEOPLES_INDEX_OFFSET),
+        proc = Popen('sispmctl -g {0}'.format(self._socket),
                      stdout=PIPE, stderr=PIPE, shell=True)
 
         stdout, stderr = proc.communicate()
@@ -212,18 +215,18 @@ class PowerManagerUsbWin(PowerManagerUsb):
 
     def __init__(self, socket,
                  path=r"C:\Program Files\Gembird\Power Manager\pm.exe",
-                 power_mode=POWER_MODES.Impulse):
+                 power_mode=POWER_MODES.Toggle):
 
-        global PEOPLES_INDEX_OFFSET
         super(PowerManagerUsbWin, self).__init__(
             socket,
             path,
-            on_args=["-on", "-PW1", "-Scanner{0}".format(socket + PEOPLES_INDEX_OFFSET)],
-            off_args=["-off", "-PW1", "-Scanner{0}".format(socket + PEOPLES_INDEX_OFFSET)],
+            on_args=["-on", "-PW1", "-Scanner{0}".format(socket)],
+            off_args=["-off", "-PW1", "-Scanner{0}".format(socket)],
             power_mode=power_mode,
             name="USB(Windows)")
 
 
+# noinspection PyUnresolvedReferences
 class PowerManagerLan(PowerManagerNull):
     """Class for handling LAN-connected PM:s.
 
@@ -232,7 +235,7 @@ class PowerManagerLan(PowerManagerNull):
 
     def __init__(self, socket, host=None, password="1", verify_name=False,
                  pm_name="Server 1", mac=None,
-                 power_mode=POWER_MODES.Impulse):
+                 power_mode=POWER_MODES.Toggle):
 
         super(PowerManagerLan, self).__init__(socket, name="LAN", power_mode=power_mode)
         self._host = host
@@ -276,7 +279,12 @@ class PowerManagerLan(PowerManagerNull):
         """Looks up the MAC-address supplied on the local router"""
 
         # SEARCHING FOR IP SPECIFIC DEPENDENCIES
-        import nmap
+        try:
+            import nmap
+        except ImportError:
+            self._logger.error("Can't scan for Power Manager without nmap installed")
+            self._host = None
+            return self._host
 
         # PINGSCAN ALL IP:S
         self._logger.info("LAN PM, Scanning hosts (may take a while...)")
@@ -341,7 +349,7 @@ class PowerManagerLan(PowerManagerNull):
 
         if self._host is None or self._host == "":
 
-            self._logger.error("LAN PM, Loging in failed, no host")
+            self._logger.error("LAN PM, Logging in failed, no host")
             return None
 
         else:
@@ -449,8 +457,8 @@ class PowerManagerLan(PowerManagerNull):
             states = re.findall(r'sockstates = ([^;]*)', page)[0].strip()
             try:
                 states = eval(states)
-                if len(states) >= self._socket + PEOPLES_INDEX_OFFSET:
-                    return states[self._socket] == 1
+                if len(states) >= self._socket:
+                    return states[self._socket - 1] == 1
             except:
                 pass
 

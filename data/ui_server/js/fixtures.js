@@ -10,6 +10,8 @@ var new_fixture_name;
 var save_fixture_action_id;
 var save_fixture_button;
 var remove_fixture_id;
+var grayscale_type_id;
+
 
 var context_warning = "";
 var fixture_image = null;
@@ -24,10 +26,15 @@ var grayscale_graph = null;
 var img_width = 0;
 var img_height = 0;
 
+$(document.documentElement).mouseup(function(event) {
+    if (creatingArea != null && selected_fixture_canvas_jq != null)
+        mouseUpFunction(event);
+});
+
 function translateToImageCoords(coords) {
     var imageCoords = JSON.parse(JSON.stringify(coords));
-    imageCoords.x /= scale;
-    imageCoords.y /= scale;
+    imageCoords.x = clamp(imageCoords.x, 0, img_width) / scale;
+    imageCoords.y = clamp(imageCoords.y, 0, img_height) / scale;
     return imageCoords;
 }
 
@@ -69,10 +76,13 @@ function set_canvas() {
                 areas[creatingArea].y2 = imagePos.y;
                 areas[creatingArea].grayscale = false;
                 areas[creatingArea].plate = -1;
+                InputEnabled($(grayscale_type_id), true);
             }
         } else {
-            if (areas[nextArea] && areas[nextArea].grayscale)
+            if (areas[nextArea] && areas[nextArea].grayscale) {
                 grayscale_graph = null;
+                InputEnabled($(grayscale_type_id), true);
+            }
             areas.splice(nextArea, 1);
             creatingArea = null;
 
@@ -91,7 +101,11 @@ function set_canvas() {
         }
     });
 
-    selected_fixture_canvas_jq.mouseup( function(event) {
+    selected_fixture_canvas_jq.mouseup(mouseUpFunction );
+
+}
+
+function mouseUpFunction(event) {
         var minUsableSize = 10000;
         var curArea = creatingArea;
         creatingArea = null;
@@ -108,9 +122,9 @@ function set_canvas() {
 
         for (var i=0; i<areas.length;i++) {
             if (getAreaSize(i) < minUsableSize) {
-                if (area[i] && area[i].grayscale)
+                if (area[i] && area[i].grayscale) {
                     grayscale_graph = null;
-
+                }
                 areas.splice(i, 1);
                 if (i < curArea)
                     curArea--;
@@ -129,8 +143,6 @@ function set_canvas() {
         }
         setPlateIndices();
         draw_fixture();
-     });
-
 }
 
 function isArea(index) {
@@ -205,6 +217,7 @@ function clearAreas() {
     areas = [];
     grayscale_graph = null;
     context_warning = "";
+    InputEnabled($(grayscale_type_id), true);
 }
 
 function getAreaByPoint(point) {
@@ -234,6 +247,7 @@ function removeGrayScale() {
             areas.grayscale = false;
             break;
     }
+    InputEnabled($(grayscale_type_id), true);
 }
 
 function testAsGrayScale(plate) {
@@ -256,11 +270,13 @@ function testAsGrayScale(plate) {
                     plate.grayscale = true;
                     grayscale_graph = GetLinePlot(data.target_values, data.source_values,
                         "Grayscale", "Targets", "Measured values");
+                    InputEnabled($(grayscale_type_id), false);
                 } else {
                     if (!hasGrayScale() && data.reason)
                         grayscale_graph = GetLinePlot([], [], data.reason, "Targets", "Measured values");
                     plate.grayscale = false;
                     plate.plate = 0;
+                    InputEnabled($(grayscale_type_id), true);
                     setPlateIndices();
                 }
                 draw_fixture();
@@ -270,6 +286,7 @@ function testAsGrayScale(plate) {
                 context_warning = "Error occured detecting grayscale";
                 setPlateIndices();
                 draw_fixture();
+                InputEnabled($(grayscale_type_id), true);
             }
 
         });
@@ -297,7 +314,6 @@ function get_fixtures() {
         })
         unselect(options);
     })
-
     $(new_fixture_data_id).hide();
     $(selected_fixture_div_id).hide();
 }
@@ -333,6 +349,8 @@ function get_fixture() {
                 data.grayscale.grayscale = true;
                 data.grayscale.plate = -1;
                 SetSelectedGrayscale(data.grayscale.name);
+                InputEnabled($(grayscale_type_id), false);
+
                 areas.push(data.grayscale)
                 markers = data.markers;
 
@@ -410,7 +428,7 @@ function load_fixture_image(image_name) {
             fixture_image = img;
             draw_fixture();
         }
-        img.src = "?image=" + image_name;
+        img.src = "?rnd=" + Math.random() + "&image=" + image_name;
 
     } else {
         fixture_image = null;

@@ -270,9 +270,12 @@ class AbstractModelFactory(object):
     def to_dict(cls, model):
 
         model_as_dict = dict(**model)
-        for k in model_as_dict:
+        keys = model_as_dict.keys()
+        for k in keys:
 
-            if k in cls.STORE_SECTION_SERIALIZERS and isinstance(cls.STORE_SECTION_SERIALIZERS[k], types.FunctionType):
+            if k not in cls.STORE_SECTION_SERIALIZERS:
+                del model_as_dict[k]
+            elif k in cls.STORE_SECTION_SERIALIZERS and isinstance(cls.STORE_SECTION_SERIALIZERS[k], types.FunctionType):
 
                 model_as_dict[k] = cls.STORE_SECTION_SERIALIZERS[k](serialize=model_as_dict[k])
 

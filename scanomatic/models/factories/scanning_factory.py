@@ -1,6 +1,6 @@
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory
-from scanomatic.models.scanning_model import ScanningModel, ScannerOwnerModel, ScanningAuxInfoModel, PlateDescription, \
-    CULTURE_SOURCE, PLATE_STORAGE
+from scanomatic.models.scanning_model import ScanningModel, ScannerModel, ScanningAuxInfoModel, PlateDescription, \
+    CULTURE_SOURCE, PLATE_STORAGE, ScannerOwnerModel
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
 from scanomatic.models.rpc_job_models import RPCjobModel
@@ -201,6 +201,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'scanner': int,
         'scanner_hardware': str,
         'mode': str,
+        'computer': str,
         'version': str,
         'id': str,
         'auxillary_info': ScanningAuxInfoModel,
@@ -380,7 +381,31 @@ class ScanningModelFactory(AbstractModelFactory):
 class ScannerOwnerFactory(AbstractModelFactory):
 
     MODEL = ScannerOwnerModel
+    STORE_SECTION_HEAD = ("id",)
+
+    STORE_SECTION_SERIALIZERS = {
+        "id": str,
+        "pid": int
+    }
+
+    @classmethod
+    def create(cls, **settings):
+        """
+        :rtype : scanomatic.model.scanning_model.ScannerOwnerModel
+        """
+
+        return super(ScannerOwnerFactory, cls).create(**settings)
+
+
+class ScannerFactory(AbstractModelFactory):
+
+    MODEL = ScannerModel
     STORE_SECTION_HEAD = ("scanner_name",)
+    _SUB_FACTORIES = {
+        ScannerOwnerModel: ScannerOwnerFactory,
+        RPCjobModel: ScannerOwnerFactory
+    }
+
     STORE_SECTION_SERIALIZERS = {
         'socket': int,
         'scanner_name': str,
@@ -389,7 +414,7 @@ class ScannerOwnerFactory(AbstractModelFactory):
         "expected_interval": float,
         "email": str,
         "warned": bool,
-        "owner": RPCjobModel,
+        "owner": ScannerOwnerModel,
         "claiming": bool,
         "power": bool,
         "reported": bool,
@@ -400,7 +425,7 @@ class ScannerOwnerFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
         """
-         :rtype : scanomatic.models.scanning_model.ScannerOwnerModel
+         :rtype : scanomatic.models.scanning_model.ScannerModel
         """
 
-        return super(ScannerOwnerFactory, cls).create(**settings)
+        return super(ScannerFactory, cls).create(**settings)

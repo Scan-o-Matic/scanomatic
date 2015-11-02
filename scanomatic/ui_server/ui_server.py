@@ -22,7 +22,7 @@ from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 from scanomatic.imageAnalysis.support import save_image_as_png
 from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
-from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
+from scanomatic.imageAnalysis.imageGrayscale import get_grayscale, is_valid_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.compile_project_model import COMPILE_ACTION
@@ -76,14 +76,11 @@ def get_area_too_large_for_grayscale(grayscale_area_model):
 
     
 def get_grayscale_is_valid(values, grayscale):
+
     if values is None:
         return False
 
-    try:
-        fit = np.polyfit(grayscale['targets'], values, 3)
-        return np.unique(np.sign(fit)).size == 1
-    except:
-        return False
+    return is_valid_grayscale(grayscale['targets'], values)
 
 
 def usable_markers(markers, image):
@@ -405,7 +402,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if scanner_query is None or scanner_query.lower() == 'all':
             return jsonify(scanners=rpc_client.get_scanner_status(), success=True)
         elif scanner_query.lower() == 'free':
-            return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()},
+            return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()
+                                     if 'owner' not in s or not s['owner']},
                            success=True)
         else:
             try:
@@ -558,7 +556,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
 
                 fixture = get_fixture_image_by_name(name)
-                _, values = get_grayscale(fixture, grayscale_area_model)
+                _, values = get_grayscale(fixture, grayscale_area_model, debug=debug)
                 grayscale_object = getGrayscale(grayscale_area_model.name)
                 valid = get_grayscale_is_valid(values, grayscale_object)
                 return jsonify(source_values=values, target_values=grayscale_object['targets'],

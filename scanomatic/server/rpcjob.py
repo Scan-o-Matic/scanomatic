@@ -71,7 +71,7 @@ class Fake(object):
 
     def is_alive(self):
 
-        if self._job.pid is None:
+        if not self._job.pid:
             return False
 
         return psutil.pid_exists(self._job.pid)

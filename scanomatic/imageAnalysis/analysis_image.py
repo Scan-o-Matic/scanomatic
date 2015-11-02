@@ -20,6 +20,8 @@ import numpy as np
 #
 
 import grid_array
+from imageGrayscale import is_valid_grayscale
+from grayscale import getGrayscale
 from scanomatic.io.logger import Logger
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
@@ -283,7 +285,11 @@ class ProjectImage(object):
             self.clear_features()
             return
 
-        if not image_model.fixture.grayscale.values:
+        if not image_model.fixture.grayscale.values or not is_valid_grayscale(
+                getGrayscale(image_model.fixture.grayscale.name)['targets'],
+                image_model.fixture.grayscale.values):
+
+            self._logger.warning("Not a valid grayscale")
             self.clear_features()
             return
 

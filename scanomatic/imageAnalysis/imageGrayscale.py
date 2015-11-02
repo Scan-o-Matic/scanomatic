@@ -14,8 +14,10 @@ __status__ = "Development"
 #
 
 import numpy as np
+from numpy.lib.stride_tricks import as_strided
 from scipy.signal import fftconvolve, convolve2d, convolve
 from scipy.ndimage import gaussian_filter1d
+import os
 
 #
 # INTERNAL DEPENDENCIES
@@ -24,6 +26,8 @@ from scipy.ndimage import gaussian_filter1d
 import scanomatic.io.logger as logger
 import grayscale
 import signal
+from scanomatic.generics.maths import iqr_mean
+from scanomatic.io.paths import Paths
 
 #
 # CLASSES
@@ -41,10 +45,75 @@ def get_ortho_trimmed_slice(im, grayscale):
     kernel_scaled = kernel / float(kernel.max()) - 0.5
     C = np.abs(convolve2d(im_scaled, kernel_scaled, mode="valid"))
     peak = gaussian_filter1d(np.max(C, axis=0), half_width).argmax()
+
     return im[:, peak - half_width: peak + half_width]
 
 
-def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0.75):
+def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0.7, permissibility_threshold=0.03,
+                           acceptability_threshold = 0.9, buffer=0.5):
+
+    # Restructures the image so that local variances can be measured using a kernel the scaled (default 0.7) size
+    # of the segment size
+
+    kernel_size = tuple(int(kernel_part_of_segment * v) for v in (grayscale['length'], grayscale['width']))
+    strided_im = as_strided(im_ortho_trimmed,
+                            shape=(im_ortho_trimmed.shape[0] - kernel_size[0] + 1,
+                                   im_ortho_trimmed.shape[1] - kernel_size[1] + 1,
+                                   kernel_size[0], kernel_size[1]),
+                            strides=im_ortho_trimmed.strides * 2)
+
+    # Note: ortho_signal has indices half kernel_size offset with regards to im_ortho_trimmed
+
+    ortho_signal = np.median(np.var(strided_im, axis=(-1, -2)), axis=1)
+
+    # Possibly more sophisticated method may be needed looking at establishing the drifting baseline and convolving
+    # segment-lengths with one-kernels to ensure no peak is there.
+
+    permissible_positions = ortho_signal < permissibility_threshold * (ortho_signal.max() - ortho_signal.min()) + \
+                                           ortho_signal.min()
+
+
+    # Selects the best stretch of permissible signal (True) compared to the expected length of the grayscale
+    acceptable_placement = None
+    placement_accuracy = 0
+    in_section = False
+    section_start = 0
+    length = float(grayscale['sections'] * grayscale['length'])
+
+    for i, val in enumerate(permissible_positions):
+
+        if in_section and not val:
+
+            in_section = False
+            accuracy = 1 - abs(i - section_start - length) / length
+            if accuracy > placement_accuracy:
+                placement_accuracy = accuracy
+                acceptable_placement = int((i - 1 - section_start) / 2) + section_start
+        elif not in_section and val:
+            in_section = True
+            section_start = i
+
+    if in_section:
+        accuracy = 1 - abs(i - section_start - length) / length
+        if accuracy > placement_accuracy:
+            placement_accuracy = accuracy
+            acceptable_placement = int((permissible_positions.size - 1 - section_start) / 2) + section_start
+
+    print (placement_accuracy)
+    if placement_accuracy > acceptability_threshold:
+
+        buffered_half_length = int(round(length / 2 + grayscale['length'] * buffer))
+
+        # Correct offset in the permissible signa to the image
+        acceptable_placement += kernel_size[0] / 2
+
+        return im_ortho_trimmed[max(0, acceptable_placement - buffered_half_length):
+                                min(im_ortho_trimmed.shape[0], acceptable_placement + buffered_half_length)]
+
+    return im_ortho_trimmed
+
+
+def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0.75, debug=True):
 
     def _extend_edges_if_permissable_at_boundry(guess_edges, permissables):
 
@@ -63,9 +132,13 @@ def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0
     def _get_segments_from_edges(edges_vector):
         return np.vstack((edges_vector[::2], edges_vector[1::2])).T
 
+    if debug:
+        np.save(os.path.join(Paths().log, "ortho_trimmed.npy"), im_ortho_trimmed)
+
     length = grayscale['sections'] * grayscale['length']
     if length > im_ortho_trimmed.shape[0]:
         return np.array([])
+
     para_signal = convolve(np.var(im_ortho_trimmed, axis=1), np.ones((length, )), mode='valid')
     permissables = para_signal < (para_signal.max() - para_signal.min()) / stringency + para_signal.min()
     edges = np.where(convolve(permissables, [-1,1], mode='same') != 0)[0]
@@ -82,7 +155,7 @@ def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0
                             np.min((peak + bufferd_half_length, im_ortho_trimmed.shape[0]))]
 
 
-def get_grayscale(fixture, grayscale_area_model):
+def get_grayscale(fixture, grayscale_area_model, debug=False):
 
     gs = grayscale.getGrayscale(grayscale_area_model.name)
     im = fixture.get_grayscale_im_section(grayscale_area_model)
@@ -91,11 +164,33 @@ def get_grayscale(fixture, grayscale_area_model):
     im_o = get_ortho_trimmed_slice(im, gs)
     if not im_o.size:
         return None, None
-    im_p = get_para_timmed_slice(im_o, gs)
+    im_p = get_para_trimmed_slice(im_o, gs)
     if not im_p.size:
         return None, None
+    Analyse_Grayscale.DEBUG_DETECTION = debug
     ag = Analyse_Grayscale(target_type=grayscale_area_model.name, image=None, scale_factor=1)
-    return ag.get_grayscale(im_p)
+    return ag.get_grayscale(im_p, pre_trimmed=True)
+
+
+def is_valid_grayscale(calibration_target_values, image_values, pixel_depth=8) :
+
+    try:
+        fit = np.polyfit(image_values, calibration_target_values, 3)
+    except TypeError:
+        # Probably vectors were of unequal size
+        return False
+
+    poly = np.poly1d(fit)
+    data = poly(np.arange(2*pixel_depth))
+
+    # Analytical derivative over the value span ensuring that the curve is continuously increasing or decreasing
+    poly_is_ok = np.unique(np.sign(data[1:] - data[:-1])).size == 1
+
+    # Verify that the same sign correlation is intact for the difference of two consequtive elements in each series
+    measures_are_ok = np.unique(tuple(np.sign(a) - np.sign(b) for a, b in
+                                      zip(np.diff(calibration_target_values), np.diff(image_values)))).size == 1
+
+    return poly_is_ok and measures_are_ok
 
 
 class Analyse_Grayscale(object):
@@ -110,10 +205,11 @@ class Analyse_Grayscale(object):
     SPIKE_BEST_TOLLERANCE = 0.05
     SAFETY_PADDING = 0.2
     SAFETY_COEFF = 0.5
-    NEW_GS_ALG_L_DIFF_T = 0.03
+    NEW_GS_ALG_L_DIFF_T = 0.1
     NEW_GS_ALG_L_DIFF_SPIKE_T = 0.3
     NEW_GS_ALG_SPIKES_FRACTION = 0.8
     NEW_SAFETY_PADDING = 0.2
+    DEBUG_DETECTION = False
 
     def __init__(self, target_type="Kodak", image=None, scale_factor=1.0):
 
@@ -163,7 +259,7 @@ class Analyse_Grayscale(object):
 
     def get_sampling_positions(self):
 
-        return self._orthMid, self._grayscale_pos
+        return self._mid_ortho_slice, self._grayscale_pos
 
     def get_grayscale_X(self, grayscale_pos=None):
 
@@ -255,7 +351,7 @@ class Analyse_Grayscale(object):
             rect[0][1] -= delta
             rect[1][1] += delta
 
-        self._mid_orth_strip = rect[0][1] + (rect[1][1] - rect[0][1]) / 2
+        self._mid_ortho_trimmed = rect[0][1] + (rect[1][1] - rect[0][1]) / 2
 
         return rect
 
@@ -322,80 +418,123 @@ class Analyse_Grayscale(object):
 
     def _get_clean_im_and_rect(self):
 
-        #np.save("gs_example.npy", self._img)
+        if self.DEBUG_DETECTION:
 
-        rect = self._get_start_rect()
+            np.save(os.path.join(Paths().log, "gs_slice.npy"), self._img)
 
-        #print "START:", rect
+        rect_in_slice_coords = self._get_start_rect()
 
-        rect = self._get_ortho_trimmed(rect)
+        if self.DEBUG_DETECTION:
+            self._logger.info("start rect is: {0}".format(rect_in_slice_coords))
 
-        #print "ORTHO:", rect
+        rect_in_slice_coords = self._get_ortho_trimmed(rect_in_slice_coords)
 
-        rect = self._get_para_trimmed(rect)
+        if self.DEBUG_DETECTION:
+            self._logger.info("Ortho trimmed rect is: {0}".format(rect_in_slice_coords))
+            np.save(os.path.join(Paths().log, "gs_ortho_trimmed.npy"),
+                    self._img[rect_in_slice_coords[0][0]: rect_in_slice_coords[1][0],
+                    rect_in_slice_coords[0][1]: rect_in_slice_coords[1][1]])
 
-        #print "PARA:", rect
+        rect_in_slice_coords = self._get_para_trimmed(rect_in_slice_coords)
 
-        im = self._img[rect[0][0]: rect[1][0],
-                       rect[0][1]: rect[1][1]]
+        if self.DEBUG_DETECTION:
+            self._logger.info("Ortho & para trimmed rect is: {0}".format(rect_in_slice_coords))
+            np.save(os.path.join(Paths().log, "gs_ortho_and_para_trimmed.npy"),
+                    self._img[rect_in_slice_coords[0][0]: rect_in_slice_coords[1][0],
+                    rect_in_slice_coords[0][1]: rect_in_slice_coords[1][1]])
 
-        self._orthMid = (rect[1][1] + rect[0][1]) / 2.0
+        im_trimmed = self._img[rect_in_slice_coords[0][0]: rect_in_slice_coords[1][0],
+                     rect_in_slice_coords[0][1]: rect_in_slice_coords[1][1]]
 
-        return im, rect
+        self._mid_ortho_slice = (rect_in_slice_coords[1][1] + rect_in_slice_coords[0][1]) / 2.0
 
-    def get_grayscale(self, image=None):
+        return im_trimmed, rect_in_slice_coords
+
+    def get_grayscale(self, image=None, pre_trimmed=False):
 
         self._sectionAreaSlices = []
 
         if image is not None:
 
             self._img = image
-            im_slice = image
-            rect = ([0,0], image.shape)
-            self._orthMid = (rect[1][1] + rect[0][1]) / 2.0
-            self._mid_orth_strip = rect[0][1] + (rect[1][1] - rect[0][1]) / 2
+
+        if pre_trimmed:
+            im_trimmed = self._img
+            rect = ([0,0], self._img.shape)
+            self._mid_ortho_slice = (rect[1][1] + rect[0][1]) / 2.0
+            self._mid_ortho_trimmed = self._mid_ortho_slice - rect[0][1]
+            self._logger.info("Loaded pre-trimmed image slice")
+
         else:
-            im_slice, rect = self._get_clean_im_and_rect()
+
+            im_trimmed, rect = self._get_clean_im_and_rect()
+            self._logger.info("Using automatic trimming of image slice")
 
         if self._img is None or sum(self._img.shape) == 0:
 
             self._logger.error("No image loaded or null image")
             return None
 
-        #THE 1D SIGNAL ALONG THE GS
-        strip_values = im_slice.mean(axis=1)
-        #FOUND GS-SEGMENT DIFFERENCE TO EXPECTED SIZE
+        if self.DEBUG_DETECTION:
+            np.save(os.path.join(Paths().log, 'gs_section_used_in_detection.npy'), im_trimmed)
+
+        # THE 1D SIGNAL ALONG THE GS
+        para_signal_trimmed_im = np.mean(im_trimmed, axis=1)
+
+        if self.DEBUG_DETECTION:
+            np.save(os.path.join(Paths().log, 'gs_para_signal_trimmed_im.npy'), para_signal_trimmed_im)
+
+        # FOUND GS-SEGMENT DIFFERENCE TO EXPECTED SIZE
         expected_strip_size = float(self._grayscale_length *
                                     self._grayscale_sections)
-        gs_l_diff = abs(1 - strip_values.size / expected_strip_size)
 
-        up_spikes = signal.get_signal(strip_values, self.SPIKE_UP_T)
+        gs_l_diff = abs(1 - para_signal_trimmed_im.size / expected_strip_size)
+
+        up_spikes = signal.get_signal(para_signal_trimmed_im, self.SPIKE_UP_T)
         grayscale_segment_centers = None
+        if self.DEBUG_DETECTION:
+            np.save(os.path.join(Paths().log, "gs_up_spikes.npy"), up_spikes)
 
         if gs_l_diff < Analyse_Grayscale.NEW_GS_ALG_L_DIFF_T:
 
-            deltas, observed_spikes, pos_diffs = signal.get_signal_data(
-                strip_values, up_spikes, self._grayscale,
+            deltas, observed_spikes, observed_to_expected_map = signal.get_signal_data(
+                para_signal_trimmed_im, up_spikes, self._grayscale,
                 self._grayscale["length"] * Analyse_Grayscale.NEW_GS_ALG_L_DIFF_SPIKE_T)
 
-            #IF GS-SECTION SEEMS TO BE RIGHT SIZE FOR THE WHOLE GS
-            #THEN THE SECTIONING PROBABLY IS A GOOD ESTIMATE FOR THE GS
-            #IF SPIKES MATCHES MOST OF THE EXPECTED EDGES
+            # IF GS-SECTION SEEMS TO BE RIGHT SIZE FOR THE WHOLE GS
+            # THEN THE SECTIONING PROBABLY IS A GOOD ESTIMATE FOR THE GS
+            # IF SPIKES MATCHES MOST OF THE EXPECTED EDGES
             if ((np.isfinite(deltas).sum() - np.isnan(deltas[0]) -
                     np.isnan(deltas[-1])) / float(self._grayscale_sections) >
                     self.NEW_GS_ALG_SPIKES_FRACTION):
 
-                edges = signal.get_signal_edges(pos_diffs, deltas, observed_spikes)
+                if self.DEBUG_DETECTION:
+                    np.save(os.path.join(Paths().log, "gs_pos_diffs.npy"), observed_to_expected_map)
+                    np.save(os.path.join(Paths().log, "gs_deltas.npy"), deltas)
+                    np.save(os.path.join(Paths().log, "gs_observed_spikes.npy"), observed_spikes)
+
+                edges = signal.get_signal_edges(observed_to_expected_map, deltas, observed_spikes,
+                                                self._grayscale_sections)
+
                 fin_edges = np.isfinite(edges)
                 where_fin_edges = np.where(fin_edges)[0]
 
-                #GET THE FREQ
+                if self.DEBUG_DETECTION:
+                    np.save(os.path.join(Paths().log, "gs_edges.npy"), edges)
+
+                # GET THE FREQ
                 frequency = np.diff(edges[where_fin_edges[0]: where_fin_edges[-1]], 1)
                 frequency = frequency[np.isfinite(frequency)].mean()
 
-                edges = signal.get_edges_extended(edges, frequency)
+                edges = signal.extrapolate_edges(edges, frequency, para_signal_trimmed_im.size)
 
-                #EXTRACTING SECTION MIDPOINTS
+                if edges.size != self._grayscale_sections + 1:
+                    self._logger.critical(
+                        "Number of edges doesn't correspond to the grayscale segments ({0}!={1})".format(
+                            edges.size, self._grayscale_sections + 1))
+                    return None, None
+
+                # EXTRACTING SECTION MIDPOINTS
                 grayscale_segment_centers = np.interp(
                     np.arange(self._grayscale_sections) + 0.5,
                     np.arange(self._grayscale_sections + 1),
@@ -407,7 +546,7 @@ class Analyse_Grayscale(object):
                 if grayscale_segment_centers[0] - frequency * self.NEW_SAFETY_PADDING < 0:
                     grayscale_segment_centers += frequency
                 if (grayscale_segment_centers[-1] + frequency * self.NEW_SAFETY_PADDING >
-                        strip_values.size):
+                        para_signal_trimmed_im.size):
                     grayscale_segment_centers -= frequency
 
                 #SETTING ABS POS REL TO WHOLE IM-SECTION
@@ -417,17 +556,20 @@ class Analyse_Grayscale(object):
                 val_para = frequency * self.NEW_SAFETY_PADDING
 
                 #SETTING VALUE TOP
-                top = self._mid_orth_strip - val_orth
+                top = self._mid_ortho_trimmed - val_orth
                 if top < 0:
                     top = 0
 
                 #SETTING VALUE BOTTOM
-                bottom = self._mid_orth_strip + val_orth + 1
+                bottom = self._mid_ortho_trimmed + val_orth + 1
                 if bottom >= self._img.shape[1]:
                     bottom = self._img.shape[1] - 1
 
                 gray_scale = []
-                for pos in grayscale_segment_centers:
+                if self.DEBUG_DETECTION:
+                    np.save(os.path.join(Paths().log, "gs_slice.npy"), self._img)
+
+                for i, pos in enumerate(grayscale_segment_centers):
 
                     left = pos - val_para
 
@@ -442,7 +584,11 @@ class Analyse_Grayscale(object):
                     self._sectionAreaSlices.append((slice(left, right),
                                                     slice(top, bottom)))
 
-                    gray_scale.append(np.median(self._img[left: right, top: bottom]))
+                    gray_scale.append(iqr_mean(self._img[left: right, top: bottom]))
+
+                    if self.DEBUG_DETECTION:
+                        np.save(os.path.join(Paths().log, "gs_segment_{0}.npy".format(i)),
+                                self._img[left: right, top: bottom])
 
             else:
 
@@ -506,7 +652,7 @@ class Analyse_Grayscale(object):
 
                 s += frequency
 
-            if s[-1] + frequency * self.SAFETY_PADDING > strip_values.size:
+            if s[-1] + frequency * self.SAFETY_PADDING > para_signal_trimmed_im.size:
 
                 self._logger.warning(
                     "GRAYSCALE, the signal got adjusted one interval"
@@ -521,12 +667,12 @@ class Analyse_Grayscale(object):
                 2.0 * self.SAFETY_COEFF
 
             #SETTING TOP
-            top = self._mid_orth_strip - self.ortho_half_height
+            top = self._mid_ortho_trimmed - self.ortho_half_height
             if top < 0:
                 top = 0
 
             #SETTING BOTTOM
-            bottom = self._mid_orth_strip + self.ortho_half_height
+            bottom = self._mid_ortho_trimmed + self.ortho_half_height
             if bottom >= self._img.shape[1]:
                 bottom = self._img.shape[1] - 1
 
@@ -546,7 +692,7 @@ class Analyse_Grayscale(object):
                 if right >= self._img.shape[0]:
                     right = self._img.shape[0] - 1
 
-                gray_scale.append(np.median(self._img[left: right, top: bottom]))
+                gray_scale.append(iqr_mean(self._img[left: right, top: bottom]))
 
         self._grayscale_pos = grayscale_segment_centers
         self._grayscaleSource = gray_scale
