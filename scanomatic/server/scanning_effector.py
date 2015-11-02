@@ -577,6 +577,7 @@ Scan-o-Matic""", self._scanning_job)
 
     def _do_request_scanner_off(self):
 
+        time.sleep(5)
         self._logger.info("Job {0} requested scanner off".format(self._scanning_job.id))
         self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_OFF, self._scanning_job.id)
         self._scanning_effector_data.usb_port = ""
