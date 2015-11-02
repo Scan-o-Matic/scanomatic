@@ -37,6 +37,7 @@ from scanomatic.io.app_config import Config as AppConfig
 
 JOBS_CALL_SET_USB = "set_usb"
 SECONDS_PER_MINUTE = 60.0
+MINUTES_PER_HOUR = 60.0
 
 FILE_SIZE_DEVIATION_ALLOWANCE = 0.2
 TOO_SMALL_SIZE = 1024 * 1024
@@ -86,10 +87,16 @@ class ScannerEffector(proc_effector.ProcessEffector):
     @property
     def label(self):
 
-        return "'{0}' on scanner {1} (ETA: {2:0.0f} min)".format(
+        time_left = self.seconds_left / SECONDS_PER_MINUTE
+        if time_left > 90:
+            time_left = "{0:0.1f} h".format((time_left / MINUTES_PER_HOUR))
+        else:
+            time_left = "{0:0.0f} min".format(time_left)
+
+        return "'{0}' on scanner {1} (ETA: {2})".format(
             self._scanning_job.project_name,
             self._scanning_job.scanner,
-            self.seconds_left / 60.0)
+            time_left)
 
     def setup(self, job, redirect_logging=True):
 
