@@ -62,6 +62,9 @@ class Model(object):
 
     def __eq__(self, other):
 
+        if other is None:
+            return False
+
         for key in self.keys():
 
             if key not in other or not(self[key] == other[key]):
