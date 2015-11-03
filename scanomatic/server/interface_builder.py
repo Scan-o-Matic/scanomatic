@@ -251,6 +251,7 @@ class Interface_Builder(SingeltonOneInit):
                         This ``title`` is preferrably coupled with ``kwargs``
                         while the other universally used titles have no use
                         for extra parameters.
+                email:  Add recipient of notifications to a job
                 start:  Starting the job's execution
                 pause:  Temporarily pausing the job
                 resume: Temporarily resuming the job
