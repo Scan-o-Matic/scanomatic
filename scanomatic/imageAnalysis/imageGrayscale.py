@@ -113,48 +113,6 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
     return im_ortho_trimmed
 
 
-def get_para_timmed_slice(im_ortho_trimmed, grayscale, stringency=40.0, buffer=0.75, debug=True):
-
-    def _extend_edges_if_permissable_at_boundry(guess_edges, permissables):
-
-        if not permissables[(guess_edges,)][0]:
-            shifted_edges = np.zeros(guess_edges.size + 1)
-            shifted_edges[1:] = guess_edges
-            guess_edges = shifted_edges
-
-        if permissables[(guess_edges,)][-1]:
-            appended_edges = np.zeros(guess_edges.size + 1)
-            appended_edges[:-1] = guess_edges
-            guess_edges = appended_edges
-
-        return guess_edges
-
-    def _get_segments_from_edges(edges_vector):
-        return np.vstack((edges_vector[::2], edges_vector[1::2])).T
-
-    if debug:
-        np.save(os.path.join(Paths().log, "ortho_trimmed.npy"), im_ortho_trimmed)
-
-    length = grayscale['sections'] * grayscale['length']
-    if length > im_ortho_trimmed.shape[0]:
-        return np.array([])
-
-    para_signal = convolve(np.var(im_ortho_trimmed, axis=1), np.ones((length, )), mode='valid')
-    permissables = para_signal < (para_signal.max() - para_signal.min()) / stringency + para_signal.min()
-    edges = np.where(convolve(permissables, [-1,1], mode='same') != 0)[0]
-    if not edges.size:
-        return im_ortho_trimmed
-
-    edges = _extend_edges_if_permissable_at_boundry(edges, permissables)
-    segments = _get_segments_from_edges(edges)
-    optimal_segment = np.abs(length/10.0 - np.diff(segments, axis=1).ravel()).argmin()
-    peak = segments[optimal_segment].mean() + (im_ortho_trimmed.shape[0] - para_signal.size) / 2.0
-    bufferd_half_length = length / 2 + buffer * grayscale['length']
-    print(peak, bufferd_half_length)
-    return im_ortho_trimmed[np.max((0, peak - bufferd_half_length)):
-                            np.min((peak + bufferd_half_length, im_ortho_trimmed.shape[0]))]
-
-
 def get_grayscale(fixture, grayscale_area_model, debug=False):
 
     gs = grayscale.getGrayscale(grayscale_area_model.name)
