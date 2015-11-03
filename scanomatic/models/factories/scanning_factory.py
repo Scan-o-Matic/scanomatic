@@ -197,7 +197,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'plate_descriptions': (tuple, PlateDescription),
         'email': lambda enforce=None, serialize=None:
         ([m.strip() for m in enforce.split(",")] if isinstance(enforce, str) else
-         (serialize if isinstance(serialize, str) else (", ".join(serialize) if isinstance(serialize, list) else ""))),
+         (serialize if isinstance(serialize, str) else (", ".join(serialize) if isinstance(serialize, list) else enforce))),
         'pinning_formats': (tuple, tuple, int),
         'fixture': str,
         'scanner': int,
