@@ -12,9 +12,8 @@ except ImportError:
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMEText import MIMEText
 
-
-
 _logger = logger.Logger("Mailer")
+
 
 def get_server(host=None, smtp_port=0, tls=False, login=None, password=None):
 
