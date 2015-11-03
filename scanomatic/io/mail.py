@@ -51,7 +51,25 @@ def get_server(host=None, smtp_port=0, tls=False, login=None, password=None):
 
 
 def mail(sender, receiver, subject, message, final_message=True, server=None):
+    """
 
+    :param sender: Then mail address of the sender, if has value `None` a default address will be generated using
+    `get_default_email()`
+    :type sender: str or None
+    :param receiver: The mail address(es) of the reciever(s)
+    :type receiver: str or [str]
+    :param subject: Subject line
+    :type subject: str
+    :param message: Bulk of message
+    :type message: str
+    :param final_message (optional): If this is the final message intended to be sent by the server.
+    If so, server will be disconnected afterwards. Default `True`
+    :type final_message: bool
+    :param server (optional): The server to send the message, if not supplied will create a default server
+     using `get_server()`
+    :type server: smtplib.SMTP
+    :return: None
+    """
     if server is None:
         server = get_server()
 
@@ -67,15 +85,17 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
         msg = MIMEMultipart.MIMEMultipart()
 
     msg['From'] = sender
-    msg['To'] = receiver
+    msg['To'] = receiver if isinstance(receiver, str) else ", ".join(receiver)
     msg['Subject'] = subject
     try:
         msg.attach(MIMEText(message))
     except TypeError:
         msg.attach(MIMEText.MIMEText(message))
 
+    if isinstance(receiver, str):
+        receiver = [receiver]
     try:
-        server.sendmail(sender, [receiver], msg.as_string())
+        server.sendmail(sender, receiver, msg.as_string())
     except smtplib.SMTPException:
         _logger.error("Could not mail, either no network connection or missing mailing functionality.")
 
