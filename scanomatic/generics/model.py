@@ -62,7 +62,9 @@ class Model(object):
 
     def __eq__(self, other):
 
-        if other is None:
+        try:
+            _ = (e for e in other)
+        except TypeError:
             return False
 
         for key in self.keys():
