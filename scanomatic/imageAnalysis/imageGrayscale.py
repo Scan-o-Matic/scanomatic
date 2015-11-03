@@ -49,8 +49,8 @@ def get_ortho_trimmed_slice(im, grayscale):
     return im[:, peak - half_width: peak + half_width]
 
 
-def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0.7, permissibility_threshold=0.03,
-                           acceptability_threshold = 0.9, buffer=0.5):
+def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0.7, permissibility_threshold=20,
+                           acceptability_threshold=0.9, buffer=0.5):
 
     # Restructures the image so that local variances can be measured using a kernel the scaled (default 0.7) size
     # of the segment size
@@ -64,13 +64,12 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
 
     # Note: ortho_signal has indices half kernel_size offset with regards to im_ortho_trimmed
 
-    ortho_signal = np.median(np.var(strided_im, axis=(-1, -2)), axis=1)
+    ortho_signal = np.median(np.var(strided_im, axis=(-1, -2)), axis=1) / sum(kernel_size)
 
     # Possibly more sophisticated method may be needed looking at establishing the drifting baseline and convolving
     # segment-lengths with one-kernels to ensure no peak is there.
 
-    permissible_positions = ortho_signal < permissibility_threshold * (ortho_signal.max() - ortho_signal.min()) + \
-                                           ortho_signal.min()
+    permissible_positions = ortho_signal < permissibility_threshold
 
 
     # Selects the best stretch of permissible signal (True) compared to the expected length of the grayscale
