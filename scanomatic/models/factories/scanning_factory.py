@@ -306,12 +306,18 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if (isinstance(model.email, str) and
-                (model.email == '' or
-                     re.match(r'[^@]+@[^@]+\.[^@]+', model.email))):
-            return True
+        if isinstance(model.email, str):
+            email = [model.email]
+        else:
+            email = model.email
 
-        return model.FIELD_TYPES.email
+        try:
+            for address in email:
+                if not (isinstance(address, str) and (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', model.email))):
+                    raise TypeError
+            return True
+        except TypeError:
+            return model.FIELD_TYPES.email
 
     @classmethod
     def _validate_pinning_formats(cls, model):
