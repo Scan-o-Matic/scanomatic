@@ -1038,10 +1038,6 @@ class SerializationHelper(object):
         """
         if serialized_obj is None or serialized_obj is False and dtype is not bool:
             return None
-        elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
-            return serialized_obj
-        if SerializationHelper.isvalidtype(serialized_obj, dtype):
-            return serialized_obj
         elif isinstance(dtype, type) and issubclass(dtype, Enum):
             try:
                 return dtype[serialized_obj]
@@ -1073,6 +1069,10 @@ class SerializationHelper(object):
                 return cPickle.loads(serialized_obj)
             except (cPickle.PickleError, TypeError):
                 return None
+        elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
+            return serialized_obj
+        elif SerializationHelper.isvalidtype(serialized_obj, dtype):
+            return serialized_obj
 
     @staticmethod
     def get_config(path):
