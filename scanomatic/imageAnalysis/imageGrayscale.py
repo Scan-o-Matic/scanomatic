@@ -49,8 +49,8 @@ def get_ortho_trimmed_slice(im, grayscale):
     return im[:, peak - half_width: peak + half_width]
 
 
-def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0.7, permissibility_threshold=20,
-                           acceptability_threshold=0.9, buffer=0.5):
+def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0.6, permissibility_threshold=20,
+                           acceptability_threshold=0.8, buffer=0.5):
 
     # Restructures the image so that local variances can be measured using a kernel the scaled (default 0.7) size
     # of the segment size
