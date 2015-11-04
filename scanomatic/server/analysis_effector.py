@@ -207,7 +207,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._remove_files_from_previous_analysis()
 
-
         if self._analysis_job.focus_position is not None:
             self._focus_graph = support.Watch_Graph(
                 self._analysis_job.focus_position, self._analysis_job.output_directory)
@@ -280,7 +279,10 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 Paths().get_scan_instructions_path_from_compile_instructions_path(
                     self._analysis_job.compile_instructions))[0]
         except IndexError:
-            self._logger.warning("No information found about how the scanning was done")
+            self._logger.warning("No information found about how the scanning was done," +
+                                 " using empty instructions instead")
+
+            self._scanning_instructions = ScanningModelFactory.create()
 
         self._allow_start = allow_start
         if not self._allow_start:
