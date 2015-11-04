@@ -84,26 +84,36 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
         if in_section and not val:
 
             in_section = False
+            # The difference of the observed length compared to the exepected is divided with the expected.
+            # It is practically impossible due to restraints on size of area checked for grayscale that the
+            # delta is larger than the expected length. For that reason the division will be in the range 0 - 1
+            # with better precision being close to 0. Accuracy will therefore be close to 1 if the fit is good.
             accuracy = 1 - abs(i - section_start - length) / length
             if accuracy > placement_accuracy:
                 placement_accuracy = accuracy
-                acceptable_placement = int((i - 1 - section_start) / 2) + section_start
+                acceptable_placement_length = i - 1 - section_start
+                acceptable_placement = int(acceptable_placement_length / 2) + section_start
         elif not in_section and val:
             in_section = True
             section_start = i
 
     if in_section:
-        accuracy = 1 - abs(i - section_start - length) / length
+        # This only repeats above code in the loop but covers the case that the segment ends with a
+        # permissible area.
+        accuracy = 1 - abs(permissible_positions.size - section_start - length) / length
         if accuracy > placement_accuracy:
             placement_accuracy = accuracy
-            acceptable_placement = int((permissible_positions.size - 1 - section_start) / 2) + section_start
+            acceptable_placement_length = permissible_positions.size - 1 - section_start
+            acceptable_placement = int(acceptable_placement_length / 2) + section_start
 
-    print (placement_accuracy)
     if placement_accuracy > acceptability_threshold:
 
-        buffered_half_length = int(round(length / 2 + grayscale['length'] * buffer))
+        # Using the expected length of the grayscale (which implies that this has to be a good value
+        # buffering is scaled by the accuracy of the selected segments length compare to the expected
+        # length.
+        buffered_half_length = int(round(length / 2 + grayscale['length'] * buffer * (1 - accuracy)))
 
-        # Correct offset in the permissible signa to the image
+        # Correct offset in the permissible signal to the image
         acceptable_placement += kernel_size[0] / 2
 
         return im_ortho_trimmed[max(0, acceptable_placement - buffered_half_length):
