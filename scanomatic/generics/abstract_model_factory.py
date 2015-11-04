@@ -1063,7 +1063,7 @@ class SerializationHelper(object):
         elif isinstance(dtype, types.FunctionType):
             try:
                 return dtype(enforce=cPickle.loads(serialized_obj))
-            except cPickle.PickleError:
+            except (cPickle.PickleError, EOFError):
                 return None
 
         elif isinstance(serialized_obj, types.GeneratorType):
