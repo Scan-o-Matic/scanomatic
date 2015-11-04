@@ -519,6 +519,9 @@ class Analyse_Grayscale(object):
                 #SETTING ABS POS REL TO WHOLE IM-SECTION
                 grayscale_segment_centers += rect[0][0]
 
+                if self.DEBUG_DETECTION:
+                    np.save(os.path.join(Paths().log, "gs_segment_centers.npy"), grayscale_segment_centers)
+
                 val_orth = self._grayscale_width * self.NEW_SAFETY_PADDING
                 val_para = frequency * self.NEW_SAFETY_PADDING
 
