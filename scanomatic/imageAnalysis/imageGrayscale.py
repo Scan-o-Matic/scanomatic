@@ -111,8 +111,9 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
         # Using the expected length of the grayscale (which implies that this has to be a good value
         # buffering is scaled by the accuracy of the selected segments length compare to the expected
         # length.
-        buffered_half_length = int(round(length / 2 + grayscale['length'] * buffer * (1 - accuracy)))
-
+        buffered_half_length = int(round(length / 2 + grayscale['length'] * buffer * (1 - placement_accuracy)))
+        print("Best accuracy {0} ({1} vs expected {2} results in {3}".format(
+            placement_accuracy, acceptable_placement_length, length, buffered_half_length * 2))
         # Correct offset in the permissible signal to the image
         acceptable_placement += kernel_size[0] / 2
 
