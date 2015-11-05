@@ -262,8 +262,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._redirect_logging = redirect_logging
 
-        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
-
+        if not self._analysis_job.output_directory:
+            AnalysisModelFactory.set_default(self._analysis_job, [self._analysis_job.FIELD_TYPES.output_directory])
+            self._logger.info("Using default '{0}' output directory".format(self._analysis_job.output_directory))
         if not self._analysis_job.compile_instructions:
             self._analysis_job.compile_instructions = \
                 Paths().get_project_compile_instructions_path_from_compilation_path(self._analysis_job.compilation)
