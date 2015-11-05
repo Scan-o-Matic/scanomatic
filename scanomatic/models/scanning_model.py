@@ -97,6 +97,7 @@ class ScanningModel(model.Model):
         self.description = description
         self.plate_descriptions = plate_descriptions
         self.email = email
+        """:type : str or [str]"""
         self.pinning_formats = pinning_formats
         self.fixture = fixture
         self.scanner = scanner

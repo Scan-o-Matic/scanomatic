@@ -52,6 +52,7 @@ class ProcessEffector(object):
             'resume': self.resume,
             'setup': self.setup,
             'status': self.status,
+            'email': self.email,
             'stop': self.stop
         }
 
@@ -68,6 +69,11 @@ class ProcessEffector(object):
         self._pipe_effector = None
         self._start_time = None
         decorators.register_type_lock(self)
+
+    def email(self, add=None, remove=None):
+
+        return False
+
 
     @property
     def label(self):

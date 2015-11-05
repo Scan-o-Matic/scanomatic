@@ -353,7 +353,7 @@ class GridArray():
 
     def _update_grid_cells(self):
 
-        for grid_cell in self._grid_cells.values():
+        for grid_cell in self._grid_cells.itervalues():
 
             grid_cell.set_grid_coordinates(self._grid_cell_corners)
 
@@ -382,7 +382,7 @@ class GridArray():
                     self._grid_cells[grid_cell.position] = grid_cell
 
     def clear_features(self):
-        for grid_cell in self._grid_cells:
+        for grid_cell in self._grid_cells.itervalues():
             grid_cell.clear_features()
 
     def analyse(self, im, image_model, save_grid_name=None):

@@ -1038,20 +1038,19 @@ class SerializationHelper(object):
         """
         if serialized_obj is None or serialized_obj is False and dtype is not bool:
             return None
-        elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
-            return serialized_obj
-        if SerializationHelper.isvalidtype(serialized_obj, dtype):
-            return serialized_obj
+
         elif isinstance(dtype, type) and issubclass(dtype, Enum):
             try:
                 return dtype[serialized_obj]
             except (KeyError, SyntaxError):
                 return None
+
         elif dtype is bool:
             try:
                 return bool(eval(serialized_obj))
             except (NameError, AttributeError, SyntaxError):
                 return False
+
         elif dtype in (int, float, str):
             try:
                 return dtype(serialized_obj)
@@ -1060,14 +1059,22 @@ class SerializationHelper(object):
                     return dtype(eval(serialized_obj))
                 except (SyntaxError, NameError, AttributeError, TypeError, ValueError):
                     return None
+
         elif isinstance(dtype, types.FunctionType):
             try:
                 return dtype(enforce=cPickle.loads(serialized_obj))
-            except cPickle.PickleError:
+            except (cPickle.PickleError, EOFError):
                 return None
 
         elif isinstance(serialized_obj, types.GeneratorType):
             return dtype(serialized_obj)
+
+        elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
+            return serialized_obj
+
+        elif SerializationHelper.isvalidtype(serialized_obj, dtype):
+            return serialized_obj
+
         else:
             try:
                 return cPickle.loads(serialized_obj)
