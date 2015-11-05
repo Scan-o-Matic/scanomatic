@@ -166,6 +166,7 @@ def is_valid_grayscale(calibration_target_values, image_values, pixel_depth=8):
         fit = np.polyfit(image_values, calibration_target_values, 3)
     except TypeError:
         # Probably vectors were of unequal size
+        _logger.error("Probable mismatch between number of detected segments and expected number of segments.")
         return False
 
     poly = np.poly1d(fit)
@@ -173,11 +174,16 @@ def is_valid_grayscale(calibration_target_values, image_values, pixel_depth=8):
 
     # Analytical derivative over the value span ensuring that the curve is continuously increasing or decreasing
     poly_is_ok = np.unique(np.sign(data[1:] - data[:-1])).size == 1
+    if not poly_is_ok:
+        _logger.warning("Polynomial fit failed required monotonous test")
 
     # Verify that the same sign correlation is intact for the difference of two consecutive elements in each series
     measures_are_ok = np.unique(tuple(np.sign(a) - np.sign(b) for a, b in
-                                      zip(np.diff(calibration_target_values), np.diff(image_values)))).size == 1
+                                      zip(np.diff(np.convolve(calibration_target_values, [1, 1, 1], 'valid')),
+                                          np.diff(np.convolve(image_values, [1, 1, 1], 'valid'))))).size == 1
 
+    if not measures_are_ok:
+        _logger.warning("Actual measures lack monotonous tendencies.")
     return poly_is_ok and measures_are_ok
 
 
@@ -400,5 +406,8 @@ def detect_grayscale(im_trimmed, grayscale):
 
     gray_scale, grayscale_segment_centers = signal.get_higher_second_half_order_according_to_first(
         gray_scale, grayscale_segment_centers)
+
+    if DEBUG_DETECTION:
+        np.save(os.path.join(Paths().log, "gs_final_values.npy"), gray_scale)
 
     return grayscale_segment_centers, gray_scale
