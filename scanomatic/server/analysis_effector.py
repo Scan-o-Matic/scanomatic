@@ -283,6 +283,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._logger.warning("No information found about how the scanning was done," +
                                  " using empty instructions instead")
 
+        if not self._scanning_instructions:
             self._scanning_instructions = ScanningModelFactory.create()
 
         self._allow_start = allow_start
