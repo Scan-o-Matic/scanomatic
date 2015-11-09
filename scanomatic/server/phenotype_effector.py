@@ -63,6 +63,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
         self._feature_job = job.content_model
+        self._job.content_model = self._feature_job
 
         if feature_factory.FeaturesFactory.validate(self._feature_job) is not True:
             self._logger.warning("Can't setup, instructions don't validate")

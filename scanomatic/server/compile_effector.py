@@ -47,6 +47,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         self._logger.info("Setup called")
 
         self._compile_job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0].content_model
+        self._job.content_model = self._compile_job
 
         if self._compile_job.images is None:
             self._compile_job.images = tuple()

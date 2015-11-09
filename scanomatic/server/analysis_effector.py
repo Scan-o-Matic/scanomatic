@@ -65,6 +65,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
 
+        self._job.content_model = self._analysis_job
+
         self._scanning_instructions = None
 
         self._focus_graph = None
