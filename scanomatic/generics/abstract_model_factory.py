@@ -13,6 +13,28 @@ from types import GeneratorType
 from collections import defaultdict
 
 
+def email_serializer(enforce=None, serialize=None):
+    if enforce is not None:
+        if isinstance(enforce, str):
+            return [m.strip() for m in enforce.split(",")]
+        elif isinstance(enforce, list):
+            return [str(e) for e in enforce if e]
+        else:
+            return list(enforce)
+
+    elif serialize is not None:
+
+        if isinstance(serialize, str):
+            return serialize
+        elif isinstance(serialize, list):
+            return ", ".join(serialize)
+        else:
+            return str(serialize)
+
+    else:
+        return None
+
+
 def _get_coordinates_and_items_to_validate(structure, obj):
 
     if obj is None or obj is False and structure[0] is not bool:
