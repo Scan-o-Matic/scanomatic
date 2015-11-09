@@ -29,7 +29,7 @@ from scanomatic.io.app_config import Config as AppConfig
 import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory, XMLModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
@@ -315,6 +315,8 @@ Scan-o-Matic""", self._analysis_job)
         if not self._scanning_instructions:
             self._scanning_instructions = ScanningModelFactory.create()
 
+        self.ensure_default_values_if_missing()
+
         self._allow_start = allow_start
         if not self._allow_start:
             self._logger.error("Can't perform analysis; instructions don't validate.")
@@ -323,3 +325,18 @@ Scan-o-Matic""", self._analysis_job)
                                                               ))
             self.add_message("Can't perform analysis; instructions don't validate.")
             self._stopping = True
+
+    def ensure_default_values_if_missing(self):
+
+        if not self._analysis_job.xml_model.slim_measure:
+            XMLModelFactory.set_default(self._analysis_job.xml_model,
+                                        [self._analysis_job.xml_model.FIELD_TYPES.slim_measure])
+        if not self._analysis_job.xml_model.slim_compartment:
+            XMLModelFactory.set_default(self._analysis_job.xml_model,
+                                        [self._analysis_job.xml_model.FIELD_TYPES.slim_compartment])
+        if not self._analysis_job.image_data_output_measure:
+            AnalysisModelFactory.set_default(self._analysis_job,
+                                             [self._analysis_job.FIELD_TYPES.image_data_output_measure])
+        if not self._analysis_job.image_data_output_item:
+            AnalysisModelFactory.set_default(self._analysis_job,
+                                             [self._analysis_job.FIELD_TYPES.image_data_output_item])
