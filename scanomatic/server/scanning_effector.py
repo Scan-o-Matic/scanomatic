@@ -231,6 +231,17 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_effector_data.current_cycle_step,
                 self._scanning_effector_data.previous_scan_cycle_start))
 
+            self._mail("Scan-o-Matic: Terminated project '{project_name}' by user",
+                           """This is an automated email, please don't reply!
+
+The project '{project_name}' on {scanner} on """ + AppConfig().computer_human_name +
+                           """ has been requested to be terminated by user and is therefore
+shutting down.
+
+All the best,
+
+Scan-o-Matic""", self._scanning_job)
+
             if (self._scanning_effector_data.current_cycle_step.value in
                     (SCAN_CYCLE.RequestScanner, SCAN_CYCLE.RequestScannerOff, SCAN_CYCLE.ReportNotObtainedUSB,
                      SCAN_CYCLE.ReportScanError, SCAN_CYCLE.Scan, SCAN_CYCLE.WaitForScanComplete, SCAN_CYCLE.WaitForUSB
