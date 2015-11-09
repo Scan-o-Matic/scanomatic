@@ -233,7 +233,7 @@ Scan-o-Matic""", self._analysis_job)
 
         if self._xmlWriter.get_initialized() is False:
 
-            self._logger.critical('ANALYSIS: XML writer failed to initialize')
+            self._logger.critical('XML writer failed to initialize')
             self._xmlWriter.close()
             self._running = False
 
@@ -250,6 +250,18 @@ Scan-o-Matic""", self._analysis_job)
             self._stopping = True
 
         self._analysis_needs_init = False
+
+        self._logger.info('Primary data format will save {0}:{1}'.format(self._analysis_job.image_data_output_item,
+                                                                         self._analysis_job.image_data_output_measure))
+
+        self._logger.info('Analysis saved in XML-slimmed will be {0}:{1}'.format(
+            self._analysis_job.xml_model.slim_compartment, self._analysis_job.xml_model.slim_measure))
+
+        self._logger.info('Compartments excluded from big XML are {0}'.format(
+            self._analysis_job.xml_model.exclude_compartments))
+
+        self._logger.info('Measures excluded from big XML are {0}'.format(
+            self._analysis_job.xml_model.exclude_measures))
 
         return True
 
