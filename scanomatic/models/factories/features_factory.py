@@ -2,7 +2,7 @@ __author__ = 'martin'
 
 import os
 
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
 import scanomatic.models.features_model as features_model
 
 class FeaturesFactory(AbstractModelFactory):
@@ -10,7 +10,8 @@ class FeaturesFactory(AbstractModelFactory):
     MODEL = features_model.FeaturesModel
     STORE_SECTION_HEAD = ("analysis_directory", )
     STORE_SECTION_SERIALIZERS = {
-        "analysis_directory": str
+        "analysis_directory": str,
+        "email": email_serializer
     }
 
     @classmethod
