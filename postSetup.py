@@ -71,10 +71,7 @@ def install_data_files(target_base=None, source_base=None, install_list=None):
             source_path = os.path.join(source_directory, file_name)
             target_path = os.path.join(target_directory, file_name)
 
-            os.path.dirname(target_path)
-
             if not os.path.isdir(os.path.dirname(target_path)):
-
                 os.makedirs(os.path.dirname(target_path), 0755)
 
             if not os.path.isfile(target_path) and files[file_name] is None:
