@@ -195,7 +195,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'scanner_tag': str,
         'description': str,
         'plate_descriptions': (tuple, PlateDescription),
-        'email':email_serializer,
+        'email': email_serializer,
         'pinning_formats': (tuple, tuple, int),
         'fixture': str,
         'scanner': int,

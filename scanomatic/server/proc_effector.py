@@ -157,8 +157,7 @@ class ProcessEffector(object):
 
     def setup(self, job):
 
-        self._logger.warning(
-                "Setup is not overwritten, job info ({0}) lost.".format(job))
+        self._logger.warning("Setup is not overwritten, job info ({0}) lost.".format(job))
 
     @property
     def waiting(self):
