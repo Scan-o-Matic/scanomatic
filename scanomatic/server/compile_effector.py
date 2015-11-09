@@ -176,7 +176,8 @@ Scan-o-Matic""", self._compile_job)
                 AnalysisModelFactory.create(
                     chain=True,
                     compile_instructions=self._compile_instructions_path,
-                    compilation=self._compile_job.path))):
+                    compilation=self._compile_job.path,
+                    email=self._compile_job.email))):
             self._logger.info("Enqueued analysis")
 
             return True
