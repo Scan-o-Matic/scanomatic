@@ -623,6 +623,8 @@ Scan-o-Matic""", self._scanning_job)
         """
         if self._scanning_job.fixture and self._scanning_effector_data.compilation_state is not COMPILE_STATE.Finalized:
 
+            self._scanning_effector_data.compile_project_model.email = self._scanning_job.email
+
             compile_job_id = self._rpc_client.create_compile_project_job(
                 compile_project_factory.CompileProjectFactory.to_dict(
                     self._scanning_effector_data.compile_project_model))
