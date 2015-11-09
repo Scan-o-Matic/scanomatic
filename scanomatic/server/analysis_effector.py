@@ -30,7 +30,7 @@ import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
+from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
@@ -129,7 +129,10 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
                 try:
                     rc = rpc_client.get_client(admin=True)
-                    if rc.create_feature_extract_job({"analysis_directory": self._analysis_job.output_directory}):
+                    if rc.create_feature_extract_job(FeaturesFactory.to_dict(FeaturesFactory.create(
+                            analysis_directory=self._analysis_job.output_directory,
+                            email=self._analysis_job.email))):
+
                         self._logger.info("Enqueued feature extraction job")
                     else:
                         self._logger.warning("Enqueing of feature extraction job refused")
