@@ -11,7 +11,9 @@ from scanomatic.models.factories.compile_project_factory import CompileImageAnal
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.rpc_job_models import JOB_TYPE
 import scanomatic.io.rpc_client as rpc_client
+from scanomatic.io.app_config import Config as AppConfig
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
+
 
 class CompileProjectEffector(proc_effector.ProcessEffector):
 
@@ -99,12 +101,11 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
                 self._compile_job.compile_action is COMPILE_ACTION.InitiateAndSpawnAnalysis):
 
             self._spawn_analysis()
-            self._stopping = True
-            raise StopIteration()
+            self.enact_stop()
 
         else:
-            self._stopping = True
-            raise StopIteration()
+
+            self.enact_stop()
 
     def _analyse_image(self, compile_image_model):
 
@@ -153,6 +154,22 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
             self._stopping = True
             raise e
 
+    def enact_stop(self):
+
+        self._stopping = True
+
+        self._mail("Scan-o-Matic: Compilation of '{path}' completed",
+                       """This is an automated email, please don't reply!
+
+The project '{path}' on """ + AppConfig().computer_human_name +
+                       """ has completed. No downstream analysis requested.
+
+All the best,
+
+Scan-o-Matic""", self._compile_job)
+
+        raise StopIteration
+
     def _spawn_analysis(self):
 
         if rpc_client.get_client(admin=True).create_analysis_job(AnalysisModelFactory.to_dict(
@@ -161,7 +178,20 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
                     compile_instructions=self._compile_instructions_path,
                     compilation=self._compile_job.path))):
             self._logger.info("Enqueued analysis")
+
             return True
+
         else:
+
+            self._mail("Scan-o-Matic: Compilation of '{path}' completed",
+                       """This is an automated email, please don't reply!
+
+The project '{path}' on """ + AppConfig().computer_human_name +
+                       """ has completed. Downstream analysis was refused.
+
+All the best,
+
+Scan-o-Matic""", self._compile_job)
+
             self._logger.warning("Enquing analysis was refused")
             return False
