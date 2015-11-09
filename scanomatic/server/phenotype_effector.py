@@ -22,6 +22,7 @@ import time
 import proc_effector
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
+from scanomatic.io.app_config import Config as AppConfig
 import scanomatic.dataProcessing.phenotyper as phenotyper
 from scanomatic.models.rpc_job_models import JOB_TYPE
 import scanomatic.models.factories.features_factory as feature_factory
@@ -128,6 +129,17 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
                 self._phenotyper.saveState(self._analysis_base_path,
                                            askOverwrite=False)
+
+            self._mail("Scan-o-Matic: Feature extraction of '{analysis_directory}' completed",
+                       """This is an automated email, please don't reply!
+
+The project '{analysis_directory}' on """ + AppConfig().computer_human_name +
+                       """ has completed. Downstream analysis exists. All is done.
+Hope you find cool results!
+
+All the best,
+
+Scan-o-Matic""", self._feature_job)
 
             raise StopIteration
 
