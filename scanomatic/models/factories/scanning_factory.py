@@ -1,4 +1,4 @@
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
 from scanomatic.models.scanning_model import ScanningModel, ScannerModel, ScanningAuxInfoModel, PlateDescription, \
     CULTURE_SOURCE, PLATE_STORAGE, ScannerOwnerModel
 import scanomatic.io.fixtures as fixtures
@@ -195,9 +195,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'scanner_tag': str,
         'description': str,
         'plate_descriptions': (tuple, PlateDescription),
-        'email': lambda enforce=None, serialize=None:
-        ([m.strip() for m in enforce.split(",")] if isinstance(enforce, str) else
-         (serialize if isinstance(serialize, str) else (", ".join(serialize) if isinstance(serialize, list) else enforce))),
+        'email':email_serializer,
         'pinning_formats': (tuple, tuple, int),
         'fixture': str,
         'scanner': int,

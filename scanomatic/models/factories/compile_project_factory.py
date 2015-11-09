@@ -4,7 +4,7 @@ import os
 import re
 import glob
 
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
 from scanomatic.models import compile_project_model
 from scanomatic.models import fixture_models
 from scanomatic.models.factories import fixture_factories
@@ -101,6 +101,7 @@ class CompileProjectFactory(AbstractModelFactory):
         'images': (tuple, compile_project_model.CompileImageModel),
         'path': str,
         'start_condition': str,
+        'email': email_serializer,
         'start_time': float,
         'fixture_type': compile_project_model.FIXTURE,
         'fixture_name': str,
