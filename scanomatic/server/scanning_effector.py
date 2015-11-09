@@ -84,26 +84,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.VerifyDiskspace: self._do_verify_image_size
         }
 
-    def email(self, add=None, remove=None):
-
-        if add is not None:
-            try:
-                self._scanning_job.email += [add] if isinstance(add, str) else add
-            except TypeError:
-                return False
-
-            return True
-
-        elif remove is not None:
-
-            try:
-                self._scanning_job.email.remove(remove)
-            except (ValueError, AttributeError, TypeError):
-                return False
-            return True
-
-        return False
-
     @property
     def label(self):
 

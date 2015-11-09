@@ -38,6 +38,12 @@ class ProcessEffector(object):
     TYPE = rpc_job_models.JOB_TYPE.Unknown
 
     def __init__(self, job, logger_name="Process Effector"):
+        """
+
+        :type job: scanomatic.models.rpc_job_models.RPCjobModel
+        :type logger_name: str
+        :return:
+        """
 
         self._job = job
         self._job_label = job.id
@@ -72,8 +78,24 @@ class ProcessEffector(object):
 
     def email(self, add=None, remove=None):
 
-        return False
+        if add is not None:
+            try:
+                self._job.content_model.email += [add] if isinstance(add, str) else add
+            except TypeError:
+                return False
 
+            return True
+
+        elif remove is not None:
+
+            try:
+                self._job.content_model.email.remove(remove)
+            except (ValueError, AttributeError, TypeError):
+                return False
+
+            return True
+
+        return False
 
     @property
     def label(self):
