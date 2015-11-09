@@ -2,7 +2,7 @@ __author__ = 'martin'
 
 import os
 
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, email_serializer
 import scanomatic.models.analysis_model as analysis_model
 
 
@@ -137,6 +137,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         'compile_instructions': str,
         'pinning_matrices': list,
         'use_local_fixture': bool,
+        'email': email_serializer,
         'stop_at_image': int,
         'output_directory': str,
         'focus_position': tuple,
