@@ -304,6 +304,9 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
+        if not model.email:
+            return True
+
         if isinstance(model.email, str):
             email = ",".split(model.email)
         else:
