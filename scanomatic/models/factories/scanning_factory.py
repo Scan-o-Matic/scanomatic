@@ -305,13 +305,13 @@ class ScanningModelFactory(AbstractModelFactory):
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
         if isinstance(model.email, str):
-            email = [model.email]
+            email = ",".split(model.email)
         else:
             email = model.email
 
         try:
             for address in email:
-                if not (isinstance(address, str) and (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', model.email))):
+                if not (isinstance(address, str) and (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', address))):
                     raise TypeError
             return True
         except TypeError:
