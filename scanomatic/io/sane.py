@@ -57,6 +57,7 @@ class SCANNER_DATA(Enum):
     SANEBackend = 0
     Aliases = 1
     DefaultTransparencyWord = 2
+    WaitBeforeScan = 3
 
 
 class SCAN_FLAGS(Enum):
@@ -83,6 +84,7 @@ class SaneBase(object):
 
     _SETTINGS_REPOSITORY = {
         "EPSON V700": {
+            SCANNER_DATA.WaitBeforeScan: 0,
             SCANNER_DATA.SANEBackend: 'epson2',
             SCANNER_DATA.Aliases: ('GT-X900', 'V700'),
             SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
@@ -96,6 +98,7 @@ class SaneBase(object):
                 SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
                 SCAN_FLAGS.Depth: "8"}},
         "EPSON V800": {
+            SCANNER_DATA.WaitBeforeScan: 3,
             SCANNER_DATA.SANEBackend: 'epson2',
             SCANNER_DATA.Aliases: ('GT-X980', 'V800'),
             SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
@@ -318,6 +321,9 @@ class SaneBase(object):
 
                     scan_query = self._get_scan_instructions(prepend=preprend_settings)
                     self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
+
+                    if self._scan_settings[SCANNER_DATA.WaitBeforeScan]:
+                        time.sleep(self._scan_settings[SCANNER_DATA.WaitBeforeScan])
 
                     scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
                     _, stderr = scan_proc.communicate()
