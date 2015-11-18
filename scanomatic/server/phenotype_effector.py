@@ -53,7 +53,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
     @property
     def progress(self):
 
-        return self._progress is None and 1 or self._progress
+        return 1 if self._progress is None else self._progress
 
     def setup(self, job):
 
