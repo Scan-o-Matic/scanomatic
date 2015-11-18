@@ -306,7 +306,8 @@ class SaneBase(object):
         if filename:
             self._logger.info("Scanning {0}".format(filename))
 
-            returncode = -1
+            returncode = 0
+            stderr = ""
 
             try:
                 with open(filename, 'w') as im:
@@ -325,10 +326,18 @@ class SaneBase(object):
 
             except IOError:
                 self._logger.error("Could not write to file: {0}".format(filename))
+                returncode = -1
 
             else:
+
                 if returncode:
+                    self._logger.critical("scanimage produced return-code {0}".format(returncode))
+                    self._logger.critical("Standard error from scanimage:\n\n{0}\n\n".format(stderr))
                     os.remove(filename)
+                else:
+                    self._logger.error("Error occurred while scanning but scanimage not reporting error code." +
+                                       " stderr of scanimage shows:\n\n{0}\n\n".format(stderr))
+                    returncode = -1
 
             return returncode == 0
 
