@@ -343,6 +343,11 @@ class AbstractModelFactory(object):
         return (v.name for v in cls.get_invalid(model))
 
     @classmethod
+    def get_invalid_as_text(cls, model):
+
+        return ", ".join(["{0}: '{1}'".format(key, model[key]) for key in cls.get_invalid_names(model)])
+
+    @classmethod
     def _get_validation_results(cls, model):
 
         return (getattr(cls, attr)(model) for attr in dir(cls) if attr.startswith("_validate"))
