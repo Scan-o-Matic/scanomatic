@@ -121,7 +121,6 @@ class SaneBase(object):
         self._logger = Logger("SANE")
 
         self.next_file_name = None
-        self._scanner_name = None
 
         self._scan_settings = None
 
