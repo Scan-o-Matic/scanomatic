@@ -334,8 +334,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             if validates and job_id:
                 return jsonify(success=True, name=project_name)
             else:
+
                 return jsonify(success=False, reason="The following has bad data: {0}".format(
-                    ", ".join(ScanningModelFactory.get_invalid_names(m))) if not validates else
+                    ScanningModelFactory.get_invalid_as_text(m))
+                    if not validates else
                     "Job refused, probably scanner can't be reached, check connection.")
 
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
