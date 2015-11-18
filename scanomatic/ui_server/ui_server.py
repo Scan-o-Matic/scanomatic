@@ -5,7 +5,6 @@ from flask import Flask, request, send_from_directory, redirect, jsonify, abort,
 import webbrowser
 from threading import Thread
 from socket import error
-from subprocess import Popen
 import os
 import numpy as np
 from enum import Enum
