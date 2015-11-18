@@ -321,8 +321,8 @@ class SaneBase(object):
                     scan_query = self._get_scan_instructions(prepend=preprend_settings)
                     self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
 
-                    if SaneBase._SETTINGS_REPOSITORY[SCANNER_DATA.WaitBeforeScan]:
-                        time.sleep(SaneBase._SETTINGS_REPOSITORY[SCANNER_DATA.WaitBeforeScan])
+                    if SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan]:
+                        time.sleep(SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan])
 
                     scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
                     _, stderr = scan_proc.communicate()
