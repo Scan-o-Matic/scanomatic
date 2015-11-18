@@ -352,7 +352,7 @@ Scan-o-Matic""", self._scanning_job)
                 self._mail("Scan-o-Matic: '{project_name}' error while scanning",
                            """This is an automated email, please don't reply!
 
-Failed to scan image """ + self.current_image + """ for '{project_name}'.
+Failed to scan image {0} """.format(self.current_image) + """ for '{project_name}'.
 
 All the best,
 
