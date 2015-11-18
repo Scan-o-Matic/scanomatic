@@ -3,6 +3,7 @@
 #
 
 import numpy as np
+from types import StringTypes
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_filter, median_filter
 
@@ -69,7 +70,7 @@ def getDownSampledPlates(dataObject, subSampling="BR"):
     subSamplingLookUp = {'TL': (0, 0), 'TR': (0, 1), 'BL': (1, 0), 'BR': (1, 1)}
 
     #Generic -> Per plate
-    if isinstance(subSampling, str):
+    if isinstance(subSampling, StringTypes):
         subSampling = [subSampling for i in range(dataObject.shape[0])]
 
     #Name to offset

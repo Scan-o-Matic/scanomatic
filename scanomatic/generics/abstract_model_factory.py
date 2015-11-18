@@ -15,7 +15,7 @@ from collections import defaultdict
 
 def email_serializer(enforce=None, serialize=None):
     if enforce is not None:
-        if isinstance(enforce, str):
+        if isinstance(enforce, types.StringTypes):
             return [m.strip() for m in enforce.split(",")]
         elif isinstance(enforce, list):
             return [str(e) for e in enforce if e]
@@ -24,7 +24,7 @@ def email_serializer(enforce=None, serialize=None):
 
     elif serialize is not None:
 
-        if isinstance(serialize, str):
+        if isinstance(serialize, types.StringTypes):
             return serialize
         elif isinstance(serialize, list):
             return ", ".join(serialize)
@@ -458,7 +458,7 @@ class AbstractModelFactory(object):
     @staticmethod
     def _is_file(path):
 
-        return isinstance(path, str) and os.path.isfile(path)
+        return isinstance(path, types.StringTypes) and os.path.isfile(path)
 
     @staticmethod
     def _is_tuple_or_list(obj):
@@ -956,7 +956,7 @@ class Serializer(object):
 
     def get_section_name(self, model):
 
-        if isinstance(self._factory.STORE_SECTION_HEAD, str):
+        if isinstance(self._factory.STORE_SECTION_HEAD, types.StringTypes):
             return self._factory.STORE_SECTION_HEAD
         elif isinstance(self._factory.STORE_SECTION_HEAD, list):
             heads = [(str(model[head]) if model[head] is not None else '') for head in self._factory.STORE_SECTION_HEAD]
@@ -1073,7 +1073,7 @@ class SerializationHelper(object):
             except (NameError, AttributeError, SyntaxError):
                 return False
 
-        elif dtype in (int, float, str):
+        elif dtype in (int, float, types.StringTypes):
             try:
                 return dtype(serialized_obj)
             except (TypeError, ValueError):
@@ -1112,7 +1112,7 @@ class SerializationHelper(object):
         """
         conf = LinkerConfigParser(id=path, allow_no_value=True)
 
-        if isinstance(path, str):
+        if isinstance(path, types.StringTypes):
             try:
                 with open(path, 'r') as fh:
                     conf.readfp(fh)

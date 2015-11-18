@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import time
 import os
+from types import StringTypes
 
 #
 # INTERNAL DEPENDENCIES
@@ -80,7 +81,7 @@ class ProcessEffector(object):
 
         if add is not None:
             try:
-                self._job.content_model.email += [add] if isinstance(add, str) else add
+                self._job.content_model.email += [add] if isinstance(add, StringTypes) else add
             except TypeError:
                 return False
 

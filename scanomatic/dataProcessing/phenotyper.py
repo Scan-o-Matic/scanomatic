@@ -17,6 +17,7 @@ __status__ = "Development"
 
 import numpy as np
 import os
+from types import StringTypes
 from scipy.ndimage import median_filter, gaussian_filter1d
 from scipy.optimize import leastsq
 from scipy.stats import linregress
@@ -773,7 +774,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         values = []
         for pos in posList:
 
-            if isinstance(pos, str):
+            if isinstance(pos, StringTypes):
                 plate, x, y = self._posStringToTuple(pos)
             else:
                 plate, x, y = pos

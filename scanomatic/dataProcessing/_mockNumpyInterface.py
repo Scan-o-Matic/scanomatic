@@ -11,6 +11,7 @@ __maintainer__ = "Martin Zackrisson"
 __email__ = "martin.zackrisson@gu.se"
 __status__ = "Development"
 
+from types import StringTypes
 
 class NumpyArrayInterface(object):
 
@@ -32,7 +33,7 @@ class NumpyArrayInterface(object):
 
     def __getitem__(self, key):
 
-        if isinstance(key, str):
+        if isinstance(key, StringTypes):
             plate, x, y = self._posStringToTuple(key)
             return self._dataObject[plate][x, y]
         elif isinstance(key, int):

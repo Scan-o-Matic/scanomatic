@@ -16,6 +16,7 @@ import xmlrpclib
 import enum
 from subprocess import Popen
 import socket
+from types import StringTypes
 
 #
 # INTERNAL DEPENDENCIES
@@ -186,7 +187,7 @@ class _ClientProxy(object):
     @host.setter
     def host(self, value):
 
-        if not isinstance(value, str):
+        if not isinstance(value, StringTypes):
             value = str(value)
 
         value = "{0}{1}".format(

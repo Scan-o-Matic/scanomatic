@@ -8,6 +8,7 @@ from scanomatic.models.rpc_job_models import RPCjobModel
 import os
 import re
 import string
+from types import StringTypes
 
 
 
@@ -47,7 +48,7 @@ class PlateDescriptionFactory(AbstractModelFactory):
         """
         :type model: scanomatic.models.scanning_model.PlateDescription
         """
-        if isinstance(model.name, str) and model.str:
+        if isinstance(model.name, StringTypes) and model.str:
             return True
         return model.FIELD_TYPES.name
 
@@ -56,7 +57,7 @@ class PlateDescriptionFactory(AbstractModelFactory):
         """
         :type model: scanomatic.models.scanning_model.PlateDescription
         """
-        if isinstance(model.description, str) and model.str:
+        if isinstance(model.description, StringTypes) and model.str:
             return True
         return model.FIELD_TYPES.description
 
@@ -293,7 +294,7 @@ class ScanningModelFactory(AbstractModelFactory):
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
 
-        if isinstance(model.description, str):
+        if isinstance(model.description, StringTypes):
             return True
 
         return model.FIELD_TYPES.description
@@ -307,14 +308,15 @@ class ScanningModelFactory(AbstractModelFactory):
         if not model.email:
             return True
 
-        if isinstance(model.email, str):
+        if isinstance(model.email, StringTypes):
             email = ",".split(model.email)
         else:
             email = model.email
 
         try:
             for address in email:
-                if not (isinstance(address, str) and (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', address))):
+                if not (isinstance(address, StringTypes) and
+                            (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', address))):
                     raise TypeError
             return True
         except TypeError:

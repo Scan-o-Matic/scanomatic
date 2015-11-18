@@ -8,6 +8,8 @@ from scanomatic.models.factories.compile_project_factory import CompileProjectFa
 from scanomatic.models.compile_project_model import CompileInstructionsModel
 from scanomatic.models.features_model import FeaturesModel
 from scanomatic.models.factories.features_factory import FeaturesFactory
+from types import StringTypes
+
 
 class RPC_Job_Model_Factory(AbstractModelFactory):
 
@@ -44,7 +46,7 @@ class RPC_Job_Model_Factory(AbstractModelFactory):
     @classmethod
     def _validate_id(cls, model):
 
-        if isinstance(model.id, str):
+        if isinstance(model.id, StringTypes):
     
             return True
 

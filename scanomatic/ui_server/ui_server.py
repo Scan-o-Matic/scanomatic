@@ -13,6 +13,7 @@ import shutil
 import re
 from itertools import chain
 import glob
+from types import StringTypes
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -305,7 +306,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 'root', Paths().experiment_root)
 
             plate_descriptions = request.json.get("plate_descriptions")
-            if all(isinstance(p, str) or isinstance(p, unicode) or p is None for p in plate_descriptions):
+            if all(isinstance(p, StringTypes) or p is None for p in plate_descriptions):
                 plate_descriptions = tuple({"index": i, "description": p} for i, p in enumerate(plate_descriptions))
 
             m = ScanningModelFactory.create(

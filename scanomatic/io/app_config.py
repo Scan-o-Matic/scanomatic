@@ -14,7 +14,8 @@ __status__ = "Development"
 #
 
 import os
-from hashlib import  md5
+from types import StringTypes
+from hashlib import md5
 import random
 from cPickle import loads, dumps, UnpickleableError, UnpicklingError
 from ConfigParser import ConfigParser
@@ -304,7 +305,7 @@ class Config(SingeltonOneInit):
 
         if isinstance(scanner, int) and 0 < scanner <= self.number_of_scanners:
             scanner = self.SCANNER_PATTERN.format(scanner)
-        elif isinstance(scanner, str):
+        elif isinstance(scanner, StringTypes):
             numbers = map(int, re.findall(r'\d+', scanner))
             if len(numbers) != 1 or numbers[0] <= 0 or numbers[0] > self.number_of_scanners:
                 return None

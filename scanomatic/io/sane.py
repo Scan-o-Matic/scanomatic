@@ -22,6 +22,7 @@ import copy
 import time
 from itertools import chain
 from enum import Enum
+from types import StringTypes
 
 #
 # INTERNAL DEPENDENCIES
@@ -172,7 +173,7 @@ class SaneBase(object):
         if not model:
             return None
 
-        if isinstance(scan_mode, str):
+        if isinstance(scan_mode, StringTypes):
             scan_mode = scan_mode.upper()
             if scan_mode == "COLOUR":
                 scan_mode = "COLOR"
