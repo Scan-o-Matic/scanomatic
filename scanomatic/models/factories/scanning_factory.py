@@ -423,7 +423,7 @@ class ScannerFactory(AbstractModelFactory):
         'usb': str,
         'power': bool,
         "expected_interval": float,
-        "email": str,
+        "email": email_serializer,
         "warned": bool,
         "owner": ScannerOwnerModel,
         "claiming": bool,
