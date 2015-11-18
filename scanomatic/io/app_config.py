@@ -186,6 +186,8 @@ class Config(SingeltonOneInit):
 
     def _set_pm_extras(self):
 
+        self._logger.info("Using pm-type {0}".format(self.pm_type))
+
         if self.pm_type == power_manager.POWER_MANAGER_TYPE.linuxUSB:
 
             self._PM = power_manager.PowerManagerUsbLinux
