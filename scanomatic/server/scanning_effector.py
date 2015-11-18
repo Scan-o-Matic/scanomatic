@@ -212,10 +212,10 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_effector_data.previous_scan_cycle_start))
 
             self._mail("Scan-o-Matic: Terminated project '{project_name}' by user",
-                           """This is an automated email, please don't reply!
+                       """This is an automated email, please don't reply!
 
 The project '{project_name}' on {scanner} on """ + AppConfig().computer_human_name +
-                           """ has been requested to be terminated by user and is therefore
+                       """ has been requested to be terminated by user and is therefore
 shutting down.
 
 All the best,
@@ -349,6 +349,17 @@ Scan-o-Matic""", self._scanning_job)
                 return SCAN_STEP.NextMajor
             else:
                 self._logger.warning("Scan completed, but not successfully.")
+                self._mail("Scan-o-Matic: '{project_name}' error while scanning",
+                           """This is an automated email, please don't reply!
+
+Failed to scan image """ + self.current_image + """ for '{project_name}'.
+
+All the best,
+
+Scan-o-Matic""", self._scanning_job)
+
+                self._scanning_effector_data.warned_scanner_error = True
+
                 return SCAN_STEP.NextMinor
 
         elif self._should_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
