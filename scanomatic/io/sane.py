@@ -349,14 +349,6 @@ class SaneBase(object):
                         self._logger.critical("Standard error from scanimage:\n\n{0}\n\n".format(stderr))
                         os.remove(filename)
 
-                    else:
-                        self._logger.critical(
-                            "Error occurred while scanning but scanimage not reporting error code. " +
-                            "Assuming that image was scanned correctly."
-                            " stderr of scanimage shows:\n\n{0}\n\n".format(stderr))
-
-                        returncode = 0
-
                 if returncode <= 0 or attempts > max_attempts:
                     break
 
