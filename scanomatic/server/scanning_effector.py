@@ -690,7 +690,8 @@ Scan-o-Matic""", self._scanning_job)
 
         self._logger.info("Got an usb port '{0}'".format(port))
         self._scanning_effector_data.scanner_model = scanner_model
-        self._scanner.model = scanner_model
+        if scanner_model:
+            self._scanner.model = scanner_model
         self._scanning_effector_data.usb_port = port
 
     def _add_scanned_image(self, index, time_stamp, path):
