@@ -98,7 +98,7 @@ class SaneBase(object):
                 SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
                 SCAN_FLAGS.Depth: "8"}},
         "EPSON V800": {
-            SCANNER_DATA.WaitBeforeScan: 3,
+            SCANNER_DATA.WaitBeforeScan: 5,
             SCANNER_DATA.SANEBackend: 'epson2',
             SCANNER_DATA.Aliases: ('GT-X980', 'V800'),
             SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
@@ -306,43 +306,59 @@ class SaneBase(object):
             filename = self.next_file_name
 
         if filename:
+
             self._logger.info("Scanning {0}".format(filename))
+            attempts = 0
+            max_attempts = 5
 
-            returncode = 0
-            stderr = ""
+            while True:
 
-            try:
-                with open(filename, 'w') as im:
-                    if scanner:
-                        preprend_settings = {SCAN_FLAGS.Device: scanner}
-                    else:
-                        preprend_settings = None
+                attempts += 1
+                returncode = 0
+                stderr = ""
 
-                    scan_query = self._get_scan_instructions(prepend=preprend_settings)
-                    self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
+                try:
+                    with open(filename, 'w') as im:
+                        if scanner:
+                            preprend_settings = {SCAN_FLAGS.Device: scanner}
+                        else:
+                            preprend_settings = None
 
-                    if SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan]:
-                        time.sleep(SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan])
+                        scan_query = self._get_scan_instructions(prepend=preprend_settings)
+                        self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
 
-                    scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
-                    _, stderr = scan_proc.communicate()
+                        if SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan]:
+                            time.sleep(SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan])
+                        elif attempts > 1:
+                            time.sleep(1)
 
-                    returncode = scan_proc.returncode
+                        scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
+                        _, stderr = scan_proc.communicate()
 
-            except IOError:
-                self._logger.error("Could not write to file: {0}".format(filename))
-                returncode = -1
+                        returncode = scan_proc.returncode
 
-            else:
-
-                if returncode:
-                    self._logger.critical("scanimage produced return-code {0}".format(returncode))
-                    self._logger.critical("Standard error from scanimage:\n\n{0}\n\n".format(stderr))
-                    os.remove(filename)
-                else:
-                    self._logger.error("Error occurred while scanning but scanimage not reporting error code." +
-                                       " stderr of scanimage shows:\n\n{0}\n\n".format(stderr))
+                except IOError:
+                    self._logger.error("Could not write to file: {0}".format(filename))
                     returncode = -1
+
+                else:
+
+                    if returncode:
+                        self._logger.critical("scanimage produced return-code {0}, attempt {1}/{2}".format(
+                            returncode, attempts, max_attempts))
+                        self._logger.critical("Standard error from scanimage:\n\n{0}\n\n".format(stderr))
+                        os.remove(filename)
+
+                    else:
+                        self._logger.critical(
+                            "Error occurred while scanning but scanimage not reporting error code. " +
+                            "Assuming that image was scanned correctly."
+                            " stderr of scanimage shows:\n\n{0}\n\n".format(stderr))
+
+                        returncode = 0
+
+                if returncode <= 0 or attempts > max_attempts:
+                    break
 
             return returncode == 0
 
