@@ -214,7 +214,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._mail("Scan-o-Matic: Terminated project '{project_name}' by user",
                            """This is an automated email, please don't reply!
 
-    The project '{project_name}' on {scanner} on """ + AppConfig().computer_human_name +
+    The project '{project_name}' on scanner {scanner} on """ + AppConfig().computer_human_name +
                            """ has been requested to be terminated by user and is therefore
     shutting down.
 
