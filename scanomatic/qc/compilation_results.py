@@ -39,13 +39,14 @@ def get_grayscale_variability(project_compilation):
 
 
 @_input_validate
-def get_grayscale_outlier_images(project_compilation, max_distance=3.0):
+def get_grayscale_outlier_images(project_compilation, max_distance=3.0, only_image_indices=False):
 
     data = np.array([image.fixture.grayscale.values for image in project_compilation])
     norm = np.median(data, axis=0)
     sq_distances = np.sum((data - norm) ** 2, axis=1)
     threshold = max_distance ** 2 * np.median(sq_distances)
-    return [image.image for i, image in enumerate(project_compilation) if sq_distances[i] > threshold]
+    return [(i if only_image_indices else image) for i, image in enumerate(project_compilation)
+            if sq_distances[i] > threshold]
 
 
 @_input_validate
@@ -120,13 +121,13 @@ def get_positional_markers_variability(project_compilation):
 
 
 @_input_validate
-def get_positional_marker_outlier_images(project_compilation, max_distance=10):
+def get_positional_marker_outlier_images(project_compilation, max_distance=4, only_image_indices=False):
 
     data = _get_marker_sorted_data(project_compilation)
     norm = np.median(data, axis=0)
     sq_distances = np.sum((data - norm) ** 2, axis=(1, 2))
     irregulars = np.where(sq_distances > max_distance ** 2)[0]
-    return tuple(project_compilation[i] for i in irregulars)
+    return irregulars if only_image_indices else tuple(project_compilation[i] for i in irregulars)
 
 
 def _get_marker_sorted_data(project_compilation):
@@ -138,3 +139,15 @@ def _get_marker_sorted_data(project_compilation):
     sortorder = np.argmin(np.subtract.outer(lengths, norm) ** 2, axis=-1)
 
     return np.array([d[:, s] for d, s in izip(data, sortorder)])
+
+
+@_input_validate
+def get_images_with_irregularities(project_compilation, only_image_indices=False):
+
+    data = set(get_grayscale_outlier_images(project_compilation, only_image_indices=only_image_indices)).union(
+        get_positional_marker_outlier_images(project_compilation, only_image_indices=only_image_indices))
+
+    if only_image_indices:
+        return sorted(data)
+    else:
+        return sorted(data, key=lambda x: x.image.index)
