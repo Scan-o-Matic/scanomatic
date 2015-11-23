@@ -43,6 +43,9 @@ class FixtureImage(object):
         self._conversion_factor = 1.0 / scale
         self._logger = logger.Logger("Resource Image Analysis")
 
+        self._logger.info("Analysing image {0} using pattern file {1} and scale {2}".format(
+            path if path else (image.shape if image is not None else "NO IMAGE"), pattern_image_path, scale))
+
         if os.path.isfile(pattern_image_path) is False and resource_paths is not None:
 
             pattern_image_path = os.path.join(resource_paths.images, os.path.basename(

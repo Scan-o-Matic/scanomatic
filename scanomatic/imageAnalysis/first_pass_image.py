@@ -241,10 +241,11 @@ class FixtureImage(object):
         if markings is None:
             markings = len(self["fixture"].model.orientation_marks_x)
 
-        _logger.info("Running marker detection ({0} markers on {1})".format(markings, self.im_path))
-
         analysis_img = self._get_image_in_correct_scale(self.MARKER_DETECTION_DPI)
         scale_factor = self.get_dpi_factor_to_target(self.MARKER_DETECTION_DPI)
+
+        _logger.info("Running marker detection ({0} markers on {1} ({2}) using {3}, scale {4})".format(
+            markings, self.im_path, analysis_img.shape, self["reference"].get_marker_path(), scale_factor))
 
         im_analysis = imageFixture.FixtureImage(
             image=analysis_img,
