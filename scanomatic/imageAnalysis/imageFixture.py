@@ -132,7 +132,19 @@ class FixtureImage(object):
             self._img = imageBasics.Quick_Scale_To_im(conversion_factor)
             self._logger.info("Scaled")
 
-    def get_hit_refined(self, hit, conv_img):
+    def get_hit_refined(self, hit, conv_img, half_stencil_size):
+        """
+        Use half-size to select area and give each pixel the weight of the convolution result of
+        that coordinate times the 2D gaussian value based on offset of distance to hit (sigma = ?).
+
+        Refined hit is the hit + mass-center offset from hit
+
+        :param hit:
+        :param conv_img:
+        :param half_stencil_size:
+        :return: refined hit
+        :rtype : (int, int)
+        """
 
         #quarter_stencil = map(lambda x: x/8.0, stencil_size)
         #m_hit = conv_img[(max_coord[0] - quarter_stencil[0] or 0):\
@@ -181,12 +193,12 @@ class FixtureImage(object):
 
         max_coord = np.array((max_coord[0][0], max_coord[1][0]))
 
-        #Refining
-        if refine_hit:
-            max_coord = self.get_hit_refined(max_coord, conv_img)
-
         #Zeroing out hit
         half_stencil = map(lambda x: x / 2.0, stencil_size)
+
+        #Refining
+        if refine_hit:
+            max_coord = self.get_hit_refined(max_coord, conv_img, half_stencil)
 
         d1_min = (max_coord[0] - half_stencil[0] > 0 and
                   max_coord[0] - half_stencil[0] or 0)
