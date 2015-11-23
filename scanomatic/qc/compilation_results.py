@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 import glob
 import os
 import re
+from itertools import izip
 
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 
@@ -53,6 +54,7 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
     data = np.array([image.fixture.grayscale.values for image in project_compilation])
     outliers = get_grayscale_outlier_images(project_compilation, max_distance) if mark_outliers else []
     f = plt.figure()
+    f.clf()
     ax = f.gca()
     ax.imshow(data)
     ax.set_ylabel("Image index")
@@ -89,3 +91,50 @@ def _get_irregular_intervals(data, max_deviation):
     norm = np.abs(np.median(diff))
     irregulars = np.where(np.abs(1 - diff / norm) > max_deviation)[0]
     return tuple((i + 1, diff[i]) for i in irregulars)
+
+
+@_input_validate
+def plot_positional_markers(project_compilation):
+
+    data = np.array([(image.fixture.orientation_marks_x, image.fixture.orientation_marks_y) for
+                     image in project_compilation])
+
+    shape = np.max([image.fixture.shape for image in project_compilation], axis=0)
+
+    f = plt.figure()
+    f.clf()
+    ax = f.gca()
+    for x, y in data:
+        ax.plot(x, y, 'x')
+    ax.set_xlim(0, shape[1])
+    ax.set_ylim(0, shape[0])
+    ax.set_title("Position marker centers")
+    return f
+
+
+@_input_validate
+def get_positional_markers_variability(project_compilation):
+
+    data = _get_marker_sorted_data(project_compilation)
+    return np.var(data, axis=0) / np.median(data, axis=0)
+
+
+@_input_validate
+def get_positional_marker_outlier_images(project_compilation, max_distance=10):
+
+    data = _get_marker_sorted_data(project_compilation)
+    norm = np.median(data, axis=0)
+    sq_distances = np.sum((data - norm) ** 2, axis=(1, 2))
+    irregulars = np.where(sq_distances > max_distance ** 2)[0]
+    return tuple(project_compilation[i] for i in irregulars)
+
+
+def _get_marker_sorted_data(project_compilation):
+
+    data = np.array([(image.fixture.orientation_marks_x, image.fixture.orientation_marks_y) for
+                     image in project_compilation])
+    lengths = data.sum(axis=1)
+    norm = np.median(lengths, axis=0)
+    sortorder = np.argmin(np.subtract.outer(lengths, norm) ** 2, axis=-1)
+
+    return np.array([d[:, s] for d, s in izip(data, sortorder)])
