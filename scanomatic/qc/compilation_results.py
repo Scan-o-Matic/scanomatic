@@ -3,8 +3,14 @@ __author__ = 'martin'
 from types import StringTypes
 import numpy as np
 from matplotlib import pyplot as plt
+import glob
+import os
+import re
 
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
+
+_img_pattern = re.compile(r".*_[0-9]{4}_[0-9.]+\.tiff$")
+_time_pattern = re.compile(r'[0-9]+\.[0-9]*')
 
 
 def _input_validate(f):
@@ -61,3 +67,25 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
         ax.set_xlim(0, segments)
 
     return f
+
+
+@_input_validate
+def get_irregular_intervals(project_compilation, max_deviation=0.05):
+
+    return _get_irregular_intervals([i.image.time_stamp for i in project_compilation], max_deviation)
+
+
+def get_irregular_intervals_from_file_names(directory, max_deviation=0.05):
+
+    images = [float(_time_pattern.findall(f)[-1]) for f in sorted(glob.glob(os.path.join(directory, "*.tiff")))
+              if _img_pattern.match(f)]
+
+    return _get_irregular_intervals(images, max_deviation)
+
+
+def _get_irregular_intervals(data, max_deviation):
+
+    diff = np.diff(data)
+    norm = np.abs(np.median(diff))
+    irregulars = np.where(np.abs(1 - diff / norm) > max_deviation)[0]
+    return tuple((i + 1, diff[i]) for i in irregulars)
