@@ -388,7 +388,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     def _analyse(self):
 
         self._smoothen()
-        self._calculatePhenotypes()
+        self._calculate_phenotypes()
 
     def iterAnalyse(self):
 
@@ -400,15 +400,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             raise StopIteration("Can't iterate when not in itermode")
             return
         else:
-            n = sum((p.shape[0] * p.shape[1] for p in self._dataObject)) + 1.0
-            i = 0.0
+
             self._smoothen()
             self._logger.info("Smoothed")
-            yield i / n
-            for x in self._calculatePhenotypes():
-                self._logger.info("Phenotype extraction iteration")
-                i += x
-                yield i / n
+            yield 0
+            for x in self._calculate_phenotypes():
+                self._logger.debug("Phenotype extraction iteration")
+                yield x
 
         self._itermode = False
 
@@ -431,159 +429,146 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._logger.info("Smoothing Done")
 
-    def _calculatePhenotypes(self):
+    def _calculate_phenotypes(self):
 
-        # TODO? Add "OD" levels 0-5%, 5-15, ... linear regresions.
-
-        def _linReg(X, Y):
+        def _linreg_helper(X, Y):
             return linregress(X, Y)[0::4]
-
-        def _linReg2(*args):
-            return linregress(args[:linRegSize], args[linRegSize:])[0::4]
 
         if self._timeObject.shape[0] - (self._linRegSize - 1) <= 0:
             self._logger.error(
                 "Refusing phenotype extractions since number of scans are less than used in the linear regression")
             return
 
-        timesStrided = np.lib.stride_tricks.as_strided(
+        times_strided = np.lib.stride_tricks.as_strided(
             self._timeObject,
             shape=(self._timeObject.shape[0] - (self._linRegSize - 1),
                    self._linRegSize),
             strides=(self._timeObject.strides[0],
                      self._timeObject.strides[0]))
 
-        flatT = self._timeObject.ravel()
+        flat_times = self._timeObject.ravel()
 
-        idT48 = np.abs(np.subtract.outer(self._timeObject, [48])).argmin()
+        index_for_48h = np.abs(np.subtract.outer(self._timeObject, [48])).argmin()
 
-        allPhenotypes = []
+        all_phenotypes = []
 
-        linRegSize = self._linRegSize
-        #linRegUFunc = np.frompyfunc(_linReg2, linRegSize * 2, 2)
-        posOffset = (linRegSize - 1) / 2
-        nPhenotypes = self.nPhenotypeTypes
+        regression_size = self._linRegSize
+        position_offset = (regression_size - 1) / 2
+        phenotypes_count = self.nPhenotypeTypes
+        total_curves = float(
+            sum(p.shape[0] * p.shape[1] if (p is not None and p.ndim > 1) else 0 for p in self._dataObject))
 
         self._logger.info("Phenotypes (N={0}) Extraction Started".format(
-            nPhenotypes))
+            phenotypes_count))
 
         for plateI, plate in enumerate(self._dataObject):
 
-            stridedPlate = np.lib.stride_tricks.as_strided(
+            flat_positions_curves = np.lib.stride_tricks.as_strided(
                 plate,
                 shape=(plate.shape[0] * plate.shape[1],
-                       plate.shape[2] - (linRegSize - 1),
-                       linRegSize),
+                       plate.shape[2] - (regression_size - 1),
+                       regression_size),
                 strides=(plate.strides[1],
                          plate.strides[2], plate.strides[2]))
 
-            phenotypes = np.zeros((plate.shape[:2]) + (nPhenotypes,),
+            phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),
                                   dtype=plate.dtype)
 
-            allPhenotypes.append(phenotypes)
+            all_phenotypes.append(phenotypes)
 
-            stridedPlate = np.lib.stride_tricks.as_strided(
-                plate,
-                shape=(plate.shape[0], plate.shape[1],
-                       plate.shape[2] - (linRegSize - 1),
-                       linRegSize),
-                strides=(plate.strides[0], plate.strides[1],
-                         plate.strides[2], plate.strides[2]))
+            for pos_index, pos_data in enumerate(np.log2(flat_positions_curves)):
 
-            for idX, X in enumerate(np.log2(stridedPlate)):
+                position_phenotypes = [None] * phenotypes_count
 
-                for idY, Y in enumerate(X):
+                derivative_values = []
 
-                    curPhenos = [None] * nPhenotypes
+                for times, value_segment in itertools.izip(times_strided, pos_data):
 
-                    #CALCULATING GT
-                    vals = []
+                    derivative_values.append(_linreg_helper(times, value_segment))
 
-                    for V, T in itertools.izip(Y, timesStrided):
+                derivative_values = np.array(derivative_values)
+                masked_derivative_values = np.ma.masked_invalid(derivative_values[..., 0])
+                best_finite_derivative_values = -masked_derivative_values.mask.sum() - 1
+                derivative_values_sort_index = masked_derivative_values.argsort()
+                id0 = pos_index % plate.shape[0]
+                id1 = pos_index / plate.shape[0]
 
-                        vals.append(_linReg(T, V))
+                curve = np.ma.masked_invalid(plate[id0, id1])
 
-                    vals = np.array(vals)
-                    mVals = np.ma.masked_invalid(vals[..., 0])
-                    bestFinite = -mVals.mask.sum() - 1
-                    vArgSort = mVals.argsort()
+                # CALCULATING CURVE FITS
+                observed_values = plate[id0, id1].ravel().astype(np.float64)
 
-                    curve = np.ma.masked_invalid(plate[idX, idY])
+                p = Phenotyper.CalculateFitRSquare(
+                    flat_times, np.log2(observed_values))
 
-                    #CALCULATING CURVE FITS
-                    Yobs = plate[idX, idY].ravel().astype(np.float64)
+                # YIELD TYPE OF PHENOTYPES
+                position_phenotypes[self.PHEN_INIT_VAL_A] = curve[0]
+                position_phenotypes[self.PHEN_INIT_VAL_B] = curve[:2].mean()
+                position_phenotypes[self.PHEN_INIT_VAL_C] = curve[:3].mean()
+                position_phenotypes[self.PHEN_INIT_VAL_D] = curve[:3].min()
+                position_phenotypes[self.PHEN_FINAL_VAL] = curve[3:].mean()
+                position_phenotypes[self.PHEN_YIELD] = \
+                    position_phenotypes[self.PHEN_FINAL_VAL] - \
+                    position_phenotypes[self.PHEN_INIT_VAL_C]
+                position_phenotypes[self.PHEN_48_Y_VALUE] = curve[index_for_48h]
 
-                    p = Phenotyper.CalculateFitRSquare(
-                        flatT, np.log2(Yobs))
+                # REGISTRATING GT PHENOTYPES
+                if abs(best_finite_derivative_values) <= derivative_values_sort_index.size:
+                    position_phenotypes[self.PHEN_GT_VALUE] = 1.0 / derivative_values[
+                        derivative_values_sort_index[best_finite_derivative_values], self.PHEN_GT_VALUE]
 
-                    #YIELD TYPE OF PHENOTYPES
-                    curPhenos[self.PHEN_INIT_VAL_A] = curve[0]
-                    curPhenos[self.PHEN_INIT_VAL_B] = curve[:2].mean()
-                    curPhenos[self.PHEN_INIT_VAL_C] = curve[:3].mean()
-                    curPhenos[self.PHEN_INIT_VAL_D] = curve[:3].min()
-                    curPhenos[self.PHEN_FINAL_VAL] = curve[3:].mean()
-                    curPhenos[self.PHEN_YIELD] = \
-                        curPhenos[self.PHEN_FINAL_VAL] - \
-                        curPhenos[self.PHEN_INIT_VAL_C]
-                    curPhenos[self.PHEN_48_Y_VALUE] = curve[idT48]
+                    position_phenotypes[self.PHEN_GT_ERR] = derivative_values[
+                        derivative_values_sort_index[best_finite_derivative_values], self.PHEN_GT_ERR]
 
-                    #REGISTRATING GT PHENOTYPES
-                    if (abs(bestFinite) <= vArgSort.size):
-                        curPhenos[self.PHEN_GT_VALUE] = 1.0 / vals[
-                            vArgSort[bestFinite], self.PHEN_GT_VALUE]
+                    position_phenotypes[self.PHEN_GT_POS] = derivative_values_sort_index[best_finite_derivative_values] +\
+                        position_offset
 
-                        curPhenos[self.PHEN_GT_ERR] = vals[
-                            vArgSort[bestFinite], self.PHEN_GT_ERR]
+                    if abs(best_finite_derivative_values) < derivative_values_sort_index.size:
+                        position_phenotypes[self.PHEN_GT_2ND_VALUE] = 1.0 / derivative_values[
+                            derivative_values_sort_index[best_finite_derivative_values - 1], self.PHEN_GT_VALUE]
 
-                        curPhenos[self.PHEN_GT_POS] = vArgSort[bestFinite] +\
-                            posOffset
+                        position_phenotypes[self.PHEN_GT_2ND_ERR] = derivative_values[
+                            derivative_values_sort_index[best_finite_derivative_values - 1], self.PHEN_GT_ERR]
 
-                        if (abs(bestFinite) < vArgSort.size):
-                            curPhenos[self.PHEN_GT_2ND_VALUE] = 1.0 / vals[
-                                vArgSort[bestFinite - 1], self.PHEN_GT_VALUE]
+                        position_phenotypes[self.PHEN_GT_2ND_POS] = \
+                            derivative_values_sort_index[best_finite_derivative_values - 1] + position_offset
 
-                            curPhenos[self.PHEN_GT_2ND_ERR] = vals[
-                                vArgSort[bestFinite - 1], self.PHEN_GT_ERR]
+                    position_phenotypes[self.PHEN_GT_Y_VALUE] = \
+                        np.median(
+                            curve[position_phenotypes[self.PHEN_GT_POS] - position_offset:
+                                  position_phenotypes[self.PHEN_GT_POS] + position_offset
+                                  + 1])
 
-                            curPhenos[self.PHEN_GT_2ND_POS] = \
-                                vArgSort[bestFinite - 1] + posOffset
+                    growth_delta = (np.log2(position_phenotypes[self.PHEN_GT_Y_VALUE]) -
+                          np.log2(position_phenotypes[self.PHEN_INIT_VAL_C]))
 
-                        curPhenos[self.PHEN_GT_Y_VALUE] = \
-                            np.median(
-                                curve[curPhenos[self.PHEN_GT_POS] - posOffset:
-                                      curPhenos[self.PHEN_GT_POS] + posOffset
-                                      + 1])
+                    if growth_delta > 0:
 
-                        dY = (np.log2(curPhenos[self.PHEN_GT_Y_VALUE]) -                                           
-                              np.log2(curPhenos[self.PHEN_INIT_VAL_C]))
+                        position_phenotypes[self.PHEN_LAG] = \
+                            flat_times[position_phenotypes[self.PHEN_GT_POS]] - \
+                            growth_delta * position_phenotypes[self.PHEN_GT_VALUE]
+                    else:
+                        position_phenotypes[self.PHEN_LAG] = np.nan
 
-                        if dY > 0:
+                # REGISTRATING CURVE FITS
+                position_phenotypes[self.PHEN_FIT_VALUE] = p[0]
+                position_phenotypes[self.PHEN_FIT_PARAM1] = p[1][0]
+                position_phenotypes[self.PHEN_FIT_PARAM2] = p[1][1]
+                position_phenotypes[self.PHEN_FIT_PARAM3] = p[1][2]
+                position_phenotypes[self.PHEN_FIT_PARAM4] = p[1][3]
+                position_phenotypes[self.PHEN_FIT_PARAM5] = p[1][4]
 
-                            curPhenos[self.PHEN_LAG] = \
-                                flatT[curPhenos[self.PHEN_GT_POS]] - \
-                                dY * curPhenos[self.PHEN_GT_VALUE]
-                        else:
-                            curPhenos[self.PHEN_LAG] = np.nan
-
-                    #REGISTRATING CURVE FITS
-                    curPhenos[self.PHEN_FIT_VALUE] = p[0]
-                    curPhenos[self.PHEN_FIT_PARAM1] = p[1][0]
-                    curPhenos[self.PHEN_FIT_PARAM2] = p[1][1]
-                    curPhenos[self.PHEN_FIT_PARAM3] = p[1][2]
-                    curPhenos[self.PHEN_FIT_PARAM4] = p[1][3]
-                    curPhenos[self.PHEN_FIT_PARAM5] = p[1][4]
-
-                    #STORING PHENOTYPES
-                    phenotypes[idX, idY, ...] = curPhenos
+                # STORING PHENOTYPES
+                phenotypes[id0, id1, ...] = position_phenotypes
 
                 if self._itermode:
-                    self._logger.info("Done plate {0} pos {1} {2}".format(
-                        plateI, idX, idY))
-                    yield idY + 1
+                    self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
+                        plateI, id0, id1, list(position_phenotypes)))
+                    yield (pos_index + 1.0) / total_curves
 
             self._logger.info("Plate {0} Done".format(plateI))
 
-        self._phenotypes = np.array(allPhenotypes)
+        self._phenotypes = np.array(all_phenotypes)
 
         self._logger.info("Phenotype Extraction Done")
 
