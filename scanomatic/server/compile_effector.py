@@ -57,11 +57,22 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         self._logger.surpress_prints = True
 
         self._logger.info("Doing setup")
+        self._logger.info("Action {0}".format(self._compile_job.compile_action))
         self._compile_instructions_path = Paths().get_project_compile_instructions_path_from_compile_model(
             self._compile_job)
         self._tweak_path()
         self._load_fixture()
         self._allow_start = True
+        if self._compile_job.compile_action == COMPILE_ACTION.Initiate or \
+                        self._compile_job.compile_action == COMPILE_ACTION.InitiateAndSpawnAnalysis:
+
+            # Empty files
+            try:
+                os.remove(self._compile_instructions_path)
+            except OSError:
+                pass
+
+
         if self._fixture_settings is None:
             self._logger.critical("No fixture loaded, name probably not recognized or old fixture settings file")
             self._stopping = True
