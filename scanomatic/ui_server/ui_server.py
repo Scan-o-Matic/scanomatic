@@ -267,7 +267,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     compilation=request.values.get("compilation"),
                     compile_instructions=request.values.get("compile_instructions"),
                     output_directory=request.values.get("output_directory"),
-                    chain=request.values.get("chain"))
+                    chain=bool(request.values.get('chain', default=1, type=int)))
 
                 success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
                     AnalysisModelFactory.to_dict(model))
@@ -387,13 +387,16 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             path = request.values.get('path')
             is_local = bool(int(request.values.get('local')))
             fixture=request.values.get("fixture")
-            _logger.info("Attempting to compile on path {0}, as {1} fixture{2}".format(
-                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture)))
+            chain_steps = bool(request.values.get('chain', default=1, type=int))
+            _logger.info("Attempting to compile on path {0}, as {1} fixture{2} (Chaining: {3})".format(
+                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture),
+                chain_steps))
 
             job_id = rpc_client.create_compile_project_job(
                 CompileProjectFactory.dict_from_path_and_fixture(
                     path, fixture=fixture, is_local=is_local,
-                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if request.values.get('chain') else COMPILE_ACTION.Initiate))
+                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if chain_steps else
+                    COMPILE_ACTION.Initiate))
 
             return jsonify(success=True if job_id else False, reason="" if job_id else "Invalid parameters")
 
