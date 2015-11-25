@@ -97,19 +97,35 @@ def _get_irregular_intervals(data, max_deviation):
 @_input_validate
 def plot_positional_markers(project_compilation):
 
-    data = np.array([(image.fixture.orientation_marks_x, image.fixture.orientation_marks_y) for
-                     image in project_compilation])
+    data = _get_marker_sorted_data(project_compilation)
 
     shape = np.max([image.fixture.shape for image in project_compilation], axis=0)
 
     f = plt.figure()
     f.clf()
-    ax = f.gca()
+    ax = f.add_subplot(2, 2, 1)
     for x, y in data:
         ax.plot(x, y, 'x')
+    for i in range(data.shape[2])[:3]:
+        ax.annotate(i + 1, (data[:, 0, i].mean(), data[:, 1, i].mean()), textcoords='offset points', xytext=(10, -5))
     ax.set_xlim(0, shape[1])
     ax.set_ylim(0, shape[0])
     ax.set_title("Position marker centers")
+
+    for i in range(data.shape[2])[:3]:
+
+        ax = f.add_subplot(2, 2, i + 2)
+        x = data[:, 0, i]
+        y = data[:, 1, i]
+        x -= x.min()
+        y -= y.min()
+        im = np.zeros((x.max() + 1, y.max() + 1))
+        for x_val, y_val in izip(x, y):
+            im[x_val, y_val] += 1
+
+        print "Marker ", i + 1, '\n', im, '\n'
+        ax.imshow(im, interpolation="none", cmap=plt.get_cmap("Blues"), vmin=0)
+        ax.set_title("Marker {0} pos irregularity freqs".format(i  + 1))
     return f
 
 
