@@ -210,6 +210,11 @@ class FixtureImage(object):
             hit += self.get_hit_refined(hit - (coordinates['d0_min'], coordinates['d1_min']), conv_img, coordinates,
                                         refine_hit_gauss_weight_size_fraction)
 
+            coordinates = {'d0_min': round(max(0, hit[0] - half_stencil_size[0] - 1)),
+                           'd0_max': round(min(conv_img.shape[0], hit[0] + half_stencil_size[0])),
+                           'd1_min': round(max(0, hit[1] - half_stencil_size[1] - 1)),
+                           'd1_max': round(min(conv_img.shape[1], hit[1] + half_stencil_size[1]))}
+
         conv_img[coordinates['d0_min']: coordinates['d0_max'],
                  coordinates['d1_min']: coordinates['d1_max']] = conv_img.min() - 1
 
