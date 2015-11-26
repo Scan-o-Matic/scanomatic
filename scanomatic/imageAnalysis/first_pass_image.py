@@ -223,16 +223,6 @@ class FixtureImage(object):
         logger.debug(
             "Threading done (took: {0} s)".format(time.time() - t))
 
-    def _get_markings(self, source='reference'):
-
-        markers = self[source].get_marker_positions()
-
-        if markers:
-
-            return np.array(markers[0]), np.array(markers[1])
-
-        return None, None
-
     def run_marker_analysis(self, markings=None):
 
         _logger = self._logger
