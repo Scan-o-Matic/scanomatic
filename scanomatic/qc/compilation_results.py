@@ -121,7 +121,7 @@ def plot_positional_markers(project_compilation):
         y -= y.min()
         im = np.zeros((x.max() + 1, y.max() + 1))
         for x_val, y_val in izip(x, y):
-            im[x_val, y_val] += 1
+            im[round(x_val), round(y_val)] += 1
 
         print "Marker ", i + 1, '\n', im, '\n'
         ax.imshow(im, interpolation="none", cmap=plt.get_cmap("Blues"), vmin=0)

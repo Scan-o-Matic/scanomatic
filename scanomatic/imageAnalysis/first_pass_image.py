@@ -421,7 +421,7 @@ class FixtureImage(object):
 
         for dim, keys in {1: ('x1', 'x2'), 0: ('y1', 'y2')}.items():
             for key in keys:
-                area[key] += offset[dim]
+                area[key] = round(area[key] + offset[dim])
                 if area[key] > self.EXPECTED_IM_SIZE[dim]:
                     self._logger.warning("{0} value ({1}) outside image, setting to img border".format(key, area[key]))
                     area[key] = self.EXPECTED_IM_SIZE[dim]
