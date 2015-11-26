@@ -124,7 +124,7 @@ def plot_positional_markers(project_compilation):
             im[round(x_val), round(y_val)] += 1
 
         print "Marker ", i + 1, '\n', im, '\n'
-        ax.imshow(im, interpolation="none", cmap=plt.get_cmap("Blues"), vmin=0)
+        ax.imshow(im.T, interpolation="none", cmap=plt.get_cmap("Blues"), vmin=0)
         ax.set_title("Marker {0} pos irregularity freqs".format(i  + 1))
     return f
 
