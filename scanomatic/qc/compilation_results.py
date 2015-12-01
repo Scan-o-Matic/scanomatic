@@ -65,7 +65,7 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
     if outliers:
         segments = data.shape[1]
         for outlier in outliers:
-            ax.annotate(outlier.index, (segments, outlier.index), color='k')
+            ax.annotate(outlier.image.index, (segments, outlier.image.index), color='k')
 
         ax.set_xlim(0, segments)
 
