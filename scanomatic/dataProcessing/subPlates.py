@@ -43,7 +43,7 @@ class SubPlates(_mockNumpyInterface.NumpyArrayInterface):
             kernels         An array of kernels or None(s)
 
         """
-        self._dataObject = dataObject
+        self._smooth_growth_data = dataObject
         self._kernels = None
         self.kernels = kernels
 
@@ -56,9 +56,9 @@ class SubPlates(_mockNumpyInterface.NumpyArrayInterface):
 
         if (kernels is not None):
 
-            assert len(kernels) == len(self._dataObject), (
+            assert len(kernels) == len(self._smooth_growth_data), (
                 "Must have exactly as many kernels {0} as plates {1}".format(
-                    len(kernels), len(self._dataObject)))
+                    len(kernels), len(self._smooth_growth_data)))
 
             for i, kernel in enumerate(kernels):
 
@@ -70,17 +70,17 @@ class SubPlates(_mockNumpyInterface.NumpyArrayInterface):
 
                     assert np.array(
                         [p % k == 0 for p, k in itertools.izip(
-                            self._dataObject[0].shape[:2],
+                            self._smooth_growth_data[0].shape[:2],
                             kernel.shape)]).all(), (
                                 "Dimension missmatch between kernel and plate"
                                 " ({0} not evenly divisable with {1})".format(
-                                    self._dataObject.shape[:2], kernel.shape))
+                                    self._smooth_growth_data.shape[:2], kernel.shape))
 
         self._kernels = kernels
 
     def __getitem__(self, value):
 
-        plate = self._dataObject[value]
+        plate = self._smooth_growth_data[value]
 
         if (self._kernels is None or self._kernels[value] is None):
             return plate

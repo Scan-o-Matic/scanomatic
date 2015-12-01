@@ -23,7 +23,7 @@ class NumpyArrayInterface(object):
         (Or be one-dimensional with elements having at least two).
 
         """
-        self._dataObject = dataObject
+        self._smooth_growth_data = dataObject
 
     def _posStringToTuple(self, posStr):
 
@@ -35,26 +35,26 @@ class NumpyArrayInterface(object):
 
         if isinstance(key, StringTypes):
             plate, x, y = self._posStringToTuple(key)
-            return self._dataObject[plate][x, y]
+            return self._smooth_growth_data[plate][x, y]
         elif isinstance(key, int):
-            return self._dataObject[key]
+            return self._smooth_growth_data[key]
         else:
-            return self._dataObject[key[0]][key[1:]]
+            return self._smooth_growth_data[key[0]][key[1:]]
 
     def __iter__(self):
 
-        for i in xrange(len(self._dataObject)):
+        for i in xrange(len(self._smooth_growth_data)):
 
             yield self.__getitem__(i)
 
     def __len__(self):
 
-        return self._dataObject.shape[0]
+        return self._smooth_growth_data.shape[0]
 
     @property
     def shape(self):
-        return self._dataObject.shape
+        return self._smooth_growth_data.shape
 
     @property
     def ndim(self):
-        return self._dataObject.ndim
+        return self._smooth_growth_data.ndim
