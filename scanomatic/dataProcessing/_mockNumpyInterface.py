@@ -25,7 +25,7 @@ class NumpyArrayInterface(object):
         """
         self._smooth_growth_data = dataObject
 
-    def _posStringToTuple(self, posStr):
+    def _position_2_string_tuple(self, posStr):
 
         plate, coords = [p.strip() for p in posStr.split(":")]
         x, y = [int(c) for c in coords.split("-")]
@@ -34,7 +34,7 @@ class NumpyArrayInterface(object):
     def __getitem__(self, key):
 
         if isinstance(key, StringTypes):
-            plate, x, y = self._posStringToTuple(key)
+            plate, x, y = self._position_2_string_tuple(key)
             return self._smooth_growth_data[plate][x, y]
         elif isinstance(key, int):
             return self._smooth_growth_data[key]
