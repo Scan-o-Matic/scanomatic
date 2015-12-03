@@ -153,6 +153,6 @@ Scan-o-Matic""", self._feature_job)
             timeObject=self._times,
             itermode=True)
 
-        self._phenotype_iterator = self._phenotyper.iterAnalyse()
+        self._phenotype_iterator = self._phenotyper.iterate_extraction()
         self._iteration_index = 1
         self._logger.info("Starting phenotype extraction")
