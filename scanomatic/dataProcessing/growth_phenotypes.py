@@ -1,6 +1,34 @@
 from enum import Enum
 import numpy as np
 from scipy.optimize import leastsq
+from itertools import izip
+from scipy.stats import linregress
+
+
+def _linreg_helper(X, Y):
+    return linregress(X, Y)[0::4]
+
+
+def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times_strided, index_for_48h,
+                                         position_offset):
+
+    linreg_values = []
+    curve_logged = np.log2(curve)
+
+    for times, value_segment in izip(times_strided, curve_strided):
+
+        linreg_values.append(_linreg_helper(times, value_segment))
+
+    derivative_values, derivative_errors = np.array(linreg_values).T
+
+    return {
+        'curve_smooth_growth_data': np.ma.masked_invalid(curve),
+        'index48h': index_for_48h,
+        'chapman_richards_fit': CalculateFitRSquare(flat_times, curve_logged),
+        'derivative_values': derivative_values,
+        'derivative_errors': derivative_errors,
+        'linregress_extent': position_offset,
+        'flat_times': flat_times}
 
 
 def initial_value(curve_smooth_growth_data, *args, **kwargs):
@@ -119,6 +147,7 @@ def population_size_at_generation_time(curve_smooth_growth_data, index, linregre
             max(0, index - linregress_extent):
             min(index + linregress_extent + 1, curve_smooth_growth_data.size)])
 
+
 def growth_lag(index, flat_times, derivative_values, **kwargs):
 
     growth_delta = population_size_at_generation_time(index=index, **kwargs) - curve_baseline(**kwargs)
@@ -128,6 +157,11 @@ def growth_lag(index, flat_times, derivative_values, **kwargs):
         return np.interp(max(0.0, -growth_delta / derivative_values[index]), np.arange(flat_times.size), flat_times)
 
     return np.nan
+
+#
+#
+# Enum helpers
+#
 
 _generation_time_indices = None
 _kwargs = None
