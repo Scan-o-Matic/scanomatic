@@ -109,7 +109,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         super(Phenotyper, self).__init__(array_copy)
 
         self._removed_filter = np.array([None for _ in self._smooth_growth_data], dtype=np.object)
-        self._remove_actions = tuple(deque() for _ in self._smooth_growth_data)
+        self._remove_actions = None
         self._init_remove_filter_and_undo_actions()
 
         self._logger = logger.Logger("Phenotyper")
@@ -499,7 +499,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             self._removed_filter[plate_index] = np.zeros_like(self._raw_growth_data[plate_index], dtype=np.int8)
 
-        self._remove_actions.clear()
+        self._remove_actions = tuple(deque() for _ in self._smooth_growth_data)
 
     def add_position_mark(self, plate, positionList, phenotype=None, position_mark=PositionMark.BadData):
         """Adds positions as removed from data.
