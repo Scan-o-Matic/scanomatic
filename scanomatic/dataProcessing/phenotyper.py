@@ -401,11 +401,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return len(Phenotypes) if not self._limited_phenotypes else len(self._limited_phenotypes)
 
     @property
-    def nPhenotypesInData(self):
-
-        return max((p is None and 0 or p.shape[-1]) for p in self._phenotypes)
-
-    @property
     def generation_times(self):
 
         return np.array(
