@@ -340,6 +340,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._logger.info("Phenotypes (N={0}) Extraction Started".format(
             phenotypes_count))
 
+        curves_in_completed_plates = 0
+
         for plateI, plate in enumerate(self._smooth_growth_data):
 
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
@@ -372,9 +374,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 if self._itermode:
                     self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
                         plateI, id0, id1, list(position_phenotypes)))
-                    yield (pos_index + 1.0) / total_curves
+                    yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
 
             self._logger.info("Plate {0} Done".format(plateI))
+            curves_in_completed_plates += 0 if plate is None else plate_flat_regression_strided.shape[0]
 
         self._phenotypes = np.array(all_phenotypes)
 
