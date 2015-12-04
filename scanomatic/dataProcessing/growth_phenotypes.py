@@ -136,7 +136,7 @@ def generation_time_error(derivative_error, index, **kwargs):
     return derivative_error[index]
 
 
-def generation_time_when(flat_times, index):
+def generation_time_when(flat_times, index, **kwargs):
     return flat_times[index]
 
 
