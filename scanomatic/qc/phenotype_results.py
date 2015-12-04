@@ -4,25 +4,41 @@ import matplotlib.pyplot as plt
 import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
+from types import StringTypes
+from itertools import izip
 
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
 from scanomatic.io.logger import Logger
+from scanomatic.dataProcessing.phenotyper import Phenotyper
 
 _logger = Logger("Phenotype Results QC")
 
+def _validate_input(f):
 
-def plot_plate_heatmap(phenotypes, plate_index,
-                       measure=None,
-                       use_common_value_axis=True,
-                       vmin=None,
-                       vmax=None,
-                       show_color_bar=True,
-                       horizontal_orientation=True,
-                       cm=plt.cm.RdBu_r,
-                       title_text=None,
-                       hide_axis=False,
-                       fig=None,
-                       show_figure=True):
+    def wrapped(*args, **kwargs):
+
+        if len(args) > 0 and isinstance(args[0], StringTypes):
+
+            args = list(args)
+            args[0] = Phenotyper.LoadFromState(args[0]).phenotypes
+        elif 'phenotypes' in kwargs and isinstance(kwargs['phenotypes'], StringTypes):
+            kwargs['phenotypes'] = Phenotyper.LoadFromState(kwargs['phenotypes']).phenotypes
+
+        return f(*args, **kwargs)
+
+    return wrapped
+
+
+@_validate_input
+def get_position_phenotypes(phenotypes, plate, position_selection=None):
+
+    return {phenotype.name: phenotypes[plate][position_selection][phenotype.value] for phenotype in Phenotypes}
+
+
+@_validate_input
+def plot_plate_heatmap(
+        phenotypes, plate_index, measure=None, use_common_value_axis=True, vmin=None, vmax=None, show_color_bar=True,
+        horizontal_orientation=True, cm=plt.cm.RdBu_r, title_text=None, hide_axis=False, fig=None, show_figure=True):
 
     if measure is None:
         measure = Phenotypes.GenerationTime.value
