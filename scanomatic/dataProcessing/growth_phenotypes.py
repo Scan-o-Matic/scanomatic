@@ -248,25 +248,25 @@ class Phenotypes(Enum):
             return kwargs['chapman_richards_fit'][1][4]
 
         elif self is Phenotypes.GenerationTime:
-            return generation_time(index=_generation_time_indices(kwargs, 0), **kwargs)
+            return generation_time(index=_get_generation_time_index(kwargs, 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2:
-            return generation_time(index=_generation_time_indices(kwargs, 1), **kwargs)
+            return generation_time(index=_get_generation_time_index(kwargs, 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimeScanIndex:
-            return generation_time_when(_generation_time_indices(kwargs, 0), **kwargs)
+            return generation_time_when(_get_generation_time_index(kwargs, 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2ScanIndex:
-            return generation_time_when(_generation_time_indices(kwargs, 1), **kwargs)
+            return generation_time_when(_get_generation_time_index(kwargs, 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimeScanIndex:
-            return generation_time_error(index=_generation_time_indices(kwargs, 0), **kwargs)
+            return generation_time_error(index=_get_generation_time_index(kwargs, 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2StErrOfEstimate:
-            return generation_time_error(index=_generation_time_indices(kwargs, 1), **kwargs)
+            return generation_time_error(index=_get_generation_time_index(kwargs, 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimePopulationSize:
-            return population_size_at_generation_time(index=_generation_time_indices(kwargs, 0), **kwargs)
+            return population_size_at_generation_time(index=_get_generation_time_index(kwargs, 0), **kwargs)
 
         elif self is Phenotypes.GrowthLag:
-            return growth_lag(index=_generation_time_indices(kwargs, 0), **kwargs)
+            return growth_lag(index=_get_generation_time_index(kwargs, 0), **kwargs)
