@@ -244,7 +244,7 @@ class Phenotypes(Enum):
         elif self is Phenotypes.ChapmanRichardsParam4:
             return kwargs['chapman_richards_fit'][1][3]
 
-        elif self is Phenotypes.ChapmanRichardsParam5:
+        elif self is Phenotypes.ChapmanRichardsParamXtra:
             return kwargs['chapman_richards_fit'][1][4]
 
         elif self is Phenotypes.GenerationTime:
