@@ -167,8 +167,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         times = np.load(os.path.join(directory_path, _p.phenotype_times))
 
-        smooth_growth_data = np.load(os.path.join(directory_path,
-                                          _p.phenotypes_input_smooth))
+        smooth_growth_data = np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
 
         median_filt_size, gauss_sigma, linear_reg_size = np.load(
             os.path.join(directory_path, _p.phenotypes_extraction_params))
@@ -506,7 +505,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    range(self._removed_filter.shape[0]))
 
     def get_position_list_filtered(self, position_list, value_type=Phenotypes.GenerationTime):
-
 
         values = []
         for pos in position_list:
