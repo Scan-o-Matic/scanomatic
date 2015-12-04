@@ -467,7 +467,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         for plate_index in range(self._removed_filter.shape[0]):
 
-            self._removed_filter[plate_index] = np.zeros_like(self._raw_growth_data[plate_index], dtype=np.int8)
+            self._removed_filter[plate_index] = np.zeros(
+                self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
 
         self._remove_actions = tuple(deque() for _ in self._smooth_growth_data)
 
