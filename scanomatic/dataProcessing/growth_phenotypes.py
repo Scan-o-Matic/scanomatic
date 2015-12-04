@@ -254,10 +254,10 @@ class Phenotypes(Enum):
             return generation_time(index=_get_generation_time_index(kwargs, 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimeScanIndex:
-            return generation_time_when(_get_generation_time_index(kwargs, 0), **kwargs)
+            return generation_time_when(index=_get_generation_time_index(kwargs, 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2ScanIndex:
-            return generation_time_when(_get_generation_time_index(kwargs, 1), **kwargs)
+            return generation_time_when(index=_get_generation_time_index(kwargs, 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimeScanIndex:
             return generation_time_error(index=_get_generation_time_index(kwargs, 0), **kwargs)
