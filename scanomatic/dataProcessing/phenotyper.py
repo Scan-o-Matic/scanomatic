@@ -472,29 +472,24 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._remove_actions = tuple(deque() for _ in self._smooth_growth_data)
 
-    def add_position_mark(self, plate, positionList, phenotype=None, position_mark=PositionMark.BadData):
-        """Adds positions as removed from data.
-
-        Args:
-
-            plate (int):    The plate
-
-            positionList (iterable):    A list of X and Y coordinates as
-                                        returned by np.where
-
-        Kwargs:
-
-            phenotype (int/None):   What phenotype to invoke filter on
-                                    or if None to invoke on all
-        """
+    def add_position_mark(self, plate, position_list, phenotype=None, position_mark=PositionMark.BadData):
 
         if position_mark is PositionMark.NoGrowth or phenotype is None:
             phenotype = slice(None, None, None)
         else:
             phenotype = phenotype.value
 
-        self._removed_filter[plate][positionList, phenotype] = position_mark.value
-        self._remove_actions[plate].append((positionList, phenotype))
+        previous_state = self._removed_filter[plate][position_list, phenotype]
+        if isinstance(previous_state, np.array):
+            previous_state = np.unique(previous_state)
+            if previous_state.size > 1:
+                previous_state = 0
+            else:
+                previous_state = previous_state[0]
+
+        self._remove_actions[plate].append((position_list, phenotype, previous_state))
+        self._removed_filter[plate][position_list, phenotype] = position_mark.value
+
 
     def getRemoveFilter(self, plate):
         """Get remove filter for plate.
