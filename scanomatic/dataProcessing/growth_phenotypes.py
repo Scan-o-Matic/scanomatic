@@ -132,8 +132,8 @@ def generation_time(derivative_values, index, **kwargs):
     return 1.0 / derivative_values[index]
 
 
-def generation_time_error(derivative_error, index, **kwargs):
-    return derivative_error[index]
+def generation_time_error(derivative_errors, index, **kwargs):
+    return derivative_errors[index]
 
 
 def generation_time_when(flat_times, index, **kwargs):
@@ -259,7 +259,7 @@ class Phenotypes(Enum):
         elif self is Phenotypes.GenerationTime2ScanIndex:
             return generation_time_when(index=_get_generation_time_index(kwargs, 1), **kwargs)
 
-        elif self is Phenotypes.GenerationTimeScanIndex:
+        elif self is Phenotypes.GenerationTimeStErrOfEstimate:
             return generation_time_error(index=_get_generation_time_index(kwargs, 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2StErrOfEstimate:
