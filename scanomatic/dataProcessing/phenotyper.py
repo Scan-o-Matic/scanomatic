@@ -83,6 +83,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._phenotypes = None
         self._times_data = None
+        self._limited_phenotypes = phenotypes
 
         self._base_name = base_name
 
@@ -120,7 +121,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._liinear_regression_size = linear_regression_size
         self._itermode = itermode
         self._meta_data = None
-        self._limited_phenotypes = phenotypes
 
         if not self._itermode and run_extraction:
             self._extract_features()
