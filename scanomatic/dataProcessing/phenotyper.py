@@ -482,22 +482,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._remove_actions[plate].append((position_list, phenotype, previous_state))
         self._removed_filter[plate][position_list, phenotype] = position_mark.value
 
-
-    def getRemoveFilter(self, plate):
-        """Get remove filter for plate.
-
-        Args:
-
-            plate (int)   Index of plate
-
-        Returns:
-
-            numpy.ndarray (dtype=np.bool)
-                The per position status of removal
-        """
-
-        return self._removed_filter[plate]
-
     def plate_has_any_colonies_removed(self, plate):
         """Get if plate has anything removed.
 
@@ -510,7 +494,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             bool    The status of the plate removals
         """
 
-        return self.getRemoveFilter(plate).any()
+        return self._removed_filter[plate].any()
 
     def has_any_colonies_removed(self):
         """If any plate has anything removed
