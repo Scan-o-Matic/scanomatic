@@ -463,39 +463,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             strides=(self._times_data.strides[0],
                      self._times_data.strides[0]))
 
-    def padPhenotypes(self):
-
-        padding = self.number_of_phenotypes - self.nPhenotypesInData
-
-        if (padding):
-            self._logger.info(
-                "Padding phenotypes, adding" +
-                " {0} to become {1}, current shape {2}".format(
-                    padding,
-                    self.number_of_phenotypes,
-                    self._phenotypes.shape))
-
-            phenotypes = []
-            removes = []
-            for i, p in enumerate(self._phenotypes):
-
-                if p is not None:
-                    pad = np.zeros(p.shape[:-1] + (padding,))
-                    phenotypes.append(np.dstack((p, pad * np.nan)))
-                    removes.append(np.dstack((p, pad == 0)))
-                else:
-                    removes.append(None)
-                    phenotypes.append(None)
-
-            self._phenotypes = np.array(phenotypes)
-            self._removed_filter = np.array(removes)
-
-            self._logger.info(
-                "New phenotypes shapes {0}".format(
-                    self._phenotypes.shape))
-
-        return padding
-
     def _init_remove_filter_and_undo_actions(self):
 
         for plate_index in range(self._removed_filter.shape[0]):
