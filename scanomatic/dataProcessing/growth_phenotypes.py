@@ -129,10 +129,15 @@ def RCResiduals(crParams, X, Y):
 
 
 def generation_time(derivative_values_log2, index, **kwargs):
+    if index < 0:
+        return np.nan
     return 1.0 / derivative_values_log2[index]
 
 
 def generation_time_error(derivative_errors, index, **kwargs):
+    if index < 0:
+        return np.nan
+
     return derivative_errors[index]
 
 
@@ -149,6 +154,9 @@ def population_size_at_generation_time(curve_smooth_growth_data, index, linregre
 
 
 def growth_lag(index, flat_times, derivative_values_log2, **kwargs):
+
+    if index < 0:
+        return np.nan
 
     growth_delta = population_size_at_generation_time(index=index, **kwargs) - curve_baseline(**kwargs)
 
@@ -175,7 +183,9 @@ def _get_generation_time_index(kwargs, rank):
         masked_values = np.ma.masked_invalid(kwargs['derivative_values_log2'])
         _generation_time_indices = np.argsort(masked_values)[:-masked_values.mask.sum()][::-1]
 
-    return _generation_time_indices[rank]
+    if rank < _generation_time_indices.size:
+        return _generation_time_indices[rank]
+    return -1
 
 
 class Phenotypes(Enum):
