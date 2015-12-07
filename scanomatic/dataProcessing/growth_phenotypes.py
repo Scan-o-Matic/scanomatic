@@ -172,7 +172,8 @@ def _get_generation_time_index(kwargs, rank):
     global _kwargs, _generation_time_indices
     if kwargs is not _kwargs:
         _kwargs = kwargs
-        _generation_time_indices = np.argsort(kwargs['derivative_values'])
+        masked_values = np.ma.masked_invalid(kwargs['derivative_values_log2'])
+        _generation_time_indices = np.argsort(masked_values)[:-masked_values.mask.sum()][::-1]
 
     return _generation_time_indices[rank]
 
