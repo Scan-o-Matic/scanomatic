@@ -119,7 +119,7 @@ def plot_positional_markers(project_compilation):
         y = data[:, 1, i]
         x -= x.min()
         y -= y.min()
-        im = np.zeros((x.max() + 1, y.max() + 1))
+        im = np.zeros((round(x.max()) + 1, round(y.max()) + 1))
         for x_val, y_val in izip(x, y):
             im[round(x_val), round(y_val)] += 1
 

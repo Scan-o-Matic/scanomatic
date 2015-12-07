@@ -19,22 +19,26 @@ import numpy as np
 import os
 from types import StringTypes
 from scipy.ndimage import median_filter, gaussian_filter1d
-from scipy.stats import linregress
-import itertools
-import matplotlib.pyplot as plt
-import matplotlib
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from collections import deque
+from enum import Enum
 
 #
 #   INTERNAL DEPENDENCIES
 #
 
 import _mockNumpyInterface
-import scanomatic.io.xml.reader as xmlReader
+import scanomatic.io.xml.reader as xml_reader_module
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
-from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, CalculateFitRSquare
+from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes
+
+
+class PositionMark(Enum):
+
+    OK = 0
+    NoGrowth = 1
+    BadData = 2
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
@@ -66,31 +70,33 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     the pattern <code>Phenotyper.PHEN_*</code>. 
     """
 
-    def __init__(self, dataObject, timeObject=None,
-                 medianKernelSize=5, gaussSigma=1.5, linRegSize=5,
-                 measure=None, baseName=None, itermode=False, runAnalysis=True):
+    def __init__(self, raw_growth_data, times_data=None,
+                 median_kernel_size=5, gaussian_filter_sigma=1.5, linear_regression_size=5,
+                 phenotypes=None, base_name=None, itermode=False, run_extraction=True):
 
         self._paths = paths.Paths()
 
-        self._raw_growth_data = dataObject
+        self._raw_growth_data = raw_growth_data
 
         self._phenotypes = None
-        self._timeObject = None
-        self._base_name = baseName
+        self._times_data = None
+        self._limited_phenotypes = phenotypes
 
-        if isinstance(dataObject, xmlReader.XML_Reader):
-            arrayCopy = self._xmlReader2array(dataObject)
+        self._base_name = base_name
 
-            if timeObject is None:
-                timeObject = dataObject.get_scan_times()
+        if isinstance(raw_growth_data, xml_reader_module.XML_Reader):
+            array_copy = self._xml_reader_2_array(raw_growth_data)
+
+            if times_data is None:
+                times_data = raw_growth_data.get_scan_times()
         else:
-            arrayCopy = dataObject.copy()
+            array_copy = raw_growth_data.copy()
 
-        self.times = timeObject
+        self.times = times_data
 
-        assert self._timeObject is not None, "A data series needs its times"
+        assert self._times_data is not None, "A data series needs its times"
 
-        for plate in arrayCopy:
+        for plate in array_copy:
 
             assert (plate is None or
                     plate.ndim == 4 and plate.shape[-1] == 1 or
@@ -98,27 +104,27 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                         "Phenotype Strider only work with one phenotype. "
                         + "Your shape is {0}".format(plate.shape))
 
-        super(Phenotyper, self).__init__(arrayCopy)
+        super(Phenotyper, self).__init__(array_copy)
 
-        self._removeFilter = np.array([None for _ in self._smooth_growth_data],
-                                      dtype=np.object)
+        self._removed_filter = np.array([None for _ in self._smooth_growth_data], dtype=np.object)
+        self._remove_actions = None
+        self._init_remove_filter_and_undo_actions()
 
         self._logger = logger.Logger("Phenotyper")
 
-        assert medianKernelSize % 2 == 1, "Median kernel size must be odd"
-        self._median_kernel_size = medianKernelSize
-        self._gaussSigma = gaussSigma
-        self._linRegSize = linRegSize
+        assert median_kernel_size % 2 == 1, "Median kernel size must be odd"
+        self._median_kernel_size = median_kernel_size
+        self._gaussian_filter_sigma = gaussian_filter_sigma
+        self._liinear_regression_size = linear_regression_size
         self._itermode = itermode
-        self._metaData = None
+        self._meta_data = None
 
-        if not self._itermode and runAnalysis:
-            self._analyse()
+        if not self._itermode and run_extraction:
+            self._extract_features()
 
-    @classmethod
-    def phenotypeNames(cls):
+    def phenotype_names(self):
 
-        return (p for p in cls.__dict__ if p.startswith("PHEN_"))
+        return tuple(p.name for p in Phenotypes if not self._limited_phenotypes or p in self._limited_phenotypes)
 
     @classmethod
     def LoadFromXML(cls, path, **kwargs):
@@ -133,14 +139,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         used in instanciating the class.
         """
 
-        xml = xmlReader.XML_Reader(path)
-        if (path.lower().endswith(".xml")):
+        xml = xml_reader_module.XML_Reader(path)
+        if path.lower().endswith(".xml"):
             path = path[:-4]
 
-        return cls(xml, baseName=path, **kwargs)
+        return cls(xml, base_name=path, **kwargs)
 
     @classmethod
-    def LoadFromState(cls, dirPath):
+    def LoadFromState(cls, directory_path):
         """Creates an instance based on previously saved phenotyper state
         in specified directory.
 
@@ -155,32 +161,31 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         """
         _p = paths.Paths()
 
-        phenotypes = np.load(os.path.join(dirPath, _p.phenotypes_raw_npy))
+        phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
 
-        source = np.load(os.path.join(dirPath,  _p.phenotypes_input_data))
+        raw_growth_data = np.load(os.path.join(directory_path,  _p.phenotypes_input_data))
 
-        times = np.load(os.path.join(dirPath, _p.phenotype_times))
+        times = np.load(os.path.join(directory_path, _p.phenotype_times))
 
-        dataObject = np.load(os.path.join(dirPath,
-                                          _p.phenotypes_input_smooth))
+        smooth_growth_data = np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
 
-        medianKernelSize, gaussSigma, linRegSize = np.load(
-            os.path.join(dirPath, _p.phenotypes_extraction_params))
+        median_filt_size, gauss_sigma, linear_reg_size = np.load(
+            os.path.join(directory_path, _p.phenotypes_extraction_params))
 
-        phenotyper = cls(source, times, medianKernelSize=medianKernelSize,
-                         gaussSigma=gaussSigma, linRegSize=linRegSize,
-                         runAnalysis=False)
+        phenotyper = cls(raw_growth_data, times, median_kernel_size=median_filt_size,
+                         gaussian_filter_sigma=gauss_sigma, linear_regression_size=linear_reg_size,
+                         run_extraction=False, base_name=directory_path)
 
-        phenotyper._smooth_growth_data = dataObject
+        phenotyper._smooth_growth_data = smooth_growth_data
         phenotyper._phenotypes = phenotypes
 
-        p = os.path.join(dirPath, _p.phenotypes_filter)
-        if os.path.isfile(p):
-            pFilter = np.load(p)
-            if all(p.shape == pFilter[i].shape for i, p in enumerate(phenotypes)
-                   if p is not None and pFilter[i] is not None):
+        filter_path = os.path.join(directory_path, _p.phenotypes_filter)
+        if os.path.isfile(filter_path):
+            phenotype_remove_filter = np.load(filter_path)
+            if all(p.shape == phenotype_remove_filter[i].shape for i, p in enumerate(phenotypes)
+                   if p is not None and phenotype_remove_filter[i] is not None):
 
-                #phenotypes._removeFilter = pFilter
+                # phenotypes._removeFilter = phenotype_remove_filter
                 pass
 
         return phenotyper
@@ -192,7 +197,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return cls(data, times)
 
     @classmethod
-    def LoadFromNumPy(cls, path, timesPath=None, **kwargs):
+    def LoadFromNumPy(cls, path, times_data_path=None, **kwargs):
         """Class Method used to create a Phenotype Strider from
         a saved numpy data array and a saved numpy times array.
 
@@ -215,36 +220,36 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         Optional Parameters can be passed as keywords and will be
         used in instanciating the class.
         """
-        dataPath = path
-        if (path.lower().endswith(".npy")):
+        data_directory = path
+        if path.lower().endswith(".npy"):
             path = path[:-4]
             if path.endswith(".data"):
                 path = path[:-5]
 
-        if (timesPath is None):
-            timesPath = path + ".times.npy"
+        if times_data_path is None:
+            times_data_path = path + ".times.npy"
 
-        if (not os.path.isfile(dataPath)):
-            if (os.path.isfile(timesPath + ".data.npy")):
+        if not os.path.isfile(data_directory):
+            if os.path.isfile(times_data_path + ".data.npy"):
 
-                timesPath += ".data.npy"
+                times_data_path += ".data.npy"
 
-            elif (os.path.isfile(timesPath + ".npy")):
+            elif os.path.isfile(times_data_path + ".npy"):
 
-                timesPath += ".npy"
+                times_data_path += ".npy"
 
-        return cls(np.load(dataPath), np.load(timesPath), baseName=path,
+        return cls(np.load(data_directory), np.load(times_data_path), base_name=path,
                    **kwargs)
 
     @property
-    def metaData(self):
+    def meta_data(self):
 
-        return self._metaData
+        return self._meta_data
 
-    @metaData.setter
-    def metaData(self, val):
+    @meta_data.setter
+    def meta_data(self, val):
 
-        self._metaData = val
+        self._meta_data = val
 
     @property
     def raw_growth_data(self):
@@ -256,26 +261,26 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return self._smooth_growth_data
 
-    def _xmlReader2array(self, dataObject):
+    @staticmethod
+    def _xml_reader_2_array(data_object):
 
-        return np.array([k in dataObject.get_data().keys() and
-                         dataObject.get_data()[k] or None for k in
-                         range(max((dataObject.get_data().keys())) + 1)])
+        return np.array([k in data_object.get_data().keys() and
+                         data_object.get_data()[k] or None for k in
+                         range(max((data_object.get_data().keys())) + 1)])
 
-    def _analyse(self):
+    def _extract_features(self):
 
         self._smoothen()
         self._calculate_phenotypes()
 
-    def iterAnalyse(self):
+    def iterate_extraction(self):
 
         self._logger.info(
             "Iteration started, will extract {0} phenotypes".format(
-                self.nPhenotypeTypes))
+                self.number_of_phenotypes))
 
         if self._itermode is False:
             raise StopIteration("Can't iterate when not in itermode")
-            return
 
         else:
 
@@ -304,80 +309,58 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 plate_as_flat, footprint=median_kernel, mode='reflect')
 
             plate_as_flat[...] = gaussian_filter1d(
-                plate_as_flat, sigma=self._gaussSigma, mode='reflect', axis=-1)
+                plate_as_flat, sigma=self._gaussian_filter_sigma, mode='reflect', axis=-1)
 
         self._logger.info("Smoothing Done")
 
     def _calculate_phenotypes(self):
 
-        def _linreg_helper(X, Y):
-            return linregress(X, Y)[0::4]
-
-        if self._timeObject.shape[0] - (self._linRegSize - 1) <= 0:
+        if self._times_data.shape[0] - (self._liinear_regression_size - 1) <= 0:
             self._logger.error(
                 "Refusing phenotype extractions since number of scans are less than used in the linear regression")
             return
 
-        times_strided = np.lib.stride_tricks.as_strided(
-            self._timeObject,
-            shape=(self._timeObject.shape[0] - (self._linRegSize - 1),
-                   self._linRegSize),
-            strides=(self._timeObject.strides[0],
-                     self._timeObject.strides[0]))
+        times_strided = self.times_strided
 
-        flat_times = self._timeObject.ravel()
+        flat_times = self._times_data.ravel()
 
-        index_for_48h = np.abs(np.subtract.outer(self._timeObject, [48])).argmin()
+        index_for_48h = np.abs(np.subtract.outer(self._times_data, [48])).argmin()
 
         all_phenotypes = []
 
-        regression_size = self._linRegSize
+        regression_size = self._liinear_regression_size
         position_offset = (regression_size - 1) / 2
-        phenotypes_count = self.nPhenotypeTypes
-        total_curves = float(
-            sum(p.shape[0] * p.shape[1] if (p is not None and p.ndim > 1) else 0 for p in self._smooth_growth_data))
+        phenotypes_count = self.number_of_phenotypes
+        total_curves = float(self.number_of_curves)
 
         self._logger.info("Phenotypes (N={0}) Extraction Started".format(
             phenotypes_count))
 
+        curves_in_completed_plates = 0
+
         for plateI, plate in enumerate(self._smooth_growth_data):
 
-            plate_flat_regression_strided = np.lib.stride_tricks.as_strided(
-                plate,
-                shape=(plate.shape[0] * plate.shape[1],
-                       plate.shape[2] - (regression_size - 1),
-                       regression_size),
-                strides=(plate.strides[1],
-                         plate.strides[2], plate.strides[2]))
+            plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
             phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),
                                   dtype=plate.dtype)
 
             all_phenotypes.append(phenotypes)
 
-            for pos_index, pos_data in enumerate(np.log2(plate_flat_regression_strided)):
+            for pos_index, pos_data in enumerate(plate_flat_regression_strided):
 
                 position_phenotypes = [None] * phenotypes_count
-
-                linreg_values= []
-
-                for times, value_segment in itertools.izip(times_strided, pos_data):
-
-                    linreg_values.append(_linreg_helper(times, value_segment))
-
-                derivative_values, derivative_errors = np.array(linreg_values).T
 
                 id0 = pos_index % plate.shape[0]
                 id1 = pos_index / plate.shape[0]
 
-                curve_data = {'curve_smooth_growth_data': np.ma.masked_invalid(plate[id0, id1]),
-                              'index48h': index_for_48h,
-                              'chapman_richards_fit': CalculateFitRSquare(
-                                  flat_times, np.log2(plate[id0, id1].ravel().astype(np.float64))),
-                              'derivative_values': derivative_values,
-                              'derivative_errors': derivative_errors,
-                              'linregress_extent': position_offset,
-                              'flat_times': flat_times}
+                curve_data = get_preprocessed_data_for_phenotypes(
+                    curve=plate[id0, id1],
+                    curve_strided=pos_data,
+                    flat_times=flat_times,
+                    times_strided=times_strided,
+                    index_for_48h=index_for_48h,
+                    position_offset=position_offset)
 
                 for phenotype in Phenotypes:
                     position_phenotypes[phenotype.value] = phenotype(**curve_data)
@@ -387,36 +370,40 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 if self._itermode:
                     self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
                         plateI, id0, id1, list(position_phenotypes)))
-                    yield (pos_index + 1.0) / total_curves
+                    yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
 
             self._logger.info("Plate {0} Done".format(plateI))
+            curves_in_completed_plates += 0 if plate is None else plate_flat_regression_strided.shape[0]
 
         self._phenotypes = np.array(all_phenotypes)
 
         self._logger.info("Phenotype Extraction Done")
 
+    def _get_plate_linear_regression_strided(self, plate):
+
+        return np.lib.stride_tricks.as_strided(
+            plate,
+            shape=(plate.shape[0] * plate.shape[1],
+                   plate.shape[2] - (self._liinear_regression_size - 1),
+                   self._liinear_regression_size),
+            strides=(plate.strides[1],
+                     plate.strides[2], plate.strides[2]))
+
     @property
-    def nPhenotypeTypes(self):
+    def number_of_curves(self):
 
-        return max(getattr(self, attr) for attr in dir(self) if
-                   attr.startswith("PHEN_")) + 1
-
-    @property
-    def nPhenotypesInData(self):
-
-        return max((p is None and 0 or p.shape[-1]) for p in self._phenotypes)
+        return sum(p.shape[0] * p.shape[1] if (p is not None and p.ndim > 1) else 0 for p in self._raw_growth_data)
 
     @property
-    def curveFits(self):
+    def number_of_phenotypes(self):
+
+        return len(Phenotypes) if not self._limited_phenotypes else len(self._limited_phenotypes)
+
+    @property
+    def generation_times(self):
 
         return np.array(
-            [plate[..., self.PHEN_FIT_VALUE] for plate in self.phenotypes])
-
-    @property
-    def generationTimes(self):
-
-        return np.array(
-            [plate[..., self.PHEN_GT_VALUE] for plate in self.phenotypes])
+            [plate[..., Phenotypes.GenerationTime.value] for plate in self.phenotypes])
 
     @property
     def phenotypes(self):
@@ -426,19 +413,24 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             return None
 
         for i, p in enumerate(self._phenotypes):
-            if (self._removeFilter[i] is not None and p is not None):
-                ret.append(
-                    np.ma.masked_array(p, self._removeFilter[i],
-                                       fill_value=np.nan))
+            if p is not None:
+                filtered_plate = np.ma.masked_array(
+                    p.copy(), self._removed_filter[i] == PositionMark.BadData.value, fill_value=np.nan)
+                filtered_plate[self._removed_filter[i] == PositionMark.NoGrowth.value] = np.inf
+                ret.append(filtered_plate)
             else:
                 ret.append(p)
 
         return ret
 
+    def get_phenotype(self, phenotype):
+
+        return [p if p is None else p[..., phenotype.value] for p in self.phenotypes]
+
     @property
     def times(self):
 
-        return self._timeObject
+        return self._times_data
 
     @times.setter
     def times(self, value):
@@ -450,90 +442,46 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (isinstance(value, np.ndarray) is False):
             value = np.array(value, dtype=np.float)
 
-        self._timeObject = value
+        self._times_data = value
 
-    def padPhenotypes(self):
+    @property
+    def times_strided(self):
 
-        padding = self.nPhenotypeTypes - self.nPhenotypesInData
+        return np.lib.stride_tricks.as_strided(
+            self._times_data,
+            shape=(self._times_data.shape[0] - (self._liinear_regression_size - 1),
+                   self._liinear_regression_size),
+            strides=(self._times_data.strides[0],
+                     self._times_data.strides[0]))
 
-        if (padding):
-            self._logger.info(
-                "Padding phenotypes, adding" +
-                " {0} to become {1}, current shape {2}".format(
-                    padding,
-                    self.nPhenotypeTypes,
-                    self._phenotypes.shape))
+    def _init_remove_filter_and_undo_actions(self):
 
-            phenotypes = []
-            removes = []
-            for i, p in enumerate(self._phenotypes):
+        for plate_index in range(self._removed_filter.shape[0]):
 
-                if p is not None:
-                    pad = np.zeros(p.shape[:-1] + (padding,))
-                    phenotypes.append(np.dstack((p, pad * np.nan)))
-                    removes.append(np.dstack((p, pad == 0)))
-                else:
-                    removes.append(None)
-                    phenotypes.append(None)
+            self._removed_filter[plate_index] = np.zeros(
+                self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
 
-            self._phenotypes = np.array(phenotypes)
-            self._removeFilter = np.array(removes)
+        self._remove_actions = tuple(deque() for _ in self._smooth_growth_data)
 
-            self._logger.info(
-                "New phenotypes shapes {0}".format(
-                    self._phenotypes.shape))
+    def add_position_mark(self, plate, position_list, phenotype=None, position_mark=PositionMark.BadData):
 
-        return padding
+        if position_mark is PositionMark.NoGrowth or phenotype is None:
+            phenotype = slice(None, None, None)
+        else:
+            phenotype = phenotype.value
 
-    def _checkFilterInit(self, plate):
+        previous_state = self._removed_filter[plate][position_list, phenotype]
+        if isinstance(previous_state, np.array):
+            previous_state = np.unique(previous_state)
+            if previous_state.size > 1:
+                previous_state = 0
+            else:
+                previous_state = previous_state[0]
 
-        if (not(hasattr(self._removeFilter[plate], "shape")) or
-                self._removeFilter[plate].shape !=
-                self._phenotypes[plate].shape):
+        self._remove_actions[plate].append((position_list, phenotype, previous_state))
+        self._removed_filter[plate][position_list, phenotype] = position_mark.value
 
-            self._removeFilter[plate] = np.zeros(
-                self._phenotypes[plate].shape,
-                dtype=np.bool)
-
-    def add2RemoveFilter(self, plate, positionList, phenotype=None):
-        """Adds positions as removed from data.
-
-        Args:
-
-            plate (int):    The plate
-
-            positionList (iterable):    A list of X and Y coordinates as
-                                        returned by np.where
-
-        Kwargs:
-
-            phenotype (int/None):   What phenotype to invoke filter on
-                                    or if None to invoke on all
-        """
-
-        if (self._phenotypes is None or self._phenotypes[plate] is None):
-            raise IndexError("No phenotypes known for plate {0}".format(plate))
-
-        self._checkFilterInit(plate)
-        self._removeFilter[plate][positionList] = True
-
-    def getRemoveFilter(self, plate):
-        """Get remove filter for plate.
-
-        Args:
-
-            plate (int)   Index of plate
-
-        Returns:
-
-            numpy.ndarray (dtype=np.bool)
-                The per position status of removal
-        """
-
-        self._checkFilterInit(plate)
-        return self._removeFilter[plate]
-
-    def hasRemoved(self, plate):
+    def plate_has_any_colonies_removed(self, plate):
         """Get if plate has anything removed.
 
         Args:
@@ -545,122 +493,30 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             bool    The status of the plate removals
         """
 
-        return self.getRemoveFilter(plate).any()
+        return self._removed_filter[plate].any()
 
-    def hasAnyRemoved(self):
+    def has_any_colonies_removed(self):
         """If any plate has anything removed
 
         Returns:
             bool    The removal status
         """
-        return any(self.hasRemoved(i) for i in
-                   range(self._removeFilter.shape[0]))
+        return any(self.plate_has_any_colonies_removed(i) for i in
+                   range(self._removed_filter.shape[0]))
 
     def get_position_list_filtered(self, position_list, value_type=Phenotypes.GenerationTime):
-
 
         values = []
         for pos in position_list:
 
             if isinstance(pos, StringTypes):
-                plate, x, y = self._posStringToTuple(pos)
+                plate, x, y = self._position_2_string_tuple(pos)
             else:
                 plate, x, y = pos
 
             values.append(self.phenotypes[plate][x, y][value_type.value])
 
         return values
-
-    def plot_plate_heatmap(self, plate_index,
-                           measure=None,
-                           data=None,
-                           use_common_value_axis=True,
-                           vmin=None,
-                           vmax=None,
-                           show_color_bar=True,
-                           horizontal_orientation=True,
-                           cm=plt.cm.RdBu_r,
-                           title_text=None,
-                           hide_axis=False,
-                           fig=None,
-                           show_figure=True):
-
-        if measure is None:
-            measure = Phenotypes.GenerationTime.value
-        elif isinstance(measure, Phenotypes):
-            measure = measure.value
-
-        if fig is None:
-            fig = plt.figure()
-
-        cax = None
-
-        if len(fig.axes):
-            ax = fig.axes[0]
-            if len(fig.axes) == 2:
-                cax = fig.axes[1]
-                cax.cla()
-                fig.delaxes(cax)
-                cax = None
-            ax.cla()
-        else:
-            ax = fig.gca()
-
-        if title_text is not None:
-            ax.set_title(title_text)
-
-        if data is None:
-            data = self.phenotypes
-
-        plate_data = data[plate_index][..., measure]
-
-        if not horizontal_orientation:
-            plate_data = plate_data.T
-
-        if plate_data[np.isfinite(plate_data)].size == 0:
-            self._logger.error("No finite data")
-            return False
-
-        if None not in (vmin, vmax):
-            pass
-        elif use_common_value_axis:
-            vmin, vmax = zip(*[
-                (p[..., measure][np.isfinite(p[..., measure])].min(),
-                 p[..., measure][np.isfinite(p[..., measure])].max())
-                for p in data if p is not None])
-            vmin = min(vmin)
-            vmax = max(vmax)
-        else:
-            vmin = plate_data[np.isfinite(plate_data)].min()
-            vmax = plate_data[np.isfinite(plate_data)].max()
-
-        font = {'family': 'sans',
-                'weight': 'normal',
-                'size': 6}
-
-        matplotlib.rc('font', **font)
-
-        im = ax.imshow(
-            plate_data,
-            vmin=vmin,
-            vmax=vmax,
-            interpolation="nearest",
-            cmap=cm)
-
-        if show_color_bar:
-            divider = make_axes_locatable(ax)
-            if cax is None:
-                cax = divider.append_axes("right", "5%", pad="3%")
-            plt.colorbar(im, cax=cax)
-
-        if hide_axis:
-            ax.set_axis_off()
-
-        fig.tight_layout()
-        if show_figure:
-            fig.show()
-
-        return fig
 
     def save_phenotypes(self, path=None, data=None, data_headers=None, delim="\t", newline="\n", ask_if_overwrite=True):
 
@@ -689,7 +545,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             np.save(path + ".npy", data)
 
             # HEADER ROW
-            meta_data = self._metaData
+            meta_data = self._meta_data
             all_headers_identical = True
             meta_data_headers = tuple()
 
@@ -755,20 +611,20 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         p = os.path.join(dir_path, self._paths.phenotypes_filter)
         if (not ask_if_overwrite or not os.path.isfile(p) or
                 self._do_ask_overwrite(p)):
-            np.save(p, self._removeFilter)
+            np.save(p, self._removed_filter)
 
         p = os.path.join(dir_path, self._paths.phenotype_times)
         if (not ask_if_overwrite or not os.path.isfile(p) or
                 self._do_ask_overwrite(p)):
-            np.save(p, self._timeObject)
+            np.save(p, self._times_data)
 
         p = os.path.join(dir_path, self._paths.phenotypes_extraction_params)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(
                 p,
                 [self._median_kernel_size,
-                 self._gaussSigma,
-                 self._linRegSize])
+                 self._gaussian_filter_sigma,
+                 self._liinear_regression_size])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
 
@@ -784,8 +640,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             path = path[:-4]
 
         source = self._raw_growth_data
-        if isinstance(source, xmlReader.XML_Reader):
-            source = self._xmlReader2array(source)
+        if isinstance(source, xml_reader_module.XML_Reader):
+            source = self._xml_reader_2_array(source)
 
         np.save(path + ".data.npy", source)
-        np.save(path + ".times.npy", self._timeObject)
+        np.save(path + ".times.npy", self._times_data)

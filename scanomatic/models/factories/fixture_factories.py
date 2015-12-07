@@ -3,7 +3,8 @@ __author__ = 'martin'
 import re
 
 from scanomatic.models.fixture_models import FixtureModel, FixturePlateModel
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, split_and_replace
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, split_and_replace, \
+    float_list_serializer
 from scanomatic.models import fixture_models
 
 
@@ -129,7 +130,7 @@ class GrayScaleAreaModelFactory(AbstractModelFactory):
     STORE_SECTION_HEAD = "Grayscale"
     STORE_SECTION_SERIALIZERS = {
         'name': str,
-        'values': (tuple, float),
+        'values': float_list_serializer,
         'width': float,
         'section_length': float,
         'x1': int,
@@ -159,8 +160,8 @@ class FixtureFactory(AbstractModelFactory):
 
     STORE_SECTION_SERIALIZERS = {
         'grayscale': fixture_models.GrayScaleAreaModel,
-        "orientation_marks_x": list,
-        "orientation_marks_y": list,
+        "orientation_marks_x": float_list_serializer,
+        "orientation_marks_y": float_list_serializer,
         "shape": list,
         "coordinates_scale": float,
         "scale": float,

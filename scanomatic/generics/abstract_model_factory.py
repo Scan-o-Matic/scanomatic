@@ -13,6 +13,29 @@ from types import GeneratorType
 from collections import defaultdict
 
 
+def float_list_serializer(enforce=None,serialize=None):
+    if enforce is not None:
+        if isinstance(enforce, types.StringTypes):
+            return [float(m.strip()) for m in enforce.split(",")]
+        elif isinstance(enforce, list):
+            return [float(e) for i, e in enumerate(enforce) if e or i < len(enforce) - 1]
+        else:
+            return list(enforce)
+
+    elif serialize is not None:
+
+        if isinstance(serialize, types.StringTypes):
+            return serialize
+        else:
+            try:
+                return ", ".join((str(e) for e in serialize))
+            except TypeError:
+                return str(serialize)
+
+    else:
+        return None
+
+
 def email_serializer(enforce=None, serialize=None):
     if enforce is not None:
         if isinstance(enforce, types.StringTypes):
@@ -870,7 +893,11 @@ class Serializer(object):
 
             if key in conf.options(section):
 
-                value = conf.get(section, key)
+                try:
+                    value = conf.get(section, key)
+                except ValueError:
+                    self._logger.critical("Could not parse section {0}, key {1}".format(section, key))
+                    value = None
 
                 if isinstance(dtype, tuple):
 
