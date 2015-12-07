@@ -170,7 +170,7 @@ class FixtureImage(object):
 
         gauss = make_2d_guass_filter(gauss_size, gauss_size / gaussian_weight_size_fraction, local_hit)
 
-        return np.array(center_of_mass(image_slice * gauss[: image_slice.shape[0], : image_slice.shape[0]])) - \
+        return np.array(center_of_mass(image_slice * gauss[: image_slice.shape[0], : image_slice.shape[1]])) - \
             local_hit
 
     def get_convolution(self, threshold=127):
