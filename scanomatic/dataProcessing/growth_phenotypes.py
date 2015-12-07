@@ -17,15 +17,15 @@ def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times
 
     for times, value_segment in izip(times_strided, curve_strided):
 
-        linreg_values.append(_linreg_helper(times, value_segment))
+        linreg_values.append(_linreg_helper(times, np.log2(value_segment)))
 
-    derivative_values, derivative_errors = np.array(linreg_values).T
+    derivative_values_log2, derivative_errors = np.array(linreg_values).T
 
     return {
         'curve_smooth_growth_data': np.ma.masked_invalid(curve),
         'index48h': index_for_48h,
         'chapman_richards_fit': CalculateFitRSquare(flat_times, curve_logged),
-        'derivative_values': derivative_values,
+        'derivative_values_log2': derivative_values_log2,
         'derivative_errors': derivative_errors,
         'linregress_extent': position_offset,
         'flat_times': flat_times}
@@ -128,8 +128,8 @@ def RCResiduals(crParams, X, Y):
     return Y - ChapmanRichards4ParameterExtendedCurve(X, *crParams)
 
 
-def generation_time(derivative_values, index, **kwargs):
-    return 1.0 / derivative_values[index]
+def generation_time(derivative_values_log2, index, **kwargs):
+    return 1.0 / derivative_values_log2[index]
 
 
 def generation_time_error(derivative_errors, index, **kwargs):
@@ -148,13 +148,14 @@ def population_size_at_generation_time(curve_smooth_growth_data, index, linregre
             min(index + linregress_extent + 1, curve_smooth_growth_data.size)])
 
 
-def growth_lag(index, flat_times, derivative_values, **kwargs):
+def growth_lag(index, flat_times, derivative_values_log2, **kwargs):
 
     growth_delta = population_size_at_generation_time(index=index, **kwargs) - curve_baseline(**kwargs)
 
     if growth_delta > 0:
 
-        return np.interp(max(0.0, -growth_delta / derivative_values[index]), np.arange(flat_times.size), flat_times)
+        return np.interp(max(0.0, -growth_delta / derivative_values_log2[index]), np.arange(flat_times.size),
+                         flat_times)
 
     return np.nan
 
