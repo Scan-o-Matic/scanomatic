@@ -101,6 +101,8 @@ def plot_positional_markers(project_compilation):
 
     shape = np.max([image.fixture.shape for image in project_compilation], axis=0)
 
+    scans = data.shape[0]
+
     f = plt.figure()
     f.clf()
     ax = f.add_subplot(2, 2, 1)
@@ -110,7 +112,9 @@ def plot_positional_markers(project_compilation):
         ax.annotate(i + 1, (data[:, 0, i].mean(), data[:, 1, i].mean()), textcoords='offset points', xytext=(10, -5))
     ax.set_xlim(0, shape[1])
     ax.set_ylim(0, shape[0])
+    ax.set(adjustable='box', aspect=1)
     ax.set_title("Position marker centers")
+    cm = plt.get_cmap("Blues")
 
     for i in range(data.shape[2])[:3]:
 
@@ -119,13 +123,19 @@ def plot_positional_markers(project_compilation):
         y = data[:, 1, i]
         x -= x.min()
         y -= y.min()
-        im = np.zeros((round(x.max()) + 1, round(y.max()) + 1))
+        im = np.zeros((round(x.max()) + 1, round(y.max()) + 1), dtype=int)
         for x_val, y_val in izip(x, y):
             im[round(x_val), round(y_val)] += 1
 
         print "Marker ", i + 1, '\n', im, '\n'
-        ax.imshow(im.T, interpolation="none", cmap=plt.get_cmap("Blues"), vmin=0)
-        ax.set_title("Marker {0} pos irregularity freqs".format(i  + 1))
+        ax.imshow(im.T, interpolation="none", cmap=cm, vmin=0, vmax=scans)
+        for idx0, series in enumerate(im):
+            for idx1, value in enumerate(series):
+                ax.annotate(value, (idx0, idx1), color=cm(0.9) if value < scans/2.0 else cm(0.1), ha='center', va='center')
+        ax.set_title("Marker {0} pos freqs".format(i + 1))
+        ax.axis('off')
+
+    f.tight_layout()
     return f
 
 
