@@ -5,7 +5,6 @@ from flask import Flask, request, send_from_directory, redirect, jsonify, abort,
 import webbrowser
 from threading import Thread
 from socket import error
-from subprocess import Popen
 import os
 import numpy as np
 from enum import Enum
@@ -13,6 +12,7 @@ import shutil
 import re
 from itertools import chain
 import glob
+from types import StringTypes
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -267,7 +267,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     compilation=request.values.get("compilation"),
                     compile_instructions=request.values.get("compile_instructions"),
                     output_directory=request.values.get("output_directory"),
-                    chain=request.values.get("chain"))
+                    chain=bool(request.values.get('chain', default=1, type=int)))
 
                 success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
                     AnalysisModelFactory.to_dict(model))
@@ -305,7 +305,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 'root', Paths().experiment_root)
 
             plate_descriptions = request.json.get("plate_descriptions")
-            if all(isinstance(p, str) or isinstance(p, unicode) or p is None for p in plate_descriptions):
+            if all(isinstance(p, StringTypes) or p is None for p in plate_descriptions):
                 plate_descriptions = tuple({"index": i, "description": p} for i, p in enumerate(plate_descriptions))
 
             m = ScanningModelFactory.create(
@@ -333,8 +333,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             if validates and job_id:
                 return jsonify(success=True, name=project_name)
             else:
+
                 return jsonify(success=False, reason="The following has bad data: {0}".format(
-                    ", ".join(ScanningModelFactory.get_invalid_names(m))) if not validates else
+                    ScanningModelFactory.get_invalid_as_text(m))
+                    if not validates else
                     "Job refused, probably scanner can't be reached, check connection.")
 
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
@@ -385,13 +387,16 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             path = request.values.get('path')
             is_local = bool(int(request.values.get('local')))
             fixture=request.values.get("fixture")
-            _logger.info("Attempting to compile on path {0}, as {1} fixture{2}".format(
-                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture)))
+            chain_steps = bool(request.values.get('chain', default=1, type=int))
+            _logger.info("Attempting to compile on path {0}, as {1} fixture{2} (Chaining: {3})".format(
+                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture),
+                chain_steps))
 
             job_id = rpc_client.create_compile_project_job(
                 CompileProjectFactory.dict_from_path_and_fixture(
                     path, fixture=fixture, is_local=is_local,
-                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if request.values.get('chain') else COMPILE_ACTION.Initiate))
+                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if chain_steps else
+                    COMPILE_ACTION.Initiate))
 
             return jsonify(success=True if job_id else False, reason="" if job_id else "Invalid parameters")
 
@@ -412,6 +417,19 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             except StopIteration:
                 return jsonify(scanner=None, success=False, reason="Unknown scanner or query '{0}'".format(
                     scanner_query))
+
+    @app.route("/server/<action>", methods=['post', 'get'])
+    def _server_actions(action=None):
+
+        if action == 'reboot':
+
+            if rpc_client.local and (request.args.get('force') == '1' or not rpc_client.working_on_job_or_has_queue):
+
+                rpc_client.shutdown()
+                time.sleep(5)
+                rpc_client.launch_local()
+                time.sleep(5)
+                return jsonify(success=rpc_client.online)
 
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():

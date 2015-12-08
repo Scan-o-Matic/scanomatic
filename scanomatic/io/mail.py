@@ -3,6 +3,7 @@ __author__ = 'martin'
 
 import scanomatic.io.logger as logger
 
+from types import StringTypes
 import smtplib
 import socket
 
@@ -84,14 +85,14 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
         msg = MIMEMultipart.MIMEMultipart()
 
     msg['From'] = sender
-    msg['To'] = receiver if isinstance(receiver, str) else ", ".join(receiver)
+    msg['To'] = receiver if isinstance(receiver, StringTypes) else ", ".join(receiver)
     msg['Subject'] = subject
     try:
         msg.attach(MIMEText(message))
     except TypeError:
         msg.attach(MIMEText.MIMEText(message))
 
-    if isinstance(receiver, str):
+    if isinstance(receiver, StringTypes):
         receiver = [receiver]
     try:
         server.sendmail(sender, receiver, msg.as_string())

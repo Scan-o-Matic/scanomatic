@@ -316,7 +316,9 @@ class ScannerPowerManager(SingeltonOneInit):
 
         scanner_model.owner = rpc_job_model
         scanner_model.expected_interval = rpc_job_model.content_model.time_between_scans
-        self._logger.info("Acquire scanner successful, owner set to {0}".format(scanner_model.owner))
+        scanner_model.email = rpc_job_model.content_model.email
+        self._logger.info("Acquire scanner successful, owner set to {0} (mail {1})".format(
+            scanner_model.owner, scanner_model.email))
 
         self._save(scanner_model)
 

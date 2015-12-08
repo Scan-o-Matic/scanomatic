@@ -17,23 +17,28 @@ __status__ = "Development"
 
 import numpy as np
 import os
+from types import StringTypes
 from scipy.ndimage import median_filter, gaussian_filter1d
-from scipy.optimize import leastsq
-from scipy.stats import linregress
-import itertools
-import matplotlib.pyplot as plt
-import matplotlib
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from collections import deque
+from enum import Enum
 
 #
 #   INTERNAL DEPENDENCIES
 #
 
 import _mockNumpyInterface
-import scanomatic.io.xml.reader as xmlReader
+import scanomatic.io.xml.reader as xml_reader_module
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
+from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes
+
+
+class PositionMark(Enum):
+
+    OK = 0
+    NoGrowth = 1
+    BadData = 2
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
@@ -65,77 +70,33 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     the pattern <code>Phenotyper.PHEN_*</code>. 
     """
 
-    PHEN_GT_VALUE = 0
-    PHEN_GT_ERR = 1
-    PHEN_GT_POS = 2
-    PHEN_GT_2ND_VALUE = 3
-    PHEN_GT_2ND_ERR = 4
-    PHEN_GT_2ND_POS = 5
-    PHEN_FIT_VALUE = 6
-    PHEN_FIT_PARAM1 = 7
-    PHEN_FIT_PARAM2 = 8
-    PHEN_FIT_PARAM3 = 9
-    PHEN_FIT_PARAM4 = 10
-    PHEN_FIT_PARAM5 = 11
-    PHEN_INIT_VAL_A = 12
-    PHEN_INIT_VAL_B = 13
-    PHEN_INIT_VAL_C = 14
-    PHEN_INIT_VAL_D = 15
-    PHEN_FINAL_VAL = 16
-    PHEN_YIELD = 17
-    PHEN_LAG = 18
-    PHEN_GT_Y_VALUE = 19
-    PHEN_48_Y_VALUE = 20
-
-    NAMES_OF_PHENOTYPES = {
-        PHEN_GT_VALUE: "Generation Time",
-        PHEN_GT_ERR: "Error of GT-fit",
-        PHEN_GT_POS: "Time for fastest growth",
-        PHEN_GT_2ND_VALUE: "Generation Time (2nd place)",
-        PHEN_GT_2ND_ERR: "Error of GT (2nd place) - fit",
-        PHEN_GT_2ND_POS: "Time of second fastest growth",
-        PHEN_FIT_VALUE: "Chapman Richards model fit",
-        PHEN_FIT_PARAM1: "Chapman Richards b1 (untransformed)",
-        PHEN_FIT_PARAM2: "Chapman Richards b2 (untransformed)",
-        PHEN_FIT_PARAM3: "Chapman Richards b3 (untransformed)",
-        PHEN_FIT_PARAM4: "Chapman Richards b4 (untransformed)",
-        PHEN_FIT_PARAM5: "Chapman Richards extension D (initial cells)",
-        PHEN_INIT_VAL_A: "Initial Value",
-        PHEN_INIT_VAL_B: "Initial Value (mean 2)",
-        PHEN_INIT_VAL_C: "Initial Value (mean 3)",
-        PHEN_INIT_VAL_D: "Initial Value (min 3)",
-        PHEN_FINAL_VAL: "Final Value",
-        PHEN_YIELD: "Yield",
-        PHEN_LAG: "Lag",
-        PHEN_GT_Y_VALUE: "Value at Generation Time",
-        PHEN_48_Y_VALUE: "Value at 48h"
-    }
-
-    def __init__(self, dataObject, timeObject=None,
-                 medianKernelSize=5, gaussSigma=1.5, linRegSize=5,
-                 measure=None, baseName=None, itermode=False, runAnalysis=True):
+    def __init__(self, raw_growth_data, times_data=None,
+                 median_kernel_size=5, gaussian_filter_sigma=1.5, linear_regression_size=5,
+                 phenotypes=None, base_name=None, itermode=False, run_extraction=True):
 
         self._paths = paths.Paths()
 
-        self._source = dataObject
+        self._raw_growth_data = raw_growth_data
 
         self._phenotypes = None
-        self._timeObject = None
-        self._baseName = baseName
+        self._times_data = None
+        self._limited_phenotypes = phenotypes
 
-        if isinstance(dataObject, xmlReader.XML_Reader):
-            arrayCopy = self._xmlReader2array(dataObject)
+        self._base_name = base_name
 
-            if timeObject is None:
-                timeObject = dataObject.get_scan_times()
+        if isinstance(raw_growth_data, xml_reader_module.XML_Reader):
+            array_copy = self._xml_reader_2_array(raw_growth_data)
+
+            if times_data is None:
+                times_data = raw_growth_data.get_scan_times()
         else:
-            arrayCopy = dataObject.copy()
+            array_copy = raw_growth_data.copy()
 
-        self.times = timeObject
+        self.times = times_data
 
-        assert self._timeObject is not None, "A data series needs its times"
+        assert self._times_data is not None, "A data series needs its times"
 
-        for plate in arrayCopy:
+        for plate in array_copy:
 
             assert (plate is None or
                     plate.ndim == 4 and plate.shape[-1] == 1 or
@@ -143,27 +104,27 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                         "Phenotype Strider only work with one phenotype. "
                         + "Your shape is {0}".format(plate.shape))
 
-        super(Phenotyper, self).__init__(arrayCopy)
+        super(Phenotyper, self).__init__(array_copy)
 
-        self._removeFilter = np.array([None for _ in self._dataObject],
-                                      dtype=np.object)
+        self._removed_filter = np.array([None for _ in self._smooth_growth_data], dtype=np.object)
+        self._remove_actions = None
+        self._init_remove_filter_and_undo_actions()
 
         self._logger = logger.Logger("Phenotyper")
 
-        assert medianKernelSize % 2 == 1, "Median kernel size must be odd"
-        self._medianKernelSize = medianKernelSize
-        self._gaussSigma = gaussSigma
-        self._linRegSize = linRegSize
+        assert median_kernel_size % 2 == 1, "Median kernel size must be odd"
+        self._median_kernel_size = median_kernel_size
+        self._gaussian_filter_sigma = gaussian_filter_sigma
+        self._linear_regression_size = linear_regression_size
         self._itermode = itermode
-        self._metaData = None
+        self._meta_data = None
 
-        if not self._itermode and runAnalysis:
-            self._analyse()
+        if not self._itermode and run_extraction:
+            self._extract_features()
 
-    @classmethod
-    def phenotypeNames(cls):
+    def phenotype_names(self):
 
-        return (p for p in cls.__dict__ if p.startswith("PHEN_"))
+        return tuple(p.name for p in Phenotypes if not self._limited_phenotypes or p in self._limited_phenotypes)
 
     @classmethod
     def LoadFromXML(cls, path, **kwargs):
@@ -178,14 +139,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         used in instanciating the class.
         """
 
-        xml = xmlReader.XML_Reader(path)
-        if (path.lower().endswith(".xml")):
+        xml = xml_reader_module.XML_Reader(path)
+        if path.lower().endswith(".xml"):
             path = path[:-4]
 
-        return cls(xml, baseName=path, **kwargs)
+        return cls(xml, base_name=path, **kwargs)
 
     @classmethod
-    def LoadFromState(cls, dirPath):
+    def LoadFromState(cls, directory_path):
         """Creates an instance based on previously saved phenotyper state
         in specified directory.
 
@@ -200,32 +161,31 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         """
         _p = paths.Paths()
 
-        phenotypes = np.load(os.path.join(dirPath, _p.phenotypes_raw_npy))
+        phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
 
-        source = np.load(os.path.join(dirPath,  _p.phenotypes_input_data))
+        raw_growth_data = np.load(os.path.join(directory_path,  _p.phenotypes_input_data))
 
-        times = np.load(os.path.join(dirPath, _p.phenotype_times))
+        times = np.load(os.path.join(directory_path, _p.phenotype_times))
 
-        dataObject = np.load(os.path.join(dirPath,
-                                          _p.phenotypes_input_smooth))
+        smooth_growth_data = np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
 
-        medianKernelSize, gaussSigma, linRegSize = np.load(
-            os.path.join(dirPath, _p.phenotypes_extraction_params))
+        median_filt_size, gauss_sigma, linear_reg_size = np.load(
+            os.path.join(directory_path, _p.phenotypes_extraction_params))
 
-        phenotyper = cls(source, times, medianKernelSize=medianKernelSize,
-                         gaussSigma=gaussSigma, linRegSize=linRegSize,
-                         runAnalysis=False)
+        phenotyper = cls(raw_growth_data, times, median_kernel_size=median_filt_size,
+                         gaussian_filter_sigma=gauss_sigma, linear_regression_size=linear_reg_size,
+                         run_extraction=False, base_name=directory_path)
 
-        phenotyper._dataObject = dataObject
+        phenotyper._smooth_growth_data = smooth_growth_data
         phenotyper._phenotypes = phenotypes
 
-        p = os.path.join(dirPath, _p.phenotypes_filter)
-        if os.path.isfile(p):
-            pFilter = np.load(p)
-            if all(p.shape == pFilter[i].shape for i, p in enumerate(phenotypes)
-                   if p is not None and pFilter[i] is not None):
+        filter_path = os.path.join(directory_path, _p.phenotypes_filter)
+        if os.path.isfile(filter_path):
+            phenotype_remove_filter = np.load(filter_path)
+            if all(p.shape == phenotype_remove_filter[i].shape for i, p in enumerate(phenotypes)
+                   if p is not None and phenotype_remove_filter[i] is not None):
 
-                #phenotypes._removeFilter = pFilter
+                # phenotypes._removeFilter = phenotype_remove_filter
                 pass
 
         return phenotyper
@@ -237,7 +197,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return cls(data, times)
 
     @classmethod
-    def LoadFromNumPy(cls, path, timesPath=None, **kwargs):
+    def LoadFromNumPy(cls, path, times_data_path=None, **kwargs):
         """Class Method used to create a Phenotype Strider from
         a saved numpy data array and a saved numpy times array.
 
@@ -260,354 +220,190 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         Optional Parameters can be passed as keywords and will be
         used in instanciating the class.
         """
-        dataPath = path
-        if (path.lower().endswith(".npy")):
+        data_directory = path
+        if path.lower().endswith(".npy"):
             path = path[:-4]
             if path.endswith(".data"):
                 path = path[:-5]
 
-        if (timesPath is None):
-            timesPath = path + ".times.npy"
+        if times_data_path is None:
+            times_data_path = path + ".times.npy"
 
-        if (not os.path.isfile(dataPath)):
-            if (os.path.isfile(timesPath + ".data.npy")):
+        if not os.path.isfile(data_directory):
+            if os.path.isfile(times_data_path + ".data.npy"):
 
-                timesPath += ".data.npy"
+                times_data_path += ".data.npy"
 
-            elif (os.path.isfile(timesPath + ".npy")):
+            elif os.path.isfile(times_data_path + ".npy"):
 
-                timesPath += ".npy"
+                times_data_path += ".npy"
 
-        return cls(np.load(dataPath), np.load(timesPath), baseName=path,
+        return cls(np.load(data_directory), np.load(times_data_path), base_name=path,
                    **kwargs)
 
-    @staticmethod
-    def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
-        """Reterns a Chapman-Ritchards 4 parameter curve exteneded with a
-        Y-axis offset D parameter.
+    @property
+    def meta_data(self):
 
-        ''Note: The parameters b0, b1, b2 and b3 have been transposed so
-        that they stay within the allowed bounds of the model
+        return self._meta_data
 
-        Args:
+    @meta_data.setter
+    def meta_data(self, val):
 
-            X (np.array):   The X-data
-
-            b0 (float): The first parameter. To ensure that it stays within
-                        the allowed bounds b0 > 0, the input b0 is
-                        transposed using ``np.power(np.e, b0)``.
-
-            b1 (float): The second parameter. The bounds are
-                        1 - b3 < b1 < 1 and thus it is scaled as follows::
-
-                            ``np.power(np.e, b1) / (np.power(np.e, b1) + 1) *
-                            b3 + (1 - b3)``
-
-                        Where ``b3`` referes to the transformed version.
-
-
-            b2 (float): The third parameter, has same bounds and scaling as
-                        the first
-
-            b3 (float): The fourth parameter, has bounds 0 < b3 < 1, thus
-                        scaling is done with::
-
-                            ``np.power(np.e, b3) / (np.power(np.e, b3) + 1)``
-
-            D (float):  Any real number, used as the offset of the curve,
-                        no transformation applied.
-
-        Returns:
-
-            np.array.       An array of matching size as X with the
-                            Chapman-Ritchards extended curve for the
-                            parameter set.
-
-        """
-
-        #Enusuring parameters stay within the allowed bounds
-        b0 = np.power(np.e, b0)
-        b2 = np.power(np.e, b2)
-        v = np.power(np.e, b3)
-        b3 = v / (v + 1.0)
-        v = np.power(np.e, b1)
-        b1 = v / (v + 1.0) * b3 + (1 - b3)
-
-        return D + b0 * np.power(1.0 - b1 * np.exp(-b2 * X), 1.0 / (1.0 - b3))
-
-    @staticmethod
-    def RCResiduals(crParams, X, Y):
-
-        return Y - Phenotyper.ChapmanRichards4ParameterExtendedCurve(
-            X, *crParams)
-
-    @staticmethod
-    def CalculateFitRSquare(
-            X, Y,
-            #i1 p0=np.array([1.7, -50, -2.28, -261, 14.6],
-            #i2 p0=np.array([1.64, -50, -2.46, -261, 15.18],
-            #p0=np.array([1.622, 21.1, -2.38, -1.99, 15.36],
-            p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18],
-                        dtype=np.float)):
-
-        """X and Y must be 1D, Y must be log2"""
-
-        p = leastsq(Phenotyper.RCResiduals, p0, args=(X, Y))[0]
-        Yhat = Phenotyper.ChapmanRichards4ParameterExtendedCurve(
-            X, *p)
-        return (1.0 - np.square(Yhat - Y).sum() /
-                np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
+        self._meta_data = val
 
     @property
-    def metaData(self):
+    def raw_growth_data(self):
 
-        return self._metaData
-
-    @metaData.setter
-    def metaData(self, val):
-
-        self._metaData = val
+        return self._raw_growth_data
 
     @property
-    def source(self):
+    def smooth_growth_data(self):
 
-        return self._source
+        return self._smooth_growth_data
 
-    @property
-    def smoothData(self):
+    @staticmethod
+    def _xml_reader_2_array(data_object):
 
-        return self._dataObject
+        return np.array([k in data_object.get_data().keys() and
+                         data_object.get_data()[k] or None for k in
+                         range(max((data_object.get_data().keys())) + 1)])
 
-    def _xmlReader2array(self, dataObject):
-
-        return np.array([k in dataObject.get_data().keys() and
-                         dataObject.get_data()[k] or None for k in
-                         range(max((dataObject.get_data().keys())) + 1)])
-
-    def _analyse(self):
+    def _extract_features(self):
 
         self._smoothen()
-        self._calculatePhenotypes()
+        self._calculate_phenotypes()
 
-    def iterAnalyse(self):
+    def iterate_extraction(self):
 
         self._logger.info(
             "Iteration started, will extract {0} phenotypes".format(
-                self.nPhenotypeTypes))
+                self.number_of_phenotypes))
 
-        if (self._itermode is False):
+        if self._itermode is False:
             raise StopIteration("Can't iterate when not in itermode")
-            return
+
         else:
-            n = sum((p.shape[0] * p.shape[1] for p in self._dataObject)) + 1.0
-            i = 0.0
+
             self._smoothen()
             self._logger.info("Smoothed")
-            yield i / n
-            for x in self._calculatePhenotypes():
-                self._logger.info("Phenotype extraction iteration")
-                i += x
-                yield i / n
+            yield 0
+            for x in self._calculate_phenotypes():
+                self._logger.debug("Phenotype extraction iteration")
+                yield x
 
         self._itermode = False
 
     def _smoothen(self):
+
         self._logger.info("Smoothing Started")
-        medianFootprint = np.ones((1, self._medianKernelSize))
+        median_kernel = np.ones((1, self._median_kernel_size))
 
-        for plate in self._dataObject:
+        for plate in self._smooth_growth_data:
 
-            stridedPlate = np.lib.stride_tricks.as_strided(
+            plate_as_flat = np.lib.stride_tricks.as_strided(
                 plate,
                 shape=(plate.shape[0] * plate.shape[1], plate.shape[2]),
                 strides=(plate.strides[1], plate.strides[2]))
 
-            stridedPlate[...] = median_filter(
-                stridedPlate, footprint=medianFootprint, mode='reflect')
+            plate_as_flat[...] = median_filter(
+                plate_as_flat, footprint=median_kernel, mode='reflect')
 
-            stridedPlate[...] = gaussian_filter1d(
-                stridedPlate, sigma=self._gaussSigma, mode='reflect', axis=-1)
+            plate_as_flat[...] = gaussian_filter1d(
+                plate_as_flat, sigma=self._gaussian_filter_sigma, mode='reflect', axis=-1)
 
         self._logger.info("Smoothing Done")
 
-    def _calculatePhenotypes(self):
+    def _calculate_phenotypes(self):
 
-        # TODO? Add "OD" levels 0-5%, 5-15, ... linear regresions.
-
-        def _linReg(X, Y):
-            return linregress(X, Y)[0::4]
-
-        def _linReg2(*args):
-            return linregress(args[:linRegSize], args[linRegSize:])[0::4]
-
-        if self._timeObject.shape[0] - (self._linRegSize - 1) <= 0:
+        if self._times_data.shape[0] - (self._linear_regression_size - 1) <= 0:
             self._logger.error(
                 "Refusing phenotype extractions since number of scans are less than used in the linear regression")
             return
 
-        timesStrided = np.lib.stride_tricks.as_strided(
-            self._timeObject,
-            shape=(self._timeObject.shape[0] - (self._linRegSize - 1),
-                   self._linRegSize),
-            strides=(self._timeObject.strides[0],
-                     self._timeObject.strides[0]))
+        times_strided = self.times_strided
 
-        flatT = self._timeObject.ravel()
+        flat_times = self._times_data
 
-        idT48 = np.abs(np.subtract.outer(self._timeObject, [48])).argmin()
+        index_for_48h = np.abs(np.subtract.outer(self._times_data, [48])).argmin()
 
-        allPhenotypes = []
+        all_phenotypes = []
 
-        linRegSize = self._linRegSize
-        #linRegUFunc = np.frompyfunc(_linReg2, linRegSize * 2, 2)
-        posOffset = (linRegSize - 1) / 2
-        nPhenotypes = self.nPhenotypeTypes
+        regression_size = self._linear_regression_size
+        position_offset = (regression_size - 1) / 2
+        phenotypes_count = self.number_of_phenotypes
+        total_curves = float(self.number_of_curves)
 
         self._logger.info("Phenotypes (N={0}) Extraction Started".format(
-            nPhenotypes))
+            phenotypes_count))
 
-        for plateI, plate in enumerate(self._dataObject):
+        curves_in_completed_plates = 0
 
-            stridedPlate = np.lib.stride_tricks.as_strided(
-                plate,
-                shape=(plate.shape[0] * plate.shape[1],
-                       plate.shape[2] - (linRegSize - 1),
-                       linRegSize),
-                strides=(plate.strides[1],
-                         plate.strides[2], plate.strides[2]))
+        for plateI, plate in enumerate(self._smooth_growth_data):
 
-            phenotypes = np.zeros((plate.shape[:2]) + (nPhenotypes,),
+            plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
+
+            phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),
                                   dtype=plate.dtype)
 
-            allPhenotypes.append(phenotypes)
+            all_phenotypes.append(phenotypes)
 
-            stridedPlate = np.lib.stride_tricks.as_strided(
-                plate,
-                shape=(plate.shape[0], plate.shape[1],
-                       plate.shape[2] - (linRegSize - 1),
-                       linRegSize),
-                strides=(plate.strides[0], plate.strides[1],
-                         plate.strides[2], plate.strides[2]))
+            for pos_index, pos_data in enumerate(plate_flat_regression_strided):
 
-            for idX, X in enumerate(np.log2(stridedPlate)):
+                position_phenotypes = [None] * phenotypes_count
 
-                for idY, Y in enumerate(X):
+                id0 = pos_index % plate.shape[0]
+                id1 = pos_index / plate.shape[0]
 
-                    curPhenos = [None] * nPhenotypes
+                curve_data = get_preprocessed_data_for_phenotypes(
+                    curve=plate[id0, id1],
+                    curve_strided=pos_data,
+                    flat_times=flat_times,
+                    times_strided=times_strided,
+                    index_for_48h=index_for_48h,
+                    position_offset=position_offset)
 
-                    #CALCULATING GT
-                    vals = []
+                for phenotype in Phenotypes:
+                    position_phenotypes[phenotype.value] = phenotype(**curve_data)
 
-                    for V, T in itertools.izip(Y, timesStrided):
-
-                        vals.append(_linReg(T, V))
-
-                    vals = np.array(vals)
-                    mVals = np.ma.masked_invalid(vals[..., 0])
-                    bestFinite = -mVals.mask.sum() - 1
-                    vArgSort = mVals.argsort()
-
-                    curve = np.ma.masked_invalid(plate[idX, idY])
-
-                    #CALCULATING CURVE FITS
-                    Yobs = plate[idX, idY].ravel().astype(np.float64)
-
-                    p = Phenotyper.CalculateFitRSquare(
-                        flatT, np.log2(Yobs))
-
-                    #YIELD TYPE OF PHENOTYPES
-                    curPhenos[self.PHEN_INIT_VAL_A] = curve[0]
-                    curPhenos[self.PHEN_INIT_VAL_B] = curve[:2].mean()
-                    curPhenos[self.PHEN_INIT_VAL_C] = curve[:3].mean()
-                    curPhenos[self.PHEN_INIT_VAL_D] = curve[:3].min()
-                    curPhenos[self.PHEN_FINAL_VAL] = curve[3:].mean()
-                    curPhenos[self.PHEN_YIELD] = \
-                        curPhenos[self.PHEN_FINAL_VAL] - \
-                        curPhenos[self.PHEN_INIT_VAL_C]
-                    curPhenos[self.PHEN_48_Y_VALUE] = curve[idT48]
-
-                    #REGISTRATING GT PHENOTYPES
-                    if (abs(bestFinite) <= vArgSort.size):
-                        curPhenos[self.PHEN_GT_VALUE] = 1.0 / vals[
-                            vArgSort[bestFinite], self.PHEN_GT_VALUE]
-
-                        curPhenos[self.PHEN_GT_ERR] = vals[
-                            vArgSort[bestFinite], self.PHEN_GT_ERR]
-
-                        curPhenos[self.PHEN_GT_POS] = vArgSort[bestFinite] +\
-                            posOffset
-
-                        if (abs(bestFinite) < vArgSort.size):
-                            curPhenos[self.PHEN_GT_2ND_VALUE] = 1.0 / vals[
-                                vArgSort[bestFinite - 1], self.PHEN_GT_VALUE]
-
-                            curPhenos[self.PHEN_GT_2ND_ERR] = vals[
-                                vArgSort[bestFinite - 1], self.PHEN_GT_ERR]
-
-                            curPhenos[self.PHEN_GT_2ND_POS] = \
-                                vArgSort[bestFinite - 1] + posOffset
-
-                        curPhenos[self.PHEN_GT_Y_VALUE] = \
-                            np.median(
-                                curve[curPhenos[self.PHEN_GT_POS] - posOffset:
-                                      curPhenos[self.PHEN_GT_POS] + posOffset
-                                      + 1])
-
-                        dY = (np.log2(curPhenos[self.PHEN_GT_Y_VALUE]) -                                           
-                              np.log2(curPhenos[self.PHEN_INIT_VAL_C]))
-
-                        if dY > 0:
-
-                            curPhenos[self.PHEN_LAG] = \
-                                flatT[curPhenos[self.PHEN_GT_POS]] - \
-                                dY * curPhenos[self.PHEN_GT_VALUE]
-                        else:
-                            curPhenos[self.PHEN_LAG] = np.nan
-
-                    #REGISTRATING CURVE FITS
-                    curPhenos[self.PHEN_FIT_VALUE] = p[0]
-                    curPhenos[self.PHEN_FIT_PARAM1] = p[1][0]
-                    curPhenos[self.PHEN_FIT_PARAM2] = p[1][1]
-                    curPhenos[self.PHEN_FIT_PARAM3] = p[1][2]
-                    curPhenos[self.PHEN_FIT_PARAM4] = p[1][3]
-                    curPhenos[self.PHEN_FIT_PARAM5] = p[1][4]
-
-                    #STORING PHENOTYPES
-                    phenotypes[idX, idY, ...] = curPhenos
+                phenotypes[id0, id1, ...] = position_phenotypes
 
                 if self._itermode:
-                    self._logger.info("Done plate {0} pos {1} {2}".format(
-                        plateI, idX, idY))
-                    yield idY + 1
+                    self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
+                        plateI, id0, id1, list(position_phenotypes)))
+                    yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
 
             self._logger.info("Plate {0} Done".format(plateI))
+            curves_in_completed_plates += 0 if plate is None else plate_flat_regression_strided.shape[0]
 
-        self._phenotypes = np.array(allPhenotypes)
+        self._phenotypes = np.array(all_phenotypes)
 
         self._logger.info("Phenotype Extraction Done")
 
+    def _get_plate_linear_regression_strided(self, plate):
+
+        return np.lib.stride_tricks.as_strided(
+            plate,
+            shape=(plate.shape[0] * plate.shape[1],
+                   plate.shape[2] - (self._linear_regression_size - 1),
+                   self._linear_regression_size),
+            strides=(plate.strides[1],
+                     plate.strides[2], plate.strides[2]))
+
     @property
-    def nPhenotypeTypes(self):
+    def number_of_curves(self):
 
-        return max(getattr(self, attr) for attr in dir(self) if
-                   attr.startswith("PHEN_")) + 1
-
-    @property
-    def nPhenotypesInData(self):
-
-        return max((p is None and 0 or p.shape[-1]) for p in self._phenotypes)
+        return sum(p.shape[0] * p.shape[1] if (p is not None and p.ndim > 1) else 0 for p in self._raw_growth_data)
 
     @property
-    def curveFits(self):
+    def number_of_phenotypes(self):
+
+        return len(Phenotypes) if not self._limited_phenotypes else len(self._limited_phenotypes)
+
+    @property
+    def generation_times(self):
 
         return np.array(
-            [plate[..., self.PHEN_FIT_VALUE] for plate in self.phenotypes])
-
-    @property
-    def generationTimes(self):
-
-        return np.array(
-            [plate[..., self.PHEN_GT_VALUE] for plate in self.phenotypes])
+            [plate[..., Phenotypes.GenerationTime.value] for plate in self.phenotypes])
 
     @property
     def phenotypes(self):
@@ -617,19 +413,24 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             return None
 
         for i, p in enumerate(self._phenotypes):
-            if (self._removeFilter[i] is not None and p is not None):
-                ret.append(
-                    np.ma.masked_array(p, self._removeFilter[i],
-                                       fill_value=np.nan))
+            if p is not None:
+                filtered_plate = np.ma.masked_array(
+                    p.copy(), self._removed_filter[i] == PositionMark.BadData.value, fill_value=np.nan)
+                filtered_plate[self._removed_filter[i] == PositionMark.NoGrowth.value] = np.inf
+                ret.append(filtered_plate)
             else:
                 ret.append(p)
 
         return ret
 
+    def get_phenotype(self, phenotype):
+
+        return [p if p is None else p[..., phenotype.value] for p in self.phenotypes]
+
     @property
     def times(self):
 
-        return self._timeObject
+        return self._times_data
 
     @times.setter
     def times(self, value):
@@ -641,90 +442,46 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (isinstance(value, np.ndarray) is False):
             value = np.array(value, dtype=np.float)
 
-        self._timeObject = value
+        self._times_data = value
 
-    def padPhenotypes(self):
+    @property
+    def times_strided(self):
 
-        padding = self.nPhenotypeTypes - self.nPhenotypesInData
+        return np.lib.stride_tricks.as_strided(
+            self._times_data,
+            shape=(self._times_data.shape[0] - (self._linear_regression_size - 1),
+                   self._linear_regression_size),
+            strides=(self._times_data.strides[0],
+                     self._times_data.strides[0]))
 
-        if (padding):
-            self._logger.info(
-                "Padding phenotypes, adding" +
-                " {0} to become {1}, current shape {2}".format(
-                    padding,
-                    self.nPhenotypeTypes,
-                    self._phenotypes.shape))
+    def _init_remove_filter_and_undo_actions(self):
 
-            phenotypes = []
-            removes = []
-            for i, p in enumerate(self._phenotypes):
+        for plate_index in range(self._removed_filter.shape[0]):
 
-                if p is not None:
-                    pad = np.zeros(p.shape[:-1] + (padding,))
-                    phenotypes.append(np.dstack((p, pad * np.nan)))
-                    removes.append(np.dstack((p, pad == 0)))
-                else:
-                    removes.append(None)
-                    phenotypes.append(None)
+            self._removed_filter[plate_index] = np.zeros(
+                self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
 
-            self._phenotypes = np.array(phenotypes)
-            self._removeFilter = np.array(removes)
+        self._remove_actions = tuple(deque() for _ in self._smooth_growth_data)
 
-            self._logger.info(
-                "New phenotypes shapes {0}".format(
-                    self._phenotypes.shape))
+    def add_position_mark(self, plate, position_list, phenotype=None, position_mark=PositionMark.BadData):
 
-        return padding
+        if position_mark is PositionMark.NoGrowth or phenotype is None:
+            phenotype = slice(None, None, None)
+        else:
+            phenotype = phenotype.value
 
-    def _checkFilterInit(self, plate):
+        previous_state = self._removed_filter[plate][position_list, phenotype]
+        if isinstance(previous_state, np.array):
+            previous_state = np.unique(previous_state)
+            if previous_state.size > 1:
+                previous_state = 0
+            else:
+                previous_state = previous_state[0]
 
-        if (not(hasattr(self._removeFilter[plate], "shape")) or
-                self._removeFilter[plate].shape !=
-                self._phenotypes[plate].shape):
+        self._remove_actions[plate].append((position_list, phenotype, previous_state))
+        self._removed_filter[plate][position_list, phenotype] = position_mark.value
 
-            self._removeFilter[plate] = np.zeros(
-                self._phenotypes[plate].shape,
-                dtype=np.bool)
-
-    def add2RemoveFilter(self, plate, positionList, phenotype=None):
-        """Adds positions as removed from data.
-
-        Args:
-
-            plate (int):    The plate
-
-            positionList (iterable):    A list of X and Y coordinates as
-                                        returned by np.where
-
-        Kwargs:
-
-            phenotype (int/None):   What phenotype to invoke filter on
-                                    or if None to invoke on all
-        """
-
-        if (self._phenotypes is None or self._phenotypes[plate] is None):
-            raise IndexError("No phenotypes known for plate {0}".format(plate))
-
-        self._checkFilterInit(plate)
-        self._removeFilter[plate][positionList] = True
-
-    def getRemoveFilter(self, plate):
-        """Get remove filter for plate.
-
-        Args:
-
-            plate (int)   Index of plate
-
-        Returns:
-
-            numpy.ndarray (dtype=np.bool)
-                The per position status of removal
-        """
-
-        self._checkFilterInit(plate)
-        return self._removeFilter[plate]
-
-    def hasRemoved(self, plate):
+    def plate_has_any_colonies_removed(self, plate):
         """Get if plate has anything removed.
 
         Args:
@@ -736,363 +493,45 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             bool    The status of the plate removals
         """
 
-        return self.getRemoveFilter(plate).any()
+        return self._removed_filter[plate].any()
 
-    def hasAnyRemoved(self):
+    def has_any_colonies_removed(self):
         """If any plate has anything removed
 
         Returns:
             bool    The removal status
         """
-        return any(self.hasRemoved(i) for i in
-                   range(self._removeFilter.shape[0]))
+        return any(self.plate_has_any_colonies_removed(i) for i in
+                   range(self._removed_filter.shape[0]))
 
-    def getPositionListFiltered(self, posList, valueType=PHEN_GT_VALUE):
-        """Get phenotypes for the list of positions.
-
-        Args:
-
-            posList         List of position tuples or position strings
-            or mix thereof.
-
-                            For tuples, they should be
-
-                                    (plate, x, y)
-
-                            For strings they should be
-
-                                plate:x,y
-
-        Optional Parameters:
-
-            valueType       The type of value to obtain. Default is
-            the generation time value.
-
-        """
+    def get_position_list_filtered(self, position_list, value_type=Phenotypes.GenerationTime):
 
         values = []
-        for pos in posList:
+        for pos in position_list:
 
-            if isinstance(pos, str):
-                plate, x, y = self._posStringToTuple(pos)
+            if isinstance(pos, StringTypes):
+                plate, x, y = self._position_2_string_tuple(pos)
             else:
                 plate, x, y = pos
 
-            values.append(self.phenotypes[plate][x, y][valueType])
+            values.append(self.phenotypes[plate][x, y][value_type.value])
 
         return values
 
-    def plotRandomSampesAndSave(self, pathPattern="fig__{0}.png", n=100,
-                                figure=None, figClear=False, **kwargs):
+    def save_phenotypes(self, path=None, data=None, data_headers=None, delim="\t", newline="\n", ask_if_overwrite=True):
 
-        zpos = int(np.floor(np.log10(n)) + 1)
+        if path is None and self._base_name is not None:
+            path = self._base_name + ".csv"
 
-        for i in range(n):
-            figure = self.plotACurve(drawable=figure, clearDrawable=figClear,
-                                     **kwargs)
-            figure.savefig(pathPattern.format(str(i + 1).zfill(zpos)))
-
-    def plotACurve(self, position=None,
-                   plotRaw=True, plotSmooth=True, plotRegLine=True,
-                   plotFit=True,
-                   annotateGTpos=True, annotateFit=True,
-                   annotatePosition=True, annotatePhenotypeValue=True,
-                   xMarkTimes=None, plusMarkTimes=None, altMeasures=None,
-                   drawable=None, clearDrawable=True):
-        """Plots a curve with phenotypes marked based on a position.
-
-        Optional Parameters:
-
-            position        Tuple containing (plate, x, y)
-            If none is submitted a random position is plotted
-
-            plotRaw         If the raw growth data should be plotted
-            Default: True
-
-            plotSmooth      If the smoothed data should be plotted
-            Default: True
-
-            plotRegLine     If the regression line used for the GT
-            extraction should be plotted
-            Default: True
-
-            plotFit         If curve fit line be plotted
-
-            annotateGTpos   If GT position used should be marked with
-            arrow
-            Default: True
-
-            annotateFit     If curve fit should be annotated,
-
-            annotatePosition
-                            If a text be written informing the position
-            on the plate of the plotted curve
-
-            annotatePhenotypeValue
-                            If the value of the generation time should
-                            be written out.
-
-            xMarkTimes      Times on raw data to be marked with x
-            Default: None
-
-            plusMarkTimes   Times on raw data to be marked with +
-            Default: None
-
-            altMeasures     If comparision measures should be written out
-            as an iterable of (textLabel, value) tuples.
-            Default: None
-
-            drawable        A figure or axes from matplotlib to continue 
-            drawing on rather than creating a new figure
-
-            clearDrawable   If the supplied drawable should be cleared
-            """
-
-        def _markCurve(positions, colorChar):
-
-            markIndices = np.abs(np.subtract.outer(
-                self._timeObject, positions)).argmin(axis=0)
-
-            ax.semilogy(
-                self._timeObject[markIndices],
-                plotRaw and self._source[position[0]][position[0]][markIndices],
-                colorChar)
-
-        if drawable is not None:
-            if isinstance(drawable, plt.Figure):
-                f = drawable
-                if clearDrawable:
-                    f.clf()
-                ax = f.gca()
-            elif isinstance(drawable, plt.Axes):
-                ax = drawable
-                f = ax.figure
-                if clearDrawable:
-                    drawable.cla()
-
-        else:
-            f = plt.figure()
-            ax = f.gca()
-            drawable = f
-
-        font = {'family': 'sans',
-                'weight': 'normal',
-                'size': 6}
-
-        matplotlib.rc('font', **font)
-
-        ax.tick_params(axis='x', which='both', bottom='on', top='off')
-        ax.tick_params(axis='y', which='both', left='on', right='off')
-
-        anyGoodValues = (self._source[position[0]][position[1:]] > 0).any()
-
-        if position is None:
-            position = (np.random.randint(0, self._dataObject.shape[0]),
-                        np.random.randint(0, self._dataObject[0].shape[0]),
-                        np.random.randint(0, self._dataObject[0].shape[1]))
-        if plotRaw and anyGoodValues:
-            ax.semilogy(self._timeObject,
-                        self._source[position[0]][position[1:]],
-                        '-b', basey=2)
-
-        if plotSmooth and anyGoodValues:
-            ax.semilogy(self._timeObject,
-                        self._dataObject[position[0]][position[1:]],
-                        '-g', basey=2)
-
-        if xMarkTimes is not None:
-
-            _markCurve(xMarkTimes, 'xr')
-
-        if plusMarkTimes is not None:
-
-            _markCurve(plusMarkTimes, '+k')
-
-        tId = int(self._phenotypes[position[0]][position[1:]][
-            self.PHEN_GT_POS])
-
-        gtY = self._dataObject[position[0]][position[1:]][tId]
-
-        if plotFit:
-
-            Yhat = np.power(
-                2.0,
-                Phenotyper.ChapmanRichards4ParameterExtendedCurve(
-                    self._timeObject.ravel(),
-                    self._phenotypes[position[0]][position[1:]][
-                        self.PHEN_FIT_PARAM1],
-                    self._phenotypes[position[0]][position[1:]][
-                        self.PHEN_FIT_PARAM2],
-                    self._phenotypes[position[0]][position[1:]][
-                        self.PHEN_FIT_PARAM3],
-                    self._phenotypes[position[0]][position[1:]][
-                        self.PHEN_FIT_PARAM4],
-                    self._phenotypes[position[0]][position[1:]][
-                        self.PHEN_FIT_PARAM5]))
-
-            ax.semilogy(self._timeObject,
-                        Yhat, '--', color=(0.1, 0.1, 0.1, 0.5), basey=2)
-
-        if plotRegLine and anyGoodValues:
-
-            t = self._timeObject[tId]
-
-            a = 1.0 / self._phenotypes[position[0]][position[1:]][
-                self.PHEN_GT_VALUE]
-            b = (np.log2(gtY) - a * t)
-
-            dT = 0.1 * self._timeObject.max() - self._timeObject.min()
-            axYlim = ax.get_ylim()
-
-            ax.semilogy([t - dT, t + dT], np.power(2, [a * (t - dT) + b,
-                                                       a * (t + dT) + b]),
-                        '-.k', basey=2)
-
-            ax.set_ylim(axYlim)
-
-        if annotateGTpos:
-
-            ax.annotate("GT", xy=(self._timeObject[tId], gtY), arrowprops=dict(
-                arrowstyle="->", connectionstyle="arc3"),
-                xytext=(30, 10), textcoords="offset points")
-
-        if annotateFit:
-
-            ax.text(0.1, 0.85, "$R^2 = {0:.5f}$".format(
-                    self._phenotypes[position[0]][position[1:]][
-                        self.PHEN_FIT_VALUE]),
-                    transform=ax.transAxes)
-
-        measureText = "Generation Time: {0:.2f}".format(
-            self._phenotypes[position[0]][position[1:]][self.PHEN_GT_VALUE])
-
-        if altMeasures is not None:
-
-            for label, value in altMeasures:
-
-                measureText += "\n{0}: {1:.2f}".format(label, value)
-
-        if (annotatePhenotypeValue):
-            ax.text(0.6, 0.3, measureText, transform=ax.transAxes)
-
-        if (annotatePosition):
-            ax.text(0.1, 0.9, "Plate {0}, Row {1} Col {2}".format(*position),
-                    transform=ax.transAxes)
-
-        ax.set_xlim(left=0)
-
-        return drawable
-
-    def plotPlateHeatmap(self, plateIndex,
-                         markPositions=[],
-                         measure=None,
-                         data=None,
-                         useCommonValueAxis=True,
-                         vmin=None,
-                         vmax=None,
-                         showColorBar=True,
-                         horizontalOrientation=True,
-                         cm=plt.cm.RdBu_r,
-                         titleText=None,
-                         hideAxis=False,
-                         fig=None,
-                         showFig=True):
-
-        if measure is None:
-            measure = self.PHEN_GT_VALUE
-
-        if fig is None:
-            fig = plt.figure()
-
-        cax = None
-
-        if (len(fig.axes)):
-            ax = fig.axes[0]
-            if (len(fig.axes) == 2):
-                cax = fig.axes[1]
-                cax.cla()
-                fig.delaxes(cax)
-                cax = None
-            ax.cla()
-        else:
-            ax = fig.gca()
-
-        if (titleText is not None):
-            ax.set_title(titleText)
-
-        if data is None:
-            data = self.phenotypes
-
-        plateData = data[plateIndex][..., measure]
-
-        if not horizontalOrientation:
-            plateData = plateData.T
-
-        if (plateData[np.isfinite(plateData)].size == 0):
-            self._logger.error("No finite data")
-            return False
-
-        if (None not in (vmin, vmax)):
-            pass
-        elif (useCommonValueAxis):
-            vmin, vmax = zip(*[
-                (p[..., measure][np.isfinite(p[..., measure])].min(),
-                 p[..., measure][np.isfinite(p[..., measure])].max())
-                for p in data if p is not None])
-            vmin = min(vmin)
-            vmax = max(vmax)
-        else:
-            vmin = plateData[np.isfinite(plateData)].min()
-            vmax = plateData[np.isfinite(plateData)].max()
-
-        font = {'family': 'sans',
-                'weight': 'normal',
-                'size': 6}
-
-        matplotlib.rc('font', **font)
-
-        im = ax.imshow(
-            plateData,
-            vmin=vmin,
-            vmax=vmax,
-            interpolation="nearest",
-            cmap=cm,
-        )
-
-        if (showColorBar):
-            divider = make_axes_locatable(ax)
-            if (cax is None):
-                cax = divider.append_axes("right", "5%", pad="3%")
-            plt.colorbar(im, cax=cax)
-
-        if (hideAxis):
-            ax.set_axis_off()
-
-        fig.tight_layout()
-        if (showFig):
-            fig.show()
-
-        return fig
-
-    def savePhenotypes(self, path=None, data=None, dataHeaders=None,
-                       delim="\t", newline="\n", askOverwrite=True):
-        """Outputs the phenotypes as a csv type format."""
-
-        if (path is None and self._baseName is not None):
-            path = self._baseName + ".csv"
-
-        if (os.path.isfile(path) and askOverwrite):
-            if ('y' not in raw_input("Overwrite existing file? (y/N)").lower()):
+        if os.path.isfile(path) and ask_if_overwrite:
+            if 'y' not in raw_input("Overwrite existing file? (y/N)").lower():
                 return False
 
         headers = ('Plate', 'Row', 'Column')
 
-        #USING RAW PHENOTYPE DATA
+        # USING RAW PHENOTYPE DATA
         if data is None:
-            dataHeaders = tuple(
-                self.NAMES_OF_PHENOTYPES[i] for i in
-                sorted(self.NAMES_OF_PHENOTYPES.keys()))
-
+            data_headers = tuple(phenotype.name for phenotype in Phenotypes)
             self._logger.info("Using raw phenotypes")
             data = self.phenotypes
 
@@ -1102,109 +541,107 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         with open(path, 'w') as fh:
 
-            #SAVES OUT DATA AS NPY AS WELL
+            # SAVES OUT DATA AS NPY AS WELL
             np.save(path + ".npy", data)
 
-            #HEADER ROW
-            metaData = self._metaData
-            allHeadersSame = True
-            metaDataHeaders = tuple()
+            # HEADER ROW
+            meta_data = self._meta_data
+            all_headers_identical = True
+            meta_data_headers = tuple()
 
-            if metaData is not None:
+            if meta_data is not None:
                 self._logger.info("Using meta-data")
-                metaDataHeaders = metaData.getHeaderRow(0)
-                for plateI in range(1, len(data)):
-                    if metaDataHeaders != metaData.getHeaderRow(plateI):
-                        allHeadersSame = False
+                meta_data_headers = meta_data.getHeaderRow(0)
+                for plate_index in range(1, len(data)):
+                    if meta_data_headers != meta_data.getHeaderRow(plate_index):
+                        all_headers_identical = False
                         break
-                metaDataHeaders = tuple(metaDataHeaders)
+                meta_data_headers = tuple(meta_data_headers)
 
-            if allHeadersSame:
+            if all_headers_identical:
                 fh.write("{0}{1}".format(delim.join(
-                    map(str, headers + metaDataHeaders + dataHeaders)), newline))
+                    map(str, headers + meta_data_headers + data_headers)), newline))
 
-            #DATA
-            for plateI, plate in enumerate(data):
+            # DATA
+            for plate_index, plate in enumerate(data):
 
-                if not allHeadersSame:
+                if not all_headers_identical:
                     fh.write("{0}{1}".format(delim.join(
-                        map(str, headers + tuple(metaData.getHeaderRow(plateI)) +
-                            dataHeaders)), newline))
+                        map(str, headers + tuple(meta_data.getHeaderRow(plate_index)) +
+                            data_headers)), newline))
 
                 for idX, X in enumerate(plate):
 
                     for idY, Y in enumerate(X):
 
-                        if metaData is None:
+                        if meta_data is None:
                             fh.write("{0}{1}".format(delim.join(map(
-                                str, [plateI, idX, idY] + Y.tolist())), newline))
+                                str, [plate_index, idX, idY] + Y.tolist())), newline))
                         else:
                             fh.write("{0}{1}".format(delim.join(map(
-                                str, [plateI, idX, idY] + metaData(plateI, idX, idY)
-                                + Y.tolist())), newline))
+                                str, [plate_index, idX, idY] + meta_data(plate_index, idX, idY) +
+                                     Y.tolist())), newline))
 
-        self._logger.info("Saved csv absolute phenotypes to {0}".format(
-            path))
+        self._logger.info("Saved csv absolute phenotypes to {0}".format(path))
 
         return True
 
     @staticmethod
-    def _saveOverwriteAsk(path):
+    def _do_ask_overwrite(path):
         return raw_input("Overwrite '{0}' (y/N)".format(
             path)).strip().upper().startswith("Y")
 
-    def saveState(self, dirPath, askOverwrite=True):
+    def save_state(self, dir_path, ask_if_overwrite=True):
 
-        p = os.path.join(dirPath, self._paths.phenotypes_raw_npy)
-        if (not askOverwrite or not os.path.isfile(p) or
-                self._saveOverwriteAsk(p)):
+        p = os.path.join(dir_path, self._paths.phenotypes_raw_npy)
+        if (not ask_if_overwrite or not os.path.isfile(p) or
+                self._do_ask_overwrite(p)):
             np.save(p, self._phenotypes)
 
-        p = os.path.join(dirPath, self._paths.phenotypes_input_data)
-        if (not askOverwrite or not os.path.isfile(p) or
-                self._saveOverwriteAsk(p)):
-            np.save(p, self._source)
+        p = os.path.join(dir_path, self._paths.phenotypes_input_data)
+        if (not ask_if_overwrite or not os.path.isfile(p) or
+                self._do_ask_overwrite(p)):
+            np.save(p, self._raw_growth_data)
 
-        p = os.path.join(dirPath, self._paths.phenotypes_input_smooth)
-        if (not askOverwrite or not os.path.isfile(p) or
-                self._saveOverwriteAsk(p)):
-            np.save(p, self._dataObject)
+        p = os.path.join(dir_path, self._paths.phenotypes_input_smooth)
+        if (not ask_if_overwrite or not os.path.isfile(p) or
+                self._do_ask_overwrite(p)):
+            np.save(p, self._smooth_growth_data)
 
-        p = os.path.join(dirPath, self._paths.phenotypes_filter)
-        if (not askOverwrite or not os.path.isfile(p) or
-                self._saveOverwriteAsk(p)):
-            np.save(p, self._removeFilter)
+        p = os.path.join(dir_path, self._paths.phenotypes_filter)
+        if (not ask_if_overwrite or not os.path.isfile(p) or
+                self._do_ask_overwrite(p)):
+            np.save(p, self._removed_filter)
 
-        p = os.path.join(dirPath, self._paths.phenotype_times)
-        if (not askOverwrite or not os.path.isfile(p) or
-                self._saveOverwriteAsk(p)):
-            np.save(p, self._timeObject)
+        p = os.path.join(dir_path, self._paths.phenotype_times)
+        if (not ask_if_overwrite or not os.path.isfile(p) or
+                self._do_ask_overwrite(p)):
+            np.save(p, self._times_data)
 
-        p = os.path.join(dirPath, self._paths.phenotypes_extraction_params)
-        if (not askOverwrite or not os.path.isfile(p) or
-                self._saveOverwriteAsk(p)):
+        p = os.path.join(dir_path, self._paths.phenotypes_extraction_params)
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(
                 p,
-                [self._medianKernelSize,
-                 self._gaussSigma,
-                 self._linRegSize])
+                [self._median_kernel_size,
+                 self._gaussian_filter_sigma,
+                 self._linear_regression_size])
 
-        self._logger.info("State saved to '{0}'".format(dirPath))
+        self._logger.info("State saved to '{0}'".format(dir_path))
 
-    def saveInputData(self, path=None):
+    def save_input_data(self, path=None):
 
-        if (path is None):
+        if path is None:
 
-            assert self._baseName is not None, "Must give path some way"
+            assert self._base_name is not None, "Must give path some way"
 
-            path = self._baseName
+            path = self._base_name
 
-        if (path.endswith(".npy")):
+        if path.endswith(".npy"):
             path = path[:-4]
 
-        source = self._source
-        if (isinstance(source, xmlReader.XML_Reader)):
-            source = self._xmlReader2array(source)
+        source = self._raw_growth_data
+        if isinstance(source, xml_reader_module.XML_Reader):
+            source = self._xml_reader_2_array(source)
 
         np.save(path + ".data.npy", source)
-        np.save(path + ".times.npy", self._timeObject)
+        np.save(path + ".times.npy", self._times_data)

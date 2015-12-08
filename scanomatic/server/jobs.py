@@ -13,7 +13,7 @@ __status__ = "Development"
 #
 
 from multiprocessing import Pipe
-
+from types import StringTypes
 #
 # INTERNAL DEPENDENCIES
 #
@@ -55,7 +55,7 @@ class Jobs(SingeltonOneInit):
 
     def __contains__(self, key):
 
-        if isinstance(key, str):
+        if isinstance(key, StringTypes):
             return any(True for j in self._jobs if j.id == key)
 
         return key in self._jobs

@@ -16,6 +16,7 @@ import xmlrpclib
 import enum
 from subprocess import Popen
 import socket
+from types import StringTypes
 
 #
 # INTERNAL DEPENDENCIES
@@ -28,18 +29,20 @@ import scanomatic.io.logger as logger
 # METHODS
 #
 
-def santize_communication(obj):
+
+def sanitize_communication(obj):
 
     if isinstance(obj, dict):
-        return {k: santize_communication(v) for k, v in obj.iteritems() if v is not None}
+        return {k: sanitize_communication(v) for k, v in obj.iteritems() if v is not None}
     elif isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set):
-        return type(obj)(False if v is None else santize_communication(v) for v in obj)
+        return type(obj)(False if v is None else sanitize_communication(v) for v in obj)
     elif isinstance(obj, enum.Enum):
         return obj.name
     elif obj is None:
         return False
     else:
         return obj
+
 
 def get_client(host=None, port=None, admin=False, log_level=None):
 
@@ -125,8 +128,8 @@ class _ClientProxy(object):
             if self._userID is not None:
                 args = (self._userID,) + args
 
-            args = santize_communication(args)
-            kwargs = santize_communication(kwargs)
+            args = sanitize_communication(args)
+            kwargs = sanitize_communication(kwargs)
 
             self._logger.debug("Sanitized args {0} and kwargs {1}".format(args, kwargs))
 
@@ -151,6 +154,11 @@ class _ClientProxy(object):
                 return ("launch_local",)
 
         return retTup
+
+    @property
+    def working_on_job_or_has_queue(self):
+
+        return self.online and (self.get_job_status() or self.get_queue_status())
 
     @property
     def online(self):
@@ -184,7 +192,7 @@ class _ClientProxy(object):
     @host.setter
     def host(self, value):
 
-        if not isinstance(value, str):
+        if not isinstance(value, StringTypes):
             value = str(value)
 
         value = "{0}{1}".format(

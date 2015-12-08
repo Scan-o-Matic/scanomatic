@@ -22,6 +22,7 @@ import time
 import proc_effector
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
+from scanomatic.io.app_config import Config as AppConfig
 import scanomatic.dataProcessing.phenotyper as phenotyper
 from scanomatic.models.rpc_job_models import JOB_TYPE
 import scanomatic.models.factories.features_factory as feature_factory
@@ -52,7 +53,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
     @property
     def progress(self):
 
-        return self._progress is None and 1 or self._progress
+        return 1 if self._progress is None else self._progress
 
     def setup(self, job):
 
@@ -62,6 +63,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
         self._feature_job = job.content_model
+        self._job.content_model = self._feature_job
 
         if feature_factory.FeaturesFactory.validate(self._feature_job) is not True:
             self._logger.warning("Can't setup, instructions don't validate")
@@ -121,13 +123,24 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         if not self._running:
             if not self._stopping:
-                self._phenotyper.savePhenotypes(
+                self._phenotyper.save_phenotypes(
                     path=os.path.join(self._analysis_base_path,
                                       self._paths.phenotypes_raw_csv),
-                    askOverwrite=False)
+                    ask_if_overwrite=False)
 
-                self._phenotyper.saveState(self._analysis_base_path,
-                                           askOverwrite=False)
+                self._phenotyper.save_state(self._analysis_base_path,
+                                            ask_if_overwrite=False)
+
+            self._mail("Scan-o-Matic: Feature extraction of '{analysis_directory}' completed",
+                       """This is an automated email, please don't reply!
+
+The project '{analysis_directory}' on """ + AppConfig().computer_human_name +
+                       """ has completed. Downstream analysis exists. All is done.
+Hope you find cool results!
+
+All the best,
+
+Scan-o-Matic""", self._feature_job)
 
             raise StopIteration
 
@@ -136,10 +149,10 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
         self._start_time = time.time()
 
         self._phenotyper = phenotyper.Phenotyper(
-            dataObject=self._data,
-            timeObject=self._times,
+            raw_growth_data=self._data,
+            times_data=self._times,
             itermode=True)
 
-        self._phenotype_iterator = self._phenotyper.iterAnalyse()
+        self._phenotype_iterator = self._phenotyper.iterate_extraction()
         self._iteration_index = 1
         self._logger.info("Starting phenotype extraction")

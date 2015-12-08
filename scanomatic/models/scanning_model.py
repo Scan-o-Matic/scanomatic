@@ -161,6 +161,7 @@ class ScanningModelEffectorData(model.Model):
                  previous_scan_cycle_start=-1.0, current_scan_time=-1.0, scanner_model='',
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
                  compile_project_model=None, known_file_size=0, warned_file_size=False, warned_scanner_error=False,
+                 warned_terminated=False,
                  warned_scanner_usb=False, warned_discspace=False, informed_close_to_end=False,
                  compilation_state=COMPILE_STATE.NotInitialized):
 
@@ -183,6 +184,7 @@ class ScanningModelEffectorData(model.Model):
         self.warned_scanner_error = warned_scanner_error
         self.warned_scanner_usb = warned_scanner_usb
         self.warned_discspace = warned_discspace
+        self.warned_terminated = warned_terminated
         self.compilation_state = compilation_state
         self.informed_close_to_end = informed_close_to_end
 

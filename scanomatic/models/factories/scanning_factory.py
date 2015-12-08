@@ -1,4 +1,4 @@
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
 from scanomatic.models.scanning_model import ScanningModel, ScannerModel, ScanningAuxInfoModel, PlateDescription, \
     CULTURE_SOURCE, PLATE_STORAGE, ScannerOwnerModel
 import scanomatic.io.fixtures as fixtures
@@ -8,6 +8,7 @@ from scanomatic.models.rpc_job_models import RPCjobModel
 import os
 import re
 import string
+from types import StringTypes
 
 
 
@@ -47,7 +48,7 @@ class PlateDescriptionFactory(AbstractModelFactory):
         """
         :type model: scanomatic.models.scanning_model.PlateDescription
         """
-        if isinstance(model.name, str) and model.str:
+        if isinstance(model.name, StringTypes) and model.str:
             return True
         return model.FIELD_TYPES.name
 
@@ -56,7 +57,7 @@ class PlateDescriptionFactory(AbstractModelFactory):
         """
         :type model: scanomatic.models.scanning_model.PlateDescription
         """
-        if isinstance(model.description, str) and model.str:
+        if isinstance(model.description, StringTypes) and model.str:
             return True
         return model.FIELD_TYPES.description
 
@@ -195,9 +196,7 @@ class ScanningModelFactory(AbstractModelFactory):
         'scanner_tag': str,
         'description': str,
         'plate_descriptions': (tuple, PlateDescription),
-        'email': lambda enforce=None, serialize=None:
-        ([m.strip() for m in enforce.split(",")] if isinstance(enforce, str) else
-         (serialize if isinstance(serialize, str) else (", ".join(serialize) if isinstance(serialize, list) else enforce))),
+        'email': email_serializer,
         'pinning_formats': (tuple, tuple, int),
         'fixture': str,
         'scanner': int,
@@ -295,7 +294,7 @@ class ScanningModelFactory(AbstractModelFactory):
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
 
-        if isinstance(model.description, str):
+        if isinstance(model.description, StringTypes):
             return True
 
         return model.FIELD_TYPES.description
@@ -306,14 +305,18 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if isinstance(model.email, str):
-            email = [model.email]
+        if not model.email:
+            return True
+
+        if isinstance(model.email, StringTypes):
+            email = ",".split(model.email)
         else:
             email = model.email
 
         try:
             for address in email:
-                if not (isinstance(address, str) and (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', model.email))):
+                if not (isinstance(address, StringTypes) and
+                            (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', address))):
                     raise TypeError
             return True
         except TypeError:
@@ -420,7 +423,7 @@ class ScannerFactory(AbstractModelFactory):
         'usb': str,
         'power': bool,
         "expected_interval": float,
-        "email": str,
+        "email": email_serializer,
         "warned": bool,
         "owner": ScannerOwnerModel,
         "claiming": bool,

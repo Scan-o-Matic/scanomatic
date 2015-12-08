@@ -22,6 +22,7 @@ import copy
 import time
 from itertools import chain
 from enum import Enum
+from types import StringTypes
 
 #
 # INTERNAL DEPENDENCIES
@@ -56,6 +57,7 @@ class SCANNER_DATA(Enum):
     SANEBackend = 0
     Aliases = 1
     DefaultTransparencyWord = 2
+    WaitBeforeScan = 3
 
 
 class SCAN_FLAGS(Enum):
@@ -82,6 +84,7 @@ class SaneBase(object):
 
     _SETTINGS_REPOSITORY = {
         "EPSON V700": {
+            SCANNER_DATA.WaitBeforeScan: 0,
             SCANNER_DATA.SANEBackend: 'epson2',
             SCANNER_DATA.Aliases: ('GT-X900', 'V700'),
             SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
@@ -95,6 +98,7 @@ class SaneBase(object):
                 SCAN_FLAGS.Top: "0", SCAN_FLAGS.Width: "215.9", SCAN_FLAGS.Height: "297.18",
                 SCAN_FLAGS.Depth: "8"}},
         "EPSON V800": {
+            SCANNER_DATA.WaitBeforeScan: 5,
             SCANNER_DATA.SANEBackend: 'epson2',
             SCANNER_DATA.Aliases: ('GT-X980', 'V800'),
             SCANNER_DATA.DefaultTransparencyWord: 'TPU8x10',
@@ -117,7 +121,6 @@ class SaneBase(object):
         self._logger = Logger("SANE")
 
         self.next_file_name = None
-        self._scanner_name = None
 
         self._scan_settings = None
 
@@ -172,7 +175,7 @@ class SaneBase(object):
         if not model:
             return None
 
-        if isinstance(scan_mode, str):
+        if isinstance(scan_mode, StringTypes):
             scan_mode = scan_mode.upper()
             if scan_mode == "COLOUR":
                 scan_mode = "COLOR"
@@ -303,31 +306,51 @@ class SaneBase(object):
             filename = self.next_file_name
 
         if filename:
+
             self._logger.info("Scanning {0}".format(filename))
+            attempts = 0
+            max_attempts = 5
 
-            returncode = -1
+            while True:
 
-            try:
-                with open(filename, 'w') as im:
-                    if scanner:
-                        preprend_settings = {SCAN_FLAGS.Device: scanner}
-                    else:
-                        preprend_settings = None
+                attempts += 1
+                returncode = 0
+                stderr = ""
 
-                    scan_query = self._get_scan_instructions(prepend=preprend_settings)
-                    self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
+                try:
+                    with open(filename, 'w') as im:
+                        if scanner:
+                            preprend_settings = {SCAN_FLAGS.Device: scanner}
+                        else:
+                            preprend_settings = None
 
-                    scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
-                    _, stderr = scan_proc.communicate()
+                        scan_query = self._get_scan_instructions(prepend=preprend_settings)
+                        self._logger.info("Scan-query is:\n{0}".format(" ".join(scan_query)))
 
-                    returncode = scan_proc.returncode
+                        if SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan]:
+                            time.sleep(SaneBase._SETTINGS_REPOSITORY[self._model][SCANNER_DATA.WaitBeforeScan])
+                        elif attempts > 1:
+                            time.sleep(1)
 
-            except IOError:
-                self._logger.error("Could not write to file: {0}".format(filename))
+                        scan_proc = Popen(scan_query, stdout=im, stderr=PIPE, shell=False)
+                        _, stderr = scan_proc.communicate()
 
-            else:
-                if returncode:
-                    os.remove(filename)
+                        returncode = scan_proc.returncode
+
+                except IOError:
+                    self._logger.error("Could not write to file: {0}".format(filename))
+                    returncode = -1
+
+                else:
+
+                    if returncode:
+                        self._logger.critical("scanimage produced return-code {0}, attempt {1}/{2}".format(
+                            returncode, attempts, max_attempts))
+                        self._logger.critical("Standard error from scanimage:\n\n{0}\n\n".format(stderr))
+                        os.remove(filename)
+
+                if returncode <= 0 or attempts > max_attempts:
+                    break
 
             return returncode == 0
 

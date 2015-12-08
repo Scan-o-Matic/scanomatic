@@ -17,6 +17,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import fftconvolve
+from scipy.ndimage import center_of_mass
 
 #
 # INTERNAL DEPENDENCIES
@@ -42,6 +43,9 @@ class FixtureImage(object):
         self._transformed = False
         self._conversion_factor = 1.0 / scale
         self._logger = logger.Logger("Resource Image Analysis")
+
+        self._logger.info("Analysing image {0} using pattern file {1} and scale {2}".format(
+            path if path else (image.shape if image is not None else "NO IMAGE"), pattern_image_path, scale))
 
         if os.path.isfile(pattern_image_path) is False and resource_paths is not None:
 
@@ -129,30 +133,45 @@ class FixtureImage(object):
             self._img = imageBasics.Quick_Scale_To_im(conversion_factor)
             self._logger.info("Scaled")
 
-    def get_hit_refined(self, hit, conv_img):
+    def get_hit_refined(self, local_hit, conv_img, coordinates, gaussian_weight_size_fraction=2.0):
+        """
+        Use half-size to select area and give each pixel the weight of the convolution result of
+        that coordinate times the 2D gaussian value based on offset of distance to hit (sigma = ?).
 
-        #quarter_stencil = map(lambda x: x/8.0, stencil_size)
-        #m_hit = conv_img[(max_coord[0] - quarter_stencil[0] or 0):\
-            #(max_coord[0] + quarter_stencil[0] or conv_img.shape[0]),
-            #(max_coord[1] - quarter_stencil[1] or 0):\
-            #(max_coord[1] + quarter_stencil[1] or conv_img.shape[1])]
+        Refined hit is the hit + mass-center offset from hit
 
-        #mg = np.mgrid[:m_hit.shape[0],:m_hit.shape[1]]
-        #w_m_hit = m_hit*mg *m_hit.shape[0] * m_hit.shape[1] /\
-            #float(m_hit.sum())
-        #refinement = np.array((w_m_hit[0].mean(), w_m_hit[1].mean()))
-        #m_hit_max = np.where(m_hit == m_hit.max())
-        #print "HIT: {1}, REFINED HIT: {0}, VECTOR: {2}".format(
-            #refinement,
-            #(m_hit_max[0][0], m_hit_max[1][0]),
-            #(refinement - np.array([m_hit_max[0][0], m_hit_max[1][0]])))
+        :param hit:
+        :param conv_img:
+        :param half_stencil_size:
+        :return: refined hit
+        :rtype : (int, int)
+        """
 
-        #print "OLD POS", max_coord, " ",
-        #max_coord = (refinement - np.array([m_hit_max[0][0],
-            #m_hit_max[1][0]])) + max_coord
-        #print "NEW POS", max_coord, "\n"
+        def make_2d_guass_filter(size, fwhm, center):
+            """ Make a square gaussian kernel.
 
-        return hit
+            size is the length of a side of the square
+            fwhm is full-width-half-maximum, which
+            can be thought of as an effective radius.
+            """
+
+            x = np.arange(0, size, 1, float)
+            y = x[:,np.newaxis]
+
+            x0 = center[1]
+            y0 = center[0]
+
+            return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
+
+        image_slice = conv_img[coordinates['d0_min']: coordinates['d0_max'],
+                      coordinates['d1_min']: coordinates['d1_max']]
+
+        gauss_size = max(image_slice.shape)
+
+        gauss = make_2d_guass_filter(gauss_size, gauss_size / gaussian_weight_size_fraction, local_hit)
+
+        return np.array(center_of_mass(image_slice * gauss[: image_slice.shape[0], : image_slice.shape[1]])) - \
+            local_hit
 
     def get_convolution(self, threshold=127):
 
@@ -167,41 +186,40 @@ class FixtureImage(object):
 
         return fftconvolve(t_img, t_mrk, mode='same')
 
-    def get_best_location(self, conv_img, stencil_size, refine_hit=True):
+    def get_best_location(self, conv_img, stencil_size, refine_hit_gauss_weight_size_fraction=2.0):
         """This whas hidden and should be taken care of, is it needed"""
 
-        max_coord = np.where(conv_img == conv_img.max())
+        hit = np.where(conv_img == conv_img.max())
 
-        if len(max_coord[0]) == 0:
+        if len(hit[0]) == 0:
 
             return None, conv_img
 
-        max_coord = np.array((max_coord[0][0], max_coord[1][0]))
-
-        #Refining
-        if refine_hit:
-            max_coord = self.get_hit_refined(max_coord, conv_img)
+        hit = np.array((hit[0][0], hit[1][0]), dtype=float)
 
         #Zeroing out hit
-        half_stencil = map(lambda x: x / 2.0, stencil_size)
+        half_stencil_size = map(lambda x: x / 2.0, stencil_size)
 
-        d1_min = (max_coord[0] - half_stencil[0] > 0 and
-                  max_coord[0] - half_stencil[0] or 0)
+        coordinates = {'d0_min': max(0, hit[0] - half_stencil_size[0] - 1),
+                       'd0_max': min(conv_img.shape[0], hit[0] + half_stencil_size[0]),
+                       'd1_min': max(0, hit[1] - half_stencil_size[1] - 1),
+                       'd1_max': min(conv_img.shape[1], hit[1] + half_stencil_size[1])}
 
-        d1_max = (max_coord[0] + half_stencil[0] < conv_img.shape[0]
-                  and max_coord[0] + half_stencil[0] or conv_img.shape[0] - 1)
 
-        d2_min = (max_coord[1] - half_stencil[1] > 0 and
-                  max_coord[1] - half_stencil[1] or 0)
+        hit += self.get_hit_refined(hit - (coordinates['d0_min'], coordinates['d1_min']), conv_img, coordinates,
+                                    refine_hit_gauss_weight_size_fraction)
 
-        d2_max = (max_coord[1] + half_stencil[1] < conv_img.shape[1]
-                  and max_coord[1] + half_stencil[1] or conv_img.shape[1] - 1)
+        coordinates = {'d0_min': round(max(0, hit[0] - half_stencil_size[0] - 1)),
+                       'd0_max': round(min(conv_img.shape[0], hit[0] + half_stencil_size[0])),
+                       'd1_min': round(max(0, hit[1] - half_stencil_size[1] - 1)),
+                       'd1_max': round(min(conv_img.shape[1], hit[1] + half_stencil_size[1]))}
 
-        conv_img[d1_min: d1_max, d2_min:d2_max] = conv_img.min() - 1
+        conv_img[coordinates['d0_min']: coordinates['d0_max'],
+                 coordinates['d1_min']: coordinates['d1_max']] = conv_img.min() - 1
 
-        return max_coord, conv_img
+        return hit, conv_img
 
-    def get_best_locations(self, conv_img, stencil_size, n, refine_hit=True):
+    def get_best_locations(self, conv_img, stencil_size, n, refine_hit_gauss_weight_size_fraction=2.0):
         """This returns the best locations as a list of coordinates on the
         CURRENT IMAGE regardless of if it was scaled"""
 
@@ -215,8 +233,8 @@ class FixtureImage(object):
 
         while i < n:
 
-            m_loc, c_img = self.get_best_location(c_img, stencil_size,
-                                                  refine_hit)
+            m_loc, c_img = self.get_best_location(
+                c_img, stencil_size, refine_hit_gauss_weight_size_fraction)
 
             m_locations.append(m_loc)
 
@@ -234,7 +252,8 @@ class FixtureImage(object):
 
             m1 = np.array(self.get_best_locations(
                 c1, self._pattern_img.shape,
-                markings, refine_hit=False)) * self._conversion_factor
+                markings,
+                refine_hit_gauss_weight_size_fraction=3.5)) * self._conversion_factor
 
             try:
                 return m1[:, 1], m1[:, 0]

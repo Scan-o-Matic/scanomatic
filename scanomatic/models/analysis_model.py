@@ -38,7 +38,7 @@ class AnalysisModel(model.Model):
 
     def __init__(self, compilation="", compile_instructions="",
                  pinning_matrices=((32, 48), (32, 48), (32, 48), (32, 48)),
-                 use_local_fixture=False,
+                 use_local_fixture=False, email="",
                  stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
                  animate_focal=False, grid_images=None, grid_model=None, xml_model=None,
                  image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum, chain=True):
@@ -53,6 +53,7 @@ class AnalysisModel(model.Model):
         self.compile_instructions = compile_instructions
         self.pinning_matrices = pinning_matrices
         self.use_local_fixture = use_local_fixture
+        self.email = email
         self.stop_at_image = stop_at_image
         self.output_directory = output_directory
         self.focus_position = focus_position

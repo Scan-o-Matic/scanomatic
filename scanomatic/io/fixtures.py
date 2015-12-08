@@ -59,13 +59,6 @@ class FixtureSettings(object):
                 self._logger.error("Trying to load an outdated fixture at {0}, this won't work".format(self._conf_path))
             return FixtureFactory.create(path=self._conf_path, name=name)
 
-    def get_marker_position(self, index):
-
-        try:
-            return self.get_marker_positions()[index]
-        except (IndexError, TypeError):
-            return None
-
     def get_marker_positions(self):
 
         return zip(self.model.orientation_marks_x, self.model.orientation_marks_y)

@@ -12,6 +12,7 @@ __status__ = "Development"
 #   DEPENDENCIES
 #
 
+from types import StringTypes
 import odf.opendocument as opendocument
 import odf.table as table
 from odf.text import P
@@ -352,7 +353,7 @@ class Meta_Data_Base(object):
         KeyError
             If key not known
         """
-        if isinstance(obj, str):
+        if isinstance(obj, StringTypes):
             if hasattr(self, obj):
                 obj = getattr(self, obj)
             else:

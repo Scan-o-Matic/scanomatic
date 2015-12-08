@@ -1,22 +1,25 @@
 __author__ = 'martin'
 
 import os
+from types import StringTypes
 
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
 import scanomatic.models.features_model as features_model
+
 
 class FeaturesFactory(AbstractModelFactory):
 
     MODEL = features_model.FeaturesModel
     STORE_SECTION_HEAD = ("analysis_directory", )
     STORE_SECTION_SERIALIZERS = {
-        "analysis_directory": str
+        "analysis_directory": str,
+        "email": email_serializer
     }
 
     @classmethod
     def _validate_analysis_directory(cls, model):
 
-        if not isinstance(model.analysis_directory, str):
+        if not isinstance(model.analysis_directory, StringTypes):
             return model.FIELD_TYPES.analysis_directory
 
         analysis_directory = model.analysis_directory.rstrip("/")

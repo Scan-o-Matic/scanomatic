@@ -84,26 +84,6 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.VerifyDiskspace: self._do_verify_image_size
         }
 
-    def email(self, add=None, remove=None):
-
-        if add is not None:
-            try:
-                self._scanning_job.email += [add] if isinstance(add, str) else add
-            except TypeError:
-                return False
-
-            return True
-
-        elif remove is not None:
-
-            try:
-                self._scanning_job.email.remove(remove)
-            except (ValueError, AttributeError, TypeError):
-                return False
-            return True
-
-        return False
-
     @property
     def label(self):
 
@@ -230,6 +210,19 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_job,
                 self._scanning_effector_data.current_cycle_step,
                 self._scanning_effector_data.previous_scan_cycle_start))
+            if not self._scanning_effector_data.warned_terminated:
+                self._mail("Scan-o-Matic: Terminated project '{project_name}' by user",
+                           """This is an automated email, please don't reply!
+
+    The project '{project_name}' on scanner {scanner} on """ + AppConfig().computer_human_name +
+                           """ has been requested to be terminated by user and is therefore
+    shutting down.
+
+    All the best,
+
+    Scan-o-Matic""", self._scanning_job)
+
+                self._scanning_effector_data.warned_terminated = True
 
             if (self._scanning_effector_data.current_cycle_step.value in
                     (SCAN_CYCLE.RequestScanner, SCAN_CYCLE.RequestScannerOff, SCAN_CYCLE.ReportNotObtainedUSB,
@@ -358,6 +351,17 @@ Scan-o-Matic""", self._scanning_job)
                 return SCAN_STEP.NextMajor
             else:
                 self._logger.warning("Scan completed, but not successfully.")
+                self._mail("Scan-o-Matic: '{project_name}' error while scanning",
+                           """This is an automated email, please don't reply!
+
+Failed to scan image {0} """.format(self.current_image) + """ for '{project_name}'.
+
+All the best,
+
+Scan-o-Matic""", self._scanning_job)
+
+                self._scanning_effector_data.warned_scanner_error = True
+
                 return SCAN_STEP.NextMinor
 
         elif self._should_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
@@ -612,6 +616,10 @@ Scan-o-Matic""", self._scanning_job)
         """
         if self._scanning_job.fixture and self._scanning_effector_data.compilation_state is not COMPILE_STATE.Finalized:
 
+            self._scanning_effector_data.compile_project_model.email = self._scanning_job.email \
+                if self._scanning_effector_data.compile_project_model.compile_action in \
+                (COMPILE_ACTION.AppendAndSpawnAnalysis, COMPILE_ACTION.InitiateAndSpawnAnalysis) else []
+
             compile_job_id = self._rpc_client.create_compile_project_job(
                 compile_project_factory.CompileProjectFactory.to_dict(
                     self._scanning_effector_data.compile_project_model))
@@ -682,7 +690,8 @@ Scan-o-Matic""", self._scanning_job)
 
         self._logger.info("Got an usb port '{0}'".format(port))
         self._scanning_effector_data.scanner_model = scanner_model
-        self._scanner.model = scanner_model
+        if scanner_model:
+            self._scanner.model = scanner_model
         self._scanning_effector_data.usb_port = port
 
     def _add_scanned_image(self, index, time_stamp, path):

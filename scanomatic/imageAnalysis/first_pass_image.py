@@ -223,16 +223,6 @@ class FixtureImage(object):
         logger.debug(
             "Threading done (took: {0} s)".format(time.time() - t))
 
-    def _get_markings(self, source='reference'):
-
-        markers = self[source].get_marker_positions()
-
-        if markers:
-
-            return np.array(markers[0]), np.array(markers[1])
-
-        return None, None
-
     def run_marker_analysis(self, markings=None):
 
         _logger = self._logger
@@ -241,10 +231,11 @@ class FixtureImage(object):
         if markings is None:
             markings = len(self["fixture"].model.orientation_marks_x)
 
-        _logger.info("Running marker detection ({0} markers on {1})".format(markings, self.im_path))
-
         analysis_img = self._get_image_in_correct_scale(self.MARKER_DETECTION_DPI)
         scale_factor = self.get_dpi_factor_to_target(self.MARKER_DETECTION_DPI)
+
+        _logger.info("Running marker detection ({0} markers on {1} ({2}) using {3}, scale {4})".format(
+            markings, self.im_path, analysis_img.shape, self["reference"].get_marker_path(), scale_factor))
 
         im_analysis = imageFixture.FixtureImage(
             image=analysis_img,
@@ -430,7 +421,7 @@ class FixtureImage(object):
 
         for dim, keys in {1: ('x1', 'x2'), 0: ('y1', 'y2')}.items():
             for key in keys:
-                area[key] += offset[dim]
+                area[key] = round(area[key] + offset[dim])
                 if area[key] > self.EXPECTED_IM_SIZE[dim]:
                     self._logger.warning("{0} value ({1}) outside image, setting to img border".format(key, area[key]))
                     area[key] = self.EXPECTED_IM_SIZE[dim]

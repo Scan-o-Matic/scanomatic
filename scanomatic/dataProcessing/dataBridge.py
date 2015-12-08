@@ -59,7 +59,7 @@ class Data_Bridge(_mockNumpyInterface.NumpyArrayInterface):
     def _createArrayRepresentation(self, **kwargs):
 
         if isinstance(self._source, np.ndarray):
-            self._dataObject = self._source.copy()
+            self._smooth_growth_data = self._source.copy()
             self.updateSource = self._updateToArray
 
         elif isinstance(self._source, dict):
@@ -81,7 +81,7 @@ class Data_Bridge(_mockNumpyInterface.NumpyArrayInterface):
 
                                 plates[-1][-1][-1].append(value)
 
-            self._dataObject = np.array(plates)
+            self._smooth_growth_data = np.array(plates)
             self.updateSource = self._updateToFeatureDict
 
         elif isinstance(self._source, xmlReader.XML_Reader):
@@ -97,7 +97,7 @@ class Data_Bridge(_mockNumpyInterface.NumpyArrayInterface):
                 tmpD = []
                 for p in self._source.get_data().values():
                     tmpD.append(p[..., self._timeIndex, :].copy())
-                self._dataObject = np.array(tmpD)
+                self._smooth_growth_data = np.array(tmpD)
 
         else:
 
@@ -120,7 +120,7 @@ class Data_Bridge(_mockNumpyInterface.NumpyArrayInterface):
 
                         for valueKey in compartment:
 
-                            compartment[valueKey] = self._dataObject[
+                            compartment[valueKey] = self._smooth_growth_data[
                                 plateIndex, d1Index, d2Index, measureIndex]
 
                             measureIndex += 1
@@ -131,20 +131,20 @@ class Data_Bridge(_mockNumpyInterface.NumpyArrayInterface):
 
         for i, p in enumerate(self._source):
 
-            p[...] = self._dataObject[i]
+            p[...] = self._smooth_growth_data[i]
 
     def _updateToXMLreader(self):
         """Updates the source inplace"""
 
-        for plateIndex in self._dataObject.shape[0]:
+        for plateIndex in self._smooth_growth_data.shape[0]:
 
-            for d1 in self._dataObject[plateIndex].shape[0]:
+            for d1 in self._smooth_growth_data[plateIndex].shape[0]:
 
-                for d2 in self._dataObject[plateIndex].shape[1]:
+                for d2 in self._smooth_growth_data[plateIndex].shape[1]:
 
                     self._source.set_data_value(
                         plateIndex, d1, d2, self._timeIndex,
-                        self._dataObject[plateIndex][d1, d2])
+                        self._smooth_growth_data[plateIndex][d1, d2])
 
     def getSource(self):
         """Returns a reference to the source"""
@@ -154,14 +154,14 @@ class Data_Bridge(_mockNumpyInterface.NumpyArrayInterface):
     def getAsArray(self):
         """Returns the data as a normalisations compatible array"""
 
-        return self._dataObject
+        return self._smooth_growth_data
 
     def setArrayRepresentation(self, array):
         """Method for overwriting the array representation of the data"""
 
-        if (array.shape == self._dataObject.shape):
-            self._dataObject = array
+        if (array.shape == self._smooth_growth_data.shape):
+            self._smooth_growth_data = array
         else:
             raise Exception(
                 "New representation must match current shape: {0}".format(
-                    self._dataObject.shape))
+                    self._smooth_growth_data.shape))
