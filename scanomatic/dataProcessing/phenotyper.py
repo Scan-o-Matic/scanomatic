@@ -115,7 +115,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         assert median_kernel_size % 2 == 1, "Median kernel size must be odd"
         self._median_kernel_size = median_kernel_size
         self._gaussian_filter_sigma = gaussian_filter_sigma
-        self._liinear_regression_size = linear_regression_size
+        self._linear_regression_size = linear_regression_size
         self._itermode = itermode
         self._meta_data = None
 
@@ -315,20 +315,20 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def _calculate_phenotypes(self):
 
-        if self._times_data.shape[0] - (self._liinear_regression_size - 1) <= 0:
+        if self._times_data.shape[0] - (self._linear_regression_size - 1) <= 0:
             self._logger.error(
                 "Refusing phenotype extractions since number of scans are less than used in the linear regression")
             return
 
         times_strided = self.times_strided
 
-        flat_times = self._times_data.ravel()
+        flat_times = self._times_data
 
         index_for_48h = np.abs(np.subtract.outer(self._times_data, [48])).argmin()
 
         all_phenotypes = []
 
-        regression_size = self._liinear_regression_size
+        regression_size = self._linear_regression_size
         position_offset = (regression_size - 1) / 2
         phenotypes_count = self.number_of_phenotypes
         total_curves = float(self.number_of_curves)
@@ -384,8 +384,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return np.lib.stride_tricks.as_strided(
             plate,
             shape=(plate.shape[0] * plate.shape[1],
-                   plate.shape[2] - (self._liinear_regression_size - 1),
-                   self._liinear_regression_size),
+                   plate.shape[2] - (self._linear_regression_size - 1),
+                   self._linear_regression_size),
             strides=(plate.strides[1],
                      plate.strides[2], plate.strides[2]))
 
@@ -449,8 +449,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return np.lib.stride_tricks.as_strided(
             self._times_data,
-            shape=(self._times_data.shape[0] - (self._liinear_regression_size - 1),
-                   self._liinear_regression_size),
+            shape=(self._times_data.shape[0] - (self._linear_regression_size - 1),
+                   self._linear_regression_size),
             strides=(self._times_data.strides[0],
                      self._times_data.strides[0]))
 
@@ -624,7 +624,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 p,
                 [self._median_kernel_size,
                  self._gaussian_filter_sigma,
-                 self._liinear_regression_size])
+                 self._linear_regression_size])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
 
