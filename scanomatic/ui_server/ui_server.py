@@ -418,6 +418,19 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 return jsonify(scanner=None, success=False, reason="Unknown scanner or query '{0}'".format(
                     scanner_query))
 
+    @app.route("/server/<action>", methods=['post', 'get'])
+    def _server_actions(action=None):
+
+        if action == 'reboot':
+
+            if rpc_client.local and (request.args.get('force') == '1' or not rpc_client.working_on_job_or_has_queue):
+
+                rpc_client.shutdown()
+                time.sleep(5)
+                rpc_client.launch_local()
+                time.sleep(5)
+                return jsonify(success=rpc_client.online)
+
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():
 
