@@ -156,6 +156,11 @@ class _ClientProxy(object):
         return retTup
 
     @property
+    def working_on_job_or_has_queue(self):
+
+        return self.online and (self.get_job_status() or self.get_queue_status())
+
+    @property
     def online(self):
 
         if self._client is not None:
