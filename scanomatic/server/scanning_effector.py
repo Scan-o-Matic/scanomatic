@@ -26,18 +26,18 @@ from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.scanning_model import SCAN_CYCLE, SCAN_STEP, COMPILE_STATE, ScanningModelEffectorData
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
-from scanomatic.models.compile_project_model import COMPILE_ACTION
+from scanomatic.models.compile_project_model import COMPILE_ACTION, FIXTURE
 from scanomatic.io import scanner_manager
 from scanomatic.io import sane
 from scanomatic.io import paths
 from threading import Thread
 import scanomatic.io.rpc_client as rpc_client
 from scanomatic.models.factories import compile_project_factory
-from scanomatic.io import mail
 from scanomatic.io.app_config import Config as AppConfig
 
 JOBS_CALL_SET_USB = "set_usb"
 SECONDS_PER_MINUTE = 60.0
+MINUTES_PER_HOUR = 60.0
 
 FILE_SIZE_DEVIATION_ALLOWANCE = 0.2
 TOO_SMALL_SIZE = 1024 * 1024
@@ -65,7 +65,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
         self._scanning_job = job.content_model
         """:type : scanomatic.models.scanning_model.ScanningModel"""
-        self._job_label = "'{0}' on scanner {1}".format(self._scanning_job.project_name, self._scanning_job.scanner)
+
         self._scanning_effector_data = ScanningModelEffectorData()
         self._rpc_client = rpc_client.get_client(admin=True)
         self._scanner = None
@@ -84,21 +84,35 @@ class ScannerEffector(proc_effector.ProcessEffector):
             SCAN_CYCLE.VerifyDiskspace: self._do_verify_image_size
         }
 
+    @property
+    def label(self):
+
+        time_left = self.seconds_left / SECONDS_PER_MINUTE
+        if time_left > 90:
+            time_left = "{0:0.1f} h".format((time_left / MINUTES_PER_HOUR))
+        else:
+            time_left = "{0:0.0f} min".format(time_left)
+
+        return "'{0}' on scanner {1} (ETA: {2})".format(
+            self._scanning_job.project_name,
+            self._scanning_job.scanner,
+            time_left)
+
     def setup(self, job, redirect_logging=True):
 
         job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
         paths_object = paths.Paths()
         self._scanning_job.id = job.id
+        self._scanning_job.computer = AppConfig().computer_human_name
         self._setup_directory()
 
         if redirect_logging:
-            self._logger.info("{0} is setting up; logging will be directed to file".format(job))
-            self._logger.set_output_target(
-                os.path.join(self._project_directory,
-                             paths_object.scan_log_file_pattern.format(self._scanning_job.project_name)),
-                catch_stdout=True, catch_stderr=True)
+            file_path = os.path.join(
+                self._project_directory, paths_object.scan_log_file_pattern.format(self._scanning_job.project_name))
+            self._logger.info("{0} is setting up; logging will be directed to file {1}".format(job, file_path))
+            self._logger.set_output_target(file_path, catch_stdout=True, catch_stderr=True)
 
-            self._logger.surpress_prints = True
+            self._logger.surpress_prints = False
 
         self._logger.info("Doing setup")
 
@@ -109,8 +123,12 @@ class ScannerEffector(proc_effector.ProcessEffector):
         self._scanner = sane.SaneBase(scan_mode=self._scanning_job.mode, model=self._scanning_job.scanner_hardware)
 
         self._scanning_effector_data.compile_project_model = compile_project_factory.CompileProjectFactory.create(
-            compile_action=COMPILE_ACTION.Initiate,
-            path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job))
+            compile_action=COMPILE_ACTION.Initiate if self._scanning_job.number_of_scans > 1
+            else COMPILE_ACTION.InitiateAndSpawnAnalysis,
+            path=paths_object.get_project_settings_path_from_scan_model(self._scanning_job),
+            fixture_type=FIXTURE.Global,
+            fixture_name=self._scanning_job.fixture)
+
         self._scanning_effector_data.compile_project_model.images = []
 
         scan_project_file_path = os.path.join(
@@ -136,16 +154,32 @@ class ScannerEffector(proc_effector.ProcessEffector):
         else:
 
             # Actual duration is expected to be one less than the number of scans plus duration of first and last scan
-            # so 0.5 is a rough estimate
+            # so adding 30 seconds to expected runtime
 
-            return run_time / ((self._scanning_job.number_of_scans - 0.5)
-                               * self._scanning_job.time_between_scans * SECONDS_PER_MINUTE)
+            return run_time / ((self._scanning_job.number_of_scans - 1)
+                               * self._scanning_job.time_between_scans * SECONDS_PER_MINUTE - 30)
 
     @property
-    def time_left(self):
+    def seconds_left(self):
+        """Calculates the remaining time
 
-        return ((self._scanning_job.number_of_scans - self._scanning_effector_data.current_image) *
-                self._scanning_job.time_between_scans - self.time_since_last_scan)
+        Note that the -1 is because it is the interval that should be calculated rather than the actual time.
+        Max is used to guarantee not running into negative times on the last image
+
+        :return: time left
+        """
+        global SECONDS_PER_MINUTE
+
+        if self._scanning_effector_data.current_image is None:
+            return 0
+
+        progress = self.progress
+        if not progress:
+            return 0
+
+        run_time = self.run_time
+
+        return max(run_time / progress - progress - self.time_since_last_scan, 0)
 
     @property
     def total_images(self):
@@ -176,6 +210,26 @@ class ScannerEffector(proc_effector.ProcessEffector):
                 self._scanning_job,
                 self._scanning_effector_data.current_cycle_step,
                 self._scanning_effector_data.previous_scan_cycle_start))
+            if not self._scanning_effector_data.warned_terminated:
+                self._mail("Scan-o-Matic: Terminated project '{project_name}' by user",
+                           """This is an automated email, please don't reply!
+
+    The project '{project_name}' on scanner {scanner} on """ + AppConfig().computer_human_name +
+                           """ has been requested to be terminated by user and is therefore
+    shutting down.
+
+    All the best,
+
+    Scan-o-Matic""", self._scanning_job)
+
+                self._scanning_effector_data.warned_terminated = True
+
+            if (self._scanning_effector_data.current_cycle_step.value in
+                    (SCAN_CYCLE.RequestScanner, SCAN_CYCLE.RequestScannerOff, SCAN_CYCLE.ReportNotObtainedUSB,
+                     SCAN_CYCLE.ReportScanError, SCAN_CYCLE.Scan, SCAN_CYCLE.WaitForScanComplete, SCAN_CYCLE.WaitForUSB
+                     )):
+
+                self._do_request_scanner_off()
 
             if self.current_image == 0:
                 self._scanning_effector_data.current_image = None
@@ -184,7 +238,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
             self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.Wait
 
-        if (not self._scanning_effector_data.informed_close_to_end and self.time_left / 60.0 <
+        if (not self._scanning_effector_data.informed_close_to_end and self.seconds_left / 60.0 <
                 AppConfig().mail_scanning_done_minutes_before):
 
             self._do_report_scanning_soon_done()
@@ -266,7 +320,7 @@ The project '{project_name}' now manages to power up scanner {scanner} again.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
             return SCAN_STEP.NextMajor
         elif self._should_continue_waiting(self.WAIT_FOR_USB_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
@@ -293,14 +347,29 @@ The project '{project_name}' now managed to successfully scan an image again.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
                 return SCAN_STEP.NextMajor
             else:
+                self._logger.warning("Scan completed, but not successfully.")
+                self._mail("Scan-o-Matic: '{project_name}' error while scanning",
+                           """This is an automated email, please don't reply!
+
+Failed to scan image {0} """.format(self.current_image) + """ for '{project_name}'.
+
+All the best,
+
+Scan-o-Matic""", self._scanning_job)
+
+                self._scanning_effector_data.warned_scanner_error = True
+
                 return SCAN_STEP.NextMinor
 
         elif self._should_continue_waiting(self.WAIT_FOR_SCAN_TOLERANCE_FACTOR):
             return SCAN_STEP.Wait
         else:
+            self._logger.warning("Giving up waiting for scan (taking too long, {0} min)".format(
+                self.scan_cycle_step_duration / 60.0))
+
             return SCAN_STEP.NextMinor
 
     @property
@@ -318,7 +387,8 @@ Scan-o-Matic""")
             self._mail("Scan-o-Matic: Project '{project_name}' error while scanning",
                        """This is an automated email, please don't reply!
 
-The project '{project_name}' reports an error while scanning.
+The project '{project_name}' on ''""" + AppConfig().computer_human_name +
+                       """' reports an error while scanning.
 Please hurry to correct this so that the project won't be spoiled.
 
 The scanning project will attempt a new scan in {time_between_scans} minutes,
@@ -328,7 +398,7 @@ Instead you will be notified when/if error is resolved.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.NextMajor
 
@@ -342,7 +412,8 @@ Scan-o-Matic""")
             self._mail("Scan-o-Matic: Project '{project_name}' could not acquire its Scanner",
                        """This is an automated email, please don't reply!
 
-The project '{project_name}' could not get scanner {scanner} powered up.
+The project '{project_name}' on ''""" + AppConfig().computer_human_name +
+                       """' could not get scanner {scanner} powered up.
 Please hurry to correct this so that the project won't be spoiled.
 
 The scanning project will attempt a new scan in {time_between_scans} minutes,
@@ -352,7 +423,7 @@ Instead you will be notified when/if error is resolved.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.TruncateIteration
 
@@ -399,7 +470,7 @@ Scan-o-Matic""")
                 self._mail("Scan-o-Matic: Project '{project_name}' got suspicious image",
                            """This is an automated email, please don't reply!
 
-The project '{project_name}' got an image of very small size.
+The project '{project_name}' on ''""" + AppConfig().computer_human_name + """' got an image of very small size.
 
 """ + "{0}:\t{1} bytes\n".format(self._scanning_effector_data.current_image_path, current_size) + """
 
@@ -410,7 +481,7 @@ Several reasons are probable:
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
             return SCAN_STEP.TruncateIteration
 
@@ -426,7 +497,7 @@ Scan-o-Matic""")
                 self._mail("Scan-o-Matic: Project '{project_name}' got suspicious image",
                            """This is an automated email, please don't reply!
 
-The project '{project_name}' got an image of unexpected size.
+The project '{project_name}' on ''""" + AppConfig().computer_human_name + """' got an image of unexpected size.
 
 """ + "{0}:\t{1} bytes\n\n".format(self._scanning_effector_data.current_image_path, current_size) +
                            "Previously, the largest size was {0}, such deviations aren't expected.".format(
@@ -438,7 +509,7 @@ Several reasons are probable:
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
             return SCAN_STEP.TruncateIteration
 
@@ -452,7 +523,7 @@ The project '{project_name}' got image of expected size again! Yay.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         self._scanning_effector_data.known_file_size = largest_known_size
         return SCAN_STEP.NextMinor
@@ -485,7 +556,8 @@ Scan-o-Matic""")
                 self._mail("Scan-o-Matic: Project '{project_name}' may not have enough disc space",
                            """This is an automated email, please don't reply!
 
-The project '{project_name}' is reporting that the remaining space the
+The project '{project_name}' on ''""" + AppConfig().computer_human_name +
+                           """' is reporting that the remaining space the
 drive it is saving its data to may not be enough for the remainder of the project
 to complete.
 
@@ -499,26 +571,27 @@ No further warnings about disc space will be sent for this project.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
         return SCAN_STEP.NextMajor
 
     def _do_report_scanning_soon_done(self):
 
         self._scanning_effector_data.informed_close_to_end = True
-        self._mail("Scan-o-Matic: Project '{project_name}' scanning is soon done.",
+        self._mail("Scan-o-Matic: Project '{project_name}' on scanning is soon done.",
                    """This is an automated email, please don't reply!
 
-The project '{project_name}' is reporting that it will soon stop using scanner {scanner} and launch
+The project '{project_name} on ''""" + AppConfig().computer_human_name +
+                   """' is reporting that it will soon stop using scanner {scanner} and launch
 the automatic analysis.
 
-""" + "Scanning estimated to end in {0:0.f} minutes".format(self.time_left / 60.) + """
+""" + "Scanning estimated to end in {0:0.0f} minutes".format(self.seconds_left / 60.) + """
 
 It's a great time to start preparing the next experiment.
 
 All the best,
 
-Scan-o-Matic""")
+Scan-o-Matic""", self._scanning_job)
 
     def _do_request_scanner_on(self):
 
@@ -528,6 +601,7 @@ Scan-o-Matic""")
 
     def _do_request_scanner_off(self):
 
+        time.sleep(5)
         self._logger.info("Job {0} requested scanner off".format(self._scanning_job.id))
         self.pipe_effector.send(scanner_manager.JOB_CALL_SCANNER_REQUEST_OFF, self._scanning_job.id)
         self._scanning_effector_data.usb_port = ""
@@ -541,6 +615,10 @@ Scan-o-Matic""")
                 the setup-method.
         """
         if self._scanning_job.fixture and self._scanning_effector_data.compilation_state is not COMPILE_STATE.Finalized:
+
+            self._scanning_effector_data.compile_project_model.email = self._scanning_job.email \
+                if self._scanning_effector_data.compile_project_model.compile_action in \
+                (COMPILE_ACTION.AppendAndSpawnAnalysis, COMPILE_ACTION.InitiateAndSpawnAnalysis) else []
 
             compile_job_id = self._rpc_client.create_compile_project_job(
                 compile_project_factory.CompileProjectFactory.to_dict(
@@ -565,7 +643,8 @@ Scan-o-Matic""")
                 else:
                     self._scanning_effector_data.compile_project_model.compile_action = COMPILE_ACTION.Append
                 self._scanning_effector_data.compile_project_model.start_condition = compile_job_id
-                self._scanning_effector_data.compile_project_model.images.clear()
+                while self._scanning_effector_data.compile_project_model.images:
+                    self._scanning_effector_data.compile_project_model.images.pop()
                 self._logger.info("Job {0} created compile project job".format(self._scanning_job.id))
             else:
                 self._logger.warning("Failed to create a compile project job, refused by server")
@@ -607,9 +686,12 @@ Scan-o-Matic""")
         return os.path.join(self._scanning_job.directory_containing_project.rstrip(os.sep),
                             self._scanning_job.project_name)
 
-    def _set_usb_port(self, port):
+    def _set_usb_port(self, port, scanner_model):
 
         self._logger.info("Got an usb port '{0}'".format(port))
+        self._scanning_effector_data.scanner_model = scanner_model
+        if scanner_model:
+            self._scanner.model = scanner_model
         self._scanning_effector_data.usb_port = port
 
     def _add_scanned_image(self, index, time_stamp, path):
@@ -618,24 +700,3 @@ Scan-o-Matic""")
             index=index, time_stamp=time_stamp, path=path)
 
         self._scanning_effector_data.compile_project_model.images.append(image_model)
-
-    def _mail(self, title_template, message_template):
-
-        def _do_mail(title, message, scanning_job_model):
-
-            if not scanning_job_model.email:
-                return
-
-            if AppConfig().mail_server:
-                server = mail.get_server(AppConfig().mail_server, smtp_port=AppConfig().mail_port,
-                                         login=AppConfig().mail_user, password=AppConfig().mail_password)
-            else:
-                server = None
-
-            mail.mail(scanning_job_model.email if AppConfig().mail_user is None else AppConfig().mail_user,
-                      scanning_job_model.email,
-                      title.format(**scanning_job_model),
-                      message.format(**scanning_job_model),
-                      server=server)
-
-        Thread(target=_do_mail, args=(title_template, message_template, self._scanning_job)).start()

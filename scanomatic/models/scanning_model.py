@@ -82,7 +82,7 @@ class ScanningModel(model.Model):
                  project_name="", directory_containing_project="",
                  project_tag="", scanner_tag="", id="", start_time=0.0,
                  description="", email="", pinning_formats=tuple(),
-                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU",
+                 fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU", computer="",
                  auxillary_info=ScanningAuxInfoModel(),
                  plate_descriptions=tuple(),
                  version=__version__):
@@ -97,11 +97,13 @@ class ScanningModel(model.Model):
         self.description = description
         self.plate_descriptions = plate_descriptions
         self.email = email
+        """:type : str or [str]"""
         self.pinning_formats = pinning_formats
         self.fixture = fixture
         self.scanner = scanner
         self.scanner_hardware = scanner_hardware
         self.mode = mode
+        self.computer = computer
         self.start_time = start_time
         self.auxillary_info = auxillary_info
         self.version = version
@@ -123,13 +125,23 @@ class PlateDescription(model.Model):
 
 class ScannerOwnerModel(model.Model):
 
-    def __init__(self, socket=-1, scanner_name="", owner=None, usb="", power=False, last_on=-1, last_off=-1,
+    def __init__(self, id=None, pid=0):
+
+        self.id = id
+        self.pid = pid
+        super(ScannerOwnerModel, self).__init__()
+
+
+class ScannerModel(model.Model):
+
+    def __init__(self, socket=-1, scanner_name="", owner=None, usb="", model='', power=False, last_on=-1, last_off=-1,
                  expected_interval=0, email="", warned=False, claiming=False, reported=False):
 
         self.socket = socket
         self.scanner_name = scanner_name
         self.usb = usb
         self.power = power
+        self.model = model
         self.last_on = last_on
         self.last_off = last_off
         self.expected_interval = expected_interval
@@ -139,16 +151,17 @@ class ScannerOwnerModel(model.Model):
         self.claiming = claiming
         self.reported = reported
 
-        super(ScannerOwnerModel, self).__init__()
+        super(ScannerModel, self).__init__()
 
 
 class ScanningModelEffectorData(model.Model):
 
     def __init__(self, current_cycle_step=SCAN_CYCLE.Wait, current_step_start_time=-1, current_image=-1,
                  current_image_path="", current_image_path_pattern="",
-                 previous_scan_cycle_start=-1.0, current_scan_time=-1.0,
+                 previous_scan_cycle_start=-1.0, current_scan_time=-1.0, scanner_model='',
                  scanning_image_name="", usb_port="", scanning_thread=None, scan_success=False,
                  compile_project_model=None, known_file_size=0, warned_file_size=False, warned_scanner_error=False,
+                 warned_terminated=False,
                  warned_scanner_usb=False, warned_discspace=False, informed_close_to_end=False,
                  compilation_state=COMPILE_STATE.NotInitialized):
 
@@ -163,6 +176,7 @@ class ScanningModelEffectorData(model.Model):
         self.scan_success = scan_success
         self.scanning_image_name = scanning_image_name
         self.usb_port = usb_port
+        self.scanner_model = scanner_model
         self.compile_project_model = compile_project_model
         """:type : scanomatic.models.compile_project_model.CompileInstructionsModel"""
         self.known_file_size = known_file_size
@@ -170,6 +184,7 @@ class ScanningModelEffectorData(model.Model):
         self.warned_scanner_error = warned_scanner_error
         self.warned_scanner_usb = warned_scanner_usb
         self.warned_discspace = warned_discspace
+        self.warned_terminated = warned_terminated
         self.compilation_state = compilation_state
         self.informed_close_to_end = informed_close_to_end
 

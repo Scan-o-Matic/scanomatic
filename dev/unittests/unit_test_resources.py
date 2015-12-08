@@ -107,7 +107,7 @@ class Test_Image_Grayscale(unittest.TestCase):
 
     def test_get_grayscale_X(self):
 
-        gs_X = self.ag.get_grayscale_X()
+        gs_X = self.ag.get_grayscale_x()
 
         self.assertNotEqual(gs_X, None)
 
@@ -115,7 +115,7 @@ class Test_Image_Grayscale(unittest.TestCase):
 
     def test_get_grayscale(self):
 
-        gs_pos, gs_val = self.ag.get_grayscale()
+        gs_pos, gs_val = self.ag.detect_grayscale()
 
         self.assertEqual(len(gs_pos), len(gs_val))
         self.assertEqual(len(gs_pos), self.ag._grayscale_sections)

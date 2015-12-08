@@ -13,9 +13,9 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-from subprocess import Popen, PIPE
-import re
 import psutil
+import time
+from enum import Enum
 
 #
 # INTERNAL DEPENDENCIES
@@ -25,21 +25,22 @@ import scanomatic.io.app_config as app_config
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 import scanomatic.io.fixtures as fixtures
-from scanomatic.models.factories.scanning_factory import ScannerOwnerFactory
+from scanomatic.models.factories.scanning_factory import ScannerFactory
 from scanomatic.io.power_manager import InvalidInit, PowerManagerNull
 import scanomatic.generics.decorators as decorators
 from scanomatic.generics.singleton import SingeltonOneInit
-
-
-def get_alive_scanners():
-
-    p = Popen(["scanimage", "-L"], shell=False, stdout=PIPE, stderr=PIPE)
-    stdout, _ = p.communicate()
-    return re.findall(r'device[^\`]*.(.*libusb[^\`\']*)', stdout)
+from scanomatic.io.sane import get_alive_scanners
 
 
 JOB_CALL_SCANNER_REQUEST_ON = "request_scanner_on"
 JOB_CALL_SCANNER_REQUEST_OFF = "request_scanner_off"
+
+
+class STATE(Enum):
+
+    Unknown = 0
+    Reported = 1
+    Resolved = 2
 
 
 class ScannerPowerManager(SingeltonOneInit):
@@ -52,16 +53,19 @@ class ScannerPowerManager(SingeltonOneInit):
         self._fixtures = fixtures.Fixtures()
         self._orphan_usbs = set()
 
-        self._scanners = self._get_scanner_owners_from_file()
+        self._scanners = self._initiate_scanners()
         self._pm = self._get_power_manager(self._scanners)
         self._scanner_queue = []
+
+        self._reported_sane_missing = STATE.Unknown
+
         decorators.register_type_lock(self)
 
     def __getitem__(self, item):
 
         """
 
-        :rtype : scanomatic.models.scanning_model.ScannerOwnerModel
+        :rtype : scanomatic.models.scanning_model.ScannerModel
         """
         if isinstance(item, int):
             return self._scanners[item]
@@ -73,22 +77,25 @@ class ScannerPowerManager(SingeltonOneInit):
 
         :rtype : bool
         """
-        try:
-            return self[item] is not None
-        except IndexError:
-            return False
+        if isinstance(item, int):
+            return any(scanner_id == item for scanner_id in self._scanners)
+        else:
+            return any(scanner.name == item if scanner else False for scanner in self._scanners.itervalues())
 
-    def _get_scanner_owners_from_file(self):
+    def _initiate_scanners(self):
 
         scanners = {}
 
-        for scanner in ScannerOwnerFactory.serializer.load(self._paths.config_scanners):
+        # Load saved scanner data
+        for scanner in ScannerFactory.serializer.load(self._paths.config_scanners):
 
-            scanners[scanner.socket] = scanner
+            if 0 < scanner.socket <= self._conf.number_of_scanners:
+                scanners[scanner.socket] = scanner
 
+        # Create free scanners for those missing previous data
         for socket in self._enumerate_scanner_sockets():
             if socket not in scanners:
-                scanner = ScannerOwnerFactory.create(socket=socket, scanner_name=self._conf.get_scanner_name(socket))
+                scanner = ScannerFactory.create(socket=socket, scanner_name=self._conf.get_scanner_name(socket))
                 scanners[scanner.socket] = scanner
 
         self._logger.info("Scanners inited: {0}".format(scanners))
@@ -98,25 +105,28 @@ class ScannerPowerManager(SingeltonOneInit):
     def _enumerate_scanner_sockets(self):
 
         for power_socket in range(self._conf.number_of_scanners):
-            yield power_socket
+            yield power_socket + 1
 
     def _get_power_manager(self, scanners):
-
+        """
+        :rtype : {int : scanomatic.io.power_manager.PowerManagerNull}
+        """
         pm = {}
-        for power_socket in scanners:
+        for scanner in scanners.itervalues():
 
             try:
-                pm[power_socket] = self._conf.get_pm(power_socket)
+                pm[scanner.socket] = self._conf.get_pm(scanner.socket)
             except InvalidInit:
-                self._logger.error("Failed to init socket {0}".format(power_socket))
-                pm[power_socket] = PowerManagerNull(power_socket)
+                self._logger.error("Failed to init socket {0}".format(scanner.socket))
+                pm[scanner.socket] = PowerManagerNull(scanner.socket)
 
-        self._logger.info("Power Managers inited {0}".format(pm))
+            self._logger.info("Power Manager {0} inited for scanner {1}".format(pm[scanner.socket], scanner))
+
         return pm
 
-    def _save(self, scanner_owner_model):
+    def _save(self, scanner_model):
 
-        ScannerOwnerFactory.serializer.dump(scanner_owner_model, self._paths.config_scanners)
+        ScannerFactory.serializer.dump(scanner_model, self._paths.config_scanners)
 
     def _rescue(self, available_usbs, active_usbs):
 
@@ -135,8 +145,9 @@ class ScannerPowerManager(SingeltonOneInit):
 
                     self._save(scanner)
 
-    def _match_scanners(self, active_usbs):
+    def _match_scanners(self, alive_scanners):
 
+        active_usbs, active_models = zip(*alive_scanners)
         self._trim_no_longer_active_orphan_uabs(active_usbs)
         available_usbs = self._get_non_orphan_usbs(active_usbs)
         unknown_usbs = self._remove_known_usbs(available_usbs)
@@ -148,13 +159,19 @@ class ScannerPowerManager(SingeltonOneInit):
             self._rescue(unknown_usbs, active_usbs)
             return False
 
-        self._assign_usb_to_claim(unknown_usbs)
+        usb = unknown_usbs.pop()
+        scanner_model = tuple(name for u, name in alive_scanners if u == usb)[0]
+
+        self._assign_usb_to_claim(usb, scanner_model)
 
         return True
 
     @property
     def _claimer(self):
+        """
 
+        :return: scanomatic.models.scanning_model.ScannerModel
+        """
         for scanner in self._scanners.values():
             if scanner.claiming:
                 return scanner
@@ -168,13 +185,15 @@ class ScannerPowerManager(SingeltonOneInit):
             return False
         return True
 
-    def _assign_usb_to_claim(self, unknown_usbs):
+    def _assign_usb_to_claim(self, usb, model_name):
 
         scanner = self._claimer
-        scanner.usb = unknown_usbs.pop()
-        scanner.claiming = False
-        scanner.reported = False
-        self._save(scanner)
+        if usb:
+            scanner.model = model_name
+            scanner.usb = usb
+            scanner.claiming = False
+            scanner.reported = False
+            self._save(scanner)
 
     def _set_usb_to_scanner_that_could_be_on(self, usb):
 
@@ -224,7 +243,7 @@ class ScannerPowerManager(SingeltonOneInit):
             if scanner.usb:
                 return scanner.usb
             else:
-                self._logger.info("Scanner {0} requested to be turned on by {1}.".format(scanner.socket, job_id))
+                self._logger.info("Requested socket {0} to be turned on (By {1}).".format(scanner.socket, job_id))
                 return self._add_to_claim_queue(scanner)
 
         else:
@@ -239,6 +258,7 @@ class ScannerPowerManager(SingeltonOneInit):
             self._scanner_queue.append(scanner)
         return True
 
+    @decorators.type_lock
     def request_off(self, job_id):
 
         scanner = self._get_scanner_by_owner_id(job_id)
@@ -248,7 +268,7 @@ class ScannerPowerManager(SingeltonOneInit):
                 "Can't turn off scanner for unknown job {1}".format(job_id))
             return False
 
-        self._logger.info("Scanner {0} requested to be turned on by {1}.".format(scanner.socket, job_id))
+        self._logger.info("Requested socket {0} to be turned off (By {1}).".format(scanner.socket, job_id))
         if self._power_down(scanner):
             self._save(scanner)
             return True
@@ -263,6 +283,7 @@ class ScannerPowerManager(SingeltonOneInit):
             scanner.power = False
             scanner.claiming = False
             scanner.reported = True
+            scanner.last_off = time.time()
 
         return success
 
@@ -276,11 +297,11 @@ class ScannerPowerManager(SingeltonOneInit):
                 scanner_name))
             return False
 
-        scanner_owner_model = self._scanners[scanner]
+        scanner_model = self._scanners[scanner]
 
-        if scanner_owner_model.owner and scanner_owner_model.owner.id != rpc_job_model.id:
+        if scanner_model.owner and scanner_model.owner.id != rpc_job_model.id:
 
-            if psutil.pid_exists(scanner_owner_model.owner.pid):
+            if psutil.pid_exists(scanner_model.owner.pid):
 
                 self._logger.warning("Trying to claim {0} when claimed".format(
                     scanner_name))
@@ -291,18 +312,24 @@ class ScannerPowerManager(SingeltonOneInit):
                     "Releasing {0} since owner process is dead".format(
                         scanner_name))
 
-                self._power_down(scanner_owner_model)
+                self._power_down(scanner_model)
 
-        scanner_owner_model.owner = rpc_job_model
-        self._logger.info("Acquire scanner successful, owner set to {0}".format(scanner_owner_model.owner))
+        scanner_model.owner = rpc_job_model
+        scanner_model.expected_interval = rpc_job_model.content_model.time_between_scans
+        scanner_model.email = rpc_job_model.content_model.email
+        self._logger.info("Acquire scanner successful, owner set to {0} (mail {1})".format(
+            scanner_model.owner, scanner_model.email))
 
-        self._save(scanner_owner_model)
+        self._save(scanner_model)
 
         return True
 
     def release_scanner(self, job_id):
 
         scanner = self._get_scanner_by_owner_id(job_id)
+        if not scanner:
+            return False
+
         if scanner.power or scanner.usb:
             self._power_down(scanner)
 
@@ -317,21 +344,31 @@ class ScannerPowerManager(SingeltonOneInit):
         scanners = [scanner for scanner in self._scanners.values() if scanner.owner and scanner.owner.id == job_id]
         if scanners:
             return scanners[0]
-        self._logger.warning("Job id '{0}' unknown known claims on scanners are {1}".format(
+        self._logger.warning("Job id '{0}' has no registered claim on any scanner. Known claims are {1}".format(
             job_id, [scanner.owner.id for scanner in self._scanners.values() if scanner.owner]))
         return None
 
-    def update(self):
+    def update(self, synch_from_file=False):
+
+        if synch_from_file:
+            self._scanners = self._initiate_scanners()
 
         self._manage_claimer()
         try:
             alive_scanners = get_alive_scanners()
+            if self._reported_sane_missing is STATE.Reported:
+                self._logger.info("SANE is now accessible but need restart to detect scanners")
+                self._reported_sane_missing = STATE.Resolved
+
         except OSError:
             self._pm.clear()
             self._scanners.clear()
-            self._logger.warning("SANE is not installed, server can't scan")
+            if self._reported_sane_missing is not STATE.Reported:
+                self._logger.warning("SANE is not installed, server can't scan")
+            self._reported_sane_missing = STATE.Reported
         else:
-            return self._match_scanners(alive_scanners)
+            if alive_scanners:
+                return self._match_scanners(alive_scanners)
 
     @decorators.type_lock
     def _manage_claimer(self):
@@ -347,6 +384,7 @@ class ScannerPowerManager(SingeltonOneInit):
         if claimer and not claimer.power:
 
             claimer.power = self._pm[self._claimer.socket].powerUpScanner()
+            claimer.last_on = time.time()
             self._save(claimer)
 
     def has_fixture(self, fixture_name):
@@ -371,9 +409,14 @@ class ScannerPowerManager(SingeltonOneInit):
                 for scanner_socket in self._pm}
 
     @property
+    def pm_types(self):
+
+        return {pm.socket: {'mode': pm.power_mode, 'type': type(pm)} for pm in self._pm.itervalues()}
+
+    @property
     def has_scanners(self):
         reachable_pms = any(type(pm) is not PowerManagerNull for pm in self._pm.values())
-        self._logger.info("Power Manager {0} is reachable? {1}".format(self._pm, reachable_pms))
+        self._logger.info("Power Manager {0} is reachable? {1}".format(self.pm_types, reachable_pms))
         return self._pm and reachable_pms
 
     @property
@@ -388,4 +431,5 @@ class ScannerPowerManager(SingeltonOneInit):
     @property
     def non_reported_usbs(self):
 
-        return (scanner for scanner in self._scanners.values() if scanner.usb and not scanner.reported)
+        return (scanner for scanner in self._scanners.itervalues()
+                if scanner.owner and scanner.usb and not scanner.reported)

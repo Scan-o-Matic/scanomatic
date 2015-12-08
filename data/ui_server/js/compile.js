@@ -20,7 +20,7 @@ function Compile(button) {
         method: "POST",
         data: {local: localFixture ? 1 : 0, 'fixture': $(current_fixture_id).val(),
                path: path,
-               chain: $("#chain-analysis-request").is(':checked'),
+               chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
                },
         success: function (data) {
             if (data.success) {

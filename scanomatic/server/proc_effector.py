@@ -15,6 +15,7 @@ __status__ = "Development"
 
 import time
 import os
+from types import StringTypes
 
 #
 # INTERNAL DEPENDENCIES
@@ -24,6 +25,9 @@ import scanomatic.io.logger as logger
 import scanomatic.models.rpc_job_models as rpc_job_models
 import scanomatic.generics.decorators as decorators
 from pipes import ChildPipeEffector
+from scanomatic.io import mail
+from scanomatic.io.app_config import Config as AppConfig
+from threading import Thread
 
 #
 # CLASSES
@@ -35,6 +39,12 @@ class ProcessEffector(object):
     TYPE = rpc_job_models.JOB_TYPE.Unknown
 
     def __init__(self, job, logger_name="Process Effector"):
+        """
+
+        :type job: scanomatic.models.rpc_job_models.RPCjobModel
+        :type logger_name: str
+        :return:
+        """
 
         self._job = job
         self._job_label = job.id
@@ -49,6 +59,7 @@ class ProcessEffector(object):
             'resume': self.resume,
             'setup': self.setup,
             'status': self.status,
+            'email': self.email,
             'stop': self.stop
         }
 
@@ -66,8 +77,29 @@ class ProcessEffector(object):
         self._start_time = None
         decorators.register_type_lock(self)
 
+    def email(self, add=None, remove=None):
+
+        if add is not None:
+            try:
+                self._job.content_model.email += [add] if isinstance(add, StringTypes) else add
+            except TypeError:
+                return False
+
+            return True
+
+        elif remove is not None:
+
+            try:
+                self._job.content_model.email.remove(remove)
+            except (ValueError, AttributeError, TypeError):
+                return False
+
+            return True
+
+        return False
+
     @property
-    def identifier(self):
+    def label(self):
 
         return self._job_label
 
@@ -126,8 +158,7 @@ class ProcessEffector(object):
 
     def setup(self, job):
 
-        self._logger.warning(
-                "Setup is not overwritten, job info ({0}) lost.".format(job))
+        self._logger.warning("Setup is not overwritten, job info ({0}) lost.".format(job))
 
     @property
     def waiting(self):
@@ -140,7 +171,7 @@ class ProcessEffector(object):
     def status(self, *args, **kwargs):
 
         return dict([('id', self._job.id),
-                     ('label', self._job_label),
+                     ('label', self.label),
                      ('pid', self._pid),
                      ('type', self.TYPE.text),
                      ('running', self._running),
@@ -186,3 +217,24 @@ class ProcessEffector(object):
                 return True
         elif self._stopping:
             raise StopIteration
+
+    def _mail(self, title_template, message_template, data_model):
+
+        def _do_mail(title, message, model):
+
+            if not model.email:
+                return
+
+            if AppConfig().mail_server:
+                server = mail.get_server(AppConfig().mail_server, smtp_port=AppConfig().mail_port,
+                                         login=AppConfig().mail_user, password=AppConfig().mail_password)
+            else:
+                server = None
+
+            mail.mail(AppConfig().mail_user,
+                      model.email,
+                      title.format(**model),
+                      message.format(**model),
+                      server=server)
+
+        Thread(target=_do_mail, args=(title_template, message_template, data_model)).start()

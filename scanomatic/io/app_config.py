@@ -14,7 +14,8 @@ __status__ = "Development"
 #
 
 import os
-from hashlib import  md5
+from types import StringTypes
+from hashlib import md5
 import random
 from cPickle import loads, dumps, UnpickleableError, UnpicklingError
 from ConfigParser import ConfigParser
@@ -84,6 +85,8 @@ class Config(SingeltonOneInit):
             }
         # TMP SOLUTION TO BIGGER PROBLEMS
 
+        self.computer_human_name = 'Unnamed Computer'
+
         # VERSION HANDLING
         self.version_first_pass_change_1 = 0.997
         self.version_fixture_grid_history_change_1 = 0.998
@@ -96,12 +99,9 @@ class Config(SingeltonOneInit):
         self.scan_program = "scanimage"
         self.scan_program_version_flag = "-V"
         self._scanner_models = {
-            self.SCANNER_PATTERN.format(i): 'EPSON V700' for i in range(4)}
+            self.SCANNER_PATTERN.format(i + 1): 'EPSON V700' for i in range(4)}
 
         # POWER MANAGER
-        self._scanner_sockets = {
-            self.SCANNER_PATTERN.format(i): i for i in range(4)}
-
         self.pm_type = power_manager.POWER_MANAGER_TYPE.notInstalled
         self._pm_host = "192.168.0.100"
         self._pm_pwd = None
@@ -150,6 +150,8 @@ class Config(SingeltonOneInit):
 
 
     def _set_pm_extras(self):
+
+        self._logger.info("Using pm-type {0}".format(self.pm_type))
 
         if self.pm_type == power_manager.POWER_MANAGER_TYPE.linuxUSB:
 
@@ -268,11 +270,11 @@ class Config(SingeltonOneInit):
 
     def get_scanner_name(self, scanner):
 
-        if isinstance(scanner, int) and 0 <= scanner < self.number_of_scanners:
-            scanner = self.SCANNER_PATTERN.format(scanner + 1)
-        elif isinstance(scanner, str):
+        if isinstance(scanner, int) and 0 < scanner <= self.number_of_scanners:
+            scanner = self.SCANNER_PATTERN.format(scanner)
+        elif isinstance(scanner, StringTypes):
             numbers = map(int, re.findall(r'\d+', scanner))
-            if len(numbers) != 1 or numbers[0] < 0 or numbers[0] >= self.number_of_scanners:
+            if len(numbers) != 1 or numbers[0] <= 0 or numbers[0] > self.number_of_scanners:
                 return None
             scanner = self.SCANNER_PATTERN.format(numbers[0])
         else:
@@ -282,17 +284,19 @@ class Config(SingeltonOneInit):
     
     def get_scanner_socket(self, scanner):
 
-        scanner_name = self.get_scanner_name(scanner)
-        if scanner_name in self._scanner_sockets:
-            return self._scanner_sockets[scanner_name]
-        else:
-            self._logger.error("{0}/{1} not a scanner, can't return its power socket".format(scanner, scanner_name))
+        if isinstance(scanner, int):
+            return scanner
+
+        try:
+            return map(int, re.findall(r'\d+', scanner))[0]
+        except (IndexError, TypeError):
+            self._logger.error("Could n't get socket for scanner '{0}'".format(scanner))
             return None
 
     def get_pm(self, scanner_name, **pm_kwargs):
 
-        scanner_pm_socket = self.get_scanner_socket(scanner_name)
-        if scanner_pm_socket is None:
+        socket = self.get_scanner_socket(scanner_name)
+        if socket is None:
             self._logger.error("Socket for scanner {0} is unknown".format(scanner_name))
             return power_manager.PowerManagerNull("None")
         if len(pm_kwargs) == 0:
@@ -300,9 +304,9 @@ class Config(SingeltonOneInit):
 
         self._logger.info(
             "Creating scanner PM for socket {0} and settings {1}".format(
-                scanner_pm_socket, pm_kwargs))
+                socket, pm_kwargs))
 
-        return self._PM(scanner_pm_socket, **pm_kwargs)
+        return self._PM(socket, **pm_kwargs)
 
     def get_default_experiment_query(self):
 

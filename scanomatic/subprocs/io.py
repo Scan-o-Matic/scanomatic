@@ -16,6 +16,7 @@ __status__ = "Development"
 import inspect
 import time
 import psutil
+from types import StringTypes
 
 #
 # INTERNAL DEPENDENCIES
@@ -69,12 +70,12 @@ class Unbuffered_IO:
 
     def writelines(self, data):
 
-        if isinstance(data, str):
+        if isinstance(data, StringTypes):
             data = (data, )
 
         for row in data:
 
-            if not isinstance(row, str):
+            if not isinstance(row, StringTypes):
 
                 row = str(row)
 
@@ -238,7 +239,7 @@ class Proc_IO(object):
             timestamp = time.time()
 
         #SETTING CORRECT TYPES OF MSG
-        if isinstance(msg, str):
+        if isinstance(msg, StringTypes):
             msg = (msg, )
         else:
             msg = tuple(msg)

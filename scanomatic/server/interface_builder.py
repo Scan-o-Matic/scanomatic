@@ -12,12 +12,12 @@ import scanomatic.io.logger as logger
 from scanomatic.server.server import Server
 from scanomatic.server.stoppable_rpc_server import Stoppable_RPC_Server
 import scanomatic.generics.decorators as decorators
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory, ScannerOwnerFactory
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory, ScannerFactory
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 import scanomatic.models.rpc_job_models as rpc_job_models
-from scanomatic.io.rpc_client import santize_communication
+from scanomatic.io.rpc_client import sanitize_communication
 
 _SOM_SERVER = None
 """:type: scanomatic.server.server.Server"""
@@ -42,6 +42,21 @@ def _verify_admin(f):
             return False
 
     return _verify_global_admin
+
+
+def _report_invalid(logger, factory, model, title):
+   """
+
+   :type logger: scanomatic.io.logger.Logger
+   :type factory: scanomatic.generics.abstract_model_factory.AbstractModelFactory
+   :type model: scanomstic.generics.model.Model
+   :return: None
+   """
+
+   for param in factory.get_invalid_names(model):
+
+       logger.warning("{title} got invalid parameter {param} value '{value}'".format(
+           title=title, param=param, value=model[param]))
 
 
 class Interface_Builder(SingeltonOneInit):
@@ -136,7 +151,7 @@ class Interface_Builder(SingeltonOneInit):
         else:
             self.logger.error("Unknown error shutting down Scan-o-Matic server")
 
-        return santize_communication(val)
+        return sanitize_communication(val)
 
     @_verify_admin
     def _server_restart(self, user_id, wait_for_jobs_to_stop=False):
@@ -176,19 +191,19 @@ class Interface_Builder(SingeltonOneInit):
                         server status.
         """
         global _SOM_SERVER
-        return santize_communication(_SOM_SERVER.get_server_status())
+        return sanitize_communication(_SOM_SERVER.get_server_status())
 
     def _server_get_scanner_status(self, user_id=None):
 
         global _SOM_SERVER
-        return santize_communication(
-            sorted([ScannerOwnerFactory.to_dict(scanner_owner_model)
-             for scanner_owner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
+        return sanitize_communication(
+            sorted([ScannerFactory.to_dict(scanner_model)
+                    for scanner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
 
     def _server_get_queue_status(self, user_id=None):
 
         global _SOM_SERVER
-        return santize_communication(_SOM_SERVER.queue.status)
+        return sanitize_communication(_SOM_SERVER.queue.status)
 
     def _server_get_job_status(self, user_id=None):
         """Gives a list or statuses.
@@ -215,10 +230,10 @@ class Interface_Builder(SingeltonOneInit):
 
         """
         global _SOM_SERVER
-        return santize_communication(_SOM_SERVER.jobs.status)
+        return sanitize_communication(_SOM_SERVER.jobs.status)
 
     @_verify_admin
-    def _server_communicate(self, user_id, job_id, communication, **communication_content):
+    def _server_communicate(self, user_id, job_id, communication, communication_content={}):
         """Used to communicate with active jobs.
 
         Args:
@@ -236,6 +251,7 @@ class Interface_Builder(SingeltonOneInit):
                         This ``title`` is preferrably coupled with ``kwargs``
                         while the other universally used titles have no use
                         for extra parameters.
+                email:  Add recipient of notifications to a job
                 start:  Starting the job's execution
                 pause:  Temporarily pausing the job
                 resume: Temporarily resuming the job
@@ -257,16 +273,16 @@ class Interface_Builder(SingeltonOneInit):
 
         if job is not None:
             if job.status is rpc_job_models.JOB_STATUS.Queued:
-                return santize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job))
+                return sanitize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job))
             else:
                 try:
                     ret = _SOM_SERVER.jobs[job].pipe.send(communication, **communication_content)
                     self.logger.info("The job {0} got message {1}".format(
                         job.id, communication))
-                    return santize_communication(ret)
-                except AttributeError:
-                    self.logger.error("The job {0} has no valid call {1}".format(
-                        job.id, communication))
+                    return sanitize_communication(ret)
+                except (AttributeError, TypeError):
+                    self.logger.error("The job {0} has no valid call {1} with payload {2}".format(
+                        job.id, communication, communication_content))
                     return False
 
         else:
@@ -370,13 +386,16 @@ class Interface_Builder(SingeltonOneInit):
         if not path_valid or not ScanningModelFactory.validate(scanning_model):
             if not path_valid:
                 _SOM_SERVER.logger.error("Project name duplicate in containing directory")
-            else:
-                _SOM_SERVER.logger.error("Invalid settings: {0}".format(
-                    tuple("{0}={1}".format(inval, scanning_model[inval]) for
-                          inval in ScanningModelFactory.get_invalid_names(scanning_model))))
+
+            if not ScanningModelFactory.validate(scanning_model):
+                _report_invalid(
+                    _SOM_SERVER.logger,
+                    ScanningModelFactory,
+                    scanning_model,
+                    "Request scanning job")
             return False
 
-        return santize_communication(_SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan))
+        return sanitize_communication(_SOM_SERVER.enqueue(scanning_model, rpc_job_models.JOB_TYPE.Scan))
 
     @_verify_admin
     def _server_create_compile_project_job(self, user_id, compile_project_model):
@@ -386,11 +405,15 @@ class Interface_Builder(SingeltonOneInit):
         compile_project_model = CompileProjectFactory.create(**compile_project_model)
 
         if not CompileProjectFactory.validate(compile_project_model):
-            _SOM_SERVER.logger.error("Invalid settings: {0}".format(
-                tuple(CompileProjectFactory.get_invalid_names(compile_project_model))))
+
+            _report_invalid(
+                _SOM_SERVER.logger,
+                CompileProjectFactory,
+                compile_project_model,
+                "Request compile project")
             return False
 
-        return santize_communication(_SOM_SERVER.enqueue(compile_project_model, rpc_job_models.JOB_TYPE.Compile))
+        return sanitize_communication(_SOM_SERVER.enqueue(compile_project_model, rpc_job_models.JOB_TYPE.Compile))
 
     @_verify_admin
     def _server_remove_from_queue(self, user_id, job_id):
@@ -423,7 +446,7 @@ class Interface_Builder(SingeltonOneInit):
         """
 
         global _SOM_SERVER
-        return santize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job_id))
+        return sanitize_communication(_SOM_SERVER.queue.remove_and_free_potential_scanner_claim(job_id))
 
     @_verify_admin
     def _server_flush_queue(self, user_id):
@@ -512,15 +535,15 @@ class Interface_Builder(SingeltonOneInit):
 
         if operation == "ON":
 
-            return santize_communication(scanner_manager.request_on(job_id))
+            return sanitize_communication(scanner_manager.request_on(job_id))
 
         elif operation == "OFF":
 
-            return santize_communication(scanner_manager.request_off(job_id))
+            return sanitize_communication(scanner_manager.request_off(job_id))
 
         elif operation == "RELEASE":
 
-            return santize_communication(scanner_manager.release_scanner(job_id))
+            return sanitize_communication(scanner_manager.release_scanner(job_id))
 
         else:
 
@@ -537,7 +560,7 @@ class Interface_Builder(SingeltonOneInit):
         """
 
         global _SOM_SERVER
-        return santize_communication(_SOM_SERVER.scanner_manager.fixtures)
+        return sanitize_communication(_SOM_SERVER.scanner_manager.fixtures)
 
     @_verify_admin
     def _server_create_analysis_job(self, user_id, analysis_model):
@@ -567,12 +590,10 @@ class Interface_Builder(SingeltonOneInit):
 
         analysis_model = AnalysisModelFactory.create(**analysis_model)
         if not AnalysisModelFactory.validate(analysis_model):
-            _SOM_SERVER.logger.warning("Attempted to create analysis with invalid parameters")
-            _SOM_SERVER.logger.warning("Invalid settings: {0}".format(
-                tuple(AnalysisModelFactory.get_invalid_names(analysis_model))))
+            _report_invalid(_SOM_SERVER.logger, AnalysisModelFactory, analysis_model, "Request analysis")
             return False
 
-        return santize_communication( _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis))
+        return sanitize_communication( _SOM_SERVER.enqueue(analysis_model, rpc_job_models.JOB_TYPE.Analysis))
 
     @_verify_admin
     def _server_create_feature_extract_job(self, user_id, feature_extract_model):
@@ -601,4 +622,8 @@ class Interface_Builder(SingeltonOneInit):
         global _SOM_SERVER
 
         feature_extract_model = FeaturesFactory.create(**feature_extract_model)
-        return santize_communication(_SOM_SERVER.enqueue(feature_extract_model, rpc_job_models.JOB_TYPE.Features))
+        if not FeaturesFactory.validate(feature_extract_model):
+            _report_invalid(_SOM_SERVER.logger, FeaturesFactory, feature_extract_model, "Request feature extraction")
+            return False
+
+        return sanitize_communication(_SOM_SERVER.enqueue(feature_extract_model, rpc_job_models.JOB_TYPE.Features))

@@ -122,6 +122,11 @@ class Model(object):
 
     def __eq__(self, other):
 
+        try:
+            _ = (e for e in other)
+        except TypeError:
+            return False
+
         for key in self.keys():
 
             if key not in other or not(self[key] == other[key]):

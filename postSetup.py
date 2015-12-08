@@ -59,6 +59,9 @@ def install_data_files(target_base=None, source_base=None, install_list=None):
         source_directory = os.path.join(source_base, relative_directory)
         target_directory = os.path.join(target_base, relative_directory)
 
+        if not os.path.isdir(target_directory):
+            os.makedirs(target_directory, 0755)
+
         if files is None:
             files = dict(_clone_all_files_in(source_directory))
             print files
@@ -68,10 +71,7 @@ def install_data_files(target_base=None, source_base=None, install_list=None):
             source_path = os.path.join(source_directory, file_name)
             target_path = os.path.join(target_directory, file_name)
 
-            os.path.dirname(target_path)
-
             if not os.path.isdir(os.path.dirname(target_path)):
-
                 os.makedirs(os.path.dirname(target_path), 0755)
 
             if not os.path.isfile(target_path) and files[file_name] is None:

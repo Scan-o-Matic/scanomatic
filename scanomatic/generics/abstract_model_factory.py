@@ -13,6 +13,51 @@ from types import GeneratorType
 from collections import defaultdict
 
 
+def float_list_serializer(enforce=None,serialize=None):
+    if enforce is not None:
+        if isinstance(enforce, types.StringTypes):
+            return [float(m.strip()) for m in enforce.split(",")]
+        elif isinstance(enforce, list):
+            return [float(e) for i, e in enumerate(enforce) if e or i < len(enforce) - 1]
+        else:
+            return list(enforce)
+
+    elif serialize is not None:
+
+        if isinstance(serialize, types.StringTypes):
+            return serialize
+        else:
+            try:
+                return ", ".join((str(e) for e in serialize))
+            except TypeError:
+                return str(serialize)
+
+    else:
+        return None
+
+
+def email_serializer(enforce=None, serialize=None):
+    if enforce is not None:
+        if isinstance(enforce, types.StringTypes):
+            return [m.strip() for m in enforce.split(",")]
+        elif isinstance(enforce, list):
+            return [str(e) for e in enforce if e]
+        else:
+            return list(enforce)
+
+    elif serialize is not None:
+
+        if isinstance(serialize, types.StringTypes):
+            return serialize
+        elif isinstance(serialize, list):
+            return ", ".join(serialize)
+        else:
+            return str(serialize)
+
+    else:
+        return None
+
+
 def _get_coordinates_and_items_to_validate(structure, obj):
 
     if obj is None or obj is False and structure[0] is not bool:
@@ -198,18 +243,16 @@ class AbstractModelFactory(object):
                         cls.logger.error(
                             "Contents mismatch between factory {0} and model data '{1}'".format(dtype, obj))
                         return obj
-
-            else:
+            try:
+                return dtype(obj)
+            except (AttributeError, ValueError, TypeError):
                 try:
-                    return dtype(obj)
-                except (AttributeError, ValueError, TypeError):
-                    try:
-                        return dtype[obj]
-                    except (AttributeError, KeyError, IndexError, TypeError):
-                        cls.logger.error(
-                            "Having problems enforcing '{0}' to be type '{1}' in supplied settings '{2}'.".format(
-                                obj, dtype, settings))
-                        return obj
+                    return dtype[obj]
+                except (AttributeError, KeyError, IndexError, TypeError):
+                    cls.logger.error(
+                        "Having problems enforcing '{0}' to be type '{1}' in supplied settings '{2}'.".format(
+                            obj, dtype, settings))
+                    return obj
 
         for key in keys:
 
@@ -272,9 +315,12 @@ class AbstractModelFactory(object):
     def to_dict(cls, model):
 
         model_as_dict = dict(**model)
-        for k in model_as_dict:
+        keys = model_as_dict.keys()
+        for k in keys:
 
-            if k in cls.STORE_SECTION_SERIALIZERS and isinstance(cls.STORE_SECTION_SERIALIZERS[k], types.FunctionType):
+            if k not in cls.STORE_SECTION_SERIALIZERS:
+                del model_as_dict[k]
+            elif k in cls.STORE_SECTION_SERIALIZERS and isinstance(cls.STORE_SECTION_SERIALIZERS[k], types.FunctionType):
 
                 model_as_dict[k] = cls.STORE_SECTION_SERIALIZERS[k](serialize=model_as_dict[k])
 
@@ -318,6 +364,11 @@ class AbstractModelFactory(object):
     def get_invalid_names(cls, model):
 
         return (v.name for v in cls.get_invalid(model))
+
+    @classmethod
+    def get_invalid_as_text(cls, model):
+
+        return ", ".join(["{0}: '{1}'".format(key, model[key]) for key in cls.get_invalid_names(model)])
 
     @classmethod
     def _get_validation_results(cls, model):
@@ -435,7 +486,7 @@ class AbstractModelFactory(object):
     @staticmethod
     def _is_file(path):
 
-        return isinstance(path, str) and os.path.isfile(path)
+        return isinstance(path, types.StringTypes) and os.path.isfile(path)
 
     @staticmethod
     def _is_tuple_or_list(obj):
@@ -659,6 +710,7 @@ class LinkerConfigParser(object, ConfigParser):
         return self._nonzero if hasattr(self, '_nonzero') else len(self.sections())
 
 
+
 class MockConfigParser(object):
 
     def __init__(self, serialized_object):
@@ -841,7 +893,11 @@ class Serializer(object):
 
             if key in conf.options(section):
 
-                value = conf.get(section, key)
+                try:
+                    value = conf.get(section, key)
+                except ValueError:
+                    self._logger.critical("Could not parse section {0}, key {1}".format(section, key))
+                    value = None
 
                 if isinstance(dtype, tuple):
 
@@ -932,7 +988,7 @@ class Serializer(object):
 
     def get_section_name(self, model):
 
-        if isinstance(self._factory.STORE_SECTION_HEAD, str):
+        if isinstance(self._factory.STORE_SECTION_HEAD, types.StringTypes):
             return self._factory.STORE_SECTION_HEAD
         elif isinstance(self._factory.STORE_SECTION_HEAD, list):
             heads = [(str(model[head]) if model[head] is not None else '') for head in self._factory.STORE_SECTION_HEAD]
@@ -1036,26 +1092,20 @@ class SerializationHelper(object):
         """
         if serialized_obj is None or serialized_obj is False and dtype is not bool:
             return None
-        elif isinstance(dtype, types.FunctionType):
-            try:
-                return dtype(unserialize=cPickle.loads(serialized_obj))
-            except (cPickle.PickleError, TypeError, ValueError):
-                return None
-        elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
-            return serialized_obj
-        elif SerializationHelper.isvalidtype(serialized_obj, dtype):
-            return serialized_obj
+
         elif isinstance(dtype, type) and issubclass(dtype, Enum):
             try:
                 return dtype[serialized_obj]
             except (KeyError, SyntaxError):
                 return None
+
         elif dtype is bool:
             try:
                 return bool(eval(serialized_obj))
             except (NameError, AttributeError, SyntaxError):
                 return False
-        elif dtype in (int, float, str):
+
+        elif dtype in (int, float, types.StringTypes):
             try:
                 return dtype(serialized_obj)
             except (TypeError, ValueError):
@@ -1063,12 +1113,26 @@ class SerializationHelper(object):
                     return dtype(eval(serialized_obj))
                 except (SyntaxError, NameError, AttributeError, TypeError, ValueError):
                     return None
+
+        elif isinstance(dtype, types.FunctionType):
+            try:
+                return dtype(enforce=cPickle.loads(serialized_obj))
+            except (cPickle.PickleError, EOFError):
+                return None
+
         elif isinstance(serialized_obj, types.GeneratorType):
             return dtype(serialized_obj)
+
+        elif isinstance(serialized_obj, _SectionsLink) or isinstance(serialized_obj, dtype):
+            return serialized_obj
+
+        elif SerializationHelper.isvalidtype(serialized_obj, dtype):
+            return serialized_obj
+
         else:
             try:
                 return cPickle.loads(serialized_obj)
-            except (cPickle.PickleError, TypeError, ValueError):
+            except (cPickle.PickleError, TypeError):
                 return None
 
     @staticmethod
@@ -1080,7 +1144,7 @@ class SerializationHelper(object):
         """
         conf = LinkerConfigParser(id=path, allow_no_value=True)
 
-        if isinstance(path, str):
+        if isinstance(path, types.StringTypes):
             try:
                 with open(path, 'r') as fh:
                     conf.readfp(fh)

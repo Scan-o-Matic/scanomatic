@@ -1,6 +1,6 @@
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory
-from scanomatic.models.scanning_model import ScanningModel, ScannerOwnerModel, ScanningAuxInfoModel, PlateDescription, \
-    CULTURE_SOURCE, PLATE_STORAGE
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, email_serializer
+from scanomatic.models.scanning_model import ScanningModel, ScannerModel, ScanningAuxInfoModel, PlateDescription, \
+    CULTURE_SOURCE, PLATE_STORAGE, ScannerOwnerModel
 import scanomatic.io.fixtures as fixtures
 import scanomatic.io.app_config as app_config
 from scanomatic.models.rpc_job_models import RPCjobModel
@@ -8,6 +8,7 @@ from scanomatic.models.rpc_job_models import RPCjobModel
 import os
 import re
 import string
+from types import StringTypes
 
 
 
@@ -47,7 +48,7 @@ class PlateDescriptionFactory(AbstractModelFactory):
         """
         :type model: scanomatic.models.scanning_model.PlateDescription
         """
-        if isinstance(model.name, str) and model.str:
+        if isinstance(model.name, StringTypes) and model.str:
             return True
         return model.FIELD_TYPES.name
 
@@ -56,7 +57,7 @@ class PlateDescriptionFactory(AbstractModelFactory):
         """
         :type model: scanomatic.models.scanning_model.PlateDescription
         """
-        if isinstance(model.description, str) and model.str:
+        if isinstance(model.description, StringTypes) and model.str:
             return True
         return model.FIELD_TYPES.description
 
@@ -195,12 +196,13 @@ class ScanningModelFactory(AbstractModelFactory):
         'scanner_tag': str,
         'description': str,
         'plate_descriptions': (tuple, PlateDescription),
-        'email': str,
+        'email': email_serializer,
         'pinning_formats': (tuple, tuple, int),
         'fixture': str,
         'scanner': int,
         'scanner_hardware': str,
         'mode': str,
+        'computer': str,
         'version': str,
         'id': str,
         'auxillary_info': ScanningAuxInfoModel,
@@ -292,7 +294,7 @@ class ScanningModelFactory(AbstractModelFactory):
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
 
-        if isinstance(model.description, str):
+        if isinstance(model.description, StringTypes):
             return True
 
         return model.FIELD_TYPES.description
@@ -303,12 +305,22 @@ class ScanningModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.scanning_model.ScanningModel
         """
-        if (isinstance(model.email, str) and
-                (model.email == '' or
-                     re.match(r'[^@]+@[^@]+\.[^@]+', model.email))):
+        if not model.email:
             return True
 
-        return model.FIELD_TYPES.email
+        if isinstance(model.email, StringTypes):
+            email = ",".split(model.email)
+        else:
+            email = model.email
+
+        try:
+            for address in email:
+                if not (isinstance(address, StringTypes) and
+                            (address == '' or re.match(r'[^@]+@[^@]+\.[^@]+', address))):
+                    raise TypeError
+            return True
+        except TypeError:
+            return model.FIELD_TYPES.email
 
     @classmethod
     def _validate_pinning_formats(cls, model):
@@ -380,16 +392,40 @@ class ScanningModelFactory(AbstractModelFactory):
 class ScannerOwnerFactory(AbstractModelFactory):
 
     MODEL = ScannerOwnerModel
+    STORE_SECTION_HEAD = ("id",)
+
+    STORE_SECTION_SERIALIZERS = {
+        "id": str,
+        "pid": int
+    }
+
+    @classmethod
+    def create(cls, **settings):
+        """
+        :rtype : scanomatic.model.scanning_model.ScannerOwnerModel
+        """
+
+        return super(ScannerOwnerFactory, cls).create(**settings)
+
+
+class ScannerFactory(AbstractModelFactory):
+
+    MODEL = ScannerModel
     STORE_SECTION_HEAD = ("scanner_name",)
+    _SUB_FACTORIES = {
+        ScannerOwnerModel: ScannerOwnerFactory,
+        RPCjobModel: ScannerOwnerFactory
+    }
+
     STORE_SECTION_SERIALIZERS = {
         'socket': int,
         'scanner_name': str,
         'usb': str,
         'power': bool,
         "expected_interval": float,
-        "email": str,
+        "email": email_serializer,
         "warned": bool,
-        "owner": RPCjobModel,
+        "owner": ScannerOwnerModel,
         "claiming": bool,
         "power": bool,
         "reported": bool,
@@ -400,7 +436,7 @@ class ScannerOwnerFactory(AbstractModelFactory):
     @classmethod
     def create(cls, **settings):
         """
-         :rtype : scanomatic.models.scanning_model.ScannerOwnerModel
+         :rtype : scanomatic.models.scanning_model.ScannerModel
         """
 
-        return super(ScannerOwnerFactory, cls).create(**settings)
+        return super(ScannerFactory, cls).create(**settings)

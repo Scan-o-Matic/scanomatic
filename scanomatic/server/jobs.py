@@ -13,7 +13,7 @@ __status__ = "Development"
 #
 
 from multiprocessing import Pipe
-
+from types import StringTypes
 #
 # INTERNAL DEPENDENCIES
 #
@@ -55,7 +55,7 @@ class Jobs(SingeltonOneInit):
 
     def __contains__(self, key):
 
-        if isinstance(key, str):
+        if isinstance(key, StringTypes):
             return any(True for j in self._jobs if j.id == key)
 
         return key in self._jobs
@@ -161,12 +161,16 @@ class Jobs(SingeltonOneInit):
         self._scanner_manager.update()
 
         for scanner in self._scanner_manager.non_reported_usbs:
-            if scanner.owner in self:
-                self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb)
+            if scanner.owner in self and scanner.usb:
+                self._jobs[scanner.owner].pipe.send(scanning_effector.JOBS_CALL_SET_USB, scanner.usb, scanner.model)
                 scanner.reported = True
-                self._logger.info("Reported USB for scanner {0} to {1}".format(scanner.socket, scanner.owner))
+                self._logger.info("Reported USB {2} for scanner {0} to {1}".format(scanner.socket, scanner.owner.id,
+                                                                                   scanner.usb))
             else:
-                self._logger.warning("Unknown scanner claiming process {0}".format(scanner.owner))
+                if scanner.usb:
+                    self._logger.warning("Unknown scanner claiming process {0}".format(scanner.owner))
+                else:
+                    self._logger.info("Waiting for actual USB assignment on request from {0}".format(scanner.owner.id))
 
     def add(self, job):
         """Launches and adds a new jobs.
@@ -213,6 +217,7 @@ class Jobs(SingeltonOneInit):
         """
         job_process.daemon = True
         job_process.start()
+        job.pid = job_process.pid
         if job.type is rpc_job_models.JOB_TYPE.Scan:
             self._add_scanner_operations_to_job(job_process)
             job.content_model.id = job.id

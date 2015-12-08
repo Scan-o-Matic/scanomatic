@@ -309,7 +309,7 @@ class GridArray():
         self._update_grid_cells()
 
         if save_name is not None:
-            save_name += "{0}.svg".format(self.index)
+            save_name += "{0}.svg".format(self.index + 1)
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name)
 
         return True
@@ -353,7 +353,7 @@ class GridArray():
 
     def _update_grid_cells(self):
 
-        for grid_cell in self._grid_cells.values():
+        for grid_cell in self._grid_cells.itervalues():
 
             grid_cell.set_grid_coordinates(self._grid_cell_corners)
 
@@ -382,7 +382,7 @@ class GridArray():
                     self._grid_cells[grid_cell.position] = grid_cell
 
     def clear_features(self):
-        for grid_cell in self._grid_cells:
+        for grid_cell in self._grid_cells.itervalues():
             grid_cell.clear_features()
 
     def analyse(self, im, image_model, save_grid_name=None):

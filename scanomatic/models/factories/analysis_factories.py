@@ -1,8 +1,8 @@
 __author__ = 'martin'
 
 import os
-
-from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting
+from types import StringTypes
+from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, email_serializer
 import scanomatic.models.analysis_model as analysis_model
 
 
@@ -137,6 +137,7 @@ class AnalysisModelFactory(AbstractModelFactory):
         'compile_instructions': str,
         'pinning_matrices': list,
         'use_local_fixture': bool,
+        'email': email_serializer,
         'stop_at_image': int,
         'output_directory': str,
         'focus_position': tuple,
@@ -234,7 +235,7 @@ class AnalysisModelFactory(AbstractModelFactory):
 
         :type model: scanomatic.models.analysis_model.AnalysisModel
         """
-        if (model.output_directory is None or isinstance(model.output_directory, str) and
+        if (model.output_directory is None or isinstance(model.output_directory, StringTypes) and
                 os.sep not in model.output_directory):
             return True
         return model.FIELD_TYPES.output_directory

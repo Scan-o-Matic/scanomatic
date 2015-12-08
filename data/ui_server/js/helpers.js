@@ -1,4 +1,8 @@
 
+function clamp(value, min, max) {
+    return value == null ? min : (isNaN(value) ? max : Math.max(Math.min(value, max), min));
+}
+
 function GetMousePosRelative(event, obj) {
     return {x: event.pageX - obj.offset().left, y: event.pageY - obj.offset().top};
 }
@@ -44,7 +48,7 @@ function Execute(idOrClass, methodName) {
 function Dialogue(title, body_header, body, redirect, reactivate_button ) {
     $('<div class=\'dialog\'></div>').appendTo("body")
         .prop("title", title)
-        .html("<div><h3>" + body_header + "</h3>" + body + "</div>")
+        .html("<div>" + (body_header != null ? ("<h3>" + body_header + "</h3>") : "")  + (body != null ? body : "") + "</div>")
         .dialog({modal: true,
                  buttons: {
                     Ok: function() {

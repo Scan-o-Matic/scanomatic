@@ -25,11 +25,12 @@ import proc_effector
 import scanomatic.io.xml.writer as xml_writer
 import scanomatic.io.image_data as image_data
 from scanomatic.io.paths import Paths
+from scanomatic.io.app_config import Config as AppConfig
 import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
-from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
+from scanomatic.models.factories.analysis_factories import AnalysisModelFactory, XMLModelFactory
+from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
@@ -63,6 +64,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         else:
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
+
+        self._job.content_model = self._analysis_job
 
         self._scanning_instructions = None
 
@@ -128,13 +131,27 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
                 try:
                     rc = rpc_client.get_client(admin=True)
-                    if rc.create_feature_extract_job({"analysis_directory": self._analysis_job.output_directory}):
+                    if rc.create_feature_extract_job(FeaturesFactory.to_dict(FeaturesFactory.create(
+                            analysis_directory=self._analysis_job.output_directory,
+                            email=self._analysis_job.email))):
+
                         self._logger.info("Enqueued feature extraction job")
                     else:
                         self._logger.warning("Enqueing of feature extraction job refused")
                 except:
                     self._logger.error("Could not spawn analysis at directory {0}".format(
                         self._analysis_job.output_directory))
+            else:
+                self._mail("Scan-o-Matic: Analysis for project '{project_name}' done.",
+                           """This is an automated email, please don't reply!
+
+The project '{compile_instructions}' on """ + AppConfig().computer_human_name +
+                           """ is done and no further action requested.
+
+All the best,
+
+Scan-o-Matic""", self._analysis_job)
+
             self._running = False
             raise StopIteration
 
@@ -207,7 +224,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._remove_files_from_previous_analysis()
 
-
         if self._analysis_job.focus_position is not None:
             self._focus_graph = support.Watch_Graph(
                 self._analysis_job.focus_position, self._analysis_job.output_directory)
@@ -217,7 +233,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         if self._xmlWriter.get_initialized() is False:
 
-            self._logger.critical('ANALYSIS: XML writer failed to initialize')
+            self._logger.critical('XML writer failed to initialize')
             self._xmlWriter.close()
             self._running = False
 
@@ -234,6 +250,18 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._stopping = True
 
         self._analysis_needs_init = False
+
+        self._logger.info('Primary data format will save {0}:{1}'.format(self._analysis_job.image_data_output_item,
+                                                                         self._analysis_job.image_data_output_measure))
+
+        self._logger.info('Analysis saved in XML-slimmed will be {0}:{1}'.format(
+            self._analysis_job.xml_model.slim_compartment, self._analysis_job.xml_model.slim_measure))
+
+        self._logger.info('Compartments excluded from big XML are {0}'.format(
+            self._analysis_job.xml_model.exclude_compartments))
+
+        self._logger.info('Measures excluded from big XML are {0}'.format(
+            self._analysis_job.xml_model.exclude_measures))
 
         return True
 
@@ -263,8 +291,9 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._redirect_logging = redirect_logging
 
-        job = RPC_Job_Model_Factory.serializer.load_serialized_object(job)[0]
-
+        if not self._analysis_job.output_directory:
+            AnalysisModelFactory.set_default(self._analysis_job, [self._analysis_job.FIELD_TYPES.output_directory])
+            self._logger.info("Using default '{0}' output directory".format(self._analysis_job.output_directory))
         if not self._analysis_job.compile_instructions:
             self._analysis_job.compile_instructions = \
                 Paths().get_project_compile_instructions_path_from_compilation_path(self._analysis_job.compilation)
@@ -280,7 +309,13 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                 Paths().get_scan_instructions_path_from_compile_instructions_path(
                     self._analysis_job.compile_instructions))[0]
         except IndexError:
-            self._logger.warning("No information found about how the scanning was done")
+            self._logger.warning("No information found about how the scanning was done," +
+                                 " using empty instructions instead")
+
+        if not self._scanning_instructions:
+            self._scanning_instructions = ScanningModelFactory.create()
+
+        self.ensure_default_values_if_missing()
 
         self._allow_start = allow_start
         if not self._allow_start:
@@ -290,3 +325,18 @@ class AnalysisEffector(proc_effector.ProcessEffector):
                                                               ))
             self.add_message("Can't perform analysis; instructions don't validate.")
             self._stopping = True
+
+    def ensure_default_values_if_missing(self):
+
+        if not self._analysis_job.xml_model.slim_measure:
+            XMLModelFactory.set_default(self._analysis_job.xml_model,
+                                        [self._analysis_job.xml_model.FIELD_TYPES.slim_measure])
+        if not self._analysis_job.xml_model.slim_compartment:
+            XMLModelFactory.set_default(self._analysis_job.xml_model,
+                                        [self._analysis_job.xml_model.FIELD_TYPES.slim_compartment])
+        if not self._analysis_job.image_data_output_measure:
+            AnalysisModelFactory.set_default(self._analysis_job,
+                                             [self._analysis_job.FIELD_TYPES.image_data_output_measure])
+        if not self._analysis_job.image_data_output_item:
+            AnalysisModelFactory.set_default(self._analysis_job,
+                                             [self._analysis_job.FIELD_TYPES.image_data_output_item])

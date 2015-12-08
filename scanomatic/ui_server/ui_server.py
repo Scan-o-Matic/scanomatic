@@ -5,7 +5,6 @@ from flask import Flask, request, send_from_directory, redirect, jsonify, abort,
 import webbrowser
 from threading import Thread
 from socket import error
-from subprocess import Popen
 import os
 import numpy as np
 from enum import Enum
@@ -13,6 +12,7 @@ import shutil
 import re
 from itertools import chain
 import glob
+from types import StringTypes
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
@@ -22,7 +22,7 @@ from scanomatic.imageAnalysis.first_pass_image import FixtureImage
 from scanomatic.imageAnalysis.support import save_image_as_png
 from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
-from scanomatic.imageAnalysis.imageGrayscale import get_grayscale
+from scanomatic.imageAnalysis.imageGrayscale import get_grayscale, is_valid_grayscale
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.compile_project_model import COMPILE_ACTION
@@ -76,21 +76,25 @@ def get_area_too_large_for_grayscale(grayscale_area_model):
 
     
 def get_grayscale_is_valid(values, grayscale):
+
     if values is None:
         return False
 
-    try:
-        fit = np.polyfit(grayscale['targets'], values, 3)
-        return np.unique(np.sign(fit)).size == 1
-    except:
-        return False
+    return is_valid_grayscale(grayscale['targets'], values)
 
 
 def usable_markers(markers, image):
 
     def marker_inside_image(marker):
+        """Compares marker to image shape
 
-        return (marker > 0).all() and marker[0] < image.shape[0] and marker[1] < image.shape[1]
+        Note that image shape comes in y, x order while markers come in x, y order
+
+        """
+        val = (marker > 0).all() and marker[0] < image.shape[1] and marker[1] < image.shape[0]
+        if not val:
+            _logger.error("Marker {marker} is outside image {shape}".format(marker=marker, shape=image.shape))
+        return val
 
     try:
         markers_array = np.array(markers, dtype=float)
@@ -98,9 +102,11 @@ def usable_markers(markers, image):
         return False
 
     if markers_array.ndim != 2 or markers_array.shape[0] < 3 or markers_array.shape[1] != 2:
+        _logger.error("Markers have bad shape {markers}".format(markers=markers))
         return False
 
     if len(set(map(tuple, markers_array))) != len(markers):
+        _logger.error("Some makerer is duplicated {markers}".format(markers=markers))
         return False
 
     return all(marker_inside_image(marker) for marker in markers_array)
@@ -261,9 +267,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     compilation=request.values.get("compilation"),
                     compile_instructions=request.values.get("compile_instructions"),
                     output_directory=request.values.get("output_directory"),
-                    chain=request.values.get("chain"))
+                    chain=bool(request.values.get('chain', default=1, type=int)))
 
-                success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(AnalysisModelFactory.to_dict(model))
+                success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
+                    AnalysisModelFactory.to_dict(model))
 
                 if success:
                     return jsonify(success=True)
@@ -275,7 +282,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
                 model = FeaturesFactory.create(analysis_directory=request.values.get("analysis_directory"))
 
-                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(FeaturesFactory.to_dict(model))
+                success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
+                    FeaturesFactory.to_dict(model))
 
                 if success:
                     return jsonify(success=success)
@@ -297,7 +305,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 'root', Paths().experiment_root)
 
             plate_descriptions = request.json.get("plate_descriptions")
-            if all(isinstance(p, str) or isinstance(p, unicode) or p is None for p in plate_descriptions):
+            if all(isinstance(p, StringTypes) or p is None for p in plate_descriptions):
                 plate_descriptions = tuple({"index": i, "description": p} for i, p in enumerate(plate_descriptions))
 
             m = ScanningModelFactory.create(
@@ -325,8 +333,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             if validates and job_id:
                 return jsonify(success=True, name=project_name)
             else:
+
                 return jsonify(success=False, reason="The following has bad data: {0}".format(
-                    ", ".join(ScanningModelFactory.get_invalid_names(m))) if not validates else
+                    ScanningModelFactory.get_invalid_as_text(m))
+                    if not validates else
                     "Job refused, probably scanner can't be reached, check connection.")
 
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
@@ -377,13 +387,16 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             path = request.values.get('path')
             is_local = bool(int(request.values.get('local')))
             fixture=request.values.get("fixture")
-            _logger.info("Attempting to compile on path {0}, as {1} fixture{2}".format(
-                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture)))
+            chain_steps = bool(request.values.get('chain', default=1, type=int))
+            _logger.info("Attempting to compile on path {0}, as {1} fixture{2} (Chaining: {3})".format(
+                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture),
+                chain_steps))
 
             job_id = rpc_client.create_compile_project_job(
                 CompileProjectFactory.dict_from_path_and_fixture(
                     path, fixture=fixture, is_local=is_local,
-                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if request.values.get('chain') else COMPILE_ACTION.Initiate))
+                    compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if chain_steps else
+                    COMPILE_ACTION.Initiate))
 
             return jsonify(success=True if job_id else False, reason="" if job_id else "Invalid parameters")
 
@@ -394,7 +407,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if scanner_query is None or scanner_query.lower() == 'all':
             return jsonify(scanners=rpc_client.get_scanner_status(), success=True)
         elif scanner_query.lower() == 'free':
-            return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()},
+            return jsonify(scanners={s['socket']: s['scanner_name'] for s in rpc_client.get_scanner_status()
+                                     if 'owner' not in s or not s['owner']},
                            success=True)
         else:
             try:
@@ -403,6 +417,19 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             except StopIteration:
                 return jsonify(scanner=None, success=False, reason="Unknown scanner or query '{0}'".format(
                     scanner_query))
+
+    @app.route("/server/<action>", methods=['post', 'get'])
+    def _server_actions(action=None):
+
+        if action == 'reboot':
+
+            if rpc_client.local and (request.args.get('force') == '1' or not rpc_client.working_on_job_or_has_queue):
+
+                rpc_client.shutdown()
+                time.sleep(5)
+                rpc_client.launch_local()
+                time.sleep(5)
+                return jsonify(success=rpc_client.online)
 
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():
@@ -547,7 +574,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
 
                 fixture = get_fixture_image_by_name(name)
-                _, values = get_grayscale(fixture, grayscale_area_model)
+                _, values = get_grayscale(fixture, grayscale_area_model, debug=debug)
                 grayscale_object = getGrayscale(grayscale_area_model.name)
                 valid = get_grayscale_is_valid(values, grayscale_object)
                 return jsonify(source_values=values, target_values=grayscale_object['targets'],

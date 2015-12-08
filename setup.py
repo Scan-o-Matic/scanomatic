@@ -115,9 +115,10 @@ setup(
         "scanomatic.models.factories",
         "scanomatic.io",
         "scanomatic.io.xml",
+        "scanomatic.qc",
         "scanomatic.server",
-        "scanomatic.imageAnalysis", "scanomatic.dataProcessing",
-        "scanomatic.dataProcessing.visualization",
+        "scanomatic.imageAnalysis",
+        "scanomatic.dataProcessing",
         "scanomatic.ui_server"],
 
     package_data={"scanomatic": data_files},
