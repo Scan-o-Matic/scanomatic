@@ -151,6 +151,7 @@ _logger.info("Scan-o-Matic is setup on system")
 import postSetup
 _logger.info("Copying data and configuration files")
 postSetup.install_data_files()
+postSetup.install_launcher()
 _logger.info("Post Setup Complete")
 
 if sys.argv[-1].upper() == "--USER":

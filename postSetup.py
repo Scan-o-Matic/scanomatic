@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import glob
+import stat
 
 import scanomatic.io.logger as logger
 
@@ -25,6 +26,17 @@ data_files = [
     ('images', None),
     ('ui_server', None)
 ]
+
+
+_launcher_text = """[Desktop Entry]
+Type=Application
+Terminal=false
+Icon={user_home}/.scan-o-matic/images/scan-o-matic_icon_256_256.png
+Name=Scan-o-Matic
+Comment=Large-scale high-quality phenomics platform
+Exec={executable_path}
+Categories=Science;
+"""
 
 
 def _clone_all_files_in(path):
@@ -90,6 +102,30 @@ def install_data_files(target_base=None, source_base=None, install_list=None):
                 shutil.copy(source_path, target_path)
                 os.chmod(target_path, defaltPermission)
 
+
+def linux_launcher_install():
+
+    user_home = os.path.expanduser("~")
+    exec_path = os.path.join(user_home, '.local', 'bin', 'scan-o-matic')
+    if not os.path.isfile(exec_path):
+        exec_path = os.path.join(os.sep, 'usr', 'local', 'bin', 'scan-o-matic')
+    text = _launcher_text.format(user_home=user_home, executable_path=exec_path)
+    target = os.path.join(user_home, '.local', 'share','applications', 'scan-o-matic.desktop')
+    with open(target, 'w') as fh:
+        fh.write(text)
+
+    os.chmod(target, os.stat(target)[stat.ST_MODE] | stat.S_IXUSR)
+    _logger.info("Installed desktop launcher for linux menu/dash etc.")
+
+def install_launcher():
+
+    if os.name == 'posix':
+        linux_launcher_install()
+    else:
+        _logger.warning("Don't know how to install launchers for this os...")
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1].lower() == 'install':
         install_data_files()
+
+    install_launcher()
