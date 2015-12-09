@@ -158,11 +158,12 @@ def growth_lag(index, flat_times, derivative_values_log2, **kwargs):
     if index < 0:
         return np.nan
 
-    growth_delta = population_size_at_generation_time(index=index, **kwargs) - curve_baseline(**kwargs)
+    growth_delta = np.log2(population_size_at_generation_time(index=index, **kwargs)) - \
+                   np.log2(curve_baseline(**kwargs))
 
     if growth_delta > 0:
 
-        return np.interp(max(0.0, -growth_delta / derivative_values_log2[index]), np.arange(flat_times.size),
+        return np.interp(max(0.0, growth_delta / derivative_values_log2[index]), np.arange(flat_times.size),
                          flat_times)
 
     return np.nan
