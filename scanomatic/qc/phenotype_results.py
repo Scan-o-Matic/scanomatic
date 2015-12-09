@@ -34,7 +34,6 @@ def get_position_phenotypes(phenotypes, plate, position_selection=None):
 
     return {phenotype.name: phenotypes[plate][position_selection][phenotype.value] for phenotype in Phenotypes}
 
-
 @_validate_input
 def plot_plate_heatmap(
         phenotypes, plate_index, measure=None, use_common_value_axis=True, vmin=None, vmax=None, show_color_bar=True,
@@ -64,27 +63,30 @@ def plot_plate_heatmap(
     if title_text is not None:
         ax.set_title(title_text)
 
-    plate_data = phenotypes[plate_index][..., measure]
+    try:
+        plate_data = phenotypes[plate_index][..., measure].astype(np.float)
+    except ValueError:
+        _logger.error("The phenotype {0} is not scalar and thus can't be displayed as a heatmap".format(
+            Phenotypes(measure)))
+        return fig
 
     if not horizontal_orientation:
         plate_data = plate_data.T
 
     if plate_data[np.isfinite(plate_data)].size == 0:
         _logger.error("No finite data")
-        return False
+        return fig
 
-    if None not in (vmin, vmax):
-        pass
-    elif use_common_value_axis:
-        vmin, vmax = zip(*[
-            (p[..., measure][np.isfinite(p[..., measure])].min(),
-             p[..., measure][np.isfinite(p[..., measure])].max())
-            for p in phenotypes if p is not None])
-        vmin = min(vmin)
-        vmax = max(vmax)
-    else:
+    if None in (vmin, vmax):
         vmin = plate_data[np.isfinite(plate_data)].min()
         vmax = plate_data[np.isfinite(plate_data)].max()
+
+        if use_common_value_axis:
+            for plate in phenotypes:
+
+                plate = np.ma.masked_invalid(plate[..., measure].astype(np.float))
+                vmin = min(vmin, plate.min())
+                vmax = max(vmax, plate.max())
 
     font = {'family': 'sans',
             'weight': 'normal',
