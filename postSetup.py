@@ -111,10 +111,16 @@ def linux_launcher_install():
         exec_path = os.path.join(os.sep, 'usr', 'local', 'bin', 'scan-o-matic')
     text = _launcher_text.format(user_home=user_home, executable_path=exec_path)
     target = os.path.join(user_home, '.local', 'share', 'applications', 'scan-o-matic.desktop')
-    with open(target, 'w') as fh:
-        fh.write(text)
 
-    os.chmod(target, os.stat(target)[stat.ST_MODE] | stat.S_IXUSR)
+    try:
+        with open(target, 'w') as fh:
+            fh.write(text)
+    except IOError:
+        _logger.error("Could not install desktop launcher automatically, you have an odd linux system.")
+        _logger.info("""You may want to make a manual 'scan-o-matic.desktop' launcher and place it somewhere nice.
+        If so, this is what should be its contents:\n\n{0}\n""".format(text))
+    else:
+        os.chmod(target, os.stat(target)[stat.ST_MODE] | stat.S_IXUSR)
     _logger.info("Installed desktop launcher for linux menu/dash etc.")
 
 
