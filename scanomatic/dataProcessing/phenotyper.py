@@ -439,7 +439,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 isinstance(value, tuple)), "Invalid time series {0}".format(
                     value)
 
-        if (isinstance(value, np.ndarray) is False):
+        if isinstance(value, np.ndarray) is False:
             value = np.array(value, dtype=np.float)
 
         self._times_data = value
