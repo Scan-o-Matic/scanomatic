@@ -343,7 +343,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
             phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),
-                                  dtype=plate.dtype)
+                                  dtype=np.object)
 
             all_phenotypes.append(phenotypes)
 
