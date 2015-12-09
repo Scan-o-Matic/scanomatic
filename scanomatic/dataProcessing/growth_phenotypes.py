@@ -168,6 +168,11 @@ def growth_lag(index, flat_times, derivative_values_log2, **kwargs):
 
     return np.nan
 
+
+def growth_velocity_vector(derivative_values_log2, **kwargs):
+
+    return derivative_values_log2
+
 #
 #
 # Enum helpers
@@ -218,6 +223,8 @@ class Phenotypes(Enum):
     ChapmanRichardsParam3 = 9
     ChapmanRichardsParam4 = 10
     ChapmanRichardsParamXtra = 11
+
+    GrowthVelocityVector = 22
 
     def __call__(self, **kwargs):
 
@@ -283,3 +290,6 @@ class Phenotypes(Enum):
 
         elif self is Phenotypes.GrowthLag:
             return growth_lag(index=_get_generation_time_index(kwargs, 0), **kwargs)
+
+        elif self is Phenotypes.GrowthVelocityVector:
+            return growth_velocity_vector(**kwargs)
