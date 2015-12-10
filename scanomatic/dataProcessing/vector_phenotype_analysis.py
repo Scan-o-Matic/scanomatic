@@ -76,7 +76,7 @@ def plot_heatmap_dendrogram_and_cluster(
     while data.ndim > 2:
         data = get_linearized_positions(data)
 
-    if distance_measure == 'seuclidean' and 'V' not in distance_kwargs:
+    if distance_measure == 'seuclidean' and not distance_kwargs.get('V', None):
         distance_kwargs['V'] = np.ma.masked_invalid(data).std(axis=0)
 
     distances = sch.distance.pdist(data, metric=distance_measure, **distance_kwargs)
