@@ -176,8 +176,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                          gaussian_filter_sigma=gauss_sigma, linear_regression_size=linear_reg_size,
                          run_extraction=False, base_name=directory_path)
 
-        phenotyper._smooth_growth_data = smooth_growth_data
-        phenotyper._phenotypes = phenotypes
+        phenotyper.set('smooth_growth_data',smooth_growth_data)
+        phenotyper.set('phenotypes', phenotypes)
 
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
@@ -397,6 +397,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     @property
     def number_of_phenotypes(self):
 
+        if self._phenotypes is not None:
+            phenotypes = np.unique(tuple(p.shape[2] for p in self._phenotypes if p is not None and p.ndim == 3))
+            if phenotypes.size == 1:
+                return phenotypes[0]
+
         return len(Phenotypes) if not self._limited_phenotypes else len(self._limited_phenotypes)
 
     @property
@@ -453,6 +458,21 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    self._linear_regression_size),
             strides=(self._times_data.strides[0],
                      self._times_data.strides[0]))
+
+    def set(self, data_type, data):
+
+        if data_type == 'phenotypes':
+
+            self._phenotypes = data
+            self._init_remove_filter_and_undo_actions()
+
+        elif data_type == 'smooth_growth_data':
+
+            self._smooth_growth_data = data
+
+        else:
+
+            self._logger.warning('Unknown type of data {0}'.format(data_type))
 
     def _init_remove_filter_and_undo_actions(self):
 
