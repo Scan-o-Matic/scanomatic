@@ -64,7 +64,17 @@ def get_pca_components(data, resolve_nans_method=_resolve_neighbours_gauss, dims
     return tuple(s[dim]**(1./2) * V[:,dim] for dim in range(dims))
 
 
-def plot_heatmap_dendrogram(data, distance_measure='euclidean', linkage_method='single', distance_kwargs={}):
+def plot_heatmap_dendrogram_and_cluster(
+        data, distance_measure='euclidean', linkage_method='single', distance_kwargs={},
+        dendrogram_kwargs={'no_labels': True},
+        cluster_kwargs={'criterion':'distance', 't': 0.9},
+        phenotype=Phenotypes.GrowthVelocityVector):
+
+    if data.dtype is np.object:
+        data = get_plate_phenotype_in_array(data, phenotype=phenotype)
+
+    while data.ndim > 2:
+        data = get_linearized_positions(data)
 
     if distance_measure == 'seuclidean' and 'V' not in distance_kwargs:
         distance_kwargs['V'] = np.ma.masked_invalid(data).std(axis=0)
@@ -73,26 +83,24 @@ def plot_heatmap_dendrogram(data, distance_measure='euclidean', linkage_method='
 
     fig = plt.figure()
 
-    dendrogram = [None, None]
+    # Easy extension for clustering in both dimensions
+    dendrogram = [None]
+    linkage = [None]
     for id, (ax_placement, dendrogram_orientation) in enumerate(
-            (([0.09, 0.1, 0.4, 0.8], 'right'),)):  #  ([0.3, 0.71, 0.6, 0.2], 'right'))):
+            (([0.09, 0.1, 0.4, 0.8], 'right'),)):
 
         ax = fig.add_axes(ax_placement)
-        linkage = sch.linkage(distances, method=linkage_method)
+        linkage[id] = sch.linkage(distances, method=linkage_method)
         dendrogram[id] = sch.dendrogram(
-            linkage, orientation=dendrogram_orientation, no_labels=True)
-        """dendrogram[id] = sch.dendrogram(
-            linkage, orientation=dendrogram_orientation, no_labels=True, truncate_mode='level', p=30, get_leaves=True,
-            show_leaf_counts=True)"""
+            linkage, orientation=dendrogram_orientation, **dendrogram_kwargs)
         ax.axis('off')
-    heat_ax = fig.add_axes([0.5, 0.1, 0.4, 0.8])  # [0.3,0.1,0.6,0.6])
+
+    heat_ax = fig.add_axes([0.5, 0.1, 0.4, 0.8])
     idx1 = dendrogram[0]['leaves']
-    # idx2 = dendrogram[1]['leaves']
     clustered_data = data[idx1, :]
-    # clustered_data = clustered_data[:, idx2]
     im = heat_ax.matshow(clustered_data, aspect='auto', origin='lower', cmap=plt.cm.YlGnBu)
     heat_ax.axis('off')
 
-    axcolor = fig.add_axes([0.91, 0.1, 0.02, 0.8])  # [0.91, 0.1, 0.02, 0.6])
+    axcolor = fig.add_axes([0.91, 0.1, 0.02, 0.8])
     plt.colorbar(im, cax=axcolor)
-    return fig
+    return fig, tuple(sch.fcluster(linkage[id], **cluster_kwargs) for id in range(len(linkage)))
