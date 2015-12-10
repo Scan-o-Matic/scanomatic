@@ -113,7 +113,7 @@ def plot_heatmap_dendrogram_and_cluster(
         ax = fig.add_axes(ax_placement)
         linkage[id] = sch.linkage(distances, method=linkage_method)
         dendrogram[id] = sch.dendrogram(
-            linkage, orientation=dendrogram_orientation, **dendrogram_kwargs)
+            linkage[id], orientation=dendrogram_orientation, **dendrogram_kwargs)
         ax.axis('off')
 
     heat_ax = fig.add_axes([0.5, 0.1, 0.4, 0.8])
