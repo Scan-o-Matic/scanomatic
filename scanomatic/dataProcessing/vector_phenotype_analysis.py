@@ -54,10 +54,29 @@ def _blank_missing_data(data):
     return data
 
 
-def get_pca_components(data, resolve_nans_method=_resolve_neighbours_gauss, dims=2):
+def _ensure_indata(f):
 
-    while data.ndim > 2:
-        data = get_linearized_positions(data)
+    def wrapped(*args, **kwargs):
+
+        data = args[0]
+        phenotype = kwargs.get('phenotype', Phenotypes.GrowthVelocityVector)
+
+        if data.dtype is np.object:
+            data = get_plate_phenotype_in_array(data, phenotype=phenotype)
+
+        while data.ndim > 2:
+            data = get_linearized_positions(data)
+
+        args = list(args)
+        args[0] = data
+
+        return f(*args, **kwargs)
+
+    return wrapped
+
+
+@_ensure_indata
+def get_pca_components(data, resolve_nans_method=_resolve_neighbours_gauss, dims=2):
 
     M = data.T.copy()
     print (np.isfinite(M) == False).sum()
@@ -70,18 +89,14 @@ def get_pca_components(data, resolve_nans_method=_resolve_neighbours_gauss, dims
     return tuple(s[dim]**(1./2) * V[:,dim] for dim in range(dims))
 
 
+@_ensure_indata
 def plot_heatmap_dendrogram_and_cluster(
         data, distance_measure='euclidean', linkage_method='single', distance_kwargs={},
         dendrogram_kwargs={'no_labels': True},
         cluster_kwargs={'criterion':'distance', 't': 0.9},
         phenotype=Phenotypes.GrowthVelocityVector):
 
-    if data.dtype is np.object:
-        data = get_plate_phenotype_in_array(data, phenotype=phenotype)
-
-    while data.ndim > 2:
-        data = get_linearized_positions(data)
-
+    print type(data), type(distance_measure)
     if distance_measure == 'seuclidean' and not distance_kwargs.get('V', None):
         distance_kwargs['V'] = np.ma.masked_invalid(data).std(axis=0)
 
