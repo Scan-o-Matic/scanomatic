@@ -12,11 +12,17 @@ from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
 def get_plate_phenotype_in_array(phenotypes, phenotype=Phenotypes.GrowthVelocityVector):
 
     data = phenotypes[..., phenotype.value]
-    vector_length = max(v.size for v in data.ravel())
+    try:
+        vector_length = max(v.size for v in data.ravel())
+    except AttributeError:
+        vector_length = 1
 
     arr = np.zeros(data.shape + (vector_length,), dtype=np.float)
     for coord in product(*tuple(range(dim_length) for dim_length in data.shape)):
-        arr[coord][:len(data[coord])] = data[coord]
+        if vector_length > 1:
+            arr[coord][:len(data[coord])] = data[coord]
+        else:
+            arr[coord] = data[coord]
 
     return arr
 
