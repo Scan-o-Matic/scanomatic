@@ -18,7 +18,7 @@ __status__ = "Development"
 #
 
 import numpy as np
-
+import operator
 from scipy.stats.mstats import mquantiles, tmean
 from scipy.ndimage import binary_erosion, \
     center_of_mass, label, \
@@ -806,65 +806,62 @@ class Blob(CellItem):
     def get_candidate_blob_ranks(self):
 
         label_array, number_of_labels = label(self.filter_array)
-        qualities = []
-        c_o_m = {}
+        qualities = {}
+        centre_of_masses = {}
 
         if number_of_labels > 0:
 
-            for item in xrange(number_of_labels):
+            for label_value in xrange(1, number_of_labels + 1):
 
-                cur_item = (label_array == (item + 1))
+                current_label_filter = label_array == label_value
 
-                c_o_m[item] = center_of_mass(cur_item)
+                if current_label_filter.sum() == 0:
+                    continue
 
-                cur_pxs = np.sum(cur_item)
+                centre_of_masses[label_value] = center_of_mass(current_label_filter)
 
-                over_axis_sum = np.where(np.sum(cur_item, 1) > 0)[0]
-                dim1 = over_axis_sum[-1] - over_axis_sum[0]
-                over_axis_sum = np.where(np.sum(cur_item, 0) > 0)[0]
-                dim2 = over_axis_sum[-1] - over_axis_sum[0]
+                area = np.sum(current_label_filter)
 
-                if dim1 > dim2:
+                dim_extents = [-1, -1]
+                for dim in range(2):
+                    over_axis_sum = np.where(np.sum(current_label_filter, axis=dim) > 0)
+                    dim_extents[dim] = max(*over_axis_sum) - min(*over_axis_sum) + 1.0
 
-                    qualities.append(cur_pxs * dim2 / float(dim1))
+                qualities[label_value] = (area * min(dim_extents) / max(dim_extents))
 
-                else:
-
-                    qualities.append(cur_pxs * dim1 / float(dim2))
-
-        return number_of_labels, qualities, c_o_m, label_array
+        return number_of_labels, qualities, centre_of_masses, label_array
 
     # noinspection PyTypeChecker
     def keep_best_blob(self):
         """Evaluates all blobs detected and keeps the best one"""
 
-        number_of_labels, qualities, c_o_m, label_array = \
-            self.get_candidate_blob_ranks()
+        _, qualities, centre_of_masses, label_array = self.get_candidate_blob_ranks()
 
-        if number_of_labels > 0:
+        if qualities:
 
-            q_best = np.asarray(qualities).argmax() + 1
+            quality_order = zip(*sorted(qualities.iteritems(), key=operator.itemgetter(1)))[0][::-1]
+            best_quality_label = quality_order[0]
 
-            self.filter_array = (label_array == q_best)
+            self.filter_array = label_array == best_quality_label
 
-            composite_blob = [q_best]
+            composite_blob = [best_quality_label]
             composite_trash = []
 
-            for item in xrange(number_of_labels):
+            for item_label in quality_order[1:]:
 
-                if self.filter_array[tuple(map(round, c_o_m[item]))]:
+                if self.filter_array[tuple(map(round, centre_of_masses[item_label]))]:
 
-                    composite_blob.append(item + 1)
+                    composite_blob.append(item_label)
 
                 else:
 
-                    composite_trash.append(item + 1)
+                    composite_trash.append(item_label)
 
             self.filter_array = np.in1d(
-                label_array, np.array(composite_blob)).reshape(self.filter_array.shape, order='C')
+                label_array, np.array(composite_blob)).reshape(self.filter_array.shape)
 
             self.trash_array = np.in1d(
-                label_array, np.array(composite_trash)).reshape(self.filter_array.shape, order='C')
+                label_array, np.array(composite_trash)).reshape(self.filter_array.shape)
 
 #
 # CLASSES Background (inverse blob area)
