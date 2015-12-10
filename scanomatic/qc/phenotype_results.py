@@ -34,6 +34,7 @@ def get_position_phenotypes(phenotypes, plate, position_selection=None):
 
     return {phenotype.name: phenotypes[plate][position_selection][phenotype.value] for phenotype in Phenotypes}
 
+
 @_validate_input
 def plot_plate_heatmap(
         phenotypes, plate_index, measure=None, use_common_value_axis=True, vmin=None, vmax=None, show_color_bar=True,
