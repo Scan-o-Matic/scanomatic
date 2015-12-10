@@ -5,6 +5,7 @@ from itertools import product, izip
 from scipy.signal import gaussian
 from matplotlib import pyplot as plt
 import scipy.cluster.hierarchy as sch
+import operator
 
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
 
@@ -125,3 +126,18 @@ def plot_heatmap_dendrogram_and_cluster(
     axcolor = fig.add_axes([0.91, 0.1, 0.02, 0.8])
     plt.colorbar(im, cax=axcolor)
     return fig, tuple(sch.fcluster(linkage[id], **cluster_kwargs) for id in range(len(linkage)))
+
+
+def plot_grouped_scatter_phenotypes(phenotype_x, phenotype_y, clustering, marker='o', **kwargs):
+
+    uniques = np.unique(clustering)
+    cluster_sizes = {label: (clustering == label).sum() for label in uniques}
+    unique_order = zip(*sorted(cluster_sizes.iteritems(), key=operator.itemgetter(1)))[0][::-1]
+    fig = plt.figure()
+    ax = fig.gca()
+
+    for label in unique_order:
+        ax.plot(phenotype_x[clustering == label], phenotype_y[clustering == label], marker=marker,
+                linestyle="None", **kwargs)
+
+    return fig
