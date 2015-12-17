@@ -5,7 +5,7 @@ import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from types import StringTypes
-from itertools import izip
+import pandas as pd
 
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
 from scanomatic.io.logger import Logger
@@ -117,3 +117,20 @@ def plot_plate_heatmap(
 
     return fig
 
+
+def load_phenotype_results_into_plates(file_name, phenotype_header='Generation Time'):
+
+    data = pd.read_csv(file_name, sep='\t')
+    plates = np.array([None for _ in range(data.Plate.max() + 1)], dtype=np.object)
+
+    for plateIndex in data.Plate.unique():
+        plate = data[data.Plate == plateIndex]
+        if plate.any() is False:
+            continue
+
+        plates[plateIndex] = np.zeros((plate.Row.max() + 1, plate.Column.max() + 1), dtype=np.float) * np.nan
+
+        for _, dataRow in plate.iterrows():
+            plates[plateIndex][dataRow.Row, dataRow.Column] = dataRow[phenotype_header]
+
+    return plates
