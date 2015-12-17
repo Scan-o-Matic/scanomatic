@@ -82,8 +82,9 @@ class GridCell():
 
     def set_grid_coordinates(self, grid_cell_corners):
 
-        self.xy1 = grid_cell_corners[:, 0, self.position[0], self.position[1]]
-        self.xy2 = grid_cell_corners[:, 1, self.position[0], self.position[1]]
+        flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
+        self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]]
+        self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
 
     def get_overshoot_warning(self):
 
