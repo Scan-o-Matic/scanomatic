@@ -257,7 +257,7 @@ class GridArray():
         self._grid = None
         self._grid_cell_corners = None
 
-        self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data={})
+        self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data=set())
         self._first_analysis = True
 
     @property
@@ -378,7 +378,7 @@ class GridArray():
                         self._analysis_model.focus_position == (self.index, row, column)):
 
                     grid_cell = GridCell([self._identifier, (row, column)], polynomial_coeffs)
-                    self._features.data[grid_cell.position] = grid_cell.features
+                    self._features.data.add(grid_cell.features)
                     self._grid_cells[grid_cell.position] = grid_cell
 
     def clear_features(self):
