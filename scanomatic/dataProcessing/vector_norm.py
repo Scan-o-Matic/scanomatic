@@ -59,11 +59,13 @@ def get_best_reference_for_experiments(
                 try:
                     sums[i] += np.abs(curves[pos] - curves[tuple(other)]).sum() * reference_weights[pos]
                 except IndexError, e:
+                    print "---"
                     print "For position", (x, y), "on plate shape", curves.shape
                     print "Comparing", pos, "and", tuple(other)
                     print "Curves have shape", curves.shape
                     print "weights have shape", reference_weights.shape
                     print "Filter has shape", reference_filter.shape
+                    print "---"
                     raise e
 
         sums = np.ma.masked_invalid(sums)
