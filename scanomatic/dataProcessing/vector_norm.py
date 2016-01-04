@@ -100,3 +100,9 @@ def get_best_reference_for_experiments(
         reference_plate[x, y] = most_stable(local_reference_curves, local_weights, local_reference_filter)
 
     return reference_plate
+
+
+def vector_norm(plate):
+
+    reference = get_best_reference_for_experiments(plate)
+    return plate - reference
