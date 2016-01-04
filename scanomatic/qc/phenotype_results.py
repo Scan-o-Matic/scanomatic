@@ -6,6 +6,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from types import StringTypes
 import pandas as pd
+import time
 
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
 from scanomatic.io.logger import Logger
@@ -134,3 +135,22 @@ def load_phenotype_results_into_plates(file_name, phenotype_header='Generation T
             plates[plateIndex][dataRow.Row, dataRow.Column] = dataRow[phenotype_header]
 
     return plates
+
+
+def animate_plate_over_time(plate, initial_delay=3, delay=0.05):
+
+    vmin = np.ma.masked_invalid(plate).min()
+    vmax = np.ma.masked_invalid(plate).max()
+
+    i = -1
+    fig = plt.figure()
+    ax = fig.gca()
+    im = ax.imshow(plate[...,0], interpolation="nearest", vmin=vmin, vmax=vmax)
+
+    while True:
+        i+=1
+        i%=plate.shape[-1]
+        im.set_data(plate[..., i])
+        ax.set_title("Time {0}".format(i))
+        fig.canvas.draw()
+        time.sleep(delay) if i != 0 else time.sleep(initial_delay)
