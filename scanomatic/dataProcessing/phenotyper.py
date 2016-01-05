@@ -289,6 +289,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 yield x
 
 
+    @property
+    def has_smooth_growth_data(self):
+
+        if self._smooth_growth_data is None or len(self._smooth_growth_data) != len(self._raw_growth_data):
+            return False
+
+        return all((a is None == b is None ) or a.shape == b.shape for a, b in zip(self._raw_growth_data, self._smooth_growth_data))
+
     def _smoothen(self):
 
         self._logger.info("Smoothing Started")
