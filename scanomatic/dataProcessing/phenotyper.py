@@ -278,16 +278,25 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             "Iteration started, will extract {0} phenotypes".format(
                 self.number_of_phenotypes))
 
-
-        else:
-
+        if not self.has_smooth_growth_data:
             self._smoothen()
-            self._logger.info("Smoothed")
-            yield 0
-            for x in self._calculate_phenotypes():
-                self._logger.debug("Phenotype extraction iteration")
-                yield x
+        self._logger.info("Smoothed")
+        yield 0
+        for x in self._calculate_phenotypes():
+            self._logger.debug("Phenotype extraction iteration")
+            yield x
 
+    def extract_phenotypes(self):
+
+        self._logger.info("Extracting phenotypes. This will take a while...")
+
+        if not self.has_smooth_growth_data:
+            self._smoothen()
+
+        for _ in self._calculate_phenotypes():
+            pass
+
+        self._logger.info("Phenotypes extracted")
 
     @property
     def has_smooth_growth_data(self):
