@@ -447,7 +447,26 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def get_phenotype(self, phenotype):
 
-        return [p if p is None else p[..., phenotype.value] for p in self.phenotypes]
+        def _plate_type_converter(plate):
+
+            out = np.zeros(plate.shape + plate[0,0].shape, dtype=plate[0,0].dtype)
+            if out.dtype == np.float:
+                out *= np.nan
+
+            for out_pos, in_pos in zip(out.reshape(out.shape[0] * out.shape[1], out.shape[2]), plate.ravel()):
+                out_pos[...] = in_pos
+
+            return out
+
+        if self._phenotypes is None or \
+                    self._limited_phenotypes and phenotype not in self._limited_phenotypes or \
+                    phenotype.value >= self.number_of_phenotypes:
+
+            raise ValueError(
+                "'{0}' has not been extracted, please re-run 'extract_phenotypes()' to include it.".format(
+                phenotype.name))
+
+        return [p if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self.phenotypes]
 
     @property
     def times(self):
