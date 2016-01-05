@@ -332,6 +332,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def _calculate_phenotypes(self):
 
+        self._logger.info("Extraction...")
+
         if self._times_data.shape[0] - (self._linear_regression_size - 1) <= 0:
             self._logger.error(
                 "Refusing phenotype extractions since number of scans are less than used in the linear regression")
@@ -350,8 +352,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         phenotypes_count = self.number_of_phenotypes
         total_curves = float(self.number_of_curves)
 
-        self._logger.info("Phenotypes (N={0}) Extraction Started".format(
-            phenotypes_count))
+        self._logger.info("Phenotypes (N={0}), extraction started for {1} curves".format(
+            phenotypes_count, total_curves))
 
         curves_in_completed_plates = 0
 
