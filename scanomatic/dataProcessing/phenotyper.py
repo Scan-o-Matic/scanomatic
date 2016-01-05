@@ -308,10 +308,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def _smoothen(self):
 
+        self.set("smooth_growth_data", self._raw_growth_data.copy())
         self._logger.info("Smoothing Started")
         median_kernel = np.ones((1, self._median_kernel_size))
 
         for plate in self._smooth_growth_data:
+
+            if plate is None:
+                continue
 
             plate_as_flat = np.lib.stride_tricks.as_strided(
                 plate,
