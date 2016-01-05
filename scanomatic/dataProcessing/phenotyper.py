@@ -77,7 +77,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._paths = paths.Paths()
 
         self._raw_growth_data = raw_growth_data
-
+        self._smooth_growth_data = None
         self._phenotypes = None
         self._times_data = None
         self._limited_phenotypes = phenotypes
