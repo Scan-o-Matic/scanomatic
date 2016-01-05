@@ -116,10 +116,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._median_kernel_size = median_kernel_size
         self._gaussian_filter_sigma = gaussian_filter_sigma
         self._linear_regression_size = linear_regression_size
-        self._itermode = itermode
         self._meta_data = None
 
-        if not self._itermode and run_extraction:
+        if run_extraction:
             self._extract_features()
 
     def phenotype_names(self):
@@ -279,8 +278,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             "Iteration started, will extract {0} phenotypes".format(
                 self.number_of_phenotypes))
 
-        if self._itermode is False:
-            raise StopIteration("Can't iterate when not in itermode")
 
         else:
 
@@ -291,7 +288,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 self._logger.debug("Phenotype extraction iteration")
                 yield x
 
-        self._itermode = False
 
     def _smoothen(self):
 
@@ -367,7 +363,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 phenotypes[id0, id1, ...] = position_phenotypes
 
-                if self._itermode:
+                if id0 == 0:
                     self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
                         plateI, id0, id1, list(position_phenotypes)))
                     yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
