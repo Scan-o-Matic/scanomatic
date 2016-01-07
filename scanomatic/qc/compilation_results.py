@@ -57,7 +57,7 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
     f = plt.figure()
     f.clf()
     ax = f.gca()
-    ax.imshow(data)
+    ax.imshow(data, interpolation='nearest', aspect='auto')
     ax.set_ylabel("Image index")
     ax.set_xlabel("Grayscale segment")
     ax.set_title("Grayscale segment measured values as colors" +
