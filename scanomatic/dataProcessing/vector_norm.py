@@ -102,6 +102,26 @@ def get_best_reference_for_experiments(
     return reference_plate
 
 
+def remove_positions_by_offset_and_flatten(plate, offset=PositionOffset.LowerRight):
+
+    out = np.zeros((plate.shape[0] * plate.shape[1] * 3 / 4, plate.shape[2]), dtype=plate.dtype)
+    if out.dtype == np.float:
+        out *= np.nan
+
+    i = 0
+    offset_x, offset_y = offset.value
+
+    for idx, row in enumerate(plate):
+
+        for idy, vector in enumerate(row):
+
+            if not (idx % 2 == offset_x and idy % 2 == offset_y):
+                out[i] = vector
+                i += 1
+
+    return out
+
+
 def vector_norm(plate):
 
     reference = get_best_reference_for_experiments(plate)
