@@ -44,9 +44,10 @@ def get_reference_position_filter(plate_shape, position_selector=get_reference_p
 
 
 def get_best_reference_for_experiments(
-            plate,
-            reference_position_filter=None,
-            distance_matrix=get_distance_matrix()):
+        plate,
+        reference_position_filter=None,
+        distance_matrix=get_distance_matrix(),
+        scale_references=False):
 
     def most_stable(curves, reference_weights, reference_filter):
 
