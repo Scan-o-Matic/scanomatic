@@ -71,7 +71,10 @@ def get_best_reference_for_experiments(
 
         sums = np.ma.masked_invalid(sums)
         if sums.any():
-            return curves[tuple(positions[sums.argmin()])]
+            if scale_references:
+                return curves[tuple(positions[sums.argmin()])] * scale_vector
+            else:
+                return curves[tuple(positions[sums.argmin()])]
         return np.zeros((curves.shape[-1], )) * np.nan
 
     if reference_position_filter is None:
@@ -81,6 +84,14 @@ def get_best_reference_for_experiments(
     offset = int(np.floor(distance_matrix_size / 2))
     reference_plate = np.zeros_like(plate) * np.nan
     dim_x, dim_y = plate.shape[:2]
+
+    if scale_references:
+        ravel_references = np.ma.masked_invalid(
+            plate[reference_position_filter].reshape(reference_position_filter.sum(), plate.shape[-1]))
+        ravel_experiments = np.ma.masked_invalid(
+            plate[reference_position_filter == False].reshape(
+                reference_position_filter.size - reference_position_filter.sum(), plate.shape[-1]))
+        scale_vector = ravel_experiments.mean(axis=0) / ravel_references.mean(axis=0)
 
     for x, y in itertools.product(range(dim_x), range(dim_y)):
 
@@ -123,7 +134,7 @@ def remove_positions_by_offset_and_flatten(plate, offset=PositionOffset.LowerRig
     return out
 
 
-def vector_norm(plate):
+def vector_norm(plate, scale_references=False):
 
-    reference = get_best_reference_for_experiments(plate)
+    reference = get_best_reference_for_experiments(plate, scale_references=scale_references)
     return plate - reference
