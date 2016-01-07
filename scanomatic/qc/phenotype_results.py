@@ -137,20 +137,53 @@ def load_phenotype_results_into_plates(file_name, phenotype_header='Generation T
     return plates
 
 
-def animate_plate_over_time(plate, initial_delay=3, delay=0.05):
+def animate_plate_over_time(plate, initial_delay=3, delay=0.05, truncate_value_encoding=False,
+                            animation_params={'action': 'run', 'index': 0, }):
 
-    vmin = np.ma.masked_invalid(plate).min()
-    vmax = np.ma.masked_invalid(plate).max()
+    masked_plate = np.ma.masked_invalid(plate).ravel()
+    masked_plate = masked_plate[masked_plate.mask == False]
 
-    i = -1
-    fig = plt.figure()
-    ax = fig.gca()
-    im = ax.imshow(plate[...,0], interpolation="nearest", vmin=vmin, vmax=vmax)
+    if truncate_value_encoding:
+        fraction = 0.1
+        argorder = masked_plate.argsort()
 
-    while True:
-        i+=1
-        i%=plate.shape[-1]
-        im.set_data(plate[..., i])
-        ax.set_title("Time {0}".format(i))
-        fig.canvas.draw()
-        time.sleep(delay) if i != 0 else time.sleep(initial_delay)
+        vmin = masked_plate[argorder[np.round(argorder.size * fraction)]]
+        vmax = masked_plate[argorder[np.round(argorder.size * (1 - fraction))]]
+
+    else:
+        vmin = masked_plate.min()
+        vmax = masked_plate.max()
+
+    if 'action' not in animation_params:
+        animation_params['action'] = 'run'
+    if 'index' not in animation_params:
+        animation_params['index'] = 0
+    if 'figure' not in animation_params:
+        animation_params['figure'] = plt.figure()
+    if 'ax' not in animation_params:
+        animation_params['ax'] = animation_params['figure'].gca()
+
+    animation_params['ax'].cla()
+    plt.ion()
+    im = animation_params['ax'].imshow(plate[...,0], interpolation="nearest", vmin=vmin, vmax=vmax)
+
+    def _animation():
+        while animation_params['action'] != 'stop':
+            im.set_data(plate[..., animation_params['index']])
+
+            animation_params['index'] += 1
+            animation_params['index'] %= plate.shape[-1]
+
+            animation_params['ax'].set_title("Time {0}".format(animation_params['index']))
+            animation_params['figure'].canvas.draw()
+            while True:
+                time.sleep(delay) if animation_params['index'] != 1 else time.sleep(initial_delay)
+                if animation_params['action'] != 'pause':
+                    break
+
+    try:
+        _animation()
+    except KeyboardInterrupt:
+        pass
+
+    return animation_params
