@@ -136,6 +136,8 @@ class Paths(SingeltonOneInit):
         self.experiment_local_fixturename = \
             self.fixture_conf_file_rel_pattern.format("fixture")
         self.experiment_grid_image_pattern = "grid___origin_plate_{0}.svg"
+        self.grid_pattern = "grid_plate___{0}.npy"
+        self.grid_size_pattern = "grid_size___{0}.npy"
         self.experiment_grid_error_image = "_no_grid_{0}.npy"
 
         self.phenotypes_raw_csv = "phenotypes_raw.csv"

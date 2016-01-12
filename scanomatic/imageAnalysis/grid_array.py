@@ -313,6 +313,11 @@ class GridArray():
             save_name += "{0}.svg".format(self.index + 1)
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name, origin=self._grid_cells[(0, 0)])
 
+            np.save(os.path.join(os.path.dirname(save_name),
+                                 self._paths.grid_pattern.format(self.index + 1)), self._grid)
+
+            np.save(os.path.join(os.path.dirname(save_name),
+                                 self._paths.grid_size_pattern.format(self.index + 1)), self._grid_cell_size)
         return True
 
     def _calculate_grid_and_get_spacings(self, im, grid_correction=None):
