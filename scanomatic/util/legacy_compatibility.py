@@ -57,7 +57,8 @@ def patch_image_file_names_by_interval(path, interval=20.0):
 
         source = os.path.join(path, source_pattern.format(base_name, image_index))
         if os.path.isfile(source):
-            os.rename(source, os.path.join(path, target_pattern.format(base_name, image_index, image_index * interval)))
+            os.rename(source, os.path.join(path, target_pattern.format(
+                base_name, image_index, image_index * 60.0 * interval)))
             processed_images += 1
         else:
             _logger.warning("Missing file with index {0}".format(image_index))
