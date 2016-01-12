@@ -7,10 +7,13 @@ import numpy as np
 from types import StringTypes
 import pandas as pd
 import time
+import os
+import glob
 
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
 from scanomatic.io.logger import Logger
 from scanomatic.dataProcessing.phenotyper import Phenotyper
+from scanomatic.io.paths import Paths
 
 _logger = Logger("Phenotype Results QC")
 
@@ -135,6 +138,45 @@ def load_phenotype_results_into_plates(file_name, phenotype_header='Generation T
             plates[plateIndex][dataRow.Row, dataRow.Column] = dataRow[phenotype_header]
 
     return plates
+
+
+def load_colony_images_for_animation(analysis_directory, position, project_compilation=None):
+    """
+
+    :param analysis_directory: path to analysis directory
+    :type  analysis_directory: str
+    :param position: list/tuple of colony to extract. (Plate, Row, Colum)
+    :type position: [int]
+    :param project_compilation: Path to the associated compilation file, inferred if not submitted
+    :type project_compilation: str
+    :return: numpy.ndarray
+    """
+
+    analysis_directory = analysis_directory.rstrip(os.sep)
+    if not project_compilation:
+        experiment_directory = os.sep.join(analysis_directory.split(os.sep)[:-1])
+        experiment_name = experiment_directory.split(os.sep)[-1]
+
+        project_compilation = os.path.join(experiment_directory,
+                                           Paths().project_compilation_pattern.format(experiment_name))
+
+        if not os.path.isfile(project_compilation):
+
+            candidates = glob.glob(os.path.join(
+                experiment_directory, Paths().project_compilation_pattern.format("*")))
+
+            if not candidates:
+                _logger.error("Could not find any project.compilation file in '{0}'".format(experiment_directory))
+                return np.zeros()
+            elif len(candidates) != 1:
+                _logger.error("Found several project.compilation files in '{0}', unsure which to use.".format(
+                    experiment_directory) +
+                              "Either remove one of {0} or specify compilation-file in function call".format(candidates))
+                return np.zeros()
+
+            project_compilation = candidates[0]
+    else:
+        experiment_directory = os.path.dirname(project_compilation)
 
 
 def animate_plate_over_time(plate, initial_delay=3, delay=0.05, truncate_value_encoding=False,
