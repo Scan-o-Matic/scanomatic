@@ -40,7 +40,7 @@ def patch_image_file_names_by_interval(path, interval=20.0):
         if match:
             included_images += 1
             if not base_name:
-                base_name = match.groups()
+                base_name = match.groups()[0]
             elif match.groups()[0] != base_name:
                 _logger.error("Conflicting image names, unsure if '{0}' or '{1}' is project name".format(
                     base_name, match.groups()[0]))
