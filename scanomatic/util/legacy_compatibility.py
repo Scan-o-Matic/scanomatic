@@ -52,16 +52,17 @@ def patch_image_file_names_by_interval(path, interval=20.0):
 
     image_index = 0
     processed_images = 0
+    index_length = 4
 
     while processed_images < included_images:
 
-        source = os.path.join(path, source_pattern.format(base_name, image_index))
+        source = os.path.join(path, source_pattern.format(base_name, str(image_index).zfill(index_length)))
         if os.path.isfile(source):
             os.rename(source, os.path.join(path, target_pattern.format(
-                base_name, image_index, image_index * 60.0 * interval)))
+                base_name, str(image_index).zfill(index_length), image_index * 60.0 * interval)))
             processed_images += 1
         else:
-            _logger.warning("Missing file with index {0}".format(image_index))
+            _logger.warning("Missing file with index {0} ({1})".format(image_index, source))
 
         image_index += 1
         if image_index > included_images * sanity_threshold:
