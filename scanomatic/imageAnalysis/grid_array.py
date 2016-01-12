@@ -93,7 +93,7 @@ def _create_grid_array_identifier(identifier):
     return identifier
 
 
-def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=None):
+def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=None, origin=None):
 
     grid_image = plt.figure()
     grid_plot = grid_image.add_subplot(111)
@@ -117,9 +117,10 @@ def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=
                 grid_corners[y, :, :, col].mean(axis=0),
                 'r-')
 
-        grid_plot.plot(grid_corners[x, :, 0, 0].mean(axis=0),
-                       grid_corners[y, :, 0, 0].mean(axis=0),
-                       'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
+        if origin:
+
+            pos = np.mean((origin.xy1, origin.xy2), axis=0)
+            grid_plot.plot(pos[0], pos[1], 'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
     if x_values is not None and y_values is not None:
 
@@ -257,7 +258,7 @@ class GridArray():
         self._grid = None
         self._grid_cell_corners = None
 
-        self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data={})
+        self._features = AnalysisFeaturesFactory.create(index=self._identifier[-1], shape=tuple(pinning), data=set())
         self._first_analysis = True
 
     @property
@@ -310,8 +311,13 @@ class GridArray():
 
         if save_name is not None:
             save_name += "{0}.svg".format(self.index + 1)
-            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name)
+            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name, origin=self._grid_cells[(0, 0)])
 
+            np.save(os.path.join(os.path.dirname(save_name),
+                                 self._paths.grid_pattern.format(self.index + 1)), self._grid)
+
+            np.save(os.path.join(os.path.dirname(save_name),
+                                 self._paths.grid_size_pattern.format(self.index + 1)), self._grid_cell_size)
         return True
 
     def _calculate_grid_and_get_spacings(self, im, grid_correction=None):
@@ -378,7 +384,7 @@ class GridArray():
                         self._analysis_model.focus_position == (self.index, row, column)):
 
                     grid_cell = GridCell([self._identifier, (row, column)], polynomial_coeffs)
-                    self._features.data[grid_cell.position] = grid_cell.features
+                    self._features.data.add(grid_cell.features)
                     self._grid_cells[grid_cell.position] = grid_cell
 
     def clear_features(self):
