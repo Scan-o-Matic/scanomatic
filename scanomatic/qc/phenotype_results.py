@@ -267,10 +267,13 @@ def animate_plate_over_time(plate, initial_delay=3, delay=0.05, truncate_value_e
         animation_params['figure'] = plt.figure()
     if 'ax' not in animation_params:
         animation_params['ax'] = animation_params['figure'].gca()
+    if 'cmap' not in animation_params:
+        animation_params['cmap'] = None
 
     animation_params['ax'].cla()
     plt.ion()
-    im = animation_params['ax'].imshow(plate[...,0], interpolation="nearest", vmin=vmin, vmax=vmax)
+    im = animation_params['ax'].imshow(plate[...,0], interpolation="nearest", vmin=vmin, vmax=vmax,
+                                       cmap=animation_params['cmap'])
 
     def _animation():
         while animation_params['action'] != 'stop':
