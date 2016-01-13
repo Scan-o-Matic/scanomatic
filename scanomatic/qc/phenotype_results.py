@@ -232,9 +232,12 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
 
         y, x = _bound(im.shape, y, x)
 
-        im = im[y[0]: y[1], x[0]: x[1]]
+        # As gridding is done on plates as seen in the scanner while plate positioning is done on plates
+        # as seen by the scanner the inverse direction of the short dimension is needed and needed after
+        # slicing out the plate
+        im = im[y[0]: y[1], x[0]: x[1]][:,::-1]
 
-        images[i, ...] = slice_im(im, grid[:, position[1], position[2]], grid_size)
+        images[..., i] = slice_im(im, grid[:, position[2], position[1]], grid_size)
 
     return times, images, im
 
