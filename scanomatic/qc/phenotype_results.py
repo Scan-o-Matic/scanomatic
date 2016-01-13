@@ -182,7 +182,7 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
         return plate[lbound[0]: ubound[0], lbound[1]:ubound[1]]
 
     plate_as_index = position[0] - 1
-    analysis_directory = analysis_directory.rstrip(os.sep)
+    analysis_directory = os.path.abspath(analysis_directory)
     if not project_compilation:
         experiment_directory = os.sep.join(analysis_directory.split(os.sep)[:-1])
         experiment_name = experiment_directory.split(os.sep)[-1]
