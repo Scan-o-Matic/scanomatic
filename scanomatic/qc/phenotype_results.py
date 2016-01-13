@@ -151,9 +151,9 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
     :type position: [int]
     :param project_compilation: Path to the associated compilation file, inferred if not submitted
     :type project_compilation: str
-    :return: First array is a 1D time-vector, second array is a 3D image sequence vector where the first dimension
-    is time.
-    :rtype : numpy.ndarray, numpy.ndarray
+    :return: First array is a 1D time-vector, second array is a 3D image sequence vector where the last dimension
+    is time, the third array is the 2D plate slice of the last image.
+    :rtype : numpy.ndarray, numpy.ndarray, numpy.ndarray
     """
 
     def _bound(bounds, a, b):
@@ -183,7 +183,9 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
 
     plate_as_index = position[0] - 1
     analysis_directory = os.path.abspath(analysis_directory)
+
     if not project_compilation:
+
         experiment_directory = os.sep.join(analysis_directory.split(os.sep)[:-1])
         experiment_name = experiment_directory.split(os.sep)[-1]
 
@@ -234,7 +236,7 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
 
         images[i, ...] = slice_im(im, grid[:, position[1], position[2]], grid_size)
 
-    return times, images
+    return times, images, im
 
 
 def animate_plate_over_time(plate, initial_delay=3, delay=0.05, truncate_value_encoding=False,
