@@ -18,6 +18,7 @@ __status__ = "Development"
 
 import numpy as np
 from scipy.stats.mstats import tmean, mquantiles
+import os
 
 #
 # SCANNOMATIC LIBRARIES
@@ -26,6 +27,7 @@ from scipy.stats.mstats import tmean, mquantiles
 import grid_cell_extra as grid_cell_extra
 from scanomatic.models.analysis_model import VALUES, COMPARTMENTS
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+from scanomatic.io.paths import Paths
 #
 # CLASS: Grid_Cell
 #
@@ -40,6 +42,7 @@ class GridCell():
 
     def __init__(self, identifier, polynomial_coeffs):
 
+        self._debug_save = True
         self._identifier = identifier
         self.position = tuple(identifier[-1])
         self._polynomial_coeffs = polynomial_coeffs
@@ -51,7 +54,7 @@ class GridCell():
         self._previous_image = None
         self.features = AnalysisFeaturesFactory.create(index=tuple(self.position), data={})
         self._analysis_items = {}
-        """:type: dict[scanomatic.models.analysis_model.ITEMS|scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
+        """:type: dict[scanomatic.models.analysis_model.ITEMS | scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
         self._set_empty_analysis_items()
 
     def _set_empty_analysis_items(self):
@@ -85,6 +88,7 @@ class GridCell():
         flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
         self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]]
         self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
+        self._debug_save = self.position[0] == 0 and self.position[1] == 0
 
     def get_overshoot_warning(self):
 
@@ -165,6 +169,21 @@ class GridCell():
             self.clear_features()
         else:
             self._analyse()
+
+        if self._debug_save:
+
+            blob = self._analysis_items[COMPARTMENTS.Blob]
+
+            base_path = os.path.join(Paths().log, "grid_cell_{0}_{1}".format("_".join(map(str, self._identifier[:-1])),
+                                                                             "_".join(map(str, self._identifier[-1]))))
+
+            np.save(base_path + ".background.filter.npy", background.filter_array)
+            np.save(base_path + ".image.npy", background.grid_array)
+            np.save(base_path + ".blob.filter.npy", blob.filter_array)
+            np.save(base_path + ".blob.trash.current.npy", blob.trash_array)
+            np.save(base_path + ".blob.trash.old.npy", blob.old_trash)
+
+            self._debug_save = False
 
     def clear_features(self):
 
