@@ -171,19 +171,29 @@ class GridCell():
             self._analyse()
 
         if self._debug_save:
+            self.debug_save()
 
-            blob = self._analysis_items[COMPARTMENTS.Blob]
 
-            base_path = os.path.join(Paths().log, "grid_cell_{0}_{1}".format("_".join(map(str, self._identifier[:-1])),
-                                                                             "_".join(map(str, self._identifier[-1]))))
+    @property
+    def debug_base_path(self):
 
-            np.save(base_path + ".background.filter.npy", background.filter_array)
-            np.save(base_path + ".image.npy", background.grid_array)
-            np.save(base_path + ".blob.filter.npy", blob.filter_array)
-            np.save(base_path + ".blob.trash.current.npy", blob.trash_array)
-            np.save(base_path + ".blob.trash.old.npy", blob.old_trash)
+        return os.path.join(Paths().log, "grid_cell_{0}_{1}".format("_".join(map(str, self._identifier[0])),
+                                                                    "_".join(map(str, self._identifier[-1]))))
 
-            self._debug_save = False
+    def debug_save(self, base_path=None):
+
+        if not base_path:
+            base_path = self.debug_base_path
+
+        blob = self._analysis_items[COMPARTMENTS.Blob]
+        background = self._analysis_items[COMPARTMENTS.Background]
+
+        np.save(base_path + ".background.filter.npy", background.filter_array)
+        np.save(base_path + ".image.npy", background.grid_array)
+        np.save(base_path + ".blob.filter.npy", blob.filter_array)
+        np.save(base_path + ".blob.trash.current.npy", blob.trash_array)
+        np.save(base_path + ".blob.trash.old.npy", blob.old_trash)
+
 
     def clear_features(self):
 
