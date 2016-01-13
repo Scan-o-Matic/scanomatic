@@ -74,12 +74,19 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
 
 
 @_input_validate
-def animate_marker_positions(project_compilation, fig=None, slice_size=201, initial_delay=3, delay=0.05):
+def animate_marker_positions(project_compilation, fig=None, slice_size=201, initial_delay=3, delay=0.05,
+                             positioning='detected'):
 
-    assert slice_size % 2 == 1 , "Slice size may not be even"
+    assert slice_size % 2 == 1, "Slice size may not be even"
+    assert positioning in ('detected', 'probable'), "Not understood positioning mode"
 
     positions = np.array([(image.fixture.orientation_marks_x, image.fixture.orientation_marks_y)
                           for image in project_compilation])
+
+    if positioning is "probable":
+
+        positions[:] = np.round(np.median(positions, axis=0))
+
     paths = [image.image.path if os.path.isfile(image.image.path) else os.path.basename(image.image.path)
              for image in project_compilation]
 
