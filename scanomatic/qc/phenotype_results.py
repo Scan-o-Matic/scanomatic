@@ -217,7 +217,7 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
     compilation_results = sorted(compilation_results, key=lambda entry: entry.image.index)
 
     times = np.array(tuple(entry.image.time_stamp for entry in compilation_results))
-    images = np.zeros(times.shape + tuple(grid_size), dtype=np.int8)
+    images = np.zeros(tuple(grid_size) + times.shape, dtype=np.uint16)
 
     for i, entry in enumerate(compilation_results):
         try:
