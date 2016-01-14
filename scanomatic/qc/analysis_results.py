@@ -29,8 +29,8 @@ def animate_blob_detection(save_target, position=(0, 0, 0), source_location=None
     for i, ax in enumerate(fig.axes):
         ims.append(ax.imshow(data, interpolation='nearest', vmin=0, vmax=(3000 if i == 0 else 1)))
 
-    @Write_Movie(save_target)
-    def _plotter(fig=fig):
+    @Write_Movie(save_target, fig=fig)
+    def _plotter():
 
         for path in files:
 
