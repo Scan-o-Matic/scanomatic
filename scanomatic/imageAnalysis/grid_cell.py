@@ -52,7 +52,7 @@ class GridCell():
         self.source = None
         self.ready = False
         self._previous_image = None
-        self._image_index = -1
+        self.image_index = -1
         self.features = AnalysisFeaturesFactory.create(index=tuple(self.position), data={})
         self._analysis_items = {}
         """:type: dict[scanomatic.models.analysis_model.ITEMS | scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
@@ -179,7 +179,7 @@ class GridCell():
     def debug_base_path(self):
 
         return os.path.join(Paths().log, "grid_cell_{0}_{1}_{2}".format(
-            self._image_index, self._identifier[0][1], "_".join(map(str, self._identifier[-1]))))
+            self.image_index, self._identifier[0][1], "_".join(map(str, self._identifier[-1]))))
 
     def debug_save(self):
 
