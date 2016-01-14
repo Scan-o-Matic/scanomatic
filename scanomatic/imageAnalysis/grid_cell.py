@@ -42,7 +42,7 @@ class GridCell():
 
     def __init__(self, identifier, polynomial_coeffs):
 
-        self._debug_save = True
+        self._debug_save = False
         self._identifier = identifier
         self.position = tuple(identifier[-1])
         self._polynomial_coeffs = polynomial_coeffs
@@ -84,22 +84,12 @@ class GridCell():
 
         return self.__str__()
 
-    @property
-    def image_index(self):
-
-        return self._image_index
-
-    @image_index.setter
-    def image_index(self, value):
-
-        self._image_index = value
-
     def set_grid_coordinates(self, grid_cell_corners):
 
         flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
         self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]]
         self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
-        self._debug_save = self.position[0] == 0 and self.position[1] == 0
+        # self._debug_save = self.position[0] == 0 and self.position[1] == 0
 
     def get_overshoot_warning(self):
 
