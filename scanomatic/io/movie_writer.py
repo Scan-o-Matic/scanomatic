@@ -13,7 +13,8 @@ import numpy as np
 
 class Write_Movie(object):
 
-    def __init__(self, target, title='Animation Plotting', artist='Scan-o-Matic', comment='', fps=15, dpi=100):
+    def __init__(self, target, title='Animation Plotting', artist='Scan-o-Matic', comment='', fps=15, dpi=100,
+                 fig=None):
         """Generic movie writer for plotting functions
 
         :param target: Where to save the movie
@@ -23,6 +24,8 @@ class Write_Movie(object):
         :param fps: Frames per second to be used
         :type fps: int
         :param dpi: Resolution of the film in dpi
+        :param fig: The figure to be used (optional), it can also be inferred from the drawing function's signature
+        or automatically created by the Write_Movie instance
         :return:
 
         # Usage
@@ -40,14 +43,17 @@ class Write_Movie(object):
         self._writer = FFMpegWriter(fps, metadata={'title': title, 'artist': artist, 'comment':comment})
         self._target = target
         self._dpi = dpi
+        self._fig = fig
 
     def __call__(self, drawing_function, *args, **kwargs):
 
         print("Starting animation")
-        fig = None
-        for a in args:
-            if isinstance(a, plt.Figure):
-                fig = a
+        fig = self._fig
+
+        if fig is None:
+            for a in args:
+                if isinstance(a, plt.Figure):
+                    fig = a
 
         if fig is None:
             for fig_key in ('fig', 'figure', 'Fig', 'Figure'):
