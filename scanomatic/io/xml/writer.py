@@ -458,7 +458,7 @@ class XML_Writer(object):
 
                     plate_features = features.data[index]
 
-                    for cell_features in plate_features.data.itervalues():
+                    for cell_features in plate_features.data:
                         for f in self._file_handles.values():
 
                             f.write(self.XML_OPEN_W_TWO_PARAM.format(

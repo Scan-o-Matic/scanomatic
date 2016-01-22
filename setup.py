@@ -119,6 +119,7 @@ setup(
         "scanomatic.server",
         "scanomatic.imageAnalysis",
         "scanomatic.dataProcessing",
+        "scanomatic.util",
         "scanomatic.ui_server"],
 
     package_data={"scanomatic": data_files},

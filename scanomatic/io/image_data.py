@@ -70,7 +70,7 @@ class ImageData(object):
             plate = np.zeros(plate_features.shape) * np.nan
             plates[plate_features.index] = plate
 
-            for cell_features in plate_features.data.itervalues():
+            for cell_features in plate_features.data:
 
                 if output_item in cell_features.data:
 

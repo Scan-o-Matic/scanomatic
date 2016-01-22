@@ -94,8 +94,7 @@ def get_pca_components(data, resolve_nans_method=_resolve_neighbours_gauss, dims
 def plot_heatmap_dendrogram_and_cluster(
         data, distance_measure='euclidean', linkage_method='single', distance_kwargs={},
         dendrogram_kwargs={'no_labels': True},
-        cluster_kwargs={'criterion':'distance', 't': 0.9},
-        phenotype=Phenotypes.GrowthVelocityVector):
+        cluster_kwargs={'criterion': 'distance', 't': 0.9}):
 
     print type(data), type(distance_measure)
     if distance_measure == 'seuclidean' and not distance_kwargs.get('V', None):

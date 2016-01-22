@@ -7,6 +7,7 @@ import glob
 import os
 import re
 from itertools import izip
+import time
 
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 
@@ -57,7 +58,7 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
     f = plt.figure()
     f.clf()
     ax = f.gca()
-    ax.imshow(data)
+    ax.imshow(data, interpolation='nearest', aspect='auto')
     ax.set_ylabel("Image index")
     ax.set_xlabel("Grayscale segment")
     ax.set_title("Grayscale segment measured values as colors" +
@@ -71,6 +72,81 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
 
     return f
 
+
+@_input_validate
+def animate_marker_positions(project_compilation, fig=None, slice_size=201, initial_delay=3, delay=0.05,
+                             positioning='detected'):
+
+    assert slice_size % 2 == 1, "Slice size may not be even"
+    assert positioning in ('detected', 'probable'), "Not understood positioning mode"
+
+    positions = np.array([(image.fixture.orientation_marks_x, image.fixture.orientation_marks_y)
+                          for image in project_compilation])
+
+    if positioning is "probable":
+
+        positions[:] = np.round(np.median(positions, axis=0))
+
+    paths = [image.image.path if os.path.isfile(image.image.path) else os.path.basename(image.image.path)
+             for image in project_compilation]
+
+    plt.ion()
+    if fig is None:
+        fig = plt.figure()
+
+    fig.clf()
+
+    images = [None for _ in range(positions.shape[-1])]
+    half_slice_size = np.floor(slice_size / 2.0)
+
+    for idx in range(len(images)):
+        ax = fig.add_subplot(len(images), 1, idx + 1)
+        images[idx] = ax.imshow(
+            np.zeros((slice_size, slice_size), dtype=np.float), cmap=plt.cm.gray, vmin=0, vmax=255)
+        ax.axvline(half_slice_size, color='c')
+        ax.axhline(half_slice_size, color='c')
+
+    def make_cutout(img, pos_y, pos_x):
+        cutout = np.zeros((slice_size, slice_size), dtype=np.float) * np.nan
+        cutout[abs(min(pos_x - half_slice_size, 0)): min(cutout.shape[0], img.shape[0] - pos_x),
+               abs(min(pos_y - half_slice_size, 0)): min(cutout.shape[1], img.shape[1] - pos_y)] = \
+            img[max(pos_x - half_slice_size, 0): min(pos_x + half_slice_size + 1, img.shape[0]),
+                max(pos_y - half_slice_size, 0): min(pos_y + half_slice_size + 1, img.shape[1])]
+        return cutout
+
+    def _animate():
+
+        index = 0
+        data = [None for _ in range(positions.shape[0])]
+
+        while True:
+
+            if data[index] is None:
+
+                image = plt.imread(paths[index])
+                data[index] = []
+                for im_index, im in enumerate(images):
+                    im_slice = make_cutout(image, *positions[index, :, im_index])
+                    im.set_data(im_slice)
+                    data[index].append(im_slice)
+            else:
+                for im_index, im in enumerate(images):
+                    im.set_data(data[index][im_index])
+
+            index += 1
+            index %= positions.shape[0]
+
+            fig.axes[0].set_title("Time {0}".format(index))
+            fig.canvas.draw()
+
+            time.sleep(delay) if index != 1 else time.sleep(initial_delay)
+
+    try:
+        _animate()
+    except KeyboardInterrupt:
+        pass
+
+    return fig
 
 @_input_validate
 def get_irregular_intervals(project_compilation, max_deviation=0.05):

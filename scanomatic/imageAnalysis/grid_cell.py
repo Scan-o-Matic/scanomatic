@@ -18,6 +18,7 @@ __status__ = "Development"
 
 import numpy as np
 from scipy.stats.mstats import tmean, mquantiles
+import os
 
 #
 # SCANNOMATIC LIBRARIES
@@ -26,11 +27,10 @@ from scipy.stats.mstats import tmean, mquantiles
 import grid_cell_extra as grid_cell_extra
 from scanomatic.models.analysis_model import VALUES, COMPARTMENTS
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+from scanomatic.io.paths import Paths
 #
 # CLASS: Grid_Cell
 #
-
-_DEBUG_IMAGE = False
 
 
 class GridCell():
@@ -40,6 +40,7 @@ class GridCell():
 
     def __init__(self, identifier, polynomial_coeffs):
 
+        self._debug_save = False
         self._identifier = identifier
         self.position = tuple(identifier[-1])
         self._polynomial_coeffs = polynomial_coeffs
@@ -49,9 +50,10 @@ class GridCell():
         self.source = None
         self.ready = False
         self._previous_image = None
+        self.image_index = -1
         self.features = AnalysisFeaturesFactory.create(index=tuple(self.position), data={})
         self._analysis_items = {}
-        """:type: dict[scanomatic.models.analysis_model.ITEMS|scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
+        """:type: dict[scanomatic.models.analysis_model.ITEMS | scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
         self._set_empty_analysis_items()
 
     def _set_empty_analysis_items(self):
@@ -82,8 +84,10 @@ class GridCell():
 
     def set_grid_coordinates(self, grid_cell_corners):
 
-        self.xy1 = grid_cell_corners[:, 0, self.position[0], self.position[1]]
-        self.xy2 = grid_cell_corners[:, 1, self.position[0], self.position[1]]
+        flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
+        self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]]
+        self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
+        # self._debug_save = self.position[0] == 0 and self.position[1] == 0
 
     def get_overshoot_warning(self):
 
@@ -110,17 +114,6 @@ class GridCell():
                 self.source = np.polyval(polynomial_coeffs, self.source)
 
             self._set_max_value_filter()
-
-            global _DEBUG_IMAGE
-            if _DEBUG_IMAGE:
-
-                from matplotlib import pyplot as plt
-                from scanomatic.io.paths import Paths
-                import os
-                plt.clf()
-                plt.imshow(self.source)
-                plt.savefig(os.path.join(Paths().scanomatic, "scanomatic_debug_grid_cell_image.png"))
-                _DEBUG_IMAGE = False
 
         self.push_source_data_to_cell_items()
 
@@ -164,6 +157,30 @@ class GridCell():
             self.clear_features()
         else:
             self._analyse()
+
+        if self._debug_save:
+            self.debug_save()
+
+
+    @property
+    def debug_base_path(self):
+
+        return os.path.join(Paths().log, "grid_cell_{0}_{1}_{2}".format(
+            self.image_index, self._identifier[0][1], "_".join(map(str, self._identifier[-1]))))
+
+    def debug_save(self):
+
+        base_path = self.debug_base_path
+
+        blob = self._analysis_items[COMPARTMENTS.Blob]
+        background = self._analysis_items[COMPARTMENTS.Background]
+
+        np.save(base_path + ".background.filter.npy", background.filter_array)
+        np.save(base_path + ".image.npy", background.grid_array)
+        np.save(base_path + ".blob.filter.npy", blob.filter_array)
+        np.save(base_path + ".blob.trash.current.npy", blob.trash_array)
+        np.save(base_path + ".blob.trash.old.npy", blob.old_trash)
+
 
     def clear_features(self):
 
