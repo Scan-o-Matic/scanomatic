@@ -30,7 +30,9 @@ if __name__ == "__main__":
     setproctitle.setproctitle("SoM {0}".format("Server"))
     basename = os.path.basename(sys.argv[0])[:15]
 
-    for p in psutil.get_process_list():
+    procs = psutil.get_process_list if hasattr(psutil, "get_process_list") else psutil.process_iter
+
+    for p in procs():
 
         try:
 
