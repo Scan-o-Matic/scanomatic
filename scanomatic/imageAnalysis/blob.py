@@ -18,7 +18,12 @@ __status__ = "Development"
 import numpy as np
 from scipy.ndimage import binary_erosion, binary_dilation,\
     gaussian_filter, median_filter
-from skimage import filter as ski_filter
+
+try:
+    from skimage import filters as ski_filter
+except ImportError:
+    from skimage import filter as ski_filter
+
 
 #
 # SCANNOMATIC LIBRARIES
