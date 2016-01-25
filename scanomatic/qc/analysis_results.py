@@ -13,6 +13,27 @@ _pattern = re.compile(r".*_([0-9]+)_[0-9]+_[0-9]+_[0-9]+\.image.npy")
 _logger = Logger("Phenotype Results QC")
 
 
+def _sqaure_ax(ax):
+    fig = ax.figure
+
+    fig_width = fig.get_figwidth()
+    fig_height = fig.get_figheight()
+
+    extents = ax.get_position()
+    ax_width = fig_width * extents.width
+    ax_height = fig_height * extents.height
+    if ax_width > ax_height:
+        delta = (ax_width - ax_height) / (fig_width * 2.0)
+        extents.x0 += delta
+        extents.x1 -= delta
+    elif ax_height > ax_width:
+        delta = (ax_height - ax_width) / (fig_height * 2.0)
+        extents.y0 += delta
+        extents.y1 -= delta
+
+    ax.set_position(extents)
+
+
 def plot_growth_curve(growth_data, position, ax=None):
 
     if ax is None:
@@ -22,7 +43,6 @@ def plot_growth_curve(growth_data, position, ax=None):
 
     ax.semilogy(times, data[position[0] - 1][position[1:]], "g-", basey=2)
     ax.set_xlim(xmin=0, xmax=times.max() + 1)
-
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population size [cells]")
     curve_times = ax.lines[0].get_data()[0]
@@ -157,6 +177,8 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
 
     _, curve_times, polygon = plot_growth_curve(analysis_folder, position, curve_ax)
 
+    fig.tight_layout(h_pad=0.5)
+
     @Write_Movie(save_target, "Colony growth animation", fps=fps, fig=fig)
     def _plotter():
 
@@ -165,7 +187,7 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
             im_ax.set_title("Pos {0}, (t={1:.1f}h)".format(position, time / 3600.))
             im.set_data(images[..., i])
             set_axvspan_width(polygon, curve_times[i])
-
+            _sqaure_ax(curve_ax)
             yield
 
 
