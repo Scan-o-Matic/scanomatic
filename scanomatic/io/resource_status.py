@@ -71,7 +71,12 @@ class Resource_Status(object):
 
         :returns: boolean
         """
-        memUsage = psutil.phymem_usage().percent
+
+        try:
+            memUsage = psutil.phymem_usage().percent
+        except AttributeError:
+            memUsage = psutil.virtual_memory().percent
+
         memOK = (100 - memUsage) > Resource_Status._APP_CONFIG.resources_mem_min
 
         Resource_Status._LOGGER.info(
