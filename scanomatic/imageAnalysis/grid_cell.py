@@ -17,7 +17,7 @@ __status__ = "Development"
 #
 
 import numpy as np
-from scipy.stats.mstats import tmean, mquantiles
+# from scipy.stats.mstats import tmean, mquantiles
 import os
 
 #
@@ -28,6 +28,8 @@ import grid_cell_extra as grid_cell_extra
 from scanomatic.models.analysis_model import VALUES, COMPARTMENTS
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 from scanomatic.io.paths import Paths
+from scanomatic.io.logger import Logger
+from scanomatic.generics.maths import iqr_mean_stable as iqr_mean
 #
 # CLASS: Grid_Cell
 #
@@ -37,6 +39,7 @@ class GridCell():
 
     MAX_THRESHOLD = 4200
     MIN_THRESHOLD = 0
+    _logger = Logger("Grid Cell")
 
     def __init__(self, identifier, polynomial_coeffs):
 
@@ -100,10 +103,13 @@ class GridCell():
             if bg_sub_source is not None:
 
                 feature_array = self.source[np.where(bg_sub_source)]
-                bg_sub = tmean(feature_array,
-                               mquantiles(feature_array, prob=[0.25, 0.75]))
+                # bg_sub = tmean(feature_array,
+                #                mquantiles(feature_array, prob=[0.25, 0.75]))
+                bg_sub = iqr_mean(feature_array)
                 if not np.isfinite(bg_sub):
                     bg_sub = np.mean(feature_array)
+                    GridCell._logger.warning("{0} caused background mean ({1}) due to inf".format(
+                            self._identifier, bg_sub))
 
                 self.source -= bg_sub
 

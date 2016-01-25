@@ -26,7 +26,7 @@ import os
 import scanomatic.io.logger as logger
 from grayscale import getGrayscale
 import signal
-from scanomatic.generics.maths import iqr_mean
+from scanomatic.generics.maths import iqr_mean_stable as iqr_mean
 from scanomatic.io.paths import Paths
 
 #

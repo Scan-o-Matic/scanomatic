@@ -19,7 +19,7 @@ __status__ = "Development"
 
 import numpy as np
 import operator
-from scipy.stats.mstats import mquantiles, tmean
+# from scipy.stats.mstats import mquantiles, tmean
 from scipy.ndimage import binary_erosion, \
     center_of_mass, label, \
     gaussian_filter
@@ -31,6 +31,7 @@ import histogram
 import blob
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 from scanomatic.models.analysis_model import COMPARTMENTS, MEASURES
+from scanomatic.generics.maths import iqr_mean_stable as iqr_mean, quantiles_stable
 
 #
 # FUNCTIONS
@@ -284,11 +285,13 @@ class CellItem():
                 feature_data[MEASURES.Median] = np.median(feature_array)
 
             if MEASURES.IQR in self._features_key_list or MEASURES.IQR_Mean in self._features_key_list:
-                feature_data[MEASURES.IQR] = mquantiles(feature_array, prob=[0.25, 0.75])
+                feature_data[MEASURES.IQR] = quantiles_stable(feature_array)
+                # mquantiles(feature_array, prob=[0.25, 0.75])
 
                 try:
 
-                    feature_data[MEASURES.IQR_Mean] = tmean(feature_array, feature_data['IQR'])
+                    feature_data[MEASURES.IQR_Mean] = iqr_mean(feature_array)
+                    # tmean(feature_array, feature_data['IQR'])
 
                 except:
 
