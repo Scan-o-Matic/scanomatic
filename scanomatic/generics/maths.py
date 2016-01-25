@@ -12,3 +12,25 @@ def iqr_mean(data, *args, **kwargs):
             return  val.filled(np.nan)
         return val
     return None
+
+
+def iqr_mean_stable(data):
+
+    if not isinstance(data, np.ma.masked_array):
+        data = np.ma.masked_invalid(data)
+
+    data = data[data.mask == False]
+    threshold = np.floor(data.size * 0.25)
+    data.sort()
+    return data[threshold:-threshold].mean()
+
+
+def quantiles_stable(data):
+
+    if not isinstance(data, np.ma.masked_array):
+        data = np.ma.masked_invalid(data)
+
+    data = data[data.mask == False]
+    threshold = np.floor(data.size * 0.25)
+    data.sort()
+    return data[threshold], data[-threshold]
