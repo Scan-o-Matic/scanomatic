@@ -191,19 +191,27 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
             yield
 
 
-def animate_blob_detection(save_target, position=(0, 0, 0), source_location=None, growth_data=None,
-                           fig=None, fps=3, interval=None):
+def detection_files(data_pos, source_location=None):
 
     if source_location is None:
         source_location = Paths().log
 
-    if fig is None:
-        fig = plt.figure()
-
-    pattern = os.path.join(source_location, "grid_cell_*_{0}_{1}_{2}.image.npy".format(*position))
+    pattern = os.path.join(source_location, "grid_cell_*_{0}_{1}_{2}.image.npy".format(*data_pos))
     files = np.array(glob.glob(pattern))
     image_indices = [int(_pattern.match(f).groups()[0]) for f in files]
     index_order = np.argsort(image_indices)
+    return files[index_order], np.array(image_indices)[index_order]
+
+
+def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None, growth_data=None,
+                           fig=None, fps=12, interval=None):
+
+    if fig is None:
+        fig = plt.figure()
+
+    data_pos = [v for v in position]
+    data_pos[0] -= 1
+    files, image_indices = detection_files(data_pos, source_location)
 
     titles = ["Image", "Background", "Blob", "Trash (Now)", "Trash (Previous)", "Growth Data"]
     axes = len(titles)
@@ -213,28 +221,30 @@ def animate_blob_detection(save_target, position=(0, 0, 0), source_location=None
             ax = fig.add_subplot(2, 3, i + 1)
             ax.set_title(titles[i])
 
-    _, curve_times, polygon = plot_growth_curve(growth_data, position, fig.axes[-1])
+    curve_ax, curve_times, polygon = plot_growth_curve(growth_data, position, fig.axes[-1])
 
     image_ax = fig.axes[0]
     ims = []
     data = np.load(files[0])
-    for i, ax in enumerate(fig.axes):
+    for i, ax in enumerate(fig.axes[:-1]):
         ims.append(ax.imshow(data, interpolation='nearest', vmin=0, vmax=(3000 if i == 0 else 1)))
 
     @Write_Movie(save_target, "Colony detection animation", fps=fps, fig=fig)
     def _plotter():
 
-        for i in index_order:
+        for i, index in enumerate(image_indices):
 
             ims[0].set_data(np.load(files[i]))
             base_name = files[i][:-10]
-            image_ax.set_title("Image (t={0:.1f})".format(
-                image_indices[i] if interval is None else image_indices[i] * interval))
+            image_ax.set_title("Image (t={0:.1f}h)".format(
+                image_indices[index] if interval is None else image_indices[index] * interval))
 
-            for i, ending in enumerate(('.background.filter.npy', '.blob.filter.npy',
+            for j, ending in enumerate(('.background.filter.npy', '.blob.filter.npy',
                               '.blob.trash.current.npy', '.blob.trash.old.npy')):
 
-                ims[i + 1].set_data(np.load(base_name + ending))
-                set_axvspan_width(polygon, curve_times[i])
+                ims[j + 1].set_data(np.load(base_name + ending))
+
+            set_axvspan_width(polygon, curve_times[i])
+            _sqaure_ax(curve_ax)
 
             yield
