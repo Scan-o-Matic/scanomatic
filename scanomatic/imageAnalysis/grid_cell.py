@@ -228,8 +228,8 @@ class GridCell():
         background.detect()
 
     def attach_analysis(self, blob=True, background=True, cell=True,
-                        blob_detect='default', run_detect=False, center=None,
-                        radius=None):
+                        blob_detect=grid_cell_extra.BlobDetectionTypes.DEFAULT,
+                        run_detect=False, center=None, radius=None):
 
         """attach_analysis connects the analysis modules to the Grid_Cell.
 

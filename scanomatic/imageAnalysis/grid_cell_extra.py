@@ -362,24 +362,25 @@ class Blob(CellItem):
     blob.AnalysisThresholdOtsu(BLOB_RECIPE, threshold_unit_adjust=0.5)
     blob.AnalysisRecipeDilate(BLOB_RECIPE, iterations=2)
 
-    def __init__(self, identifier, grid_array, run_detect=True, threshold=None, blob_detect='default',
+    def __init__(self, identifier, grid_array, run_detect=True, threshold=None, blob_detect=BlobDetectionTypes.DEFAULT,
                  image_color_logic="norm", center=None, radius=None):
 
         CellItem.__init__(self, identifier, grid_array)
 
         self.threshold = threshold
 
-        try:
+        if not isinstance(blob_detect, BlobDetectionTypes):
+            try:
 
-            detect_type = BlobDetectionTypes[blob_detect.upper()]
+                blob_detect = BlobDetectionTypes[blob_detect.upper()]
 
-        except KeyError:
+            except KeyError:
 
-            detect_type = BlobDetectionTypes.DEFAULT
+                blob_detect = BlobDetectionTypes.DEFAULT
 
         self.detect_function = {BlobDetectionTypes.DEFAULT: self.default_detect,
                                 BlobDetectionTypes.THRESHOLD: self.threshold_detect,
-                                BlobDetectionTypes.ITERATIVE: self.iterative_threshold_detect}[detect_type]
+                                BlobDetectionTypes.ITERATIVE: self.iterative_threshold_detect}[blob_detect]
         self.old_trash = None
         self.trash_array = None
         self.image_color_logic = image_color_logic
