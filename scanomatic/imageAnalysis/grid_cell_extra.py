@@ -377,9 +377,13 @@ class Blob(CellItem):
 
                 blob_detect = BlobDetectionTypes.DEFAULT
 
-        self.detect_function = {BlobDetectionTypes.DEFAULT: self.default_detect,
-                                BlobDetectionTypes.THRESHOLD: self.threshold_detect,
-                                BlobDetectionTypes.ITERATIVE: self.iterative_threshold_detect}[blob_detect]
+        if blob_detect is BlobDetectionTypes.THRESHOLD:
+            self.detect_function = self.threshold
+        elif blob_detect is BlobDetectionTypes.ITERATIVE:
+            self.detect_function = self.iterative_threshold_detect
+        else:
+            self.detect_function = self.default_detect
+
         self.old_trash = None
         self.trash_array = None
         self.image_color_logic = image_color_logic
