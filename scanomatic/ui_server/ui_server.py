@@ -431,6 +431,21 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 time.sleep(5)
                 return jsonify(success=rpc_client.online)
 
+        elif action == 'shutdown':
+
+            rpc_client.shutdown()
+            time.sleep(2)
+            return jsonify(success=rpc_client.online is False)
+
+        elif action == 'launch':
+
+            if rpc_client.online:
+                return jsonify(success=False, reason="Server is already running")
+
+            rpc_client.launch_local()
+            time.sleep(2)
+            return jsonify(success=rpc_client.online)
+
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():
 
