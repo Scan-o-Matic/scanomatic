@@ -225,7 +225,7 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
 
     image_ax = fig.axes[0]
     ims = []
-    data = np.load(files[0])
+    data = np.load(files[0]).astype(np.float64)
     for i, ax in enumerate(fig.axes[:-1]):
         ims.append(ax.imshow(data, interpolation='nearest', vmin=0, vmax=(3000 if i == 0 else 1)))
 
@@ -242,7 +242,9 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
             for j, ending in enumerate(('.background.filter.npy', '.blob.filter.npy',
                               '.blob.trash.current.npy', '.blob.trash.old.npy')):
 
-                ims[j + 1].set_data(np.load(base_name + ending))
+                im_data = np.load(base_name + ending)
+                if im_data.ndim == 2:
+                    ims[j + 1].set_data(np.load(base_name + ending))
 
             set_axvspan_width(polygon, curve_times[i])
             _sqaure_ax(curve_ax)
