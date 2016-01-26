@@ -51,27 +51,15 @@ class Write_Movie(object):
         fig = self._fig
 
         if fig is None:
-            for a in args:
-                if isinstance(a, plt.Figure):
-                    fig = a
-
-        if fig is None:
-            for fig_key in ('fig', 'figure', 'Fig', 'Figure'):
-                if fig_key in kwargs and isinstance(kwargs[fig_key], plt.Figure):
-                    fig = kwargs[fig_key]
-                    break
-
-        if fig is None:
             fig = plt.figure()
 
         with self._writer.saving(fig, self._target, self._dpi):
 
             try:
-                for _ in drawing_function(*args, **kwargs):
+                for _ in drawing_function():
                     self._writer.grab_frame()
             except TypeError:
-                args += (fig,)
-                for _ in drawing_function(*args, **kwargs):
+                for _ in drawing_function(fig):
                     self._writer.grab_frame()
 
         print("Animation done!")
