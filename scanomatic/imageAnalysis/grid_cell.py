@@ -92,10 +92,6 @@ class GridCell():
         self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
         # self._debug_save = self.position[0] == 0 and self.position[1] == 0
 
-    def get_overshoot_warning(self):
-
-        return self._adjustment_warning
-
     def set_new_data_source_space(self, space=VALUES.Cell_Estimates, bg_sub_source=None, polynomial_coeffs=None):
 
         if space is VALUES.Cell_Estimates:
@@ -126,8 +122,12 @@ class GridCell():
     def _set_max_value_filter(self):
 
         max_detect_filter = self.source > self.MAX_THRESHOLD
-        self._adjustment_warning = max_detect_filter.any()
         self.source[max_detect_filter] = self.MAX_THRESHOLD
+        if not self._adjustment_warning and max_detect_filter.any():
+            self._adjustment_warning = True
+            self._logger.warning("{0} got {1} pixel-values capped to {2} due to exceeding colony thickness.".format(
+                self._identifier, max_detect_filter.sum(), self.MAX_THRESHOLD) +
+                                 " Further warnings for this colony suppressed.")
 
     def push_source_data_to_cell_items(self):
         for item_names in self._analysis_items.keys():
