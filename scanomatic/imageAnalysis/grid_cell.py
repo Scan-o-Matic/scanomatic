@@ -154,6 +154,9 @@ class GridCell():
         dictionary to avoid key errors..
         """
 
+        if self._debug_save:
+            self.debug_save_part_one()
+
         background = self._analysis_items[COMPARTMENTS.Background]
 
         if detect:
@@ -165,7 +168,7 @@ class GridCell():
             self._analyse()
 
         if self._debug_save:
-            self.debug_save()
+            self.debug_save_part_two()
 
 
     @property
@@ -174,7 +177,13 @@ class GridCell():
         return os.path.join(Paths().log, "grid_cell_{0}_{1}_{2}".format(
             self.image_index, self._identifier[0][1], "_".join(map(str, self._identifier[-1]))))
 
-    def debug_save(self):
+
+    def debug_save_part_one(self):
+
+        base_path = self.debug_base_path
+        np.save(base_path + ".image.npy", self.source)
+
+    def debug_save_part_two(self):
 
         base_path = self.debug_base_path
 
@@ -182,7 +191,7 @@ class GridCell():
         background = self._analysis_items[COMPARTMENTS.Background]
 
         np.save(base_path + ".background.filter.npy", background.filter_array)
-        np.save(base_path + ".image.npy", background.grid_array)
+        np.save(base_path + ".image.cells.npy", background.grid_array)
         np.save(base_path + ".blob.filter.npy", blob.filter_array)
         np.save(base_path + ".blob.trash.current.npy", blob.trash_array)
         np.save(base_path + ".blob.trash.old.npy", blob.old_trash)
