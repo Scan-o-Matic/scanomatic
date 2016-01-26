@@ -45,7 +45,7 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index):
 
     :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell
     """
-    grid_cell.source = _get_image_slice(im, grid_cell)
+    grid_cell.source = _get_image_slice(im, grid_cell).astype(np.float64)
     grid_cell.image_index = image_index
 
     if transpose_polynomial is not None:
