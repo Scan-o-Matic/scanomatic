@@ -56,7 +56,7 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index):
             blob=True, background=True, cell=True,
             run_detect=False)
 
-    grid_cell.analyse(remember_filter=True)
+    grid_cell.analyse(remember_filter=False)
 
 
 def _set_image_transposition(grid_cell, transpose_polynomial):
