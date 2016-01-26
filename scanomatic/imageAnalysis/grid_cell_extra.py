@@ -356,7 +356,6 @@ class BlobDetectionTypes(Enum):
 
 class Blob(CellItem):
 
-
     BLOB_RECIPE = blob.AnalysisRecipeEmpty()
     blob.AnalysisRecipeMedianFilter(BLOB_RECIPE)
     blob.AnalysisThresholdOtsu(BLOB_RECIPE, threshold_unit_adjust=0.5)
