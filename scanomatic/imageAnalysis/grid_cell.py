@@ -43,9 +43,9 @@ class GridCell():
 
     def __init__(self, identifier, polynomial_coeffs):
 
-        self._debug_save = False
         self._identifier = identifier
         self.position = tuple(identifier[-1])
+        self._debug_save = self.position == (0, 0)
         self._polynomial_coeffs = polynomial_coeffs
         self._adjustment_warning = False
         self.xy1 = []
