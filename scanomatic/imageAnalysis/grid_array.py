@@ -56,6 +56,7 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index):
             blob=True, background=True, cell=True,
             run_detect=False)
 
+    # TODO: Deterimine if it is best to remember history or not!
     grid_cell.analyse(remember_filter=False)
 
 
