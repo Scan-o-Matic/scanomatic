@@ -19,6 +19,7 @@ __status__ = "Development"
 
 import numpy as np
 import operator
+from enum import Enum
 # from scipy.stats.mstats import mquantiles, tmean
 from scipy.ndimage import binary_erosion, \
     center_of_mass, label, \
@@ -346,11 +347,15 @@ def get_onion_values(array, array_filter, layer_size):
     return np.asarray(onion)
 
 
-class Blob(CellItem):
+class BlobDetectionTypes(Enum):
 
     DEFAULT = 0
     ITERATIVE = 1
     THRESHOLD = 2
+
+
+class Blob(CellItem):
+
 
     BLOB_RECIPE = blob.AnalysisRecipeEmpty()
     blob.AnalysisRecipeMedianFilter(BLOB_RECIPE)
@@ -364,19 +369,17 @@ class Blob(CellItem):
 
         self.threshold = threshold
 
-        detect_types = {
-            'default': self.DEFAULT,
-            'iterative': self.ITERATIVE,
-            'threshold': self.THRESHOLD}
-
         try:
 
-            self.blob_detect = detect_types[blob_detect.lower()]
+            detect_type = BlobDetectionTypes[blob_detect.upper()]
 
         except KeyError:
 
-            self.blob_detect = self.DEFAULT
+            detect_type = BlobDetectionTypes.DEFAULT
 
+        self.detect_function = {BlobDetectionTypes.DEFAULT: self.default_detect,
+                                BlobDetectionTypes.THRESHOLD: self.threshold_detect,
+                                BlobDetectionTypes.ITERATIVE: self.iterative_threshold_detect}[detect_type]
         self.old_trash = None
         self.trash_array = None
         self.image_color_logic = image_color_logic
@@ -391,13 +394,9 @@ class Blob(CellItem):
 
                 self.manual_detect(center, radius)
 
-            elif self.blob_detect == self.THRESHOLD:
-
-                self.threshold_detect()
-
             else:
 
-                self.default_detect()
+                self.detect_function()
 
         self._debug_ticker = 0
 
@@ -570,7 +569,7 @@ class Blob(CellItem):
     # DETECT functions
     #
 
-    def detect(self, blob_detect=None, max_change_threshold=8,
+    def detect(self, detect_type=None, max_change_threshold=8,
                remember_filter=False):
         """
         Generic wrapper function for blob-detection that calls the
@@ -589,25 +588,22 @@ class Blob(CellItem):
 
             self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
 
-        if blob_detect is None:
+        if detect_type is None:
 
-            blob_detect = self.blob_detect
-
-        if blob_detect == self.DEFAULT:
-
-            self.default_detect()
-
-        elif blob_detect == self.ITERATIVE:
-
-            self.iterative_threshold_detect()
-
-        elif blob_detect == self.THRESHOLD:
-
-            self.threshold_detect()
-
+            self.detect_function()
         else:
 
-            self.default_detect()
+            if detect_type is BlobDetectionTypes.ITERATIVE:
+
+                self.iterative_threshold_detect()
+
+            elif detect_type is BlobDetectionTypes.THRESHOLD:
+
+                self.threshold_detect()
+
+            else:
+
+                self.default_detect()
 
         if self.trash_array is None:
 
