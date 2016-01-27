@@ -1,16 +1,7 @@
-#!/usr/bin/env python
 """
 Part of the analysis work-flow that holds the grid-cell object (A tile in a
 grid-array with a potential blob at the center).
 """
-__author__ = "Martin Zackrisson, Mats Kvarnstroem"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
 
 #
 # DEPENDENCIES
