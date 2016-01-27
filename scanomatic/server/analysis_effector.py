@@ -164,6 +164,12 @@ Scan-o-Matic""", self._analysis_job)
             self._stopping = True
             return False
 
+        # TODO: Verify that this isn't the thing causing the capping!
+        if image_model.fixture.grayscale is None or image_model.fixture.grayscale.values is None:
+            self._logger.error("No grayscale analysis results for '{0}' means image not included in analysis".format(
+                image_model.image.path))
+            return True
+
         image_model.fixture.grayscale.values = image_model.fixture.grayscale.values[::-1]
 
         first_image_analysed = self._current_image_model is None
