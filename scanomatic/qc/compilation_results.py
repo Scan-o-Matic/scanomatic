@@ -53,8 +53,15 @@ def get_grayscale_outlier_images(project_compilation, max_distance=3.0, only_ima
 @_input_validate
 def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distance=3.0):
 
-    data = np.array([image.fixture.grayscale.values for image in project_compilation])
-    outliers = get_grayscale_outlier_images(project_compilation, max_distance) if mark_outliers else []
+    data = [image.fixture.grayscale.values for image in project_compilation]
+    length = max(len(v) for v in data if v is not None)
+    empty = np.zeros((length,), dtype=float) * np.inf
+    data = [empty if d is None else d for d in data]
+    data = np.array(data)
+    if mark_outliers:
+        outliers = get_grayscale_outlier_images(project_compilation, max_distance) if mark_outliers else []
+    else:
+        outliers = None
     f = plt.figure()
     f.clf()
     ax = f.gca()
