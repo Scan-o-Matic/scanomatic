@@ -62,7 +62,7 @@ _logger.info("Preparing setup parameters")
 
 package_dependencies = [
     'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
-    'numpy', 'sh', 'nmap', 'configparse', 'scikit-image',
+    'numpy', 'sh', 'nmap', 'configparse', 'skimage',
     'uuid', 'PIL', 'scipy', 'setproctitle', 'psutil', 'flask']
 
 data_files = []
@@ -107,7 +107,6 @@ setup(
     author="Martin Zackrisson",
     author_email="martin.zackrisson@gu.se",
     url="www.gitorious.org/scannomatic",
-    install_requires=package_dependencies,
     packages=[
         "scanomatic",
         "scanomatic.generics",
@@ -134,7 +133,8 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Bio-Informatics'
-    ]
+    ],
+    requires=package_dependencies
 )
 
 if os.name == "nt":
