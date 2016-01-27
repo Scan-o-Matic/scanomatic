@@ -9,9 +9,11 @@ from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 
+from mpl_toolkits.mplot3d import Axes3D
+
 _pattern = re.compile(r".*_([0-9]+)_[0-9]+_[0-9]+_[0-9]+\.image.npy")
 _logger = Logger("Phenotype Results QC")
-
+_marker_sequence = ['v', 'o', 's', '+', 'x', 'D', '*', '^']
 
 def _sqaure_ax(ax):
     fig = ax.figure
@@ -249,4 +251,130 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
             set_axvspan_width(polygon, curve_times[i])
             _sqaure_ax(curve_ax)
 
+            yield
+
+
+def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, growth_data=None,
+                           fig=None, fps=12, interval=None, height_conversion=.001, rotation_speed=5.):
+
+    if fig is None:
+        fig = plt.figure(figsize=(10, 3))
+
+    data_pos = [v for v in position]
+    data_pos[0] -= 1
+    files, image_indices = detection_files(data_pos, source_location)
+
+    titles = ["Image", "3D", "Growth Curve"]
+    axes = len(titles)
+    if len(fig.axes) != axes:
+        fig.clf()
+        for i in range(axes):
+            if i == 1:
+                ax = fig.add_subplot(i, 3, i + 1, projection='3d')
+            else:
+                ax = fig.add_subplot(1, 3, i + 1)
+            ax.set_title(titles[i])
+
+    image_ax, ax3d, curve_ax = fig.axes
+
+    data = np.load(files[0])
+    im = image_ax.imshow(data, interpolation='nearest', vmin=0, vmax=100)
+
+    coords_x, coords_y = np.mgrid[0:data.shape[0], 0:data.shape[1]]
+
+    _, curve_times, polygon = plot_growth_curve(growth_data, position, curve_ax)
+    _sqaure_ax(curve_ax)
+
+    @Write_Movie(save_target, "Colony detection animation", fps=fps, fig=fig)
+    def _plotter():
+
+        for i, index in enumerate(image_indices):
+
+            im.set_data(np.load(files[i]))
+
+            base_name = files[i][:-10]
+
+            image_ax.set_title("Image (t={0:.1f}h)".format(
+                image_indices[index] if interval is None else image_indices[index] * interval))
+
+            cells = np.load(base_name + ".image.cells.npy")
+            if cells.ndim != 2:
+                cells = np.zeros_like(coords_y)
+            else:
+                cells = np.round(cells * height_conversion, 1)
+
+            ax3d = fig.add_subplot(1, 3, 2, projection='3d')
+            ax3d.view_init(elev=35., azim=(i*rotation_speed) % 360)
+            ax3d.set_axis_off()
+            ax3d.plot_surface(coords_x, coords_y, cells, rstride=3, cstride=3, lw=.2)
+
+            ax3d.set_xlim(xmin=0, xmax=coords_x.shape[0])
+            ax3d.set_ylim(ymin=0, ymax=coords_x.shape[1])
+            ax3d.set_zlim(zmin=0, zmax=15)
+
+            _sqaure_ax(ax3d)
+            # _zoom_ax(ax3d, 1.3)
+
+            set_axvspan_width(polygon, curve_times[i])
+
+            yield
+
+
+def animate_example_curves(save_target, growth_data=None, fig=None, fps=2, ax_title=None, duration=4, legend=None,
+                           cmap=plt.cm.terrain, **kwargs):
+
+    if isinstance(growth_data, types.StringType):
+        growth_data = [growth_data]
+
+    if fig is None:
+        fig = plt.figure()
+
+    times = []
+    data = []
+
+    for path in growth_data:
+        t, d = ImageData.read_image_data_and_time(path)
+        times.append(t)
+        data.append(d)
+
+    ax = plt.gca()
+    ax.set_title(ax_title)
+
+    curves = []
+    data_sets = len(data)
+    for i in range(data_sets):
+        curve = ax.semilogy(times[i], data[i][0][0, 0], marker=_marker_sequence[i], basey=2,
+                            color=cmap(i/float(data_sets)), mec=cmap(i/float(data_sets)), **kwargs)[0]
+        curves.append(curve)
+
+    ax.set_xlim(xmin=0, xmax=max(np.array(t).max() for t in times) + 0.5)
+    ax.set_xlabel("Time [h]")
+    ax.set_ylabel("Population Size [cells]")
+    if ax_title is not None:
+        ax.set_title(ax_title)
+    if legend:
+        ax.legend(legend, loc='lower right')
+
+    @Write_Movie(save_target, "Example Curves", fps=fps, fig=fig)
+    def _plotter():
+
+        elapsed = 0
+
+        while elapsed < duration:
+            plate = np.random.randint(data[0].shape[0])
+            pos = tuple(np.random.randint(d) for d in data[0][plate].shape[:2])
+            if ax_title is None:
+                ax.set_title("Plate {0}, Pos {1}".format(plate, pos))
+
+            ymin = None
+            ymax = None
+            for i in range(data_sets):
+                d = np.ma.masked_invalid(data[i][plate][pos])
+                curves[i].set_ydata(d)
+                if ymin is None or d.min() < ymin:
+                    ymin = d.min() * 0.9
+                if ymax is None or d.max() > ymax:
+                    ymax = d.max() * 1.2
+            ax.set_ylim(ymin=ymin, ymax=ymax)
+            elapsed += 1.0/fps
             yield
