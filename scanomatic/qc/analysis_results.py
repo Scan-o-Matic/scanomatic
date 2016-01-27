@@ -316,7 +316,6 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
             ax3d.set_zlim(zmin=0, zmax=15)
 
             _sqaure_ax(ax3d)
-            # _zoom_ax(ax3d, 1.3)
 
             set_axvspan_width(polygon, curve_times[i])
 
