@@ -272,13 +272,11 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
     if len(fig.axes) != axes:
         fig.clf()
         for i in range(axes):
-            if i == 1:
-                ax = fig.add_subplot(i, 3, i + 1, projection='3d')
-            else:
+            if i != 1:
                 ax = fig.add_subplot(1, 3, i + 1)
-            ax.set_title(titles[i])
+                ax.set_title(titles[i])
 
-    image_ax, ax3d, curve_ax = fig.axes
+    image_ax, curve_ax = fig.axes
 
     data = np.load(files[0])
     im = image_ax.imshow(data, interpolation='nearest', vmin=0, vmax=100)
@@ -290,6 +288,8 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
 
     @Write_Movie(save_target, "Colony detection animation", fps=fps, fig=fig)
     def _plotter():
+
+        ax3d = None
 
         for i, index in enumerate(image_indices):
 
@@ -306,10 +306,12 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
             else:
                 cells = np.round(cells * height_conversion, 1)
 
+            if ax3d:
+                fig.delaxes(ax3d)
             ax3d = fig.add_subplot(1, 3, 2, projection='3d')
             ax3d.view_init(elev=35., azim=(i*rotation_speed) % 360)
             ax3d.set_axis_off()
-            ax3d.plot_surface(coords_x, coords_y, cells, rstride=3, cstride=3, lw=.2)
+            ax3d.plot_surface(coords_x, coords_y, cells, rstride=3, cstride=3, lw=.2, edgecolors="w")
 
             ax3d.set_xlim(xmin=0, xmax=coords_x.shape[0])
             ax3d.set_ylim(ymin=0, ymax=coords_x.shape[1])
