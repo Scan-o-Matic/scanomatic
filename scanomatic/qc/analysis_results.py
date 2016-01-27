@@ -2,6 +2,7 @@
 import glob
 import os
 import re
+import types
 
 from scanomatic.io.movie_writer import *
 from scanomatic.io.image_data import ImageData
@@ -164,7 +165,7 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
 
 
 def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=12, project_compilation=None, fig=None,
-                          cmap=plt.cm.gray):
+                          cmap=plt.cm.gray, colony_title=None):
 
     _logger.info("Loading colony images")
     times, images, _ = load_colony_images_for_animation(analysis_folder, position,
@@ -174,7 +175,7 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
         fig = plt.figure()
 
     im_ax = fig.add_subplot(1, 2, 1)
-    curve_ax = fig.add_subplot(1, 2, 2, aspect=1.0)
+    curve_ax = fig.add_subplot(1, 2, 2)
     im = im_ax.imshow(images[..., 0], interpolation="nearest", vmin=images.min(), vmax=images.max(), cmap=cmap)
 
     _, curve_times, polygon = plot_growth_curve(analysis_folder, position, curve_ax)
@@ -186,7 +187,9 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
 
         for i, time in enumerate(times):
 
-            im_ax.set_title("Pos {0}, (t={1:.1f}h)".format(position, time / 3600.))
+            im_ax.set_title(
+                colony_title if colony_title is not None else
+                "Pos {0}, (t={1:.1f}h)".format(position, time / 3600.))
             im.set_data(images[..., i])
             set_axvspan_width(polygon, curve_times[i])
             _sqaure_ax(curve_ax)
@@ -229,7 +232,7 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
     ims = []
     data = np.load(files[0]).astype(np.float64)
     for i, ax in enumerate(fig.axes[:-1]):
-        ims.append(ax.imshow(data, interpolation='nearest', vmin=0, vmax=(3000 if i == 0 else 1)))
+        ims.append(ax.imshow(data, interpolation='nearest', vmin=0, vmax=(100 if i == 0 else 1)))
 
     @Write_Movie(save_target, "Colony detection animation", fps=fps, fig=fig)
     def _plotter():
