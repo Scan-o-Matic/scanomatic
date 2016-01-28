@@ -37,7 +37,7 @@ def _sqaure_ax(ax):
     ax.set_position(extents)
 
 
-def plot_growth_curve(growth_data, position, ax=None):
+def plot_growth_curve(growth_data, position, ax=None, save_target=None):
 
     if ax is None:
         ax = plt.figure().gca()
@@ -52,6 +52,9 @@ def plot_growth_curve(growth_data, position, ax=None):
 
     polygon = ax.axvspan(0, 0, color=(0, 1, 0, 0.5))
     polygon.xy = np.vstack((polygon.xy, polygon.xy[0].reshape(1,2)))
+
+    if save_target is not None:
+        ax.figure.savefig(save_target)
 
     return ax, curve_times, polygon
 
