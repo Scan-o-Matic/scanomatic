@@ -1,5 +1,7 @@
 __author__ = 'martin'
 
+from scanomatic.io.movie_writer import Write_Movie
+
 import matplotlib.pyplot as plt
 import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -9,7 +11,6 @@ import pandas as pd
 
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
 from scanomatic.io.logger import Logger
-from scanomatic.io.movie_writer import Write_Movie
 from scanomatic.dataProcessing.phenotyper import Phenotyper
 
 _logger = Logger("Phenotype Results QC")
@@ -39,7 +40,8 @@ def get_position_phenotypes(phenotypes, plate, position_selection=None):
 @_validate_input
 def plot_plate_heatmap(
         phenotypes, plate_index, measure=None, use_common_value_axis=True, vmin=None, vmax=None, show_color_bar=True,
-        horizontal_orientation=True, cm=plt.cm.RdBu_r, title_text=None, hide_axis=False, fig=None, show_figure=True):
+        horizontal_orientation=True, cm=plt.cm.RdBu_r, title_text=None, hide_axis=False, fig=None,
+        save_target=None):
 
     if measure is None:
         measure = Phenotypes.GenerationTime.value
@@ -112,9 +114,8 @@ def plot_plate_heatmap(
     if hide_axis:
         ax.set_axis_off()
 
-    fig.tight_layout()
-    if show_figure:
-        fig.show()
+    if save_target is not None:
+        fig.savefig(save_target)
 
     return fig
 
