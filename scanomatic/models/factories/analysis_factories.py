@@ -143,6 +143,8 @@ class AnalysisModelFactory(AbstractModelFactory):
         'focus_position': tuple,
         'suppress_non_focal': bool,
         'animate_focal': bool,
+        'one_time_positioning': bool,
+        'one_time_grayscale': bool,
         'grid_images': list,
         'grid_model': analysis_model.GridModel,
         'xml_model': analysis_model.XMLModel,
