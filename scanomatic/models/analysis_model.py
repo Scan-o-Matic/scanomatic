@@ -41,7 +41,7 @@ class AnalysisModel(model.Model):
                  use_local_fixture=False, email="",
                  stop_at_image=-1, output_directory="analysis",
                  focus_position=None, suppress_non_focal=False, animate_focal=False,
-                 one_time_positioning=False, one_time_grayscale=False,
+                 one_time_positioning=True, one_time_grayscale=False,
                  grid_images=None, grid_model=None, xml_model=None,
                  image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum, chain=True):
 
