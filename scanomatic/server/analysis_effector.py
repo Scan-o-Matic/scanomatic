@@ -191,7 +191,7 @@ Scan-o-Matic""", self._analysis_job)
         # Overwrite plate positions if requested
         if self._analysis_job.one_time_positioning:
 
-            self._logger.info("Using plate positions detetect on {0} for {1}".format(
+            self._logger.info("Using plate positions detected on {0} for {1}".format(
                 self._reference_compilation_image_model.image.path,
                 image_model.image.path))
 
