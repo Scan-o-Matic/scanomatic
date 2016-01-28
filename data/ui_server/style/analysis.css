@@ -1,0 +1,14 @@
+.onoffswitch.one_time_positioning {
+    position: relative; width: 350px;
+}
+
+.onoffswitch-inner.one_time_positioning:after {
+    content: "One Time Positioning (default)" !important;
+}
+.onoffswitch-inner.one_time_positioning:before {
+    content: "Dynamic Positioning" !important;
+}
+
+.onoffswitch-switch.one_time_positioning {
+    position: absolute; top: 0; bottom: 0; right: 316px;
+}

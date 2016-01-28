@@ -267,6 +267,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     compilation=request.values.get("compilation"),
                     compile_instructions=request.values.get("compile_instructions"),
                     output_directory=request.values.get("output_directory"),
+                    one_time_positioning=bool(request.values.get('one_time_positioning', default=1, type=int)),
                     chain=bool(request.values.get('chain', default=1, type=int)))
 
                 success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
