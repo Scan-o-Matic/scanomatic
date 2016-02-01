@@ -1,6 +1,6 @@
 __author__ = 'martin'
 
-from scanomatic.io.movie_writer import Write_Movie
+from scanomatic.io.movie_writer import MovieWriter
 
 import matplotlib.pyplot as plt
 import matplotlib
@@ -169,7 +169,7 @@ def animate_plate_over_time(save_target, plate, initial_delay=3, delay=0.05, tru
     im = animation_params['ax'].imshow(plate[..., 0], interpolation="nearest", vmin=vmin, vmax=vmax,
                                        cmap=animation_params['cmap'])
 
-    @Write_Movie(save_target, fps=fps, fig=animation_params['figure'])
+    @MovieWriter(save_target, fps=fps, fig=animation_params['figure'])
     def _animation():
         while animation_params['index'] < plate.shape[-1]:
 
@@ -179,5 +179,6 @@ def animate_plate_over_time(save_target, plate, initial_delay=3, delay=0.05, tru
 
             yield
 
+    _animation()
 
     return animation_params

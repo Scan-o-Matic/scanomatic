@@ -3,12 +3,15 @@ import glob
 import os
 import re
 import types
+import numpy as np
 
-from scanomatic.io.movie_writer import *
+from scanomatic.io.movie_writer import MovieWriter
 from scanomatic.io.image_data import ImageData
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
+
+from matplotlib import pyplot as plt
 
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -51,7 +54,7 @@ def plot_growth_curve(growth_data, position, ax=None, save_target=None):
     curve_times = ax.lines[0].get_data()[0]
 
     polygon = ax.axvspan(0, 0, color=(0, 1, 0, 0.5))
-    polygon.xy = np.vstack((polygon.xy, polygon.xy[0].reshape(1,2)))
+    polygon.xy = np.vstack((polygon.xy, polygon.xy[0].reshape(1, 2)))
 
     if save_target is not None:
         ax.figure.savefig(save_target)
@@ -185,7 +188,7 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
 
     fig.tight_layout(h_pad=0.5)
 
-    @Write_Movie(save_target, "Colony growth animation", fps=fps, fig=fig)
+    @MovieWriter(save_target, "Colony growth animation", fps=fps, fig=fig)
     def _plotter():
 
         for i, time in enumerate(times):
@@ -197,6 +200,8 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
             set_axvspan_width(polygon, curve_times[i])
             _sqaure_ax(curve_ax)
             yield
+
+    return _plotter()
 
 
 def detection_files(data_pos, source_location=None):
@@ -237,7 +242,7 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
     for i, ax in enumerate(fig.axes[:-1]):
         ims.append(ax.imshow(data, interpolation='nearest', vmin=0, vmax=(100 if i == 0 else 1)))
 
-    @Write_Movie(save_target, "Colony detection animation", fps=fps, fig=fig)
+    @MovieWriter(save_target, "Colony detection animation", fps=fps, fig=fig)
     def _plotter():
 
         for i, index in enumerate(image_indices):
@@ -259,9 +264,11 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
 
             yield
 
+    return _plotter()
+
 
 def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, growth_data=None,
-                           fig=None, fps=12, interval=None, height_conversion=.001, rotation_speed=5.):
+                      fig=None, fps=12, interval=None, height_conversion=.001, rotation_speed=5.):
 
     if fig is None:
         fig = plt.figure(figsize=(10, 3))
@@ -289,7 +296,7 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
     _, curve_times, polygon = plot_growth_curve(growth_data, position, curve_ax)
     _sqaure_ax(curve_ax)
 
-    @Write_Movie(save_target, "Colony detection animation", fps=fps, fig=fig)
+    @MovieWriter(save_target, "Colony detection animation", fps=fps, fig=fig)
     def _plotter():
 
         ax3d = None
@@ -325,6 +332,8 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
             set_axvspan_width(polygon, curve_times[i])
 
             yield
+
+    return _plotter()
 
 
 def animate_example_curves(save_target, growth_data=None, fig=None, fps=2, ax_title=None, duration=4, legend=None,
@@ -362,7 +371,7 @@ def animate_example_curves(save_target, growth_data=None, fig=None, fps=2, ax_ti
     if legend:
         ax.legend(legend, loc='lower right')
 
-    @Write_Movie(save_target, "Example Curves", fps=fps, fig=fig)
+    @MovieWriter(save_target, "Example Curves", fps=fps, fig=fig)
     def _plotter():
 
         elapsed = 0
@@ -385,3 +394,5 @@ def animate_example_curves(save_target, growth_data=None, fig=None, fps=2, ax_ti
             ax.set_ylim(ymin=ymin, ymax=ymax)
             elapsed += 1.0/fps
             yield
+
+    return _plotter()

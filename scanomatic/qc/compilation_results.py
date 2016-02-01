@@ -1,4 +1,4 @@
-__author__ = 'martin'
+from scanomatic.io.movie_writer import MovieWriter
 
 from types import StringTypes
 import numpy as np
@@ -121,12 +121,13 @@ def animate_marker_positions(project_compilation, fig=None, slice_size=201, init
                 max(pos_y - half_slice_size, 0): min(pos_y + half_slice_size + 1, img.shape[1])]
         return cutout
 
+    @MovieWriter(save_target, title=title, comment=comment, fps=fps, fig=fig)
     def _animate():
 
-        index = 0
+
         data = [None for _ in range(positions.shape[0])]
 
-        while True:
+        for index in range(positions.shape[0]):
 
             if data[index] is None:
 
@@ -140,20 +141,13 @@ def animate_marker_positions(project_compilation, fig=None, slice_size=201, init
                 for im_index, im in enumerate(images):
                     im.set_data(data[index][im_index])
 
-            index += 1
-            index %= positions.shape[0]
-
             fig.axes[0].set_title("Time {0}".format(index))
-            fig.canvas.draw()
+            yield
 
-            time.sleep(delay) if index != 1 else time.sleep(initial_delay)
-
-    try:
-        _animate()
-    except KeyboardInterrupt:
-        pass
+    _animate()
 
     return fig
+
 
 @_input_validate
 def get_irregular_intervals(project_compilation, max_deviation=0.05):
