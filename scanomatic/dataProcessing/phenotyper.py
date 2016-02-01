@@ -368,8 +368,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 position_phenotypes = [None] * phenotypes_count
 
-                id0 = pos_index % plate.shape[0]
-                id1 = pos_index / plate.shape[0]
+                id1 = pos_index % plate.shape[1]
+                id0 = pos_index / plate.shape[1]
 
                 curve_data = get_preprocessed_data_for_phenotypes(
                     curve=plate[id0, id1],
