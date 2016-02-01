@@ -69,7 +69,7 @@ def get_grayscale_outlier_images(project_compilation, max_distance=3.0, only_ima
 
 
 @_input_validate
-def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distance=3.0):
+def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distance=3.0, save_target=None):
 
     data = [image.fixture.grayscale.values for image in project_compilation]
     length = max(len(v) for v in data if v is not None)
@@ -94,6 +94,9 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
             ax.annotate(outlier.image.index, (segments, outlier.image.index), color='k')
 
         ax.set_xlim(0, segments)
+
+    if save_target is not None:
+        f.savefig(save_target)
 
     return f
 
@@ -190,7 +193,7 @@ def _get_irregular_intervals(data, max_deviation):
 
 
 @_input_validate
-def plot_positional_markers(project_compilation):
+def plot_positional_markers(project_compilation, save_target=None):
 
     data = _get_marker_sorted_data(project_compilation)
 
@@ -231,6 +234,10 @@ def plot_positional_markers(project_compilation):
         ax.axis('off')
 
     f.tight_layout()
+
+    if save_target is not None:
+        f.savefig(save_target)
+
     return f
 
 
