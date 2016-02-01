@@ -190,7 +190,9 @@ class FixtureImage(object):
 
         return fftconvolve(t_img, t_mrk, mode='same')
 
-    def get_best_location(self, conv_img, stencil_size, refine_hit_gauss_weight_size_fraction=2.0):
+    @staticmethod
+    def get_best_location(conv_img, stencil_size, refine_hit_gauss_weight_size_fraction=2.0,
+                          max_refinement_iterations=20, min_refinement_sq_distance=0.0001):
         """This whas hidden and should be taken care of, is it needed"""
 
         hit = np.where(conv_img == conv_img.max())
@@ -210,8 +212,16 @@ class FixtureImage(object):
                        'd1_max': min(conv_img.shape[1], hit[1] + half_stencil_size[1])}
 
 
-        hit += self.get_hit_refined(hit - (coordinates['d0_min'], coordinates['d1_min']), conv_img, coordinates,
-                                    refine_hit_gauss_weight_size_fraction)
+        for _ in range(max_refinement_iterations):
+
+            offset = FixtureImage.get_hit_refined(
+                    hit - (coordinates['d0_min'], coordinates['d1_min']), conv_img, coordinates,
+                    refine_hit_gauss_weight_size_fraction)
+
+            hit += offset
+
+            if (offset ** 2).sum() < min_refinement_sq_distance:
+                break
 
         coordinates = {'d0_min': round(max(0, hit[0] - half_stencil_size[0] - 1)),
                        'd0_max': round(min(conv_img.shape[0], hit[0] + half_stencil_size[0])),
