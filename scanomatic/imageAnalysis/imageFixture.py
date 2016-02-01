@@ -133,7 +133,8 @@ class FixtureImage(object):
             self._img = imageBasics.Quick_Scale_To_im(conversion_factor)
             self._logger.info("Scaled")
 
-    def get_hit_refined(self, local_hit, conv_img, coordinates, gaussian_weight_size_fraction=2.0):
+    @staticmethod
+    def get_hit_refined(local_hit, conv_img, coordinates=None, gaussian_weight_size_fraction=2.0):
         """
         Use half-size to select area and give each pixel the weight of the convolution result of
         that coordinate times the 2D gaussian value based on offset of distance to hit (sigma = ?).
@@ -163,8 +164,11 @@ class FixtureImage(object):
 
             return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
 
-        image_slice = conv_img[coordinates['d0_min']: coordinates['d0_max'],
-                      coordinates['d1_min']: coordinates['d1_max']]
+        if coordinates is None:
+            image_slice = conv_img
+        else:
+            image_slice = conv_img[coordinates['d0_min']: coordinates['d0_max'],
+                                   coordinates['d1_min']: coordinates['d1_max']]
 
         gauss_size = max(image_slice.shape)
 
