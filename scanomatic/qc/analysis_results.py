@@ -182,11 +182,12 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
 
 
 def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=12, project_compilation=None, fig=None,
-                          cmap=plt.cm.gray, colony_title=None):
+                          cmap=plt.cm.gray, colony_title=None, positioning="one-time"):
 
     _logger.info("Loading colony images")
     times, images, _ = load_colony_images_for_animation(analysis_folder, position,
-                                                        project_compilation=project_compilation)
+                                                        project_compilation=project_compilation,
+                                                        positioning=positioning)
 
     if fig is None:
         fig = plt.figure()
