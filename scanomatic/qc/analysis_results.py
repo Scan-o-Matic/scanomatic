@@ -67,7 +67,7 @@ def set_axvspan_width(polygon, width):
     polygon.xy[2:4, 0] = width
 
 
-def load_colony_images_for_animation(analysis_directory, position, project_compilation=None):
+def load_colony_images_for_animation(analysis_directory, position, project_compilation=None, positioning="one-time"):
     """
 
     :param analysis_directory: path to analysis directory
@@ -77,6 +77,9 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
     :type position: [int]
     :param project_compilation: Path to the associated compilation file, inferred if not submitted
     :type project_compilation: str
+    :param positioning: Type of positioning to simulate. Default is "one-time", which uses the gridding image
+    positioning all through.Use "detected" for the position actually detected.
+    :type positioning: str
     :return: First array is a 1D time-vector, second array is a 3D image sequence vector where the last dimension
     is time, the third array is the 2D plate slice of the last image.
     :rtype : numpy.ndarray, numpy.ndarray, numpy.ndarray
@@ -106,6 +109,8 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
             ubound += colony_size - (ubound - lbound)
 
         return plate[lbound[0]: ubound[0], lbound[1]:ubound[1]]
+
+    assert positioning in ('one-time', 'detected'), "Unknown positioning argument"
 
     plate_as_index = position[0] - 1
     analysis_directory = os.path.abspath(analysis_directory)
@@ -146,6 +151,7 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
     times = np.array(tuple(entry.image.time_stamp for entry in compilation_results))
     images = np.zeros(tuple(grid_size) + times.shape, dtype=np.uint16)
     im = None
+    ref_plate_model = compilation_results[-1].fixture.plates
 
     for i, entry in enumerate(compilation_results):
         try:
@@ -153,7 +159,12 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
         except IOError:
             im = plt.imread(os.path.join(experiment_directory, os.path.basename(entry.image.path)))
 
-        plate_model = entry.fixture.plates[plate_as_index]
+        if positioning == 'one-time':
+            plate_model = ref_plate_model[plate_as_index]
+        elif positioning == 'detected':
+            plate_model = entry.fixture.plates[plate_as_index]
+        else:
+            raise ValueError("Positioning can't be '{0}'".format(positioning))
 
         x = sorted((plate_model.x1, plate_model.x2))
         y = sorted((plate_model.y1, plate_model.y2))
