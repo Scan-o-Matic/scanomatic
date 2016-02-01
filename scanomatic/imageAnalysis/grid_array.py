@@ -39,13 +39,14 @@ class InvalidGridException(Exception):
     pass
 
 
-def _analyse_grid_cell(grid_cell, im, transpose_polynomial):
+def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index):
 
     """
 
     :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell
     """
-    grid_cell.source = _get_image_slice(im, grid_cell)
+    grid_cell.source = _get_image_slice(im, grid_cell).astype(np.float64)
+    grid_cell.image_index = image_index
 
     if transpose_polynomial is not None:
         _set_image_transposition(grid_cell, transpose_polynomial)
@@ -55,7 +56,8 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial):
             blob=True, background=True, cell=True,
             run_detect=False)
 
-    grid_cell.analyse(remember_filter=True)
+    # TODO: Deterimine if it is best to remember history or not!
+    grid_cell.analyse(remember_filter=False)
 
 
 def _set_image_transposition(grid_cell, transpose_polynomial):
@@ -239,6 +241,8 @@ class GridCellSizes(object):
 
 class GridArray():
 
+    _LOGGER = logger.Logger("Grid Array")
+
     def __init__(self, image_identifier, pinning, analysis_model):
 
         self._paths = paths.Paths()
@@ -401,7 +405,9 @@ class GridArray():
         self.watch_blob = None
         self.watch_results = None
 
-        self.image_index = image_model.image.index
+        index = image_model.image.index
+        self.image_index = index
+        self._LOGGER.info("Processing {0}, index {1}".format(self._identifier, index))
 
         # noinspection PyBroadException
         try:
@@ -422,7 +428,7 @@ class GridArray():
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_grid_name)
 
         for grid_cell in self._grid_cells.values():
-            _analyse_grid_cell(grid_cell, im, transpose_polynomial)
+            _analyse_grid_cell(grid_cell, im, transpose_polynomial, index)
 
         self._set_focus_colony_results()
 

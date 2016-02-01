@@ -39,8 +39,10 @@ class AnalysisModel(model.Model):
     def __init__(self, compilation="", compile_instructions="",
                  pinning_matrices=((32, 48), (32, 48), (32, 48), (32, 48)),
                  use_local_fixture=False, email="",
-                 stop_at_image=-1, output_directory="analysis", focus_position=None, suppress_non_focal=False,
-                 animate_focal=False, grid_images=None, grid_model=None, xml_model=None,
+                 stop_at_image=-1, output_directory="analysis",
+                 focus_position=None, suppress_non_focal=False, animate_focal=False,
+                 one_time_positioning=True, one_time_grayscale=False,
+                 grid_images=None, grid_model=None, xml_model=None,
                  image_data_output_item=COMPARTMENTS.Blob, image_data_output_measure=MEASURES.Sum, chain=True):
 
         if grid_model is None:
@@ -59,6 +61,8 @@ class AnalysisModel(model.Model):
         self.focus_position = focus_position
         self.suppress_non_focal = suppress_non_focal
         self.animate_focal = animate_focal
+        self.one_time_positioning = one_time_positioning
+        self.one_time_grayscale = one_time_grayscale
         self.grid_images = grid_images
         self.grid_model = grid_model
         self.xml_model = xml_model

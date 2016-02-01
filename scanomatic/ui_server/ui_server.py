@@ -267,6 +267,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                     compilation=request.values.get("compilation"),
                     compile_instructions=request.values.get("compile_instructions"),
                     output_directory=request.values.get("output_directory"),
+                    one_time_positioning=bool(request.values.get('one_time_positioning', default=1, type=int)),
                     chain=bool(request.values.get('chain', default=1, type=int)))
 
                 success = AnalysisModelFactory.validate(model) and rpc_client.create_analysis_job(
@@ -430,6 +431,21 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 rpc_client.launch_local()
                 time.sleep(5)
                 return jsonify(success=rpc_client.online)
+
+        elif action == 'shutdown':
+
+            rpc_client.shutdown()
+            time.sleep(2)
+            return jsonify(success=rpc_client.online is False)
+
+        elif action == 'launch':
+
+            if rpc_client.online:
+                return jsonify(success=False, reason="Server is already running")
+
+            rpc_client.launch_local()
+            time.sleep(2)
+            return jsonify(success=rpc_client.online)
 
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():

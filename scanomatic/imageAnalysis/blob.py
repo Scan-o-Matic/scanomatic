@@ -18,7 +18,12 @@ __status__ = "Development"
 import numpy as np
 from scipy.ndimage import binary_erosion, binary_dilation,\
     gaussian_filter, median_filter
-from skimage import filter as ski_filter
+
+try:
+    from skimage import filters as ski_filter
+except ImportError:
+    from skimage import filter as ski_filter
+
 
 #
 # SCANNOMATIC LIBRARIES
@@ -52,13 +57,14 @@ class AnalysisRecipeAbstraction(object):
     def analyse(self, im, filter_array, base_level=True):
 
         if base_level:
-            filter_array[...] = im.copy()
+            im = im.copy()
+            filter_array[...] = 0
 
         for a in self.analysis_order:
 
             if a is self:
 
-                self._do(filter_array)
+                self._do(im, filter_array)
 
             else:
 
@@ -74,7 +80,7 @@ class AnalysisRecipeAbstraction(object):
 
             self.analysis_order.insert(pos, a)
 
-    def _do(self, filter_array):
+    def _do(self, im, filter_array):
 
         pass
 
@@ -97,11 +103,10 @@ class AnalysisThresholdOtsu(AnalysisRecipeAbstraction):
 
         self._thresholdUnitAdjust = threshold_unit_adjust
 
-    def _do(self, filter_array):
+    def _do(self, im, filter_array):
 
         try:
-            filter_array[...] = filter_array > ski_filter.threshold_otsu(
-                filter_array) + self._thresholdUnitAdjust
+            filter_array[...] = im > ski_filter.threshold_otsu(im) + self._thresholdUnitAdjust
         except ValueError:
             filter_array[...] = 0
 
@@ -118,7 +123,7 @@ class AnalysisRecipeErode(AnalysisRecipeAbstraction):
         super(AnalysisRecipeErode, self).__init__(
             parent, description="Binary Erode")
 
-    def _do(self, filter_array):
+    def _do(self, im, filter_array):
 
         filter_array[...] = binary_erosion(filter_array, iterations=3)
 
@@ -134,9 +139,9 @@ class AnalysisRecipeErodeSmall(AnalysisRecipeAbstraction):
         super(AnalysisRecipeErodeSmall, self).__init__(
             parent, description="Binary Erode (small)")
 
-    def _do(self, filter_array):
+    def _do(self, im, filter_array):
 
-        filter_array[...] = binary_erosion(filter_array, origin=(1, 1), structure=self.kernel)
+        binary_erosion(filter_array, origin=(1, 1), output=filter_array, structure=self.kernel)
 
 
 class AnalysisRecipeDilate(AnalysisRecipeAbstraction):
@@ -156,7 +161,7 @@ class AnalysisRecipeDilate(AnalysisRecipeAbstraction):
 
         self._iterations = iterations
 
-    def _do(self, filter_array):
+    def _do(self, im, filter_array):
 
         filter_array[...] = binary_dilation(filter_array, iterations=self._iterations)
 
@@ -168,9 +173,9 @@ class AnalysisRecipeGauss2(AnalysisRecipeAbstraction):
         super(AnalysisRecipeGauss2, self).__init__(
             parent, description="Gaussian size 2")
 
-    def _do(self, filter_array):
+    def _do(self, im, filter_array):
 
-        gaussian_filter(filter_array, 2, output=filter_array)
+        gaussian_filter(im, 2, output=im)
 
 
 class AnalysisRecipeMedianFilter(AnalysisRecipeAbstraction):
@@ -180,7 +185,7 @@ class AnalysisRecipeMedianFilter(AnalysisRecipeAbstraction):
         super(AnalysisRecipeMedianFilter, self).__init__(
             parent, description="Median Filter")
 
-    def _do(self, filter_array):
+    def _do(self, im, filter_array):
 
-        median_filter(filter_array, size=(3, 3), mode="nearest",
-                      output=filter_array)
+        median_filter(im, size=(3, 3), mode="nearest",
+                      output=im)

@@ -9,6 +9,7 @@ function Analyse(button) {
             compile_instructions: $("#compile-instructions").val(),
             output_directory: $("#analysis-directory").val(),
             chain: $("#chain-analysis-request").is(':checked') ? 0 : 1,
+            one_time_positioning: $("#one_time_positioning").is(':checked') ? 0 : 1,
                },
         method: 'POST',
         success: function(data) {

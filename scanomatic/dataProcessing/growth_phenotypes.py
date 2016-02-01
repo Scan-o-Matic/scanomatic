@@ -158,14 +158,20 @@ def growth_lag(index, flat_times, derivative_values_log2, **kwargs):
     if index < 0:
         return np.nan
 
-    growth_delta = population_size_at_generation_time(index=index, **kwargs) - curve_baseline(**kwargs)
+    growth_delta = np.log2(population_size_at_generation_time(index=index, **kwargs)) - \
+                   np.log2(curve_baseline(**kwargs))
 
     if growth_delta > 0:
 
-        return np.interp(max(0.0, -growth_delta / derivative_values_log2[index]), np.arange(flat_times.size),
+        return np.interp(max(0.0, growth_delta / derivative_values_log2[index]), np.arange(flat_times.size),
                          flat_times)
 
     return np.nan
+
+
+def growth_velocity_vector(derivative_values_log2, **kwargs):
+
+    return derivative_values_log2
 
 #
 #
@@ -217,6 +223,8 @@ class Phenotypes(Enum):
     ChapmanRichardsParam3 = 9
     ChapmanRichardsParam4 = 10
     ChapmanRichardsParamXtra = 11
+
+    GrowthVelocityVector = 22
 
     def __call__(self, **kwargs):
 
@@ -282,3 +290,6 @@ class Phenotypes(Enum):
 
         elif self is Phenotypes.GrowthLag:
             return growth_lag(index=_get_generation_time_index(kwargs, 0), **kwargs)
+
+        elif self is Phenotypes.GrowthVelocityVector:
+            return growth_velocity_vector(**kwargs)

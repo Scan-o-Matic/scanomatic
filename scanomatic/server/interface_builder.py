@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 import socket
 import sys
 import os

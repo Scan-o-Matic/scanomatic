@@ -1,14 +1,3 @@
-"""Monitors status of hardware resources"""
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-
 #
 # DEPENDENCIES
 #
@@ -82,7 +71,12 @@ class Resource_Status(object):
 
         :returns: boolean
         """
-        memUsage = psutil.phymem_usage().percent
+
+        try:
+            memUsage = psutil.phymem_usage().percent
+        except AttributeError:
+            memUsage = psutil.virtual_memory().percent
+
         memOK = (100 - memUsage) > Resource_Status._APP_CONFIG.resources_mem_min
 
         Resource_Status._LOGGER.info(

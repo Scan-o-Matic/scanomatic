@@ -133,7 +133,8 @@ class FixtureImage(object):
             self._img = imageBasics.Quick_Scale_To_im(conversion_factor)
             self._logger.info("Scaled")
 
-    def get_hit_refined(self, local_hit, conv_img, coordinates, gaussian_weight_size_fraction=2.0):
+    @staticmethod
+    def get_hit_refined(local_hit, conv_img, coordinates=None, gaussian_weight_size_fraction=2.0):
         """
         Use half-size to select area and give each pixel the weight of the convolution result of
         that coordinate times the 2D gaussian value based on offset of distance to hit (sigma = ?).
@@ -163,8 +164,11 @@ class FixtureImage(object):
 
             return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
 
-        image_slice = conv_img[coordinates['d0_min']: coordinates['d0_max'],
-                      coordinates['d1_min']: coordinates['d1_max']]
+        if coordinates is None:
+            image_slice = conv_img
+        else:
+            image_slice = conv_img[coordinates['d0_min']: coordinates['d0_max'],
+                                   coordinates['d1_min']: coordinates['d1_max']]
 
         gauss_size = max(image_slice.shape)
 
@@ -186,7 +190,9 @@ class FixtureImage(object):
 
         return fftconvolve(t_img, t_mrk, mode='same')
 
-    def get_best_location(self, conv_img, stencil_size, refine_hit_gauss_weight_size_fraction=2.0):
+    @staticmethod
+    def get_best_location(conv_img, stencil_size, refine_hit_gauss_weight_size_fraction=2.0,
+                          max_refinement_iterations=20, min_refinement_sq_distance=0.0001):
         """This whas hidden and should be taken care of, is it needed"""
 
         hit = np.where(conv_img == conv_img.max())
@@ -205,9 +211,16 @@ class FixtureImage(object):
                        'd1_min': max(0, hit[1] - half_stencil_size[1] - 1),
                        'd1_max': min(conv_img.shape[1], hit[1] + half_stencil_size[1])}
 
+        for _ in range(max_refinement_iterations):
 
-        hit += self.get_hit_refined(hit - (coordinates['d0_min'], coordinates['d1_min']), conv_img, coordinates,
-                                    refine_hit_gauss_weight_size_fraction)
+            offset = FixtureImage.get_hit_refined(
+                    hit - (coordinates['d0_min'], coordinates['d1_min']), conv_img, coordinates,
+                    refine_hit_gauss_weight_size_fraction)
+
+            hit += offset
+
+            if (offset ** 2).sum() < min_refinement_sq_distance:
+                break
 
         coordinates = {'d0_min': round(max(0, hit[0] - half_stencil_size[0] - 1)),
                        'd0_max': round(min(conv_img.shape[0], hit[0] + half_stencil_size[0])),

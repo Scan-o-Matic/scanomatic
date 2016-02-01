@@ -19,7 +19,8 @@ __status__ = "Development"
 
 import numpy as np
 import operator
-from scipy.stats.mstats import mquantiles, tmean
+from enum import Enum
+# from scipy.stats.mstats import mquantiles, tmean
 from scipy.ndimage import binary_erosion, \
     center_of_mass, label, \
     gaussian_filter
@@ -31,6 +32,7 @@ import histogram
 import blob
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 from scanomatic.models.analysis_model import COMPARTMENTS, MEASURES
+from scanomatic.generics.maths import iqr_mean_stable as iqr_mean, quantiles_stable
 
 #
 # FUNCTIONS
@@ -284,11 +286,13 @@ class CellItem():
                 feature_data[MEASURES.Median] = np.median(feature_array)
 
             if MEASURES.IQR in self._features_key_list or MEASURES.IQR_Mean in self._features_key_list:
-                feature_data[MEASURES.IQR] = mquantiles(feature_array, prob=[0.25, 0.75])
+                feature_data[MEASURES.IQR] = quantiles_stable(feature_array)
+                # mquantiles(feature_array, prob=[0.25, 0.75])
 
                 try:
 
-                    feature_data[MEASURES.IQR_Mean] = tmean(feature_array, feature_data['IQR'])
+                    feature_data[MEASURES.IQR_Mean] = iqr_mean(feature_array)
+                    # tmean(feature_array, feature_data['IQR'])
 
                 except:
 
@@ -343,36 +347,42 @@ def get_onion_values(array, array_filter, layer_size):
     return np.asarray(onion)
 
 
-class Blob(CellItem):
+class BlobDetectionTypes(Enum):
 
     DEFAULT = 0
     ITERATIVE = 1
     THRESHOLD = 2
+
+
+class Blob(CellItem):
 
     BLOB_RECIPE = blob.AnalysisRecipeEmpty()
     blob.AnalysisRecipeMedianFilter(BLOB_RECIPE)
     blob.AnalysisThresholdOtsu(BLOB_RECIPE, threshold_unit_adjust=0.5)
     blob.AnalysisRecipeDilate(BLOB_RECIPE, iterations=2)
 
-    def __init__(self, identifier, grid_array, run_detect=True, threshold=None, blob_detect='default',
+    def __init__(self, identifier, grid_array, run_detect=True, threshold=None, blob_detect=BlobDetectionTypes.DEFAULT,
                  image_color_logic="norm", center=None, radius=None):
 
         CellItem.__init__(self, identifier, grid_array)
 
         self.threshold = threshold
 
-        detect_types = {
-            'default': self.DEFAULT,
-            'iterative': self.ITERATIVE,
-            'threshold': self.THRESHOLD}
+        if not isinstance(blob_detect, BlobDetectionTypes):
+            try:
 
-        try:
+                blob_detect = BlobDetectionTypes[blob_detect.upper()]
 
-            self.blob_detect = detect_types[blob_detect.lower()]
+            except KeyError:
 
-        except KeyError:
+                blob_detect = BlobDetectionTypes.DEFAULT
 
-            self.blob_detect = self.DEFAULT
+        if blob_detect is BlobDetectionTypes.THRESHOLD:
+            self.detect_function = self.threshold
+        elif blob_detect is BlobDetectionTypes.ITERATIVE:
+            self.detect_function = self.iterative_threshold_detect
+        else:
+            self.detect_function = self.default_detect
 
         self.old_trash = None
         self.trash_array = None
@@ -388,13 +398,9 @@ class Blob(CellItem):
 
                 self.manual_detect(center, radius)
 
-            elif self.blob_detect == self.THRESHOLD:
-
-                self.threshold_detect()
-
             else:
 
-                self.default_detect()
+                self.detect_function()
 
         self._debug_ticker = 0
 
@@ -567,7 +573,7 @@ class Blob(CellItem):
     # DETECT functions
     #
 
-    def detect(self, blob_detect=None, max_change_threshold=8,
+    def detect(self, detect_type=None, max_change_threshold=8,
                remember_filter=False):
         """
         Generic wrapper function for blob-detection that calls the
@@ -586,25 +592,22 @@ class Blob(CellItem):
 
             self.trash_array = np.zeros(self.filter_array.shape, dtype=bool)
 
-        if blob_detect is None:
+        if detect_type is None:
 
-            blob_detect = self.blob_detect
-
-        if blob_detect == self.DEFAULT:
-
-            self.default_detect()
-
-        elif blob_detect == self.ITERATIVE:
-
-            self.iterative_threshold_detect()
-
-        elif blob_detect == self.THRESHOLD:
-
-            self.threshold_detect()
-
+            self.detect_function()
         else:
 
-            self.default_detect()
+            if detect_type is BlobDetectionTypes.ITERATIVE:
+
+                self.iterative_threshold_detect()
+
+            elif detect_type is BlobDetectionTypes.THRESHOLD:
+
+                self.threshold_detect()
+
+            else:
+
+                self.default_detect()
 
         if self.trash_array is None:
 

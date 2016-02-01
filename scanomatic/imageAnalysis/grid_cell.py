@@ -1,23 +1,15 @@
-#!/usr/bin/env python
 """
 Part of the analysis work-flow that holds the grid-cell object (A tile in a
 grid-array with a potential blob at the center).
 """
-__author__ = "Martin Zackrisson, Mats Kvarnstroem"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
 
 #
 # DEPENDENCIES
 #
 
 import numpy as np
-from scipy.stats.mstats import tmean, mquantiles
+# from scipy.stats.mstats import tmean, mquantiles
+import os
 
 #
 # SCANNOMATIC LIBRARIES
@@ -26,22 +18,25 @@ from scipy.stats.mstats import tmean, mquantiles
 import grid_cell_extra as grid_cell_extra
 from scanomatic.models.analysis_model import VALUES, COMPARTMENTS
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
+from scanomatic.io.paths import Paths
+from scanomatic.io.logger import Logger
+from scanomatic.generics.maths import iqr_mean_stable as iqr_mean
 #
 # CLASS: Grid_Cell
 #
-
-_DEBUG_IMAGE = False
 
 
 class GridCell():
 
     MAX_THRESHOLD = 4200
     MIN_THRESHOLD = 0
+    _logger = Logger("Grid Cell")
 
     def __init__(self, identifier, polynomial_coeffs):
 
         self._identifier = identifier
         self.position = tuple(identifier[-1])
+        self._debug_save = self.position == (0, 0)
         self._polynomial_coeffs = polynomial_coeffs
         self._adjustment_warning = False
         self.xy1 = []
@@ -49,9 +44,10 @@ class GridCell():
         self.source = None
         self.ready = False
         self._previous_image = None
+        self.image_index = -1
         self.features = AnalysisFeaturesFactory.create(index=tuple(self.position), data={})
         self._analysis_items = {}
-        """:type: dict[scanomatic.models.analysis_model.ITEMS|scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
+        """:type: dict[scanomatic.models.analysis_model.ITEMS | scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
         self._set_empty_analysis_items()
 
     def _set_empty_analysis_items(self):
@@ -85,10 +81,7 @@ class GridCell():
         flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
         self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]]
         self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
-
-    def get_overshoot_warning(self):
-
-        return self._adjustment_warning
+        # self._debug_save = self.position[0] == 0 and self.position[1] == 0
 
     def set_new_data_source_space(self, space=VALUES.Cell_Estimates, bg_sub_source=None, polynomial_coeffs=None):
 
@@ -97,10 +90,13 @@ class GridCell():
             if bg_sub_source is not None:
 
                 feature_array = self.source[np.where(bg_sub_source)]
-                bg_sub = tmean(feature_array,
-                               mquantiles(feature_array, prob=[0.25, 0.75]))
+                # bg_sub = tmean(feature_array,
+                #                mquantiles(feature_array, prob=[0.25, 0.75]))
+                bg_sub = iqr_mean(feature_array)
                 if not np.isfinite(bg_sub):
                     bg_sub = np.mean(feature_array)
+                    GridCell._logger.warning("{0} caused background mean ({1}) due to inf".format(
+                            self._identifier, bg_sub))
 
                 self.source -= bg_sub
 
@@ -112,24 +108,22 @@ class GridCell():
 
             self._set_max_value_filter()
 
-            global _DEBUG_IMAGE
-            if _DEBUG_IMAGE:
-
-                from matplotlib import pyplot as plt
-                from scanomatic.io.paths import Paths
-                import os
-                plt.clf()
-                plt.imshow(self.source)
-                plt.savefig(os.path.join(Paths().scanomatic, "scanomatic_debug_grid_cell_image.png"))
-                _DEBUG_IMAGE = False
-
         self.push_source_data_to_cell_items()
 
     def _set_max_value_filter(self):
 
         max_detect_filter = self.source > self.MAX_THRESHOLD
-        self._adjustment_warning = max_detect_filter.any()
-        self.source[max_detect_filter] = self.MAX_THRESHOLD
+        # TODO: Removed the acual capping for now
+        # self.source[max_detect_filter] = self.MAX_THRESHOLD
+        if self._adjustment_warning != max_detect_filter.any():
+            self._adjustment_warning = not self._adjustment_warning
+            if self._adjustment_warning:
+                self._logger.warning("{0} got {1} pixel-values capped to {2} due to exceeding colony thickness.".format(
+                    self._identifier, max_detect_filter.sum(), self.MAX_THRESHOLD) +
+                                     " Further warnings for this colony suppressed.")
+            else:
+                self._logger.info("{0} no longer have pixels that reach the thickness-cap {1}".format(
+                    self._identifier, self.MAX_THRESHOLD))
 
     def push_source_data_to_cell_items(self):
         for item_names in self._analysis_items.keys():
@@ -156,6 +150,9 @@ class GridCell():
         dictionary to avoid key errors..
         """
 
+        if self._debug_save:
+            self.debug_save_part_one()
+
         background = self._analysis_items[COMPARTMENTS.Background]
 
         if detect:
@@ -165,6 +162,36 @@ class GridCell():
             self.clear_features()
         else:
             self._analyse()
+
+        if self._debug_save:
+            self.debug_save_part_two()
+
+
+    @property
+    def debug_base_path(self):
+
+        return os.path.join(Paths().log, "grid_cell_{0}_{1}_{2}".format(
+            self.image_index, self._identifier[0][1], "_".join(map(str, self._identifier[-1]))))
+
+
+    def debug_save_part_one(self):
+
+        base_path = self.debug_base_path
+        np.save(base_path + ".image.npy", self.source)
+
+    def debug_save_part_two(self):
+
+        base_path = self.debug_base_path
+
+        blob = self._analysis_items[COMPARTMENTS.Blob]
+        background = self._analysis_items[COMPARTMENTS.Background]
+
+        np.save(base_path + ".background.filter.npy", background.filter_array)
+        np.save(base_path + ".image.cells.npy", background.grid_array)
+        np.save(base_path + ".blob.filter.npy", blob.filter_array)
+        np.save(base_path + ".blob.trash.current.npy", blob.trash_array)
+        np.save(base_path + ".blob.trash.old.npy", blob.old_trash)
+
 
     def clear_features(self):
 
@@ -197,8 +224,8 @@ class GridCell():
         background.detect()
 
     def attach_analysis(self, blob=True, background=True, cell=True,
-                        blob_detect='default', run_detect=False, center=None,
-                        radius=None):
+                        blob_detect=grid_cell_extra.BlobDetectionTypes.DEFAULT,
+                        run_detect=False, center=None, radius=None):
 
         """attach_analysis connects the analysis modules to the Grid_Cell.
 

@@ -1,4 +1,4 @@
-__author__ = 'martin'
+from scanomatic.io.movie_writer import MovieWriter
 
 from types import StringTypes
 import numpy as np
@@ -7,6 +7,7 @@ import glob
 import os
 import re
 from itertools import izip
+import time
 
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 
@@ -30,6 +31,24 @@ def _input_validate(f):
     return wrapped
 
 
+def simulate_positioning(project_compilation, positioning):
+
+    assert positioning in ('detected', 'probable', 'one-time'), "Not understood positioning mode"
+
+    positions = np.array([(image.fixture.orientation_marks_x, image.fixture.orientation_marks_y)
+                          for image in project_compilation])
+
+    if positioning == "probable":
+
+        positions[:] = np.round(np.median(positions, axis=0))
+
+    elif positioning == "one-time":
+
+        positions[:] = positions[-1]
+
+    return positions
+
+
 @_input_validate
 def get_grayscale_variability(project_compilation):
 
@@ -50,14 +69,21 @@ def get_grayscale_outlier_images(project_compilation, max_distance=3.0, only_ima
 
 
 @_input_validate
-def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distance=3.0):
+def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distance=3.0, save_target=None):
 
-    data = np.array([image.fixture.grayscale.values for image in project_compilation])
-    outliers = get_grayscale_outlier_images(project_compilation, max_distance) if mark_outliers else []
+    data = [image.fixture.grayscale.values for image in project_compilation]
+    length = max(len(v) for v in data if v is not None)
+    empty = np.zeros((length,), dtype=float) * np.inf
+    data = [empty if d is None else d for d in data]
+    data = np.array(data)
+    if mark_outliers:
+        outliers = get_grayscale_outlier_images(project_compilation, max_distance) if mark_outliers else []
+    else:
+        outliers = None
     f = plt.figure()
     f.clf()
     ax = f.gca()
-    ax.imshow(data)
+    ax.imshow(data, interpolation='nearest', aspect='auto')
     ax.set_ylabel("Image index")
     ax.set_xlabel("Grayscale segment")
     ax.set_title("Grayscale segment measured values as colors" +
@@ -69,7 +95,74 @@ def plot_grayscale_histogram(project_compilation, mark_outliers=True, max_distan
 
         ax.set_xlim(0, segments)
 
+    if save_target is not None:
+        f.savefig(save_target)
+
     return f
+
+
+@_input_validate
+def animate_marker_positions(project_compilation, fig=None, slice_size=201,
+                             positioning='detected', save_target="marker_positions.avi",
+                             title="Position markers", comment="", fps=12):
+
+    assert slice_size % 2 == 1, "Slice size may not be even"
+
+    positions = simulate_positioning(project_compilation, positioning)
+
+    paths = [image.image.path if os.path.isfile(image.image.path) else os.path.basename(image.image.path)
+             for image in project_compilation]
+
+    plt.ion()
+    if fig is None:
+        fig = plt.figure()
+
+    fig.clf()
+
+    images = [None for _ in range(positions.shape[-1])]
+    half_slice_size = np.floor(slice_size / 2.0)
+
+    for idx in range(len(images)):
+        ax = fig.add_subplot(len(images), 1, idx + 1)
+        images[idx] = ax.imshow(
+            np.zeros((slice_size, slice_size), dtype=np.float), cmap=plt.cm.gray, vmin=0, vmax=255)
+        ax.axvline(half_slice_size, color='c')
+        ax.axhline(half_slice_size, color='c')
+
+    def make_cutout(img, pos_y, pos_x):
+        cutout = np.zeros((slice_size, slice_size), dtype=np.float) * np.nan
+        cutout[abs(min(pos_x - half_slice_size, 0)): min(cutout.shape[0], img.shape[0] - pos_x),
+               abs(min(pos_y - half_slice_size, 0)): min(cutout.shape[1], img.shape[1] - pos_y)] = \
+            img[max(pos_x - half_slice_size, 0): min(pos_x + half_slice_size + 1, img.shape[0]),
+                max(pos_y - half_slice_size, 0): min(pos_y + half_slice_size + 1, img.shape[1])]
+        return cutout
+
+    @MovieWriter(save_target, title=title, comment=comment, fps=fps, fig=fig)
+    def _animate():
+
+
+        data = [None for _ in range(positions.shape[0])]
+
+        for index in range(positions.shape[0]):
+
+            if data[index] is None:
+
+                image = plt.imread(paths[index])
+                data[index] = []
+                for im_index, im in enumerate(images):
+                    im_slice = make_cutout(image, *positions[index, :, im_index])
+                    im.set_data(im_slice)
+                    data[index].append(im_slice)
+            else:
+                for im_index, im in enumerate(images):
+                    im.set_data(data[index][im_index])
+
+            fig.axes[0].set_title("Time {0}".format(index))
+            yield
+
+    _animate()
+
+    return fig
 
 
 @_input_validate
@@ -95,7 +188,7 @@ def _get_irregular_intervals(data, max_deviation):
 
 
 @_input_validate
-def plot_positional_markers(project_compilation):
+def plot_positional_markers(project_compilation, save_target=None):
 
     data = _get_marker_sorted_data(project_compilation)
 
@@ -136,6 +229,10 @@ def plot_positional_markers(project_compilation):
         ax.axis('off')
 
     f.tight_layout()
+
+    if save_target is not None:
+        f.savefig(save_target)
+
     return f
 
 

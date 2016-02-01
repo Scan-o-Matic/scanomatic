@@ -77,7 +77,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._paths = paths.Paths()
 
         self._raw_growth_data = raw_growth_data
-
+        self._smooth_growth_data = None
         self._phenotypes = None
         self._times_data = None
         self._limited_phenotypes = phenotypes
@@ -116,10 +116,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._median_kernel_size = median_kernel_size
         self._gaussian_filter_sigma = gaussian_filter_sigma
         self._linear_regression_size = linear_regression_size
-        self._itermode = itermode
         self._meta_data = None
 
-        if not self._itermode and run_extraction:
+        if run_extraction:
             self._extract_features()
 
     def phenotype_names(self):
@@ -176,8 +175,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                          gaussian_filter_sigma=gauss_sigma, linear_regression_size=linear_reg_size,
                          run_extraction=False, base_name=directory_path)
 
-        phenotyper._smooth_growth_data = smooth_growth_data
-        phenotyper._phenotypes = phenotypes
+        phenotyper.set('smooth_growth_data',smooth_growth_data)
+        phenotyper.set('phenotypes', phenotypes)
 
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
@@ -279,26 +278,44 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             "Iteration started, will extract {0} phenotypes".format(
                 self.number_of_phenotypes))
 
-        if self._itermode is False:
-            raise StopIteration("Can't iterate when not in itermode")
-
-        else:
-
+        if not self.has_smooth_growth_data:
             self._smoothen()
-            self._logger.info("Smoothed")
-            yield 0
-            for x in self._calculate_phenotypes():
-                self._logger.debug("Phenotype extraction iteration")
-                yield x
+        self._logger.info("Smoothed")
+        yield 0
+        for x in self._calculate_phenotypes():
+            self._logger.debug("Phenotype extraction iteration")
+            yield x
 
-        self._itermode = False
+    def extract_phenotypes(self):
+
+        self._logger.info("Extracting phenotypes. This will take a while...")
+
+        if not self.has_smooth_growth_data:
+            self._smoothen()
+
+        for _ in self._calculate_phenotypes():
+            pass
+
+        self._logger.info("Phenotypes extracted")
+
+    @property
+    def has_smooth_growth_data(self):
+
+        if self._smooth_growth_data is None or len(self._smooth_growth_data) != len(self._raw_growth_data):
+            return False
+
+        return all((a is None == b is None ) or a.shape == b.shape for a, b in zip(self._raw_growth_data, self._smooth_growth_data))
 
     def _smoothen(self):
 
+        self.set("smooth_growth_data", self._raw_growth_data.copy())
         self._logger.info("Smoothing Started")
         median_kernel = np.ones((1, self._median_kernel_size))
 
         for plate in self._smooth_growth_data:
+
+            if plate is None:
+                continue
 
             plate_as_flat = np.lib.stride_tricks.as_strided(
                 plate,
@@ -333,8 +350,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         phenotypes_count = self.number_of_phenotypes
         total_curves = float(self.number_of_curves)
 
-        self._logger.info("Phenotypes (N={0}) Extraction Started".format(
-            phenotypes_count))
+        self._logger.info("Phenotypes (N={0}), extraction started for {1} curves".format(
+            phenotypes_count, int(total_curves)))
 
         curves_in_completed_plates = 0
 
@@ -343,7 +360,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
             phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),
-                                  dtype=plate.dtype)
+                                  dtype=np.object)
 
             all_phenotypes.append(phenotypes)
 
@@ -351,8 +368,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 position_phenotypes = [None] * phenotypes_count
 
-                id0 = pos_index % plate.shape[0]
-                id1 = pos_index / plate.shape[0]
+                id1 = pos_index % plate.shape[1]
+                id0 = pos_index / plate.shape[1]
 
                 curve_data = get_preprocessed_data_for_phenotypes(
                     curve=plate[id0, id1],
@@ -367,7 +384,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 phenotypes[id0, id1, ...] = position_phenotypes
 
-                if self._itermode:
+                if id0 == 0:
                     self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
                         plateI, id0, id1, list(position_phenotypes)))
                     yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
@@ -397,6 +414,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     @property
     def number_of_phenotypes(self):
 
+        if self._phenotypes is not None:
+            phenotypes = np.unique(tuple(p.shape[2] for p in self._phenotypes if p is not None and p.ndim == 3))
+            if phenotypes.size == 1:
+                return phenotypes[0]
+
         return len(Phenotypes) if not self._limited_phenotypes else len(self._limited_phenotypes)
 
     @property
@@ -425,7 +447,26 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def get_phenotype(self, phenotype):
 
-        return [p if p is None else p[..., phenotype.value] for p in self.phenotypes]
+        def _plate_type_converter(plate):
+
+            out = np.zeros(plate.shape + plate[0,0].shape, dtype=plate[0,0].dtype)
+            if out.dtype == np.float:
+                out *= np.nan
+
+            for out_pos, in_pos in zip(out.reshape(out.shape[0] * out.shape[1], out.shape[2]), plate.ravel()):
+                out_pos[...] = in_pos
+
+            return out
+
+        if self._phenotypes is None or \
+                    self._limited_phenotypes and phenotype not in self._limited_phenotypes or \
+                    phenotype.value >= self.number_of_phenotypes:
+
+            raise ValueError(
+                "'{0}' has not been extracted, please re-run 'extract_phenotypes()' to include it.".format(
+                phenotype.name))
+
+        return [p if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self.phenotypes]
 
     @property
     def times(self):
@@ -439,7 +480,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 isinstance(value, tuple)), "Invalid time series {0}".format(
                     value)
 
-        if (isinstance(value, np.ndarray) is False):
+        if isinstance(value, np.ndarray) is False:
             value = np.array(value, dtype=np.float)
 
         self._times_data = value
@@ -453,6 +494,21 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    self._linear_regression_size),
             strides=(self._times_data.strides[0],
                      self._times_data.strides[0]))
+
+    def set(self, data_type, data):
+
+        if data_type == 'phenotypes':
+
+            self._phenotypes = data
+            self._init_remove_filter_and_undo_actions()
+
+        elif data_type == 'smooth_growth_data':
+
+            self._smooth_growth_data = data
+
+        else:
+
+            self._logger.warning('Unknown type of data {0}'.format(data_type))
 
     def _init_remove_filter_and_undo_actions(self):
 
@@ -574,13 +630,18 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                     for idY, Y in enumerate(X):
 
+                        # TODO: This is a hack to not break csv structure with vector phenotypes
+                        Y = [v if not(isinstance(v, np.ndarray) and v.size > 1
+                                      or isinstance(v, list)
+                                      or isinstance(v, tuple)) else None for v in Y]
+
                         if meta_data is None:
                             fh.write("{0}{1}".format(delim.join(map(
-                                str, [plate_index, idX, idY] + Y.tolist())), newline))
+                                str, [plate_index, idX, idY] + Y)), newline))
                         else:
                             fh.write("{0}{1}".format(delim.join(map(
                                 str, [plate_index, idX, idY] + meta_data(plate_index, idX, idY) +
-                                     Y.tolist())), newline))
+                                     Y)), newline))
 
         self._logger.info("Saved csv absolute phenotypes to {0}".format(path))
 

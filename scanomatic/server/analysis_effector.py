@@ -30,6 +30,7 @@ import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory, XMLModelFactory
+from scanomatic.models.factories.fixture_factories import GrayScaleAreaModelFactory, FixturePlateFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
@@ -58,6 +59,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         self._allowed_calls['setup'] = self.setup
 
         self._redirect_logging = True
+        self._reference_compilation_image_model = None
 
         if job.content_model:
             self._analysis_job = AnalysisModelFactory.create(**job.content_model)
@@ -163,8 +165,42 @@ Scan-o-Matic""", self._analysis_job)
         if image_model is None:
             self._stopping = True
             return False
+        elif self._reference_compilation_image_model is None:
+            # Using the first recieved model / last in project as reference model.
+            # Used for one_time type of analysis settings
+            self._reference_compilation_image_model = image_model
+
+        # TODO: Verify that this isn't the thing causing the capping!
+        if image_model.fixture.grayscale is None or image_model.fixture.grayscale.values is None:
+            self._logger.error("No grayscale analysis results for '{0}' means image not included in analysis".format(
+                image_model.image.path))
+            return True
 
         image_model.fixture.grayscale.values = image_model.fixture.grayscale.values[::-1]
+
+        # Overwrite grayscale with previous if has been requested
+        if self._analysis_job.one_time_grayscale:
+
+            self._logger.info("Using the grayscale detected on {0} for {1}".format(
+                self._reference_compilation_image_model.image.path,
+                image_model.image.path))
+
+            image_model.fixture.grayscale = GrayScaleAreaModelFactory.copy(
+                    self._reference_compilation_image_model.fixture.grayscale)
+
+        # Overwrite plate positions if requested
+        if self._analysis_job.one_time_positioning:
+
+            self._logger.info("Using plate positions detected on {0} for {1}".format(
+                self._reference_compilation_image_model.image.path,
+                image_model.image.path))
+
+            image_model.fixture.orientation_marks_x = \
+                [v for v in self._reference_compilation_image_model.fixture.orientation_marks_x]
+            image_model.fixture.orientation_marks_y = \
+                [v for v in self._reference_compilation_image_model.fixture.orientation_marks_y]
+            image_model.fixture.plates = \
+                [FixturePlateFactory.copy(m) for m in self._reference_compilation_image_model.fixture.plates]
 
         first_image_analysed = self._current_image_model is None
         self._current_image_model = image_model
