@@ -630,13 +630,18 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                     for idY, Y in enumerate(X):
 
+                        # TODO: This is a hack to not break csv structure with vector phenotypes
+                        Y = [v if not(isinstance(v, np.ndarray) and v.size > 1
+                                      or isinstance(v, list)
+                                      or isinstance(v, tuple)) else None for v in Y]
+
                         if meta_data is None:
                             fh.write("{0}{1}".format(delim.join(map(
-                                str, [plate_index, idX, idY] + Y.tolist())), newline))
+                                str, [plate_index, idX, idY] + Y)), newline))
                         else:
                             fh.write("{0}{1}".format(delim.join(map(
                                 str, [plate_index, idX, idY] + meta_data(plate_index, idX, idY) +
-                                     Y.tolist())), newline))
+                                     Y)), newline))
 
         self._logger.info("Saved csv absolute phenotypes to {0}".format(path))
 
