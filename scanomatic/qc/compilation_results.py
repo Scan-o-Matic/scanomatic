@@ -31,6 +31,24 @@ def _input_validate(f):
     return wrapped
 
 
+def simulate_positioning(project_compilation, positioning):
+
+    assert positioning in ('detected', 'probable', 'one-time'), "Not understood positioning mode"
+
+    positions = np.array([(image.fixture.orientation_marks_x, image.fixture.orientation_marks_y)
+                          for image in project_compilation])
+
+    if positioning == "probable":
+
+        positions[:] = np.round(np.median(positions, axis=0))
+
+    elif positioning == "one-time":
+
+        positions[:] = positions[-1]
+
+    return positions
+
+
 @_input_validate
 def get_grayscale_variability(project_compilation):
 
