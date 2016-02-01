@@ -211,7 +211,6 @@ class FixtureImage(object):
                        'd1_min': max(0, hit[1] - half_stencil_size[1] - 1),
                        'd1_max': min(conv_img.shape[1], hit[1] + half_stencil_size[1])}
 
-
         for _ in range(max_refinement_iterations):
 
             offset = FixtureImage.get_hit_refined(
