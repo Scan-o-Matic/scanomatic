@@ -1,4 +1,3 @@
-__author__ = 'martin'
 """The following code is based on the example moviewriter presented in:
 
 http://matplotlib.org/examples/animation/moviewriter.html
@@ -9,9 +8,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 import numpy as np
+import time
 
 
-class Write_Movie(object):
+class MovieWriter(object):
 
     def __init__(self, target, title='Animation Plotting', artist='Scan-o-Matic', comment='', fps=15, dpi=100,
                  fig=None):
@@ -39,42 +39,62 @@ class Write_Movie(object):
         The drawing function needs to return an iterator (see movie_writer.demo for example)
         """
 
-        FFMpegWriter = anim.writers['ffmpeg']
-        self._writer = FFMpegWriter(fps, metadata={'title': title, 'artist': artist, 'comment':comment})
+        self._title = title
+        self._artist = artist
+        self._comment = comment
         self._target = target
         self._dpi = dpi
+        self._fps = fps
         self._fig = fig
 
-    def __call__(self, drawing_function, *args, **kwargs):
+    def __call__(self, drawing_function):
 
-        print("Starting animation")
-        fig = self._fig
+        def wrapped(*args, **kwargs):
 
-        if fig is None:
-            fig = plt.figure()
+            start_time = time.time()
+            print("Starting animation")
 
-        with self._writer.saving(fig, self._target, self._dpi):
+            Writer = anim.writers['ffmpeg']
+            writer = Writer(self._fps,
+                            metadata={'title': self._title, 'artist': self._artist, 'comment': self._comment})
 
-            try:
-                for _ in drawing_function():
-                    self._writer.grab_frame()
-            except TypeError:
-                for _ in drawing_function(fig):
-                    self._writer.grab_frame()
+            fig = self._fig
+            for v in args + tuple(kwargs.values()):
+                if isinstance(v, plt.Figure):
+                    fig = v
+                    break
 
-        print("Animation done!")
+            if fig is None:
+                fig = plt.figure()
+
+            with writer.saving(fig, self._target, self._dpi):
+
+                frame = 0
+                try:
+                    iterator = drawing_function(*args, **kwargs)
+                except TypeError:
+                    iterator = drawing_function(fig, *args, **kwargs)
+
+                for _ in iterator:
+                    writer.grab_frame()
+                    if (frame % 42 == 0 and frame > 0):
+                        print("{0} frames processed. (Movie length = {1:.2f}s, Processing for {2:.2f}s".format(
+                            frame + 1, frame / float(self._fps), time.time() - start_time))
+                    frame += 1
+
+            print("Animation done! (Process took: {0:.2f}s)".format(time.time() - start_time))
+
+        return wrapped
 
 
-def demo(output_name):
+@MovieWriter("demo_film.avi")
+def demo_plot_method(fig, length=50):
 
-    @Write_Movie(output_name)
-    def _plot_method(fig, length=50):
+    ax = fig.gca()
+    im = ax.imshow(np.random.random([3, 3]), interpolation="nearest", vmin=0, vmax=1)
 
-        ax = fig.gca()
-        im = ax.imshow(np.random.random([3, 3]), interpolation="nearest", vmin=0, vmax=1)
+    for i in range(length):
 
-        for i in range(length):
-
-            ax.set_title(i)
-            im.set_data(np.random.random([3,3]))
-            yield None
+        ax.set_title(i)
+        im.set_data(np.random.random([3, 3]))
+        yield None
