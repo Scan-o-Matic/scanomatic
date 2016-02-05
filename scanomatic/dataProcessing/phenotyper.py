@@ -31,7 +31,8 @@ import scanomatic.io.xml.reader as xml_reader_module
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
-from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes
+from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
+    PhenotypeDataType
 
 
 class PositionMark(Enum):
@@ -360,7 +361,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
             phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),
-                                  dtype=np.object)
+                                  dtype=np.float)
 
             all_phenotypes.append(phenotypes)
 
@@ -380,7 +381,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     position_offset=position_offset)
 
                 for phenotype in Phenotypes:
-                    position_phenotypes[phenotype.value] = phenotype(**curve_data)
+                    if PhenotypeDataType(phenotype) is PhenotypeDataType.Scalar:
+                        position_phenotypes[phenotype.value] = phenotype(**curve_data)
 
                 phenotypes[id0, id1, ...] = position_phenotypes
 
