@@ -263,6 +263,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             settings_model.power_manager.host = data["power_manager"]["host"]
             settings_model.power_manager.type = POWER_MANAGER_TYPE[data["power_manager"]["type"]]
             settings_model.paths.projects_root = data["paths"]["projects_root"]
+            settings_model.computer_human_name = data["computer_human_name"]
+            settings_model.mail.warn_scanning_done_minutes_before = data["mail"]["warn_scanning_done_minutes_before"]
             if ApplicationSettingsFactory.validate(settings_model):
                 ApplicationSettingsFactory.serializer.purge_all(Paths().config_main_app)
                 success = ApplicationSettingsFactory.serializer.dump(settings_model, Paths().config_main_app)

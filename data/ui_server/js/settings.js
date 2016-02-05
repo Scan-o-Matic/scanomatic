@@ -31,8 +31,11 @@ function UpdateSettings(button, forceSettings) {
         },
         paths: {
             projects_root: $("#projects_root").val()
+        },
+        computer_human_name: $("#computer_human_name").val(),
+        mail: {
+            warn_scanning_done_minutes_before: $("#warn_scanning_done_minutes_before").val()
         }
-
     };
 
     $.ajax({
