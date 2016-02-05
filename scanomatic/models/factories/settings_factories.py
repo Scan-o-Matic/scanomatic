@@ -111,11 +111,12 @@ class MailFactory(AbstractModelFactory):
         "warn_scanning_done_minutes_before": float
     }
 
+    @classmethod
     def create(cls, **settings):
         """
         :rtype : scanomatic.models.settings_models.MailModel
         """
-        return super(PathsFactory, cls).create(**settings)
+        return super(MailFactory, cls).create(**settings)
 
 
 class PathsFactory(AbstractModelFactory):
