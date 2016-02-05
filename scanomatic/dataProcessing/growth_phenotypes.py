@@ -17,10 +17,15 @@ def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times
 
     linreg_values = []
     curve_logged = np.log2(curve)
+    log2_strided_curve = np.log2(curve_strided)
+    filters = np.isfinite(log2_strided_curve)
+    min_size = curve_strided.shape[-1] - 1
+    for times, value_segment, filt in izip(times_strided, log2_strided_curve, filters):
 
-    for times, value_segment in izip(times_strided, curve_strided):
-
-        linreg_values.append(_linreg_helper(times, np.log2(value_segment)))
+        if filt.sum() >= min_size:
+            linreg_values.append(_linreg_helper(times[filt], value_segment[filt]))
+        else:
+            linreg_values.append((np.nan, np.nan))
 
     derivative_values_log2, derivative_errors = np.array(linreg_values).T
 
@@ -28,8 +33,8 @@ def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times
         'curve_smooth_growth_data': np.ma.masked_invalid(curve),
         'index48h': index_for_48h,
         'chapman_richards_fit': CalculateFitRSquare(flat_times, curve_logged),
-        'derivative_values_log2': derivative_values_log2,
-        'derivative_errors': derivative_errors,
+        'derivative_values_log2': np.ma.masked_invalid(derivative_values_log2),
+        'derivative_errors': np.ma.masked_invalid(derivative_errors),
         'linregress_extent': position_offset,
         'flat_times': flat_times}
 
