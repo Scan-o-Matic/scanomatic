@@ -64,6 +64,9 @@ def growth_yield(curve_smooth_growth_data, *args, **kwargs):
 
 
 def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
+    if index48h < 0 or index48h >= curve_smooth_growth_data.size:
+        _logger.warning("Faulty index {0} for 48h size (max {1})".format(index, curve_smooth_growth_data.size - 1))
+        return  np.nan
     return curve_smooth_growth_data[index48h]
 
 
@@ -140,19 +143,26 @@ def RCResiduals(crParams, X, Y):
 
 
 def generation_time(derivative_values_log2, index, **kwargs):
-    if index < 0:
+    if index < 0 or index >= derivative_values_log2.size:
+        _logger.warning("Faulty index {0} for GT (max {1})".format(index, derivative_values_log2.size - 1))
         return np.nan
     return 1.0 / derivative_values_log2[index]
 
 
 def generation_time_error(derivative_errors, index, **kwargs):
-    if index < 0:
+    if index < 0 or index >= derivative_errors.size:
+        _logger.warning("Faulty index {0} for GT error (max {1})".format(index, derivative_errors.size - 1))
         return np.nan
 
     return derivative_errors[index]
 
 
 def generation_time_when(flat_times, index, **kwargs):
+
+    if index < 0 or index >= flat_times.size:
+        _logger.warning("Faulty index {0} for GT when (max {1})".format(index, flat_times.size - 1))
+        return np.nan
+
     return flat_times[index]
 
 
