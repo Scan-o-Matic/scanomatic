@@ -3,6 +3,9 @@ import numpy as np
 from scipy.optimize import leastsq
 from itertools import izip
 from scipy.stats import linregress
+from scanomatic.io.logger import Logger
+
+_logger = Logger("Growth Phenotypes")
 
 
 def _linreg_helper(X, Y):
