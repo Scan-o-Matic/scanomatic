@@ -193,15 +193,10 @@ _generation_time_indices = None
 _kwargs = None
 
 
-def _get_generation_time_index(kwargs, rank):
-    global _kwargs, _generation_time_indices
-    if kwargs is not _kwargs:
-        _kwargs = kwargs
-        masked_values = np.ma.masked_invalid(kwargs['derivative_values_log2'])
-        _generation_time_indices = masked_values.argsort()[::-1]
-
-    if rank < _generation_time_indices.size:
-        return _generation_time_indices[rank]
+def _get_generation_time_index(log2_masked_derivative_data, rank):
+    finites = log2_masked_derivative_data.size - log2_masked_derivative_data.mask.sum()
+    if finites > np.abs(rank):
+        return log2_masked_derivative_data.argsort()[:finites][-(rank + 1)]
     return -1
 
 
