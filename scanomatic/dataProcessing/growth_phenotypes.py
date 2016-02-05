@@ -158,7 +158,7 @@ def generation_time_when(flat_times, index, **kwargs):
 
 def population_size_at_generation_time(curve_smooth_growth_data, index, linregress_extent, **kwargs):
 
-    return np.median(
+    return np.ma.median(
         curve_smooth_growth_data[
             max(0, index - linregress_extent):
             min(index + linregress_extent + 1, curve_smooth_growth_data.size)])
