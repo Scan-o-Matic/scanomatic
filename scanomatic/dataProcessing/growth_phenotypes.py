@@ -130,7 +130,11 @@ def CalculateFitRSquare(X, Y, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18], dtype
     X = X[np.isfinite(Y)]
     Y = Y[np.isfinite(Y)]
 
-    p = leastsq(RCResiduals, p0, args=(X, Y))[0]
+    try:
+        p = leastsq(RCResiduals, p0, args=(X, Y))[0]
+    except TypeError:
+        return np.inf, p0
+
     Yhat = ChapmanRichards4ParameterExtendedCurve(
         X, *p)
     return (1.0 - np.square(Yhat - Y).sum() /
