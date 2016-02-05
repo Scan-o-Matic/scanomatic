@@ -238,12 +238,12 @@ class Phenotypes(Enum):
 
     GenerationTime = 0
     GenerationTimeStErrOfEstimate = 1
-    GenerationTimeScanIndex = 2
+    GenerationTimeWhen = 2
     GenerationTimePopulationSize = 21
 
     GenerationTime2 = 3
     GenerationTime2StErrOfEstimate = 4
-    GenerationTime2ScanIndex = 5
+    GenerationTime2When = 5
 
     ChapmanRichardsFit = 6
     ChapmanRichardsParam1 = 7
@@ -271,6 +271,9 @@ class Phenotypes(Enum):
         elif self is Phenotypes.ColonySize48h:
             return growth_48h(**kwargs)
 
+        elif self is Phenotypes.GenerationTime48h:
+            return generation_time(index=kwargs['index48h'], **kwargs)
+
         elif self is Phenotypes.CurveGrowthYield:
             return growth_yield(**kwargs)
 
@@ -296,28 +299,28 @@ class Phenotypes(Enum):
             return kwargs['chapman_richards_fit'][1][4]
 
         elif self is Phenotypes.GenerationTime:
-            return generation_time(index=_get_generation_time_index(kwargs, 0), **kwargs)
+            return generation_time(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2:
-            return generation_time(index=_get_generation_time_index(kwargs, 1), **kwargs)
+            return generation_time(index=_get_generation_time_index(kwargs['derivative_values_log2'], 1), **kwargs)
 
-        elif self is Phenotypes.GenerationTimeScanIndex:
-            return generation_time_when(index=_get_generation_time_index(kwargs, 0), **kwargs)
+        elif self is Phenotypes.GenerationTimeWhen:
+            return generation_time_when(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
-        elif self is Phenotypes.GenerationTime2ScanIndex:
-            return generation_time_when(index=_get_generation_time_index(kwargs, 1), **kwargs)
+        elif self is Phenotypes.GenerationTime2When:
+            return generation_time_when(index=_get_generation_time_index(kwargs['derivative_values_log2'], 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimeStErrOfEstimate:
-            return generation_time_error(index=_get_generation_time_index(kwargs, 0), **kwargs)
+            return generation_time_error(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2StErrOfEstimate:
-            return generation_time_error(index=_get_generation_time_index(kwargs, 1), **kwargs)
+            return generation_time_error(index=_get_generation_time_index(kwargs['derivative_values_log2'], 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimePopulationSize:
-            return population_size_at_generation_time(index=_get_generation_time_index(kwargs, 0), **kwargs)
+            return population_size_at_generation_time(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
         elif self is Phenotypes.GrowthLag:
-            return growth_lag(index=_get_generation_time_index(kwargs, 0), **kwargs)
+            return growth_lag(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
         elif self is Phenotypes.GrowthVelocityVector:
             return growth_velocity_vector(**kwargs)
