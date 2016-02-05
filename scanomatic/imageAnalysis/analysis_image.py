@@ -13,6 +13,8 @@ __status__ = "Development"
 #
 
 import os
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.image as plt_img
 import numpy as np
 #

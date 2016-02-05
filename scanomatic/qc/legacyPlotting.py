@@ -14,6 +14,8 @@ __status__ = "Development"
 #
 
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 

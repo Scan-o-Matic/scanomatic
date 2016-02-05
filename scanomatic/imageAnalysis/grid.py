@@ -519,6 +519,8 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
     grid = build_grid_from_center(x_data, y_data, center, dx, dy, grid_shape)
 
     if visual and x_data is not None and y_data is not None:
+        import matplotlib
+        matplotlib.use("Agg")
         from matplotlib import pyplot as plt
         plt.imshow(im_filtered)
         plt.plot(y_data, x_data, 'g+', ms=10, mew=2)
