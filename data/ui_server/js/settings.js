@@ -14,7 +14,10 @@ function dynamicallyLimitScanners(button) {
         numOfScanners.val(maxVal);
 }
 
-function UpdateSettings(forceSettings) {
+function UpdateSettings(button, forceSettings) {
+
+    InputEnabled($(button), false);
+
     var action = forceSettings ? "forceUpdate" : "update";
     var data = {
         number_of_scanners: $("#number_of_scanners").val(),
@@ -32,6 +35,24 @@ function UpdateSettings(forceSettings) {
 
     };
 
-    console.log(data);
+    $.ajax({
+        url: '?action=' + action,
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        method: 'POST',
+        success: function(data) {
+            if (data.success) {
+                Dialogue("Settings", "Settings updated", "", "/settings");
+            } else {
+                Dialogue("Settings", "Settings refused", data.reason ? data.reason : "Unknown reason", false, button);
+            }
+        },
+        error: function(data) {
+            Dialogue("Settings", "Error", "An error occurred processing request", false, button);
+        }
+
+    });
+
 
 }
