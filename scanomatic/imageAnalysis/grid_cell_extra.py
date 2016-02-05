@@ -31,7 +31,7 @@ from scipy.ndimage import binary_erosion, \
 import histogram
 import blob
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
-from scanomatic.models.analysis_model import COMPARTMENTS, MEASURES
+from scanomatic.models.analysis_model import MEASURES
 from scanomatic.generics.maths import iqr_mean_stable as iqr_mean, quantiles_stable
 
 #

@@ -167,14 +167,3 @@ def otsu(histogram=None, labels=None, counts=None):
                     S2B_opt = critValue / (sumT ** 2)
 
     return threshold  # , mu0_opt, mu1_opt, w0_opt,w1_opt, S2B_opt
-
-if __name__ == "__main__":
-
-    import os
-    from matplotlib import pyplot as pp
-    #imgpath = 'D:\\Images\\P_COLONIES\\20111111_NaCl_WithBox'
-    #imgfile = 'New_rig_NaCl_test_with_box_121.jpg'
-    imgpath = 'D:\\Images\\P_VQM'
-    imgfile = 'beach.jpg'
-    img = np.flipud(pp.imread(os.path.join(imgpath, imgfile)))
-    hist = histogram(img[:, :, 1])
