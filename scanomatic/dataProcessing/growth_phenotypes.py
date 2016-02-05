@@ -121,8 +121,11 @@ def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
     return D + b0 * np.power(1.0 - b1 * np.exp(-b2 * X), 1.0 / (1.0 - b3))
 
 
-def CalculateFitRSquare(X, Y, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18],dtype=np.float)):
+def CalculateFitRSquare(X, Y, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18], dtype=np.float)):
     """X and Y must be 1D, Y must be log2"""
+
+    X = X[np.isfinite(Y)]
+    Y = Y[np.isfinite(Y)]
 
     p = leastsq(RCResiduals, p0, args=(X, Y))[0]
     Yhat = ChapmanRichards4ParameterExtendedCurve(
