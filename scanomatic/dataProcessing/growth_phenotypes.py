@@ -194,6 +194,18 @@ def _get_generation_time_index(kwargs, rank):
     return -1
 
 
+class PhenotypeDataType(Enum):
+
+    Scalar = 0
+    Vector = 1
+
+    def __call__(self, phenotype):
+
+        if  phenotype is Phenotypes.GrowthVelocityVector:
+            return PhenotypeDataType.Vector
+        return PhenotypeDataType.Scalar
+
+
 class Phenotypes(Enum):
 
     InitialValue = 12
