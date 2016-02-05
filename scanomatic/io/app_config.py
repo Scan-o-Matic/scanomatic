@@ -13,13 +13,8 @@ __status__ = "Development"
 # DEPENDENCIES
 #
 
-import os
-from types import StringTypes
-from hashlib import md5
-import random
-from cPickle import loads, dumps, UnpickleableError, UnpicklingError
-from ConfigParser import ConfigParser
-import re
+
+from ConfigParser import ConfigParser, NoOptionError
 
 #
 # INTERNAL DEPENDENCIES
@@ -83,7 +78,23 @@ class Config(SingeltonOneInit):
         except (IndexError, IOError):
             self._settings = ApplicationSettingsFactory.create()
 
+        rpc_conf = ConfigParser(allow_no_value=True)
+        rpc_conf.read(self._paths.config_rpc)
+
+        if not self._settings.rpc_server.host:
+            self._settings.rpc_server.host = Config._safe_get(rpc_conf, "Communication", "host", '127.0.0.1', str)
+        if not self._settings.rpc_server.port:
+            self._settings.rpc_server.port = Config._safe_get(rpc_conf, "Communication", "port", 12451, int)
+
         self._PM = power_manager.get_pm_class(self._settings.power_manager.type)
+
+    @staticmethod
+    def _safe_get(conf_parser, section, key, default, type):
+
+        try:
+            return type(conf_parser.get(section, key))
+        except NoOptionError:
+            return default
 
     @property
     def versions(self):
