@@ -174,9 +174,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         rpc_client.launch_local()
 
     if port is None:
-        port = Config().ui_port
+        port = Config().ui_server.port
 
-    if is_local is True or (Config().ui_local and is_local is None):
+    if is_local is True or (Config().ui_server.local and is_local is None):
         host = "localhost"
         is_local = True
     elif host is None:

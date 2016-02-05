@@ -27,10 +27,10 @@ import re
 
 import power_manager
 import paths
-import config_file
 import logger
 from scanomatic.generics.singleton import SingeltonOneInit
 import scanomatic.models.scanning_model as scanning_model
+from scanomatic.models.factories.settings_factories import ApplicationSettingsFactory
 
 #
 # CLASSES
@@ -77,304 +77,181 @@ class Config(SingeltonOneInit):
                 }
 
             }
-        # TMP SOLUTION TO BIGGER PROBLEMS
-
-        self.computer_human_name = 'Unnamed Computer'
-
-        # VERSION HANDLING
-        self.version_first_pass_change_1 = 0.997
-        self.version_fixture_grid_history_change_1 = 0.998
-        self.version_oldest_allow_fixture = 0.9991
-
-        # SCANNER
-        self.number_of_scanners = 3
-        self.scanner_name_pattern = "Scanner {0}"
-        self.scanner_names = list()
-        self.scan_program = "scanimage"
-        self.scan_program_version_flag = "-V"
-        self._scanner_models = {
-            self.SCANNER_PATTERN.format(i + 1): 'EPSON V700' for i in range(4)}
-
-        # POWER MANAGER
-        self.pm_type = power_manager.POWER_MANAGER_TYPE.notInstalled
-        self._pm_host = "192.168.0.100"
-        self._pm_pwd = None
-        self._pm_verify_name = False
-        self._pm_mac = None
-        self._pm_name = "Server 1"
-
-        # RPC SERVER
-        self._rpc_port = None
-        self._rpc_host = None
-        self._config_rpc_admin = None
-        self._server_config = None
-
-        # UI SERVER
-        self.ui_port = 5000
-        self.ui_local = True
-
-        # HARDWARE RESOURCES
-        self.resources_min_checks = 3
-        self.resources_mem_min = 30
-        self.resources_cpu_tot_free = 30
-        self.resources_cpu_single = 75
-        self.resources_cpu_n = 1
-
-        # LOAD CONFIG FROM FILE
-        self._load_config_from_file()
-
-        # MAIL
-        self.mail_server = None
-        self.mail_user = None
-        self.mail_port = 0
-        self.mail_password = None
-        self.mail_scanning_done_minutes_before = 30
-
-        self._set_pm_extras()
-
-    def _load_config_from_file(self):
-
-        self._config_file = config_file.ConfigFile(
-            self._paths.config_main_app)
-
-        scanners = self._config_file['number-of-scanners']
-        if scanners is not None:
-            self.number_of_scanners = scanners
-            self._logger.info("Updating number of scanners to {0}".format(scanners))
-
-        pm = self._config_file['pm-type']
-        if pm is not None:
-            try:
-                self.pm_type = loads(pm)
-                self._logger.info("Updating Power Manager to: {0}".format(self.pm_type))
-
-            except (ValueError, UnpicklingError):
-                mode_by_name = tuple(mode.name.lower() == pm.lower() for mode in power_manager.POWER_MANAGER_TYPE)
-                if any(mode_by_name):
-                    for mode, pm_type in zip(mode_by_name, power_manager.POWER_MANAGER_TYPE):
-                        if mode:
-                            self.pm_type = pm_type
-                            self._logger.info("Updating Power Manager by value to: {0}".format(self.pm_type))
-                            break
-                else:
-                    self._logger.error("Power Manager Mode '{0}' not recognized only valid: {1}".format(
-                        pm, power_manager.POWER_MANAGER_TYPE.__members__.keys()))
-
-            except UnpickleableError:
-                self._logger.warning("Power Manager Type {0} not valid".format(
-                    pm))
-
-        experiments_root = self._config_file['experiments-root']
-        if experiments_root is not None:
-            self._paths.experiment_root = experiments_root
-
-        pm_name = self._config_file['pm-name']
-        if pm_name is not None:
-            self._pm_name = pm_name
-
-        pm_host = self._config_file['pm-host']
-        if pm_host is not None:
-            self._pm_host = pm_host
-
-        pm_pwd = self._config_file['pm-pwd']
-        if pm_pwd is not None:
-            self._pm_pwd = pm_pwd
-
-        pm_mac = self._config_file['pm-MAC']
-        if pm_mac is not None:
-            self._pm_mac = pm_mac
-
-    def _set_pm_extras(self):
-
-        self._logger.info("Using pm-type {0}".format(self.pm_type))
-
-        if self.pm_type == power_manager.POWER_MANAGER_TYPE.linuxUSB:
-
-            self._PM = power_manager.PowerManagerUsbLinux
-            self._pm_arguments = {
-                'power_mode': self.POWER_DEFAULT
-            }
-
-        elif self.pm_type == power_manager.POWER_MANAGER_TYPE.LAN:
-            self._PM = power_manager.PowerManagerLan
-
-            self._pm_arguments = {
-                'power_mode': self.POWER_DEFAULT,
-                'host': self._pm_host,
-                'password': self._pm_pwd,
-                'verify_name': self._pm_verify_name,
-                'pm_name': self._pm_name,
-                'mac': self._pm_mac,
-            }
-        else:
-            self._PM = power_manager.PowerManagerNull
-            self._pm_arguments = {
-                'power_mode': self.POWER_DEFAULT
-            }
-
-    @staticmethod
-    def _safe_config_get(cfg, section, item, default_value=None, vtype=None):
 
         try:
+            self._settings = ApplicationSettingsFactory.serializer.load(self._paths.config_main_app)[0]
+        except (IndexError, IOError):
+            self._settings = ApplicationSettingsFactory.create()
 
-            default_value = cfg.get(section, item)
-            if vtype is not None:
-                default_value = vtype(default_value)
-
-        except:
-
-            pass
-
-        return default_value
+        self._PM = power_manager.get_pm_class(self._settings.power_manager.type)
 
     @property
-    def server_config(self):
+    def versions(self):
+        """
 
-        if self._server_config is None:
-            self._server_config = ConfigParser(allow_no_value=True)
-            self._server_config.readfp(open(self._paths.config_rpc))
-            self._logger.info("Loaded RPC config from '{0}'".format(
-                self._paths.config_rpc))
-        return self._server_config
+        Returns: scanomatic.models.settings_models.VersionChangesModel
 
-    @property
-    def rpc_host(self):
-
-        if self._rpc_host is None:
-            host = self._safe_config_get(self.server_config, 'Communication', 'host', '127.0.0.1')
-            self._rpc_host = host
-
-        return self._rpc_host
+        """
+        return self._settings.versions
 
     @property
-    def rpc_port(self):
+    def power_manager(self):
+        """
 
-        if self._rpc_port is None:
+        Returns: scanomatic.models.settings_models.PowerManagerModel
 
-            port = self._safe_config_get(self.server_config, 'Communication', 'port', 14547, int)
-            self._rpc_port = port
+        """
 
-        return self._rpc_port
+        return self._settings.power_manager
 
     @property
-    def rpc_admin(self):
+    def rpc_server(self):
+        """
 
-        if self._config_rpc_admin is not None:
-            return self._config_rpc_admin
+        Returns: scanomatic.models.settings_models.RPCServerModel
 
-        path = self._paths.config_rpc_admin
+        """
+        return self._settings.rpc_server
 
-        if os.path.isfile(path):
-            fh = open(path, 'r')
-            admin = fh.read().strip()
-            fh.close()
-        else:
-            admin = md5(str(random.random())).hexdigest()
-            fh = open(path, 'w')
-            fh.write(admin)
-            fh.close()
+    @property
+    def ui_server(self):
+        """
 
-        self._config_rpc_admin = admin
+        Returns: scanomatic.models.settings_models.UIServerModel
 
-        return admin
+        """
+        return self._settings.ui_server
 
-    def set(self, key, value):
+    @property
+    def hardware_resource_limits(self):
+        """
 
-        if key == 'pm-type':
-            if value in power_manager.has_value(
-                    power_manager.POWER_MANAGER_TYPE, value): 
-                self.pm_type = power_manager.get_enum_name_from_value(
-                    power_manager.POWER_MANAGER_TYPE, value)
-                self._set_pm_extras()
+        Returns: scanomatic.models.settings_models.HardwareResourceLimitsModel
 
-        elif key == 'number-of-scanners':
+        """
+        return self._settings.hardware_resource_limits
 
-            if isinstance(value, int) and 0 <= value <= 4:
-                self.number_of_scanners = value
+    @property
+    def mail(self):
+        """
 
-    def save_settings(self):
+        Returns: scanomatic.models.settings_models.MailModel
 
-        self._config_file['pm-type'] = dumps(self.pm_type)
-        self._config_file['number-of-scanners'] = self.number_of_scanners
-        self._config_file['experiments-root'] = self._paths.experiment_root
-        self._config_file.save()
+        """
+        return self._settings.mail
 
-    def get_scanner_model(self, scanner):
+    @property
+    def paths(self):
+        """
 
-        return self._scanner_models[self.get_scanner_name(scanner)]
+        Returns: scanomatic.models.settings_models.PathsModel
+
+        """
+        return self._settings.paths
+
+    @property
+    def computer_human_name(self):
+        """
+
+        Returns: str
+
+        """
+        return self._settings.computer_human_name
+
+    @property
+    def number_of_scanners(self):
+        """
+
+        Returns: int
+
+        """
+        return self._settings.number_of_scanners
+
+    @property
+    def scanner_name_pattern(self):
+        """
+
+        Returns: str
+
+        """
+        return self._settings.scanner_name_pattern
+
+    @property
+    def scanner_names(self):
+        """
+
+        Returns: [str]
+
+        """
+        return self._settings.scanner_names
+
+    @property
+    def scan_program(self):
+        """
+
+        Returns: str
+
+        """
+        return self._settings.scan_program
+
+    @property
+    def scan_program_version_flag(self):
+        """
+
+        Returns: str
+
+        """
+        return self._settings.scan_program_version_flag
+
+    @property
+    def scanner_models(self):
+        """
+
+        Returns: {str: str}
+
+        """
+        return self._settings.scanner_models
+
+    @property
+    def scanner_sockets(self):
+        """
+
+        Returns: {str: int}
+
+        """
+        return self._settings.scanner_sockets
 
     def get_scanner_name(self, scanner):
 
         if isinstance(scanner, int) and 0 < scanner <= self.number_of_scanners:
             scanner = self.SCANNER_PATTERN.format(scanner)
-        elif isinstance(scanner, StringTypes):
-            numbers = map(int, re.findall(r'\d+', scanner))
-            if len(numbers) != 1 or numbers[0] <= 0 or numbers[0] > self.number_of_scanners:
-                return None
-            scanner = self.SCANNER_PATTERN.format(numbers[0])
-        else:
-            return None
 
-        return scanner
+        for s in self.scanner_names:
+            if s == scanner:
+                return scanner
+        return None
     
     def get_scanner_socket(self, scanner):
 
-        if isinstance(scanner, int):
-            return scanner
+        scanner = self.get_scanner_name(scanner)
 
-        try:
-            return map(int, re.findall(r'\d+', scanner))[0]
-        except (IndexError, TypeError):
-            self._logger.error("Could n't get socket for scanner '{0}'".format(scanner))
-            return None
+        if scanner:
+            return self.scanner_sockes[scanner]
+        return None
 
-    def get_pm(self, scanner_name, **pm_kwargs):
+    def get_pm(self, scanner):
 
-        socket = self.get_scanner_socket(scanner_name)
+        socket = self.get_scanner_socket(scanner)
         if socket is None:
-            self._logger.error("Socket for scanner {0} is unknown".format(scanner_name))
+            self._logger.error("Socket for scanner {0} is unknown".format(scanner))
             return power_manager.PowerManagerNull("None")
-        if len(pm_kwargs) == 0:
-            pm_kwargs = self._pm_arguments
+
 
         self._logger.info(
             "Creating scanner PM for socket {0} and settings {1}".format(
-                socket, pm_kwargs))
+                socket, dict(**self.power_manager)))
 
-        return self._PM(socket, **pm_kwargs)
-
-    def get_default_experiment_query(self):
-
-        experiment_query = {
-            '-f': None,  # FIXTURE: path to conf-file
-            '-s': "",  # SCANNER to be used
-            '-i': 20,  # INTERVAL in minutes
-            '-n': 217,  # NUMBER OF SCANS
-            '-m': "",  # PINNING LIST STRING
-            '-r': self._paths.experiment_root,  # ROOT of experiments
-            '-p': "",  # PREFIX for experiment
-            '-d': "",  # DESCRIPTION
-            '-c': "",  # PROJECT ID CODE
-            '-u': "",  # UUID
-            '--debug': 'info'  # LEVEL OF VERBOSITY
-        }
-
-        return experiment_query
-
-    def get_default_analysis_query(self):
-
-        analysis_query = {
-            "-i": "",  # No default input file
-            "-o": self._paths.experiment_analysis_relative_path,  # Default subdir
-            # "-t" : 100,  # Time to set grid
-            '--xml-short': 'True',  # Short output format
-            '--xml-omit-compartments': 'background,cell',  # Only look at blob
-            '--xml-omit-measures':
-            'mean,median,IQR,IQR_mean,centroid,perimeter,area',  # only get pixelsum
-            '--debug': 'info'  # Report everything that is info and above in seriousness
-        }
-
-        return analysis_query
+        return self._PM(socket, **self.power_manager)
 
     def get_min_model(self, model, factory):
 

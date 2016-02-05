@@ -239,7 +239,7 @@ class ScannerEffector(proc_effector.ProcessEffector):
             self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.Wait
 
         if (not self._scanning_effector_data.informed_close_to_end and self.seconds_left / 60.0 <
-                AppConfig().mail_scanning_done_minutes_before):
+                AppConfig().mail.warn_scanning_done_minutes_before):
 
             self._do_report_scanning_soon_done()
 

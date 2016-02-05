@@ -81,7 +81,7 @@ def get_active_plates(meta_data, suppress_analysis, graph_watch, config=None):
 
     plate_position_keys = []
 
-    if meta_data['Version'] >= config.version_first_pass_change_1:
+    if meta_data['Version'] >= config.versions.first_pass_change_1:
         v_offset = 1
     else:
         v_offset = 0

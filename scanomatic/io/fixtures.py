@@ -100,7 +100,6 @@ class Fixtures(object):
 
     def __init__(self):
 
-        self._app_config = app_config.Config()
         self._fixtures = None
         self.update()
 

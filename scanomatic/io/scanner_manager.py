@@ -115,7 +115,7 @@ class ScannerPowerManager(SingeltonOneInit):
         for scanner in scanners.itervalues():
 
             try:
-                pm[scanner.socket] = self._conf.get_pm(scanner.socket)
+                pm[scanner.socket] = self._conf.get_pm(scanner.name)
             except InvalidInit:
                 self._logger.error("Failed to init socket {0}".format(scanner.socket))
                 pm[scanner.socket] = PowerManagerNull(scanner.socket)
