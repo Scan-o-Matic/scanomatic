@@ -381,7 +381,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     position_offset=position_offset)
 
                 for phenotype in Phenotypes:
-                    if PhenotypeDataType(phenotype) is PhenotypeDataType.Scalar:
+                    if PhenotypeDataType.Scalar(phenotype):
                         position_phenotypes[phenotype.value] = phenotype(**curve_data)
 
                 phenotypes[id0, id1, ...] = position_phenotypes

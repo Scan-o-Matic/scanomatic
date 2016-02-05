@@ -202,8 +202,8 @@ class PhenotypeDataType(Enum):
     def __call__(self, phenotype):
 
         if  phenotype is Phenotypes.GrowthVelocityVector:
-            return PhenotypeDataType.Vector
-        return PhenotypeDataType.Scalar
+            return True if self is PhenotypeDataType.Vector else False
+        return True if self is PhenotypeDataType.Scalar else False
 
 
 class Phenotypes(Enum):
