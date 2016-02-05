@@ -7,6 +7,8 @@ import os
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
+from threading import BoundedSemaphore, Thread
+import time
 
 #
 # SCANNOMATIC LIBRARIES
@@ -29,7 +31,7 @@ class InvalidGridException(Exception):
     pass
 
 
-def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index):
+def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semaphor=None):
 
     """
 
@@ -48,6 +50,9 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index):
 
     # TODO: Deterimine if it is best to remember history or not!
     grid_cell.analyse(remember_filter=False)
+
+    if semaphor is not None:
+        semaphor.release()
 
 
 def _set_image_transposition(grid_cell, transpose_polynomial):
@@ -417,8 +422,18 @@ class GridArray():
         if save_grid_name:
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_grid_name)
 
+        semaphor = BoundedSemaphore(96)
+        thread_group = set()
         for grid_cell in self._grid_cells.values():
-            _analyse_grid_cell(grid_cell, im, transpose_polynomial, index)
+
+            semaphor.acquire()
+            t = Thread(target=_analyse_grid_cell, args=(grid_cell, im, transpose_polynomial, index, semaphor))
+            t.start()
+            thread_group.add(t)
+
+        while thread_group:
+            thread_group = set(t for t in thread_group if t.is_alive())
+            time.sleep(0.01)
 
         self._set_focus_colony_results()
 
