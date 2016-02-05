@@ -85,6 +85,11 @@ class Config(SingeltonOneInit):
             self._settings.rpc_server.host = Config._safe_get(rpc_conf, "Communication", "host", '127.0.0.1', str)
         if not self._settings.rpc_server.port:
             self._settings.rpc_server.port = Config._safe_get(rpc_conf, "Communication", "port", 12451, int)
+        if not self._settings.rpc_server.admin:
+            try:
+                self._settings.rpc_server.admin = open(self._paths.config_rpc_admin, 'r').read().strip()
+            except IOError:
+                pass
 
         self._PM = power_manager.get_pm_class(self._settings.power_manager.type)
 
