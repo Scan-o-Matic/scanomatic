@@ -305,3 +305,4 @@ class Phenotypes(Enum):
 
         elif self is Phenotypes.GrowthVelocityVector:
             return growth_velocity_vector(**kwargs)
+
