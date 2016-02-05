@@ -250,16 +250,15 @@ class Config(SingeltonOneInit):
             return self.scanner_sockes[scanner]
         return None
 
-    def get_pm(self, scanner):
+    def get_pm(self, socket):
 
-        socket = self.get_scanner_socket(scanner)
         if socket is None:
-            self._logger.error("Socket for scanner {0} is unknown".format(scanner))
+            self._logger.error("Socket {0} is unknown".format(scanner))
             return power_manager.PowerManagerNull("None")
 
 
         self._logger.info(
-            "Creating scanner PM for socket {0} and settings {1}".format(
+            "Creating scanner PM for socked {0} and settings {1}".format(
                 socket, dict(**self.power_manager)))
 
         return self._PM(socket, **self.power_manager)
