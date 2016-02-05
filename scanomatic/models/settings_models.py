@@ -48,7 +48,7 @@ class RPCServerModel(model.Model):
 
 class UIServerModel(model.Model):
 
-    def __init__(self, port=5000, local=None, host=None):
+    def __init__(self, port=5000, local=True, host=None):
 
         self.port = port
 
