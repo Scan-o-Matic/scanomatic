@@ -3,6 +3,9 @@ import numpy as np
 from scipy.optimize import leastsq
 from itertools import izip
 from scipy.stats import linregress
+from scanomatic.io.logger import Logger
+
+_logger = Logger("Growth Phenotypes")
 
 
 def _linreg_helper(X, Y):
@@ -14,10 +17,15 @@ def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times
 
     linreg_values = []
     curve_logged = np.log2(curve)
+    log2_strided_curve = np.log2(curve_strided)
+    filters = np.isfinite(log2_strided_curve)
+    min_size = curve_strided.shape[-1] - 1
+    for times, value_segment, filt in izip(times_strided, log2_strided_curve, filters):
 
-    for times, value_segment in izip(times_strided, curve_strided):
-
-        linreg_values.append(_linreg_helper(times, np.log2(value_segment)))
+        if filt.sum() >= min_size:
+            linreg_values.append(_linreg_helper(times[filt], value_segment[filt]))
+        else:
+            linreg_values.append((np.nan, np.nan))
 
     derivative_values_log2, derivative_errors = np.array(linreg_values).T
 
@@ -25,8 +33,8 @@ def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times
         'curve_smooth_growth_data': np.ma.masked_invalid(curve),
         'index48h': index_for_48h,
         'chapman_richards_fit': CalculateFitRSquare(flat_times, curve_logged),
-        'derivative_values_log2': derivative_values_log2,
-        'derivative_errors': derivative_errors,
+        'derivative_values_log2': np.ma.masked_invalid(derivative_values_log2),
+        'derivative_errors': np.ma.masked_invalid(derivative_errors),
         'linregress_extent': position_offset,
         'flat_times': flat_times}
 
@@ -56,6 +64,9 @@ def growth_yield(curve_smooth_growth_data, *args, **kwargs):
 
 
 def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
+    if index48h < 0 or index48h >= curve_smooth_growth_data.size:
+        _logger.warning("Faulty index {0} for 48h size (max {1})".format(index, curve_smooth_growth_data.size - 1))
+        return  np.nan
     return curve_smooth_growth_data[index48h]
 
 
@@ -113,8 +124,11 @@ def ChapmanRichards4ParameterExtendedCurve(X, b0, b1, b2, b3, D):
     return D + b0 * np.power(1.0 - b1 * np.exp(-b2 * X), 1.0 / (1.0 - b3))
 
 
-def CalculateFitRSquare(X, Y, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18],dtype=np.float)):
+def CalculateFitRSquare(X, Y, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18], dtype=np.float)):
     """X and Y must be 1D, Y must be log2"""
+
+    X = X[np.isfinite(Y)]
+    Y = Y[np.isfinite(Y)]
 
     p = leastsq(RCResiduals, p0, args=(X, Y))[0]
     Yhat = ChapmanRichards4ParameterExtendedCurve(
@@ -129,25 +143,32 @@ def RCResiduals(crParams, X, Y):
 
 
 def generation_time(derivative_values_log2, index, **kwargs):
-    if index < 0:
+    if index < 0 or index >= derivative_values_log2.size:
+        _logger.warning("Faulty index {0} for GT (max {1})".format(index, derivative_values_log2.size - 1))
         return np.nan
     return 1.0 / derivative_values_log2[index]
 
 
 def generation_time_error(derivative_errors, index, **kwargs):
-    if index < 0:
+    if index < 0 or index >= derivative_errors.size:
+        _logger.warning("Faulty index {0} for GT error (max {1})".format(index, derivative_errors.size - 1))
         return np.nan
 
     return derivative_errors[index]
 
 
 def generation_time_when(flat_times, index, **kwargs):
+
+    if index < 0 or index >= flat_times.size:
+        _logger.warning("Faulty index {0} for GT when (max {1})".format(index, flat_times.size - 1))
+        return np.nan
+
     return flat_times[index]
 
 
 def population_size_at_generation_time(curve_smooth_growth_data, index, linregress_extent, **kwargs):
 
-    return np.median(
+    return np.ma.median(
         curve_smooth_growth_data[
             max(0, index - linregress_extent):
             min(index + linregress_extent + 1, curve_smooth_growth_data.size)])
@@ -182,16 +203,23 @@ _generation_time_indices = None
 _kwargs = None
 
 
-def _get_generation_time_index(kwargs, rank):
-    global _kwargs, _generation_time_indices
-    if kwargs is not _kwargs:
-        _kwargs = kwargs
-        masked_values = np.ma.masked_invalid(kwargs['derivative_values_log2'])
-        _generation_time_indices = masked_values.argsort()[::-1]
-
-    if rank < _generation_time_indices.size:
-        return _generation_time_indices[rank]
+def _get_generation_time_index(log2_masked_derivative_data, rank):
+    finites = log2_masked_derivative_data.size - log2_masked_derivative_data.mask.sum()
+    if finites > np.abs(rank):
+        return log2_masked_derivative_data.argsort()[:finites][-(rank + 1)]
     return -1
+
+
+class PhenotypeDataType(Enum):
+
+    Scalar = 0
+    Vector = 1
+
+    def __call__(self, phenotype):
+
+        if  phenotype is Phenotypes.GrowthVelocityVector:
+            return True if self is PhenotypeDataType.Vector else False
+        return True if self is PhenotypeDataType.Scalar else False
 
 
 class Phenotypes(Enum):
@@ -210,12 +238,12 @@ class Phenotypes(Enum):
 
     GenerationTime = 0
     GenerationTimeStErrOfEstimate = 1
-    GenerationTimeScanIndex = 2
+    GenerationTimeWhen = 2
     GenerationTimePopulationSize = 21
 
     GenerationTime2 = 3
     GenerationTime2StErrOfEstimate = 4
-    GenerationTime2ScanIndex = 5
+    GenerationTime2When = 5
 
     ChapmanRichardsFit = 6
     ChapmanRichardsParam1 = 7
@@ -243,6 +271,9 @@ class Phenotypes(Enum):
         elif self is Phenotypes.ColonySize48h:
             return growth_48h(**kwargs)
 
+        elif self is Phenotypes.GenerationTime48h:
+            return generation_time(index=kwargs['index48h'], **kwargs)
+
         elif self is Phenotypes.CurveGrowthYield:
             return growth_yield(**kwargs)
 
@@ -268,28 +299,29 @@ class Phenotypes(Enum):
             return kwargs['chapman_richards_fit'][1][4]
 
         elif self is Phenotypes.GenerationTime:
-            return generation_time(index=_get_generation_time_index(kwargs, 0), **kwargs)
+            return generation_time(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2:
-            return generation_time(index=_get_generation_time_index(kwargs, 1), **kwargs)
+            return generation_time(index=_get_generation_time_index(kwargs['derivative_values_log2'], 1), **kwargs)
 
-        elif self is Phenotypes.GenerationTimeScanIndex:
-            return generation_time_when(index=_get_generation_time_index(kwargs, 0), **kwargs)
+        elif self is Phenotypes.GenerationTimeWhen:
+            return generation_time_when(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
-        elif self is Phenotypes.GenerationTime2ScanIndex:
-            return generation_time_when(index=_get_generation_time_index(kwargs, 1), **kwargs)
+        elif self is Phenotypes.GenerationTime2When:
+            return generation_time_when(index=_get_generation_time_index(kwargs['derivative_values_log2'], 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimeStErrOfEstimate:
-            return generation_time_error(index=_get_generation_time_index(kwargs, 0), **kwargs)
+            return generation_time_error(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
         elif self is Phenotypes.GenerationTime2StErrOfEstimate:
-            return generation_time_error(index=_get_generation_time_index(kwargs, 1), **kwargs)
+            return generation_time_error(index=_get_generation_time_index(kwargs['derivative_values_log2'], 1), **kwargs)
 
         elif self is Phenotypes.GenerationTimePopulationSize:
-            return population_size_at_generation_time(index=_get_generation_time_index(kwargs, 0), **kwargs)
+            return population_size_at_generation_time(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
         elif self is Phenotypes.GrowthLag:
-            return growth_lag(index=_get_generation_time_index(kwargs, 0), **kwargs)
+            return growth_lag(index=_get_generation_time_index(kwargs['derivative_values_log2'], 0), **kwargs)
 
         elif self is Phenotypes.GrowthVelocityVector:
             return growth_velocity_vector(**kwargs)
+
