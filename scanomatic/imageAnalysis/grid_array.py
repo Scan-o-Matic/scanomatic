@@ -437,7 +437,6 @@ class GridArray():
 
         self._set_focus_colony_results()
 
-
     def _set_focus_colony_results(self):
 
         if self._analysis_model.focus_position:

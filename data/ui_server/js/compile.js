@@ -1,15 +1,26 @@
 
 var localFixture = false;
 var path = '';
+var project_path_valid = false;
+
+function set_project_directory(input) {
+
+    get_path_suggestions(
+        input,
+        true,
+        "",
+        function(data, status) {
+            path = $(input).val();
+            project_path_valid = data.valid_parent && data.exists;
+            InputEnabled($("#submit-button"), project_path_valid);
+    });
+}
 
 function toggleLocalFixture(caller) {
     localFixture = $(caller).prop("checked");
     InputEnabled($(current_fixture_id), !localFixture);
 }
 
-function CompilePath(caller) {
-    path = $(caller).val();
-}
 
 function Compile(button) {
 

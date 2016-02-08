@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 import scanomatic.generics.model as model
 
 

@@ -58,21 +58,20 @@ function set_poetry(input) {
 
 function set_experiment_root(input) {
 
-    $.get("/experiment/" + $(input).val(), function(data, status) {
-        var val = $(input).val();
-        $(input).autocomplete({source: data.suggestions});
-        if (val == "" || (data.path == "root/" && val.length < data.path.length))
-            $(input).val(data.path);
+    get_path_suggestions(
+        input,
+        true,
+        "",
+        function(data, status) {
+            project_path = $(input).val();
+            project_path_valid = data.valid_parent && !data.exists;
+            project_path_invalid_reason = data.reason;
 
-        project_path = $(input).val();
-        project_path_valid = data.valid_experiment;
-        project_path_invalid_reason = data.reason;
-        console.log(data);
-        set_validation_status("#project-path", project_path_valid, project_path_valid ? 'Everything is cool' : project_path_invalid_reason);
-        if (data.valid_experiment)
-            $("#experiment-title").html("Start Experiment '" + data.prefix + "'");
-        else
-            $("#experiment-title").html("Start Experiment");
+            set_validation_status("#project-path", project_path_valid, project_path_valid ? 'Everything is cool' : project_path_invalid_reason);
+            if (data.valid_parent && !data.exists)
+                $("#experiment-title").html("Start Experiment '" + data.prefix + "'");
+            else
+                $("#experiment-title").html("Start Experiment");
     });
 }
 

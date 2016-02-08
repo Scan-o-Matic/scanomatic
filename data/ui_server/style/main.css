@@ -24,6 +24,12 @@ img.icon-large {
     margin-left: 3px;
 }
 
+
+.ui-helper-hidden-accessible {
+    display: none;
+    hidden: hidden;
+}
+
 .long {
     width: 80%;
 }

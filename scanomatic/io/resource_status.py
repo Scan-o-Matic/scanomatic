@@ -1,7 +1,3 @@
-#
-# DEPENDENCIES
-#
-
 import psutil
 
 #

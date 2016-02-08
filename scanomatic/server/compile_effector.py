@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 import os
 import time
 import proc_effector

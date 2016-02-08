@@ -1,18 +1,3 @@
-#!/usr/bin/env python
-"""Home-brewn logging tools"""
-__author__ = "Martin Zackrisson, jetxee"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-#
-# DEPENDENICES
-#
-
 # import traceback
 import datetime
 import sys

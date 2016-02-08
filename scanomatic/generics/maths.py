@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 from scipy.stats.mstats import mquantiles
 import numpy as np
 

@@ -1,20 +1,4 @@
-"""The RPC-server is the master controller of all Scan-o-Matic default
-operations.
-"""
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
 # TODO: Who handles keyboard interrupts?
-
-#
-# DEPENDENCIES
-#
 
 import time
 from math import trunc

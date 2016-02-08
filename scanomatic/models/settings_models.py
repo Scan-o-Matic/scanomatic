@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 import scanomatic.generics.model as model
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE, POWER_MODES
 import os

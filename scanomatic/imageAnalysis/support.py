@@ -1,22 +1,3 @@
-"""
-Support functions for the analysis module such that its fundaments
-can be slimmed... this may be a temporary solution (that is it may
-be moved further in the future, but main idea is to compartmentalize
-and modularize stuff here)
-"""
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-#
-# DEPENDENCIES
-#
-
 import sys
 import os
 import time

@@ -1,13 +1,3 @@
-"""The master effector of data processing downstream of image analysis"""
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
 #
 # DEPENDENCIES
 #
@@ -80,10 +70,10 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         times, data = image_data.ImageData.read_image_data_and_time(self._feature_job.analysis_directory)
 
-        if None in (times, data) or 0 in map(len, (times, data)):
+        if times is None or data is None or 0 in map(len, (times, data)):
             self._logger.error(
                 "Could not filter image times to match data or no data. " +
-                "Do you have the right directory?")
+                "Do you have the right directory, it should be an analysis directory?")
 
             self.add_message("There is no image data in given directory or " +
                              "the image data is corrupt")

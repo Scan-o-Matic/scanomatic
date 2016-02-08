@@ -1,18 +1,3 @@
-#!/usr/bin/env python
-"""
-Part of the analysis work-flow that analyses the image section of a grid-cell.
-"""
-__author__ = "Martin Zackrisson, jetxee"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman",
-               "jetxee"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-
 #
 # DEPENDENCIES
 #

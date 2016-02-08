@@ -1,9 +1,6 @@
-__author__ = 'martin'
-__version__ = 0.998
-
 from enum import Enum
 import scanomatic.generics.model as model
-
+import scanomatic
 
 class IMAGE_ROTATIONS(Enum):
     Landscape = 0
@@ -104,7 +101,7 @@ class XMLModel(model.Model):
 class AnalysisMetaData(model.Model):
 
     def __init__(self, start_time=0, name="", description="", interval=20.0, images=0,
-                 uuid="", fixture="", scanner="", project_id="", scanner_layout_id="", version=__version__,
+                 uuid="", fixture="", scanner="", project_id="", scanner_layout_id="", version=scanomatic.__version__,
                  pinnings=()):
 
         self.start_time = start_time

@@ -24,11 +24,6 @@ tr {
     vertical-align: center;
 }
 
-.ui-helper-hidden-accessible {
-    display: none;
-    hidden: hidden;
-}
-
 option {
     padding: 3px;
     margin-right: 3px;

@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 from scipy.signal import gaussian
 import numpy as np
 from enum import Enum

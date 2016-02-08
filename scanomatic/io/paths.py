@@ -1,17 +1,3 @@
-"""Resource Paths"""
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-#
-# DEPENDENCIES
-#
-
 import os
 import re
 
@@ -20,7 +6,6 @@ import re
 #
 
 import logger
-import scanomatic.faulty_reference as faulty_reference
 from scanomatic.generics.singleton import SingeltonOneInit
 
 #
@@ -116,7 +101,6 @@ class Paths(SingeltonOneInit):
         self.log_relaunch = os.path.join(self.log, "relaunch.log")
         self.log_project_progress = os.path.join(self.log, "progress.projects")
 
-        self.experiment_root = os.path.join(os.path.expanduser("~"), "Documents")
         self.experiment_scan_image_pattern = "{0}_{1}_{2:.4f}.tiff"
         self.experiment_analysis_relative_path = "analysis"
         self.experiment_analysis_file_name = "analysis.log"
@@ -166,11 +150,6 @@ class Paths(SingeltonOneInit):
             return os.path.join(getattr(self, attr), *other)
         else:
             raise AttributeError("Unknown path attribute '{0}'".format(attr))
-
-    @property
-    def src(self):
-
-        return faulty_reference.FaultyReference("src", base=str(self))
 
     def _is_fixture_file_name(self, fixture_name):
 
@@ -232,7 +211,6 @@ class Paths(SingeltonOneInit):
 
         return self.project_compilation_instructions_pattern.format(
             self.get_project_directory_name_with_file_prefix_from_path(path))
-
 
     def get_project_compile_log_path_from_compile_model(self, compile_model):
 

@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from time import sleep
 
