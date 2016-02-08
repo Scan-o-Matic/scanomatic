@@ -1,3 +1,17 @@
+function get_path_suggestions(input, isDirectory, suffix, callback) {
+
+    if (suffix == undefined)
+        suffix = "";
+
+    $.get("/data/" + $(input).val() + "?suffix=" + suffix + "&directory=" + (isDirectory ? 1 : 0), function(data, status) {
+        var val = $(input).val();
+        $(input).autocomplete({source: data.suggestions});
+        if (val == "" || (data.path == "root/" && val.length < data.path.length))
+            $(input).val(data.path);
+
+        callback(data, status);
+    });
+}
 
 function clamp(value, min, max) {
     return value == null ? min : (isNaN(value) ? max : Math.max(Math.min(value, max), min));
