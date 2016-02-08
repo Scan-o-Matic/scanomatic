@@ -324,7 +324,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if request.args.get("enqueue"):
             project_name = os.path.basename(os.path.abspath(request.json.get("project_path")))
             project_root = os.path.dirname(request.json.get("project_path")).replace(
-                'root', Paths().experiment_root)
+                'root', Config().paths.projects_root)
 
             plate_descriptions = request.json.get("plate_descriptions")
             if all(isinstance(p, StringTypes) or p is None for p in plate_descriptions):
@@ -363,40 +363,73 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         return send_from_directory(Paths().ui_root, Paths().ui_experiment_file)
 
-    @app.route("/experiment/")
-    @app.route("/experiment/<command>", methods=['get', 'post'])
-    @app.route("/experiment/<command>/", methods=['get', 'post'])
-    @app.route("/experiment/<command>/<path:sub_path>", methods=['get', 'post'])
+    @app.route("/data/")
+    @app.route("/data/<command>", methods=['get', 'post'])
+    @app.route("/data/<command>/", methods=['get', 'post'])
+    @app.route("/data/<command>/<path:sub_path>", methods=['get', 'post'])
     def _experiment_commands(command=None, sub_path=""):
 
         if command is None:
             command = 'root'
 
         sub_path = sub_path.split("/")
+        try:
+            is_directory = bool(request.values.get('isDirectory', type=int, default=True))
+        except ValueError:
+            is_directory = True
 
-        if not all(safe_directory_name(name) for name in sub_path):
+        if not all(safe_directory_name(name) for name in sub_path[:None if is_directory else -1]):
 
-            return jsonify(path=Paths().experiment_root, valid_experiment=False,
+            return jsonify(path=Config().paths.projects_root, valid_parent=False,
                            reason="Only letter, numbers and underscore allowed")
 
         if command == 'root':
 
-            root = Paths().experiment_root
-            path = os.path.join(*chain([root], sub_path))
-            valid_root = os.path.isdir(os.path.dirname(path))
-            duplicate_experiment = os.path.isdir(path) or os.path.isfile(path)
-            reason = "Root directory does not exist" if not valid_root else "Duplicate experiment" if duplicate_experiment else ""
-            if valid_root:
+            suffix = request.values.get('suffix', default="")
+
+            root = Config().paths.projects_root
+            path = os.path.abspath(os.path.join(*chain([root], sub_path)))
+            prefix = sub_path[-1] if sub_path else ""
+            if prefix == "":
+                path += os.path.sep
+
+            if root in path[:len(root)]:
+                valid_parent_directory = os.path.isdir(os.path.dirname(path))
+                if suffix and not path.endswith(suffix):
+                    suffixed_path = path + suffix
+                    exists = os.path.isdir(suffixed_path) and is_directory or \
+                             os.path.isfile(suffixed_path) and not is_directory
+
+                else:
+                    exists = os.path.isdir(path) and is_directory or os.path.isfile(path) and not is_directory
+
+                if not valid_parent_directory:
+                    reason = "Root directory does not exist"
+                else:
+                    reason = ""
+            else:
+                valid_parent_directory = False
+                exists = False
+                reason = "Path not allowed"
+
+            if valid_parent_directory:
                 suggestions = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
-                                    for p in glob.glob(path + "*")
+                                    for p in glob.glob(path + "*" + (suffix if is_directory else  ""))
                                     if os.path.isdir(p) and safe_directory_name(os.path.basename(p)))
+                if not is_directory:
+                    suggestions = tuple("/".join(chain([command], os.path.relpath(p, root).split(os.sep)))
+                                        for p in glob.glob(os.path.join(os.path.dirname(path), prefix + "*" + suffix))
+                                        if os.path.isfile(p)) + suggestions
+
             else:
                 suggestions = tuple()
 
-            return jsonify(path="/".join(chain([command], sub_path)), valid_experiment=valid_root and not duplicate_experiment,
-                           reason=reason, suggestions=suggestions, prefix=sub_path[-1] if sub_path else "")
+            _logger.info("{0}: {1}".format(path, glob.glob(path + "*")))
 
-        return jsonify()
+            return jsonify(path="/".join(chain([command], sub_path)), valid_parent=valid_parent_directory,
+                           reason=reason, suggestions=suggestions, prefix=prefix, exists=exists)
+
+        return jsonify(path='/', valid_parent=False, reason="Path not allowed")
 
     @app.route("/compile", methods=['get', 'post'])
     def _compile():
