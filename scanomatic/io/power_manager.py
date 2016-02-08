@@ -1,14 +1,3 @@
-#!/usr/bin/env python
-"""Resource module using a SIS-PM to control power to one socket at a time."""
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
 #
 # DEPENDENCIES
 #
@@ -77,6 +66,21 @@ def has_value(enum, value):
 def get_enum_name_from_value(enum, value):
     return list(elem for elem in enum if elem.value == value)[0]
 
+
+def get_pm_class(pm_type):
+
+    if pm_type is POWER_MANAGER_TYPE.notInstalled:
+        return PowerManagerNull
+    elif pm_type is POWER_MANAGER_TYPE.LAN:
+        return PowerManagerLan
+    elif pm_type is POWER_MANAGER_TYPE.USB:
+        return PowerManagerUsb
+    elif pm_type is POWER_MANAGER_TYPE.linuxUSB:
+        return PowerManagerUsbLinux
+    elif pm_type is POWER_MANAGER_TYPE.windowsUSB:
+        return PowerManagerUsbWin
+    return PowerManagerNull
+
 #
 # CLASSES
 #
@@ -85,7 +89,7 @@ def get_enum_name_from_value(enum, value):
 class PowerManagerNull(object):
 
     def __init__(self, socket, 
-                 power_mode=POWER_MODES.Toggle, name="not installed"):
+                 power_mode=POWER_MODES.Toggle, name="not installed", **kwargs):
 
         if power_mode is POWER_MODES.Impulse:
             self.powerUpScanner = types.MethodType(_impulse_scanner, self)
@@ -132,7 +136,7 @@ class PowerManagerNull(object):
 
 class PowerManagerUsb(PowerManagerNull):
     """Base Class for USB-connected PM:s. Not intended to be used directly."""
-    def __init__(self, socket, path, on_args=None, off_args=None, power_mode=POWER_MODES.Toggle, name="USB"):
+    def __init__(self, socket, path, on_args=None, off_args=None, power_mode=POWER_MODES.Toggle, name="USB", **kwargs):
 
         if not off_args:
             off_args = []
@@ -180,8 +184,7 @@ class PowerManagerUsbLinux(PowerManagerUsb):
     ON_TEXT = "on"
     OFF_TEXT = "off"
 
-    def __init__(self, socket, path="sispmctl",
-                 power_mode=POWER_MODES.Impulse):
+    def __init__(self, socket, path="sispmctl", power_mode=POWER_MODES.Impulse, **kwargs):
 
         super(PowerManagerUsbLinux, self).__init__(
             socket,
@@ -215,7 +218,7 @@ class PowerManagerUsbWin(PowerManagerUsb):
 
     def __init__(self, socket,
                  path=r"C:\Program Files\Gembird\Power Manager\pm.exe",
-                 power_mode=POWER_MODES.Toggle):
+                 power_mode=POWER_MODES.Toggle, **kwargs):
 
         super(PowerManagerUsbWin, self).__init__(
             socket,
@@ -235,7 +238,7 @@ class PowerManagerLan(PowerManagerNull):
 
     def __init__(self, socket, host=None, password="1", verify_name=False,
                  pm_name="Server 1", mac=None,
-                 power_mode=POWER_MODES.Toggle):
+                 power_mode=POWER_MODES.Toggle, **kwargs):
 
         super(PowerManagerLan, self).__init__(socket, name="LAN", power_mode=power_mode)
         self._host = host

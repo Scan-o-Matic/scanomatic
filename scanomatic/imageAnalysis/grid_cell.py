@@ -81,7 +81,6 @@ class GridCell():
         flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
         self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]]
         self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
-        # self._debug_save = self.position[0] == 0 and self.position[1] == 0
 
     def set_new_data_source_space(self, space=VALUES.Cell_Estimates, bg_sub_source=None, polynomial_coeffs=None):
 

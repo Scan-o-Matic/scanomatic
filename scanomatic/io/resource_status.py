@@ -45,7 +45,7 @@ class Resource_Status(object):
         cur_cpus = psutil.cpu_percent(percpu=True)
 
         free_cpus = [
-            cpu < Resource_Status._APP_CONFIG.resources_cpu_single
+            cpu < Resource_Status._APP_CONFIG.hardware_resource_limits.cpu_single_free
             for cpu in cur_cpus]
 
         Resource_Status._LOGGER.info(
@@ -53,9 +53,9 @@ class Resource_Status(object):
                 ["(({0}%, {1})".format(p, ['FREE', 'TAKEN'][not f]) for
                  p, f in zip(cur_cpus, free_cpus)]))
 
-        cpuOK = (sum(free_cpus) >= Resource_Status._APP_CONFIG.resources_cpu_n
+        cpuOK = (sum(free_cpus) >= Resource_Status._APP_CONFIG.hardware_resource_limits.cpu_free_count
                  and sum(100 - curCpu for curCpu in cur_cpus) >
-                 Resource_Status._APP_CONFIG.resources_cpu_tot_free)
+                 Resource_Status._APP_CONFIG.hardware_resource_limits.cpu_total_percent_free)
 
         Resource_Status._LOGGER.info(
             "CPUs: {0}".format(['OK', 'NOK'][not cpuOK]))
@@ -77,7 +77,7 @@ class Resource_Status(object):
         except AttributeError:
             memUsage = psutil.virtual_memory().percent
 
-        memOK = (100 - memUsage) > Resource_Status._APP_CONFIG.resources_mem_min
+        memOK = (100 - memUsage) > Resource_Status._APP_CONFIG.hardware_resource_limits.memory_minimum_percent
 
         Resource_Status._LOGGER.info(
             "MEM: {0}%, {1}".format(
@@ -96,7 +96,7 @@ class Resource_Status(object):
         """
 
         val = Resource_Status.check_mem() and Resource_Status.check_cpu()
-        target = Resource_Status._APP_CONFIG.resources_min_checks
+        target = Resource_Status._APP_CONFIG.hardware_resource_limits.checks_pass_needed
 
         if val:
             Resource_Status._passes += 1

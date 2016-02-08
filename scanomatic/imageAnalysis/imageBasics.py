@@ -1,16 +1,8 @@
 """Resource module for handling basic images operations."""
 
-__author__ = "Martin Zackrisson, Andreas Skyman"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Andreas Skyman"]
-__license__ = "GPL v3.0"
-__version__ = "0.994"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import scanomatic.io.logger as logger
 from scipy.ndimage import zoom

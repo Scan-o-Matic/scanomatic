@@ -48,7 +48,7 @@ class RPCServerModel(model.Model):
 
 class UIServerModel(model.Model):
 
-    def __init__(self, port=5000, local=None, host=None):
+    def __init__(self, port=5000, local=True, host=None):
 
         self.port = port
 
@@ -83,6 +83,19 @@ class PathsModel(model.Model):
         super(PathsModel, self).__init__()
 
 
+class MailModel(model.Model):
+
+    def __init__(self, server=None, user=None, port=0, password=None, warn_scanning_done_minutes_before=30):
+
+        self.server = server
+        self.user = user
+        self.port = port
+        self.password = password
+        self.warn_scanning_done_minutes_before = warn_scanning_done_minutes_before
+
+        super(MailModel, self).__init__()
+
+
 class ApplicationSettingsModel(model.Model):
 
     def __init__(self,
@@ -95,6 +108,8 @@ class ApplicationSettingsModel(model.Model):
                  rpc_server=None,
                  ui_server=None,
                  hardware_resource_limits=None,
+                 computer_human_name="Unnamed Computer",
+                 mail=None,
                  paths=None):
 
         self.versions = VersionChangesModel()
@@ -103,7 +118,8 @@ class ApplicationSettingsModel(model.Model):
         self.ui_server = ui_server
         self.hardware_resource_limits = hardware_resource_limits
         self.paths = paths
-
+        self.computer_human_name = computer_human_name
+        self.mail = mail
         self.number_of_scanners = number_of_scanners
         self.scanner_name_pattern = scanner_name_pattern
 

@@ -1,9 +1,9 @@
 __author__ = 'martin'
 
 from scanomatic.io.movie_writer import MovieWriter
-
-import matplotlib.pyplot as plt
 import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from types import StringTypes

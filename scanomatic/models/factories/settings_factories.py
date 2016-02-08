@@ -99,6 +99,26 @@ class HardwareResourceLimitsFactory(AbstractModelFactory):
         return super(HardwareResourceLimitsFactory, cls).create(**settings)
 
 
+class MailFactory(AbstractModelFactory):
+
+    MODEL = settings_models.MailModel
+    STORE_SECTION_HEAD = "Mail"
+    STORE_SECTION_SERIALIZERS = {
+        "server": str,
+        "user": str,
+        "port": int,
+        "password": str,
+        "warn_scanning_done_minutes_before": float
+    }
+
+    @classmethod
+    def create(cls, **settings):
+        """
+        :rtype : scanomatic.models.settings_models.MailModel
+        """
+        return super(MailFactory, cls).create(**settings)
+
+
 class PathsFactory(AbstractModelFactory):
 
     MODEL = settings_models.PathsModel
@@ -125,7 +145,8 @@ class ApplicationSettingsFactory(AbstractModelFactory):
         settings_models.HardwareResourceLimitsModel: HardwareResourceLimitsFactory,
         settings_models.PowerManagerModel: PowerManagerFactory,
         settings_models.RPCServerModel: RPCServerFactory,
-        settings_models.UIServerModel: UIServerFactory
+        settings_models.UIServerModel: UIServerFactory,
+        settings_models.MailModel: MailFactory
     }
 
     STORE_SECTION_SERIALIZERS = {
@@ -133,11 +154,13 @@ class ApplicationSettingsFactory(AbstractModelFactory):
         "rpc_server": settings_models.RPCServerModel,
         "ui_server": settings_models.UIServerModel,
         "hardware_resource_limits": settings_models.HardwareResourceLimitsModel,
+        "mail": settings_models.MailModel,
         "paths": settings_models.PathsModel,
         "number_of_scanners": int,
         "scanner_name_pattern": str,
         "scan_program": str,
         "scan_program_version_flag": str,
+        "computer_human_name": str,
         "scanner_models":
             lambda enforce=None, serialize=None:
             ([serialize[name] for name in sorted(serialize.keys())] if isinstance(serialize, dict) else None)

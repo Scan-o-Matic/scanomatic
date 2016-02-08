@@ -45,7 +45,7 @@ class Server(object):
         config = app_config.Config()
 
         self.logger = logger.Logger("Server")
-        self.admin = config.rpc_admin
+        self.admin = config.rpc_server.admin
         self._running = False
         self._started = False
         self._waitForJobsToTerminate = False

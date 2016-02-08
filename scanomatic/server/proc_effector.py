@@ -225,13 +225,13 @@ class ProcessEffector(object):
             if not model.email:
                 return
 
-            if AppConfig().mail_server:
-                server = mail.get_server(AppConfig().mail_server, smtp_port=AppConfig().mail_port,
-                                         login=AppConfig().mail_user, password=AppConfig().mail_password)
+            if AppConfig().mail.server:
+                server = mail.get_server(AppConfig().mail.server, smtp_port=AppConfig().mail.port,
+                                         login=AppConfig().mail.user, password=AppConfig().mail.password)
             else:
                 server = None
 
-            mail.mail(AppConfig().mail_user,
+            mail.mail(AppConfig().mail.user,
                       model.email,
                       title.format(**model),
                       message.format(**model),

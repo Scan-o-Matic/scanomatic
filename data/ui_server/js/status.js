@@ -79,7 +79,9 @@ function jobsStatusFormatter(data) {
 }
 
 function jobStatusAsHTML(job) {
-    ret = "<div class=job><input type='hidden' class='id' value='" + job.id + "'><code>"
+    ret = "<div class=job title='ETA: "
+        + (job.progress > 0.01 ? ((job.runTime / job.progress - job.runTime) / 60).toFixed(1) : "???") +
+        "min'><input type='hidden' class='id' value='" + job.id + "'><code>"
         + job.type + "</code>&nbsp;<code>"
         + (job.running ? "Running" : "Not running") + "</code>";
 

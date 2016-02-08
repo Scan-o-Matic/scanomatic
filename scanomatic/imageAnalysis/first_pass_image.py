@@ -17,6 +17,8 @@ __status__ = "Development"
 import time
 import itertools
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 from matplotlib.pyplot import imread
 
 #

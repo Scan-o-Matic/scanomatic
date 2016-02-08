@@ -79,8 +79,8 @@ class Interface_Builder(SingeltonOneInit):
 
         global _RPC_SERVER
         app_config = Config()
-        host = app_config.rpc_host
-        port = app_config.rpc_port
+        host = app_config.rpc_server.host
+        port = app_config.rpc_server.port
 
         if _RPC_SERVER is not None and _RPC_SERVER.running:
             _RPC_SERVER.logger.warning("Attempt to launch second instance of server")

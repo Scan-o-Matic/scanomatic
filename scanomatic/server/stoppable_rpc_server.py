@@ -10,9 +10,9 @@ import scanomatic.io.logger as logger
 class Stoppable_RPC_Server(object):
 
     def __init__(self, *args, **kwargs):
-
-        self._server = SimpleXMLRPCServer(*args, **kwargs)
         self.logger = logger.Logger("RPC Server")
+        self.logger.info("Starting server with {0} and {1}".format(args, kwargs))
+        self._server = SimpleXMLRPCServer(*args, **kwargs)
         self._keepAlive = True
         self._running = False
         self._started = False
