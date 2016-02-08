@@ -284,9 +284,22 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if action:
             if action == 'analysis':
 
+                path_compilation = request.values.get("compilation")
+                path_compilation = os.path.abspath(path_compilation.replace('root', Config().paths.projects_root))
+
+                path_compile_instructions = request.values.get("compile_instructions")
+                if path_compile_instructions == "root" or path_compile_instructions == "root/":
+                    path_compile_instructions = None
+                elif path_compile_instructions:
+                    path_compile_instructions = os.path.abspath(path_compile_instructions.replace(
+                        'root', Config().paths.projects_root))
+
+                _logger.info("Attempting to analyse '{0}' (instructions {1})".format(
+                    path_compilation, path_compile_instructions))
+
                 model = AnalysisModelFactory.create(
-                    compilation=request.values.get("compilation"),
-                    compile_instructions=request.values.get("compile_instructions"),
+                    compilation=path_compilation,
+                    compile_instructions=path_compile_instructions,
                     output_directory=request.values.get("output_directory"),
                     one_time_positioning=bool(request.values.get('one_time_positioning', default=1, type=int)),
                     chain=bool(request.values.get('chain', default=1, type=int)))
@@ -301,8 +314,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                         ", ".join(AnalysisModelFactory.get_invalid_names(model))))
 
             elif action == 'extract':
-
-                model = FeaturesFactory.create(analysis_directory=request.values.get("analysis_directory"))
+                path = request.values.get("analysis_directory")
+                path = os.path.abspath(path.replace('root', Config().paths.projects_root))
+                _logger.info("Attempting to extract features in '{0}'".format(path))
+                model = FeaturesFactory.create(analysis_directory=path)
 
                 success = FeaturesFactory.validate(model) and rpc_client.create_feature_extract_job(
                     FeaturesFactory.to_dict(model))

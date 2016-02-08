@@ -1,3 +1,25 @@
+function set_analysis_directory(input, validate) {
+
+    get_path_suggestions(
+        input,
+        true,
+        "",
+        function(data, status) {
+            if (validate)
+                InputEnabled($("#submit-button2"), data.valid_parent && data.exists);
+    });
+}
+
+function set_file_path(input, suffix) {
+
+    get_path_suggestions(
+        input,
+        false,
+        suffix,
+        function(data, status) {
+    });
+}
+
 function Analyse(button) {
 
     InputEnabled($(button), false);
