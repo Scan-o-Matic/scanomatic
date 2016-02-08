@@ -20,8 +20,8 @@ __status__ = "Development"
 
 import os
 import sys
-import time
 import threading
+import time
 
 """
 #DEBUGGING memory
@@ -40,7 +40,7 @@ import scanomatic.io.xml.writer as xmlWriter
 import scanomatic.io.paths as paths
 import scanomatic.io.app_config as app_config
 import scanomatic.io.logger as loggerModule
-import scanomatic.subprocs.communicator as communicator
+import dev.outdated.subprocs.communicator as communicator
 import scanomatic.io.project_log as project_log
 
 #

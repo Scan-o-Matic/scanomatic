@@ -1,23 +1,3 @@
-#!/usr/bin/env python
-"""
-The resource signal-module deals with detecting repeating patterns such as
-gray-scales and grids.
-"""
-
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Mats Kvarnstroem", "Andreas Skyman"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-
-#
-# DEPENDENCIES
-#
-
 import numpy as np
 from scipy import signal, ndimage
 

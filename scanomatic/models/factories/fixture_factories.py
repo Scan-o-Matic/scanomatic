@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 import re
 
 from scanomatic.models.fixture_models import FixtureModel, FixturePlateModel

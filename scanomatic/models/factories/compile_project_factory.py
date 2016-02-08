@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 import os
 import re
 import glob

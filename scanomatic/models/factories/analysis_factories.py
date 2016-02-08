@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 import os
 from types import StringTypes
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, email_serializer

@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 import numpy as np
 from itertools import product, izip
 from scipy.signal import gaussian

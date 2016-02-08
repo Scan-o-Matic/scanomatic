@@ -1,6 +1,3 @@
-__author__ = 'martin'
-
-
 import scanomatic.io.logger as logger
 
 from types import StringTypes

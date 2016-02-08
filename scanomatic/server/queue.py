@@ -1,24 +1,3 @@
-"""The master effector of the analysis, calls and coordinates image analysis
-and the output of the process"""
-__author__ = "Martin Zackrisson"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson"]
-__license__ = "GPL v3.0"
-__version__ = "0.9991"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-
-#
-# DEPENDENCIES
-#
-
-
-#
-# INTERNAL DEPENDENCIES
-#
-
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory

@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 from enum import Enum
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
 from scanomatic.io.logger import Logger

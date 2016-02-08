@@ -1,18 +1,3 @@
-"""Detects grayscales in images"""
-
-__author__ = "Martin Zackrisson, Andreas Skyman"
-__copyright__ = "Swedish copyright laws apply"
-__credits__ = ["Martin Zackrisson", "Andreas Skyman"]
-__license__ = "GPL v3.0"
-__version__ = "0.994"
-__maintainer__ = "Martin Zackrisson"
-__email__ = "martin.zackrisson@gu.se"
-__status__ = "Development"
-
-#
-# DEPENDENCIES
-#
-
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from scipy.signal import convolve2d

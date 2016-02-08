@@ -1,5 +1,3 @@
-__version__ = "0.9991"
-
 import scanomatic.generics.model as model
 from scanomatic.generics.enums import MinorMajorStepEnum
 from scanomatic.generics.decorators import class_property

@@ -1,5 +1,3 @@
-__author__ = 'martin'
-
 from scanomatic.models.factories.fixture_factories import GridHistoryFactory
 from collections import defaultdict
 from scanomatic.io.logger import Logger
