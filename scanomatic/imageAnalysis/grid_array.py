@@ -422,7 +422,7 @@ class GridArray():
         if save_grid_name:
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_grid_name)
 
-        semaphor = BoundedSemaphore(96)
+        semaphor = BoundedSemaphore(16)
         thread_group = set()
         for grid_cell in self._grid_cells.values():
 
