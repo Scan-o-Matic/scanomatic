@@ -80,10 +80,10 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         times, data = image_data.ImageData.read_image_data_and_time(self._feature_job.analysis_directory)
 
-        if None in (times, data) or 0 in map(len, (times, data)):
+        if times is None or data is None or 0 in map(len, (times, data)):
             self._logger.error(
                 "Could not filter image times to match data or no data. " +
-                "Do you have the right directory?")
+                "Do you have the right directory, it should be an analysis directory?")
 
             self.add_message("There is no image data in given directory or " +
                              "the image data is corrupt")
