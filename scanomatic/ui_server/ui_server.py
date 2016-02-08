@@ -440,6 +440,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 return jsonify(success=False, reason="Scan-o-Matic server offline")
 
             path = request.values.get('path')
+            path = os.path.abspath(path.replace('root', Config().paths.projects_root))
             is_local = bool(int(request.values.get('local')))
             fixture=request.values.get("fixture")
             chain_steps = bool(request.values.get('chain', default=1, type=int))

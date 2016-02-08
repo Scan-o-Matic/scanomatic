@@ -37,8 +37,11 @@
                 </div>
                 <div class="section">
                     <label for="project-directory">Project Directory</label>
-                    <input id="project-directory" name="project-directory" class="long" onchange="CompilePath(this);">
-                    <div class="indented"><em>Unfortunately you have to type it yourself and needs to be absolute path</em></div>
+                    <input id="project-directory" name="project-directory" class="long"
+                           onchange="set_project_directory(this); CompilePath(this);"
+                                   onfocus="set_project_directory(this);"
+                                   onkeyup="set_project_directory(this);">
+
                 </div>
                 <div class="section">
                     <div class="onoffswitch chain">
@@ -57,9 +60,8 @@
     </div>
     <script>
         get_fixtures();
-        CompilePath("#project-directory");
         toggleLocalFixture("#local-fixture");
-
+        InputEnabled($("#submit-button"), false);
     </script>
 </body>
 </html>
