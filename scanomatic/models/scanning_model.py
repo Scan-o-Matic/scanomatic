@@ -1,6 +1,7 @@
 import scanomatic.generics.model as model
 from scanomatic.generics.enums import MinorMajorStepEnum
 from scanomatic.generics.decorators import class_property
+import scanomatic
 from enum import Enum
 
 
@@ -83,7 +84,7 @@ class ScanningModel(model.Model):
                  fixture="", scanner=1, scanner_hardware="EPSON V700", mode="TPU", computer="",
                  auxillary_info=ScanningAuxInfoModel(),
                  plate_descriptions=tuple(),
-                 version=__version__):
+                 version=scanomatic.__version__):
 
         self.number_of_scans = number_of_scans
         self.time_between_scans = time_between_scans
