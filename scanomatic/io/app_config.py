@@ -140,6 +140,11 @@ class Config(SingeltonOneInit):
         """
         return self._settings.computer_human_name
 
+    @computer_human_name.setter
+    def computer_human_name(self, value):
+
+        self._settings.computer_human_name = str(value)
+
     @property
     def number_of_scanners(self):
         """
@@ -149,6 +154,16 @@ class Config(SingeltonOneInit):
         """
         return self._settings.number_of_scanners
 
+    @number_of_scanners.setter
+    def number_of_scanners(self, value):
+
+        if isinstance(value, int) and value >= 0:
+            self._settings.number_of_scanners = value
+            #TODO: Should update dependent values such as length of scanner names
+        else:
+            self._logger.warning("Refused to set number of scanners '{0}', only 0 or positive ints allowed".format(
+                value))
+
     @property
     def scanner_name_pattern(self):
         """
@@ -157,6 +172,11 @@ class Config(SingeltonOneInit):
 
         """
         return self._settings.scanner_name_pattern
+
+    @scanner_name_pattern.setter
+    def scanner_name_pattern(self, value):
+
+        self._settings.scanner_name_pattern = str(value)
 
     @property
     def scanner_names(self):
