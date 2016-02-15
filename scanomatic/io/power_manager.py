@@ -285,6 +285,11 @@ class PowerManagerLan(PowerManagerNull):
             self._host = None
             return self._host
 
+        if not self._mac:
+            self._logger.warning("Can not search for the power manager on the LAN without knowing its MAC")
+            self._host = None
+            return self._host
+
         # PINGSCAN ALL IP:S
         self._logger.info("LAN PM, Scanning hosts (may take a while...)")
         nm = nmap.PortScanner()
