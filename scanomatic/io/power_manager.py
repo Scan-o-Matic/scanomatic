@@ -233,7 +233,7 @@ class PowerManagerLan(PowerManagerNull):
     If no password is supplied, default password is used."""
 
     def __init__(self, socket, host=None, password="1", verify_name=False,
-                 pm_name="Server 1", mac=None,
+                 name="Server 1", mac=None,
                  power_mode=POWER_MODES.Toggle, **kwargs):
 
         super(PowerManagerLan, self).__init__(socket, name="LAN", power_mode=power_mode)
@@ -243,8 +243,8 @@ class PowerManagerLan(PowerManagerNull):
             password = "1"
         self._password = password
 
-        self._pm_server_name = pm_name
-        self._pm_server_str = "<h2>{0}".format(pm_name)
+        self._pm_server_name = name
+        self._pm_server_str = "<h2>{0}".format(name)
         self._verify_name = verify_name
 
         self._pwd_params = urlencode((("pw", password),))
