@@ -57,25 +57,7 @@ class Config(SingeltonOneInit):
 
             }
 
-        try:
-            self._settings = ApplicationSettingsFactory.serializer.load(self._paths.config_main_app)[0]
-        except (IndexError, IOError):
-            self._settings = ApplicationSettingsFactory.create()
-
-        rpc_conf = ConfigParser(allow_no_value=True)
-        rpc_conf.read(self._paths.config_rpc)
-
-        if not self._settings.rpc_server.host:
-            self._settings.rpc_server.host = Config._safe_get(rpc_conf, "Communication", "host", '127.0.0.1', str)
-        if not self._settings.rpc_server.port:
-            self._settings.rpc_server.port = Config._safe_get(rpc_conf, "Communication", "port", 12451, int)
-        if not self._settings.rpc_server.admin:
-            try:
-                self._settings.rpc_server.admin = open(self._paths.config_rpc_admin, 'r').read().strip()
-            except IOError:
-                pass
-
-        self._PM = power_manager.get_pm_class(self._settings.power_manager.type)
+        self.reload_settings()
 
     @staticmethod
     def _safe_get(conf_parser, section, key, default, type):
@@ -230,7 +212,67 @@ class Config(SingeltonOneInit):
             if s == scanner:
                 return scanner
         return None
-    
+
+    def reload_settings(self):
+
+        try:
+            self._settings = ApplicationSettingsFactory.serializer.load(self._paths.config_main_app)[0]
+        except (IndexError, IOError):
+            self._settings = ApplicationSettingsFactory.create()
+
+        rpc_conf = ConfigParser(allow_no_value=True)
+        rpc_conf.read(self._paths.config_rpc)
+
+        if not self._settings.rpc_server.host:
+            self._settings.rpc_server.host = Config._safe_get(rpc_conf, "Communication", "host", '127.0.0.1', str)
+        if not self._settings.rpc_server.port:
+            self._settings.rpc_server.port = Config._safe_get(rpc_conf, "Communication", "port", 12451, int)
+        if not self._settings.rpc_server.admin:
+            try:
+                self._settings.rpc_server.admin = open(self._paths.config_rpc_admin, 'r').read().strip()
+            except IOError:
+                pass
+
+        self._PM = power_manager.get_pm_class(self._settings.power_manager.type)
+
+    def validate(self, bad_keys_out=None):
+        """
+
+        Args:
+            bad_keys_out: list to hold keys with bad values
+            :type bad_keys_out: list
+
+
+        Returns:
+
+        """
+        if bad_keys_out is not None:
+            try:
+                while True:
+                    bad_keys_out.pop()
+            except IndexError:
+                pass
+
+        if not ApplicationSettingsFactory.validate(self._settings):
+            self._logger.error("There are invalid values in the current application settings,"
+                               "will not save and will reload last saved settings")
+
+            if bad_keys_out is not None:
+                for label in ApplicationSettingsFactory.get_invalid_names(self._settings):
+                    bad_keys_out.append(label)
+
+            self.reload_settings()
+            return False
+        return True
+
+    def save_current_settings(self):
+
+        if self.validate():
+            ApplicationSettingsFactory.serializer.purge_all(self._paths.config_main_app)
+
+            ApplicationSettingsFactory.serializer.dump(
+                self._settings, self._paths.config_main_app)
+
     def get_scanner_socket(self, scanner):
 
         scanner = self.get_scanner_name(scanner)
