@@ -223,6 +223,10 @@ class Config(SingeltonOneInit):
         """
         return self._settings.scanner_sockets
 
+    def model_copy(self):
+
+        return ApplicationSettingsFactory.copy(self._settings)
+
     def get_scanner_name(self, scanner):
 
         if isinstance(scanner, int) and 0 < scanner <= self.number_of_scanners:
