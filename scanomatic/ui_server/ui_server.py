@@ -30,7 +30,6 @@ from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
-from scanomatic.models.factories.settings_factories import ApplicationSettingsFactory
 
 _url = None
 _logger = Logger("UI-server")
@@ -245,36 +244,32 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     @app.route("/settings", methods=['get', 'post'])
     def _config():
 
-        try:
-            settings_model = ApplicationSettingsFactory.serializer.load(Paths().config_main_app)[0]
-        except IndexError:
-            settings_model = ApplicationSettingsFactory.create()
+        app_conf = Config()
 
         action = request.args.get("action")
         if action == "update":
             data = request.json
             print data
-            settings_model.number_of_scanners = data["number_of_scanners"]
-            settings_model.power_manager.number_of_sockets = data["power_manager"]["sockets"]
-            settings_model.power_manager.host = data["power_manager"]["host"]
-            settings_model.power_manager.mac = data["power_manager"]["mac"]
-            settings_model.power_manager.name = data["power_manager"]["name"]
-            settings_model.power_manager.password = data["power_manager"]["password"]
-            settings_model.power_manager.host = data["power_manager"]["host"]
-            settings_model.power_manager.type = POWER_MANAGER_TYPE[data["power_manager"]["type"]]
-            settings_model.paths.projects_root = data["paths"]["projects_root"]
-            settings_model.computer_human_name = data["computer_human_name"]
-            settings_model.mail.warn_scanning_done_minutes_before = data["mail"]["warn_scanning_done_minutes_before"]
-            if ApplicationSettingsFactory.validate(settings_model):
-                ApplicationSettingsFactory.serializer.purge_all(Paths().config_main_app)
-                success = ApplicationSettingsFactory.serializer.dump(settings_model, Paths().config_main_app)
+            app_conf.number_of_scanners = data["number_of_scanners"]
+            app_conf.power_manager.number_of_sockets = data["power_manager"]["sockets"]
+            app_conf.power_manager.host = data["power_manager"]["host"]
+            app_conf.power_manager.mac = data["power_manager"]["mac"]
+            app_conf.power_manager.name = data["power_manager"]["name"]
+            app_conf.power_manager.password = data["power_manager"]["password"]
+            app_conf.power_manager.host = data["power_manager"]["host"]
+            app_conf.power_manager.type = POWER_MANAGER_TYPE[data["power_manager"]["type"]]
+            app_conf.paths.projects_root = data["paths"]["projects_root"]
+            app_conf.computer_human_name = data["computer_human_name"]
+            app_conf.mail.warn_scanning_done_minutes_before = data["mail"]["warn_scanning_done_minutes_before"]
 
-            return jsonify(success=success, reason=None if success else "Bad data for {0}".format(
-                tuple(ApplicationSettingsFactory.get_invalid_names(settings_model))))
+            bad_data = []
+            success = app_conf.validate(bad_data)
+            app_conf.save_current_settings()
+            return jsonify(success=success, reason=None if success else "Bad data for {0}".format(bad_data))
         elif action:
             return jsonify(success=False, reason="Not implemented")
 
-        return render_template(Paths().ui_settings_template, **settings_model)
+        return render_template(Paths().ui_settings_template, **app_conf.model_copy())
 
     @app.route("/analysis", methods=['get', 'post'])
     def _analysis():

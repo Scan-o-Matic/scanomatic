@@ -16,8 +16,8 @@ class VersionChangesModel(model.Model):
 
 class PowerManagerModel(model.Model):
 
-    def __init__(self, type=POWER_MANAGER_TYPE.notInstalled, number_of_sockets=4,
-                 host="192.168.0.100", password="", verify_name=False, mac=None,
+    def __init__(self, type=POWER_MANAGER_TYPE.LAN, number_of_sockets=4,
+                 host="192.168.0.100", password="1", verify_name=False, mac=None,
                  name="Server 1", power_mode=POWER_MODES.Toggle):
 
         self.type = type
