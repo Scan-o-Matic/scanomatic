@@ -1,5 +1,5 @@
 from ConfigParser import ConfigParser, NoOptionError
-
+import uuid
 #
 # INTERNAL DEPENDENCIES
 #
@@ -26,6 +26,9 @@ class Config(SingeltonOneInit):
         self._paths = paths.Paths()
 
         self._logger = logger.Logger("Application Config")
+
+        #TODO: Extend functionality to toggle to remote connect
+        self._use_local_rpc_settings = True
 
         self._minMaxModels = {
             scanning_model.ScanningModel: {
@@ -244,20 +247,42 @@ class Config(SingeltonOneInit):
         except (IndexError, IOError):
             self._settings = ApplicationSettingsFactory.create()
 
+        if self._use_local_rpc_settings:
+            self.apply_local_rpc_settings()
+
+        self._PM = power_manager.get_pm_class(self._settings.power_manager.type)
+
+    def apply_local_rpc_settings(self):
+
         rpc_conf = ConfigParser(allow_no_value=True)
         rpc_conf.read(self._paths.config_rpc)
 
-        if not self._settings.rpc_server.host:
-            self._settings.rpc_server.host = Config._safe_get(rpc_conf, "Communication", "host", '127.0.0.1', str)
-        if not self._settings.rpc_server.port:
-            self._settings.rpc_server.port = Config._safe_get(rpc_conf, "Communication", "port", 12451, int)
-        if not self._settings.rpc_server.admin:
-            try:
-                self._settings.rpc_server.admin = open(self._paths.config_rpc_admin, 'r').read().strip()
-            except IOError:
-                pass
+        self._settings.rpc_server.host = Config._safe_get(rpc_conf, "Communication", "host", '127.0.0.1', str)
+        self._settings.rpc_server.port = Config._safe_get(rpc_conf, "Communication", "port", 12451, int)
 
-        self._PM = power_manager.get_pm_class(self._settings.power_manager.type)
+        try:
+            self._settings.rpc_server.admin = open(self._paths.config_rpc_admin, 'r').read().strip()
+        except IOError:
+            self._settings.rpc_server.admin = self._generate_admin_uuid()
+        else:
+            if not self._settings.rpc_server.admin:
+                self._settings.rpc_server = self._generate_admin_uuid()
+
+    def _generate_admin_uuid(self):
+
+        val = str(uuid.uuid1())
+        try:
+            with open(self._paths.config_rpc_admin, 'w') as fh:
+                fh.write(val)
+                self._logger.info("New admin user identifier generated")
+        except IOError:
+            self._logger.critical("Could not write to file '{0}'".format(self._paths.config_rpc_admin) +
+                                  ", you won't be able to perform any actions on Scan-o-Matic until fixed." +
+                                  " If you are really lucky, it works if rebooted, " +
+                                  "but it seems your installation is corrupt.")
+            return None
+
+        return val
 
     def validate(self, bad_keys_out=None):
         """
