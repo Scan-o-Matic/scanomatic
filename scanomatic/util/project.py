@@ -3,6 +3,7 @@ import glob
 
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
 _logger = logger.Logger("Legacy compatibility")
 _paths = paths.Paths()
@@ -60,3 +61,23 @@ def rename_project_folder(new_name):
 
     os.rename(base_path, destination)
 
+
+def rename_scan_instructions(new_name, old_name=None, **model_updates):
+
+    base_path = _get_basepath(new_name)
+    new_name = _ensure_only_basename(new_name)
+    old_name = _ensure_valid_old_name(old_name)
+
+    for instructions in glob.glob(os.path.join(base_path, _paths.scan_project_file_pattern.format(old_name + "*"))):
+
+        destination = os.path.join(base_path, os.path.basename(instructions.replace(old_name, new_name, 1)))
+        _logger.info("Renaming file {0} => {1}".format(instructions, destination))
+        os.rename(instructions, destination)
+        m = tuple(ScanningModelFactory.serializer.load(destination))[0]
+        m.project_name = new_name
+        ScanningModelFactory.update(m, **model_updates)
+
+        with open(destination, 'w') as fh:
+            ScanningModelFactory.serializer.dump_to_filehandle(m, fh)
+
+        _logger.info("Updated the contents of {0}".format(destination))
