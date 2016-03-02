@@ -873,7 +873,7 @@ class Serializer(object):
         with SerializationHelper.get_config(path) as conf:
 
             if conf:
-                return self._unserialize(conf)
+                return tuple(self._unserialize(conf))
 
         return tuple()
 
@@ -935,7 +935,7 @@ class Serializer(object):
 
     def load_serialized_object(self, serialized_object):
 
-        return self._unserialize(MockConfigParser(serialized_object))
+        return tuple(self._unserialize(MockConfigParser(serialized_object)))
 
     def serialize(self, model):
 
