@@ -745,17 +745,26 @@ class Serializer(object):
         self._factory = factory
         self._logger = Logger(factory.__name__)
 
-    def dump(self, model, path):
+    def dump(self, model, path, overwrite=False):
 
         if self._has_section_head_and_is_valid(model):
 
-            with SerializationHelper.get_config(path) as conf:
+            if overwrite:
 
-                self._purge_tree(conf, model)
+                conf = LinkerConfigParser(id=path, allow_no_value=True)
                 section = self.get_section_name(model)
                 self.serialize_into_conf(model, conf, section)
-
                 return SerializationHelper.save_config(conf, path)
+
+            else:
+
+                with SerializationHelper.get_config(path) as conf:
+
+                    self._purge_tree(conf, model)
+                    section = self.get_section_name(model)
+                    self.serialize_into_conf(model, conf, section)
+
+                    return SerializationHelper.save_config(conf, path)
 
         return False
 
