@@ -243,8 +243,10 @@ class Config(SingeltonOneInit):
     def reload_settings(self):
 
         try:
-            self._settings = ApplicationSettingsFactory.serializer.load(self._paths.config_main_app)[0]
-        except (IndexError, IOError):
+            self._settings = ApplicationSettingsFactory.serializer.load_first(self._paths.config_main_app)
+        except (IOError):
+            self._settings = ApplicationSettingsFactory.create()
+        if not self._settings:
             self._settings = ApplicationSettingsFactory.create()
 
         if self._use_local_rpc_settings:

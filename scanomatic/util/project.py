@@ -77,12 +77,11 @@ def rename_scan_instructions(new_name, old_name=None, **model_updates):
         destination = os.path.join(base_path, os.path.basename(instructions.replace(old_name, new_name, 1)))
         _logger.info("Renaming file {0} => {1}".format(instructions, destination))
         os.rename(instructions, destination)
-        m = tuple(ScanningModelFactory.serializer.load(destination))[0]
+        m = ScanningModelFactory.serializer.load_first(destination)
         m.project_name = new_name
         ScanningModelFactory.update(m, **model_updates)
         if ScanningModelFactory.validate(m):
-            with open(destination, 'w') as fh:
-                ScanningModelFactory.serializer.dump_to_filehandle(m, fh)
+            ScanningModelFactory.serializer.dump(m, destination, overwrite=True)
 
             _logger.info("Updated the contents of {0}".format(destination))
         else:

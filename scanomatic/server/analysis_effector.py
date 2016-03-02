@@ -329,10 +329,10 @@ Scan-o-Matic""", self._analysis_job)
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
 
         try:
-            self._scanning_instructions = ScanningModelFactory.serializer.load(
+            self._scanning_instructions = ScanningModelFactory.serializer.load_first(
                 Paths().get_scan_instructions_path_from_compile_instructions_path(
-                    self._analysis_job.compile_instructions))[0]
-        except IndexError:
+                    self._analysis_job.compile_instructions))
+        except IOError:
             self._logger.warning("No information found about how the scanning was done," +
                                  " using empty instructions instead")
 

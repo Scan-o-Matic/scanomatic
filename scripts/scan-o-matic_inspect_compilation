@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     mpl.rcParams['text.usetex'] = False
     plt.ion()
-    compile_images = tuple( CompileImageAnalysisFactory.serializer.load(args.path))
+    compile_images = CompileImageAnalysisFactory.serializer.load(args.path)
     index = 0
     while index < len(compile_images):
 

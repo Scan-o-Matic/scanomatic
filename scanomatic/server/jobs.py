@@ -121,7 +121,7 @@ class Jobs(SingeltonOneInit):
 
     def _load_from_file(self):
 
-        jobs = list(RPC_Job_Model_Factory.serializer.load(self._paths.rpc_jobs))
+        jobs = RPC_Job_Model_Factory.serializer.load(self._paths.rpc_jobs)
         for job in jobs:
             if job and job.content_model:
                 child_pipe, parent_pipe = Pipe()

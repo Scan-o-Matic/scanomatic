@@ -40,7 +40,7 @@ class CompilationResults(object):
     def _load_compile_instructions(self, path):
 
         try:
-            self._compile_instructions = CompileProjectFactory.serializer.load(path)[0]
+            self._compile_instructions = CompileProjectFactory.serializer.load_first(path)
         except IndexError:
             self._logger.error("Could not load path {0}".format(path))
             self._compile_instructions = None

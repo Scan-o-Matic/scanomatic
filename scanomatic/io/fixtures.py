@@ -38,11 +38,16 @@ class FixtureSettings(object):
         """:rtype : scanomatic.models.fixture_models.FixtureModel"""
 
         try:
-            return tuple(FixtureFactory.serializer.load(self._conf_path))[0]
+            val = FixtureFactory.serializer.load_first(self._conf_path)
         except (IndexError, ConfigParser.Error), e:
             if isinstance(e, ConfigParser.Error):
                 self._logger.error("Trying to load an outdated fixture at {0}, this won't work".format(self._conf_path))
             return FixtureFactory.create(path=self._conf_path, name=name)
+        else:
+            if val is None:
+                return FixtureFactory.create(path=self._conf_path, name=name)
+            else:
+                return val
 
     def get_marker_positions(self):
 

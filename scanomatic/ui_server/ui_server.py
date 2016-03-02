@@ -528,7 +528,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         elif name in rpc_client.get_fixtures():
             path = Paths().get_fixture_path(name)
             try:
-                fixture = tuple(FixtureFactory.serializer.load(path))[0]
+                fixture = FixtureFactory.serializer.load_first(path)
                 return jsonify(success=True, grayscale=dict(**fixture.grayscale),
                         plates=[dict(**plate) for plate in fixture.plates],
                         markers=zip(fixture.orientation_marks_x, fixture.orientation_marks_y))
