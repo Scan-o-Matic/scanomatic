@@ -106,7 +106,7 @@ class Server(object):
     def _attempt_job_creation(self):
 
         next_job = self._queue.get_highest_priority()
-        if next_job is not None:
+        if next_job is not None and (Resource_Status.check_resources(consume_checks=True) or len(self._jobs) == 0):
             if self._jobs.add(next_job):
                 self._queue.remove(next_job)
 
