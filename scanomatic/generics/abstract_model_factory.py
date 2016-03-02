@@ -879,8 +879,8 @@ class Serializer(object):
 
     def _unserialize(self, conf):
 
-        return tuple(self.unserialize_section(conf, section) for section in conf.sections()
-                     if self._factory.all_keys_valid(conf.options(section)))
+        return (self.unserialize_section(conf, section) for section in conf.sections()
+                if self._factory.all_keys_valid(conf.options(section)))
 
     def unserialize_section(self, conf, section):
 
