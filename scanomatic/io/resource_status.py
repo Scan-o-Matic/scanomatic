@@ -82,7 +82,7 @@ class Resource_Status(object):
         return memOK
 
     @staticmethod
-    def check_resources():
+    def check_resources(consume_checks=False):
         """Checks if both memory and cpu are OK for poping.
 
         At least MIN_SUCCESS_PASSES is needed for both checks
@@ -105,7 +105,7 @@ class Resource_Status(object):
 
         ret = Resource_Status._passes >= target
 
-        if ret:
+        if ret and consume_checks:
             Resource_Status._passes = 0
 
         return ret
