@@ -877,6 +877,19 @@ class Serializer(object):
 
         return tuple()
 
+    def load_first(self, path):
+
+        with SerializationHelper.get_config(path) as conf:
+
+            if conf:
+                try:
+                    return self._unserialize(conf).next()
+                except StopIteration:
+                    self._logger.error("No model in file '{0}'".format(path))
+            else:
+                self._logger.error("No file named '{0}'".format(path))
+        return None
+
     def _unserialize(self, conf):
 
         return (self.unserialize_section(conf, section) for section in conf.sections()
