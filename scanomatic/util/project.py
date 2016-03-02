@@ -9,10 +9,14 @@ _logger = logger.Logger("Projects util")
 _paths = paths.Paths()
 
 
-def rename_project(new_name, old_name=None, update_folder_name=False, update_image_names=True):
+def rename_project(new_name, old_name=None, update_folder_name=True, update_image_names=True,
+                   update_scan_instructions=True):
 
     if update_image_names:
         rename_project_images(new_name, old_name=old_name)
+
+    if update_scan_instructions:
+        rename_scan_instructions(new_name, old_name=old_name)
 
     if update_folder_name:
         rename_project_folder(new_name)
