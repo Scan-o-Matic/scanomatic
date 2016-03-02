@@ -5,7 +5,7 @@ import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
-_logger = logger.Logger("Legacy compatibility")
+_logger = logger.Logger("Projects util")
 _paths = paths.Paths()
 
 
@@ -76,8 +76,10 @@ def rename_scan_instructions(new_name, old_name=None, **model_updates):
         m = tuple(ScanningModelFactory.serializer.load(destination))[0]
         m.project_name = new_name
         ScanningModelFactory.update(m, **model_updates)
+        if ScanningModelFactory.validate(m):
+            with open(destination, 'w') as fh:
+                ScanningModelFactory.serializer.dump_to_filehandle(m, fh)
 
-        with open(destination, 'w') as fh:
-            ScanningModelFactory.serializer.dump_to_filehandle(m, fh)
-
-        _logger.info("Updated the contents of {0}".format(destination))
+            _logger.info("Updated the contents of {0}".format(destination))
+        else:
+            _logger.error("Can't update contents of {0} because model doesn't validate".format(destination))
