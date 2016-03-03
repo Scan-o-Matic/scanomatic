@@ -216,12 +216,12 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
     return _plotter()
 
 
-def detection_files(data_pos, source_location=None):
+def detection_files(data_pos, source_location=None, suffix=".calibrated"):
 
     if source_location is None:
         source_location = Paths().log
 
-    pattern = os.path.join(source_location, "grid_cell_*_{0}_{1}_{2}.image.npy".format(*data_pos))
+    pattern = os.path.join(source_location, "grid_cell_*_{0}_{1}_{2}".format(*data_pos) + suffix + ".image.npy")
     files = np.array(glob.glob(pattern))
     image_indices = [int(_pattern.match(f).groups()[0]) for f in files]
     index_order = np.argsort(image_indices)
