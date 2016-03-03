@@ -32,11 +32,11 @@ class GridCell():
     MIN_THRESHOLD = 0
     _logger = Logger("Grid Cell")
 
-    def __init__(self, identifier, polynomial_coeffs):
+    def __init__(self, identifier, polynomial_coeffs, save_extra_data=False):
 
         self._identifier = identifier
         self.position = tuple(identifier[-1])
-        self._debug_save = self.position == (0, 0)
+        self.save_extra_data = save_extra_data
         self._polynomial_coeffs = polynomial_coeffs
         self._adjustment_warning = False
         self.xy1 = []
@@ -129,7 +129,7 @@ class GridCell():
 
     def get_item(self, item_name):
 
-        if item_name in self._analysis_items.keys():
+        if item_name in self._analysis_items:
 
             return self._analysis_items[item_name]
 
@@ -148,9 +148,6 @@ class GridCell():
         dictionary to avoid key errors..
         """
 
-        if self._debug_save:
-            self.debug_save_part_one()
-
         background = self._analysis_items[COMPARTMENTS.Background]
 
         if detect:
@@ -161,25 +158,23 @@ class GridCell():
         else:
             self._analyse()
 
-        if self._debug_save:
-            self.debug_save_part_two()
+    def get_save_data_path(self, base_path):
 
+        if base_path is None:
+            base_path = Paths().log
 
-    @property
-    def debug_base_path(self):
-
-        return os.path.join(Paths().log, "grid_cell_{0}_{1}_{2}".format(
+        return os.path.join(base_path, "grid_cell_{0}_{1}_{2}".format(
             self.image_index, self._identifier[0][1], "_".join(map(str, self._identifier[-1]))))
 
 
-    def debug_save_part_one(self):
+    def save_data_image(self, suffix="", base_path=None):
 
-        base_path = self.debug_base_path
-        np.save(base_path + ".image.npy", self.source)
+        base_path = self.get_save_data_path(base_path)
+        np.save(base_path + suffix + ".image.npy", self.source)
 
-    def debug_save_part_two(self):
+    def save_data_detections(self, base_path=None):
 
-        base_path = self.debug_base_path
+        base_path = self.get_save_data_path(base_path)
 
         blob = self._analysis_items[COMPARTMENTS.Blob]
         background = self._analysis_items[COMPARTMENTS.Background]
