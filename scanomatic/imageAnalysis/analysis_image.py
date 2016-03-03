@@ -37,11 +37,10 @@ def _get_init_features(grid_arrays):
 
     features = AnalysisFeaturesFactory.create(
         shape=(size,),
-        data=tuple(grid_arrays[i].features if grid_arrays[i] else None for i in range(size)),
+        data=tuple(grid_arrays[i].features if i in grid_arrays else None for i in range(size)),
         index=0)
 
     return features
-
 
 
 class ProjectImage(object):
