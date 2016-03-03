@@ -432,16 +432,35 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def get_phenotype(self, phenotype):
 
-        def _plate_type_converter(plate):
+        def _plate_type_converter_vector(plate):
 
-            out = np.zeros(plate.shape + plate[0,0].shape, dtype=plate[0,0].dtype)
-            if out.dtype == np.float:
+            out = np.zeros(plate.shape + plate[0, 0].shape, dtype=plate[0, 0].dtype)
+            if out.dtype == np.floating:
                 out *= np.nan
 
             for out_pos, in_pos in zip(out.reshape(out.shape[0] * out.shape[1], out.shape[2]), plate.ravel()):
                 out_pos[...] = in_pos
 
             return out
+
+        def _plate_type_converter_scalar(plate):
+
+            dtype = type(plate[0, 0])
+            out = np.zeros(plate.shape, dtype=dtype)
+
+            if issubclass(type(out.dtype), np.floating):
+                out *= np.nan
+
+            out[...] = plate
+
+            return out
+
+        def _plate_type_converter(plate):
+
+            if plate.ndim == 3:
+                return _plate_type_converter_vector(plate)
+            else:
+                return _plate_type_converter_scalar(plate)
 
         if self._phenotypes is None or \
                     self._limited_phenotypes and phenotype not in self._limited_phenotypes or \
