@@ -53,8 +53,20 @@ class MovieWriter(object):
 
             start_time = time.time()
             print("Starting animation")
+            writers = [a for a in anim.writers.list() if not a.endswith("_file")]
+            if not writers:
+                print("No capability of making films")
+                return
 
-            Writer = anim.writers['ffmpeg']
+            preference = [u'ffmpeg', u'avconv']
+            Writer = None
+            for pref in preference:
+                if pref in writers:
+                    Writer = anim.writers[pref]
+                    break
+            if Writer is None:
+                Writer = anim.writers[writers[0]]
+
             writer = Writer(self._fps,
                             metadata={'title': self._title, 'artist': self._artist, 'comment': self._comment})
 
