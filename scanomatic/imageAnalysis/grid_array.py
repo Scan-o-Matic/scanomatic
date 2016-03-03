@@ -260,10 +260,6 @@ class GridArray():
         self._analysis_model = analysis_model
         self._pinning_matrix = pinning
 
-        self.watch_source = None
-        self.watch_blob = None
-        self.watch_results = None
-
         self._guess_grid_cell_size = None
         self._grid_cell_size = None
         self._grid_cells = {}
@@ -419,9 +415,6 @@ class GridArray():
 
         :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
         """
-        self.watch_source = None
-        self.watch_blob = None
-        self.watch_results = None
 
         index = image_model.image.index
         self.image_index = index
@@ -459,16 +452,3 @@ class GridArray():
         while thread_group:
             thread_group = set(t for t in thread_group if t.is_alive())
             time.sleep(0.01)
-
-        self._set_focus_colony_results()
-
-    def _set_focus_colony_results(self):
-
-        if self._analysis_model.focus_position:
-
-            grid_cell = self._grid_cells[tuple(self._analysis_model.focus_position[1:])]
-
-            self.watch_blob = grid_cell.get_item('blob').filter_array.copy()
-
-            self.watch_source = grid_cell.get_item('blob').grid_array.copy()
-            self.watch_results = self.features[grid_cell.position]

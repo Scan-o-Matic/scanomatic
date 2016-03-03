@@ -295,15 +295,3 @@ class ProjectImage(object):
         for index, grid_array in self._grid_arrays.iteritems():
             if index not in grid_arrays_processed:
                 grid_array.clear_features()
-
-        if self._analysis_model.focus_position:
-            self._record_focus_colony_data()
-
-    def _record_focus_colony_data(self):
-
-        focus_plate = self._grid_arrays[self._analysis_model.focus_position[0]]
-
-        self.watch_grid_size = focus_plate.grid_cell_size
-        self.watch_source = focus_plate.watch_source
-        self.watch_blob = focus_plate.watch_blob
-        self.watch_results = focus_plate.watch_results

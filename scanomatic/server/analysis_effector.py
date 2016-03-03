@@ -14,7 +14,6 @@ import scanomatic.io.xml.writer as xml_writer
 import scanomatic.io.image_data as image_data
 from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config as AppConfig
-import scanomatic.imageAnalysis.support as support
 import scanomatic.imageAnalysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory, XMLModelFactory
@@ -59,7 +58,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         self._scanning_instructions = None
 
-        self._focus_graph = None
         self._current_image_model = None
         """:type : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
         self._analysis_needs_init = True
@@ -108,9 +106,6 @@ class AnalysisEffector(proc_effector.ProcessEffector):
     def _finalize_analysis(self):
 
             self._xmlWriter.close()
-
-            if self._focus_graph is not None:
-                self._focus_graph.finalize()
 
             self._logger.info("ANALYSIS, Full analysis took {0} minutes".format(
                 ((time.time() - self._start_time) / 60.0)))
@@ -210,10 +205,6 @@ Scan-o-Matic""", self._analysis_job)
 
         self._xmlWriter.write_image_features(image_model, features)
 
-        if self._focus_graph:
-
-            self._focus_graph.add_image(self._image.watch_source, self._image.watch_blob)
-
         self._logger.info("Image took {0} seconds".format(time.time() - scan_start_time))
 
         return True
@@ -247,10 +238,6 @@ Scan-o-Matic""", self._analysis_job)
         self._logger.info("Will remove previous files")
 
         self._remove_files_from_previous_analysis()
-
-        if self._analysis_job.focus_position is not None:
-            self._focus_graph = support.Watch_Graph(
-                self._analysis_job.focus_position, self._analysis_job.output_directory)
 
         self._xmlWriter = xml_writer.XML_Writer(
             self._analysis_job.output_directory, self._analysis_job.xml_model)
