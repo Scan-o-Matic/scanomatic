@@ -52,6 +52,9 @@ class ImageData(object):
         plates = [None] * number_of_plates
         for plate_features in features.data:
 
+            if plate_features is None:
+                continue
+
             plate = np.zeros(plate_features.shape) * np.nan
             plates[plate_features.index] = plate
 
@@ -213,16 +216,25 @@ class ImageData(object):
             data = np.array(data)
 
         try:
-            new_data = [[] for _ in range(max(s.shape[0] for s in data if isinstance(s, np.ndarray)))]
+            new_data = [(None if data[0][plate_index] is None else [])
+                        for plate_index in range(max(scan.shape[0] for scan in data if isinstance(scan, np.ndarray)))]
         except ValueError:
             ImageData._LOGGER.error("There is no data")
             return None
 
         for scan in data:
             for plate_id, plate in enumerate(scan):
+
+                if plate is None:
+                    continue
+
                 new_data[plate_id].append(plate)
 
         for plate_id, plate in enumerate(new_data):
+
+            if plate is None:
+                continue
+
             p = np.array(plate)
             new_data[plate_id] = np.lib.stride_tricks.as_strided(
                 p, (p.shape[1], p.shape[2], p.shape[0]),
