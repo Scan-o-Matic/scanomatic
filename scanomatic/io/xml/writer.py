@@ -457,54 +457,54 @@ class XML_Writer(object):
                 if index < features.shape[0]:
 
                     plate_features = features.data[index]
+                    if plate_features is not None:
+                        for cell_features in plate_features.data:
+                            for f in self._file_handles.values():
 
-                    for cell_features in plate_features.data:
-                        for f in self._file_handles.values():
+                                f.write(self.XML_OPEN_W_TWO_PARAM.format(
+                                    tag_gc,
+                                    'x', cell_features.index[0],
+                                    'y', cell_features.index[1]))
 
-                            f.write(self.XML_OPEN_W_TWO_PARAM.format(
-                                tag_gc,
-                                'x', cell_features.index[0],
-                                'y', cell_features.index[1]))
+                            for compartment_features in cell_features.data.itervalues():
 
-                        for compartment_features in cell_features.data.itervalues():
-
-                            if compartment_features.index in omit_compartments:
-                                continue
-
-                            compartment_name = tag_compartments[compartment_features.index]
-
-                            compartment_in_slimmed = compartment_features.index is slimmed_compartment
-
-                            if compartment_in_slimmed:
-
-                                fhs.write(self.XML_OPEN.format(compartment_name))
-
-                            fh.write(self.XML_OPEN.format(compartment_name))
-
-                            for measure, value in compartment_features.data.iteritems():
-
-                                if measure in omit_measures:
+                                if compartment_features.index in omit_compartments:
                                     continue
 
-                                m_string = self.XML_OPEN_CONT_CLOSE.format(
-                                    tag_measures[measure],
-                                    value)
+                                compartment_name = tag_compartments[compartment_features.index]
 
-                                if compartment_in_slimmed and measure is slimmed_measure:
+                                compartment_in_slimmed = compartment_features.index is slimmed_compartment
 
-                                    fhs.write(m_string)
+                                if compartment_in_slimmed:
 
-                                fh.write(m_string)
+                                    fhs.write(self.XML_OPEN.format(compartment_name))
 
-                            if compartment_in_slimmed:
+                                fh.write(self.XML_OPEN.format(compartment_name))
 
-                                fhs.write(self.XML_CLOSE.format(compartment_name))
+                                for measure, value in compartment_features.data.iteritems():
 
-                            fh.write(self.XML_CLOSE.format(compartment_name))
+                                    if measure in omit_measures:
+                                        continue
 
-                        for f in (fh, fhs):
+                                    m_string = self.XML_OPEN_CONT_CLOSE.format(
+                                        tag_measures[measure],
+                                        value)
 
-                            f.write(self.XML_CLOSE.format(tag_gc))
+                                    if compartment_in_slimmed and measure is slimmed_measure:
+
+                                        fhs.write(m_string)
+
+                                    fh.write(m_string)
+
+                                if compartment_in_slimmed:
+
+                                    fhs.write(self.XML_CLOSE.format(compartment_name))
+
+                                fh.write(self.XML_CLOSE.format(compartment_name))
+
+                            for f in (fh, fhs):
+
+                                f.write(self.XML_CLOSE.format(tag_gc))
 
                 for f in self._file_handles.values():
 
