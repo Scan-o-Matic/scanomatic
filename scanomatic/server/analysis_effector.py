@@ -233,7 +233,7 @@ Scan-o-Matic""", self._analysis_job)
                 os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
                 catch_stdout=True, catch_stderr=True)
 
-            self._logger.surpress_prints = True
+            self._logger.surpress_prints = False
 
         self._logger.info("Will remove previous files")
 
