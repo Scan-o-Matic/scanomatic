@@ -104,7 +104,7 @@ def _create_grid_array_identifier(identifier):
     return identifier
 
 
-def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=None, origin=None):
+def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=None, marked_position=None):
 
     grid_image = plt.figure()
     grid_plot = grid_image.add_subplot(111)
@@ -128,9 +128,9 @@ def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=
                 grid_corners[y, :, :, col].mean(axis=0),
                 'r-')
 
-        if origin:
+        if marked_position:
 
-            pos = np.mean((origin.xy1, origin.xy2), axis=0)
+            pos = np.mean((marked_position.xy1, marked_position.xy2), axis=0)
             grid_plot.plot(pos[0], pos[1], 'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
     if x_values is not None and y_values is not None:
@@ -324,7 +324,16 @@ class GridArray():
 
         if save_name is not None:
             save_name += "{0}.svg".format(self.index + 1)
-            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name, origin=self._grid_cells[(0, 0)])
+            if self._analysis_model.suppress_non_focal:
+                if self._analysis_model.focus_position and self._analysis_model.focus_position[0] == self.index:
+                    mark = self._grid_cells[(self._analysis_model.focus_position[1],
+                                             self._analysis_model.focus_position[2])]
+                else:
+                    mark = None
+            else:
+               mark = self._grid_cells[(0, 0)]
+
+            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name, marked_position=mark)
 
             np.save(os.path.join(os.path.dirname(save_name),
                                  self._paths.grid_pattern.format(self.index + 1)), self._grid)
