@@ -103,10 +103,26 @@ class Server(object):
         else:
             self.logger.warning("Attempted to start Scan-o-Matic server that is already running")
 
+    def _job_may_be_created(self, job):
+        """
+
+        Args:
+            job: queue item
+
+        Returns: bool
+
+        """
+        if job is None:
+            return False
+        elif job.type == rpc_job_models.JOB_TYPE.Scan:
+            return True
+        else:
+            return Resource_Status.check_resources(consume_checks=True) or len(self._jobs) == 0
+
     def _attempt_job_creation(self):
 
         next_job = self._queue.get_highest_priority()
-        if next_job is not None and (Resource_Status.check_resources(consume_checks=True) or len(self._jobs) == 0):
+        if self._job_may_be_created(next_job):
             if self._jobs.add(next_job):
                 self._queue.remove(next_job)
 
