@@ -112,8 +112,7 @@ class GridCell():
     def _set_max_value_filter(self):
 
         max_detect_filter = self.source > self.MAX_THRESHOLD
-        # TODO: Removed the acual capping for now
-        # self.source[max_detect_filter] = self.MAX_THRESHOLD
+
         if self._adjustment_warning != max_detect_filter.any():
             self._adjustment_warning = not self._adjustment_warning
             if self._adjustment_warning:
