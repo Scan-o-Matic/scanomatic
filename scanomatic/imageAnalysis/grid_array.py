@@ -31,17 +31,28 @@ class InvalidGridException(Exception):
     pass
 
 
-def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semaphor=None):
+def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semaphor=None, analysis_job_model=None):
 
     """
 
     :type grid_cell: scanomatic.imageAnalysis.grid_cell.GridCell
     """
+    save_extra_data = grid_cell.save_extra_data
+
     grid_cell.source = _get_image_slice(im, grid_cell).astype(np.float64)
     grid_cell.image_index = image_index
 
+    if save_extra_data:
+        grid_cell.save_data_image(suffix=".raw",
+                                  base_path=analysis_job_model.output_directory if analysis_job_model else None)
+
+
     if transpose_polynomial is not None:
         _set_image_transposition(grid_cell, transpose_polynomial)
+
+    if save_extra_data:
+        grid_cell.save_data_image(suffix=".calibrated",
+                                  base_path=analysis_job_model.output_directory if analysis_job_model else None)
 
     if not grid_cell.ready:
         grid_cell.attach_analysis(
@@ -50,6 +61,9 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
 
     # TODO: Deterimine if it is best to remember history or not!
     grid_cell.analyse(remember_filter=False)
+
+    if save_extra_data:
+        grid_cell.save_data_detections(base_path=analysis_job_model.output_directory if analysis_job_model else None)
 
     if semaphor is not None:
         semaphor.release()
@@ -424,10 +438,12 @@ class GridArray():
 
         semaphor = BoundedSemaphore(16)
         thread_group = set()
+        m = self._analysis_model
+
         for grid_cell in self._grid_cells.values():
 
             semaphor.acquire()
-            t = Thread(target=_analyse_grid_cell, args=(grid_cell, im, transpose_polynomial, index, semaphor))
+            t = Thread(target=_analyse_grid_cell, args=(grid_cell, im, transpose_polynomial, index, semaphor, m))
             t.start()
             thread_group.add(t)
 
