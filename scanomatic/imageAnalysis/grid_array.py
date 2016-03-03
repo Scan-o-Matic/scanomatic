@@ -393,15 +393,16 @@ class GridArray():
         self._features.data.clear()
 
         polynomial_coeffs = get_calibration_polynomial_coeffs()
+        focus_position = self._analysis_model.focus_position
 
         for row in xrange(pinning_matrix[0]):
 
             for column in xrange(pinning_matrix[1]):
+                cur_position = (self.index, row, column)
+                if (not self._analysis_model.suppress_non_focal or focus_position == cur_position):
 
-                if (not self._analysis_model.suppress_non_focal or
-                        self._analysis_model.focus_position == (self.index, row, column)):
-
-                    grid_cell = GridCell([self._identifier, (row, column)], polynomial_coeffs)
+                    is_focus = focus_position == cur_position if focus_position else False
+                    grid_cell = GridCell([self._identifier, (row, column)], polynomial_coeffs, save_extra_data=is_focus)
                     self._features.data.add(grid_cell.features)
                     self._grid_cells[grid_cell.position] = grid_cell
 
