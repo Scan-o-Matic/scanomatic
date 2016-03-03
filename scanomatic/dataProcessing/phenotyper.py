@@ -341,6 +341,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         for plateI, plate in enumerate(self._smooth_growth_data):
 
+            if plate is None:
+                all_phenotypes.append(None)
+                continue
+
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
             phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),
@@ -382,6 +386,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._logger.info("Phenotype Extraction Done")
 
     def _get_plate_linear_regression_strided(self, plate):
+
+        if plate is None:
+            return None
 
         return np.lib.stride_tricks.as_strided(
             plate,
@@ -517,7 +524,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     def _init_remove_filter_and_undo_actions(self):
 
         for plate_index in range(self._removed_filter.shape[0]):
-
+            if self._raw_growth_data[plate_index] is None:
+                continue
             self._removed_filter[plate_index] = np.zeros(
                 self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
 
@@ -629,6 +637,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     fh.write("{0}{1}".format(delim.join(
                         map(str, headers + tuple(meta_data.getHeaderRow(plate_index)) +
                             data_headers)), newline))
+
+                if plate is None:
+                    continue
 
                 for idX, X in enumerate(plate):
 
