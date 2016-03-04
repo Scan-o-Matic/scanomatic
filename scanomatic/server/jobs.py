@@ -174,7 +174,7 @@ class Jobs(SingeltonOneInit):
         job_effector = self._get_job_effector(job)
 
         if not job_effector:
-            self._logger.error("Job {0} can't be exectued, will drop request".format(job.id))
+            self._logger.error("Job {0} can't be executed, will drop request".format(job.id))
             return True
 
         parent_pipe, child_pipe = Pipe()

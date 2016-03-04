@@ -189,7 +189,6 @@ class Server(object):
 
             self.logger.warning("Jobs will be abandoned, can't wait for ever..")
 
-
     def _get_job_id(self):
 
         job_id = ""
