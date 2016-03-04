@@ -208,12 +208,18 @@ class ScannerEffector(proc_effector.ProcessEffector):
 
                 self._scanning_effector_data.warned_terminated = True
 
-            if (self._scanning_effector_data.current_cycle_step.value in
+            if (self._scanning_effector_data.current_cycle_step in
                     (SCAN_CYCLE.RequestScanner, SCAN_CYCLE.RequestScannerOff, SCAN_CYCLE.ReportNotObtainedUSB,
-                     SCAN_CYCLE.ReportScanError, SCAN_CYCLE.Scan, SCAN_CYCLE.WaitForScanComplete, SCAN_CYCLE.WaitForUSB
+                     SCAN_CYCLE.ReportScanError, SCAN_CYCLE.Scan, SCAN_CYCLE.WaitForUSB
                      )):
-
                 self._do_request_scanner_off()
+                self._scanning_effector_data.current_cycle_step = SCAN_CYCLE.Wait
+
+            elif self._scanning_effector_data.current_cycle_step == SCAN_CYCLE.WaitForScanComplete:
+
+                if self._do_wait_for_scan() == SCAN_STEP.NextMajor:
+                    self._do_request_scanner_off()
+                    self._scanning_effector_data.current_cycle_step = SCAN_CYCLE.Wait
 
             if self.current_image == 0:
                 self._scanning_effector_data.current_image = None
