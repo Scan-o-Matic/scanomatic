@@ -207,19 +207,22 @@ class ProcessEffector(object):
 
         def _do_mail(title, message, model):
 
-            if not model.email:
-                return
+            try:
+                if not model.email:
+                    return
 
-            if AppConfig().mail.server:
-                server = mail.get_server(AppConfig().mail.server, smtp_port=AppConfig().mail.port,
-                                         login=AppConfig().mail.user, password=AppConfig().mail.password)
-            else:
-                server = None
+                if AppConfig().mail.server:
+                    server = mail.get_server(AppConfig().mail.server, smtp_port=AppConfig().mail.port,
+                                             login=AppConfig().mail.user, password=AppConfig().mail.password)
+                else:
+                    server = None
 
-            mail.mail(AppConfig().mail.user,
-                      model.email,
-                      title.format(**model),
-                      message.format(**model),
-                      server=server)
+                mail.mail(AppConfig().mail.user,
+                          model.email,
+                          title.format(**model),
+                          message.format(**model),
+                          server=server)
+            except:
+                self._logger.warning("Mailing message '{0}' to '{1}' failed".format(title, model.email))
 
         Thread(target=_do_mail, args=(title_template, message_template, data_model)).start()
