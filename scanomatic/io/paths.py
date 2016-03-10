@@ -114,6 +114,7 @@ class Paths(SingeltonOneInit):
             self.config, "grayscales.cfg")
 
         self.analysis_run_log = 'analysis.log'
+        self.analysis_model_file = 'analysis.model'
 
         self.experiment_first_pass_analysis_relative = "{0}.1_pass.analysis"
         self.experiment_first_pass_log_relative = ".1_pass.log"

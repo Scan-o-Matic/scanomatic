@@ -235,6 +235,9 @@ Scan-o-Matic""", self._analysis_job)
 
             self._logger.surpress_prints = False
 
+        AnalysisModelFactory.serializer.dump(self._analysis_job,
+                                             os.path.join(self._analysis_job.output_directory,
+                                                          Paths().analysis_model_file))
         self._logger.info("Will remove previous files")
 
         self._remove_files_from_previous_analysis()
