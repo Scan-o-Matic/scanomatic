@@ -65,8 +65,8 @@ def growth_yield(curve_smooth_growth_data, *args, **kwargs):
 
 def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
     if index48h < 0 or index48h >= curve_smooth_growth_data.size:
-        _logger.warning("Faulty index {0} for 48h size (max {1})".format(index, curve_smooth_growth_data.size - 1))
-        return  np.nan
+        _logger.warning("Faulty index {0} for 48h size (max {1})".format(index48h, curve_smooth_growth_data.size - 1))
+        return np.nan
     return curve_smooth_growth_data[index48h]
 
 
