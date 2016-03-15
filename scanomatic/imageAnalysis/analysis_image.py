@@ -13,7 +13,7 @@ from grayscale import getGrayscale
 from scanomatic.io.logger import Logger
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
-
+from scanomatic.io.paths import Paths
 
 #
 # CLASS Project_Image
@@ -129,11 +129,25 @@ class ProjectImage(object):
                 if im is None:
                     self._logger.error("Plate model {0} could not be used to slice image".format(plate_model))
                     continue
-                if not self._grid_arrays[index].set_grid(
-                        im, save_name=save_name,
-                        grid_correction=self._analysis_model.grid_model.gridding_offsets[index]
-                        if self._analysis_model.grid_model.gridding_offsets is not None and
-                        index < len(self._analysis_model.grid_model.gridding_offsets) else None):
+
+                if self._analysis_model.grid_model.gridding_offsets is not None and \
+                        index < len(self._analysis_model.grid_model.gridding_offsets) \
+                        and self._analysis_model.grid_model.gridding_offsets[index] is not None:
+
+                    reference_folder = self._analysis_model.grid_model.reference_grid_folder
+                    if reference_folder:
+                        reference_folder = os.path.join(os.path.dirname(self._analysis_model.output_directory),
+                                                        reference_folder)
+                    elif reference_folder:
+                        reference_folder = self._analysis_model.output_directory
+
+                    if not self._grid_arrays[index].set_grid(
+                            im, save_name=save_name, offset=self._analysis_model.grid_model.gridding_offsets[index],
+                            grid=os.path.join(reference_folder, Paths().grid_pattern.format(index + 1))):
+
+                        self._logger.error("Could not use previous gridding with offset")
+
+                elif not self._grid_arrays[index].detect_grid(im, save_name=save_name):
 
                     self._logger.warning("Failed to grid plate {0}".format(plate_model))
 

@@ -291,7 +291,14 @@ class GridArray():
         self._identifier[0] = value
         self._features.index[0] = value
 
-    def set_grid(self, im, save_name=None, grid_correction=None):
+    def set_grid(self, im, save_name=None, offset=None,
+                            grid=None):
+
+        # TODO: Implement!
+        self._LOGGER.warning("Set grid not implemented")
+        pass
+
+    def detect_grid(self, im, save_name=None, grid_correction=None):
 
         self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
@@ -432,7 +439,7 @@ class GridArray():
             transpose_polynomial = None
 
         if self._grid is None:
-            if not self.set_grid(im):
+            if not self.detect_grid(im):
                 self.clear_features()
                 return
 

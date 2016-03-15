@@ -73,13 +73,14 @@ class AnalysisModel(model.Model):
 class GridModel(model.Model):
 
     def __init__(self, use_utso=True, median_coefficient=0.99, manual_threshold=0.05, grid=None,
-                 gridding_offsets=None):
+                 gridding_offsets=None, reference_grid_folder=None):
 
         self.use_utso = use_utso
         self.median_coefficient = median_coefficient
         self.manual_threshold = manual_threshold
         self.grid = grid
         self.gridding_offsets = gridding_offsets
+        self.reference_grid_folder = reference_grid_folder
 
         super(GridModel, self).__init__()
 
