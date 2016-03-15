@@ -146,7 +146,7 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
     grid_size = np.load(os.path.join(analysis_directory, Paths().grid_size_pattern.format((position[0]))))
 
     compilation_results = CompileImageAnalysisFactory.serializer.load(project_compilation)
-    compilation_results = sorted(compilation_results, key=lambda entry: entry.image.index)
+    compilation_results = sorted(compilation_results, key=lambda e: e.image.index)
 
     times = np.array(tuple(entry.image.time_stamp for entry in compilation_results))
     images = np.zeros(tuple(grid_size) + times.shape, dtype=np.uint16)
