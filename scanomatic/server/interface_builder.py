@@ -2,7 +2,7 @@ import socket
 import sys
 import os
 from time import sleep
-from functools import  wraps
+from functools import wraps
 
 from scanomatic.io.app_config import Config
 from scanomatic.generics.singleton import SingeltonOneInit
