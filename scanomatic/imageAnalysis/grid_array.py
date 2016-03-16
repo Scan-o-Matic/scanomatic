@@ -331,7 +331,7 @@ class GridArray():
 
             elif o < 0:
 
-                grid[1, :, -o:] = grid[1, :, o:]
+                grid[1, :, -o:] = grid[1, :, :o]
                 for idx in range(-o)[::-1]:
                     grid[1, :, idx] = grid[1, :, idx + 1] - delta
 
