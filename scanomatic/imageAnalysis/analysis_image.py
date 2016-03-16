@@ -132,7 +132,7 @@ class ProjectImage(object):
 
                 if self._analysis_model.grid_model.gridding_offsets is not None and \
                         index < len(self._analysis_model.grid_model.gridding_offsets) \
-                        and self._analysis_model.grid_model.gridding_offsets[index] is not None:
+                        and self._analysis_model.grid_model.gridding_offsets[index]:
 
                     reference_folder = self._analysis_model.grid_model.reference_grid_folder
                     if reference_folder:
