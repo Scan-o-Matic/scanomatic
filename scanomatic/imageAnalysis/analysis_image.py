@@ -138,7 +138,7 @@ class ProjectImage(object):
                     if reference_folder:
                         reference_folder = os.path.join(os.path.dirname(self._analysis_model.output_directory),
                                                         reference_folder)
-                    elif reference_folder:
+                    else:
                         reference_folder = self._analysis_model.output_directory
 
                     if not self._grid_arrays[index].set_grid(
