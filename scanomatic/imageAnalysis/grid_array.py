@@ -311,7 +311,10 @@ class GridArray():
 
             spacings = ((grid[0, 1:] - grid[0,:-1]).ravel().mean(), (grid[1, :, 1:] - grid[1,:, :-1]).ravel().mean())
 
-            o = offset[0]
+            # The direction of the first axis is flipped to make offsetting more logical from user perspective
+            # this inversion must be matched by equal inversion in detect_grid
+
+            o = offset[0] * -1
             delta = spacings[0]
             if o > 0:
 
@@ -374,6 +377,13 @@ class GridArray():
 
         self._LOGGER.info("Detecting grid on plate {0} using grid correction {1}".format(
             self.index + 1, grid_correction))
+
+        # The direction of the first axis is flipped to make offsetting more logical from user perspective
+        # this inversion must be matched by equal inversion in set_grid
+
+        if grid_correction:
+            grid_correction = list(grid_correction)
+            grid_correction[0] *= -1
 
         self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
