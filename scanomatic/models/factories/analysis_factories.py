@@ -12,6 +12,7 @@ class GridModelFactory(AbstractModelFactory):
         "median_coefficient": float,
         "manual_threshold": float,
         "gridding_offsets": list,
+        "reference_grid_folder": str,
         "grid": (tuple, tuple, float)
     }
 
@@ -41,9 +42,10 @@ class GridModelFactory(AbstractModelFactory):
 
         def _valid_correction(value):
 
-            return value is None or (len(value) == 2 and all(isinstance(offset, int) for offset in value))
+            return value is None or value is False or (len(value) == 2 and all(isinstance(offset, int) for offset in value))
 
         if model.gridding_offsets is None:
+
             return True
 
         try:
