@@ -294,9 +294,77 @@ class GridArray():
     def set_grid(self, im, save_name=None, offset=None,
                             grid=None):
 
-        # TODO: Implement!
+        try:
+            grid = np.load(grid)
+        except IOError:
+            self._LOGGER.error("No grid file named '{0}'".format(grid))
+            self._LOGGER.info("Invoking grid detection instead")
+            return self.detect_grid(im, save_name=save_name, grid_correction=offset)
+
         self._LOGGER.warning("Set grid not implemented")
-        pass
+
+        if offset and not all(o==0 for o in offset):
+
+            spacings = ((grid[0, 1:] - grid[0,:-1]).ravel().mean(), (grid[1, :, 1:] - grid[1,:, :-1]).ravel().mean())
+
+            o = offset[0]
+            delta = spacings[0]
+            if o > 0:
+
+                grid[0, :-o] = grid[0, o:]
+                for idx in range(-o, 0):
+                    grid[0, idx] = grid[0, idx - 1] + delta
+
+            elif o < 0:
+
+                grid[0, -o:] = grid[0, :o]
+                for idx in range(-o)[::-1]:
+                    grid[0, idx] = grid[0, idx + 1] - delta
+
+            o = offset[1]
+            delta = spacings[1]
+            if o > 0:
+
+                grid[1, :, :-o] = grid[1, :, o:]
+                for idx in range(-o, 0):
+                    grid[1, :, idx] = grid[1, :, idx - 1] + delta
+
+            elif o < 0:
+
+                grid[1, :, -o:] = grid[1, :, o:]
+                for idx in range(-o)[::-1]:
+                    grid[1, :, idx] = grid[1, :, idx + 1] - delta
+
+        self._grid = grid
+
+        if not self._is_valid_grid_shape():
+
+            raise InvalidGridException(
+                "Grid shape {0} missmatch with pinning matrix {1}".format(self._grid.shape, self._pinning_matrix))
+
+        self._grid_cell_size = map(lambda x: int(round(x)), spacings)
+        self._set_grid_cell_corners()
+        self._update_grid_cells()
+
+        if save_name is not None:
+            save_name += "{0}.svg".format(self.index + 1)
+            if self._analysis_model.suppress_non_focal:
+                if self._analysis_model.focus_position and self._analysis_model.focus_position[0] == self.index:
+                    mark = self._grid_cells[(self._analysis_model.focus_position[1],
+                                             self._analysis_model.focus_position[2])]
+                else:
+                    mark = None
+            else:
+               mark = self._grid_cells[(0, 0)]
+
+            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name, marked_position=mark)
+
+            np.save(os.path.join(os.path.dirname(save_name),
+                                 self._paths.grid_pattern.format(self.index + 1)), self._grid)
+
+            np.save(os.path.join(os.path.dirname(save_name),
+                                 self._paths.grid_size_pattern.format(self.index + 1)), self._grid_cell_size)
+        return True
 
     def detect_grid(self, im, save_name=None, grid_correction=None):
 
