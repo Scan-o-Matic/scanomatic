@@ -294,6 +294,9 @@ class GridArray():
     def set_grid(self, im, save_name=None, offset=None,
                             grid=None):
 
+        self._LOGGER.info("Setting manual re-gridding for plate {0} using offset {1} on reference grid {2}".format(
+            self.index + 1, offset, grid))
+
         try:
             grid = np.load(grid)
         except IOError:
@@ -301,7 +304,6 @@ class GridArray():
             self._LOGGER.info("Invoking grid detection instead")
             return self.detect_grid(im, save_name=save_name, grid_correction=offset)
 
-        self._LOGGER.warning("Set grid not implemented")
 
         if offset and not all(o==0 for o in offset):
 
@@ -367,6 +369,9 @@ class GridArray():
         return True
 
     def detect_grid(self, im, save_name=None, grid_correction=None):
+
+        self._LOGGER.info("Detecting grid on plate {0} using grid correction {1}".format(
+            self.index + 1, grid_correction))
 
         self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
