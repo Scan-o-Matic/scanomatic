@@ -305,6 +305,8 @@ class GridArray():
             return self.detect_grid(im, save_name=save_name, grid_correction=offset)
 
 
+        self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
+
         if offset and not all(o==0 for o in offset):
 
             spacings = ((grid[0, 1:] - grid[0,:-1]).ravel().mean(), (grid[1, :, 1:] - grid[1,:, :-1]).ravel().mean())
