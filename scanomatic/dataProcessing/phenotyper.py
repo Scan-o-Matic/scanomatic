@@ -15,7 +15,7 @@ import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
-    PhenotypeDataType
+    PhenotypeDataType, get_derivative
 
 
 class PositionMark(Enum):
@@ -505,6 +505,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    self._linear_regression_size),
             strides=(self._times_data.strides[0],
                      self._times_data.strides[0]))
+
+    def get_derivative(self, plate, position):
+
+        return get_derivative(
+            self._get_plate_linear_regression_strided(
+                self.smooth_growth_data[plate][position].reshape(1, 1, self.times.size))[0],
+                self.times_strided)[0]
 
     def set(self, data_type, data):
 
