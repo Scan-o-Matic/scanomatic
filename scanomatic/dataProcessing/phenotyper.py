@@ -346,6 +346,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             phenotypes_count, int(total_curves)))
 
         curves_in_completed_plates = 0
+        phenotypes_inclusion = self._phenotypes_inclusion
+
+        if phenotypes_inclusion is not PhenotypeDataType.Trusted:
+            self._logger.warning("Will extract phenotypes beyond those that are trusted, this is not recommended!" +
+                                 " It is your responsibility to verify the validity of those phenotypes!")
 
         for plateI, plate in enumerate(self._smooth_growth_data):
 
@@ -376,7 +381,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     position_offset=position_offset)
 
                 for phenotype in Phenotypes:
-                    if PhenotypeDataType.Scalar(phenotype):
+
+                    if PhenotypeDataType.Scalar(phenotype) and phenotypes_inclusion(phenotype):
+
                         position_phenotypes[phenotype.value] = phenotype(**curve_data)
 
                 phenotypes[id0, id1, ...] = position_phenotypes
