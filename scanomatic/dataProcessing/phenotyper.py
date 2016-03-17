@@ -274,6 +274,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._logger.debug("Phenotype extraction iteration")
             yield x
 
+    def wipe_extracted_phenotypes(self):
+
+        self._phenotypes = None
+
     def extract_phenotypes(self):
 
         self._logger.info("Extracting phenotypes. This will take a while...")
