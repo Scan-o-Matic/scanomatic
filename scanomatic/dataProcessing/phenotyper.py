@@ -533,6 +533,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if data_type == 'phenotypes':
 
             self._phenotypes = data
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._phenotypes = None
+
             self._init_remove_filter_and_undo_actions()
 
         elif data_type == 'smooth_growth_data':
