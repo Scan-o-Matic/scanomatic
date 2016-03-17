@@ -393,7 +393,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                         plateI, id0, id1, list(position_phenotypes)))
                     yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
 
-            self._logger.info("Plate {0} Done".format(plateI))
+            self._logger.info("Plate {0} Done".format(plateI + 1))
             curves_in_completed_plates += 0 if plate is None else plate_flat_regression_strided.shape[0]
 
         self._phenotypes = np.array(all_phenotypes)
@@ -491,6 +491,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             raise ValueError(
                 "'{0}' has not been extracted, please re-run 'extract_phenotypes()' to include it.".format(
                 phenotype.name))
+
+        if not PhenotypeDataType.Trusted(phenotype):
+            self._logger.warning("The phenotype '{0}' has not been fully tested and verified!".format(phenotype.name))
 
         return [p if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self.phenotypes]
 
