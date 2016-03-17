@@ -106,6 +106,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if run_extraction:
             self.extract_phenotypes()
 
+    def set_phenotype_inclusion_level(self, value):
+        if isinstance(value, PhenotypeDataType):
+            self._phenotypes_inclusion = value
+        else:
+            self._logger.error("Value not a PhenotypeDataType!")
 
     def phenotype_names(self):
 
