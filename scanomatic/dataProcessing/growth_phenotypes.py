@@ -65,7 +65,7 @@ def curve_low_point(curve_smooth_growth_data, *args, **kwargs):
 
 
 def curve_end_average(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[3:].mean()
+    return curve_smooth_growth_data[-3:].mean()
 
 
 def growth_yield(curve_smooth_growth_data, *args, **kwargs):
