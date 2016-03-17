@@ -140,8 +140,7 @@ Scan-o-Matic""", self._feature_job)
 
         self._phenotyper = phenotyper.Phenotyper(
             raw_growth_data=self._data,
-            times_data=self._times,
-            itermode=True)
+            times_data=self._times)
 
         self._phenotype_iterator = self._phenotyper.iterate_extraction()
         self._iteration_index = 1

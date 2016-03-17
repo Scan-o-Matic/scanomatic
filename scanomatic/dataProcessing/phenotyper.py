@@ -56,7 +56,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def __init__(self, raw_growth_data, times_data=None,
                  median_kernel_size=5, gaussian_filter_sigma=1.5, linear_regression_size=5,
-                 phenotypes=None, base_name=None, itermode=False, run_extraction=True):
+                 phenotypes=None, base_name=None, run_extraction=False,
+                 phenotypes_inclusion=PhenotypeDataType.Trusted):
 
         self._paths = paths.Paths()
 
@@ -65,7 +66,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._phenotypes = None
         self._times_data = None
         self._limited_phenotypes = phenotypes
-
+        self._phenotypes_inclusion = phenotypes_inclusion
         self._base_name = base_name
 
         if isinstance(raw_growth_data, xml_reader_module.XML_Reader):
@@ -126,7 +127,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if path.lower().endswith(".xml"):
             path = path[:-4]
 
-        return cls(xml, base_name=path, **kwargs)
+        return cls(xml, base_name=path, run_extraction=True, **kwargs)
 
     @classmethod
     def LoadFromState(cls, directory_path):
@@ -164,20 +165,22 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
+            # TODO: Need implementation to load remove_state correctly
+            """
             phenotype_remove_filter = np.load(filter_path)
             if all(p.shape == phenotype_remove_filter[i].shape for i, p in enumerate(phenotypes)
                    if p is not None and phenotype_remove_filter[i] is not None):
 
                 # phenotypes._removeFilter = phenotype_remove_filter
                 pass
-
+            """
         return phenotyper
 
     @classmethod
     def LoadFromImageData(cls, path='.'):
 
         times, data = image_data.ImageData.read_image_data_and_time(path)
-        return cls(data, times)
+        return cls(data, times, run_extraction=True)
 
     @classmethod
     def LoadFromNumPy(cls, path, times_data_path=None, **kwargs):
@@ -221,7 +224,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 times_data_path += ".npy"
 
-        return cls(np.load(data_directory), np.load(times_data_path), base_name=path,
+        return cls(np.load(data_directory), np.load(times_data_path), base_name=path, run_extraction=True
                    **kwargs)
 
     @property
