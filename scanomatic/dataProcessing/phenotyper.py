@@ -104,7 +104,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._meta_data = None
 
         if run_extraction:
-            self._extract_features()
+            self.extract_phenotypes()
+
 
     def phenotype_names(self):
 
@@ -253,11 +254,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return np.array([k in data_object.get_data().keys() and
                          data_object.get_data()[k] or None for k in
                          range(max((data_object.get_data().keys())) + 1)])
-
-    def _extract_features(self):
-
-        self._smoothen()
-        self._calculate_phenotypes()
 
     def iterate_extraction(self):
 
