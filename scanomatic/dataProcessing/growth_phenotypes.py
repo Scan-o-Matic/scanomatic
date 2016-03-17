@@ -227,12 +227,39 @@ class PhenotypeDataType(Enum):
 
     Scalar = 0
     Vector = 1
+    Trusted = 2
+    UnderDevelopment = 3
+    All = 4
 
     def __call__(self, phenotype):
 
-        if  phenotype is Phenotypes.GrowthVelocityVector:
-            return True if self is PhenotypeDataType.Vector else False
-        return True if self is PhenotypeDataType.Scalar else False
+        if self is PhenotypeDataType.Scalar:
+
+            return phenotype is not Phenotypes.GrowthVelocityVector
+
+        elif self is PhenotypeDataType.Vector:
+
+            return phenotype is Phenotypes.GrowthVelocityVector
+
+        elif self is PhenotypeDataType.Trusted:
+
+            return phenotype in (Phenotypes.GenerationTime,
+                                 Phenotypes.ChapmanRichardsFit,
+                                 Phenotypes.ColonySize48h,
+                                 Phenotypes.InitialValue,
+                                 Phenotypes.GenerationTimeWhen,
+                                 Phenotypes.GenerationTimeStErrOfEstimate,
+                                 Phenotypes.GenerationTimePopulationSize)
+
+        elif self is PhenotypeDataType.UnderDevelopment:
+
+            return PhenotypeDataType.Trusted(phenotype) or phenotype in (Phenotypes.CurveBaseLine,
+                                                                         Phenotypes.CurveEndAverage,
+                                                                         Phenotypes.CurveGrowthYield)
+
+        elif self is PhenotypeDataType.All:
+
+            return True
 
 
 class Phenotypes(Enum):
