@@ -294,6 +294,9 @@ class Phenotypes(Enum):
 
     GrowthVelocityVector = 22
 
+    GrowthImpulseDuration = 23
+    GrowthImpulseAverageRate = 24
+
     def __call__(self, **kwargs):
 
         if self is Phenotypes.InitialValue:
