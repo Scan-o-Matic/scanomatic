@@ -297,6 +297,9 @@ class GridArray():
         self._LOGGER.info("Setting manual re-gridding for plate {0} using offset {1} on reference grid {2}".format(
             self.index + 1, offset, grid))
 
+        if not offset:
+            return self.detect_grid(im, save_name=save_name, grid_correction=offset)
+
         try:
             grid = np.load(grid)
         except IOError:
