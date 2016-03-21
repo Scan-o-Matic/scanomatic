@@ -54,6 +54,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             self._analysis_job = AnalysisModelFactory.create()
             self._logger.warning("No job instructions")
 
+        self._orginal_model = None
+
         self._job.content_model = self._analysis_job
 
         self._scanning_instructions = None
@@ -235,9 +237,10 @@ Scan-o-Matic""", self._analysis_job)
 
             self._logger.surpress_prints = False
 
-        AnalysisModelFactory.serializer.dump(self._analysis_job,
-                                             os.path.join(self._analysis_job.output_directory,
-                                                          Paths().analysis_model_file))
+
+        AnalysisModelFactory.serializer.dump(
+            self._orginal_model, os.path.join(self._analysis_job.output_directory, Paths().analysis_model_file))
+
         self._logger.info("Will remove previous files")
 
         self._remove_files_from_previous_analysis()
@@ -316,6 +319,7 @@ Scan-o-Matic""", self._analysis_job)
 
         allow_start = AnalysisModelFactory.validate(self._analysis_job)
 
+        self._orginal_model = AnalysisModelFactory.copy(self._analysis_job)
         AnalysisModelFactory.set_absolute_paths(self._analysis_job)
 
         try:
