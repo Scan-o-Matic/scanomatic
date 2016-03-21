@@ -64,6 +64,8 @@ def plot_segments(
     curve_color = CurvePhases(np.unique(phases)[0]) if np.unique(phases).size == 1 else CurvePhases.Multiple
     ax.semilogy(times, curve, basey=2, color=colors[curve_color], lw=2)
     ax.set_xlim(xmin=times[0], xmax=times[-1])
+    ax.set_xlabel("Time [h]")
+    ax.set_ylabel("Population Size [cells]")
 
     return f
 
