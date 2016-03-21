@@ -235,7 +235,7 @@ def _phenotype_phases(curve, phases, phenotyper_object, plate, pos):
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start])
 
 
-def new_phenotypes(
+def phase_phenotypes(
         phenotyper_object, plate, pos, segment_alpha=0.75, f=None,
         thresholds={Thresholds.ImpulseExtension: 0.75,
                     Thresholds.ImpulseSlopeRequirement: 0.1,
