@@ -25,6 +25,15 @@ class Thresholds(Enum):
     FlatlineSlopRequirement = 2
 
 
+class CurvePhasePhenotypes(Enum):
+
+    Curvature = 0
+    PopulationDoublingTime = 1
+    Duration = 2
+    FractionYield = 3
+    Start = 4
+
+
 def plot_segments(
         times, curve, phases, segment_alpha=0.3, f=None,
         colors={CurvePhases.Multiple: "#5f3275",
@@ -179,22 +188,49 @@ def _locate_retardation(dYdt, ddYdtSigns, phases, left, right, offset, flatline_
         return (left, right), CurvePhases.Undetermined
 
 
-def _phenotype_phases(curve, phases):
+def _phenotype_phases(curve, phases, phenotyper_object, plate, pos):
 
-    padded_candidates = np.hstack(([False] * offset, candidates, [False] * offset))
+    times = phenotyper_object.times
+    phenotypes = []
+    doublings = (np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.CurveEndAverage)[plate][pos]) - \
+                 np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.CurveBaseLine)[plate][pos]))
 
-    duration = phenotyper_object.times[right + offset] - phenotyper_object.times[left + offset]
-    average_rate = 1 / linregress(phenotyper_object.times[padded_candidates],
-                                  np.log2(curve[padded_candidates]))[0]
-    impulse_yield = (np.log2(curve[right + offset]) - np.log2(curve[left + offset])) / \
-        (np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.CurveEndAverage)[plate][pos]) - \
-         np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.CurveBaseLine)[plate][pos]))
+    for phase in CurvePhases:
 
-    {'GrowthImpulseDuration': duration,
-             'GrowthImpulseGenerationsFraction': impulse_yield,
-             'GrowthImpulseAverageRate': average_rate,
-             'AccelerationPhaseMean': ddYdt[acc_candidates[ddYdtSlice]].mean() if acc_candidates.any() else np.nan,
-             'RetartationPhaseMean': ddYdt[ret_candidates[ddYdtSlice]].mean() if ret_candidates.any() else np.nan}
+        labels, label_count = label(phases == phase.value)
+        for id_label in range(1, label_count + 1):
+
+            if phase == CurvePhases.Undetermined or phase == CurvePhases.Multiple:
+                phenotypes.append((phase, None))
+                continue
+
+            filt = labels == id_label
+            left, right = _locate_segment(filt)
+
+            phase_phenotypes = {}
+
+            if phase == CurvePhases.Acceleration or phase == CurvePhases.Retardation:
+                # A. For non-linear phases use the X^2 coefficient as curvature measure
+                phase_phenotypes[CurvePhasePhenotypes.Curvature] = np.polyfit(times[filt], np.log2(curve[filt]), 2)[0]
+            else:
+                # B. For linear phases get the doubling time
+                phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / linregress(times[filt], np.log2(curve[filt]))[0]
+
+            # C. Get duration
+            phase_phenotypes[CurvePhasePhenotypes.Duration] = times[right] - times[left]
+
+            # D. Get fraction of doublings
+            phase_phenotypes[CurvePhasePhenotypes.FractionYield] = (np.log2(curve[right]) - np.log2(curve[left])) / \
+                                                                   doublings
+
+
+            # E. Get start of phase
+            phase_phenotypes[CurvePhasePhenotypes.Start] = times[left]
+
+            phenotypes.append((phase, phase_phenotypes))
+
+    # Return phenotypes sorted on phase start rather than type of phase
+    return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start])
 
 
 def new_phenotypes(phenotyper_object, plate, pos, segment_alpha=0.75):
@@ -210,4 +246,4 @@ def new_phenotypes(phenotyper_object, plate, pos, segment_alpha=0.75):
 
     _segment(dYdt, dYdtRanks, ddYdtSigns, phases, filter=span, offset=offset)
 
-    return phases, plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha)
+    return phases, _phenotype_phases(curve, phases, phenotyper_object, plate, pos), plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha)
