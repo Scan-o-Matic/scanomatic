@@ -170,21 +170,21 @@ def generation_time_error(derivative_errors, index, **kwargs):
     return derivative_errors[index]
 
 
-def generation_time_when(flat_times, index, **kwargs):
-
-    if index < 0 or index >= flat_times.size:
-        _logger.warning("Faulty index {0} for GT when (max {1})".format(index, flat_times.size - 1))
+def generation_time_when(flat_times, index, linregress_extent, **kwargs):
+    pos = index + linregress_extent
+    if pos < 0 or pos >= flat_times.size:
+        _logger.warning("Faulty index {0} for GT when (max {1})".format(pos, flat_times.size - 1))
         return np.nan
 
-    return flat_times[index]
+    return flat_times[pos]
 
 
 def population_size_at_generation_time(curve_smooth_growth_data, index, linregress_extent, **kwargs):
-
+    pos = index + linregress_extent
     return np.ma.median(
         curve_smooth_growth_data[
-            max(0, index - linregress_extent):
-            min(index + linregress_extent + 1, curve_smooth_growth_data.size)])
+            max(0, pos - linregress_extent):
+            min(pos + linregress_extent + 1, curve_smooth_growth_data.size)])
 
 
 def growth_lag(index, flat_times, derivative_values_log2, **kwargs):
