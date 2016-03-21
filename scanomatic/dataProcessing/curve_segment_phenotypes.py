@@ -235,7 +235,11 @@ def _phenotype_phases(curve, phases, phenotyper_object, plate, pos):
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start])
 
 
-def new_phenotypes(phenotyper_object, plate, pos, segment_alpha=0.75):
+def new_phenotypes(
+        phenotyper_object, plate, pos, segment_alpha=0.75, f=None,
+        thresholds={Thresholds.ImpulseExtension: 0.75,
+                    Thresholds.ImpulseSlopeRequirement: 0.1,
+                    Thresholds.FlatlineSlopRequirement: 0.02}):
 
     curve = phenotyper_object.smooth_growth_data[plate][pos]
     dYdt = phenotyper_object.get_derivative(plate, pos)
@@ -246,6 +250,9 @@ def new_phenotypes(phenotyper_object, plate, pos, segment_alpha=0.75):
     phases = np.ones_like(curve).astype(np.int) * 0
     span = _get_filter(dYdt.size)
 
-    _segment(dYdt, dYdtRanks, ddYdtSigns, phases, filter=span, offset=offset)
+    _segment(dYdt, dYdtRanks, ddYdtSigns, phases, filter=span, offset=offset, thresholds=thresholds)
 
-    return phases, _phenotype_phases(curve, phases, phenotyper_object, plate, pos), plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha)
+    return phases,\
+           _phenotype_phases(curve, phases, phenotyper_object, plate, pos),\
+           None if f is False else plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha,
+                                                 f=f)
