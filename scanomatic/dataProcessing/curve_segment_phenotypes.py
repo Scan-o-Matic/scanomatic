@@ -5,6 +5,51 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scanomatic.dataProcessing import growth_phenotypes
 from scanomatic.dataProcessing import phenotyper
+from enum import Enum
+
+
+class CurvePhases(Enum):
+
+    Multiple = -1
+    Undetermined = 0
+    Flat = 1
+    Acceleration = 2
+    Retardation = 3
+    Impulse = 4
+
+
+def plot_segments(
+        times, curve, phases, segment_alpha=0.3, f=None,
+        colors={CurvePhases.Multiple: "#5f3275",
+                CurvePhases.Flat: "#f9e812",
+                CurvePhases.Acceleration: "#ea5207",
+                CurvePhases.Impulse: "#99220c",
+                CurvePhases.Retardation: "#c797c1"}):
+
+    if f is None:
+        f = plt.figure()
+
+    ax = f.gca()
+
+    for phase in CurvePhases:
+
+        if phase == CurvePhases.Undetermined:
+            continue
+
+        labels, label_count = label(phases == phase.value)
+        for id_label in range(1, label_count + 1):
+            positions = np.where(labels == id_label)[0]
+            left = positions[0]
+            right = positions[-1]
+            left = np.linspace(times[max(left - 1, 0)], times[left], 3)[1]
+            right = np.linspace(times[min(curve.size - 1, right + 1)], times[right], 3)[1]
+            ax.axvspan(left, right, color=colors[phase], alpha=segment_alpha)
+
+    curve_color = CurvePhases(np.unique(phases)[0]) if np.unique(phases).size == 1 else CurvePhases.Multiple
+    ax.semilogy(times, curve, basey=2, color=colors[curve_color])
+    ax.set_xlim(xmin=times[0], xmax=times[-1])
+
+    return f
 
 
 def new_phenotypes(phenotyper_object, plate, pos, impulse_threshold=0.75, flatline_threshold=0.02):
@@ -22,6 +67,8 @@ def new_phenotypes(phenotyper_object, plate, pos, impulse_threshold=0.75, flatli
 
     candidates, _ = label(candidates)
     candidates = candidates == candidates[loc]
+
+    phases = np.ones_like(curve).astype(np.int) * -1
 
     where = np.where(candidates)[0]
     left = where[0]
@@ -56,22 +103,10 @@ def new_phenotypes(phenotyper_object, plate, pos, impulse_threshold=0.75, flatli
     except ValueError:
         ret_candidates = np.zeros_like(candidates2).astype(bool)
 
-    f = plt.figure()
-    ax = f.gca()
-    ax.semilogy(curve, basey=2)
-    ax.axvspan(left + 2, right + 3, color='m', alpha=.2)
-    if acc_candidates.any():
-        ax.axvspan(
-            np.where(acc_candidates)[0][0] + 2,
-            np.where(acc_candidates)[0][-1] + 3, color='c', alpha=0.2)
-    if ret_candidates.any():
-        ax.axvspan(
-            np.where(ret_candidates)[0][0] + 2,
-            np.where(ret_candidates)[0][-1] + 3, color='g', alpha=0.2)
 
     return ({'GrowthImpulseDuration': duration,
              'GrowthImpulseGenerationsFraction': impulse_yield,
              'GrowthImpulseAverageRate': average_rate,
              'AccelerationPhaseMean': ddYdt[acc_candidates[ddYdtSlice]].mean() if acc_candidates.any() else np.nan,
              'RetartationPhaseMean': ddYdt[ret_candidates[ddYdtSlice]].mean() if ret_candidates.any() else np.nan},
-            f)
+            plot_segments(phenotyper_object.times, curve, phases))
