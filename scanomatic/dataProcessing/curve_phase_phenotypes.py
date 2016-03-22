@@ -231,7 +231,7 @@ def _phenotype_phases(curve, phases, phenotyper_object, plate, pos):
 
             phenotypes.append((phase, phase_phenotypes))
 
-    # Return phenotypes sorted on phase start rather than type of phase
+    # Phenotypes sorted on phase start rather than type of phase
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start])
 
 
