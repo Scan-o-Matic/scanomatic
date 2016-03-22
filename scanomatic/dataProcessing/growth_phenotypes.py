@@ -247,15 +247,15 @@ class PhenotypeDataType(Enum):
                                  Phenotypes.ChapmanRichardsFit,
                                  Phenotypes.ColonySize48h,
                                  Phenotypes.InitialValue,
-                                 Phenotypes.GenerationTimeWhen,
-                                 Phenotypes.GenerationTimeStErrOfEstimate,
-                                 Phenotypes.GenerationTimePopulationSize)
+                                 Phenotypes.GenerationTimeStErrOfEstimate,)
 
         elif self is PhenotypeDataType.UnderDevelopment:
 
             return PhenotypeDataType.Trusted(phenotype) or phenotype in (Phenotypes.CurveBaseLine,
                                                                          Phenotypes.CurveEndAverage,
-                                                                         Phenotypes.CurveGrowthYield)
+                                                                         Phenotypes.CurveGrowthYield,
+                                                                         Phenotypes.GenerationTimeWhen,
+                                                                         Phenotypes.GenerationTimePopulationSize)
 
         elif self is PhenotypeDataType.All:
 
