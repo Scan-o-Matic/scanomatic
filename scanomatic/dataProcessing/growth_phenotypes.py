@@ -244,15 +244,21 @@ class PhenotypeDataType(Enum):
 
     Scalar = 0
     Vector = 1
-    Trusted = 2
-    UnderDevelopment = 3
-    All = 4
+    Phases = 2
+
+    Trusted = 10
+    UnderDevelopment = 11
+
+    All = 100
 
     def __call__(self, phenotype=None):
 
         _vectors = (Phenotypes.GrowthVelocityVector,
                     Phenotypes.GrowthPhasesVector,
                     Phenotypes.GrowthPhasesPhenotypes)
+
+        _phases = (Phenotypes.GrowthPhasesVector,
+                   Phenotypes.GrowthPhasesPhenotypes)
 
         _trusted = (Phenotypes.GenerationTime,
                     Phenotypes.ChapmanRichardsFit,
@@ -280,6 +286,12 @@ class PhenotypeDataType(Enum):
                 return _vectors
 
             return phenotype in _vectors
+
+        elif self is PhenotypeDataType.Phases:
+
+            if phenotype is None:
+                return _phases
+            return phenotype in _phases
 
         elif self is PhenotypeDataType.Trusted:
 
