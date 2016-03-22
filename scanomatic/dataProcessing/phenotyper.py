@@ -16,6 +16,7 @@ import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
     PhenotypeDataType, get_derivative
+from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
 
 
 class PositionMark(Enum):
@@ -64,6 +65,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._raw_growth_data = raw_growth_data
         self._smooth_growth_data = None
         self._phenotypes = None
+        self._vector_phenotypes = None
         self._times_data = None
         self._limited_phenotypes = phenotypes
         self._phenotypes_inclusion = phenotypes_inclusion
@@ -141,6 +143,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         _p = paths.Paths()
 
         phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+        try:
+            vector_phenotypes = np.load(os.path.join(directory_path, _p.vector_phenotypes_raw))
+        except IOError:
+            vector_phenotypes = None
 
         raw_growth_data = np.load(os.path.join(directory_path,  _p.phenotypes_input_data))
 
@@ -157,6 +163,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         phenotyper.set('smooth_growth_data',smooth_growth_data)
         phenotyper.set('phenotypes', phenotypes)
+        phenotyper.set('vector_phenotypes', vector_phenotypes)
 
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
@@ -268,9 +275,17 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def wipe_extracted_phenotypes(self):
 
+        if self._phenotypes is not None:
+            self._logger.info("Removing previous phenotypes")
         self._phenotypes = None
 
+        if self._vector_phenotypes is not None:
+            self._logger.info("Removing previous vector phenotypes")
+        self._vector_phenotypes
+
     def extract_phenotypes(self):
+
+        self.wipe_extracted_phenotypes()
 
         self._logger.info("Extracting phenotypes. This will take a while...")
 
@@ -328,10 +343,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         index_for_48h = np.abs(np.subtract.outer(self._times_data, [48])).argmin()
 
         all_phenotypes = []
+        all_vector_phenotypes = []
 
         regression_size = self._linear_regression_size
         position_offset = (regression_size - 1) / 2
         phenotypes_count = self.number_of_phenotypes
+        vector_phenotypes_count = 2
         total_curves = float(self.number_of_curves)
 
         self._logger.info("Phenotypes (N={0}), extraction started for {1} curves".format(
@@ -344,18 +361,20 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._logger.warning("Will extract phenotypes beyond those that are trusted, this is not recommended!" +
                                  " It is your responsibility to verify the validity of those phenotypes!")
 
-        for plateI, plate in enumerate(self._smooth_growth_data):
+        for id_plate, plate in enumerate(self._smooth_growth_data):
 
             if plate is None:
                 all_phenotypes.append(None)
+                all_vector_phenotypes.append(None)
                 continue
 
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
-            phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),
-                                  dtype=np.float)
+            phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),dtype=np.float)
+            vector_phenotypes = np.zeros((plate.shape[:2] + (vector_phenotypes_count, )), dtype=np.object) * np.nan
 
             all_phenotypes.append(phenotypes)
+            all_vector_phenotypes.append(vector_phenotypes)
 
             for pos_index, pos_data in enumerate(plate_flat_regression_strided):
 
@@ -372,23 +391,41 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     index_for_48h=index_for_48h,
                     position_offset=position_offset)
 
+                phases_reported = False
+
                 for phenotype in Phenotypes:
 
-                    if PhenotypeDataType.Scalar(phenotype) and phenotypes_inclusion(phenotype):
+                    if not phenotypes_inclusion(phenotype):
+                        continue
 
+                    if PhenotypeDataType.Scalar(phenotype):
                         position_phenotypes[phenotype.value] = phenotype(**curve_data)
+
+                    elif not phases_reported and PhenotypeDataType.Phases(phenotype):
+
+                        phases, phases_phenotypes, _ = phase_phenotypes(
+                            self, id_plate, (id0, id1), f=False,
+                            experiment_doublings=position_phenotypes[Phenotypes.ExperimentPopulationDoublings.value])
+
+                        if phenotypes_inclusion(Phenotypes.GrowthPhasesVector):
+                            vector_phenotypes[id0, id1, 0] = phases
+                        if phenotypes_inclusion(Phenotypes.GrowthPhasesPhenotypes):
+                            vector_phenotypes[id0, id1, 1] = phases_phenotypes
+
+                        phases_reported = True
 
                 phenotypes[id0, id1, ...] = position_phenotypes
 
                 if id0 == 0:
                     self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
-                        plateI, id0, id1, list(position_phenotypes)))
+                        id_plate, id0, id1, list(position_phenotypes)))
                     yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
 
-            self._logger.info("Plate {0} Done".format(plateI + 1))
+            self._logger.info("Plate {0} Done".format(id_plate + 1))
             curves_in_completed_plates += 0 if plate is None else plate_flat_regression_strided.shape[0]
 
         self._phenotypes = np.array(all_phenotypes)
+        self._vector_phenotypes = np.array(all_vector_phenotypes)
 
         self._logger.info("Phenotype Extraction Done")
 
@@ -531,6 +568,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
                 self._phenotypes = None
 
+            self._init_remove_filter_and_undo_actions()
+
+        elif data_type == 'vector_phenotypes':
+
+            self._vector_phenotypes = data
             self._init_remove_filter_and_undo_actions()
 
         elif data_type == 'smooth_growth_data':
@@ -693,6 +735,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (not ask_if_overwrite or not os.path.isfile(p) or
                 self._do_ask_overwrite(p)):
             np.save(p, self._phenotypes)
+
+        p = os.path.join(dir_path, self._paths.vector_phenotypes_raw)
+        if (not ask_if_overwrite or not os.path.isfile(p) or
+                self._do_ask_overwrite(p)):
+            np.save(p, self._vector_phenotypes)
 
         p = os.path.join(dir_path, self._paths.phenotypes_input_data)
         if (not ask_if_overwrite or not os.path.isfile(p) or
