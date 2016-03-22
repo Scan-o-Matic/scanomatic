@@ -70,28 +70,17 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._base_name = base_name
 
         if isinstance(raw_growth_data, xml_reader_module.XML_Reader):
-            array_copy = self._xml_reader_2_array(raw_growth_data)
 
             if times_data is None:
                 times_data = raw_growth_data.get_scan_times()
-        else:
-            array_copy = raw_growth_data.copy()
 
         self.times = times_data
 
         assert self._times_data is not None, "A data series needs its times"
 
-        for plate in array_copy:
+        super(Phenotyper, self).__init__(None)
 
-            assert (plate is None or
-                    plate.ndim == 4 and plate.shape[-1] == 1 or
-                    plate.ndim == 3), (
-                        "Phenotype Strider only work with one phenotype. "
-                        + "Your shape is {0}".format(plate.shape))
-
-        super(Phenotyper, self).__init__(array_copy)
-
-        self._removed_filter = np.array([None for _ in self._smooth_growth_data], dtype=np.object)
+        self._removed_filter = np.array([None for _ in self._raw_growth_data], dtype=np.object)
         self._remove_actions = None
         self._init_remove_filter_and_undo_actions()
 
@@ -268,8 +257,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if not self.has_smooth_growth_data:
             self._smoothen()
-        self._logger.info("Smoothed")
-        yield 0
+            self._logger.info("Smoothed")
+            yield 0
+        else:
+            self._logger.info("No smoothing, data already smooth!")
+
         for x in self._calculate_phenotypes():
             self._logger.debug("Phenotype extraction iteration")
             yield x
@@ -557,7 +549,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._removed_filter[plate_index] = np.zeros(
                 self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
 
-        self._remove_actions = tuple(deque() for _ in self._smooth_growth_data)
+        self._remove_actions = tuple(deque() for _ in self._raw_growth_data)
 
     def add_position_mark(self, plate, position_list, phenotype=None, position_mark=PositionMark.BadData):
 
