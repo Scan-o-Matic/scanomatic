@@ -156,14 +156,20 @@ def RCResiduals(crParams, X, Y):
 
 
 def generation_time(derivative_values_log2, index, **kwargs):
-    if index < 0 or index >= derivative_values_log2.size:
+    if index < 0:
+        _logger.warning("No GT because no finite slopes in data")
+        return np.nan
+    elif index >= derivative_values_log2.size:
         _logger.warning("Faulty index {0} for GT (max {1})".format(index, derivative_values_log2.size - 1))
         return np.nan
     return 1.0 / derivative_values_log2[index]
 
 
 def generation_time_error(derivative_errors, index, **kwargs):
-    if index < 0 or index >= derivative_errors.size:
+    if index < 0:
+        _logger.warning("No GT Error because no finite slopes in data")
+        return np.nan
+    elif index >= derivative_errors.size:
         _logger.warning("Faulty index {0} for GT error (max {1})".format(index, derivative_errors.size - 1))
         return np.nan
 
@@ -172,7 +178,10 @@ def generation_time_error(derivative_errors, index, **kwargs):
 
 def generation_time_when(flat_times, index, linregress_extent, **kwargs):
     pos = index + linregress_extent
-    if pos < 0 or pos >= flat_times.size:
+    if pos < 0:
+        _logger.warning("No GT When because no finite slopes in data")
+        return np.nan
+    elif pos >= flat_times.size:
         _logger.warning("Faulty index {0} for GT when (max {1})".format(pos, flat_times.size - 1))
         return np.nan
 
@@ -181,6 +190,10 @@ def generation_time_when(flat_times, index, linregress_extent, **kwargs):
 
 def population_size_at_generation_time(curve_smooth_growth_data, index, linregress_extent, **kwargs):
     pos = index + linregress_extent
+    if pos < 0:
+        _logger.warning("No GT Pop Size because no finite slopes in data")
+        return np.nan
+
     return np.ma.median(
         curve_smooth_growth_data[
             max(0, pos - linregress_extent):
