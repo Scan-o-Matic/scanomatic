@@ -63,7 +63,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
             os.path.join(self._feature_job.analysis_directory, paths.Paths().phenotypes_extraction_log),
             catch_stdout=True, catch_stderr=True)
 
-        self._logger.surpress_prints = True
+        self._logger.surpress_prints = False
 
         self._logger.info("Loading files image data from '{0}'".format(
             self._feature_job.analysis_directory))
