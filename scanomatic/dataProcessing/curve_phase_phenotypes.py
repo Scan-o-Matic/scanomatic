@@ -277,3 +277,14 @@ def phase_phenotypes(
            _phenotype_phases(curve, phases, phenotyper_object.times, experiment_doublings),\
            None if f is False else plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha,
                                                  f=f)
+
+
+def filter_plate(plate, phase=CurvePhases.Acceleration, measure=CurvePhasePhenotypes.Curvature):
+
+    def f(v):
+        phases = tuple(d for t, d in v if t == phase)
+        if phases:
+            return phases[0][measure]
+        return np.nan
+
+    return np.frompyfunc(f, 1, 1)(plate).astype(np.float)
