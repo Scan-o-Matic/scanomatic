@@ -248,38 +248,57 @@ class PhenotypeDataType(Enum):
     UnderDevelopment = 3
     All = 4
 
-    def __call__(self, phenotype):
+    def __call__(self, phenotype=None):
+
+        _vectors = (Phenotypes.GrowthVelocityVector,
+                    Phenotypes.GrowthPhasesVector,
+                    Phenotypes.GrowthPhasesPhenotypes)
+
+        _trusted = (Phenotypes.GenerationTime,
+                    Phenotypes.ChapmanRichardsFit,
+                    Phenotypes.ColonySize48h,
+                    Phenotypes.InitialValue,
+                    Phenotypes.GenerationTimeStErrOfEstimate)
+
+        _under_development = (Phenotypes.ExperimentBaseLine,
+                              Phenotypes.ExperimentEndAverage,
+                              Phenotypes.ExperimentGrowthYield,
+                              Phenotypes.GenerationTimeWhen,
+                              Phenotypes.GenerationTimePopulationSize,
+                              Phenotypes.ExperimentPopulationDoublings)
 
         if self is PhenotypeDataType.Scalar:
 
-            return phenotype not in (Phenotypes.GrowthVelocityVector,
-                                     Phenotypes.GrowthPhasesVector,
-                                     Phenotypes.GrowthPhasesPhenotypes)
+            if phenotype is None:
+                return tuple(p for p in Phenotypes if p not in _vectors)
+
+            return phenotype not in _vectors
 
         elif self is PhenotypeDataType.Vector:
 
-            return phenotype in (Phenotypes.GrowthVelocityVector,
-                                     Phenotypes.GrowthPhasesVector,
-                                     Phenotypes.GrowthPhasesPhenotypes)
+            if phenotype is None:
+                return _vectors
+
+            return phenotype in _vectors
 
         elif self is PhenotypeDataType.Trusted:
 
-            return phenotype in (Phenotypes.GenerationTime,
-                                 Phenotypes.ChapmanRichardsFit,
-                                 Phenotypes.ColonySize48h,
-                                 Phenotypes.InitialValue,
-                                 Phenotypes.GenerationTimeStErrOfEstimate,)
+            if phenotype is None:
+                return _trusted
+
+            return phenotype in _trusted
 
         elif self is PhenotypeDataType.UnderDevelopment:
 
-            return PhenotypeDataType.Trusted(phenotype) or phenotype in (Phenotypes.ExperimentBaseLine,
-                                                                         Phenotypes.ExperimentEndAverage,
-                                                                         Phenotypes.ExperimentGrowthYield,
-                                                                         Phenotypes.GenerationTimeWhen,
-                                                                         Phenotypes.GenerationTimePopulationSize,
-                                                                         Phenotypes.ExperimentPopulationDoublings)
+            if phenotype is None:
+                return _under_development
+
+            return phenotype in _trusted or phenotype in _under_development
 
         elif self is PhenotypeDataType.All:
+
+            if phenotype is None:
+                tuple(p for p in Phenotypes)
 
             return True
 
