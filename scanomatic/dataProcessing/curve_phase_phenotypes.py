@@ -96,11 +96,25 @@ def _segment(dYdt, dYdtRanks, ddYdtSigns, phases, filter, offset,
         if filter.all():
             warnings.warn("No impulse detected, max rate is {0} (threshold {1}).".format(
                 dYdt[loc_max], thresholds[Thresholds.ImpulseSlopeRequirement]))
+        if left == 0:
+            phases[:offset] = phases[offset]
+        if right == phases.size:
+            phases[-offset:] = phases[-offset - 1]
         return
 
     # 4. Locate impulse
     impulse_left, impulse_right = _locate_impulse(dYdt, loc_max, phases, filter, offset,
                                                   thresholds[Thresholds.ImpulseExtension])
+
+    if impulse_left is None or impulse_right is None:
+        if filter.all():
+            warnings.warn("No impulse phase detected though max rate super-seeded threshold")
+        if left == 0:
+            phases[:offset] = phases[offset]
+        if right == phases.size:
+            phases[-offset:] = phases[-offset - 1]
+
+        return
 
     # 5. Locate acceleration phase
     (accel_left, _), next_phase = _locate_acceleration(
