@@ -264,11 +264,12 @@ class PhenotypeDataType(Enum):
 
         elif self is PhenotypeDataType.UnderDevelopment:
 
-            return PhenotypeDataType.Trusted(phenotype) or phenotype in (Phenotypes.CurveBaseLine,
-                                                                         Phenotypes.CurveEndAverage,
-                                                                         Phenotypes.CurveGrowthYield,
+            return PhenotypeDataType.Trusted(phenotype) or phenotype in (Phenotypes.ExperimentBaseLine,
+                                                                         Phenotypes.ExperimentEndAverage,
+                                                                         Phenotypes.ExperimentGrowthYield,
                                                                          Phenotypes.GenerationTimeWhen,
-                                                                         Phenotypes.GenerationTimePopulationSize)
+                                                                         Phenotypes.GenerationTimePopulationSize,
+                                                                         Phenotypes.ExperimentPopulationDoublings)
 
         elif self is PhenotypeDataType.All:
 
@@ -278,12 +279,12 @@ class PhenotypeDataType(Enum):
 class Phenotypes(Enum):
 
     InitialValue = 12
-    CurveFirstTwoAverage = 13
-    CurveBaseLine = 14
-    CurveLowPoint = 15
-    CurveEndAverage = 16
+    ExperimentFirstTwoAverage = 13
+    ExperimentBaseLine = 14
+    ExperimentLowPoint = 15
+    ExperimentEndAverage = 16
 
-    CurveGrowthYield = 17
+    ExperimentGrowthYield = 17
     GrowthLag = 18
 
     GenerationTime48h = 19
@@ -315,13 +316,13 @@ class Phenotypes(Enum):
         if self is Phenotypes.InitialValue:
             return initial_value(**kwargs)
 
-        elif self is Phenotypes.CurveBaseLine:
+        elif self is Phenotypes.ExperimentBaseLine:
             return curve_baseline(**kwargs)
 
-        elif self is Phenotypes.CurveEndAverage:
+        elif self is Phenotypes.ExperimentEndAverage:
             return curve_end_average(**kwargs)
 
-        elif self is Phenotypes.CurveFirstTwoAverage:
+        elif self is Phenotypes.ExperimentFirstTwoAverage:
             return curve_first_two_average(**kwargs)
 
         elif self is Phenotypes.ColonySize48h:
@@ -330,10 +331,10 @@ class Phenotypes(Enum):
         elif self is Phenotypes.GenerationTime48h:
             return generation_time(index=kwargs['index48h'], **kwargs)
 
-        elif self is Phenotypes.CurveGrowthYield:
+        elif self is Phenotypes.ExperimentGrowthYield:
             return growth_yield(**kwargs)
 
-        elif self is Phenotypes.CurveLowPoint:
+        elif self is Phenotypes.ExperimentLowPoint:
             return curve_low_point(**kwargs)
 
         elif self is Phenotypes.ChapmanRichardsFit:

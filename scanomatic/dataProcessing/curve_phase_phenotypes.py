@@ -194,8 +194,8 @@ def _phenotype_phases(curve, phases, phenotyper_object, plate, pos):
 
     times = phenotyper_object.times
     phenotypes = []
-    doublings = (np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.CurveEndAverage)[plate][pos]) - \
-                 np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.CurveBaseLine)[plate][pos]))
+    doublings = (np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.ExperimentEndAverage)[plate][pos]) - \
+                 np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.ExperimentBaseLine)[plate][pos]))
 
     for phase in CurvePhases:
 
