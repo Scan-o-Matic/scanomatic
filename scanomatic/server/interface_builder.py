@@ -194,9 +194,12 @@ class Interface_Builder(SingeltonOneInit):
     def _server_get_scanner_status(self, user_id=None):
 
         global _SOM_SERVER
-        return sanitize_communication(
-            sorted([ScannerFactory.to_dict(scanner_model)
-                    for scanner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
+        if not _SOM_SERVER.scanner_manager.connected_to_scanners:
+            return []
+        else:
+            return sanitize_communication(
+                sorted([ScannerFactory.to_dict(scanner_model)
+                        for scanner_model in _SOM_SERVER.scanner_manager.status], key=lambda x: x['socket']))
 
     def _server_get_queue_status(self, user_id=None):
 
@@ -514,11 +517,14 @@ class Interface_Builder(SingeltonOneInit):
         scanner_manager = _SOM_SERVER.scanner_manager
         operation = operation.to_upper()
 
+        if not scanner_manager.connected_to_scanners:
+
+            _SOM_SERVER.logger.warning("Scanners not loaded (yet)")
+            return False
+
         if scanner not in scanner_manager:
 
-            _SOM_SERVER.logger.warning(
-                "Unknown scanner: {0}".format(scanner))
-
+            _SOM_SERVER.logger.warning("Unknown scanner: {0}".format(scanner))
             return False
 
         scanner_model = scanner_manager[scanner]
@@ -558,6 +564,8 @@ class Interface_Builder(SingeltonOneInit):
         """
 
         global _SOM_SERVER
+        if not _SOM_SERVER.scanner_manager.connected_to_scanners:
+            return False
         return sanitize_communication(_SOM_SERVER.scanner_manager.fixtures)
 
     @_verify_admin

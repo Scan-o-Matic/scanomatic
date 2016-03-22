@@ -1,6 +1,7 @@
 import psutil
 import time
 from enum import Enum
+from threading import Thread
 
 #
 # INTERNAL DEPENDENCIES
@@ -39,12 +40,19 @@ class ScannerPowerManager(SingeltonOneInit):
         self._orphan_usbs = set()
 
         self._scanners = self._initiate_scanners()
-        self._pm = self._get_power_manager(self._scanners)
+        self._pm = None
         self._scanner_queue = []
 
         self._reported_sane_missing = STATE.Unknown
 
+        Thread(target=self._load_pm).start()
+
         decorators.register_type_lock(self)
+
+    def _load_pm(self):
+
+        self._pm = self._get_power_manager(self._scanners)
+
 
     def __getitem__(self, item):
 
@@ -220,6 +228,11 @@ class ScannerPowerManager(SingeltonOneInit):
     def _get_non_orphan_usbs(self, usbs):
 
         return set(usbs).difference(self._orphan_usbs)
+
+    @property
+    def connected_to_scanners(self):
+
+        return self._pm is not None
 
     def request_on(self, job_id):
 

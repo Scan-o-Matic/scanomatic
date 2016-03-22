@@ -68,7 +68,7 @@ class Jobs(SingeltonOneInit):
         """:type job : scanomatic.models.rpc_job_models.RPCJobModel"""
 
         if job in self._jobs:
-            if job.type == rpc_job_models.JOB_TYPE.Scan:
+            if job.type == rpc_job_models.JOB_TYPE.Scan and self._scanner_manager.connected_to_scanners:
                 self._scanner_manager.release_scanner(job.id)
             del self._jobs[job]
             self._logger.info("Job '{0}' not active/removed".format(job))
@@ -148,6 +148,9 @@ class Jobs(SingeltonOneInit):
 
     def handle_scanners(self):
 
+        if not self._scanner_manager.connected_to_scanners:
+            return
+
         self._scanner_manager.update()
 
         for scanner in self._scanner_manager.non_reported_usbs:
@@ -175,6 +178,10 @@ class Jobs(SingeltonOneInit):
 
         if not job_effector:
             self._logger.error("Job {0} can't be executed, will drop request".format(job.id))
+            return True
+
+        if not self._scanner_manager.connected_to_scanners and job.type == rpc_job_models.JOB_TYPE.Scan:
+            self._logger.error("Scanners aren't ready, job request dropped")
             return True
 
         parent_pipe, child_pipe = Pipe()

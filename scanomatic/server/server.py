@@ -138,7 +138,7 @@ class Server(object):
 
             if i == 0 and self._queue:
                 self._attempt_job_creation()
-            elif i <= 1:
+            elif i <= 1 and self._scanner_manager.connected_to_scanners:
                 self._scanner_manager.update()
             else:
                 self._jobs.sync()
@@ -233,7 +233,7 @@ class Server(object):
 
     def verify_scanner_claim(self, rpc_job_model):
 
-        if not self.scanner_manager.has_scanners:
+        if not self.scanner_manager.connected_to_scanners or not self.scanner_manager.has_scanners:
             self.logger.error("There are no scanners reachable from server")
             return False
 
