@@ -199,21 +199,17 @@ def _locate_retardation(dYdt, ddYdtSigns, phases, left, right, offset, flatline_
     candidates2, label_count = label(candidates2)
 
     if label_count:
-        acc_candidates = candidates2 == label_count
-        phases[offset: -offset][acc_candidates] = CurvePhases.Retardation.value
-        return _locate_segment(acc_candidates), CurvePhases.Flat
+        ret_cantidates = candidates2 == 1
+        phases[offset: -offset][ret_cantidates] = CurvePhases.Retardation.value
+        return _locate_segment(ret_cantidates), CurvePhases.Flat
     else:
         phases[offset: -offset][candidates] = CurvePhases.Undetermined.value
         return (left, right), CurvePhases.Undetermined
 
 
-def _phenotype_phases(curve, phases, phenotyper_object, plate, pos):
+def _phenotype_phases(curve, phases, times, doublings):
 
-    times = phenotyper_object.times
     phenotypes = []
-    doublings = (np.log2(phenotyper_object.get_phenotype(
-        growth_phenotypes.Phenotypes.ExperimentEndAverage)[plate][pos]) -
-                 np.log2(phenotyper_object.get_phenotype(growth_phenotypes.Phenotypes.ExperimentBaseLine)[plate][pos]))
 
     for phase in CurvePhases:
 
@@ -257,7 +253,8 @@ def phase_phenotypes(
         phenotyper_object, plate, pos, segment_alpha=0.75, f=None,
         thresholds={Thresholds.ImpulseExtension: 0.75,
                     Thresholds.ImpulseSlopeRequirement: 0.1,
-                    Thresholds.FlatlineSlopRequirement: 0.02}):
+                    Thresholds.FlatlineSlopRequirement: 0.02},
+        experiment_doublings=None):
 
     curve = phenotyper_object.smooth_growth_data[plate][pos]
     dYdt = phenotyper_object.get_derivative(plate, pos)
@@ -270,7 +267,13 @@ def phase_phenotypes(
 
     _segment(dYdt, dYdtRanks, ddYdtSigns, phases, filter=span, offset=offset, thresholds=thresholds)
 
+    if experiment_doublings is None:
+        experiment_doublings = (np.log2(phenotyper_object.get_phenotype(
+            growth_phenotypes.Phenotypes.ExperimentEndAverage)[plate][pos]) -
+                                np.log2(phenotyper_object.get_phenotype(
+                                    growth_phenotypes.Phenotypes.ExperimentBaseLine)[plate][pos]))
+
     return phases,\
-           _phenotype_phases(curve, phases, phenotyper_object, plate, pos),\
+           _phenotype_phases(curve, phases, phenotyper_object.times, experiment_doublings),\
            None if f is False else plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha,
                                                  f=f)
