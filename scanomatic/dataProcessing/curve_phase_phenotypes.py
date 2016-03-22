@@ -246,7 +246,7 @@ def _phenotype_phases(curve, phases, times, doublings):
             phenotypes.append((phase, phase_phenotypes))
 
     # Phenotypes sorted on phase start rather than type of phase
-    return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start])
+    return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
 
 
 def phase_phenotypes(
