@@ -72,6 +72,10 @@ def growth_yield(curve_smooth_growth_data, *args, **kwargs):
     return curve_end_average(curve_smooth_growth_data) - curve_baseline(curve_smooth_growth_data)
 
 
+def growth_curve_doublings(curve_smooth_growth_data, *args, **kwargs):
+    return np.log2(curve_end_average(curve_smooth_growth_data)) - np.log2(curve_baseline(curve_smooth_growth_data))
+
+
 def growth_48h(curve_smooth_growth_data, index48h, *args, **kwargs):
     if index48h < 0 or index48h >= curve_smooth_growth_data.size:
         _logger.warning("Faulty index {0} for 48h size (max {1})".format(index48h, curve_smooth_growth_data.size - 1))
@@ -248,11 +252,15 @@ class PhenotypeDataType(Enum):
 
         if self is PhenotypeDataType.Scalar:
 
-            return phenotype is not Phenotypes.GrowthVelocityVector
+            return phenotype not in (Phenotypes.GrowthVelocityVector,
+                                     Phenotypes.GrowthPhasesVector,
+                                     Phenotypes.GrowthPhasesPhenotypes)
 
         elif self is PhenotypeDataType.Vector:
 
-            return phenotype is Phenotypes.GrowthVelocityVector
+            return phenotype in (Phenotypes.GrowthVelocityVector,
+                                     Phenotypes.GrowthPhasesVector,
+                                     Phenotypes.GrowthPhasesPhenotypes)
 
         elif self is PhenotypeDataType.Trusted:
 
@@ -306,10 +314,11 @@ class Phenotypes(Enum):
     ChapmanRichardsParam4 = 10
     ChapmanRichardsParamXtra = 11
 
-    GrowthVelocityVector = 22
+    ExperimentPopulationDoublings = 22
 
-    GrowthImpulseDuration = 23
-    GrowthImpulseAverageRate = 24
+    GrowthVelocityVector = 1000
+    GrowthPhasesVector = 1100
+    GrowthPhasesPhenotypes = 1101
 
     def __call__(self, **kwargs):
 
@@ -333,6 +342,9 @@ class Phenotypes(Enum):
 
         elif self is Phenotypes.ExperimentGrowthYield:
             return growth_yield(**kwargs)
+
+        elif self is Phenotypes.ExperimentPopulationDoublings:
+            return growth_curve_doublings(**kwargs)
 
         elif self is Phenotypes.ExperimentLowPoint:
             return curve_low_point(**kwargs)
