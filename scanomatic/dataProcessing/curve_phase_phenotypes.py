@@ -151,10 +151,13 @@ def _locate_impulse(dYdt, loc, phases, filter, offset, extension_threshold):
     return _locate_segment(candidates)
 
 
-def _locate_segment(filter):
+def _locate_segment(filt):
 
-    where = np.where(filter)[0]
-    return where[0], where[-1]
+    where = np.where(filt)[0]
+    if where.size > 0:
+        return where[0], where[-1]
+    else:
+        return None, None
 
 
 def _get_filter(size, left=None, right=None):
