@@ -279,6 +279,12 @@ def phase_phenotypes(
                                                  f=f)
 
 
+def phase_selector_critera_filter(phases, criteria, func=max):
+
+    val = func(phase[criteria] for phase in phases)
+    return tuple(phase for phase in phases if phase[criteria] == val)[0]
+
+
 def filter_plate_custom_filter(
         plate,
         phase=CurvePhases.Acceleration,
