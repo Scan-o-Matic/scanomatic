@@ -305,11 +305,14 @@ def filter_plate_custom_filter(
 class CurvePhaseMetaPhenotypes(Enum):
 
     MajorImpulseYieldContribution = 0
+    BimodalGrowthFirstImpulseDoubingTime = 1
+    BimodalGrowthSecondImpulseDoubingTime = 2
 
 
 def filter_plate(plate, meta_phenotype):
 
-    if (meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution):
+    if meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution:
+
         selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield)
         return filter_plate_custom_filter(
             plate,
@@ -317,3 +320,15 @@ def filter_plate(plate, meta_phenotype):
             measure=CurvePhasePhenotypes.FractionYield,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=selector)
+
+    elif (meta_phenotype == CurvePhaseMetaPhenotypes.BimodalGrowthFirstImpulseDoubingTime or
+          meta_phenotype == CurvePhaseMetaPhenotypes.BimodalGrowthSecondImpulseDoubingTime):
+
+        return filter_plate_custom_filter(
+            plate,
+            phase=CurvePhases.Impulse,
+            measure=CurvePhasePhenotypes.PopulationDoublingTime,
+            phases_requirement=lambda phases: len(phases) == 2,
+            phase_selector=lambda phases: phases[
+                0 if meta_phenotype == CurvePhaseMetaPhenotypes.BimodalGrowthFirstImpulseDoubingTime else 1]
+        )
