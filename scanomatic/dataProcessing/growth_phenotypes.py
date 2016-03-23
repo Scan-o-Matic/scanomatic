@@ -248,6 +248,7 @@ class PhenotypeDataType(Enum):
 
     Trusted = 10
     UnderDevelopment = 11
+    Other = 12
 
     All = 100
 
@@ -306,6 +307,12 @@ class PhenotypeDataType(Enum):
                 return _under_development
 
             return phenotype in _trusted or phenotype in _under_development
+
+        elif self is PhenotypeDataType.Other:
+
+            if phenotype is None:
+                return tuple(p for p in Phenotypes if p not in _trusted and p not in _under_development)
+            return phenotype not in _trusted and phenotype not in _under_development
 
         elif self is PhenotypeDataType.All:
 
