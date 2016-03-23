@@ -731,6 +731,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def save_state(self, dir_path, ask_if_overwrite=True):
 
+        if not os.path.isdir(dir_path):
+            os.makedirs(dir_path)
+
         p = os.path.join(dir_path, self._paths.phenotypes_raw_npy)
         if (not ask_if_overwrite or not os.path.isfile(p) or
                 self._do_ask_overwrite(p)):
