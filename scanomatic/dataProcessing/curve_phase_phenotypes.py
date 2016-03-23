@@ -292,4 +292,4 @@ def filter_plate_custom_filter(
             return phase_selector(phases)[measure]
         return np.nan
 
-    return np.frompyfunc(f, 1, 1)(plate).astype(np.float)
+    return np.ma.masked_invalid(np.frompyfunc(f, 1, 1)(plate).astype(np.float))
