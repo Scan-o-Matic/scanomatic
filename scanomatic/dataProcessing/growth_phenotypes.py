@@ -317,7 +317,7 @@ class PhenotypeDataType(Enum):
         elif self is PhenotypeDataType.All:
 
             if phenotype is None:
-                tuple(p for p in Phenotypes)
+                return tuple(p for p in Phenotypes)
 
             return True
 
