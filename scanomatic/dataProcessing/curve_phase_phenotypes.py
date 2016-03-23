@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from scanomatic.dataProcessing import growth_phenotypes
 from enum import Enum
 import warnings
+from functools import partial
 
 
 class CurvePhases(Enum):
@@ -299,3 +300,20 @@ def filter_plate_custom_filter(
         return np.nan
 
     return np.ma.masked_invalid(np.frompyfunc(f, 1, 1)(plate).astype(np.float))
+
+
+class CurvePhaseMetaPhenotypes(Enum):
+
+    MajorImpulseYieldContribution = 0
+
+
+def filter_plate(plate, meta_phenotype):
+
+    if (meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution):
+        selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield)
+        return filter_plate_custom_filter(
+            plate,
+            phase=CurvePhases.Impulse,
+            measure=CurvePhasePhenotypes.FractionYield,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=selector)
