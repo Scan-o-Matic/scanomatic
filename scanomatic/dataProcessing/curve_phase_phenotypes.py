@@ -279,12 +279,17 @@ def phase_phenotypes(
                                                  f=f)
 
 
-def filter_plate(plate, phase=CurvePhases.Acceleration, measure=CurvePhasePhenotypes.Curvature):
+def filter_plate_custom_filter(
+        plate,
+        phase=CurvePhases.Acceleration,
+        measure=CurvePhasePhenotypes.Curvature,
+        phases_requirement=lambda phases: len(phases) == 1,
+        phase_selector=lambda phases: phases[0]):
 
     def f(v):
         phases = tuple(d for t, d in v if t == phase)
-        if phases:
-            return phases[0][measure]
+        if phases_requirement(phases):
+            return phase_selector(phases)[measure]
         return np.nan
 
     return np.frompyfunc(f, 1, 1)(plate).astype(np.float)
