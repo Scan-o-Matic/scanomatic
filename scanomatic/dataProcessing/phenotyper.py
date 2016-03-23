@@ -24,6 +24,7 @@ class PositionMark(Enum):
     OK = 0
     NoGrowth = 1
     BadData = 2
+    Empty = 3
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
