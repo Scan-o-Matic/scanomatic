@@ -56,3 +56,7 @@ class FilterArray(object):
     def __getattr__(self, item):
 
         return getattr(np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.mask), item)
+
+    def __getitem__(self, item):
+
+        return np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.mask)[item]
