@@ -644,10 +644,17 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 if self._phenotypes[plate_index] is None:
                     continue
+
                 for phenotype in Phenotypes:
+
                     if self._phenotypes_inclusion(phenotype):
+
                         self._phenotype_filter[plate_index][phenotype] = np.zeros(
-                            self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
+                            self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
+
+                        self._phenotype_filter[plate_index][phenotype][
+                            np.where(np.isfinite(self._phenotypes[plate_index][..., phenotype.value]) == False)] = \
+                            Filter.UndecidedProblem.value
 
         if not self._correct_shapes(self._phenotypes, self._phenotype_filter_undo):
             self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
