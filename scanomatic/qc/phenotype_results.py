@@ -15,6 +15,7 @@ from scanomatic.dataProcessing.phenotyper import Phenotyper
 
 _logger = Logger("Phenotype Results QC")
 
+
 def _validate_input(f):
 
     def wrapped(*args, **kwargs):
@@ -22,9 +23,9 @@ def _validate_input(f):
         if len(args) > 0 and isinstance(args[0], StringTypes):
 
             args = list(args)
-            args[0] = Phenotyper.LoadFromState(args[0]).phenotypes
+            args[0] = Phenotyper.LoadFromState(args[0])
         elif 'phenotypes' in kwargs and isinstance(kwargs['phenotypes'], StringTypes):
-            kwargs['phenotypes'] = Phenotyper.LoadFromState(kwargs['phenotypes']).phenotypes
+            kwargs['phenotypes'] = Phenotyper.LoadFromState(kwargs['phenotypes'])
 
         return f(*args, **kwargs)
 
@@ -34,7 +35,7 @@ def _validate_input(f):
 @_validate_input
 def get_position_phenotypes(phenotypes, plate, position_selection=None):
 
-    return {phenotype.name: phenotypes[plate][position_selection][phenotype.value] for phenotype in Phenotypes}
+    return {phenotype.name: phenotypes.get_phenotype(phenotype)[plate][position_selection] for phenotype in Phenotypes}
 
 
 @_validate_input
@@ -44,9 +45,7 @@ def plot_plate_heatmap(
         save_target=None):
 
     if measure is None:
-        measure = Phenotypes.GenerationTime.value
-    elif isinstance(measure, Phenotypes):
-        measure = measure.value
+        measure = Phenotypes.GenerationTime
 
     if fig is None:
         fig = plt.figure()
@@ -68,10 +67,9 @@ def plot_plate_heatmap(
         ax.set_title(title_text)
 
     try:
-        plate_data = phenotypes[plate_index][..., measure].astype(np.float)
+        plate_data = phenotypes.get_phenotype(measure)[plate_index].astype(np.float)
     except ValueError:
-        _logger.error("The phenotype {0} is not scalar and thus can't be displayed as a heatmap".format(
-            Phenotypes(measure)))
+        _logger.error("The phenotype {0} is not scalar and thus can't be displayed as a heatmap".format(measure))
         return fig
 
     if not horizontal_orientation:
@@ -86,9 +84,7 @@ def plot_plate_heatmap(
         vmax = plate_data[np.isfinite(plate_data)].max()
 
         if use_common_value_axis:
-            for plate in phenotypes:
-
-                plate = np.ma.masked_invalid(plate[..., measure].astype(np.float))
+            for plate in phenotypes.get_phenotype(measure):
                 vmin = min(vmin, plate.min())
                 vmax = max(vmax, plate.max())
 
