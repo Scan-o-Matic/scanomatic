@@ -515,8 +515,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 return _plate_type_converter_scalar(plate)
 
         if self._phenotypes is None or \
-                    self._limited_phenotypes and phenotype not in self._limited_phenotypes or \
-                    phenotype.value >= self.number_of_phenotypes:
+                self._limited_phenotypes and phenotype not in self._limited_phenotypes or \
+                phenotype.value >= self.number_of_phenotypes:
 
             raise ValueError(
                 "'{0}' has not been extracted, please re-run 'extract_phenotypes()' to include it.".format(
