@@ -464,26 +464,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     @property
     def generation_times(self):
 
-        return np.array(
-            [plate[..., Phenotypes.GenerationTime.value] for plate in self.phenotypes])
-
-    @property
-    def phenotypes(self):
-
-        ret = []
-        if self._phenotypes is None:
-            return None
-
-        for i, p in enumerate(self._phenotypes):
-            if p is not None:
-                filtered_plate = np.ma.masked_array(
-                    p.copy(), self._phenotype_filter[i] == Filter.BadData.value, fill_value=np.nan)
-                filtered_plate[self._phenotype_filter[i] == Filter.NoGrowth.value] = np.inf
-                ret.append(filtered_plate)
-            else:
-                ret.append(p)
-
-        return ret
+        return self.get_phenotype(Phenotypes.GenerationTime)
 
     def get_phenotype(self, phenotype, filtered=True):
 
@@ -531,11 +512,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if filtered:
 
             return [None if p is None else
-                    np.ma.MaskedArray(_plate_type_converter(p[..., phenotype.value]),
-                                      mask=self._phenotype_filter[id_plate][phenotype])
-                    for id_plate, p in enumerate(self.phenotypes)]
+                    FilterArray(_plate_type_converter(p[..., phenotype.value]),
+                                self._phenotype_filter[id_plate][phenotype])
+                    for id_plate, p in enumerate(self._phenotypes)]
         else:
-            return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self.phenotypes]
+            return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
 
     @property
     def times(self):
