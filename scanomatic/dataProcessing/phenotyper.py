@@ -1,9 +1,11 @@
 import numpy as np
 import os
-from types import StringTypes
+import csv
 from scipy.ndimage import median_filter, gaussian_filter1d
 from collections import deque
 import pickle
+from enum import Enum
+from types import StringTypes
 
 #
 #   INTERNAL DEPENDENCIES
@@ -18,6 +20,17 @@ from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preproce
     PhenotypeDataType, get_derivative
 from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
+
+
+class SaveData(Enum):
+
+    ScalarPhenotypesRaw = 0
+    ScalarPhenotypesNormalized = 1
+    VectorPhenotypesRaw = 10
+    VectorPhenotypesNormalized = 11
+
+
+# TODO: Phenotypes should possibly not be indexed based on enum value either and use dict like the undo/filter
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
@@ -737,71 +750,81 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         return any(self.plate_has_any_colonies_removed(i) for i in
                    range(self._phenotype_filter.shape[0]))
 
-    def get_position_list_filtered(self, position_list, value_type=Phenotypes.GenerationTime):
+    @staticmethod
+    def _make_csv_row(*args):
 
-        values = []
-        for pos in position_list:
+        for a in args:
 
-            if isinstance(pos, StringTypes):
-                plate, x, y = self._position_2_string_tuple(pos)
+            if isinstance(a, StringTypes):
+                yield a
             else:
-                plate, x, y = pos
+                try:
+                    for v in Phenotyper._make_csv_row(*a):
+                        yield v
+                except TypeError:
+                    yield a
 
-            values.append(self.phenotypes[plate][x, y][value_type.value])
+    def meta_data_headers(self):
 
-        return values
+        all_headers_identical = True
 
-    def save_phenotypes(self, path=None, data=None, data_headers=None, delim="\t", newline="\n", ask_if_overwrite=True):
+        if self._meta_data is not None:
+            self._logger.info("Adding meta-data")
+            meta_data_headers = self._meta_data.getHeaderRow(0)
+            for plate_index in range(1, len(self._phenotypes)):
+                if meta_data_headers != self._meta_data.getHeaderRow(plate_index):
+                    all_headers_identical = False
+                    break
+
+            meta_data_headers = tuple(meta_data_headers)
+
+            if all_headers_identical:
+                return (h for h in meta_data_headers)
+            else:
+                self._logger.warning(
+                    "The headers vary between plate, not a good idea to put in one file, meta-data not included")
+                return tuple()
+
+        return tuple()
+
+    def save_phenotypes(self, path=None, save_data=SaveData.ScalarPhenotypesRaw,
+                        data_headers=None, dialect=csv.excel, ask_if_overwrite=True):
 
         if path is None and self._base_name is not None:
-            path = self._base_name + ".csv"
+            path = self._base_name + "_{0}.csv".format(save_data.name.lower())
 
         if os.path.isfile(path) and ask_if_overwrite:
             if 'y' not in raw_input("Overwrite existing file? (y/N)").lower():
                 return False
 
-        headers = ('Plate', 'Row', 'Column')
+        default_meta_data = ('Plate', 'Row', 'Column')
 
-        # USING RAW PHENOTYPE DATA
-        if data is None:
-            data_headers = tuple(phenotype.name for phenotype in Phenotypes)
-            self._logger.info("Using raw phenotypes")
-            data = self.phenotypes
-
-        if data is None:
-            self._logger.warning("Could not save data since there is no data")
+        if save_data == SaveData.ScalarPhenotypesRaw:
+            data_source = self._phenotypes
+        else:
+            self._logger.error("Not implemented saving '{0}'".format(save_data))
             return False
+
+        meta_data = self._meta_data
+        no_metadata = tuple()
 
         with open(path, 'w') as fh:
 
-            # SAVES OUT DATA AS NPY AS WELL
-            np.save(path + ".npy", data)
+            cw = csv.writer(fh, dialect=dialect)
 
             # HEADER ROW
-            meta_data = self._meta_data
-            all_headers_identical = True
-            meta_data_headers = tuple()
+            meta_data_headers = self.meta_data_headers()
+            include_meta_data = not(isinstance(meta_data_headers, tuple) and len(meta_data_headers) == 0)
+            cw.writerow(
+                tuple(self._make_csv_row(
+                    default_meta_data,
+                    meta_data_headers,
+                    (p for p in Phenotypes if self._phenotypes_inclusion(p)))))
 
-            if meta_data is not None:
-                self._logger.info("Using meta-data")
-                meta_data_headers = meta_data.getHeaderRow(0)
-                for plate_index in range(1, len(data)):
-                    if meta_data_headers != meta_data.getHeaderRow(plate_index):
-                        all_headers_identical = False
-                        break
-                meta_data_headers = tuple(meta_data_headers)
-
-            if all_headers_identical:
-                fh.write("{0}{1}".format(delim.join(
-                    map(str, headers + meta_data_headers + data_headers)), newline))
+            phenotype_filter = np.where([self._phenotypes_inclusion(p) for p in Phenotypes])[0]
 
             # DATA
-            for plate_index, plate in enumerate(data):
-
-                if not all_headers_identical:
-                    fh.write("{0}{1}".format(delim.join(
-                        map(str, headers + tuple(meta_data.getHeaderRow(plate_index)) +
-                            data_headers)), newline))
+            for plate_index, (plate, filt) in enumerate(zip(data_source, self._phenotype_filter)):
 
                 if plate is None:
                     continue
@@ -810,20 +833,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                     for idY, Y in enumerate(X):
 
-                        # TODO: This is a hack to not break csv structure with vector phenotypes
-                        Y = [v if not(isinstance(v, np.ndarray) and v.size > 1
-                                      or isinstance(v, list)
-                                      or isinstance(v, tuple)) else None for v in Y]
+                        cw.writerow(
+                            tuple(self._make_csv_row(
+                                (plate_index, idX, idY),
+                                no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
+                                (y if filt[Phenotypes(idP)][idX, idY] == 0 else Filter(filt[Phenotypes(idP)][idX, idY]).name
+                                 for idP, y in zip(phenotype_filter, Y[phenotype_filter])))))
 
-                        if meta_data is None:
-                            fh.write("{0}{1}".format(delim.join(map(
-                                str, [plate_index, idX, idY] + Y)), newline))
-                        else:
-                            fh.write("{0}{1}".format(delim.join(map(
-                                str, [plate_index, idX, idY] + meta_data(plate_index, idX, idY) +
-                                     Y)), newline))
-
-        self._logger.info("Saved csv absolute phenotypes to {0}".format(path))
+        self._logger.info("Saved {0} to {1}".format(save_data, path))
 
         return True
 
