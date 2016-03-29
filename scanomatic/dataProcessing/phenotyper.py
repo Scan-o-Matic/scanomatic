@@ -304,7 +304,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if self._smooth_growth_data is None or len(self._smooth_growth_data) != len(self._raw_growth_data):
             return False
 
-        return all((a is None == b is None ) or a.shape == b.shape for a, b in zip(self._raw_growth_data, self._smooth_growth_data))
+        return all((a is None == b is None ) or a.shape == b.shape for a, b in
+                   zip(self._raw_growth_data, self._smooth_growth_data))
 
     def _smoothen(self):
 
@@ -526,10 +527,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._logger.warning("The phenotype '{0}' has not been fully tested and verified!".format(phenotype.name))
 
         if filtered:
-            # TODO: Get valid filter
-            return [p if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self.phenotypes]
+
+            return [None if p is None else
+                    np.ma.MaskedArray(_plate_type_converter(p[..., phenotype.value]),
+                                      mask=self._phenotype_filter[id_plate][phenotype])
+                    for id_plate, p in enumerate(self.phenotypes)]
         else:
-            return [p if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self.phenotypes]
+            return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self.phenotypes]
 
     @property
     def times(self):
