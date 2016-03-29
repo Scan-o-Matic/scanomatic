@@ -4,6 +4,7 @@ from types import StringTypes
 from scipy.ndimage import median_filter, gaussian_filter1d
 from collections import deque
 from enum import Enum
+import pickle
 
 #
 #   INTERNAL DEPENDENCIES
@@ -85,8 +86,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         super(Phenotyper, self).__init__(None)
 
-        self._curve_filter = np.array([{} for _ in self._raw_growth_data], dtype=np.object)
-        self._remove_actions = None
+        self._phenotype_filter = np.array([{} for _ in self._raw_growth_data], dtype=np.object)
+        self._phenotype_filter_undo = None
 
         self._logger = logger.Logger("Phenotyper")
 
@@ -169,15 +170,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
-            # TODO: Need implementation to load remove_state correctly
-            """
-            phenotype_remove_filter = np.load(filter_path)
-            if all(p.shape == phenotype_remove_filter[i].shape for i, p in enumerate(phenotypes)
-                   if p is not None and phenotype_remove_filter[i] is not None):
+            phenotyper.set("phenotype_filter", np.load(filter_path))
 
-                # phenotypes._removeFilter = phenotype_remove_filter
-                pass
-            """
+        filter_undo_path = os.path.join(directory_path, _p.phenotypes_filter_undo)
+        if os.path.isfile(filter_undo_path):
+            phenotyper.set("phenotype_filter_undo", pickle.load(filter_undo_path))
+
         return phenotyper
 
     @classmethod
@@ -228,8 +226,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
                 times_data_path += ".npy"
 
-        return cls(np.load(data_directory), np.load(times_data_path), base_name=path, run_extraction=True
-                   **kwargs)
+        return cls(np.load(data_directory), np.load(times_data_path), base_name=path, run_extraction=True, **kwargs)
 
     @property
     def meta_data(self):
@@ -477,8 +474,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         for i, p in enumerate(self._phenotypes):
             if p is not None:
                 filtered_plate = np.ma.masked_array(
-                    p.copy(), self._curve_filter[i] == PositionMark.BadData.value, fill_value=np.nan)
-                filtered_plate[self._curve_filter[i] == PositionMark.NoGrowth.value] = np.inf
+                    p.copy(), self._phenotype_filter[i] == PositionMark.BadData.value, fill_value=np.nan)
+                filtered_plate[self._phenotype_filter[i] == PositionMark.NoGrowth.value] = np.inf
                 ret.append(filtered_plate)
             else:
                 ret.append(p)
@@ -570,8 +567,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def set(self, data_type, data):
 
-        # TODO: Setting of filter and undo
-
         if data_type == 'phenotypes':
 
             if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
@@ -587,6 +582,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             self._smooth_growth_data = data
 
+        elif data == "phenotype_filter_undo":
+
+            self._phenotype_filter_undo = data
+
+        elif data == "phenotype_filter":
+
+            self._phenotype_filter = data
+
         else:
 
             self._logger.warning('Unknown type of data {0}'.format(data_type))
@@ -598,10 +601,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 continue
             for phenotype in Phenotypes:
                 if self._phenotypes_inclusion(phenotype):
-                    self._curve_filter[plate_index][phenotype] = np.zeros(
+                    self._phenotype_filter[plate_index][phenotype] = np.zeros(
                         self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
 
-        self._remove_actions = tuple(deque() for _ in self._phenotypes)
+        self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
     def add_position_mark(self, plate, position_list, phenotype=None, position_mark=PositionMark.BadData,
                           undoable=True):
@@ -620,35 +623,35 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         else:
 
-            previous_state = self._curve_filter[plate][phenotype, position_list]
+            previous_state = self._phenotype_filter[plate][phenotype, position_list]
 
             if isinstance(previous_state, np.array):
                 if np.unique(previous_state).size == 1:
                     previous_state = previous_state[0]
 
-            self._curve_filter[plate][phenotype][position_list] = position_mark.value
+            self._phenotype_filter[plate][phenotype][position_list] = position_mark.value
 
             if undoable:
                 self._add_undo(plate, position_list, phenotype, previous_state)
 
     def _add_undo(self, plate, position_list, phenotype, previous_state):
 
-        self._remove_actions[plate].append((position_list, phenotype, previous_state))
-        while len(self._remove_actions[plate]) > self.UNDO_HISTORY_LENGTH:
-            self._remove_actions[plate].popleft()
+        self._phenotype_filter_undo[plate].append((position_list, phenotype, previous_state))
+        while len(self._phenotype_filter_undo[plate]) > self.UNDO_HISTORY_LENGTH:
+            self._phenotype_filter_undo[plate].popleft()
 
     def undo(self, plate):
 
-        if len(self._remove_actions[plate]) == 0:
+        if len(self._phenotype_filter_undo[plate]) == 0:
             self._logger.info("No more actions to undo")
 
-        position_list, phenotype, previous_state = self._remove_actions[plate].pop()
+        position_list, phenotype, previous_state = self._phenotype_filter_undo[plate].pop()
         if phenotype is None:
             for phenotype in Phenotypes:
                 if self._phenotypes_inclusion(phenotype):
-                    self._curve_filter[plate][phenotype][position_list] = previous_state
+                    self._phenotype_filter[plate][phenotype][position_list] = previous_state
         else:
-            self._curve_filter[plate][phenotype][position_list] = previous_state
+            self._phenotype_filter[plate][phenotype][position_list] = previous_state
 
     def plate_has_any_colonies_removed(self, plate):
         """Get if plate has anything removed.
@@ -662,7 +665,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             bool    The status of the plate removals
         """
 
-        return self._curve_filter[plate].any()
+        return self._phenotype_filter[plate].any()
 
     def has_any_colonies_removed(self):
         """If any plate has anything removed
@@ -671,7 +674,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             bool    The removal status
         """
         return any(self.plate_has_any_colonies_removed(i) for i in
-                   range(self._curve_filter.shape[0]))
+                   range(self._phenotype_filter.shape[0]))
 
     def get_position_list_filtered(self, position_list, value_type=Phenotypes.GenerationTime):
 
@@ -796,7 +799,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         p = os.path.join(dir_path, self._paths.phenotypes_filter)
         if (not ask_if_overwrite or not os.path.isfile(p) or
                 self._do_ask_overwrite(p)):
-            np.save(p, self._curve_filter)
+            np.save(p, self._phenotype_filter)
+
+        p = os.path.join(dir_path, self._paths.phenotypes_filter_undo)
+        if (not ask_if_overwrite or not os.path.isfile(p) or
+                self._do_ask_overwrite(p)):
+
+            pickle.dump(self._phenotype_filter_undo, p)
 
         p = os.path.join(dir_path, self._paths.phenotype_times)
         if (not ask_if_overwrite or not os.path.isfile(p) or
