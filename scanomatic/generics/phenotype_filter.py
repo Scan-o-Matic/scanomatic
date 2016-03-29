@@ -4,7 +4,7 @@ from itertools import imap, repeat
 from enum import Enum
 
 
-def cumulative_apply(f, iterable):
+def fold(f, iterable):
 
     out = None
     for pos, val in enumerate(iterable):
@@ -21,13 +21,12 @@ class Filter(Enum):
     NoGrowth = 1
     BadData = 2
     Empty = 3
+    UndecidedProblem = 4
 
 
 class FilterArray(object):
 
     def __init__(self, data, filter):
-
-        assert data.shape == filter.shape, "Data and filter don't match"
 
         self.__dict__["__numpy_data"] = data
         self.__dict__["__numpy_filter"] = filter
@@ -44,7 +43,7 @@ class FilterArray(object):
 
     def filter_to_mask(self, *filters):
 
-        return cumulative_apply(
+        return fold(
             or_,
             imap(eq,
                  repeat(self.__dict__["__numpy_filter"], len(filters)),
