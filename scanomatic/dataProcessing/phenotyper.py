@@ -470,12 +470,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         def _plate_type_converter_vector(plate):
 
-            out = np.zeros(plate.shape + plate[0, 0].shape, dtype=plate[0, 0].dtype)
-            if out.dtype == np.floating:
-                out *= np.nan
-
-            for out_pos, in_pos in zip(out.reshape(out.shape[0] * out.shape[1], out.shape[2]), plate.ravel()):
-                out_pos[...] = in_pos
+            out = plate.copy()
+            if out.dtype == np.floating and out.shape[-1] == 1:
+                return out.reshape(out.shape[:2])
 
             return out
 
