@@ -282,7 +282,15 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if self._vector_phenotypes is not None:
             self._logger.info("Removing previous vector phenotypes")
-        self._vector_phenotypes
+        self._vector_phenotypes = None
+
+        if self._phenotype_filter is not None:
+            self._logger.info("Removing previous remove filter")
+        self._phenotype_filter = None
+
+        if self._phenotype_filter_undo is not None:
+            self._logger.info("Removing filter undo history")
+        self._phenotype_filter_undo = None
 
     def extract_phenotypes(self):
 
@@ -295,6 +303,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         for _ in self._calculate_phenotypes():
             pass
+
+        self._init_remove_filter_and_undo_actions()
 
         self._logger.info("Phenotypes extracted")
 
@@ -578,37 +588,99 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             else:
                 self._phenotypes = data
 
+            self._init_remove_filter_and_undo_actions()
+
         elif data_type == 'vector_phenotypes':
 
             self._vector_phenotypes = data
+
+            self._init_remove_filter_and_undo_actions()
 
         elif data_type == 'smooth_growth_data':
 
             self._smooth_growth_data = data
 
-        elif data == "phenotype_filter_undo":
+        elif data_type == "phenotype_filter_undo":
 
             self._phenotype_filter_undo = data
+            self._init_remove_filter_and_undo_actions()
 
-        elif data == "phenotype_filter":
+        elif data_type == "phenotype_filter":
 
-            self._phenotype_filter = data
+            self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
+            self._init_remove_filter_and_undo_actions()
 
         else:
 
             self._logger.warning('Unknown type of data {0}'.format(data_type))
 
+    def _convert_to_current_phenotype_filter(self, data):
+
+        new_data = []
+        for id_plate, plate in enumerate(data):
+
+            if plate is None or plate.size == 0:
+                new_data.append(None)
+                continue
+
+            if plate.dtype == np.int8 and plate.ndim == 3:
+                new_plate = {}
+
+                for id_phenotype in range(plate.shape[-1]):
+                    try:
+                        new_plate[Phenotypes(id_phenotype)] = plate[..., id_phenotype]
+                    except ValueError:
+                        self._logger.warning(
+                            "Saved data had a Phenotype of index {0}, this is not a valid Phenotype".format(
+                                id_phenotype))
+
+                new_data.append(new_plate)
+
+            else:
+
+                self._logger.error(
+                    "Skipping previous phenotype filter of plate {0} because not understood".format(id_plate + 1))
+                new_data.append(None)
+
+        return np.array(new_data)
+
+    def _correct_shapes(self, guide, obj):
+
+        if guide is None:
+            return True
+        elif obj is None:
+            return False
+        elif len(guide) != len(obj):
+            return False
+
+        if isinstance(obj, np.ndarray):
+            for g, o in zip(guide, obj):
+                if g is None != o is None:
+                    return False
+                if isinstance(o, dict):
+                  for v in o.itervalues():
+                      if g.shape[:2] != v.shape[:2]:
+                          return False
+                elif g.shape[:2] != o.shape[:2]:
+                    return False
+        return True
+
     def _init_remove_filter_and_undo_actions(self):
 
-        for plate_index in range(self._phenotypes.shape[0]):
-            if self._phenotypes[plate_index] is None:
-                continue
-            for phenotype in Phenotypes:
-                if self._phenotypes_inclusion(phenotype):
-                    self._phenotype_filter[plate_index][phenotype] = np.zeros(
-                        self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
+        if not self._correct_shapes(self._phenotypes, self._phenotype_filter):
+            self._phenotype_filter = np.array([{} for _ in range(self._phenotypes.shape[0])], dtype=np.object)
 
-        self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
+            for plate_index in range(self._phenotypes.shape[0]):
+
+                if self._phenotypes[plate_index] is None:
+                    continue
+                for phenotype in Phenotypes:
+                    if self._phenotypes_inclusion(phenotype):
+                        self._phenotype_filter[plate_index][phenotype] = np.zeros(
+                            self._raw_growth_data[plate_index].shape[:2] + (self.number_of_phenotypes,), dtype=np.int8)
+
+        if not self._correct_shapes(self._phenotypes, self._phenotype_filter_undo):
+            self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
     def add_position_mark(self, plate, position_list, phenotype=None, position_mark=PositionMark.BadData,
                           undoable=True):
@@ -620,16 +692,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     self.add_position_mark(plate, position_list, phen, position_mark, undoable=False)
 
             if undoable:
-                self._logger.warning("Undoing this mark will assume all phenotypes were marked as OK")
-                self._add_undo(plate, position_list, phen, 0)
+                self._logger.warning("Undoing this mark will assume all phenotypes were previously marked as OK")
+                self._add_undo(plate, position_list, None, 0)
 
             return
 
         else:
 
-            previous_state = self._phenotype_filter[plate][phenotype, position_list]
+            previous_state = self._phenotype_filter[plate][phenotype][position_list]
 
-            if isinstance(previous_state, np.array):
+            if isinstance(previous_state, np.ndarray):
                 if np.unique(previous_state).size == 1:
                     previous_state = previous_state[0]
 
@@ -648,14 +720,22 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if len(self._phenotype_filter_undo[plate]) == 0:
             self._logger.info("No more actions to undo")
+            return
 
         position_list, phenotype, previous_state = self._phenotype_filter_undo[plate].pop()
+        self._logger.info("Setting {0} for positions {1} to state {2}".format(
+            phenotype,
+            position_list,
+            PositionMark(previous_state)))
+
         if phenotype is None:
             for phenotype in Phenotypes:
-                if self._phenotypes_inclusion(phenotype):
+                if self._phenotypes_inclusion(phenotype) and phenotype in self._phenotype_filter[plate]:
                     self._phenotype_filter[plate][phenotype][position_list] = previous_state
-        else:
+        elif phenotype in self._phenotype_filter[plate]:
             self._phenotype_filter[plate][phenotype][position_list] = previous_state
+        else:
+            self._logger.warning("Could not undo for {0} because no filter present for phenotype".format(phenotype))
 
     def plate_has_any_colonies_removed(self, plate):
         """Get if plate has anything removed.
