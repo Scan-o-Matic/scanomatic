@@ -17,7 +17,7 @@ import scanomatic.io.image_data as image_data
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
     PhenotypeDataType, get_derivative
 from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
-from scanomatic.generics.phenotype_filter import FilterArray, PositionMark
+from scanomatic.generics.phenotype_filter import FilterArray, Filter
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
@@ -477,8 +477,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         for i, p in enumerate(self._phenotypes):
             if p is not None:
                 filtered_plate = np.ma.masked_array(
-                    p.copy(), self._phenotype_filter[i] == PositionMark.BadData.value, fill_value=np.nan)
-                filtered_plate[self._phenotype_filter[i] == PositionMark.NoGrowth.value] = np.inf
+                    p.copy(), self._phenotype_filter[i] == Filter.BadData.value, fill_value=np.nan)
+                filtered_plate[self._phenotype_filter[i] == Filter.NoGrowth.value] = np.inf
                 ret.append(filtered_plate)
             else:
                 ret.append(p)
@@ -674,7 +674,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if not self._correct_shapes(self._phenotypes, self._phenotype_filter_undo):
             self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
-    def add_position_mark(self, plate, position_list, phenotype=None, position_mark=PositionMark.BadData,
+    def add_position_mark(self, plate, position_list, phenotype=None, position_mark=Filter.BadData,
                           undoable=True):
 
         if phenotype is None:
@@ -718,7 +718,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._logger.info("Setting {0} for positions {1} to state {2}".format(
             phenotype,
             position_list,
-            PositionMark(previous_state)))
+            Filter(previous_state)))
 
         if phenotype is None:
             for phenotype in Phenotypes:

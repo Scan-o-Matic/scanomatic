@@ -15,7 +15,7 @@ def cumulative_apply(f, iterable):
     return out
 
 
-class PositionMark(Enum):
+class Filter(Enum):
 
     OK = 0
     NoGrowth = 1
