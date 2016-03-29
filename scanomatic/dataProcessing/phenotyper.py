@@ -3,7 +3,6 @@ import os
 from types import StringTypes
 from scipy.ndimage import median_filter, gaussian_filter1d
 from collections import deque
-from enum import Enum
 import pickle
 
 #
@@ -18,14 +17,7 @@ import scanomatic.io.image_data as image_data
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
     PhenotypeDataType, get_derivative
 from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
-
-
-class PositionMark(Enum):
-
-    OK = 0
-    NoGrowth = 1
-    BadData = 2
-    Empty = 3
+from scanomatic.generics.phenotype_filter import FilterArray, PositionMark
 
 
 class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
