@@ -783,6 +783,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if path is None and self._base_name is not None:
             path = self._base_name
+            if path == ".":
+                path = "phenotypes"
 
         if save_data == SaveData.ScalarPhenotypesRaw:
             data_source = self._phenotypes
@@ -802,7 +804,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             plate_path = "{0}.{1}.{2}.csv".format(path, save_data.name.lower(), plate_index)
 
             if os.path.isfile(plate_path) and ask_if_overwrite:
-                if 'y' not in raw_input("Overwrite existing file? (y/N)").lower():
+                if 'y' not in raw_input("Overwrite existing file '{0}'? (y/N)".format(plate_path)).lower():
                     continue
 
             with open(plate_path, 'w') as fh:
