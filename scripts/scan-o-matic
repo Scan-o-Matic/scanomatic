@@ -30,7 +30,7 @@ if __name__ == "__main__":
         "--port", type=int, dest="port", help="Manual override of default port")
 
     parser.add_argument(
-        '--local', type=bool, dest="local", help="Manual override if only to serve locally")
+        '--local', type=str, default="N", dest="local", help="Manual override if only to serve locally")
 
     parser.add_argument(
         '--host', type=str, dest="host", help="Manually setting host address of server")
@@ -50,4 +50,4 @@ if __name__ == "__main__":
     true_strings = ['Y', 'YES', 'TRUE', 'T']
     ui_server.launch(open_browser_url=args.browser.upper() in true_strings,
                      debug=args.debug.upper() in true_strings,
-                     is_local=args.local, port=args.port, host=args.host)
+                     is_local=args.local.upper() in true_strings, port=args.port, host=args.host)
