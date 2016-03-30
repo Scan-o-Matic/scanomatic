@@ -267,6 +267,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         for i, _ in enumerate(self._raw_growth_data):
             yield i
 
+    @property
+    def plate_shapes(self):
+
+        for plate in self._raw_growth_data:
+
+            if plate is None:
+                yield None
+            else:
+                yield plate.shape[:2]
+
     @staticmethod
     def _xml_reader_2_array(data_object):
 
