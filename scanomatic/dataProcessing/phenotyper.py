@@ -818,7 +818,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if self._meta_data is not None:
             self._logger.info("Adding meta-data")
-            return self._meta_data.getHeaderRow(plate_index)
+            return self._meta_data.get_header_row(plate_index)
 
         return tuple()
 

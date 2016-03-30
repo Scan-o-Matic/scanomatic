@@ -164,7 +164,7 @@ def uniques(metaData, forcePlatewise=False, slicer=None):
     if not isinstance(slicer, slice):
         slicer = slice(slicer)
 
-    for pos in metaData.generateCoordinates():
+    for pos in metaData.generate_coordinates():
 
         strain = tuple(metaData(*pos))[slicer]
 
