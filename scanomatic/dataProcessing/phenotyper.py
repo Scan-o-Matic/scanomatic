@@ -874,40 +874,33 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             os.makedirs(dir_path)
 
         p = os.path.join(dir_path, self._paths.phenotypes_raw_npy)
-        if (not ask_if_overwrite or not os.path.isfile(p) or
-                self._do_ask_overwrite(p)):
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._phenotypes)
 
         p = os.path.join(dir_path, self._paths.vector_phenotypes_raw)
-        if (not ask_if_overwrite or not os.path.isfile(p) or
-                self._do_ask_overwrite(p)):
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._vector_phenotypes)
 
         p = os.path.join(dir_path, self._paths.phenotypes_input_data)
-        if (not ask_if_overwrite or not os.path.isfile(p) or
-                self._do_ask_overwrite(p)):
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._raw_growth_data)
 
         p = os.path.join(dir_path, self._paths.phenotypes_input_smooth)
-        if (not ask_if_overwrite or not os.path.isfile(p) or
-                self._do_ask_overwrite(p)):
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._smooth_growth_data)
 
         p = os.path.join(dir_path, self._paths.phenotypes_filter)
-        if (not ask_if_overwrite or not os.path.isfile(p) or
-                self._do_ask_overwrite(p)):
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._phenotype_filter)
 
         p = os.path.join(dir_path, self._paths.phenotypes_filter_undo)
-        if (not ask_if_overwrite or not os.path.isfile(p) or
-                self._do_ask_overwrite(p)):
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
 
             with open(p, 'w') as fh:
                 pickle.dump(self._phenotype_filter_undo, fh)
 
         p = os.path.join(dir_path, self._paths.phenotype_times)
-        if (not ask_if_overwrite or not os.path.isfile(p) or
-                self._do_ask_overwrite(p)):
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._times_data)
 
         p = os.path.join(dir_path, self._paths.phenotypes_meta_data)
