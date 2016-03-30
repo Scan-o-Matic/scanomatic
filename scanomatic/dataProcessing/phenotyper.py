@@ -253,6 +253,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return self._smooth_growth_data
 
+    @property
+    def enumerate_plates(self):
+
+        for i, _ in enumerate(self._raw_growth_data):
+            yield i
+
     @staticmethod
     def _xml_reader_2_array(data_object):
 
