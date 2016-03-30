@@ -251,11 +251,6 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return self._meta_data
 
-    @meta_data.setter
-    def meta_data(self, val):
-
-        self._meta_data = val
-
     @property
     def raw_growth_data(self):
 
