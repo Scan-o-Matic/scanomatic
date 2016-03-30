@@ -181,12 +181,18 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         filter_undo_path = os.path.join(directory_path, _p.phenotypes_filter_undo)
         if os.path.isfile(filter_undo_path):
             with open(filter_undo_path, 'r') as fh:
-                phenotyper.set("phenotype_filter_undo", pickle.load(fh))
+                try:
+                    phenotyper.set("phenotype_filter_undo", pickle.load(fh))
+                except EOFError:
+                    phenotyper._logger.warning("Could not load saved undo, file corrupt!")
 
         meta_data_path = os.path.join(directory_path, _p.phenotypes_meta_data)
         if os.path.isfile(meta_data_path):
             with open(meta_data_path, 'r') as fh:
-                phenotyper.set("meta_data", pickle.load(fh))
+                try:
+                    phenotyper.set("meta_data", pickle.load(fh))
+                except EOFError:
+                    phenotyper._logger.warning("Could not load saved meta-data, file corrupt!")
 
         return phenotyper
 
