@@ -180,7 +180,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         filter_undo_path = os.path.join(directory_path, _p.phenotypes_filter_undo)
         if os.path.isfile(filter_undo_path):
-            phenotyper.set("phenotype_filter_undo", pickle.load(filter_undo_path))
+            with open(filter_undo_path, 'r') as fh:
+                phenotyper.set("phenotype_filter_undo", pickle.load(fh))
 
         return phenotyper
 
@@ -883,7 +884,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (not ask_if_overwrite or not os.path.isfile(p) or
                 self._do_ask_overwrite(p)):
 
-            pickle.dump(self._phenotype_filter_undo, p)
+            with open(p, 'w') as fh:
+                pickle.dump(self._phenotype_filter_undo, fh)
 
         p = os.path.join(dir_path, self._paths.phenotype_times)
         if (not ask_if_overwrite or not os.path.isfile(p) or
