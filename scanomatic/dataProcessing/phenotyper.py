@@ -20,6 +20,7 @@ from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preproce
     PhenotypeDataType, get_derivative
 from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
+from scanomatic.io.meta_data import MetaData
 
 
 class SaveData(Enum):

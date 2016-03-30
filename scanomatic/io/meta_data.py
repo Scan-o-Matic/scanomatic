@@ -144,7 +144,7 @@ def scanomaticScale(metaData, refTuple, refPlateAppend={},
     Returns
     -------
 
-    Meta_Data_Base
+    MetaDataBase
         Meta-data object that represents the pinning
     """
 
@@ -155,7 +155,7 @@ def scanomaticScale(metaData, refTuple, refPlateAppend={},
 
     newShape = [(x*2, y*2) for x, y in metaData.shape]
 
-    newMetaData = Meta_Data_Base(newShape)
+    newMetaData = MetaDataBase(newShape)
     for idPlate in xrange(len(newShape)):
         cr = newMetaData[idPlate]
         cr.full = metaData.PLATE_PARTIAL
@@ -177,7 +177,7 @@ def scanomaticScale(metaData, refTuple, refPlateAppend={},
 #
 
 
-class Meta_Data_Base(object):
+class MetaDataBase(object):
 
     ORIENTATION_HORIZONTAL = 0
     ORIENTATION_VERTICAL = 1
@@ -202,7 +202,7 @@ class Meta_Data_Base(object):
 
         self._plateShapes = plateShapes
         self._coordinatResolver = [_Coordinate_Resolver(plateShapes[i],
-                                                        Meta_Data_Base.PLATE_FULL)
+                                                        MetaDataBase.PLATE_FULL)
                                    for i in range(len(plateShapes))]
     def __getitem__(self, plate):
 
@@ -451,8 +451,7 @@ class Meta_Data_Base(object):
                         yield plate, rowI, colI
 
 
-
-class Meta_Data(Meta_Data_Base):
+class MetaData(MetaDataBase):
 
     MATCH_NO = 0
     MATCH_PLATE = 1
@@ -462,7 +461,7 @@ class Meta_Data(Meta_Data_Base):
 
         self._logger = logger.Logger("Meta Data")
 
-        super(Meta_Data, self).__init__(plateShapes)
+        super(MetaData, self).__init__(plateShapes)
 
         self._paths = paths
 
@@ -525,12 +524,12 @@ class Meta_Data(Meta_Data_Base):
 
                             self.setPositionLookup(
                                 i, dID,
-                                full=Meta_Data.PLATE_PARTIAL,
+                                full=MetaData.PLATE_PARTIAL,
                                 offset=[
-                                    Meta_Data.OFFSET_UPPER_LEFT,
-                                    Meta_Data.OFFSET_UPPER_RIGHT,
-                                    Meta_Data.OFFSET_LOWER_LEFT,
-                                    Meta_Data.OFFSET_LOWER_RIGHT][j])
+                                    MetaData.OFFSET_UPPER_LEFT,
+                                    MetaData.OFFSET_UPPER_RIGHT,
+                                    MetaData.OFFSET_LOWER_LEFT,
+                                    MetaData.OFFSET_LOWER_RIGHT][j])
 
                     n += 1
 
@@ -570,13 +569,13 @@ class Meta_Data(Meta_Data_Base):
                 plate = plateShape[0] * plateShape[1]
 
                 if plate == n or n * 4 == plate:
-                    return Meta_Data.MATCH_PLATE
+                    return MetaData.MATCH_PLATE
 
                 elif plate == n - 1 or (n - 1) * 4 == plate:
 
-                    return Meta_Data.MATCH_PLATE_HEADERS
+                    return MetaData.MATCH_PLATE_HEADERS
 
-        return Meta_Data.MATCH_NO
+        return MetaData.MATCH_NO
 
     def _endTrimRows(self, rows, rowContentExtractor):
 
@@ -629,10 +628,10 @@ class Meta_Data(Meta_Data_Base):
     
         if elem.hasChildNodes():
 
-            ret += Meta_Data._getTextInElementFromOds(elem.firstChild)
+            ret += MetaData._getTextInElementFromOds(elem.firstChild)
 
         if elem.nextSibling:
-            ret += Meta_Data._getTextInElementFromOds(elem.nextSibling)
+            ret += MetaData._getTextInElementFromOds(elem.nextSibling)
 
         return ret
 
@@ -646,7 +645,7 @@ class Meta_Data(Meta_Data_Base):
                 dataRow.append(u'')
             else:
                 dataRow.append(u', '.join(
-                    Meta_Data._getTextInElementFromOds(e) for e in E))
+                    MetaData._getTextInElementFromOds(e) for e in E))
 
         while len(dataRow) > 0 and dataRow[-1] == u'':
             dataRow.pop()
@@ -706,7 +705,7 @@ class Meta_Data(Meta_Data_Base):
 
                 matchType = self._hasValidRows(rows)
 
-                if matchType == Meta_Data.MATCH_NO:
+                if matchType == MetaData.MATCH_NO:
 
                     self._logger.warning(
                         (u"Sheet {0} of {1} had no understandable data" +
@@ -726,7 +725,7 @@ class Meta_Data(Meta_Data_Base):
                     name = sheetNamer(t)
                     sheetID = md5.new(name + str(time.time())).hexdigest()
 
-                    if matchType == Meta_Data.MATCH_PLATE:
+                    if matchType == MetaData.MATCH_PLATE:
 
                         self._headers[sheetID] = ["" for _ in
                                                   range(len(data[0]))]
@@ -751,34 +750,34 @@ class Meta_Data(Meta_Data_Base):
 
         #0 SETTING DEFAULTS
         if orientation is None:
-            orientation = Meta_Data.ORIENTATION_HORIZONTAL
+            orientation = MetaData.ORIENTATION_HORIZONTAL
         if verticalDirection is None:
-            verticalDirection = Meta_Data.VERTICAL_ASCENDING
+            verticalDirection = MetaData.VERTICAL_ASCENDING
         if horizontalDirection is None:
-            horizontalDirection = Meta_Data.HORIZONTAL_ASCENDING
+            horizontalDirection = MetaData.HORIZONTAL_ASCENDING
         if full is None:
-            full = Meta_Data_Base.PLATE_FULL
+            full = MetaDataBase.PLATE_FULL
         if offset is None:
-            offset = Meta_Data.OFFSET_UPPER_LEFT
+            offset = MetaData.OFFSET_UPPER_LEFT
 
         #1 SANITYCHECK
         nInData = self._plateShapes[plateIndex][0] * \
             self._plateShapes[plateIndex][1]
 
-        if not(full is Meta_Data_Base.PLATE_FULL and
+        if not(full is MetaDataBase.PLATE_FULL and
                 nInData == len(self._data[dataKey]) or
-                full is Meta_Data.PLATE_PARTIAL and
+                full is MetaData.PLATE_PARTIAL and
                 nInData == 4 * len(self._data[dataKey])):
 
             self._logger.error(
                 u"Sheet {0} can't be assigned as {1}".format(
                     self._sheetNames[dataKey],
-                    ["PARTIAL", "FULL"][full is Meta_Data_Base.PLATE_FULL]))
+                    ["PARTIAL", "FULL"][full is MetaDataBase.PLATE_FULL]))
             raise ValueError
             return False
 
         #1.5 Link header info
-        if offset == Meta_Data.OFFSET_UPPER_LEFT:
+        if offset == MetaData.OFFSET_UPPER_LEFT:
             self._plateI2Header[plateIndex] = dataKey
 
         #2 Invoke sorting
@@ -795,7 +794,7 @@ class Meta_Data(Meta_Data_Base):
         cr.horizontalDirection = horizontalDirection
 
 
-class _Coordinate_Resolver(Meta_Data_Base):
+class _Coordinate_Resolver(MetaDataBase):
 
     def __init__(self, shape, full, orientation=None, horizontalDirection=None,
                  verticalDirection=None):
@@ -833,7 +832,7 @@ class _Coordinate_Resolver(Meta_Data_Base):
     @horizontalDirection.setter
     def horizontalDirection(self, horizontalDirection):
 
-        self._rowAsc = horizontalDirection is Meta_Data.HORIZONTAL_ASCENDING
+        self._rowAsc = horizontalDirection is MetaData.HORIZONTAL_ASCENDING
 
     @property
     def verticalDirection(self):
@@ -843,7 +842,7 @@ class _Coordinate_Resolver(Meta_Data_Base):
     @verticalDirection.setter
     def verticalDirection(self, verticalDirection):
 
-        self._colAsc = verticalDirection is Meta_Data.VERTICAL_ASCENDING
+        self._colAsc = verticalDirection is MetaData.VERTICAL_ASCENDING
 
     @property
     def horizontal(self):
@@ -852,7 +851,7 @@ class _Coordinate_Resolver(Meta_Data_Base):
 
     @horizontal.setter
     def horizontal(self, orientation):
-        self._horizontal = orientation is Meta_Data.ORIENTATION_HORIZONTAL
+        self._horizontal = orientation is MetaData.ORIENTATION_HORIZONTAL
 
     @property
     def full(self):
@@ -862,7 +861,7 @@ class _Coordinate_Resolver(Meta_Data_Base):
     @full.setter
     def full(self, value):
 
-        full = value is True or value is Meta_Data_Base.PLATE_FULL
+        full = value is True or value is MetaDataBase.PLATE_FULL
 
         if full != self._full:
 
@@ -872,7 +871,7 @@ class _Coordinate_Resolver(Meta_Data_Base):
                 partialShape = [d / 2 for d in self._shape]
                 self._part = [_Coordinate_Resolver(
                     shape=partialShape,
-                    full=Meta_Data_Base.PLATE_FULL) for _ in range(4)]
+                    full=MetaDataBase.PLATE_FULL) for _ in range(4)]
             else:
                 self._part = None
 
@@ -910,7 +909,7 @@ class _Coordinate_Resolver(Meta_Data_Base):
         elif self._full:
             if self._data is None:
                 return list()
-            elif isinstance(self._data, Meta_Data):
+            elif isinstance(self._data, MetaData):
                 return self._data(plate, row, col)
             else:
                 """
@@ -923,17 +922,17 @@ class _Coordinate_Resolver(Meta_Data_Base):
             offC = col % 2
             if offR:
                 if offC:
-                    return self._part[Meta_Data.OFFSET_LOWER_RIGHT](
+                    return self._part[MetaData.OFFSET_LOWER_RIGHT](
                         plate, (row - 1) / 2, (col - 1) / 2)
                 else:
-                    return self._part[Meta_Data.OFFSET_LOWER_LEFT](
+                    return self._part[MetaData.OFFSET_LOWER_LEFT](
                         plate, (row - 1) / 2, col / 2)
             else:
                 if offC:
-                    return self._part[Meta_Data.OFFSET_UPPER_RIGHT](
+                    return self._part[MetaData.OFFSET_UPPER_RIGHT](
                         plate, row / 2, (col - 1) / 2)
                 else:
-                    return self._part[Meta_Data.OFFSET_UPPER_LEFT](
+                    return self._part[MetaData.OFFSET_UPPER_LEFT](
                         plate, row / 2, col / 2)
 
     @property
