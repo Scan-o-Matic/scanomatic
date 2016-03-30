@@ -930,7 +930,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         p = os.path.join(dir_path, self._paths.phenotypes_meta_data)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             with open(p, 'w') as fh:
-                pickle.dump(self._meta_data, p)
+                pickle.dump(self._meta_data, fh)
 
         p = os.path.join(dir_path, self._paths.phenotypes_extraction_params)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
