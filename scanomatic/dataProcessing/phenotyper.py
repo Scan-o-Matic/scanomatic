@@ -183,6 +183,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             with open(filter_undo_path, 'r') as fh:
                 phenotyper.set("phenotype_filter_undo", pickle.load(fh))
 
+        meta_data_path = os.path.join(directory_path, _p.phenotypes_meta_data)
+        if os.path.isfile(meta_data_path):
+            with open(meta_data_path, 'r') as fh:
+                phenotyper.set("meta_data", pickle.load(fh))
+
         return phenotyper
 
     @classmethod
@@ -600,6 +605,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
             self._init_remove_filter_and_undo_actions()
 
+        elif data_type == "meta_data":
+
+            if isinstance(data, MetaData) or data is None:
+                self._meta_data = data
+            else:
+                self._logger.warning("Not a valid meta data type")
         else:
 
             self._logger.warning('Unknown type of data {0}'.format(data_type))
@@ -891,6 +902,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if (not ask_if_overwrite or not os.path.isfile(p) or
                 self._do_ask_overwrite(p)):
             np.save(p, self._times_data)
+
+        p = os.path.join(dir_path, self._paths.phenotypes_meta_data)
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
+            with open(p, 'w') as fh:
+                pickle.dump(self._meta_data, p)
 
         p = os.path.join(dir_path, self._paths.phenotypes_extraction_params)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
