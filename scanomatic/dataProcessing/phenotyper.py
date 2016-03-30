@@ -284,6 +284,19 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                          data_object.get_data()[k] or None for k in
                          range(max((data_object.get_data().keys())) + 1)])
 
+    def load_meta_data(self, *meta_data_paths):
+
+        """Loads meta-data about the experiment based on paths to compatible files.
+
+        See the wiki on how such files should be formatted
+
+        :param paths: Any number of paths to files OpenOffice or Excel compatible that contains the meta data
+
+        :return: None
+        """
+
+        self._meta_data = MetaData(tuple(self.plate_shapes), *meta_data_paths)
+
     def iterate_extraction(self):
 
         self._logger.info(
