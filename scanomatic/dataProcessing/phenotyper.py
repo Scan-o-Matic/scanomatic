@@ -325,7 +325,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if self._smooth_growth_data is None or len(self._smooth_growth_data) != len(self._raw_growth_data):
             return False
 
-        return all((a is None == b is None ) or a.shape == b.shape for a, b in
+        return all(((a is None) is (b is None)) or a.shape == b.shape for a, b in
                    zip(self._raw_growth_data, self._smooth_growth_data))
 
     def _smoothen(self):
@@ -393,7 +393,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
-            phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,),dtype=np.float)
+            phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,), dtype=np.float)
             vector_phenotypes = np.zeros((plate.shape[:2] + (vector_phenotypes_count, )), dtype=np.object) * np.nan
 
             all_phenotypes.append(phenotypes)
@@ -520,7 +520,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             raise ValueError(
                 "'{0}' has not been extracted, please re-run 'extract_phenotypes()' to include it.".format(
-                phenotype.name))
+                    phenotype.name))
 
         if not PhenotypeDataType.Trusted(phenotype):
             self._logger.warning("The phenotype '{0}' has not been fully tested and verified!".format(phenotype.name))
@@ -565,8 +565,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return get_derivative(
             self._get_plate_linear_regression_strided(
-                self.smooth_growth_data[plate][position].reshape(1, 1, self.times.size))[0],
-                self.times_strided)[0]
+                self.smooth_growth_data[plate][position].reshape(1, 1, self.times.size))[0], self.times_strided)[0]
 
     def set(self, data_type, data):
 
@@ -633,7 +632,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return np.array(new_data)
 
-    def _correct_shapes(self, guide, obj):
+    @staticmethod
+    def _correct_shapes(guide, obj):
 
         if guide is None:
             return True
@@ -644,12 +644,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         if isinstance(obj, np.ndarray):
             for g, o in zip(guide, obj):
-                if g is None != o is None:
+                if (g is None) is not (o is None):
                     return False
                 if isinstance(o, dict):
-                  for v in o.itervalues():
-                      if g.shape[:2] != v.shape[:2]:
-                          return False
+                    for v in o.itervalues():
+                        if g.shape[:2] != v.shape[:2]:
+                            return False
                 elif g.shape[:2] != o.shape[:2]:
                     return False
         return True
