@@ -597,12 +597,19 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         elif data_type == "phenotype_filter_undo":
 
-            self._phenotype_filter_undo = data
+            if isinstance(data, tuple) and all(isinstance(q, deque) for q in data):
+                self._phenotype_filter_undo = data
+            else:
+                self._logger.warning("Not a proper undo history")
+
             self._init_remove_filter_and_undo_actions()
 
         elif data_type == "phenotype_filter":
 
-            self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
+            if not all(True if plate is None else isinstance(plate, dict) for plate in data):
+                self._phenotype_filter = self._convert_to_current_phenotype_filter(data)
+            else:
+                self._phenotype_filter = data
             self._init_remove_filter_and_undo_actions()
 
         elif data_type == "meta_data":
