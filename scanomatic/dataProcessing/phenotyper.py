@@ -770,40 +770,19 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 except TypeError:
                     yield a
 
-    def meta_data_headers(self):
-
-        all_headers_identical = True
+    def meta_data_headers(self, plate_index):
 
         if self._meta_data is not None:
             self._logger.info("Adding meta-data")
-            meta_data_headers = self._meta_data.getHeaderRow(0)
-            for plate_index in range(1, len(self._phenotypes)):
-                if meta_data_headers != self._meta_data.getHeaderRow(plate_index):
-                    all_headers_identical = False
-                    break
-
-            meta_data_headers = tuple(meta_data_headers)
-
-            if all_headers_identical:
-                return (h for h in meta_data_headers)
-            else:
-                self._logger.warning(
-                    "The headers vary between plate, not a good idea to put in one file, meta-data not included")
-                return tuple()
+            return self._meta_data.getHeaderRow(plate_index)
 
         return tuple()
 
     def save_phenotypes(self, path=None, save_data=SaveData.ScalarPhenotypesRaw,
-                        data_headers=None, dialect=csv.excel, ask_if_overwrite=True):
+                        dialect=csv.excel, ask_if_overwrite=True):
 
         if path is None and self._base_name is not None:
-            path = self._base_name + "_{0}.csv".format(save_data.name.lower())
-
-        if os.path.isfile(path) and ask_if_overwrite:
-            if 'y' not in raw_input("Overwrite existing file? (y/N)").lower():
-                return False
-
-        default_meta_data = ('Plate', 'Row', 'Column')
+            path = self._base_name
 
         if save_data == SaveData.ScalarPhenotypesRaw:
             data_source = self._phenotypes
@@ -811,26 +790,37 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._logger.error("Not implemented saving '{0}'".format(save_data))
             return False
 
+        default_meta_data = ('Plate', 'Row', 'Column')
+
         meta_data = self._meta_data
         no_metadata = tuple()
 
-        with open(path, 'w') as fh:
+        phenotype_filter = np.where([self._phenotypes_inclusion(p) for p in Phenotypes])[0]
+        phenotype_filter = phenotype_filter[phenotype_filter < self.number_of_phenotypes]
 
-            cw = csv.writer(fh, dialect=dialect)
+        for plate_index in self.enumerate_plates:
+            plate_path = "{0}.{1}.{2}.csv".format(path, save_data.name.lower(), plate_index)
 
-            # HEADER ROW
-            meta_data_headers = self.meta_data_headers()
-            include_meta_data = not(isinstance(meta_data_headers, tuple) and len(meta_data_headers) == 0)
-            cw.writerow(
-                tuple(self._make_csv_row(
-                    default_meta_data,
-                    meta_data_headers,
-                    (p for p in Phenotypes if self._phenotypes_inclusion(p)))))
+            if os.path.isfile(plate_path) and ask_if_overwrite:
+                if 'y' not in raw_input("Overwrite existing file? (y/N)").lower():
+                    continue
 
-            phenotype_filter = np.where([self._phenotypes_inclusion(p) for p in Phenotypes])[0]
+            with open(plate_path, 'w') as fh:
 
-            # DATA
-            for plate_index, (plate, filt) in enumerate(zip(data_source, self._phenotype_filter)):
+                cw = csv.writer(fh, dialect=dialect)
+
+                # HEADER ROW
+                meta_data_headers = self.meta_data_headers(plate_index)
+
+                cw.writerow(
+                    tuple(self._make_csv_row(
+                        default_meta_data,
+                        meta_data_headers,
+                        (p for p in Phenotypes if self._phenotypes_inclusion(p)))))
+
+                # DATA
+                plate = data_source[plate_index]
+                filt = self._phenotype_filter[plate_index]
 
                 if plate is None:
                     continue
@@ -843,10 +833,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                             tuple(self._make_csv_row(
                                 (plate_index, idX, idY),
                                 no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
-                                (y if filt[Phenotypes(idP)][idX, idY] == 0 else Filter(filt[Phenotypes(idP)][idX, idY]).name
+                                (y if filt[Phenotypes(idP)][idX, idY] == 0 else
+                                 Filter(filt[Phenotypes(idP)][idX, idY]).name
                                  for idP, y in zip(phenotype_filter, Y[phenotype_filter])))))
 
-        self._logger.info("Saved {0} to {1}".format(save_data, path))
+                self._logger.info("Saved {0}, plate {1} to {2}".format(save_data, plate_index + 1, plate_path))
 
         return True
 
