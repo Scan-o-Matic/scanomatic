@@ -6,48 +6,48 @@ def scan(plate_meta_data, column, value_function):
     return value_function(plate_meta_data[column])
 
 
-
 class StrainSelector(object):
 
-    def __init__(self, phenotyper, criteria):
+    def __init__(self, phenotyper, selection):
 
         self.__phenotyper = phenotyper
-        self.__criteria_string = criteria
-        self.__criteria = StrainSelector.selection_criteria_from_string(phenotyper, criteria)
+        self.__selection = selection
+
+    def __add__(self, other):
+
+        if other.__phenotyper == self.__phenotyper:
+            return StrainSelector(self.__phenotyper,
+                                  tuple(StrainSelector.__joined(s1, s2) for s1, s2 in zip(self.__selection,
+                                                                                          other.__selection)))
+        else:
+            raise ValueError("Other does not have matching phenotyper")
+
+    def __iadd__(self, other):
+
+        if other.__phenotyper == self.__phenotyper:
+            self.__selection = tuple(StrainSelector.__joined(s1, s2) for s1, s2 in zip(self.__selection,
+                                                                                       other.__selection))
+        else:
+            raise ValueError("Other does not have matching phenotyper")
+
+    @staticmethod
+    def __joined(selection1, selection2):
+
+        if selection1 and selection2:
+            return selection1[0] + selection2[0], selection1[1] + selection2[1]
+        elif selection1:
+            return selection1
+        else:
+            return selection2
 
     def __filter(self, data):
 
-        return tuple((d[f] if d is not None else None) for d, f in zip(data, self.__criteria))
+        return tuple((d[f] if d is not None else None) for d, f in zip(data, self.__selection))
 
-    @staticmethod
-    def parse_criteria_string(criteria_string):
-        """
-        Should take something like
-        "ORF = YAWL031R | GENE = HOG1 | TOR1"
-        look at column ORF after YAWL031R OR in column GENE after either HOG1 or TOR1
+    @property
+    def selection(self):
 
-        If no number included instad of column name:
-        "2 = HOG1" it implies look at second column
-
-        Args:
-            criteria_string:
-
-        Returns:
-
-        """
-
-        # TODO: parser using re
-        return tuple((column, value_function) for column, value_function in X)
-
-    @staticmethod
-    def selection_criteria_from_string(phenotyper, criteria_string):
-
-        # TODO: Should act recursively maybe
-        criteria = StrainSelector.parse_criteria_string(criteria_string)
-        selection = [(scan(plate, column, value_function) for column, ) for plate in phenotyper.meta_data]
-
-        #TODO: search using the parser
-        return selection
+        return self.__selection
 
     @property
     def raw_growth_data(self):
@@ -60,24 +60,28 @@ class StrainSelector(object):
         return self.__filter(self.__phenotyper.smooth_growth_data)
 
     @property
+    def phenytype_names(self):
+
+        return [phenotype.name for phenotype in self.__phenotyper.analysed_phenotypes]
+
+    @property
     def phenotypes(self):
 
-        # TODO: add list of active phenotypes
+        phenotypes = {}
+        for phenotype in self.__phenotyper.analysed_phenotypes:
 
-        phenotypes = []
-        for phenotype in self.__phenotyper.included_phenotypes:
+            phenotypes[phenotype] = self.get_phenotype(phenotype)
 
-            phenotypes.append(self.get_phenotype(phenotype))
-
-        # TODO: Re-arrange to be strain, phenotype
-        phenotypes = np.array(phenotypes)
-        return phenotypes
+        return np.array(
+            tuple(
+                tuple(phenotypes[p][i] for p in self.__phenotyper.analysed_phenotypes)
+                for i, _ in enumerate(self.__selection)))
 
     @property
     def meta_data(self):
 
-        # TODO: All indices from meta-data
-        return ""
+        md = self.__phenotyper.meta_data
+        return [tuple(md.get_data_from_numpy_where(i, s) if s else None) for i, s in enumerate(self.__selection)]
 
     def get_phenotype(self, phenotype):
 
