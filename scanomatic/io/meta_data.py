@@ -288,7 +288,6 @@ class MetaDataBase(object):
                 for row in self._data[id_plate]:
                     row.append(column_data[self._sheet_read_order.index(id_plate)])
 
-
     def copy_paste_plates(self, from_sheet=None, copies=3, append_columns={}):
         """Inplace adjustment of metaData content to
         """
@@ -417,6 +416,12 @@ class MetaData(MetaDataBase):
 
         return -1
 
+    def get_data_from_numpy_where(self, plate, selection):
+
+        selection = zip(*selection)
+        for row, col in selection:
+            yield self(plate, row, col)
+
     def find(self, value, column=None):
         """Generate coordinate tuples for where key matches meta-data
 
@@ -444,8 +449,6 @@ class MetaData(MetaDataBase):
             if column is None:
                 if value in data:
                     yield (id_row, id_col)
-                else:
-                    print data
             else:
                 if value == data[column]:
                     yield (id_row, id_col)
