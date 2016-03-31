@@ -21,6 +21,7 @@ from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preproce
 from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData
+from scanomatic.dataProcessing.strain_selector import StrainSelector
 
 
 class SaveData(Enum):
@@ -297,6 +298,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._meta_data = MetaData(tuple(self.plate_shapes), *meta_data_paths)
 
+    def find_in_meta_data(self, value, column=None):
+
+        selection = self.meta_data.find(value, column=column)
+        return StrainSelector(self, tuple(zip(*s) for s in selection))
+
     def iterate_extraction(self):
 
         self._logger.info(
@@ -564,6 +570,15 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     for id_plate, p in enumerate(self._phenotypes)]
         else:
             return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
+
+    @property
+    def analysed_phenotypes(self):
+
+        for p in Phenotypes:
+
+            if self._phenotypes_inclusion(p) and self._phenotypes is not None\
+                    and self._phenotypes[0].shape[-1] > p.value:
+                yield p
 
     @property
     def times(self):
