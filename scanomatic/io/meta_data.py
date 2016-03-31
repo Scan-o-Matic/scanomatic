@@ -263,6 +263,12 @@ class MetaDataBase(object):
     def shape(self):
         return self._plate_shapes
 
+    @property
+    def plates(self):
+
+        for id_plate, _ in enumerate(self._plate_shapes):
+            yield id_plate
+
     def _is_managing_the_data(self):
 
         return self._data is not None
@@ -282,112 +288,6 @@ class MetaDataBase(object):
                 for row in self._data[id_plate]:
                     row.append(column_data[self._sheet_read_order.index(id_plate)])
 
-    def find(self, key, exact=True):
-        """Generate coordinate tuples for where key matches meta-data
-
-        Parameters
-        ----------
-
-        key : str or list
-            Strain meta-data to look for
-
-        exact : bool, optional
-            If key needs to fully match meta-data (default) or if it is
-            sufficient that key exists in meta-data.
-
-        Returns
-        -------
-
-        generator
-            Each item being a (plate, row, column)-tuple.
-        """
-
-        for coord in self.generate_coordinates():
-
-            if exact and key == self(*coord):
-                yield coord
-            elif not exact and key in self(*coord):
-                yield coord
-
-    def slice_by_found(self, obj, key, exact=True, plates=None):
-        """Produces a slice of passed object according to found key possitions.
-
-        Note:: This only works with four uniform plates.
-
-        Parameters
-        ----------
-
-        obj : str or numpy.ndarray-like
-            If string is passed and such an object exists on self, 
-
-        key : str or list
-            Strain meta-data to look for
-
-        exact : bool, optional
-            If key needs to fully match meta-data (default) or if it is
-            sufficient that key exists in meta-data.
-
-        plates : tuple, optional
-            A tuple of plate indices to include in searching for the key.
-            If not supplied, all plates are searched (default).
-
-        Returns
-        -------
-
-        obj-slice
-            A slice out of `obj` for the indices where key was matching.
-
-        Raises
-        ------
-
-        AttributeError
-            If `obj` is passed as a string and no such attribute exists on 
-            `self`
-
-        TypeError
-            If `obj` is not `numpy.ndarray`-like
-
-        IndexError
-            If obj is not matching in shape `self` and index is found outside
-            the range of `obj`
-
-        KeyError
-            If key not known
-        """
-        if isinstance(obj, StringTypes):
-            if hasattr(self, obj):
-                obj = getattr(self, obj)
-            else:
-                raise AttributeError("Unknown attribute on self `{0}`".format(
-                    obj))
-    
-        vals = tuple(zip(*(c for c in self.find(key, exact=exact) if plates is None and True or c[0] in plates)))
-
-        if not vals:
-            raise KeyError("The key '{0}' is not known in meta-data".format(
-                key))
-
-        return obj[vals]
-
-    def find_plate(self, val, column_slice=None):
-        
-        if column_slice is None:
-            column_slice = slice(-1, None)
-
-        if hasattr(self, "_data") and self._data is not None:
-            for i in range(len(self._data)):
-                if isinstance(self._data, dict):
-                    if val in self._data[self._sheet_read_order[i]][0]:
-                        return i
-                else:
-                    if val in self(i, 0, 0):
-                        return i
-
-            raise KeyError("Value '{0}' not present".format(val))
-
-        else:
-
-            return self[self.OFFSET_UPPER_LEFT].find_plate(val, column_slice=column_slice)
 
     def copy_paste_plates(self, from_sheet=None, copies=3, append_columns={}):
         """Inplace adjustment of metaData content to
@@ -453,9 +353,11 @@ class MetaDataBase(object):
                 self.append_columns(k, v)
                 append_columns.pop(k)
 
-    def generate_coordinates(self):
+    def generate_coordinates(self, plate=None):
 
-        for id_plate, shape in enumerate(self._plate_shapes):
+        plates = (p for i, p in enumerate(self._plate_shapes) if plate is None or i is plate)
+
+        for id_plate, shape in enumerate(plates):
 
             if shape is not None:
 
@@ -505,6 +407,48 @@ class MetaData(MetaDataBase):
             return None
 
         return ["" for _ in range(len(self(plate, 0, 0)))]
+
+    def get_header_index(self, plate, header):
+
+        for i, column_header in enumerate(self.get_header_row(plate)):
+
+            if column_header.lower() == header.lower():
+                return i
+
+        return -1
+
+    def find(self, value, column=None):
+        """Generate coordinate tuples for where key matches meta-data
+
+        Returns
+        -------
+
+        generator
+            Each item being a (plate, row, column)-tuple.
+        """
+
+        for id_plate in self.plates:
+
+            yield self.find_on_plate(id_plate, value, column=column)
+
+    def find_on_plate(self, plate, value, column=None):
+
+        if isinstance(column, StringTypes):
+            column = self.get_header_index(plate, column)
+
+            if column < 0:
+                yield tuple()
+
+        for id_plate, id_row, id_col in self.generate_coordinates(plate=plate):
+            data = self(id_plate, id_row, id_col)
+            if column is None:
+                if value in data:
+                    yield (id_row, id_col)
+                else:
+                    print data
+            else:
+                if value == data[column]:
+                    yield (id_row, id_col)
 
     def _guess_coordinates(self):
 
