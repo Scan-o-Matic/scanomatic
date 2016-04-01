@@ -78,6 +78,12 @@ class StrainSelector(object):
                 for i, _ in enumerate(self.__selection)))
 
     @property
+    def vector_phenotypes(self):
+
+        # TODO: something here
+        pass
+
+    @property
     def meta_data(self):
 
         md = self.__phenotyper.meta_data
