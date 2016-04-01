@@ -516,6 +516,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._normalizable_phenotypes.remove(phenotype)
 
+    def set_control_surface_offsets(self, offset, plate=None):
+
+        if plate is None:
+            self._reference_surface_positions = [offset() for _ in self.enumerate_plates]
+        else:
+            self._reference_surface_positions[plate] = offset()
+
     @property
     def number_of_curves(self):
 
