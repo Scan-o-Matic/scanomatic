@@ -523,6 +523,20 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         else:
             self._reference_surface_positions[plate] = offset()
 
+    def normalize_phenotypes(self):
+
+        for phenotype in self._normalizable_phenotypes:
+
+            try:
+                data = self.get_phenotype(phenotype)
+            except ValueError:
+                self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
+                continue
+
+            for id_plate, plate in enumerate(data):
+                pass
+                # TODO: Norm goes here
+
     @property
     def number_of_curves(self):
 
