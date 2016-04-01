@@ -104,9 +104,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._linear_regression_size = linear_regression_size
         self._meta_data = None
 
-        self._normalizable_phenotypes = set(
+        self._normalizable_phenotypes = {
             Phenotypes.GenerationTime, Phenotypes.ExperimentGrowthYield, Phenotypes.ExperimentPopulationDoublings,
-            Phenotypes.GenerationTimePopulationSize, Phenotypes.GrowthLag, Phenotypes.ColonySize48h)
+            Phenotypes.GenerationTimePopulationSize, Phenotypes.GrowthLag, Phenotypes.ColonySize48h}
 
         self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
 
