@@ -10,14 +10,16 @@ from scanomatic.io.image_data import ImageData
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
+from scanomatic.generics.maths import mid50_mean
 
 from matplotlib import pyplot as plt
 
 from mpl_toolkits.mplot3d import Axes3D
 
-_pattern = re.compile(r".*_([0-9]+)_[0-9]+_[0-9]+_[0-9]+\..*image.npy")
+_pattern = re.compile(r".*_([0-9]+)_[0-9]+_[0-9]+_[0-9]+\..*")
 _logger = Logger("Phenotype Results QC")
 _marker_sequence = ['v', 'o', 's', '+', 'x', 'D', '*', '^']
+
 
 def _sqaure_ax(ax):
     fig = ax.figure
