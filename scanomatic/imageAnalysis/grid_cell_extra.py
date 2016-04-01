@@ -17,7 +17,7 @@ import histogram
 import blob
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 from scanomatic.models.analysis_model import MEASURES
-from scanomatic.generics.maths import iqr_mean_stable as iqr_mean, quantiles_stable
+from scanomatic.generics.maths import mid50_mean as iqr_mean, quantiles_stable
 
 #
 # FUNCTIONS

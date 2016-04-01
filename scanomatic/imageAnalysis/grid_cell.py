@@ -20,7 +20,7 @@ from scanomatic.models.analysis_model import VALUES, COMPARTMENTS
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
-from scanomatic.generics.maths import iqr_mean_stable as iqr_mean
+from scanomatic.generics.maths import mid50_mean as iqr_mean
 #
 # CLASS: Grid_Cell
 #
