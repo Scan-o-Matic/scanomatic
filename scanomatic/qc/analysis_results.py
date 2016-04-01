@@ -42,6 +42,21 @@ def _sqaure_ax(ax):
     ax.set_position(extents)
 
 
+def calculate_growth_curve(data_paths, blob_paths, background_paths=None):
+
+    if background_paths is not None:
+        return np.array([
+            (np.load(data) - mid50_mean(np.load(data)[np.load(bg)]))[np.load(blob)].sum()
+            for data, blob, bg in zip(data_paths, blob_paths, background_paths)
+        ])
+
+    else:
+        return np.array([
+            np.load(data)[np.load(blob)].sum()
+            for data, blob in zip(data_paths, blob_paths)
+        ])
+
+
 def plot_growth_curve(growth_data, position, ax=None, save_target=None):
 
     if ax is None:
