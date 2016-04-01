@@ -104,6 +104,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._linear_regression_size = linear_regression_size
         self._meta_data = None
 
+        self._normalizable_phenotypes = set(
+            Phenotypes.GenerationTime, Phenotypes.ExperimentGrowthYield, Phenotypes.ExperimentPopulationDoublings,
+            Phenotypes.GenerationTimePopulationSize, Phenotypes.GrowthLag, Phenotypes.ColonySize48h)
+
         self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
 
         if run_extraction:
@@ -503,6 +507,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                    self._linear_regression_size),
             strides=(plate.strides[1],
                      plate.strides[2], plate.strides[2]))
+
+    def add_phenotype_to_normalization(self, phenotype):
+
+        self._normalizable_phenotypes.add(phenotype)
+
+    def remove_phenotype_from_normalization(self, phenotype):
+
+        self._normalizable_phenotypes.remove(phenotype)
 
     @property
     def number_of_curves(self):
