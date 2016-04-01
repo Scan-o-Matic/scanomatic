@@ -957,20 +957,3 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._logger.info("State saved to '{0}'".format(dir_path))
 
-    def save_input_data(self, path=None):
-
-        if path is None:
-
-            assert self._base_name is not None, "Must give path some way"
-
-            path = self._base_name
-
-        if path.endswith(".npy"):
-            path = path[:-4]
-
-        source = self._raw_growth_data
-        if isinstance(source, xml_reader_module.XML_Reader):
-            source = self._xml_reader_2_array(source)
-
-        np.save(path + ".data.npy", source)
-        np.save(path + ".times.npy", self._times_data)
