@@ -2,6 +2,7 @@
 #   DEPENDENCIES
 #
 
+from enum import Enum
 import numpy as np
 from types import StringTypes
 from scipy.interpolate import griddata
@@ -17,7 +18,18 @@ from scanomatic.dataProcessing.dataBridge import Data_Bridge
 #   STATIC GLOBALS
 #
 
-DEFAULT_CONTROL_POSITION_KERNEL = np.array([[0, 0], [0, 1]], dtype=np.bool)
+
+class Offsets(Enum):
+
+    LowerRight = 0
+    LowerLeft = 1
+    UpperLeft = 2
+    UpperRight = 3
+
+    def __call__(self, **kwargs):
+
+        return np.array([[self is Offsets.UpperLeft, self is Offsets.UpperRight],
+                         [self is Offsets.LowerLeft, self is Offsets.LowerRight]], dtype=np.bool)
 
 #
 #   METHODS: Math support functions
@@ -113,7 +125,7 @@ def getControlPositionsArray(dataBridge,
     tmpCtrlPosPlateHolder = []
 
     if controlPositionKernel is None:
-        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+        controlPositionKernel = [Offsets.LowerRight() for _ in range(nPlates)]
 
     for plateIndex in xrange(nPlates):
 
@@ -175,8 +187,7 @@ def getControlPositionsCoordinates(dataObject, controlPositionKernel=None):
     nPlates = len(dataObject)
 
     if controlPositionKernel is None:
-        controlPositionKernel = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
-
+        controlPositionKernel = [Offsets.LowerRight() for _ in range(nPlates)]
     return _getPositionsForKernelTrue(dataObject, controlPositionKernel)
 
 
@@ -185,7 +196,7 @@ def getExperimentPosistionsCoordinates(dataObject, controlPositionKernels=None):
     nPlates = len(dataObject)
 
     if controlPositionKernels is None:
-        controlPositionKernels = [DEFAULT_CONTROL_POSITION_KERNEL] * nPlates
+        controlPositionKernels = [Offsets.LowerRight() for _ in range(nPlates)]
 
     experimentPositionKernels = [k == np.False_ for k in controlPositionKernels]
 
