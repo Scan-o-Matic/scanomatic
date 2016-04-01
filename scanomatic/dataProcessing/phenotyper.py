@@ -22,7 +22,7 @@ from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData
 from scanomatic.dataProcessing.strain_selector import StrainSelector
-
+from scanomatic.dataProcessing.norm import Offsets
 
 class SaveData(Enum):
 
@@ -103,6 +103,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._gaussian_filter_sigma = gaussian_filter_sigma
         self._linear_regression_size = linear_regression_size
         self._meta_data = None
+
+        self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
 
         if run_extraction:
             self.extract_phenotypes()
