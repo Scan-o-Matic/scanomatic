@@ -563,7 +563,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return self.get_phenotype(Phenotypes.GenerationTime)
 
-    def get_phenotype(self, phenotype, filtered=True):
+    def get_phenotype(self, phenotype, filtered=True, normalized=False):
 
         def _plate_type_converter_vector(plate):
 
@@ -603,14 +603,36 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if not PhenotypeDataType.Trusted(phenotype):
             self._logger.warning("The phenotype '{0}' has not been fully tested and verified!".format(phenotype.name))
 
-        if filtered:
+        if normalized:
 
-            return [None if p is None else
-                    FilterArray(_plate_type_converter(p[..., phenotype.value]),
-                                self._phenotype_filter[id_plate][phenotype])
-                    for id_plate, p in enumerate(self._phenotypes)]
+            if self._normalized_phenotypes is None or not \
+                    all(True if p is None else phenotype in p for p in self._normalized_phenotypes):
+
+                if self._normalized_phenotypes is None:
+                    self._logger.warning("No phenotypes have been normalized")
+                else:
+                    self._logger.warning("Phenotypes {0} not included in normalized phenotypes".format(phenotype))
+                return [None for _ in self._phenotype_filter]
+
+            if filtered:
+
+                return [None if p is None else
+                        FilterArray(p[phenotype], self._phenotype_filter[id_plate][phenotype])
+                        for id_plate, p in enumerate(self._normalized_phenotypes)]
+
+            else:
+
+                return [None if p is None else p[phenotype] for _, p in enumerate(self._normalized_phenotypes)]
+
         else:
-            return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
+            if filtered:
+
+                return [None if p is None else
+                        FilterArray(_plate_type_converter(p[..., phenotype.value]),
+                                    self._phenotype_filter[id_plate][phenotype])
+                        for id_plate, p in enumerate(self._phenotypes)]
+            else:
+                return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
 
     @property
     def analysed_phenotypes(self):
