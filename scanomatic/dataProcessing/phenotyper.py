@@ -189,6 +189,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if os.path.isfile(filter_path):
             phenotyper.set("phenotype_filter", np.load(filter_path))
 
+        normalized_phenotypes = os.path.join(directory_path, _p.normalized_phenotypes)
+        if os.path.isfile(normalized_phenotypes):
+            phenotyper.set("normalized_phenotypes", np.load(normalized_phenotypes))
+
         filter_undo_path = os.path.join(directory_path, _p.phenotypes_filter_undo)
         if os.path.isfile(filter_undo_path):
             with open(filter_undo_path, 'r') as fh:
@@ -687,6 +691,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             self._init_remove_filter_and_undo_actions()
 
+        elif data_type == 'normalized_phenotypes':
+
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._normalized_phenotypes = None
+            else:
+                self._normalized_phenotypes = data
+
         elif data_type == 'vector_phenotypes':
 
             self._vector_phenotypes = data
@@ -982,6 +993,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         p = os.path.join(dir_path, self._paths.vector_phenotypes_raw)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._vector_phenotypes)
+
+        p = os.path.join(dir_path, self._paths.normalized_phenotypes)
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
+            np.save(p, self._normalized_phenotypes)
 
         p = os.path.join(dir_path, self._paths.phenotypes_input_data)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
