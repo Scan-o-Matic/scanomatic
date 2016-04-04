@@ -321,6 +321,12 @@ def get_normailsation_surface(control_positions_filtered_data, control_position_
             Omitted if `None`.
 
     """
+
+    def get_stripped_invalid_points(selector):
+
+        return tuple(map(np.array, zip(*((x, y) for is_selected, x, y in zip(selector, *anchor_points)
+                                         if is_selected))))
+
     out = []
     n_plates = len(control_positions_filtered_data)
 
@@ -335,10 +341,16 @@ def get_normailsation_surface(control_positions_filtered_data, control_position_
 
         missing_data_test = np.isinf
 
-    for plateIndex in xrange(n_plates):
+    for id_plate in xrange(n_plates):
 
-        points = control_position_coordinates[plateIndex]
-        plate = control_positions_filtered_data[plateIndex].copy()
+        if control_positions_filtered_data[id_plate] is None:
+            out.append(None)
+            continue
+
+        anchor_points = control_position_coordinates[id_plate]
+        plate = control_positions_filtered_data[id_plate].copy()
+        if plate.ndim == 2:
+            anchor_points = anchor_points[:2]
         out.append(plate)
         grid_x, grid_y = np.mgrid[0:plate.shape[0], 0:plate.shape[1]]
 
@@ -348,18 +360,18 @@ def get_normailsation_surface(control_positions_filtered_data, control_position_
                 for method in norm_sequence:
 
                     if use_accumulated:
-                        points = np.where(missing_data_test(plate[..., id_measurement]) == np.False_)
-                    values = plate[points]
+                        anchor_points = np.where(missing_data_test(plate[..., id_measurement]) == np.False_)
+                    anchor_values = plate[anchor_points]
 
-                    finite_values = np.isfinite(values)
+                    finite_values = np.isfinite(anchor_values)
                     if finite_values.sum() > 0:
 
                         if (finite_values == np.False_).any():
 
-                            points = tuple(p[finite_values] for p in points)
-                            values = values[finite_values]
+                            anchor_points = tuple(p[finite_values] for p in anchor_points)
+                            anchor_values = anchor_values[finite_values]
 
-                        splined_plate = griddata(tuple(points[:2]), values, (grid_x, grid_y), method=method,
+                        splined_plate = griddata(tuple(anchor_points[:2]), anchor_values, (grid_x, grid_y), method=method,
                                                  fill_value=fill_value)
                         missing_data = np.where(missing_data_test(plate[..., id_measurement]))
                         plate[..., id_measurement][missing_data] = splined_plate[missing_data]
@@ -370,18 +382,16 @@ def get_normailsation_surface(control_positions_filtered_data, control_position_
             for method in norm_sequence:
 
                 if use_accumulated:
-                    points = np.where(missing_data_test(plate) == np.False_)
-                values = plate[points]
+                    anchor_points = np.where(missing_data_test(plate) == np.False_)
 
-                finite_values = np.isfinite(values)
-                if finite_values.sum() > 0:
+                anchor_points = get_stripped_invalid_points(np.isfinite(plate[anchor_points]))
+                anchor_values = plate[anchor_points]
 
-                    if (finite_values == np.False_).any():
+                if anchor_values.size == 0 or np.isfinite(plate).all():
+                    break
+                elif anchor_values.any():
 
-                        points = tuple(p[finite_values] for p in points)
-                        values = values[finite_values]
-
-                    splined_plate = griddata(tuple(points[:2]), values, (grid_x, grid_y), method=method,
+                    splined_plate = griddata(anchor_points, anchor_values, (grid_x, grid_y), method=method,
                                              fill_value=fill_value)
                     missing_data = np.where(missing_data_test(plate))
                     plate[missing_data] = splined_plate[missing_data]
