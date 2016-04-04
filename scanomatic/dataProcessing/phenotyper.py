@@ -22,7 +22,7 @@ from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData
 from scanomatic.dataProcessing.strain_selector import StrainSelector
-from scanomatic.dataProcessing.norm import Offsets
+from scanomatic.dataProcessing.norm import Offsets, get_normailzed_data
 
 class SaveData(Enum):
 
@@ -75,9 +75,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._raw_growth_data = raw_growth_data
         self._smooth_growth_data = None
+
         self._phenotypes = None
         self._vector_phenotypes = None
+        self._normalized_phenotypes = None
+
         self._times_data = None
+
         self._limited_phenotypes = phenotypes
         self._phenotypes_inclusion = phenotypes_inclusion
         self._base_name = base_name
@@ -525,6 +529,9 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
     def normalize_phenotypes(self):
 
+        if self._normalized_phenotypes is None:
+            self._normalized_phenotypes = np.array([{} for _ in self.enumerate_plates], dtype=np.object)
+
         for phenotype in self._normalizable_phenotypes:
 
             try:
@@ -533,9 +540,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
                 continue
 
-            for id_plate, plate in enumerate(data):
-                pass
-                # TODO: Norm goes here
+            for id_plate, plate in enumerate(get_normailzed_data(data, self._reference_surface_positions)):
+                self._normalized_phenotypes[id_plate][phenotype] = plate
 
     @property
     def number_of_curves(self):
