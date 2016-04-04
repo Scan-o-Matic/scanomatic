@@ -623,6 +623,8 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if not PhenotypeDataType.Trusted(phenotype):
             self._logger.warning("The phenotype '{0}' has not been fully tested and verified!".format(phenotype.name))
 
+        self._init_remove_filter_and_undo_actions()
+
         if normalized:
 
             if self._normalized_phenotypes is None or not \
