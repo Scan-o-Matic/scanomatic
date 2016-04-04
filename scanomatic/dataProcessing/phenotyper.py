@@ -694,6 +694,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 self._phenotypes = data
 
             self._init_remove_filter_and_undo_actions()
+            self._init_default_offsets()
 
         elif data_type == 'normalized_phenotypes':
 
@@ -702,11 +703,14 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             else:
                 self._normalized_phenotypes = data
 
+            self._init_default_offsets()
+
         elif data_type == 'vector_phenotypes':
 
             self._vector_phenotypes = data
 
             self._init_remove_filter_and_undo_actions()
+            self._init_default_offsets()
 
         elif data_type == 'smooth_growth_data':
 
@@ -790,6 +794,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 elif g.shape[:2] != o.shape[:2]:
                     return False
         return True
+
+    def _init_default_offsets(self):
+
+        if len(self._reference_surface_positions) != len(self._phenotypes):
+            self.set_control_surface_offsets(Offsets.LowerRight)
 
     def _init_remove_filter_and_undo_actions(self):
 
