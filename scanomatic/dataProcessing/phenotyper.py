@@ -162,7 +162,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         """
         _p = paths.Paths()
 
-        phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+        try:
+            phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+        except IOError:
+            phenotypes = None
+
         try:
             vector_phenotypes = np.load(os.path.join(directory_path, _p.vector_phenotypes_raw))
         except IOError:
