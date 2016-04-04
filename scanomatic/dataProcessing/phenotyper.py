@@ -638,7 +638,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
             if filtered:
 
-                return [None if p is None else
+                return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
                         FilterArray(p[phenotype], self._phenotype_filter[id_plate][phenotype])
                         for id_plate, p in enumerate(self._normalized_phenotypes)]
 
@@ -649,7 +649,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         else:
             if filtered:
 
-                return [None if p is None else
+                return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
                         FilterArray(_plate_type_converter(p[..., phenotype.value]),
                                     self._phenotype_filter[id_plate][phenotype])
                         for id_plate, p in enumerate(self._phenotypes)]
