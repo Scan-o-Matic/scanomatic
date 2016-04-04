@@ -547,9 +547,16 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         for phenotype in self._normalizable_phenotypes:
 
+            if self._phenotypes_inclusion(phenotype) is False:
+                continue
+
             try:
                 data = self.get_phenotype(phenotype)
-            except ValueError:
+            except (ValueError, KeyError):
+                self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
+                continue
+
+            if all(v is None for v in data):
                 self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
                 continue
 
