@@ -28,7 +28,7 @@ class Offsets(Enum):
     UpperLeft = 2
     UpperRight = 3
 
-    def __call__(self, **kwargs):
+    def __call__(self):
 
         return np.array([[self is Offsets.UpperLeft, self is Offsets.UpperRight],
                          [self is Offsets.LowerLeft, self is Offsets.LowerRight]], dtype=np.bool)
@@ -58,6 +58,12 @@ def get_downsampled_plates(data, subsampling="BR"):
             TR:     Top right
             BL:     Bottom left
             BR:     Bottom right
+
+        Args:
+            data:
+                The data
+            subsampling:
+                The subsampling used
     """
 
     # How much smaller the cut should be than the original
@@ -72,7 +78,7 @@ def get_downsampled_plates(data, subsampling="BR"):
 
     # Generic -> Per plate
     if isinstance(subsampling, StringTypes):
-        subsampling = [subsampling for i in range(data.shape[0])]
+        subsampling = [subsampling for _ in range(data.shape[0])]
 
     # Name to offset
     subsampling = [sub_sample_lookup[s] for s in subsampling]
@@ -97,7 +103,16 @@ def get_control_position_filtered_arrays(data, offsets=None, fill_value=np.nan):
     """Support method that returns array in the shape corresponding
     to the data in the DataBridge such that only the values reported
     in the control positions are maintained (without affecting the contents
-    of the Databridge)."""
+    of the Databridge).
+
+    Args:
+        data:
+            The data
+        offsets:
+            Control position offsets
+        fill_value:
+            Value to fill non control positions with
+    """
 
     if isinstance(data, Data_Bridge):
         data = data.getAsArray()
@@ -138,7 +153,14 @@ def _get_positions(data, offsets):
 
 
 def get_control_position_coordinates(data, offsets=None):
-    """Returns list of tuples that emulates the results of running np.where"""
+    """Returns list of tuples that emulates the results of running np.where
+
+    Args:
+        data:
+            The data
+        offsets:
+            Control position offsets
+    """
 
     n_plates = len(data)
 
@@ -148,100 +170,112 @@ def get_control_position_coordinates(data, offsets=None):
     return _get_positions(data, offsets)
 
 
-def getExperimentPosistionsCoordinates(dataObject, controlPositionKernels=None):
+def get_experiment_positions_coordinates(data, offsets=None):
 
-    nPlates = len(dataObject)
+    if offsets is None:
+        offsets = [Offsets.LowerRight() for _ in range(len(data))]
 
-    if controlPositionKernels is None:
-        controlPositionKernels = [Offsets.LowerRight() for _ in range(nPlates)]
+    experiment_positions_offsets = [k == np.False_ for k in offsets]
 
-    experimentPositionKernels = [k == np.False_ for k in controlPositionKernels]
-
-    return _get_positions(dataObject, experimentPositionKernels)
+    return _get_positions(data, experiment_positions_offsets)
 
 
-def getCoordinateFiltered(dataObject, coordinates, measure=1,
-                          requireFinite=True,
-                          requireCorrelated=False):
+def get_coordinate_filtered(data, coordinates, measure=1, require_finite=True, require_correlated=False):
 
-    if isinstance(dataObject, Data_Bridge):
-        dataObject.getAsArray()
+    if isinstance(data, Data_Bridge):
+        data = data.getAsArray()
 
     filtered = []
-    for i in range(len(dataObject)):
+    for i in range(len(data)):
 
-        p = dataObject[i][..., measure]
-        filteredP = p[coordinates[i]]
+        p = data[i][..., measure]
+        filtered_plate = p[coordinates[i]]
 
-        if requireFinite and not requireCorrelated:
-            filteredP = filteredP[np.isfinite(filteredP)]
+        if require_finite and not require_correlated:
+            filtered_plate = filtered_plate[np.isfinite(filtered_plate)]
 
-        filtered.append(filteredP)
+        filtered.append(filtered_plate)
 
     filtered = np.array(filtered)
 
-    if requireCorrelated:
+    if require_correlated:
 
         filtered = filtered[:, np.isfinite(filtered).all(axis=0)]
 
     return filtered
 
 
-def getCenterTransformedControlPositions(controlPositionCoordinates,
-                                         dataObject):
+def get_center_transformed_control_positions(control_pos_coordinates, data):
 
-    """Remaps coordinates so they are relative to the plates' center"""
+    """Remaps coordinates so they are relative to the plates' center
 
-    centerTransformed = []
+    Args:
+        control_pos_coordinates:
+            Positions of the controls
 
-    if isinstance(dataObject, Data_Bridge):
-        dataObject = dataObject.getAsArray()
+        data:
+            The data
+    """
 
-    for plateIndex, plate in enumerate(controlPositionCoordinates):
+    center_transformed = []
 
-        center = dataObject[plateIndex].shape[:2] / 2.0
-        centerTransformed.append((plate[0] - center[0],  plate[1] - center[1]))
+    if isinstance(data, Data_Bridge):
+        data = data.getAsArray()
 
-    return centerTransformed
+    for id_plate, plate in enumerate(control_pos_coordinates):
+
+        center = data[id_plate].shape[:2] / 2.0
+        center_transformed.append((plate[0] - center[0],  plate[1] - center[1]))
+
+    return center_transformed
 
 
-def getControlPositionsAverage(controlPositionsDataArray,
-                               experimentPositionsValue=np.nan,
-                               averageMethod=mid50_mean):
-    """Returns the average per measure of each measurementtype for
+def get_control_positions_average(control_pos_data_array,
+                                  overwrite_experiment_values=np.nan,
+                                  average_method=mid50_mean):
+    """Returns the average per measure of each measurement type for
     the control positions. Default is to return the mean of the
-    inter quartile range"""
+    the mid 50 values.
 
-    plateControlAverages = []
+    Args:
+        control_pos_data_array:
+            The data
+        overwrite_experiment_values:
+            Which data not to include
+        average_method:
+            The averaging method used
+    """
 
-    for plate in controlPositionsDataArray:
+    plate_control_averages = []
 
-        measureVector = []
-        plateControlAverages.append(measureVector)
+    for plate in control_pos_data_array:
 
-        for measureIndex in xrange(plate.shape[2]):
+        measurement_vector = []
+        plate_control_averages.append(measurement_vector)
 
-            if experimentPositionsValue in (np.nan, np.inf):
+        for id_measurement in xrange(plate.shape[2]):
 
-                if np.isnan(experimentPositionsValue):
+            if overwrite_experiment_values in (np.nan, np.inf):
 
-                    expPosTest = np.isnan
+                if np.isnan(overwrite_experiment_values):
+
+                    valid_data_test = np.isnan
 
                 else:
 
-                    expPosTest = np.isinf
+                    valid_data_test = np.isinf
 
-                measureVector.append(
-                    averageMethod(plate[..., measureIndex][
-                        expPosTest(plate[..., measureIndex]) == np.False_]))
+                measurement_vector.append(
+                    average_method(plate[..., id_measurement][
+                        valid_data_test(plate[..., id_measurement]) == np.False_]))
 
             else:
 
-                measureVector.append(
-                    averageMethod(plate[..., measureIndex][
-                        plate[..., measureIndex] != experimentPositionsValue]))
+                measurement_vector.append(
+                    average_method(plate[..., id_measurement][
+                                      plate[..., id_measurement] != overwrite_experiment_values]))
 
-    return np.array(plateControlAverages)
+    return np.array(plate_control_averages)
 
 
 def get_normailsation_surface(control_positions_filtered_data, control_position_coordinates=None,
@@ -251,30 +285,40 @@ def get_normailsation_surface(control_positions_filtered_data, control_position_
     scipy.interpolate's gridddata based on sequence of supplied
     method preferences.
 
-        controlPositionDataArray
+    Args:
+        control_positions_filtered_data:
             An array with only control position values intact.
             All other values should be missingDataValue or they won't be
             calculated.
 
-        controlPositionsCoordinates (None)
+        control_position_coordinates:
             Optional argument to supply already constructed
             per plate control positions vector. If not supplied
             it is constructed using controlPositionKernel
 
-        normalisationSequence ('cubic', 'linear', 'nearest')
+        norm_sequence (str):
+            ('cubic', 'linear', 'nearest')
             The griddata method order to be invoked.
 
-        useAccumulated (False)
+        use_accumulated (False):
             If later stage methods should use information obtained in
             earlier stages or only work on original control positions.
 
-        missingDataValue (np.nan)
+        fill_value (np.nan):
             The value to be used to indicate that normalisation value
             for a position is not known
 
-        controlPositionKernel (None)
+        offsets (None):
             Argument passed on when constructing the
             controlPositionsCoordinates if it is not supplied.
+
+        apply_median_smoothing_kernel (int):
+            Optional argument to apply a median smoothing of certain size to the surface
+            after interpolation. Omitted if `None`.
+
+        apply_gaussian_smoothing_sigma (float):
+            Optional argument to apply a gaussian smoothing with sigma.
+            Omitted if `None`.
 
     """
     out = []
@@ -378,9 +422,7 @@ def apply_outlier_filter(data, median_filter_size=(3, 3), measure=None, k=2.0, p
     Args:
         data (numpy.array):    Array of platewise values
 
-    Kwargs:
-
-        nanFillSize (tuple):    Used in median filter that is nan-safe as
+        median_filter_size (tuple):    Used in median filter that is nan-safe as
                                 first smoothing step before testing outliers.
                                 If set to None, step is skipped
 
@@ -390,7 +432,7 @@ def apply_outlier_filter(data, median_filter_size=(3, 3), measure=None, k=2.0, p
 
         p (int) :   Estimate number of positions to be qualified as outliers
 
-        maxIterations (int) :   Maximum number of iterations filter may be
+        max_iterations (int) :   Maximum number of iterations filter may be
                                 applied
     """
 
@@ -476,6 +518,10 @@ def apply_log2_transform(data, measures=None):
     If required, a filter for which measures to be log2-transformed as
     either an array or tuple of measure indices. If left None, all measures
     will be logged
+
+    Args:
+        data:       Data to be transformed
+        measures:   If only a specific measure should be transformed
     """
 
     if measures is None:
@@ -490,10 +536,12 @@ def apply_sobel_filert(data, measure=1, threshold=1, **kwargs):
     """Applies a Sobel filter to the arrays and then compares this to a
     threshold setting all positions greater than said absolute threshold to NaN.
 
-    measure     The measurement to evaluate
-    threshold   The maximum absolute value allowed
+    Args:
+        data:       The data to be filtered
+        measure:    The measurement to evaluate
+        threshold:  The maximum absolute value allowed
 
-    Further arguments of scipy.ndimage.sobel can be supplied
+    Further arguments of `scipy.ndimage.sobel` can be supplied
     """
 
     if 'mode' not in kwargs:
@@ -512,10 +560,12 @@ def apply_laplace_filter(data, measure=1, threshold=1, **kwargs):
     """Applies a Laplace filter to the arrays and then compares the absolute
     values of those to a threshold, discarding those exceeding it.
 
-    measure     The measurement to evaluate
-    threshold   The maximum absolute value allowed
+    Args:
+        data:       The data to be filtered
+        measure:    The measurement to evaluate
+        threshold:  The maximum absolute value allowed
 
-    Further arguments of scipy.ndimage.laplace can be supplied
+    Further arguments of `scipy.ndimage.laplace` can be supplied
     """
     if 'mode' not in kwargs:
         kwargs['mode'] = 'nearest'
@@ -533,11 +583,13 @@ def apply_gauss_smoothing(data, measure=1, sigma=3.5, **kwargs):
 
     Note that this will behave badly if there are NaNs on the plate.
 
-    measure     The measurement ot evaluate
-    sigma       The size of the gaussian kernel
+    Args:
+        data:       The data to be smoothed
+        measure:    The measurement ot evaluate
+        sigma:      The size of the gaussian kernel
     """
 
-    if ('mode' not in kwargs):
+    if 'mode' not in kwargs:
         kwargs['mode'] = 'nearest'
 
     for id_plate in range(len(data)):
@@ -548,20 +600,21 @@ def apply_gauss_smoothing(data, measure=1, sigma=3.5, **kwargs):
 
 def apply_median_smoothing(data, measure=1, filter_shape=(3, 3), **kwargs):
 
-    if ('mode' not in kwargs):
+    if 'mode' not in kwargs:
         kwargs['mode'] = 'nearest'
 
     for id_plate, plate in enumerate(data):
 
-        data[id_plate][..., measure] = median_filter(
-            plate[..., measure], size=filter_shape, **kwargs)
+        data[id_plate][..., measure] = median_filter(plate[..., measure], size=filter_shape, **kwargs)
 
 
 def apply_sigma_filter(data, sigma=3):
     """Applies a per plate global sigma filter such that those values
     exceeding the absolute sigma distance to the mean are discarded.
 
-    nSigma      Threshold distance from mean
+    Args:
+        data: Data to be filtered
+        sigma: Threshold distance from mean
     """
     for id_plate in range(len(data)):
 
@@ -580,25 +633,25 @@ def apply_sigma_filter(data, sigma=3):
 #
 
 
-def initalPlateTransform(IPV, FlexScalingV, MagnitudeScalingV):
+def initial_plate_transform(ipv, flex_scaling_vector, magnitude_scaling_vector):
 
-    return MagnitudeScalingV * (FlexScalingV * (IPV -
-                                                IPV[np.isfinite(IPV)].mean()))
+    return magnitude_scaling_vector * (flex_scaling_vector * (ipv - ipv[np.isfinite(ipv)].mean()))
 
 
-def IPVresidue(scalingParams, IPV, GT):
+def ipv_residue(scaling_params, ipv, gt):
 
-    iPflex = scalingParams[: scalingParams.size / 2]
-    iPscale = scalingParams[scalingParams.size / 2:]
-    rVal = np.array([GT[idP] - initalPlateTransform(
-        IPV, iPflex[idP], iPscale[idP]) for idP in xrange(GT.shape[0])
-        if GT[idP].size > 0], dtype=np.float)
+    ip_flex = scaling_params[: scaling_params.size / 2]
+    ip_scale = scaling_params[scaling_params.size / 2:]
+    ret = np.array([gt[id_p] - initial_plate_transform(
+        ipv, ip_flex[id_p], ip_scale[id_p]) for id_p in xrange(gt.shape[0])
+                     if gt[id_p].size > 0], dtype=np.float)
 
-    return np.hstack([p[np.isfinite(p)].ravel() for p in rVal])
+    return np.hstack([p[np.isfinite(p)].ravel() for p in ret])
 
 #
 #   METHODS: Normalisation method
 #
+
 
 def get_normailzed_data(data, offsets=None):
 
@@ -606,36 +659,22 @@ def get_normailzed_data(data, offsets=None):
     apply_outlier_filter(surface, measure=None)
     surface = get_normailsation_surface(surface, offsets=offsets)
 
-    return normalisation(data, surface, updateBridge=False, log=True)
+    return normalisation(data, surface, log=True)
 
 
-def normalisation(dataBridge, normalisationSurface, updateBridge=True,
-                  log=False):
+def normalisation(data, norm_surface, log=False):
 
-    normalData = []
-    if (not isinstance(dataBridge, np.ndarray)):
-        bridgeArray = dataBridge.getAsArray()
-    else:
-        bridgeArray = dataBridge
+    normed_data = []
+    if isinstance(data, Data_Bridge):
+        data = data.getAsArray()
 
-    for plateIndex in range(normalisationSurface.shape[0]):
+    for id_plate, (plate, surf) in enumerate(zip(data, norm_surface)):
 
-        if (bridgeArray[plateIndex] is None or
-                normalisationSurface[plateIndex] is None):
-            normalData.append(None)
+        if plate is None or surf is None:
+            normed_data.append(None)
         elif log:
-            normalData.append(
-                np.log2(bridgeArray[plateIndex]) -
-                np.log2(normalisationSurface[plateIndex]))
+            normed_data.append(np.log2(plate) - np.log2(surf))
         else:
-            normalData.append(
-                bridgeArray[plateIndex] -
-                normalisationSurface[plateIndex])
+            normed_data.append(plate - surf)
 
-    normalData = np.array(normalData)
-
-    if updateBridge:
-        dataBridge.setArrayRepresentation(normalData)
-        dataBridge.updateBridge()
-
-    return normalData
+    return np.array(normed_data)
