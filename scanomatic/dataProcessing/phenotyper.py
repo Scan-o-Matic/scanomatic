@@ -97,7 +97,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         super(Phenotyper, self).__init__(None)
 
-        self._phenotype_filter = np.array([{} for _ in self._raw_growth_data], dtype=np.object)
+        self._phenotype_filter = None
         self._phenotype_filter_undo = None
 
         self._logger = logger.Logger("Phenotyper")
@@ -527,6 +527,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     def remove_phenotype_from_normalization(self, phenotype):
 
         self._normalizable_phenotypes.remove(phenotype)
+
+    @property
+    def phenotypes_that_normalize(self):
+
+        return tuple(v for v in self._normalizable_phenotypes)
 
     def set_control_surface_offsets(self, offset, plate=None):
 
