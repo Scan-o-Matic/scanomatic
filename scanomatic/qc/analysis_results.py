@@ -306,7 +306,7 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
     data_pos[0] -= 1
     files, image_indices = detection_files(data_pos, source_location)
 
-    titles = ["Image", "3D", "Growth Curve"]
+    titles = ["Image", "3D", "Population Size [cells]"]
     axes = len(titles)
     if len(fig.axes) != axes:
         fig.clf()
@@ -323,6 +323,9 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
     coords_x, coords_y = np.mgrid[0:data.shape[0], 0:data.shape[1]]
 
     _, curve_times, polygon = plot_growth_curve(growth_data, position, curve_ax)
+    curve_ax.set_ylabel("")
+    curve_ax.set_xlabel("")
+
     _sqaure_ax(curve_ax)
 
     @MovieWriter(save_target, "Colony detection animation", fps=fps, fig=fig)
@@ -337,7 +340,7 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
             # Added suffix length too
             base_name = files[i][:-(10 + 11)]
 
-            image_ax.set_title("Image (t={0:.1f}h)".format(
+            image_ax.set_title("Image (Time={0:.1f}h)".format(
                 image_indices[index] if interval is None else image_indices[index] * interval))
 
             cells = np.load(base_name + ".image.cells.npy")
