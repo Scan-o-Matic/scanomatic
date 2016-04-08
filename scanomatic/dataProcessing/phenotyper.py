@@ -965,6 +965,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         phenotype_filter = phenotype_filter[phenotype_filter < self.number_of_phenotypes]
 
         for plate_index in self.enumerate_plates:
+
+            if data_source[plate_index] is None:
+                continue
+
             plate_path = "{0}.{1}.plate_{2}.csv".format(path, save_data.name, plate_index + 1)
 
             if os.path.isfile(plate_path) and ask_if_overwrite:
