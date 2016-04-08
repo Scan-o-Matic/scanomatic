@@ -18,7 +18,7 @@ import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
     PhenotypeDataType, get_derivative
-from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
+from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes, filter_plate, CurvePhaseMetaPhenotypes
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData
 from scanomatic.dataProcessing.strain_selector import StrainSelector
@@ -79,6 +79,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._phenotypes = None
         self._vector_phenotypes = None
+        self._vector_meta_phenotypes = None
         self._normalized_phenotypes = None
 
         self._times_data = None
@@ -173,6 +174,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         except IOError:
             vector_phenotypes = None
 
+        try:
+            vector_meta_phenotypes = np.load(os.path.join(directory_path, _p.vector_meta_phenotypes_raw))
+        except IOError:
+            vector_meta_phenotypes = None
+
         raw_growth_data = np.load(os.path.join(directory_path,  _p.phenotypes_input_data))
 
         times = np.load(os.path.join(directory_path, _p.phenotype_times))
@@ -189,6 +195,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         phenotyper.set('smooth_growth_data',smooth_growth_data)
         phenotyper.set('phenotypes', phenotypes)
         phenotyper.set('vector_phenotypes', vector_phenotypes)
+        phenotyper.set('vector_meta_phenotypes', vector_meta_phenotypes)
 
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
@@ -350,6 +357,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if self._vector_phenotypes is not None:
             self._logger.info("Removing previous vector phenotypes")
         self._vector_phenotypes = None
+
+        if self._vector_meta_phenotypes is not None:
+            self._logger.info("Removing previous vector meta phenotypes")
+        self._vector_meta_phenotypes = None
 
         if self._phenotype_filter is not None:
             self._logger.info("Removing previous remove filter")
@@ -727,6 +738,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             self._init_remove_filter_and_undo_actions()
             self._init_default_offsets()
 
+        elif data_type == 'vector_meta_phenotypes':
+
+            self._vector_meta_phenotypes = data
+
+            self._init_remove_filter_and_undo_actions()
+            self._init_default_offsets()
+
         elif data_type == 'smooth_growth_data':
 
             self._smooth_growth_data = data
@@ -1030,6 +1048,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         p = os.path.join(dir_path, self._paths.vector_phenotypes_raw)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._vector_phenotypes)
+
+        p = os.path.join(dir_path, self._paths.vector_meta_phenotypes_raw)
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
+            np.save(p, self._vector_meta_phenotypes)
 
         p = os.path.join(dir_path, self._paths.normalized_phenotypes)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
