@@ -436,6 +436,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         all_phenotypes = []
         all_vector_phenotypes = []
+        all_vector_meta_phenotypes = []
 
         regression_size = self._linear_regression_size
         position_offset = (regression_size - 1) / 2
@@ -458,15 +459,21 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             if plate is None:
                 all_phenotypes.append(None)
                 all_vector_phenotypes.append(None)
+                all_vector_meta_phenotypes.append(None)
                 continue
 
             plate_flat_regression_strided = self._get_plate_linear_regression_strided(plate)
 
             phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,), dtype=np.float)
-            vector_phenotypes = np.zeros((plate.shape[:2] + (vector_phenotypes_count, )), dtype=np.object) * np.nan
+            vector_phenotypes = {
+                p: np.zeros(plate.shape[:2], dtype=np.object) * np.nan
+                for p in VectorPhenotypes if self._phenotypes_inclusion(p)}
+
+            vector_meta_phenotypes = {}
 
             all_phenotypes.append(phenotypes)
             all_vector_phenotypes.append(vector_phenotypes)
+            all_vector_meta_phenotypes.append(vector_meta_phenotypes)
 
             for pos_index, pos_data in enumerate(plate_flat_regression_strided):
 
@@ -483,35 +490,47 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                     index_for_48h=index_for_48h,
                     position_offset=position_offset)
 
-                phases_reported = False
-
                 for phenotype in Phenotypes:
 
                     if not phenotypes_inclusion(phenotype):
                         continue
 
                     if PhenotypeDataType.Scalar(phenotype):
-                        position_phenotypes[phenotype.value] = phenotype(**curve_data)
 
-                    elif not phases_reported and PhenotypeDataType.Phases(phenotype):
-
-                        phases, phases_phenotypes, _ = phase_phenotypes(
-                            self, id_plate, (id0, id1), f=False,
-                            experiment_doublings=position_phenotypes[Phenotypes.ExperimentPopulationDoublings.value])
-
-                        if phenotypes_inclusion(Phenotypes.GrowthPhasesVector):
-                            vector_phenotypes[id0, id1, 0] = phases
-                        if phenotypes_inclusion(Phenotypes.GrowthPhasesPhenotypes):
-                            vector_phenotypes[id0, id1, 1] = phases_phenotypes
-
-                        phases_reported = True
+                        try:
+                            position_phenotypes[phenotype.value] = phenotype(**curve_data)
+                        except IndexError:
+                            self._logger.critical(
+                                "Could not store {0}, something is wrong, aborting...".format(phenotype))
+                            return
 
                 phenotypes[id0, id1, ...] = position_phenotypes
+
+                if self._phenotypes_inclusion(VectorPhenotypes):
+
+                    phases, phases_phenotypes, _ = phase_phenotypes(
+                        self, id_plate, (id0, id1), f=False,
+                        experiment_doublings=position_phenotypes[Phenotypes.ExperimentPopulationDoublings.value])
+
+                    if phenotypes_inclusion(VectorPhenotypes.PhasesClassifications):
+                        vector_phenotypes[VectorPhenotypes.PhasesClassifications][id0, id1] = phases
+                    if phenotypes_inclusion(VectorPhenotypes.PhasesPhenotypes):
+                        vector_phenotypes[VectorPhenotypes.PhasesPhenotypes][id0, id1] = phases_phenotypes
 
                 if id0 == 0:
                     self._logger.debug("Done plate {0} pos {1} {2} {3}".format(
                         id_plate, id0, id1, list(position_phenotypes)))
                     yield (curves_in_completed_plates + pos_index + 1.0) / total_curves
+
+            for phenotype in CurvePhaseMetaPhenotypes:
+
+                if not self._phenotypes_inclusion(VectorPhenotypes.PhasesPhenotypes):
+                    self._logger.warning("Can't extract {0} because {1} has not been included.".format(
+                        phenotype, VectorPhenotypes.PhasesPhenotypes))
+                    continue
+
+                vector_meta_phenotypes[phenotype] = filter_plate(
+                    vector_phenotypes[VectorPhenotypes.PhasesPhenotypes], phenotype)
 
             self._logger.info("Plate {0} Done".format(id_plate + 1))
             curves_in_completed_plates += 0 if plate is None else plate_flat_regression_strided.shape[0]
@@ -852,8 +871,20 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                         self._phenotype_filter[plate_index][phenotype] = np.zeros(
                             self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
 
+                        if phenotype.value < self._phenotypes[plate_index].shape[-1]:
+                            self._phenotype_filter[plate_index][phenotype][
+                                np.where(np.isfinite(self._phenotypes[plate_index][..., phenotype.value]) == False)] = \
+                                Filter.UndecidedProblem.value
+
+                for phenotype in CurvePhaseMetaPhenotypes:
+
+                    if self._phenotypes_inclusion(phenotype):
+
+                        self._phenotype_filter[plate_index][phenotype] = np.zeros(
+                            self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
+
                         self._phenotype_filter[plate_index][phenotype][
-                            np.where(np.isfinite(self._phenotypes[plate_index][..., phenotype.value]) == False)] = \
+                            np.where(np.isfinite(self._vector_meta_phenotypes[plate_index][phenotype]) == False)] = \
                             Filter.UndecidedProblem.value
 
         if not self._correct_shapes(self._phenotypes, self._phenotype_filter_undo):
