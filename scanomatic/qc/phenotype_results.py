@@ -8,6 +8,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 from types import StringTypes
 import pandas as pd
+from functools import wraps
 
 from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
 from scanomatic.io.logger import Logger
@@ -18,6 +19,7 @@ _logger = Logger("Phenotype Results QC")
 
 def _validate_input(f):
 
+    @wraps
     def wrapped(*args, **kwargs):
 
         if len(args) > 0 and isinstance(args[0], StringTypes):

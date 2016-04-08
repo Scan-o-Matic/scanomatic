@@ -7,12 +7,12 @@ def iqr_mean(data, *args, **kwargs):
     if quantiles.any():
         val = np.ma.masked_outside(data, *quantiles).mean(*args, **kwargs)
         if isinstance(val, np.ma.MaskedArray):
-            return  val.filled(np.nan)
+            return val.filled(np.nan)
         return val
     return None
 
 
-def iqr_mean_stable(data):
+def mid50_mean(data):
 
     if not isinstance(data, np.ma.masked_array):
         data = np.ma.masked_invalid(data)

@@ -10,14 +10,16 @@ from scanomatic.io.image_data import ImageData
 from scanomatic.io.paths import Paths
 from scanomatic.io.logger import Logger
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
+from scanomatic.generics.maths import mid50_mean
 
 from matplotlib import pyplot as plt
 
 from mpl_toolkits.mplot3d import Axes3D
 
-_pattern = re.compile(r".*_([0-9]+)_[0-9]+_[0-9]+_[0-9]+\..*image.npy")
+_pattern = re.compile(r".*_([0-9]+)_[0-9]+_[0-9]+_[0-9]+\..*")
 _logger = Logger("Phenotype Results QC")
 _marker_sequence = ['v', 'o', 's', '+', 'x', 'D', '*', '^']
+
 
 def _sqaure_ax(ax):
     fig = ax.figure
@@ -38,6 +40,21 @@ def _sqaure_ax(ax):
         extents.y1 -= delta
 
     ax.set_position(extents)
+
+
+def calculate_growth_curve(data_paths, blob_paths, background_paths=None):
+
+    if background_paths is not None:
+        return np.array([
+            (np.load(data) - mid50_mean(np.load(data)[np.load(bg)]))[np.load(blob)].sum()
+            for data, blob, bg in zip(data_paths, blob_paths, background_paths)
+        ])
+
+    else:
+        return np.array([
+            np.load(data)[np.load(blob)].sum()
+            for data, blob in zip(data_paths, blob_paths)
+        ])
 
 
 def plot_growth_curve(growth_data, position, ax=None, save_target=None):
@@ -216,12 +233,12 @@ def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=
     return _plotter()
 
 
-def detection_files(data_pos, source_location=None, suffix=".calibrated"):
+def detection_files(data_pos, source_location=None, suffix=".calibrated.image.npy"):
 
     if source_location is None:
         source_location = Paths().log
 
-    pattern = os.path.join(source_location, "grid_cell_*_{0}_{1}_{2}".format(*data_pos) + suffix + ".image.npy")
+    pattern = os.path.join(source_location, "grid_cell_*_{0}_{1}_{2}".format(*data_pos) + suffix)
     files = np.array(glob.glob(pattern))
     image_indices = [int(_pattern.match(f).groups()[0]) for f in files]
     index_order = np.argsort(image_indices)
@@ -265,7 +282,7 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
                 image_indices[index] if interval is None else image_indices[index] * interval))
 
             for j, ending in enumerate(('.background.filter.npy', '.blob.filter.npy',
-                              '.blob.trash.current.npy', '.blob.trash.old.npy')):
+                                        '.blob.trash.current.npy', '.blob.trash.old.npy')):
 
                 im_data = np.load(base_name + ending)
                 if im_data.ndim == 2:
@@ -289,7 +306,7 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
     data_pos[0] -= 1
     files, image_indices = detection_files(data_pos, source_location)
 
-    titles = ["Image", "3D", "Growth Curve"]
+    titles = ["Image", "3D", "Population Size [cells]"]
     axes = len(titles)
     if len(fig.axes) != axes:
         fig.clf()
@@ -306,6 +323,9 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
     coords_x, coords_y = np.mgrid[0:data.shape[0], 0:data.shape[1]]
 
     _, curve_times, polygon = plot_growth_curve(growth_data, position, curve_ax)
+    curve_ax.set_ylabel("")
+    curve_ax.set_xlabel("")
+
     _sqaure_ax(curve_ax)
 
     @MovieWriter(save_target, "Colony detection animation", fps=fps, fig=fig)
@@ -320,7 +340,7 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
             # Added suffix length too
             base_name = files[i][:-(10 + 11)]
 
-            image_ax.set_title("Image (t={0:.1f}h)".format(
+            image_ax.set_title("Image (Time={0:.1f}h)".format(
                 image_indices[index] if interval is None else image_indices[index] * interval))
 
             cells = np.load(base_name + ".image.cells.npy")

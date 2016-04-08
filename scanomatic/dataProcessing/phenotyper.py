@@ -22,7 +22,7 @@ from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData
 from scanomatic.dataProcessing.strain_selector import StrainSelector
-
+from scanomatic.dataProcessing.norm import Offsets, get_normailzed_data
 
 class SaveData(Enum):
 
@@ -75,9 +75,13 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._raw_growth_data = raw_growth_data
         self._smooth_growth_data = None
+
         self._phenotypes = None
         self._vector_phenotypes = None
+        self._normalized_phenotypes = None
+
         self._times_data = None
+
         self._limited_phenotypes = phenotypes
         self._phenotypes_inclusion = phenotypes_inclusion
         self._base_name = base_name
@@ -93,7 +97,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         super(Phenotyper, self).__init__(None)
 
-        self._phenotype_filter = np.array([{} for _ in self._raw_growth_data], dtype=np.object)
+        self._phenotype_filter = None
         self._phenotype_filter_undo = None
 
         self._logger = logger.Logger("Phenotyper")
@@ -103,6 +107,12 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         self._gaussian_filter_sigma = gaussian_filter_sigma
         self._linear_regression_size = linear_regression_size
         self._meta_data = None
+
+        self._normalizable_phenotypes = {
+            Phenotypes.GenerationTime, Phenotypes.ExperimentGrowthYield, Phenotypes.ExperimentPopulationDoublings,
+            Phenotypes.GenerationTimePopulationSize, Phenotypes.GrowthLag, Phenotypes.ColonySize48h}
+
+        self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
 
         if run_extraction:
             self.extract_phenotypes()
@@ -152,7 +162,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         """
         _p = paths.Paths()
 
-        phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+        try:
+            phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+        except IOError:
+            phenotypes = None
+
         try:
             vector_phenotypes = np.load(os.path.join(directory_path, _p.vector_phenotypes_raw))
         except IOError:
@@ -178,6 +192,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
             phenotyper.set("phenotype_filter", np.load(filter_path))
+
+        normalized_phenotypes = os.path.join(directory_path, _p.normalized_phenotypes)
+        if os.path.isfile(normalized_phenotypes):
+            phenotyper.set("normalized_phenotypes", np.load(normalized_phenotypes))
 
         filter_undo_path = os.path.join(directory_path, _p.phenotypes_filter_undo)
         if os.path.isfile(filter_undo_path):
@@ -502,6 +520,49 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             strides=(plate.strides[1],
                      plate.strides[2], plate.strides[2]))
 
+    def add_phenotype_to_normalization(self, phenotype):
+
+        self._normalizable_phenotypes.add(phenotype)
+
+    def remove_phenotype_from_normalization(self, phenotype):
+
+        self._normalizable_phenotypes.remove(phenotype)
+
+    @property
+    def phenotypes_that_normalize(self):
+
+        return tuple(v for v in self._normalizable_phenotypes)
+
+    def set_control_surface_offsets(self, offset, plate=None):
+
+        if plate is None:
+            self._reference_surface_positions = [offset() for _ in self.enumerate_plates]
+        else:
+            self._reference_surface_positions[plate] = offset()
+
+    def normalize_phenotypes(self):
+
+        if self._normalized_phenotypes is None:
+            self._normalized_phenotypes = np.array([{} for _ in self.enumerate_plates], dtype=np.object)
+
+        for phenotype in self._normalizable_phenotypes:
+
+            if self._phenotypes_inclusion(phenotype) is False:
+                continue
+
+            try:
+                data = self.get_phenotype(phenotype)
+            except (ValueError, KeyError):
+                self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
+                continue
+
+            if all(v is None for v in data):
+                self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
+                continue
+
+            for id_plate, plate in enumerate(get_normailzed_data(data, self._reference_surface_positions)):
+                self._normalized_phenotypes[id_plate][phenotype] = plate
+
     @property
     def number_of_curves(self):
 
@@ -522,7 +583,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return self.get_phenotype(Phenotypes.GenerationTime)
 
-    def get_phenotype(self, phenotype, filtered=True):
+    def get_phenotype(self, phenotype, filtered=True, normalized=False):
 
         def _plate_type_converter_vector(plate):
 
@@ -562,14 +623,38 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if not PhenotypeDataType.Trusted(phenotype):
             self._logger.warning("The phenotype '{0}' has not been fully tested and verified!".format(phenotype.name))
 
-        if filtered:
+        self._init_remove_filter_and_undo_actions()
 
-            return [None if p is None else
-                    FilterArray(_plate_type_converter(p[..., phenotype.value]),
-                                self._phenotype_filter[id_plate][phenotype])
-                    for id_plate, p in enumerate(self._phenotypes)]
+        if normalized:
+
+            if self._normalized_phenotypes is None or not \
+                    all(True if p is None else phenotype in p for p in self._normalized_phenotypes):
+
+                if self._normalized_phenotypes is None:
+                    self._logger.warning("No phenotypes have been normalized")
+                else:
+                    self._logger.warning("Phenotypes {0} not included in normalized phenotypes".format(phenotype))
+                return [None for _ in self._phenotype_filter]
+
+            if filtered:
+
+                return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
+                        FilterArray(p[phenotype], self._phenotype_filter[id_plate][phenotype])
+                        for id_plate, p in enumerate(self._normalized_phenotypes)]
+
+            else:
+
+                return [None if p is None else p[phenotype] for _, p in enumerate(self._normalized_phenotypes)]
+
         else:
-            return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
+            if filtered:
+
+                return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
+                        FilterArray(_plate_type_converter(p[..., phenotype.value]),
+                                    self._phenotype_filter[id_plate][phenotype])
+                        for id_plate, p in enumerate(self._phenotypes)]
+            else:
+                return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
 
     @property
     def analysed_phenotypes(self):
@@ -623,12 +708,23 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 self._phenotypes = data
 
             self._init_remove_filter_and_undo_actions()
+            self._init_default_offsets()
+
+        elif data_type == 'normalized_phenotypes':
+
+            if isinstance(data, np.ndarray) and (data.size == 0 or not data.any()):
+                self._normalized_phenotypes = None
+            else:
+                self._normalized_phenotypes = data
+
+            self._init_default_offsets()
 
         elif data_type == 'vector_phenotypes':
 
             self._vector_phenotypes = data
 
             self._init_remove_filter_and_undo_actions()
+            self._init_default_offsets()
 
         elif data_type == 'smooth_growth_data':
 
@@ -712,6 +808,11 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                 elif g.shape[:2] != o.shape[:2]:
                     return False
         return True
+
+    def _init_default_offsets(self):
+
+        if len(self._reference_surface_positions) != len(self._phenotypes):
+            self.set_control_surface_offsets(Offsets.LowerRight)
 
     def _init_remove_filter_and_undo_actions(self):
 
@@ -924,6 +1025,10 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._vector_phenotypes)
 
+        p = os.path.join(dir_path, self._paths.normalized_phenotypes)
+        if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
+            np.save(p, self._normalized_phenotypes)
+
         p = os.path.join(dir_path, self._paths.phenotypes_input_data)
         if not ask_if_overwrite or not os.path.isfile(p) or self._do_ask_overwrite(p):
             np.save(p, self._raw_growth_data)
@@ -961,20 +1066,3 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         self._logger.info("State saved to '{0}'".format(dir_path))
 
-    def save_input_data(self, path=None):
-
-        if path is None:
-
-            assert self._base_name is not None, "Must give path some way"
-
-            path = self._base_name
-
-        if path.endswith(".npy"):
-            path = path[:-4]
-
-        source = self._raw_growth_data
-        if isinstance(source, xml_reader_module.XML_Reader):
-            source = self._xml_reader_2_array(source)
-
-        np.save(path + ".data.npy", source)
-        np.save(path + ".times.npy", self._times_data)
