@@ -24,6 +24,7 @@ from scanomatic.io.meta_data import MetaData
 from scanomatic.dataProcessing.strain_selector import StrainSelector
 from scanomatic.dataProcessing.norm import Offsets, get_normailzed_data
 
+
 class SaveData(Enum):
 
     ScalarPhenotypesRaw = 0
@@ -1070,4 +1071,3 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
                  self._linear_regression_size])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
-
