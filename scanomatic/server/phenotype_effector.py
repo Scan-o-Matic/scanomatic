@@ -113,13 +113,14 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
 
         if not self._running:
             if not self._stopping:
+
+                self._phenotyper.save_state(self._analysis_base_path,
+                                            ask_if_overwrite=False)
+
                 self._phenotyper.save_phenotypes(
                     path=os.path.join(self._analysis_base_path,
                                       self._paths.phenotypes_raw_csv),
                     ask_if_overwrite=False)
-
-                self._phenotyper.save_state(self._analysis_base_path,
-                                            ask_if_overwrite=False)
 
             self._mail("Scan-o-Matic: Feature extraction of '{analysis_directory}' completed",
                        """This is an automated email, please don't reply!
