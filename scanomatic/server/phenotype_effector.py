@@ -118,8 +118,7 @@ class PhenotypeExtractionEffector(proc_effector.ProcessEffector):
                                             ask_if_overwrite=False)
 
                 self._phenotyper.save_phenotypes(
-                    path=os.path.join(self._analysis_base_path,
-                                      self._paths.phenotypes_raw_csv),
+                    dir_path=self._analysis_base_path,
                     ask_if_overwrite=False)
 
             self._mail("Scan-o-Matic: Feature extraction of '{analysis_directory}' completed",

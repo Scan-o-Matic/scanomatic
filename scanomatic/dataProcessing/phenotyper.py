@@ -938,17 +938,18 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
 
         return tuple()
 
-    def save_phenotypes(self, path=None, save_data=SaveData.ScalarPhenotypesRaw,
+    def save_phenotypes(self, dir_path=None, save_data=SaveData.ScalarPhenotypesRaw,
                         dialect=csv.excel, ask_if_overwrite=True):
 
-        if path is None and self._base_name is not None:
-            path = self._base_name
-        elif path is None:
+        if dir_path is None and self._base_name is not None:
+            dir_path = self._base_name
+        elif dir_path is None:
             self._logger.error("Needs somewhere to save the phenotype")
             return False
 
-        if not os.path.dirname(path) or path.endswith(os.sep):
-            path += "phenotypes"
+        dir_path = os.path.abspath(dir_path)
+
+        path = os.path.join(dir_path, self._paths.phenotypes_csv_pattern)
 
         if save_data == SaveData.ScalarPhenotypesRaw:
             data_source = self._phenotypes
@@ -969,7 +970,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
             if data_source[plate_index] is None:
                 continue
 
-            plate_path = "{0}.{1}.plate_{2}.csv".format(path, save_data.name, plate_index + 1)
+            plate_path = path.format(save_data.name, plate_index + 1)
 
             if os.path.isfile(plate_path) and ask_if_overwrite:
                 if 'y' not in raw_input("Overwrite existing file '{0}'? (y/N)".format(plate_path)).lower():
