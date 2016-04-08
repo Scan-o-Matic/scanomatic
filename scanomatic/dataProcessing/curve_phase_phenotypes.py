@@ -35,6 +35,12 @@ class CurvePhasePhenotypes(Enum):
     Start = 4
 
 
+class VectorPhenotypes(Enum):
+
+    PhasesClassifications = 0
+    PhasesPhenotypes = 1
+
+
 def plot_segments(
         times, curve, phases, segment_alpha=0.3, f=None,
         colors={CurvePhases.Multiple: "#5f3275",

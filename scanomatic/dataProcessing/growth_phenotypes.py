@@ -240,88 +240,6 @@ def _get_generation_time_index(log2_masked_derivative_data, rank):
     return -1
 
 
-class PhenotypeDataType(Enum):
-
-    Scalar = 0
-    Vector = 1
-    Phases = 2
-
-    Trusted = 10
-    UnderDevelopment = 11
-    Other = 12
-
-    All = 100
-
-    def __call__(self, phenotype=None):
-
-        _vectors = (Phenotypes.GrowthVelocityVector,
-                    Phenotypes.GrowthPhasesVector,
-                    Phenotypes.GrowthPhasesPhenotypes)
-
-        _phases = (Phenotypes.GrowthPhasesVector,
-                   Phenotypes.GrowthPhasesPhenotypes)
-
-        _trusted = (Phenotypes.GenerationTime,
-                    Phenotypes.ChapmanRichardsFit,
-                    Phenotypes.ColonySize48h,
-                    Phenotypes.InitialValue,
-                    Phenotypes.GenerationTimeStErrOfEstimate)
-
-        _under_development = (Phenotypes.ExperimentBaseLine,
-                              Phenotypes.ExperimentEndAverage,
-                              Phenotypes.ExperimentGrowthYield,
-                              Phenotypes.GenerationTimeWhen,
-                              Phenotypes.GenerationTimePopulationSize,
-                              Phenotypes.ExperimentPopulationDoublings)
-
-        if self is PhenotypeDataType.Scalar:
-
-            if phenotype is None:
-                return tuple(p for p in Phenotypes if p not in _vectors)
-
-            return phenotype not in _vectors
-
-        elif self is PhenotypeDataType.Vector:
-
-            if phenotype is None:
-                return _vectors
-
-            return phenotype in _vectors
-
-        elif self is PhenotypeDataType.Phases:
-
-            if phenotype is None:
-                return _phases
-            return phenotype in _phases
-
-        elif self is PhenotypeDataType.Trusted:
-
-            if phenotype is None:
-                return _trusted
-
-            return phenotype in _trusted
-
-        elif self is PhenotypeDataType.UnderDevelopment:
-
-            if phenotype is None:
-                return _under_development
-
-            return phenotype in _trusted or phenotype in _under_development
-
-        elif self is PhenotypeDataType.Other:
-
-            if phenotype is None:
-                return tuple(p for p in Phenotypes if p not in _trusted and p not in _under_development)
-            return phenotype not in _trusted and phenotype not in _under_development
-
-        elif self is PhenotypeDataType.All:
-
-            if phenotype is None:
-                return tuple(p for p in Phenotypes)
-
-            return True
-
-
 class Phenotypes(Enum):
 
     InitialValue = 12
@@ -355,8 +273,6 @@ class Phenotypes(Enum):
     ExperimentPopulationDoublings = 22
 
     GrowthVelocityVector = 1000
-    GrowthPhasesVector = 1100
-    GrowthPhasesPhenotypes = 1101
 
     def __call__(self, **kwargs):
 
