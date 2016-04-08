@@ -39,7 +39,7 @@ class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
     """The Phenotyper class is a class for producing phenotypes
     based on growth curves as well as storing and easy displaying them.
 
-    There are fource modes of instanciating a phenotyper instance:
+    There are foure modes of instantiating a phenotyper instance:
 
     <code>
     #Generic instanciation
