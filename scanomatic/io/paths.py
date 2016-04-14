@@ -133,6 +133,7 @@ class Paths(SingeltonOneInit):
         self.phenotypes_filter = "phenotypes_filter.npy"
         self.phenotypes_filter_undo = "phenotypes_filter.undo.pickle"
         self.phenotypes_meta_data = "meta_data.pickle"
+        self.phenotypes_meta_data_original_file_patern = "meta_data_{0}.{1}"
         self.phenotypes_input_data = "curves_raw.npy"
         self.phenotypes_input_smooth = "curves_smooth.npy"
         self.phenotypes_extraction_params = "phenotype_params.npy"
