@@ -3,6 +3,10 @@ from scanomatic.dataProcessing import phenotyper
 from scanomatic.io.paths import Paths
 import os
 import uuid
+import time
+from itertools import chain
+
+RESERVATION_TIME = 60 * 5
 
 
 def _add_lock(path):
@@ -12,23 +16,42 @@ def _add_lock(path):
     return key
 
 
-def _update_lock(path, key):
+def _update_lock(lock_file_path, key):
 
-    pass
+    with open(lock_file_path, 'w') as fh:
+        fh.write("|".join((str(time.time(), str(key)))))
+    return True
 
 
 def _remove_lock(path):
+
+    lock_file_path = os.path.join(path, Paths().ui_server_phenotype_state_lock)
+    os.remove(lock_file_path)
 
     return True
 
 
 def _validate_lock_key(path, key=""):
-    # 1 Translate project to real path
-    # 2 If non-expired lock validate same
-    if not True:
+
+    lock_file_path = os.path.join(path, Paths().ui_server_phenotype_state_lock)
+
+    locked = False
+    try:
+        with open(lock_file_path, 'r') as fh:
+            time_stamp, current_key = fh.readline().split("|")
+            time_stamp = float(time_stamp)
+            if not(key == current_key or time.time() - time_stamp > RESERVATION_TIME):
+                locked = True
+    except IOError:
+        pass
+    except ValueError:
+        pass
+
+    if locked:
         return ""
 
     if key:
+        _update_lock(lock_file_path, key)
         return key
     else:
         return _add_lock(path)
@@ -36,12 +59,13 @@ def _validate_lock_key(path, key=""):
 
 def _discover_projects(path):
 
-    return []
+    dirs = tuple(chain(*tuple(dirs for _, dirs, _ in os.walk(".."))))
+    return tuple(d for d in dirs if phenotyper.path_has_saved_project_state(d))
 
 
-def _get_project_name(projects):
-
-    return []
+def _get_project_name(project_path):
+    # TODO: Implement this
+    return "Unknown/Not implemented"
 
 
 def _convert_path_to_url(prefix, path):
