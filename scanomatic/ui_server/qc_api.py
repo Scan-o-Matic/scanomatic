@@ -1,10 +1,12 @@
+import os
+import time
+import uuid
 from flask import request, Flask, jsonify
+from itertools import chain
+
 from scanomatic.dataProcessing import phenotyper
 from scanomatic.io.paths import Paths
-import os
-import uuid
-import time
-from itertools import chain
+from scanomatic.ui_server.general import _convert_url_to_path
 
 RESERVATION_TIME = 60 * 5
 
@@ -19,7 +21,7 @@ def _add_lock(path):
 def _update_lock(lock_file_path, key):
 
     with open(lock_file_path, 'w') as fh:
-        fh.write("|".join((str(time.time(), str(key)))))
+        fh.write("|".join((str(time.time()), str(key))))
     return True
 
 
@@ -71,11 +73,6 @@ def _get_project_name(project_path):
 def _convert_path_to_url(prefix, path):
     # TODO: Strip root/jail from path
     return "/".join((prefix, path))
-
-
-def _convert_url_to_path(url):
-
-    return url
 
 
 def _get_new_metadata_file_name(project_path, suffix):
