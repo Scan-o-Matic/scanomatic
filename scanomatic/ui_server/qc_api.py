@@ -61,7 +61,7 @@ def _validate_lock_key(path, key=""):
 
 def _discover_projects(path):
 
-    dirs = tuple(chain(*tuple(dirs for _, dirs, _ in os.walk(".."))))
+    dirs = tuple(chain(*tuple(tuple(os.path.join(root, d) for d in dirs) for root, dirs, _ in os.walk(path))))
     return tuple(d for d in dirs if phenotyper.path_has_saved_project_state(d))
 
 
@@ -86,7 +86,11 @@ def _get_search_results(path, url_prefix):
     projects = _discover_projects(path)
     names = list(_get_project_name(p) for p in projects)
     urls = list(convert_path_to_url(url_prefix, p) for p in projects)
-    names, urls = zip(*tuple((n, u) for n, u in zip(names, urls) if u is not None))
+    if None in urls:
+        try:
+            names, urls = zip(*tuple((n, u) for n, u in zip(names, urls) if u is not None))
+        except ValueError:
+            pass
     return {'names': names, 'urls': urls}
 
 
@@ -98,10 +102,13 @@ def add_routes(app):
         app (Flask): The flask app to decorate
     """
 
-    @app.route("/api/results/browse/<project>")
+    @app.route("/api/results/browse")
+    @app.route("/api/results/browse/")
+    @app.route("/api/results/browse/<path:project>")
     def browse_for_results(project=""):
 
         path = convert_url_to_path(project)
+        print path
         is_results = phenotyper.path_has_saved_project_state(path)
 
         return jsonify(success=True,
@@ -109,7 +116,7 @@ def add_routes(app):
                        is_results=is_results,
                        **_get_search_results(path, "/api/results/browse"))
 
-    @app.route("/api/results/lock/add/<project>")
+    @app.route("/api/results/lock/add/<path:project>")
     def lock_project(project=""):
 
         path = convert_url_to_path(project)
@@ -121,8 +128,8 @@ def add_routes(app):
         else:
             return jsonify(success=False, reason="Someone else is working with these results")
 
-    @app.route("/api/results/lock/remove/<project>")
-    def lock_project(project=""):
+    @app.route("/api/results/lock/remove/<path:project>")
+    def unlock_project(project=""):
 
         path = convert_url_to_path(project)
 
@@ -135,7 +142,7 @@ def add_routes(app):
         _remove_lock(path)
         return jsonify(success=True)
 
-    @app.route("/api/results/meta_data/add/<project>", methods=["POST"])
+    @app.route("/api/results/meta_data/add/<path:project>", methods=["POST"])
     def add_meta_data(project=None):
 
         path = convert_url_to_path(project)
@@ -161,7 +168,8 @@ def add_routes(app):
         return jsonify(success=True)
 
     @app.route("/api/results/pinning", defaults={'project': ""})
-    @app.route("/api/results/pinning/<project>")
+    @app.route("/api/results/pinning/", defaults={'project': ""})
+    @app.route("/api/results/pinning/<path:project>")
     def get_pinning(project=None):
 
         path = convert_url_to_path(project)
@@ -179,8 +187,9 @@ def add_routes(app):
                        pinnings=pinnings, plates=sum(1 for p in pinnings if p is not None),
                        read_only=read_only)
 
+    @app.route("/api/results/phenotype_names")
     @app.route("/api/results/phenotype_names/")
-    @app.route("/api/results/phenotype_names/<project>")
+    @app.route("/api/results/phenotype_names/<path:project>")
     def get_phenotype_names(project=None):
 
         path = convert_url_to_path(project)
@@ -199,10 +208,11 @@ def add_routes(app):
                        read_only=read_only, project_name=name)
 
     @app.route("/api/results/phenotype")
-    @app.route("/api/results/phenotype/<phenotype>/<int: plate>/<project>")
-    @app.route("/api/results/phenotype/<phenotype>/<project>")
-    @app.route("/api/results/phenotype/<int: plate>/<project>")
-    @app.route("/api/results/phenotype/<project>")
+    @app.route("/api/results/phenotype/")
+    @app.route("/api/results/phenotype/<phenotype>/<int:plate>/<path:project>")
+    @app.route("/api/results/phenotype/<phenotype>/<path:project>")
+    @app.route("/api/results/phenotype/<int:plate>/<path:project>")
+    @app.route("/api/results/phenotype/<path:project>")
     def get_phenotype_data(phenotype=None, project=None, plate=None):
 
         path = convert_url_to_path(project)
@@ -238,7 +248,7 @@ def add_routes(app):
         return jsonify(success=True, read_only=read_only, project_name=name, data=data, plate=plate,
                        phenotype=phenotype)
 
-    @app.route("/api/results/phenotypes/<int: plate>/<int: pos_x>/<int: pos_y>/<project>")
+    @app.route("/api/results/phenotypes/<int:plate>/<int:pos_x>/<int:pos_y>/<path:project>")
     def get_phenotypes_for_position():
 
         return jsonify(success=False, reason="Not implemented")
