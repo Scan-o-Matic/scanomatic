@@ -34,14 +34,6 @@ def _validate_lock_key(path, key=""):
         return _add_lock(path)
 
 
-def _is_project(path):
-
-    if not path:
-        return False
-
-    return False
-
-
 def _discover_projects(path):
 
     return []
@@ -94,7 +86,7 @@ def add_routes(app):
     def browse_for_results(project=""):
 
         path = _convert_url_to_path(project)
-        is_results = _is_project(project)
+        is_results = phenotyper.path_has_saved_project_state(path)
 
         return jsonify(success=True,
                        project=project,
@@ -103,9 +95,10 @@ def add_routes(app):
 
     @app.route("/api/results/lock/add/<project>")
     def lock_project(project=""):
-        if not _is_project(project):
-            return jsonify(success=False, reason="Not a project")
+
         path = _convert_url_to_path(project)
+        if not phenotyper.path_has_saved_project_state(path):
+            return jsonify(success=False, reason="Not a project")
         key = _validate_lock_key(path, "")
         if key:
             return jsonify(success=True, lock_key=key)
@@ -115,9 +108,11 @@ def add_routes(app):
     @app.route("/api/results/lock/remove/<project>")
     def lock_project(project=""):
 
-        if not _is_project(project):
-            return jsonify(success=False, reason="Not a project")
         path = _convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+            return jsonify(success=False, reason="Not a project")
+
         if not _validate_lock_key(path, request.form['lock_key']):
             return jsonify(success=False, reason="Invalid key")
 
@@ -129,7 +124,7 @@ def add_routes(app):
 
         path = _convert_url_to_path(project)
 
-        if not _is_project(project):
+        if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=True,
                            is_results=False,
                            **_get_search_results(path, "/api/results/meta_data/add/"))
@@ -155,7 +150,7 @@ def add_routes(app):
 
         path = _convert_url_to_path(project)
 
-        if not _is_project(project):
+        if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(success=True,
                            is_results=False,
@@ -174,7 +169,7 @@ def add_routes(app):
 
         path = _convert_url_to_path(project)
 
-        if not _is_project(project):
+        if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(success=True,
                            is_results=False,
@@ -196,7 +191,7 @@ def add_routes(app):
 
         path = _convert_url_to_path(project)
 
-        if not _is_project(project):
+        if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(success=True,
                            is_results=False,

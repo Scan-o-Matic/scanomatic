@@ -47,6 +47,14 @@ def get_phenotype(name):
     raise KeyError("Unknown phenotype {0}".format(name))
 
 
+def path_has_saved_project_state(path):
+
+    if not path:
+        return False
+
+    return False
+
+
 class SaveData(Enum):
 
     ScalarPhenotypesRaw = 0
