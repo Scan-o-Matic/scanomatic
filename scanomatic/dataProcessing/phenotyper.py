@@ -27,6 +27,26 @@ from scanomatic.dataProcessing.strain_selector import StrainSelector
 from scanomatic.dataProcessing.norm import Offsets, get_normailzed_data
 
 
+def get_phenotype(name):
+
+    try:
+        return Phenotypes[name]
+    except KeyError:
+        pass
+
+    try:
+        return CurvePhaseMetaPhenotypes[name]
+    except KeyError:
+        pass
+
+    try:
+        return VectorPhenotypes[name]
+    except KeyError:
+        pass
+
+    raise KeyError("Unknown phenotype {0}".format(name))
+
+
 class SaveData(Enum):
 
     ScalarPhenotypesRaw = 0
