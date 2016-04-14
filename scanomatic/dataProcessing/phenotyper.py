@@ -47,12 +47,29 @@ def get_phenotype(name):
     raise KeyError("Unknown phenotype {0}".format(name))
 
 
-def path_has_saved_project_state(path):
+def path_has_saved_project_state(directory_path, require_phenotypes=True):
 
-    if not path:
+
+    if not directory_path:
         return False
 
-    return False
+    _p = paths.Paths()
+
+    if require_phenotypes:
+        try:
+            phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+        except IOError:
+            return False
+
+    try:
+        np.load(os.path.join(directory_path,  _p.phenotypes_input_data))
+        np.load(os.path.join(directory_path, _p.phenotype_times))
+        np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
+        np.load(os.path.join(directory_path, _p.phenotypes_extraction_params))
+    except IOError:
+        return False
+
+    return True
 
 
 class SaveData(Enum):
