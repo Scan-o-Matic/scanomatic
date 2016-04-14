@@ -15,6 +15,8 @@ def convert_url_to_path(url):
 
 
 def convert_path_to_url(prefix, path):
+    if not safe_directory_name(path):
+        return None
     if prefix:
         return "/".join(chain([prefix], os.path.relpath(path, Config().paths.projects_root).split(os.sep)))
     else:

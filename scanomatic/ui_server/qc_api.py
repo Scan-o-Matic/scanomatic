@@ -86,7 +86,7 @@ def _get_search_results(path, url_prefix):
     projects = _discover_projects(path)
     names = list(_get_project_name(p) for p in projects)
     urls = list(convert_path_to_url(url_prefix, p) for p in projects)
-
+    names, urls = zip(*tuple((n, u) for n, u in zip(names, urls) if u is not None))
     return {'names': names, 'urls': urls}
 
 
