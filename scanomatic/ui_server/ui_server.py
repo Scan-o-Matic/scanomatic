@@ -30,6 +30,7 @@ from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
+from . import qc_api
 
 _url = None
 _logger = Logger("UI-server")
@@ -699,6 +700,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             return send_from_directory(Paths().fixtures, image)
 
         return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)
+
+    qc_api.add_routes(app)
 
     try:
         if is_local:
