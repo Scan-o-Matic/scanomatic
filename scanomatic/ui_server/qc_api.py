@@ -6,7 +6,7 @@ from itertools import chain
 
 from scanomatic.dataProcessing import phenotyper
 from scanomatic.io.paths import Paths
-from scanomatic.ui_server.general import convert_url_to_path
+from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url
 
 RESERVATION_TIME = 60 * 5
 
@@ -70,11 +70,6 @@ def _get_project_name(project_path):
     return "Unknown/Not implemented"
 
 
-def _convert_path_to_url(prefix, path):
-    # TODO: Strip root/jail from path
-    return "/".join((prefix, path))
-
-
 def _get_new_metadata_file_name(project_path, suffix):
 
     i = 1
@@ -90,7 +85,7 @@ def _get_search_results(path, url_prefix):
 
     projects = _discover_projects(path)
     names = list(_get_project_name(p) for p in projects)
-    urls = list(_convert_path_to_url(url_prefix, p) for p in projects)
+    urls = list(convert_path_to_url(url_prefix, p) for p in projects)
 
     return {'names': names, 'urls': urls}
 

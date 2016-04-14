@@ -12,3 +12,10 @@ def safe_directory_name(name):
 def convert_url_to_path(url):
     root = Config().paths.projects_root
     return os.path.abspath(os.path.join(*chain([root], url)))
+
+
+def convert_path_to_url(prefix, path):
+    if prefix:
+        return "/".join(chain([prefix], os.path.relpath(path, Config().paths.projects_root).split(os.sep)))
+    else:
+        return "/".join(os.path.relpath(path, Config().paths.projects_root).split(os.sep))
