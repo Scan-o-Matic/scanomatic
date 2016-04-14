@@ -6,7 +6,7 @@ from itertools import chain
 
 from scanomatic.dataProcessing import phenotyper
 from scanomatic.io.paths import Paths
-from scanomatic.ui_server.general import _convert_url_to_path
+from scanomatic.ui_server.general import convert_url_to_path
 
 RESERVATION_TIME = 60 * 5
 
@@ -106,7 +106,7 @@ def add_routes(app):
     @app.route("/api/results/browse/<project>")
     def browse_for_results(project=""):
 
-        path = _convert_url_to_path(project)
+        path = convert_url_to_path(project)
         is_results = phenotyper.path_has_saved_project_state(path)
 
         return jsonify(success=True,
@@ -117,7 +117,7 @@ def add_routes(app):
     @app.route("/api/results/lock/add/<project>")
     def lock_project(project=""):
 
-        path = _convert_url_to_path(project)
+        path = convert_url_to_path(project)
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=False, reason="Not a project")
         key = _validate_lock_key(path, "")
@@ -129,7 +129,7 @@ def add_routes(app):
     @app.route("/api/results/lock/remove/<project>")
     def lock_project(project=""):
 
-        path = _convert_url_to_path(project)
+        path = convert_url_to_path(project)
 
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=False, reason="Not a project")
@@ -143,7 +143,7 @@ def add_routes(app):
     @app.route("/api/results/meta_data/add/<project>", methods=["POST"])
     def add_meta_data(project=None):
 
-        path = _convert_url_to_path(project)
+        path = convert_url_to_path(project)
 
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=True,
@@ -169,7 +169,7 @@ def add_routes(app):
     @app.route("/api/results/pinning/<project>")
     def get_pinning(project=None):
 
-        path = _convert_url_to_path(project)
+        path = convert_url_to_path(project)
 
         if not phenotyper.path_has_saved_project_state(path):
 
@@ -188,7 +188,7 @@ def add_routes(app):
     @app.route("/api/results/phenotype_names/<project>")
     def get_phenotype_names(project=None):
 
-        path = _convert_url_to_path(project)
+        path = convert_url_to_path(project)
 
         if not phenotyper.path_has_saved_project_state(path):
 
@@ -210,7 +210,7 @@ def add_routes(app):
     @app.route("/api/results/phenotype/<project>")
     def get_phenotype_data(phenotype=None, project=None, plate=None):
 
-        path = _convert_url_to_path(project)
+        path = convert_url_to_path(project)
 
         if not phenotyper.path_has_saved_project_state(path):
 
