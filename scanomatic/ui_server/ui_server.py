@@ -1,35 +1,34 @@
-__author__ = 'martin'
-
-import time
-from flask import Flask, request, send_from_directory, redirect, jsonify, abort, render_template
-import webbrowser
-from threading import Thread
-from socket import error
-import os
-import numpy as np
-from enum import Enum
-import shutil
-import re
-from itertools import chain
 import glob
+import numpy as np
+import os
+import shutil
+import time
+import webbrowser
+from flask import Flask, request, send_from_directory, redirect, jsonify, abort, render_template
+from itertools import chain
+from socket import error
+from threading import Thread
 from types import StringTypes
 
-from scanomatic.io.app_config import Config
-from scanomatic.io.paths import Paths
-from scanomatic.io.logger import Logger
-from scanomatic.io.rpc_client import get_client
+from enum import Enum
+
 from scanomatic.imageAnalysis.first_pass_image import FixtureImage
-from scanomatic.io.power_manager import POWER_MANAGER_TYPE
-from scanomatic.imageAnalysis.support import save_image_as_png
-from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
 from scanomatic.imageAnalysis.imageGrayscale import get_grayscale, is_valid_grayscale
-from scanomatic.models.factories.fixture_factories import FixtureFactory
-from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
+from scanomatic.imageAnalysis.support import save_image_as_png
+from scanomatic.io.app_config import Config
+from scanomatic.io.logger import Logger
+from scanomatic.io.paths import Paths
+from scanomatic.io.power_manager import POWER_MANAGER_TYPE
+from scanomatic.io.rpc_client import get_client
 from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
+from scanomatic.models.factories.fixture_factories import FixtureFactory
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
+from scanomatic.ui_server.general import safe_directory_name
 from . import qc_api
 
 _url = None
@@ -111,10 +110,6 @@ def usable_markers(markers, image):
         return False
 
     return all(marker_inside_image(marker) for marker in markers_array)
-
-
-def safe_directory_name(name):
-    return re.match("^[A-Za-z_0-9]*$", name) is not None
 
 
 def usable_plates(plates):
