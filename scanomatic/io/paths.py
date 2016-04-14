@@ -125,6 +125,7 @@ class Paths(SingeltonOneInit):
         self.grid_size_pattern = "grid_size___{0}.npy"
         self.experiment_grid_error_image = "_no_grid_{0}.npy"
 
+        self.ui_server_phenotype_state_lock = "phenotypes_state.lock"
         self.phenotypes_csv_pattern = "phenotypes.{0}.plate_{1}.csv"
         self.phenotypes_raw_npy = "phenotypes_raw.npy"
         self.vector_phenotypes_raw = "phenotypes_vectors_raw.npy"

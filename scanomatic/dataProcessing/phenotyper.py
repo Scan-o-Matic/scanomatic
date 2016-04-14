@@ -49,7 +49,6 @@ def get_phenotype(name):
 
 def path_has_saved_project_state(directory_path, require_phenotypes=True):
 
-
     if not directory_path:
         return False
 
