@@ -109,11 +109,11 @@ def add_routes(app):
 
         path = convert_url_to_path(project)
         print path
-        is_results = phenotyper.path_has_saved_project_state(path)
+        is_project = phenotyper.path_has_saved_project_state(path)
 
         return jsonify(success=True,
                        project=project,
-                       is_results=is_results,
+                       is_project=is_project,
                        **_get_search_results(path, "/api/results/browse"))
 
     @app.route("/api/results/lock/add/<path:project>")
@@ -124,7 +124,7 @@ def add_routes(app):
             return jsonify(success=False, reason="Not a project")
         key = _validate_lock_key(path, "")
         if key:
-            return jsonify(success=True, lock_key=key)
+            return jsonify(success=True, is_project=True, is_endpoint=True, lock_key=key)
         else:
             return jsonify(success=False, reason="Someone else is working with these results")
 
@@ -149,7 +149,7 @@ def add_routes(app):
 
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=True,
-                           is_results=False,
+                           is_project=False,
                            **_get_search_results(path, "/api/results/meta_data/add/"))
 
         if not _validate_lock_key(path, request.form["lock_key"]):
@@ -177,13 +177,13 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(success=True,
-                           is_results=False,
+                           is_project=False,
                            **_get_search_results(path, "/api/results/pinning"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         pinnings = list(state.plate_shapes)
         read_only = _validate_lock_key(path, request.form["lock_key"])
-        return jsonify(success=True, is_results=True, project_name=_get_project_name(path),
+        return jsonify(success=True, is_project=True, project_name=_get_project_name(path),
                        pinnings=pinnings, plates=sum(1 for p in pinnings if p is not None),
                        read_only=read_only)
 
@@ -197,7 +197,7 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(success=True,
-                           is_results=False,
+                           is_project=False,
                            **_get_search_results(path, "/api/results/phenotype_names"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
@@ -220,7 +220,8 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
 
             return jsonify(success=True,
-                           is_results=False,
+                           is_project=False,
+                           is_endpoint=False,
                            **_get_search_results(path, "/api/results/phenotype"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
