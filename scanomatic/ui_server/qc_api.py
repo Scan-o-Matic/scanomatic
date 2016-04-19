@@ -35,6 +35,9 @@ def _remove_lock(path):
 
 def _validate_lock_key(path, key=""):
 
+    if not key:
+        key = ""
+
     lock_file_path = os.path.join(path, Paths().ui_server_phenotype_state_lock)
 
     locked = False
@@ -56,7 +59,7 @@ def _validate_lock_key(path, key=""):
         _update_lock(lock_file_path, key)
         return key
     else:
-        return _add_lock(path)
+        return _add_lock(lock_file_path)
 
 
 def _discover_projects(path):
@@ -114,6 +117,7 @@ def add_routes(app):
         return jsonify(success=True,
                        project=project,
                        is_project=is_project,
+                       is_endpoint=False,
                        **_get_search_results(path, "/api/results/browse"))
 
     @app.route("/api/results/lock/add/<path:project>")
@@ -126,7 +130,8 @@ def add_routes(app):
         if key:
             return jsonify(success=True, is_project=True, is_endpoint=True, lock_key=key)
         else:
-            return jsonify(success=False, reason="Someone else is working with these results")
+            return jsonify(success=False, is_project=True, is_endpoint=True,
+                           reason="Someone else is working with these results")
 
     @app.route("/api/results/lock/remove/<path:project>")
     def unlock_project(project=""):
@@ -134,10 +139,10 @@ def add_routes(app):
         path = convert_url_to_path(project)
 
         if not phenotyper.path_has_saved_project_state(path):
-            return jsonify(success=False, reason="Not a project")
+            return jsonify(success=False, is_project=False, is_endpoint=True, reason="Not a project")
 
         if not _validate_lock_key(path, request.form['lock_key']):
-            return jsonify(success=False, reason="Invalid key")
+            return jsonify(success=False, is_project=True, is_endpoint=True, reason="Invalid key")
 
         _remove_lock(path)
         return jsonify(success=True)
@@ -150,10 +155,12 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=True,
                            is_project=False,
+                           is_endpoint=False,
                            **_get_search_results(path, "/api/results/meta_data/add/"))
 
         if not _validate_lock_key(path, request.form["lock_key"]):
-            return jsonify(success=False, reason="Someone else is working with these results")
+            return jsonify(success=False, is_project=True, is_endpoint=True,
+                           reason="Someone else is working with these results")
 
         data = request.form["file"]
         file_sufix = request.form["file_suffix"]
@@ -165,7 +172,7 @@ def add_routes(app):
         state.load_meta_data(meta_data_path)
         state.save_state(path, ask_if_overwrite=False)
 
-        return jsonify(success=True)
+        return jsonify(success=True, is_project=True, is_endpoint=True)
 
     @app.route("/api/results/pinning", defaults={'project': ""})
     @app.route("/api/results/pinning/", defaults={'project': ""})
@@ -178,14 +185,15 @@ def add_routes(app):
 
             return jsonify(success=True,
                            is_project=False,
+                           is_endpoint=False,
                            **_get_search_results(path, "/api/results/pinning"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         pinnings = list(state.plate_shapes)
-        read_only = _validate_lock_key(path, request.form["lock_key"])
-        return jsonify(success=True, is_project=True, project_name=_get_project_name(path),
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        return jsonify(success=True, is_project=True, is_endpoint=True, project_name=_get_project_name(path),
                        pinnings=pinnings, plates=sum(1 for p in pinnings if p is not None),
-                       read_only=read_only)
+                       read_only=not lock_key, lock_key=lock_key)
 
     @app.route("/api/results/phenotype_names")
     @app.route("/api/results/phenotype_names/")
@@ -201,18 +209,18 @@ def add_routes(app):
                            **_get_search_results(path, "/api/results/phenotype_names"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
-        read_only = _validate_lock_key(path, request.form["lock_key"])
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         name = _get_project_name(path)
 
         return jsonify(success=True, phenotypes=state.phenotype_names(),
-                       read_only=read_only, project_name=name)
+                       is_project=True, is_endpoint=True,
+                       read_only=not lock_key, lock_key=lock_key, project_name=name)
 
     @app.route("/api/results/phenotype")
     @app.route("/api/results/phenotype/")
     @app.route("/api/results/phenotype/<phenotype>/<int:plate>/<path:project>")
     @app.route("/api/results/phenotype/<phenotype>/<path:project>")
     @app.route("/api/results/phenotype/<int:plate>/<path:project>")
-    @app.route("/api/results/phenotype/<path:project>")
     def get_phenotype_data(phenotype=None, project=None, plate=None):
 
         path = convert_url_to_path(project)
@@ -225,15 +233,17 @@ def add_routes(app):
                            **_get_search_results(path, "/api/results/phenotype"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
-        read_only = _validate_lock_key(path, request.form["lock_key"])
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         name = _get_project_name(path)
 
         if phenotype is None:
 
             phenotypes = state.phenotype_names()
 
-            # TODO: Add some smart urls about phenotypes including platees if exists
-            return jsonify(success=True, read_only=read_only, phenotypes=phenotypes,
+            # TODO: Add some smart urls about phenotypes including plates if exists
+            return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
+                           is_project=True, is_endpoint=True,
+                           phenotypes=phenotypes,
                            project_name=name)
 
         if plate is None:
@@ -241,13 +251,14 @@ def add_routes(app):
             urls = ["/api/results/phenotype/{0}/{1}".format(i + 1, project)
                     for i, p in enumerate(state.plate_shapes) if p is not None]
 
-            return jsonify(success=True, urls=urls, read_only=read_only, project_name=name)
+            return jsonify(success=True, urls=urls, read_only=not lock_key, lock_key=lock_key, project_name=name,
+                           is_project=True, is_endpoint=False)
 
         phenotype_enum = phenotyper.get_phenotype(phenotype)
         data = state.get_phenotype(phenotype_enum)[plate].filled()
 
-        return jsonify(success=True, read_only=read_only, project_name=name, data=data, plate=plate,
-                       phenotype=phenotype)
+        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, project_name=name, data=data.tolist(),
+                       plate=plate, phenotype=phenotype, is_project=True, is_endpoint=True)
 
     @app.route("/api/results/phenotypes/<int:plate>/<int:pos_x>/<int:pos_y>/<path:project>")
     def get_phenotypes_for_position():
