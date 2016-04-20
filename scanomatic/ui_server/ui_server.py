@@ -188,6 +188,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _help():
         return send_from_directory(Paths().ui_root, Paths().ui_help_file)
 
+    @app.route("/qc_norm")
+    def _qc_norm():
+        return send_from_directory(Paths().ui_root, Paths().ui_qc_norm_file)
+
     @app.route("/wiki")
     def _wiki():
         return redirect("https://github.com/local-minimum/scanomatic/wiki")
