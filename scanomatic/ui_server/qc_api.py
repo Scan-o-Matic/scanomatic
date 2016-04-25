@@ -174,6 +174,39 @@ def add_routes(app):
 
         return jsonify(success=True, is_project=True, is_endpoint=True)
 
+    @app.route("/api/results/meta_data/column_names/<int:plate>/<path:project>")
+    @app.route("/api/results/meta_data/column_names/<path:project>")
+    @app.route("/api/results/meta_data/column_names")
+    @app.route("/api/results/meta_data/column_names/")
+    def show_meta_data_headers(plate=None, project=None):
+
+        base_url = "/api/results/meta_data/column_names"
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+            return jsonify(success=True,
+                           is_project=False,
+                           is_endpoint=False,
+                           **_get_search_results(path, base_url))
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        name = _get_project_name(path)
+
+        if plate is None:
+
+            urls = ["{0}/{1}/{2}".format(base_url, plate, project)
+                    for plate in state.enumerate_plates]
+
+            return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
+                           is_project=True, is_endpoint=False,
+                           urls=urls,
+                           project_name=name)
+
+        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
+                       is_project=True, is_endpoint=True, project_name=name,
+                       columns=state.meta_data_headers(plate))
+
     @app.route("/api/results/pinning", defaults={'project': ""})
     @app.route("/api/results/pinning/", defaults={'project': ""})
     @app.route("/api/results/pinning/<path:project>")
