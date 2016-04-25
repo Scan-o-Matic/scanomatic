@@ -1,13 +1,15 @@
 import os
 import time
 import uuid
+import glob
 from dateutil import tz
 from flask import request, Flask, jsonify
 from itertools import chain, product
 from datetime import datetime
 from scanomatic.dataProcessing import phenotyper
 from scanomatic.io.paths import Paths
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url
+from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, path_is_in_jail
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
 RESERVATION_TIME = 60 * 5
 
@@ -70,8 +72,22 @@ def _discover_projects(path):
 
 
 def _get_project_name(project_path):
-    # TODO: Implement this
-    return "Unknown/Not implemented"
+    no_name = None
+
+    if not path_is_in_jail(project_path):
+        return no_name
+
+    candidates = glob.glob(os.path.join(project_path, Paths().scan_project_file_pattern.format("*")))
+    if candidates:
+        for candidate in candidates:
+            model = ScanningModelFactory.serializer.load_first(candidate)
+            if model:
+                return model.project_name if model.project_name else no_name
+
+    if project_path:
+        return _get_project_name(os.path.dirname(project_path))
+
+    return no_name
 
 
 def _get_new_metadata_file_name(project_path, suffix):
@@ -127,10 +143,12 @@ def add_routes(app):
             return jsonify(success=True, is_project=False, is_endpoint=False,
                            **_get_search_results(path, "/api/results/browse"))
 
+        name = _get_project_name(path)
         return jsonify(success=True,
                        project=project,
                        is_project=is_project,
                        is_endpoint=False,
+                       project_name=name,
                        analysis_date=datetime.fromtimestamp(analysis_date, local_zone).astimezone(zone).isoformat()
                        if analysis_date else "",
                        extraction_date=datetime.fromtimestamp(extraction_date, local_zone).astimezone(zone).isoformat()
