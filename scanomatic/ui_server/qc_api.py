@@ -242,8 +242,8 @@ def add_routes(app):
 
             # TODO: Add some smart urls about phenotypes including plates if exists
             return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
-                           is_project=True, is_endpoint=True,
-                           phenotypes=phenotypes,
+                           is_project=True, is_endpoint=False,
+                           phenotypes=phenotypes, urls=[],
                            project_name=name)
 
         if plate is None:
@@ -307,7 +307,9 @@ def add_routes(app):
         return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
                        is_project=True, is_endpoint=True,
                        project_name=name,
+                       time_data=state.times,
                        smooth_data=state.smooth_growth_data[plate - 1][d1_row, d2_col].tolist(),
                        raw_data=state.raw_growth_data[plate - 1][d1_row, d2_col].tolist())
 
+    # End of UI extension with qc-functionality
     return True
