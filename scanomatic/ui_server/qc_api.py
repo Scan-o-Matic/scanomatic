@@ -3,7 +3,7 @@ import time
 import uuid
 from flask import request, Flask, jsonify
 from itertools import chain, product
-
+from datetime import datetime
 from scanomatic.dataProcessing import phenotyper
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url
@@ -105,19 +105,27 @@ def add_routes(app):
         app (Flask): The flask app to decorate
     """
 
+    @app.route("/api/results/browse/<path:project>")
     @app.route("/api/results/browse")
     @app.route("/api/results/browse/")
-    @app.route("/api/results/browse/<path:project>")
     def browse_for_results(project=""):
 
         path = convert_url_to_path(project)
-        print path
         is_project = phenotyper.path_has_saved_project_state(path)
+        if is_project:
+            analysis_date, extraction_date, change_date = phenotyper.get_project_dates(path)
+        else:
+
+            return jsonify(success=True, is_project=False, is_endpoint=False,
+                           **_get_search_results(path, "/api/results/browse"))
 
         return jsonify(success=True,
                        project=project,
                        is_project=is_project,
                        is_endpoint=False,
+                       analysis_date=datetime.fromtimestamp(analysis_date).isoformat() if analysis_date else "",
+                       extraction_date=datetime.fromtimestamp(extraction_date).isoformat() if extraction_date else "",
+                       change_date=datetime.fromtimestamp(change_date).isoformat() if change_date else "",
                        **_get_search_results(path, "/api/results/browse"))
 
     @app.route("/api/results/lock/add/<path:project>")

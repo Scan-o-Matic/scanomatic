@@ -6,6 +6,7 @@ from collections import deque
 import pickle
 from enum import Enum
 from types import StringTypes
+import glob
 
 #
 #   INTERNAL DEPENDENCIES
@@ -69,6 +70,37 @@ def path_has_saved_project_state(directory_path, require_phenotypes=True):
         return False
 
     return True
+
+
+def get_project_dates(directory_path):
+
+    def most_recent(stat_result):
+
+        return max(stat_result.st_mtime, stat_result.st_atime, stat_result.st_ctime)
+
+    analysis_date = None
+    _p = paths.Paths()
+    image_data_files = glob.glob(os.path.join(directory_path, _p.image_analysis_img_data.format("*")))
+    if image_data_files:
+        analysis_date = max(most_recent(os.stat(p)) for p in image_data_files)
+    try:
+        phenotype_date = most_recent(os.stat(os.path.join(directory_path, _p.phenotypes_raw_npy)))
+    except OSError:
+        phenotype_date = None
+
+    state_date = phenotype_date
+
+    for path in (_p.phenotypes_input_data, _p.phenotype_times, _p.phenotypes_input_smooth,
+                 _p.phenotypes_extraction_params, _p.phenotypes_filter, _p.phenotypes_filter_undo,
+                 _p.phenotypes_meta_data, _p.normalized_phenotypes, _p.vector_phenotypes_raw,
+                 _p.vector_meta_phenotypes_raw):
+
+        try:
+            state_date = max(state_date, most_recent(os.stat(os.path.join(directory_path, path))))
+        except OSError:
+            pass
+
+    return analysis_date, phenotype_date, state_date
 
 
 class SaveData(Enum):
