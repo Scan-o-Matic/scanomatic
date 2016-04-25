@@ -230,7 +230,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, "/api/results/phenotype"))
+                           **_get_search_results(path, "/api/results/phenotype/_NONE_"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
@@ -240,16 +240,25 @@ def add_routes(app):
 
             phenotypes = state.phenotype_names()
 
+            if plate is None:
+
+                urls = ["/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate, project)
+                        for phenotype, plate in product(phenotypes, state.enumerate_plates)]
+            else:
+
+                urls = ["/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate, project)
+                        for phenotype in phenotypes]
+
             # TODO: Add some smart urls about phenotypes including plates if exists
             return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
                            is_project=True, is_endpoint=False,
-                           phenotypes=phenotypes, urls=[],
+                           phenotypes=phenotypes, urls=urls,
                            project_name=name)
 
         if plate is None:
 
-            urls = ["/api/results/phenotype/{0}/{1}".format(i + 1, project)
-                    for i, p in enumerate(state.plate_shapes) if p is not None]
+            urls = ["/api/results/phenotype/{0}/{1}".format(plate + 1, project)
+                    for plate, phenotype in enumerate(state.plate_shapes) if phenotype is not None]
 
             return jsonify(success=True, urls=urls, read_only=not lock_key, lock_key=lock_key, project_name=name,
                            is_project=True, is_endpoint=False)
