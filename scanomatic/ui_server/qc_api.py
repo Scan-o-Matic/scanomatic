@@ -127,10 +127,12 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=False, reason="Not a project")
         key = _validate_lock_key(path, "")
+        name = _get_project_name(path)
+
         if key:
-            return jsonify(success=True, is_project=True, is_endpoint=True, lock_key=key)
+            return jsonify(success=True, is_project=True, is_endpoint=True, lock_key=key, project_name=name)
         else:
-            return jsonify(success=False, is_project=True, is_endpoint=True,
+            return jsonify(success=False, is_project=True, is_endpoint=True, project_name=name,
                            reason="Someone else is working with these results")
 
     @app.route("/api/results/lock/remove/<path:project>")
@@ -141,11 +143,12 @@ def add_routes(app):
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=False, is_project=False, is_endpoint=True, reason="Not a project")
 
-        if not _validate_lock_key(path, request.form['lock_key']):
+        if not _validate_lock_key(path, request.values.get("lock_key")):
             return jsonify(success=False, is_project=True, is_endpoint=True, reason="Invalid key")
 
         _remove_lock(path)
-        return jsonify(success=True)
+        name = _get_project_name(path)
+        return jsonify(success=True, is_project=True, is_endpoint=True, project_name=name)
 
     @app.route("/api/results/meta_data/add/<path:project>", methods=["POST"])
     def add_meta_data(project=None):
@@ -158,21 +161,40 @@ def add_routes(app):
                            is_endpoint=False,
                            **_get_search_results(path, "/api/results/meta_data/add"))
 
-        if not _validate_lock_key(path, request.form["lock_key"]):
+        name = _get_project_name(path)
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        if not lock_key:
             return jsonify(success=False, is_project=True, is_endpoint=True,
+                           project_name=name,
                            reason="Someone else is working with these results")
 
-        data = request.form["file"]
-        file_sufix = request.form["file_suffix"]
+        meta_data_stream = request.files.get('meta_data')
+        if not meta_data_stream:
+            return jsonify(success=False, is_project=True, is_endpoint=True,
+                           project_name=name,
+                           reason="No file was sent with name/id 'meta_data'")
+
+        file_sufix = request.values.get("file_suffix")
+        if not file_sufix:
+            return jsonify(success=False, is_project=True, is_endpoint=True,
+                           project_name=name,
+                           reason="The ending of the file (xls, xlsx, ods) was not specified in 'file_suffix'")
 
         meta_data_path = _get_new_metadata_file_name(path, file_sufix)
-        with open(meta_data_path, 'wb') as fh:
-            fh.write(data)
+        try:
+            with open(meta_data_path, 'wb') as fh:
+                fh.write(meta_data_stream)
+        except IOError:
+            return jsonify(success=False, reason="Failed to save file, contact server admin.",
+                           read_only=not lock_key, lock_key=lock_key,
+                           is_endpoint=True, is_project=True, project_name=name)
+
         state = phenotyper.Phenotyper.LoadFromState(path)
         state.load_meta_data(meta_data_path)
         state.save_state(path, ask_if_overwrite=False)
 
-        return jsonify(success=True, is_project=True, is_endpoint=True)
+        return jsonify(success=True, is_project=True, is_endpoint=True, project_name=name,
+                       read_only=not lock_key, lock_key=lock_key)
 
     @app.route("/api/results/meta_data/column_names/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/column_names/<path:project>")
