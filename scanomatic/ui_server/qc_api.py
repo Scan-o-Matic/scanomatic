@@ -1,6 +1,7 @@
 import os
 import time
 import uuid
+from dateutil import tz
 from flask import request, Flask, jsonify
 from itertools import chain, product
 from datetime import datetime
@@ -110,8 +111,15 @@ def add_routes(app):
     @app.route("/api/results/browse/")
     def browse_for_results(project=""):
 
+        local_zone = tz.gettz()
+
+        zone = tz.gettz(request.values.get("time_zone"))
+        if not zone:
+            zone = tz.gettz()
+
         path = convert_url_to_path(project)
         is_project = phenotyper.path_has_saved_project_state(path)
+
         if is_project:
             analysis_date, extraction_date, change_date = phenotyper.get_project_dates(path)
         else:
@@ -123,9 +131,12 @@ def add_routes(app):
                        project=project,
                        is_project=is_project,
                        is_endpoint=False,
-                       analysis_date=datetime.fromtimestamp(analysis_date).isoformat() if analysis_date else "",
-                       extraction_date=datetime.fromtimestamp(extraction_date).isoformat() if extraction_date else "",
-                       change_date=datetime.fromtimestamp(change_date).isoformat() if change_date else "",
+                       analysis_date=datetime.fromtimestamp(analysis_date, local_zone).astimezone(zone).isoformat()
+                       if analysis_date else "",
+                       extraction_date=datetime.fromtimestamp(extraction_date, local_zone).astimezone(zone).isoformat()
+                       if extraction_date else "",
+                       change_date=datetime.fromtimestamp(change_date, local_zone).astimezone(zone).isoformat()
+                       if change_date else "",
                        **_get_search_results(path, "/api/results/browse"))
 
     @app.route("/api/results/lock/add/<path:project>")
