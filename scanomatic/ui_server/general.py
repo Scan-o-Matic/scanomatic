@@ -27,3 +27,8 @@ def convert_path_to_url(prefix, path):
     if safe_directory_name(path):
         return path
     return None
+
+
+def path_is_in_jail(path):
+
+    return Config().paths.projects_root in path
