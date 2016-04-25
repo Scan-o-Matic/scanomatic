@@ -2,7 +2,7 @@ import os
 import time
 import uuid
 from flask import request, Flask, jsonify
-from itertools import chain
+from itertools import chain, product
 
 from scanomatic.dataProcessing import phenotyper
 from scanomatic.io.paths import Paths
@@ -260,9 +260,54 @@ def add_routes(app):
         return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, project_name=name, data=data.tolist(),
                        plate=plate, phenotype=phenotype, is_project=True, is_endpoint=True)
 
-    @app.route("/api/results/phenotypes/<int:plate>/<int:pos_x>/<int:pos_y>/<path:project>")
-    def get_phenotypes_for_position():
+    @app.route("/api/results/curves")
+    @app.route("/api/results/curves/")
+    @app.route("/api/results/curves/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
+    @app.route("/api/results/curves/<int:plate>/<path:project>")
+    @app.route("/api/results/curves/<path:project>")
+    def get_growth_data(plate=None, d1_row=None, d2_col=None, project=None):
 
-        return jsonify(success=False, reason="Not implemented")
+        url_root = "/api/results/curves"
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(success=True,
+                           is_project=False,
+                           is_endpoint=False,
+                           **_get_search_results(path, url_root))
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        name = _get_project_name(path)
+
+        if plate is None:
+
+            urls = ["{0}/{1}/{2}".format(url_root, i + 1, project)
+                    for i, p in enumerate(state.plate_shapes) if p is not None]
+
+            return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
+                           is_project=True, is_endpoint=False, urls=urls,
+                           project_name=name)
+
+        if d1_row is None or d2_col is None:
+
+            shape = tuple(state.plate_shapes)[plate - 1]
+            if shape is None:
+                return jsonify(success=False, reason="Plate not included in project")
+
+            urls = ["{0}/{1}/{2}/{3}/{4}".format(url_root, plate, d1, d2, project) for d1, d2 in
+                    product(range(shape[0]) if d1_row is None else [d1_row],
+                            range(shape[1]) if d2_col is None else [d2_col])]
+
+            return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
+                           is_project=True, is_endpoint=False, urls=urls,
+                           project_name=name)
+
+        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
+                       is_project=True, is_endpoint=True,
+                       project_name=name,
+                       smooth_data=state.smooth_growth_data[plate - 1][d1_row, d2_col].tolist(),
+                       raw_data=state.raw_growth_data[plate - 1][d1_row, d2_col].tolist())
 
     return True
