@@ -156,7 +156,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, "/api/results/meta_data/add/"))
+                           **_get_search_results(path, "/api/results/meta_data/add"))
 
         if not _validate_lock_key(path, request.form["lock_key"]):
             return jsonify(success=False, is_project=True, is_endpoint=True,
@@ -320,7 +320,6 @@ def add_routes(app):
                 urls = ["/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate, project)
                         for phenotype in phenotypes]
 
-            # TODO: Add some smart urls about phenotypes including plates if exists
             return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
                            is_project=True, is_endpoint=False,
                            phenotypes=phenotypes, urls=urls,
