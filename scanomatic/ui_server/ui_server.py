@@ -12,10 +12,10 @@ from types import StringTypes
 
 from enum import Enum
 
-from scanomatic.imageAnalysis.first_pass_image import FixtureImage
-from scanomatic.imageAnalysis.grayscale import getGrayscales, getGrayscale
-from scanomatic.imageAnalysis.imageGrayscale import get_grayscale, is_valid_grayscale
-from scanomatic.imageAnalysis.support import save_image_as_png
+from scanomatic.image_analysis.first_pass_image import FixtureImage
+from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
+from scanomatic.image_analysis.image_grayscale import get_grayscale, is_valid_grayscale
+from scanomatic.image_analysis.support import save_image_as_png
 from scanomatic.io.app_config import Config
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths

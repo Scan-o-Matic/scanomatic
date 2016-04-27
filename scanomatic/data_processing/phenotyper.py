@@ -12,20 +12,20 @@ import glob
 #   INTERNAL DEPENDENCIES
 #
 
-import _mockNumpyInterface
+import mock_numpy_interface
 import scanomatic.io.xml.reader as xml_reader_module
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
-from scanomatic.dataProcessing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
+from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
     get_derivative
-from scanomatic.dataProcessing.curve_phase_phenotypes import phase_phenotypes, filter_plate, CurvePhaseMetaPhenotypes, \
+from scanomatic.data_processing.curve_phase_phenotypes import phase_phenotypes, filter_plate, CurvePhaseMetaPhenotypes, \
     VectorPhenotypes
-from scanomatic.dataProcessing.phenotypes import PhenotypeDataType
+from scanomatic.data_processing.phenotypes import PhenotypeDataType
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData
-from scanomatic.dataProcessing.strain_selector import StrainSelector
-from scanomatic.dataProcessing.norm import Offsets, get_normailzed_data
+from scanomatic.data_processing.strain_selector import StrainSelector
+from scanomatic.data_processing.norm import Offsets, get_normailzed_data
 
 
 def get_phenotype(name):
@@ -114,7 +114,7 @@ class SaveData(Enum):
 # TODO: Phenotypes should possibly not be indexed based on enum value either and use dict like the undo/filter
 
 
-class Phenotyper(_mockNumpyInterface.NumpyArrayInterface):
+class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
     """The Phenotyper class is a class for producing phenotypes
     based on growth curves as well as storing and easy displaying them.
 

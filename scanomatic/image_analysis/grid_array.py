@@ -18,9 +18,9 @@ import grid
 from grid_cell import GridCell
 import scanomatic.io.paths as paths
 import scanomatic.io.logger as logger
-import imageBasics
+import image_basics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
-from scanomatic.imageAnalysis.grayscale import getGrayscale
+from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 #
@@ -31,7 +31,7 @@ class InvalidGridException(Exception):
     pass
 
 
-def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semaphor=None, analysis_job_model=None):
+def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semaphore=None, analysis_job_model=None):
 
     """
 
@@ -65,8 +65,8 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
     if save_extra_data:
         grid_cell.save_data_detections(base_path=analysis_job_model.output_directory if analysis_job_model else None)
 
-    if semaphor is not None:
-        semaphor.release()
+    if semaphore is not None:
+        semaphore.release()
 
 
 def _set_image_transposition(grid_cell, transpose_polynomial):
@@ -263,7 +263,7 @@ class GridArray():
         self._guess_grid_cell_size = None
         self._grid_cell_size = None
         self._grid_cells = {}
-        """:type:dict[tuple|scanomatic.imageAnalysis.grid_cell.GridCell]"""
+        """:type:dict[tuple|scanomatic.image_analysis.grid_cell.GridCell]"""
         self._grid = None
         self._grid_cell_corners = None
 
@@ -518,7 +518,7 @@ class GridArray():
 
         # noinspection PyBroadException
         try:
-            transpose_polynomial = imageBasics.Image_Transpose(
+            transpose_polynomial = image_basics.Image_Transpose(
                 sourceValues=image_model.fixture.grayscale.values,
                 targetValues=getGrayscale(image_model.fixture.grayscale.name)['targets'])
 
@@ -534,14 +534,16 @@ class GridArray():
         if save_grid_name:
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_grid_name)
 
-        semaphor = BoundedSemaphore(16)
+        semaphore = BoundedSemaphore(16)
         thread_group = set()
         m = self._analysis_model
 
-        for grid_cell in self._grid_cells.values():
+        for grid_cell in self._grid_cells.itervalues():
 
-            semaphor.acquire()
-            t = Thread(target=_analyse_grid_cell, args=(grid_cell, im, transpose_polynomial, index, semaphor, m))
+            semaphore.acquire()
+            if grid_cell.save_extra_data:
+                self._LOGGER.info("Starting analysis of extra monitored grid cell {0}".format(grid_cell.position))
+            t = Thread(target=_analyse_grid_cell, args=(grid_cell, im, transpose_polynomial, index, semaphore, m))
             t.start()
             thread_group.add(t)
 

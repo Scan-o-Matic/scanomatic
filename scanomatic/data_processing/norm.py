@@ -12,7 +12,7 @@ from scipy.ndimage import gaussian_filter, sobel, laplace, convolve, generic_fil
 #   INTERNAL DEPENDENCIES
 #
 
-from scanomatic.dataProcessing.dataBridge import Data_Bridge
+from scanomatic.data_processing.data_bridge import Data_Bridge
 from scanomatic.generics.maths import mid50_mean
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 

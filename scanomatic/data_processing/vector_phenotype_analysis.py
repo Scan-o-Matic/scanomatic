@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import scipy.cluster.hierarchy as sch
 import operator
 
-from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
+from scanomatic.data_processing.growth_phenotypes import Phenotypes
 
 
 def get_plate_phenotype_in_array(phenotypes, phenotype=Phenotypes.GrowthVelocityVector):

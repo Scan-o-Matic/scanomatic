@@ -14,7 +14,7 @@ import scanomatic.io.xml.writer as xml_writer
 import scanomatic.io.image_data as image_data
 from scanomatic.io.paths import Paths
 from scanomatic.io.app_config import Config as AppConfig
-import scanomatic.imageAnalysis.analysis_image as analysis_image
+import scanomatic.image_analysis.analysis_image as analysis_image
 from scanomatic.models.rpc_job_models import JOB_TYPE
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory, XMLModelFactory
 from scanomatic.models.factories.fixture_factories import GrayScaleAreaModelFactory, FixturePlateFactory

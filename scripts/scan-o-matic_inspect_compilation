@@ -7,7 +7,7 @@ from scanomatic.models.factories.compile_project_factory import CompileImageAnal
 from matplotlib import  pyplot as plt
 import matplotlib as mpl
 import numpy as np
-from scanomatic.imageAnalysis.grayscale import getGrayscale
+from scanomatic.image_analysis.grayscale import getGrayscale
 import os
 
 if __name__ == "__main__":

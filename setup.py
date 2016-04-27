@@ -116,8 +116,8 @@ setup(
         "scanomatic.io.xml",
         "scanomatic.qc",
         "scanomatic.server",
-        "scanomatic.imageAnalysis",
-        "scanomatic.dataProcessing",
+        "scanomatic.image_analysis",
+        "scanomatic.data_processing",
         "scanomatic.util",
         "scanomatic.ui_server"],
 

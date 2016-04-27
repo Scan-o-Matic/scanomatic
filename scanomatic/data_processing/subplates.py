@@ -5,10 +5,10 @@ import itertools
 #   INTERNAL DEPENDENCIES
 #
 
-import _mockNumpyInterface
+import mock_numpy_interface
 
 
-class SubPlates(_mockNumpyInterface.NumpyArrayInterface):
+class SubPlates(mock_numpy_interface.NumpyArrayInterface):
 
     def __init__(self, dataObject, kernels=None):
         """This class puts an interchangeable subsampling level

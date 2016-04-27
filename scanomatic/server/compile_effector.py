@@ -4,7 +4,7 @@ import proc_effector
 from scanomatic.models.compile_project_model import FIXTURE, COMPILE_ACTION
 from scanomatic.io.fixtures import Fixtures, FixtureSettings
 from scanomatic.io.paths import Paths
-from scanomatic.imageAnalysis import first_pass
+from scanomatic.image_analysis import first_pass
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
 from scanomatic.models.factories.rpc_job_factory import RPC_Job_Model_Factory
 from scanomatic.models.rpc_job_models import JOB_TYPE

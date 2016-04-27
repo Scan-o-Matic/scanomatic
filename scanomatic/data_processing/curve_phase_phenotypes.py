@@ -3,7 +3,7 @@ from scipy.stats import linregress
 from scipy import signal
 import numpy as np
 from matplotlib import pyplot as plt
-from scanomatic.dataProcessing import growth_phenotypes
+from scanomatic.data_processing import growth_phenotypes
 from enum import Enum
 import warnings
 from functools import partial

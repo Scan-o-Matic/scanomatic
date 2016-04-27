@@ -11,7 +11,7 @@ from scipy.ndimage import center_of_mass
 #
 
 import scanomatic.io.logger as logger
-import imageBasics
+import image_basics
 
 #
 # CLASSES
@@ -117,7 +117,7 @@ class FixtureImage(object):
         if conversion_factor != 1.0:
 
             self._logger.info("Scaling to {0}".format(conversion_factor))
-            self._img = imageBasics.Quick_Scale_To_im(conversion_factor)
+            self._img = image_basics.Quick_Scale_To_im(conversion_factor)
             self._logger.info("Scaled")
 
     @staticmethod

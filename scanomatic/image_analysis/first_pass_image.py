@@ -14,9 +14,9 @@ from scanomatic.io.logger import Logger
 from scanomatic.io.fixtures import FixtureSettings
 from scanomatic.models.factories.fixture_factories import FixturePlateFactory
 
-import imageBasics
-import imageFixture
-import imageGrayscale
+import image_basics
+import image_fixture
+import image_grayscale
 
 
 def _get_coords_sorted(coords):
@@ -223,7 +223,7 @@ class FixtureImage(object):
         _logger.info("Running marker detection ({0} markers on {1} ({2}) using {3}, scale {4})".format(
             markings, self.im_path, analysis_img.shape, self["reference"].get_marker_path(), scale_factor))
 
-        im_analysis = imageFixture.FixtureImage(
+        im_analysis = image_fixture.FixtureImage(
             image=analysis_img,
             pattern_image_path=self["reference"].get_marker_path(),
             scale=scale_factor)
@@ -243,7 +243,7 @@ class FixtureImage(object):
 
         if self._original_dpi != target_dpi:
 
-            return imageBasics.Quick_Scale_To_im(
+            return image_basics.Quick_Scale_To_im(
                 im=self.im,
                 scale=self.get_dpi_factor_to_target(target_dpi))
 
@@ -390,7 +390,7 @@ class FixtureImage(object):
 
             return False
 
-        current_model.grayscale.values = imageGrayscale.get_grayscale(self, current_model.grayscale)[1]
+        current_model.grayscale.values = image_grayscale.get_grayscale(self, current_model.grayscale)[1]
 
     def _set_area_relative(self, area, rotation=None, offset=(0, 0)):
 

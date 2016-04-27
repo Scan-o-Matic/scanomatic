@@ -5,7 +5,6 @@
 import numpy as np
 import operator
 from enum import Enum
-# from scipy.stats.mstats import mquantiles, tmean
 from scipy.ndimage import binary_erosion, \
     center_of_mass, label, \
     gaussian_filter

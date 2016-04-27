@@ -10,9 +10,9 @@ from types import StringTypes
 import pandas as pd
 from functools import wraps
 
-from scanomatic.dataProcessing.growth_phenotypes import Phenotypes
+from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.io.logger import Logger
-from scanomatic.dataProcessing.phenotyper import Phenotyper
+from scanomatic.data_processing.phenotyper import Phenotyper
 
 _logger = Logger("Phenotype Results QC")
 

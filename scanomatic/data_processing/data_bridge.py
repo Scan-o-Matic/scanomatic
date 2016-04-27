@@ -4,11 +4,11 @@ import numpy as np
 #   INTERNAL DEPENDENCIES
 #
 
-import _mockNumpyInterface
+import mock_numpy_interface
 import scanomatic.io.xml.reader as xmlReader
 
 
-class Data_Bridge(_mockNumpyInterface.NumpyArrayInterface):
+class Data_Bridge(mock_numpy_interface.NumpyArrayInterface):
 
     def __init__(self, source, **kwargs):
         """The data structure is expected to be convertable into

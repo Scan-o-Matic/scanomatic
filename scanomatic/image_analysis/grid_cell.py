@@ -8,7 +8,6 @@ grid-array with a potential blob at the center).
 #
 
 import numpy as np
-# from scipy.stats.mstats import tmean, mquantiles
 import os
 
 #
@@ -47,7 +46,7 @@ class GridCell():
         self.image_index = -1
         self.features = AnalysisFeaturesFactory.create(index=tuple(self.position), data={})
         self._analysis_items = {}
-        """:type: dict[scanomatic.models.analysis_model.ITEMS | scanomatic.imageAnalysis.grid_cell_extra.CellItem]"""
+        """:type: dict[scanomatic.models.analysis_model.ITEMS | scanomatic.image_analysis.grid_cell_extra.CellItem]"""
         self._set_empty_analysis_items()
 
     def _set_empty_analysis_items(self):

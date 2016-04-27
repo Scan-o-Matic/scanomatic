@@ -6,7 +6,7 @@ from dateutil import tz
 from flask import request, Flask, jsonify
 from itertools import chain, product
 from datetime import datetime
-from scanomatic.dataProcessing import phenotyper
+from scanomatic.data_processing import phenotyper
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, path_is_in_jail
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory

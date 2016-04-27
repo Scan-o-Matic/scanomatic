@@ -8,7 +8,7 @@ import numpy as np
 #
 
 import grid_array
-from imageGrayscale import is_valid_grayscale
+from image_grayscale import is_valid_grayscale
 from grayscale import getGrayscale
 from scanomatic.io.logger import Logger
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
@@ -55,7 +55,7 @@ class ProjectImage(object):
         self.im = None
 
         self._grid_arrays = self._new_grid_arrays
-        """:type : dict[int|scanomatic.imageAnalysis.grid_array.GridArray]"""
+        """:type : dict[int|scanomatic.image_analysis.grid_array.GridArray]"""
         self.features = _get_init_features(self._grid_arrays)
 
     @property
@@ -302,7 +302,7 @@ class ProjectImage(object):
                 grid_arrays_processed.add(plate.index)
                 im = self.get_im_section(plate)
                 grid_arr = self._grid_arrays[plate.index]
-                """:type: scanomatic.imageAnalysis.grid_array.GridArray"""
+                """:type: scanomatic.image_analysis.grid_array.GridArray"""
                 grid_arr.analyse(im, image_model)
 
         for index, grid_array in self._grid_arrays.iteritems():
