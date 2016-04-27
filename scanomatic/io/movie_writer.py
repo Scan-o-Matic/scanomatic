@@ -3,12 +3,9 @@
 http://matplotlib.org/examples/animation/moviewriter.html
 """
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.animation as anim
 import numpy as np
 import time
+from  scanomatic.generics.purge_importing import ExpiringModule
 
 
 class MovieWriter(object):
@@ -53,48 +50,57 @@ class MovieWriter(object):
 
             start_time = time.time()
             print("Starting animation")
-            writers = [a for a in anim.writers.list() if not a.endswith("_file")]
-            if not writers:
-                print("No capability of making films")
-                return
 
-            preference = [u'ffmpeg', u'avconv']
-            Writer = None
-            for pref in preference:
-                if pref in writers:
-                    Writer = anim.writers[pref]
-                    break
-            if Writer is None:
-                Writer = anim.writers[writers[0]]
+            with ExpiringModule('matplotlib', run_code="mod.use('Agg')") as mpl:
+                with ExpiringModule('matplotlib.pyplot') as plt:
+                    with ExpiringModule('matplotlib.animation') as anim:
 
-            writer = Writer(self._fps,
-                            metadata={'title': self._title, 'artist': self._artist, 'comment': self._comment})
+                        writers = [a for a in anim.writers.list() if not a.endswith("_file")]
+                        if not writers:
+                            print("No capability of making films")
+                            return
 
-            fig = self._fig
-            for v in args + tuple(kwargs.values()):
-                if isinstance(v, plt.Figure):
-                    fig = v
-                    break
+                        preference = [u'ffmpeg', u'avconv']
+                        Writer = None
+                        for pref in preference:
+                            if pref in writers:
+                                Writer = anim.writers[pref]
+                                break
+                        if Writer is None:
+                            Writer = anim.writers[writers[0]]
 
-            if fig is None:
-                fig = plt.figure()
+                        writer = Writer(self._fps,
+                                        metadata={'title': self._title,
+                                                  'artist': self._artist,
+                                                  'comment': self._comment})
 
-            with writer.saving(fig, self._target, self._dpi):
+                        fig = self._fig
 
-                frame = 0
-                try:
-                    iterator = drawing_function(*args, **kwargs)
-                except TypeError:
-                    iterator = drawing_function(fig, *args, **kwargs)
+                        for v in args + tuple(kwargs.values()):
+                            if isinstance(v, plt.Figure):
+                                fig = v
+                                break
 
-                for _ in iterator:
-                    writer.grab_frame()
-                    if (frame % 42 == 0 and frame > 0):
-                        print("{0} frames processed. (Movie length = {1:.2f}s, Processing for {2:.2f}s".format(
-                            frame + 1, frame / float(self._fps), time.time() - start_time))
-                    frame += 1
+                        if fig is None:
+                            fig = plt.figure()
 
-            print("Animation done! (Process took: {0:.2f}s)".format(time.time() - start_time))
+                        with writer.saving(fig, self._target, self._dpi):
+
+                            frame = 0
+                            try:
+                                iterator = drawing_function(*args, **kwargs)
+                            except TypeError:
+                                iterator = drawing_function(fig, *args, **kwargs)
+
+                            for _ in iterator:
+                                writer.grab_frame()
+                                if frame % 42 == 0 and frame > 0:
+                                    print(
+                                        "Frame {0} (Movie length = {1:.2f}s, Processing for {2:.2f}s".format(
+                                            frame + 1, frame / float(self._fps), time.time() - start_time))
+                                frame += 1
+
+                        print("Animation done! (Process took: {0:.2f}s)".format(time.time() - start_time))
 
         return wrapped
 
