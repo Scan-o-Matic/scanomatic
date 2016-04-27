@@ -1,5 +1,9 @@
 import os
 import numpy as np
+from time import sleep
+from threading import Thread
+from subprocess import call
+
 #
 # SCANNOMATIC LIBRARIES
 #
@@ -95,7 +99,7 @@ class ProjectImage(object):
 
         return not self._analysis_model.suppress_non_focal or index == self._analysis_model.focus_position[0]
 
-    def set_grid(self, image_model, save_name=None):
+    def set_grid(self, image_model):
 
         """
 
@@ -105,12 +109,11 @@ class ProjectImage(object):
             self._logger.critical("No image model to grid on")
             return False
 
-        if save_name is None:
-            save_name = os.sep.join((self._analysis_model.output_directory, "grid___origin_plate_"))
-
         self.load_image(image_model.image.path)
 
         if self._im_loaded:
+
+            threads = set()
 
             for index in self._grid_arrays:
 
@@ -140,14 +143,27 @@ class ProjectImage(object):
                         reference_folder = self._analysis_model.output_directory
 
                     if not self._grid_arrays[index].set_grid(
-                            im, save_name=save_name, offset=self._analysis_model.grid_model.gridding_offsets[index],
+                            im, analysis_directory=self._analysis_model.output_directory,
+                            offset=self._analysis_model.grid_model.gridding_offsets[index],
                             grid=os.path.join(reference_folder, Paths().grid_pattern.format(index + 1))):
 
                         self._logger.error("Could not use previous gridding with offset")
 
-                elif not self._grid_arrays[index].detect_grid(im, save_name=save_name):
+                else:
 
-                    self._logger.warning("Failed to grid plate {0}".format(plate_model))
+                    t = Thread(target=self._grid_arrays[index].detect_grid,
+                               args=(im,), kwargs=dict(analysis_directory=self._analysis_model.output_directory))
+                    t.start()
+                    threads.add(t)
+
+            while threads:
+                threads = set(t for t in threads if t.is_alive())
+                sleep(0.01)
+
+            call(["python",
+                  "-c",
+                  "from scanomatic.util.analysis import produce_grid_images; produce_grid_images('{0}')".format(
+                      self._analysis_model.output_directory)])
 
         return True
 
