@@ -44,18 +44,20 @@ class ImageData(object):
             path, image_index=image_index))
 
         if features is None:
-            ImageData._LOGGER.warning(
-                "Image {0} had no data".format(image_index))
+            ImageData._LOGGER.warning("Image {0} had no data".format(image_index))
             return
 
         number_of_plates = features.shape[0]
         plates = [None] * number_of_plates
+        ImageData._LOGGER.info("Writing features for {0} plates ({1})".format(number_of_plates, features.shape))
+
         for plate_features in features.data:
 
             if plate_features is None:
                 continue
 
             plate = np.zeros(plate_features.shape) * np.nan
+            ImageData._LOGGER.info("Writing plate features for plates index {0}".format(plate_features.index))
             plates[plate_features.index] = plate
 
             for cell_features in plate_features.data:
