@@ -24,7 +24,7 @@ _logger = logger.Logger("Basic Image Utils")
 def load_image_to_numpy(path, orientation=IMAGE_ROTATIONS.Portrait):
 
     im = Image.open(path)
-    data = np.asarray(im, dtype=np.int8)
+    data = np.asarray(im, dtype=np.uint8)
 
     data_orientation = IMAGE_ROTATIONS.Portrait if max(data.shape) == data.shape[0] else IMAGE_ROTATIONS.Landscape
 
