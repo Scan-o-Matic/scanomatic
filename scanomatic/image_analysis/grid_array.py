@@ -539,9 +539,9 @@ class GridArray():
 
         for grid_cell in self._grid_cells.itervalues():
 
-            semaphore.acquire()
             if grid_cell.save_extra_data:
-                self._LOGGER.info("Starting analysis of extra monitored grid cell {0}".format(grid_cell.position))
+                self._LOGGER.info("Starting analysis of extra monitored position {0}".format(grid_cell.position))
+            semaphore.acquire()
             t = Thread(target=_analyse_grid_cell, args=(grid_cell, im, transpose_polynomial, index, semaphore, m))
             t.start()
             thread_group.add(t)

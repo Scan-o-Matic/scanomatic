@@ -233,7 +233,7 @@ Scan-o-Matic""", self._analysis_job)
                                                                                          Paths().analysis_run_log))
             self._logger.set_output_target(
                 os.path.join(self._analysis_job.output_directory, Paths().analysis_run_log),
-                catch_stdout=True, catch_stderr=True)
+                catch_stdout=True, catch_stderr=True, buffering=None)
 
             self._logger.surpress_prints = False
 
