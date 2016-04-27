@@ -4,9 +4,7 @@
 
 import numpy as np
 import os
-import matplotlib
-matplotlib.use("Agg")
-from matplotlib import pyplot as plt
+
 # from threading import BoundedSemaphore, Thread
 # import time
 
@@ -22,7 +20,7 @@ import image_basics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
-
+from scanomatic.generics.purge_importing import ExpiringModule
 #
 # EXCEPTIONS
 
@@ -106,57 +104,60 @@ def _create_grid_array_identifier(identifier):
 
 def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=None, marked_position=None):
 
-    grid_image = plt.figure()
-    grid_plot = grid_image.add_subplot(111)
-    grid_plot.imshow(im.T, cmap=plt.cm.gray)
-    x = 0
-    y = 1
+    with ExpiringModule("matplotlib", run_code="mod.use('Agg')") as _:
+        with ExpiringModule("matplotlib.pyplot") as plt:
 
-    if grid_corners is not None:
+            grid_image = plt.figure()
+            grid_plot = grid_image.add_subplot(111)
+            grid_plot.imshow(im.T, cmap=plt.cm.gray)
+            x = 0
+            y = 1
 
-        for row in range(grid_corners.shape[2]):
+            if grid_corners is not None:
 
-            grid_plot.plot(
-                grid_corners[x, :, row, :].mean(axis=0),
-                grid_corners[y, :, row, :].mean(axis=0),
-                'r-')
+                for row in range(grid_corners.shape[2]):
 
-        for col in range(grid_corners.shape[3]):
+                    grid_plot.plot(
+                        grid_corners[x, :, row, :].mean(axis=0),
+                        grid_corners[y, :, row, :].mean(axis=0),
+                        'r-')
 
-            grid_plot.plot(
-                grid_corners[x, :, :, col].mean(axis=0),
-                grid_corners[y, :, :, col].mean(axis=0),
-                'r-')
+                for col in range(grid_corners.shape[3]):
 
-        if marked_position:
+                    grid_plot.plot(
+                        grid_corners[x, :, :, col].mean(axis=0),
+                        grid_corners[y, :, :, col].mean(axis=0),
+                        'r-')
 
-            pos = np.mean((marked_position.xy1, marked_position.xy2), axis=0)
-            grid_plot.plot(pos[0], pos[1], 'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
+                if marked_position:
 
-    if x_values is not None and y_values is not None:
+                    pos = np.mean((marked_position.xy1, marked_position.xy2), axis=0)
+                    grid_plot.plot(pos[0], pos[1], 'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
 
-        grid_plot.plot(x_values, y_values, 'o', alpha=0.75,
-                       ms=5, mfc='none', mec='red', mew=1)
+            if x_values is not None and y_values is not None:
 
-    ax = grid_image.gca()
-    ax.set_xlim(0, im.shape[x])
-    ax.set_ylim(im.shape[y], 0)
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
+                grid_plot.plot(x_values, y_values, 'o', alpha=0.75,
+                               ms=5, mfc='none', mec='red', mew=1)
 
-    if save_grid_name is None:
+            ax = grid_image.gca()
+            ax.set_xlim(0, im.shape[x])
+            ax.set_ylim(im.shape[y], 0)
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
 
-        grid_image.show()
-        return grid_image
+            if save_grid_name is None:
 
-    else:
+                grid_image.show()
+                return grid_image
 
-        grid_image.savefig(save_grid_name, pad_inches=0.01,
-                           format='svg', bbox_inches='tight')
+            else:
 
-        grid_image.clf()
-        plt.close(grid_image)
-        del grid_image
+                grid_image.savefig(save_grid_name, pad_inches=0.01,
+                                   format='svg', bbox_inches='tight')
+
+                grid_image.clf()
+                plt.close(grid_image)
+                del grid_image
 
 
 def get_calibration_polynomial_coeffs():
