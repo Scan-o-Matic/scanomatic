@@ -7,8 +7,8 @@ import os
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
-from threading import BoundedSemaphore, Thread
-import time
+# from threading import BoundedSemaphore, Thread
+# import time
 
 #
 # SCANNOMATIC LIBRARIES
@@ -533,21 +533,25 @@ class GridArray():
         if save_grid_name:
             make_grid_im(im, self._grid_cell_corners, save_grid_name=save_grid_name)
 
+        """
         semaphore = BoundedSemaphore(16)
         thread_group = set()
+        """
         m = self._analysis_model
 
         for grid_cell in self._grid_cells.itervalues():
 
             if grid_cell.save_extra_data:
                 self._LOGGER.info("Starting analysis of extra monitored position {0}".format(grid_cell.position))
-            semaphore.acquire()
-            t = Thread(target=_analyse_grid_cell, args=(grid_cell, im, transpose_polynomial, index, semaphore, m))
-            t.start()
-            thread_group.add(t)
+            _analyse_grid_cell(grid_cell, im, transpose_polynomial, index, None, m)
+            # semaphore.acquire()
+            # t = Thread(target=_analyse_grid_cell, args=(grid_cell, im, transpose_polynomial, index, semaphore, m))
+            # t.start()
+            # thread_group.add(t)
 
+        """
         while thread_group:
             thread_group = set(t for t in thread_group if t.is_alive())
             time.sleep(0.01)
-
+        """
         self._LOGGER.info("Plate {0} completed".format(self._identifier))
