@@ -1,7 +1,4 @@
 import os
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import fftconvolve
 from scipy.ndimage import center_of_mass
@@ -9,7 +6,7 @@ from scipy.ndimage import center_of_mass
 #
 # INTERNAL DEPENDENCIES
 #
-
+from image_basics import load_image_to_numpy
 import scanomatic.io.logger as logger
 import image_basics
 
@@ -43,9 +40,9 @@ class FixtureImage(object):
 
             try:
 
-                pattern_img = plt.imread(pattern_image_path)
+                pattern_img = load_image_to_numpy(pattern_image_path)
 
-            except:
+            except IOError:
 
                 self._logger.error(
                     "Could not open orientation guide image at " +
@@ -76,9 +73,9 @@ class FixtureImage(object):
 
                 try:
 
-                    self._img = plt.imread(path)
+                    self._img = load_image_to_numpy(path)
 
-                except:
+                except IOError:
 
                     self._logger.error("Could not open image at " + str(path))
                     self._load_error = True
@@ -101,9 +98,9 @@ class FixtureImage(object):
 
         try:
 
-            self._img = plt.imread(path)
+            self._img = load_image_to_numpy(path)
 
-        except:
+        except IOError:
 
             self._logger.error("Could not reload image at " + str(path))
             self._load_error = True

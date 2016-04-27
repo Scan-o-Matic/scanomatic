@@ -428,7 +428,7 @@ def get_valid_parameters(center, spacing, expected_center, expected_spacing,
 
 
 def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
-             visual=False, x_data=None, y_data=None,
+             x_data=None, y_data=None,
              expected_center=(100, 100), run_dev=False, dev_reduce_grid_data_fraction=None,
              validate_parameters=False, grid_correction=None):
     """Detects grid candidates and constructs a grid"""
@@ -498,17 +498,5 @@ def get_grid(im, expected_spacing=(105, 105), grid_shape=(16, 24),
     dx, dy = spacings
 
     grid = build_grid_from_center(x_data, y_data, center, dx, dy, grid_shape)
-
-    if visual and x_data is not None and y_data is not None:
-        import matplotlib
-        matplotlib.use("Agg")
-        from matplotlib import pyplot as plt
-        plt.imshow(im_filtered)
-        plt.plot(y_data, x_data, 'g+', ms=10, mew=2)
-        plt.plot(grid[:, :, 1].ravel(), grid[:, :, 0].ravel(),
-                 'o', ms=15, mec='w', mew=2, mfc='none')
-        plt.ylim(0, im_filtered.shape[0])
-        plt.xlim(0, im_filtered.shape[1])
-        plt.show()
 
     return grid, x_data, y_data, center, spacings, adjusted_values

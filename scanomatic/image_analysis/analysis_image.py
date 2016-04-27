@@ -1,7 +1,4 @@
 import os
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.image as plt_img
 import numpy as np
 #
 # SCANNOMATIC LIBRARIES
@@ -10,6 +7,7 @@ import numpy as np
 import grid_array
 from image_grayscale import is_valid_grayscale
 from grayscale import getGrayscale
+from image_basics import load_image_to_numpy
 from scanomatic.io.logger import Logger
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
@@ -157,7 +155,7 @@ class ProjectImage(object):
 
         try:
 
-            self.im = plt_img.imread(path)
+            self.im = load_image_to_numpy(path, IMAGE_ROTATIONS.Portrait)
             self._im_loaded = True
 
         except (TypeError, IOError):
@@ -168,7 +166,7 @@ class ProjectImage(object):
             self._logger.warning("Failed to load image at '{0}', trying '{1}'.".format(path, alt_path))
             try:
 
-                self.im = plt_img.imread(alt_path)
+                self.im =load_image_to_numpy(alt_path, IMAGE_ROTATIONS.Portrait)
                 self._im_loaded = True
 
             except (TypeError, IOError):

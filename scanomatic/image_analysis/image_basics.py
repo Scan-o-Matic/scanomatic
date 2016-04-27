@@ -57,7 +57,7 @@ def Quick_Scale_To_im(path=None, im=None, source_dpi=600, target_dpi=150,
 
         try:
 
-            im = plt.imread(path)
+            im = load_image_to_numpy(path)
 
         except:
 

@@ -1,9 +1,6 @@
 import time
 import itertools
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
-from matplotlib.pyplot import imread
 
 #
 # SCANNOMATIC LIBRARIES
@@ -13,7 +10,7 @@ from scanomatic.io.grid_history import GriddingHistory
 from scanomatic.io.logger import Logger
 from scanomatic.io.fixtures import FixtureSettings
 from scanomatic.models.factories.fixture_factories import FixturePlateFactory
-
+from image_basics import load_image_to_numpy
 import image_basics
 import image_fixture
 import image_grayscale
@@ -141,7 +138,11 @@ class FixtureImage(object):
 
         elif image_path is not None:
 
-            self.im = imread(image_path)
+            try:
+                self.im = load_image_to_numpy(image_path)
+            except IOError:
+                self.im = None
+
             if self.im is None:
                 self._logger.error("Could not load image")
 
