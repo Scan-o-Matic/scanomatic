@@ -165,9 +165,7 @@ class ProjectImage(object):
             alt_path = os.path.join(os.path.dirname(self._analysis_model.first_pass_file),
                                     os.path.basename(path))
 
-            self._logger.warning("Failed to load image at '{0}', trying '{1}'.".format(
-                path, alt_path
-            ))
+            self._logger.warning("Failed to load image at '{0}', trying '{1}'.".format(path, alt_path))
             try:
 
                 self.im = plt_img.imread(alt_path)
@@ -308,3 +306,5 @@ class ProjectImage(object):
         for index, grid_array in self._grid_arrays.iteritems():
             if index not in grid_arrays_processed:
                 grid_array.clear_features()
+
+        self._logger.info("Image {0} processed".format(image_model.image.index))

@@ -307,7 +307,6 @@ class GridArray():
             self._LOGGER.info("Invoking grid detection instead")
             return self.detect_grid(im, save_name=save_name, grid_correction=offset)
 
-
         self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
         spacings = ((grid[0, 1:] - grid[0,:-1]).ravel().mean(), (grid[1, :, 1:] - grid[1,:, :-1]).ravel().mean())
@@ -550,3 +549,5 @@ class GridArray():
         while thread_group:
             thread_group = set(t for t in thread_group if t.is_alive())
             time.sleep(0.01)
+
+        self._LOGGER.info("Plate {0} completed".format(self._identifier))

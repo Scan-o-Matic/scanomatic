@@ -115,11 +115,11 @@ class GridCell():
         if self._adjustment_warning != max_detect_filter.any():
             self._adjustment_warning = not self._adjustment_warning
             if self._adjustment_warning:
-                self._logger.warning("{0} got {1} pixel-values capped to {2} due to exceeding colony thickness.".format(
+                self._logger.warning("{0} got {1} pixel-values overshooting {2}.".format(
                     self._identifier, max_detect_filter.sum(), self.MAX_THRESHOLD) +
                                      " Further warnings for this colony suppressed.")
             else:
-                self._logger.info("{0} no longer have pixels that reach the thickness-cap {1}".format(
+                self._logger.info("{0} no longer have pixels that reach {1} depth.".format(
                     self._identifier, self.MAX_THRESHOLD))
 
     def push_source_data_to_cell_items(self):
