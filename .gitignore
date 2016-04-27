@@ -18,7 +18,4 @@ bundle_version.sh
 ver_upgrade.py
 GIT_HELP
 scripts/scan-o-matic_job
-.idea/workspace.xml
-.idea/encodings.xml
-.idea/misc.xml
-.idea/modules.xml
+/.idea
