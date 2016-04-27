@@ -182,7 +182,7 @@ class ProjectImage(object):
             self._logger.warning("Failed to load image at '{0}', trying '{1}'.".format(path, alt_path))
             try:
 
-                self.im =load_image_to_numpy(alt_path, IMAGE_ROTATIONS.Portrait)
+                self.im = load_image_to_numpy(alt_path, IMAGE_ROTATIONS.Portrait)
                 self._im_loaded = True
 
             except (TypeError, IOError):
