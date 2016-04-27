@@ -1,11 +1,14 @@
 """Resource module for handling basic images operations."""
 
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import scanomatic.io.logger as logger
 from scipy.ndimage import zoom
+try:
+    import Image
+except ImportError:
+    from PIL import Image
+
+from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 
 #
 # GLOBALS
@@ -16,6 +19,19 @@ _logger = logger.Logger("Basic Image Utils")
 #
 # FUNCTIONS
 #
+
+
+def load_image_to_numpy(path, orientation=IMAGE_ROTATIONS.Portrait):
+
+    im = Image.open(path)
+    data = np.asarray(im, dtype=np.int8)
+
+    data_orientation = IMAGE_ROTATIONS.Portrait if max(data.shape) == data.shape[0] else IMAGE_ROTATIONS.Landscape
+
+    if data_orientation == orientation:
+        return data
+    else:
+        return data.T
 
 
 def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
