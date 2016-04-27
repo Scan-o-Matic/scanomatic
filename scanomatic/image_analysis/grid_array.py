@@ -229,7 +229,6 @@ class GridArray(object):
     @image_index.setter
     def image_index(self, value):
         self._identifier[0] = value
-        self._features.index[0] = value
 
     def set_grid(self, im, analysis_directory=None, offset=None, grid=None):
 
