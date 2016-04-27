@@ -1,5 +1,10 @@
 import numpy as np
-from skimage import filter as ski_filter
+
+try:
+    from skimage import filters as ski_filter
+except ImportError:
+    from skimage import filter as ski_filter
+
 from scipy import ndimage
 
 #
