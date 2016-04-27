@@ -18,7 +18,6 @@ import image_basics
 from scanomatic.models.analysis_model import IMAGE_ROTATIONS
 from scanomatic.image_analysis.grayscale import getGrayscale
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
-from scanomatic.generics.purge_importing import ExpiringModule
 #
 # EXCEPTIONS
 
@@ -98,64 +97,6 @@ def _create_grid_array_identifier(identifier):
         identifier = [identifier[0], identifier[1]]
 
     return identifier
-
-
-def make_grid_im(im, grid_corners, save_grid_name=None, x_values=None, y_values=None, marked_position=None):
-
-    with ExpiringModule("matplotlib", run_code="mod.use('Agg')") as _:
-        with ExpiringModule("matplotlib.pyplot") as plt:
-
-            grid_image = plt.figure()
-            grid_plot = grid_image.add_subplot(111)
-            grid_plot.imshow(im.T, cmap=plt.cm.gray)
-            x = 0
-            y = 1
-
-            if grid_corners is not None:
-
-                for row in range(grid_corners.shape[2]):
-
-                    grid_plot.plot(
-                        grid_corners[x, :, row, :].mean(axis=0),
-                        grid_corners[y, :, row, :].mean(axis=0),
-                        'r-')
-
-                for col in range(grid_corners.shape[3]):
-
-                    grid_plot.plot(
-                        grid_corners[x, :, :, col].mean(axis=0),
-                        grid_corners[y, :, :, col].mean(axis=0),
-                        'r-')
-
-                if marked_position:
-
-                    pos = np.mean((marked_position.xy1, marked_position.xy2), axis=0)
-                    grid_plot.plot(pos[0], pos[1], 'o', alpha=0.75, ms=10, mfc='none', mec='blue', mew=1)
-
-            if x_values is not None and y_values is not None:
-
-                grid_plot.plot(x_values, y_values, 'o', alpha=0.75,
-                               ms=5, mfc='none', mec='red', mew=1)
-
-            ax = grid_image.gca()
-            ax.set_xlim(0, im.shape[x])
-            ax.set_ylim(im.shape[y], 0)
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-
-            if save_grid_name is None:
-
-                grid_image.show()
-                return grid_image
-
-            else:
-
-                grid_image.savefig(save_grid_name, pad_inches=0.01,
-                                   format='svg', bbox_inches='tight')
-
-                grid_image.clf()
-                plt.close(grid_image)
-                del grid_image
 
 
 def get_calibration_polynomial_coeffs():
@@ -290,21 +231,20 @@ class GridArray():
         self._identifier[0] = value
         self._features.index[0] = value
 
-    def set_grid(self, im, save_name=None, offset=None,
-                            grid=None):
+    def set_grid(self, im, analysis_directory=None, offset=None, grid=None):
 
         self._LOGGER.info("Setting manual re-gridding for plate {0} using offset {1} on reference grid {2}".format(
             self.index + 1, offset, grid))
 
         if not offset:
-            return self.detect_grid(im, save_name=save_name, grid_correction=offset)
+            return self.detect_grid(im, analysis_directory=analysis_directory, grid_correction=offset)
 
         try:
             grid = np.load(grid)
         except IOError:
             self._LOGGER.error("No grid file named '{0}'".format(grid))
             self._LOGGER.info("Invoking grid detection instead")
-            return self.detect_grid(im, save_name=save_name, grid_correction=offset)
+            return self.detect_grid(im, analysis_directory=analysis_directory, grid_correction=offset)
 
         self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
@@ -354,27 +294,15 @@ class GridArray():
         self._set_grid_cell_corners()
         self._update_grid_cells()
 
-        if save_name is not None:
-            save_name += "{0}.svg".format(self.index + 1)
-            if self._analysis_model.suppress_non_focal:
-                if self._analysis_model.focus_position and self._analysis_model.focus_position[0] == self.index:
-                    mark = self._grid_cells[(self._analysis_model.focus_position[1],
-                                             self._analysis_model.focus_position[2])]
-                else:
-                    mark = None
-            else:
-               mark = self._grid_cells[(0, 0)]
+        if analysis_directory is not None:
 
-            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name, marked_position=mark)
+            np.save(os.path.join(analysis_directory, self._paths.grid_pattern.format(self.index + 1)), self._grid)
 
-            np.save(os.path.join(os.path.dirname(save_name),
-                                 self._paths.grid_pattern.format(self.index + 1)), self._grid)
-
-            np.save(os.path.join(os.path.dirname(save_name),
+            np.save(os.path.join(analysis_directory,
                                  self._paths.grid_size_pattern.format(self.index + 1)), self._grid_cell_size)
         return True
 
-    def detect_grid(self, im, save_name=None, grid_correction=None):
+    def detect_grid(self, im, analysis_directory=None, grid_correction=None):
 
         self._LOGGER.info("Detecting grid on plate {0} using grid correction {1}".format(
             self.index + 1, grid_correction))
@@ -397,8 +325,7 @@ class GridArray():
                 self._paths.experiment_grid_error_image.format(self.index))
 
             np.save(error_file, im)
-            save_name = error_file + ".svg"
-            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name.format(self.index))
+            self._LOGGER.warning("Failed to detect grid on plate {0}".format(self.index))
 
             return False
 
@@ -411,24 +338,13 @@ class GridArray():
         self._set_grid_cell_corners()
         self._update_grid_cells()
 
-        if save_name is not None:
-            save_name += "{0}.svg".format(self.index + 1)
-            if self._analysis_model.suppress_non_focal:
-                if self._analysis_model.focus_position and self._analysis_model.focus_position[0] == self.index:
-                    mark = self._grid_cells[(self._analysis_model.focus_position[1],
-                                             self._analysis_model.focus_position[2])]
-                else:
-                    mark = None
-            else:
-               mark = self._grid_cells[(0, 0)]
+        if analysis_directory is not None:
 
-            make_grid_im(im, self._grid_cell_corners, save_grid_name=save_name, marked_position=mark)
+            np.save(os.path.join(analysis_directory, self._paths.grid_pattern.format(self.index + 1)), self._grid)
 
-            np.save(os.path.join(os.path.dirname(save_name),
-                                 self._paths.grid_pattern.format(self.index + 1)), self._grid)
-
-            np.save(os.path.join(os.path.dirname(save_name),
+            np.save(os.path.join(analysis_directory,
                                  self._paths.grid_size_pattern.format(self.index + 1)), self._grid_cell_size)
+
         return True
 
     def _calculate_grid_and_get_spacings(self, im, grid_correction=None):
@@ -503,7 +419,7 @@ class GridArray():
         for grid_cell in self._grid_cells.itervalues():
             grid_cell.clear_features()
 
-    def analyse(self, im, image_model, save_grid_name=None):
+    def analyse(self, im, image_model):
 
         """
 
