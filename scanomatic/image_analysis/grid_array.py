@@ -188,7 +188,7 @@ class GridCellSizes(object):
         return approximate_size
 
 
-class GridArray():
+class GridArray(object):
 
     _LOGGER = logger.Logger("Grid Array")
 
@@ -248,9 +248,9 @@ class GridArray():
 
         self._init_grid_cells(_get_grid_to_im_axis_mapping(self._pinning_matrix, im))
 
-        spacings = ((grid[0, 1:] - grid[0,:-1]).ravel().mean(), (grid[1, :, 1:] - grid[1,:, :-1]).ravel().mean())
+        spacings = ((grid[0, 1:] - grid[0, :-1]).ravel().mean(), (grid[1, :, 1:] - grid[1, :, :-1]).ravel().mean())
 
-        if offset and not all(o==0 for o in offset):
+        if offset and not all(o == 0 for o in offset):
 
             # The direction of the first axis is flipped to make offsetting more logical from user perspective
             # this inversion must be matched by equal inversion in detect_grid
@@ -408,7 +408,7 @@ class GridArray():
 
             for column in xrange(pinning_matrix[1]):
                 cur_position = (self.index, row, column)
-                if (not self._analysis_model.suppress_non_focal or focus_position == cur_position):
+                if not self._analysis_model.suppress_non_focal or focus_position == cur_position:
 
                     is_focus = focus_position == cur_position if focus_position else False
                     grid_cell = GridCell([self._identifier, (row, column)], polynomial_coeffs, save_extra_data=is_focus)
