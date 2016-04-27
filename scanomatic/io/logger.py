@@ -87,13 +87,14 @@ class Logger(object):
     @classmethod
     def set_global_output_target(
             cls,  target, catch_stdout=False, catch_stderr=False,
-            mode='w'):
+            mode='w', buffering=None):
 
         if cls._DEFAULT_LOGFILE is not None:
             cls._DEFAULT_LOGFILE.close()
 
         if target is not None:
-            cls._DEFAULT_LOGFILE = _ExtendedFileObject(target, mode)
+            cls._DEFAULT_LOGFILE = _ExtendedFileObject(target, mode,
+                                                       buffering=512 if buffering is None else buffering)
         else:
             if cls._DEFAULT_LOGFILE is not None:
                 cls._DEFAULT_LOGFILE.close()
@@ -241,13 +242,13 @@ class Logger(object):
 
     def set_output_target(
             self, target, catch_stdout=False, catch_stderr=False,
-            mode='w'):
+            mode='w', buffering=None):
 
         if self._log_file is not None:
             self._log_file.close()
 
         if target is not None:
-            self._log_file = _ExtendedFileObject(target, mode)
+            self._log_file = _ExtendedFileObject(target, mode, buffering=512 if buffering is None else buffering)
         else:
             if self._log_file is not None:
                 self._log_file.close()
@@ -286,9 +287,9 @@ class Logger(object):
 
 class _ExtendedFileObject(file):
 
-    def __init__(self, path, mode):
+    def __init__(self, path, mode, buffering=None):
 
-        super(_ExtendedFileObject, self).__init__(path, mode)
+        super(_ExtendedFileObject, self).__init__(path, mode, buffering=buffering)
         self._semaphor = False
         self._buffer = []
 
