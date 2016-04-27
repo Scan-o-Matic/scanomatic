@@ -28,14 +28,15 @@ class PhenotypeDataType(Enum):
                     Phenotypes.ChapmanRichardsFit,
                     Phenotypes.ColonySize48h,
                     Phenotypes.InitialValue,
+                    Phenotypes.ExperimentBaseLine,
+                    Phenotypes.ExperimentGrowthYield,
+                    Phenotypes.ExperimentPopulationDoublings,
+                    Phenotypes.GenerationTimeWhen,
+                    Phenotypes.ExperimentEndAverage,
                     Phenotypes.GenerationTimeStErrOfEstimate)
 
-        _under_development = (Phenotypes.ExperimentBaseLine,
-                              Phenotypes.ExperimentEndAverage,
-                              Phenotypes.ExperimentGrowthYield,
-                              Phenotypes.GenerationTimeWhen,
+        _under_development = (
                               Phenotypes.GenerationTimePopulationSize,
-                              Phenotypes.ExperimentPopulationDoublings,
                               CurvePhaseMetaPhenotypes.BimodalGrowthFirstImpulseDoubingTime,
                               CurvePhaseMetaPhenotypes.BimodalGrowthSecondImpulseDoubingTime,
                               CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution)
