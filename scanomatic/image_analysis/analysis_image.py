@@ -48,7 +48,14 @@ def _get_init_features(grid_arrays):
 class ProjectImage(object):
 
     def __init__(self, analysis_model, scanning_meta_data):
+        """
 
+        :param analysis_model: The model
+         :type analysis_model : scanomatic.models.analysis_model.AnalysisModel
+        :param scanning_meta_data: scanning info
+        :type scanning_meta_data : scanomatic.models.scanning_model.ScanningModel
+        :return:
+        """
         self._analysis_model = analysis_model
         self._scanning_meta_data = scanning_meta_data
         self._logger = Logger("Analysis Image")
@@ -176,7 +183,7 @@ class ProjectImage(object):
 
         except (TypeError, IOError):
 
-            alt_path = os.path.join(os.path.dirname(self._analysis_model.first_pass_file),
+            alt_path = os.path.join(os.path.dirname(self._analysis_model.compilation),
                                     os.path.basename(path))
 
             self._logger.warning("Failed to load image at '{0}', trying '{1}'.".format(path, alt_path))
