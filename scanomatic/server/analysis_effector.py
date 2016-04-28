@@ -193,6 +193,7 @@ Scan-o-Matic""", self._analysis_job)
         self._logger.info("ANALYSIS, Running analysis on '{0}'".format(image_model.image.path))
 
         self._image.analyse(image_model)
+        self._logger.info("Analysis took {0}, will now write out results.".format(time.time() - scan_start_time))
 
         features = self._image.features
 

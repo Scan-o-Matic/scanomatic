@@ -300,7 +300,7 @@ class ProjectImage(object):
         :type image_model: scanomatic.models.compile_project_model.CompileImageAnalysisModel
         """
         self.load_image(image_model.image.path)
-
+        self._logger.info("Image loaded")
         if self._im_loaded is False:
             self.clear_features()
             return
