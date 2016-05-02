@@ -77,7 +77,15 @@ class ImageData(object):
                                     plate_features.shape, cell_features.index))
 
                             return False
-
+                    else:
+                        ImageData._LOGGER.info("Missing data for colony position {0}, plate {1}".format(
+                            cell_features.index,
+                            plate_features.index))
+                else:
+                    ImageData._LOGGER.info("Missing compartment for colony position {0}, palte {1}".format(
+                        cell_features.index,
+                        plate_features.index
+                    ))
 
         ImageData._LOGGER.info("Saved Image Data '{0}' with {1} plates".format(
             path, len(plates)))
