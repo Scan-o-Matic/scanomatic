@@ -277,7 +277,7 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
         for i, index in enumerate(image_indices):
 
             ims[0].set_data(np.load(files[i]))
-            base_name = files[i][:-10]
+            base_name = files[i][:-21]
             image_ax.set_title("Image (t={0:.1f}h)".format(
                 image_indices[index] if interval is None else image_indices[index] * interval))
 
