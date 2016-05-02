@@ -4,11 +4,21 @@ import sys
 import glob
 import stat
 
-import scanomatic.io.logger as logger
 
-_logger = logger.Logger("Post Install")
+class MiniLogger(object):
 
-homeDir = os.path.expanduser("~")
+    def info(self, txt):
+        print("INFO: " + txt)
+
+    def warning(self, txt):
+        print("WARNING: " + txt)
+
+    def error(self, txt):
+        print("ERROR: " + txt)
+
+_logger = MiniLogger()
+
+home_dir = os.path.expanduser("~")
 
 defaltPermission = 0644
 installPath = ".scan-o-matic"
@@ -53,7 +63,7 @@ def _clone_all_files_in(path):
 def install_data_files(target_base=None, source_base=None, install_list=None):
 
     if target_base is None:
-        target_base = os.path.join(homeDir, installPath)
+        target_base = os.path.join(home_dir, installPath)
 
     if source_base is None:
         source_base = defaultSourceBase
@@ -131,9 +141,58 @@ def install_launcher():
     else:
         _logger.warning("Don't know how to install launchers for this os...")
 
+
+def uninstall():
+    _logger.info("Uninstalling")
+    current_location = os.path.abspath(os.curdir)
+    os.chdir(os.pardir)
+    import shutil
+
+    try:
+        import scanomatic as som
+        _logger.info("Found installation at {0}".format(som.__file__))
+        if os.path.abspath(som.__file__) != som.__file__ or current_location in som.__file__:
+            _logger.error("Trying to uninstall the local folder, just remove it instead if this was intended")
+        else:
+            shutil.rmtree(os.path.dirname(som.__file__))
+            parent_dir = os.path.dirname(os.path.dirname(som.__file__))
+            for egg in glob.glob(os.path.join(parent_dir, "Scan_o_Matic*.egg-info")):
+                os.remove(egg)
+
+            _logger.info("Removed installation at {0}".format(som.__file__))
+    except (ImportError, OSError):
+        _logger.info("All install location removed")
+
+    _logger.info("Uninstall complete")
+    os.chdir(current_location)
+
+
+def purge():
+
+    uninstall()
+
+    import shutil
+    settings = os.path.join(home_dir, ".scan-o-matic")
+
+    try:
+        shutil.rmtree(os.path.join(home_dir, settings))
+        _logger.info("Setting have been purged")
+    except IOError:
+        _logger.info("No settings found")
+
+
 if __name__ == "__main__":
 
-    if len(sys.argv) > 1 and sys.argv[1].lower() == 'install':
-        install_data_files()
+    if len(sys.argv) > 1:
+        action = sys.argv[1].lower()
 
-    install_launcher()
+        if action == 'install-settings':
+            install_data_files()
+        elif action == 'uninstall':
+            uninstall()
+        elif action == 'purge':
+            purge()
+        elif action == 'install-launcher':
+            install_launcher()
+    else:
+        _logger.info("Valid options are 'install-settings', 'install-launcher', 'uninstall', 'purge'")

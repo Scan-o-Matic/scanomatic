@@ -7,16 +7,19 @@ __version__ = "0.9991"
 
 import os
 import sys
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 
 #
 # INTERNAL DEPENDENCIES
 #
 
-import scanomatic.io.logger as logger
+from setup_tools import MiniLogger
 
-_logger = logger.Logger("Scan-o-Matic Setup")
-_logger.level = _logger.INFO
+if sys.argv[1] == 'uninstall':
+    call('python -c"from setup_tools import uninstall;uninstall()"', shell=True)
+    sys.exit()
+
+_logger = MiniLogger()
 _logger.info("Checking non-python dependencies")
 
 #
@@ -149,10 +152,10 @@ _logger.info("Scan-o-Matic is setup on system")
 # POST-INSTALL
 #
 
-import postSetup
+from setup_tools import install_data_files, install_launcher
 _logger.info("Copying data and configuration files")
-postSetup.install_data_files()
-postSetup.install_launcher()
+install_data_files()
+install_launcher()
 _logger.info("Post Setup Complete")
 
 if sys.argv[-1].upper() == "--USER":
