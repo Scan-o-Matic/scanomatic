@@ -64,7 +64,7 @@ def plot_growth_curve(growth_data, position, ax=None, save_target=None):
 
     times, data = ImageData.read_image_data_and_time(growth_data)
 
-    ax.semilogy(times, data[position[0] - 1][position[2], position[1]], "g-", basey=2)
+    ax.semilogy(times, data[position[0] - 1][position[1], position[2]], "g-", basey=2)
     ax.set_xlim(xmin=0, xmax=times.max() + 1)
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population size [cells]")
