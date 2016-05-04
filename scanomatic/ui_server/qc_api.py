@@ -445,7 +445,7 @@ def add_routes(app):
         return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
                        is_project=True, is_endpoint=True,
                        project_name=name,
-                       time_data=state.times,
+                       time_data=state.times.tolist(),
                        smooth_data=state.smooth_growth_data[plate - 1][d1_row, d2_col].tolist(),
                        raw_data=state.raw_growth_data[plate - 1][d1_row, d2_col].tolist())
 
