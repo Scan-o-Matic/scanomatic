@@ -157,6 +157,14 @@ def add_routes(app):
                        is_project=is_project,
                        is_endpoint=False,
                        project_name=name,
+                       add_lock=convert_path_to_url("/api/results/lock/add", path) if is_project else None,
+                       remove_lock=convert_path_to_url("/api/results/lock/remove", path) if is_project else None,
+                       add_meta_data=convert_path_to_url("/api/results/meta_data/add", path) if is_project else None,
+                       meta_data_column_names=convert_path_to_url("/api/results/meta_data/column_names", path)
+                       if is_project else None,
+                       phenotype_names = convert_path_to_url("/api/results/phenotype_names", path)
+                       if is_project else None,
+                       curves=convert_path_to_url("/api/results/curves", path) if is_project else None,
                        analysis_date=datetime.fromtimestamp(analysis_date, local_zone).astimezone(zone).isoformat()
                        if analysis_date else "",
                        extraction_date=datetime.fromtimestamp(extraction_date, local_zone).astimezone(zone).isoformat()
