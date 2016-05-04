@@ -404,8 +404,8 @@ def add_routes(app):
 
         if plate is None:
 
-            urls = ["/api/results/phenotype/{0}/{1}".format(plate + 1, project)
-                    for plate, phenotype in enumerate(state.plate_shapes) if phenotype is not None]
+            urls = ["/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate + 1, project)
+                    for plate, _ in enumerate(state.plate_shapes)]
 
             return jsonify(success=True, urls=urls, read_only=not lock_key, lock_key=lock_key, project_name=name,
                            is_project=True, is_endpoint=False)
