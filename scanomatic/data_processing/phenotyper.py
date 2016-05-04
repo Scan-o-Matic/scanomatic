@@ -57,7 +57,7 @@ def path_has_saved_project_state(directory_path, require_phenotypes=True):
 
     if require_phenotypes:
         try:
-            phenotypes = np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
+            np.load(os.path.join(directory_path, _p.phenotypes_raw_npy))
         except IOError:
             return False
 
