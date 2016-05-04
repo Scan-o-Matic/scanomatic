@@ -31,6 +31,7 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         self._image_to_analyse = 0
         self._fixture_settings = None
         self._compile_instructions_path = None
+        self._has_mailed_issues = False
         self._allowed_calls['progress'] = self.progress
 
     @property
@@ -69,7 +70,6 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
                 os.remove(self._compile_instructions_path)
             except OSError:
                 pass
-
 
         if self._fixture_settings is None:
             self._logger.critical("No fixture loaded, name probably not recognized or old fixture settings file")
@@ -127,9 +127,10 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
         try:
 
             with self._compile_output_filehandle as fh:
-
+                issues = {}
                 try:
-                    image_model = first_pass.analyse(compile_image_model, self._fixture_settings)
+
+                    image_model = first_pass.analyse(compile_image_model, self._fixture_settings, issues=issues)
                     CompileImageAnalysisFactory.serializer.dump_to_filehandle(
                         image_model, fh, as_if_appending=True)
 
@@ -141,9 +142,31 @@ class CompileProjectEffector(proc_effector.ProcessEffector):
 
                     self._logger.error("Could not output analysis to file {0}".format(
                         compile_image_model.path))
+
+                if issues and not self._has_mailed_issues:
+                    self._mail_issues(issues)
+
         except IOError:
 
             self._logger.critical("Could not write to project file {0}".format(self._compile_job.path))
+
+    def _mail_issues(self, issues):
+        self._has_mailed_issues = True
+        self._mail("Scan-o-Matic: Problems compiling project '{path}'",
+                   """This is an automated email, please don't reply!
+
+The project '{path}' on """ + AppConfig().computer_human_name +
+                   """ has experienced a problems with compiling the current project.
+                   """
+                   "* Image seems rotated ({0} radians).\n".format(issues['rotation']) if 'rotation' in issues else ""
+                   "* Part of calibrated fixture falls outside image ({0}).\n".format(
+                       issues['overflow'] if isinstance(issues['overflow'], str)
+                       else "Plate {0}".format(issues["overflow"])) if 'overflow' in issues else ""
+                   """
+
+All the best,
+
+Scan-o-Matic""", self._compile_job)
 
     @property
     def _compile_output_filehandle(self):

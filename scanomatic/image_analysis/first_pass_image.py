@@ -195,7 +195,7 @@ class FixtureImage(object):
             "invokes setting area positions (acc-time {0} s)".format(
                 time.time() - t))
 
-        self.set_current_areas()
+        self.set_current_areas(issues={})
 
         logger.debug(
             "Threading areas set(acc-time: {0} s)".format(time.time() - t))
@@ -393,12 +393,14 @@ class FixtureImage(object):
 
         current_model.grayscale.values = image_grayscale.get_grayscale(self, current_model.grayscale)[1]
 
-    def _set_area_relative(self, area, rotation=None, offset=(0, 0)):
+    def _set_area_relative(self, area, rotation=None, offset=(0, 0), issues={}):
 
         """
 
         :type area: scanomatic.models.fixture_models.FixturePlateModel |
-        scanomatic.models.fixture_models.GrayScaleAreaModel
+            scanomatic.models.fixture_models.GrayScaleAreaModel
+        :type issues: dict
+        :type offset: tuple(int)
         """
 
         if rotation:
@@ -412,15 +414,25 @@ class FixtureImage(object):
                 if area[key] > self.EXPECTED_IM_SIZE[dim]:
                     self._logger.warning("{0} value ({1}) outside image, setting to img border".format(key, area[key]))
                     area[key] = self.EXPECTED_IM_SIZE[dim]
+                    issues['overflow'] = area.index if hasattr(area, "index") else "Grayscale"
                 elif area[key] < 0:
                     self._logger.warning("{0} value ({1}) outside image, setting to img border".format(key, area[key]))
                     area[key] = 0
+                    issues['overflow'] = area.index if hasattr(area, "index") else "Grayscale"
 
-    def set_current_areas(self):
+    def set_current_areas(self, issues):
+        """
+
+        :param issues: reported issues
+         :type issues: dict
+        :return:
+        """
 
         self._set_current_mark_order()
         offset = self._get_offset()
         rotation = self._get_rotation()
+        if abs(rotation) > 0.05:
+            issues['rotation'] = rotation
         current_model = self["current"].model
         ref_model = self["fixture"].model
 
@@ -431,6 +443,6 @@ class FixtureImage(object):
         current_model.plates = type(current_model.plates)(FixturePlateFactory.copy(plate) for plate in ref_model.plates)
 
         for plate in current_model.plates:
-            self._set_area_relative(plate, rotation, offset)
+            self._set_area_relative(plate, rotation, offset, issues)
 
-        self._set_area_relative(current_model.grayscale, rotation, offset)
+        self._set_area_relative(current_model.grayscale, rotation, offset, issues)

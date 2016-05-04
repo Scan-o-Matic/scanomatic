@@ -23,12 +23,11 @@ class MarkerDetectionFailed(Exception):
 #
 
 
-def analyse(compile_image_model, fixture_settings):
+def analyse(compile_image_model, fixture_settings, issues):
     """
-
-
     :type fixture_settings: scanomatic.io.fixtures.FixtureSettings
     :type compile_image_model: scanomatic.models.compile_project_model.CompileImageModel
+    :type issues: dict
     :rtype : scanomatic.models.compile_project_model.CompileImageAnalysisModel
     """
 
@@ -43,7 +42,7 @@ def analyse(compile_image_model, fixture_settings):
 
     _logger.info("Setting current fixture_image areas for {0}".format(compile_image_model))
 
-    fixture_image.set_current_areas()
+    fixture_image.set_current_areas(issues)
 
     _do_grayscale(compile_analysis_model, fixture_image)
 
