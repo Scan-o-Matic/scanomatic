@@ -18,7 +18,7 @@ import scanomatic.models.rpc_job_models as rpc_job_models
 from scanomatic.io.rpc_client import sanitize_communication
 
 _SOM_SERVER = None
-""":type: scanomatic.server.server.Server"""
+""":type : scanomatic.server.server.Server"""
 _RPC_SERVER = None
 
 
@@ -43,21 +43,21 @@ def _verify_admin(f):
 
 
 def _report_invalid(logger, factory, model, title):
-   """
+    """
 
-   :type logger: scanomatic.io.logger.Logger
-   :type factory: scanomatic.generics.abstract_model_factory.AbstractModelFactory
-   :type model: scanomstic.generics.model.Model
-   :return: None
-   """
+    :type logger: scanomatic.io.logger.Logger
+    :type factory: scanomatic.generics.abstract_model_factory.AbstractModelFactory
+    :type model: scanomatic.generics.model.Model
+    :return: None
+    """
 
-   for param in factory.get_invalid_names(model):
+    for param in factory.get_invalid_names(model):
 
-       logger.warning("{title} got invalid parameter {param} value '{value}'".format(
+        logger.warning("{title} got invalid parameter {param} value '{value}'".format(
            title=title, param=param, value=model[param]))
 
 
-class Interface_Builder(SingeltonOneInit):
+class InterfaceBuilder(SingeltonOneInit):
 
     def __one_init__(self):
 
