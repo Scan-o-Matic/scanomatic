@@ -102,21 +102,29 @@ function jobStatusAsHTML(job) {
     return ret + "</div>";
 }
 
+function shortHash(job){
+
+    return " ("  + job.id.substring(job.id.length - 8) + ")";
+}
+
 function queueItemAsHTML(job) {
 
     ret = "<div class='job'><input type='hidden' class='id' value='" + job.id + "'><code>"
         + job.type + "</code>&nbsp;<code>" + job.status + "</code>&nbsp;";
 
-    if (job.type == "Scan")
+    if (job.type == "Scan") {
         ret += job.content_model.project_name;
-    else if (job.type == "Compile")
-        ret += job.content_model.path;
-    else if (job.type == "Analysis")
-        ret += job.content_model.compilation;
-    else if (job.type == "Features")
-        ret += job.content_model.analysis_directory;
-    else
-        ret += job.id;
+    } else if (job.type == "Compile") {
+        arr = job.content_model.path.split("/");
+        ret += arr[arr.length - 1];
+    } else if (job.type == "Analysis") {
+        arr = job.content_model.compilation.split("/");
+        ret += arr[arr.length - 2].replace("_", " ") + " -> " + job.content_model.output_directory.replace("_", " ");
+    } else if (job.type == "Features") {
+        arr = job.content_model.analysis_directory.split("/");
+        ret += arr[arr.length - 2].replace("_", " ") + ": " + arr[arr.length - 1].replace("_", " ");
+    }
+    ret += shortHash(job);
 
     ret += "<button type='button' class='stop-button' onclick='stopDialogue(this);'></button>";
     return ret + "</div>";
