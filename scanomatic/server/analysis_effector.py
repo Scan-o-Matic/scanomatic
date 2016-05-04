@@ -23,6 +23,22 @@ from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 import scanomatic.io.first_pass_results as first_pass_results
 import scanomatic.io.rpc_client as rpc_client
 
+
+def get_label_from_analysis_model(analysis_model, id_hash):
+    """Make a suitable label to show in status view
+
+    :param analysis_model: The model
+     :type analysis_model: scanomatic.models.analysis_model.AnalysisModel
+    :param id_hash : The identifier of the project
+     :type id_hash : str
+    :return: label
+    :rtype: str
+    """
+
+    root = os.path.basename(os.path.dirname(analysis_model.compilation)).replace("_", " ")
+    output = analysis_model.output_directory.replace("_", " ")
+    return "{0} -> {1}, ({2})".format(root, output, id_hash[-6:])
+
 #
 # CLASSES
 #
@@ -33,12 +49,17 @@ class AnalysisEffector(proc_effector.ProcessEffector):
     TYPE = JOB_TYPE.Analysis
 
     def __init__(self, job):
+        """
 
+        :param job: The job
+         :type job : scanomatic.models.rpc_job_models.RPCjobModel
+        :return:
+        """
         # sys.excepthook = support.custom_traceback
 
         super(AnalysisEffector, self).__init__(job, logger_name="Analysis Effector")
         self._config = None
-        self._job_label = job.content_model.compilation
+        self._job_label = get_label_from_analysis_model(job.content_model.compilation, job.id)
 
         self._specific_statuses['total'] = 'total'
         self._specific_statuses['current_image_index'] = 'current_image_index'
