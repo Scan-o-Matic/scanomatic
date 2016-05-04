@@ -357,9 +357,11 @@ def add_routes(app):
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         name = _get_project_name(path)
-
+        urls = ["/api/results/phenotype/{0}/{1}".format(phenotype, project)
+                for phenotype in state.phenotype_names()]
         return jsonify(success=True, phenotypes=state.phenotype_names(),
                        is_project=True, is_endpoint=True,
+                       phenotype_urls=urls,
                        read_only=not lock_key, lock_key=lock_key, project_name=name)
 
     @app.route("/api/results/phenotype")
