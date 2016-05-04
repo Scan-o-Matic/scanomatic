@@ -267,6 +267,12 @@ class ScanningModelFactory(AbstractModelFactory):
                 tuple(c for c in model.project_name if c in string.letters + string.digits + "_")):
             return model.FIELD_TYPES.project_name
 
+        try:
+            int(model.project_name)
+            return model.FIELD_TYPES.project_name
+        except (ValueError, TypeError):
+            pass
+
         return True
 
     @classmethod
