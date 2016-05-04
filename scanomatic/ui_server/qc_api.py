@@ -71,6 +71,14 @@ def _discover_projects(path):
     return tuple(d for d in dirs if phenotyper.path_has_saved_project_state(d))
 
 
+def _get_possible_paths(path):
+
+    dirs = tuple()
+    for root, dirs, _ in os.walk(path, followlinks=True):
+        break
+    return tuple(os.path.join(root, d) for d in dirs)
+
+
 def _get_project_name(project_path):
     no_name = None
 
@@ -103,7 +111,7 @@ def _get_new_metadata_file_name(project_path, suffix):
 
 def _get_search_results(path, url_prefix):
 
-    projects = _discover_projects(path)
+    projects = _get_possible_paths(path)
     names = list(_get_project_name(p) for p in projects)
     urls = list(convert_path_to_url(url_prefix, p) for p in projects)
     if None in urls:
