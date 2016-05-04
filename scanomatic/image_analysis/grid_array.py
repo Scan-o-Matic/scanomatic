@@ -403,7 +403,7 @@ class GridArray(object):
         polynomial_coeffs = get_calibration_polynomial_coeffs()
         focus_position = (self._analysis_model.focus_position[0],
                           self._analysis_model.focus_position[2],
-                          self._analysis_model.focus_position[1])
+                          self._analysis_model.focus_position[1]) if self._analysis_model.focus_position else None
 
         for row in xrange(pinning_matrix[0]):
 
