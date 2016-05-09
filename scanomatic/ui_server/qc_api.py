@@ -75,8 +75,12 @@ def _discover_projects(path):
 def _get_possible_paths(path):
 
     dirs = tuple()
+    root = None
     for root, dirs, _ in os.walk(path, followlinks=True):
         break
+
+    if root is None:
+        return tuple()
     return tuple(os.path.join(root, d) for d in dirs)
 
 
@@ -163,7 +167,7 @@ def add_routes(app):
                        add_meta_data=convert_path_to_url("/api/results/meta_data/add", path) if is_project else None,
                        meta_data_column_names=convert_path_to_url("/api/results/meta_data/column_names", path)
                        if is_project else None,
-                       phenotype_names = convert_path_to_url("/api/results/phenotype_names", path)
+                       phenotype_names=convert_path_to_url("/api/results/phenotype_names", path)
                        if is_project else None,
                        curves=convert_path_to_url("/api/results/curves", path) if is_project else None,
                        analysis_date=datetime.fromtimestamp(analysis_date, local_zone).astimezone(zone).isoformat()
