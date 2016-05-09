@@ -443,7 +443,7 @@ def add_routes(app):
 
             urls = []
             plate_indices = []
-            for plate, shape in state.plate_shapes:
+            for plate, shape in enumerate(state.plate_shapes):
                 if shape is not None:
                     urls.append("/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate, project))
                     plate_indices.append(plate)
