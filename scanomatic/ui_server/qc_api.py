@@ -315,7 +315,7 @@ def add_routes(app):
         if state.meta_data:
             return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
                            is_project=True, is_endpoint=True, project_name=name,
-                           meta_data=state.meta_data[plate - 1].data)
+                           meta_data=state.meta_data[plate].data)
         else:
             return jsonify(success=False, reason="Project has no meta-data added",
                            read_only=not lock_key, lock_key=lock_key,
@@ -480,7 +480,7 @@ def add_routes(app):
 
         if plate is None:
 
-            urls = ["{0}/{1}/{2}".format(url_root, i + 1, project)
+            urls = ["{0}/{1}/{2}".format(url_root, i, project)
                     for i, p in enumerate(state.plate_shapes) if p is not None]
 
             return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
@@ -489,7 +489,7 @@ def add_routes(app):
 
         if d1_row is None or d2_col is None:
 
-            shape = tuple(state.plate_shapes)[plate - 1]
+            shape = tuple(state.plate_shapes)[plate]
             if shape is None:
                 return jsonify(success=False, reason="Plate not included in project")
 
@@ -505,8 +505,8 @@ def add_routes(app):
                        is_project=True, is_endpoint=True,
                        project_name=name,
                        time_data=state.times.tolist(),
-                       smooth_data=state.smooth_growth_data[plate - 1][d1_row, d2_col].tolist(),
-                       raw_data=state.raw_growth_data[plate - 1][d1_row, d2_col].tolist())
+                       smooth_data=state.smooth_growth_data[plate][d1_row, d2_col].tolist(),
+                       raw_data=state.raw_growth_data[plate][d1_row, d2_col].tolist())
 
     # End of UI extension with qc-functionality
     return True
