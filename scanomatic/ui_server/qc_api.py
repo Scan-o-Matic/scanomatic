@@ -404,8 +404,8 @@ def add_routes(app):
     @app.route("/api/results/phenotype")
     @app.route("/api/results/phenotype/")
     @app.route("/api/results/phenotype/<phenotype>/<int:plate>/<path:project>")
-    @app.route("/api/results/phenotype/<phenotype>/<path:project>")
     @app.route("/api/results/phenotype/<int:plate>/<path:project>")
+    @app.route("/api/results/phenotype/<phenotype>/<path:project>")
     def get_phenotype_data(phenotype=None, project=None, plate=None):
 
         path = convert_url_to_path(project)
