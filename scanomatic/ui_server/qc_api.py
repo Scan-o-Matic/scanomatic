@@ -10,6 +10,7 @@ from scanomatic.data_processing import phenotyper
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, path_is_in_jail
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
+from scanomatic.data_processing.phenotypes import get_sort_order
 
 RESERVATION_TIME = 60 * 5
 
@@ -359,7 +360,11 @@ def add_routes(app):
         name = _get_project_name(path)
         urls = ["/api/results/phenotype/{0}/{1}".format(phenotype, project)
                 for phenotype in state.phenotype_names()]
+
+        sort_order = [get_sort_order(p) for p in state.phenotype_names()]
+
         return jsonify(success=True, phenotypes=state.phenotype_names(),
+                       phenotype_sort_orders=sort_order,
                        is_project=True, is_endpoint=True,
                        phenotype_urls=urls,
                        read_only=not lock_key, lock_key=lock_key, project_name=name)

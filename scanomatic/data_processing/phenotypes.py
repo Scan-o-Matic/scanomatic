@@ -87,3 +87,13 @@ class PhenotypeDataType(Enum):
                 return tuple(p for p in Phenotypes)
 
             return True
+
+
+def get_sort_order(phenotype):
+    """
+
+    :param phenotype: the phenotype
+    :return:
+    """
+
+    return 1
