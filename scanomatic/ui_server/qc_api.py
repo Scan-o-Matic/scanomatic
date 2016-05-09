@@ -170,6 +170,7 @@ def add_routes(app):
                        phenotype_names=convert_path_to_url("/api/results/phenotype_names", path)
                        if is_project else None,
                        curves=convert_path_to_url("/api/results/curves", path) if is_project else None,
+                       quality_index=convert_path_to_url("/api/results/quality_index", path) if is_project else None,
                        analysis_date=datetime.fromtimestamp(analysis_date, local_zone).astimezone(zone).isoformat()
                        if analysis_date else "",
                        extraction_date=datetime.fromtimestamp(extraction_date, local_zone).astimezone(zone).isoformat()
