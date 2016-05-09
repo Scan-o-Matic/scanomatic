@@ -807,6 +807,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._get_plate_linear_regression_strided(
                 self.smooth_growth_data[plate][position].reshape(1, 1, self.times.size))[0], self.times_strided)[0]
 
+    def get_quality_index(self, plate):
+
+        #TODO: Add the previous ranking system
+        return (np.array([]), np.array([]))
+
     def set(self, data_type, data):
 
         if data_type == 'phenotypes':

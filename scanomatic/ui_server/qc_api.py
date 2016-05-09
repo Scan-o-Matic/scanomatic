@@ -369,6 +369,38 @@ def add_routes(app):
                        phenotype_urls=urls,
                        read_only=not lock_key, lock_key=lock_key, project_name=name)
 
+    @app.route("/api/results/quality_index")
+    @app.route("/api/results/quality_index/")
+    @app.route("/api/results/quality_index/<int:plate>/<path:project>")
+    @app.route("/api/results/quality_index/<path:project>")
+    def get_quality_index(project=None, plate=None):
+
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(success=True,
+                           is_project=False,
+                           is_endpoint=False,
+                           **_get_search_results(path, "/api/results/quality_index"))
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        name = _get_project_name(path)
+
+        if plate is None:
+
+            urls = ["/api/results/quality_index/{0}/{1}".format(plate, project)
+                    for plate, shape in enumerate(state.enumerate_plates) if shape is not None]
+            return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
+                           is_project=True, is_endpoint=False,
+                           urls=urls,
+                           project_name=name)
+
+        rows, cols = state.get_quality_index(plate)
+        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, is_project=True, is_endpoint=True,
+                       project_name=name, dim1_rows=rows.tolist(), dim2_cols=cols.tolist())
+
     @app.route("/api/results/phenotype")
     @app.route("/api/results/phenotype/")
     @app.route("/api/results/phenotype/<phenotype>/<int:plate>/<path:project>")
