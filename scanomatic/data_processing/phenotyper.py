@@ -197,6 +197,17 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         if run_extraction:
             self.extract_phenotypes()
 
+    def __contains__(self, phenotype):
+        """
+
+        :param phenotype: The phenotype
+         :type phenotype: enum.Enum
+        :return: bool
+        """
+        return (self._phenotypes is None or
+                self._limited_phenotypes and phenotype not in self._limited_phenotypes or
+                phenotype.value >= self.number_of_phenotypes)
+
     def set_phenotype_inclusion_level(self, value):
         if isinstance(value, PhenotypeDataType):
             self._phenotypes_inclusion = value
@@ -721,9 +732,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             else:
                 return _plate_type_converter_scalar(plate)
 
-        if self._phenotypes is None or \
-                self._limited_phenotypes and phenotype not in self._limited_phenotypes or \
-                phenotype.value >= self.number_of_phenotypes:
+        if phenotype not in self:
 
             raise ValueError(
                 "'{0}' has not been extracted, please re-run 'extract_phenotypes()' to include it.".format(
@@ -809,8 +818,44 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def get_quality_index(self, plate):
 
-        #TODO: Add the previous ranking system
-        return (np.array([]), np.array([]))
+        shape = tuple(self.plate_shapes)[plate]
+
+        if Phenotypes.GenerationTime in self:
+            gt = self.get_phenotype(Phenotypes.GenerationTime)[plate]
+        else:
+            gt = np.ones(shape)
+
+        if Phenotypes.GenerationTimeStErrOfEstimate in self:
+            gt_err = self.get_phenotype(Phenotypes.GenerationTimeStErrOfEstimate)[plate]
+        else:
+            gt_err = np.ones(shape)
+
+        if Phenotypes.ChapmanRichardsFit in self:
+            cr_fit = self.get_phenotype(Phenotypes.ChapmanRichardsFit)[plate]
+        else:
+            cr_fit = np.ones(shape)
+
+        if Phenotypes.GrowthLag in self:
+            lag = self.get_phenotype(Phenotypes.GrowthLag)[plate]
+        else:
+            lag = np.ones(shape)
+
+        if Phenotypes.ExperimentGrowthYield in self:
+            growth = self.get_phenotype(Phenotypes.ExperimentGrowthYield)[plate]
+        else:
+            growth = np.ones(shape)
+
+        gt_mean = gt[np.isfinite(gt)].mean()
+        lag_mean = lag[np.isfinite(lag)].mean()
+        growth_mean = growth[np.isfinite(growth)].mean()
+
+        badness = (np.abs(gt - gt_mean) / gt_mean +
+                   gt_err * 100 +
+                   (1 - cr_fit.clip(0, 1)) * 25 +
+                   np.abs(lag - lag_mean) / lag_mean +
+                   np.abs(growth - growth_mean) / growth)
+
+        return np.unravel_index(badness.ravel().argsort(), badness.shape)
 
     def set(self, data_type, data):
 
