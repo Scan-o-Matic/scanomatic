@@ -404,11 +404,15 @@ def add_routes(app):
 
         if plate is None:
 
-            urls = ["/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate + 1, project)
-                    for plate, _ in enumerate(state.plate_shapes)]
+            urls = []
+            plate_indices = []
+            for plate, shape in state.plate_shapes:
+                if shape is not None:
+                    urls.append("/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate, project))
+                    plate_indices.append(plate)
 
             return jsonify(success=True, urls=urls, read_only=not lock_key, lock_key=lock_key, project_name=name,
-                           is_project=True, is_endpoint=False)
+                           plate_indices=plate_indices, is_project=True, is_endpoint=False)
 
         phenotype_enum = phenotyper.get_phenotype(phenotype)
         data = state.get_phenotype(phenotype_enum)[plate].filled()
