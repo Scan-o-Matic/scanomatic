@@ -92,8 +92,8 @@ class PhenotypeDataType(Enum):
 def get_sort_order(phenotype):
     """
 
-    :param phenotype: the phenotype
+    :param phenotype: the phenotype name
     :return:
     """
-
+    # TODO: Add the inverse exceptions
     return 1
