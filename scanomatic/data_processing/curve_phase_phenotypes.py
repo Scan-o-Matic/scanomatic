@@ -318,6 +318,7 @@ class CurvePhaseMetaPhenotypes(Enum):
     MajorImpulseYieldContribution = 0
     BimodalGrowthFirstImpulseDoubingTime = 1
     BimodalGrowthSecondImpulseDoubingTime = 2
+    InitialLag = 3
 
 
 def filter_plate(plate, meta_phenotype):
@@ -343,3 +344,27 @@ def filter_plate(plate, meta_phenotype):
             phase_selector=lambda phases: phases[
                 0 if meta_phenotype == CurvePhaseMetaPhenotypes.BimodalGrowthFirstImpulseDoubingTime else 1]
         )
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLag:
+
+        lag_slope = filter_plate_custom_filter(
+            plate, phase=CurvePhases.Flat, measure=CurvePhasePhenotypes.LinearModelSlope,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0])
+
+        lag_intercept = filter_plate_custom_filter(
+            plate, phase=CurvePhases.Flat, measure=CurvePhasePhenotypes.LinearModelIntercept,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0])
+
+        impulse_slope = filter_plate_custom_filter(
+            plate, phase=CurvePhases.Impulse, measure=CurvePhasePhenotypes.LinearModelSlope,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0])
+
+        impulse_intercept = filter_plate_custom_filter(
+            plate, phase=CurvePhases.Impulse, measure=CurvePhasePhenotypes.LinearModelIntercept,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0])
+
+        return (impulse_intercept - lag_intercept) / (lag_slope - impulse_slope)
