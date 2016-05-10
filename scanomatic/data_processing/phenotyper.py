@@ -204,9 +204,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
          :type phenotype: enum.Enum
         :return: bool
         """
-        return (self._phenotypes is None or
-                self._limited_phenotypes and phenotype not in self._limited_phenotypes or
-                phenotype.value >= self.number_of_phenotypes)
+
+        if isinstance(phenotype, Phenotypes):
+            return self._phenotypes is not None and phenotype.value < self._phenotypes.shape[-1]
+        elif isinstance(phenotype, CurvePhaseMetaPhenotypes):
+            return any(phenotype in plate for plate in self._vector_meta_phenotypes if plate is not None)
 
     def set_phenotype_inclusion_level(self, value):
         if isinstance(value, PhenotypeDataType):
