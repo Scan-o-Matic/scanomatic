@@ -277,12 +277,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         smooth_growth_data = np.load(os.path.join(directory_path, _p.phenotypes_input_smooth))
 
-        median_filt_size, gauss_sigma, linear_reg_size = np.load(
+        phenotyper = cls(raw_growth_data, times, run_extraction=False, base_name=directory_path)
+
+        extraction_params = np.load(
             os.path.join(directory_path, _p.phenotypes_extraction_params))
 
-        phenotyper = cls(raw_growth_data, times, median_kernel_size=median_filt_size,
-                         gaussian_filter_sigma=gauss_sigma, linear_regression_size=linear_reg_size,
-                         run_extraction=False, base_name=directory_path)
+        if extraction_params.size > 0:
+            if extraction_params.size == 3:
+                median_filt_size, gauss_sigma, linear_reg_size = extraction_params
+            elif extraction_params.size == 4:
+                median_filt_size, gauss_sigma, linear_reg_size, inclusion_name = extraction_params
+                phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
+
+            phenotyper._median_kernel_size = median_filt_size
+            phenotyper._gaussian_filter_sigma = gauss_sigma
+            phenotyper._linear_regression_size = linear_reg_size
 
         phenotyper.set('smooth_growth_data',smooth_growth_data)
         phenotyper.set('phenotypes', phenotypes)
@@ -1271,6 +1280,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 p,
                 [self._median_kernel_size,
                  self._gaussian_filter_sigma,
-                 self._linear_regression_size])
+                 self._linear_regression_size,
+                 None if self._phenotypes_inclusion is None else self._phenotypes_inclusion.name])
 
         self._logger.info("State saved to '{0}'".format(dir_path))
