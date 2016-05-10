@@ -106,8 +106,6 @@ class RpcJob(Process, Fake):
 
         _l.info("Starting main loop")
 
-        # TODO: See if this can be done better so that processes always will terminate
-
         while t.is_alive() and job_running:
 
             if pipe_effector.keepAlive:
