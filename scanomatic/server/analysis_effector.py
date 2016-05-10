@@ -106,9 +106,8 @@ class AnalysisEffector(proc_effector.ProcessEffector):
         total = float(self.total)
         initiation_weight = 1
 
-        # TODO: Verify this is correct, may underestimate progress
         if total > 0 and self._current_image_model:
-            return (total - self.current_image_index) / float(total + initiation_weight)
+            return (total - self.current_image_index + initiation_weight) / float(total + initiation_weight)
 
         return 0.0
 
