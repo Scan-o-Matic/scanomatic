@@ -33,6 +33,8 @@ class CurvePhasePhenotypes(Enum):
     Duration = 2
     FractionYield = 3
     Start = 4
+    LinearModelSlope = 5
+    LinearModelIntercept = 6
 
 
 class VectorPhenotypes(Enum):
@@ -237,7 +239,10 @@ def _phenotype_phases(curve, phases, times, doublings):
                 phase_phenotypes[CurvePhasePhenotypes.Curvature] = np.polyfit(times[filt], np.log2(curve[filt]), 2)[0]
             else:
                 # B. For linear phases get the doubling time
-                phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / linregress(times[filt], np.log2(curve[filt]))[0]
+                slope, intercept, _, _, _ = linregress(times[filt], np.log2(curve[filt]))
+                phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
+                phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
+                phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
 
             # C. Get duration
             phase_phenotypes[CurvePhasePhenotypes.Duration] = times[right] - times[left]
