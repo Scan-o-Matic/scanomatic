@@ -711,33 +711,6 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def get_phenotype(self, phenotype, filtered=True, normalized=False):
 
-        def _plate_type_converter_vector(plate):
-
-            out = plate.copy()
-            if out.dtype == np.floating and out.shape[-1] == 1:
-                return out.reshape(out.shape[:2])
-
-            return out
-
-        def _plate_type_converter_scalar(plate):
-
-            dtype = type(plate[0, 0])
-            out = np.zeros(plate.shape, dtype=dtype)
-
-            if issubclass(type(out.dtype), np.floating):
-                out *= np.nan
-
-            out[...] = plate
-
-            return out
-
-        def _plate_type_converter(plate):
-
-            if plate.ndim == 3:
-                return _plate_type_converter_vector(plate)
-            else:
-                return _plate_type_converter_scalar(plate)
-
         if phenotype not in self:
 
             raise ValueError(
@@ -771,14 +744,54 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 return [None if p is None else p[phenotype] for _, p in enumerate(self._normalized_phenotypes)]
 
         else:
+            if isinstance(phenotype, Phenotypes):
+                data = self._restructure_growth_phenotype(phenotype)
+            else:
+                data = self._get_phenotype_data(phenotype)
+
             if filtered:
 
                 return [None if (p is None or phenotype not in self._phenotype_filter[id_plate]) else
-                        FilterArray(_plate_type_converter(p[..., phenotype.value]),
-                                    self._phenotype_filter[id_plate][phenotype])
-                        for id_plate, p in enumerate(self._phenotypes)]
+                        FilterArray(p, self._phenotype_filter[id_plate][phenotype])
+                        for id_plate, p in enumerate(data)]
             else:
-                return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
+                return data
+
+    def _get_phenotype_data(self, phenotype):
+
+        if isinstance(phenotype, CurvePhaseMetaPhenotypes):
+            return [None if p is None else p[phenotype] for p in self._vector_meta_phenotypes]
+
+    def _restructure_growth_phenotype(self, phenotype):
+
+        def _plate_type_converter_vector(plate):
+
+            out = plate.copy()
+            if out.dtype == np.floating and out.shape[-1] == 1:
+                return out.reshape(out.shape[:2])
+
+            return out
+
+        def _plate_type_converter_scalar(plate):
+
+            dtype = type(plate[0, 0])
+            out = np.zeros(plate.shape, dtype=dtype)
+
+            if issubclass(type(out.dtype), np.floating):
+                out *= np.nan
+
+            out[...] = plate
+
+            return out
+
+        def _plate_type_converter(plate):
+
+            if plate.ndim == 3:
+                return _plate_type_converter_vector(plate)
+            else:
+                return _plate_type_converter_scalar(plate)
+
+        return [None if p is None else _plate_type_converter(p[..., phenotype.value]) for p in self._phenotypes]
 
     @property
     def analysed_phenotypes(self):
