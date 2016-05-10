@@ -32,7 +32,7 @@ class CompilationResults(object):
             self._load_compilation(self._compilation_path, sort_mode=sort_mode)
 
     @classmethod
-    def create_from_data(cls, path, compile_instructions, image_models, used_models=None):
+    def create_from_data(cls, path, compile_instructions, image_models, used_models=None, scan_instructions=None):
 
         if used_models is None:
             used_models = []
@@ -43,6 +43,7 @@ class CompilationResults(object):
         new._image_models = CompileImageAnalysisFactory.copy_iterable_of_model(list(image_models))
         new._used_models = CompileImageAnalysisFactory.copy_iterable_of_model(list(used_models))
         new._loading_length = len(new._image_models)
+        new._scanner_instructions = scan_instructions
         return new
 
     def load_scanner_instructions(self, path=None):
@@ -127,17 +128,29 @@ class CompilationResults(object):
 
         other_start_index = len(self)
         other_image_models = []
+        other_directory = os.path.dirname(other._compilation_path)
         for index in range(len(other)):
             model = CompileImageAnalysisFactory.copy(other[index])
-            model.time += start_time_difference
-            model.index += other_start_index
+            """:type : scanomatic.models.compile_project_model.CompileImageAnalysisModel"""
+
+            model.image.time_stamp += start_time_difference
+            model.image.index += other_start_index
+            self._update_image_path_if_needed(model, other_directory)
             other_image_models.append(model)
 
         other_image_models += self._image_models
         other_image_models = sorted(other_image_models, key=lambda x: x.image.time_stamp)
 
         return CompilationResults.create_from_data(self._compilation_path, self._compile_instructions,
-                                                   other_image_models, self._used_models)
+                                                   other_image_models, self._used_models, self._scanner_instructions)
+
+    def _update_image_path_if_needed(self, model, directory):
+        if not os.path.isfile(model.image.path):
+            image_name = os.path.basename(model.image.path)
+            if os.path.isfile(os.path.join(directory, image_name)):
+                model.image.path = os.path.join(directory, image_name)
+                return
+        self._logger.warning("Couldn't locate the file {0}".format(model.image.path))
 
     @property
     def start_time(self):
