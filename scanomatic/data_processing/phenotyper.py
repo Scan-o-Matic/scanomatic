@@ -530,7 +530,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         regression_size = self._linear_regression_size
         position_offset = (regression_size - 1) / 2
         phenotypes_count = self.number_of_phenotypes
-        vector_phenotypes_count = 2
+
         total_curves = float(self.number_of_curves)
 
         self._logger.info("Phenotypes (N={0}), extraction started for {1} curves".format(
@@ -556,7 +556,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             phenotypes = np.zeros((plate.shape[:2]) + (phenotypes_count,), dtype=np.float)
             vector_phenotypes = {
                 p: np.zeros(plate.shape[:2], dtype=np.object) * np.nan
-                for p in VectorPhenotypes if self._phenotypes_inclusion(p)}
+                for p in VectorPhenotypes if phenotypes_inclusion(p)}
 
             vector_meta_phenotypes = {}
 
@@ -595,7 +595,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 phenotypes[id0, id1, ...] = position_phenotypes
 
-                if self._phenotypes_inclusion(VectorPhenotypes):
+                if phenotypes_inclusion(VectorPhenotypes):
 
                     phases, phases_phenotypes, _ = phase_phenotypes(
                         self, id_plate, (id0, id1), f=False,
@@ -613,7 +613,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
             for phenotype in CurvePhaseMetaPhenotypes:
 
-                if not self._phenotypes_inclusion(VectorPhenotypes.PhasesPhenotypes):
+                if not phenotypes_inclusion(phenotype):
+                    continue
+
+                if not phenotypes_inclusion(VectorPhenotypes.PhasesPhenotypes):
                     self._logger.warning("Can't extract {0} because {1} has not been included.".format(
                         phenotype, VectorPhenotypes.PhasesPhenotypes))
                     continue
@@ -626,6 +629,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._phenotypes = np.array(all_phenotypes)
         self._vector_phenotypes = np.array(all_vector_phenotypes)
+        self._vector_meta_phenotypes = np.array(all_vector_meta_phenotypes)
 
         self._logger.info("Phenotype Extraction Done")
 
