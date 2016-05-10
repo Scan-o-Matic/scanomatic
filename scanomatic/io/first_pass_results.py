@@ -1,17 +1,25 @@
 from enum import Enum
 from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory, CompileProjectFactory
+from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.io.logger import Logger
+from scanomatic.io.paths import Paths
+import os
+from glob import glob
 
 FIRST_PASS_SORTING = Enum("FIRST_PASS_SORTING", names=("Index", "Time"))
 
 
 class CompilationResults(object):
 
-    def __init__(self, compilation_path=None, compile_instructions_path=None, sort_mode=FIRST_PASS_SORTING.Time):
+    def __init__(self, compilation_path=None, compile_instructions_path=None,
+                 scanner_instructions_path=None, sort_mode=FIRST_PASS_SORTING.Time):
 
         self._logger = Logger("Compilation results")
         self._compilation_path = compilation_path
         self._compile_instructions = None
+        self._scanner_instructions = None
+        """:type : scanomatic.models.scanning_model.ScanningModel"""
+        self.load_scanner_instructions(scanner_instructions_path)
         self._plates = None
         self._plate_position_keys = None
         self._image_models = []
@@ -36,6 +44,24 @@ class CompilationResults(object):
         new._used_models = CompileImageAnalysisFactory.copy_iterable_of_model(list(used_models))
         new._loading_length = len(new._image_models)
         return new
+
+    def load_scanner_instructions(self, path=None):
+        """
+
+        Args:
+            path:  Path to the instrucitons or None to infer it
+
+
+        """
+        if path is None:
+            try:
+                path = glob(os.path.join(os.path.dirname(self._compilation_path),
+                                         Paths().scan_project_file_pattern.format('*')))[0]
+            except IndexError:
+                self._logger.warning("No information of start time of project, can't safely be joined with others")
+                return
+
+        self._scanner_instructions = ScanningModelFactory.serializer.load_first(path)
 
     def _load_compile_instructions(self, path):
 
