@@ -287,6 +287,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 median_filt_size, gauss_sigma, linear_reg_size = extraction_params
             elif extraction_params.size == 4:
                 median_filt_size, gauss_sigma, linear_reg_size, inclusion_name = extraction_params
+                if inclusion_name is None:
+                    inclusion_name = 'Trusted'
                 phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
 
             phenotyper._median_kernel_size = median_filt_size
