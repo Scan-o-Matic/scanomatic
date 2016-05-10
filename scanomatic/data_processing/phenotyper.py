@@ -684,6 +684,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         for phenotype in self._normalizable_phenotypes:
 
             if self._phenotypes_inclusion(phenotype) is False:
+                self._logger.info("Because {0} has not been extracted it is skipped".format(phenotype))
                 continue
 
             try:
