@@ -219,3 +219,34 @@ class CompilationResults(object):
             self._image_models.remove(model)
             self._used_models.append(model)
         return model
+
+    def dump(self, directory, new_name=None, force_dump_scan_instructions=False):
+
+        self._logger.warning(
+            """This functionality has not fully been tested, if you test it and it works fine let Martin konw.
+            If it doesn't work, let him know too.""")
+        directory = os.path.abspath(directory)
+        os.makedirs(directory)
+        if new_name is None:
+            new_name = os.path.basename(directory)
+
+        try:
+            with open(os.path.join(directory, Paths().project_compilation_pattern.format(new_name)), 'w') as fh:
+                while True:
+                    model = CompileImageAnalysisFactory.copy(self.get_next_image_model())
+                    self._update_image_path_if_needed(model, directory)
+                    if model is None:
+                        break
+                    CompileImageAnalysisFactory.serializer.dump_to_filehandle(model, fh)
+        except IOError:
+            self._logger.error("Could not save to directory")
+            return
+
+        compile_instructions = os.path.join(directory, Paths().project_compilation_pattern.format(new_name))
+        CompileProjectFactory.serializer.dump(self._compile_instructions, compile_instructions)
+
+        if not glob(os.path.join(directory, Paths().scan_project_file_pattern.format('*'))) or \
+                force_dump_scan_instructions:
+
+            scan_instructions = os.path.join(directory, Paths().scan_project_file_pattern.format(new_name))
+            ScanningModelFactory.serializer.dump(self._scanner_instructions, scan_instructions)
