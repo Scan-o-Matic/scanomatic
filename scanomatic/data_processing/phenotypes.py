@@ -35,11 +35,15 @@ class PhenotypeDataType(Enum):
                     Phenotypes.ExperimentEndAverage,
                     Phenotypes.GenerationTimeStErrOfEstimate)
 
-        _under_development = (
-                              Phenotypes.GenerationTimePopulationSize,
+        _under_development = (Phenotypes.GenerationTimePopulationSize,
+                              Phenotypes.GrowthLag,
                               CurvePhaseMetaPhenotypes.BimodalGrowthFirstImpulseDoubingTime,
                               CurvePhaseMetaPhenotypes.BimodalGrowthSecondImpulseDoubingTime,
-                              CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution)
+                              CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution,
+                              CurvePhaseMetaPhenotypes.InitialLag,
+                              VectorPhenotypes.PhasesPhenotypes,
+                              VectorPhenotypes.PhasesClassifications,
+                              VectorPhenotypes)
 
         if self is PhenotypeDataType.Scalar:
 
