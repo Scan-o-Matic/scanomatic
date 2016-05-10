@@ -123,8 +123,7 @@ class CompilationResults(object):
         :type other: CompilationResults
         """
 
-        # TODO: start time needed to add compilation results in relevant manner
-        start_time_difference = 0
+        start_time_difference = other.start_time - self.start_time
 
         other_start_index = len(self)
         other_image_models = []
@@ -139,6 +138,14 @@ class CompilationResults(object):
 
         return CompilationResults.create_from_data(self._compilation_path, self._compile_instructions,
                                                    other_image_models, self._used_models)
+
+    @property
+    def start_time(self):
+
+        if self._scanner_instructions:
+            return self._scanner_instructions.start_time
+        self._logger.warning("No scanner instructions have been loaded, start time unknown")
+        return 0
 
     @property
     def compile_instructions(self):
