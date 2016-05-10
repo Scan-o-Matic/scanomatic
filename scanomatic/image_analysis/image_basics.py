@@ -21,7 +21,7 @@ _logger = logger.Logger("Basic Image Utils")
 #
 
 
-def load_image_to_numpy(path, orientation=IMAGE_ROTATIONS.Portrait):
+def load_image_to_numpy(path, orientation=IMAGE_ROTATIONS.Portrait, dtype=np.float64):
 
     im = Image.open(path)
     data = np.asarray(im, dtype=np.uint8)
@@ -29,9 +29,15 @@ def load_image_to_numpy(path, orientation=IMAGE_ROTATIONS.Portrait):
     data_orientation = IMAGE_ROTATIONS.Portrait if max(data.shape) == data.shape[0] else IMAGE_ROTATIONS.Landscape
 
     if data_orientation == orientation:
-        return data
+        if dtype is None:
+            return data
+        else:
+            return data.astype(dtype)
     else:
-        return data.T
+        if dtype is None:
+            return data.T
+        else:
+            return data.T.astype(dtype)
 
 
 def Quick_Scale_To(source_path, target_path, source_dpi=600, target_dpi=150):
