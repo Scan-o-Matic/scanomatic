@@ -59,7 +59,7 @@ class AnalysisEffector(proc_effector.ProcessEffector):
 
         super(AnalysisEffector, self).__init__(job, logger_name="Analysis Effector")
         self._config = None
-        self._job_label = get_label_from_analysis_model(job.content_model.compilation, job.id)
+        self._job_label = get_label_from_analysis_model(job.content_model, job.id)
 
         self._specific_statuses['total'] = 'total'
         self._specific_statuses['current_image_index'] = 'current_image_index'
