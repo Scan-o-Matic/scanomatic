@@ -315,7 +315,7 @@ class ProjectImage(object):
 
         self.features.index = image_model.image.index
         grid_arrays_processed = set()
-        threads = set()
+        # threads = set()
         for plate in image_model.fixture.plates:
 
             if plate.index in self._grid_arrays:
@@ -323,6 +323,8 @@ class ProjectImage(object):
                 im = self.get_im_section(plate)
                 grid_arr = self._grid_arrays[plate.index]
                 """:type: scanomatic.image_analysis.grid_array.GridArray"""
+                grid_arr.analyse(im, image_model)
+                """
                 t = Thread(target=grid_arr.analyse, args=(im, image_model))
                 t.start()
                 threads.add(t)
@@ -330,7 +332,7 @@ class ProjectImage(object):
         while threads:
             threads = set(t for t in threads if t.is_alive())
             sleep(0.01)
-
+        """
         for index, grid_array in self._grid_arrays.iteritems():
             if index not in grid_arrays_processed:
                 grid_array.clear_features()
