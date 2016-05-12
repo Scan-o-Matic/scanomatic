@@ -102,6 +102,8 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
     :rtype : numpy.ndarray, numpy.ndarray, numpy.ndarray
     """
 
+    # TODO: Verify that it is the correct image that is displayed
+
     def _bound(bounds, a, b):
 
         def bounds_check(bound, val):
