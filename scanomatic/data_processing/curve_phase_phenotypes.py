@@ -35,6 +35,8 @@ class CurvePhasePhenotypes(Enum):
     Start = 4
     LinearModelSlope = 5
     LinearModelIntercept = 6
+    AsymptoteAngle = 7
+    AsymptoteIntersection = 8
 
 
 class VectorPhenotypes(Enum):
@@ -216,8 +218,9 @@ def _locate_retardation(dYdt, ddYdtSigns, phases, left, right, offset, flatline_
         return (left, right), CurvePhases.Undetermined
 
 
-def _phenotype_phases(curve, phases, times, doublings):
+def _phenotype_phases(curve, derivative, phases, times, doublings):
 
+    derivative_offset = (times.shape[0] - derivative.shape[0]) / 2
     phenotypes = []
 
     for phase in CurvePhases:
@@ -237,6 +240,20 @@ def _phenotype_phases(curve, phases, times, doublings):
             if phase == CurvePhases.Acceleration or phase == CurvePhases.Retardation:
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
                 phase_phenotypes[CurvePhasePhenotypes.Curvature] = np.polyfit(times[filt], np.log2(curve[filt]), 2)[0]
+
+                a1 = np.array((times[left], np.log2(curve[left])))
+                a2 = np.array((times[right], np.log2(curve[right])))
+                k1 = derivative[left - derivative_offset]
+                k2 = derivative[right - derivative_offset]
+                m1 = a1[1] - k1 * a1[0]
+                m2 = a2[1] - k2 * a2[1]
+                i_x = (m2 - m1) / (k1 - k2)
+                i = np.array((i_x, k1 * i_x + m1))
+                a1 -= i
+                a2 -= i
+                phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = (i_x - times[left]) / (times[right] - times[left])
+                phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = np.arccos(
+                    np.dot(a1, a2) / (np.sqrt(np.dot(a1, a1)) * np.sqrt(np.dot(a2, a2))))
             else:
                 # B. For linear phases get the doubling time
                 slope, intercept, _, _, _ = linregress(times[filt], np.log2(curve[filt]))
@@ -286,7 +303,7 @@ def phase_phenotypes(
                                     growth_phenotypes.Phenotypes.ExperimentBaseLine)[plate][pos]))
 
     return phases,\
-           _phenotype_phases(curve, phases, phenotyper_object.times, experiment_doublings),\
+           _phenotype_phases(curve, dYdt, phases, phenotyper_object.times, experiment_doublings),\
            None if f is False else plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha,
                                                  f=f)
 
