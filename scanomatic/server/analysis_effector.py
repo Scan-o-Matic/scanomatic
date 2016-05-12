@@ -36,7 +36,7 @@ def get_label_from_analysis_model(analysis_model, id_hash):
     """
 
     root = os.path.basename(os.path.dirname(analysis_model.compilation)).replace("_", " ")
-    output = analysis_model.output_directory.replace("_", " ")
+    output = analysis_model.output_directory.replace("_", " ") if analysis_model.output_directory else "analysis"
     return "{0} -> {1}, ({2})".format(root, output, id_hash[-6:])
 
 #
