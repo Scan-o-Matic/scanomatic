@@ -64,7 +64,7 @@ def plot_growth_curve(growth_data, position, ax=None, save_target=None):
 
     times, data = ImageData.read_image_data_and_time(growth_data)
 
-    ax.semilogy(times, data[position[0] - 1][position[1], position[2]], "g-", basey=2)
+    ax.semilogy(times, data[position[0]][position[1], position[2]], "g-", basey=2)
     ax.set_xlim(xmin=0, xmax=times.max() + 1)
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population size [cells]")
@@ -129,7 +129,6 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
 
     assert positioning in ('one-time', 'detected'), "Unknown positioning argument"
 
-    plate_as_index = position[0] - 1
     analysis_directory = os.path.abspath(analysis_directory)
 
     if not project_compilation:
@@ -159,8 +158,9 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
     else:
         experiment_directory = os.path.dirname(project_compilation)
 
-    grid = np.load(os.path.join(analysis_directory, Paths().grid_pattern.format(position[0])))
-    grid_size = np.load(os.path.join(analysis_directory, Paths().grid_size_pattern.format((position[0]))))
+    # grids number +1
+    grid = np.load(os.path.join(analysis_directory, Paths().grid_pattern.format(position[0] + 1)))
+    grid_size = np.load(os.path.join(analysis_directory, Paths().grid_size_pattern.format((position[0] + 1))))
 
     compilation_results = CompileImageAnalysisFactory.serializer.load(project_compilation)
     compilation_results = sorted(compilation_results, key=lambda e: e.image.index)
@@ -177,9 +177,9 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
             im = plt.imread(os.path.join(experiment_directory, os.path.basename(entry.image.path)))
 
         if positioning == 'one-time':
-            plate_model = ref_plate_model[plate_as_index]
+            plate_model = ref_plate_model[position[0]]
         elif positioning == 'detected':
-            plate_model = entry.fixture.plates[plate_as_index]
+            plate_model = entry.fixture.plates[position[0]]
         else:
             raise ValueError("Positioning can't be '{0}'".format(positioning))
 
@@ -245,15 +245,13 @@ def detection_files(data_pos, source_location=None, suffix=".calibrated.image.np
     return files[index_order], np.array(image_indices)[index_order]
 
 
-def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None, growth_data=None,
+def animate_blob_detection(save_target, position, analysis_folder,
                            fig=None, fps=12, interval=None):
 
     if fig is None:
         fig = plt.figure()
 
-    data_pos = [v for v in position]
-    data_pos[0] -= 1
-    files, image_indices = detection_files(data_pos, source_location)
+    files, image_indices = detection_files(position, analysis_folder)
 
     titles = ["Image", "Background", "Blob", "Trash (Now)", "Trash (Previous)", "Growth Data"]
     axes = len(titles)
@@ -263,7 +261,7 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
             ax = fig.add_subplot(2, 3, i + 1)
             ax.set_title(titles[i])
 
-    curve_ax, curve_times, polygon = plot_growth_curve(growth_data, position, fig.axes[-1])
+    curve_ax, curve_times, polygon = plot_growth_curve(analysis_folder, position, fig.axes[-1])
 
     image_ax = fig.axes[0]
     ims = []
@@ -296,15 +294,13 @@ def animate_blob_detection(save_target, position=(1, 0, 0), source_location=None
     return _plotter()
 
 
-def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, growth_data=None,
+def animate_3d_colony(save_target, position, analysis_folder,
                       fig=None, fps=12, interval=None, height_conversion=.001, rotation_speed=5.):
 
     if fig is None:
         fig = plt.figure(figsize=(10, 3))
 
-    data_pos = [v for v in position]
-    data_pos[0] -= 1
-    files, image_indices = detection_files(data_pos, source_location)
+    files, image_indices = detection_files(position, analysis_folder)
 
     titles = ["Image", "3D", "Population Size [cells]"]
     axes = len(titles)
@@ -322,7 +318,7 @@ def animate_3d_colony(save_target, position=(1, 0, 0), source_location=None, gro
 
     coords_x, coords_y = np.mgrid[0:data.shape[0], 0:data.shape[1]]
 
-    _, curve_times, polygon = plot_growth_curve(growth_data, position, curve_ax)
+    _, curve_times, polygon = plot_growth_curve(analysis_folder, position, curve_ax)
     curve_ax.set_ylabel("")
     curve_ax.set_xlabel("")
 
