@@ -165,7 +165,6 @@ class GridCell():
         return os.path.join(base_path, "grid_cell_{0}_{1}_{2}".format(
             self.image_index, self._identifier[0][1], "_".join(map(str, self._identifier[-1][::-1]))))
 
-
     def save_data_image(self, suffix="", base_path=None):
 
         base_path = self.get_save_data_path(base_path)
