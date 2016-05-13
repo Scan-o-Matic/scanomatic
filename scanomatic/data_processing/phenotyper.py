@@ -1027,24 +1027,47 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
     def _init_remove_filter_and_undo_actions(self):
 
         if not self._correct_shapes(self._phenotypes, self._phenotype_filter):
+
+            if self._phenotype_filter is not None:
+                self._logger.info("Filter & undo doesn't match number of plates and their shapes. Rewriting...")
             self._phenotype_filter = np.array([{} for _ in range(self._phenotypes.shape[0])], dtype=np.object)
+            self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
-            for plate_index in range(self._phenotypes.shape[0]):
+        elif not self._correct_shapes(self._phenotypes, self._phenotype_filter_undo):
+            self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
 
-                if self._phenotypes[plate_index] is None:
-                    continue
+        for plate_index in range(self._phenotypes.shape[0]):
 
-                for phenotype in Phenotypes:
+            if self._phenotypes[plate_index] is None:
+                continue
 
-                    if self._phenotypes_inclusion(phenotype):
+            for phenotype in Phenotypes:
+
+                # If phenotype is included and extracted but no filter exists set default
+                if self._phenotypes_inclusion(phenotype) and phenotype not in self._phenotype_filter[plate_index]\
+                        and phenotype.value < self._phenotypes[plate_index].shape[-1]:
+
+                    self._phenotype_filter[plate_index][phenotype] = np.zeros(
+                        self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
+
+                    self._phenotype_filter[plate_index][phenotype][
+                        np.where(np.isfinite(self._phenotypes[plate_index][..., phenotype.value]) == False)] = \
+                        Filter.UndecidedProblem.value
+
+            if self._vector_meta_phenotypes is not None:
+
+                for phenotype in CurvePhaseMetaPhenotypes:
+
+                    if self._phenotypes_inclusion(phenotype) and phenotype not in self._phenotype_filter:
 
                         self._phenotype_filter[plate_index][phenotype] = np.zeros(
                             self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
 
-                        if phenotype.value < self._phenotypes[plate_index].shape[-1]:
-                            self._phenotype_filter[plate_index][phenotype][
-                                np.where(np.isfinite(self._phenotypes[plate_index][..., phenotype.value]) == False)] = \
-                                Filter.UndecidedProblem.value
+                        self._phenotype_filter[plate_index][phenotype][
+                            np.where(np.isfinite(
+                                self._vector_meta_phenotypes[plate_index][phenotype]) == False)] = \
+                            Filter.UndecidedProblem.value
+
 
                 if self._vector_meta_phenotypes is not None:
                     for phenotype in CurvePhaseMetaPhenotypes:
