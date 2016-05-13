@@ -451,7 +451,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._init_remove_filter_and_undo_actions()
 
-    def wipe_extracted_phenotypes(self):
+    def wipe_extracted_phenotypes(self, keep_filter=False):
 
         if self._phenotypes is not None:
             self._logger.info("Removing previous phenotypes")
@@ -465,17 +465,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._logger.info("Removing previous vector meta phenotypes")
         self._vector_meta_phenotypes = None
 
-        if self._phenotype_filter is not None:
-            self._logger.info("Removing previous remove filter")
-        self._phenotype_filter = None
+        if keep_filter:
+            self._logger.warning("Keeping the filter may cause inconsistencies with what curves are marked as bad."
+                                 " Use with care, and consider running the `infer_filter` method.")
+        if not keep_filter:
+            if self._phenotype_filter is not None:
+                self._logger.info("Removing previous remove filter")
+            self._phenotype_filter = None
 
-        if self._phenotype_filter_undo is not None:
-            self._logger.info("Removing filter undo history")
-        self._phenotype_filter_undo = None
+            if self._phenotype_filter_undo is not None:
+                self._logger.info("Removing filter undo history")
+            self._phenotype_filter_undo = None
 
-    def extract_phenotypes(self):
+    def extract_phenotypes(self, keep_filter=False):
 
-        self.wipe_extracted_phenotypes()
+        self.wipe_extracted_phenotypes(keep_filter)
 
         self._logger.info("Extracting phenotypes. This will take a while...")
 
