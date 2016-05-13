@@ -41,6 +41,8 @@ class PhenotypeDataType(Enum):
                               CurvePhaseMetaPhenotypes.BimodalGrowthSecondImpulseDoubingTime,
                               CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution,
                               CurvePhaseMetaPhenotypes.InitialLag,
+                              CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle,
+                              CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteAngle,
                               VectorPhenotypes.PhasesPhenotypes,
                               VectorPhenotypes.PhasesClassifications,
                               VectorPhenotypes)
