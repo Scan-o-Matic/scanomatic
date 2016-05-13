@@ -1068,22 +1068,32 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                                 self._vector_meta_phenotypes[plate_index][phenotype]) == False)] = \
                             Filter.UndecidedProblem.value
 
+    def infer_filter(self, template, *phenotypes):
+        """Transfer all marks on one phenotype to other phenotypes.
 
-                if self._vector_meta_phenotypes is not None:
-                    for phenotype in CurvePhaseMetaPhenotypes:
+        Note that the Filter.OK is not transferred, thus not replacing any existing
+        non Filter.OK marking for those positions.
 
-                        if self._phenotypes_inclusion(phenotype):
+        :param template: The phenotype used as source
+        :param phenotypes: The phenotypes that should be updated
 
-                            self._phenotype_filter[plate_index][phenotype] = np.zeros(
-                                self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
+        """
+        self._logger.warning("Inferring is done without ability to undo.")
 
-                            self._phenotype_filter[plate_index][phenotype][
-                                np.where(np.isfinite(
-                                    self._vector_meta_phenotypes[plate_index][phenotype]) == False)] = \
-                                Filter.UndecidedProblem.value
+        template_filt = {plate: self._phenotype_filter[plate][template] for plate in self.enumerate_plates}
 
-        if not self._correct_shapes(self._phenotypes, self._phenotype_filter_undo):
-            self._phenotype_filter_undo = tuple(deque() for _ in self._phenotypes)
+        for mark in Filter:
+
+            if mark == Filter.OK:
+                continue
+
+            for phenotype in phenotypes:
+
+                for plate in self.enumerate_plates:
+
+                    if phenotype in self._phenotype_filter[plate]:
+
+                        self._phenotype_filter[plate][phenotype][template_filt[plate] == mark.value] = mark.value
 
     def add_position_mark(self, plate, position_list, phenotype=None, position_mark=Filter.BadData,
                           undoable=True):
