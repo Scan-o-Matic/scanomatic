@@ -302,6 +302,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         filter_path = os.path.join(directory_path, _p.phenotypes_filter)
         if os.path.isfile(filter_path):
+            phenotyper._logger.info("Loading previous filter {0}".format(filter_path))
             phenotyper.set("phenotype_filter", np.load(filter_path))
 
         normalized_phenotypes = os.path.join(directory_path, _p.normalized_phenotypes)
@@ -962,6 +963,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def _convert_to_current_phenotype_filter(self, data):
 
+        self._logger.info("Converting old filter format to new.")
+        self._logger.warning("If you save the state the qc-filter will not be readable to old scan-o-matic qc.")
         new_data = []
         for id_plate, plate in enumerate(data):
 
