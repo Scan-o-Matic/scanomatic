@@ -136,7 +136,7 @@ class GridCell():
 
             return None
 
-    def analyse(self, detect=True, remember_filter=False):
+    def analyse(self, detect=True, remember_filter=True):
         """get_analysis iterates through all possible cell items
         and runs their detect and do_analysis if they are attached.
 
@@ -206,7 +206,7 @@ class GridCell():
                 item.set_data_source(self.source)
                 item.do_analysis()
 
-    def detect(self, remember_filter=False):
+    def detect(self, remember_filter=True):
 
         blob = self._analysis_items[COMPARTMENTS.Blob]
         background = self._analysis_items[COMPARTMENTS.Background]

@@ -41,7 +41,6 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
         grid_cell.save_data_image(suffix=".raw",
                                   base_path=analysis_job_model.output_directory if analysis_job_model else None)
 
-
     if transpose_polynomial is not None:
         _set_image_transposition(grid_cell, transpose_polynomial)
 
@@ -55,7 +54,7 @@ def _analyse_grid_cell(grid_cell, im, transpose_polynomial, image_index, semapho
             run_detect=False)
 
     # TODO: Deterimine if it is best to remember history or not!
-    grid_cell.analyse(remember_filter=False)
+    grid_cell.analyse(remember_filter=True)
 
     if save_extra_data:
         grid_cell.save_data_detections(base_path=analysis_job_model.output_directory if analysis_job_model else None)

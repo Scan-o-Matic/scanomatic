@@ -153,7 +153,7 @@ def get_array_subtraction(array_one, array_two, offset, output=None):
 #
 
 
-class CellItem():
+class CellItem(object):
 
     def __init__(self, identifier, grid_array):
         """Cell_Item is a super-class for Blob, Background and Cell and should
@@ -558,7 +558,7 @@ class Blob(CellItem):
     #
 
     def detect(self, detect_type=None, max_change_threshold=8,
-               remember_filter=False):
+               remember_filter=True, remember_trash=False):
         """
         Generic wrapper function for blob-detection that calls the
         proper detection function and evaluates the results in comparison
@@ -689,6 +689,8 @@ class Blob(CellItem):
         if remember_filter:
 
             self.old_filter = self.filter_array.copy()
+
+        if remember_trash:
 
             if self.trash_array is not None:
 
