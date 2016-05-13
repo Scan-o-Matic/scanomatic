@@ -291,9 +291,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                     inclusion_name = 'Trusted'
                 phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
 
-            phenotyper._median_kernel_size = median_filt_size
-            phenotyper._gaussian_filter_sigma = gauss_sigma
-            phenotyper._linear_regression_size = linear_reg_size
+            phenotyper._median_kernel_size = int(median_filt_size)
+            phenotyper._gaussian_filter_sigma = float(gauss_sigma)
+            phenotyper._linear_regression_size = int(linear_reg_size)
 
         phenotyper.set('smooth_growth_data',smooth_growth_data)
         phenotyper.set('phenotypes', phenotypes)
