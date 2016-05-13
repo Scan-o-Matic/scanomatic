@@ -50,8 +50,14 @@ class FilterArray(object):
                  (f.value if hasattr(f, "value") else f for f in filters)))
 
     def masked(self, *filters):
+        if not filters:
+            filters = (Filter.NoGrowth, Filter.BadData, Filter.UndecidedProblem, Filter.Empty)
 
         return np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.filter_to_mask(*filters))
+
+    def filled(self, fill_value=np.nan):
+
+        return np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.mask).filled(fill_value=fill_value)
 
     def __getattr__(self, item):
 
