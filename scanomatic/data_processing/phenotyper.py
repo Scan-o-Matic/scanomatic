@@ -969,12 +969,19 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 new_data.append(None)
                 continue
 
-            if plate.dtype == np.int8 and plate.ndim == 3:
+            if plate.ndim == 3:
                 new_plate = {}
 
                 for id_phenotype in range(plate.shape[-1]):
+                    phenotype = plate[..., id_phenotype]
+                    if phenotype.dtype == bool or np.unique(phenotype).max() == 1:
+                        phenotype = phenotype.astype(np.uint8) * Filter.UndecidedProblem.value
+                    else:
+                        phenotype = phenotype.astype(np.uint8)
+                    phenotype.clip(min(f.value for f in Filter), max(f.value for f in Filter))
+
                     try:
-                        new_plate[Phenotypes(id_phenotype)] = plate[..., id_phenotype]
+                        new_plate[Phenotypes(id_phenotype)] = phenotype
                     except ValueError:
                         self._logger.warning(
                             "Saved data had a Phenotype of index {0}, this is not a valid Phenotype".format(
