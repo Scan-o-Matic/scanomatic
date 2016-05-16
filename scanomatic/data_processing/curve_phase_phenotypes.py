@@ -338,7 +338,6 @@ def _impulse_counter(phase_vector):
 class CurvePhaseMetaPhenotypes(Enum):
 
     MajorImpulseYieldContribution = 0
-    BimodalGrowthFirstImpulseDoubingTime = 1
     InitialLag = 3
     InitialAccelerationAsymptoteAngle = 4
     FinalRetardationAsymptoteAngle = 5
@@ -356,17 +355,6 @@ def filter_plate(plate, meta_phenotype):
             measure=CurvePhasePhenotypes.FractionYield,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=selector)
-
-    elif meta_phenotype == CurvePhaseMetaPhenotypes.BimodalGrowthFirstImpulseDoubingTime:
-
-        return filter_plate_custom_filter(
-            plate,
-            phase=CurvePhases.Impulse,
-            measure=CurvePhasePhenotypes.PopulationDoublingTime,
-            phases_requirement=lambda phases: len(phases) == 2,
-            phase_selector=lambda phases: phases[
-                0 if meta_phenotype == CurvePhaseMetaPhenotypes.BimodalGrowthFirstImpulseDoubingTime else 1]
-        )
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLag:
 

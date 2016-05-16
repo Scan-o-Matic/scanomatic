@@ -37,7 +37,6 @@ class PhenotypeDataType(Enum):
 
         _under_development = (Phenotypes.GenerationTimePopulationSize,
                               Phenotypes.GrowthLag,
-                              CurvePhaseMetaPhenotypes.BimodalGrowthFirstImpulseDoubingTime,
                               CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution,
                               CurvePhaseMetaPhenotypes.InitialLag,
                               CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle,
