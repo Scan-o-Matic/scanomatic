@@ -295,7 +295,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             phenotyper._gaussian_filter_sigma = float(gauss_sigma)
             phenotyper._linear_regression_size = int(linear_reg_size)
 
-        phenotyper.set('smooth_growth_data',smooth_growth_data)
+        phenotyper.set('smooth_growth_data', smooth_growth_data)
         phenotyper.set('phenotypes', phenotypes)
         phenotyper.set('vector_phenotypes', vector_phenotypes)
         phenotyper.set('vector_meta_phenotypes', vector_meta_phenotypes)
