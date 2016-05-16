@@ -28,7 +28,7 @@ class Thresholds(Enum):
 
 class CurvePhasePhenotypes(Enum):
 
-    Curvature = 0
+    # Curvature = 0
     PopulationDoublingTime = 1
     Duration = 2
     FractionYield = 3
@@ -239,7 +239,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
 
             if phase == CurvePhases.Acceleration or phase == CurvePhases.Retardation:
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
-                phase_phenotypes[CurvePhasePhenotypes.Curvature] = np.polyfit(times[filt], np.log2(curve[filt]), 2)[0]
+                # phase_phenotypes[CurvePhasePhenotypes.Curvature] = np.polyfit(times[filt], np.log2(curve[filt]), 2)[0]
 
                 a1 = np.array((times[left], np.log2(curve[left])))
                 a2 = np.array((times[right], np.log2(curve[right])))
@@ -318,7 +318,7 @@ def phase_selector_critera_filter(phases, criteria, func=max):
 def filter_plate_custom_filter(
         plate,
         phase=CurvePhases.Acceleration,
-        measure=CurvePhasePhenotypes.Curvature,
+        measure=CurvePhasePhenotypes.AsymptoteIntersection,
         phases_requirement=lambda phases: len(phases) == 1,
         phase_selector=lambda phases: phases[0]):
 
@@ -389,12 +389,13 @@ def filter_plate(plate, meta_phenotype):
 
         return (impulse_intercept - lag_intercept) / (lag_slope - impulse_slope)
 
+    # TODO: Decide if angle should be normalized by following impulse steepness
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle:
 
         return filter_plate_custom_filter(
             plate,
             phase=CurvePhases.Acceleration,
-            measure=CurvePhasePhenotypes.AsymptoteAngle,
+            measure=CurvePhasePhenotypes.AsymptoteIntersection,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[0]
         )
@@ -404,7 +405,7 @@ def filter_plate(plate, meta_phenotype):
         return filter_plate_custom_filter(
             plate,
             phase=CurvePhases.Retardation,
-            measure=CurvePhasePhenotypes.AsymptoteAngle,
+            measure=CurvePhasePhenotypes.AsymptoteIntersection,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[-1]
         )
