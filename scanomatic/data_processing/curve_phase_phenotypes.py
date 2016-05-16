@@ -339,12 +339,19 @@ class CurvePhaseMetaPhenotypes(Enum):
 
     MajorImpulseYieldContribution = 0
     FirstMinorImpulseYieldContribution = 1
-    InitialLag = 3
-    InitialAccelerationAsymptoteAngle = 4
-    FinalRetardationAsymptoteAngle = 5
-    Modalities = 6
-    MajorImpulseAveragePopulationDoublingTime = 7
-    FirstMinorImpulseAveragePopulationDoublingTime = 8
+    MajorImpulseAveragePopulationDoublingTime = 5
+    FirstMinorImpulseAveragePopulationDoublingTime = 6
+
+    InitialAccelerationAsymptoteAngle = 10
+    FinalRetardationAsymptoteAngle = 11
+    InitialAccelerationAsymptoteIntersect = 15
+    FinalRetardationAsymptoteIntersect = 16
+
+    InitialLag = 20
+    ExperimentDoublings = 21
+    Modalities = 25
+
+    ResidualGrowth = 30
 
 
 def filter_plate(plate, meta_phenotype):
@@ -416,8 +423,27 @@ def filter_plate(plate, meta_phenotype):
 
         return (impulse_intercept - lag_intercept) / (lag_slope - impulse_slope)
 
-    # TODO: Decide if angle should be normalized by following impulse steepness
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle:
+
+        return filter_plate_custom_filter(
+            plate,
+            phase=CurvePhases.Acceleration,
+            measure=CurvePhasePhenotypes.AsymptoteAngle,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0]
+        )
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteAngle:
+
+        return filter_plate_custom_filter(
+            plate,
+            phase=CurvePhases.Retardation,
+            measure=CurvePhasePhenotypes.AsymptoteAngle,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[-1]
+        )
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect:
 
         return filter_plate_custom_filter(
             plate,
@@ -427,7 +453,7 @@ def filter_plate(plate, meta_phenotype):
             phase_selector=lambda phases: phases[0]
         )
 
-    elif meta_phenotype == CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteAngle:
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteIntersect:
 
         return filter_plate_custom_filter(
             plate,
