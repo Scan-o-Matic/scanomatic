@@ -338,10 +338,13 @@ def _impulse_counter(phase_vector):
 class CurvePhaseMetaPhenotypes(Enum):
 
     MajorImpulseYieldContribution = 0
+    FirstMinorImpulseYieldContribution = 1
     InitialLag = 3
     InitialAccelerationAsymptoteAngle = 4
     FinalRetardationAsymptoteAngle = 5
     Modalities = 6
+    MajorImpulseAveragePopulationDoublingTime = 7
+    FirstMinorImpulseAveragePopulationDoublingTime = 8
 
 
 def filter_plate(plate, meta_phenotype):
@@ -354,6 +357,39 @@ def filter_plate(plate, meta_phenotype):
             phase=CurvePhases.Impulse,
             measure=CurvePhasePhenotypes.FractionYield,
             phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=selector)
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution:
+
+        selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield,
+                           func=lambda x: x[np.argsort(x)[-2]])
+        return filter_plate_custom_filter(
+            plate,
+            phase=CurvePhases.Impulse,
+            measure=CurvePhasePhenotypes.FractionYield,
+            phases_requirement=lambda phases: len(phases) > 1,
+            phase_selector=selector)
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime:
+
+        selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield)
+        return filter_plate_custom_filter(
+            plate,
+            phase=CurvePhases.Impulse,
+            measure=CurvePhasePhenotypes.PopulationDoublingTime,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=selector)
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.FirstMinorImpulseAveragePopulationDoublingTime:
+
+        selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield,
+                           func=lambda x: x[np.argsort(x)[-2]])
+
+        return filter_plate_custom_filter(
+            plate,
+            phase=CurvePhases.Impulse,
+            measure=CurvePhasePhenotypes.PopulationDoublingTime,
+            phases_requirement=lambda phases: len(phases) > 1,
             phase_selector=selector)
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLag:
@@ -402,4 +438,9 @@ def filter_plate(plate, meta_phenotype):
         )
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Modalities:
+
         return np.ma.masked_invalid(np.frompyfunc(_impulse_counter, 1, 1))
+
+    else:
+
+        return np.ma.masked_invalid(np.ones_like(plate.shape) * np.nan)
