@@ -331,6 +331,10 @@ def filter_plate_custom_filter(
     return np.ma.masked_invalid(np.frompyfunc(f, 1, 1)(plate).astype(np.float))
 
 
+def _impulse_counter(phase_vector):
+    return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
+
+
 class CurvePhaseMetaPhenotypes(Enum):
 
     MajorImpulseYieldContribution = 0
@@ -339,6 +343,7 @@ class CurvePhaseMetaPhenotypes(Enum):
     InitialLag = 3
     InitialAccelerationAsymptoteAngle = 4
     FinalRetardationAsymptoteAngle = 5
+    Modalities = 6
 
 
 def filter_plate(plate, meta_phenotype):
@@ -409,3 +414,6 @@ def filter_plate(plate, meta_phenotype):
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[-1]
         )
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.Modalities:
+        return np.ma.masked_invalid(np.frompyfunc(_impulse_counter, 1, 1))
