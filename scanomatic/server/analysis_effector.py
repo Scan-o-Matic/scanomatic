@@ -119,48 +119,51 @@ class AnalysisEffector(proc_effector.ProcessEffector):
             if self._analysis_needs_init:
                 return self._setup_first_iteration()
             elif not self._stopping:
-                return self._analyze_image()
+                if not self._analyze_image():
+                    self._stopping = True
+                return not self._stopping
             else:
-                return self._finalize_analysis()
+                self._finalize_analysis()
+                raise StopIteration
         else:
-            return self._finalize_analysis()
+            self._finalize_analysis()
+            raise StopIteration
 
     def _finalize_analysis(self):
 
-            self._xmlWriter.close()
+        self._xmlWriter.close()
 
-            self._logger.info("ANALYSIS, Full analysis took {0} minutes".format(
-                ((time.time() - self._start_time) / 60.0)))
+        self._logger.info("ANALYSIS, Full analysis took {0} minutes".format(
+            ((time.time() - self._start_time) / 60.0)))
 
-            self._logger.info('Analysis completed at ' + str(time.time()))
+        self._logger.info('Analysis completed at ' + str(time.time()))
 
-            if self._analysis_job.chain:
+        if self._analysis_job.chain:
 
-                try:
-                    rc = rpc_client.get_client(admin=True)
-                    if rc.create_feature_extract_job(FeaturesFactory.to_dict(FeaturesFactory.create(
-                            analysis_directory=self._analysis_job.output_directory,
-                            email=self._analysis_job.email))):
+            try:
+                rc = rpc_client.get_client(admin=True)
+                if rc.create_feature_extract_job(FeaturesFactory.to_dict(FeaturesFactory.create(
+                        analysis_directory=self._analysis_job.output_directory,
+                        email=self._analysis_job.email))):
 
-                        self._logger.info("Enqueued feature extraction job")
-                    else:
-                        self._logger.warning("Enqueing of feature extraction job refused")
-                except:
-                    self._logger.error("Could not spawn analysis at directory {0}".format(
-                        self._analysis_job.output_directory))
-            else:
-                self._mail("Scan-o-Matic: Analysis for project '{project_name}' done.",
-                           """This is an automated email, please don't reply!
+                    self._logger.info("Enqueued feature extraction job")
+                else:
+                    self._logger.warning("Enqueing of feature extraction job refused")
+            except:
+                self._logger.error("Could not spawn analysis at directory {0}".format(
+                    self._analysis_job.output_directory))
+        else:
+            self._mail("Scan-o-Matic: Analysis for project '{project_name}' done.",
+                       """This is an automated email, please don't reply!
 
 The project '{compile_instructions}' on """ + AppConfig().computer_human_name +
-                           """ is done and no further action requested.
+                       """ is done and no further action requested.
 
 All the best,
 
 Scan-o-Matic""", self._analysis_job)
 
-            self._running = False
-            raise StopIteration
+        self._running = False
 
     def _analyze_image(self):
 
