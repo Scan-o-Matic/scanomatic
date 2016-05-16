@@ -252,8 +252,9 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
                 a1 -= i
                 a2 -= i
                 phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = (i_x - times[left]) / (times[right] - times[left])
-                phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = np.arccos(
-                    np.dot(a1, a2) / (np.sqrt(np.dot(a1, a1)) * np.sqrt(np.dot(a2, a2))))
+                phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
+                    np.arctan((k2 - k1) / (1 + k1 * k2))
+
             else:
                 # B. For linear phases get the doubling time
                 slope, intercept, _, _, _ = linregress(times[filt], np.log2(curve[filt]))
