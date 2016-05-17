@@ -9,6 +9,7 @@ import copy
 import time
 from itertools import izip
 import numpy as np
+import csv
 
 #
 #   OPTIONAL IMPORT
@@ -193,9 +194,36 @@ class ExcelLoader(DataLoader):
         return row[1].tolist()
 
 
+class CSVLoader(DataLoader):
+
+    _SUFFIXES = ("csv", "tsv", "tab", "txt")
+
+    def __init__(self, path):
+        super(CSVLoader, self).__init__(path)
+        self._load()
+
+    def _load(self):
+
+        self._reset()
+        with open(self._path) as fh:
+            raw_data = fh.readlines()
+
+        dialect = csv.Sniffer().sniff(raw_data[0])
+        data = csv.reader(raw_data, dialect=dialect)
+        self._columns.append(max(len(row) for row in data))
+        self._entries.append(len(data))
+        self._headers.append(None)
+        self._row_iterators.append((row for row in data))
+
+    @staticmethod
+    def _get_next_row(row):
+
+        return row
+
+
 class MetaData2(object):
 
-    _LOADERS = (ExcelLoader,)
+    _LOADERS = (ExcelLoader, CSVLoader)
 
     def __init__(self, plate_shapes, *paths):
 
