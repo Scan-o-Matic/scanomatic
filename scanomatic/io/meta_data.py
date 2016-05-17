@@ -47,6 +47,7 @@ class DataLoader(object):
         self._columns = []
         self._sheet_names = []
         self._headers = []
+        """:type : [str]"""
 
     def _reset(self):
 
@@ -72,7 +73,7 @@ class DataLoader(object):
             yield self._get_next_row(row)
 
     @staticmethod
-    def _get_next_row(self, row):
+    def _get_next_row(row):
 
         raise NotImplemented
 
@@ -244,8 +245,28 @@ class MetaData2(object):
 
         return self._data[plate][outer, inner]
 
-    def get_headers(self, plate):
+    def __getitem__(self, plate):
 
+        return self._data[plate].tolist()
+
+    def __getstate__(self):
+
+        return {k: v for k, v in self.__dict__.iteritems() if k != "_logger"}
+
+    def __setstate__(self, state):
+
+        self.__dict__.update(state)
+
+    def get_header_row(self, plate):
+        """
+
+        Args:
+            plate: Plate index
+            :type plate : int
+
+        Returns: Header row
+            :rtype : [str]
+        """
         return self._headers[plate]
 
     @property
@@ -254,12 +275,12 @@ class MetaData2(object):
         return self._loading_plate >= len(self._plate_shapes)
 
     @property
-    def plate_completed(self):
+    def _plate_completed(self):
 
         return len(self._loading_offset) == 0
 
     @staticmethod
-    def get_loader(path):
+    def _get_loader(path):
 
         for loader in MetaData2._LOADERS:
 
@@ -275,7 +296,7 @@ class MetaData2(object):
             if self.loaded:
                 return
 
-            loader = MetaData2.get_loader(path)
+            loader = MetaData2._get_loader(path)
             """:type : DataLoader"""
             if loader is None:
                 self._logger.warning("Unknown file format, can't load {0}".format(path))
@@ -291,7 +312,7 @@ class MetaData2(object):
 
                 headers = loader.get_headers(size)
 
-                if not self.has_matching_headers(headers):
+                if not self._has_matching_headers(headers):
                     self._logger.warning(
                         "Sheet {0} ({1}) of {2} headers don't match {3} != {4}".format(
                             loader.get_sheet_name(sheet_id),
@@ -307,7 +328,7 @@ class MetaData2(object):
                 self._update_meta_data(loader)
                 self._update_loading_offsets()
 
-                if self.plate_completed:
+                if self._plate_completed:
                     self._loading_plate += 1
 
                 if self.loaded:
@@ -336,7 +357,7 @@ class MetaData2(object):
 
         self._loading_offset[-1] = (outer, inner)
 
-    def has_matching_headers(self, headers):
+    def _has_matching_headers(self, headers):
 
         if self._headers[self._loading_plate] is None:
             return True
@@ -403,6 +424,66 @@ class MetaData2(object):
             max_outer, max_inner = self._plate_shapes[self._loading_plate]
 
             return coord_lister(outer, inner, max_outer, max_inner)
+
+    def get_data_from_numpy_where(self, plate, selection):
+
+        selection = zip(*selection)
+        for outer, inner in selection:
+            yield self(plate, outer, inner)
+
+    def find(self, value, column=None):
+        """Generate coordinate tuples for where key matches meta-data
+
+        Returns
+        -------
+
+        generator
+            Each item being a (plate, row, column)-tuple.
+        """
+
+        for id_plate, _ in enumerate(self._plate_shapes):
+
+            yield self.find_on_plate(id_plate, value, column=column)
+
+    def find_on_plate(self, plate, value, column=None):
+
+        if isinstance(column, StringTypes):
+            column = self.get_header_index(plate, column)
+
+            if column < 0:
+                yield tuple()
+
+        for id_plate, id_row, id_col in self.generate_coordinates(plate=plate):
+            data = self(id_plate, id_row, id_col)
+            if column is None:
+                if value in data:
+                    yield (id_row, id_col)
+            else:
+                if value == data[column]:
+                    yield (id_row, id_col)
+
+    def get_header_index(self, plate, header):
+
+        for i, column_header in enumerate(self.get_header_row(plate)):
+
+            if column_header.lower() == header.lower():
+                return i
+
+        return -1
+
+    def generate_coordinates(self, plate=None):
+
+        plates = (p for i, p in enumerate(self._plate_shapes) if plate is None or i is plate)
+
+        for id_plate, shape in enumerate(plates):
+
+            if shape is not None:
+
+                for id_row in xrange(shape[0]):
+
+                    for id_col in xrange(shape[1]):
+
+                        yield id_plate, id_row, id_col
 
 #
 # Old implementation
