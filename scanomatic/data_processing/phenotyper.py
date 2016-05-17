@@ -426,7 +426,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         :return: None
         """
 
-        self._meta_data = MetaData(tuple(self.plate_shapes), *(os.path.abspath(p) for p in meta_data_paths))
+        self._meta_data = MetaData(tuple(self.plate_shapes), *(os.path.expanduser(p) for p in meta_data_paths))
 
     def find_in_meta_data(self, value, column=None):
 
