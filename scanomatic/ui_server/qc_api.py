@@ -11,6 +11,7 @@ from scanomatic.io.paths import Paths
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, path_is_in_jail
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.data_processing.phenotypes import get_sort_order
+from scanomatic.generics.phenotype_filter import Filter
 
 RESERVATION_TIME = 60 * 5
 
@@ -457,10 +458,12 @@ def add_routes(app):
                            plate_indices=plate_indices, is_project=True, is_endpoint=False)
 
         phenotype_enum = phenotyper.get_phenotype(phenotype)
-        data = state.get_phenotype(phenotype_enum)[plate].filled()
+        plate_data = state.get_phenotype(phenotype_enum)[plate]
 
-        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, project_name=name, data=data.tolist(),
-                       plate=plate, phenotype=phenotype, is_project=True, is_endpoint=True)
+        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, project_name=name, data=plate_data.tojson(),
+                       plate=plate, phenotype=phenotype, is_project=True, is_endpoint=True,
+                       **{filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
+                          for filt in Filter if filt != Filter.OK})
 
     @app.route("/api/results/curves")
     @app.route("/api/results/curves/")
