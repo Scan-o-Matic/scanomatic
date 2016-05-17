@@ -55,6 +55,10 @@ class FilterArray(object):
 
         return np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.filter_to_mask(*filters))
 
+    def where_mask_layer(self, filter):
+
+        return np.where(self.__dict__["__numpy_filter"] == filter.value)
+
     def filled(self, fill_value=np.nan):
 
         return np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.mask).filled(fill_value=fill_value)
