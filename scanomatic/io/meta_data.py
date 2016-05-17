@@ -25,8 +25,170 @@ except ImportError:
 
 import scanomatic.io.logger as logger
 
+
 #
 # METHODS
+#
+
+
+class DataLoader(object):
+
+    _SUFFIXES = []
+
+    def __init__(self, path):
+        self._logger = logger.Logger("MetaDataLoader")
+        self._path = path
+        self._sheet = -1
+        self._entries = []
+        self._row_iterators = []
+        self._columns = []
+        self._sheet_names = []
+        self._headers = []
+
+    def _reset(self):
+
+        self._sheet = -1
+        self._columns = []
+        self._entries = []
+        self._row_iterators = []
+        self._sheet_names = []
+        self._headers = []
+
+    @property
+    def rows(self):
+
+        return self._entries[self._sheet]
+
+    def get_next(self):
+
+        try:
+
+            return self._get_next_row(self._row_iterators[self._sheet])
+
+        except IndexError:
+
+            raise StopIteration
+
+    @staticmethod
+    def _get_next_row(self, iterable):
+
+        raise NotImplemented
+
+    def _get_empty_headers(self):
+
+        return [None for _ in self._columns[self._sheet]]
+
+    def get_headers(self, plate_size):
+
+        if self._headers[self._sheet] is None:
+            if self.sheet_is_valid_with_headers(plate_size):
+                self._headers[self._sheet] = self._get_next_row(self._row_iterators[self._sheet])
+            elif self.sheet_is_valid_without_headers(plate_size):
+                self._headers[self._sheet] = self._get_empty_headers()
+
+        return self._headers[self._sheet]
+
+    @classmethod
+    def can_load(cls, path):
+        """
+
+        Args:
+            path:
+            :type path : str
+        Returns:
+
+        """
+        suffix = path[::-1].split(".", 1)[0][::-1].lower()
+        return suffix in cls._SUFFIXES
+
+    @property
+    def sheets(self):
+
+        return len(self._entries)
+
+    def next_sheet(self, plate_size):
+
+        self._sheet += 1
+
+        while not self.sheet_is_valid(plate_size):
+
+            if self._sheet >= len(self._entries):
+                raise StopIteration
+
+            self._logger.warning(
+                "Sheet {0} ({1} zero-indexed) has {2} and {3} entry rows. This doesn't match plate size {4}".format(
+                    self._sheet_names[self._sheet],
+                    self._sheet,
+                    " header row" if self.sheet_is_valid_without_headers(plate_size) else "no headers",
+                    self._entries[self._sheet],
+                    plate_size))
+
+            self._sheet += 1
+
+        return self._sheet
+
+    def sheet_is_valid_with_headers(self, plate_size):
+
+        return plate_size % (self._entries[self._sheet] - 1) == 0 and \
+               (plate_size / (self._entries[self._sheet] - 1)) % 4 == 1
+
+    def sheet_is_valid_without_headers(self, plate_size):
+
+        return plate_size % self._entries[self._sheet] == 0 and \
+               plate_size / self._entries[self._sheet] % 4 == 1
+
+    def sheet_is_valid(self, plate_size):
+
+        if 0 <= self._sheet < len(self._entries):
+
+            return self.sheet_is_valid_with_headers(plate_size) or self.sheet_is_valid_without_headers(plate_size)
+
+        return False
+
+
+class ExcelLoader(DataLoader):
+
+    _SUFFIXES = ['xls', 'xlsx']
+
+    def __init__(self, path):
+
+        super(ExcelLoader, self).__init__(path)
+        self._data = None
+        self._load()
+
+    def _load(self):
+
+        self._data = []
+        self._reset()
+        doc = pd.ExcelFile(self._path)
+        for n in doc.sheet_names:
+            self._sheet_names.append(n)
+            self._load_sheet(doc.parse(n, header=None).fillna(value=u''))
+
+    def _load_sheet(self, df):
+        """
+
+        Args:
+            df: DataFrame / sheet
+            :type df : pandas.DataFrame
+
+        Returns:
+
+        """
+        self._data.append(df)
+        self._entries.append(df.shape[0])
+        self._columns.append(df.shape[1])
+        self._headers.append(None)
+        self._row_iterators.append(df.iterrows())
+
+    @staticmethod
+    def _get_next_row(iterable):
+
+        return iterable.next()[1].tolist()
+
+
+#
+# Old implementation
 #
 
 
