@@ -249,6 +249,17 @@ class MetaData2(object):
 
         return self._data[plate].tolist()
 
+    def __eq__(self, other):
+
+        if hasattr(other, "shapes") and self.shapes != other.shapes:
+            return False
+
+        for plate, outer, inner in self.generate_coordinates():
+
+            if self(plate, outer, inner) != other(plate, outer, inner):
+                return False
+        return True
+
     def __getstate__(self):
 
         return {k: v for k, v in self.__dict__.iteritems() if k != "_logger"}
@@ -268,6 +279,10 @@ class MetaData2(object):
             :rtype : [str]
         """
         return self._headers[plate]
+
+    @property
+    def shapes(self):
+        return self._plate_shapes
 
     @property
     def loaded(self):
