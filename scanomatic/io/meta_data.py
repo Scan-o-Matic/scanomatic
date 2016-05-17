@@ -7,6 +7,8 @@ from hashlib import md5
 import os
 import copy
 import time
+from itertools import izip
+import numpy as np
 
 #
 #   OPTIONAL IMPORT
@@ -59,18 +61,17 @@ class DataLoader(object):
 
         return self._entries[self._sheet]
 
+    def get_sheet_name(self, sheet_index):
+
+        return self._sheet_names[sheet_index]
+
     def get_next(self):
 
-        try:
-
-            return self._get_next_row(self._row_iterators[self._sheet])
-
-        except IndexError:
-
-            raise StopIteration
+        for row in self._row_iterators[self._sheet]:
+            yield self._get_next_row(row)
 
     @staticmethod
-    def _get_next_row(self, iterable):
+    def _get_next_row(self, row):
 
         raise NotImplemented
 
@@ -82,7 +83,7 @@ class DataLoader(object):
 
         if self._headers[self._sheet] is None:
             if self.sheet_is_valid_with_headers(plate_size):
-                self._headers[self._sheet] = self._get_next_row(self._row_iterators[self._sheet])
+                self._headers[self._sheet] = self._get_next_row(self._row_iterators[self._sheet].next())
             elif self.sheet_is_valid_without_headers(plate_size):
                 self._headers[self._sheet] = self._get_empty_headers()
 
@@ -113,7 +114,7 @@ class DataLoader(object):
         while not self.sheet_is_valid(plate_size):
 
             if self._sheet >= len(self._entries):
-                raise StopIteration
+                return None
 
             self._logger.warning(
                 "Sheet {0} ({1} zero-indexed) has {2} and {3} entry rows. This doesn't match plate size {4}".format(
@@ -126,6 +127,11 @@ class DataLoader(object):
             self._sheet += 1
 
         return self._sheet
+
+    @property
+    def has_more_data(self):
+
+        return self._sheet < len(self._entries)
 
     def sheet_is_valid_with_headers(self, plate_size):
 
@@ -182,10 +188,193 @@ class ExcelLoader(DataLoader):
         self._row_iterators.append(df.iterrows())
 
     @staticmethod
-    def _get_next_row(iterable):
+    def _get_next_row(row):
 
-        return iterable.next()[1].tolist()
+        return row[1].tolist()
 
+
+class MetaData2(object):
+
+    _LOADERS = (ExcelLoader,)
+
+    def __init__(self, plate_shapes, *paths):
+
+        self._logger = logger.Logger("MetaData")
+        self._plate_shapes = plate_shapes
+        self._data = tuple(None if shape is None else np.empty(shape, dtype=np.object) for shape in plate_shapes)
+        self._headers = list(None for _ in plate_shapes)
+        self._loading_plate = 0
+        self._loading_offset = []
+        self._paths = paths
+
+        self._load(*paths)
+
+        if not self.loaded:
+            self._logger.warning("Not enough meta-data to fill all plates")
+
+    def __call__(self, plate, outer, inner):
+
+        return self._data[plate][outer, inner]
+
+    def get_headers(self, plate):
+
+        return self._headers[plate]
+
+    @property
+    def loaded(self):
+
+        return self._loading_plate >= len(self._plate_shapes)
+
+    @property
+    def plate_completed(self):
+
+        return len(self._loading_offset) == 0
+
+    @staticmethod
+    def get_loader(path):
+
+        for loader in MetaData2._LOADERS:
+
+            if loader.can_load(path):
+                return loader(path)
+
+        return None
+
+    def _load(self, *paths):
+
+        for path in paths:
+
+            if self.loaded:
+                return
+
+            loader = MetaData2.get_loader(path)
+            """:type : DataLoader"""
+            if loader is None:
+                self._logger.warning("Unknown file format, can't load {0}".format(path))
+                continue
+
+            size = self._get_sought_size()
+
+            while loader.has_more_data:
+
+                sheet_id = loader.next_sheet(size)
+                if sheet_id is None:
+                    break
+
+                headers = loader.get_headers(size)
+
+                if not self.has_matching_headers(headers):
+                    self._logger.warning(
+                        "Sheet {0} ({1}) of {2} headers don't match {3} != {4}".format(
+                            loader.get_sheet_name(sheet_id),
+                            sheet_id,
+                            path,
+                            headers,
+                            self._headers[self._loading_plate]))
+                    continue
+
+                self._logger.info("Using {0}:{1} for plate {2}".format(
+                    path, loader.get_sheet_name(sheet_id), self._loading_plate))
+                self._update_headers_if_needed(headers)
+                self._update_meta_data(loader)
+                self._update_loading_offsets()
+
+                if self.plate_completed:
+                    self._loading_plate += 1
+
+                if self.loaded:
+                    return
+
+                size = self._get_sought_size()
+
+    def _get_sought_size(self):
+
+        size = np.prod(self._plate_shapes[self._loading_plate])
+        return size / 4 ** len(self._loading_offset)
+
+    def _update_loading_offsets(self):
+
+        if not self._loading_offset:
+            return
+        outer, inner = self._loading_offset[-1]
+        inner += 1
+        if inner > 1:
+            inner %= 2
+            outer += 1
+            if outer > 1:
+                self._loading_offset = self._loading_offset[:-1]
+                self._update_loading_offsets()
+                return
+
+        self._loading_offset[-1] = (outer, inner)
+
+    def has_matching_headers(self, headers):
+
+        if self._headers[self._loading_plate] is None:
+            return True
+        elif len(self._headers[self._loading_plate]) != len(headers):
+            return False
+        elif all(h is None for h in self._headers[self._loading_plate]):
+            return True
+        else:
+            return all(a == b for a, b in zip(self._headers[self._loading_plate], headers))
+
+    def _update_headers_if_needed(self, headers):
+
+        if self._headers[self._loading_plate] is None or all(h is None for h in self._headers[self._loading_plate]):
+            self._headers[self._loading_plate] = headers
+
+    def _update_meta_data(self, loader):
+
+        slotter = self._get_slotting_iter(loader)
+
+        for meta_data in loader.get_next():
+            self._data[self._loading_plate][slotter.next()] = meta_data
+
+    def _get_slotting_iter(self, loader):
+        """
+
+        Args:
+            loader:
+            :type loader: DataLoader
+
+        Returns:
+            Coordinate iterator
+            :rtype : iter
+        """
+        def coord_lister(outer, inner, max_outer, max_inner):
+
+            yield outer, inner
+            inner += factor
+            if inner >= max_inner:
+                inner %= max_inner
+                outer += factor
+                if outer >= max_outer:
+                    outer %= max_outer
+
+        factor = np.log2(self._data[self._loading_plate].size / (loader.rows - loader.sheet_is_valid_with_headers(
+            np.prod(self._plate_shapes[self._loading_plate]))))
+
+        if factor != int(factor):
+            return None
+
+        elif factor == 0:
+            # Full plate
+            return izip(*np.unravel_index(
+                np.arange(self._data[self._loading_plate].size),
+                self._plate_shapes[self._loading_plate]))
+
+        else:
+            # Partial plate
+            factor = int(factor)
+            if factor > len(self._loading_offset):
+                self._loading_offset += [(0, 0) for _ in range(factor - len(self._loading_offset))]
+
+            outer, inner = map(sum, zip(*((o*2**l, i*2**l) for l, (o, i) in enumerate(self._loading_offset))))
+            factor = 2 ** len(self._loading_offset)
+            max_outer, max_inner = self._plate_shapes[self._loading_plate]
+
+            return coord_lister(outer, inner, max_outer, max_inner)
 
 #
 # Old implementation
