@@ -63,6 +63,14 @@ class FilterArray(object):
 
         return np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.mask).filled(fill_value=fill_value)
 
+    def tojson(self):
+
+        val = self.filled()
+        filt = np.isnan(val)
+        val = val.astype(np.object)
+        val[filt] = None
+        return val.tolist()
+
     def __getattr__(self, item):
 
         return getattr(np.ma.MaskedArray(self.__dict__["__numpy_data"], mask=self.mask), item)
