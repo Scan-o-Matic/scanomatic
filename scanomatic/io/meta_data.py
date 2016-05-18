@@ -488,9 +488,9 @@ class MetaData2(object):
 
     def generate_coordinates(self, plate=None):
 
-        plates = (p for i, p in enumerate(self._plate_shapes) if plate is None or i is plate)
+        plates = ((i, p) for i, p in enumerate(self._plate_shapes) if plate is None or i is plate)
 
-        for id_plate, shape in enumerate(plates):
+        for id_plate, shape in plates:
 
             if shape is not None:
 
