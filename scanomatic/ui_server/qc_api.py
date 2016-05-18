@@ -135,6 +135,7 @@ def add_routes(app):
                        if extraction_date else "",
                        change_date=datetime.fromtimestamp(change_date, local_zone).astimezone(zone).isoformat()
                        if change_date else "",
+                       analysis_instructions=convert_path_to_url("/api/analysis/instructions", path) if is_project else None,
                        **get_search_results(path, "/api/results/browse"))
 
     @app.route("/api/results/lock/add/<path:project>")
