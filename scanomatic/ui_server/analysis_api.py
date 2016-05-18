@@ -1,7 +1,6 @@
 import os
-from flask import request, Flask, jsonify, send_from_directory
+from flask import Flask, jsonify
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results
-from scanomatic.dataProcessing import phenotyper
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.analysis_model import AnalysisModel
