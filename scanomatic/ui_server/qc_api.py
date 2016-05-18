@@ -1,17 +1,17 @@
 import os
 import time
-import uuid
-import glob
+from datetime import datetime
 from dateutil import tz
 from flask import request, Flask, jsonify, send_from_directory
 from itertools import chain, product
-from datetime import datetime
+
+import uuid
+
 from scanomatic.data_processing import phenotyper
-from scanomatic.io.paths import Paths
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, path_is_in_jail
-from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.data_processing.phenotypes import get_sort_order
 from scanomatic.generics.phenotype_filter import Filter
+from scanomatic.io.paths import Paths
+from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, _get_project_name
 
 RESERVATION_TIME = 60 * 5
 
@@ -73,37 +73,6 @@ def _discover_projects(path):
     return tuple(d for d in dirs if phenotyper.path_has_saved_project_state(d))
 
 
-def _get_possible_paths(path):
-
-    dirs = tuple()
-    root = None
-    for root, dirs, _ in os.walk(path, followlinks=True):
-        break
-
-    if root is None:
-        return tuple()
-    return tuple(os.path.join(root, d) for d in dirs)
-
-
-def _get_project_name(project_path):
-    no_name = None
-
-    if not path_is_in_jail(project_path):
-        return no_name
-
-    candidates = glob.glob(os.path.join(project_path, Paths().scan_project_file_pattern.format("*")))
-    if candidates:
-        for candidate in candidates:
-            model = ScanningModelFactory.serializer.load_first(candidate)
-            if model:
-                return model.project_name if model.project_name else no_name
-
-    if project_path:
-        return _get_project_name(os.path.dirname(project_path))
-
-    return no_name
-
-
 def _get_new_metadata_file_name(project_path, suffix):
 
     i = 1
@@ -113,19 +82,6 @@ def _get_new_metadata_file_name(project_path, suffix):
         i += 1
         if not os.path.isfile(path):
             return path
-
-
-def _get_search_results(path, url_prefix):
-
-    projects = _get_possible_paths(path)
-    names = list(_get_project_name(p) for p in projects)
-    urls = list(convert_path_to_url(url_prefix, p) for p in projects)
-    if None in urls:
-        try:
-            names, urls = zip(*tuple((n, u) for n, u in zip(names, urls) if u is not None))
-        except ValueError:
-            pass
-    return {'names': names, 'urls': urls}
 
 
 def add_routes(app):
@@ -155,7 +111,7 @@ def add_routes(app):
         else:
 
             return jsonify(success=True, is_project=False, is_endpoint=False,
-                           **_get_search_results(path, "/api/results/browse"))
+                           **get_search_results(path, "/api/results/browse"))
 
         name = _get_project_name(path)
         return jsonify(success=True,
@@ -179,7 +135,7 @@ def add_routes(app):
                        if extraction_date else "",
                        change_date=datetime.fromtimestamp(change_date, local_zone).astimezone(zone).isoformat()
                        if change_date else "",
-                       **_get_search_results(path, "/api/results/browse"))
+                       **get_search_results(path, "/api/results/browse"))
 
     @app.route("/api/results/lock/add/<path:project>")
     def lock_project(project=""):
@@ -220,7 +176,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, "/api/results/meta_data/add"))
+                           **get_search_results(path, "/api/results/meta_data/add"))
 
         name = _get_project_name(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
@@ -270,7 +226,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, base_url))
+                           **get_search_results(path, base_url))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
@@ -303,7 +259,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, base_url))
+                           **get_search_results(path, base_url))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
@@ -340,7 +296,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, "/api/results/pinning"))
+                           **get_search_results(path, "/api/results/pinning"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         pinnings = list(state.plate_shapes)
@@ -363,7 +319,7 @@ def add_routes(app):
 
             return jsonify(success=True,
                            is_project=False,
-                           **_get_search_results(path, base_url))
+                           **get_search_results(path, base_url))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
@@ -391,7 +347,7 @@ def add_routes(app):
 
             return jsonify(success=True,
                            is_project=False,
-                           **_get_search_results(path, "/api/results/phenotype_names"))
+                           **get_search_results(path, "/api/results/phenotype_names"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
@@ -420,7 +376,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, "/api/results/quality_index"))
+                           **get_search_results(path, "/api/results/quality_index"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
@@ -453,7 +409,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, "/api/results/phenotype/_NONE_"))
+                           **get_search_results(path, "/api/results/phenotype/_NONE_"))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
@@ -516,7 +472,7 @@ def add_routes(app):
             return jsonify(success=True,
                            is_project=False,
                            is_endpoint=False,
-                           **_get_search_results(path, url_root))
+                           **get_search_results(path, url_root))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
