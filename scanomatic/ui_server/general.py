@@ -8,8 +8,12 @@ from scanomatic.io.paths import Paths
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
 
+_safe_dir = re.compile(r"^[A-Za-z_0-9./]*$")
+_no_super = re.compile(r"/?\.{2}/")
+
+
 def safe_directory_name(name):
-    return re.match("^[A-Za-z_0-9/]*$", name) is not None
+    return _safe_dir.match(name) is not None and _no_super.search(name) is None
 
 
 def convert_url_to_path(url):
@@ -23,7 +27,7 @@ def convert_url_to_path(url):
 
 def convert_path_to_url(prefix, path):
     if prefix:
-        path =  "/".join(chain([prefix], os.path.relpath(path, Config().paths.projects_root).split(os.sep)))
+        path = "/".join(chain([prefix], os.path.relpath(path, Config().paths.projects_root).split(os.sep)))
     else:
         path = "/".join(os.path.relpath(path, Config().paths.projects_root).split(os.sep))
 
