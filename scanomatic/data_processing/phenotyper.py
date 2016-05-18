@@ -23,7 +23,7 @@ from scanomatic.data_processing.curve_phase_phenotypes import phase_phenotypes, 
     VectorPhenotypes
 from scanomatic.data_processing.phenotypes import PhenotypeDataType
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
-from scanomatic.io.meta_data import MetaData
+from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
 from scanomatic.data_processing.norm import Offsets, get_normailzed_data
 
