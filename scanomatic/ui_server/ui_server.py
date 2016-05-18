@@ -32,6 +32,7 @@ from scanomatic.ui_server.general import safe_directory_name
 from . import qc_api
 import analysis_api
 import compilation_api
+import scan_api
 
 _url = None
 _logger = Logger("UI-server")
@@ -705,6 +706,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     qc_api.add_routes(app)
     analysis_api.add_routes(app)
     compilation_api.add_routes(app)
+    scan_api.add_routes(app)
 
     try:
         if is_local:
