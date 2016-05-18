@@ -17,7 +17,7 @@ def add_routes(app):
     @app.route("/api/analysis/instructions", defaults={'project': ''})
     @app.route("/api/analysis/instructions/", defaults={'project': ''})
     @app.route("/api/analysis/instructions/<path:project>")
-    def get_instructions(project=None):
+    def get_analysis_instructions(project=None):
 
         base_url = "/api/analysis/instructions"
 
@@ -43,5 +43,5 @@ def add_routes(app):
                 'grid_model': {'gridding_offsets': model.grid_model.gridding_offsets,
                                'reference_grid_folder': model.grid_model.reference_grid_folder},
             },
-            compile_instructions=convert_path_to_url("/api/compilation/instructions", model.compile_instructions),
+            compile_instructions=convert_path_to_url("/api/compile/instructions", model.compile_instructions),
             **get_search_results(path, base_url))
