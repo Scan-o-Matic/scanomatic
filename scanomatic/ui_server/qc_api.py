@@ -477,6 +477,9 @@ def add_routes(app):
                            phenotypes=phenotypes, urls=urls,
                            project_name=name)
 
+        phenotype_enum = phenotyper.get_phenotype(phenotype)
+        is_segmentation_based = state.is_segmentation_based_phenotype(phenotype_enum)
+
         if plate is None:
 
             urls = []
@@ -487,13 +490,14 @@ def add_routes(app):
                     plate_indices.append(plate)
 
             return jsonify(success=True, urls=urls, read_only=not lock_key, lock_key=lock_key, project_name=name,
-                           plate_indices=plate_indices, is_project=True, is_endpoint=False)
+                           plate_indices=plate_indices, is_project=True, is_endpoint=False,
+                           is_segmentation_based=is_segmentation_based)
 
-        phenotype_enum = phenotyper.get_phenotype(phenotype)
         plate_data = state.get_phenotype(phenotype_enum)[plate]
 
-        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, project_name=name, data=plate_data.tojson(),
-                       plate=plate, phenotype=phenotype, is_project=True, is_endpoint=True,
+        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, project_name=name,
+                       data=plate_data.tojson(), plate=plate, phenotype=phenotype, is_project=True, is_endpoint=True,
+                       is_segmentation_based=is_segmentation_based,
                        **{filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
                           for filt in Filter if filt != Filter.OK})
 
@@ -541,12 +545,17 @@ def add_routes(app):
                            is_project=True, is_endpoint=False, urls=urls,
                            project_name=name)
 
+        segmentations = state.get_curve_segments(plate, d1_row, d2_col)
+        if segmentations is not None:
+            segmentations = segmentations.tolist()
+
         return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
                        is_project=True, is_endpoint=True,
                        project_name=name,
                        time_data=state.times.tolist(),
                        smooth_data=state.smooth_growth_data[plate][d1_row, d2_col].tolist(),
-                       raw_data=state.raw_growth_data[plate][d1_row, d2_col].tolist())
+                       raw_data=state.raw_growth_data[plate][d1_row, d2_col].tolist(),
+                       segmentations=segmentations)
 
     # End of UI extension with qc-functionality
     return True

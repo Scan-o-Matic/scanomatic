@@ -377,6 +377,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         return cls(np.load(data_directory), np.load(times_data_path), base_name=path, run_extraction=True, **kwargs)
 
+    @staticmethod
+    def is_segmentation_based_phenotype(phenotype):
+
+        return isinstance(phenotype, CurvePhaseMetaPhenotypes)
+
     @property
     def meta_data(self):
 
@@ -670,6 +675,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
     def remove_phenotype_from_normalization(self, phenotype):
 
         self._normalizable_phenotypes.remove(phenotype)
+
+    def get_curve_segments(self, plate, outer, inner):
+
+        try:
+            return self._vector_phenotypes[plate][VectorPhenotypes.PhasesClassifications][outer, inner]
+        except (ValueError, IndexError, TypeError, KeyError):
+            return None
 
     @property
     def phenotypes_that_normalize(self):
