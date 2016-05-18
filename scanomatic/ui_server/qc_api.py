@@ -3,7 +3,7 @@ import time
 import uuid
 import glob
 from dateutil import tz
-from flask import request, Flask, jsonify
+from flask import request, Flask, jsonify, send_from_directory
 from itertools import chain, product
 from datetime import datetime
 from scanomatic.data_processing import phenotyper
@@ -172,6 +172,7 @@ def add_routes(app):
                        if is_project else None,
                        curves=convert_path_to_url("/api/results/curves", path) if is_project else None,
                        quality_index=convert_path_to_url("/api/results/quality_index", path) if is_project else None,
+                       gridding=convert_path_to_url("/api/results/gridding", path) if is_project else None,
                        analysis_date=datetime.fromtimestamp(analysis_date, local_zone).astimezone(zone).isoformat()
                        if analysis_date else "",
                        extraction_date=datetime.fromtimestamp(extraction_date, local_zone).astimezone(zone).isoformat()
@@ -347,6 +348,37 @@ def add_routes(app):
         return jsonify(success=True, is_project=True, is_endpoint=True, project_name=_get_project_name(path),
                        pinnings=pinnings, plates=sum(1 for p in pinnings if p is not None),
                        read_only=not lock_key, lock_key=lock_key)
+
+    @app.route("/api/results/gridding", defaults={'project': ""})
+    @app.route("/api/results/gridding/", defaults={'project': ""})
+    @app.route("/api/results/gridding/<int:plate>", defaults={'project': ""})
+    @app.route("/api/results/gridding/<int:plate>/<path:project>")
+    @app.route("/api/results/gridding/<path:project>")
+    def get_gridding(project=None, plate=None):
+
+        base_url = "/api/results/gridding"
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(success=True,
+                           is_project=False,
+                           **_get_search_results(path, base_url))
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        name = _get_project_name(path)
+
+        if plate is None:
+
+            urls = ["{0}/{1}/{2}".format(base_url, plate, project)
+                    for plate, shape in enumerate(state.enumerate_plates) if shape is not None]
+            return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
+                           is_project=True, is_endpoint=False,
+                           urls=urls,
+                           project_name=name)
+
+        return send_from_directory(path, Paths().experiment_grid_image_pattern.format(plate + 1))
 
     @app.route("/api/results/phenotype_names")
     @app.route("/api/results/phenotype_names/")
