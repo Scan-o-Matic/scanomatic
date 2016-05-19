@@ -1,6 +1,6 @@
 import os
 from flask import Flask, jsonify
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results
+from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
 from scanomatic.io.paths import Paths
 from glob import glob
 from scanomatic.models.compile_project_model import CompileInstructionsModel
@@ -41,21 +41,23 @@ def add_routes(app):
 
         if model is not None:
 
-            return jsonify(
-                success=True,
-                instructions={
-                    'fixture': model.fixture_name,
-                    'fixture_type': model.fixture_type.name,
-                    'compilation': [dict(**i) for i in model.images],
-                    'email': model.email,
-                },
-                compile_instructions=compile_instructions if compile_instructions else None,
-                scan_instructions=scan_instructions if scan_instructions else None,
-                **get_search_results(path, base_url))
+            return jsonify(**json_response(
+                ["urls", "compile_instructions", "scan_instructions"],
+                dict(
+                    instructions={
+                        'fixture': model.fixture_name,
+                        'fixture_type': model.fixture_type.name,
+                        'compilation': [dict(**i) for i in model.images],
+                        'email': model.email,
+                    },
+                    compile_instructions=compile_instructions,
+                    scan_instructions=scan_instructions,
+                    **get_search_results(path, base_url))))
 
         else:
-            return jsonify(
-                compile_instructions=compile_instructions if compile_instructions else None,
-                scan_instructions=scan_instructions if scan_instructions else None,
-                success=True,
-                **get_search_results(path, base_url))
+            return jsonify(**json_response(
+                ["urls", "compile_instructions", "scan_instructions"],
+                dict(
+                    compile_instructions=compile_instructions,
+                    scan_instructions=scan_instructions,
+                    **get_search_results(path, base_url))))

@@ -1,6 +1,6 @@
 import os
 from flask import Flask, jsonify
-from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results
+from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
 from scanomatic.io.paths import Paths
 from glob import glob
 from scanomatic.models.scanning_model import ScanningModel
@@ -41,44 +41,45 @@ def add_routes(app):
 
         if model is not None:
 
-            return jsonify(
-                success=True,
-                instructions={
-                    'fixture': model.fixture,
-                    'computer': model.computer,
-                    'description': model.description,
-                    'number_of_scans': model.number_of_scans,
-                    'mode': model.mode,
-                    'plate_descriptions': model.plate_descriptions,
-                    'pinning_formats': model.pinning_formats,
-                    'time_between_scans': model.time_between_scans,
-                    'start_time': model.start_time,
-                    'project_name': model.project_name,
-                    'scanner': model.scanner,
-                    'scanner_hardware': model.scanner_hardware,
-                    'project_tag': model.project_tag,
-                    'scanner_tag': model.scanner_tag,
-                    'auxillary_info': {
-                        'culture_freshness': model.auxillary_info.culture_freshness if
-                        model.auxillary_info.culture_freshness else None,
-                        'culture_source': model.auxillary_info.culture_source.name if
-                        model.auxillary_info.culture_source else None,
-                        'pinning_project_start_delay': model.auxillary_info.pinning_project_start_delay,
-                        'plate_age': model.auxillary_info.plate_age,
-                        'precultures': model.auxillary_info.precultures,
-                        'plate_storage': model.auxillary_info.plate_storage.name if model.auxillary_info.plate_storage
-                        else None,
-                        'stress_level': model.auxillary_info.stress_level,
+            return jsonify(**json_response(
+                ["urls", "scan_instructions", "compile_instructions"],
+                dict(
+                    instructions={
+                        'fixture': model.fixture,
+                        'computer': model.computer,
+                        'description': model.description,
+                        'number_of_scans': model.number_of_scans,
+                        'mode': model.mode,
+                        'plate_descriptions': model.plate_descriptions,
+                        'pinning_formats': model.pinning_formats,
+                        'time_between_scans': model.time_between_scans,
+                        'start_time': model.start_time,
+                        'project_name': model.project_name,
+                        'scanner': model.scanner,
+                        'scanner_hardware': model.scanner_hardware,
+                        'project_tag': model.project_tag,
+                        'scanner_tag': model.scanner_tag,
+                        'auxillary_info': {
+                            'culture_freshness': model.auxillary_info.culture_freshness if
+                            model.auxillary_info.culture_freshness else None,
+                            'culture_source': model.auxillary_info.culture_source.name if
+                            model.auxillary_info.culture_source else None,
+                            'pinning_project_start_delay': model.auxillary_info.pinning_project_start_delay,
+                            'plate_age': model.auxillary_info.plate_age,
+                            'precultures': model.auxillary_info.precultures,
+                            'plate_storage': model.auxillary_info.plate_storage.name if model.auxillary_info.plate_storage
+                            else None,
+                            'stress_level': model.auxillary_info.stress_level,
+                        },
+                        'email': model.email,
                     },
-                    'email': model.email,
-                },
-                compile_instructions=compile_instructions if compile_instructions else None,
-                scan_instructions=scan_instructions if scan_instructions else None,
-                **get_search_results(path, base_url))
-
+                    compile_instructions=compile_instructions,
+                    scan_instructions=scan_instructions,
+                    **get_search_results(path, base_url))))
         else:
-            return jsonify(
-                compile_instructions=compile_instructions if compile_instructions else None,
-                scan_instructions=scan_instructions if scan_instructions else None,
-                success=True,
-                **get_search_results(path, base_url))
+            return jsonify(**json_response(
+                ["urls", "scan_instructions", "compile_instructions"],
+                dict(
+                    compile_instructions=compile_instructions,
+                    scan_instructions=scan_instructions,
+                    **get_search_results(path, base_url))))
