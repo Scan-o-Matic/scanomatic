@@ -84,6 +84,21 @@ def _get_new_metadata_file_name(project_path, suffix):
             return path
 
 
+def _get_json_lock_response(lock_key, data=None):
+
+    if data is None:
+        data = dict()
+
+    data["read_only"] = not lock_key
+    data["lock_key"] = lock_key
+    return data
+
+
+def merge_dicts(*dicts):
+
+    return {k: v for k, v in chain(d.iteritems() for d in dicts)}
+
+
 def add_routes(app):
 
     """
@@ -210,15 +225,14 @@ def add_routes(app):
                 fh.write(meta_data_stream)
         except IOError:
             return jsonify(success=False, reason="Failed to save file, contact server admin.",
-                           read_only=not lock_key, lock_key=lock_key,
-                           is_endpoint=True, is_project=True, project_name=name)
+                           is_endpoint=True, is_project=True, project_name=name, **_get_json_lock_response(lock_key))
 
         state = phenotyper.Phenotyper.LoadFromState(path)
         state.load_meta_data(meta_data_path)
         state.save_state(path, ask_if_overwrite=False)
 
         return jsonify(success=True, is_project=True, is_endpoint=True, project_name=name,
-                       read_only=not lock_key, lock_key=lock_key)
+                       **_get_json_lock_response(lock_key))
 
     @app.route("/api/results/meta_data/column_names/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/column_names/<path:project>")
@@ -236,19 +250,15 @@ def add_routes(app):
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         name = get_project_name(path)
-
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(base_url, plate, project)
                     for plate in state.enumerate_plates]
 
-            return jsonify(**json_response(
-                ["urls"],
-                dict(read_only=not lock_key, lock_key=lock_key, is_project=True, project_name=name, urls=urls)))
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
-        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
-                       is_project=True, is_endpoint=True, project_name=name,
-                       columns=state.meta_data_headers(plate))
+        return jsonify(success=True, is_endpoint=True, columns=state.meta_data_headers(plate), **response)
 
     @app.route("/api/results/meta_data/get/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/get/<path:project>")
@@ -266,24 +276,18 @@ def add_routes(app):
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         name = get_project_name(path)
-
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(base_url, plate, project)
                     for plate in state.enumerate_plates]
 
-            return jsonify(**json_response(
-                ["urls"],
-                dict(read_only=not lock_key, lock_key=lock_key, is_project=True, project_name=name, urls=urls)))
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
         if state.meta_data:
-            return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
-                           is_project=True, is_endpoint=True, project_name=name,
-                           meta_data=state.meta_data[plate].data)
+            return jsonify(success=True, is_endpoint=True, meta_data=state.meta_data[plate].data, **response)
         else:
-            return jsonify(success=False, reason="Project has no meta-data added",
-                           read_only=not lock_key, lock_key=lock_key,
-                           is_project=True, is_endpoint=True, project_name=name)
+            return jsonify(success=False, reason="Project has no meta-data added", is_endpoint=True, **response)
 
     @app.route("/api/results/pinning", defaults={'project': ""})
     @app.route("/api/results/pinning/", defaults={'project': ""})
@@ -302,7 +306,7 @@ def add_routes(app):
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         return jsonify(success=True, is_project=True, is_endpoint=True, project_name=get_project_name(path),
                        pinnings=pinnings, plates=sum(1 for p in pinnings if p is not None),
-                       read_only=not lock_key, lock_key=lock_key)
+                       **_get_json_lock_response(lock_key))
 
     @app.route("/api/results/gridding", defaults={'project': ""})
     @app.route("/api/results/gridding/", defaults={'project': ""})
@@ -328,10 +332,7 @@ def add_routes(app):
                     for plate, shape in enumerate(state.enumerate_plates) if shape is not None]
 
             return jsonify(**json_response(
-                ["urls"],
-                dict(
-                    read_only=not lock_key, lock_key=lock_key,
-                    is_project=True, urls=urls, project_name=name)))
+                ["urls"], dict(is_project=True, urls=urls, project_name=name, **_get_json_lock_response(lock_key))))
 
         return send_from_directory(path, Paths().experiment_grid_image_pattern.format(plate + 1))
 
@@ -362,7 +363,8 @@ def add_routes(app):
                  phenotype_sort_orders=sort_order,
                  is_project=True,
                  phenotype_urls=urls,
-                 read_only=not lock_key, lock_key=lock_key, project_name=name)))
+                 project_name=name,
+                 **_get_json_lock_response(lock_key))))
 
     @app.route("/api/results/quality_index")
     @app.route("/api/results/quality_index/")
@@ -382,19 +384,16 @@ def add_routes(app):
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         name = get_project_name(path)
-
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
         if plate is None:
 
             urls = ["/api/results/quality_index/{0}/{1}".format(plate, project)
                     for plate, shape in enumerate(state.enumerate_plates) if shape is not None]
-            return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
-                           is_project=True, is_endpoint=False,
-                           urls=urls,
-                           project_name=name)
+
+            return jsonify(json_response(["urls"], dict(urls=urls, **response)))
 
         rows, cols = state.get_quality_index(plate)
-        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, is_project=True, is_endpoint=True,
-                       project_name=name, dim1_rows=rows.tolist(), dim2_cols=cols.tolist())
+        return jsonify(success=True, is_endpoint=True, dim1_rows=rows.tolist(), dim2_cols=cols.tolist(), **response)
 
     @app.route("/api/results/phenotype")
     @app.route("/api/results/phenotype/")
@@ -413,7 +412,7 @@ def add_routes(app):
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         name = get_project_name(path)
-
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
         if phenotype is None:
 
             phenotypes = state.phenotype_names()
@@ -427,10 +426,7 @@ def add_routes(app):
                 urls = ["/api/results/phenotype/{0}/{1}/{2}".format(phenotype, plate, project)
                         for phenotype in phenotypes]
 
-            return jsonify(**json_response(
-                ["urls"],
-                dict(read_only=not lock_key, lock_key=lock_key, is_project=True, phenotypes=phenotypes, urls=urls,
-                     project_name=name)))
+            return jsonify(**json_response(["urls"], dict(phenotypes=phenotypes, urls=urls, **response)))
 
         phenotype_enum = phenotyper.get_phenotype(phenotype)
         is_segmentation_based = state.is_segmentation_based_phenotype(phenotype_enum)
@@ -447,16 +443,17 @@ def add_routes(app):
             return jsonify(**json_response(
                 ["urls"],
                 dict(
-                    urls=urls, read_only=not lock_key, lock_key=lock_key, project_name=name,
-                    plate_indices=plate_indices, is_project=True, is_segmentation_based=is_segmentation_based)))
+                    urls=urls, plate_indices=plate_indices, is_segmentation_based=is_segmentation_based, **response)))
 
         plate_data = state.get_phenotype(phenotype_enum)[plate]
 
-        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key, project_name=name,
-                       data=plate_data.tojson(), plate=plate, phenotype=phenotype, is_project=True, is_endpoint=True,
-                       is_segmentation_based=is_segmentation_based,
-                       **{filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
-                          for filt in Filter if filt != Filter.OK})
+        return jsonify(
+            success=True, data=plate_data.tojson(), plate=plate, phenotype=phenotype, is_endpoint=True,
+            is_segmentation_based=is_segmentation_based,
+            **merge_dicts(
+                {filt.name: tuple(v.tolist() for v in plate_data.where_mask_layer(filt))
+                 for filt in Filter if filt != Filter.OK},
+                response))
 
     @app.route("/api/results/curves")
     @app.route("/api/results/curves/")
@@ -475,15 +472,14 @@ def add_routes(app):
         state = phenotyper.Phenotyper.LoadFromState(path)
         lock_key = _validate_lock_key(path, request.values.get("lock_key"))
         name = get_project_name(path)
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
 
         if plate is None:
 
             urls = ["{0}/{1}/{2}".format(url_root, i, project)
                     for i, p in enumerate(state.plate_shapes) if p is not None]
 
-            return jsonify(**json_response(
-                ["urls"],
-                dict(read_only=not lock_key, lock_key=lock_key, is_project=True, urls=urls, project_name=name)))
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
         if d1_row is None or d2_col is None:
 
@@ -495,21 +491,18 @@ def add_routes(app):
                     product(range(shape[0]) if d1_row is None else [d1_row],
                             range(shape[1]) if d2_col is None else [d2_col])]
 
-            return jsonify(**json_response(
-                ["urls"],
-                dict(read_only=not lock_key, lock_key=lock_key, is_project=True, urls=urls, project_name=name)))
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
         segmentations = state.get_curve_segments(plate, d1_row, d2_col)
         if segmentations is not None:
             segmentations = segmentations.tolist()
 
-        return jsonify(success=True, read_only=not lock_key, lock_key=lock_key,
-                       is_project=True, is_endpoint=True,
-                       project_name=name,
+        return jsonify(success=True, is_endpoint=True,
                        time_data=state.times.tolist(),
                        smooth_data=state.smooth_growth_data[plate][d1_row, d2_col].tolist(),
                        raw_data=state.raw_growth_data[plate][d1_row, d2_col].tolist(),
-                       segmentations=segmentations)
+                       segmentations=segmentations,
+                       **response)
 
     # End of UI extension with qc-functionality
     return True
