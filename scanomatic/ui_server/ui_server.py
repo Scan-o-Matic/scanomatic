@@ -214,6 +214,11 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if js:
             return send_from_directory(Paths().ui_js, js)
 
+    @app.route("/fonts/<font>")
+    def _font_base(font=None):
+        if font:
+            return send_from_directory(Paths().ui_font, font)
+
     @app.route("/job/<job_id>/<job_command>")
     def _communicate_with_job(job_id="", job_command=""):
 

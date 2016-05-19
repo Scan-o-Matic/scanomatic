@@ -66,6 +66,7 @@ class Paths(SingeltonOneInit):
         self.ui_root = os.path.join(self.root, "ui_server")
         self.ui_css = os.path.join(self.ui_root, "style")
         self.ui_js = os.path.join(self.ui_root, "js")
+        self.ui_font = os.path.join(self.ui_root, "fonts")
         self.ui_templates = os.path.join(self.ui_root, "templates")
         self.ui_help_file = "help.html"
         self.ui_qc_norm_file = "qc_norm.html"
