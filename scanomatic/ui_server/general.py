@@ -95,7 +95,7 @@ def strip_empty_exits(exits, data):
     """
     all_exits = [e for e in exits]
     for e in all_exits:
-        if e in data and len(data[e]) == 0:
+        if e in data and (data[e] is None or len(data[e]) == 0):
             del data[e]
             exits.remove(e)
         elif e not in data:

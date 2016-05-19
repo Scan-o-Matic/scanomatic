@@ -131,7 +131,8 @@ def add_routes(app):
         name = get_project_name(path)
 
         return jsonify(**json_response(
-            ["urls"],
+            ["urls", "add_lock", "remove_lock", "add_meta_data", "meta_data_column_names",
+             "phenotype_names", "curves", "quality_index", "gridding", "analysis_instructions"],
             dict(
                 project=project,
                 is_project=is_project,
