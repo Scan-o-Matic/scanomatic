@@ -1,12 +1,4 @@
 from types import StringTypes
-from odf import opendocument
-import odf.table as table
-from odf.text import P
-from odf.element import Text
-from hashlib import md5
-import os
-import copy
-import time
 from itertools import izip
 import numpy as np
 import csv
@@ -232,6 +224,7 @@ class MetaData2(object):
         self._plate_shapes = plate_shapes
         self._data = tuple(None if shape is None else np.empty(shape, dtype=np.object) for shape in plate_shapes)
         self._headers = list(None for _ in plate_shapes)
+        """:type self._headers: list[(int, int) | None]"""
         self._loading_plate = 0
         self._loading_offset = []
         self._paths = paths
@@ -276,7 +269,7 @@ class MetaData2(object):
             :type plate : int
 
         Returns: Header row
-            :rtype : [str]
+            :rtype : list[str]
         """
         return self._headers[plate]
 
@@ -449,11 +442,18 @@ class MetaData2(object):
     def find(self, value, column=None):
         """Generate coordinate tuples for where key matches meta-data
 
+        :param value : Search criteria
+            :type value : str
+        :param column : Optional column name to limit search to, default (None)
+            searches all columns
+            :type column: str | None
+
         Returns
         -------
 
         generator
             Each item being a (plate, row, column)-tuple.
+
         """
 
         for id_plate, _ in enumerate(self._plate_shapes):
