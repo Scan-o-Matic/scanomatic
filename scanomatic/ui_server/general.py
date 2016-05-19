@@ -44,7 +44,7 @@ def path_is_in_jail(path):
 def get_search_results(path, url_prefix):
 
     projects = _get_possible_paths(path)
-    names = list(_get_project_name(p) for p in projects)
+    names = list(get_project_name(p) for p in projects)
     urls = list(convert_path_to_url(url_prefix, p) for p in projects)
     if None in urls:
         try:
@@ -66,7 +66,7 @@ def _get_possible_paths(path):
     return tuple(os.path.join(root, d) for d in dirs)
 
 
-def _get_project_name(project_path):
+def get_project_name(project_path):
     no_name = None
 
     if not path_is_in_jail(project_path):
@@ -80,6 +80,41 @@ def _get_project_name(project_path):
                 return model.project_name if model.project_name else no_name
 
     if project_path:
-        return _get_project_name(os.path.dirname(project_path))
+        return get_project_name(os.path.dirname(project_path))
 
     return no_name
+
+
+def strip_empty_exits(exits, data):
+    """
+        :param exits : Exit keys
+        :type exits : list[str]
+
+        :param data : Data dict
+        :type data : dict
+    """
+    all_exits = [e for e in exits]
+    for e in all_exits:
+        if e in data and len(data[e]) == 0:
+            del data[e]
+            exits.remove(e)
+        elif e not in data:
+            exits.remove(e)
+
+
+def json_response(exits, data, success=True):
+
+    strip_empty_exits(exits, data)
+    is_endpoint = len(exits) == 0
+    data["is_endpoint"] = is_endpoint
+
+    if success is not None:
+        data["success"] = success
+
+    if is_endpoint:
+        if "exits" in data:
+            del data["exits"]
+    else:
+        data["exits"] = exits
+
+    return data
