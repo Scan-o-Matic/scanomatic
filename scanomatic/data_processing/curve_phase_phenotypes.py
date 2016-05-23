@@ -12,18 +12,27 @@ from functools import partial
 class CurvePhases(Enum):
 
     Multiple = -1
+    """:type : CurvePhases"""
     Undetermined = 0
+    """:type : CurvePhases"""
     Flat = 1
+    """:type : CurvePhases"""
     Acceleration = 2
+    """:type : CurvePhases"""
     Retardation = 3
+    """:type : CurvePhases"""
     Impulse = 4
+    """:type : CurvePhases"""
 
 
 class Thresholds(Enum):
 
     ImpulseExtension = 0
+    """:type : Thresholds"""
     ImpulseSlopeRequirement = 1
+    """:type : Thresholds"""
     FlatlineSlopRequirement = 2
+    """:type : Thresholds"""
 
 
 class CurvePhasePhenotypes(Enum):
@@ -44,20 +53,27 @@ class VectorPhenotypes(Enum):
     PhasesClassifications = 0
     PhasesPhenotypes = 1
 
+PHASE_PLOTTING_COLORS = {
+    CurvePhases.Multiple: "#5f3275",
+    CurvePhases.Flat: "#f9e812",
+    CurvePhases.Acceleration: "#ea5207",
+    CurvePhases.Impulse: "#99220c",
+    CurvePhases.Retardation: "#c797c1"}
+
 
 def plot_segments(
         times, curve, phases, segment_alpha=0.3, f=None,
-        colors={CurvePhases.Multiple: "#5f3275",
-                CurvePhases.Flat: "#f9e812",
-                CurvePhases.Acceleration: "#ea5207",
-                CurvePhases.Impulse: "#99220c",
-                CurvePhases.Retardation: "#c797c1"}):
+        colors=None):
+
+    if colors is None:
+        colors = PHASE_PLOTTING_COLORS
 
     if f is None:
         f = plt.figure()
 
     ax = f.gca()
 
+    # noinspection PyTypeChecker
     for phase in CurvePhases:
 
         if phase == CurvePhases.Undetermined:
@@ -81,44 +97,53 @@ def plot_segments(
     return f
 
 
-def _filter_find(vector, filter, func=np.max):
+def _filter_find(vector, filt, func=np.max):
 
-    return np.where((vector == func(vector[filter])) & filter)[0]
+    return np.where((vector == func(vector[filt])) & filt)[0]
+
+DEFAULT_THRESHOLDS = {
+    Thresholds.ImpulseExtension: 0.75,
+    Thresholds.ImpulseSlopeRequirement: 0.1,
+    Thresholds.FlatlineSlopRequirement: 0.02}
 
 
-def _segment(dYdt, dYdtRanks, ddYdtSigns, phases, filter, offset,
-             thresholds={Thresholds.ImpulseExtension: 0.75,
-                         Thresholds.ImpulseSlopeRequirement: 0.1,
-                         Thresholds.FlatlineSlopRequirement: 0.02}):
+def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset,
+             thresholds=None):
 
-    if np.unique(phases[offset: -offset][filter]).size != 1:
+    if thresholds is None:
+        thresholds = DEFAULT_THRESHOLDS
+
+    if np.unique(phases[offset: -offset][filt]).size != 1:
         raise ValueError("Impossible to segment due to multiple phases {0} filter {1}".format(
-            np.unique(phases[filter][offset: -offset]), filter
+            np.unique(phases[filt][offset: -offset]), filt
         ))
 
     # 1. Find segment's borders
-    left, right = _locate_segment(filter)
+    left, right = _locate_segment(filt)
 
-    # 2. Find segment's maximum groth
-    loc_max = _filter_find(dYdtRanks, filter)
+    # 2. Find segment's maximum growth
+    loc_max = _filter_find(dydt_ranks, filt)
+
+    no_impulse = filt.all()
 
     # 3. Further sementation requires existance of reliable growth impulse
-    if dYdt[loc_max] < thresholds[Thresholds.ImpulseSlopeRequirement]:
-        if filter.all():
+    if dydt[loc_max] < thresholds[Thresholds.ImpulseSlopeRequirement]:
+        if no_impulse:
             warnings.warn("No impulse detected, max rate is {0} (threshold {1}).".format(
-                dYdt[loc_max], thresholds[Thresholds.ImpulseSlopeRequirement]))
+                dydt[loc_max], thresholds[Thresholds.ImpulseSlopeRequirement]))
         if left == 0:
             phases[:offset] = phases[offset]
+
         if right == phases.size:
             phases[-offset:] = phases[-offset - 1]
         return
 
     # 4. Locate impulse
-    impulse_left, impulse_right = _locate_impulse(dYdt, loc_max, phases, filter, offset,
+    impulse_left, impulse_right = _locate_impulse(dydt, loc_max, phases, filt, offset,
                                                   thresholds[Thresholds.ImpulseExtension])
 
     if impulse_left is None or impulse_right is None:
-        if filter.all():
+        if no_impulse:
             warnings.warn("No impulse phase detected though max rate super-seeded threshold")
         if left == 0:
             phases[:offset] = phases[offset]
@@ -129,32 +154,34 @@ def _segment(dYdt, dYdtRanks, ddYdtSigns, phases, filter, offset,
 
     # 5. Locate acceleration phase
     (accel_left, _), next_phase = _locate_acceleration(
-        dYdt, ddYdtSigns, phases, left, impulse_left, offset,
+        dydt, ddydt_signs, phases, left, impulse_left, offset,
         flatline_threshold=thresholds[Thresholds.FlatlineSlopRequirement])
 
     # 5b. If there's anything remaining, it is candidate flatline, but investigated for more impulses
     if left != accel_left:
         phases[left + offset: accel_left + 1 + offset] = next_phase.value
-        _segment(dYdt, dYdtRanks, ddYdtSigns, phases, _get_filter(dYdt.size, left, accel_left), offset, thresholds)
+        _segment(dydt, dydt_ranks, ddydt_signs, phases, _get_filter(left, accel_left, size=dydt.size, filt=filt),
+                 offset, thresholds)
 
     # 6. Locate retardation phase
     (_, retard_right), next_phase = _locate_retardation(
-        dYdt, ddYdtSigns, phases, impulse_right, right, offset,
+        dydt, ddydt_signs, phases, impulse_right, right, offset,
         flatline_threshold=thresholds[Thresholds.FlatlineSlopRequirement])
 
     # 6b. If there's anything remaining, it is candidate flatline, but investigated for more impulses
     if right != retard_right:
-        phases[retard_right + offset: right + 1 + offset] = next_phase.value
-        _segment(dYdt, dYdtRanks, ddYdtSigns, phases, _get_filter(dYdt.size, retard_right, right), offset, thresholds)
+        phases[retard_right + offset: right + offset] = next_phase.value
+        _segment(dydt, dydt_ranks, ddydt_signs, phases, _get_filter(retard_right, right, size=dydt.size, filt=filt),
+                 offset, thresholds)
 
     # 7. Update phases edges
     phases[:offset] = phases[offset]
     phases[-offset:] = phases[-offset - 1]
 
 
-def _locate_impulse(dYdt, loc, phases, filter, offset, extension_threshold):
+def _locate_impulse(dydt, loc, phases, filt, offset, extension_threshold):
 
-    candidates = (dYdt > dYdt[loc] * extension_threshold) & filter
+    candidates = (dydt > dydt[loc] * extension_threshold) & filt
     candidates = signal.medfilt(candidates, 3).astype(bool)
 
     candidates, _ = label(candidates)
@@ -162,32 +189,57 @@ def _locate_impulse(dYdt, loc, phases, filter, offset, extension_threshold):
     return _locate_segment(candidates)
 
 
-def _locate_segment(filt):
+def _locate_segment(filt):  # -> (int, int)
+    """
 
-    where = np.where(filt)[0]
-    if where.size > 0:
-        return where[0], where[-1]
+    Args:
+        filt: a boolean array
+
+    Returns:
+        Left and exclusive right indices of filter
+    """
+    labels, n = label(filt)
+    if n == 1:
+        where = np.where(labels == 1)[0]
+        return where[0], where[-1] + 1
+    elif n > 1:
+        warnings.warn("Filter is not homogenous, contains {0} segments".format(n))
+        return None, None
     else:
         return None, None
 
 
-def _get_filter(size, left=None, right=None):
+def _get_filter(left=None, right=None, filt=None, size=None):
+    """
 
-    filt = np.zeros(size).astype(bool)
+    Args:
+        left: inclusive left index or None (sets index as 0)
+        right: exclusive right index or None (sets at size of filt)
+        filt: previous filter array to reuse
+        size: if no previous filter is supplied, size determines filter creation
+
+    Returns: Filter array
+        :rtype: numpy.ndarray
+    """
+    if filt is None:
+        filt = np.zeros(size).astype(bool)
+    else:
+        filt[:] = False
+        size = filt.size
 
     if left is None:
         left = 0
     if right is None:
-        right = size - 1
+        right = size
 
-    filt[left: right + 1] = True
+    filt[left: right] = True
     return filt
 
 
-def _locate_acceleration(dYdt, ddYdtSigns, phases, left, right, offset, flatline_threshold):
+def _locate_acceleration(dydt, ddydt_signs, phases, left, right, offset, flatline_threshold, filt=None):
 
-    candidates = _get_filter(dYdt.size, left, right)
-    candidates2 = candidates & (np.abs(dYdt) > flatline_threshold) & (ddYdtSigns == 1)
+    candidates = _get_filter(left, right, size=dydt.size, filt=filt)
+    candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs == 1)
 
     candidates2 = signal.medfilt(candidates2, 3).astype(bool)
     candidates2, label_count = label(candidates2)
@@ -201,10 +253,10 @@ def _locate_acceleration(dYdt, ddYdtSigns, phases, left, right, offset, flatline
         return (left, right), CurvePhases.Undetermined
 
 
-def _locate_retardation(dYdt, ddYdtSigns, phases, left, right, offset, flatline_threshold):
+def _locate_retardation(dydt, ddydt_signs, phases, left, right, offset, flatline_threshold, filt=None):
 
-    candidates = _get_filter(dYdt.size, left, right)
-    candidates2 = candidates & (np.abs(dYdt) > flatline_threshold) & (ddYdtSigns == -1)
+    candidates = _get_filter(left, right, size=dydt.size, filt=filt)
+    candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs == -1)
 
     candidates2 = signal.medfilt(candidates2, 3).astype(bool)
     candidates2, label_count = label(candidates2)
@@ -223,6 +275,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
     derivative_offset = (times.shape[0] - derivative.shape[0]) / 2
     phenotypes = []
 
+    # noinspection PyTypeChecker
     for phase in CurvePhases:
 
         labels, label_count = label(phases == phase.value)
@@ -234,46 +287,46 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
 
             filt = labels == id_label
             left, right = _locate_segment(filt)
-
-            phase_phenotypes = {}
+            time_right = times[right - 1]
+            time_left = times[left]
+            current_phase_phenotypes = {}
 
             if phase == CurvePhases.Acceleration or phase == CurvePhases.Retardation:
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
-                # phase_phenotypes[CurvePhasePhenotypes.Curvature] = np.polyfit(times[filt], np.log2(curve[filt]), 2)[0]
 
-                a1 = np.array((times[left], np.log2(curve[left])))
-                a2 = np.array((times[right], np.log2(curve[right])))
+                a1 = np.array((time_left, np.log2(curve[left])))
+                a2 = np.array((time_right, np.log2(curve[right - 1])))
                 k1 = derivative[left - derivative_offset]
-                k2 = derivative[right - derivative_offset]
+                k2 = derivative[right - 1 - derivative_offset]
                 m1 = a1[1] - k1 * a1[0]
                 m2 = a2[1] - k2 * a2[1]
                 i_x = (m2 - m1) / (k1 - k2)
                 i = np.array((i_x, k1 * i_x + m1))
                 a1 -= i
                 a2 -= i
-                phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = (i_x - times[left]) / (times[right] - times[left])
-                phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
+                current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
+                    (i_x - time_left) / (time_right - time_left)
+                current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
                     np.arctan((k2 - k1) / (1 + k1 * k2))
 
             else:
                 # B. For linear phases get the doubling time
                 slope, intercept, _, _, _ = linregress(times[filt], np.log2(curve[filt]))
-                phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
-                phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
-                phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
+                current_phase_phenotypes[CurvePhasePhenotypes.PopulationDoublingTime] = 1 / slope
+                current_phase_phenotypes[CurvePhasePhenotypes.LinearModelSlope] = slope
+                current_phase_phenotypes[CurvePhasePhenotypes.LinearModelIntercept] = intercept
 
             # C. Get duration
-            phase_phenotypes[CurvePhasePhenotypes.Duration] = times[right] - times[left]
+            current_phase_phenotypes[CurvePhasePhenotypes.Duration] = time_right - time_left
 
             # D. Get fraction of doublings
-            phase_phenotypes[CurvePhasePhenotypes.FractionYield] = (np.log2(curve[right]) - np.log2(curve[left])) / \
-                                                                   doublings
-
+            current_phase_phenotypes[CurvePhasePhenotypes.FractionYield] = \
+                (np.log2(curve[right - 1]) - np.log2(curve[left])) / doublings
 
             # E. Get start of phase
-            phase_phenotypes[CurvePhasePhenotypes.Start] = times[left]
+            current_phase_phenotypes[CurvePhasePhenotypes.Start] = time_left
 
-            phenotypes.append((phase, phase_phenotypes))
+            phenotypes.append((phase, current_phase_phenotypes))
 
     # Phenotypes sorted on phase start rather than type of phase
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
@@ -281,21 +334,22 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
 
 def phase_phenotypes(
         phenotyper_object, plate, pos, segment_alpha=0.75, f=None,
-        thresholds={Thresholds.ImpulseExtension: 0.75,
-                    Thresholds.ImpulseSlopeRequirement: 0.1,
-                    Thresholds.FlatlineSlopRequirement: 0.02},
+        thresholds=None,
         experiment_doublings=None):
 
-    curve = phenotyper_object.smooth_growth_data[plate][pos]
-    dYdt = phenotyper_object.get_derivative(plate, pos)
-    offset = (phenotyper_object.times.shape[0] - dYdt.shape[0]) / 2
-    dYdtRanks = dYdt.argsort().argsort()
-    ddYdt = signal.convolve(dYdt, [1, 0, -1], mode='valid')
-    ddYdtSigns = np.hstack(([0], np.sign(ddYdt), [0]))
-    phases = np.ones_like(curve).astype(np.int) * 0
-    span = _get_filter(dYdt.size)
+    if thresholds is None:
+        thresholds = DEFAULT_THRESHOLDS
 
-    _segment(dYdt, dYdtRanks, ddYdtSigns, phases, filter=span, offset=offset, thresholds=thresholds)
+    curve = phenotyper_object.smooth_growth_data[plate][pos]
+    dydt = phenotyper_object.get_derivative(plate, pos)
+    offset = (phenotyper_object.times.shape[0] - dydt.shape[0]) / 2
+    dydt_ranks = dydt.argsort().argsort()
+    ddydt = signal.convolve(dydt, [1, 0, -1], mode='valid')
+    ddydt_signs = np.hstack(([0], np.sign(ddydt), [0]))
+    phases = np.ones_like(curve).astype(np.int) * 0
+    filt = _get_filter(size=dydt.size)
+
+    _segment(dydt, dydt_ranks, ddydt_signs, phases, filt=filt, offset=offset, thresholds=thresholds)
 
     if experiment_doublings is None:
         experiment_doublings = (np.log2(phenotyper_object.get_phenotype(
@@ -304,9 +358,8 @@ def phase_phenotypes(
                                     growth_phenotypes.Phenotypes.ExperimentBaseLine)[plate][pos]))
 
     return phases,\
-           _phenotype_phases(curve, dYdt, phases, phenotyper_object.times, experiment_doublings),\
-           None if f is False else plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha,
-                                                 f=f)
+        _phenotype_phases(curve, dydt, phases, phenotyper_object.times, experiment_doublings),\
+        None if f is False else plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha, f=f)
 
 
 def phase_selector_critera_filter(phases, criteria, func=max):
