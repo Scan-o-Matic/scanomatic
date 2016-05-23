@@ -347,6 +347,7 @@ def phase_phenotypes(
     ddydt = signal.convolve(dydt, [1, 0, -1], mode='valid')
     ddydt_signs = np.hstack(([0], np.sign(ddydt), [0]))
     phases = np.ones_like(curve).astype(np.int) * 0
+    """:type : numpy.ndarray"""
     filt = _get_filter(size=dydt.size)
 
     _segment(dydt, dydt_ranks, ddydt_signs, phases, filt=filt, offset=offset, thresholds=thresholds)
