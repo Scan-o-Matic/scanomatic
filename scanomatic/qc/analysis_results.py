@@ -14,8 +14,6 @@ from scanomatic.generics.maths import mid50_mean
 
 from matplotlib import pyplot as plt
 
-from mpl_toolkits.mplot3d import Axes3D
-
 _pattern = re.compile(r".*_([0-9]+)_[0-9]+_[0-9]+_[0-9]+\..*")
 _logger = Logger("Phenotype Results QC")
 _marker_sequence = ['v', 'o', 's', '+', 'x', 'D', '*', '^']
