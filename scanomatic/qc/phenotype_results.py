@@ -1,10 +1,10 @@
-__author__ = 'martin'
+from scipy.ndimage import label
+
+from scanomatic.data_processing.curve_phase_phenotypes import CurvePhases
 
 from scanomatic.io.movie_writer import MovieWriter
 import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 import numpy as np
 from types import StringTypes
 import pandas as pd
@@ -14,7 +14,19 @@ from scanomatic.data_processing.growth_phenotypes import Phenotypes
 from scanomatic.io.logger import Logger
 from scanomatic.data_processing.phenotyper import Phenotyper
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 _logger = Logger("Phenotype Results QC")
+
+PHASE_PLOTTING_COLORS = {
+    CurvePhases.Multiple: "#5f3275",
+    CurvePhases.Flat: "#f9e812",
+    CurvePhases.Acceleration: "#ea5207",
+    CurvePhases.Impulse: "#99220c",
+    CurvePhases.Retardation: "#c797c1",
+    "raw": "#3f040d",
+    "smooth": "#849b88"}
 
 
 def _validate_input(f):
@@ -136,11 +148,14 @@ def load_phenotype_results_into_plates(file_name, phenotype_header='Generation T
     return plates
 
 
-def animate_plate_over_time(save_target, plate, initial_delay=3, delay=0.05, truncate_value_encoding=False,
-                            animation_params={'action': 'run', 'index': 0, }, fps=3):
+def animate_plate_over_time(save_target, plate, truncate_value_encoding=False, index=None, fig=None, ax=None, fps=3,
+                            cmap=None):
+
+    if index is None:
+        index = 0
 
     masked_plate = np.ma.masked_invalid(plate).ravel()
-    masked_plate = masked_plate[masked_plate.mask == False]
+    masked_plate = masked_plate[masked_plate.mask == np.False_]
 
     if truncate_value_encoding:
         fraction = 0.1
@@ -153,30 +168,65 @@ def animate_plate_over_time(save_target, plate, initial_delay=3, delay=0.05, tru
         vmin = masked_plate.min()
         vmax = masked_plate.max()
 
-    if 'index' not in animation_params:
-        animation_params['index'] = 0
-    if 'figure' not in animation_params:
-        animation_params['figure'] = plt.figure()
-    if 'ax' not in animation_params:
-        animation_params['ax'] = animation_params['figure'].gca()
-    if 'cmap' not in animation_params:
-        animation_params['cmap'] = None
-
-    animation_params['ax'].cla()
-    plt.ion()
-    im = animation_params['ax'].imshow(plate[..., 0], interpolation="nearest", vmin=vmin, vmax=vmax,
-                                       cmap=animation_params['cmap'])
-
-    @MovieWriter(save_target, fps=fps, fig=animation_params['figure'])
+    @MovieWriter(save_target, fps=fps, fig=fig)
     def _animation():
-        while animation_params['index'] < plate.shape[-1]:
 
-            im.set_data(plate[..., animation_params['index']])
-            animation_params['index'] += 1
-            animation_params['ax'].set_title("Time {0}".format(animation_params['index']))
+        if ax is None:
+            ax = fig.gca()
+
+        im = ax.imshow(plate[..., 0], interpolation="nearest", vmin=vmin, vmax=vmax, cmap=cmap)
+
+        while index < plate.shape[-1]:
+
+            im.set_data(plate[..., index])
+            ax.set_title("Time {0}".format(index))
+            index += 1
 
             yield
 
-    _animation()
+    return _animation()
 
-    return animation_params
+
+def plot_segments(save_target, phenotypes, position, segment_alpha=0.3, f=None, colors=None):
+
+    if not isinstance(phenotypes, Phenotyper):
+        phenotypes = Phenotyper.LoadFromState(phenotypes)
+
+    times = phenotypes.times
+    curve_smooth = phenotypes.smooth_growth_data[position[0], position[1:]]
+    curve_raw = phenotypes.raw_growth_data[position[0], position[1:]]
+    phases = phenotypes.get_curve_segments(*position)
+
+    if colors is None:
+        colors = PHASE_PLOTTING_COLORS
+
+    if f is None:
+        f = plt.figure()
+
+    ax = f.gca()
+
+    # noinspection PyTypeChecker
+    for phase in CurvePhases:
+
+        if phase == CurvePhases.Undetermined:
+            continue
+
+        labels, label_count = label(phases == phase.value)
+        for id_label in range(1, label_count + 1):
+            positions = np.where(labels == id_label)[0]
+            left = positions[0]
+            right = positions[-1]
+            left = np.linspace(times[max(left - 1, 0)], times[left], 3)[1]
+            right = np.linspace(times[min(curve_raw.size - 1, right + 1)], times[right], 3)[1]
+            ax.axvspan(left, right, color=colors[phase], alpha=segment_alpha)
+
+    ax.semilogy(times, curve_raw, "+", basey=2, color=colors["raw"], ms=3)
+    ax.semilogy(times, curve_smooth, "--", basey=2, color=colors["smooth"], lw=2)
+    ax.set_xlim(xmin=times[0], xmax=times[-1])
+    ax.set_xlabel("Time [h]")
+    ax.set_ylabel("Population Size [cells]")
+
+    if save_target:
+        f.savefig(save_target)
+
+    return f
