@@ -1,6 +1,5 @@
 import numpy as np
 import warnings
-from functools import partial
 from scipy import signal
 from scipy.ndimage import label
 from scipy.stats import linregress
@@ -316,12 +315,6 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
     return phases, _phenotype_phases(curve, dydt, phases, phenotyper_object.times, experiment_doublings)
 
 
-def phase_selector_critera_filter(phases, criteria, func=max):
-
-    val = func(phase[criteria] for phase in phases)
-    return tuple(phase for phase in phases if phase[criteria] == val)[0]
-
-
 def filter_plate_custom_filter(
         plate,
         phase=CurvePhases.Acceleration,
@@ -363,48 +356,37 @@ class CurvePhaseMetaPhenotypes(Enum):
 
 def filter_plate(plate, meta_phenotype):
 
-    if meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution:
+    if meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution or \
+            meta_phenotype == CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution:
 
-        selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield)
+        index = -1 if meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution else -2
+        phase_need = 1 if meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution else 2
+
         return filter_plate_custom_filter(
             plate,
             phase=CurvePhases.Impulse,
             measure=CurvePhasePhenotypes.FractionYield,
-            phases_requirement=lambda phases: len(phases) > 0,
-            phase_selector=selector)
+            phases_requirement=lambda phases: len(phases) > phase_need,
+            phase_selector=lambda phases:
+            phases[np.argsort(tuple(
+                phase[CurvePhasePhenotypes.FractionYield] if
+                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[index]])
 
-    elif meta_phenotype == CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution:
+    elif (meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime or
+            meta_phenotype == CurvePhaseMetaPhenotypes.FirstMinorImpulseAveragePopulationDoublingTime):
 
-        selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield,
-                           func=lambda x: x[np.argsort(x)[-2]])
-        return filter_plate_custom_filter(
-            plate,
-            phase=CurvePhases.Impulse,
-            measure=CurvePhasePhenotypes.FractionYield,
-            phases_requirement=lambda phases: len(phases) > 1,
-            phase_selector=selector)
-
-    elif meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime:
-
-        selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield)
-        return filter_plate_custom_filter(
-            plate,
-            phase=CurvePhases.Impulse,
-            measure=CurvePhasePhenotypes.PopulationDoublingTime,
-            phases_requirement=lambda phases: len(phases) > 0,
-            phase_selector=selector)
-
-    elif meta_phenotype == CurvePhaseMetaPhenotypes.FirstMinorImpulseAveragePopulationDoublingTime:
-
-        selector = partial(phase_selector_critera_filter, criteria=CurvePhasePhenotypes.FractionYield,
-                           func=lambda x: x[np.argsort(x)[-2]])
+        index = -1 if meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime else -2
+        phase_need = 1 if meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime else 2
 
         return filter_plate_custom_filter(
             plate,
             phase=CurvePhases.Impulse,
             measure=CurvePhasePhenotypes.PopulationDoublingTime,
-            phases_requirement=lambda phases: len(phases) > 1,
-            phase_selector=selector)
+            phases_requirement=lambda phases: len(phases) >= phase_need,
+            phase_selector=lambda phases:
+            phases[np.argsort(tuple(
+                phase[CurvePhasePhenotypes.FractionYield] if
+                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[index]])
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLag:
 
