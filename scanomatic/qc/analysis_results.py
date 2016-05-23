@@ -1,18 +1,19 @@
-
 import glob
+import numpy as np
 import os
 import re
 import types
-import numpy as np
 
-from scanomatic.io.movie_writer import MovieWriter
-from scanomatic.io.image_data import ImageData
-from scanomatic.io.paths import Paths
-from scanomatic.io.logger import Logger
-from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 from scanomatic.generics.maths import mid50_mean
+from scanomatic.io.image_data import ImageData
+from scanomatic.io.logger import Logger
+from scanomatic.io.movie_writer import MovieWriter
+from scanomatic.io.paths import Paths
+from scanomatic.models.factories.compile_project_factory import CompileImageAnalysisFactory
 
 from matplotlib import pyplot as plt
+# This import is used in 3D plotting just not explicitly stupid matplotlib
+from mpl_toolkits.mplot3d import Axes3D
 
 _pattern = re.compile(r".*_([0-9]+)_[0-9]+_[0-9]+_[0-9]+\..*")
 _logger = Logger("Phenotype Results QC")
