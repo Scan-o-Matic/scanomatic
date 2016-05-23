@@ -3,7 +3,6 @@ from flask import Flask, jsonify
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, json_response
 from scanomatic.io.paths import Paths
 from glob import glob
-from scanomatic.models.scanning_model import ScanningModel
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
 
@@ -25,16 +24,18 @@ def add_routes(app):
         path = convert_url_to_path(project)
 
         model = ScanningModelFactory.serializer.load_first(path)
-        """:type model: ScanningModel"""
+        """:type model: scanomatic.models.scanning_model.ScanningModel"""
 
         if model is None:
-            compile_instructions = [convert_path_to_url("/api/compile/instructions", p) for p in
-                                 glob(os.path.join(path, Paths().project_compilation_instructions_pattern.format("*")))]
+            compile_instructions = [
+                convert_path_to_url("/api/compile/instructions", p) for p in
+                glob(os.path.join(path, Paths().project_compilation_instructions_pattern.format("*")))]
 
         else:
-            compile_instructions = [convert_path_to_url("/api/compile/instructions", p) for p in
-                                 glob(os.path.join(os.path.dirname(path),
-                                                   Paths().project_compilation_instructions_pattern.format("*")))]
+            compile_instructions = [
+                convert_path_to_url("/api/compile/instructions", p) for p in
+                glob(os.path.join(os.path.dirname(path),
+                                  Paths().project_compilation_instructions_pattern.format("*")))]
 
         scan_instructions = [convert_path_to_url(base_url, c) for c in
                              glob(os.path.join(path, Paths().scan_project_file_pattern.format("*")))]
@@ -67,8 +68,8 @@ def add_routes(app):
                             'pinning_project_start_delay': model.auxillary_info.pinning_project_start_delay,
                             'plate_age': model.auxillary_info.plate_age,
                             'precultures': model.auxillary_info.precultures,
-                            'plate_storage': model.auxillary_info.plate_storage.name if model.auxillary_info.plate_storage
-                            else None,
+                            'plate_storage': model.auxillary_info.plate_storage.name if
+                            model.auxillary_info.plate_storage else None,
                             'stress_level': model.auxillary_info.stress_level,
                         },
                         'email': model.email,
