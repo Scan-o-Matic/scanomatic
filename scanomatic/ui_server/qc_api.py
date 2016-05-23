@@ -96,7 +96,7 @@ def _get_json_lock_response(lock_key, data=None):
 
 def merge_dicts(*dicts):
 
-    return {k: v for k, v in chain(d.iteritems() for d in dicts)}
+    return {k: v for k, v in chain(*(d.iteritems() for d in dicts))}
 
 
 def add_routes(app):
