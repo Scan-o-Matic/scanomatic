@@ -619,8 +619,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 if phenotypes_inclusion(VectorPhenotypes):
 
-                    phases, phases_phenotypes, _ = phase_phenotypes(
-                        self, id_plate, (id0, id1), f=False,
+                    phases, phases_phenotypes = phase_phenotypes(
+                        self, id_plate, (id0, id1),
                         experiment_doublings=position_phenotypes[Phenotypes.ExperimentPopulationDoublings.value])
 
                     if phenotypes_inclusion(VectorPhenotypes.PhasesClassifications):
