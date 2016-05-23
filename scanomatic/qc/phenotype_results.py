@@ -193,8 +193,8 @@ def plot_segments(save_target, phenotypes, position, segment_alpha=0.3, f=None, 
         phenotypes = Phenotyper.LoadFromState(phenotypes)
 
     times = phenotypes.times
-    curve_smooth = phenotypes.smooth_growth_data[position[0], position[1:]]
-    curve_raw = phenotypes.raw_growth_data[position[0], position[1:]]
+    curve_smooth = phenotypes.smooth_growth_data[position[0]][position[1], position[2]]
+    curve_raw = phenotypes.raw_growth_data[position[0]][position[1], position[2]]
     phases = phenotypes.get_curve_segments(*position)
 
     if colors is None:
