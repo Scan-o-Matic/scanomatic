@@ -332,7 +332,9 @@ def filter_plate_custom_filter(
 
 
 def _impulse_counter(phase_vector):
-    return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
+    if phase_vector:
+        return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
+    return -np.inf
 
 
 class CurvePhaseMetaPhenotypes(Enum):
@@ -454,7 +456,7 @@ def filter_plate(plate, meta_phenotype):
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Modalities:
 
-        return np.ma.masked_invalid(np.frompyfunc(_impulse_counter, 1, 1))
+        return np.ma.masked_invalid(np.frompyfunc(_impulse_counter, 1, 1)(plate).astype(np.float))
 
     else:
 
