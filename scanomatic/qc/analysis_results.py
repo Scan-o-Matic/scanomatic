@@ -194,12 +194,12 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
         # slicing out the plate
         im = im[y[0]: y[1], x[0]: x[1]][:, ::-1]
 
-        images[..., i] = slice_im(im, grid[:, position[2], position[1]], grid_size)
+        images[..., i] = slice_im(im, grid[:, position[2], grid.shape[2] - position[1]], grid_size)
 
     return times, images, im
 
 
-def animate_colony_growth(save_target, analysis_folder, position=(0, 0, 0), fps=12, project_compilation=None, fig=None,
+def animate_colony_growth(save_target, position, analysis_folder, fps=12, project_compilation=None, fig=None,
                           cmap=plt.cm.gray, colony_title=None, positioning="one-time"):
 
     _logger.info("Loading colony images")
