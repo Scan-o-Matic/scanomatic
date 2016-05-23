@@ -328,10 +328,23 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return phenotyper
 
     @classmethod
-    def LoadFromImageData(cls, path='.'):
+    def LoadFromImageData(cls, path='.', phenotype_inclusion=None):
+        """Loads image data files and performs an extraction
 
+        Args:
+            path: optional, default is current directory
+            phenotype_inclusion: optional setting for inclusion level
+                during phenotype extraction.
+
+        Returns: Phenotyper
+
+        """
         times, data = image_data.ImageData.read_image_data_and_time(path)
-        return cls(data, times, run_extraction=True)
+        instance = cls(data, times)
+        if phenotype_inclusion is not None:
+            instance.set_phenotype_inclusion_level(phenotype_inclusion)
+        instance.extract_phenotypes()
+        return instance
 
     @classmethod
     def LoadFromNumPy(cls, path, times_data_path=None, **kwargs):
