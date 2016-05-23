@@ -1,12 +1,13 @@
-from scipy.ndimage import label
-from scipy.stats import linregress
-from scipy import signal
 import numpy as np
-from matplotlib import pyplot as plt
-from scanomatic.data_processing import growth_phenotypes
-from enum import Enum
 import warnings
 from functools import partial
+from scipy import signal
+from scipy.ndimage import label
+from scipy.stats import linregress
+
+from enum import Enum
+
+from scanomatic.data_processing import growth_phenotypes
 
 
 class CurvePhases(Enum):
@@ -52,49 +53,6 @@ class VectorPhenotypes(Enum):
 
     PhasesClassifications = 0
     PhasesPhenotypes = 1
-
-PHASE_PLOTTING_COLORS = {
-    CurvePhases.Multiple: "#5f3275",
-    CurvePhases.Flat: "#f9e812",
-    CurvePhases.Acceleration: "#ea5207",
-    CurvePhases.Impulse: "#99220c",
-    CurvePhases.Retardation: "#c797c1"}
-
-
-def plot_segments(
-        times, curve, phases, segment_alpha=0.3, f=None,
-        colors=None):
-
-    if colors is None:
-        colors = PHASE_PLOTTING_COLORS
-
-    if f is None:
-        f = plt.figure()
-
-    ax = f.gca()
-
-    # noinspection PyTypeChecker
-    for phase in CurvePhases:
-
-        if phase == CurvePhases.Undetermined:
-            continue
-
-        labels, label_count = label(phases == phase.value)
-        for id_label in range(1, label_count + 1):
-            positions = np.where(labels == id_label)[0]
-            left = positions[0]
-            right = positions[-1]
-            left = np.linspace(times[max(left - 1, 0)], times[left], 3)[1]
-            right = np.linspace(times[min(curve.size - 1, right + 1)], times[right], 3)[1]
-            ax.axvspan(left, right, color=colors[phase], alpha=segment_alpha)
-
-    curve_color = CurvePhases(np.unique(phases)[0]) if np.unique(phases).size == 1 else CurvePhases.Multiple
-    ax.semilogy(times, curve, basey=2, color=colors[curve_color], lw=2)
-    ax.set_xlim(xmin=times[0], xmax=times[-1])
-    ax.set_xlabel("Time [h]")
-    ax.set_ylabel("Population Size [cells]")
-
-    return f
 
 
 def _filter_find(vector, filt, func=np.max):
@@ -332,10 +290,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
 
 
-def phase_phenotypes(
-        phenotyper_object, plate, pos, segment_alpha=0.75, f=None,
-        thresholds=None,
-        experiment_doublings=None):
+def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_doublings=None):
 
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
@@ -358,9 +313,7 @@ def phase_phenotypes(
                                 np.log2(phenotyper_object.get_phenotype(
                                     growth_phenotypes.Phenotypes.ExperimentBaseLine)[plate][pos]))
 
-    return phases,\
-        _phenotype_phases(curve, dydt, phases, phenotyper_object.times, experiment_doublings),\
-        None if f is False else plot_segments(phenotyper_object.times, curve, phases, segment_alpha=segment_alpha, f=f)
+    return phases, _phenotype_phases(curve, dydt, phases, phenotyper_object.times, experiment_doublings)
 
 
 def phase_selector_critera_filter(phases, criteria, func=max):
