@@ -220,8 +220,9 @@ def plot_segments(save_target, phenotypes, position, segment_alpha=0.3, f=None, 
             right = np.linspace(times[min(curve_raw.size - 1, right + 1)], times[right], 3)[1]
             ax.axvspan(left, right, color=colors[phase], alpha=segment_alpha)
 
-    ax.semilogy(times, curve_raw, "+", basey=2, color=colors["raw"], ms=3)
-    ax.semilogy(times, curve_smooth, "--", basey=2, color=colors["smooth"], lw=2)
+    ax.semilogy(times, curve_raw, "+", basey=2, color=colors["raw"], ms=6)
+    ax.semilogy(times, curve_smooth, "-", basey=2, color=colors["smooth"], lw=2)
+
     ax.set_xlim(xmin=times[0], xmax=times[-1])
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population Size [cells]")
