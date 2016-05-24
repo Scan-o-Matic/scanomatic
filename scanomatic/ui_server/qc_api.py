@@ -4,7 +4,7 @@ from datetime import datetime
 from dateutil import tz
 from flask import request, Flask, jsonify, send_from_directory
 from itertools import chain, product
-
+from subprocess import call
 import uuid
 
 from scanomatic.data_processing import phenotyper
@@ -13,7 +13,17 @@ from scanomatic.generics.phenotype_filter import Filter
 from scanomatic.io.paths import Paths
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, \
     get_project_name, json_response
+
 RESERVATION_TIME = 60 * 5
+FILM_TYPES = {'colony': 'animate_colony_growth("{save_target}", {pos}, "{path}")',
+              'detection': 'animate_blob_detection("{save_target}", {pos}, "{path}")',
+              '3d': 'animate_3d_colony("{save_target}", {pos}, "{path}")'}
+
+
+def _make_film(film_type, save_target=None, pos=None, path=None):
+    code = FILM_TYPES[film_type].format(save_target=save_target, pos=pos, path=path)
+    retcode = call(['python', '-c', 'from scanomatic.qc import analysis_results;analysis_results.{0}'.format(code)])
+    return retcode == 0
 
 
 def _add_lock(path):
@@ -498,12 +508,67 @@ def add_routes(app):
         if segmentations is not None:
             segmentations = segmentations.tolist()
 
-        return jsonify(success=True, is_endpoint=True,
-                       time_data=state.times.tolist(),
+        film_url = ["/api/results/movie/make/{0}/{1}/{2}/{3}".format(plate, d1_row, d2_col, project)]
+
+        return jsonify(time_data=state.times.tolist(),
                        smooth_data=state.smooth_growth_data[plate][d1_row, d2_col].tolist(),
                        raw_data=state.raw_growth_data[plate][d1_row, d2_col].tolist(),
                        segmentations=segmentations,
-                       **response)
+                       **json_response(["film_url"], dict(film_urls=film_url, **response)))
+
+    @app.route("/api/results/movie/make")
+    @app.route("/api/results/movie/make/")
+    @app.route("/api/results/movie/make/<film_type>/<int:plate>/<int:outer_dim>/<int:inner_dim>/<path:project>")
+    @app.route("/api/results/movie/make/<int:plate>/<int:outer_dim>/<int:inner_dim>/<path:project>")
+    @app.route("/api/results/movie/make/<int:plate>/<path:project>")
+    @app.route("/api/results/movie/make/<path:project>")
+    def get_film(project=None, film_type=None, plate=None, outer_dim=None, inner_dim=None):
+
+        url_root = "/api/results/movie/make"
+
+        path = convert_url_to_path(project)
+
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        name = get_project_name(path)
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+
+        if plate is None:
+
+            urls = ["{0}/{1}/{2}".format(url_root, i, project)
+                    for i, p in enumerate(state.plate_shapes) if p is not None]
+
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
+        if outer_dim is None or inner_dim is None:
+
+            shape = tuple(state.plate_shapes)[plate]
+            if shape is None:
+                return jsonify(success=False, reason="Plate not included in project")
+
+            urls = ["{0}/{1}/{2}/{3}/{4}".format(url_root, plate, d1, d2, project) for d1, d2 in
+                    product(range(shape[0]) if outer_dim is None else [outer_dim],
+                            range(shape[1]) if inner_dim is None else [inner_dim])]
+
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
+        if film_type is None or film_type not in FILM_TYPES:
+
+            urls = ["{0}/{1}/{2}/{3}/{4}/{5}".format(url_root, f_type, plate, outer_dim, inner_dim, project) for
+                    f_type in FILM_TYPES]
+
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
+        save_path = os.path.join(path, "qc_film_{0}_{1}_{2}.{3}.avi".format(plate, outer_dim, inner_dim, film_type))
+        if _make_film(film_type, save_target=save_path, pos=(plate, outer_dim, inner_dim), path=path):
+
+            return send_from_directory(path, os.path.basename(save_path))
+        else:
+            return jsonify(success=False, reason="Error while producing film")
 
     # End of UI extension with qc-functionality
     return True
