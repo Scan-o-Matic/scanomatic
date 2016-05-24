@@ -194,7 +194,7 @@ def load_colony_images_for_animation(analysis_directory, position, project_compi
         # slicing out the plate
         im = im[y[0]: y[1], x[0]: x[1]][:, ::-1]
 
-        images[..., i] = slice_im(im, grid[:, position[2], grid.shape[2] - position[1]], grid_size)
+        images[..., i] = slice_im(im, grid[:, grid.shape[1] - position[2] - 1, position[1]], grid_size)
 
     return times, images, im
 
