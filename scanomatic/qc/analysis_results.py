@@ -273,10 +273,10 @@ def animate_blob_detection(save_target, position, analysis_folder,
     @MovieWriter(save_target, "Colony detection animation", fps=fps, fig=fig)
     def _plotter():
 
-        for i, index in enumerate(image_indices):
+        for idx, index in enumerate(image_indices):
 
-            ims[0].set_data(np.load(files[i]))
-            base_name = files[i][:-21]
+            ims[0].set_data(np.load(files[idx]))
+            base_name = files[idx][:-21]
             image_ax.set_title("Image (t={0:.1f}h)".format(
                 image_indices[index] if interval is None else image_indices[index] * interval))
 
@@ -287,7 +287,7 @@ def animate_blob_detection(save_target, position, analysis_folder,
                 if im_data.ndim == 2:
                     ims[j + 1].set_data(np.load(base_name + ending))
 
-            set_axvspan_width(polygon, curve_times[i])
+            set_axvspan_width(polygon, curve_times[idx])
             _sqaure_ax(curve_ax)
 
             yield
@@ -330,12 +330,12 @@ def animate_3d_colony(save_target, position, analysis_folder,
 
         ax3d = None
 
-        for i, index in enumerate(image_indices):
+        for idx, index in enumerate(image_indices):
 
-            im.set_data(np.load(files[i]))
+            im.set_data(np.load(files[idx]))
 
             # Added suffix length too
-            base_name = files[i][:-(10 + 11)]
+            base_name = files[idx][:-(10 + 11)]
 
             image_ax.set_title("Image (Time={0:.1f}h)".format(
                 image_indices[index] if interval is None else image_indices[index] * interval))
@@ -349,7 +349,7 @@ def animate_3d_colony(save_target, position, analysis_folder,
             if ax3d:
                 fig.delaxes(ax3d)
             ax3d = fig.add_subplot(1, 3, 2, projection='3d')
-            ax3d.view_init(elev=35., azim=(i*rotation_speed) % 360)
+            ax3d.view_init(elev=35., azim=(idx*rotation_speed) % 360)
             ax3d.set_axis_off()
             ax3d.plot_surface(coords_x, coords_y, cells, rstride=3, cstride=3, lw=.2, edgecolors="w")
 
@@ -359,7 +359,7 @@ def animate_3d_colony(save_target, position, analysis_folder,
 
             _sqaure_ax(ax3d)
 
-            set_axvspan_width(polygon, curve_times[i])
+            set_axvspan_width(polygon, curve_times[idx])
 
             yield
 
@@ -408,19 +408,19 @@ def animate_example_curves(save_target, growth_data=None, fig=None, fps=2, ax_ti
 
         while elapsed < duration:
             plate = np.random.randint(data[0].shape[0])
-            pos = tuple(np.random.randint(d) for d in data[0][plate].shape[:2])
+            pos = tuple(np.random.randint(p_shape) for p_shape in data[0][plate].shape[:2])
             if ax_title is None:
                 ax.set_title("Plate {0}, Pos {1}".format(plate, pos))
 
             ymin = None
             ymax = None
-            for i in range(data_sets):
-                d = np.ma.masked_invalid(data[i][plate][pos])
-                curves[i].set_ydata(d)
-                if ymin is None or d.min() < ymin:
-                    ymin = d.min() * 0.9
-                if ymax is None or d.max() > ymax:
-                    ymax = d.max() * 1.2
+            for data_set in range(data_sets):
+                curve_data = np.ma.masked_invalid(data[data_set][plate][pos])
+                curves[data_set].set_ydata(curve_data)
+                if ymin is None or curve_data.min() < ymin:
+                    ymin = curve_data.min() * 0.9
+                if ymax is None or curve_data.max() > ymax:
+                    ymax = curve_data.max() * 1.2
             ax.set_ylim(ymin=ymin, ymax=ymax)
             elapsed += 1.0/fps
             yield
