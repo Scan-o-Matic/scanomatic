@@ -197,13 +197,23 @@ def plot_segments(save_target, phenotypes, position, segment_alpha=0.3, f=None, 
     curve_raw = phenotypes.raw_growth_data[position[0]][position[1], position[2]]
     phases = phenotypes.get_curve_segments(*position)
 
-    if colors is None:
-        colors = PHASE_PLOTTING_COLORS
-
     if f is None:
         f = plt.figure()
 
     ax = f.gca()
+
+    plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=colors, segment_alpha=segment_alpha)
+
+    if save_target:
+        f.savefig(save_target)
+
+    return f
+
+
+def plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=None, segment_alpha=0.3):
+
+    if colors is None:
+        colors = PHASE_PLOTTING_COLORS
 
     # noinspection PyTypeChecker
     for phase in CurvePhases:
@@ -226,8 +236,3 @@ def plot_segments(save_target, phenotypes, position, segment_alpha=0.3, f=None, 
     ax.set_xlim(xmin=times[0], xmax=times[-1])
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population Size [cells]")
-
-    if save_target:
-        f.savefig(save_target)
-
-    return f
