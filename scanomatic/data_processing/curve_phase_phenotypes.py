@@ -169,7 +169,11 @@ def _locate_impulse(dydt, loc, phases, filt, offset, extension_threshold):
     candidates = signal.medfilt(candidates, 3).astype(bool)
 
     candidates, _ = label(candidates)
-    phases[offset: -offset][candidates == candidates[loc]] = CurvePhases.Impulse.value
+    if offset:
+        phases[offset: -offset][candidates == candidates[loc]] = CurvePhases.Impulse.value
+    else:
+        phases[candidates == candidates[loc]] = CurvePhases.Impulse.value
+
     return _locate_segment(candidates)
 
 
@@ -230,10 +234,18 @@ def _locate_acceleration(dydt, ddydt_signs, phases, left, right, offset, flatlin
 
     if label_count:
         acc_candidates = candidates2 == label_count
-        phases[offset: -offset][acc_candidates] = CurvePhases.Acceleration.value
+        if offset:
+            phases[offset: -offset][acc_candidates] = CurvePhases.Acceleration.value
+        else:
+            phases[acc_candidates] = CurvePhases.Acceleration.value
+
         return _locate_segment(acc_candidates), CurvePhases.Flat
     else:
-        phases[offset: -offset][candidates] = CurvePhases.Undetermined.value
+        if offset:
+            phases[offset: -offset][candidates] = CurvePhases.Undetermined.value
+        else:
+            phases[candidates] = CurvePhases.Undetermined.value
+
         return (left, right), CurvePhases.Undetermined
 
 
@@ -247,10 +259,17 @@ def _locate_retardation(dydt, ddydt_signs, phases, left, right, offset, flatline
 
     if label_count:
         ret_cantidates = candidates2 == 1
-        phases[offset: -offset][ret_cantidates] = CurvePhases.Retardation.value
+        if offset:
+            phases[offset: -offset][ret_cantidates] = CurvePhases.Retardation.value
+        else:
+            phases[ret_cantidates] = CurvePhases.Retardation.value
+
         return _locate_segment(ret_cantidates), CurvePhases.Flat
     else:
-        phases[offset: -offset][candidates] = CurvePhases.Undetermined.value
+        if offset:
+            phases[offset: -offset][candidates] = CurvePhases.Undetermined.value
+        else:
+            phases[candidates] = CurvePhases.Undetermined.value
         return (left, right), CurvePhases.Undetermined
 
 
