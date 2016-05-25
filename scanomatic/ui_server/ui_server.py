@@ -33,6 +33,7 @@ from . import qc_api
 import analysis_api
 import compilation_api
 import scan_api
+import management_api
 
 _url = None
 _logger = Logger("UI-server")
@@ -492,33 +493,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                 return jsonify(scanner=None, success=False, reason="Unknown scanner or query '{0}'".format(
                     scanner_query))
 
-    @app.route("/server/<action>", methods=['post', 'get'])
-    def _server_actions(action=None):
-
-        if action == 'reboot':
-
-            if rpc_client.local and (request.args.get('force') == '1' or not rpc_client.working_on_job_or_has_queue):
-
-                rpc_client.shutdown()
-                time.sleep(5)
-                rpc_client.launch_local()
-                time.sleep(5)
-                return jsonify(success=rpc_client.online)
-
-        elif action == 'shutdown':
-
-            rpc_client.shutdown()
-            time.sleep(2)
-            return jsonify(success=rpc_client.online is False)
-
-        elif action == 'launch':
-
-            if rpc_client.online:
-                return jsonify(success=False, reason="Server is already running")
-
-            rpc_client.launch_local()
-            time.sleep(2)
-            return jsonify(success=rpc_client.online)
 
     @app.route("/grayscales", methods=['post', 'get'])
     def _grayscales():
@@ -708,6 +682,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)
 
+    management_api.add_routes(app, rpc_client)
     qc_api.add_routes(app)
     analysis_api.add_routes(app)
     compilation_api.add_routes(app)
