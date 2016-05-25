@@ -2,7 +2,7 @@
 from scanomatic.ui_server import ui_server
 from argparse import ArgumentParser
 import setproctitle
-import sys
+from time import sleep
 
 #
 # EXECUTION BEHAVIOUR
@@ -30,11 +30,11 @@ if __name__ == "__main__":
         " (default False)"
     )
 
-    print(sys.argv)
     args = parser.parse_args()
     
     setproctitle.setproctitle("SoM {0}".format("UI Server"))
     true_strings = ['Y', 'YES', 'TRUE', 'T']
+    sleep(1)
     ui_server.launch(open_browser_url=args.browser.upper() in true_strings,
                      debug=args.debug.upper() in true_strings,
                      is_local=args.local.upper() in true_strings, port=args.port, host=args.host)

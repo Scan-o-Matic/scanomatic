@@ -200,6 +200,10 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _wiki():
         return redirect("https://github.com/local-minimum/scanomatic/wiki")
 
+    @app.route("/maintain")
+    def _maintain():
+        return send_from_directory(Paths().ui_root, Paths().ui_maintain_file)
+
     @app.route("/images/<image_name>")
     def _help_logo(image_name=None):
         if image_name:

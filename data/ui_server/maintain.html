@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<link rel="stylesheet" type="text/css" href="/style/main.css">
+    <link rel="stylesheet" type="text/css" href="/style/status.css">
+    <script src="/js/jquery-2.1.4.min.js"></script>
+    <script src="/js/jquery-ui.min.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/maintain.js"></script>
+    <script>
+    </script>
+	<title>Scan-o-Matic</title></head>
+<body>
+    <div id="cont">
+        <div class="section">
+            <p><em>If Scan-o-Matic currently have jobs it is working on or in queue, it is generally
+                not recommended to do anything to the server. In most cases it still should be alright, but
+            some cases remain to be fully tested and verified (especially rebooting server while scanning projects
+            are running). Shutting down the server while scanning experiments are running will always cause issues as
+            the server is needed to acquire scanners.</em></p>
+        </div>
+        <h1>Server</h1>
+        <div class="section-frame" id="server-actions">
+            <button type="button" name="Server" value="Reboot" onclick="javascript:server_reboot(this);">Reboot</button>
+            <button type="button" name="Server" value="Shutdown" onclick="javascript:server_shutdown(this);">Shutdown</button>
+            <button type="button" name="Server" value="Kill" onclick="javascript:server_kill(this);">Kill</button>
+            <button type="button" name="Server" value="Launch" onclick="javascript:server_launch(this);">Launch</button>
+        </div>
+        <h2>Application</h2>
+        <div class="section-frame" id="application-actions">
+            <p><em>It should be fine to close or reboot the application while things are running.</em></p>
+
+            <button type="button" name="Application" value="Reboot" onclick="javascript:app_reboot(this);">Reboot</button>
+            <button type="button" name="Application" value="Shutdown" onclick="javascript:app_shutdown(this);">Shutdown</button>
+        </div>
+        <h2>Joint</h2>
+        <div class="section-frame" id="joint-actions">
+            <button type="button" name="Joint" value="Reboot" onclick="javascript:app_server_reboot(this);">Reboot</button>
+            <button type="button" name="Joint" value="Shutdown" onclick="javascript:app_server_shutdown(this);">Shutdown</button>
+        </div>
+    </div>
+</body>
+</html>
