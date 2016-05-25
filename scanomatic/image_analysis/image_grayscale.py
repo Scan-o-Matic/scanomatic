@@ -63,6 +63,10 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
     # of the segment size
 
     kernel_size = tuple(int(kernel_part_of_segment * v) for v in (grayscale['length'], grayscale['width']))
+
+    if im_ortho_trimmed.size == 0 or any(a - b + 1 <= 0 for a, b in zip(im_ortho_trimmed.shape, kernel_size)):
+        return None
+
     strided_im = as_strided(im_ortho_trimmed,
                             shape=(im_ortho_trimmed.shape[0] - kernel_size[0] + 1,
                                    im_ortho_trimmed.shape[1] - kernel_size[1] + 1,
@@ -138,7 +142,7 @@ def get_grayscale(fixture, grayscale_area_model, debug=False):
     if not im_o.size:
         return None, None
     im_p = get_para_trimmed_slice(im_o, gs)
-    if not im_p.size:
+    if im_p is None or not im_p.size:
         return None, None
     DEBUG_DETECTION = debug
 
