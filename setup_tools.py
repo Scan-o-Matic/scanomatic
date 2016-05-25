@@ -144,27 +144,67 @@ def install_launcher():
 
 def uninstall():
     _logger.info("Uninstalling")
+    uninstall_lib(_logger)
+    uninstall_executables(_logger)
+    uninstall_launcher(_logger)
+
+
+def uninstall_lib(l):
     current_location = os.path.abspath(os.curdir)
     os.chdir(os.pardir)
     import shutil
 
     try:
         import scanomatic as som
-        _logger.info("Found installation at {0}".format(som.__file__))
+        l.info("Found installation at {0}".format(som.__file__))
         if os.path.abspath(som.__file__) != som.__file__ or current_location in som.__file__:
-            _logger.error("Trying to uninstall the local folder, just remove it instead if this was intended")
+            l.error("Trying to uninstall the local folder, just remove it instead if this was intended")
         else:
-            shutil.rmtree(os.path.dirname(som.__file__))
+
+            try:
+                shutil.rmtree(os.path.dirname(som.__file__))
+            except OSError:
+                l.error("Not enough permissions to remove {0}".format(os.path.dirname(som.__file__)))
+
             parent_dir = os.path.dirname(os.path.dirname(som.__file__))
             for egg in glob.glob(os.path.join(parent_dir, "Scan_o_Matic*.egg-info")):
-                os.remove(egg)
+                try:
+                    os.remove(egg)
+                except OSError:
+                    l.error("Not enough permissions to remove {0}".format(egg))
 
-            _logger.info("Removed installation at {0}".format(som.__file__))
+            l.info("Removed installation at {0}".format(som.__file__))
     except (ImportError, OSError):
-        _logger.info("All install location removed")
+        l.info("All install location removed")
 
-    _logger.info("Uninstall complete")
+    l.info("Uninstall complete")
     os.chdir(current_location)
+
+
+def uninstall_executables(l):
+
+    for path in os.environ['PATH'].split(":"):
+        for file_path in glob.glob(os.path.join(path, "scan-o-matic*")):
+            l.info("Removing {0}".format(file_path))
+            try:
+                os.remove(file_path)
+            except OSError:
+                l.warning("Not enough permission to remove {0}".format(file_path))
+
+
+def uninstall_launcher(l):
+
+    user_home = os.path.expanduser("~")
+    if sys.platform.startswith('linux'):
+        target = os.path.join(user_home, '.local', 'share', 'applications', 'scan-o-matic.desktop')
+        l.info("Removing desktop-launcher/menu integration at {0}".format(target))
+        try:
+            os.remove(target)
+        except OSError:
+            l.info("No desktop-launcher/menu integration was found or no permission to remove it")
+
+    else:
+        l.info("Not on linux, no launcher should have been installed.")
 
 
 def purge():
