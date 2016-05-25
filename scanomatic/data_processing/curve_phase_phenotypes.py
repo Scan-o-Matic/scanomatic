@@ -430,7 +430,7 @@ def filter_plate(plate, meta_phenotype):
             plate,
             phase=CurvePhases.Impulse,
             measure=CurvePhasePhenotypes.FractionYield,
-            phases_requirement=lambda phases: len(phases) > phase_need,
+            phases_requirement=lambda phases: len(phases) >= phase_need,
             phase_selector=lambda phases:
             phases[np.argsort(tuple(
                 phase[CurvePhasePhenotypes.FractionYield] if
