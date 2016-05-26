@@ -19,3 +19,4 @@ ver_upgrade.py
 GIT_HELP
 scripts/scan-o-matic_job
 /.idea
+nohup.out
