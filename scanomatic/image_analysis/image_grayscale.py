@@ -64,12 +64,6 @@ def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0
 
     kernel_size = tuple(int(kernel_part_of_segment * v) for v in (grayscale['length'], grayscale['width']))
 
-    if im_ortho_trimmed.size == 0 or any(a - b + 1 <= 0 for a, b in zip(im_ortho_trimmed.shape, kernel_size)) or \
-            (v <= 0 for v in kernel_size):
-        _logger.error("Failed trimming parallel to GS because invalid ortho trimming. " +
-                      "Try making a larger selection around the grayscale on the fixture!")
-        return None
-
     try:
         strided_im = as_strided(im_ortho_trimmed,
                                 shape=(im_ortho_trimmed.shape[0] - kernel_size[0] + 1,
