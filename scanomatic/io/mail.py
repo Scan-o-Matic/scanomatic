@@ -3,6 +3,8 @@ import scanomatic.io.logger as logger
 from types import StringTypes
 import smtplib
 import socket
+import requests
+from struct import unpack
 
 try:
     from email import MIMEText, MIMEMultipart
@@ -11,6 +13,51 @@ except ImportError:
     from email.MIMEText import MIMEText
 
 _logger = logger.Logger("Mailer")
+
+_IP = None
+
+
+def ip_is_local(ip):
+    """Determines if ip is local
+
+    Code from http://stackoverflow.com/a/8339939/1099682
+
+    :param ip: and ip-adress
+    :type ip : str
+    :return: bool
+    """
+    f = unpack('!I', socket.inet_pton(socket.AF_INET, ip))[0]
+    private = (
+        [2130706432, 4278190080],  # 127.0.0.0,   255.0.0.0   http://tools.ietf.org/html/rfc3330
+        [3232235520, 4294901760],  # 192.168.0.0, 255.255.0.0 http://tools.ietf.org/html/rfc1918
+        [2886729728, 4293918720],  # 172.16.0.0,  255.240.0.0 http://tools.ietf.org/html/rfc1918
+        [167772160,  4278190080],  # 10.0.0.0,    255.0.0.0   http://tools.ietf.org/html/rfc1918
+    )
+    for net in private:
+        if (f & net[1]) == net[0]:
+            return True
+    return False
+
+
+def get_my_ip():
+    global _IP
+    if _IP:
+        return _IP
+
+    try:
+        _IP = [(s.connect(('8.8.8.8', 80)), s.getsockname()[0], s.close())
+              for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
+    except IndexError:
+        _logger.info("Failed to get IP via socket")
+
+    if _IP is None or ip_is_local(_IP):
+        try:
+            _IP = requests.request('GET', 'http://myip.dnsomatic.com').text
+        except requests.ConnectionError:
+            _logger.info("Failed to get IP via external service provider")
+            _IP = None
+
+    return _IP
 
 
 def get_server(host=None, smtp_port=0, tls=False, login=None, password=None):
@@ -106,12 +153,9 @@ def mail(sender, receiver, subject, message, final_message=True, server=None):
 def get_host_name():
 
     try:
-        ip = [(s.connect(('8.8.8.8', 80)), s.getsockname()[0], s.close())
-              for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
-    except IndexError:
+        return socket.gethostbyaddr(get_my_ip())[0]
+    except (IndexError, socket.herror):
         return None
-
-    return socket.gethostbyaddr(ip)[0]
 
 
 def get_default_email(username="no-reply---scan-o-matic"):
