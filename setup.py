@@ -66,7 +66,7 @@ _logger.info("Preparing setup parameters")
 package_dependencies = [
     'argparse', 'matplotlib', 'multiprocessing', 'odfpy',
     'numpy', 'sh', 'nmap', 'configparse', 'skimage',
-    'uuid', 'PIL', 'scipy', 'setproctitle', 'psutil', 'flask']
+    'uuid', 'PIL', 'scipy', 'setproctitle', 'psutil', 'flask', 'requests']
 
 data_files = []
 
