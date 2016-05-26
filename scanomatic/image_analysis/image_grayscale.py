@@ -196,7 +196,7 @@ def detect_grayscale(im_trimmed, grayscale):
     rect = ([0, 0], im_trimmed.shape)
     mid_ortho_slice = (rect[1][1] + rect[0][1]) / 2.0
     mid_ortho_trimmed = mid_ortho_slice - rect[0][1]
-    _logger.info("Loaded pre-trimmed image slice")
+    _logger.info("Loaded pre-trimmed image slice for GS detection")
 
     if DEBUG_DETECTION:
         np.save(os.path.join(Paths().log, 'gs_section_used_in_detection.npy'), im_trimmed)
