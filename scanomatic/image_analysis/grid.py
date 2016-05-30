@@ -219,7 +219,7 @@ def get_heatmap(data, votes, weights, sigma):
     y_votes = y_votes[vote_slice]
     votes_weights = weights[vote_slice]
 
-    heatmap = np.zeros((np.ceil(y_data.max()) + 1, np.ceil(x_data.max()) + 1))
+    heatmap = np.zeros((int(np.ceil(y_data.max()) + 1), int(np.ceil(x_data.max()) + 1)))
 
     x_votes = np.round(x_votes).astype(np.int)
     y_votes = np.round(y_votes).astype(np.int)

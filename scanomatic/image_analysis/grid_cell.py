@@ -78,8 +78,8 @@ class GridCell():
     def set_grid_coordinates(self, grid_cell_corners):
 
         flipped_long_axis_position = grid_cell_corners.shape[2] - self.position[0] - 1
-        self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]]
-        self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]]
+        self.xy1 = grid_cell_corners[:, 0, flipped_long_axis_position, self.position[1]].astype(np.int)
+        self.xy2 = grid_cell_corners[:, 1, flipped_long_axis_position, self.position[1]].astype(np.int)
 
     def set_new_data_source_space(self, space=VALUES.Cell_Estimates, bg_sub_source=None, polynomial_coeffs=None):
 
