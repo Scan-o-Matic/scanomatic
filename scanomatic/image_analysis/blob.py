@@ -90,8 +90,9 @@ class AnalysisThresholdOtsu(AnalysisRecipeAbstraction):
 
         try:
             filter_array[...] = im > ski_filter.threshold_otsu(im) + self._thresholdUnitAdjust
-        except ValueError:
+        except (ValueError, TypeError):
             filter_array[...] = 0
+
 
 class AnalysisRecipeErode(AnalysisRecipeAbstraction):
 
