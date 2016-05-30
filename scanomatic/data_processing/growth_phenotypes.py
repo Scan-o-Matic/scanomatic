@@ -162,8 +162,12 @@ def CalculateFitRSquare(X, Y, p0=np.array([1.64, -0.1, -2.46, 0.1, 15.18], dtype
 
     Yhat = ChapmanRichards4ParameterExtendedCurve(
         X, *p)
-    return (1.0 - np.square(Yhat - Y).sum() /
-        np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
+
+    if np.isfinite(Y).any():
+        return (1.0 - np.square(Yhat - Y).sum() /
+            np.square(Yhat - Y[np.isfinite(Y)].mean()).sum()), p
+    else:
+        return np.nan, p
 
 
 def RCResiduals(crParams, X, Y):
