@@ -53,7 +53,7 @@ def get_ortho_trimmed_slice(im, grayscale):
     detection = np.abs(convolve2d(im_scaled, kernel_scaled, mode="valid"))
     peak = gaussian_filter1d(np.max(detection, axis=0), half_width).argmax()
 
-    return im[:, peak - half_width: peak + half_width]
+    return im[:, int(round(peak - half_width)): int(round(peak + half_width))]
 
 
 def get_para_trimmed_slice(im_ortho_trimmed, grayscale, kernel_part_of_segment=0.6, permissibility_threshold=20,
@@ -300,7 +300,9 @@ def detect_grayscale(im_trimmed, grayscale):
                 if right >= im_trimmed.shape[0]:
                     right = im_trimmed.shape[0] - 1
 
-                gray_scale.append(iqr_mean(im_trimmed[left: right, top: bottom]))
+                gray_scale.append(iqr_mean(
+                    im_trimmed[int(round(left)): int(round(right)),
+                               int(round(top)): int(round(bottom))]))
 
                 if DEBUG_DETECTION:
                     np.save(os.path.join(Paths().log, "gs_segment_{0}.npy".format(i)),

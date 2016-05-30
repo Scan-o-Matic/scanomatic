@@ -49,23 +49,35 @@ def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times
 
 
 def initial_value(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[0]
+    return curve_smooth_growth_data[0].filled(np.nan)
 
 
 def curve_first_two_average(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[:2].mean()
+    if curve_smooth_growth_data[:2].any():
+        return curve_smooth_growth_data[:2].mean()
+    else:
+        return np.nan
 
 
 def curve_baseline(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[:3].mean()
+    if curve_smooth_growth_data[:3].any():
+        return curve_smooth_growth_data[:3].mean()
+    else:
+        return np.nan
 
 
 def curve_low_point(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[:3].min()
+    if curve_smooth_growth_data.any():
+        return curve_smooth_growth_data[:3].min()
+    else:
+        return np.nan
 
 
 def curve_end_average(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[-3:].mean()
+    if curve_smooth_growth_data[-3:].any():
+        return curve_smooth_growth_data[-3:].mean()
+    else:
+        return np.nan
 
 
 def growth_yield(curve_smooth_growth_data, *args, **kwargs):
