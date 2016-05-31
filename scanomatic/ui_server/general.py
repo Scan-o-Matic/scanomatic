@@ -7,11 +7,13 @@ from flask import send_file
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
+from scanomatic.io.logger import Logger
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scipy.misc import toimage
 
 _safe_dir = re.compile(r"^[A-Za-z_0-9./]*$")
 _no_super = re.compile(r"/?\.{2}/")
+_logger = Logger("UI API helpers")
 
 
 def safe_directory_name(name):
@@ -96,12 +98,16 @@ def strip_empty_exits(exits, data):
         :type data : dict
     """
     all_exits = [e for e in exits]
+
     for e in all_exits:
         if e in data and (data[e] is None or len(data[e]) == 0):
+            _logger.info("Removing {0} from exits because {1} is empty".format(e, data[e]))
             del data[e]
             exits.remove(e)
+            _logger.info("Exits now {0}".format(exits))
         elif e not in data:
             exits.remove(e)
+            _logger.info("Removing {0} from exits because not in data {1}, exits now {2}".format(e, data, exits))
 
 
 def json_response(exits, data, success=True):
