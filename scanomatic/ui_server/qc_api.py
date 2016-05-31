@@ -509,13 +509,14 @@ def add_routes(app):
             segmentations = segmentations.tolist()
 
         film_url = ["/api/results/movie/make/{0}/{1}/{2}/{3}".format(plate, d1_row, d2_col, project)]
-        colony_image = ["/api/compile/colony_image/{0}/{1}/{2}/{3}".format(plate, d1_row, d2_col, project)]
+        colony_image = ["/api/compile/colony_image/{4}/{0}/{1}/{2}/{3}".format(plate, d1_row, d2_col, project, t)
+                        for t, _ in enumerate(state.times)]
 
         return jsonify(time_data=state.times.tolist(),
                        smooth_data=state.smooth_growth_data[plate][d1_row, d2_col].tolist(),
                        raw_data=state.raw_growth_data[plate][d1_row, d2_col].tolist(),
                        segmentations=segmentations,
-                       **json_response(["film_url", "colony_image"],
+                       **json_response(["film_urls", "colony_image"],
                                        dict(film_urls=film_url, colony_image=colony_image, **response)))
 
     @app.route("/api/results/movie/make")
