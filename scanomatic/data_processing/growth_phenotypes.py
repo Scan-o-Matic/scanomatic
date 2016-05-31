@@ -49,7 +49,7 @@ def get_preprocessed_data_for_phenotypes(curve, curve_strided, flat_times, times
 
 
 def initial_value(curve_smooth_growth_data, *args, **kwargs):
-    return curve_smooth_growth_data[0].filled(np.nan)
+    return curve_smooth_growth_data[0]
 
 
 def curve_first_two_average(curve_smooth_growth_data, *args, **kwargs):
