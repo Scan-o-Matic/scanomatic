@@ -323,8 +323,12 @@ class FixtureImage(object):
         rotations_ref = np.arccos(x_centered_ref / length_ref)
         rotations_ref = rotations_ref * (y_centered_ref > 0) + -1 * rotations_ref * (y_centered_ref < 0)
 
+        rotation = (rotations - rotations_ref).mean()
         """:type : float"""
-        return (rotations - rotations_ref).mean()
+        if np.abs(rotation) < 0.001:
+            return 0
+        else:
+            return rotation
 
     def _get_offset(self):
 
