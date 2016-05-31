@@ -1,12 +1,14 @@
 import glob
 import os
 import re
+from StringIO import StringIO
 from itertools import chain
+from flask import send_file
 
 from scanomatic.io.app_config import Config
 from scanomatic.io.paths import Paths
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
-
+from scipy.misc import toimage
 
 _safe_dir = re.compile(r"^[A-Za-z_0-9./]*$")
 _no_super = re.compile(r"/?\.{2}/")
@@ -118,3 +120,14 @@ def json_response(exits, data, success=True):
         data["exits"] = exits
 
     return data
+
+
+def serve_pil_image(pil_img):
+    img_io = StringIO()
+    pil_img.save(img_io, 'JPEG', quality=70)
+    img_io.seek(0)
+    return send_file(img_io, mimetype='image/jpeg')
+
+
+def serve_numpy_as_image(data):
+    return serve_pil_image(toimage(data))
