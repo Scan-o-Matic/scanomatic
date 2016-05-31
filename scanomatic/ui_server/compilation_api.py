@@ -26,7 +26,7 @@ def add_routes(app):
     @app.route("/api/compile/colony_image/<int:time_index>/<int:plate>/<int:outer>/<int:inner>/<path:project>")
     @app.route("/api/compile/colony_image/<int:plate>/<int:outer>/<int:inner>/<path:project>")
     def get_colony_image(time_index=0, plate=None, outer=None, inner=None, project=None):
-        base_url = "/api/compile/instructions"
+        base_url = "/api/compile/colony_image"
 
         path = convert_url_to_path(project)
 
