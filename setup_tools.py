@@ -3,6 +3,7 @@ import shutil
 import sys
 import glob
 import stat
+from subprocess import PIPE, call
 
 
 class MiniLogger(object):
@@ -220,6 +221,36 @@ def purge():
     except IOError:
         _logger.info("No settings found")
 
+
+def test_executable_is_reachable(path='scan-o-matic'):
+
+    try:
+        call([path, '--help'], stdout=PIPE)
+    except IOError:
+        return False
+
+    return True
+
+
+def patch_bashrc_if_not_reachable():
+
+    if not test_executable_is_reachable():
+
+        for path in [('~', '.local', 'bin')]:
+
+            path = os.path.expanduser(os.path.join(*path))
+            if test_executable_is_reachable(path) and 'PATH' in os.environ and path not in os.environ['PATH']:
+
+                if 'y' in raw_input(
+                        "The installation path is not in your environmental variable PATH"
+                        "Do you wish me to append it in your `.bashrc` file? (y/N)").lower():
+
+                    with open(os.path.expanduser(os.path.join("~", ".bashrc")), 'a') as fh:
+                        fh.write("export PATH=$PATH:{0}\n".format(path))
+
+                    _logger.info("You will need to open a new terminal before you can launch `scan-o-matic`.")
+
+#
 
 if __name__ == "__main__":
 

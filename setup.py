@@ -13,7 +13,7 @@ from subprocess import Popen, PIPE, call
 # INTERNAL DEPENDENCIES
 #
 
-from setup_tools import MiniLogger
+from setup_tools import MiniLogger, patch_bashrc_if_not_reachable, test_executable_is_reachable
 
 if sys.argv[1] == 'uninstall':
     call('python -c"from setup_tools import uninstall;uninstall()"', shell=True)
@@ -156,9 +156,10 @@ from setup_tools import install_data_files, install_launcher
 _logger.info("Copying data and configuration files")
 install_data_files()
 install_launcher()
+patch_bashrc_if_not_reachable()
 _logger.info("Post Setup Complete")
 
-if sys.argv[-1].upper() == "--USER":
+if not test_executable_is_reachable():
     print """
 
     INFORMATION ABOUT LOCAL / USER INSTALL
