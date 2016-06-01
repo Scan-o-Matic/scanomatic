@@ -25,6 +25,8 @@
                        onchange="set_file_path(this, '.project.compilation');"
                        onfocus="set_file_path(this, '.project.compilation');"
                        onkeyup="set_file_path(this, '.project.compilation');">
+                    <div class="indented"><em>This should point to a file with the ending <code>.project.compilation</code>.</em></div>
+
                 </div>
                 <div class="section">
                     <label for="compile-instructions">Compile Instructions File <em>(optional)</em></label>
@@ -32,12 +34,14 @@
                         onchange="set_file_path(this, '.project.compilation.instructions');"
                        onfocus="set_file_path(this, '.project.compilation.instructions');"
                        onkeyup="set_file_path(this, '.project.compilation.instructions');">
-
+                    <div class="indented"><em>This is optional, but if included should point to a <code>.project.compilation.instructions</code>,
+                        else it is inferred from the compilation file path and name above.</em></div>
                 </div>
                 <div class="section">
                     <label for="analysis-directory">Analysis output directory <em>(optional)</em></label>
                     <input name="analysis-directory" id="analysis-directory" class="long">
-                    <div class="indented"><em>Local directory in folder containing compilation file to put analysis, defaults to 'analysis'</em></div>
+                    <div class="indented">
+                        <em>Local directory in folder containing compilation file to put analysis, defaults to <code>analysis</code></em></div>
                 </div>
                 <div class="section">
                     <div class="onoffswitch one_time_positioning">
@@ -71,6 +75,8 @@
                        onfocus="set_analysis_directory(this, true);"
                        onkeyup="set_analysis_directory(this, true);">
 
+                <div class="indented"><em>The analysis folder is the folder produced by the above step, it
+                contains, among other things, various files named <code>image_X_data.npy</code> and a file <code>time_data.npy</code>.</em></div>
 
                 <button type="button" id="submit-button2" onclick="Extract(this);">Run Feature Extraction</button>
             </form>
