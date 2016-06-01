@@ -251,6 +251,8 @@ def patch_bashrc_if_not_reachable():
                         fh.write("\nexport PATH=$PATH:{0}\n".format(path))
 
                     _logger.info("You will need to open a new terminal before you can launch `scan-o-matic`.")
+                else:
+                    _logger.info("Skipping PATH patching")
 
 #
 
