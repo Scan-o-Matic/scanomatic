@@ -248,7 +248,7 @@ def patch_bashrc_if_not_reachable():
                         "Do you wish me to append it in your `.bashrc` file? (y/N)").lower():
 
                     with open(os.path.expanduser(os.path.join("~", ".bashrc")), 'a') as fh:
-                        fh.write("export PATH=$PATH:{0}\n".format(path))
+                        fh.write("\nexport PATH=$PATH:{0}\n".format(path))
 
                     _logger.info("You will need to open a new terminal before you can launch `scan-o-matic`.")
 
