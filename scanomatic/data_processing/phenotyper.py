@@ -1086,7 +1086,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 for phenotype in CurvePhaseMetaPhenotypes:
 
-                    if self._phenotypes_inclusion(phenotype) and phenotype not in self._phenotype_filter:
+                    if self._phenotypes_inclusion(phenotype) and phenotype in self and \
+                            phenotype not in self._phenotype_filter[plate_index]:
 
                         self._phenotype_filter[plate_index][phenotype] = np.zeros(
                             self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
