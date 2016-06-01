@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import shutil
 import sys
@@ -8,13 +9,16 @@ from subprocess import PIPE, call
 
 class MiniLogger(object):
 
-    def info(self, txt):
+    @staticmethod
+    def info(txt):
         print("INFO: " + txt)
 
-    def warning(self, txt):
+    @staticmethod
+    def warning(txt):
         print("WARNING: " + txt)
 
-    def error(self, txt):
+    @staticmethod
+    def error(txt):
         print("ERROR: " + txt)
 
 _logger = MiniLogger()
@@ -101,10 +105,8 @@ def install_data_files(target_base=None, source_base=None, install_list=None):
                 _logger.info("Creating file {0}".format(target_path))
                 fh = open(target_path, 'w')
                 fh.close()
-            elif (not os.path.isfile(target_path) or files[file_name]
-                    or 'y' in raw_input(
-                        "Do you want to overwrite {0} (y/N)".format(
-                            target_path)).lower()):
+            elif (not os.path.isfile(target_path) or files[file_name] or 'y' in raw_input(
+                    "Do you want to overwrite {0} (y/N)".format(target_path)).lower()):
 
                 _logger.info(
                     "Copying file: {0} => {1}".format(
