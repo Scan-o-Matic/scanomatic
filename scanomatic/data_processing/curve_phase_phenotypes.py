@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+import operator
 from scipy import signal
 from scipy.ndimage import label
 from scipy.stats import linregress
@@ -7,6 +8,8 @@ from scipy.stats import linregress
 from enum import Enum
 
 from scanomatic.data_processing import growth_phenotypes
+
+# TODO: Verify that all offsets work properly, especially when combining ddydt_sign an dydt
 
 
 class CurvePhases(Enum):
@@ -23,6 +26,8 @@ class CurvePhases(Enum):
     """:type : CurvePhases"""
     Impulse = 4
     """:type : CurvePhases"""
+    Collapse = 5
+    """:type : CurvePhases"""
 
 
 class Thresholds(Enum):
@@ -32,6 +37,10 @@ class Thresholds(Enum):
     ImpulseSlopeRequirement = 1
     """:type : Thresholds"""
     FlatlineSlopRequirement = 2
+    """:type : Thresholds"""
+    FractionAcceleration = 3
+    """:type : Thresholds"""
+    FractionAccelerationTestDuration = 4
     """:type : Thresholds"""
 
 
@@ -54,35 +63,40 @@ class VectorPhenotypes(Enum):
     PhasesPhenotypes = 1
 
 
-def _filter_find(vector, filt, func=np.max):
+class PhaseEdge(Enum):
 
+    Left = 0
+    """:type : PhaseEdge"""
+    Right = 1
+    """:type : PhaseEdge"""
+
+
+def _filter_find(vector, filt, func=np.max):
+    vector = np.abs(vector)
     return np.where((vector == func(vector[filt])) & filt)[0]
 
 DEFAULT_THRESHOLDS = {
     Thresholds.ImpulseExtension: 0.75,
     Thresholds.ImpulseSlopeRequirement: 0.1,
-    Thresholds.FlatlineSlopRequirement: 0.02}
+    Thresholds.FlatlineSlopRequirement: 0.02,
+    Thresholds.FractionAcceleration: 0.66,
+    Thresholds.FractionAccelerationTestDuration: 3}
 
 
-def _segment_terminate_no_impulse(dydt, loc_max, thresholds, no_impulse, left, right, phases, offset):
-    if dydt[loc_max] < thresholds[Thresholds.ImpulseSlopeRequirement]:
-        if no_impulse:
-            warnings.warn("No impulse detected, max rate is {0} (threshold {1}).".format(
-                dydt[loc_max], thresholds[Thresholds.ImpulseSlopeRequirement]))
+def _verify_impulse_or_collapse(dydt, loc_max, thresholds, left, right, phases, offset):
+    if np.abs(dydt[loc_max]) < thresholds[Thresholds.ImpulseSlopeRequirement]:
         if left == 0 and offset:
             phases[:offset] = phases[offset]
 
         if right == phases.size and offset:
             phases[-offset:] = phases[-offset - 1]
-        return True
-    return False
+        return False
+    return True
 
 
-def _segment_terminate_no_impulse_though_growth(impulse_left, impulse_right, no_impulse, left, right, phases, offset):
+def _verify_impulse_or_collapse_though_growth_delta(impulse_left, impulse_right, left, right, phases, offset):
 
     if impulse_left is None or impulse_right is None:
-        if no_impulse:
-            warnings.warn("No impulse phase detected though max rate super-seeded threshold")
         if left == 0 and offset:
             phases[:offset] = phases[offset]
         if right == phases.size and offset:
@@ -92,8 +106,39 @@ def _segment_terminate_no_impulse_though_growth(impulse_left, impulse_right, no_
     return False
 
 
-def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset,
-             thresholds=None):
+def _test_phase_type(ddydt_signs, left, right, filt, test_edge, uniformity_threshold, selection_length):
+
+    candidates = _get_filter(left, right, size=ddydt_signs, filt=filt)
+    if test_edge is PhaseEdge.Left:
+        selection = ddydt_signs[candidates][:selection_length]
+    elif test_edge is PhaseEdge.Right:
+        selection = ddydt_signs[candidates][-selection_length:]
+    else:
+        return CurvePhases.Undetermined
+
+    if selection.size == 0:
+        return CurvePhases.Undetermined
+
+    sign = selection.mean()
+    if sign > uniformity_threshold:
+        return CurvePhases.Acceleration
+    elif sign < -uniformity_threshold:
+        return CurvePhases.Retardation
+    else:
+        return CurvePhases.Undetermined
+
+
+def _verify_has_flat(dydt, filt, flat_threshold):
+
+    candidates = (np.abs(dydt) < flat_threshold) & filt
+    candidates = signal.medfilt(candidates, 3).astype(bool)
+    return candidates.any()
+
+
+def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=None):
+
+    if phases.all() or not filt.any():
+        raise StopIteration
 
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
@@ -109,72 +154,116 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset,
     # 2. Find segment's maximum growth
     loc_max = _filter_find(dydt_ranks, filt)
 
-    no_impulse = filt.all()
-
     # 3. Further sementation requires existance of reliable growth impulse
-    if _segment_terminate_no_impulse(dydt, loc_max, thresholds, no_impulse, left, right, phases, offset):
-        raise StopIteration
+    if _verify_impulse_or_collapse(dydt, loc_max, thresholds, left, right, phases, offset):
+
+        # 4a. Locate impulse or collapse
+        impulse_left, impulse_right = _locate_impulse_or_collapse(dydt, loc_max, phases, filt, offset,
+                                                                  thresholds[Thresholds.ImpulseExtension])
+
+    elif _verify_has_flat(dydt, filt, thresholds[Thresholds.FlatlineSlopRequirement]):
+
+        # 4b. Locate flatline
+        loc_min = _filter_find(dydt_ranks, filt, np.min)
+        impulse_left, impulse_right = _locate_flat(
+            dydt, loc_min, phases, filt, offset, thresholds[Thresholds.FlatlineSlopRequirement])
+
+    else:
+
+        # 4c. Check remainin if they are accelerated or decelerated
+        impulse_left = right
+        impulse_right = left
 
     yield None
 
-    # 4. Locate impulse
-    impulse_left, impulse_right = _locate_impulse(dydt, loc_max, phases, filt, offset,
-                                                  thresholds[Thresholds.ImpulseExtension])
+    for direction, (l, r) in zip(PhaseEdge, ((left, impulse_left), (impulse_right, right))):
 
-    # 4.b Verify impulse exists
-    if _segment_terminate_no_impulse_though_growth(
-            impulse_left, impulse_right, no_impulse, left, right, phases, offset):
-        raise StopIteration
+        if phases[l: r].all():
+            continue
 
-    yield None
+        phase = _test_phase_type(
+            ddydt_signs, l, r, filt, PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
+            thresholds[Thresholds.FractionAcceleration], thresholds[Thresholds.FractionAccelerationTestDuration])
+        # print("Investigate {0} -> {1}".format(direction, phase))
+        if phase is CurvePhases.Acceleration:
+            # 5. Locate acceleration phase
+            (phase_left, phase_right), _ = _locate_acceleration(
+                dydt, ddydt_signs, phases, l, r, offset,
+                flatline_threshold=thresholds[Thresholds.FlatlineSlopRequirement])
 
-    # 5. Locate acceleration phase
-    (accel_left, _), next_phase = _locate_acceleration(
-        dydt, ddydt_signs, phases, left, impulse_left, offset,
-        flatline_threshold=thresholds[Thresholds.FlatlineSlopRequirement])
+            yield None
 
-    yield None
+        elif phase is CurvePhases.Retardation:
 
-    # 5b. If there's anything remaining, it is candidate flatline, but investigated for more impulses
-    if left != accel_left:
-        phases[left + offset: accel_left + 1 + offset] = next_phase.value
-        _segment(dydt, dydt_ranks, ddydt_signs, phases, _get_filter(left, accel_left, size=dydt.size, filt=filt),
-                 offset, thresholds)
-        yield None
+            # 6. Locate retardation phase
+            (phase_left, phase_right), _ = _locate_retardation(
+                dydt, ddydt_signs, phases, l, r, offset,
+                flatline_threshold=thresholds[Thresholds.FlatlineSlopRequirement])
 
-    # 6. Locate retardation phase
-    (_, retard_right), next_phase = _locate_retardation(
-        dydt, ddydt_signs, phases, impulse_right, right, offset,
-        flatline_threshold=thresholds[Thresholds.FlatlineSlopRequirement])
+            yield None
 
-    yield None
+        else:
+            # No phase found
+            phase_left = r
+            phase_right = l
 
-    # 6b. If there's anything remaining, it is candidate flatline, but investigated for more impulses
-    if right != retard_right:
-        phases[retard_right + offset: right + offset] = next_phase.value
-        _segment(dydt, dydt_ranks, ddydt_signs, phases, _get_filter(retard_right, right, size=dydt.size, filt=filt),
-                 offset, thresholds)
-        yield None
+        # 7. If there's anything remaining on left, investigated for more impulses/collapses
+        if direction is PhaseEdge.Left and right != phase_left:
+            # print "Left investigate"
+            for ret in _segment(dydt, dydt_ranks, ddydt_signs, phases,
+                                _get_filter(left, phase_left, size=dydt.size, filt=filt), offset, thresholds):
 
-    # 7. Update phases edges
+                yield ret
+
+            yield None
+
+        # 8. If there's anything remaining right, investigate for more impulses/collapses
+        if direction is PhaseEdge.Right and left != phase_right:
+            # print "Right investigate"
+            for ret in _segment(dydt, dydt_ranks, ddydt_signs, phases,
+                                _get_filter(phase_right, right, size=dydt.size, filt=filt), offset, thresholds):
+                yield ret
+
+            yield None
+
+    # 9. Update phases edges
     if offset:
         phases[:offset] = phases[offset]
         phases[-offset:] = phases[-offset - 1]
         yield None
 
 
-def _locate_impulse(dydt, loc, phases, filt, offset, extension_threshold):
+def _locate_flat(dydt, loc, phases, filt, offset, extension_threshold):
 
-    candidates = (dydt > dydt[loc] * extension_threshold) & filt
+    candidates = (np.abs(dydt) < extension_threshold) & filt
+    candidates = signal.medfilt(candidates, 3).astype(bool)
+    candidates, _ = label(candidates)
+    if candidates[loc] == 0:
+        raise ValueError("Least slope {0}, loc {1} is not a candidate {2} (filt {3})".format(
+            dydt[loc], loc, candidates.tolist(), filt.tolist()))
+    if offset:
+        phases[offset: -offset][candidates == candidates[loc]] = CurvePhases.Flat.value
+    else:
+        phases[candidates == candidates[loc]] = CurvePhases.Flat.value
+
+    return _locate_segment(candidates == candidates[loc])
+
+
+def _locate_impulse_or_collapse(dydt, loc, phases, filt, offset, extension_threshold):
+
+    phase = CurvePhases.Impulse if np.sign(dydt[loc]) > 0 else CurvePhases.Collapse
+    comp = operator.gt if phase is CurvePhases.Impulse else operator.lt
+
+    candidates = comp(dydt, dydt[loc] * extension_threshold) & filt
     candidates = signal.medfilt(candidates, 3).astype(bool)
 
     candidates, _ = label(candidates)
     if offset:
-        phases[offset: -offset][candidates == candidates[loc]] = CurvePhases.Impulse.value
+        phases[offset: -offset][candidates == candidates[loc]] = phase.value
     else:
-        phases[candidates == candidates[loc]] = CurvePhases.Impulse.value
+        phases[candidates == candidates[loc]] = phase.value
 
-    return _locate_segment(candidates)
+    return _locate_segment(candidates == candidates[loc])
 
 
 def _locate_segment(filt):  # -> (int, int)
@@ -191,7 +280,7 @@ def _locate_segment(filt):  # -> (int, int)
         where = np.where(labels == 1)[0]
         return where[0], where[-1] + 1
     elif n > 1:
-        warnings.warn("Filter is not homogenous, contains {0} segments".format(n))
+        raise ValueError("Filter is not homogenous, contains {0} segments ({1})".format(n, labels.tolist()))
         return None, None
     else:
         return None, None
@@ -344,7 +433,7 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos):
     d_offset = (phenotyper_object.times.size - dydt.size) / 2
     dydt = np.hstack(([dydt[0] for _ in range(d_offset)], dydt, [dydt[-1] for _ in range(d_offset)]))
 
-    dydt_ranks = dydt.argsort().argsort()
+    dydt_ranks = np.abs(dydt).argsort().argsort()
     offset = (phenotyper_object.times.shape[0] - dydt.shape[0]) / 2
 
     # Smoothing in kernel shape because only want reliable trends
@@ -399,6 +488,12 @@ def _impulse_counter(phase_vector):
     return -np.inf
 
 
+def _collapse_counter(phase_vector):
+    if phase_vector:
+        return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Collapse)
+    return -np.inf
+
+
 class CurvePhaseMetaPhenotypes(Enum):
 
     MajorImpulseYieldContribution = 0
@@ -414,6 +509,7 @@ class CurvePhaseMetaPhenotypes(Enum):
     InitialLag = 20
     ExperimentDoublings = 21
     Modalities = 25
+    Collapses = 26
 
     ResidualGrowth = 30
 
@@ -519,6 +615,10 @@ def filter_plate(plate, meta_phenotype):
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Modalities:
 
         return np.ma.masked_invalid(np.frompyfunc(_impulse_counter, 1, 1)(plate).astype(np.float))
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.Collapses:
+
+        return np.ma.masked_invalid(np.frompyfunc(_collapse_counter, 1, 1)(plate).astype(np.float))
 
     else:
 
