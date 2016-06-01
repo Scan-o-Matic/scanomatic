@@ -227,11 +227,11 @@ def purge():
 def test_executable_is_reachable(path='scan-o-matic'):
 
     try:
-        call([path, '--help'], stdout=PIPE)
-    except IOError:
+        ret = call([path, '--help'], stdout=PIPE)
+    except (IOError, OSError):
         return False
 
-    return True
+    return ret == 0
 
 
 def patch_bashrc_if_not_reachable():
