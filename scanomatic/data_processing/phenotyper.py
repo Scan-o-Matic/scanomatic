@@ -17,10 +17,10 @@ import scanomatic.io.xml.reader as xml_reader_module
 import scanomatic.io.logger as logger
 import scanomatic.io.paths as paths
 import scanomatic.io.image_data as image_data
-from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes,\
+from scanomatic.data_processing.growth_phenotypes import Phenotypes, get_preprocessed_data_for_phenotypes, \
     get_derivative
-from scanomatic.data_processing.curve_phase_phenotypes import phase_phenotypes, filter_plate, CurvePhaseMetaPhenotypes, \
-    VectorPhenotypes
+from scanomatic.data_processing.curve_phase_phenotypes import phase_phenotypes, filter_plate, \
+    CurvePhaseMetaPhenotypes, VectorPhenotypes
 from scanomatic.data_processing.phenotypes import PhenotypeDataType
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData

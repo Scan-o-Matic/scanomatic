@@ -1,5 +1,4 @@
 import numpy as np
-import warnings
 import operator
 from scipy import signal
 from scipy.ndimage import label
@@ -281,7 +280,6 @@ def _locate_segment(filt):  # -> (int, int)
         return where[0], where[-1] + 1
     elif n > 1:
         raise ValueError("Filter is not homogenous, contains {0} segments ({1})".format(n, labels.tolist()))
-        return None, None
     else:
         return None, None
 
