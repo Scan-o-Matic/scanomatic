@@ -122,6 +122,16 @@ class StrainSelector(object):
         md = self.__phenotyper.meta_data
         return [tuple(md.get_data_from_numpy_where(i, s) if s else None) for i, s in enumerate(self.__selection)]
 
-    def get_phenotype(self, phenotype):
+    def get_phenotype(self, phenotype, filtered=False, normalized=False):
+        """Get the phenotypes for the sub-selection.
 
-        return self.__filter(self.__phenotyper.get_phenotype(phenotype))
+        For more information see `scanomatic.data_processing.phenotyper.Phenotyper.get_phenotype`.
+
+        Args:
+            phenotype: The phenotype to get data on
+            filtered: If position marks should be included or just raw data
+            normalized: If it is the normalized data or not.
+
+        Returns: list of phenotype arrays for FilterArrays.
+        """
+        return self.__filter(self.__phenotyper.get_phenotype(phenotype, filtered=filtered, normalized=normalized))
