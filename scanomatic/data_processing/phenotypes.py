@@ -135,6 +135,11 @@ class PhenotypeDataType(Enum):
 
             return True
 
+    @classmethod
+    def classify(cls, phenotype):
+
+        return tuple(t for t in cls if t(phenotype))
+
 
 def get_sort_order(phenotype):
     """
