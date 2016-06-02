@@ -4,16 +4,50 @@ from curve_phase_phenotypes import VectorPhenotypes, CurvePhaseMetaPhenotypes
 
 
 class PhenotypeDataType(Enum):
+    """The enum contains two types of phenotype classifications.
 
+    There are three that deal with data-source/type `Scalar`, `Vector`, `Phases`.
+    There are three that deal with stage `Trusted`, `UnderDevelopment`, `Other`.
+
+    _NOTE_: A stage will always include the more trusted stages phenotypes too.
+    So to see what phenotypes are actually under development one needs to do:
+    ```set(PhenotypeDataType.UnderDevelopment).difference(PhenotypeDataTypes.Trusted)```
+
+    To test if a phenotype is of a certain type you do:
+     ```set(PhenotypeDataType.UnderDevelopment()).difference(PhenotypeDataType.Trusted())```.
+
+    Attributes:
+        Scalar: The phenotype is scalar, this is the default expectation
+        Vector: These are the phenotype that are entire vectors:
+            [`VectorPhenotypes.PhasesPhenotypes`, `VectorPhenotypes.PhasesClassification`,
+             `Phenotypes.GrowthVelocityVector`]
+        Phases: The two vector phenotypes above that clearly deals with phases.
+        Trusted: Phenotypes that have been verified and are unlikely to change.
+        UnderDevelopment: Phenotypes that are very likely to change and may include
+            bugs and errors.
+        Other: Typically disused or discarded phenotypes.
+        All: All growth phenotypes.
+
+    Methods:
+        classify: List the types that a phenotype fulfills.
+
+    """
     Scalar = 0
+    """:type : PhenotypeDataType"""
     Vector = 1
+    """:type : PhenotypeDataType"""
     Phases = 2
+    """:type : PhenotypeDataType"""
 
     Trusted = 10
+    """:type : PhenotypeDataType"""
     UnderDevelopment = 11
+    """:type : PhenotypeDataType"""
     Other = 12
+    """:type : PhenotypeDataType"""
 
     All = 100
+    """:type : PhenotypeDataType"""
 
     def __call__(self, phenotype=None):
 
