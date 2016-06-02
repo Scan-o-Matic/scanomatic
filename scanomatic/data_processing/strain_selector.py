@@ -7,9 +7,42 @@ def scan(plate_meta_data, column, value_function):
 
 
 class StrainSelector(object):
+    """Quick and easy access to sub-selection of phenotype results.
 
+    Attributes:
+        StrainSelector.selection: The positions included in the sub-selection
+        StrainSelector.raw_growth_data: The non-smooth growth data for the sub-selection
+        StrainSelector.smooth_growth_data: The smooth growth data
+        StrainSelector.phenotype_names: The names of the phenotypes extracted.
+        StrainSelector.meta_data: Getting the meta-data
+        StrainSelector.get_phenotype: Getting data for a certain phenotype
+
+    Examples:
+
+        You can add two selections to make the union of the selections
+        Let `s1` and `s2` be `StrainSelector` instances.
+        ```s_combined = s1 + s2```
+
+        You can extend a current `StrainSelector` in place too making it
+        the union of itself and the other.
+        ```s1 += s2```
+
+    See Also:
+        scanomatic.data_processing.phenotyper.Phenotyper.find_in_meta_data:
+            The search method for creating subselections based on meta-data.
+    """
     def __init__(self, phenotyper, selection):
+        """Create a sub-selection accessor.
 
+        Args:
+            phenotyper: a `scanomatic.data_processing.phenotyper.Phenotyper`
+            selection: a list of coordinate tuples with length equal to the
+                number of plates in `phenotyper`. The coordinate tuples should be
+                two length, with a tuple in each position (representing outer and inner
+                indices of coordinates respectively).
+
+        Returns: StrainSelector
+        """
         self.__phenotyper = phenotyper
         self.__selection = selection
 
@@ -60,7 +93,7 @@ class StrainSelector(object):
         return self.__filter(self.__phenotyper.smooth_growth_data)
 
     @property
-    def phenytype_names(self):
+    def phenotype_names(self):
 
         return [phenotype.name for phenotype in self.__phenotyper.analysed_phenotypes]
 
@@ -81,7 +114,7 @@ class StrainSelector(object):
     def vector_phenotypes(self):
 
         # TODO: something here
-        pass
+        raise NotImplemented()
 
     @property
     def meta_data(self):

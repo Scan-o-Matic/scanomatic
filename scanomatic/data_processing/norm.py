@@ -22,7 +22,17 @@ from scanomatic.generics.phenotype_filter import FilterArray, Filter
 
 
 class Offsets(Enum):
+    """Subplate offsets with orientation
+    (`scanomatic.data_processing.phenotyper.Phenotyper` data)
 
+    Indices enumerate from 0.
+
+    Attributes:
+        Offsets.LowerRight: Outer index even, inner index even
+        Offsets.LowerLeft: Outer index even, inner index odd
+        Offsets.UpperLeft: Outer index odd, inner index odd
+        Offsets.UpperRight: Outer index odd, inner index even
+    """
     LowerRight = 0
     LowerLeft = 1
     UpperLeft = 2
