@@ -25,6 +25,7 @@ PHASE_PLOTTING_COLORS = {
     CurvePhases.Acceleration: "#ea5207",
     CurvePhases.Impulse: "#99220c",
     CurvePhases.Retardation: "#c797c1",
+    CurvePhases.Collapse: "#0fa8aa",
     "raw": "#3f040d",
     "smooth": "#849b88"}
 
