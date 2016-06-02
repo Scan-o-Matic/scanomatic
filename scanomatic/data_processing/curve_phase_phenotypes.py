@@ -12,7 +12,17 @@ from scanomatic.data_processing import growth_phenotypes
 
 
 class CurvePhases(Enum):
+    """Phases of curves recognized
 
+    Attributes:
+        CurvePhases.Multiple: Several types for same position, to be considered as an error.
+        CurvePhases.Undetermined: Positions yet to be classified or not fulfilling any classification
+        CurvePhases.Flat: Positions that exhibit no growth or collapse
+        CurvePhases.Acceleration: Positions that are characterized by a positive second derivative.
+        CurvePhases.Retardation: Positions that are characterized by a negative second derivative.
+        CurvePhases.Impulse: Close to linear segment with growth.
+        CurvePhases.Collapse: Close to linear segment with decreasing population size.
+    """
     Multiple = -1
     """:type : CurvePhases"""
     Undetermined = 0
@@ -30,7 +40,16 @@ class CurvePhases(Enum):
 
 
 class Thresholds(Enum):
+    """Thresholds used by the phase algorithm
 
+    Attributes:
+        Thresholds.ImpulseExtension: Factor for impulse and collapse slopes to be considered equal to max/min point.
+        Thresholds.ImpulseSlopeRequirement: Minimum slope to be impulse/collapse.
+        Thresholds.FlatlineSlopRequirement: Maximum slope for something to be flatline.
+        Thresholds.FractionAcceleration: The amount of second derivative signs to be of a certain type to classify as
+            acceleration or deceleration.
+        Thresholds.FractionAccelerationTestDuration: The number of measurements included in `FractionAcceleration` test.
+    """
     ImpulseExtension = 0
     """:type : Thresholds"""
     ImpulseSlopeRequirement = 1
@@ -44,26 +63,129 @@ class Thresholds(Enum):
 
 
 class CurvePhasePhenotypes(Enum):
+    """Phenotypes for individual curve phases.
 
-    # Curvature = 0
+    _NOTE_ Some apply only to some `CurvePhases`.
+
+    Attributes:
+        CurvePhasePhenotypes.PopulationDoublingTime: The average population doubling time of the segment
+        CurvePhasePhenotypes.Duration: The length of the segment in time.
+        CurvePhasePhenotypes.FractionYield: The proportion of population doublings for the entire experiment
+            that this segment is responsible for
+        CurvePhasePhenotypes.Start: Start time of the segment
+        CurvePhasePhenotypes.LinearModelSlope: The slope of the linear model fitted to the segment
+        CurvePhasePhenotypes.LinearModelIntercept: The intercept of the linear model fitted to the segment
+        CurvePhasePhenotypes.AsymptoteAngle: The angle between the initial point slope and the final point slope
+            of the segment
+        CurvePhasePhenotypes.AsymptoteIntersection: The intercept between the asymptotes as fraction of the `Duration`
+            of the segment.
+    """
+
     PopulationDoublingTime = 1
+    """type: CurvePhasePhenotypes"""
     Duration = 2
+    """type: CurvePhasePhenotypes"""
     FractionYield = 3
+    """type: CurvePhasePhenotypes"""
     Start = 4
+    """type: CurvePhasePhenotypes"""
     LinearModelSlope = 5
+    """type: CurvePhasePhenotypes"""
     LinearModelIntercept = 6
+    """type: CurvePhasePhenotypes"""
     AsymptoteAngle = 7
+    """type: CurvePhasePhenotypes"""
     AsymptoteIntersection = 8
+    """type: CurvePhasePhenotypes"""
+
+
+class CurvePhaseMetaPhenotypes(Enum):
+    """Phenotypes of an entire growth-curve based on the phase segmentation.
+
+    Attributes:
+        CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution:
+            The fraction of the total yield (in population doublings) that the
+            `CurvePhases.Impulse` that contribute most to the total yield is
+            responsible for (`CurvePhasePhenotypes.FractionYield`).
+        CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution:
+            As with `CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution`
+            but for the second most important `CurvePhases.Impulse`
+        CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime:
+            The `CurvePhases.Impulse` that contribute most to the
+            total yield, its average population doubling time
+            (`CurvePhasePhenotypes.PopulationDoublingTime`).
+        CurvePhaseMetaPhenotypes.FirstMinorImpulseAveragePopulationDoublingTime:
+            The average population doubling time of
+            the second most contributing `CurvePhases.Impulse`
+
+        CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle:
+            The `CurvePhasePhenotypes.AsymptoteAngle` of the first `CurvePhases.Acceleration`
+        CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteAngle:
+            The `CurvePhasePhenotypes.AsymptoteAngle` of the last `CurvePhases.Retardation`
+        CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect:
+            The `CurvePhasePhenotypes.AsymptoteIntersection` of the first `CurvePhases.Acceleration`
+        CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteIntersect:
+            The `CurvePhasePhenotypes.AsymptoteIntersection` of the last `CurvePhases.Retardation`
+
+        CurvePhaseMetaPhenotypes.InitialLag:
+            The intercept time of the linear model of the first `CurvePhases.Flat` and the first
+            `CurvePhases.Impulse`. Note that this does not have to be the major impulse in the above
+            measurements.
+        CurvePhaseMetaPhenotypes.ExperimentDoublings:
+            (Not implemented) Total doublings
+        CurvePhaseMetaPhenotypes.Modalities:
+            The number of `CurvePhases.Impulse`
+        CurvePhaseMetaPhenotypes.Collapses:
+            The number of `CurvePhases.Collapse`
+
+        CurvePhaseMetaPhenotypes.ResidualGrowth:
+            (Not implemented) Classifying the growth that happens after the last `CurvePhases.Impulse`.
+
+    See Also:
+        filter_plate: Get one of these out of a plate of phase segmentation information
+    """
+    MajorImpulseYieldContribution = 0
+    FirstMinorImpulseYieldContribution = 1
+    MajorImpulseAveragePopulationDoublingTime = 5
+    FirstMinorImpulseAveragePopulationDoublingTime = 6
+
+    InitialAccelerationAsymptoteAngle = 10
+    FinalRetardationAsymptoteAngle = 11
+    InitialAccelerationAsymptoteIntersect = 15
+    FinalRetardationAsymptoteIntersect = 16
+
+    InitialLag = 20
+    ExperimentDoublings = 21
+    Modalities = 25
+    Collapses = 26
+
+    ResidualGrowth = 30
 
 
 class VectorPhenotypes(Enum):
+    """The vector type phenotypes used to store phase segmentation
 
+    Attributes:
+        VectorPhenotypes.PhasesClassifications:
+            1D vector the same length as growth data with the `CurvePhases` values
+            for classification of which phase each population size measurement in the growth data
+            is classified as.
+        VectorPhenotypes.PhasesPhenotypes:
+            1D vector of `CurvePhasePhenotypes` keyed dicts for each segment in the curve.
+    """
     PhasesClassifications = 0
+    """:type : VectorPhenotypes"""
     PhasesPhenotypes = 1
+    """:type : VectorPhenotypes"""
 
 
 class PhaseEdge(Enum):
+    """Segment edges
 
+    Attributes:
+        PhaseEdge.Left: Left edge
+        PhaseEdge.Right: Right edge
+    """
     Left = 0
     """:type : PhaseEdge"""
     Right = 1
@@ -490,26 +612,6 @@ def _collapse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Collapse)
     return -np.inf
-
-
-class CurvePhaseMetaPhenotypes(Enum):
-
-    MajorImpulseYieldContribution = 0
-    FirstMinorImpulseYieldContribution = 1
-    MajorImpulseAveragePopulationDoublingTime = 5
-    FirstMinorImpulseAveragePopulationDoublingTime = 6
-
-    InitialAccelerationAsymptoteAngle = 10
-    FinalRetardationAsymptoteAngle = 11
-    InitialAccelerationAsymptoteIntersect = 15
-    FinalRetardationAsymptoteIntersect = 16
-
-    InitialLag = 20
-    ExperimentDoublings = 21
-    Modalities = 25
-    Collapses = 26
-
-    ResidualGrowth = 30
 
 
 def filter_plate(plate, meta_phenotype):
