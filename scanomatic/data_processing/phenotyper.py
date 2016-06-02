@@ -106,10 +106,11 @@ def get_project_dates(directory_path):
 class SaveData(Enum):
     """Types of data that can be exported to csv.
 
-    SaveData.ScalarPhenotypesRaw: The non-normalized scalar-value phenotypes.
-    SaveData.ScalarPhenotypesNormalized: The normalized scalar-value phenotypes.
-    SaveData.VectorPhenotypesRaw: The non-normalized phenotype vectors.
-    SaveData.VectorPhenotypesNormalized: The normalized phenotype vectors.
+    Attributes:
+        SaveData.ScalarPhenotypesRaw: The non-normalized scalar-value phenotypes.
+        SaveData.ScalarPhenotypesNormalized: The normalized scalar-value phenotypes.
+        SaveData.VectorPhenotypesRaw: The non-normalized phenotype vectors.
+        SaveData.VectorPhenotypesNormalized: The normalized phenotype vectors.
 
     See Also:
         scanomatic.data_processing.phenotypes.PhenotypeDataType: Classification of phenotypes.

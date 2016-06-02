@@ -17,16 +17,16 @@ class PhenotypeDataType(Enum):
      ```set(PhenotypeDataType.UnderDevelopment()).difference(PhenotypeDataType.Trusted())```.
 
     Attributes:
-        Scalar: The phenotype is scalar, this is the default expectation
-        Vector: These are the phenotype that are entire vectors:
+        PhenotypeDataType.Scalar: The phenotype is scalar, this is the default expectation
+        PhenotypeDataType.Vector: These are the phenotype that are entire vectors:
             [`VectorPhenotypes.PhasesPhenotypes`, `VectorPhenotypes.PhasesClassification`,
              `Phenotypes.GrowthVelocityVector`]
-        Phases: The two vector phenotypes above that clearly deals with phases.
-        Trusted: Phenotypes that have been verified and are unlikely to change.
-        UnderDevelopment: Phenotypes that are very likely to change and may include
+        PhenotypeDataType.Phases: The two vector phenotypes above that clearly deals with phases.
+        PhenotypeDataType.Trusted: Phenotypes that have been verified and are unlikely to change.
+        PhenotypeDataType.UnderDevelopment: Phenotypes that are very likely to change and may include
             bugs and errors.
-        Other: Typically disused or discarded phenotypes.
-        All: All growth phenotypes.
+        PhenotypeDataType.Other: Typically disused or discarded phenotypes.
+        PhenotypeDataType.All: All growth phenotypes.
 
     Methods:
         classify: List the types that a phenotype fulfills.
