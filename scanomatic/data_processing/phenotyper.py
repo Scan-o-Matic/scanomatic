@@ -213,9 +213,17 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """
 
         :param phenotype: The phenotype
-         :type phenotype: enum.Enum
+         :type phenotype: [enum.Enum OR str]
         :return: bool
         """
+        if isinstance(phenotype, str):
+            try:
+                phenotype = Phenotypes[phenotype]
+            except KeyError:
+                try:
+                    phenotype = CurvePhaseMetaPhenotypes[phenotype]
+                except KeyError:
+                    return False
 
         if isinstance(phenotype, Phenotypes):
             return self._phenotypes is not None and phenotype.value < self._phenotypes.shape[-1]
