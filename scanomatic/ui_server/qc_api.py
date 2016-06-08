@@ -592,8 +592,14 @@ def add_routes(app):
             d1_row = request.values.get("d2_col",  default=None)
 
         # Ensure format will be correctly interpreted by numpy
-        outer = d1_row if isinstance(d1_row, int) else tuple(d1_row)
-        inner = d2_col if isinstance(d2_col, int) else tuple(d2_col)
+        try:
+            outer = d1_row if isinstance(d1_row, int) else tuple(d1_row)
+        except TypeError:
+            outer = None
+        try:
+            inner = d2_col if isinstance(d2_col, int) else tuple(d2_col)
+        except TypeError:
+            inner = None
 
         if outer is None or inner is None:
             return jsonify(
