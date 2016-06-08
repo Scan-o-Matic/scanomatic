@@ -30,10 +30,11 @@ from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from scanomatic.models.fixture_models import GrayScaleAreaModel, FixturePlateModel
 from scanomatic.ui_server.general import safe_directory_name
 from . import qc_api
-import analysis_api
-import compilation_api
-import scan_api
-import management_api
+from . import analysis_api
+from . import compilation_api
+from . import scan_api
+from . import management_api
+from . import tools_api
 
 _url = None
 _logger = Logger("UI-server")
@@ -687,6 +688,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         return send_from_directory(Paths().ui_root, Paths().ui_fixture_file)
 
     management_api.add_routes(app, rpc_client)
+    tools_api.add_routes(app)
     qc_api.add_routes(app)
     analysis_api.add_routes(app)
     compilation_api.add_routes(app)
