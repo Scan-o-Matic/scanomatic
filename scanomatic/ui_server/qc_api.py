@@ -466,6 +466,103 @@ def add_routes(app):
                  for filt in Filter if filt != Filter.OK},
                 response))
 
+    @app.route("/api/results/set_curve_mark")
+    @app.route("/api/results/set_curve_mark/")
+    @app.route("/api/results/set_curve_mark/<mark>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
+    @app.route("/api/results/set_curve_mark/<mark>/<int:plate>/<path:project>", methods=["POST", "GET"])
+    @app.route("/api/results/set_curve_mark/<mark>/<phenotype>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
+    @app.route("/api/results/set_curve_mark/<mark>/<phenotype>/<int:plate>/<path:project>", methods=["POST", "GET"])
+    @app.route("/api/results/set_curve_mark/<path:project>")
+    def set_curve_mark(plate=None, d1_row=None, d2_col=None, phenotype=None, mark=None, project=None):
+        """Sets a curve filter mark for a position or list of positions
+
+        If several positions should be marked at once the `d1_row` and
+        `d2_col` should be omitted from the url and instead be
+        submitted via POST.
+
+        Args:
+            plate: int, plate index
+            d1_row: int or tuple of ints, the outer coordinate(s) of
+                position(s) to be marked.
+            d2_col: int or tuple of ints, the inner coordinate(s) of
+                position(s) to be marked.
+            phenotype: str, name of the phenotype to mark.
+            mark: str, name of the marking to make.
+            project: str, url-formatted path to the project.
+
+        Returns: json-object
+
+        """
+        url_root = "/api/results/set_curve_mark"
+        path = convert_url_to_path(project)
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
+
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        name = get_project_name(path)
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+
+        # Validate lock, without lock nothing will happen
+        if not lock_key:
+            return jsonify(success=False, reason="Failed to acquire lock on project", is_endpoint=True, **response)
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+
+        # If mark is lacking create urls.
+        if mark is None:
+
+            urls = ["{0}/{1}/{2}/{3}".format(url_root, m.name, i, project)
+                    for (i, p), m in product(enumerate(state.plate_shapes), phenotyper.Filter) if p is not None]
+
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
+        # If plate not submitted give plate completing paths
+        if plate is None:
+
+            urls = ["{0}/{1}/{2}/{3}".format(url_root, "/".join((mark, phenotype) if phenotype else mark), i, project)
+                    for i, p in enumerate(state.plate_shapes) if p is not None]
+
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
+        # Process position(s) info
+        if d1_row is None:
+            d1_row = request.values.get("d1_row", default=None)
+
+        if d2_col is None:
+            d1_row = request.values.get("d2_col",  default=None)
+
+        # Ensure format will be correctly interpreted by numpy
+        outer = d1_row if isinstance(d1_row, int) else tuple(d1_row)
+        inner = d2_col if isinstance(d2_col, int) else tuple(d2_col)
+
+        if outer is None or inner is None:
+            return jsonify(
+                success=False, reason="Positional coordinates are not valid ({0}, {1})".format(outer, inner),
+                is_endpoint=True, **response)
+
+        # Validate that the mark is understood
+        try:
+            mark = phenotyper.Filter[mark]
+        except KeyError:
+            return jsonify(
+                success=False,
+                reason="Invalid position mark ({0}), supported {1}".format(mark, tuple(f for f in phenotyper.Filter)),
+                is_endpoint=True, **response)
+
+        # Validate that the phenotype is understood and exists
+        if phenotype is not None and phenotype not in state:
+            return jsonify(
+                success=False,
+                reason="Phenotype '{0}' not included in extraction".format(mark, tuple(f for f in phenotyper.Filter)),
+                is_endpoint=True, **response
+            )
+
+        state.add_position_mark(plate, (outer, inner), phenotype, mark)
+        state.save_state(path, ask_if_overwrite=False)
+
+        return jsonify(success=True, is_endpoint=True, **response)
+
     @app.route("/api/results/curves")
     @app.route("/api/results/curves/")
     @app.route("/api/results/curves/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
