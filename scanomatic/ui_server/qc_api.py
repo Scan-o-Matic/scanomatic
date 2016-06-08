@@ -572,6 +572,10 @@ def add_routes(app):
 
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
+        # Update phenotype if submitted via POST
+        if phenotype is None:
+            phenotype = request.values.get("phenotype", default=None)
+
         # If plate not submitted give plate completing paths
         if plate is None:
 
@@ -664,12 +668,16 @@ def add_routes(app):
         colony_image = ["/api/compile/colony_image/{4}/{0}/{1}/{2}/{3}".format(plate, d1_row, d2_col, project, t)
                         for t, _ in enumerate(state.times)]
 
+        mark_all_urls = ["/api/results/mark/set/{0}/{1}/{2}/{3}/{4}".format(m.name, plate, d1_row, d2_col, project)
+                         for m in phenotyper.Filter]
+
         return jsonify(time_data=state.times.tolist(),
                        smooth_data=state.smooth_growth_data[plate][d1_row, d2_col].tolist(),
                        raw_data=state.raw_growth_data[plate][d1_row, d2_col].tolist(),
                        segmentations=segmentations,
-                       **json_response(["film_urls", "colony_image"],
-                                       dict(film_urls=film_url, colony_image=colony_image, **response)))
+                       **json_response(["film_urls", "colony_image", "mark_all_urls"],
+                                       dict(film_urls=film_url, colony_image=colony_image,
+                                            mark_all_urls=mark_all_urls, **response)))
 
     @app.route("/api/results/movie/make")
     @app.route("/api/results/movie/make/")
