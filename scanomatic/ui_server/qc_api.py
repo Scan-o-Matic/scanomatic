@@ -466,13 +466,60 @@ def add_routes(app):
                  for filt in Filter if filt != Filter.OK},
                 response))
 
-    @app.route("/api/results/set_curve_mark")
-    @app.route("/api/results/set_curve_mark/")
-    @app.route("/api/results/set_curve_mark/<mark>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
-    @app.route("/api/results/set_curve_mark/<mark>/<int:plate>/<path:project>", methods=["POST", "GET"])
-    @app.route("/api/results/set_curve_mark/<mark>/<phenotype>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
-    @app.route("/api/results/set_curve_mark/<mark>/<phenotype>/<int:plate>/<path:project>", methods=["POST", "GET"])
-    @app.route("/api/results/set_curve_mark/<path:project>")
+    @app.route("/api/results/curve_mark/undo/")
+    @app.route("/api/results/curve_mark/undo/")
+    @app.route("/api/results/curve_mark/undo/<int:plate>/<path:project>")
+    @app.route("/api/results/curve_mark/undo/<path:project>")
+    def undo_curve_mark(plate=None, project=None):
+        """Undo last curve mark
+
+        Args:
+            plate: int, index of plate to invoke undo on
+            project: the url-formatted path
+
+        Returns: json-object
+            Specific keys:
+            'had_effect' key implies if undo did anything, typically
+                False means there's no more undo.
+
+        """
+        url_root = "/api/results/set_curve_mark/undo"
+        path = convert_url_to_path(project)
+        if not phenotyper.path_has_saved_project_state(path):
+
+            return jsonify(**json_response(["urls"], dict(is_project=False, **get_search_results(path, url_root))))
+
+        lock_key = _validate_lock_key(path, request.values.get("lock_key"))
+        name = get_project_name(path)
+        response = dict(is_project=True, project_name=name, **_get_json_lock_response(lock_key))
+
+        # Validate lock, without lock nothing will happen
+        if not lock_key:
+            return jsonify(success=False, reason="Failed to acquire lock on project", is_endpoint=True, **response)
+
+        state = phenotyper.Phenotyper.LoadFromState(path)
+
+        # If plate not submitted give plate completing paths
+        if plate is None:
+
+            urls = ["{0}/{1}/{2}".format(url_root, i, project)
+                    for i, p in enumerate(state.plate_shapes) if p is not None]
+
+            return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+
+        had_effect = state.undo(plate)
+        state.save_state(path, ask_if_overwrite=False)
+
+        return jsonify(success=True, is_endpoint=True, had_effect=had_effect, **response)
+
+    @app.route("/api/results/curve_mark/set")
+    @app.route("/api/results/curve_mark/set/")
+    @app.route("/api/results/curve_mark/set/<mark>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>",
+               methods=["POST", "GET"])
+    @app.route("/api/results/curve_mark/set/<mark>/<int:plate>/<path:project>", methods=["POST", "GET"])
+    @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
+    @app.route("/api/results/curve_mark/set/<mark>/<phenotype>/<int:plate>/<path:project>", methods=["POST", "GET"])
+    @app.route("/api/results/curve_mark/set/<path:project>")
     def set_curve_mark(plate=None, d1_row=None, d2_col=None, phenotype=None, mark=None, project=None):
         """Sets a curve filter mark for a position or list of positions
 
@@ -480,20 +527,25 @@ def add_routes(app):
         `d2_col` should be omitted from the url and instead be
         submitted via POST.
 
+        Supports submitting `d1_row`, `d2_col` and `phenotype` via GET
+        and POST as well as in the actual url.
+
         Args:
             plate: int, plate index
             d1_row: int or tuple of ints, the outer coordinate(s) of
                 position(s) to be marked.
             d2_col: int or tuple of ints, the inner coordinate(s) of
                 position(s) to be marked.
-            phenotype: str, name of the phenotype to mark.
+            phenotype: str, name of the phenotype to mark. If omitted
+                and no `phenotype` value submitted by POST, mark is
+                applied to all phenotypes.
             mark: str, name of the marking to make.
             project: str, url-formatted path to the project.
 
         Returns: json-object
 
         """
-        url_root = "/api/results/set_curve_mark"
+        url_root = "/api/results/set_curve_mark/set"
         path = convert_url_to_path(project)
         if not phenotyper.path_has_saved_project_state(path):
 
