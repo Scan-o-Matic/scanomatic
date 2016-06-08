@@ -1331,10 +1331,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         Args:
             plate: The plate index (0 for first plate)
+
+        Returns:
+            bool, If anything was undone
         """
         if len(self._phenotype_filter_undo[plate]) == 0:
             self._logger.info("No more actions to undo")
-            return
+            return False
 
         position_list, phenotype, previous_state = self._phenotype_filter_undo[plate].pop()
         self._logger.info("Setting {0} for positions {1} to state {2}".format(
@@ -1350,6 +1353,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             self._phenotype_filter[plate][phenotype][position_list] = previous_state
         else:
             self._logger.warning("Could not undo for {0} because no filter present for phenotype".format(phenotype))
+            return False
+        return True
 
     def plate_has_any_colonies_removed(self, plate):
         """Get if plate has anything removed.
