@@ -142,7 +142,8 @@ def add_routes(app):
 
         return jsonify(**json_response(
             ["urls", "add_lock", "remove_lock", "add_meta_data", "meta_data_column_names",
-             "phenotype_names", "curves", "quality_index", "gridding", "analysis_instructions"],
+             "phenotype_names", "curves", "quality_index", "gridding", "analysis_instructions", "curve_mark_undo",
+             "curve_mark_set"],
             dict(
                 project=project,
                 is_project=is_project,
@@ -154,6 +155,8 @@ def add_routes(app):
                 meta_data_column_names=convert_path_to_url("/api/results/meta_data/column_names", path)
                 if is_project else None,
 
+                curve_mark_undo=convert_path_to_url("/api/results/curve_mark/undo", path) if is_project else None,
+                curve_mark_set=convert_path_to_url("/api/results/curve_mark/set", path) if is_project else None,
                 phenotype_names=convert_path_to_url("/api/results/phenotype_names", path) if is_project else None,
                 curves=convert_path_to_url("/api/results/curves", path) if is_project else None,
                 quality_index=convert_path_to_url("/api/results/quality_index", path) if is_project else None,
