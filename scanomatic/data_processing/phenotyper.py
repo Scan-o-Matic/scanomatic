@@ -686,7 +686,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self.set("smooth_growth_data", self._raw_growth_data.copy())
         self._logger.info("Smoothing Started")
         median_kernel = np.ones((1, self._median_kernel_size))
-
+        times = self.times
+        # This conversion is done to reflect that previous filter worked on
+        # indices and expected ratio to hours is 1:3.
+        gauss_kwargs = {'sigma': self._gaussian_filter_sigma / 3.0}
         for plate in self._smooth_growth_data:
 
             if plate is None:
@@ -700,8 +703,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             plate_as_flat[...] = median_filter(
                 plate_as_flat, footprint=median_kernel, mode='reflect')
 
-            plate_as_flat[...] = gaussian_filter1d(
-                plate_as_flat, sigma=self._gaussian_filter_sigma, mode='reflect', axis=-1)
+            plate_as_flat[...] = tuple(
+                merge_convolve(v, times, func_kwargs=gauss_kwargs) for v in plate_as_flat
+            )
 
         self._logger.info("Smoothing Done")
 
