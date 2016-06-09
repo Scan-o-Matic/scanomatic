@@ -7,6 +7,8 @@ import pickle
 from enum import Enum
 from types import StringTypes
 import glob
+from scipy.stats import norm
+from itertools import izip
 
 #
 #   INTERNAL DEPENDENCIES
@@ -26,6 +28,86 @@ from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
 from scanomatic.data_processing.norm import Offsets, get_normailzed_data
+
+
+def time_based_gaussian_weighted_mean(data, time, sigma=1):
+    center = (time.size - time.size % 2) / 2
+    delta_time = np.abs(time - time[center])
+    kernel = norm.pdf(delta_time, loc=0, scale=sigma)
+    finite = np.isfinite(data)
+    if not finite.any() or not finite[center]:
+        return np.nan
+    kernel /= kernel[finite].sum()
+    return (data[finite] * kernel[finite]).sum()
+
+
+class EdgeCondition(Enum):
+    Reflect = 0
+    """:type : EdgeCondition"""
+    Symmetric = 1
+    """:type : EdgeCondition"""
+    Nearest = 2
+    """:type : EdgeCondition"""
+    Valid = 3
+    """:type : EdgeCondition"""
+
+
+def edge_condition(arr, mode=EdgeCondition.Reflect, kernel_size=3):
+
+    if not kernel_size % 2 == 1:
+        raise ValueError("Only odd-size kernels supported")
+
+    origin = (kernel_size - 1) / 2
+    idx = 0
+
+    # First edge:
+    if mode is EdgeCondition.Symmetric:
+        while idx < origin:
+            yield np.hstack((arr[:origin - idx][::-1], arr[:idx + 1 + origin]))
+            idx += 1
+
+    elif mode is EdgeCondition.Nearest:
+        while idx < origin:
+            yield np.hstack((tuple(arr[0] for _ in xrange(origin - idx)), arr[:idx + 1 + origin]))
+            idx += 1
+
+    elif mode is EdgeCondition.Reflect:
+        while idx < origin:
+            yield np.hstack((arr[1: origin - idx + 1][::-1], arr[:idx + 1 + origin]))
+            idx += 1
+    elif mode is EdgeCondition.Valid:
+        pass
+
+    # Valid range
+    while arr.size - idx > origin:
+        yield arr[idx - origin: idx + origin + 1]
+        idx += 1
+
+    # Second edge
+    if mode is EdgeCondition.Symmetric:
+        while idx < arr.size:
+            yield np.hstack((arr[idx - origin:], arr[arr.size - idx - origin - 1:][::-1]))
+            idx += 1
+
+    elif mode is EdgeCondition.Nearest:
+        while idx < arr.size:
+            yield np.hstack((arr[idx - origin:], tuple(arr[-1] for _ in xrange(-1*(arr.size - idx - origin - 1)))))
+            idx += 1
+
+    elif mode is EdgeCondition.Reflect:
+        while idx < arr.size:
+            yield np.hstack((arr[idx - origin:], arr[arr.size - idx - origin - 2: -1][::-1]))
+            idx += 1
+    elif mode is EdgeCondition.Valid:
+        pass
+
+
+def merge_convolve(arr1, arr2, edge_condition_mode=EdgeCondition.Reflect, kernel_size=5,
+                   func=time_based_gaussian_weighted_mean, func_kwargs={}):
+
+    return tuple(func(v1, v2, **func_kwargs) for v1, v2 in izip(
+        edge_condition(arr1, mode=edge_condition_mode, kernel_size=kernel_size),
+        edge_condition(arr2, mode=edge_condition_mode, kernel_size=kernel_size)))
 
 
 def get_phenotype(name):
