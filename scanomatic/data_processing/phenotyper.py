@@ -646,7 +646,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self._logger.info("Removing filter undo history")
             self._phenotype_filter_undo = None
 
-    def extract_phenotypes(self, keep_filter=False):
+    def extract_phenotypes(self, keep_filter=False, resmoothen=False):
         """Extract phenotypes given the current inclusion level
 
         Args:
@@ -662,7 +662,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         self._logger.info("Extracting phenotypes. This will take a while...")
 
-        if not self.has_smooth_growth_data:
+        if not self.has_smooth_growth_data or resmoothen:
             self._smoothen()
 
         for _ in self._calculate_phenotypes():
