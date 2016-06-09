@@ -1,7 +1,7 @@
 import numpy as np
 import operator
 from scipy import signal
-from scipy.ndimage import label
+from scipy.ndimage import label, generic_filter
 from scipy.stats import linregress
 
 from enum import Enum
@@ -433,12 +433,23 @@ def _get_filter(left=None, right=None, filt=None, size=None):
     return filt
 
 
+def _custom_filt(v, max_gap=3, min_length=3):
+
+    w, = np.where(v)
+    if not w.any():
+        return False
+    filted = signal.convolve(v[w[0]:w[-1] + 1] == np.False_, (1,)*max_gap, mode='same') < max_gap
+    padded = np.hstack([(0,), filted, (0,)]).astype(int)
+    diff = np.diff(padded)
+    return (np.where(diff < 0)[0] - np.where(diff > 0)[0]).max() >= min_length
+
+
 def _locate_acceleration(dydt, ddydt_signs, phases, left, right, offset, flatline_threshold, filt=None):
 
     candidates = _get_filter(left, right, size=dydt.size, filt=filt)
     candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs == 1)
 
-    candidates2 = signal.medfilt(candidates2, 3).astype(bool)
+    candidates2 = generic_filter(candidates2, _custom_filt, size=9, mode='nearest')
     candidates2, label_count = label(candidates2)
 
     if label_count:
@@ -463,7 +474,7 @@ def _locate_retardation(dydt, ddydt_signs, phases, left, right, offset, flatline
     candidates = _get_filter(left, right, size=dydt.size, filt=filt)
     candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs == -1)
 
-    candidates2 = signal.medfilt(candidates2, 3).astype(bool)
+    candidates2 = generic_filter(candidates2, _custom_filt, size=9, mode='nearest')
     candidates2, label_count = label(candidates2)
 
     if label_count:
