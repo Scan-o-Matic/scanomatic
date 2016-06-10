@@ -307,10 +307,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 except KeyError:
                     return False
 
-        if isinstance(phenotype, Phenotypes):
+        if isinstance(phenotype, Phenotypes) and self._phenotypes is not None:
             return self._phenotypes is not None and phenotype.value < self._phenotypes.shape[-1]
-        elif isinstance(phenotype, CurvePhaseMetaPhenotypes):
+        elif isinstance(phenotype, CurvePhaseMetaPhenotypes) and self._vector_meta_phenotypes is not None:
             return any(phenotype in plate for plate in self._vector_meta_phenotypes if plate is not None)
+        return False
 
     def set_phenotype_inclusion_level(self, level):
         """Change which phenotypes to be included in feature extraction.
