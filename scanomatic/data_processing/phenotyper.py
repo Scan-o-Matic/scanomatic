@@ -546,6 +546,16 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         return self._smooth_growth_data
 
     @property
+    def curve_segments(self):
+
+        try:
+            return [self._vector_phenotypes[plate][VectorPhenotypes.PhasesClassifications] for
+                    plate in self.enumerate_plates]
+
+        except (ValueError, IndexError, TypeError, KeyError):
+            return None
+
+    @property
     def enumerate_plates(self):
 
         for i, _ in enumerate(self._raw_growth_data):
