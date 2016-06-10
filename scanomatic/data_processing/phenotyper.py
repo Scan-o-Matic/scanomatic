@@ -1301,6 +1301,11 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
     def _init_remove_filter_and_undo_actions(self):
 
+        if self._phenotypes is None:
+            self._phenotype_filter = None
+            self._phenotype_filter_undo = None
+            return
+
         if not self._correct_shapes(self._phenotypes, self._phenotype_filter):
 
             if self._phenotype_filter is not None:
