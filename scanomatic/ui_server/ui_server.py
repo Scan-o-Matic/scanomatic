@@ -35,6 +35,7 @@ from . import compilation_api
 from . import scan_api
 from . import management_api
 from . import tools_api
+from . import data_api
 
 _url = None
 _logger = Logger("UI-server")
@@ -693,6 +694,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     analysis_api.add_routes(app)
     compilation_api.add_routes(app)
     scan_api.add_routes(app)
+    data_api.add_routes(app)
 
     try:
         if is_local:
