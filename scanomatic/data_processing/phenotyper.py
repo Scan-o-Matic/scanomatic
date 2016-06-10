@@ -8,7 +8,7 @@ from enum import Enum
 from types import StringTypes
 import glob
 from scipy.stats import norm
-from itertools import izip
+from itertools import izip, chain
 
 #
 #   INTERNAL DEPENDENCIES
@@ -897,6 +897,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             return self._vector_phenotypes[plate][VectorPhenotypes.PhasesClassifications][outer, inner]
         except (ValueError, IndexError, TypeError, KeyError):
             return None
+
+    @property
+    def phenotypes(self):
+        return tuple(p for p in chain(Phenotypes, CurvePhaseMetaPhenotypes) if p in self)
 
     @property
     def phenotypes_that_normalize(self):
