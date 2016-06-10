@@ -114,13 +114,16 @@ def add_routes(app):
             state.set_control_surface_offsets(phenotyper.Offsets[reference_offset])
 
             return jsonify(smooth_growth_data=json_data(state.smooth_growth_data),
-                            phenotypes={pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
-                                        for pheno in state.phenotypes},
-                           phenotypes_normed={pheno.name: [p.tojson() for p in state.get_phenotype(pheno, normalized=True)]
-                                              for pheno in state.phenotypes_that_normalize},
+                           phenotypes={
+                               pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
+                               for pheno in state.phenotypes},
+                           phenotypes_normed={
+                               pheno.name: [p.tojson() for p in state.get_phenotype(pheno, normalized=True)]
+                               for pheno in state.phenotypes_that_normalize},
                            curve_phases=json_data(curve_segments))
 
         return jsonify(smooth_growth_data=json_data(state.smooth_growth_data),
-                       phenotypes={pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
-                                   for pheno in state.phenotypes},
+                       phenotypes={
+                           pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
+                           for pheno in state.phenotypes},
                        curve_phases=json_data(curve_segments))
