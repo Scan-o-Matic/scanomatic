@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import csv
-from scipy.ndimage import median_filter, gaussian_filter1d
+from scipy.ndimage import median_filter
 from collections import deque
 import pickle
 from enum import Enum
