@@ -394,6 +394,8 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         image = np.array(request.json.get("image", [[]]))
         background_filter = np.array(request.json.get("background_filter"))
+        # TODO: Continue here to get cells per pixel
+        # TODO: Then add way to calculate features based on manual filters and cell-image
         raise NotImplemented()
 
     # End of adding routes
