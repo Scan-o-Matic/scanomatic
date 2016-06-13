@@ -3,7 +3,7 @@ function get_path_suggestions(input, isDirectory, suffix, callback) {
     if (suffix == undefined)
         suffix = "";
 
-    $.get("/data/" + $(input).val() + "?suffix=" + suffix + "&isDirectory=" + (isDirectory ? 1 : 0), function(data, status) {
+    $.get("/api/tools/path/" + $(input).val() + "?suffix=" + suffix + "&isDirectory=" + (isDirectory ? 1 : 0), function(data, status) {
         var val = $(input).val();
         $(input).autocomplete({source: data.suggestions});
         if (val == "" || (data.path == "root/" && val.length < data.path.length))
