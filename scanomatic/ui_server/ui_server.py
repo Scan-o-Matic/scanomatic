@@ -17,7 +17,6 @@ from scanomatic.models.compile_project_model import COMPILE_ACTION
 from scanomatic.models.factories.analysis_factories import AnalysisModelFactory
 from scanomatic.models.factories.compile_project_factory import CompileProjectFactory
 from scanomatic.models.factories.features_factory import FeaturesFactory
-from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 
 from . import qc_api
