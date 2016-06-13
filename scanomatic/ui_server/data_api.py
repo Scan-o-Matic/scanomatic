@@ -12,6 +12,7 @@ from scanomatic.image_analysis.image_grayscale import get_grayscale
 from scanomatic.io.logger import Logger
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.fixture_models import GrayScaleAreaModel
+from scanomatic.image_analysis.image_basics import Image_Transpose
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
@@ -324,5 +325,20 @@ def add_routes(app, rpc_client, is_debug_mode):
             request.files.keys(), request.values.keys()))
 
         return jsonify(markers=[], image="")
+
+    @app.route("/api/data/image/transform/grayscale", methods=['POST'])
+    def image_transform_grayscale():
+
+        image = np.array(request.json.get("image", [[]]))
+        grayscale_values = np.array(request.json.get("grayscale_values", []))
+        grayscale_targets = request.json.get("grayscale_targets", [])
+        if not grayscale_targets:
+            grayscale_targets = getGrayscale(request.json.get("grayscale_name", ""))['targets']
+
+        transpose_polynomial = Image_Transpose(
+            sourceValues=grayscale_values,
+            targetValues=grayscale_targets)
+
+        return jsonify(image=transpose_polynomial(image).tolist())
 
     # End of adding routes
