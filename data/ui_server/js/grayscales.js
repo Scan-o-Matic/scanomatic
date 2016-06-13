@@ -3,7 +3,7 @@ var grayscale_selector_class = ".grayscale-selector";
 
 function get_grayscales(options) {
     options.empty();
-    $.get("/grayscales?names=1", function(data, status) {
+    $.get("/api/data/grayscales", function(data, status) {
         if (data.grayscales) {
             for (var i=0; i<data.grayscales.length; i++)
                 options.append($("<option />").val(data.grayscales[i]).text(data.grayscales[i]));

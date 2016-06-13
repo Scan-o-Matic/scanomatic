@@ -1,7 +1,9 @@
 from flask import request, Flask, jsonify
-from scanomatic.data_processing import phenotyper
 from types import ListType
 import numpy as np
+
+from scanomatic.data_processing import phenotyper
+from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
 
 
 def _depth(arr, lvl=1):
@@ -127,3 +129,11 @@ def add_routes(app):
                            pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
                            for pheno in state.phenotypes},
                        curve_phases=json_data(curve_segments))
+
+    @app.route("/api/data/grayscales", methods=['post', 'get'])
+    @app.route("/api/data/grayscales/", methods=['post', 'get'])
+    def _grayscales():
+
+        return jsonify(grayscales=getGrayscales())
+
+    # End of adding routes

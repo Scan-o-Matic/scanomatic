@@ -1,11 +1,10 @@
-import glob
 import numpy as np
 import os
 import shutil
 import time
 import webbrowser
 from flask import Flask, request, send_from_directory, redirect, jsonify, abort, render_template
-from itertools import chain
+
 from socket import error
 from threading import Thread
 from types import StringTypes
@@ -95,6 +94,8 @@ def usable_markers(markers, image):
 
         Note that image shape comes in y, x order while markers come in x, y order
 
+        Args:
+            marker: (x, y) coordinates
         """
         val = (marker > 0).all() and marker[0] < image.shape[1] and marker[1] < image.shape[0]
         if not val:
@@ -239,7 +240,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _status(status_type=""):
 
         if status_type != "" and not rpc_client.online:
-            return jsonify(sucess= False, reason= "Server offline")
+            return jsonify(sucess=False, reason="Server offline")
 
         if status_type == 'queue':
             return jsonify(success=True, data=rpc_client.get_queue_status())
@@ -366,7 +367,8 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
                  pinning_formats=request.json.get("pinning_formats"),
                  fixture=request.json.get("fixture"),
                  scanner=request.json.get("scanner"),
-                 scanner_hardware=request.json.get("scanner_hardware") if "scanner_hardware" in request.json else "EPSON V700",
+                 scanner_hardware=request.json.get("scanner_hardware") if "scanner_hardware" in request.json
+                 else "EPSON V700",
                  mode=request.json.get("mode") if "mode" in request.json else "TPU",
                  plate_descriptions=plate_descriptions,
                  auxillary_info=request.json.get("auxillary_info"),
@@ -397,16 +399,18 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
             path = request.values.get('path')
             path = os.path.abspath(path.replace('root', Config().paths.projects_root))
-            is_local = bool(int(request.values.get('local')))
-            fixture=request.values.get("fixture")
+            fixture_is_local = bool(int(request.values.get('local')))
+            fixture = request.values.get("fixture")
             chain_steps = bool(request.values.get('chain', default=1, type=int))
             _logger.info("Attempting to compile on path {0}, as {1} fixture{2} (Chaining: {3})".format(
-                path, ['global', 'local'][is_local], is_local and "." or " (Fixture {0}).".format(fixture),
+                path,
+                'local' if fixture_is_local else 'global',
+                fixture_is_local and "." or " (Fixture {0}).".format(fixture),
                 chain_steps))
 
             job_id = rpc_client.create_compile_project_job(
                 CompileProjectFactory.dict_from_path_and_fixture(
-                    path, fixture=fixture, is_local=is_local,
+                    path, fixture=fixture, is_local=fixture_is_local,
                     compile_action=COMPILE_ACTION.InitiateAndSpawnAnalysis if chain_steps else
                     COMPILE_ACTION.Initiate))
 
@@ -429,16 +433,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
             except StopIteration:
                 return jsonify(scanner=None, success=False, reason="Unknown scanner or query '{0}'".format(
                     scanner_query))
-
-
-    @app.route("/grayscales", methods=['post', 'get'])
-    def _grayscales():
-
-        if request.args.get("names"):
-
-            return jsonify(grayscales=getGrayscales())
-
-        return ""
 
     @app.route("/fixtures/<name>")
     def _fixture_data(name=None):
