@@ -1,5 +1,5 @@
 import os
-from types import StringTypes
+from types import StringTypes, ListType, DictType
 from scanomatic.generics.abstract_model_factory import AbstractModelFactory, rename_setting, email_serializer
 import scanomatic.models.analysis_model as analysis_model
 
@@ -376,3 +376,15 @@ class AnalysisFeaturesFactory(AbstractModelFactory):
         """
 
         return super(AnalysisFeaturesFactory, cls).create(**settings)
+
+    @classmethod
+    def deep_to_dict(cls, model_or_data):
+
+        if isinstance(model_or_data, cls.MODEL):
+            return {k: cls.deep_to_dict(model_or_data[k]) for k in cls.to_dict(model_or_data)}
+        elif isinstance(model_or_data, DictType):
+            return {k: cls.deep_to_dict(model_or_data[k]) for k in model_or_data}
+        elif isinstance(model_or_data, ListType):
+            return [cls.deep_to_dict(v) for v in model_or_data]
+        else:
+            return model_or_data
