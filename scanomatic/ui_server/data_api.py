@@ -62,8 +62,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         is_debug_mode (bool): If running in debug-mode
     """
 
-    @app.route("/api/data/phenotype", methods=['POST'])
-    @app.route("/api/data/phenotype/", methods=['POST'])
+    @app.route("/api/data/phenotype", methods=['POST', 'GET'])
+    @app.route("/api/data/phenotype/", methods=['POST', 'GET'])
     def data_phenotype():
         """Takes growth data extracts phenotypes and normalizes.
 
@@ -178,8 +178,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         return jsonify(source_values=values, target_values=grayscale_object['targets'],
                        grayscale=valid, reason=None if valid else "No Grayscale")
 
-    @app.route("api/data/fixture/names")
-    @app.route("api/data/fixture/names/")
+    @app.route("/api/data/fixture/names")
+    @app.route("/api/data/fixture/names/")
     def _fixure_names():
 
         if rpc_client.online:
