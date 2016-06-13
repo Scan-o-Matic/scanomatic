@@ -261,7 +261,7 @@ function testAsGrayScale(plate) {
     if (plate) {
         var grayscale_name = GetSelectedGrayscale();
         $.ajax({
-            url: "?grayscale=1&fixture=" + fixture_name + "&grayscale_name=" + grayscale_name,
+            url: "/api/data/grayscale/" + fixture_name + "?grayscale_name=" + grayscale_name,
             method: "POST",
             data: plate,
             success: function (data) {
@@ -308,7 +308,7 @@ function SetAllowDetect() {
 function get_fixtures() {
     var options = $(current_fixture_id);
     options.empty();
-    $.get("/fixtures?names=1", function(data, status) {
+    $.get("/api/data/fixture/names", function(data, status) {
         $.each(data.fixtures, function() {
             options.append($("<option />").val(this).text(get_fixture_as_name(this)));
         })
@@ -336,7 +336,7 @@ function get_fixture() {
     load_fixture(options.val());
     load_fixture_image(get_fixture_from_name(options.val()));
     $.ajax({
-        url: '/fixtures/' + options.val(),
+        url: '/api/data/fixture/get/' + options.val(),
         type: "GET",
         success: function(data) {
             if (data.success) {
@@ -372,13 +372,12 @@ function detect_markers() {
     var formData = new FormData();
     formData.append("markers", $(new_fixture_markers_id).val());
     formData.append("image", $(new_fixture_image_id)[0].files[0]);
-    formData.append("name", $(new_fixture_name).val());
     InputEnabled($(new_fixture_detect_id), false);
     var button = $(save_fixture_button);
     InputEnabled(button, false);
     $(new_fixture_detect_id).val("...");
     $.ajax({
-        url: '?detect=1',
+        url: '/api/data/markers/detect/' + $(new_fixture_name).val(),
         type: 'POST',
         contentType: false,
         enctype: 'multipart/form-data',
@@ -446,16 +445,14 @@ function set_fixture_markers(data) {
 }
 
 function SaveFixture() {
-    var action = $(save_fixture_action_id).val();
     var button = $(save_fixture_button);
     InputEnabled(button, false);
     payload = {
         markers: markers,
         grayscale_name: GetSelectedGrayscale(),
-        areas: areas,
-        name: fixture_name};
+        areas: areas};
     $.ajax({
-        url:"/fixtures?" + action + "=1",
+        url:"/api/data/fixture/set/" + fix_name,
         data: JSON.stringify(payload, null, '\t'),
         contentType: 'application/json;charset=UTF-8',
         dataType: "json",
@@ -496,11 +493,10 @@ function RemoveFixture() {
                         buttons: {
                             Yes: function() {
 
-                                payload = {
-                                    name: fixture_name};
+                                payload = {};
 
                                 $.ajax({
-                                    url: "/fixtures?remove=1",
+                                    url: "/api/data/fixture/remove/" + fixture_name,
                                     data: payload,
                                     method: "POST",
                                     success: function(data) {
