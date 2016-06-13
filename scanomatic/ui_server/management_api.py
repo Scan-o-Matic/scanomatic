@@ -101,3 +101,14 @@ def add_routes(app, rpc_client):
         elif action == 'shutdown':
             shutdown_server()
             return jsonify(success=True)
+
+    @app.route("/api/job/<job_id>/<job_command>")
+    def _communicate_with_job(job_id="", job_command=""):
+
+        if rpc_client.online:
+            val = rpc_client.communicate(job_id, job_command)
+            return jsonify(success=val, reason=None if val else "Refused by server")
+
+        return jsonify(success=False, reason="Server offline")
+
+    # END OF ADDING ROUTES

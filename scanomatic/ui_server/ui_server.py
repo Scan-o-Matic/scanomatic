@@ -95,15 +95,6 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
         if font:
             return send_from_directory(Paths().ui_font, font)
 
-    @app.route("/job/<job_id>/<job_command>")
-    def _communicate_with_job(job_id="", job_command=""):
-
-        if rpc_client.online:
-            val = rpc_client.communicate(job_id, job_command)
-            return jsonify(success=val, reason=None if val else "Refused by server")
-
-        return jsonify(success=False, reason="Server offline")
-
     @app.route("/status")
     @app.route("/status/<status_type>")
     def _status(status_type=""):

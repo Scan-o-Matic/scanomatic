@@ -150,7 +150,7 @@ function stopDialogue(button) {
                         button = null;
 
                         $.ajax({
-                        url: "/job/" + job_id + "/stop",
+                        url: "/api/job/" + job_id + "/stop",
                         method: "GET",
                         success: function (data) {
                             if (data.success) {
