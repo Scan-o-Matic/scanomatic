@@ -1,8 +1,9 @@
 from flask import request, Flask, jsonify, send_from_directory
-from types import ListType
+from types import ListType, DictType
 import numpy as np
 import os
 import shutil
+from enum import Enum
 
 from scanomatic.data_processing import phenotyper
 from scanomatic.image_analysis.grayscale import getGrayscales, getGrayscale
@@ -13,6 +14,10 @@ from scanomatic.io.logger import Logger
 from scanomatic.models.factories.fixture_factories import FixtureFactory
 from scanomatic.models.fixture_models import GrayScaleAreaModel
 from scanomatic.image_analysis.image_basics import Image_Transpose
+from scanomatic.image_analysis.grid_cell import GridCell
+from scanomatic.image_analysis.grid_array import get_calibration_polynomial_coeffs
+from scanomatic.models.analysis_model import COMPARTMENTS
+from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
     get_area_too_large_for_grayscale, get_grayscale_is_valid, usable_plates, image_is_allowed, \
@@ -45,10 +50,14 @@ def json_data(data):
 
     if data is None:
         return None
-    if isinstance(data, ListType):
+    elif isinstance(data, ListType):
         return [json_data(d) for d in data]
+    elif isinstance(data, DictType):
+        return {json_data(k): json_data(data[k]) for k in data}
     elif hasattr(data, "tolist"):
         return data.tolist()
+    elif isinstance(data, Enum):
+        return data.name
     else:
         return data
 
@@ -340,5 +349,51 @@ def add_routes(app, rpc_client, is_debug_mode):
             targetValues=grayscale_targets)
 
         return jsonify(image=transpose_polynomial(image).tolist())
+
+    @app.route("/api/data/image/detect/colony", methods=['POST'])
+    def image_detect_colony():
+
+        image = np.array(request.json.get("image", [[]]))
+        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+
+        gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
+        gc.source = image.astype(np.float64)
+        gc.attach_analysis(
+            blob=True, background=True, cell=True,
+            run_detect=False)
+
+        gc.detect(remember_filter=False)
+
+        return jsonify(
+            blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
+            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist()
+        )
+
+    @app.route("/api/data/image/analyse/colony", methods=['POST'])
+    def image_analyse_colony():
+
+        image = np.array(request.json.get("image", [[]]))
+        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+
+        gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
+        gc.source = image.astype(np.float64)
+        gc.attach_analysis(
+            blob=True, background=True, cell=True,
+            run_detect=False)
+
+        gc.analyse(detect=True, remember_filter=False)
+
+        return jsonify(
+            blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
+            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
+            features=json_data(AnalysisFeaturesFactory.deep_to_dict(gc.features))
+        )
+
+    @app.route("/api/data/image/transform/cells", methods=['POST'])
+    def image_transform_cells():
+
+        image = np.array(request.json.get("image", [[]]))
+        background_filter = np.array(request.json.get("background_filter"))
+        raise NotImplemented()
 
     # End of adding routes
