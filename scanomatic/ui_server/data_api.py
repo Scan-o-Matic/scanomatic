@@ -118,13 +118,18 @@ def add_routes(app, rpc_client, is_debug_mode):
         :return: json-object with analyzed data
         """
 
-        raw_growth_data = request.json.get("raw_growth_data", [])
-        times_data = request.json.get("times_data", [])
-        settings = request.json.get("settings", {})
-        smooth_growth_data = request.json.get("smooth_growth_data", [])
-        inclusion_level = request.json.get("inclusion_level", "Trusted")
-        normalize = request.json.get("normalize", False)
-        reference_offset = request.json.get("reference_offset", "LowerRight")
+        json_obj = request.get_json(silent=True, force=True)
+        if not json_obj:
+            return jsonify(success=False, reason="No valid json object sent")
+        else:
+            raw_growth_data = json_obj.get("raw_growth_data", [])
+            times_data = json_obj.get("times_data", [])
+            settings = json_obj.get("settings", {})
+            smooth_growth_data = json_obj.get("smooth_growth_data", [])
+            inclusion_level = json_obj.get("inclusion_level", "Trusted")
+            normalize = json_obj.get("normalize", False)
+            reference_offset = json_obj.get("reference_offset", "LowerRight")
+
         raw_growth_data = _validate_depth(raw_growth_data)
 
         state = phenotyper.Phenotyper(
