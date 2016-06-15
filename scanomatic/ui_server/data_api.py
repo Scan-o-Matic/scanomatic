@@ -50,12 +50,12 @@ def json_data(data):
 
     if data is None:
         return None
+    elif hasattr(data, "tolist"):
+        return json_data(data.tolist())
     elif isinstance(data, ListType):
         return [json_data(d) for d in data]
     elif isinstance(data, DictType):
         return {json_data(k): json_data(data[k]) for k in data}
-    elif hasattr(data, "tolist"):
-        return data.tolist()
     elif isinstance(data, Enum):
         return data.name
     else:
