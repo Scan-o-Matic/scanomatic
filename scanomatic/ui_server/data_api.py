@@ -334,14 +334,17 @@ def add_routes(app, rpc_client, is_debug_mode):
 
             save_image_as_png(path)
 
-            return jsonify(markers=fixture['current'].get_marker_positions(),
-                           image=os.path.basename(fixture_file))
+            return jsonify(
+                success=True,
+                markers=json_data(fixture['current'].get_marker_positions()),
+                image=os.path.basename(fixture_file))
 
         _logger.warning("Refused detection (keys files: {0} values: {1})".format(
             request.files.keys(), request.values.keys()))
 
-        # TODO: No markers reported....
-        return jsonify(success=True, markers=[], image="")
+        return jsonify(
+            success=False,
+            reason="No fixture image name" if image_is_allowed(ext) else "Image type not allowed")
 
     @app.route("/api/data/image/transform/grayscale", methods=['POST'])
     def image_transform_grayscale():
