@@ -435,11 +435,11 @@ def add_routes(app, rpc_client, is_debug_mode):
             run_detect=False)
 
         if compartment == 'blob':
-            gc_compartment = gc[COMPARTMENTS.Blob]
+            gc_compartment = gc.get_item(COMPARTMENTS.Blob)
         elif compartment == 'background':
-            gc_compartment = gc[COMPARTMENTS.Background]
+            gc_compartment = gc.get_item(COMPARTMENTS.Background)
         elif compartment == 'total':
-            gc_compartment = gc[COMPARTMENTS.Total]
+            gc_compartment = gc.get_item(COMPARTMENTS.Total)
         else:
             return jsonify(success=False, reason="Unknown compartment {0}".format(compartment))
 
