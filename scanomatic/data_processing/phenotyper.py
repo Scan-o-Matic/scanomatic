@@ -1342,7 +1342,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                             phenotype not in self._phenotype_filter[plate_index]:
 
                         self._phenotype_filter[plate_index][phenotype] = np.zeros(
-                            self._raw_growth_data[plate_index].shape[:2], dtype=np.int8)
+                            self._vector_meta_phenotypes[plate_index][phenotype].shape, dtype=np.int8)
 
                         self._phenotype_filter[plate_index][phenotype][
                             np.where(np.isfinite(
