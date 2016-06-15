@@ -72,8 +72,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         is_debug_mode (bool): If running in debug-mode
     """
 
-    @app.route("/api/data/phenotype", methods=['POST', 'GET'])
-    @app.route("/api/data/phenotype/", methods=['POST', 'GET'])
+    @app.route("/api/data/phenotype", methods=['POST'])
     def data_phenotype():
         """Takes growth data extracts phenotypes and normalizes.
 
