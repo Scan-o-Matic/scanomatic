@@ -92,6 +92,9 @@ def add_routes(app, rpc_client, is_debug_mode):
                 It is possible to send a single curve in a 1-d array or arrays with
                 2 or 3 dimensions. These will be reshaped with new dimensions added
                 outside of the existing dimensions until i has 4 dimensions.
+                _NOTE_: The values should be on linear scale, not log2 transformed
+                    or similar. This will be done internally by the feature
+                    extraction.
 
             "times_data", a time vector with the same length as the inner-most
                 dimension of "raw_growth_data". Time should be given in hours.
