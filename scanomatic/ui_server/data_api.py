@@ -183,7 +183,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         json-object, under the key 'image'
 
         Args:
-            grayscale_name: The type of strip
+            grayscale_name: The type of strip, known by default
                 ['Kodak', 'SilverFast']
 
         Returns: json-object with keys
@@ -198,6 +198,10 @@ def add_routes(app, rpc_client, is_debug_mode):
             'transform_grayscale' list with the uri to transform image
                 in grayscale calibrated space using the results
                 of the current request
+
+        See Also:
+            _grayscales @ route /api/data/grayscales:
+                Getting the names of the known grayscales
         """
 
         data_object = request.get_json(silent=True, force=True)
