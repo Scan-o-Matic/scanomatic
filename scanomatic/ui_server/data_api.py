@@ -165,7 +165,6 @@ def add_routes(app, rpc_client, is_debug_mode):
                        curve_phases=json_data(curve_segments))
 
     @app.route("/api/data/grayscales", methods=['post', 'get'])
-    @app.route("/api/data/grayscales/", methods=['post', 'get'])
     def _grayscales():
 
         return jsonify(grayscales=getGrayscales())
@@ -196,7 +195,6 @@ def add_routes(app, rpc_client, is_debug_mode):
                        grayscale=valid, reason=None if valid else "No Grayscale")
 
     @app.route("/api/data/fixture/names")
-    @app.route("/api/data/fixture/names/")
     def _fixure_names():
 
         if rpc_client.online:
