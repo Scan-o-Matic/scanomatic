@@ -149,14 +149,16 @@ def add_routes(app, rpc_client, is_debug_mode):
         if normalize:
             state.set_control_surface_offsets(phenotyper.Offsets[reference_offset])
 
-            return jsonify(smooth_growth_data=json_data(state.smooth_growth_data),
-                           phenotypes={
-                               pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
-                               for pheno in state.phenotypes},
-                           phenotypes_normed={
-                               pheno.name: [p.tojson() for p in state.get_phenotype(pheno, normalized=True)]
-                               for pheno in state.phenotypes_that_normalize},
-                           curve_phases=json_data(curve_segments))
+            return jsonify(
+                success=True,
+                smooth_growth_data=json_data(state.smooth_growth_data),
+                phenotypes={
+                    pheno.name: [None if p is None else p.tojson() for p in state.get_phenotype(pheno)]
+                    for pheno in state.phenotypes},
+                phenotypes_normed={
+                    pheno.name: [p.tojson() for p in state.get_phenotype(pheno, normalized=True)]
+                    for pheno in state.phenotypes_that_normalize},
+                curve_phases=json_data(curve_segments))
 
         return jsonify(smooth_growth_data=json_data(state.smooth_growth_data),
                        phenotypes={
@@ -167,7 +169,7 @@ def add_routes(app, rpc_client, is_debug_mode):
     @app.route("/api/data/grayscales", methods=['post', 'get'])
     def _grayscales():
 
-        return jsonify(grayscales=getGrayscales())
+        return jsonify(success=True, grayscales=getGrayscales())
 
     @app.route("/api/data/grayscale/<fixture_name>", methods=['post', 'get'])
     def _gs_get(fixture_name):
@@ -181,7 +183,7 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         if get_area_too_large_for_grayscale(grayscale_area_model):
 
-            return jsonify(source_values=None, target_values=None, grayscale=False,
+            return jsonify(success=True, source_values=None, target_values=None, grayscale=False,
                            reason="Area too large")
 
         _logger.info("Grayscale area to be tested {0}".format(dict(**grayscale_area_model)))
@@ -191,7 +193,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         grayscale_object = getGrayscale(grayscale_area_model.name)
         valid = get_grayscale_is_valid(values, grayscale_object)
 
-        return jsonify(source_values=values, target_values=grayscale_object['targets'],
+        return jsonify(success=True, source_values=values, target_values=grayscale_object['targets'],
                        grayscale=valid, reason=None if valid else "No Grayscale")
 
     @app.route("/api/data/fixture/names")
@@ -338,7 +340,8 @@ def add_routes(app, rpc_client, is_debug_mode):
         _logger.warning("Refused detection (keys files: {0} values: {1})".format(
             request.files.keys(), request.values.keys()))
 
-        return jsonify(markers=[], image="")
+        # TODO: No markers reported....
+        return jsonify(success=True, markers=[], image="")
 
     @app.route("/api/data/image/transform/grayscale", methods=['POST'])
     def image_transform_grayscale():
@@ -353,7 +356,7 @@ def add_routes(app, rpc_client, is_debug_mode):
             sourceValues=grayscale_values,
             targetValues=grayscale_targets)
 
-        return jsonify(image=transpose_polynomial(image).tolist())
+        return jsonify(success=True, image=transpose_polynomial(image).tolist())
 
     @app.route("/api/data/image/detect/colony", methods=['POST'])
     def image_detect_colony():
@@ -370,6 +373,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         gc.detect(remember_filter=False)
 
         return jsonify(
+            success=True,
             blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
             background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist()
         )
@@ -389,6 +393,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         gc.analyse(detect=True, remember_filter=False)
 
         return jsonify(
+            success=True,
             blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
             background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
             features=json_data(AnalysisFeaturesFactory.deep_to_dict(gc.features))
