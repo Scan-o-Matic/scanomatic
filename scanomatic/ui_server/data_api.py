@@ -168,11 +168,64 @@ def add_routes(app, rpc_client, is_debug_mode):
 
     @app.route("/api/data/grayscales", methods=['post', 'get'])
     def _grayscales():
+        """The known grayscale names
 
+        Returns: json-object with key 'garyscales' having an array of strings.
+
+        """
         return jsonify(success=True, grayscales=getGrayscales())
 
-    @app.route("/api/data/grayscale/<fixture_name>", methods=['post', 'get'])
-    def _gs_get(fixture_name):
+    @app.route("/api/data/grayscale/image/<grayscale_name>", methods=['POST'])
+    def _gs_get_from_image(grayscale_name):
+        """Analyse image slice as grayscale-strip
+
+        The image should be supplied via POST, preferably in a json-object, under the key 'image'
+
+        Args:
+            grayscale_name: The type of strip ['Kodak', 'SilverFast']
+
+        Returns: json-object with keys
+            'source_values' as an array of each strip segment's average value in the image
+            'target_values' as an array of the reference values supplied by the manufacturer
+            'grayscale' as the name of the grayscale
+            'success' if analysis completed and if not 'reason' is added as to why not.
+        """
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        image = np.array(data_object.get("image", [[]]))
+
+        grayscale_area_model = GrayScaleAreaModel(
+            name=grayscale_name,
+            x1=0, x2=image.shape[1],
+            y1=0, y2=image.shape[0])
+
+        if get_area_too_large_for_grayscale(grayscale_area_model):
+
+            return jsonify(success=False, source_values=None, target_values=None, grayscale=None,
+                           reason="Area too large")
+
+        _, values = get_grayscale(image, grayscale_area_model, debug=is_debug_mode)
+        grayscale_object = getGrayscale(grayscale_area_model.name)
+        valid = get_grayscale_is_valid(values, grayscale_object)
+
+        return jsonify(
+            success=valid, source_values=values, target_values=grayscale_object['targets'],
+            grayscale=grayscale_area_model.name,
+            reason=None if valid else "No valid grayscale detected for {0}".format(dict(**grayscale_area_model)))
+
+    @app.route("/api/data/grayscale/fixture/<fixture_name>", methods=['POST', 'GET'])
+    def _gs_get_from_fixture(fixture_name):
+        """Get grayscale analysis based on fixture image
+
+        Args:
+            fixture_name: Name of the fixture
+
+        Returns:
+
+        """
 
         grayscale_area_model = GrayScaleAreaModel(
             name=request.args.get("grayscale_name", "", type=str),

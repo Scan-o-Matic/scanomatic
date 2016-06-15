@@ -261,7 +261,7 @@ function testAsGrayScale(plate) {
     if (plate) {
         var grayscale_name = GetSelectedGrayscale();
         $.ajax({
-            url: "/api/data/grayscale/" + fixture_name + "?grayscale_name=" + grayscale_name,
+            url: "/api/data/grayscale/fixture/" + fixture_name + "?grayscale_name=" + grayscale_name,
             method: "POST",
             data: plate,
             success: function (data) {
