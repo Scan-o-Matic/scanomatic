@@ -183,7 +183,6 @@ class GridCell(object):
         np.save(base_path + ".blob.trash.current.npy", blob.trash_array)
         np.save(base_path + ".blob.trash.old.npy", blob.old_trash)
 
-
     def clear_features(self):
 
         for item in self._analysis_items.itervalues():
