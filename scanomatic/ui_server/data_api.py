@@ -16,7 +16,7 @@ from scanomatic.models.fixture_models import GrayScaleAreaModel
 from scanomatic.image_analysis.image_basics import Image_Transpose
 from scanomatic.image_analysis.grid_cell import GridCell
 from scanomatic.image_analysis.grid_array import get_calibration_polynomial_coeffs
-from scanomatic.models.analysis_model import COMPARTMENTS
+from scanomatic.models.analysis_model import COMPARTMENTS, VALUES
 from scanomatic.models.factories.analysis_factories import AnalysisFeaturesFactory
 
 from .general import get_fixture_image_by_name, usable_markers, split_areas_into_grayscale_and_plates, \
@@ -404,8 +404,49 @@ def add_routes(app, rpc_client, is_debug_mode):
 
         image = np.array(request.json.get("image", [[]]))
         background_filter = np.array(request.json.get("background_filter"))
-        # TODO: Continue here to get cells per pixel
-        # TODO: Then add way to calculate features based on manual filters and cell-image
-        raise NotImplemented()
+
+        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+
+        gc = GridCell(identifier, None, save_extra_data=False)
+        gc.source = image.astype(np.float64)
+        gc.attach_analysis(
+            blob=True, background=True, cell=True,
+            run_detect=False)
+
+        gc.set_new_data_source_space(space=VALUES.Cell_Estimates, bg_sub_source=background_filter,
+                                     polynomial_coeffs=get_calibration_polynomial_coeffs())
+
+        return jsonify(success=True, image=gc.source.tolist())
+
+    @app.route("/api/data/image/analyse/compartment/<compartment>")
+    def image_analyse_compartment(compartment):
+
+        image = np.array(request.json.get("image", [[]]))
+        filt = np.array(request.json.get("filter", [[]]))
+
+        identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
+
+        gc = GridCell(identifier, None, save_extra_data=False)
+        gc.attach_analysis(
+            blob=True, background=True, cell=True,
+            run_detect=False)
+
+        if compartment == 'blob':
+            gc_compartment = gc[COMPARTMENTS.Blob]
+        elif compartment == 'background':
+            gc_compartment = gc[COMPARTMENTS.Background]
+        elif compartment == 'total':
+            gc_compartment = gc[COMPARTMENTS.Total]
+        else:
+            return jsonify(success=False, reason="Unknown compartment {0}".format(compartment))
+
+        gc_compartment.grid_array = image.astype(np.float64)
+        gc_compartment.filter_array = filt.astype(np.int)
+
+        gc_compartment.do_analysis()
+
+        return jsonify(
+            success=True,
+            features=json_data(AnalysisFeaturesFactory.deep_to_dict(gc_compartment.features)))
 
     # End of adding routes
