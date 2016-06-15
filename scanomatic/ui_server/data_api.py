@@ -179,16 +179,25 @@ def add_routes(app, rpc_client, is_debug_mode):
     def _gs_get_from_image(grayscale_name):
         """Analyse image slice as grayscale-strip
 
-        The image should be supplied via POST, preferably in a json-object, under the key 'image'
+        The image should be supplied via POST, preferably in a
+        json-object, under the key 'image'
 
         Args:
-            grayscale_name: The type of strip ['Kodak', 'SilverFast']
+            grayscale_name: The type of strip
+                ['Kodak', 'SilverFast']
 
         Returns: json-object with keys
-            'source_values' as an array of each strip segment's average value in the image
-            'target_values' as an array of the reference values supplied by the manufacturer
+            'source_values' as an array of each strip segment's
+                average value in the image
+            'target_values' as an array of the reference values
+                supplied by the manufacturer
             'grayscale' as the name of the grayscale
-            'success' if analysis completed and if not 'reason' is added as to why not.
+            'success' if analysis completed and if not 'reason'
+                is added as to why not.
+            'exits' lists the suggested further requests
+            'transform_grayscale' list with the uri to transform image
+                in grayscale calibrated space using the results
+                of the current request
         """
 
         data_object = request.get_json(silent=True, force=True)
@@ -214,17 +223,23 @@ def add_routes(app, rpc_client, is_debug_mode):
         return jsonify(
             success=valid, source_values=values, target_values=grayscale_object['targets'],
             grayscale=grayscale_area_model.name,
-            reason=None if valid else "No valid grayscale detected for {0}".format(dict(**grayscale_area_model)))
+            reason=None if valid else "No valid grayscale detected for {0}".format(dict(**grayscale_area_model)),
+            exits=["transform_grayscale"], transform_grayscale=["/api/data/image/transform/grayscale"])
 
     @app.route("/api/data/grayscale/fixture/<fixture_name>", methods=['POST', 'GET'])
     def _gs_get_from_fixture(fixture_name):
         """Get grayscale analysis based on fixture image
 
+        _NOTE_: This URI does not support json-objects posted
+
         Args:
             fixture_name: Name of the fixture
 
-        Returns:
-
+        Returns: json-object with keys
+            'source_values' as an array of each strip segment's average value in the image
+            'target_values' as an array of the reference values supplied by the manufacturer
+            'grayscale' as the name of the grayscale
+            'success' if analysis completed and if not 'reason' is added as to why not.
         """
 
         grayscale_area_model = GrayScaleAreaModel(
@@ -251,6 +266,13 @@ def add_routes(app, rpc_client, is_debug_mode):
 
     @app.route("/api/data/fixture/names")
     def _fixure_names():
+        """Names of fixtures
+
+        Returns: json-object with keys
+            "fixtures" as the an array of strings, the names
+            "success" if could be obtained and if not "reason" to explain why.
+
+        """
 
         if rpc_client.online:
             return jsonify(fixtures=rpc_client.get_fixtures(), success=True)
@@ -259,6 +281,20 @@ def add_routes(app, rpc_client, is_debug_mode):
 
     @app.route("/api/data/fixture/get/<name>")
     def _fixture_data(name=None):
+        """Get the specifications of a fixture
+
+        Args:
+            name: The name of the fixture
+
+        Returns: json-object where keys:
+            "plates" is an array of key-value arrays of the
+                included plates specs
+            "grayscale" is a key-value array of its specs
+            "markers" is a 2D array of the marker centra
+            "succses" if the fixture was found and valid else
+            "reason" to explain why not.
+
+        """
         if not rpc_client.online:
             return jsonify(success=False, reason="Scan-o-Matic server offline")
         elif name in rpc_client.get_fixtures():
@@ -276,7 +312,16 @@ def add_routes(app, rpc_client, is_debug_mode):
 
     @app.route("/api/data/fixture/remove/<name>")
     def _fixture_remove(name):
+        """Remove a fixture by name
 
+        Args:
+            name: The name of the fixture to remove
+
+        Returns: json-object with keys
+            "success" if removed else
+            "reason" to explain why not.
+
+        """
         name = Paths().get_fixture_name(name)
         known_fixtures = tuple(Paths().get_fixture_name(f) for f in rpc_client.get_fixtures())
         if name not in known_fixtures:
@@ -295,7 +340,14 @@ def add_routes(app, rpc_client, is_debug_mode):
 
     @app.route("/api/data/fixture/image/get/<name>")
     def _fixture_get_image(name):
+        """Get downscaled png image for the fixture.
 
+        Args:
+            name: Name of the fixture
+
+        Returns: image
+
+        """
         image = os.path.extsep.join(name, "png")
         _logger.info("Sending fixture image {0}".format(image))
         return send_from_directory(Paths().fixtures, image)
@@ -401,10 +453,36 @@ def add_routes(app, rpc_client, is_debug_mode):
 
     @app.route("/api/data/image/transform/grayscale", methods=['POST'])
     def image_transform_grayscale():
+        """Method to convert image to grayscale space.
 
-        image = np.array(request.json.get("image", [[]]))
-        grayscale_values = np.array(request.json.get("grayscale_values", []))
-        grayscale_targets = request.json.get("grayscale_targets", [])
+        The request must be sent over POST and preferrably in json-format.
+
+        Request keys:
+            "image": the 2D array data of image to be converted,
+                keep image no larger than needed as it takes some
+                processing doing the conversion.
+            "grayscale_values": the image values of grayscale segments
+            "grayscale_targets": the manufacturer's target values.
+
+        Returns: json-object with keys
+            "success" if successfully converted
+            "reason" why not
+            "image" the converted image
+            "exits" list keys with suggested further requests
+            "detect_colony" list with the URI for detecting a colony in an image
+
+        See Also:
+            _gs_get_from_image @ route "/api/data/grayscale/image/<grayscale_name>":
+                analysing grayscales in images.
+        """
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        image = np.array(data_object.get("image", [[]]))
+        grayscale_values = np.array(data_object.get("grayscale_values", []))
+        grayscale_targets = np.array(data_object.get("grayscale_targets", []))
+
         if not grayscale_targets:
             grayscale_targets = getGrayscale(request.json.get("grayscale_name", ""))['targets']
 
@@ -412,12 +490,36 @@ def add_routes(app, rpc_client, is_debug_mode):
             sourceValues=grayscale_values,
             targetValues=grayscale_targets)
 
-        return jsonify(success=True, image=transpose_polynomial(image).tolist())
+        return jsonify(success=True, image=transpose_polynomial(image).tolist(),
+                       exits=["detect_colony"], detect_colony=["/api/data/image/detect/colony"])
 
     @app.route("/api/data/image/detect/colony", methods=['POST'])
     def image_detect_colony():
+        """Detect colony in image
 
-        image = np.array(request.json.get("image", [[]]))
+        The request must be sent over POST and preferrably in
+        json-format.
+
+        Request keys:
+            "image": the 2D array data of an image of grayscale
+                values
+
+        Returns: json-object
+            "success" if successfully detected
+            "reason" why not
+            "blob" a 2D boolean array identifying pixels as blob
+            "background" a 2D boolean array identifying pixels as
+                background
+            "exits" list keys with suggested further requests
+            "transform_cells" list of the URI for transforming grayscale
+                calibrated values to cells.
+            "analyse_compartments": list of URI for analysing compartments
+        """
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        image = np.array(data_object.get("image", [[]]))
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
         gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
@@ -431,13 +533,37 @@ def add_routes(app, rpc_client, is_debug_mode):
         return jsonify(
             success=True,
             blob=gc.get_item(COMPARTMENTS.Blob).filter_array.tolist(),
-            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist()
+            background=gc.get_item(COMPARTMENTS.Background).filter_array.tolist(),
+            exits=['transform_cells', 'analyse_compartment'],
+            transform_cells=['/api/data/image/transform/cells'],
+            analyse_compartment=['/api/data/image/analyse/compartment/{0}'.format(c) for c in COMPARTMENTS]
         )
 
     @app.route("/api/data/image/analyse/colony", methods=['POST'])
     def image_analyse_colony():
+        """Automatically analyse image section
 
-        image = np.array(request.json.get("image", [[]]))
+        The request must be sent over POST and preferrably in
+        json-format.
+
+        Request keys:
+            "image": the 2D array data of an image of grayscale
+                values
+
+        Returns: json-object
+            "success" if successfully detected
+            "reason" why not
+            "blob" a 2D boolean array identifying pixels as blob
+            "background" a 2D boolean array identifying pixels as
+                background
+            "features" nested key-value array structure containing
+                all analysis results.
+        """
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        image = np.array(data_object.get("image", [[]]))
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
         gc = GridCell(identifier, get_calibration_polynomial_coeffs(), save_extra_data=False)
@@ -457,9 +583,33 @@ def add_routes(app, rpc_client, is_debug_mode):
 
     @app.route("/api/data/image/transform/cells", methods=['POST'])
     def image_transform_cells():
+        """Transform image values into cells per pixel
 
-        image = np.array(request.json.get("image", [[]]))
-        background_filter = np.array(request.json.get("background_filter"))
+        The request must be sent over POST and preferrably in
+        json-format.
+
+        Request keys:
+            "image": the 2D array data of an image of grayscale
+                values
+            "background_filter": the 2D array of matching size
+                with boolean values indicating pixels being part of
+                the background.
+
+        Returns: json-object
+            "success": if successfully detected
+            "reason": why not
+            "image": a 2D array of cells per pixel
+            "exits": list of suggested further URI requests
+            "analyse_compartment: list of request URIs to analyse
+                detections.
+        """
+
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        image = np.array(data_object.get("image", [[]]))
+        background_filter = np.array(data_object.get("background_filter"))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
@@ -472,7 +622,10 @@ def add_routes(app, rpc_client, is_debug_mode):
         gc.set_new_data_source_space(space=VALUES.Cell_Estimates, bg_sub_source=background_filter,
                                      polynomial_coeffs=get_calibration_polynomial_coeffs())
 
-        return jsonify(success=True, image=gc.source.tolist())
+        return jsonify(
+            success=True, image=gc.source.tolist(),
+            exits=['analyse_compartment'],
+            analyse_compartment=['/api/data/image/analyse/compartment/{0}'.format(c) for c in COMPARTMENTS])
 
     @app.route("/api/data/image/analyse/compartment/<compartment>")
     def image_analyse_compartment(compartment):
