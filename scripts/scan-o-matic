@@ -51,7 +51,18 @@ if __name__ == "__main__":
         help="Run in debug-mode (requires --local)."
     )
 
+
+    parser.add_argument(
+        "--service-relaunch", dest="relaunch", default=False, action='store_true',
+        help="Shortcut for `--kill --no-browser` and ensuring `--no-launch` is not set."
+    )
+
     args = parser.parse_args()
+
+    if args.relaunch:
+        args.kill = True
+        args.no_launch = False
+        args.no_browser = True
 
     if args.kill:
         procs = (p for p in psutil.process_iter() if get_proc_name(p) in ["SoM Server", "SoM UI Server"])
