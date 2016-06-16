@@ -1,0 +1,157 @@
+#! /usr/bin/env python
+from argparse import ArgumentParser
+import psutil
+from time import sleep
+import os
+import sys
+import tarfile
+import requests
+from multiprocessing import Process
+from subprocess import Popen, STDOUT
+
+from scanomatic.io.logger import Logger
+from scanomatic.io.paths import Paths
+from scanomatic.io.rpc_client import get_client
+from scanomatic.io.app_config import Config
+
+_logger = Logger("Scan-o-Matic As Service Check")
+
+
+def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=False):
+
+    class Daemon(Process):
+
+        def __init__(self, path_to_exec, std_out_path, args, shell):
+
+            super(Daemon, self).__init__()
+
+            self._path_to_exec = path_to_exec
+            self._std_out_path = std_out_path
+            self._args = args
+            self._shell = shell
+
+        def run(self):
+            print self._std_out_path
+            with open(self._std_out_path, 'w') as fh:
+                sys.stdout = fh
+                sys.stderr = fh
+                if self._shell:
+                    p = Popen([self._path_to_exec] + list(self._args), stderr=STDOUT, stdout=fh, shell=False)
+                else:
+                    p = Popen(" ".join([self._path_to_exec] + list(self._args)), stderr=STDOUT, stdout=fh, shell=False)
+                p.wait()
+
+    d = Daemon(path_to_executable, std_out, daemon_args, shell)
+    d.daemon = True
+    d.start()
+
+
+def get_proc_name(proc):
+
+    try:
+        return proc.name()
+    except TypeError:
+        return proc.name
+
+
+def ui_server_responsive():
+
+    port = Config().ui_server.port
+    if not port:
+        port = 5000
+    host = Config().ui_server.host
+    if not host:
+        host = 'localhost'
+    try:
+        return requests.get("http://{0}:{1}".format(host, port)).ok
+    except requests.ConnectionError:
+        return False
+
+
+def server_responsive():
+
+    return get_client().online
+
+
+def get_backup_name(path_to_original, max_backups=10, pattern="{0}.{1}.tar.gz"):
+
+    t_prev = None
+
+    for i in range(max_backups):
+
+        path = pattern.format(path_to_original, i)
+        if not os.path.isfile(path):
+            return path
+
+        s = os.stat(path)
+        t = max(s.st_atime, s.st_mtime, s.st_ctime)
+        if t_prev is not None and t_prev < t:
+            return path
+        t_prev = t
+
+    return pattern.format(path_to_original, 0)
+
+
+def backup_file(path):
+
+    if not os.path.isfile(path):
+        return None
+
+    backup_path = get_backup_name(path)
+
+    with tarfile.open(backup_path, "w:gz") as tar:
+        tar.add(path)
+
+    return backup_path
+
+if __name__ == "__main__":
+
+    parser = ArgumentParser(description="""Scan-o-Matic As Service Check""")
+
+    parser.add_argument("--schedule", default=False, dest="schedule", action='store_true',
+                        help="Inject self in schedule")
+
+    args = parser.parse_args()
+
+    if 'linux' not in sys.platform:
+        _logger.error("Non linux-system not supported for this script")
+        sys.exit(1)
+
+    if args.schedule:
+
+        pass
+
+    else:
+
+        # Testing the procs exist
+        som_server = any(True for p in psutil.process_iter() if get_proc_name(p) == "SoM Server")
+        som_ui_server = any(True for p in psutil.process_iter() if get_proc_name(p) == "SoM UI Server")
+
+        # If not responding, kill ui server
+        if som_ui_server and not ui_server_responsive():
+            _logger.info("Closing down UI Server because it doesn't respond to requests")
+            for p in (p for p in psutil.process_iter() if get_proc_name(p) == "SoM UI Server"):
+                p.kill()
+            _logger.info("Will wait 1 second before continuing")
+            sleep(1)
+            som_ui_server = False
+
+        # If not responding kill server
+        if som_server and not server_responsive():
+            _logger.info("Closing down the server because it doesn't respond to requests")
+            for p in (p for p in psutil.process_iter() if get_proc_name(p) == "SoM Server"):
+                p.kill()
+            _logger.info("Will wait 1 second before continuing")
+            sleep(1)
+            som_ui_server = False
+
+        # Starting shit that needs starting
+        if not som_server:
+            backup_file(Paths().log_server)
+            daemon("scan-o-matic_server", std_out=Paths().log_server, shell=True)
+            _logger.info("Started SoM server")
+
+        if not som_ui_server:
+            backup_file(Paths().log_ui_server)
+            daemon("scan-o-matic", std_out=Paths().log_ui_server, daemon_args=("--no-browser",))
+            _logger.info("Started UI server")
