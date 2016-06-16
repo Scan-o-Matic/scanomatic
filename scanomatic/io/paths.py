@@ -50,7 +50,6 @@ class Paths(SingeltonOneInit):
         self.analysis = "scan-o-matic_analysis"
         self.experiment = "scan-o-matic_experiment"
         self.make_project = "scan-o-matic_compile_project"
-        self.revive = "scan-o-matic_relauncher"
         self.install_autostart = "scan-o-matic_autostart"
 
         self.config_main_app = os.path.join(self.config, 'main.config')
@@ -96,10 +95,10 @@ class Paths(SingeltonOneInit):
         self.fixture_grid_history_pattern = "{0}.grid.history"
 
         self.log = os.path.join(self.root, "logs")
+        self.log_ui_server = os.path.join(self.log, "ui_server.log")
+        self.log_server = os.path.join(self.log, "server.log")
         self.log_scanner_out = os.path.join(self.log, "scanner_{0}.stdout")
         self.log_scanner_err = os.path.join(self.log, "scanner_{0}.stderr")
-        self.log_main_out = os.path.join(self.log, "main.stdout")
-        self.log_main_err = os.path.join(self.log, "main.stderr")
 
         self.log_relaunch = os.path.join(self.log, "relaunch.log")
         self.log_project_progress = os.path.join(self.log, "progress.projects")
