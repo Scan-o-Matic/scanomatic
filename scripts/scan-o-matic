@@ -9,6 +9,14 @@ from scanomatic.io.logger import Logger
 
 _logger = Logger("Scan-o-Matic launcher")
 
+
+def get_proc_name(proc):
+
+    try:
+        return proc.name()
+    except TypeError:
+        return proc.name
+
 #
 # EXECUTION BEHAVIOUR
 #
@@ -45,7 +53,7 @@ if __name__ == "__main__":
     true_strings = ['Y', 'YES', 'TRUE', 'T']
 
     if args.kill.upper() in true_strings:
-        procs = (p for p in psutil.process_iter() if p.name() in ["SoM Server", "SoM UI Server"])
+        procs = (p for p in psutil.process_iter() if get_proc_name(p) in ["SoM Server", "SoM UI Server"])
         for proc in procs:
             _logger.info("Killing process '{0}' with pid {1}".format(proc.name(), proc.pid))
             proc.kill()
