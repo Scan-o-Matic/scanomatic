@@ -54,6 +54,9 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
     _url = "http://{host}:{port}".format(host=host, port=port)
 
+    _logger.info("Requested to launch UI-server at {0} being local={1} and debug={2}".format(
+        _url, is_local, debug))
+
     @app.route("/")
     def _root():
         return send_from_directory(Paths().ui_root, Paths().ui_root_file)
@@ -338,7 +341,10 @@ def launch_webbrowser(delay=0.0):
 
 
 def launch(open_browser_url=True, **kwargs):
-
     if open_browser_url:
+        _logger.info("Getting ready to open browser")
         Thread(target=launch_webbrowser, kwargs={"delay": 2}).start()
+    else:
+        _logger.info("Will not open browser")
+
     launch_server(**kwargs)
