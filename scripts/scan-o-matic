@@ -3,6 +3,11 @@ from scanomatic.ui_server import ui_server
 from argparse import ArgumentParser
 import setproctitle
 from time import sleep
+import psutil
+import sys
+from scanomatic.io.logger import Logger
+
+_logger = Logger("Scan-o-Matic launcher")
 
 #
 # EXECUTION BEHAVIOUR
@@ -11,6 +16,12 @@ from time import sleep
 if __name__ == "__main__":
 
     parser = ArgumentParser(description="""Scan-o-Matic""")
+
+    parser.add_argument("--kill", type=str, default="N", dest="kill",
+                        help="Kill any running Scan-o-Matic server or UI Server before launching")
+
+    parser.add_argument("--no-launch", type=str, default="N", dest="no_launch",
+                        help="Scan-o-Matic will not be launched (usable with --kill).")
 
     parser.add_argument(
         "--port", type=int, dest="port", help="Manual override of default port")
@@ -31,9 +42,18 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    
-    setproctitle.setproctitle("SoM {0}".format("UI Server"))
     true_strings = ['Y', 'YES', 'TRUE', 'T']
+
+    if args.kill.upper() in true_strings:
+        procs = (p for p in psutil.process_iter() if p.name() in ["SoM Server", "SoM UI Server"])
+        for proc in procs:
+            _logger.info("Killing process '{0}' with pid {1}".format(proc.name(), proc.pid))
+            proc.kill()
+
+    if args.no_launch.upper() in true_strings:
+        sys.exit()
+
+    setproctitle.setproctitle("SoM {0}".format("UI Server"))
     sleep(1)
     ui_server.launch(open_browser_url=args.browser.upper() in true_strings,
                      debug=args.debug.upper() in true_strings,
