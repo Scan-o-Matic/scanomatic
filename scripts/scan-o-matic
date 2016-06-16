@@ -25,44 +25,48 @@ if __name__ == "__main__":
 
     parser = ArgumentParser(description="""Scan-o-Matic""")
 
-    parser.add_argument("--kill", type=str, default="N", dest="kill",
+    parser.add_argument("--kill", default=False, dest="kill", action='store_true',
                         help="Kill any running Scan-o-Matic server or UI Server before launching")
 
-    parser.add_argument("--no-launch", type=str, default="N", dest="no_launch",
+    parser.add_argument("--no-launch", default=False, dest="no_launch",  action='store_true',
                         help="Scan-o-Matic will not be launched (usable with --kill).")
 
     parser.add_argument(
         "--port", type=int, dest="port", help="Manual override of default port")
 
     parser.add_argument(
-        '--local', type=str, default="N", dest="local", help="Manual override if only to serve locally")
+        '--local', action='store_true',
+        dest="local", help="Manual override if only to serve locally")
 
     parser.add_argument(
         '--host', type=str, dest="host", help="Manually setting host address of server")
 
     parser.add_argument(
-        "--browser", type=str, dest="browser", default="Y", help="Open url to Scan-o-Matic in new tab (default True)"
+        "--no-browser", dest="no_browser", default=False, action='store_true',
+        help="Open url to Scan-o-Matic in new tab (default True)"
     )
 
     parser.add_argument(
-        "--debug", type=str, dest="debug", default="N", help="Run debug server (will crash and stuff on exceptions)" +
-        " (default False)"
+        "--debug", dest="debug", default=False, action='store_true',
+        help="Run in debug-mode (requires --local)."
     )
 
     args = parser.parse_args()
-    true_strings = ['Y', 'YES', 'TRUE', 'T']
 
-    if args.kill.upper() in true_strings:
+    if args.kill:
         procs = (p for p in psutil.process_iter() if get_proc_name(p) in ["SoM Server", "SoM UI Server"])
         for proc in procs:
             _logger.info("Killing process '{0}' with pid {1}".format(proc.name(), proc.pid))
             proc.kill()
 
-    if args.no_launch.upper() in true_strings:
+    if args.no_launch:
+        _logger.info("Not launching...Done!")
         sys.exit()
 
     setproctitle.setproctitle("SoM {0}".format("UI Server"))
+    _logger.info("Waiting 1 second before launch... please hold.")
     sleep(1)
-    ui_server.launch(open_browser_url=args.browser.upper() in true_strings,
-                     debug=args.debug.upper() in true_strings,
-                     is_local=args.local.upper() in true_strings, port=args.port, host=args.host)
+    _logger.info("Launching...")
+    ui_server.launch(open_browser_url=args.no_browser is False,
+                     debug=args.debug,
+                     is_local=args.local, port=args.port, host=args.host)
