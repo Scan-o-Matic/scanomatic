@@ -69,7 +69,10 @@ def _jsonify(data):
     return json.dumps([_jsonify_entry(e) for e in data])
 
 
-def load_data_file(file_path):
+def load_data_file(file_path=None):
+
+    if file_path is None:
+        file_path = Paths().analysis_calibration_data
 
     try:
 
@@ -118,45 +121,6 @@ def get_calibration_polynomial(coefficients_array):
     return np.poly1d(coefficients_array)
 
 
-def vector_polynomial_sum(x, *coefficient_array):
-
-    y = np.zeros(len(x))
-
-    for pos in xrange(len(x)):
-        y[pos] = (np.sum(np.polyval(coefficient_array, x[pos])))
-
-    return y
-
-
-def vector_polynomial_sum_dropped_coeffs2(x, *coefficient_array):
-
-    coefficient_array = np.array((
-        coefficient_array[0], 0, 0, 0,
-        coefficient_array[1], 0), dtype=np.float64)
-
-    y = np.zeros(len(x))
-
-    for pos in xrange(len(x)):
-        y[pos] = (np.sum(np.polyval(coefficient_array, x[pos])))
-
-    return y
-
-
-def vector_polynomial_sum_dropped_coeffs(x, *coefficient_array):
-
-    coefficient_array = np.array((
-        coefficient_array[0], 0, 0,
-        coefficient_array[1], 0), dtype=np.float64)
-
-    y = np.zeros(len(x))
-
-    for pos in xrange(len(x)):
-
-        y[pos] = (np.sum(np.polyval(coefficient_array, x[pos])))
-
-    return y
-
-
 def _get_expanded_data(data_store):
 
     measures = min(len(data_store[k]) for k in
@@ -168,7 +132,7 @@ def _get_expanded_data(data_store):
     x_max = None
 
     values = data_store[_Entry.source_values]
-    counts = data_store[_Entry.source_values]
+    counts = data_store[_Entry.source_value_counts]
     targets = data_store[_Entry.target_value]
 
     for pos in range(measures):
@@ -201,7 +165,7 @@ def poly_as_text(poly):
     return "y = {0}".format(" + ".join(coeffs()))
 
 
-def calculate_polynomial(data_store, degree=4):
+def calculate_polynomial(data_store, degree=5):
 
     x, y, _, _ = _get_expanded_data(data_store)
 
