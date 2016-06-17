@@ -16,15 +16,15 @@ def test_load_calibration():
 
 def test_expand_data_lenghts():
 
-    counts = data[calibration._Entry.source_value_counts]
+    counts = data[calibration.CalibrationEntry.source_value_counts]
     exp_vals, _, _, _ = calibration._get_expanded_data(data)
     assert all(np.sum(c) == len(v) for c, v in zip(counts, exp_vals)), list((np.sum(c), len(v)) for c, v in zip(counts, exp_vals))
 
 
 def test_expand_data_sums():
 
-    counts = data[calibration._Entry.source_value_counts]
-    values = data[calibration._Entry.source_values]
+    counts = data[calibration.CalibrationEntry.source_value_counts]
+    values = data[calibration.CalibrationEntry.source_values]
     data_sums = np.array(tuple(np.sum(np.array(c) * np.array(v)) for c, v in zip(counts, values)))
 
     exp_vals, _, _, _ = calibration._get_expanded_data(data)
@@ -35,20 +35,20 @@ def test_expand_data_sums():
 def test_expand_data_targets():
 
     _, targets, _, _ = calibration._get_expanded_data(data)
-    np.testing.assert_allclose(targets.astype(np.float), data[calibration._Entry.target_value])
+    np.testing.assert_allclose(targets.astype(np.float), data[calibration.CalibrationEntry.target_value])
 
 
 def test_expand_vector_length():
 
-    counts = data[calibration._Entry.source_value_counts][0]
-    values = data[calibration._Entry.source_values][0]
+    counts = data[calibration.CalibrationEntry.source_value_counts][0]
+    values = data[calibration.CalibrationEntry.source_values][0]
     expanded = calibration._expand_compressed_vector(values, counts, np.float)
     assert sum(counts) == expanded.size
 
 
 def test_expanded_vector_sum():
-    counts = data[calibration._Entry.source_value_counts][0]
-    values = data[calibration._Entry.source_values][0]
+    counts = data[calibration.CalibrationEntry.source_value_counts][0]
+    values = data[calibration.CalibrationEntry.source_values][0]
     data_sum = np.sum(np.array(counts) * np.array(values))
     expanded = calibration._expand_compressed_vector(values, counts, np.float)
     np.testing.assert_allclose(expanded.sum(), data_sum)

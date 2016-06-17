@@ -15,22 +15,22 @@ from scanomatic.io.paths import Paths
 _logger = Logger("Calibration")
 
 
-class _Entry(Enum):
+class CalibrationEntry(Enum):
     image = 0
-    """:type : Entry"""
+    """:type : CalibrationEntry"""
     colony_name = 1
-    """:type : Entry"""
+    """:type : CalibrationEntry"""
     target_value = 2
-    """:type : Entry"""
+    """:type : CalibrationEntry"""
     source_values = (3, 0)
-    """:type : Entry"""
+    """:type : CalibrationEntry"""
     source_value_counts = (3, 1)
-    """:type : Entry"""
+    """:type : CalibrationEntry"""
 
 
 def _eval_deprecated_format(entry, key):
 
-    if isinstance(key, _Entry):
+    if isinstance(key, CalibrationEntry):
         key = key.value
 
     if isinstance(key, int):
@@ -47,16 +47,16 @@ def _parse_data(entry):
         entry = json.loads(entry)
     except ValueError:
         # Try parsing old format
-        entry = {k.name: _eval_deprecated_format(eval(entry), k) for k in _Entry}
+        entry = {k.name: _eval_deprecated_format(eval(entry), k) for k in CalibrationEntry}
 
-    return {_Entry[k]: v for k, v in entry.iteritems()}
+    return {CalibrationEntry[k]: v for k, v in entry.iteritems()}
 
 
 def _valid_entry(entry):
 
     if entry is None:
         return False
-    return _Entry.target_value in entry and _Entry.source_value_counts in entry and _Entry.source_values in entry
+    return CalibrationEntry.target_value in entry and CalibrationEntry.source_value_counts in entry and CalibrationEntry.source_values in entry
 
 
 def _jsonify_entry(entry):
@@ -79,9 +79,9 @@ def load_data_file(file_path=None):
         with open(file_path, 'r') as fs:
 
             data_store = {
-                _Entry.target_value: [],
-                _Entry.source_values: [],
-                _Entry.source_value_counts: []}
+                CalibrationEntry.target_value: [],
+                CalibrationEntry.source_values: [],
+                CalibrationEntry.source_value_counts: []}
 
             for i, line in enumerate(fs):
 
@@ -91,9 +91,9 @@ def load_data_file(file_path=None):
                     entry = None
 
                 if _valid_entry(entry):
-                    data_store[_Entry.source_value_counts].append(entry[_Entry.source_value_counts])
-                    data_store[_Entry.source_values].append(entry[_Entry.source_values])
-                    data_store[_Entry.target_value].append(entry[_Entry.target_value])
+                    data_store[CalibrationEntry.source_value_counts].append(entry[CalibrationEntry.source_value_counts])
+                    data_store[CalibrationEntry.source_values].append(entry[CalibrationEntry.source_values])
+                    data_store[CalibrationEntry.target_value].append(entry[CalibrationEntry.target_value])
 
                 else:
                     _logger.warning("Could not parse line {0}: '{1}' in {2}".format(i, line.strip(), file_path))
@@ -124,16 +124,16 @@ def get_calibration_polynomial(coefficients_array):
 def _get_expanded_data(data_store):
 
     measures = min(len(data_store[k]) for k in
-                   (_Entry.target_value, _Entry.source_values, _Entry.source_value_counts))
+                   (CalibrationEntry.target_value, CalibrationEntry.source_values, CalibrationEntry.source_value_counts))
 
     x = np.empty((measures,), dtype=object)
     y = np.zeros((measures,), dtype=np.float64)
     x_min = None
     x_max = None
 
-    values = data_store[_Entry.source_values]
-    counts = data_store[_Entry.source_value_counts]
-    targets = data_store[_Entry.target_value]
+    values = data_store[CalibrationEntry.source_values]
+    counts = data_store[CalibrationEntry.source_value_counts]
+    targets = data_store[CalibrationEntry.target_value]
 
     for pos in range(measures):
 
