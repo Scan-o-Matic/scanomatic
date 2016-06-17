@@ -2,7 +2,10 @@ from . import calibration
 import numpy as np
 from scipy.stats import linregress
 
+# TODO: Validation should be a calibration method
+
 data = calibration.load_data_file()
+
 
 def test_load_data():
 

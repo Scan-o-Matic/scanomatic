@@ -16,6 +16,9 @@ from scanomatic.io.app_config import Config
 
 _logger = Logger("Scan-o-Matic As Service Check")
 
+# TODO: Many things should be general tools or similar
+# TODO: Add zip of folder with subfolders
+
 
 def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=False):
 

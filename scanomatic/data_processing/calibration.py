@@ -12,6 +12,9 @@ from dateutil import tz
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 
+# TODO: Need removal too
+# TODO: Consider how to send pull request on a polynomial
+
 _logger = Logger("Calibration")
 
 
