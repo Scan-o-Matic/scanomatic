@@ -20,35 +20,27 @@ _logger = Logger("Scan-o-Matic As Service Check")
 # TODO: Add zip of folder with subfolders
 
 
+def daemon_process(path_to_exec, std_out_path, args, shell):
+
+    print("\n***DAEMON SPAWNS***\n")
+    with open(std_out_path, 'w') as fh:
+        sys.stdout = fh
+        sys.stderr = fh
+        print("\n***DAEMON EXECUTABLE LAUNCHES***\n")
+        if shell:
+            p = Popen([path_to_exec] + list(args), stderr=STDOUT, stdout=fh, shell=False)
+        else:
+            p = Popen(" ".join([path_to_exec] + list(args)), stderr=STDOUT, stdout=fh, shell=False)
+        p.wait()
+        print("\n***DAEMON EXECUTABLE DIES***\n")
+
+    print("\n***DAEMON DIES***\n")
+
+
 def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=False):
 
-    class Daemon(Process):
-
-        def __init__(self, path_to_exec, std_out_path, args, shell):
-
-            super(Daemon, self).__init__()
-
-            self._path_to_exec = path_to_exec
-            self._std_out_path = std_out_path
-            self._args = args
-            self._shell = shell
-
-        def run(self):
-            print("\n***DAEMON SPAWNS***\n")
-            with open(self._std_out_path, 'w') as fh:
-                sys.stdout = fh
-                sys.stderr = fh
-                print("\n***DAEMON EXECUTABLE LAUNCHES***\n")
-                if self._shell:
-                    p = Popen([self._path_to_exec] + list(self._args), stderr=STDOUT, stdout=fh, shell=False)
-                else:
-                    p = Popen(" ".join([self._path_to_exec] + list(self._args)), stderr=STDOUT, stdout=fh, shell=False)
-                p.wait()
-                print("\n***DAEMON EXECUTABLE DIES***\n")
-
-            print("\n***DAEMON DIES***\n")
-
-    d = Daemon(path_to_executable, std_out, daemon_args, shell)
+    _logger.info("Launching daemon")
+    d = Process(name='daemon', target=daemon_process, args=(path_to_executable, std_out, daemon_args, shell))
     d.daemon = True
     d.start()
 
