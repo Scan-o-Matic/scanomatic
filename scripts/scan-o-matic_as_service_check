@@ -31,15 +31,19 @@ def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=Fa
             self._shell = shell
 
         def run(self):
-            print self._std_out_path
+            print("\n***DAEMON SPAWNS***\n")
             with open(self._std_out_path, 'w') as fh:
                 sys.stdout = fh
                 sys.stderr = fh
+                print("\n***DAEMON EXECUTABLE LAUNCHES***\n")
                 if self._shell:
                     p = Popen([self._path_to_exec] + list(self._args), stderr=STDOUT, stdout=fh, shell=False)
                 else:
                     p = Popen(" ".join([self._path_to_exec] + list(self._args)), stderr=STDOUT, stdout=fh, shell=False)
                 p.wait()
+                print("\n***DAEMON EXECUTABLE DIES***\n")
+
+            print("\n***DAEMON DIES***\n")
 
     d = Daemon(path_to_executable, std_out, daemon_args, shell)
     d.daemon = True
