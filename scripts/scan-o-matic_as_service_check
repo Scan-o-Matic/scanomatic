@@ -16,9 +16,6 @@ from scanomatic.ui_server.ui_server import ui_server_responsive
 
 _logger = Logger("Scan-o-Matic As Service Check")
 
-# TODO: Many things should be general tools or similar
-# TODO: Add zip of folder with subfolders
-
 
 def daemon_process(path_to_exec, std_out_path, args, shell):
 
