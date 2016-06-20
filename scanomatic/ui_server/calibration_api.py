@@ -103,7 +103,7 @@ def add_routes(app):
 
     @app.route("/api/calibration/export")
     @app.route("/api/calibration/export/<name>")
-    def calibration_export(name=None):
+    def calibration_export(name=''):
 
         data_path = get_data_file_path(label=name)
 
@@ -116,4 +116,7 @@ def add_routes(app):
             zf.writestr(data, data_path)
 
         memory_file.seek(0)
-        return send_file(memory_file, attachment_filename='{0}.zip'.format(name), as_attachment=True)
+        if not name:
+            name = 'default'
+
+        return send_file(memory_file, attachment_filename='calibration.{0}.zip'.format(name), as_attachment=True)
