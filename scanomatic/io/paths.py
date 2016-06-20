@@ -111,7 +111,7 @@ class Paths(SingeltonOneInit):
         self.analysis_polynomial = os.path.join(
             self.config, "calibration.polynomials")
         self.analysis_calibration_data = os.path.join(
-            self.config, "calibration.data")
+            self.config, "{0}calibration.data")
         self.analysis_graycsales = os.path.join(
             self.config, "grayscales.cfg")
 

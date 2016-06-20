@@ -105,34 +105,56 @@ def _jsonify(data):
     return json.dumps([_jsonify_entry(e) for e in data])
 
 
-def load_data_file(file_path=None):
-
+def _get_file_path(file_path=None, label=''):
     if file_path is None:
-        file_path = Paths().analysis_calibration_data
+        if label:
+            file_path = Paths().analysis_calibration_data.format(label + ".")
+        else:
+            file_path = Paths().analysis_calibration_data.format(label)
 
+    return file_path
+
+
+def save_data_to_file(data, file_path=None, label=''):
+
+    file_path = _get_file_path(file_path, label)
+    with open(file_path, 'w') as fh:
+        json.dump(data, fh)
+
+
+def load_data_file(file_path=None, label=''):
+
+    file_path = _get_file_path(file_path, label)
     try:
-
         with open(file_path, 'r') as fs:
 
-            data_store = {
-                CalibrationEntry.target_value: [],
-                CalibrationEntry.source_values: [],
-                CalibrationEntry.source_value_counts: []}
+            try:
+                data_store = json.load(fs)
 
-            for i, line in enumerate(fs):
+            except ValueError:
 
-                try:
-                    entry = _parse_data(line)
-                except (ValueError, TypeError):
-                    entry = None
+                data_store = {
+                    CalibrationEntry.target_value: [],
+                    CalibrationEntry.source_values: [],
+                    CalibrationEntry.source_value_counts: []}
 
-                if _valid_entry(entry):
-                    data_store[CalibrationEntry.source_value_counts].append(entry[CalibrationEntry.source_value_counts])
-                    data_store[CalibrationEntry.source_values].append(entry[CalibrationEntry.source_values])
-                    data_store[CalibrationEntry.target_value].append(entry[CalibrationEntry.target_value])
+                for i, line in enumerate(fs):
 
-                else:
-                    _logger.warning("Could not parse line {0}: '{1}' in {2}".format(i, line.strip(), file_path))
+                    try:
+                        entry = _parse_data(line)
+                    except (ValueError, TypeError):
+                        entry = None
+
+                    if _valid_entry(entry):
+                        data_store[CalibrationEntry.source_value_counts].append(
+                            entry[CalibrationEntry.source_value_counts])
+                        data_store[CalibrationEntry.source_values].append(
+                            entry[CalibrationEntry.source_values])
+                        data_store[CalibrationEntry.target_value].append(
+                            entry[CalibrationEntry.target_value])
+
+                    else:
+                        _logger.warning("Could not parse line {0}: '{1}' in {2}".format(i, line.strip(), file_path))
 
     except IOError:
         raise IOError("File at {0} not found".format(file_path))
