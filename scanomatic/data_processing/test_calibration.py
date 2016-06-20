@@ -1,8 +1,6 @@
 from . import calibration
 import numpy as np
-from scipy.stats import linregress
 
-# TODO: Validation should be a calibration method
 
 data = calibration.load_data_file()
 
@@ -83,12 +81,13 @@ def test_polynomial():
 
     poly_coeffs = calibration.calculate_polynomial(data)
     poly = calibration.get_calibration_polynomial(poly_coeffs)
-    expanded, targets, _, _ = calibration._get_expanded_data(data)
-    expanded_sums = np.array(tuple(v.sum() for v in poly(expanded)))
-    slope, intercept, _, p_value, stderr = linregress(expanded_sums, targets)
+    validity = calibration.validate_polynomial(data, poly)
 
-    np.testing.assert_almost_equal(slope, 1.0, decimal=3)
-    assert abs(intercept) < 75000
-    assert stderr < 0.05
-    assert p_value < 0.1
+    if validity == calibration.CalibrationValidation.BadSlope:
+        raise AssertionError(calibration.CalibrationValidation.BadSlope)
 
+    elif validity == calibration.CalibrationValidation.BadIntercept:
+        raise AssertionError(calibration.CalibrationValidation.BadIntercept)
+
+    elif validity == calibration.CalibrationValidation.BadStatistics:
+        raise AssertionError(calibration.CalibrationValidation.BadStatistics)
