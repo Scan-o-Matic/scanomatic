@@ -23,6 +23,7 @@ from scanomatic.models.factories.scanning_factory import ScanningModelFactory
 from . import qc_api
 from . import analysis_api
 from . import compilation_api
+from . import calibration_api
 from . import scan_api
 from . import management_api
 from . import tools_api
@@ -309,6 +310,7 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     compilation_api.add_routes(app)
     scan_api.add_routes(app)
     data_api.add_routes(app, rpc_client, debug)
+    calibration_api.add_routes(app)
 
     try:
         if is_local:

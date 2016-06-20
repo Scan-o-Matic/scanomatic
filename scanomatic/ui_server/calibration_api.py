@@ -8,9 +8,7 @@ import time
 
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
-    get_data_file_path, load_calibrations
-
-from scanomatic.io.backup import get_backup_object_for_stream
+    get_data_file_path
 
 _VALID_CHARACTERS = letters + "-._1234567890"
 
@@ -80,14 +78,15 @@ def add_routes(app):
 
         return jsonify(success=True, poly=poly, name=name)
 
+    @app.route("/api/calibration/get")
     @app.route("/api/calibration/get/<name>")
     @app.route("/api/calibration/get/<name>/<int:degree>")
-    def calibration_get(name, degree=5):
+    def calibration_get(name="", degree=None):
 
         try:
-            return jsonify(success=True, poly=load_calibration(name, degree).tolist())
-        except TypeError:
-            return jsonify(success=False, reason="Can't find polynomial '{0}' (Degree: {2})".format(name, degree))
+            return jsonify(success=True, poly=list(load_calibration(name, degree)))
+        except (TypeError, AttributeError):
+            return jsonify(success=False, reason="Can't find polynomial '{0}' (Degree: {1})".format(name, degree))
 
     @app.route("/api/calibration/remove/<name>")
     @app.route("/api/calibration/remove/<name>/<int:degree>")
@@ -102,8 +101,9 @@ def add_routes(app):
                                "*" if degree is None else degree
                            ))
 
+    @app.route("/api/calibration/export")
     @app.route("/api/calibration/export/<name>")
-    def calibration_remove(name):
+    def calibration_export(name=None):
 
         data_path = get_data_file_path(label=name)
 
