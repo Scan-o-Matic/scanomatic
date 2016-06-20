@@ -287,10 +287,7 @@ def load_calibration(label="", poly_degree=None, file_path=None):
             return data[k]
 
 
-def add_calibration(label, poly, file_path=None):
-
-    if file_path is None:
-        file_path = Paths().analysis_polynomial
+def _safe_copy_file_if_needed(file_path):
 
     # Make copy of previous state
     if os.path.isfile(file_path):
@@ -300,6 +297,14 @@ def add_calibration(label, poly, file_path=None):
 
         target = "{0}.{1}.polynomials".format(file_path.rstrip("polynomials"), stamp)
         shutil.copy(file_path, target)
+
+
+def add_calibration(label, poly, file_path=None):
+
+    if file_path is None:
+        file_path = Paths().analysis_polynomial
+
+    _safe_copy_file_if_needed(file_path)
 
     data = load_calibrations(file_path)
 
@@ -312,3 +317,37 @@ def add_calibration(label, poly, file_path=None):
     with open(file_path, 'w') as fh:
 
         json.dump(data, fh)
+
+
+def remove_calibration(label, degree=None, file_path=None):
+
+    if file_path is None:
+        file_path = Paths().analysis_polynomial
+
+    data = load_calibrations(file_path)
+    keys = tuple(data.keys())
+    has_changed = False
+
+    for key in keys:
+
+        if degree:
+
+            if key == "{0}_{1}".format(label, degree):
+                del data[key]
+                has_changed = True
+                break
+        elif key.startswith("{0}_".format(label)):
+            del data[key]
+            has_changed = True
+
+    if has_changed:
+        _safe_copy_file_if_needed(file_path)
+        with open(file_path, 'w') as fh:
+            json.dump(data, fh)
+
+        return True
+
+    else:
+        _logger.warning("No polynomial was found matching the criteria (label={0}, degree={1}".format(
+            label, degree))
+        return False
