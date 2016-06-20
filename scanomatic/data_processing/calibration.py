@@ -103,7 +103,7 @@ def _jsonify(data):
     return json.dumps([_jsonify_entry(e) for e in data])
 
 
-def _get_file_path(file_path=None, label=''):
+def get_data_file_path(file_path=None, label=''):
     if file_path is None:
         if label:
             file_path = Paths().analysis_calibration_data.format(label + ".")
@@ -115,14 +115,14 @@ def _get_file_path(file_path=None, label=''):
 
 def save_data_to_file(data, file_path=None, label=''):
 
-    file_path = _get_file_path(file_path, label)
+    file_path = get_data_file_path(file_path, label)
     with open(file_path, 'w') as fh:
         json.dump(data, fh)
 
 
 def load_data_file(file_path=None, label=''):
 
-    file_path = _get_file_path(file_path, label)
+    file_path = get_data_file_path(file_path, label)
     try:
         with open(file_path, 'r') as fs:
 
