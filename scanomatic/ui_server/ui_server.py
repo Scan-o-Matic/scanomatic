@@ -1,4 +1,5 @@
 import os
+import requests
 
 import time
 import webbrowser
@@ -348,3 +349,17 @@ def launch(open_browser_url=True, **kwargs):
         _logger.info("Will not open browser")
 
     launch_server(**kwargs)
+
+
+def ui_server_responsive():
+
+    port = Config().ui_server.port
+    if not port:
+        port = 5000
+    host = Config().ui_server.host
+    if not host:
+        host = 'localhost'
+    try:
+        return requests.get("http://{0}:{1}".format(host, port)).ok
+    except requests.ConnectionError:
+        return False

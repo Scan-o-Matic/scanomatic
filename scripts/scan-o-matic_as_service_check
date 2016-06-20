@@ -1,18 +1,18 @@
 #! /usr/bin/env python
-from argparse import ArgumentParser
-import psutil
-from time import sleep
 import os
 import sys
-import tarfile
-import requests
+from argparse import ArgumentParser
 from multiprocessing import Process
 from subprocess import Popen, STDOUT
+from time import sleep
 
+import psutil
+
+from scanomatic.io.backup import backup_file
 from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
-from scanomatic.io.app_config import Config
+from scanomatic.ui_server.ui_server import ui_server_responsive
 
 _logger = Logger("Scan-o-Matic As Service Check")
 
@@ -53,55 +53,10 @@ def get_proc_name(proc):
         return proc.name
 
 
-def ui_server_responsive():
-
-    port = Config().ui_server.port
-    if not port:
-        port = 5000
-    host = Config().ui_server.host
-    if not host:
-        host = 'localhost'
-    try:
-        return requests.get("http://{0}:{1}".format(host, port)).ok
-    except requests.ConnectionError:
-        return False
-
-
 def server_responsive():
 
     return get_client().online
 
-
-def get_backup_name(path_to_original, max_backups=10, pattern="{0}.{1}.tar.gz"):
-
-    t_prev = None
-
-    for i in range(max_backups):
-
-        path = pattern.format(path_to_original, i)
-        if not os.path.isfile(path):
-            return path
-
-        s = os.stat(path)
-        t = max(s.st_atime, s.st_mtime, s.st_ctime)
-        if t_prev is not None and t_prev < t:
-            return path
-        t_prev = t
-
-    return pattern.format(path_to_original, 0)
-
-
-def backup_file(path):
-
-    if not os.path.isfile(path):
-        return None
-
-    backup_path = get_backup_name(path)
-
-    with tarfile.open(backup_path, "w:gz") as tar:
-        tar.add(path)
-
-    return backup_path
 
 if __name__ == "__main__":
 
