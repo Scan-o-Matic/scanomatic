@@ -4,7 +4,7 @@ import re
 from string import letters
 
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
-    load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file
+    load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration
 
 _VALID_CHARACTERS = letters + "-._1234567890"
 
@@ -85,7 +85,13 @@ def add_routes(app):
 
     @app.route("/api/calibration/remove/<name>")
     @app.route("/api/calibration/remove/<name>/<int:degree>")
-    def calibration_remove(name, degree=5):
+    def calibration_remove(name, degree=None):
 
-        # TODO: Implement to remove
-        raise NotImplemented()
+        if remove_calibration(label=name, degree=degree):
+            return jsonify(success=True)
+        else:
+            return jsonify(success=False,
+                           reason="No calibration found matching criteria (name={0}, degree={1})".format(
+                               name,
+                               "*" if degree is None else degree
+                           ))
