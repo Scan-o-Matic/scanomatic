@@ -1,8 +1,13 @@
 from flask import Flask, jsonify, request
 import numpy as np
+import re
+from string import letters
 
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
-    load_calibration
+    load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file
+
+_VALID_CHARACTERS = letters + "-._1234567890"
+
 
 def add_routes(app):
     """
@@ -51,17 +56,23 @@ def add_routes(app):
         entries = data_object.get("entries", [])
         poly = calculate_polynomial(entries, degree)
 
-        # TODO: Validate poly
-        #
-        raise NotImplemented()
+        validity = validate_polynomial(entries, poly)
+        if validity != CalibrationValidation.OK:
+            return jsonify(success=False, reason=validity.name)
 
-        # TODO: Save data
-        #
+        name = re.sub(r'[ .,]]', '_', name)
+        name = "".join(c for c in name if c in _VALID_CHARACTERS)
+
+        if not name:
+            return jsonify(success=False, reason="Name contains no valid characters ({0})".format(_VALID_CHARACTERS))
+
+        save_data_to_file(entries, label=name)
+
         data_path = None
 
         add_calibration(name, poly, data_path)
 
-        return jsonify(success=True)
+        return jsonify(success=True, poly=poly, name=name)
 
     @app.route("/api/calibration/get/<name>")
     @app.route("/api/calibration/get/<name>/<int:degree>")
