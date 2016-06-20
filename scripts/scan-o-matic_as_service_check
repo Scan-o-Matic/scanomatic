@@ -23,18 +23,19 @@ def daemon_process(path_to_exec, std_out_path, args, shell):
     with open(std_out_path, 'w') as fh:
         sys.stdout = fh
         sys.stderr = fh
+        map(str(a) for a in args)
         print("\n***DAEMON EXECUTABLE LAUNCHES***\n")
         if shell:
-            p = Popen([path_to_exec] + list(args), stderr=STDOUT, stdout=fh, shell=False)
-        else:
             p = Popen(" ".join([path_to_exec] + list(args)), stderr=STDOUT, stdout=fh, shell=False)
+        else:
+            p = Popen([path_to_exec] + list(args), stderr=STDOUT, stdout=fh, shell=False)
         p.wait()
         print("\n***DAEMON EXECUTABLE DIES***\n")
 
     print("\n***DAEMON DIES***\n")
 
 
-def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=False):
+def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=True):
 
     _logger.info("Launching daemon")
     d = Process(name='daemon', target=daemon_process, args=(path_to_executable, std_out, daemon_args, shell))
