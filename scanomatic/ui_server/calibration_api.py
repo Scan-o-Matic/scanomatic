@@ -1,10 +1,16 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import numpy as np
 import re
 from string import letters
+from io import BytesIO
+import zipfile
+import time
 
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
-    load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration
+    load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
+    get_data_file_path, load_calibrations
+
+from scanomatic.io.backup import get_backup_object_for_stream
 
 _VALID_CHARACTERS = letters + "-._1234567890"
 
@@ -95,3 +101,19 @@ def add_routes(app):
                                name,
                                "*" if degree is None else degree
                            ))
+
+    @app.route("/api/calibration/export/<name>")
+    def calibration_remove(name):
+
+        data_path = get_data_file_path(label=name)
+
+        memory_file = BytesIO()
+        with zipfile.ZipFile(memory_file, 'w') as zf:
+
+            data = zipfile.ZipInfo(data_path)
+            data.date_time = time.localtime(time.time())[:6]
+            data.compress_type = zipfile.ZIP_DEFLATED
+            zf.writestr(data, data_path)
+
+        memory_file.seek(0)
+        return send_file(memory_file, attachment_filename='{0}.zip'.format(name), as_attachment=True)
