@@ -33,3 +33,24 @@ def backup_file(*paths):
             tar.add(path)
 
     return backup_path
+
+
+def get_backup_object_for_stream(paths):
+    archive = tarfile.open(mode='w:gz')
+    for path in paths:
+        archive.add(path, recursive=False)
+    return archive
+
+
+def backup_recursive(path):
+
+    dir_path = os.path.dirname(path)
+    base_name = os.path.basename(path)
+    with tarfile.open(os.path.join(dir_path, base_name + '.tar.gz'), mode='w:gz') as archive:
+        archive.add(path, recursive=True)
+
+
+def get_recursive_backup_object_for_stream(path):
+    archive = tarfile.open(mode='w:gz')
+    archive.add(path, recursive=True)
+    return archive
