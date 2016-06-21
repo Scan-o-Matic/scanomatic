@@ -13,6 +13,10 @@ from subprocess import Popen, PIPE, call
 # INTERNAL DEPENDENCIES
 #
 
+silent_install = any(arg.lower() == '--default' for arg in sys.argv)
+if silent_install:
+    sys.argv = [arg for arg in sys.argv if arg.lower() != '--default']
+
 from setup_tools import MiniLogger, patch_bashrc_if_not_reachable, test_executable_is_reachable
 
 if sys.argv[1] == 'uninstall':
@@ -153,9 +157,9 @@ _logger.info("Scan-o-Matic is setup on system")
 
 from setup_tools import install_data_files, install_launcher
 _logger.info("Copying data and configuration files")
-install_data_files()
+install_data_files(silent=silent_install)
 install_launcher()
-patch_bashrc_if_not_reachable()
+patch_bashrc_if_not_reachable(silent=silent_install)
 _logger.info("Post Setup Complete")
 
 if not test_executable_is_reachable():
@@ -191,6 +195,16 @@ if not test_executable_is_reachable():
     sispmctl is installed.
 
 """
+
+from scanomatic.io.paths import Paths
+
+try:
+    with open(Paths().source_location_file, mode='w') as fh:
+        directory = os.path.dirname(os.path.join(os.path.abspath(os.path.expanduser(os.path.curdir)), sys.argv[0]))
+        fh.write(directory)
+
+except IOError:
+    pass
 
 # postSetup.CheckDependencies(package_dependencies)
 
