@@ -73,7 +73,7 @@ def get_active_branch(path):
 @_git_root_navigator
 def git_pull(path):
 
-    # Needs smart handling of pull to not lock etc.
+    # TODO: Needs smart handling of pull to not lock etc.
     """
     try:
         p = Popen(['git', 'pull'], stdout=PIPE, stderr=PIPE)

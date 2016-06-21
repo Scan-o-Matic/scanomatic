@@ -102,6 +102,16 @@ def add_routes(app, rpc_client):
             shutdown_server()
             return jsonify(success=True)
 
+        elif action == 'version_check':
+
+            # TODO: Only check if exists
+            # TODO: Disallow frequent checks
+            return jsonify(success=False, reason="Not implemented")
+
+        elif action == 'upgrade':
+            # TODO: Add upgrade from API
+            return jsonify(success=False, reason="Not implemented")
+
     @app.route("/api/job/<job_id>/<job_command>")
     def _communicate_with_job(job_id="", job_command=""):
 
