@@ -40,6 +40,8 @@ class Paths(SingeltonOneInit):
         self.fixtures = os.path.join(self.config, "fixtures")
         self.images = os.path.join(self.root, "images")
 
+        self.source_location_file = os.path.join(self.root, "source_location.txt")
+
         self.desktop_file = "scan-o-matic.desktop"
         self.desktop_file_path = os.path.join(
             self.config, self.desktop_file)
