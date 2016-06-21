@@ -19,28 +19,28 @@ _logger = Logger("Scan-o-Matic As Service Check")
 
 def daemon_process(path_to_exec, std_out_path, args, shell):
 
-    print("\n***DAEMON SPAWNS***\n")
     with open(std_out_path, 'w') as fh:
-        sys.stdout = fh
-        sys.stderr = fh
-        map(str(a) for a in args)
-        print("\n***DAEMON EXECUTABLE LAUNCHES***\n")
-        if shell:
-            p = Popen(" ".join([path_to_exec] + list(args)), stderr=STDOUT, stdout=fh, shell=False)
-        else:
-            p = Popen([path_to_exec] + list(args), stderr=STDOUT, stdout=fh, shell=False)
-        p.wait()
-        print("\n***DAEMON EXECUTABLE DIES***\n")
+        args = (str(a) for a in args)
 
-    print("\n***DAEMON DIES***\n")
+        if shell:
+            fh.write("*** LAUNCHING IN SHELL: {0} ***\n\n".format(" ".join([path_to_exec] + list(args))))
+            p = Popen(" ".join([path_to_exec] + list(args)), stderr=STDOUT, stdout=fh, shell=True)
+        else:
+            fh.write("*** LAUNCHING WITHOUT SHELL: {0} ***\n\n".format([path_to_exec] + list(args)))
+            p = Popen([path_to_exec] + list(args), stderr=STDOUT, stdout=fh, shell=False)
+
+        p.wait()
 
 
 def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=True):
 
-    _logger.info("Launching daemon")
+    _logger.info("Launching daemon {0} (args={2}, {3}), outputting to {1} ".format(
+        path_to_executable, std_out, daemon_args, "shell" if shell else "no shell"
+    ))
     d = Process(name='daemon', target=daemon_process, args=(path_to_executable, std_out, daemon_args, shell))
     d.daemon = True
     d.start()
+    sleep(5)
 
 
 def get_proc_name(proc):
@@ -95,15 +95,15 @@ if __name__ == "__main__":
                 p.kill()
             _logger.info("Will wait 1 second before continuing")
             sleep(1)
-            som_ui_server = False
+            som_server = False
 
         # Starting shit that needs starting
         if not som_server:
             backup_file(Paths().log_server)
-            daemon("scan-o-matic_server", std_out=Paths().log_server, shell=True)
+            daemon("scan-o-matic_server", std_out=Paths().log_server, shell=False)
             _logger.info("Started SoM server")
 
         if not som_ui_server:
             backup_file(Paths().log_ui_server)
-            daemon("scan-o-matic", std_out=Paths().log_ui_server, daemon_args=("--no-browser",))
+            daemon("scan-o-matic", std_out=Paths().log_ui_server, daemon_args=("--no-browser",), shell=False)
             _logger.info("Started UI server")
