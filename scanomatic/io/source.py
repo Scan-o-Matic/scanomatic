@@ -1,5 +1,7 @@
 from subprocess import call, PIPE, Popen
 import os
+
+from scanomatic import _logger
 from .paths import Paths
 from .logger import Logger
 import requests
@@ -144,3 +146,17 @@ def upgrade(branch=None):
 
         _logger.info("Already newest version")
         return True
+
+
+def git_version(
+        git_repo='https://raw.githubusercontent.com/local-minimum/scanomatic',
+        branch='master',
+        file='scanomatic/__init__.py'):
+
+    uri = "/".join((git_repo, branch, file))
+    for line in requests.get(uri).text.split("\n"):
+        if line.startswith("__version__"):
+            return line.split("=")[-1].strip()
+
+    _logger.warning("Could not access any valid version information from uri {0}".format(uri))
+    return ""
