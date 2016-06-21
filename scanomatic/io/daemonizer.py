@@ -1,22 +1,29 @@
 import os
 from multiprocessing import Process
-from subprocess import Popen, STDOUT
 from time import sleep
+from subprocess import call, STDOUT
+
+from scanomatic.io.logger import Logger
+
+_logger = Logger("Daemonizer")
 
 
-def daemon_process(path_to_exec, std_out_path, args, shell):
+def _daemon_process(path_to_exec, std_out_path, args, shell):
 
     with open(std_out_path, 'w') as fh:
         args = (str(a) for a in args)
 
         if shell:
             fh.write("*** LAUNCHING IN SHELL: {0} ***\n\n".format(" ".join([path_to_exec] + list(args))))
-            p = Popen(" ".join([path_to_exec] + list(args)), stderr=STDOUT, stdout=fh, shell=True)
+            retcode = call(" ".join([path_to_exec] + list(args)), stderr=STDOUT, stdout=fh, shell=True)
         else:
             fh.write("*** LAUNCHING WITHOUT SHELL: {0} ***\n\n".format([path_to_exec] + list(args)))
-            p = Popen([path_to_exec] + list(args), stderr=STDOUT, stdout=fh, shell=False)
+            retcode = call([path_to_exec] + list(args), stderr=STDOUT, stdout=fh, shell=False)
 
-        p.wait()
+        if retcode:
+            fh.write("\n*** DAEMON EXITED WITH CODE {0} ***\n".format(retcode))
+        else:
+            fh.write("\n*** DAEMON DONE ***\n")
 
 
 def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=True):
@@ -24,7 +31,8 @@ def daemon(path_to_executable, std_out=os.devnull, daemon_args=tuple(), shell=Tr
     _logger.info("Launching daemon {0} (args={2}, {3}), outputting to {1} ".format(
         path_to_executable, std_out, daemon_args, "shell" if shell else "no shell"
     ))
-    d = Process(name='daemon', target=daemon_process, args=(path_to_executable, std_out, daemon_args, shell))
+    d = Process(name='daemon', target=_daemon_process, args=(path_to_executable, std_out, daemon_args, shell))
     d.daemon = True
     d.start()
-    sleep(5)
+
+    sleep(1)

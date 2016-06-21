@@ -7,10 +7,10 @@ import psutil
 
 from scanomatic.io.backup import backup_file
 from scanomatic.io.daemonizer import daemon
-from scanomatic.io.logger import Logger
 from scanomatic.io.paths import Paths
 from scanomatic.io.rpc_client import get_client
 from scanomatic.ui_server.ui_server import ui_server_responsive
+from scanomatic.io.logger import Logger
 
 _logger = Logger("Scan-o-Matic As Service Check")
 
