@@ -5,6 +5,7 @@ from string import letters
 from io import BytesIO
 import zipfile
 import time
+import os
 
 from scanomatic.data_processing.calibration import add_calibration, CalibrationEntry, calculate_polynomial, \
     load_calibration, validate_polynomial, CalibrationValidation, save_data_to_file, remove_calibration, \
@@ -110,10 +111,10 @@ def add_routes(app):
         memory_file = BytesIO()
         with zipfile.ZipFile(memory_file, 'w') as zf:
 
-            data = zipfile.ZipInfo(data_path)
+            data = zipfile.ZipInfo(os.path.basename(data_path))
             data.date_time = time.localtime(time.time())[:6]
             data.compress_type = zipfile.ZIP_DEFLATED
-            zf.writestr(data, data_path)
+            zf.writestr(data, open(data_path, 'r').read())
 
         memory_file.seek(0)
         if not name:
