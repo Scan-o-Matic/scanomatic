@@ -1,7 +1,7 @@
 from subprocess import call, PIPE, Popen
 import os
 
-from scanomatic import _logger
+from scanomatic import get_version
 from .paths import Paths
 from .logger import Logger
 import requests
@@ -9,7 +9,6 @@ import tempfile
 from StringIO import StringIO
 import zipfile
 
-import scanomatic
 
 _logger = Logger("Source Checker")
 
@@ -46,6 +45,7 @@ def _git_root_navigator(f):
 
     return _wrapped
 
+
 @_git_root_navigator
 def is_under_git_control(path):
 
@@ -54,6 +54,7 @@ def is_under_git_control(path):
     except OSError:
         retcode = -1
     return retcode == 0
+
 
 @_git_root_navigator
 def get_active_branch(path):
@@ -90,7 +91,7 @@ def git_pull(path):
 
 
 def download(base_uri="https://github.com/local-minimum/scanomatic/archive", branch=None, verbose=False):
-
+    global _logger
     if branch is None:
         branch = 'master'
 
@@ -117,7 +118,7 @@ def install(source_path):
 
     try:
         retcode = call(['python', os.path.join(source_path, "setup.py"), "install", "--user", "--default"],
-                  stderr=PIPE, stdout=PIPE)
+                       stderr=PIPE, stdout=PIPE)
     except OSError:
         return False
 
@@ -125,18 +126,19 @@ def install(source_path):
 
 
 def upgrade(branch=None):
+    global _logger
     path = get_source_location()
     if has_source(path) and is_under_git_control(path):
 
         if branch is None:
             branch = get_active_branch(path)
 
-        if not scanomatic.is_newest_version(branch=branch):
+        if is_newest_version(branch=branch):
 
             if git_pull():
                 return install(path)
 
-    if not scanomatic.is_newest_version():
+    if not is_newest_version():
 
         _logger.info("Downloading fresh into temp")
         path = download(branch=branch)
@@ -151,12 +153,50 @@ def upgrade(branch=None):
 def git_version(
         git_repo='https://raw.githubusercontent.com/local-minimum/scanomatic',
         branch='master',
-        file='scanomatic/__init__.py'):
-
-    uri = "/".join((git_repo, branch, file))
+        suffix='scanomatic/__init__.py'):
+    global _logger
+    uri = "/".join((git_repo, branch, suffix))
     for line in requests.get(uri).text.split("\n"):
         if line.startswith("__version__"):
             return line.split("=")[-1].strip()
 
     _logger.warning("Could not access any valid version information from uri {0}".format(uri))
     return ""
+
+
+def _version_parser(version=get_version()):
+
+    return tuple(int("".join(c for c in v if c in "0123456789")) for v in version.split(".")
+                 if any((c in "0123456789" and c) for c in v))
+
+
+def _greatest_version(v1, v2):
+    global _logger
+    comparable = min(len(v) for v in (v1, v2))
+    for i in range(comparable):
+        if v1[i] == v2[i]:
+            continue
+        elif v1[i] > v2[i]:
+            return v1
+        else:
+            return v2
+
+    if len(v1) >= len(v2):
+        return v1
+    elif len(v2) > len(v1):
+        return v2
+
+    _logger.warning("None of the versions is a version!")
+    return None
+
+
+def is_newest_version(branch='master'):
+    global _logger
+    current = _version_parser()
+    online_version = git_version(branch=branch)
+    if current == _greatest_version(current, _version_parser(online_version)):
+        _logger.info("Already using most recent version {0}".format(get_version()))
+        return True
+    else:
+        _logger.info("There's a new version on the branch {0} available.".format(branch))
+        return False
