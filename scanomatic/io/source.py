@@ -164,7 +164,7 @@ def git_version(
     return ""
 
 
-def _version_parser(version=get_version()):
+def parse_version(version=get_version()):
 
     return tuple(int("".join(c for c in v if c in "0123456789")) for v in version.split(".")
                  if any((c in "0123456789" and c) for c in v))
@@ -192,9 +192,9 @@ def _greatest_version(v1, v2):
 
 def is_newest_version(branch='master'):
     global _logger
-    current = _version_parser()
+    current = parse_version()
     online_version = git_version(branch=branch)
-    if current == _greatest_version(current, _version_parser(online_version)):
+    if current == _greatest_version(current, parse_version(online_version)):
         _logger.info("Already using most recent version {0}".format(get_version()))
         return True
     else:

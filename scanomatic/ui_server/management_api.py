@@ -5,6 +5,8 @@ import sys
 import signal
 from subprocess import Popen, PIPE
 from threading import Thread
+from scanomatic import get_version
+from scanomatic.io.source import parse_version
 
 
 def relaunch():
@@ -102,7 +104,11 @@ def add_routes(app, rpc_client):
             shutdown_server()
             return jsonify(success=True)
 
-        elif action == 'version_check':
+        elif action == 'version':
+
+            return jsonify(success=True, version=get_version(), version_ints=parse_version(get_version()))
+
+        elif action == 'upgradable':
 
             # TODO: Only check if exists
             # TODO: Disallow frequent checks
