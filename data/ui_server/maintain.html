@@ -21,7 +21,7 @@
             are running). Shutting down the server while scanning experiments are running will always cause issues as
             the server is needed to acquire scanners.</em></p>
         </div>
-        <h1>Server</h1>
+        <h2>Server</h2>
         <div class="section-frame" id="server-actions">
             <button type="button" name="Server" value="Reboot" onclick="javascript:server_reboot(this);">Reboot</button>
             <button type="button" name="Server" value="Shutdown" onclick="javascript:server_shutdown(this);">Shutdown</button>
@@ -40,10 +40,14 @@
             <button type="button" name="Joint" value="Reboot" onclick="javascript:app_server_reboot(this);">Reboot</button>
             <button type="button" name="Joint" value="Shutdown" onclick="javascript:app_server_shutdown(this);">Shutdown</button>
         </div>
+
+        <h2>Upgrade</h2>
+        <div class="section-frame" id="upgrade"></div>
+
     </div>
 </body>
     <script>
         setVersionInformation();
-
+        setUpgradeCheck();
     </script>
 </html>
