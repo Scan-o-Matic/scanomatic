@@ -143,8 +143,16 @@ def add_routes(app, rpc_client):
                                                       _GIT_INFO["version_tuple"]) != local_version["version_tuple"])
 
         elif action == 'upgrade':
-            # TODO: Add upgrade from API
-            return jsonify(success=False, reason="Not implemented")
+
+            branch = request.values.get('branch', None)
+            success = upgrade(branch=branch)
+            if success:
+                return jsonify(success=True)
+            else:
+                return jsonify(success=False, reason="Could be no update is available or installation failed.")
+
+        else:
+            return jsonify(success=False, reason="Unknown action '{0}'".format(action))
 
     @app.route("/api/job/<job_id>/<job_command>")
     def _communicate_with_job(job_id="", job_command=""):
