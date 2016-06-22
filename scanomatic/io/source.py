@@ -13,7 +13,7 @@ import json
 _logger = Logger("Source Checker")
 
 
-def get_source_information():
+def _load_source_information():
 
     try:
         with open(Paths().source_location_file, 'r') as fh:
@@ -28,6 +28,20 @@ def get_source_information():
         pass
 
     return {'location': None, 'branch': None}
+
+
+def get_source_information(test_info=False):
+
+    data = _load_source_information()
+
+    if test_info:
+        if not has_source(data['location']):
+            data['location'] = None
+
+        if not data['branch'] and data['location'] and is_under_git_control(data['location']):
+            data['branch'] = get_active_branch(data['location'])
+
+    return data
 
 
 def has_source(path=None):

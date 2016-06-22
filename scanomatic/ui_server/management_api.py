@@ -6,7 +6,7 @@ import signal
 from subprocess import Popen, PIPE
 from threading import Thread
 from scanomatic import get_version
-from scanomatic.io.source import parse_version, upgrade, git_version, highest_version
+from scanomatic.io.source import parse_version, upgrade, git_version, highest_version, get_source_information
 
 _GIT_INFO = None
 _GIT_INFO_RECHECK = 3600 * 24
@@ -114,7 +114,8 @@ def add_routes(app, rpc_client):
 
         elif action == 'version':
 
-            return jsonify(success=True, version=get_version(), version_ints=parse_version(get_version()))
+            return jsonify(success=True, version=get_version(), version_ints=parse_version(get_version()),
+                           source_information=get_source_information(test_info=True))
 
         elif action == 'upgradable':
 
