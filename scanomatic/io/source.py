@@ -158,7 +158,7 @@ def git_version(
     uri = "/".join((git_repo, branch, suffix))
     for line in requests.get(uri).text.split("\n"):
         if line.startswith("__version__"):
-            return line.split("=")[-1].strip()
+            return line.split("=")[-1].strip('" ')
 
     _logger.warning("Could not access any valid version information from uri {0}".format(uri))
     return ""
@@ -170,7 +170,7 @@ def parse_version(version=get_version()):
                  if any((c in "0123456789" and c) for c in v))
 
 
-def _greatest_version(v1, v2):
+def highest_version(v1, v2):
     global _logger
     comparable = min(len(v) for v in (v1, v2))
     for i in range(comparable):
@@ -194,7 +194,7 @@ def is_newest_version(branch='master'):
     global _logger
     current = parse_version()
     online_version = git_version(branch=branch)
-    if current == _greatest_version(current, parse_version(online_version)):
+    if current == highest_version(current, parse_version(online_version)):
         _logger.info("Already using most recent version {0}".format(get_version()))
         return True
     else:
