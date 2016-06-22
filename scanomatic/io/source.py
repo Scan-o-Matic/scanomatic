@@ -8,24 +8,32 @@ import requests
 import tempfile
 from StringIO import StringIO
 import zipfile
-
+import json
 
 _logger = Logger("Source Checker")
 
 
-def get_source_location():
+def get_source_information():
 
     try:
         with open(Paths().source_location_file, 'r') as fh:
-            return fh.read()
+            return json.load(fh)
+    except ValueError:
+        try:
+            with open(Paths().source_location_file, 'r') as fh:
+                return {'location': fh.read(), 'branch': None}
+        except IOError:
+            pass
     except IOError:
-        return None
+        pass
+
+    return {'location': None, 'branch': None}
 
 
 def has_source(path=None):
 
     if path is None:
-        path = get_source_location()
+        path = get_source_information()['location']
 
     if path:
         return os.path.isdir(path)
@@ -114,11 +122,23 @@ def download(base_uri="https://github.com/local-minimum/scanomatic/archive", bra
     return os.path.join(tf, os.walk(tf).next()[1][0])
 
 
-def install(source_path):
+def install(source_path, branch=None):
 
     try:
-        retcode = call(['python', os.path.join(source_path, "setup.py"), "install", "--user", "--default"],
-                       stderr=PIPE, stdout=PIPE)
+        if branch:
+
+            retcode = call(['python',
+                            os.path.join(source_path, "setup.py"),
+                            "install", "--user",
+                            "--default",
+                            "--branch", branch], stderr=PIPE, stdout=PIPE)
+        else:
+
+            retcode = call(['python',
+                            os.path.join(source_path, "setup.py"),
+                            "install", "--user",
+                            "--default"], stderr=PIPE, stdout=PIPE)
+
     except OSError:
         return False
 
@@ -127,7 +147,11 @@ def install(source_path):
 
 def upgrade(branch=None):
     global _logger
-    path = get_source_location()
+    source_info = get_source_information()
+    path = source_info['location']
+    if branch is None:
+        branch = source_info['branch']
+
     if has_source(path) and is_under_git_control(path):
 
         if branch is None:
@@ -136,13 +160,13 @@ def upgrade(branch=None):
         if is_newest_version(branch=branch):
 
             if git_pull():
-                return install(path)
+                return install(path, branch)
 
     if not is_newest_version():
 
         _logger.info("Downloading fresh into temp")
         path = download(branch=branch)
-        return install(path)
+        return install(path, branch)
 
     else:
 
