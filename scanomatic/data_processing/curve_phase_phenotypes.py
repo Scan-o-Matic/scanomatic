@@ -697,27 +697,28 @@ def filter_plate(plate, meta_phenotype):
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLag:
 
-        lag_slope = filter_plate_custom_filter(
+        flat_slope = filter_plate_custom_filter(
             plate, phase=CurvePhases.Flat, measure=CurvePhasePhenotypes.LinearModelSlope,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[0])
 
-        lag_intercept = filter_plate_custom_filter(
+        flat_intercept = filter_plate_custom_filter(
             plate, phase=CurvePhases.Flat, measure=CurvePhasePhenotypes.LinearModelIntercept,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[0])
 
-        impulse_slope = filter_plate_custom_filter(
-            plate, phase=CurvePhases.Impulse, measure=CurvePhasePhenotypes.LinearModelSlope,
-            phases_requirement=lambda phases: len(phases) > 0,
-            phase_selector=lambda phases: phases[0])
+        # TODO: Ensure impulse is after flat
+        impules_phase = _get_phase_id(plate, CurvePhases.Flat, CurvePhases.Impulse)
 
-        impulse_intercept = filter_plate_custom_filter(
-            plate, phase=CurvePhases.Impulse, measure=CurvePhasePhenotypes.LinearModelIntercept,
-            phases_requirement=lambda phases: len(phases) > 0,
-            phase_selector=lambda phases: phases[0])
+        impulse_slope = filter_plate_on_phase_id(
+            plate, impules_phase, measure=CurvePhasePhenotypes.LinearModelSlope)
 
-        return (impulse_intercept - lag_intercept) / (lag_slope - impulse_slope)
+        impulse_intercept = filter_plate_on_phase_id(
+            plate, impules_phase, measure=CurvePhasePhenotypes.LinearModelIntercept)
+
+        lag = (impulse_intercept - flat_intercept) / (flat_slope - impulse_slope)
+
+        return lag
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle:
 
