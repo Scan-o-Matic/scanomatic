@@ -216,6 +216,8 @@ def plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=None, segment
     if colors is None:
         colors = PHASE_PLOTTING_COLORS
 
+    legend = {}
+
     # noinspection PyTypeChecker
     for phase in CurvePhases:
 
@@ -229,7 +231,9 @@ def plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=None, segment
             right = positions[-1]
             left = np.linspace(times[max(left - 1, 0)], times[left], 3)[1]
             right = np.linspace(times[min(curve_raw.size - 1, right + 1)], times[right], 3)[1]
-            ax.axvspan(left, right, color=colors[phase], alpha=segment_alpha)
+            span = ax.axvspan(left, right, color=colors[phase], alpha=segment_alpha, label=phase.name)
+            if phase not in legend:
+                legend[phase] = span
 
     ax.semilogy(times, curve_raw, "+", basey=2, color=colors["raw"], ms=6)
     ax.semilogy(times, curve_smooth, "-", basey=2, color=colors["smooth"], lw=2)
@@ -237,3 +241,5 @@ def plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=None, segment
     ax.set_xlim(xmin=times[0], xmax=times[-1])
     ax.set_xlabel("Time [h]")
     ax.set_ylabel("Population Size [cells]")
+
+    ax.legend(loc="lower right", handles=list(legend.values()))
