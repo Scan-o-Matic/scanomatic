@@ -607,8 +607,8 @@ def filter_plate_custom_filter(
         phases_requirement=lambda phases: len(phases) == 1,
         phase_selector=lambda phases: phases[0]):
 
-    def f(v):
-        phases = tuple(d for t, d in v if t == phase)
+    def f(phenotype_vector):
+        phases = tuple(d for t, d in phenotype_vector if t == phase)
         if phases_requirement(phases):
             return phase_selector(phases)[measure]
         return np.nan
