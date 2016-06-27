@@ -76,7 +76,7 @@ def _validate_lock_key(path, key=""):
         _update_lock(lock_file_path, key)
         return key
     else:
-        return _add_lock(lock_file_path)
+        return ""
 
 
 def _discover_projects(path):
