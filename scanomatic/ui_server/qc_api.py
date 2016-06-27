@@ -11,6 +11,7 @@ from scanomatic.data_processing import phenotyper
 from scanomatic.data_processing.phenotypes import get_sort_order
 from scanomatic.generics.phenotype_filter import Filter
 from scanomatic.io.paths import Paths
+from scanomatic.io.app_config import Config
 from scanomatic.ui_server.general import convert_url_to_path, convert_path_to_url, get_search_results, \
     get_project_name, json_response
 
@@ -60,7 +61,8 @@ def _validate_lock_key(path, key=""):
         with open(lock_file_path, 'r') as fh:
             time_stamp, current_key = fh.readline().split("|")
             time_stamp = float(time_stamp)
-            if not(key == current_key or time.time() - time_stamp > RESERVATION_TIME):
+            if not(key == current_key or key == Config().ui_server.master_key or
+                   time.time() - time_stamp > RESERVATION_TIME):
                 locked = True
     except IOError:
         pass
