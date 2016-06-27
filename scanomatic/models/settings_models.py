@@ -1,6 +1,7 @@
 import scanomatic.generics.model as model
 from scanomatic.io.power_manager import POWER_MANAGER_TYPE, POWER_MODES
 import os
+from uuid import uuid1
 
 
 class VersionChangesModel(model.Model):
@@ -46,7 +47,7 @@ class RPCServerModel(model.Model):
 
 class UIServerModel(model.Model):
 
-    def __init__(self, port=5000, local=True, host=None):
+    def __init__(self, port=5000, local=True, host=None, master_key=None):
 
         self.port = port
 
@@ -54,7 +55,7 @@ class UIServerModel(model.Model):
             True if host is None or host in ['127.0.0.1', 'localhost'] else False)
 
         self.host = host
-
+        self.master_key = master_key if master_key else str(uuid1())
         super(UIServerModel, self).__init__()
 
 
