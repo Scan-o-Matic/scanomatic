@@ -8,14 +8,31 @@ __version__ = "0.9991"
 import os
 import sys
 from subprocess import Popen, PIPE, call
+import json
 
 #
-# INTERNAL DEPENDENCIES
+# Parsing and removing argument for accepting all questions as default
 #
 
 silent_install = any(arg.lower() == '--default' for arg in sys.argv)
 if silent_install:
     sys.argv = [arg for arg in sys.argv if arg.lower() != '--default']
+
+#
+# Parsing and removing arguments for branch information
+#
+
+branch = None
+branch_info = tuple(i for i, arg in enumerate(sys.argv) if arg.lower() == '--branch')
+
+if branch_info:
+    branch_info = branch_info[0]
+    branch = sys.argv[branch_info + 1] if len(sys.argv) > branch_info + 1 else None
+    sys.argv = sys.argv[:branch_info] + sys.argv[branch_info + 2:]
+
+#
+# Python-setup
+#
 
 from setup_tools import MiniLogger, patch_bashrc_if_not_reachable, test_executable_is_reachable
 
@@ -201,10 +218,10 @@ from scanomatic.io.paths import Paths
 try:
     with open(Paths().source_location_file, mode='w') as fh:
         directory = os.path.dirname(os.path.join(os.path.abspath(os.path.expanduser(os.path.curdir)), sys.argv[0]))
-        fh.write(directory)
+        json.dump({'location': directory, 'branch': branch}, fh)
 
 except IOError:
-    pass
+    _logger.warning("Could not write info for future upgrades. You should stick to manual upgrades")
 
 # postSetup.CheckDependencies(package_dependencies)
 

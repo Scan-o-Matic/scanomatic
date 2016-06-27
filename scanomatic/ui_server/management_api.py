@@ -6,7 +6,15 @@ import signal
 from subprocess import Popen, PIPE
 from threading import Thread
 from scanomatic import get_version
-from scanomatic.io.source import parse_version
+from scanomatic.io.source import parse_version, upgrade, git_version, highest_version, get_source_information
+
+_GIT_INFO = None
+_GIT_INFO_RECHECK = 3600 * 24
+
+
+def time_to_cache_git_info():
+
+    return _GIT_INFO["check_time"] + _GIT_INFO_RECHECK < time.time()
 
 
 def relaunch():
@@ -106,17 +114,46 @@ def add_routes(app, rpc_client):
 
         elif action == 'version':
 
-            return jsonify(success=True, version=get_version(), version_ints=parse_version(get_version()))
+            return jsonify(success=True, version=get_version(), version_ints=parse_version(get_version()),
+                           source_information=get_source_information(test_info=True))
 
         elif action == 'upgradable':
 
-            # TODO: Only check if exists
-            # TODO: Disallow frequent checks
-            return jsonify(success=False, reason="Not implemented")
+            global _GIT_INFO
+
+            if not _GIT_INFO or request.values.get('force_check', False, type=bool) or time_to_cache_git_info():
+                git_ver_as_text = git_version()
+                _GIT_INFO = {
+                    "check_time": time.time(),
+                    "version_text": git_ver_as_text,
+                    "version_tuple": parse_version(git_ver_as_text),
+                    "cached": False
+                }
+            else:
+                _GIT_INFO["cached"] = True
+
+            local_version = {
+                    "check_time": time.time(),
+                    "version_text": get_version(),
+                    "version_tuple": parse_version(get_version()),
+                    "cached": False
+            }
+
+            return jsonify(success=True, remote_version=_GIT_INFO, local_version=local_version,
+                           upgradable=highest_version(local_version["version_tuple"],
+                                                      _GIT_INFO["version_tuple"]) != local_version["version_tuple"])
 
         elif action == 'upgrade':
-            # TODO: Add upgrade from API
-            return jsonify(success=False, reason="Not implemented")
+
+            branch = request.values.get('branch', None)
+            success = upgrade(branch=branch)
+            if success:
+                return jsonify(success=True)
+            else:
+                return jsonify(success=False, reason="Could be no update is available or installation failed.")
+
+        else:
+            return jsonify(success=False, reason="Unknown action '{0}'".format(action))
 
     @app.route("/api/job/<job_id>/<job_command>")
     def _communicate_with_job(job_id="", job_command=""):

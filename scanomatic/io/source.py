@@ -8,24 +8,46 @@ import requests
 import tempfile
 from StringIO import StringIO
 import zipfile
-
+import json
 
 _logger = Logger("Source Checker")
 
 
-def get_source_location():
+def _load_source_information():
 
     try:
         with open(Paths().source_location_file, 'r') as fh:
-            return fh.read()
+            return json.load(fh)
+    except ValueError:
+        try:
+            with open(Paths().source_location_file, 'r') as fh:
+                return {'location': fh.read(), 'branch': None}
+        except IOError:
+            pass
     except IOError:
-        return None
+        pass
+
+    return {'location': None, 'branch': None}
+
+
+def get_source_information(test_info=False):
+
+    data = _load_source_information()
+
+    if test_info:
+        if not has_source(data['location']):
+            data['location'] = None
+
+        if not data['branch'] and data['location'] and is_under_git_control(data['location']):
+            data['branch'] = get_active_branch(data['location'])
+
+    return data
 
 
 def has_source(path=None):
 
     if path is None:
-        path = get_source_location()
+        path = get_source_information()['location']
 
     if path:
         return os.path.isdir(path)
@@ -114,11 +136,23 @@ def download(base_uri="https://github.com/local-minimum/scanomatic/archive", bra
     return os.path.join(tf, os.walk(tf).next()[1][0])
 
 
-def install(source_path):
+def install(source_path, branch=None):
 
     try:
-        retcode = call(['python', os.path.join(source_path, "setup.py"), "install", "--user", "--default"],
-                       stderr=PIPE, stdout=PIPE)
+        if branch:
+
+            retcode = call(['python',
+                            os.path.join(source_path, "setup.py"),
+                            "install", "--user",
+                            "--default",
+                            "--branch", branch], stderr=PIPE, stdout=PIPE)
+        else:
+
+            retcode = call(['python',
+                            os.path.join(source_path, "setup.py"),
+                            "install", "--user",
+                            "--default"], stderr=PIPE, stdout=PIPE)
+
     except OSError:
         return False
 
@@ -127,7 +161,11 @@ def install(source_path):
 
 def upgrade(branch=None):
     global _logger
-    path = get_source_location()
+    source_info = get_source_information()
+    path = source_info['location']
+    if branch is None:
+        branch = source_info['branch']
+
     if has_source(path) and is_under_git_control(path):
 
         if branch is None:
@@ -136,13 +174,13 @@ def upgrade(branch=None):
         if is_newest_version(branch=branch):
 
             if git_pull():
-                return install(path)
+                return install(path, branch)
 
     if not is_newest_version():
 
         _logger.info("Downloading fresh into temp")
         path = download(branch=branch)
-        return install(path)
+        return install(path, branch)
 
     else:
 
@@ -158,7 +196,7 @@ def git_version(
     uri = "/".join((git_repo, branch, suffix))
     for line in requests.get(uri).text.split("\n"):
         if line.startswith("__version__"):
-            return line.split("=")[-1].strip()
+            return line.split("=")[-1].strip('" ')
 
     _logger.warning("Could not access any valid version information from uri {0}".format(uri))
     return ""
@@ -170,7 +208,7 @@ def parse_version(version=get_version()):
                  if any((c in "0123456789" and c) for c in v))
 
 
-def _greatest_version(v1, v2):
+def highest_version(v1, v2):
     global _logger
     comparable = min(len(v) for v in (v1, v2))
     for i in range(comparable):
@@ -194,7 +232,7 @@ def is_newest_version(branch='master'):
     global _logger
     current = parse_version()
     online_version = git_version(branch=branch)
-    if current == _greatest_version(current, parse_version(online_version)):
+    if current == highest_version(current, parse_version(online_version)):
         _logger.info("Already using most recent version {0}".format(get_version()))
         return True
     else:

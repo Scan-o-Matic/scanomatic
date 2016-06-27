@@ -13,6 +13,7 @@
 	<title>Scan-o-Matic</title></head>
 <body>
     <div id="cont">
+        <h2 id="version-info">Checking version...</h2>
         <div class="section">
             <p><em>If Scan-o-Matic currently have jobs it is working on or in queue, it is generally
                 not recommended to do anything to the server. In most cases it still should be alright, but
@@ -20,7 +21,7 @@
             are running). Shutting down the server while scanning experiments are running will always cause issues as
             the server is needed to acquire scanners.</em></p>
         </div>
-        <h1>Server</h1>
+        <h2>Server</h2>
         <div class="section-frame" id="server-actions">
             <button type="button" name="Server" value="Reboot" onclick="javascript:server_reboot(this);">Reboot</button>
             <button type="button" name="Server" value="Shutdown" onclick="javascript:server_shutdown(this);">Shutdown</button>
@@ -34,11 +35,19 @@
             <button type="button" name="Application" value="Reboot" onclick="javascript:app_reboot(this);">Reboot</button>
             <button type="button" name="Application" value="Shutdown" onclick="javascript:app_shutdown(this);">Shutdown</button>
         </div>
-        <h2>Joint</h2>
+        <h2>Application & Server</h2>
         <div class="section-frame" id="joint-actions">
             <button type="button" name="Joint" value="Reboot" onclick="javascript:app_server_reboot(this);">Reboot</button>
             <button type="button" name="Joint" value="Shutdown" onclick="javascript:app_server_shutdown(this);">Shutdown</button>
         </div>
+
+        <h2>Upgrade</h2>
+        <div class="section-frame" id="upgrade"></div>
+
     </div>
 </body>
+    <script>
+        setVersionInformation();
+        setUpgradeCheck();
+    </script>
 </html>
