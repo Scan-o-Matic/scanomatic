@@ -616,6 +616,39 @@ def filter_plate_custom_filter(
     return np.ma.masked_invalid(np.frompyfunc(f, 1, 1)(plate).astype(np.float))
 
 
+def filter_plate_on_phase_id(plate, phases_id, measure):
+
+    def f(phenotype_vector, phase_id):
+        if phase_id < 0:
+            return np.nan
+
+        try:
+            return phenotype_vector[phase_id][1][measure]
+        except (KeyError, TypeError):
+            return np.nan
+
+    return np.ma.masked_invalid(np.frompyfunc(f, 2, 1)(plate, phases_id).astype(np.float))
+
+
+def _get_phase_id(plate, *phases):
+
+    l = len(phases)
+
+    def f(v):
+        v = zip(*v)[0]
+        i = 0
+        for id_phase, phase in enumerate(v):
+            if i < l:
+                if phase is phases[i]:
+                    i += 1
+                    if i == l:
+                        return id_phase
+
+        return -1
+
+    return np.frompyfunc(f, 1, 1)(plate).astype(np.int)
+
+
 def _impulse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
