@@ -51,7 +51,7 @@ def parse(path, time_scale=36000):
 def load(path=None, data=None, times=None, time_scale=36000, reshape=True):
 
     if path:
-        (_, times, data), _ = parse(path)
+        (_, times, data), _ = parse(path, time_scale=time_scale)
 
     data = data.T
     if data.shape[0] == 200:
