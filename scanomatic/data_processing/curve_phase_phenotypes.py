@@ -358,10 +358,13 @@ def _locate_flat(dydt, loc, phases, filt, offset, extension_threshold):
 
     candidates = (np.abs(dydt) < extension_threshold) & filt
     candidates = signal.medfilt(candidates, 3).astype(bool)
-    candidates, _ = label(candidates)
+    candidates, n_found = label(candidates)
     if candidates[loc] == 0:
-        raise ValueError("Least slope {0}, loc {1} is not a candidate {2} (filt {3})".format(
-            dydt[loc], loc, candidates.tolist(), filt.tolist()))
+        if n_found == 0:
+            raise ValueError("Least slope {0}, loc {1} is not a candidate {2} (filt {3})".format(
+                dydt[loc], loc, candidates.tolist(), filt.tolist()))
+        else:
+            loc = np.where((dydt[candidates > 0].argmin() == dydt) & (candidates > 0))[0]
     if offset:
         phases[offset: -offset][candidates == candidates[loc]] = CurvePhases.Flat.value
     else:
