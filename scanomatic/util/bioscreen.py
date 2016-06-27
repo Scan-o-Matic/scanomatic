@@ -56,7 +56,8 @@ def load(path=None, data=None, times=None, time_scale=36000, reshape=True):
     data = data.T
     if data.shape[0] == 200:
         if reshape:
-            data = np.array([[data[:100].reshape(10, 10)], [data[100:].reshape(10, 10)]])
+            data = np.array([data[:100].reshape(10, 10, *data.shape[1:]),
+                             data[100:].reshape(10, 10, *data.shape[1:])])
         else:
             data = np.array([[data[:100]], [data[100:]]])
     else:
