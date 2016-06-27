@@ -3,7 +3,6 @@ import operator
 from scipy import signal
 from scipy.ndimage import label, generic_filter
 from scipy.stats import linregress
-
 from enum import Enum
 
 from scanomatic.data_processing import growth_phenotypes
