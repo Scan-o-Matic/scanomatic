@@ -30,10 +30,10 @@ PHASE_PLOTTING_COLORS = {
     "smooth": "#849b88"}
 
 
+@wraps
 def _validate_input(f):
 
-    @wraps
-    def wrapped(*args, **kwargs):
+    def _wrapped(*args, **kwargs):
 
         if len(args) > 0 and isinstance(args[0], StringTypes):
 
@@ -44,7 +44,7 @@ def _validate_input(f):
 
         return f(*args, **kwargs)
 
-    return wrapped
+    return _wrapped
 
 
 @_validate_input
