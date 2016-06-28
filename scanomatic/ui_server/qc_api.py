@@ -150,7 +150,6 @@ def add_routes(app):
 
     @app.route("/api/results/browse/<path:project>")
     @app.route("/api/results/browse")
-    @app.route("/api/results/browse/")
     def browse_for_results(project=""):
 
         local_zone = tz.gettz()
@@ -293,7 +292,6 @@ def add_routes(app):
     @app.route("/api/results/meta_data/column_names/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/column_names/<path:project>")
     @app.route("/api/results/meta_data/column_names")
-    @app.route("/api/results/meta_data/column_names/")
     def show_meta_data_headers(plate=None, project=None):
 
         base_url = "/api/results/meta_data/column_names"
@@ -319,7 +317,6 @@ def add_routes(app):
     @app.route("/api/results/meta_data/get/<int:plate>/<path:project>")
     @app.route("/api/results/meta_data/get/<path:project>")
     @app.route("/api/results/meta_data/get")
-    @app.route("/api/results/meta_data/get/")
     def get_meta_data(plate=None, project=None):
 
         base_url = "/api/results/meta_data/get"
@@ -346,7 +343,6 @@ def add_routes(app):
             return jsonify(success=False, reason="Project has no meta-data added", is_endpoint=True, **response)
 
     @app.route("/api/results/pinning", defaults={'project': ""})
-    @app.route("/api/results/pinning/", defaults={'project': ""})
     @app.route("/api/results/pinning/<path:project>")
     def get_pinning(project=None):
 
@@ -365,7 +361,6 @@ def add_routes(app):
                        **_get_json_lock_response(lock_key))
 
     @app.route("/api/results/gridding", defaults={'project': ""})
-    @app.route("/api/results/gridding/", defaults={'project': ""})
     @app.route("/api/results/gridding/<int:plate>", defaults={'project': ""})
     @app.route("/api/results/gridding/<int:plate>/<path:project>")
     @app.route("/api/results/gridding/<path:project>")
@@ -393,7 +388,6 @@ def add_routes(app):
         return send_from_directory(path, Paths().experiment_grid_image_pattern.format(plate + 1))
 
     @app.route("/api/results/phenotype_names")
-    @app.route("/api/results/phenotype_names/")
     @app.route("/api/results/phenotype_names/<path:project>")
     def get_phenotype_names(project=None):
 
@@ -423,7 +417,6 @@ def add_routes(app):
                  **_get_json_lock_response(lock_key))))
 
     @app.route("/api/results/quality_index")
-    @app.route("/api/results/quality_index/")
     @app.route("/api/results/quality_index/<int:plate>/<path:project>")
     @app.route("/api/results/quality_index/<path:project>")
     def get_quality_index(project=None, plate=None):
@@ -452,7 +445,6 @@ def add_routes(app):
         return jsonify(success=True, is_endpoint=True, dim1_rows=rows.tolist(), dim2_cols=cols.tolist(), **response)
 
     @app.route("/api/results/phenotype")
-    @app.route("/api/results/phenotype/")
     @app.route("/api/results/phenotype/<phenotype>/<int:plate>/<path:project>")
     @app.route("/api/results/phenotype/<int:plate>/<path:project>")
     @app.route("/api/results/phenotype/<phenotype>/<path:project>")
@@ -511,8 +503,7 @@ def add_routes(app):
                  for filt in Filter if filt != Filter.OK},
                 response))
 
-    @app.route("/api/results/curve_mark/undo/")
-    @app.route("/api/results/curve_mark/undo/")
+    @app.route("/api/results/curve_mark/undo")
     @app.route("/api/results/curve_mark/undo/<int:plate>/<path:project>")
     @app.route("/api/results/curve_mark/undo/<path:project>")
     def undo_curve_mark(plate=None, project=None):
@@ -562,7 +553,6 @@ def add_routes(app):
         return jsonify(success=True, is_endpoint=True, had_effect=had_effect, **response)
 
     @app.route("/api/results/curve_mark/set")
-    @app.route("/api/results/curve_mark/set/")
     @app.route("/api/results/curve_mark/set/<mark>/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>",
                methods=["POST", "GET"])
     @app.route("/api/results/curve_mark/set/<mark>/<int:plate>/<path:project>", methods=["POST", "GET"])
@@ -679,7 +669,6 @@ def add_routes(app):
         return jsonify(success=True, is_endpoint=True, **response)
 
     @app.route("/api/results/curves")
-    @app.route("/api/results/curves/")
     @app.route("/api/results/curves/<int:plate>/<int:d1_row>/<int:d2_col>/<path:project>")
     @app.route("/api/results/curves/<int:plate>/<path:project>")
     @app.route("/api/results/curves/<path:project>")
@@ -736,7 +725,6 @@ def add_routes(app):
                                             mark_all_urls=mark_all_urls, **response)))
 
     @app.route("/api/results/movie/make")
-    @app.route("/api/results/movie/make/")
     @app.route("/api/results/movie/make/<film_type>/<int:plate>/<int:outer_dim>/<int:inner_dim>/<path:project>")
     @app.route("/api/results/movie/make/<int:plate>/<int:outer_dim>/<int:inner_dim>/<path:project>")
     @app.route("/api/results/movie/make/<int:plate>/<path:project>")
