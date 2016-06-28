@@ -27,17 +27,17 @@ def _make_film(film_type, save_target=None, pos=None, path=None):
     return retcode == 0
 
 
-def _add_lock(path):
+def _add_lock(path, ip):
 
     key = uuid.uuid4().hex
-    _update_lock(path, key)
+    _update_lock(path, key, ip)
     return key
 
 
-def _update_lock(lock_file_path, key):
-
+def _update_lock(lock_file_path, key, ip):
+    print "Updating", lock_file_path
     with open(lock_file_path, 'w') as fh:
-        fh.write("|".join((str(time.time()), str(key))))
+        fh.write("|".join((str(time.time()), str(key), str(ip))))
     return True
 
 
@@ -49,34 +49,63 @@ def _remove_lock(path):
     return True
 
 
-def _validate_lock_key(path, key=""):
+def _read_lock_file(path):
+
+    def parse(data):
+
+        try:
+            time_stamp, current_key, ip = data.split("|")
+        except ValueError:
+            try:
+                time_stamp, current_key = data.split("|")
+                ip = ""
+            except ValueError:
+                time_stamp = 0
+                current_key = ""
+                ip = ""
+
+        try:
+            time_stamp = float(time_stamp)
+        except ValueError:
+            time_stamp = 0
+
+        return time_stamp, current_key, ip
+
+    lock_file_path = os.path.join(path, Paths().ui_server_phenotype_state_lock)
+    try:
+        with open(lock_file_path, 'r') as fh:
+            time_stamp, current_key, ip = parse(fh.readline())
+    except IOError:
+        print "IO err"
+        time_stamp = 0
+        ip = ""
+        current_key = ""
+
+    return time_stamp, current_key, ip
+
+
+def _validate_lock_key(path, key="", ip=""):
 
     if not key:
         key = ""
 
-    lock_file_path = os.path.join(path, Paths().ui_server_phenotype_state_lock)
+    time_stamp, current_key, lock_ip = _read_lock_file(path)
+    locked_by_other = False
+    if not(key == current_key or key == Config().ui_server.master_key or not current_key or
+           time.time() - time_stamp > RESERVATION_TIME):
+        locked_by_other = True
 
-    locked = False
-    try:
-        with open(lock_file_path, 'r') as fh:
-            time_stamp, current_key = fh.readline().split("|")
-            time_stamp = float(time_stamp)
-            if not(key == current_key or key == Config().ui_server.master_key or
-                   time.time() - time_stamp > RESERVATION_TIME):
-                locked = True
-    except IOError:
-        pass
-    except ValueError:
-        pass
+    print time_stamp, current_key, lock_ip, locked_by_other
 
-    if locked:
-        return ""
+    if locked_by_other:
+        return locked_by_other, "", lock_ip
 
     if key:
-        _update_lock(lock_file_path, key)
-        return key
+        lock_file_path = os.path.join(path, Paths().ui_server_phenotype_state_lock)
+        locked_by_me = _update_lock(lock_file_path, key, ip)
+        return locked_by_me, key, ip
     else:
-        return ""
+        return locked_by_other, current_key, lock_ip
 
 
 def _discover_projects(path):
