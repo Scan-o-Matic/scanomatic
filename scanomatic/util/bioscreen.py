@@ -1,7 +1,10 @@
 import csv
 from collections import defaultdict
 import numpy as np
-
+import chardet
+import unicodedata
+import codecs
+from itertools import izip
 from scanomatic.data_processing.phenotyper import Phenotyper
 
 
@@ -25,27 +28,57 @@ def _get_count_mode(counts):
     return max_key
 
 
-def _parse_non_data(data, mode):
+def _parse_non_data(data, mode, include_until=-1):
 
-    return tuple(data[i] for i in data if len(data[i]) != mode)
+    return tuple(data[i] for i in data if len(data[i]) != mode or i < include_until)
 
 
-def _parse_data(data, mode, time_scale):
+def _parse_data(data, mode, time_scale, start_row=-1):
 
-    all_data = tuple(data[i] for i in data if len(data[i]) == mode)
-    data = np.array(all_data[1:], dtype=np.float)
-    return all_data[0], data[:, 0] / time_scale, data[:, 1:]
+    all_data = tuple(data[i] for i in data if len(data[i]) == mode and i > start_row)
+    data = np.array(all_data[1:], dtype=np.object)
+
+    try:
+        time = data[:, 0].astype(np.float) / time_scale
+    except ValueError:
+        def f(v):
+            return sum(float(a) * b for a, b in izip(v.split(":"), (1, 1/60., 1/3600.)))
+
+        time = np.frompyfunc(f, 1, 1)(data[:, 0])
+
+    colstart = max(1, data.shape[1] - 200)
+
+    return all_data[0][colstart:], time.astype(np.float), data[:, colstart:].astype(np.float)
+
+
+def csv_loader(path):
+
+    with open(path, 'r') as fh:
+        data = fh.read()
+        data = codecs.decode(data, chardet.detect(data)['encoding'])
+        data = unicodedata.normalize('NFKD', data).encode('ascii', 'ignore')
+
+    dialect = csv.Sniffer().sniff(data)
+    data = data.split(dialect.lineterminator)
+    data = {i: v for i, v in enumerate(csv.reader(data, dialect=dialect))}
+    return data
 
 
 def parse(path, time_scale=36000):
 
-    with open(path, 'r') as fh:
-        data = fh.readlines()
-
-    dialect = csv.Sniffer().sniff(data[10])
-    data = {i: v for i, v in enumerate(csv.reader(data, dialect=dialect))}
+    data = csv_loader(path)
     mode_length = _get_count_mode(_count_row_lengths(data))
-    return _parse_data(data, mode_length, time_scale), _parse_non_data(data, mode_length)
+    rows = max(data.keys()) + 1
+    i = 0
+    ret = None
+    while i < rows:
+        try:
+            ret = _parse_data(data, mode_length, time_scale, start_row=i)
+            break
+        except ValueError:
+            i += 1
+
+    return ret, _parse_non_data(data, mode_length, include_until=i)
 
 
 def load(path=None, data=None, times=None, time_scale=36000, reshape=True):
