@@ -127,19 +127,22 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
 
         action = request.args.get("action")
         if action == "update":
-            data = request.json
 
-            app_conf.number_of_scanners = data["number_of_scanners"]
-            app_conf.power_manager.number_of_sockets = data["power_manager"]["sockets"]
-            app_conf.power_manager.host = data["power_manager"]["host"]
-            app_conf.power_manager.mac = data["power_manager"]["mac"]
-            app_conf.power_manager.name = data["power_manager"]["name"]
-            app_conf.power_manager.password = data["power_manager"]["password"]
-            app_conf.power_manager.host = data["power_manager"]["host"]
-            app_conf.power_manager.type = POWER_MANAGER_TYPE[data["power_manager"]["type"]]
-            app_conf.paths.projects_root = data["paths"]["projects_root"]
-            app_conf.computer_human_name = data["computer_human_name"]
-            app_conf.mail.warn_scanning_done_minutes_before = data["mail"]["warn_scanning_done_minutes_before"]
+            data_object = request.get_json(silent=True, force=True)
+            if not data_object:
+                data_object = request.values
+
+            app_conf.number_of_scanners = data_object["number_of_scanners"]
+            app_conf.power_manager.number_of_sockets = data_object["power_manager"]["sockets"]
+            app_conf.power_manager.host = data_object["power_manager"]["host"]
+            app_conf.power_manager.mac = data_object["power_manager"]["mac"]
+            app_conf.power_manager.name = data_object["power_manager"]["name"]
+            app_conf.power_manager.password = data_object["power_manager"]["password"]
+            app_conf.power_manager.host = data_object["power_manager"]["host"]
+            app_conf.power_manager.type = POWER_MANAGER_TYPE[data_object["power_manager"]["type"]]
+            app_conf.paths.projects_root = data_object["paths"]["projects_root"]
+            app_conf.computer_human_name = data_object["computer_human_name"]
+            app_conf.mail.warn_scanning_done_minutes_before = data_object["mail"]["warn_scanning_done_minutes_before"]
 
             bad_data = []
             success = app_conf.validate(bad_data)
@@ -211,31 +214,36 @@ def launch_server(is_local=None, port=None, host=None, debug=False):
     def _experiment():
 
         if request.args.get("enqueue"):
-            project_name = os.path.basename(os.path.abspath(request.json.get("project_path")))
-            project_root = os.path.dirname(request.json.get("project_path")).replace(
+
+            data_object = request.get_json(silent=True, force=True)
+            if not data_object:
+                data_object = request.values
+
+            project_name = os.path.basename(os.path.abspath(data_object.get("project_path")))
+            project_root = os.path.dirname(data_object.get("project_path")).replace(
                 'root', Config().paths.projects_root)
 
-            plate_descriptions = request.json.get("plate_descriptions")
+            plate_descriptions = data_object.get("plate_descriptions")
             if all(isinstance(p, StringTypes) or p is None for p in plate_descriptions):
                 plate_descriptions = tuple({"index": i, "description": p} for i, p in enumerate(plate_descriptions))
 
             m = ScanningModelFactory.create(
-                 number_of_scans=request.json.get("number_of_scans"),
-                 time_between_scans=request.json.get("time_between_scans"),
+                 number_of_scans=data_object.get("number_of_scans"),
+                 time_between_scans=data_object.get("time_between_scans"),
                  project_name=project_name,
                  directory_containing_project=project_root,
-                 project_tag=request.json.get("project_tag"),
-                 scanner_tag=request.json.get("scanner_tag"),
-                 description=request.json.get("description"),
-                 email=request.json.get("email"),
-                 pinning_formats=request.json.get("pinning_formats"),
-                 fixture=request.json.get("fixture"),
-                 scanner=request.json.get("scanner"),
-                 scanner_hardware=request.json.get("scanner_hardware") if "scanner_hardware" in request.json
+                 project_tag=data_object.get("project_tag"),
+                 scanner_tag=data_object.get("scanner_tag"),
+                 description=data_object.get("description"),
+                 email=data_object.get("email"),
+                 pinning_formats=data_object.get("pinning_formats"),
+                 fixture=data_object.get("fixture"),
+                 scanner=data_object.get("scanner"),
+                 scanner_hardware=data_object.get("scanner_hardware") if "scanner_hardware" in request.json
                  else "EPSON V700",
-                 mode=request.json.get("mode") if "mode" in request.json else "TPU",
+                 mode=data_object.get("mode", "TPU"),
                  plate_descriptions=plate_descriptions,
-                 auxillary_info=request.json.get("auxillary_info"),
+                 auxillary_info=data_object.get("auxillary_info"),
             )
 
             validates = ScanningModelFactory.validate(m)

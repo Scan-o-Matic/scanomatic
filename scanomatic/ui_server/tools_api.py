@@ -23,7 +23,6 @@ def add_routes(app):
     """
 
     @app.route("/api/tools/selection", methods=['POST'])
-    @app.route("/api/tools/selection/", methods=['POST'])
     @app.route("/api/tools/selection/<operation>", methods=['POST'])
     def tools_create_selection(operation='rect'):
         """Converts selection ranges to api-understood selections.
@@ -48,14 +47,18 @@ def add_routes(app):
         Returns: json-object containing the same keys as the object sent.
 
         """
-        if request.json is None:
-            return jsonify()
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        if data_object is None or len(data_object) == 0:
+            return jsonify(success=False, reason="No valid json or post is empty")
 
         if operation == 'separate':
             response = {}
-            for key in request.json:
+            for key in data_object:
 
-                settings = request.json.get(key)
+                settings = data_object.get(key)
 
                 if valid_range(settings):
                     response[key] = range(settings['min'], settings['max'])
@@ -65,16 +68,15 @@ def add_routes(app):
         elif operation == 'rect':
             return jsonify(
                 **{k: v for k, v in
-                   zip(request.json,
+                   zip(data_object,
                        zip(*product(*(range(v['min'], v['max'])
-                                      for k, v in request.json.iteritems()
+                                      for k, v in data_object.iteritems()
                                       if valid_range(v)))))})
 
         else:
             return jsonify()
 
     @app.route("/api/tools/coordinates", methods=['POST'])
-    @app.route("/api/tools/coordinates/", methods=['POST'])
     @app.route("/api/tools/coordinates/<operation>", methods=['POST'])
     def tools_coordinates(operation='create'):
         """Conversion between coordinates and api selections.
@@ -93,14 +95,22 @@ def add_routes(app):
         Returns: json-object
 
         """
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
         if operation == 'create':
-            keys = request.json.get('keys', request.json.keys())
-            return jsonify(coordinates=zip(*(request.json[k] for k in keys)))
+            keys = data_object.get('keys', data_object.keys())
+            return jsonify(coordinates=zip(*(data_object[k] for k in keys)))
 
         elif operation == 'parse':
-            return jsonify(selection=zip(*request.json['coordinates']))
+            _logger.info("Parsing {0}".format(data_object))
+            if 'coordinates' in data_object:
+                return jsonify(selection=zip(*data_object['coordinates']))
+            else:
+                return jsonify(success=False, reason="No coordinates in {0}".format(data_object))
 
-    @app.route("/api/tools/path/")
+    @app.route("/api/tools/path")
     @app.route("/api/tools/path/<command>", methods=['get', 'post'])
     @app.route("/api/tools/path/<command>/", methods=['get', 'post'])
     @app.route("/api/tools/path/<command>/<path:sub_path>", methods=['get', 'post'])

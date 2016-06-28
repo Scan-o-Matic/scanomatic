@@ -365,9 +365,16 @@ def add_routes(app, rpc_client, is_debug_mode):
         if not rpc_client.online:
             return jsonify(success=False, reason="Scan-o-Matic server offline")
 
-        areas = request.json.get("areas")
-        markers = request.json.get("markers")
-        grayscale_name = request.json.get("grayscale_name")
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        if len(data_object) == 0:
+            return jsonify(success=False, reason="No valid json or post is empty")
+
+        areas = data_object.get("areas")
+        markers = data_object.get("markers")
+        grayscale_name = data_object.get("grayscale_name")
 
         name = Paths().get_fixture_name(name)
         if not name:
@@ -491,7 +498,7 @@ def add_routes(app, rpc_client, is_debug_mode):
         grayscale_targets = np.array(data_object.get("grayscale_targets", []))
 
         if not grayscale_targets:
-            grayscale_targets = getGrayscale(request.json.get("grayscale_name", ""))['targets']
+            grayscale_targets = getGrayscale(data_object.get("grayscale_name", ""))['targets']
 
         transpose_polynomial = Image_Transpose(
             sourceValues=grayscale_values,
@@ -637,8 +644,12 @@ def add_routes(app, rpc_client, is_debug_mode):
     @app.route("/api/data/image/analyse/compartment/<compartment>")
     def image_analyse_compartment(compartment):
 
-        image = np.array(request.json.get("image", [[]]))
-        filt = np.array(request.json.get("filter", [[]]))
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
+        image = np.array(data_object.get("image", [[]]))
+        filt = np.array(data_object.get("filter", [[]]))
 
         identifier = ["unknown_image", 0, [0, 0]]  # first plate, upper left colony (just need something
 
