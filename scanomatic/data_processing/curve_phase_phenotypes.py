@@ -155,6 +155,8 @@ class CurvePhaseMetaPhenotypes(Enum):
 
     InitialLag = 20
     ExperimentDoublings = 21
+    InitialLagAlternativeModel = 22
+
     Modalities = 25
     Collapses = 26
 
@@ -660,7 +662,7 @@ def _collapse_counter(phase_vector):
     return -np.inf
 
 
-def filter_plate(plate, meta_phenotype):
+def filter_plate(plate, meta_phenotype, phenotypes):
 
     if meta_phenotype == CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution or \
             meta_phenotype == CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution:
@@ -706,7 +708,6 @@ def filter_plate(plate, meta_phenotype):
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[0])
 
-        # TODO: Ensure impulse is after flat
         impules_phase = _get_phase_id(plate, CurvePhases.Flat, CurvePhases.Impulse)
 
         impulse_slope = filter_plate_on_phase_id(
@@ -716,8 +717,28 @@ def filter_plate(plate, meta_phenotype):
             plate, impules_phase, measure=CurvePhasePhenotypes.LinearModelIntercept)
 
         lag = (impulse_intercept - flat_intercept) / (flat_slope - impulse_slope)
+        lag[lag < 0] = np.nan
+        return np.ma.masked_invalid(lag)
 
-        return lag
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLagAlternativeModel:
+
+        impulse_slope = filter_plate_custom_filter(
+            plate, phase=CurvePhases.Impulse, measure=CurvePhasePhenotypes.LinearModelSlope,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0])
+
+        impulse_intercept = filter_plate_custom_filter(
+            plate, phase=CurvePhases.Impulse, measure=CurvePhasePhenotypes.LinearModelIntercept,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases: phases[0])
+
+        flat_slope = 0
+        flat_intercept = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentBaseLine.value]
+        # TODO: Verify that this baseline makes sense
+        # TODO: Add as under development
+        lag = (impulse_intercept - flat_intercept) / (flat_slope - impulse_slope)
+        lag[lag < 0] = np.nan
+        return np.ma.masked_invalid(lag)
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle:
 
