@@ -198,7 +198,7 @@ def _filter_find(vector, filt, func=np.max):
 DEFAULT_THRESHOLDS = {
     Thresholds.ImpulseExtension: 0.75,
     Thresholds.ImpulseSlopeRequirement: 0.02,
-    Thresholds.FlatlineSlopRequirement: 0.015,
+    Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.FractionAcceleration: 0.66,
     Thresholds.FractionAccelerationTestDuration: 3}
 
