@@ -35,7 +35,7 @@ def _add_lock(path, ip):
 
 
 def _update_lock(lock_file_path, key, ip):
-    print "Updating", lock_file_path
+
     with open(lock_file_path, 'w') as fh:
         fh.write("|".join((str(time.time()), str(key), str(ip))))
     return True
@@ -76,7 +76,6 @@ def _read_lock_file(path):
         with open(lock_file_path, 'r') as fh:
             time_stamp, current_key, ip = parse(fh.readline())
     except IOError:
-        print "IO err"
         time_stamp = 0
         ip = ""
         current_key = ""
@@ -94,8 +93,9 @@ def _validate_lock_key(path, key="", ip=""):
     if not(key == current_key or key == Config().ui_server.master_key or not current_key or
            time.time() - time_stamp > RESERVATION_TIME):
         locked_by_other = True
-
-    print time_stamp, current_key, lock_ip, locked_by_other
+    else:
+        current_key = ""
+        lock_ip = ""
 
     if locked_by_other:
         return locked_by_other, "", lock_ip
