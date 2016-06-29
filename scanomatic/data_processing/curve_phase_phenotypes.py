@@ -751,7 +751,7 @@ def filter_plate(plate, meta_phenotype, phenotypes):
             phase_selector=lambda phases:
             phases[np.argsort(tuple(
                 phase[CurvePhasePhenotypes.FractionYield] if
-                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[0]])
+                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[-1]])
 
         impulse_intercept = filter_plate_custom_filter(
             plate,
@@ -761,7 +761,7 @@ def filter_plate(plate, meta_phenotype, phenotypes):
             phase_selector=lambda phases:
             phases[np.argsort(tuple(
                 phase[CurvePhasePhenotypes.FractionYield] if
-                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[0]])
+                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[-1]])
 
         flat_slope = 0
         flat_intercept = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentLowPoint.value]
