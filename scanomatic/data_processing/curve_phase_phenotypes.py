@@ -542,6 +542,8 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
             if phase == CurvePhases.Acceleration or phase == CurvePhases.Retardation:
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
 
+                # TODO: There's something wack here
+
                 a1 = np.array((time_left, np.log2(curve[left])))
                 a2 = np.array((time_right, np.log2(curve[right - 1])))
                 k1 = derivative[left - derivative_offset]
@@ -805,7 +807,6 @@ def filter_plate(plate, meta_phenotype, phenotypes):
         )
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect:
-
         return filter_plate_custom_filter(
             plate,
             phase=CurvePhases.Acceleration,
