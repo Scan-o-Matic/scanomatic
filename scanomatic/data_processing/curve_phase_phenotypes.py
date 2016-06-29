@@ -729,6 +729,7 @@ def filter_plate(plate, meta_phenotype, phenotypes):
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[0])
 
+        # TODO: Consider using major phase
         impules_phase = _get_phase_id(plate, CurvePhases.Flat, CurvePhases.Impulse)
 
         impulse_slope = filter_plate_on_phase_id(
