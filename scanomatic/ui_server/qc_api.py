@@ -635,6 +635,10 @@ def add_routes(app):
                     m is not Filter.UndecidedProblem]
 
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
+        elif mark == Filter.UndecidedProblem.name:
+            return jsonify(success=False, is_project=True, is_endpoint=True,
+                           reason="User not allowed to set mark {0}".format(mark),
+                           **response)
 
         # Update phenotype if submitted via POST
         if phenotype is None:
