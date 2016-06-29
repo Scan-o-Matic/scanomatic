@@ -622,7 +622,8 @@ def add_routes(app):
                            is_endpoint=True, **response)
         elif not locked:
             return jsonify(success=False, is_project=True, is_endpoint=True,
-                           reason="Failed to acquire lock though no one was working on project. Please Report")
+                           reason="Failed to acquire lock though no one was working on project. Please Report",
+                           **response)
 
         state = phenotyper.Phenotyper.LoadFromState(path)
 
