@@ -723,20 +723,32 @@ def filter_plate(plate, meta_phenotype, phenotypes):
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialLagAlternativeModel:
 
         impulse_slope = filter_plate_custom_filter(
-            plate, phase=CurvePhases.Impulse, measure=CurvePhasePhenotypes.LinearModelSlope,
+            plate,
+            phase=CurvePhases.Impulse,
+            measure=CurvePhasePhenotypes.LinearModelSlope,
             phases_requirement=lambda phases: len(phases) > 0,
-            phase_selector=lambda phases: phases[0])
+            phase_selector=lambda phases:
+            phases[np.argsort(tuple(
+                phase[CurvePhasePhenotypes.FractionYield] if
+                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[0]])
 
         impulse_intercept = filter_plate_custom_filter(
-            plate, phase=CurvePhases.Impulse, measure=CurvePhasePhenotypes.LinearModelIntercept,
+            plate,
+            phase=CurvePhases.Impulse,
+            measure=CurvePhasePhenotypes.LinearModelIntercept,
             phases_requirement=lambda phases: len(phases) > 0,
-            phase_selector=lambda phases: phases[0])
+            phase_selector=lambda phases:
+            phases[np.argsort(tuple(
+                phase[CurvePhasePhenotypes.FractionYield] if
+                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[0]])
 
         flat_slope = 0
-        flat_intercept = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentBaseLine.value]
-        # TODO: Verify that this baseline makes sense
-        # TODO: Add as under development
-        lag = (impulse_intercept - flat_intercept) / (flat_slope - impulse_slope)
+        flat_intercept = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentLowPoint.value]
+
+        lag = (impulse_intercept - np.log2(flat_intercept)) / (flat_slope - impulse_slope)
+
+        # TODO: Ensure flat-measure occurs before impulse
+
         lag[lag < 0] = np.nan
         return np.ma.masked_invalid(lag)
 
