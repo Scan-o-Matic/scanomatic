@@ -72,6 +72,7 @@ class PhenotypeDataType(Enum):
         _under_development = (Phenotypes.GenerationTimePopulationSize,
                               Phenotypes.GrowthLag,
                               Phenotypes.ExperimentLowPoint,
+                              Phenotypes.ExperimentLowPointWhen,
                               CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution,
                               CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime,
                               CurvePhaseMetaPhenotypes.FirstMinorImpulseYieldContribution,
