@@ -109,9 +109,8 @@ def plot_plate_heatmap(
 
     matplotlib.rc('font', **font)
 
-    if cm != plt.cm.Greys:
-        ax.imshow(
-        np.isfinite(plate_data) == np.False_,
+    ax.imshow(
+        plate_data.mask,
         vmin=0,
         vmax=2,
         interpolation="nearest",
