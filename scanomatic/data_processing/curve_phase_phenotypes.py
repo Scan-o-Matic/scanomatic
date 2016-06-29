@@ -764,14 +764,24 @@ def filter_plate(plate, meta_phenotype, phenotypes):
                 phase[CurvePhasePhenotypes.FractionYield] if
                 phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[-1]])
 
+        impulse_start = filter_plate_custom_filter(
+            plate,
+            phase=CurvePhases.Impulse,
+            measure=CurvePhasePhenotypes.Start,
+            phases_requirement=lambda phases: len(phases) > 0,
+            phase_selector=lambda phases:
+            phases[np.argsort(tuple(
+                phase[CurvePhasePhenotypes.FractionYield] if
+                phase[CurvePhasePhenotypes.FractionYield] else -np.inf for phase in phases))[-1]])
+
         flat_slope = 0
         flat_intercept = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentLowPoint.value]
+        low_point_time = phenotypes[..., growth_phenotypes.Phenotypes.ExperimentLowPointWhen.value]
 
         lag = (impulse_intercept - np.log2(flat_intercept)) / (flat_slope - impulse_slope)
 
-        # TODO: Ensure flat-measure occurs before impulse
+        lag[(lag < 0) | (impulse_start < low_point_time)] = np.nan
 
-        lag[lag < 0] = np.nan
         return np.ma.masked_invalid(lag)
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteAngle:
