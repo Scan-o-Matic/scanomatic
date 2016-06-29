@@ -68,7 +68,7 @@ def curve_baseline(curve_smooth_growth_data, *args, **kwargs):
 
 def curve_low_point(curve_smooth_growth_data, *args, **kwargs):
     if curve_smooth_growth_data.any():
-        return curve_smooth_growth_data[:3].min()
+        return np.ma.masked_invalid(np.convolve(curve_smooth_growth_data, np.ones(3) / 3., mode='valid')).min()
     else:
         return np.nan
 
