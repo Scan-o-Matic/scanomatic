@@ -57,7 +57,7 @@ def get_position_phenotypes(phenotypes, plate, position_selection=None):
 def plot_plate_heatmap(
         phenotypes, plate_index, measure=None, use_common_value_axis=True, vmin=None, vmax=None, show_color_bar=True,
         horizontal_orientation=True, cm=plt.cm.RdBu_r, title_text=None, hide_axis=False, fig=None,
-        save_target=None):
+        save_target=None, normalized=False):
 
     if measure is None:
         measure = Phenotypes.GenerationTime
@@ -82,7 +82,7 @@ def plot_plate_heatmap(
         ax.set_title(title_text)
 
     try:
-        plate_data = phenotypes.get_phenotype(measure)[plate_index].astype(np.float)
+        plate_data = phenotypes.get_phenotype(measure, normalized=normalized)[plate_index].astype(np.float)
     except ValueError:
         _logger.error("The phenotype {0} is not scalar and thus can't be displayed as a heatmap".format(measure))
         return fig
