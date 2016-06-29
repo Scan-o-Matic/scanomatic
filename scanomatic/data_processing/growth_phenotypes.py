@@ -73,6 +73,15 @@ def curve_low_point(curve_smooth_growth_data, *args, **kwargs):
         return np.nan
 
 
+def curve_low_point_time(curve_smooth_growth_data, flat_times, *args, **kwargs):
+    # TODO: If a keeper make the convoloution be precalc and not done twice (se above func)
+    try:
+        return flat_times[
+            np.ma.masked_invalid(np.convolve(curve_smooth_growth_data, np.ones(3) / 3., mode='valid')).argmin() + 1]
+    except ValueError:
+        return np.nan
+
+
 def curve_end_average(curve_smooth_growth_data, *args, **kwargs):
     if curve_smooth_growth_data[-3:].any():
         return curve_smooth_growth_data[-3:].mean()
@@ -309,6 +318,8 @@ class Phenotypes(Enum):
     """:type Phenotypes"""
     ExperimentLowPoint = 15
     """:type Phenotypes"""
+    ExperimentLowPointWhen = 23
+    """:type Phenotypes"""
     ExperimentEndAverage = 16
     """:type Phenotypes"""
 
@@ -385,6 +396,9 @@ class Phenotypes(Enum):
 
         elif self is Phenotypes.ExperimentLowPoint:
             return curve_low_point(**kwargs)
+
+        elif self is Phenotypes.ExperimentLowPointWhen:
+            return curve_low_point_time(**kwargs)
 
         elif self is Phenotypes.ChapmanRichardsFit:
             return kwargs['chapman_richards_fit'][0]
