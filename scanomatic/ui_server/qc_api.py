@@ -606,7 +606,7 @@ def add_routes(app):
         Returns: json-object
 
         """
-        url_root = "/api/results/set_curve_mark/set"
+        url_root = "/api/results/curve_mark/set"
         path = convert_url_to_path(project)
         if not phenotyper.path_has_saved_project_state(path):
 
