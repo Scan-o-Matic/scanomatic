@@ -378,7 +378,7 @@ def _locate_flat(dydt, loc, phases, filt, offset, extension_threshold):
             raise ValueError("Least slope {0}, loc {1} is not a candidate {2} (filt {3})".format(
                 dydt[loc], loc, candidates.tolist(), filt.tolist()))
         else:
-            loc = np.where((dydt[candidates > 0].argmin() == dydt) & (candidates > 0))[0]
+            loc = np.where((dydt[candidates > 0].min() == dydt) & (candidates > 0))[0]
     if offset:
         phases[offset: -offset][candidates == candidates[loc]] = CurvePhases.Flat.value
     else:
