@@ -641,8 +641,12 @@ def add_routes(app):
                            **response)
 
         # Update phenotype if submitted via POST
+        data_object = request.get_json(silent=True, force=True)
+        if not data_object:
+            data_object = request.values
+
         if phenotype is None:
-            phenotype = request.values.get("phenotype", default=None)
+            phenotype = data_object.get("phenotype", default=None)
 
         # If plate not submitted give plate completing paths
         if plate is None:
@@ -654,10 +658,10 @@ def add_routes(app):
 
         # Process position(s) info
         if d1_row is None:
-            d1_row = request.values.get("d1_row", default=None)
+            d1_row = data_object.get("d1_row", default=None)
 
         if d2_col is None:
-            d1_row = request.values.get("d2_col",  default=None)
+            d1_row = data_object.get("d2_col",  default=None)
 
         # Ensure format will be correctly interpreted by numpy
         try:
