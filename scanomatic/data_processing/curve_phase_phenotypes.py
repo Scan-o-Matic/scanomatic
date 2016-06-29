@@ -207,14 +207,15 @@ DEFAULT_THRESHOLDS = {
 
 
 def _verify_impulse_or_collapse(dydt, loc_max, thresholds, left, right, phases, offset):
-    if np.abs(dydt[loc_max]) < thresholds[Thresholds.ImpulseSlopeRequirement]:
+    if np.abs(dydt[loc_max]) > thresholds[Thresholds.ImpulseSlopeRequirement]:
+        return True
+    else:
         if left == 0 and offset:
             phases[:offset] = phases[offset]
 
         if right == phases.size and offset:
             phases[-offset:] = phases[-offset - 1]
         return False
-    return True
 
 
 def _verify_impulse_or_collapse_though_growth_delta(impulse_left, impulse_right, left, right, phases, offset):
