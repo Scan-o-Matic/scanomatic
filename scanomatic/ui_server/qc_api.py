@@ -502,6 +502,29 @@ def add_routes(app):
                  for filt in Filter if filt != Filter.OK},
                 response))
 
+    @app.route("/api/results/curve_mark/names")
+    def curve_mark_names():
+        """Get the names
+
+        Returns: json-objects
+
+        """
+        return jsonify(**{Filter.Empty.name: {'text': "Empty",
+                                              'value': Filter.Empty.value,
+                                              'user_settable': True},
+                          Filter.BadData.name: {'text': "Bad Data",
+                                                'value': Filter.BadData.value,
+                                                'user_settable': True},
+                          Filter.NoGrowth.name: {'text': "No Growth",
+                                                 'value': Filter.NoGrowth.value,
+                                                 'user_settable': True},
+                          Filter.OK.name: {'text': "OK",
+                                           'value': Filter.OK.value,
+                                           'user_settable': True},
+                          Filter.UndecidedProblem.name: {'text': "Undecided Problem",
+                                                         'value': Filter.UndecidedProblem.value,
+                                                         'user_settable': False}})
+
     @app.route("/api/results/curve_mark/undo")
     @app.route("/api/results/curve_mark/undo/<int:plate>/<path:project>")
     @app.route("/api/results/curve_mark/undo/<path:project>")
