@@ -284,7 +284,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         self._normalizable_phenotypes = {
             Phenotypes.GenerationTime, Phenotypes.ExperimentGrowthYield, Phenotypes.ExperimentPopulationDoublings,
             Phenotypes.GenerationTimePopulationSize, Phenotypes.GrowthLag, Phenotypes.ColonySize48h,
-            CurvePhaseMetaPhenotypes.InitialLag}
+            CurvePhaseMetaPhenotypes.InitialLag, Phenotypes.ExperimentLowPoint,
+            CurvePhaseMetaPhenotypes.InitialLagAlternativeModel}
 
         self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
 
