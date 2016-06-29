@@ -631,7 +631,8 @@ def add_routes(app):
         if mark is None:
 
             urls = ["{0}/{1}/{2}/{3}".format(url_root, m.name, i, project)
-                    for (i, p), m in product(enumerate(state.plate_shapes), phenotyper.Filter) if p is not None]
+                    for (i, p), m in product(enumerate(state.plate_shapes), phenotyper.Filter) if p is not None and
+                    m is not Filter.UndecidedProblem]
 
             return jsonify(**json_response(["urls"], dict(urls=urls, **response)))
 
