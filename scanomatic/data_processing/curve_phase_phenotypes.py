@@ -3,6 +3,7 @@ import operator
 from scipy import signal
 from scipy.ndimage import label, generic_filter
 from scipy.stats import linregress
+from collections import deque
 from enum import Enum
 
 from scanomatic.data_processing import growth_phenotypes
@@ -257,6 +258,25 @@ def _verify_has_flat(dydt, filt, flat_threshold):
     return candidates.any()
 
 
+def _get_linear_feature(test_funcs, test_argvs, eval_funcs, eval_argvs, left, right):
+
+    if test_funcs:
+        test_func = test_funcs.popleft()
+        test_argv = test_argvs.popleft()
+        eval_func = eval_funcs.popleft()
+        eval_argv = eval_argvs.popleft()
+        if test_func(*test_argv):
+            try:
+                return eval_func(*eval_argv)
+            except ValueError:
+                return _get_linear_feature(test_funcs, test_argvs, eval_funcs, eval_argvs, left, right)
+        else:
+            return _get_linear_feature(test_funcs, test_argvs, eval_funcs, eval_argvs, left, right)
+    else:
+        # NOTE: Should be inverted when no feature found
+        return right, left
+
+
 def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=None):
 
     if phases.all() or not filt.any():
@@ -273,28 +293,20 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
     # 1. Find segment's borders
     left, right = _locate_segment(filt)
 
-    # 2. Find segment's maximum growth
+    # 2. Find segment's maximum & min growth
     loc_max = _filter_find(dydt_ranks, filt)
+    loc_min = _filter_find(dydt_ranks, filt, np.min)
 
-    # 3. Further sementation requires existance of reliable growth impulse
-    if _verify_impulse_or_collapse(dydt, loc_max, thresholds, left, right, phases, offset):
-
-        # 4a. Locate impulse or collapse
-        impulse_left, impulse_right = _locate_impulse_or_collapse(dydt, loc_max, phases, filt, offset,
-                                                                  thresholds[Thresholds.ImpulseExtension])
-
-    elif _verify_has_flat(dydt, filt, thresholds[Thresholds.FlatlineSlopRequirement]):
-
-        # 4b. Locate flatline
-        loc_min = _filter_find(dydt_ranks, filt, np.min)
-        impulse_left, impulse_right = _locate_flat(
-            dydt, loc_min, phases, filt, offset, thresholds[Thresholds.FlatlineSlopRequirement])
-
-    else:
-
-        # 4c. Check remainin if they are accelerated or decelerated
-        impulse_left = right
-        impulse_right = left
+    impulse_left, impulse_right = _get_linear_feature(
+        deque((_verify_impulse_or_collapse, _verify_has_flat)),
+        deque(((dydt, loc_max, thresholds, left, right, phases, offset),
+               (dydt, filt, thresholds[Thresholds.FlatlineSlopRequirement]))),
+        deque((_locate_impulse_or_collapse, _locate_flat)),
+        deque(((dydt, loc_max, phases, filt, offset, thresholds[Thresholds.ImpulseExtension]),
+               (dydt, loc_min, phases, filt, offset, thresholds[Thresholds.FlatlineSlopRequirement]))),
+        left,
+        right
+    )
 
     yield None
 
