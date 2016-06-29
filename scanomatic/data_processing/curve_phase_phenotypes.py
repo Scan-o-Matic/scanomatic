@@ -394,8 +394,16 @@ def _locate_impulse_or_collapse(dydt, loc, phases, filt, offset, extension_thres
 
     candidates = comp(dydt, dydt[loc] * extension_threshold) & filt
     candidates = signal.medfilt(candidates, 3).astype(bool)
+    candidates, n_found = label(candidates)
 
-    candidates, _ = label(candidates)
+    if candidates[loc] == 0:
+        if n_found == 0:
+            raise ValueError("Slope {0}, loc {1} is not a {4} candidate {2} (filt {3})".format(
+                dydt[loc], loc, candidates.tolist(), filt.tolist(), phase))
+        else:
+            attr = 'max' if phase == CurvePhases.Impulse else 'min'
+            loc = np.where((getattr(dydt[candidates > 0], attr)() == dydt) & (candidates > 0))[0]
+
     if offset:
         phases[offset: -offset][candidates == candidates[loc]] = phase.value
     else:
