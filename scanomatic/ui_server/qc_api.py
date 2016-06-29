@@ -27,10 +27,9 @@ def _make_film(film_type, save_target=None, pos=None, path=None):
     return retcode == 0
 
 
-def _add_lock(path, ip):
+def _get_key():
 
     key = uuid.uuid4().hex
-    _update_lock(path, key, ip)
     return key
 
 
@@ -210,7 +209,7 @@ def add_routes(app):
         path = convert_url_to_path(project)
         if not phenotyper.path_has_saved_project_state(path):
             return jsonify(success=False, reason="Not a project")
-        locked, key, ip = _validate_lock_key(path, "", request.remote_addr)
+        locked, key, ip = _validate_lock_key(path, _get_key(), request.remote_addr)
         name = get_project_name(path)
 
         if key and locked:
