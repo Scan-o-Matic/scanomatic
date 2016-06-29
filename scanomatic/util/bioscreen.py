@@ -60,6 +60,9 @@ def csv_loader(path):
 
     dialect = csv.Sniffer().sniff(data)
     data = data.split(dialect.lineterminator)
+
+    # Sniffing has to be repeated to not become confused by non-commented comment lines
+    dialect = csv.Sniffer().sniff(data[10])
     data = {i: v for i, v in enumerate(csv.reader(data, dialect=dialect))}
     return data
 
