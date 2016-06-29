@@ -285,7 +285,10 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
             Phenotypes.GenerationTime, Phenotypes.ExperimentGrowthYield, Phenotypes.ExperimentPopulationDoublings,
             Phenotypes.GenerationTimePopulationSize, Phenotypes.GrowthLag, Phenotypes.ColonySize48h,
             CurvePhaseMetaPhenotypes.InitialLag, Phenotypes.ExperimentLowPoint,
-            CurvePhaseMetaPhenotypes.InitialLagAlternativeModel}
+            CurvePhaseMetaPhenotypes.InitialLagAlternativeModel,
+            CurvePhaseMetaPhenotypes.MajorImpulseAveragePopulationDoublingTime,
+            CurvePhaseMetaPhenotypes.MajorImpulseYieldContribution
+        }
 
         self._reference_surface_positions = [Offsets.LowerRight() for _ in self.enumerate_plates]
 
