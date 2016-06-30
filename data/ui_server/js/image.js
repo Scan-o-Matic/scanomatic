@@ -1,3 +1,4 @@
+//TODO: Consider using https://github.com/image-js/tiff-js if needed
 
 function browserSupportsImages() {
     // Check for the various File API support.
