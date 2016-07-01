@@ -543,7 +543,8 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
             if phase == CurvePhases.Acceleration or phase == CurvePhases.Retardation:
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
 
-                # TODO: Resloved worst problem, might still be lurking
+                # TODO: Resloved worst problem, might still be lurking, angles are surprisingly close to PI
+
                 k1 = derivative[max(0, left - derivative_offset)]
                 k2 = derivative[right - 1 - derivative_offset]
                 m1 = np.log2(curve[left]) - k1 * time_left
