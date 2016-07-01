@@ -542,22 +542,16 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
             if phase == CurvePhases.Acceleration or phase == CurvePhases.Retardation:
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
 
-                # TODO: There's something wack here
-
-                a1 = np.array((time_left, np.log2(curve[left])))
-                a2 = np.array((time_right, np.log2(curve[right - 1])))
-                k1 = derivative[left - derivative_offset]
+                # TODO: Resloved worst problem, might still be lurking
+                k1 = derivative[max(0, left - derivative_offset)]
                 k2 = derivative[right - 1 - derivative_offset]
-                m1 = a1[1] - k1 * a1[0]
-                m2 = a2[1] - k2 * a2[1]
+                m1 = np.log2(curve[left]) - k1 * time_left
+                m2 = np.log2(curve[right - 1]) - k2 * time_right
                 i_x = (m2 - m1) / (k1 - k2)
-                i = np.array((i_x, k1 * i_x + m1))
-                a1 -= i
-                a2 -= i
                 current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteIntersection] = \
                     (i_x - time_left) / (time_right - time_left)
                 current_phase_phenotypes[CurvePhasePhenotypes.AsymptoteAngle] = \
-                    np.arctan((k2 - k1) / (1 + k1 * k2))
+                    np.pi - (np.arctan2(k2, 1) - np.arctan2(k1, 1))
 
             else:
                 # B. For linear phases get the doubling time
