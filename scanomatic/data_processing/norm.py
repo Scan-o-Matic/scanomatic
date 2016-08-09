@@ -476,16 +476,16 @@ def apply_outlier_filter(data, median_filter_size=(3, 3), measure=None, k=2.0, p
         [1, -6, 1],
         [0.5, 1, 0.5]], dtype=data[0].dtype)
 
-    old_nans = -1
-    new_nans = 1
-    iterations = 0
-    while new_nans != old_nans and iterations < max_iterations:
+    for plate in data:
 
-        old_nans = new_nans
+        old_nans = -1
         new_nans = 0
-        iterations += 1
+        iterations = 0
 
-        for plate in data:
+        while new_nans != old_nans and iterations < max_iterations:
+
+            old_nans = new_nans
+            iterations += 1
 
             if measure is None:
                 plate_copy = plate.copy()
@@ -503,14 +503,14 @@ def apply_outlier_filter(data, median_filter_size=(3, 3), measure=None, k=2.0, p
             # Make normalness analysis to find lower and upper threshold
             # Rang based to z-score, compare to threshold adjusted by expected
             # fraction of removed positions
-            plate_copy_ravel = plate_copy.ravel()
+            plate_copy_ravel = np.ma.masked_invalid(plate_copy.ravel())
             if measure is None:
                 plate_ravel = plate.ravel()
             else:
                 plate_ravel = plate[..., measure].ravel()
-            sigma = np.std(plate_copy_ravel)
-            mu = np.mean(plate_copy_ravel)
-            z_scores = np.abs(plate_copy_ravel - mu)
+            sigma = plate_copy_ravel.std()
+            mu = plate_copy_ravel.mean()
+            z_scores = np.abs(plate_copy_ravel.data - mu)
 
             for pos in np.argsort(z_scores)[::-1]:
                 if np.isnan(plate_ravel[pos]) or \
@@ -527,9 +527,9 @@ def apply_outlier_filter(data, median_filter_size=(3, 3), measure=None, k=2.0, p
                     break
 
             if measure is None:
-                new_nans += np.isnan(plate).sum()
+                new_nans = np.isnan(plate).sum()
             else:
-                new_nans += np.isnan(plate[..., measure]).sum()
+                new_nans = np.isnan(plate[..., measure]).sum()
 
 
 def apply_log2_transform(data, measures=None):
