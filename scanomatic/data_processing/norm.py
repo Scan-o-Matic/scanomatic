@@ -288,7 +288,7 @@ def get_control_positions_average(control_pos_data_array,
     return np.array(plate_control_averages)
 
 
-def get_normailsation_surface(control_positions_filtered_data, control_position_coordinates=None,
+def get_normalisation_surface(control_positions_filtered_data, control_position_coordinates=None,
                               norm_sequence=('cubic', 'linear', 'nearest'), use_accumulated=False, fill_value=np.nan,
                               offsets=None, apply_median_smoothing_kernel=None, apply_gaussian_smoothing_sigma=None):
     """Constructs normalisation surface using iterative runs of
@@ -673,11 +673,12 @@ def ipv_residue(scaling_params, ipv, gt):
 #
 
 
-def get_normailzed_data(data, offsets=None):
+def get_normalized_data(data, offsets=None):
 
     surface = get_control_position_filtered_arrays(data, offsets=offsets)
-    apply_outlier_filter(surface, measure=None)
-    surface = get_normailsation_surface(surface, offsets=offsets)
+    pre_surface = get_downsampled_plates(surface, offsets)
+    apply_outlier_filter(pre_surface, measure=None)
+    surface = get_normalisation_surface(surface, offsets=offsets)
 
     return normalisation(data, surface, log=True)
 

@@ -27,7 +27,7 @@ from scanomatic.data_processing.phenotypes import PhenotypeDataType
 from scanomatic.generics.phenotype_filter import FilterArray, Filter
 from scanomatic.io.meta_data import MetaData2 as MetaData
 from scanomatic.data_processing.strain_selector import StrainSelector
-from scanomatic.data_processing.norm import Offsets, get_normailzed_data
+from scanomatic.data_processing.norm import Offsets, get_normalized_data
 
 
 def time_based_gaussian_weighted_mean(data, time, sigma=1):
@@ -967,7 +967,7 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 self._logger.info("{0} had not been extracted, so skipping it".format(phenotype))
                 continue
 
-            for id_plate, plate in enumerate(get_normailzed_data(data, self._reference_surface_positions)):
+            for id_plate, plate in enumerate(get_normalized_data(data, self._reference_surface_positions)):
                 self._normalized_phenotypes[id_plate][phenotype] = plate
 
     @property
