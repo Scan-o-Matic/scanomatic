@@ -10,7 +10,10 @@ from scanomatic.data_processing import growth_phenotypes
 
 # TODO: Verify that all offsets work properly, especially when combining ddydt_sign an dydt
 # Verified that there are no offsets between ddydt_sign and dydt
+
 # TODO: Image segments_phasing_bug_0_11_35.png shows unexpected phases
+# Need to add concepts of Collapse acceleration and retardation to phase segmentation
+# Something is wrong with flat it seems or the first part ought to be flat (fullfills criteria of flatness)
 
 
 class CurvePhases(Enum):
@@ -307,6 +310,7 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
     loc_max = _filter_find(dydt_ranks, filt)
     loc_min = _filter_find(dydt_ranks, filt, np.min)
 
+    # TODO: This function call needs clearing up some way
     impulse_left, impulse_right = _get_linear_feature(
         deque((_verify_impulse_or_collapse, _verify_has_flat)),
         deque(((dydt, loc_max, thresholds, left, right, phases, offset),
