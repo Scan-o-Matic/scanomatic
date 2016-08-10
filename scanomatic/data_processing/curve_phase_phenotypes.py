@@ -23,10 +23,17 @@ class CurvePhases(Enum):
         CurvePhases.Multiple: Several types for same position, to be considered as an error.
         CurvePhases.Undetermined: Positions yet to be classified or not fulfilling any classification
         CurvePhases.Flat: Positions that exhibit no growth or collapse
-        CurvePhases.Acceleration: Positions that are characterized by a positive second derivative.
-        CurvePhases.Retardation: Positions that are characterized by a negative second derivative.
+        CurvePhases.GrowthAcceleration: Positions that are characterized by a positive second derivative
+            and positive derivative.
+        CurvePhases.GrowthRetardation: Positions that are characterized by a negative second derivative
+            and positive derivative.
         CurvePhases.Impulse: Close to linear segment with growth.
         CurvePhases.Collapse: Close to linear segment with decreasing population size.
+        CurvePhases.CollapseAcceleration: Positions that are characterized by a positive second derivative
+            and negative derivative.
+        CurvePhases.CollapseRetardation: Positions that are characterized by a negative second derivative
+            and negative derivative.
+
     """
     Multiple = -1
     """:type : CurvePhases"""
