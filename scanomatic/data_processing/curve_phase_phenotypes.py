@@ -9,6 +9,7 @@ from enum import Enum
 from scanomatic.data_processing import growth_phenotypes
 
 # TODO: Verify that all offsets work properly, especially when combining ddydt_sign an dydt
+# Verified that there are no offsets between ddydt_sign and dydt
 # TODO: Image segments_phasing_bug_0_11_35.png shows unexpected phases
 
 
