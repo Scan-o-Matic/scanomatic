@@ -611,7 +611,7 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
     """:type : numpy.ndarray"""
     filt = _get_filter(size=dydt.size)
     signs = np.sign(ddydt)
-    signs[np.abs(ddydt) < threshold_for_sign] = 0
+    signs[np.abs(ddydt) < threshold_for_sign * ddydt[np.isfinite(ddydt)].std()] = 0
     return dydt, dydt_ranks, signs, phases, filt, offset, curve
 
 
