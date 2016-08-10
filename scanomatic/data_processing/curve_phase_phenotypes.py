@@ -390,7 +390,7 @@ def _locate_flat(dydt, loc, phases, filt, offset, extension_threshold):
 
 def _bridge_canditates(candidates, window_size=5):
     for window in range(3, window_size, 2):
-        candidates = medfilt(candidates, window_size).astype(bool) | candidates
+        candidates = signal.medfilt(candidates, window_size).astype(bool) | candidates
     return candidates
 
 
