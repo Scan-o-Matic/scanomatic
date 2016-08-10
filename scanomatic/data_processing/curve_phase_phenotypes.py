@@ -65,6 +65,8 @@ class Thresholds(Enum):
     """:type : Thresholds"""
     FractionAccelerationTestDuration = 4
     """:type : Thresholds"""
+    SecondDerivativeSigmaAsNotZero = 5
+    """:type : Thresholds"""
 
 
 class CurvePhasePhenotypes(Enum):
@@ -208,7 +210,8 @@ DEFAULT_THRESHOLDS = {
     Thresholds.ImpulseSlopeRequirement: 0.02,
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.FractionAcceleration: 0.66,
-    Thresholds.FractionAccelerationTestDuration: 3}
+    Thresholds.FractionAccelerationTestDuration: 3,
+    Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
 def _verify_impulse_or_collapse(dydt, loc_max, thresholds, left, right, phases, offset):
@@ -588,7 +591,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
 
 
-def _get_data_needed_for_segments(phenotyper_object, plate, pos):
+def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_sign):
 
     curve = phenotyper_object.smooth_growth_data[plate][pos]
 
@@ -607,7 +610,9 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos):
     phases = np.ones_like(curve).astype(np.int) * 0
     """:type : numpy.ndarray"""
     filt = _get_filter(size=dydt.size)
-    return dydt, dydt_ranks, np.sign(ddydt), phases, filt, offset, curve
+    signs = np.sign(ddydt)
+    signs[np.abs(ddydt) < threshold_for_sign] = 0
+    return dydt, dydt_ranks, signs, phases, filt, offset, curve
 
 
 def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_doublings=None):
@@ -616,7 +621,7 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
         thresholds = DEFAULT_THRESHOLDS
 
     dydt, dydt_ranks, ddydt_signs, phases, filt, offset, curve = _get_data_needed_for_segments(
-        phenotyper_object, plate, pos)
+        phenotyper_object, plate, pos, thresholds[Thresholds.SecondDerivativeSigmaAsNotZero])
 
     for _ in _segment(dydt, dydt_ranks, ddydt_signs, phases, filt=filt, offset=offset, thresholds=thresholds):
         pass
