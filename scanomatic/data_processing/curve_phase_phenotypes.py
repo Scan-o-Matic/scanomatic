@@ -256,7 +256,7 @@ def _test_phase_type(ddydt_signs, left, right, filt, test_edge, uniformity_thres
 def _verify_has_flat(dydt, filt, flat_threshold):
 
     candidates = (np.abs(dydt) < flat_threshold) & filt
-    candidates = signal.medfilt(candidates, 3).astype(bool)
+    candidates = _bridge_canditates(candidates)
     return candidates.any()
 
 
@@ -372,7 +372,7 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
 def _locate_flat(dydt, loc, phases, filt, offset, extension_threshold):
 
     candidates = (np.abs(dydt) < extension_threshold) & filt
-    candidates = signal.medfilt(candidates, 3).astype(bool)
+    candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
     if candidates[loc] == 0:
         if n_found == 0:
@@ -388,13 +388,19 @@ def _locate_flat(dydt, loc, phases, filt, offset, extension_threshold):
     return _locate_segment(candidates == candidates[loc])
 
 
+def _bridge_canditates(candidates, window_size=5):
+    for window in range(3, window_size, 2):
+        candidates = medfilt(candidates, window_size).astype(bool) | candidates
+    return candidates
+
+
 def _locate_impulse_or_collapse(dydt, loc, phases, filt, offset, extension_threshold):
 
     phase = CurvePhases.Impulse if np.sign(dydt[loc]) > 0 else CurvePhases.Collapse
     comp = operator.gt if phase is CurvePhases.Impulse else operator.lt
 
     candidates = comp(dydt, dydt[loc] * extension_threshold) & filt
-    candidates = signal.medfilt(candidates, 3).astype(bool)
+    candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
 
     if candidates[loc] == 0:
