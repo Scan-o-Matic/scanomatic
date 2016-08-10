@@ -30,13 +30,17 @@ class CurvePhases(Enum):
     """:type : CurvePhases"""
     Flat = 1
     """:type : CurvePhases"""
-    Acceleration = 2
+    GrowthAcceleration = 2
     """:type : CurvePhases"""
-    Retardation = 3
+    GrowthRetardation = 3
     """:type : CurvePhases"""
     Impulse = 4
     """:type : CurvePhases"""
     Collapse = 5
+    """:type : CurvePhases"""
+    CollapseAcceleration = 6
+    """:type : CurvePhases"""
+    CollapseRetardation = 7
     """:type : CurvePhases"""
 
 
@@ -246,9 +250,9 @@ def _test_phase_type(ddydt_signs, left, right, filt, test_edge, uniformity_thres
 
     sign = selection.mean()
     if sign > uniformity_threshold:
-        return CurvePhases.Acceleration
+        return CurvePhases.GrowthAcceleration
     elif sign < -uniformity_threshold:
-        return CurvePhases.Retardation
+        return CurvePhases.GrowthRetardation
     else:
         return CurvePhases.Undetermined
 
@@ -321,7 +325,7 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
             ddydt_signs, l, r, filt, PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
             thresholds[Thresholds.FractionAcceleration], thresholds[Thresholds.FractionAccelerationTestDuration])
         # print("Investigate {0} -> {1}".format(direction, phase))
-        if phase is CurvePhases.Acceleration:
+        if phase is CurvePhases.GrowthAcceleration:
             # 5. Locate acceleration phase
             (phase_left, phase_right), _ = _locate_acceleration(
                 dydt, ddydt_signs, phases, l, r, offset,
@@ -329,7 +333,7 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
 
             yield None
 
-        elif phase is CurvePhases.Retardation:
+        elif phase is CurvePhases.GrowthRetardation:
 
             # 6. Locate retardation phase
             (phase_left, phase_right), _ = _locate_retardation(
@@ -487,9 +491,9 @@ def _locate_acceleration(dydt, ddydt_signs, phases, left, right, offset, flatlin
     if label_count:
         acc_candidates = candidates2 == label_count
         if offset:
-            phases[offset: -offset][acc_candidates] = CurvePhases.Acceleration.value
+            phases[offset: -offset][acc_candidates] = CurvePhases.GrowthAcceleration.value
         else:
-            phases[acc_candidates] = CurvePhases.Acceleration.value
+            phases[acc_candidates] = CurvePhases.GrowthAcceleration.value
 
         return _locate_segment(acc_candidates), CurvePhases.Flat
     else:
@@ -512,9 +516,9 @@ def _locate_retardation(dydt, ddydt_signs, phases, left, right, offset, flatline
     if label_count:
         ret_cantidates = candidates2 == 1
         if offset:
-            phases[offset: -offset][ret_cantidates] = CurvePhases.Retardation.value
+            phases[offset: -offset][ret_cantidates] = CurvePhases.GrowthRetardation.value
         else:
-            phases[ret_cantidates] = CurvePhases.Retardation.value
+            phases[ret_cantidates] = CurvePhases.GrowthRetardation.value
 
         return _locate_segment(ret_cantidates), CurvePhases.Flat
     else:
@@ -546,7 +550,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
             time_left = times[left]
             current_phase_phenotypes = {}
 
-            if phase == CurvePhases.Acceleration or phase == CurvePhases.Retardation:
+            if phase == CurvePhases.GrowthAcceleration or phase == CurvePhases.GrowthRetardation:
                 # A. For non-linear phases use the X^2 coefficient as curvature measure
 
                 # TODO: Resloved worst problem, might still be lurking, angles are surprisingly close to PI
@@ -628,7 +632,7 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
 
 def filter_plate_custom_filter(
         plate,
-        phase=CurvePhases.Acceleration,
+        phase=CurvePhases.GrowthAcceleration,
         measure=CurvePhasePhenotypes.AsymptoteIntersection,
         phases_requirement=lambda phases: len(phases) == 1,
         phase_selector=lambda phases: phases[0]):
@@ -792,7 +796,7 @@ def filter_plate(plate, meta_phenotype, phenotypes):
 
         return filter_plate_custom_filter(
             plate,
-            phase=CurvePhases.Acceleration,
+            phase=CurvePhases.GrowthAcceleration,
             measure=CurvePhasePhenotypes.AsymptoteAngle,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[0]
@@ -802,7 +806,7 @@ def filter_plate(plate, meta_phenotype, phenotypes):
 
         return filter_plate_custom_filter(
             plate,
-            phase=CurvePhases.Retardation,
+            phase=CurvePhases.GrowthRetardation,
             measure=CurvePhasePhenotypes.AsymptoteAngle,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[-1]
@@ -811,7 +815,7 @@ def filter_plate(plate, meta_phenotype, phenotypes):
     elif meta_phenotype == CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect:
         return filter_plate_custom_filter(
             plate,
-            phase=CurvePhases.Acceleration,
+            phase=CurvePhases.GrowthAcceleration,
             measure=CurvePhasePhenotypes.AsymptoteIntersection,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[0]
@@ -821,7 +825,7 @@ def filter_plate(plate, meta_phenotype, phenotypes):
 
         return filter_plate_custom_filter(
             plate,
-            phase=CurvePhases.Retardation,
+            phase=CurvePhases.GrowthRetardation,
             measure=CurvePhasePhenotypes.AsymptoteIntersection,
             phases_requirement=lambda phases: len(phases) > 0,
             phase_selector=lambda phases: phases[-1]
