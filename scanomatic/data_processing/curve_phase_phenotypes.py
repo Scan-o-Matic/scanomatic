@@ -486,7 +486,7 @@ def _custom_filt(v, max_gap=3, min_length=3):
 def _locate_acceleration(dydt, ddydt_signs, phases, left, right, offset, flatline_threshold, filt=None):
 
     candidates = _get_filter(left, right, size=dydt.size, filt=filt)
-    candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs == 1)
+    candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs >= 0)
 
     candidates2 = generic_filter(candidates2, _custom_filt, size=9, mode='nearest')
     candidates2, label_count = label(candidates2)
@@ -511,7 +511,7 @@ def _locate_acceleration(dydt, ddydt_signs, phases, left, right, offset, flatlin
 def _locate_retardation(dydt, ddydt_signs, phases, left, right, offset, flatline_threshold, filt=None):
 
     candidates = _get_filter(left, right, size=dydt.size, filt=filt)
-    candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs == -1)
+    candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs <= 0)
 
     candidates2 = generic_filter(candidates2, _custom_filt, size=9, mode='nearest')
     candidates2, label_count = label(candidates2)
