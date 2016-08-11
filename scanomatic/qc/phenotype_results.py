@@ -24,11 +24,11 @@ PHASE_PLOTTING_COLORS = {
     CurvePhases.Multiple: "#5f3275",
     CurvePhases.Flat: "#f9e812",
     CurvePhases.GrowthAcceleration: "#ea5207",
-    CurvePhases.Impulse: "#99220c",
+    CurvePhases.Impulse: "#ea072c",
     CurvePhases.GrowthRetardation: "#c797c1",
     CurvePhases.Collapse: "#0fa8aa",
-    CurvePhases.CollapseAcceleration: "0f71aa",
-    CurvePhases.CollapseRetardation: "9d0faa",
+    CurvePhases.CollapseAcceleration: "#0f71aa",
+    CurvePhases.CollapseRetardation: "#9d0faa",
     "raw": "#3f040d",
     "smooth": "#849b88"}
 
