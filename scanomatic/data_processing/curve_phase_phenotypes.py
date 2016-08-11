@@ -249,7 +249,7 @@ def _verify_impulse_or_collapse_though_growth_delta(impulse_left, impulse_right,
     return False
 
 
-def _test_phase_type(dydt, ddydt_signs, left, right, filt, test_edge, uniformity_threshold, flatline_threshold,
+def _test_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_edge, uniformity_threshold, flatline_threshold,
                      test_length):
     """ Determines type of non-linear phase.
 
@@ -289,10 +289,10 @@ def _test_phase_type(dydt, ddydt_signs, left, right, filt, test_edge, uniformity
     candidates = _get_filter(left, right, size=ddydt_signs, filt=filt)
     if test_edge is PhaseEdge.Left:
         ddydt_section = ddydt_signs[candidates][:test_length]
-        dydt_section = dydt[candidates][:test_length]
+        dydt_section = dydt_signs[candidates][:test_length]
     elif test_edge is PhaseEdge.Right:
         ddydt_section = ddydt_signs[candidates][-test_length:]
-        dydt_section = dydt[candidates][-test_length:]
+        dydt_section = dydt_signs[candidates][-test_length:]
     else:
         return CurvePhases.Undetermined
 
@@ -309,9 +309,7 @@ def _test_phase_type(dydt, ddydt_signs, left, right, filt, test_edge, uniformity
         return CurvePhases.Undetermined
 
     # Classify as growth or collapse
-    sign = np.sign(dydt_section)
-    sign[np.abs(dydt_section) < flatline_threshold] = 0
-    sign = sign.mean()
+    sign = dydt_section.mean()
     if sign > uniformity_threshold:
         return phases[0]
     elif sign < -uniformity_threshold:
@@ -346,7 +344,7 @@ def _get_linear_feature(test_funcs, test_argvs, eval_funcs, eval_argvs, left, ri
         return right, left
 
 
-def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=None):
+def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=None):
 
     if phases.all() or not filt.any():
         raise StopIteration
@@ -386,27 +384,17 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
             continue
 
         phase = _test_phase_type(
-            dydt, ddydt_signs, l, r, filt,
+            dydt_signs, ddydt_signs, l, r, filt,
             PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
             thresholds[Thresholds.FractionAcceleration],
             thresholds[Thresholds.FlatlineSlopRequirement],
             thresholds[Thresholds.FractionAccelerationTestDuration])
 
         # print("Investigate {0} -> {1}".format(direction, phase))
-        if phase is CurvePhases.GrowthAcceleration:
+        if phase is not CurvePhases.Undetermined:
             # 5. Locate acceleration phase
-            (phase_left, phase_right), _ = _locate_acceleration(
-                dydt, ddydt_signs, phases, l, r, offset,
-                flatline_threshold=thresholds[Thresholds.FlatlineSlopRequirement])
-
-            yield None
-
-        elif phase is CurvePhases.GrowthRetardation:
-
-            # 6. Locate retardation phase
-            (phase_left, phase_right), _ = _locate_retardation(
-                dydt, ddydt_signs, phases, l, r, offset,
-                flatline_threshold=thresholds[Thresholds.FlatlineSlopRequirement])
+            (phase_left, phase_right), _ = _locate_nonlinear_phase(
+                phase, direction, dydt_signs, ddydt_signs, phases, l, r, offset)
 
             yield None
 
@@ -418,7 +406,7 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
         # 7. If there's anything remaining on left, investigated for more impulses/collapses
         if direction is PhaseEdge.Left and right != phase_left:
             # print "Left investigate"
-            for ret in _segment(dydt, dydt_ranks, ddydt_signs, phases,
+            for ret in _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases,
                                 _get_filter(left, phase_left, size=dydt.size, filt=filt), offset, thresholds):
 
                 yield ret
@@ -428,7 +416,7 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
         # 8. If there's anything remaining right, investigate for more impulses/collapses
         if direction is PhaseEdge.Right and left != phase_right:
             # print "Right investigate"
-            for ret in _segment(dydt, dydt_ranks, ddydt_signs, phases,
+            for ret in _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases,
                                 _get_filter(phase_right, right, size=dydt.size, filt=filt), offset, thresholds):
                 yield ret
 
@@ -548,52 +536,46 @@ def _custom_filt(v, max_gap=3, min_length=3):
     return (np.where(diff < 0)[0] - np.where(diff > 0)[0]).max() >= min_length
 
 
-def _locate_acceleration(dydt, ddydt_signs, phases, left, right, offset, flatline_threshold, filt=None):
+def _locate_nonlinear_phase(phase, direction, dydt_signs, ddydt_signs, phases, left, right, offset, filt=None):
 
-    candidates = _get_filter(left, right, size=dydt.size, filt=filt)
-    candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs >= 0)
+    # Determine which operators to be used for first (op1) and second (op2) derivative signs
+    if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.GrowthRetardation:
+        op1 = operator.gt
+    else:
+        op1 = operator.lt
+
+    if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.CollapseAcceleration:
+        op2 = operator.ge
+    else:
+        op2 = operator.le
+
+    # Filter out the candidates
+    candidates = _get_filter(left, right, size=dydt_signs.size, filt=filt)
+    candidates2 = candidates & op1(dydt_signs, 0) & op2(ddydt_signs, 0)
 
     candidates2 = generic_filter(candidates2, _custom_filt, size=9, mode='nearest')
     candidates2, label_count = label(candidates2)
 
     if label_count:
-        acc_candidates = candidates2 == label_count
-        if offset:
-            phases[offset: -offset][acc_candidates] = CurvePhases.GrowthAcceleration.value
-        else:
-            phases[acc_candidates] = CurvePhases.GrowthAcceleration.value
 
-        return _locate_segment(acc_candidates), CurvePhases.Flat
+        # If there are more than 1 segment of candidates, the left most should be used when
+        # searching right-wards and the right most when searching left-wards.
+        candidates = candidates2 == (1 if direction is PhaseEdge.Right else label_count)
+
+        if offset:
+            phases[offset: -offset][candidates] = CurvePhases.GrowthAcceleration.value
+        else:
+            phases[candidates] = CurvePhases.GrowthAcceleration.value
+
+        return _locate_segment(candidates), CurvePhases.Flat
+
     else:
+
         if offset:
             phases[offset: -offset][candidates] = CurvePhases.Undetermined.value
         else:
             phases[candidates] = CurvePhases.Undetermined.value
 
-        return (left, right), CurvePhases.Undetermined
-
-
-def _locate_retardation(dydt, ddydt_signs, phases, left, right, offset, flatline_threshold, filt=None):
-
-    candidates = _get_filter(left, right, size=dydt.size, filt=filt)
-    candidates2 = candidates & (np.abs(dydt) > flatline_threshold) & (ddydt_signs <= 0)
-
-    candidates2 = generic_filter(candidates2, _custom_filt, size=9, mode='nearest')
-    candidates2, label_count = label(candidates2)
-
-    if label_count:
-        ret_cantidates = candidates2 == 1
-        if offset:
-            phases[offset: -offset][ret_cantidates] = CurvePhases.GrowthRetardation.value
-        else:
-            phases[ret_cantidates] = CurvePhases.GrowthRetardation.value
-
-        return _locate_segment(ret_cantidates), CurvePhases.Flat
-    else:
-        if offset:
-            phases[offset: -offset][candidates] = CurvePhases.Undetermined.value
-        else:
-            phases[candidates] = CurvePhases.Undetermined.value
         return (left, right), CurvePhases.Undetermined
 
 
@@ -656,7 +638,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
 
 
-def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_sign):
+def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_sign, threshold_flatline):
 
     curve = phenotyper_object.smooth_growth_data[plate][pos]
 
@@ -675,9 +657,16 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
     phases = np.ones_like(curve).astype(np.int) * 0
     """:type : numpy.ndarray"""
     filt = _get_filter(size=dydt.size)
-    signs = np.sign(ddydt)
-    signs[np.abs(ddydt) < threshold_for_sign * ddydt[np.isfinite(ddydt)].std()] = 0
-    return dydt, dydt_ranks, signs, phases, filt, offset, curve
+
+    # Determine second derviative signs
+    ddydt_signs = np.sign(ddydt)
+    ddydt_signs[np.abs(ddydt) < threshold_for_sign * ddydt[np.isfinite(ddydt)].std()] = 0
+
+    # Determine first derivative signs
+    dydt_signs = np.sign(dydt)
+    dydt_signs[np.abs(dydt) < threshold_flatline] = 0
+
+    return dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, curve
 
 
 def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_doublings=None):
@@ -685,10 +674,13 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    dydt, dydt_ranks, ddydt_signs, phases, filt, offset, curve = _get_data_needed_for_segments(
-        phenotyper_object, plate, pos, thresholds[Thresholds.SecondDerivativeSigmaAsNotZero])
+    dydt, dydt_ranks,  dydt_signs, ddydt_signs, phases, filt, offset, curve = _get_data_needed_for_segments(
+        phenotyper_object, plate, pos,
+        thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
+        thresholds[Thresholds.FlatlineSlopRequirement])
 
-    for _ in _segment(dydt, dydt_ranks, ddydt_signs, phases, filt=filt, offset=offset, thresholds=thresholds):
+    for _ in _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases,
+                      filt=filt, offset=offset, thresholds=thresholds):
         pass
 
     if experiment_doublings is None:
