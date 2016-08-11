@@ -299,9 +299,9 @@ def _test_nonlinear_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_
     # Classify as acceleration or retardation
     sign = ddydt_section.mean()
     if sign > uniformity_threshold:
-        phases = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseAcceleration)
+        phases = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseRetardation)
     elif sign < -uniformity_threshold:
-        phases = (CurvePhases.GrowthRetardation, CurvePhases.CollapseRetardation)
+        phases = (CurvePhases.GrowthRetardation, CurvePhases.CollapseAcceleration)
     else:
         return CurvePhases.Undetermined
 
@@ -541,7 +541,7 @@ def _locate_nonlinear_phase(phase, direction, dydt_signs, ddydt_signs, phases, l
     else:
         op1 = operator.lt
 
-    if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.CollapseAcceleration:
+    if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.CollapseRetardation:
         op2 = operator.ge
     else:
         op2 = operator.le
