@@ -246,8 +246,8 @@ def _verify_impulse_or_collapse_though_growth_delta(impulse_left, impulse_right,
     return False
 
 
-def _test_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_edge, uniformity_threshold, flatline_threshold,
-                     test_length):
+def _test_nonlinear_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_edge, uniformity_threshold, flatline_threshold,
+                               test_length):
     """ Determines type of non-linear phase.
 
     Function filters the first and second derivatives, only looking
@@ -380,7 +380,7 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
         if phases[l: r].all():
             continue
 
-        phase = _test_phase_type(
+        phase = _test_nonlinear_phase_type(
             dydt_signs, ddydt_signs, l, r, filt,
             PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
             thresholds[Thresholds.FractionAcceleration],
