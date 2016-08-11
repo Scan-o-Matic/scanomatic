@@ -9,8 +9,8 @@ from enum import Enum
 from scanomatic.data_processing import growth_phenotypes
 
 # TODO: Image segments_phasing_bug_0_11_35.png shows unexpected phases
-# Need to add concepts of Collapse acceleration and retardation to phase segmentation
-# Something is wrong with flat it seems or the first part ought to be flat (fulfills criteria of flatness)
+# Need detection of linear phases based on prolonged linearity
+# Need linear phase detection to run to completion until no linear phases remain
 
 
 class CurvePhases(Enum):
