@@ -5,6 +5,7 @@ from scipy.ndimage import label, generic_filter
 from scipy.stats import linregress
 from collections import deque
 from enum import Enum
+from itertools import izip
 
 from scanomatic.data_processing import growth_phenotypes
 
@@ -384,16 +385,14 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
     Returns:
 
     """
-    if phases.all() or not filt.any():
-        raise StopIteration
-
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    if np.unique(phases[offset: -offset][filt] if offset else phases[filt]).size != 1:
-        raise ValueError("Impossible to segment due to multiple phases {0} filter {1}".format(
-            np.unique(phases[filt][offset: -offset] if offset else phases[filt]), filt
-        ))
+    _set_flat_segments(dydt_signs,
+                       thresholds[Thresholds.LinearModelMinimumLength],
+                       phases)
+
+    # TODO: Continue here with detecting non-flat linears
 
     # 1. Find segment's borders
     left, right = _locate_segment(filt)
@@ -464,6 +463,27 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
         phases[:offset] = phases[offset]
         phases[-offset:] = phases[-offset - 1]
         yield None
+
+
+def _set_flat_segments(dydt_signs, minimum_segmentlength, phases):
+
+    phases[...] = CurvePhases.UndeterminedNonFlat.value
+    flats = _bridge_canditates(dydt_signs == 0)
+    for length, left, right in izip(*_get_candidate_lengths_and_edges(flats)):
+        if length >= minimum_segmentlength:
+            phases[left: right] = CurvePhases.Flat.value
+
+
+def _get_candidate_lengths_and_edges(candidates):
+
+    kernel = [-1, 1]
+    edges = signal.convolve(candidates, kernel, mode='same')
+    lefts, = np.where(edges == -1)
+    rights, = np.where(edges == 1)
+    if rights.size < lefts.size:
+        rights = np.hstack((rights, candidates.size))
+
+    return rights - lefts, lefts, rights
 
 
 def _locate_flat(dydt, loc, phases, filt, offset, extension_threshold):
