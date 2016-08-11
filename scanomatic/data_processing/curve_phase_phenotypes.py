@@ -352,7 +352,38 @@ def _get_linear_feature(test_funcs, test_argvs, eval_funcs, eval_argvs, left, ri
 
 
 def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=None):
+    """Iteratively segments a curve into its component CurvePhases
 
+    Proposed future segmentation structure:
+
+        mark everything as flat segments or non-flat
+
+        for each non-flat and not non-linear segment:
+            if contains linear slope:
+                mark slope as impulse or collapse
+                mark bounding non-marked segments as non-linear
+            else
+                mark as non-linear
+
+        for each non-linear segment:
+            if contains detectable non-linear type:
+                mark type
+            else:
+                mark undefined
+
+    Args:
+        dydt:
+        dydt_ranks:
+        dydt_signs:
+        ddydt_signs:
+        phases:
+        filt:
+        offset:
+        thresholds:
+
+    Returns:
+
+    """
     if phases.all() or not filt.any():
         raise StopIteration
 
