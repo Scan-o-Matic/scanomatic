@@ -97,7 +97,6 @@ class Thresholds(Enum):
     """:type : Thresholds"""
 
 
-
 class CurvePhasePhenotypes(Enum):
     """Phenotypes for individual curve phases.
 
@@ -253,18 +252,6 @@ def _verify_impulse_or_collapse(dydt, loc_max, thresholds, left, right, phases, 
         if right == phases.size and offset:
             phases[-offset:] = phases[-offset - 1]
         return False
-
-
-def _verify_impulse_or_collapse_though_growth_delta(impulse_left, impulse_right, left, right, phases, offset):
-
-    if impulse_left is None or impulse_right is None:
-        if left == 0 and offset:
-            phases[:offset] = phases[offset]
-        if right == phases.size and offset:
-            phases[-offset:] = phases[-offset - 1]
-
-        return True
-    return False
 
 
 def _test_nonlinear_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_edge, uniformity_threshold,
