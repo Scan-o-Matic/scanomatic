@@ -557,9 +557,9 @@ def _locate_nonlinear_phase(phase, direction, dydt_signs, ddydt_signs, phases, l
         candidates = candidates2 == (1 if direction is PhaseEdge.Right else label_count)
 
         if offset:
-            phases[offset: -offset][candidates] = CurvePhases.GrowthAcceleration.value
+            phases[offset: -offset][candidates] = phase.value
         else:
-            phases[candidates] = CurvePhases.GrowthAcceleration.value
+            phases[candidates] = phase.value
 
         return _locate_segment(candidates), CurvePhases.Flat
 
