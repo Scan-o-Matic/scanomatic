@@ -39,6 +39,8 @@ class CurvePhases(Enum):
             and negative derivative.
         CurvePhases.UndeterminedNonLinear: Positions of curves that
             have only been determined not to be linear.
+        CurvePhases.UndeterminedNonFlat: Positions that are not flat
+            but whose properties otherwise has yet to be determined
 
     """
     Multiple = -1
@@ -60,6 +62,8 @@ class CurvePhases(Enum):
     CollapseRetardation = 7
     """:type : CurvePhases"""
     UndeterminedNonLinear = 8
+    """:type : CurvePhases"""
+    UndeterminedNonFlat = 9
     """:type : CurvePhases"""
 
 

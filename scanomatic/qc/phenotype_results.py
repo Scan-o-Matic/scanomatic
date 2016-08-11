@@ -21,6 +21,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 _logger = Logger("Phenotype Results QC")
 
 PHASE_PLOTTING_COLORS = {
+
     CurvePhases.Multiple: "#5f3275",
     CurvePhases.Flat: "#f9e812",
     CurvePhases.GrowthAcceleration: "#ea5207",
@@ -29,8 +30,12 @@ PHASE_PLOTTING_COLORS = {
     CurvePhases.Collapse: "#0fa8aa",
     CurvePhases.CollapseAcceleration: "#0f71aa",
     CurvePhases.CollapseRetardation: "#9d0faa",
+    CurvePhases.UndeterminedNonFlat: "#aaaaaa",
+    CurvePhases.UndeterminedNonLinear: "#777777",
+
     "raw": "#3f040d",
-    "smooth": "#849b88"}
+    "smooth": "#849b88"
+}
 
 
 @wraps
