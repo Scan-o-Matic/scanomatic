@@ -221,7 +221,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.ImpulseSlopeRequirement: 0.02,
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.FractionAcceleration: 0.66,
-    Thresholds.FractionAccelerationTestDuration: 3,
+    Thresholds.FractionAccelerationTestDuration: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
@@ -249,24 +249,73 @@ def _verify_impulse_or_collapse_though_growth_delta(impulse_left, impulse_right,
     return False
 
 
-def _test_phase_type(ddydt_signs, left, right, filt, test_edge, uniformity_threshold, selection_length):
+def _test_phase_type(dydt, ddydt_signs, left, right, filt, test_edge, uniformity_threshold, flatline_threshold,
+                     test_length):
+    """ Determines type of non-linear phase.
 
+    Function filters the first and second derivatives, only looking
+    at a number of measurements near one of the two edges of the
+    candidate region. The signs of each (1st and 2nd derivative)
+    are used to determine the type of phase.
+
+    Note:
+        Both derivatives need a sufficient deviation from 0 to be
+        considered to have a sign.
+
+    Args:
+        dydt: The first derivative
+        ddydt_signs: The sign of the second derivative
+        left: Left edge
+        right: Right edge
+        filt: Boolean array of positions considered
+        test_edge: At which edge (left or right) of the candidates the
+            test should be performed
+        uniformity_threshold: The degree of conformity in sign needed
+            I.e. the fraction of ddydt_signs in the test that must
+            point in the same direction. Or the fraction of
+            dydt_signs that have to do the same.
+        flatline_threshold: In assigning dydt_signs for the test
+            region, the slope needed to considered not 0.
+        test_length: How many points should be tested as a maximum
+
+    Returns: The phase type, any of the following
+        CurvePhases.Undetermined,
+        CurvePhases.GrowthAcceleration,
+        CurvePhases.CollapseAcceleration,
+        CurvePhases.GrowthRetardation,
+        CurvePhases.CollapseRetardation
+
+    """
     candidates = _get_filter(left, right, size=ddydt_signs, filt=filt)
     if test_edge is PhaseEdge.Left:
-        selection = ddydt_signs[candidates][:selection_length]
+        ddydt_section = ddydt_signs[candidates][:test_length]
+        dydt_section = dydt[candidates][:test_length]
     elif test_edge is PhaseEdge.Right:
-        selection = ddydt_signs[candidates][-selection_length:]
+        ddydt_section = ddydt_signs[candidates][-test_length:]
+        dydt_section = dydt[candidates][-test_length:]
     else:
         return CurvePhases.Undetermined
 
-    if selection.size == 0:
+    if ddydt_section.size == 0:
         return CurvePhases.Undetermined
 
-    sign = selection.mean()
+    # Classify as acceleration or retardation
+    sign = ddydt_section.mean()
     if sign > uniformity_threshold:
-        return CurvePhases.GrowthAcceleration
+        phases = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseAcceleration)
     elif sign < -uniformity_threshold:
-        return CurvePhases.GrowthRetardation
+        phases = (CurvePhases.GrowthRetardation, CurvePhases.CollapseRetardation)
+    else:
+        return CurvePhases.Undetermined
+
+    # Classify as growth or collapse
+    sign = np.sign(dydt_section)
+    sign[np.abs(dydt_section) < flatline_threshold] = 0
+    sign = sign.mean()
+    if sign > uniformity_threshold:
+        return phases[0]
+    elif sign < -uniformity_threshold:
+        return phases[1]
     else:
         return CurvePhases.Undetermined
 
@@ -337,8 +386,12 @@ def _segment(dydt, dydt_ranks, ddydt_signs, phases, filt, offset, thresholds=Non
             continue
 
         phase = _test_phase_type(
-            ddydt_signs, l, r, filt, PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
-            thresholds[Thresholds.FractionAcceleration], thresholds[Thresholds.FractionAccelerationTestDuration])
+            dydt, ddydt_signs, l, r, filt,
+            PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
+            thresholds[Thresholds.FractionAcceleration],
+            thresholds[Thresholds.FlatlineSlopRequirement],
+            thresholds[Thresholds.FractionAccelerationTestDuration])
+
         # print("Investigate {0} -> {1}".format(direction, phase))
         if phase is CurvePhases.GrowthAcceleration:
             # 5. Locate acceleration phase
