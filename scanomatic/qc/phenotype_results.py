@@ -1,4 +1,5 @@
 from scipy.ndimage import label
+from scipy import signal
 
 from scanomatic.data_processing.curve_phase_phenotypes import CurvePhases
 
@@ -139,6 +140,66 @@ def plot_plate_heatmap(
 
     return fig
 
+
+@_validate_input
+def plot_curve_and_derivatives(phenotyper_object, plate, pos):
+    """Plots a curve and both its derivatives as calculated and
+    smoothed by scanomatic during the phase sectioning.
+
+    Args:
+        phenotyper_object: A Phenotyper instance
+        plate: the plate index
+        pos: the position tuple on the plate
+
+    Returns: A matplotlib figure
+
+    """
+    curve = np.log2(phenotyper_object.smooth_growth_data[plate][pos])
+    times = phenotyper_object.times
+    dydt = signal.convolve(
+        phenotyper_object.get_derivative(plate, pos),
+        [0.1, 0.25, 0.3, 0.25, 0.1], mode='valid')
+    d_offset = (phenotyper_object.times.size - dydt.size) / 2
+
+    dydt = np.hstack(
+        ([dydt[0] for _ in range(d_offset)],
+         dydt,
+         [dydt[-1] for _ in range(d_offset)]))
+
+    ddydt = signal.convolve(dydt, [1, 1, 1, 0, -1, -1, -1], mode='valid')
+    dd_offset = (phenotyper_object.times.size - ddydt.size) / 2
+    ddydt = np.hstack(
+        ([ddydt[0] for _ in range(dd_offset)],
+         ddydt,
+         [ddydt[-1] for _ in range(dd_offset)]))
+
+    f = plt.figure()
+    ax = f.gca()
+    ax.plot(times, ddydt, color='g')
+    ax.set_ylabel("ddy/dt")
+    ax.fill_between(times, ddydt, 0, color='g', alpha=0.7)
+    ax2 = ax.twinx()
+    ax2.plot(times, dydt, color='r')
+    ax2.fill_between(times, dydt, 0, color='r', alpha=0.7)
+    ax2.set_ylabel("dy/dt")
+    ax3 = ax.twinx()
+    ax3.plot(times, curve, color='k', lw=2)
+    ax3.yaxis.labelpad = -40
+    ax3.set_ylabel("Log2 cells")
+
+    for tick in ax3.yaxis.get_major_ticks():
+        tick.set_pad(-5)
+        tick.label2.set_horizontalalignment('right')
+
+    ax.set_xlabel("Hours")
+    ax.set_title("Curve {0} and its derviatives".format((plate, pos)))
+    ax.legend(
+        ax3.lines + ax2.lines + ax.lines,
+        ['growth', 'dy/dt', 'ddy/dt'],
+        loc='lower right',
+        bbox_to_anchor=(0.9, 0))
+    f.tight_layout()
+    return f
 
 def load_phenotype_results_into_plates(file_name, phenotype_header='Generation Time'):
 
