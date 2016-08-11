@@ -67,25 +67,35 @@ class Thresholds(Enum):
     """Thresholds used by the phase algorithm
 
     Attributes:
-        Thresholds.ImpulseExtension: Factor for impulse and collapse slopes to be considered equal to max/min point.
-        Thresholds.ImpulseSlopeRequirement: Minimum slope to be impulse/collapse.
-        Thresholds.FlatlineSlopRequirement: Maximum slope for something to be flatline.
-        Thresholds.FractionAcceleration: The amount of second derivative signs to be of a certain type to classify as
-            acceleration or deceleration.
-        Thresholds.FractionAccelerationTestDuration: The number of measurements included in `FractionAcceleration` test.
+        Thresholds.LinearModelExtension:
+            Factor for impulse and collapse slopes to be
+            considered equal to max/min point.
+        Threshold.LinearModelMinimumLength:
+            The number of measurements needed for a linear segment
+            to be considered detected.
+        Thresholds.FlatlineSlopRequirement:
+            Maximum slope for something to be flatline.
+        Thresholds.UniformityThreshold:
+            The fraction of positions considered that must agree on a
+            certain direction of the first or second derivative.
+        Thresholds.UniformityTestSize:
+            The number of measurements included in the
+            `UniformityThreshold` test.
+
     """
-    ImpulseExtension = 0
+    LinearModelExtension = 0
     """:type : Thresholds"""
-    ImpulseSlopeRequirement = 1
+    LinearModelMinimumLength = 1
     """:type : Thresholds"""
     FlatlineSlopRequirement = 2
     """:type : Thresholds"""
-    FractionAcceleration = 3
+    UniformityThreshold = 3
     """:type : Thresholds"""
-    FractionAccelerationTestDuration = 4
+    UniformityTestSize = 4
     """:type : Thresholds"""
     SecondDerivativeSigmaAsNotZero = 5
     """:type : Thresholds"""
+
 
 
 class CurvePhasePhenotypes(Enum):
@@ -225,16 +235,16 @@ def _filter_find(vector, filt, func=np.max):
     return np.where((vector == func(vector[filt])) & filt)[0]
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.ImpulseExtension: 0.75,
-    Thresholds.ImpulseSlopeRequirement: 0.02,
+    Thresholds.LinearModelExtension: 0.75,
+    Thresholds.LinearModelMinimumLength: 3,
     Thresholds.FlatlineSlopRequirement: 0.02,
-    Thresholds.FractionAcceleration: 0.66,
-    Thresholds.FractionAccelerationTestDuration: 7,
+    Thresholds.UniformityThreshold: 0.66,
+    Thresholds.UniformityTestSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
 def _verify_impulse_or_collapse(dydt, loc_max, thresholds, left, right, phases, offset):
-    if np.abs(dydt[loc_max]) > thresholds[Thresholds.ImpulseSlopeRequirement]:
+    if np.abs(dydt[loc_max]) > thresholds[Thresholds.FlatlineSlopRequirement]:
         return True
     else:
         if left == 0 and offset:
@@ -271,7 +281,7 @@ def _test_nonlinear_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_
         considered to have a sign.
 
     Args:
-        dydt: The first derivative
+        dydt_signs: The sing of the first derivative
         ddydt_signs: The sign of the second derivative
         left: Left edge
         right: Right edge
@@ -376,7 +386,7 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
         deque(((dydt, loc_max, thresholds, left, right, phases, offset),
                (dydt, filt, thresholds[Thresholds.FlatlineSlopRequirement]))),
         deque((_locate_impulse_or_collapse, _locate_flat)),
-        deque(((dydt, loc_max, phases, filt, offset, thresholds[Thresholds.ImpulseExtension]),
+        deque(((dydt, loc_max, phases, filt, offset, thresholds[Thresholds.LinearModelExtension]),
                (dydt, loc_min, phases, filt, offset, thresholds[Thresholds.FlatlineSlopRequirement]))),
         left,
         right
@@ -392,8 +402,8 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
         phase = _test_nonlinear_phase_type(
             dydt_signs, ddydt_signs, l, r, filt,
             PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
-            thresholds[Thresholds.FractionAcceleration],
-            thresholds[Thresholds.FractionAccelerationTestDuration])
+            thresholds[Thresholds.UniformityThreshold],
+            thresholds[Thresholds.UniformityTestSize])
 
         # print("Investigate {0} -> {1}".format(direction, phase))
         if phase is not CurvePhases.Undetermined:
