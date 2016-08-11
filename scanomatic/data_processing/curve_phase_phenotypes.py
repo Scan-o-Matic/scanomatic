@@ -246,7 +246,7 @@ def _verify_impulse_or_collapse_though_growth_delta(impulse_left, impulse_right,
     return False
 
 
-def _test_nonlinear_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_edge, uniformity_threshold, flatline_threshold,
+def _test_nonlinear_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_edge, uniformity_threshold,
                                test_length):
     """ Determines type of non-linear phase.
 
@@ -271,8 +271,6 @@ def _test_nonlinear_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_
             I.e. the fraction of ddydt_signs in the test that must
             point in the same direction. Or the fraction of
             dydt_signs that have to do the same.
-        flatline_threshold: In assigning dydt_signs for the test
-            region, the slope needed to considered not 0.
         test_length: How many points should be tested as a maximum
 
     Returns: The phase type, any of the following
@@ -384,7 +382,6 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
             dydt_signs, ddydt_signs, l, r, filt,
             PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
             thresholds[Thresholds.FractionAcceleration],
-            thresholds[Thresholds.FlatlineSlopRequirement],
             thresholds[Thresholds.FractionAccelerationTestDuration])
 
         # print("Investigate {0} -> {1}".format(direction, phase))
