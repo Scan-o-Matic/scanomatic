@@ -326,32 +326,6 @@ def _test_nonlinear_phase_type(dydt_signs, ddydt_signs, left, right, filt, test_
         return CurvePhases.Undetermined
 
 
-def _verify_has_flat(dydt, filt, flat_threshold):
-
-    candidates = (np.abs(dydt) < flat_threshold) & filt
-    candidates = _bridge_canditates(candidates)
-    return candidates.any()
-
-
-def _get_linear_feature(test_funcs, test_argvs, eval_funcs, eval_argvs, left, right):
-
-    if test_funcs:
-        test_func = test_funcs.popleft()
-        test_argv = test_argvs.popleft()
-        eval_func = eval_funcs.popleft()
-        eval_argv = eval_argvs.popleft()
-        if test_func(*test_argv):
-            try:
-                return eval_func(*eval_argv)
-            except ValueError:
-                return _get_linear_feature(test_funcs, test_argvs, eval_funcs, eval_argvs, left, right)
-        else:
-            return _get_linear_feature(test_funcs, test_argvs, eval_funcs, eval_argvs, left, right)
-    else:
-        # NOTE: Should be inverted when no feature found
-        return right, left
-
-
 def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
@@ -484,25 +458,6 @@ def _get_candidate_lengths_and_edges(candidates):
         rights = np.hstack((rights, candidates.size))
 
     return rights - lefts, lefts, rights
-
-
-def _locate_flat(dydt, loc, phases, filt, offset, extension_threshold):
-
-    candidates = (np.abs(dydt) < extension_threshold) & filt
-    candidates = _bridge_canditates(candidates)
-    candidates, n_found = label(candidates)
-    if candidates[loc] == 0:
-        if n_found == 0:
-            raise ValueError("Least slope {0}, loc {1} is not a candidate {2} (filt {3})".format(
-                dydt[loc], loc, candidates.tolist(), filt.tolist()))
-        else:
-            loc = np.where((dydt[candidates > 0].min() == dydt) & (candidates > 0))[0]
-    if offset:
-        phases[offset: -offset][candidates == candidates[loc]] = CurvePhases.Flat.value
-    else:
-        phases[candidates == candidates[loc]] = CurvePhases.Flat.value
-
-    return _locate_segment(candidates == candidates[loc])
 
 
 def _bridge_canditates(candidates, window_size=5):
