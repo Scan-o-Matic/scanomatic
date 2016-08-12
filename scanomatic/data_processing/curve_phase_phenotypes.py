@@ -250,7 +250,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
-def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=None):
+def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
     Proposed future segmentation structure:
@@ -273,7 +273,6 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
 
     Args:
         dydt:
-        dydt_ranks:
         dydt_signs:
         ddydt_signs:
         phases:
@@ -284,6 +283,10 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
     Returns:
 
     """
+
+    # TODO: Non linear phases should also have minimum lengths
+    # TODO: Bridge 1 gaps if same on both sides
+
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
@@ -313,8 +316,8 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
                     filt.argmin() == first_on_left_flank else \
                     PhaseEdge.Left
 
-                phase = _test_nonlinear_phase_type(
-                    dydt_signs, ddydt_signs, filt,
+                _set_nonlinear_phase_type(
+                    dydt, dydt_signs, ddydt_signs, filt,
                     PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
                     thresholds[Thresholds.UniformityThreshold],
                     thresholds[Thresholds.UniformityTestSize])
@@ -324,51 +327,23 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
                 flanking[filt] = False
                 yield None
 
+    # Try to classify remaining positions as non linear phases
+    while filt in _get_candidate_segment(phases, test_value=CurvePhases.UndeterminedNonLinear.value):
 
-    for direction, (l, r) in zip(PhaseEdge, ((left, impulse_left), (impulse_right, right))):
-
-        if phases[l: r].all():
-            continue
-
-        phase = _test_nonlinear_phase_type(
-            dydt_signs, ddydt_signs, l, r, filt,
-            PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
+        phase = _set_nonlinear_phase_type(
+            dydt, dydt_signs, ddydt_signs, filt,
+            PhaseEdge.Intelligent,
             thresholds[Thresholds.UniformityThreshold],
             thresholds[Thresholds.UniformityTestSize])
 
-        # print("Investigate {0} -> {1}".format(direction, phase))
-        if phase is not CurvePhases.Undetermined:
-            # 5. Locate acceleration phase
-            (phase_left, phase_right), _ = _locate_nonlinear_phase(
-                phase, direction, dydt_signs, ddydt_signs, phases, l, r, offset)
+        # If currently considered segment had no phase then it is undetermined
+        if phase is CurvePhases.Undetermined:
 
-            yield None
+            phases[filt] = phase.value
 
-        else:
-            # No phase found
-            phase_left = r
-            phase_right = l
+        yield  None
 
-        # 7. If there's anything remaining on left, investigated for more impulses/collapses
-        if direction is PhaseEdge.Left and right != phase_left:
-            # print "Left investigate"
-            for ret in _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases,
-                                _get_filter(left, phase_left, size=dydt.size, filt=filt), offset, thresholds):
-
-                yield ret
-
-            yield None
-
-        # 8. If there's anything remaining right, investigate for more impulses/collapses
-        if direction is PhaseEdge.Right and left != phase_right:
-            # print "Right investigate"
-            for ret in _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases,
-                                _get_filter(phase_right, right, size=dydt.size, filt=filt), offset, thresholds):
-                yield ret
-
-            yield None
-
-    # 9. Update phases edges
+    # If there's an offset assume phase carries to edge
     if offset:
         phases[:offset] = phases[offset]
         phases[-offset:] = phases[-offset - 1]
@@ -743,7 +718,7 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
         thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
         thresholds[Thresholds.FlatlineSlopRequirement])
 
-    for _ in _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases,
+    for _ in _segment(dydt, dydt_signs, ddydt_signs, phases,
                       filt=filt, offset=offset, thresholds=thresholds):
         pass
 
