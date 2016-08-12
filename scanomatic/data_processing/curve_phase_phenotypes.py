@@ -250,81 +250,6 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
-def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
-                              uniformity_threshold, test_length, phases):
-    """ Determines type of non-linear phase.
-
-    Function filters the first and second derivatives, only looking
-    at a number of measurements near one of the two edges of the
-    candidate region. The signs of each (1st and 2nd derivative)
-    are used to determine the type of phase.
-
-    Note:
-        Both derivatives need a sufficient deviation from 0 to be
-        considered to have a sign.
-
-    Args:
-        dydt: The slope values
-        dydt_signs: The sing of the first derivative
-        ddydt_signs: The sign of the second derivative
-        filt: Boolean array of positions considered
-        test_edge: At which edge (left or right) of the filt the
-            test should be performed
-        uniformity_threshold: The degree of conformity in sign needed
-            I.e. the fraction of ddydt_signs in the test that must
-            point in the same direction. Or the fraction of
-            dydt_signs that have to do the same.
-        test_length: How many points should be tested as a maximum
-        phases: The phase-classification arrya
-
-    Returns: The phase type, any of the following
-        CurvePhases.Undetermined,
-        CurvePhases.GrowthAcceleration,
-        CurvePhases.CollapseAcceleration,
-        CurvePhases.GrowthRetardation,
-        CurvePhases.CollapseRetardation
-
-    """
-
-    if test_edge is PhaseEdge.Intelligent:
-
-        # This takes a rough estimate of which side is more interesting
-        # based on the location of the steepest slope
-
-        steepest_loc = np.abs(dydt[filt]).argmax()
-        test_edge = PhaseEdge.Left if steepest_loc / float(filt.sum()) < 0.5 else PhaseEdge.Right
-
-    if test_edge is PhaseEdge.Left:
-        ddydt_section = ddydt_signs[filt][:test_length]
-        dydt_section = dydt_signs[filt][:test_length]
-    elif test_edge is PhaseEdge.Right:
-        ddydt_section = ddydt_signs[filt][-test_length:]
-        dydt_section = dydt_signs[filt][-test_length:]
-    else:
-        return CurvePhases.Undetermined
-
-    if ddydt_section.size == 0:
-        return CurvePhases.Undetermined
-
-    # Classify as acceleration or retardation
-    sign = ddydt_section.mean()
-    if sign > uniformity_threshold:
-        phases = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseRetardation)
-    elif sign < -uniformity_threshold:
-        phases = (CurvePhases.GrowthRetardation, CurvePhases.CollapseAcceleration)
-    else:
-        return CurvePhases.Undetermined
-
-    # Classify as growth or collapse
-    sign = dydt_section.mean()
-    if sign > uniformity_threshold:
-        phase = phases[0]
-    elif sign < -uniformity_threshold:
-        phase = phases[1]
-    else:
-        return CurvePhases.Undetermined
-
-
 def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
@@ -610,6 +535,81 @@ def _custom_filt(v, max_gap=3, min_length=3):
     padded = np.hstack([(0,), filted, (0,)]).astype(int)
     diff = np.diff(padded)
     return (np.where(diff < 0)[0] - np.where(diff > 0)[0]).max() >= min_length
+
+
+def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
+                              uniformity_threshold, test_length, phases):
+    """ Determines type of non-linear phase.
+
+    Function filters the first and second derivatives, only looking
+    at a number of measurements near one of the two edges of the
+    candidate region. The signs of each (1st and 2nd derivative)
+    are used to determine the type of phase.
+
+    Note:
+        Both derivatives need a sufficient deviation from 0 to be
+        considered to have a sign.
+
+    Args:
+        dydt: The slope values
+        dydt_signs: The sing of the first derivative
+        ddydt_signs: The sign of the second derivative
+        filt: Boolean array of positions considered
+        test_edge: At which edge (left or right) of the filt the
+            test should be performed
+        uniformity_threshold: The degree of conformity in sign needed
+            I.e. the fraction of ddydt_signs in the test that must
+            point in the same direction. Or the fraction of
+            dydt_signs that have to do the same.
+        test_length: How many points should be tested as a maximum
+        phases: The phase-classification arrya
+
+    Returns: The phase type, any of the following
+        CurvePhases.Undetermined,
+        CurvePhases.GrowthAcceleration,
+        CurvePhases.CollapseAcceleration,
+        CurvePhases.GrowthRetardation,
+        CurvePhases.CollapseRetardation
+
+    """
+
+    if test_edge is PhaseEdge.Intelligent:
+
+        # This takes a rough estimate of which side is more interesting
+        # based on the location of the steepest slope
+
+        steepest_loc = np.abs(dydt[filt]).argmax()
+        test_edge = PhaseEdge.Left if steepest_loc / float(filt.sum()) < 0.5 else PhaseEdge.Right
+
+    if test_edge is PhaseEdge.Left:
+        ddydt_section = ddydt_signs[filt][:test_length]
+        dydt_section = dydt_signs[filt][:test_length]
+    elif test_edge is PhaseEdge.Right:
+        ddydt_section = ddydt_signs[filt][-test_length:]
+        dydt_section = dydt_signs[filt][-test_length:]
+    else:
+        return CurvePhases.Undetermined
+
+    if ddydt_section.size == 0:
+        return CurvePhases.Undetermined
+
+    # Classify as acceleration or retardation
+    sign = ddydt_section.mean()
+    if sign > uniformity_threshold:
+        phases = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseRetardation)
+    elif sign < -uniformity_threshold:
+        phases = (CurvePhases.GrowthRetardation, CurvePhases.CollapseAcceleration)
+    else:
+        return CurvePhases.Undetermined
+
+    # Classify as growth or collapse
+    sign = dydt_section.mean()
+    if sign > uniformity_threshold:
+        phase = phases[0]
+    elif sign < -uniformity_threshold:
+        phase = phases[1]
+    else:
+        return CurvePhases.Undetermined
 
 
 def _locate_nonlinear_phase(phase, direction, dydt_signs, ddydt_signs, phases, left, right, offset, filt=None):
