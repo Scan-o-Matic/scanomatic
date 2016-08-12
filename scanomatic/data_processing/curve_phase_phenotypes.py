@@ -9,6 +9,8 @@ from itertools import izip
 
 from scanomatic.data_processing import growth_phenotypes
 
+# TODO: Should be several modules, 1 segment a curve, 2 measure segments 3, meta phenotypes from segments
+
 # TODO: Image segments_phasing_bug_0_11_35.png shows unexpected phases
 # Need detection of linear phases based on prolonged linearity
 # Need linear phase detection to run to completion until no linear phases remain
@@ -454,6 +456,7 @@ def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold, minimum_l
     border_candidates, _ = label(filt)
     loc_label = border_candidates[loc]
     return (labels == loc_label) - elected
+
 
 def _locate_segment(filt):  # -> (int, int)
     """
