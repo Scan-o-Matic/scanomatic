@@ -366,28 +366,23 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
                        thresholds[Thresholds.LinearModelMinimumLength],
                        phases)
 
-    # TODO: Continue here with detecting non-flat linears
-
-    # 1. Find segment's borders
-    left, right = _locate_segment(filt)
-
-    # 2. Find segment's maximum & min growth
-    loc_max = _filter_find(dydt_ranks, filt)
-    loc_min = _filter_find(dydt_ranks, filt, np.min)
-
-    # TODO: This function call needs clearing up some way
-    impulse_left, impulse_right = _get_linear_feature(
-        deque((_verify_impulse_or_collapse, _verify_has_flat)),
-        deque(((dydt, loc_max, thresholds, left, right, phases, offset),
-               (dydt, filt, thresholds[Thresholds.FlatlineSlopRequirement]))),
-        deque((_locate_impulse_or_collapse, _locate_flat)),
-        deque(((dydt, loc_max, phases, filt, offset, thresholds[Thresholds.LinearModelExtension]),
-               (dydt, loc_min, phases, filt, offset, thresholds[Thresholds.FlatlineSlopRequirement]))),
-        left,
-        right
-    )
-
     yield None
+
+    while (phases == CurvePhases.UndeterminedNonFlat.value).any():
+
+        bounding = _set_nonflat_linear_segment(
+            dydt, dydt_signs,
+            thresholds[Thresholds.LinearModelExtension],
+            thresholds[Thresholds.LinearModelMinimumLength],
+            phases)
+
+        yield None
+
+        if bounding.any():
+
+            phases[bounding] = CurvePhases.UndeterminedNonLinear
+            yield None
+
 
     for direction, (l, r) in zip(PhaseEdge, ((left, impulse_left), (impulse_right, right))):
 
