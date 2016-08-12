@@ -388,7 +388,7 @@ def _get_candidate_segment(complex_segment, test_value=True):
 
         if n_labels:
             yield  labels == 1
-        else
+        else:
             break
 
 
