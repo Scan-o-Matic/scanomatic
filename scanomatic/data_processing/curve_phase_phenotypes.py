@@ -461,12 +461,30 @@ def _bridge_canditates(candidates, window_size=5):
     return candidates
 
 
-def _locate_impulse_or_collapse(dydt, loc, phases, filt, offset, extension_threshold):
+def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold, minimum_length_threshold, phases):
 
-    phase = CurvePhases.Impulse if np.sign(dydt[loc]) > 0 else CurvePhases.Collapse
-    comp = operator.gt if phase is CurvePhases.Impulse else operator.lt
+    # All positions with sufficient slope
+    filt = (dydt_signs != 0) & (phases == CurvePhases.UndeterminedNonFlat.value)
 
-    candidates = comp(dydt, dydt[loc] * extension_threshold) & filt
+    # In case there are small regions left
+    if not filt.any():
+        phases[phases == CurvePhases.UndeterminedNonFlat.value] = CurvePhases.UndeterminedNonLinear.value
+        return np.array([])
+
+    # Determine value and position of steepest slope
+    loc_value = np.abs(dydt[filt]).max()
+    loc = np.where((np.abs(dydt) == loc_value) & filt)[0][0]
+    loc_value = dydt[loc]
+
+    # Determine comparison operator for first derivative
+    phase = CurvePhases.Impulse if loc_value < 0 else CurvePhases.Collapse
+    op1 = operator.lt if phase is CurvePhases.Collapse else operator.gt
+
+    # Update filter to only keep slopes in the direction of the phase
+    filt = op1(dydt_signs, 0) & (phases == CurvePhases.UndeterminedNonFlat.value)
+
+    # Find all candidates
+    candidates = op1(dydt, loc_value * extension_threshold) & filt
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
 
