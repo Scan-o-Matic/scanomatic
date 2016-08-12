@@ -468,7 +468,9 @@ def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold, minimum_l
 
     # In case there are small regions left
     if not filt.any():
+
         phases[phases == CurvePhases.UndeterminedNonFlat.value] = CurvePhases.UndeterminedNonLinear.value
+        # Since no segment was detected there are no bordering segments
         return np.array([])
 
     # Determine value and position of steepest slope
@@ -488,21 +490,37 @@ def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold, minimum_l
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
 
-    if candidates[loc] == 0:
-        if n_found == 0:
-            raise ValueError("Slope {0}, loc {1} is not a {4} candidate {2} (filt {3})".format(
-                dydt[loc], loc, candidates.tolist(), filt.tolist(), phase))
-        else:
-            attr = 'max' if phase == CurvePhases.Impulse else 'min'
-            loc = np.where((getattr(dydt[candidates > 0], attr)() == dydt) & (candidates > 0))[0]
+    # Verify that there's actually still a candidate at the peak value
+    if n_found == 0:
 
+        # TODO: It should not be possible for this to happen so print just in case
+        print("Error detecting linear non-flat segment with max {0}, segment disappeared".format(loc_value))
+
+        phases[filt] = CurvePhases.UndeterminedNonLinear.value
+
+        # Since no segment was detected there are no bordering segments
+        return np.array([])
+
+    # Get the true phase positions from the candidates
+    elected = candidates == candidates[loc]
+
+    # Verify that the elected phase fulfills length threshold
+    if elected.sum() < minimum_length_threshold:
+
+        phases[elected] = CurvePhases.UndeterminedNonLinear.value
+        # Since no segment was detected there are no bordering segments
+        return np.array([])
+
+    # Set the detected phase
     if offset:
-        phases[offset: -offset][candidates == candidates[loc]] = phase.value
+        phases[offset: -offset][elected] = phase.value
     else:
-        phases[candidates == candidates[loc]] = phase.value
+        phases[elected] = phase.value
 
-    return _locate_segment(candidates == candidates[loc])
-
+    # Locate flanking segments
+    border_candidates, _ = label(filt)
+    loc_label = border_candidates[loc]
+    return (labels == loc_label) - elected
 
 def _locate_segment(filt):  # -> (int, int)
     """
