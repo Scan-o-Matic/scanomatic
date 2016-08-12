@@ -286,7 +286,6 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
 
     """
 
-    # TODO: Non linear phases should also have minimum lengths
     # TODO: Bridge 1 gaps if same on both sides
 
     if thresholds is None:
