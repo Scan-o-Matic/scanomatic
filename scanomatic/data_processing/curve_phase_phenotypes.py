@@ -322,7 +322,9 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
                     dydt, dydt_signs, ddydt_signs, filt,
                     PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
                     thresholds[Thresholds.UniformityThreshold],
-                    thresholds[Thresholds.UniformityTestSize])
+                    thresholds[Thresholds.UniformityTestSize],
+                    thresholds[Thresholds.PhaseMinimumLength],
+                    phases)
 
                 # Only look for the first non-linear segment rest is up for grabs for
                 # Next iteration of finding impulses or collapses
@@ -336,7 +338,9 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
             dydt, dydt_signs, ddydt_signs, filt,
             PhaseEdge.Intelligent,
             thresholds[Thresholds.UniformityThreshold],
-            thresholds[Thresholds.UniformityTestSize])
+            thresholds[Thresholds.UniformityTestSize],
+            thresholds[Thresholds.PhaseMinimumLength],
+            phases)
 
         # If currently considered segment had no phase then it is undetermined
         if phase is CurvePhases.Undetermined:
@@ -516,7 +520,7 @@ def _custom_filt(v, max_gap=3, min_length=3):
 
 
 def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
-                              uniformity_threshold, test_length, phases):
+                              uniformity_threshold, test_length, min_length, phases):
     """ Determines type of non-linear phase.
 
     Function filters the first and second derivatives, only looking
@@ -540,10 +544,11 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
             point in the same direction. Or the fraction of
             dydt_signs that have to do the same.
         test_length: How many points should be tested as a maximum
+        min_length: Minimum length to be considered a detected phase
         phases: The phase-classification arrya
 
     Returns: The phase type, any of the following
-        CurvePhases.Undetermined,
+        CurvePhases.Undetermined (failed detection),
         CurvePhases.GrowthAcceleration,
         CurvePhases.CollapseAcceleration,
         CurvePhases.GrowthRetardation,
@@ -608,6 +613,9 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
     if label_count:
 
         candidates = candidates == (1 if test_edge is PhaseEdge.Left else label_count)
+
+        if candidates.sum() < min_length:
+            return CurvePhases.Undetermined
 
         if offset:
             phases[offset: -offset][candidates] = phase.value
