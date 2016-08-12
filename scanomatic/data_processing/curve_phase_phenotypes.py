@@ -573,6 +573,7 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
 
     """
 
+    # Define type at one of the edges
     if test_edge is PhaseEdge.Intelligent:
 
         # This takes a rough estimate of which side is more interesting
@@ -596,23 +597,20 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
     # Classify as acceleration or retardation
     sign = ddydt_section.mean()
     if sign > uniformity_threshold:
-        phases = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseRetardation)
+        candidate_phase_types = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseRetardation)
     elif sign < -uniformity_threshold:
-        phases = (CurvePhases.GrowthRetardation, CurvePhases.CollapseAcceleration)
+        candidate_phase_types = (CurvePhases.GrowthRetardation, CurvePhases.CollapseAcceleration)
     else:
         return CurvePhases.Undetermined
 
     # Classify as growth or collapse
     sign = dydt_section.mean()
     if sign > uniformity_threshold:
-        phase = phases[0]
+        phase = candidate_phase_types[0]
     elif sign < -uniformity_threshold:
-        phase = phases[1]
+        phase = candidate_phase_types[1]
     else:
         return CurvePhases.Undetermined
-
-
-def _locate_nonlinear_phase(phase, direction, dydt_signs, ddydt_signs, phases, left, right, offset, filt=None):
 
     # Determine which operators to be used for first (op1) and second (op2) derivative signs
     if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.GrowthRetardation:
@@ -625,34 +623,24 @@ def _locate_nonlinear_phase(phase, direction, dydt_signs, ddydt_signs, phases, l
     else:
         op2 = operator.le
 
-    # Filter out the candidates
-    candidates = _get_filter(left, right, size=dydt_signs.size, filt=filt)
-    candidates2 = candidates & op1(dydt_signs, 0) & op2(ddydt_signs, 0)
-
-    candidates2 = generic_filter(candidates2, _custom_filt, size=9, mode='nearest')
-    candidates2, label_count = label(candidates2)
+    candidates = filt & op1(dydt_signs, 0) & op2(ddydt_signs, 0)
+    candidates = generic_filter(candidates, _custom_filt, size=9, mode='nearest')
+    candidates, label_count = label(candidates)
 
     if label_count:
 
-        # If there are more than 1 segment of candidates, the left most should be used when
-        # searching right-wards and the right most when searching left-wards.
-        candidates = candidates2 == (1 if direction is PhaseEdge.Right else label_count)
+        candidates = candidates == (1 if test_edge is PhaseEdge.Left else label_count)
 
         if offset:
             phases[offset: -offset][candidates] = phase.value
         else:
             phases[candidates] = phase.value
 
-        return _locate_segment(candidates), CurvePhases.Flat
+        return phase
 
     else:
 
-        if offset:
-            phases[offset: -offset][candidates] = CurvePhases.Undetermined.value
-        else:
-            phases[candidates] = CurvePhases.Undetermined.value
-
-        return (left, right), CurvePhases.Undetermined
+        return CurvePhases.Undetermined
 
 
 def _phenotype_phases(curve, derivative, phases, times, doublings):
