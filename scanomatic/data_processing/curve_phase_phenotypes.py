@@ -286,8 +286,6 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
 
     """
 
-    # TODO: Bridge 1 gaps if same on both sides
-
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
@@ -341,18 +339,47 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
             thresholds[Thresholds.PhaseMinimumLength],
             phases)
 
+        yield None
+
         # If currently considered segment had no phase then it is undetermined
         if phase is CurvePhases.Undetermined:
 
             phases[filt] = phase.value
-
-        yield  None
+            yield None
 
     # If there's an offset assume phase carries to edge
     if offset:
         phases[:offset] = phases[offset]
         phases[-offset:] = phases[-offset - 1]
         yield None
+
+    # Bridge neighbouring segments of same type if gap is one
+    _bridge_gaps(phases)
+
+
+def _bridge_gaps(phases):
+    """Fills in undefined gaps if same phase on each side
+
+    Maximum gap size is 1
+
+    :param phases: The phase classification array
+    """
+
+    undefined, = np.where(phases == CurvePhases.Undetermined.value)
+    last_index = phases.size - 1
+
+    # If the curve is just two measurements this makes little sense
+    if last_index < 2:
+        return
+
+    for loc in undefined:
+
+        if loc == 0 and phases[1] != CurvePhases.Undetermined.value:
+            phases[loc] = phases[loc + 1]
+        elif loc == last_index and phases[loc - 1] != CurvePhases.Undetermined.value:
+            phases[loc] = phases[loc - 1]
+        elif phases[loc - 1] == phases[loc + 1] and phases[loc + 1] != CurvePhases.Undetermined.value:
+            phases[loc] = phases[loc + 1]
 
 
 def _get_candidate_segment(complex_segment, test_value=True):
@@ -544,7 +571,7 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
             dydt_signs that have to do the same.
         test_length: How many points should be tested as a maximum
         min_length: Minimum length to be considered a detected phase
-        phases: The phase-classification arrya
+        phases: The phase-classification array
 
     Returns: The phase type, any of the following
         CurvePhases.Undetermined (failed detection),
