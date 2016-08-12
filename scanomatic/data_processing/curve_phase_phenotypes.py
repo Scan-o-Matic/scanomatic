@@ -77,9 +77,9 @@ class Thresholds(Enum):
         Thresholds.LinearModelExtension:
             Factor for impulse and collapse slopes to be
             considered equal to max/min point.
-        Threshold.LinearModelMinimumLength:
-            The number of measurements needed for a linear segment
-            to be considered detected.
+        Threshold.PhaseMinimumLength:
+            The number of measurements needed for a segment to be
+            considered detected.
         Thresholds.FlatlineSlopRequirement:
             Maximum slope for something to be flatline.
         Thresholds.UniformityThreshold:
@@ -92,7 +92,7 @@ class Thresholds(Enum):
     """
     LinearModelExtension = 0
     """:type : Thresholds"""
-    LinearModelMinimumLength = 1
+    PhaseMinimumLength = 1
     """:type : Thresholds"""
     FlatlineSlopRequirement = 2
     """:type : Thresholds"""
@@ -245,7 +245,7 @@ def _filter_find(vector, filt, func=np.max):
 
 DEFAULT_THRESHOLDS = {
     Thresholds.LinearModelExtension: 0.75,
-    Thresholds.LinearModelMinimumLength: 3,
+    Thresholds.PhaseMinimumLength: 3,
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.UniformityThreshold: 0.66,
     Thresholds.UniformityTestSize: 7,
@@ -293,7 +293,7 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
         thresholds = DEFAULT_THRESHOLDS
 
     _set_flat_segments(dydt_signs,
-                       thresholds[Thresholds.LinearModelMinimumLength],
+                       thresholds[Thresholds.PhaseMinimumLength],
                        phases)
 
     yield None
@@ -303,7 +303,7 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
         flanking = _set_nonflat_linear_segment(
             dydt, dydt_signs,
             thresholds[Thresholds.LinearModelExtension],
-            thresholds[Thresholds.LinearModelMinimumLength],
+            thresholds[Thresholds.PhaseMinimumLength],
             phases)
 
         yield None
