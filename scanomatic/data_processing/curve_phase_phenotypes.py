@@ -335,7 +335,8 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
         for each non-flat and not non-linear segment:
             if contains linear slope:
                 mark slope as impulse or collapse
-                mark bounding non-marked segments as non-linear
+                for each flanking:
+                    detetect non-linear type
             else
                 mark as non-linear
 
@@ -369,7 +370,7 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
 
     while (phases == CurvePhases.UndeterminedNonFlat.value).any():
 
-        bounding = _set_nonflat_linear_segment(
+        flanking = _set_nonflat_linear_segment(
             dydt, dydt_signs,
             thresholds[Thresholds.LinearModelExtension],
             thresholds[Thresholds.LinearModelMinimumLength],
@@ -377,10 +378,26 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
 
         yield None
 
-        if bounding.any():
+        if flanking.any():
 
-            phases[bounding] = CurvePhases.UndeterminedNonLinear
-            yield None
+            first_on_left_flank = flanking.argmin()
+
+            for filt in _get_candidate_segment(flanking):
+
+                direction = PhaseEdge.Right if \
+                    filt.argmin() == first_on_left_flank else \
+                    PhaseEdge.Left
+
+                phase = _test_nonlinear_phase_type(
+                    dydt_signs, ddydt_signs, filt,
+                    PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
+                    thresholds[Thresholds.UniformityThreshold],
+                    thresholds[Thresholds.UniformityTestSize])
+
+                # Only look for the first non-linear segment rest is up for grabs for
+                # Next iteration of finding impulses or collapses
+                flanking[filt] = False
+                yield None
 
 
     for direction, (l, r) in zip(PhaseEdge, ((left, impulse_left), (impulse_right, right))):
@@ -431,6 +448,23 @@ def _segment(dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, th
         phases[:offset] = phases[offset]
         phases[-offset:] = phases[-offset - 1]
         yield None
+
+
+def _get_candidate_segment(complex_segment, test_value=True):
+    """While complex_segment contains any test_value the first
+    segment of such will be returned as a boolean array
+
+    :param complex_segment: an array
+    :param test_value: the value to look for
+    :return: generator
+    """
+    while True:
+        labels, n_labels = label(complex_segment == test_value)
+
+        if n_labels:
+            yield  labels == 1
+        else
+            break
 
 
 def _set_flat_segments(dydt_signs, minimum_segmentlength, phases):
