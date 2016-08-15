@@ -337,7 +337,7 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
                 yield None
 
     # Try to classify remaining positions as non linear phases
-    while filt in _get_candidate_segment(phases, test_value=CurvePhases.UndeterminedNonLinear.value):
+    for filt in _get_candidate_segment(phases, test_value=CurvePhases.UndeterminedNonLinear.value):
 
         phase = _set_nonlinear_phase_type(
             dydt, dydt_signs, ddydt_signs, filt,
