@@ -304,7 +304,9 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
     while (phases == CurvePhases.UndeterminedNonFlat.value).any():
 
         flanking = _set_nonflat_linear_segment(
-            dydt, dydt_signs,
+            dydt,
+            ddydt_signs,
+            thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement],
             thresholds[Thresholds.LinearModelExtension],
             thresholds[Thresholds.PhaseMinimumLength],
             offset, phases)
@@ -432,10 +434,15 @@ def _bridge_canditates(candidates, window_size=5):
     return candidates
 
 
-def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold, minimum_length_threshold, offset, phases):
+def _set_nonflat_linear_segment(dydt, ddydt_signs, min_slope, extension_threshold,
+                                minimum_length_threshold, offset, phases):
+
+    # TODO: Temp test if good move somewhere
+    dydt_signs = np.sign(dydt)
+    dydt_signs[np.abs(dydt_signs) < min_slope] = 0
 
     # All positions with sufficient slope
-    filt = (dydt_signs != 0) & (phases == CurvePhases.UndeterminedNonFlat.value)
+    filt = (dydt_signs != 0) & (ddydt_signs == 0) & (phases == CurvePhases.UndeterminedNonFlat.value)
 
     # In case there are small regions left
     if not filt.any():
@@ -447,6 +454,7 @@ def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold, minimum_l
     # Determine value and position of steepest slope
     loc_value = np.abs(dydt[filt]).max()
     loc = np.where((np.abs(dydt) == loc_value) & filt)[0][0]
+    # Getting back the sign
     loc_value = dydt[loc]
 
     # Determine comparison operator for first derivative
