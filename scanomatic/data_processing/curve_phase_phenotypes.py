@@ -737,8 +737,12 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
 
     curve = phenotyper_object.smooth_growth_data[plate][pos]
 
+    # Smoothing kernel for derivatives
+    gauss = signal.gaussian(7, 3)
+    gauss /= gauss.sum()
+
     # Some center weighted smoothing of derivative, we only care for general shape
-    dydt = signal.convolve(phenotyper_object.get_derivative(plate, pos), [0.1, 0.25, 0.3, 0.25, 0.1], mode='valid')
+    dydt = signal.convolve(phenotyper_object.get_derivative(plate, pos), gauss, mode='valid')
     d_offset = (phenotyper_object.times.size - dydt.size) / 2
     dydt = np.hstack(([dydt[0] for _ in range(d_offset)], dydt, [dydt[-1] for _ in range(d_offset)]))
 
@@ -746,7 +750,9 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
     offset = (phenotyper_object.times.shape[0] - dydt.shape[0]) / 2
 
     # Smoothing in kernel shape because only want reliable trends
-    ddydt = signal.convolve(dydt, [1, 1, 1, 0, -1, -1, -1], mode='valid')
+    ddydt = signal.convolve(dydt, [1, 0, -1], mode='valid')
+    ddydt = signal.convolve(ddydt, gauss, mode='valid')
+
     dd_offset = (dydt.size - ddydt.size) / 2
     ddydt = np.hstack(([ddydt[0] for _ in range(dd_offset)], ddydt, [ddydt[-1] for _ in range(dd_offset)]))
     phases = np.ones_like(curve).astype(np.int) * CurvePhases.Undetermined.value
@@ -764,7 +770,7 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
     dydt_signs_slope = np.sign(dydt)
     dydt_signs_slope[np.abs(dydt_signs_slope) < threshold_slope] = 0
 
-    return dydt, dydt_ranks, dydt_signs_flat, ddydt_signs, phases, offset, curve
+    return dydt, dydt_ranks, dydt_signs_flat, dydt_signs_slope, ddydt, ddydt_signs, phases, offset, curve
 
 
 def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_doublings=None):
@@ -772,7 +778,7 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    dydt, dydt_ranks, dydt_signs_flat, dydt_signs_slope, ddydt_signs, phases, offset, curve = \
+    dydt, dydt_ranks, dydt_signs_flat, dydt_signs_slope, _, ddydt_signs, phases, offset, curve = \
         _get_data_needed_for_segments(
             phenotyper_object, plate, pos,
             thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
