@@ -3,7 +3,6 @@ import operator
 from scipy import signal
 from scipy.ndimage import label, generic_filter
 from scipy.stats import linregress
-from collections import deque
 from enum import Enum
 from itertools import izip
 
