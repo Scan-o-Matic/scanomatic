@@ -305,7 +305,6 @@ def _segment(dydt, dydt_signs_flat, dydt_signs_slope, ddydt_signs, phases, offse
         flanking = _set_nonflat_linear_segment(
             dydt,
             dydt_signs_slope,
-            ddydt_signs,
             thresholds[Thresholds.LinearModelExtension],
             thresholds[Thresholds.PhaseMinimumLength],
             offset, phases)
@@ -433,11 +432,11 @@ def _bridge_canditates(candidates, window_size=5):
     return candidates
 
 
-def _set_nonflat_linear_segment(dydt, dydt_signs, ddydt_signs, extension_threshold,
+def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold,
                                 minimum_length_threshold, offset, phases):
 
     # All positions with sufficient slope
-    filt = (dydt_signs != 0) & (ddydt_signs == 0) & (phases == CurvePhases.UndeterminedNonFlat.value)
+    filt = (dydt_signs != 0) & (phases == CurvePhases.UndeterminedNonFlat.value)
 
     # In case there are small regions left
     if not filt.any():
