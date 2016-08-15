@@ -249,11 +249,11 @@ def _filter_find(vector, filt, func=np.max):
 DEFAULT_THRESHOLDS = {
     Thresholds.LinearModelExtension: 0.9,
     Thresholds.PhaseMinimumLength: 3,
-    Thresholds.FlatlineSlopRequirement: 0.02,
-    Thresholds.ImpulseOrCollapseSlopeRequirement: 0.15,
+    Thresholds.FlatlineSlopRequirement: 0.01,
+    Thresholds.ImpulseOrCollapseSlopeRequirement: 0.02,
     Thresholds.UniformityThreshold: 0.66,
     Thresholds.UniformityTestSize: 7,
-    Thresholds.SecondDerivativeSigmaAsNotZero: 0.75}
+    Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
 def _segment(dydt, dydt_signs_flat, dydt_signs_slope, ddydt_signs, phases, offset, thresholds=None):
