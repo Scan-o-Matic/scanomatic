@@ -147,7 +147,7 @@ def plot_plate_heatmap(
 
 
 @_validate_input
-def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT_THRESHOLDS):
+def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT_THRESHOLDS, show_thresholds=True):
     """Plots a curve and both its derivatives as calculated and
     smoothed by scanomatic during the phase sectioning.
 
@@ -156,10 +156,13 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
         plate: the plate index
         pos: the position tuple on the plate
         thresholds: A thresholds dictionary
+        show_thresholds: If include horizontal lines for applicable thresholds
 
     Returns: A matplotlib figure
 
     """
+    thresholds_width = 1.5
+
     curve = np.log2(phenotyper_object.smooth_growth_data[plate][pos])
     times = phenotyper_object.times
 
@@ -171,14 +174,33 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
             thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement])
 
     f = plt.figure()
+
     ax = f.gca()
     ax.plot(times, ddydt, color='g')
     ax.set_ylabel("d2y/dt2 ", color='g')
     ax.fill_between(times, ddydt, 0, color='g', alpha=0.7)
+
+    if show_thresholds:
+
+        t1 = ddydt.std() * thresholds[Thresholds.SecondDerivativeSigmaAsNotZero]
+        ax.axhline(-t1, linestyle='--', color='g', lw=thresholds_width)
+        ax.axhline(t1, linestyle='--', color='g', lw=thresholds_width)
+
     ax2 = ax.twinx()
     ax2.plot(times, dydt, color='r')
     ax2.fill_between(times, dydt, 0, color='r', alpha=0.7)
     ax2.set_ylabel("dy/dt", color='r')
+
+    if show_thresholds:
+
+        t1 = thresholds[Thresholds.FlatlineSlopRequirement]
+        t2 = thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement]
+
+        ax2.axhline(t1, linestyle='--', color='r', lw=thresholds_width)
+        ax2.axhline(t2, linestyle='-.', color='r', lw=thresholds_width)
+        ax2.axhline(-t1, linestyle='--', color='r', lw=thresholds_width)
+        ax2.axhline(-t2, linestyle='-.', color='r', lw=thresholds_width)
+
     ax3 = ax.twinx()
     ax3.plot(times, curve, color='k', lw=2)
     ax3.yaxis.labelpad = -40
@@ -191,11 +213,14 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
 
     ax.set_xlabel("Hours")
     ax.set_title("Curve {0} and its derviatives".format((plate, pos)))
-    ax.legend(
-        ax3.lines + ax2.lines + ax.lines,
+    legend = ax.legend(
+        [ax3.lines[0], ax2.lines[0], ax.lines[0]],
         ['growth', 'dy/dt', 'ddy/dt'],
         loc='lower right',
         bbox_to_anchor=(0.9, 0))
+
+    legend.get_frame().set_facecolor('white')
+
     f.tight_layout()
     return f
 
