@@ -462,7 +462,7 @@ def _set_nonflat_linear_segment(dydt, ddydt_signs, min_slope, extension_threshol
     op1 = operator.lt if phase is CurvePhases.Collapse else operator.gt
 
     # Update filter to only keep slopes in the direction of the phase
-    filt = op1(dydt_signs, 0) & (phases == CurvePhases.UndeterminedNonFlat.value)
+    filt = op1(dydt_signs, 0) & filt
 
     # Find all candidates
     candidates = op1(dydt, loc_value * extension_threshold) & filt
