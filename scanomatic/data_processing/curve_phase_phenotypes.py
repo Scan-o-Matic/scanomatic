@@ -258,7 +258,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.75}
 
 
-def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
+def _segment(dydt, dydt_signs_flat, dydt_signs_slope, ddydt_signs, phases, offset, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
     Proposed future segmentation structure:
@@ -281,7 +281,8 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
 
     Args:
         dydt:
-        dydt_signs:
+        dydt_signs_flat:
+        dydt_signs_slope:
         ddydt_signs:
         phases:
         filt:
@@ -295,7 +296,7 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    _set_flat_segments(dydt_signs,
+    _set_flat_segments(dydt_signs_flat,
                        thresholds[Thresholds.PhaseMinimumLength],
                        phases)
 
@@ -305,8 +306,8 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
 
         flanking = _set_nonflat_linear_segment(
             dydt,
+            dydt_signs_slope,
             ddydt_signs,
-            thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement],
             thresholds[Thresholds.LinearModelExtension],
             thresholds[Thresholds.PhaseMinimumLength],
             offset, phases)
@@ -324,7 +325,7 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
                     PhaseEdge.Left
 
                 _set_nonlinear_phase_type(
-                    dydt, dydt_signs, ddydt_signs, filt,
+                    dydt, dydt_signs_flat, ddydt_signs, filt,
                     PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
                     thresholds[Thresholds.UniformityThreshold],
                     thresholds[Thresholds.UniformityTestSize],
@@ -340,7 +341,7 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
     for filt in _get_candidate_segment(phases, test_value=CurvePhases.UndeterminedNonLinear.value):
 
         phase = _set_nonlinear_phase_type(
-            dydt, dydt_signs, ddydt_signs, filt,
+            dydt, dydt_signs_flat, ddydt_signs, filt,
             PhaseEdge.Intelligent,
             thresholds[Thresholds.UniformityThreshold],
             thresholds[Thresholds.UniformityTestSize],
@@ -434,12 +435,8 @@ def _bridge_canditates(candidates, window_size=5):
     return candidates
 
 
-def _set_nonflat_linear_segment(dydt, ddydt_signs, min_slope, extension_threshold,
+def _set_nonflat_linear_segment(dydt, dydt_signs, ddydt_signs, extension_threshold,
                                 minimum_length_threshold, offset, phases):
-
-    # TODO: Temp test if good move somewhere
-    dydt_signs = np.sign(dydt)
-    dydt_signs[np.abs(dydt_signs) < min_slope] = 0
 
     # All positions with sufficient slope
     filt = (dydt_signs != 0) & (ddydt_signs == 0) & (phases == CurvePhases.UndeterminedNonFlat.value)
@@ -736,7 +733,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
 
 
-def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_sign, threshold_flatline):
+def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_sign, threshold_flatline, threshold_slope):
 
     curve = phenotyper_object.smooth_growth_data[plate][pos]
 
@@ -754,17 +751,20 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
     ddydt = np.hstack(([ddydt[0] for _ in range(dd_offset)], ddydt, [ddydt[-1] for _ in range(dd_offset)]))
     phases = np.ones_like(curve).astype(np.int) * 0
     """:type : numpy.ndarray"""
-    filt = _get_filter(size=dydt.size)
 
     # Determine second derviative signs
     ddydt_signs = np.sign(ddydt)
     ddydt_signs[np.abs(ddydt) < threshold_for_sign * ddydt[np.isfinite(ddydt)].std()] = 0
 
-    # Determine first derivative signs
-    dydt_signs = np.sign(dydt)
-    dydt_signs[np.abs(dydt) < threshold_flatline] = 0
+    # Determine first derivative signs for flattness questions
+    dydt_signs_flat = np.sign(dydt)
+    dydt_signs_flat[np.abs(dydt) < threshold_flatline] = 0
 
-    return dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, filt, offset, curve
+    # Determine first derivative signs for impulse or collapse questions
+    dydt_signs_slope = np.sign(dydt)
+    dydt_signs_slope[np.abs(dydt_signs_slope) < threshold_slope] = 0
+
+    return dydt, dydt_ranks, dydt_signs_flat, ddydt_signs, phases, offset, curve
 
 
 def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_doublings=None):
@@ -772,12 +772,14 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, _, offset, curve = _get_data_needed_for_segments(
-        phenotyper_object, plate, pos,
-        thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
-        thresholds[Thresholds.FlatlineSlopRequirement])
+    dydt, dydt_ranks, dydt_signs_flat, dydt_signs_slope, ddydt_signs, phases, offset, curve = \
+        _get_data_needed_for_segments(
+            phenotyper_object, plate, pos,
+            thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
+            thresholds[Thresholds.FlatlineSlopRequirement],
+            thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement])
 
-    for _ in _segment(dydt, dydt_signs, ddydt_signs, phases, offset=offset, thresholds=thresholds):
+    for _ in _segment(dydt, dydt_signs_flat, dydt_signs_slope, ddydt_signs, phases, offset=offset, thresholds=thresholds):
         pass
 
     if experiment_doublings is None:
