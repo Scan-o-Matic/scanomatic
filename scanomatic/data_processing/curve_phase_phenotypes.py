@@ -465,6 +465,8 @@ def _set_nonflat_linear_segment(dydt, ddydt_signs, min_slope, extension_threshol
     filt = op1(dydt_signs, 0) & filt
 
     # Find all candidates
+    # Note that if max slope is close to threshold for sign that step can filter out
+    # positions that this step would not.
     candidates = op1(dydt, loc_value * extension_threshold) & filt
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
