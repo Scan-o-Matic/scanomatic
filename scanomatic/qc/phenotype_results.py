@@ -181,16 +181,17 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos):
     f = plt.figure()
     ax = f.gca()
     ax.plot(times, ddydt, color='g')
-    ax.set_ylabel("ddy/dt")
+    ax.set_ylabel("d2y/dt2 ", color='g')
     ax.fill_between(times, ddydt, 0, color='g', alpha=0.7)
     ax2 = ax.twinx()
     ax2.plot(times, dydt, color='r')
     ax2.fill_between(times, dydt, 0, color='r', alpha=0.7)
-    ax2.set_ylabel("dy/dt")
+    ax2.set_ylabel("dy/dt", color='r')
     ax3 = ax.twinx()
     ax3.plot(times, curve, color='k', lw=2)
     ax3.yaxis.labelpad = -40
     ax3.set_ylabel("Log2 cells")
+    ax3.set_yticks(ax3.get_yticks()[1:-1])
 
     for tick in ax3.yaxis.get_major_ticks():
         tick.set_pad(-5)
@@ -205,6 +206,7 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos):
         bbox_to_anchor=(0.9, 0))
     f.tight_layout()
     return f
+
 
 def load_phenotype_results_into_plates(file_name, phenotype_header='Generation Time'):
 
