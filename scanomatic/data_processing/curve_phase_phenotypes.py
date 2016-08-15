@@ -749,7 +749,7 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
     ddydt = signal.convolve(dydt, [1, 1, 1, 0, -1, -1, -1], mode='valid')
     dd_offset = (dydt.size - ddydt.size) / 2
     ddydt = np.hstack(([ddydt[0] for _ in range(dd_offset)], ddydt, [ddydt[-1] for _ in range(dd_offset)]))
-    phases = np.ones_like(curve).astype(np.int) * 0
+    phases = np.ones_like(curve).astype(np.int) * CurvePhases.Undetermined.value
     """:type : numpy.ndarray"""
 
     # Determine second derviative signs
