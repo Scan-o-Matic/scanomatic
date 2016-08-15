@@ -258,7 +258,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.75}
 
 
-def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=None):
+def _segment(dydt, dydt_signs, ddydt_signs, phases, offset, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
     Proposed future segmentation structure:
@@ -757,13 +757,12 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    dydt, dydt_ranks,  dydt_signs, ddydt_signs, phases, filt, offset, curve = _get_data_needed_for_segments(
+    dydt, dydt_ranks, dydt_signs, ddydt_signs, phases, _, offset, curve = _get_data_needed_for_segments(
         phenotyper_object, plate, pos,
         thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
         thresholds[Thresholds.FlatlineSlopRequirement])
 
-    for _ in _segment(dydt, dydt_signs, ddydt_signs, phases,
-                      filt=filt, offset=offset, thresholds=thresholds):
+    for _ in _segment(dydt, dydt_signs, ddydt_signs, phases, offset=offset, thresholds=thresholds):
         pass
 
     if experiment_doublings is None:
