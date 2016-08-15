@@ -252,7 +252,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.LinearModelExtension: 0.9,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.FlatlineSlopRequirement: 0.02,
-    Thresholds.ImpulseOrCollapseSlopeRequirement: 0.17905223175104137,
+    Thresholds.ImpulseOrCollapseSlopeRequirement: 0.15,
     Thresholds.UniformityThreshold: 0.66,
     Thresholds.UniformityTestSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.75}
