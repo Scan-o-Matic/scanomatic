@@ -1,7 +1,7 @@
 from scipy.ndimage import label
-from scipy import signal
 
-from scanomatic.data_processing.curve_phase_phenotypes import CurvePhases
+from scanomatic.data_processing.curve_phase_phenotypes import CurvePhases, _get_data_needed_for_segments, \
+    DEFAULT_THRESHOLDS, Thresholds
 
 from scanomatic.io.movie_writer import MovieWriter
 import matplotlib
@@ -147,7 +147,7 @@ def plot_plate_heatmap(
 
 
 @_validate_input
-def plot_curve_and_derivatives(phenotyper_object, plate, pos):
+def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT_THRESHOLDS):
     """Plots a curve and both its derivatives as calculated and
     smoothed by scanomatic during the phase sectioning.
 
@@ -155,28 +155,20 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos):
         phenotyper_object: A Phenotyper instance
         plate: the plate index
         pos: the position tuple on the plate
+        thresholds: A thresholds dictionary
 
     Returns: A matplotlib figure
 
     """
     curve = np.log2(phenotyper_object.smooth_growth_data[plate][pos])
     times = phenotyper_object.times
-    dydt = signal.convolve(
-        phenotyper_object.get_derivative(plate, pos),
-        [0.1, 0.25, 0.3, 0.25, 0.1], mode='valid')
-    d_offset = (phenotyper_object.times.size - dydt.size) / 2
 
-    dydt = np.hstack(
-        ([dydt[0] for _ in range(d_offset)],
-         dydt,
-         [dydt[-1] for _ in range(d_offset)]))
-
-    ddydt = signal.convolve(dydt, [1, 1, 1, 0, -1, -1, -1], mode='valid')
-    dd_offset = (phenotyper_object.times.size - ddydt.size) / 2
-    ddydt = np.hstack(
-        ([ddydt[0] for _ in range(dd_offset)],
-         ddydt,
-         [ddydt[-1] for _ in range(dd_offset)]))
+    dydt, _, _, _, ddydt, _, _, _, _ = \
+        _get_data_needed_for_segments(
+            phenotyper_object, plate, pos,
+            thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
+            thresholds[Thresholds.FlatlineSlopRequirement],
+            thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement])
 
     f = plt.figure()
     ax = f.gca()
