@@ -645,9 +645,9 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
 
     # Determine which operators to be used for first (op1) and second (op2) derivative signs
     if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.GrowthRetardation:
-        op1 = operator.gt
+        op1 = operator.ge
     else:
-        op1 = operator.lt
+        op1 = operator.le
 
     if phase is CurvePhases.GrowthAcceleration or phase is CurvePhases.CollapseRetardation:
         op2 = operator.ge
