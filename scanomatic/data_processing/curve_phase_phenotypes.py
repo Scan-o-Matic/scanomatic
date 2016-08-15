@@ -249,13 +249,13 @@ def _filter_find(vector, filt, func=np.max):
     return np.where((vector == func(vector[filt])) & filt)[0]
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.LinearModelExtension: 0.75,
+    Thresholds.LinearModelExtension: 0.9,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.ImpulseOrCollapseSlopeRequirement: 0.17905223175104137,
     Thresholds.UniformityThreshold: 0.66,
     Thresholds.UniformityTestSize: 7,
-    Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
+    Thresholds.SecondDerivativeSigmaAsNotZero: 0.75}
 
 
 def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=None):
