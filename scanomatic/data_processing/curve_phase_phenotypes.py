@@ -88,6 +88,9 @@ class Thresholds(Enum):
         Thresholds.UniformityTestSize:
             The number of measurements included in the
             `UniformityThreshold` test.
+        ImpulseOrCollapseSlopeRequirement:
+            The minimum slope allowed for a slope to be considered
+            impulse/collapse (48h doubling or half-time).
 
     """
     LinearModelExtension = 0
@@ -101,6 +104,8 @@ class Thresholds(Enum):
     UniformityTestSize = 4
     """:type : Thresholds"""
     SecondDerivativeSigmaAsNotZero = 5
+    """:type : Thresholds"""
+    ImpulseOrCollapseSlopeRequirement = 6
     """:type : Thresholds"""
 
 
@@ -247,6 +252,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.LinearModelExtension: 0.75,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.FlatlineSlopRequirement: 0.02,
+    Thresholds.ImpulseOrCollapseSlopeRequirement: 0.17905223175104137,
     Thresholds.UniformityThreshold: 0.66,
     Thresholds.UniformityTestSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
