@@ -444,7 +444,7 @@ def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold, minimum_l
     loc_value = dydt[loc]
 
     # Determine comparison operator for first derivative
-    phase = CurvePhases.Impulse if loc_value < 0 else CurvePhases.Collapse
+    phase = CurvePhases.Collapse if loc_value < 0 else CurvePhases.Impulse
     op1 = operator.lt if phase is CurvePhases.Collapse else operator.gt
 
     # Update filter to only keep slopes in the direction of the phase
@@ -459,7 +459,7 @@ def _set_nonflat_linear_segment(dydt, dydt_signs, extension_threshold, minimum_l
     if n_found == 0:
 
         # TODO: It should not be possible for this to happen so print just in case
-        print("Error detecting linear non-flat segment with max {0}, segment disappeared".format(loc_value))
+        print("Error detecting {1} segment with max {0}, segment disappeared".format(loc_value, phase))
 
         phases[filt] = CurvePhases.UndeterminedNonLinear.value
 
