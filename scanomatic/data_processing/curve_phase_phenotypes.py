@@ -492,6 +492,11 @@ def _set_nonflat_linear_segment(dydt, ddydt_signs, min_slope, extension_threshol
         # Since no segment was detected there are no bordering segments
         return np.array([])
 
+    # Update filt for border detection below before updating elected!
+    filt = (phases == CurvePhases.Undetermined.value) | \
+           (phases == CurvePhases.UndeterminedNonLinear.value) | \
+           (phases == CurvePhases.UndeterminedNonFlat.value)
+
     # Set the detected phase
     if offset:
         phases[offset: -offset][elected] = phase.value
