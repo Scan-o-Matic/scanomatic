@@ -11,9 +11,7 @@ from scanomatic.data_processing import growth_phenotypes
 
 # TODO: Should be several modules, 1 segment a curve, 2 measure segments 3, meta phenotypes from segments
 
-# TODO: Image segments_phasing_bug_0_11_35.png shows unexpected phases
-# Need detection of linear phases based on prolonged linearity
-# Need linear phase detection to run to completion until no linear phases remain
+# TODO: Consider using 3rd derivative sign to indicate impule and collapse borders
 
 
 class CurvePhases(Enum):
