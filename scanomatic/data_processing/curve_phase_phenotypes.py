@@ -10,7 +10,8 @@ from scanomatic.data_processing import growth_phenotypes
 
 # TODO: Should be several modules, 1 segment a curve, 2 measure segments 3, meta phenotypes from segments
 
-# TODO: Consider using 3rd derivative sign to indicate impule and collapse borders
+# TODO: Consider using 3rd derivative sign to indicate impulse and collapse borders
+# Or look at look at tangent at max and validate deviations from expectancy
 
 
 class CurvePhases(Enum):
