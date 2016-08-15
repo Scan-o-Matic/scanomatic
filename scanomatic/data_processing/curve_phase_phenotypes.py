@@ -321,7 +321,7 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
                     thresholds[Thresholds.UniformityThreshold],
                     thresholds[Thresholds.UniformityTestSize],
                     thresholds[Thresholds.PhaseMinimumLength],
-                    phases)
+                    offset, phases)
 
                 # Only look for the first non-linear segment rest is up for grabs for
                 # Next iteration of finding impulses or collapses
@@ -337,7 +337,7 @@ def _segment(dydt, dydt_signs, ddydt_signs, phases, filt, offset, thresholds=Non
             thresholds[Thresholds.UniformityThreshold],
             thresholds[Thresholds.UniformityTestSize],
             thresholds[Thresholds.PhaseMinimumLength],
-            phases)
+            offset, phases)
 
         yield None
 
@@ -394,7 +394,7 @@ def _get_candidate_segment(complex_segment, test_value=True):
         labels, n_labels = label(complex_segment == test_value)
 
         if n_labels:
-            yield  labels == 1
+            yield labels == 1
         else:
             break
 
@@ -502,7 +502,7 @@ def _locate_segment(filt):  # -> (int, int)
         where = np.where(labels == 1)[0]
         return where[0], where[-1] + 1
     elif n > 1:
-        raise ValueError("Filter is not homogenous, contains {0} segments ({1})".format(n, labels.tolist()))
+        raise ValueError("Filter is not homogeneous, contains {0} segments ({1})".format(n, labels.tolist()))
     else:
         return None, None
 
@@ -546,7 +546,7 @@ def _custom_filt(v, max_gap=3, min_length=3):
 
 
 def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
-                              uniformity_threshold, test_length, min_length, phases):
+                              uniformity_threshold, test_length, min_length, offset, phases):
     """ Determines type of non-linear phase.
 
     Function filters the first and second derivatives, only looking
@@ -571,6 +571,7 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
             dydt_signs that have to do the same.
         test_length: How many points should be tested as a maximum
         min_length: Minimum length to be considered a detected phase
+        offset: Offset of first derivative values to curve
         phases: The phase-classification array
 
     Returns: The phase type, any of the following
