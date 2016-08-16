@@ -313,6 +313,7 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
             times,
             curve,
             dydt,
+            dydt_signs_flat,
             thresholds[Thresholds.LinearModelExtension],
             thresholds[Thresholds.PhaseMinimumLength],
             offset, phases)
@@ -506,6 +507,12 @@ def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_thresh
     filt = (phases == CurvePhases.Undetermined.value) | \
            (phases == CurvePhases.UndeterminedNonLinear.value) | \
            (phases == CurvePhases.UndeterminedNonFlat.value)
+
+    # Only consider flanking those that have valid sign.
+    # TODO: Note that it can cause an issue if curve is very wack, could merge two segments that shouldn't
+    # Probably extremely unlikely
+    op1 = operator.le if phase is CurvePhases.Collapse else operator.ge
+    filt &= op1(dydt_signs, 0)
 
     # Set the detected phase
     if offset:
