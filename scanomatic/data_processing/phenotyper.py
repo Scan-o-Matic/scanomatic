@@ -103,7 +103,10 @@ def edge_condition(arr, mode=EdgeCondition.Reflect, kernel_size=3):
 
 
 def merge_convolve(arr1, arr2, edge_condition_mode=EdgeCondition.Reflect, kernel_size=5,
-                   func=time_based_gaussian_weighted_mean, func_kwargs={}):
+                   func=time_based_gaussian_weighted_mean, func_kwargs=None):
+
+    if not func_kwargs:
+        func_kwargs = {}
 
     return tuple(func(v1, v2, **func_kwargs) for v1, v2 in izip(
         edge_condition(arr1, mode=edge_condition_mode, kernel_size=kernel_size),
@@ -363,10 +366,13 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         Parameters:
 
-            path        The path to the xml-file
+            path:
+                The path to the xml-file
+            kwargs:
+                Optional parameters passed on to the constructor
 
         Optional Parameters can be passed as keywords and will be
-        used in instanciating the class.
+        used in instantiating the class.
         """
 
         xml = xml_reader_module.XML_Reader(path)
@@ -382,8 +388,8 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         Args:
 
-            dirPath (str):  Path to the directory holding the relevant
-                            files
+            directory_path (str):
+                Path to the directory holding the relevant files
 
         Returns:
 
@@ -425,6 +431,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
                 if inclusion_name is None:
                     inclusion_name = 'Trusted'
                 phenotyper.set_phenotype_inclusion_level(PhenotypeDataType[inclusion_name])
+            else:
+                raise ValueError("Stored parameters in {0} can't be understood".format(
+                    os.path.join(directory_path, _p.phenotypes_extraction_params)))
 
             phenotyper._median_kernel_size = int(median_filt_size)
             phenotyper._gaussian_filter_sigma = float(gauss_sigma)
@@ -492,22 +501,22 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         Parameters:
 
-            path        The path to the data numpy file
+            path:
+                The path to the data numpy file
 
-        Optional parameter:
+            times_data_path:
+                The path to the times numpy file
+                If not supplied both paths are assumed
+                to be named as:
 
-            timesPath   The path to the times numpy file
-                        If not supplied both paths are assumed
-                        to be named as:
+                    some/path.data.npy
+                    some/path.times.npy
 
-                            some/path.data.npy
-                            some/path.times.npy
-
-                        And path parameter is expexted to be
-                        'some/path' in this examply.
+                And path parameter is expexted to be
+                'some/path' in this examply.
 
         Optional Parameters can be passed as keywords and will be
-        used in instanciating the class.
+        used in instantiating the class.
         """
         data_directory = path
         if path.lower().endswith(".npy"):
@@ -588,7 +597,9 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         See the wiki on how such files should be formatted
 
         Args:
-            paths: Any number of paths to files OpenOffice or Excel compatible that contains the meta data
+            meta_data_paths:
+                Any number of paths to files OpenOffice or Excel
+                compatible that contains the meta data
 
         """
 
@@ -665,13 +676,21 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
         """Extract phenotypes given the current inclusion level
 
         Args:
-            keep_filter: Optional, if previous curve marks on phenotypes should be kept or not. Default
-                is to clear previous curve marks
+            keep_filter:
+                Optional, if previous curve marks on phenotypes should
+                be kept or not. Default is to clear previous curve
+                marks
+            resmoothen:
+                Optional, if smoothing should be redone.
+                Default is not to redo it.
 
         See Also:
-            Phenotyper.set_phenotype_inclusion_level: How to change what phenotypes are extracted
-            Phenotyper.get_phenotype: Accessing extracted phenotypes.
-            Phenotyper.normalize_phenotypes: Normalize phenotypes.
+            Phenotyper.set_phenotype_inclusion_level:
+                How to change what phenotypes are extracted
+            Phenotyper.get_phenotype:
+                Accessing extracted phenotypes.
+            Phenotyper.normalize_phenotypes:
+                Normalize phenotypes.
         """
         self.wipe_extracted_phenotypes(keep_filter)
 
