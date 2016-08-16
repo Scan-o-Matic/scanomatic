@@ -53,16 +53,37 @@ class Logger(object):
         for lvl, lvlMethodName, lvlName in self._LOGLEVELS:
 
             if hasattr(self, lvlMethodName):
-                raise Exception(
-                    "Trying to mask existing method {0} not allowed".format(
-                        lvlMethodName))
-
+                pass
             else:
 
                 setattr(self, lvlMethodName,
                         partial(Logger._output, self, lvl))
 
                 self._logLevelToMethod[lvl] = getattr(self, lvlMethodName)
+
+    def exception(self, msg):
+
+        self._output(0, msg)
+
+    def critical(self, msg):
+
+        self._output(1, msg)
+
+    def error(self, msg):
+
+        self._output(2, msg)
+
+    def warning(self, msg):
+
+        self._output(3, msg)
+
+    def info(self, msg):
+
+        self._output(4, msg)
+
+    def debug(self, msg):
+
+        self._output(5, msg)
 
     @classmethod
     def set_global_log_levels(cls, log_levels=None):
