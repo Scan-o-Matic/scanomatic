@@ -247,7 +247,7 @@ def _filter_find(vector, filt, func=np.max):
     return np.where((vector == func(vector[filt])) & filt)[0]
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.LinearModelExtension: 0.01,
+    Thresholds.LinearModelExtension: 0.015,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.FlatlineSlopRequirement: 0.01,
     Thresholds.ImpulseOrCollapseSlopeRequirement: 0.02,
