@@ -243,7 +243,7 @@ class PhaseEdge(Enum):
 
 
 DEFAULT_THRESHOLDS = {
-    Thresholds.LinearModelExtension: 0.015,
+    Thresholds.LinearModelExtension: 0.0125,
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.FlatlineSlopRequirement: 0.01,
     Thresholds.ImpulseOrCollapseSlopeRequirement: 0.02,
