@@ -256,7 +256,7 @@ DEFAULT_THRESHOLDS = {
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
-def _segment(times, curve, dydt, dydt_signs_flat, dydt_signs_slope, ddydt_signs, phases, offset, thresholds=None):
+def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, thresholds=None):
     """Iteratively segments a curve into its component CurvePhases
 
     Proposed future segmentation structure:
@@ -282,7 +282,6 @@ def _segment(times, curve, dydt, dydt_signs_flat, dydt_signs_slope, ddydt_signs,
         curve:
         dydt:
         dydt_signs_flat:
-        dydt_signs_slope:
         ddydt_signs:
         phases:
         filt:
@@ -309,7 +308,6 @@ def _segment(times, curve, dydt, dydt_signs_flat, dydt_signs_slope, ddydt_signs,
             times,
             curve,
             dydt,
-            dydt_signs_slope,
             thresholds[Thresholds.LinearModelExtension],
             thresholds[Thresholds.PhaseMinimumLength],
             offset, phases)
@@ -437,7 +435,7 @@ def _bridge_canditates(candidates, window_size=5):
     return candidates
 
 
-def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_threshold,
+def _set_nonflat_linear_segment(times, curve, dydt, extension_threshold,
                                 minimum_length_threshold, offset, phases):
 
     # All positions with sufficient slope
@@ -460,32 +458,19 @@ def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_thresh
     loc_time = times[loc]
 
     # Tangent at max
-
     tangent = (times - loc_time) * loc_slope + loc_value
 
     # Determine comparison operator for first derivative
     phase = CurvePhases.Collapse if loc_slope < 0 else CurvePhases.Impulse
 
-    # op1 = operator.lt if phase is CurvePhases.Collapse else operator.gt
-
+    # Find all candidates
     candidates = (np.abs(curve - tangent) < extension_threshold * loc_value).filled(False)
     candidates &= filt
-
-    # Update filter to only keep slopes in the direction of the phase
-    # filt = op1(dydt_signs, 0) & filt
-
-    # Find all candidates
-    # Note that if max slope is close to threshold for sign that step can filter out
-    # positions that this step would not.
-    # candidates = op1(dydt, loc_slope * extension_threshold) & filt
     candidates = _bridge_canditates(candidates)
     candidates, n_found = label(candidates)
 
     # Verify that there's actually still a candidate at the peak value
     if n_found == 0:
-
-        # TODO: It should not be possible for this to happen so print just in case
-        print("Error detecting {1} segment with max {0}, segment disappeared".format(loc_value, phase))
 
         phases[filt] = CurvePhases.UndeterminedNonLinear.value
 
@@ -791,7 +776,7 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    dydt, dydt_ranks, dydt_signs_flat, dydt_signs_slope, _, ddydt_signs, phases, offset, curve = \
+    dydt, dydt_ranks, dydt_signs_flat, _, _, ddydt_signs, phases, offset, curve = \
         _get_data_needed_for_segments(
             phenotyper_object, plate, pos,
             thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
@@ -800,7 +785,7 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
 
     for _ in _segment(
             phenotyper_object.times, curve, dydt, dydt_signs_flat,
-            dydt_signs_slope, ddydt_signs, phases, offset, thresholds):
+            ddydt_signs, phases, offset, thresholds):
 
         pass
 
