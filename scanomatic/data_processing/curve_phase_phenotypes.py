@@ -83,7 +83,7 @@ class Thresholds(Enum):
         Thresholds.UniformityThreshold:
             The fraction of positions considered that must agree on a
             certain direction of the first or second derivative.
-        Thresholds.UniformityTestSize:
+        Thresholds.UniformityTestMinSize:
             The number of measurements included in the
             `UniformityThreshold` test.
         ImpulseOrCollapseSlopeRequirement:
@@ -99,7 +99,7 @@ class Thresholds(Enum):
     """:type : Thresholds"""
     UniformityThreshold = 3
     """:type : Thresholds"""
-    UniformityTestSize = 4
+    UniformityTestMinSize = 4
     """:type : Thresholds"""
     SecondDerivativeSigmaAsNotZero = 5
     """:type : Thresholds"""
@@ -251,8 +251,8 @@ DEFAULT_THRESHOLDS = {
     Thresholds.PhaseMinimumLength: 3,
     Thresholds.FlatlineSlopRequirement: 0.01,
     Thresholds.ImpulseOrCollapseSlopeRequirement: 0.02,
-    Thresholds.UniformityThreshold: 0.66,
-    Thresholds.UniformityTestSize: 7,
+    Thresholds.UniformityThreshold: 0.4,
+    Thresholds.UniformityTestMinSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
 
 
@@ -324,11 +324,12 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
                     filt.argmin() == first_on_left_flank else \
                     PhaseEdge.Left
 
+                # Mark flanking non-linear phase
                 phase = _set_nonlinear_phase_type(
                     dydt, dydt_signs_flat, ddydt_signs, filt,
                     direction,
+                    thresholds[Thresholds.UniformityTestMinSize],
                     thresholds[Thresholds.UniformityThreshold],
-                    thresholds[Thresholds.UniformityTestSize],
                     thresholds[Thresholds.PhaseMinimumLength],
                     offset, phases)
 
@@ -349,8 +350,8 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
         phase = _set_nonlinear_phase_type(
             dydt, dydt_signs_flat, ddydt_signs, filt,
             PhaseEdge.Intelligent,
+            thresholds[Thresholds.UniformityTestMinSize],
             thresholds[Thresholds.UniformityThreshold],
-            thresholds[Thresholds.UniformityTestSize],
             thresholds[Thresholds.PhaseMinimumLength],
             offset, phases)
 
@@ -443,7 +444,7 @@ def _bridge_canditates(candidates, window_size=5):
     return candidates
 
 
-def _set_nonflat_linear_segment(times, curve, dydt, extension_threshold,
+def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_threshold,
                                 minimum_length_threshold, offset, phases):
 
     # All positions with sufficient slope
@@ -569,8 +570,8 @@ def _custom_filt(v, max_gap=3, min_length=3):
     return (np.where(diff < 0)[0] - np.where(diff > 0)[0]).max() >= min_length
 
 
-def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
-                              uniformity_threshold, test_length, min_length, offset, phases):
+def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge, test_min_length,
+                              uniformity_threshold, min_length, offset, phases):
     """ Determines type of non-linear phase.
 
     Function filters the first and second derivatives, only looking
@@ -593,7 +594,7 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
             I.e. the fraction of ddydt_signs in the test that must
             point in the same direction. Or the fraction of
             dydt_signs that have to do the same.
-        test_length: How many points should be tested as a maximum
+        test_min_length: How many points should be tested as a minimum
         min_length: Minimum length to be considered a detected phase
         offset: Offset of first derivative values to curve
         phases: The phase-classification array
@@ -606,6 +607,7 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
         CurvePhases.CollapseRetardation
 
     """
+    phase = CurvePhases.Undetermined
 
     # Define type at one of the edges
     if test_edge is PhaseEdge.Intelligent:
@@ -613,37 +615,27 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
         # This takes a rough estimate of which side is more interesting
         # based on the location of the steepest slope
 
-        steepest_loc = np.abs(dydt[filt]).argmax()
-        test_edge = PhaseEdge.Left if steepest_loc / float(filt.sum()) < 0.5 else PhaseEdge.Right
+        phase = _classify_non_linear_segment(dydt_signs, ddydt_signs, uniformity_threshold)
+        if phase == CurvePhases.Undetermined:
+            steepest_loc = np.abs(dydt[filt]).argmax()
+            test_edge = PhaseEdge.Left if steepest_loc / float(filt.sum()) < 0.5 else PhaseEdge.Right
 
     if test_edge is PhaseEdge.Left:
-        ddydt_section = ddydt_signs[filt][:test_length]
-        dydt_section = dydt_signs[filt][:test_length]
+        for test_length in range(test_min_length, dydt.size, 4):
+            ddydt_section = ddydt_signs[filt][:test_length]
+            dydt_section = dydt_signs[filt][:test_length]
+            phase = _classify_non_linear_segment(dydt_section, ddydt_section, uniformity_threshold)
+            if phase != CurvePhases.Undetermined:
+                break
     elif test_edge is PhaseEdge.Right:
-        ddydt_section = ddydt_signs[filt][-test_length:]
-        dydt_section = dydt_signs[filt][-test_length:]
-    else:
-        return CurvePhases.Undetermined
+        for test_length in range(test_min_length, dydt.size, 4):
+            ddydt_section = ddydt_signs[filt][-test_length:]
+            dydt_section = dydt_signs[filt][-test_length:]
+            phase = _classify_non_linear_segment(dydt_section, ddydt_section, uniformity_threshold)
+            if phase != CurvePhases.Undetermined:
+                break
 
-    if ddydt_section.size == 0:
-        return CurvePhases.Undetermined
-
-    # Classify as acceleration or retardation
-    sign = ddydt_section.mean()
-    if sign > uniformity_threshold:
-        candidate_phase_types = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseRetardation)
-    elif sign < -uniformity_threshold:
-        candidate_phase_types = (CurvePhases.GrowthRetardation, CurvePhases.CollapseAcceleration)
-    else:
-        return CurvePhases.Undetermined
-
-    # Classify as growth or collapse
-    sign = dydt_section.mean()
-    if sign > uniformity_threshold:
-        phase = candidate_phase_types[0]
-    elif sign < -uniformity_threshold:
-        phase = candidate_phase_types[1]
-    else:
+    elif phase == CurvePhases.Undetermined:
         return CurvePhases.Undetermined
 
     # Determine which operators to be used for first (op1) and second (op2) derivative signs
@@ -677,6 +669,50 @@ def _set_nonlinear_phase_type(dydt, dydt_signs, ddydt_signs, filt, test_edge,
 
     else:
 
+        return CurvePhases.Undetermined
+
+
+def _classify_non_linear_segment(dydt, ddydt, uniformity_threshold):
+    """Classifies non linear segment
+
+    Args:
+        dydt: First derivative signs
+        ddydt: Second derivative signs
+        uniformity_threshold:
+
+    Returns: CurvePhase
+
+    """
+
+    if ddydt.size == 0 or ddydt.sum() == 0 or dydt.sum() == 0:
+        return CurvePhases.Undetermined
+
+    # Classify as acceleration or retardation
+    sign = np.sign(ddydt.mean())
+    if sign == 0:
+        return CurvePhases.Undetermined
+    op = operator.le if sign < 0 else operator.ge
+    value = op(ddydt, 0).mean() * sign
+
+    if value > uniformity_threshold:
+        candidate_phase_types = (CurvePhases.GrowthAcceleration, CurvePhases.CollapseRetardation)
+    elif value < -uniformity_threshold:
+        candidate_phase_types = (CurvePhases.GrowthRetardation, CurvePhases.CollapseAcceleration)
+    else:
+        return CurvePhases.Undetermined
+
+    # Classify as acceleration or retardation
+    sign = np.sign(dydt.mean())
+    if sign == 0:
+        return CurvePhases.Undetermined
+    op = operator.le if sign < 0 else operator.ge
+    value = op(dydt, 0).mean() * sign
+
+    if value > uniformity_threshold:
+        return candidate_phase_types[0]
+    elif value < -uniformity_threshold:
+        return candidate_phase_types[1]
+    else:
         return CurvePhases.Undetermined
 
 
