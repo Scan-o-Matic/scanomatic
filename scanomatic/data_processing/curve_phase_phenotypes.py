@@ -264,10 +264,11 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
                 mark slope as impulse or collapse
                 for each flanking:
                     detetect non-linear type
+                    if nothing detected, mark as linear
             else
                 mark as non-linear
 
-        for each non-linear segment:
+        for each remaining non-linear segment:
             if contains detectable non-linear type:
                 mark type
             else:
@@ -275,23 +276,30 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
 
     Args:
         times:
+            The sample times vector
         curve:
+            The smooth growth curve
         dydt:
+            The first derivative
         dydt_signs_flat:
+            The signs of first derivative with area around 0
+            considered 0.
         ddydt_signs:
+            The signs of the second derivative with area around 0
+            considered 0.
         phases:
-        filt:
+            The phase classification vector (should be all 0)
         offset:
+            An int for offset between curve and derivative
         thresholds:
-
-    Returns:
-
+            The thresholds dictionary to be used.
     """
     curve = np.ma.masked_invalid(np.log2(curve))
 
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
+    # Mark all flats
     _set_flat_segments(dydt_signs_flat,
                        thresholds[Thresholds.PhaseMinimumLength],
                        phases)
@@ -300,6 +308,7 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
 
     while (phases == CurvePhases.UndeterminedNonFlat.value).any():
 
+        # Mark linear slope
         flanking = _set_nonflat_linear_segment(
             times,
             curve,
@@ -338,6 +347,7 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
                 # Only look for the first non-linear segment rest is up for grabs for
                 # Next iteration of finding impulses or collapses
                 flanking[filt] = False
+
                 yield None
 
     # Try to classify remaining positions as non linear phases
