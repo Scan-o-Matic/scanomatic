@@ -545,33 +545,6 @@ def _locate_segment(filt):  # -> (int, int)
         return None, None
 
 
-def _get_filter(left=None, right=None, filt=None, size=None):
-    """
-
-    Args:
-        left: inclusive left index or None (sets index as 0)
-        right: exclusive right index or None (sets at size of filt)
-        filt: previous filter array to reuse
-        size: if no previous filter is supplied, size determines filter creation
-
-    Returns: Filter array
-        :rtype: numpy.ndarray
-    """
-    if filt is None:
-        filt = np.zeros(size).astype(bool)
-    else:
-        filt[:] = False
-        size = filt.size
-
-    if left is None:
-        left = 0
-    if right is None:
-        right = size
-
-    filt[left: right] = True
-    return filt
-
-
 def _custom_filt(v, max_gap=3, min_length=3):
 
     w, = np.where(v)
