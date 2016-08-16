@@ -324,13 +324,19 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
                     filt.argmin() == first_on_left_flank else \
                     PhaseEdge.Left
 
-                _set_nonlinear_phase_type(
+                phase = _set_nonlinear_phase_type(
                     dydt, dydt_signs_flat, ddydt_signs, filt,
-                    PhaseEdge.Left if direction is PhaseEdge.Right else PhaseEdge.Right,
+                    direction,
                     thresholds[Thresholds.UniformityThreshold],
                     thresholds[Thresholds.UniformityTestSize],
                     thresholds[Thresholds.PhaseMinimumLength],
                     offset, phases)
+
+                if phase is CurvePhases.Undetermined:
+                    # If no curved segment found, it is not safe to look for more
+                    # non-flat linear phases because could merge two that should
+                    # not be merged.
+                    phases[filt] = CurvePhases.UndeterminedNonLinear.value
 
                 # Only look for the first non-linear segment rest is up for grabs for
                 # Next iteration of finding impulses or collapses
