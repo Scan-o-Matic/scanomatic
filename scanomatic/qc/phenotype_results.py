@@ -303,6 +303,8 @@ def plot_segments(save_target, phenotypes, position, segment_alpha=0.3, f=None, 
 
     plot_phases(ax, curve_raw, curve_smooth, times, phases, colors=colors, segment_alpha=segment_alpha)
 
+    ax.set_title("Curve phases for plate {0}, position ({1}, {2})".format(*position))
+
     if save_target:
         f.savefig(save_target)
 
