@@ -242,10 +242,6 @@ class PhaseEdge(Enum):
     """:type : PhaseEdge"""
 
 
-def _filter_find(vector, filt, func=np.max):
-    vector = np.abs(vector)
-    return np.where((vector == func(vector[filt])) & filt)[0]
-
 DEFAULT_THRESHOLDS = {
     Thresholds.LinearModelExtension: 0.015,
     Thresholds.PhaseMinimumLength: 3,
