@@ -389,10 +389,12 @@ def _bridge_gaps(phases):
 
     for loc in undefined:
 
-        if loc == 0 and phases[1] != CurvePhases.Undetermined.value:
-            phases[loc] = phases[loc + 1]
-        elif loc == last_index and phases[loc - 1] != CurvePhases.Undetermined.value:
-            phases[loc] = phases[loc - 1]
+        if loc == 0:
+            if phases[1] != CurvePhases.Undetermined.value:
+                phases[loc] = phases[loc + 1]
+        elif loc == last_index:
+            if phases[loc - 1] != CurvePhases.Undetermined.value:
+                phases[loc] = phases[loc - 1]
         elif phases[loc - 1] == phases[loc + 1] and phases[loc + 1] != CurvePhases.Undetermined.value:
             phases[loc] = phases[loc + 1]
 
