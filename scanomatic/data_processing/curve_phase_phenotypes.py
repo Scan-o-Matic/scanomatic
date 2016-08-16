@@ -10,9 +10,6 @@ from scanomatic.data_processing import growth_phenotypes
 
 # TODO: Should be several modules, 1 segment a curve, 2 measure segments 3, meta phenotypes from segments
 
-# TODO: Consider using 3rd derivative sign to indicate impulse and collapse borders
-# Or look at look at tangent at max and validate deviations from expectancy
-
 
 class CurvePhases(Enum):
     """Phases of curves recognized
@@ -509,7 +506,7 @@ def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_thresh
            (phases == CurvePhases.UndeterminedNonFlat.value)
 
     # Only consider flanking those that have valid sign.
-    # TODO: Note that it can cause an issue if curve is very wack, could merge two segments that shouldn't
+    # TODO: Note that it can cause an issue if curve is very wack, could merge two segments that shouldn't be
     # Probably extremely unlikely
     op1 = operator.le if phase is CurvePhases.Collapse else operator.ge
     filt &= op1(dydt_signs, 0)

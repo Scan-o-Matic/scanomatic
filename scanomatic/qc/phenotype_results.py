@@ -198,12 +198,12 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
     if show_thresholds:
 
         t1 = thresholds[Thresholds.FlatlineSlopRequirement]
-        t2 = thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement]
+        # t2 = thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement]
 
         ax2.axhline(t1, linestyle='--', color='r', lw=thresholds_width)
-        ax2.axhline(t2, linestyle='-.', color='r', lw=thresholds_width)
+        # ax2.axhline(t2, linestyle='-.', color='r', lw=thresholds_width)
         ax2.axhline(-t1, linestyle='--', color='r', lw=thresholds_width)
-        ax2.axhline(-t2, linestyle='-.', color='r', lw=thresholds_width)
+        # ax2.axhline(-t2, linestyle='-.', color='r', lw=thresholds_width)
 
     ax3 = ax.twinx()
     ax3.plot(times, curve, color='k', lw=2)
