@@ -76,34 +76,40 @@ def get_downsampled_plates(data, subsampling="BR"):
                 The subsampling used
     """
 
-    # How much smaller the cut should be than the original
-    # (e.g. take every second)
-    subsampling_size = 2
-
-    # Number of dimensions to subsample
-    subsample_first_dim = 2
-
-    # Lookup to translate subsamplingexpressions to coordinates
-    sub_sample_lookup = {'TL': (0, 0), 'TR': (0, 1), 'BL': (1, 0), 'BR': (1, 1)}
 
     # Generic -> Per plate
     if isinstance(subsampling, StringTypes):
         subsampling = [subsampling for _ in range(data.shape[0])]
 
-    # Name to offset
-    subsampling = [sub_sample_lookup[s] for s in subsampling]
+        # Lookup to translate subsamplingexpressions to coordinates
+        sub_sample_lookup = {'TL': Offsets.UpperLeft, 'TR': Offsets.UpperRight,
+                             'BL': Offsets.LowerLeft, 'BR': Offsets.LowerRight}
+
+        # Name to offset
+        subsampling = [sub_sample_lookup[s]() for s in subsampling]
 
     # Create a new container for the plates. It is important that this remains
-    # a list and is not converted into an array if both returned memebers of A
+    # a list and is not converted into an array if both returned members of A
     # and original plate values should operate on the same memory
+
+    # Number of dimensions to subsample, take first two
+    # subsample_first_dim = 2
+
     out = []
     for i, plate in enumerate(data):
         offset = subsampling[i]
-        new_shape = (tuple(plate.shape[d] / subsampling_size for d in xrange(subsample_first_dim)) +
-                     plate.shape[subsample_first_dim:])
-        new_strides = (tuple(plate.strides[d] * subsampling_size for d in xrange(subsample_first_dim)) +
-                       plate.strides[subsample_first_dim:])
-        out.append(np.lib.stride_tricks.as_strided(plate[offset[0]:, offset[1]:], shape=new_shape, strides=new_strides))
+
+        # How much smaller the cut should be than the original
+        # (e.g. take every second)
+        subsample_scale = 2 if offset.sum() == 1 else 0
+        if not subsample_scale:
+            raise ValueError(
+                "Only exactly one reference position offset per plate allowed. "
+                "You had {0}".format(offset))
+
+        d1, d2 = np.where(offset)
+
+        out.append(plate[d1::2, d2::2])
 
     return out
 
