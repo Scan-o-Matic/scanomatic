@@ -791,6 +791,7 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
                                 np.log2(phenotyper_object.get_phenotype(
                                     growth_phenotypes.Phenotypes.ExperimentBaseLine)[plate][pos]))
 
+    # TODO: ensure it isn't intentially smoothed dydt that is uses for values, good for location though
     return phases, _phenotype_phases(curve, dydt, phases, phenotyper_object.times, experiment_doublings)
 
 
