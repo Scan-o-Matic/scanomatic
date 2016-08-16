@@ -469,6 +469,7 @@ def _set_nonflat_linear_segment(times, curve, dydt, dydt_signs, extension_thresh
     # op1 = operator.lt if phase is CurvePhases.Collapse else operator.gt
 
     candidates = (np.abs(curve - tangent) < extension_threshold * loc_value).filled(False)
+    candidates &= filt
 
     # Update filter to only keep slopes in the direction of the phase
     # filt = op1(dydt_signs, 0) & filt
