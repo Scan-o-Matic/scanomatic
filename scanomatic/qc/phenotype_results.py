@@ -170,12 +170,11 @@ def plot_curve_and_derivatives(phenotyper_object, plate, pos, thresholds=DEFAULT
     curve = np.log2(phenotyper_object.smooth_growth_data[plate][pos])
     times = phenotyper_object.times
 
-    dydt, _, _, _, ddydt, _, _, _, _ = \
+    dydt, _, _, ddydt, _, _, _, _ = \
         _get_data_needed_for_segments(
             phenotyper_object, plate, pos,
             thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
-            thresholds[Thresholds.FlatlineSlopRequirement],
-            thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement])
+            thresholds[Thresholds.FlatlineSlopRequirement])
 
     f = plt.figure()
 

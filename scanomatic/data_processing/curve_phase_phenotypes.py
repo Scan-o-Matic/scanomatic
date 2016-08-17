@@ -83,9 +83,8 @@ class Thresholds(Enum):
         Thresholds.UniformityTestMinSize:
             The number of measurements included in the
             `UniformityThreshold` test.
-        ImpulseOrCollapseSlopeRequirement:
-            The minimum slope allowed for a slope to be considered
-            impulse/collapse (48h doubling or half-time).
+        Thresholds.NonFlatLinearMinimumLength:
+            Minimum length of collapse or impulse
 
     """
     LinearModelExtension = 0
@@ -100,7 +99,7 @@ class Thresholds(Enum):
     """:type : Thresholds"""
     SecondDerivativeSigmaAsNotZero = 5
     """:type : Thresholds"""
-    ImpulseOrCollapseSlopeRequirement = 6
+    NonFlatLinearMinimumLength = 7
     """:type : Thresholds"""
 
 
@@ -241,9 +240,9 @@ class PhaseEdge(Enum):
 
 DEFAULT_THRESHOLDS = {
     Thresholds.LinearModelExtension: 0.01,
-    Thresholds.PhaseMinimumLength: 5,
-    Thresholds.FlatlineSlopRequirement: 0.015,
-    Thresholds.ImpulseOrCollapseSlopeRequirement: 0.02,
+    Thresholds.PhaseMinimumLength: 3,
+    Thresholds.NonFlatLinearMinimumLength: 7,
+    Thresholds.FlatlineSlopRequirement: 0.02,
     Thresholds.UniformityThreshold: 0.4,
     Thresholds.UniformityTestMinSize: 7,
     Thresholds.SecondDerivativeSigmaAsNotZero: 0.5}
@@ -312,7 +311,7 @@ def _segment(times, curve, dydt, dydt_signs_flat, ddydt_signs, phases, offset, t
             dydt,
             dydt_signs_flat,
             thresholds[Thresholds.LinearModelExtension],
-            thresholds[Thresholds.PhaseMinimumLength],
+            thresholds[Thresholds.NonFlatLinearMinimumLength],
             offset, phases)
 
         yield None
@@ -758,7 +757,7 @@ def _phenotype_phases(curve, derivative, phases, times, doublings):
     return sorted(phenotypes, key=lambda (t, p): p[CurvePhasePhenotypes.Start] if p is not None else 9999)
 
 
-def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_sign, threshold_flatline, threshold_slope):
+def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_sign, threshold_flatline):
 
     curve = phenotyper_object.smooth_growth_data[plate][pos]
 
@@ -791,11 +790,8 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
     dydt_signs_flat = np.sign(dydt)
     dydt_signs_flat[np.abs(dydt) < threshold_flatline] = 0
 
-    # Determine first derivative signs for impulse or collapse questions
-    dydt_signs_slope = np.sign(dydt)
-    dydt_signs_slope[np.abs(dydt_signs_slope) < threshold_slope] = 0
 
-    return dydt, dydt_ranks, dydt_signs_flat, dydt_signs_slope, ddydt, ddydt_signs, phases, offset, curve
+    return dydt, dydt_ranks, dydt_signs_flat, ddydt, ddydt_signs, phases, offset, curve
 
 
 def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_doublings=None):
@@ -803,12 +799,11 @@ def phase_phenotypes(phenotyper_object, plate, pos, thresholds=None, experiment_
     if thresholds is None:
         thresholds = DEFAULT_THRESHOLDS
 
-    dydt, dydt_ranks, dydt_signs_flat, _, _, ddydt_signs, phases, offset, curve = \
+    dydt, dydt_ranks, dydt_signs_flat, _, ddydt_signs, phases, offset, curve = \
         _get_data_needed_for_segments(
             phenotyper_object, plate, pos,
             thresholds[Thresholds.SecondDerivativeSigmaAsNotZero],
-            thresholds[Thresholds.FlatlineSlopRequirement],
-            thresholds[Thresholds.ImpulseOrCollapseSlopeRequirement])
+            thresholds[Thresholds.FlatlineSlopRequirement])
 
     for _ in _segment(
             phenotyper_object.times, curve, dydt, dydt_signs_flat,
