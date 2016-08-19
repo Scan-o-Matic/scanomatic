@@ -197,10 +197,13 @@ class CurvePhaseMetaPhenotypes(Enum):
     FinalRetardationAsymptoteIntersect = 16
 
     InitialLag = 20
-    ExperimentDoublings = 21
     InitialLagAlternativeModel = 22
 
+    ExperimentDoublings = 21
+
     Modalities = 25
+    ModalitiesAlternativeModel = 27
+
     Collapses = 26
 
     ResidualGrowth = 30
@@ -874,10 +877,28 @@ def _get_phase_id(plate, *phases):
 
     return np.frompyfunc(f, 1, 1)(plate).astype(np.int)
 
+def _phase_finder(phase_vector, phase):
+
+    if phase_vector:
+        return tuple(i for i, p in phase_vector if p[0] == phase)
+    return tuple()
 
 def _impulse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
+    return -np.inf
+
+def _inner_impulse_counter(phase_vector):
+
+    if phase_vector:
+        acc = _phase_finder(phase_vector, CurvePhases.GrowthAcceleration)
+        if not acc:
+            return -np.inf
+        ret = _phase_finder(phase_vector, CurvePhases.GrowthRetardation)
+        if not ret:
+            return -np.inf
+        return _impulse_counter(phase_vector[acc[0]: ret[-1]])
+
     return -np.inf
 
 
@@ -1030,6 +1051,10 @@ def filter_plate(plate, meta_phenotype, phenotypes):
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Modalities:
 
         return np.ma.masked_invalid(np.frompyfunc(_impulse_counter, 1, 1)(plate).astype(np.float))
+
+    elif meta_phenotype == CurvePhaseMetaPhenotypes.ModalitiesAlternativeModel:
+
+        return np.ma.masked_invalid(np.frompyfunc(_inner_impulse_counter, 1, 1)(plate).astype(np.float))
 
     elif meta_phenotype == CurvePhaseMetaPhenotypes.Collapses:
 
