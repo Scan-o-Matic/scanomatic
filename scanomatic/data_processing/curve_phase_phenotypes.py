@@ -877,16 +877,19 @@ def _get_phase_id(plate, *phases):
 
     return np.frompyfunc(f, 1, 1)(plate).astype(np.int)
 
+
 def _phase_finder(phase_vector, phase):
 
     if phase_vector:
         return tuple(i for i, p in phase_vector if p[0] == phase)
     return tuple()
 
+
 def _impulse_counter(phase_vector):
     if phase_vector:
         return sum(1 for phase in phase_vector if phase[0] == CurvePhases.Impulse)
     return -np.inf
+
 
 def _inner_impulse_counter(phase_vector):
 
