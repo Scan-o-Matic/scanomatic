@@ -955,13 +955,13 @@ def filter_plate(plate, meta_phenotype, phenotypes):
             phase_selector=lambda phases: phases[0])
 
         # TODO: Consider using major phase
-        impules_phase = _get_phase_id(plate, CurvePhases.Flat, CurvePhases.Impulse)
+        impulses_phase = _get_phase_id(plate, CurvePhases.Flat, CurvePhases.Impulse)
 
         impulse_slope = filter_plate_on_phase_id(
-            plate, impules_phase, measure=CurvePhasePhenotypes.LinearModelSlope)
+            plate, impulses_phase, measure=CurvePhasePhenotypes.LinearModelSlope)
 
         impulse_intercept = filter_plate_on_phase_id(
-            plate, impules_phase, measure=CurvePhasePhenotypes.LinearModelIntercept)
+            plate, impulses_phase, measure=CurvePhasePhenotypes.LinearModelIntercept)
 
         lag = (impulse_intercept - flat_intercept) / (flat_slope - impulse_slope)
         lag[lag < 0] = np.nan
