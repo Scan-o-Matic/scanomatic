@@ -442,6 +442,7 @@ def _get_candidate_lengths_and_edges(candidates):
 
 
 def _bridge_canditates(candidates, window_size=5):
+    # TODO: Verify method, use published, sure this will never expand initial detections?
     for window in range(3, window_size, 2):
         candidates = signal.medfilt(candidates, window_size).astype(bool) | candidates
     return candidates
@@ -789,7 +790,6 @@ def _get_data_needed_for_segments(phenotyper_object, plate, pos, threshold_for_s
     # Determine first derivative signs for flattness questions
     dydt_signs_flat = np.sign(dydt)
     dydt_signs_flat[np.abs(dydt) < threshold_flatline] = 0
-
 
     return dydt, dydt_ranks, dydt_signs_flat, ddydt, ddydt_signs, phases, offset, curve
 
