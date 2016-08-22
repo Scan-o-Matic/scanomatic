@@ -84,6 +84,7 @@ class PhenotypeDataType(Enum):
                               CurvePhaseMetaPhenotypes.InitialAccelerationAsymptoteIntersect,
                               CurvePhaseMetaPhenotypes.FinalRetardationAsymptoteIntersect,
                               CurvePhaseMetaPhenotypes.Modalities,
+                              CurvePhaseMetaPhenotypes.ModalitiesAlternativeModel,
                               CurvePhaseMetaPhenotypes.Collapses,
                               CurvePhaseMetaPhenotypes.ExperimentDoublings,
                               CurvePhaseMetaPhenotypes.ResidualGrowth,

@@ -1555,8 +1555,20 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
         if save_data == SaveData.ScalarPhenotypesRaw:
             data_source = self._phenotypes
+        elif save_data == SaveData.ScalarPhenotypesNormalized:
+            data_source = self._normalized_phenotypes
         else:
             self._logger.error("Not implemented saving '{0}'".format(save_data))
+            return False
+
+        if data_source is None or len(data_source) == 0:
+            if save_data is SaveData.ScalarPhenotypesRaw:
+                self._logger.error("You must extract phenotypes before you can save them")
+            elif save_data is SaveData.ScalarPhenotypesNormalized:
+                self._logger.error("You must normalize before you can save anything...")
+            else:
+                self._logger.error("No data to save")
+
             return False
 
         default_meta_data = ('Plate', 'Row', 'Column')
@@ -1582,33 +1594,68 @@ class Phenotyper(mock_numpy_interface.NumpyArrayInterface):
 
                 cw = csv.writer(fh, dialect=dialect)
 
+                # DATA
+                plate = data_source[plate_index]
+
                 # HEADER ROW
                 meta_data_headers = self.meta_data_headers(plate_index)
 
-                cw.writerow(
-                    tuple(self._make_csv_row(
-                        default_meta_data,
-                        meta_data_headers,
-                        (p for p in Phenotypes if self._phenotypes_inclusion(p)))))
+                if save_data is SaveData.ScalarPhenotypesRaw:
 
-                # DATA
-                plate = data_source[plate_index]
+                    cw.writerow(
+                        tuple(self._make_csv_row(
+                            default_meta_data,
+                            meta_data_headers,
+                            (p for p in Phenotypes if self._phenotypes_inclusion(p)))))
+
+                elif save_data is SaveData.ScalarPhenotypesNormalized:
+
+                    cw.writerow(
+                        tuple(self._make_csv_row(
+                            default_meta_data,
+                            meta_data_headers,
+                            plate.keys())))
+
                 filt = self._phenotype_filter[plate_index]
 
                 if plate is None:
                     continue
 
-                for idX, X in enumerate(plate):
+                if save_data is SaveData.ScalarPhenotypesRaw:
 
-                    for idY, Y in enumerate(X):
+                    for idX, X in enumerate(plate):
+
+                        for idY, Y in enumerate(X):
+
+                            cw.writerow(
+                                tuple(self._make_csv_row(
+                                    (plate_index, idX, idY),
+                                    no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
+                                    (y if filt[Phenotypes(idP)][idX, idY] == 0 else
+                                     Filter(filt[Phenotypes(idP)][idX, idY]).name
+                                     for idP, y in zip(phenotype_filter, Y[phenotype_filter])))))
+
+                elif save_data is SaveData.ScalarPhenotypesNormalized:
+
+                    idX = 0
+                    idY = 0
+                    lX, lY = plate[plate.keys()[0]].shape
+
+                    while True:
 
                         cw.writerow(
-                            tuple(self._make_csv_row(
-                                (plate_index, idX, idY),
-                                no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
-                                (y if filt[Phenotypes(idP)][idX, idY] == 0 else
-                                 Filter(filt[Phenotypes(idP)][idX, idY]).name
-                                 for idP, y in zip(phenotype_filter, Y[phenotype_filter])))))
+                                tuple(self._make_csv_row(
+                                    (plate_index, idX, idY),
+                                    no_metadata if meta_data is None else meta_data(plate_index, idX, idY),
+                                    (plate[p][idX, idY] for p in plate)
+                                    )))
+
+                        idX += 1
+                        if idX == lX:
+                            idX = 0
+                            idY += 1
+                            if idY == lY:
+                                break
 
                 self._logger.info("Saved {0}, plate {1} to {2}".format(save_data, plate_index + 1, plate_path))
 
